@@ -94,7 +94,7 @@ def get_solution_file(message):
     file_info = bot.get_file(message.document.file_id)
     # print(message.document.file_name)
     downloaded_file = bot.download_file(file_info.file_path)
-    file_name = "solutions/{}/{}/{}/{}".format(get_id(message.chat.id), *get_data(message.chat.id),
+    file_name = "../solutions/{}/{}/{}/{}".format(get_id(message.chat.id), *get_data(message.chat.id),
                                                message.document.file_name)
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with open(file_name, 'wb') as file:
@@ -109,7 +109,7 @@ def get_solution_file(message):
 def get_solution_photo(message):
     file_info = bot.get_file(message.photo[0].file_id)
     downloaded_file = bot.download_file(file_info.file_path)
-    file_name = "solutions/{}/{}/{}/1.png".format(get_id(message.chat.id), *get_data(message.chat.id))
+    file_name = "../solutions/{}/{}/{}/1.png".format(get_id(message.chat.id), *get_data(message.chat.id))
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with open(file_name, 'wb') as file:
         file.write(downloaded_file)
@@ -121,7 +121,7 @@ def get_solution_photo(message):
 @bot.message_handler(func=lambda message: get_state(message.chat.id) == SENDING_PHOTO_STATE,
                      content_types=["text"])
 def get_solution_text(message):
-    file_name = "solutions/{}/{}/{}/1.txt".format(get_id(message.chat.id), *get_data(message.chat.id))
+    file_name = "../solutions/{}/{}/{}/1.txt".format(get_id(message.chat.id), *get_data(message.chat.id))
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with open(file_name, 'w') as file:
         file.write(message.text)
