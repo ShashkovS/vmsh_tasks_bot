@@ -3,3 +3,6 @@ gspread
 google-api-python-client
 oauth2client
 pydrive
+aiohttp
+cchardet
+aiodns

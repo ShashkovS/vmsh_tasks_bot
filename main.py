@@ -3,13 +3,30 @@ import logging
 import tasks_helper
 import os
 from state_helper import *
+from aiohttp import web
 
-# logger = telebot.logger
-# telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
+logger = telebot.logger
+telebot.logger.setLevel(logging.WARN)  # Outputs debug messages to console.
 
-key = open('creds/telegram_bot_key').read().strip()
-bot = telebot.TeleBot(key)
-del key
+API_TOKEN = open('creds/telegram_bot_key').read().strip()
+WEBHOOK_HOST = 'vmshtasksbot.proj179.ru'
+WEBHOOK_LISTEN = "0.0.0.0"
+WEBHOOK_PORT = 443
+WEBHOOK_URL = "https://{}:{}/{}/".format(WEBHOOK_HOST, WEBHOOK_PORT, API_TOKEN)
+SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+
+bot = telebot.TeleBot(API_TOKEN)
+
+
+# process only requests with correct bot token
+async def handle(request):
+    if request.match_info.get("token") == bot.token:
+        request_body_dict = await request.json()
+        update = telebot.types.Update.de_json(request_body_dict)
+        bot.process_new_updates([update])
+        return web.Response()
+    else:
+        return web.Response(status=403)
 
 
 @bot.message_handler(commands=['start'])
@@ -94,8 +111,8 @@ def get_solution_file(message):
     file_info = bot.get_file(message.document.file_id)
     # print(message.document.file_name)
     downloaded_file = bot.download_file(file_info.file_path)
-    file_name = "../solutions/{}/{}/{}/{}".format(get_id(message.chat.id), *get_data(message.chat.id),
-                                               message.document.file_name)
+    file_name = SOLS_PATH + "/{}/{}/{}/{}".format(get_id(message.chat.id), *get_data(message.chat.id),
+                                                  message.document.file_name)
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with open(file_name, 'wb') as file:
         file.write(downloaded_file)
@@ -109,7 +126,7 @@ def get_solution_file(message):
 def get_solution_photo(message):
     file_info = bot.get_file(message.photo[0].file_id)
     downloaded_file = bot.download_file(file_info.file_path)
-    file_name = "../solutions/{}/{}/{}/1.png".format(get_id(message.chat.id), *get_data(message.chat.id))
+    file_name = SOLS_PATH + "/{}/{}/{}/1.png".format(get_id(message.chat.id), *get_data(message.chat.id))
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with open(file_name, 'wb') as file:
         file.write(downloaded_file)
@@ -121,7 +138,7 @@ def get_solution_photo(message):
 @bot.message_handler(func=lambda message: get_state(message.chat.id) == SENDING_PHOTO_STATE,
                      content_types=["text"])
 def get_solution_text(message):
-    file_name = "../solutions/{}/{}/{}/1.txt".format(get_id(message.chat.id), *get_data(message.chat.id))
+    file_name = SOLS_PATH + "/{}/{}/{}/1.txt".format(get_id(message.chat.id), *get_data(message.chat.id))
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with open(file_name, 'w') as file:
         file.write(message.text)
@@ -136,6 +153,14 @@ def what(message):
     print(message)
 
 
+# Remove webhook, it fails sometimes the set if there is a previous webhook
+bot.remove_webhook()
+# Set webhook
+bot.set_webhook(url=WEBHOOK_URL)
+app = web.Application()
+app.router.add_post("/{token}/", handle)
+
+# Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
+# А вот в режиме отладки можно запустить и без вебхуков
 if __name__ == "__main__":
-    print(os.getcwd())
     bot.infinity_polling()
