@@ -2,14 +2,40 @@ import telebot
 import logging
 import tasks_helper
 import os
+import ssl
 from state_helper import *
+from aiohttp import web
 
-# logger = telebot.logger
-# telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
+logger = telebot.logger
+telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
 
-key = open('creds/telegram_bot_key').read().strip()
-bot = telebot.TeleBot(key)
-del key
+API_TOKEN = open('creds/telegram_bot_key').read().strip()
+WEBHOOK_HOST = 'https://vmshtasksbot.proj179.ru'
+WEBHOOK_LISTEN = "0.0.0.0"
+WEBHOOK_PORT = 8443
+
+WEBHOOK_SSL_CERT = "/etc/letsencrypt/live/vmshtasksbot.proj179.ru/fullchain.pem"
+WEBHOOK_SSL_PRIV = "/etc/letsencrypt/live/vmshtasksbot.proj179.ru/privkey.pem"
+
+WEBHOOK_URL_BASE = "https://{}:{}".format(WEBHOOK_HOST, WEBHOOK_PORT)
+WEBHOOK_URL_PATH = "/{}/".format(API_TOKEN)
+
+bot = telebot.TeleBot(API_TOKEN)
+app = web.Application()
+
+
+# process only requests with correct bot token
+async def handle(request):
+    if request.match_info.get("token") == bot.token:
+        request_body_dict = await request.json()
+        update = telebot.types.Update.de_json(request_body_dict)
+        bot.process_new_updates([update])
+        return web.Response()
+    else:
+        return web.Response(status=403)
+
+
+app.router.add_post("/{token}/", handle)
 
 
 @bot.message_handler(commands=['start'])
@@ -95,7 +121,7 @@ def get_solution_file(message):
     # print(message.document.file_name)
     downloaded_file = bot.download_file(file_info.file_path)
     file_name = "../solutions/{}/{}/{}/{}".format(get_id(message.chat.id), *get_data(message.chat.id),
-                                               message.document.file_name)
+                                                  message.document.file_name)
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with open(file_name, 'wb') as file:
         file.write(downloaded_file)
@@ -136,6 +162,24 @@ def what(message):
     print(message)
 
 
+# https://api.telegram.org/botYOUR-TOKEN/setWebhook?url=https://vmshtasksbot.proj179.ru:8443/YOUR-TOKEN/
 if __name__ == "__main__":
-    print(os.getcwd())
-    bot.infinity_polling()
+    # start aiohttp server (our bot)
+
+    # Remove webhook, it fails sometimes the set if there is a previous webhook
+    bot.remove_webhook()
+
+    # Set webhook
+    bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH, certificate=open(WEBHOOK_SSL_CERT, 'r'))
+
+    # Build ssl context
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    context.load_cert_chain(WEBHOOK_SSL_CERT, WEBHOOK_SSL_PRIV)
+
+    # Start aiohttp server
+    web.run_app(
+        app,
+        host=WEBHOOK_LISTEN,
+        port=WEBHOOK_PORT,
+        ssl_context=context,
+    )
