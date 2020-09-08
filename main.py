@@ -10,15 +10,13 @@ logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG)  # Outputs debug messages to console.
 
 API_TOKEN = open('creds/telegram_bot_key').read().strip()
-WEBHOOK_HOST = 'https://vmshtasksbot.proj179.ru'
+WEBHOOK_HOST = 'vmshtasksbot.proj179.ru'
 WEBHOOK_LISTEN = "0.0.0.0"
 WEBHOOK_PORT = 8443
+WEBHOOK_URL = "https://{}:{}/{}/".format(WEBHOOK_HOST, WEBHOOK_PORT, API_TOKEN)
 
 WEBHOOK_SSL_CERT = "/etc/letsencrypt/live/vmshtasksbot.proj179.ru/fullchain.pem"
 WEBHOOK_SSL_PRIV = "/etc/letsencrypt/live/vmshtasksbot.proj179.ru/privkey.pem"
-
-WEBHOOK_URL_BASE = "https://{}:{}".format(WEBHOOK_HOST, WEBHOOK_PORT)
-WEBHOOK_URL_PATH = "/{}/".format(API_TOKEN)
 
 bot = telebot.TeleBot(API_TOKEN)
 app = web.Application()
@@ -170,7 +168,7 @@ if __name__ == "__main__":
     bot.remove_webhook()
 
     # Set webhook
-    bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH, certificate=open(WEBHOOK_SSL_CERT, 'r'))
+    bot.set_webhook(url=WEBHOOK_URL, certificate=open(WEBHOOK_SSL_CERT, 'r'))
 
     # Build ssl context
     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
