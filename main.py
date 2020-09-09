@@ -3,6 +3,7 @@ import logging
 import tasks_helper
 import os
 from state_helper import *
+from user_helper import *
 from aiohttp import web
 
 logger = telebot.logger
@@ -13,7 +14,7 @@ WEBHOOK_HOST = 'vmshtasksbot.proj179.ru'
 WEBHOOK_LISTEN = "0.0.0.0"
 WEBHOOK_PORT = 443
 WEBHOOK_URL = "https://{}:{}/{}/".format(WEBHOOK_HOST, WEBHOOK_PORT, API_TOKEN)
-SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -44,13 +45,21 @@ def update_all(message):
 
 @bot.message_handler(func=lambda message: get_state(message.chat.id) == GETTING_USER_INFO_STATE)
 def get_pass(message):
-    if message.text == "qwerty":
-        bot.send_message(message.chat.id, "ОК, Добро пожаловать, Акакий Акакиевич")
-        set_state(message.chat.id, GETTING_TASK_INFO_STATE)
-        set_id(message.chat.id, message.text)
-        get_task(message)
-    else:
+    # if message.text == "qwerty":
+    #     bot.send_message(message.chat.id, "ОК, Добро пожаловать, Акакий Акакиевич")
+    #     set_state(message.chat.id, GETTING_TASK_INFO_STATE)
+    #     set_id(message.chat.id, message.text)
+    #     get_task(message)
+    # else:
+    #     bot.send_message(message.chat.id, "Неправильно, попробуйте еще раз")
+    user = authorize(message.text)
+    if user is None:
         bot.send_message(message.chat.id, "Неправильно, попробуйте еще раз")
+    else:
+        bot.send_message(message.chat.id, "ОК, Добро пожаловать, {} {}".format(user.name, user.surname))
+        set_state(message.chat.id, GETTING_TASK_INFO_STATE)
+        set_id(message.chat.id, user.id)
+        get_task(message)
 
 
 def build_lessons_keyboard():
