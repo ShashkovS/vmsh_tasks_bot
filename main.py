@@ -18,9 +18,6 @@ SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutio
 
 bot = telebot.TeleBot(API_TOKEN)
 
-with open('del.me', 'w') as f:
-    f.write('delme')
-
 # process only requests with correct bot token
 async def handle(request):
     if request.match_info.get("token") == bot.token:
