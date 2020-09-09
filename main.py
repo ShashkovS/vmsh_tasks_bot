@@ -155,12 +155,14 @@ def what(message):
 
 # Remove webhook, it fails sometimes the set if there is a previous webhook
 bot.remove_webhook()
-# Set webhook
-bot.set_webhook(url=WEBHOOK_URL)
-app = web.Application()
-app.router.add_post("/{token}/", handle)
 
 # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
 # А вот в режиме отладки можно запустить и без вебхуков
 if __name__ == "__main__":
     bot.infinity_polling()
+else:
+
+    # Set webhook
+    bot.set_webhook(url=WEBHOOK_URL)
+    app = web.Application()
+    app.router.add_post("/{token}/", handle)
