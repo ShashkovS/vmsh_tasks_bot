@@ -1,9 +1,9 @@
 import telebot
 import logging
 import tasks_helper
+import user_helper
 import os
 from state_helper import *
-from user_helper import *
 from aiohttp import web
 
 logger = telebot.logger
@@ -40,6 +40,7 @@ def start(message):
 @bot.message_handler(commands=['update_all_quaLtzPE'])
 def update_all(message):
     tasks_helper.build_lesson_list()
+    user_helper.build_user_list()
     bot.send_message(message.chat.id, "Данные обновлены")
 
 
@@ -52,7 +53,7 @@ def get_pass(message):
     #     get_task(message)
     # else:
     #     bot.send_message(message.chat.id, "Неправильно, попробуйте еще раз")
-    user = authorize(message.text)
+    user = user_helper.authorize(message.text)
     if user is None:
         bot.send_message(message.chat.id, "Неправильно, попробуйте еще раз")
     else:
