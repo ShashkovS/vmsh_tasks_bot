@@ -171,7 +171,6 @@ bot.remove_webhook()
 if __name__ == "__main__":
     bot.infinity_polling()
 else:
-
     # Set webhook
     bot.set_webhook(url=WEBHOOK_URL)
     app = web.Application()
