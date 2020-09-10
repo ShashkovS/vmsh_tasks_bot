@@ -7,8 +7,8 @@ import datetime
 from state_helper import *
 from aiogram import Bot
 from aiogram.dispatcher import Dispatcher
-from aiogram.dispatcher.webhook import *
-from aiogram.utils.executor import start_polling, start_webhook
+from aiogram.dispatcher.webhook import configure_app, types, web
+from aiogram.utils.executor import start_polling
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -215,7 +215,8 @@ else:
     WEBHOOK_PORT = 443
     WEBHOOK_URL = "https://{}:{}/{}/".format(WEBHOOK_HOST, WEBHOOK_PORT, API_TOKEN)
     # Create app
-    app = get_new_configured_app(dispatcher=dispatcher, path=WEBHOOK_URL)
+    app = web.Application()
+    configure_app(dispatcher, app, path='/{token}/', route_name='telegram_webhook_handler')
     # Setup event handlers.
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
