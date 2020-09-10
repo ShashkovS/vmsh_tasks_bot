@@ -1,3 +1,4 @@
 .idea/
 creds
 students_and_probles.pickle
+.db/
