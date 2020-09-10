@@ -26,3 +26,38 @@
 - интерпретатор выкинет полотно с ошибкой, в полотне будет url типа https://console.developers.google.com/apis/api/sheets.googleapis.com/overview?project=xxxx, переходим туда
 - там будет на выбор ВКЛЮЧИТЬ и ПОПРОБОВАТЬ ЭТОТ АПИ. нажимаем ВКЛЮЧИТЬ, ждем несколько минут (изменения подхватываются не сразу).
 - готово
+
+
+### Рулим хендлерами
+
+Мы не используем декораторы, а регистрируем все хендлеры в 
+
+    async def on_startup(app):
+        logging.warning('Start up!')
+        if USE_WEBHOOKS:
+            await check_webhook()
+        dispatcher.register_message_handler(start, commands=['start'])
+        dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
+        dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
+        dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
+        
+### Рулим состояниями
+
+Под каждый state мы пишем функцию-обработчик. Добавляем её в словарь
+
+    state_processors = {
+        GET_USER_INFO_STATE: prc_get_user_info_state,
+        GET_TASK_INFO_STATE: prc_get_task_info_state,
+        SENDING_SOLUTION_STATE: prc_sending_solution_state,
+    }
+
+
+Обычные сообщения обрабатываются так:
+
+    async def process_regular_message(message: types.Message):
+        cur_chat_state = get_state(message.chat.id)
+        state_processor = state_processors.get(cur_chat_state, prc_WTF)
+        await state_processor(message)
+
+То есть определили state, вызвали соответствующую функцию.
+Здесь в нормальной ситуации мы ничего не дорабатываем

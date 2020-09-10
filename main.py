@@ -10,7 +10,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.webhook import configure_app, types, web
 from aiogram.utils.executor import start_polling
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 API_TOKEN = open('creds/telegram_bot_key').read().strip()
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'solutions')
@@ -208,6 +208,7 @@ async def on_shutdown(app):
 # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
 # А вот в режиме отладки можно запустить и без вебхуков
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
 else:
     USE_WEBHOOKS = True
