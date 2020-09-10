@@ -40,7 +40,29 @@ def _create_base():
             )
         """)
         c.execute("""
-            CREATE TABLE IF NOT EXISTS messages (
+            CREATE TABLE IF NOT EXISTS results (
+                problem_id INTEGER,
+                student_id INTEGER NULL,
+                teacher_id INTEGER NULL,
+                ts timestamp NOT NULL,
+                verdict integer NOT NULL,
+                FOREIGN KEY(problem_id) REFERENCES problems(id),
+                FOREIGN KEY(student_id) REFERENCES users(id),
+                FOREIGN KEY(teacher_id) REFERENCES users(id)
+            )
+        """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS states_log (
+                user_id INTEGER PRIMARY KEY,
+                state INTEGER,
+                problem_id INTEGER,
+                ts timestamp NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(problem_id) REFERENCES problems(id)
+            )
+        """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS messages_log (
                 id INTEGER PRIMARY KEY UNIQUE,
                 from_bot boolean NOT NULL,
                 tg_msg_id INTEGER NOT NULL,
