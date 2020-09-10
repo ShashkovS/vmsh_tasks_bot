@@ -2,3 +2,5 @@
 creds
 students_and_probles.pickle
 db/
+__pycache__/
+solutions/

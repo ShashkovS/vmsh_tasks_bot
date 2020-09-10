@@ -13,7 +13,7 @@ from aiogram.utils.executor import start_polling
 logging.basicConfig(level=logging.INFO)
 
 API_TOKEN = open('creds/telegram_bot_key').read().strip()
-SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'solutions')
+SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions')
 USE_WEBHOOKS = False
 
 bot = Bot(API_TOKEN)
