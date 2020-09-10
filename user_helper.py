@@ -1,14 +1,12 @@
 import readSettingsFromGS
+from dataclasses import dataclass
 
-
+@dataclass
 class User:
-    __slots__ = ['id', 'name', 'surname', 'password']
-
-    def __init__(self, user_id, surname, name, password):
-        self.id = user_id
-        self.name = name
-        self.surname = surname
-        self.password = password
+    id: str
+    surname: str
+    name: str
+    password: str
 
 
 users = []
@@ -20,6 +18,7 @@ def build_user_list():
     readSettingsFromGS.load()
     for i in readSettingsFromGS.students[1:]:
         users.append(User(*i))
+    print(users)
 
 
 def authorize(password):
