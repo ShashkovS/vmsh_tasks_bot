@@ -2,12 +2,13 @@ import logging
 import os
 import io
 import datetime
+import db_helper
+import hashlib
 from state_helper import *
 from aiogram import Bot
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.webhook import configure_app, types, web
 from aiogram.utils.executor import start_polling
-import db_helper
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,7 +17,7 @@ SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions'
 USE_WEBHOOKS = False
 
 # Для каждого бота своя база
-db_name = str(abs(hash(API_TOKEN))) + '.db'
+db_name = hashlib.md5(API_TOKEN.encode('utf-8')).hexdigest() + '.db'
 db, users, problems = db_helper.init_db_and_objects(db_name)
 
 # Запускаем API телеграм-бота
