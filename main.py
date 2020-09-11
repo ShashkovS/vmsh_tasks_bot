@@ -9,6 +9,7 @@ from aiogram import Bot
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.webhook import configure_app, types, web
 from aiogram.utils.executor import start_polling
+import db_helper
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,6 +17,11 @@ API_TOKEN = open('creds/telegram_bot_key').read().strip()
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions')
 USE_WEBHOOKS = False
 
+# # Для каждого бота своя база
+# db_name = str(abs(hash(API_TOKEN))) + '.db'
+# db, users, problems = db_helper.init_db_and_objects(db_name)
+
+# Запускаем API телеграм-бота
 bot = Bot(API_TOKEN)
 dispatcher = Dispatcher(bot)
 

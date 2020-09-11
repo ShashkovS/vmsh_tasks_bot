@@ -1,10 +1,12 @@
 import sqlite3
 import os
 from dataclasses import dataclass
+import load_data_from_spreadsheet
 
 # APP_PATH = os.path.dirname(os.path.realpath(__file__))
 APP_PATH = r'X:\repos\vmsh_tasks_bot'
 DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+db = None
 
 
 class DB:
@@ -189,7 +191,12 @@ class Users:
         self.by_token = {}
         self.by_id = {}
         for row in rows:
-            user = User(**row)
+            if type(row) == dict:
+                user = User(**row)
+            elif type(row) == User:
+                user = row
+            else:
+                raise TypeError('Use dict or User to init Users')
             self.all_users.append(user)
             self.by_chat_id[user.chat_id] = user
             self.by_token[user.token] = user
@@ -206,6 +213,9 @@ class Users:
 
     def __repr__(self):
         return f'Users({self.all_users!r})'
+
+    def __len__(self):
+        return len(self.all_users)
 
 
 @dataclass
@@ -234,12 +244,17 @@ class Problems:
     def __init__(self, rows=None):
         if rows is None:
             rows = db.fetch_all_problems()
-        self.all_users = []
+        self.all_problems = []
         self.by_key = {}
         self.by_id = {}
         for row in rows:
-            problem = Problem(**row)
-            self.all_users.append(problem)
+            if type(row) == dict:
+                problem = Problem(**row)
+            elif type(row) == Problem:
+                problem = row
+            else:
+                raise TypeError('Use dict or Problem to init Problems')
+            self.all_problems.append(problem)
             self.by_key[(problem.list, problem.prob, problem.item,)] = problem
             self.by_id[problem.id] = problem
 
@@ -250,7 +265,33 @@ class Problems:
         return self.by_id.get((list, prob, item), None)
 
     def __repr__(self):
-        return f'Problems({self.all_users!r})'
+        return f'Problems({self.all_problems!r})'
+
+    def __len__(self):
+        return len(self.all_problems)
+
+
+def init_db_and_objects(db_file='prod_database.db'):
+    global db
+    db = DB(db_file)
+    users = Users()
+    problems = Problems()
+    if len(users) == 0 or len(problems) == 0:
+        problems, students, teachers = load_data_from_spreadsheet.load()
+        for student in students:
+            student['type'] = 0
+            student['chat_id'] = None
+            student['middlename'] = ''
+        for teacher in teachers:
+            teacher['type'] = 1
+            teacher['chat_id'] = None
+        for problem in problems:
+            problem['prob_type'] = 1
+            problem['ans_type'] = 1
+        # Создание юзеров автоматически зальёт их в базу
+        users = Users(students + teachers)
+        problems = Problems(problems)
+    return db, users, problems
 
 
 if __name__ == '__main__':
@@ -270,6 +311,7 @@ if __name__ == '__main__':
     print(users.by_chat_id[12312])
     print(users.get_by_id(123))
     print(users.get_by_id(1))
+    print(len(users))
 
     p1 = Problem(1, 1, 'а', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', 123, 'check_int', 'ЛОЖЬ!', 'Крутяк')
     p2 = Problem(1, 1, 'б', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', 123, 'check_int', 'ЛОЖЬ!', 'Крутяк')
@@ -282,5 +324,14 @@ if __name__ == '__main__':
     print(problems.by_key[(1, 1, 'б')])
     print(problems.get_by_key(1, 1, 'б'))
     print(problems.get_by_key(1, 1, 'бs'))
+    print(len(problems))
 
+    db.disconnect()
+    print('\n' * 10)
+    print('self test 2')
+    db, users, problems = init_db_and_objects('dummy2')
+    for user in users.all_users:
+        print(user)
+    for user in problems.all_problems:
+        print(user)
     db.disconnect()
