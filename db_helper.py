@@ -3,8 +3,8 @@ import os
 from dataclasses import dataclass
 import load_data_from_spreadsheet
 
-# APP_PATH = os.path.dirname(os.path.realpath(__file__))
-APP_PATH = r'X:\repos\vmsh_tasks_bot'
+APP_PATH = os.path.dirname(os.path.realpath(__file__))
+# APP_PATH = r'X:\repos\vmsh_tasks_bot'
 DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 db = None
 
@@ -69,7 +69,7 @@ class DB:
             CREATE TABLE IF NOT EXISTS states (
                 user_id INTEGER PRIMARY KEY,
                 state INTEGER,
-                problem_id INTEGER,
+                problem_id INTEGER NULL,
                 FOREIGN KEY(user_id) REFERENCES users(id),
                 FOREIGN KEY(problem_id) REFERENCES problems(id)
             )
@@ -239,6 +239,9 @@ class Problem:
         if self.id is None:
             self.id = db.add_problem(self.__dict__)
 
+    def __str__(self):
+        return f"Задача {self.list}.{self.prob}{self.item} - {self.title}"
+
 
 class Problems:
     def __init__(self, rows=None):
@@ -247,6 +250,7 @@ class Problems:
         self.all_problems = []
         self.by_key = {}
         self.by_id = {}
+        self.by_list = {}
         for row in rows:
             if type(row) == dict:
                 problem = Problem(**row)
@@ -257,12 +261,24 @@ class Problems:
             self.all_problems.append(problem)
             self.by_key[(problem.list, problem.prob, problem.item,)] = problem
             self.by_id[problem.id] = problem
+            if problem.list not in self.by_list:
+                self.by_list[problem.list] = list()
+            self.by_list[problem.list].append(problem)
 
     def get_by_id(self, key):
         return self.by_id.get(key, None)
 
     def get_by_key(self, list: int, prob: int, item: ''):
         return self.by_id.get((list, prob, item), None)
+
+    def get_by_lesson(self, lesson: int):
+        return self.by_list.get(lesson, list())
+
+    def get_all_lessons(self):
+        return sorted(list(self.by_list.keys()))
+
+    def get_last_lesson(self):
+        return max(self.by_list.keys())
 
     def __repr__(self):
         return f'Problems({self.all_problems!r})'

@@ -1,6 +1,4 @@
 import logging
-import tasks_helper
-import user_helper
 import os
 import io
 import datetime
@@ -17,9 +15,9 @@ API_TOKEN = open('creds/telegram_bot_key').read().strip()
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions')
 USE_WEBHOOKS = False
 
-# # Для каждого бота своя база
-# db_name = str(abs(hash(API_TOKEN))) + '.db'
-# db, users, problems = db_helper.init_db_and_objects(db_name)
+# Для каждого бота своя база
+db_name = str(abs(hash(API_TOKEN))) + '.db'
+db, users, problems = db_helper.init_db_and_objects(db_name)
 
 # Запускаем API телеграм-бота
 bot = Bot(API_TOKEN)
@@ -36,8 +34,8 @@ async def start(message: types.Message):
 
 
 async def update_all_internal_data(message: types.Message):
-    tasks_helper.build_lesson_list()
-    user_helper.build_user_list()
+    global db, users, problems
+    db, users, problems = db_helper.init_db_and_objects()
     await bot.send_message(
         chat_id=message.chat.id,
         text="Данные обновлены",
@@ -45,7 +43,7 @@ async def update_all_internal_data(message: types.Message):
 
 
 async def prc_get_user_info_state(message: types.Message):
-    user = user_helper.authorize(message.text)
+    user = users.get_by_token(message.text)
     if user is None:
         await bot.send_message(
             chat_id=message.chat.id,
@@ -69,12 +67,12 @@ async def prc_WTF(message: types.Message):
     )
 
 
-def build_tasks_keyboard(lesson_num: int):
+def build_problems_keyboard(lesson_num: int):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    for task in tasks_helper.get_lesson_tasks(lesson_num):
+    for problem in problems.get_by_lesson(lesson_num):
         task_button = types.InlineKeyboardButton(
-            text=f"{task}",
-            callback_data=f"t_({lesson_num},{task.name})"
+            text=f"{problem}",
+            callback_data=f"t_{problem.id}"
         )
         keyboard_markup.add(task_button)
     to_lessons_button = types.InlineKeyboardButton(
@@ -87,10 +85,10 @@ def build_tasks_keyboard(lesson_num: int):
 
 def build_lessons_keyboard():
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    for lesson in tasks_helper.get_all_lessons():
+    for lesson in problems.get_all_lessons():
         lesson_button = types.InlineKeyboardButton(
-            text="Листок {}".format(lesson.number),
-            callback_data='l_{}'.format(lesson.number),
+            text=f"Листок {lesson}",
+            callback_data=f"l_{lesson}",
         )
         keyboard_markup.add(lesson_button)
     return keyboard_markup
@@ -104,7 +102,7 @@ async def prc_get_task_info_state(message):
     await bot.send_message(
         chat_id=message.chat.id,
         text="Вот задачи текущего листка:",
-        reply_markup=build_tasks_keyboard(tasks_helper.get_last_lesson()),
+        reply_markup=build_problems_keyboard(problems.get_last_lesson()),
     )
 
 
@@ -161,17 +159,16 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
         if query.data[0] == 't':
             await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                                 reply_markup=None)
-            task_id = query.data[3:-1].split(',')
+            problem_id = int(query.data[2:])
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text="Выбрана задача {}. Теперь отправьте фотографии или скан вашего решения.".
-                                        format(tasks_helper.get_task(*task_id)))
-            set_state(query.message.chat.id, SENDING_SOLUTION_STATE, task_id)
+                                        text=f"Выбрана задача {problems.by_id(problem_id)}. Теперь отправьте фотографии или скан вашего решения.")
+            set_state(query.message.chat.id, SENDING_SOLUTION_STATE, problem_id)
         elif query.data[0] == 'l':
 
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         text="Теперь выберите задачу")
             await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                                reply_markup=build_tasks_keyboard(query.data[2:]))
+                                                reply_markup=build_problems_keyboard(query.data[2:]))
         elif query.data[0] == 'a':
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         text="Вот список всех листков:")
