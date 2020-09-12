@@ -1,6 +1,7 @@
 .idea/
 creds
 students_and_probles.pickle
+students_and_probles_v2.pickle
 db/
 __pycache__/
 solutions/
