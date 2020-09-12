@@ -25,18 +25,6 @@ bot = Bot(API_TOKEN)
 dispatcher = Dispatcher(bot)
 
 
-async def start(message: types.Message):
-    user = users.get_by_chat_id(message.chat.id)
-    if not user:
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text="Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
-        )
-    else:
-        states.set_by_user_id(user, GET_TASK_INFO_STATE)
-        await prc_get_task_info_state(message)
-
-
 async def update_all_internal_data(message: types.Message):
     global db, users, problems, states
     db, users, problems, states = db_helper.init_db_and_objects()
@@ -162,6 +150,17 @@ async def process_regular_message(message: types.Message):
         cur_chat_state = states.get_by_user_id(user.id)['state']
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
     await state_processor(message)
+
+
+async def start(message: types.Message):
+    user = users.get_by_chat_id(message.chat.id)
+    if not user:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
+        )
+    else:
+        await process_regular_message(message)
 
 
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
