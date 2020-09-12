@@ -19,22 +19,22 @@ def load():
     client = gspread.authorize(creds)
     sheet = client.open_by_key('1mw9yuCYABGiIF5WXcTE6jAi0l1UtcnTA2jlO7SDHN6Y')
 
-    worksheet_problems = sheet.worksheet("Задачиv2")
+    worksheet_problems = sheet.worksheet("Задачи")
     problems = _dict_factory(
-        worksheet_problems.get('A:M'),
+        worksheet_problems.get_all_values(),
         ['list', 'prob', 'item', 'title', 'prob_text', 'prob_type', 'ans_type', 'ans_validation', 'validation_error', 'cor_ans', 'cor_ans_checker',
          'wrong_ans', 'congrat', ],
     )
 
     worksheet_students = sheet.worksheet("Школьники")
     students = _dict_factory(
-        worksheet_students.get('B:D'),
+        worksheet_students.get_all_values(),
         ['surname', 'name', 'token'],
     )
 
     worksheet_students = sheet.worksheet("Учителя")
     teachers = _dict_factory(
-        worksheet_students.get('B:E'),
+        worksheet_students.get_all_values(),
         ['surname', 'name', 'middlename', 'token'],
     )
 
