@@ -4,7 +4,7 @@ import io
 import datetime
 import db_helper
 import hashlib
-from state_helper import *
+from states_and_callbacks_consts import *
 from aiogram import Bot
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.webhook import configure_app, types, web
@@ -27,14 +27,14 @@ dispatcher = Dispatcher(bot)
 
 async def update_all_internal_data(message: types.Message):
     global db, users, problems, states
-    db, users, problems, states = db_helper.init_db_and_objects()
+    db, users, problems, states = db_helper.init_db_and_objects(db_name, refresh=True)
     await bot.send_message(
         chat_id=message.chat.id,
         text="Данные обновлены",
     )
 
 
-async def prc_get_user_info_state(message: types.Message):
+async def prc_get_user_info_state(message: types.Message, user: db_helper.User):
     user = users.get_by_token(message.text)
     if user is None:
         await bot.send_message(
@@ -47,17 +47,19 @@ async def prc_get_user_info_state(message: types.Message):
             chat_id=message.chat.id,
             text=f"ОК, Добро пожаловать, {user.name} {user.surname}",
         )
-        # set_state(message.chat.id, GET_TASK_INFO_STATE)
-        states.set_by_user_id(user.id, GET_TASK_INFO_STATE)
         users.set_chat_id(user, message.chat.id)
-        await prc_get_task_info_state(message)
+        states.set_by_user_id(user.id, GET_TASK_INFO_STATE)
+        await prc_get_task_info_state(message, user)
 
 
-async def prc_WTF(message: types.Message):
+async def prc_WTF(message: types.Message, user: db_helper.User):
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Всё сломалось, бот запутался в текущей ситации :(",
+        text="Всё сломалось, бот запутался в текущей ситации :(. Начнём сначала!",
     )
+    logging.error(f"prc_WTF: {user!r} {message!r}")
+    states.set_by_user_id(user.id, GET_TASK_INFO_STATE)
+    await prc_get_task_info_state(message, user)
 
 
 def build_problems_keyboard(lesson_num: int):
@@ -65,12 +67,12 @@ def build_problems_keyboard(lesson_num: int):
     for problem in problems.get_by_lesson(lesson_num):
         task_button = types.InlineKeyboardButton(
             text=f"{problem}",
-            callback_data=f"t_{problem.id}"
+            callback_data=f"{PROBLEM_SELECTED_CALLBACK}_{problem.id}"
         )
         keyboard_markup.add(task_button)
     to_lessons_button = types.InlineKeyboardButton(
         text="К списку всех листков",
-        callback_data="a"
+        callback_data=f"{SHOW_LIST_OF_LISTS_CALLBACK}"
     )
     keyboard_markup.add(to_lessons_button)
     return keyboard_markup
@@ -81,13 +83,13 @@ def build_lessons_keyboard():
     for lesson in problems.get_all_lessons():
         lesson_button = types.InlineKeyboardButton(
             text=f"Листок {lesson}",
-            callback_data=f"l_{lesson}",
+            callback_data=f"{LIST_SELECTED_CALLBACK}_{lesson}",
         )
         keyboard_markup.add(lesson_button)
     return keyboard_markup
 
 
-async def prc_get_task_info_state(message):
+async def prc_get_task_info_state(message, user: db_helper.User):
     await bot.send_message(
         chat_id=message.chat.id,
         text="Сейчас нужно выбрать задачу, которую Вы хотите отправить",
@@ -99,10 +101,9 @@ async def prc_get_task_info_state(message):
     )
 
 
-async def prc_sending_solution_state(message: types.Message):
+async def prc_sending_solution_state(message: types.Message, user: db_helper.User):
     downloaded = []
     text = message.text
-    user = users.get_by_chat_id(message.chat.id)
     if text:
         downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
     for photo in message.photo:
@@ -131,7 +132,7 @@ async def prc_sending_solution_state(message: types.Message):
         text="Принято на проверку"
     )
     states.set_by_user_id(user.id, GET_TASK_INFO_STATE)
-    await prc_get_task_info_state(message)
+    await prc_get_task_info_state(message, user)
 
 
 state_processors = {
@@ -142,14 +143,13 @@ state_processors = {
 
 
 async def process_regular_message(message: types.Message):
-    # cur_chat_state = states.get_by_chat_id(message.chat.id).state
     user = users.get_by_chat_id(message.chat.id)
     if not user:
         cur_chat_state = GET_USER_INFO_STATE
     else:
         cur_chat_state = states.get_by_user_id(user.id)['state']
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
-    await state_processor(message)
+    await state_processor(message, user)
 
 
 async def start(message: types.Message):
@@ -163,29 +163,44 @@ async def start(message: types.Message):
         await process_regular_message(message)
 
 
+async def prc_problems_selected_callback(query: types.CallbackQuery):
+    user = users.get_by_chat_id(query.message.chat.id)
+    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
+    problem_id = int(query.data[2:])
+    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                text=f"Выбрана задача {problems.get_by_id(problem_id)}. Теперь отправьте фотографии или скан вашего решения.")
+    states.set_by_user_id(user.id, SENDING_SOLUTION_STATE, problem_id)
+
+
+async def prc_list_selected_callback(query: types.CallbackQuery):
+    list_num = int(query.data[2:])
+    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                text="Теперь выберите задачу")
+    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=build_problems_keyboard(list_num))
+
+
+async def prc_show_list_of_lists_callback(query: types.CallbackQuery):
+    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                text="Вот список всех листков:")
+    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=build_lessons_keyboard())
+
+
+callbacks_processors = {
+    PROBLEM_SELECTED_CALLBACK: prc_problems_selected_callback,
+    SHOW_LIST_OF_LISTS_CALLBACK: prc_show_list_of_lists_callback,
+    LIST_SELECTED_CALLBACK: prc_list_selected_callback,
+}
+
+
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
     print(query)
-    user = users.get_by_chat_id(query.message.chat.id)
     if query.message:
-        if query.data[0] == 't':
-            await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                                reply_markup=None)
-            problem_id = int(query.data[2:])
-            await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text=f"Выбрана задача {problems.get_by_id(problem_id)}. Теперь отправьте фотографии или скан вашего решения.")
-            # states.set_by_chat_id(query.message.chat.id, SENDING_SOLUTION_STATE, problem_id)
-            states.set_by_user_id(user.id, SENDING_SOLUTION_STATE, problem_id)
-        elif query.data[0] == 'l':
-
-            await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text="Теперь выберите задачу")
-            await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                                reply_markup=build_problems_keyboard(query.data[2:]))
-        elif query.data[0] == 'a':
-            await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text="Вот список всех листков:")
-            await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                                reply_markup=build_lessons_keyboard())
+        callback_type = query.data[0]
+        callback_processor = callbacks_processors.get(callback_type, None)
+        await callback_processor(query)
 
 
 async def check_webhook():

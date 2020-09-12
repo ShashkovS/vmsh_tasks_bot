@@ -348,13 +348,13 @@ class States:
         db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
 
 
-def init_db_and_objects(db_file='prod_database.db'):
+def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
     global db
     db = DB(db_file)
     users = Users()
     problems = Problems()
     states = States()
-    if len(users) == 0 or len(problems) == 0:
+    if refresh or len(users) == 0 or len(problems) == 0:
         problems, students, teachers = load_data_from_spreadsheet.load()
         for student in students:
             student['type'] = 0
