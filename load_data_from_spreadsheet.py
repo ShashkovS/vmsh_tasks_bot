@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import pickle
+
+DUMP_FILENAME = 'students_and_probles_v2.pickle'
 
 def _dict_factory(rows, column_names):
     res_rows = []
@@ -10,7 +13,16 @@ def _dict_factory(rows, column_names):
     return res_rows
 
 
-def load():
+def load(*, use_pickle=True):
+    if use_pickle:
+        try:
+            with open(DUMP_FILENAME, 'rb') as f:
+                problems, students, teachers = pickle.load(f)
+            print('google_load_ignored')
+            return problems, students, teachers
+        except FileNotFoundError:
+            pass
+
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
 
@@ -38,7 +50,10 @@ def load():
         ['surname', 'name', 'middlename', 'token'],
     )
 
-    return problems[2:], students[2:], teachers[2:]
+    result = problems[2:], students[2:], teachers[2:]
+    with open(DUMP_FILENAME, 'wb') as f:
+        pickle.dump(result, f)
+    return result
 
 
 if __name__ == '__main__':
