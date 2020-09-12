@@ -67,11 +67,15 @@ class DB:
         """)
         c.execute("""
             CREATE TABLE IF NOT EXISTS states (
-                user_id INTEGER PRIMARY KEY,
+                user_id INTEGER PRIMARY KEY UNIQUE ,
                 state INTEGER,
                 problem_id INTEGER NULL,
+                last_student_id INTEGER NULL,
+                last_teacher_id INTEGER NULL,
                 FOREIGN KEY(user_id) REFERENCES users(id),
-                FOREIGN KEY(problem_id) REFERENCES problems(id)
+                FOREIGN KEY(problem_id) REFERENCES problems(id),
+                FOREIGN KEY(last_student_id) REFERENCES users(id),
+                FOREIGN KEY(last_teacher_id) REFERENCES users(id)
             )
         """)
         c.execute("""
@@ -149,6 +153,46 @@ class DB:
         self.conn.commit()
         return cur.lastrowid
 
+    def fetch_all_states(self):
+        cur = self.conn.cursor()
+        cur.execute("SELECT * FROM states")
+        rows = cur.fetchall()
+        return rows
+
+    def update_state(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
+                     last_teacher_id: int = 0):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id)
+            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id) 
+            ON CONFLICT (user_id) DO UPDATE SET 
+            state = :state,
+            problem_id = :problem_id
+        """, args)
+        self.conn.commit()
+
+    def fetch_one_state(self, user_id: int):
+        cur = self.conn.cursor()
+        cur.execute("""
+        SELECT * FROM states WHERE user_id = :user_id
+        """, {"user_id": user_id})
+        rows = cur.fetchall()
+        if rows:
+            return rows[0]
+        else:
+            return None
+
+    def set_user_chat_id(self, user_id: int, chat_id: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+        UPDATE users
+        SET chat_id = :chat_id
+        WHERE id = :user_id
+        """, args)
+        self.conn.commit()
+
     def fetch_all_users(self):
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM users")
@@ -181,6 +225,10 @@ class User:
         if self.id is None:
             self.id = db.add_user(self.__dict__)
 
+    def set_chat_id(self, chat_id: int):
+        self.chat_id = chat_id
+        db.set_user_chat_id(self.id, self.chat_id)
+
 
 class Users:
     def __init__(self, rows=None):
@@ -210,6 +258,10 @@ class Users:
 
     def get_by_id(self, key):
         return self.by_id.get(key, None)
+
+    def set_chat_id(self, user: User, chat_id: int):
+        user.set_chat_id(chat_id)
+        self.by_chat_id[chat_id] = user
 
     def __repr__(self):
         return f'Users({self.all_users!r})'
@@ -287,11 +339,21 @@ class Problems:
         return len(self.all_problems)
 
 
+class States:
+    def get_by_user_id(self, user_id: int):
+        return db.fetch_one_state(user_id)
+
+    def set_by_user_id(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
+                       last_teacher_id: int = 0):
+        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
+
+
 def init_db_and_objects(db_file='prod_database.db'):
     global db
     db = DB(db_file)
     users = Users()
     problems = Problems()
+    states = States()
     if len(users) == 0 or len(problems) == 0:
         problems, students, teachers = load_data_from_spreadsheet.load()
         for student in students:
@@ -307,7 +369,7 @@ def init_db_and_objects(db_file='prod_database.db'):
         # Создание юзеров автоматически зальёт их в базу
         users = Users(students + teachers)
         problems = Problems(problems)
-    return db, users, problems
+    return db, users, problems, states
 
 
 if __name__ == '__main__':

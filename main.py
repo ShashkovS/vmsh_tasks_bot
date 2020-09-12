@@ -18,7 +18,7 @@ USE_WEBHOOKS = False
 
 # Для каждого бота своя база
 db_name = hashlib.md5(API_TOKEN.encode('utf-8')).hexdigest() + '.db'
-db, users, problems = db_helper.init_db_and_objects(db_name)
+db, users, problems, states = db_helper.init_db_and_objects(db_name)
 
 # Запускаем API телеграм-бота
 bot = Bot(API_TOKEN)
@@ -26,17 +26,20 @@ dispatcher = Dispatcher(bot)
 
 
 async def start(message: types.Message):
-    set_state(message.chat.id, START_DIALOG_STATE)
-    set_state(message.chat.id, GET_USER_INFO_STATE)
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text="Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
-    )
+    user = users.get_by_chat_id(message.chat.id)
+    if not user:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
+        )
+    else:
+        states.set_by_user_id(user, GET_TASK_INFO_STATE)
+        await prc_get_task_info_state(message)
 
 
 async def update_all_internal_data(message: types.Message):
-    global db, users, problems
-    db, users, problems = db_helper.init_db_and_objects()
+    global db, users, problems, states
+    db, users, problems, states = db_helper.init_db_and_objects()
     await bot.send_message(
         chat_id=message.chat.id,
         text="Данные обновлены",
@@ -56,8 +59,9 @@ async def prc_get_user_info_state(message: types.Message):
             chat_id=message.chat.id,
             text=f"ОК, Добро пожаловать, {user.name} {user.surname}",
         )
-        set_state(message.chat.id, GET_TASK_INFO_STATE)
-        set_id(message.chat.id, user.id)
+        # set_state(message.chat.id, GET_TASK_INFO_STATE)
+        states.set_by_user_id(user.id, GET_TASK_INFO_STATE)
+        users.set_chat_id(user, message.chat.id)
         await prc_get_task_info_state(message)
 
 
@@ -110,6 +114,7 @@ async def prc_get_task_info_state(message):
 async def prc_sending_solution_state(message: types.Message):
     downloaded = []
     text = message.text
+    user = users.get_by_chat_id(message.chat.id)
     if text:
         downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
     for photo in message.photo:
@@ -128,7 +133,7 @@ async def prc_sending_solution_state(message: types.Message):
         print(file_info, file_id, filename)
     for bin_data, filename in downloaded:
         ext = filename[filename.rfind('.') + 1:]
-        file_name = os.path.join(SOLS_PATH, get_id(message.chat.id), *get_data(message.chat.id),
+        file_name = os.path.join(SOLS_PATH, str(user.id), str(states.get_by_user_id(user.id)['problem_id']),
                                  datetime.datetime.now().isoformat().replace(':', '') + '.' + ext)
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         with open(file_name, 'wb') as file:
@@ -137,7 +142,7 @@ async def prc_sending_solution_state(message: types.Message):
         chat_id=message.chat.id,
         text="Принято на проверку"
     )
-    set_state(message.chat.id, GET_TASK_INFO_STATE)
+    states.set_by_user_id(user.id, GET_TASK_INFO_STATE)
     await prc_get_task_info_state(message)
 
 
@@ -149,21 +154,28 @@ state_processors = {
 
 
 async def process_regular_message(message: types.Message):
-    cur_chat_state = get_state(message.chat.id)
+    # cur_chat_state = states.get_by_chat_id(message.chat.id).state
+    user = users.get_by_chat_id(message.chat.id)
+    if not user:
+        cur_chat_state = GET_USER_INFO_STATE
+    else:
+        cur_chat_state = states.get_by_user_id(user.id)['state']
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
     await state_processor(message)
 
 
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
     print(query)
+    user = users.get_by_chat_id(query.message.chat.id)
     if query.message:
         if query.data[0] == 't':
             await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                                 reply_markup=None)
             problem_id = int(query.data[2:])
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text=f"Выбрана задача {problems.by_id(problem_id)}. Теперь отправьте фотографии или скан вашего решения.")
-            set_state(query.message.chat.id, SENDING_SOLUTION_STATE, problem_id)
+                                        text=f"Выбрана задача {problems.get_by_id(problem_id)}. Теперь отправьте фотографии или скан вашего решения.")
+            # states.set_by_chat_id(query.message.chat.id, SENDING_SOLUTION_STATE, problem_id)
+            states.set_by_user_id(user.id, SENDING_SOLUTION_STATE, problem_id)
         elif query.data[0] == 'l':
 
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
