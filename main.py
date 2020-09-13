@@ -201,11 +201,24 @@ async def prc_sending_test_answer_state(message: types.Message, user: db_helper.
     await process_regular_message(message)
 
 
+async def prc_wait_sos_request_state(message: types.Message, user: db_helper.User):
+    try:
+        await bot.forward_message('@vmsh_bot_sos_channel', message.chat.id, message.message_id)
+    except:
+        # Если бот в этот канал не добавлен, то всё упадёт
+        pass
+    await bot.send_message(chat_id=message.chat.id, text=f"Переслал сообщение.")
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await asyncio.sleep(1)
+    await process_regular_message(message)
+
+
 state_processors = {
     STATE_GET_USER_INFO: prc_get_user_info_state,
     STATE_GET_TASK_INFO: prc_get_task_info_state,
     STATE_SENDING_SOLUTION: prc_sending_solution_state,
     STATE_SENDING_TEST_ANSWER: prc_sending_test_answer_state,
+    STATE_WAIT_SOS_REQUEST: prc_wait_sos_request_state,
 }
 
 
@@ -231,12 +244,24 @@ async def start(message: types.Message):
         await process_regular_message(message)
 
 
+async def sos(message: types.Message):
+    user = users.get_by_chat_id(message.chat.id)
+    if not user:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Привет! Без пароля я не знаю, кому помогать... Пожалуйста, введите свой пароль",
+        )
+    else:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Так, опишите вашу проблему. И я перешлю это сообщение живому человеку.",
+        )
+        states.set_by_user_id(user.id, STATE_WAIT_SOS_REQUEST)
+
+
 async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_helper.User):
     user = users.get_by_chat_id(query.message.chat.id)
     state = states.get_by_user_id(user.id)
-    if state.get('state', None) != STATE_GET_TASK_INFO:
-        print('WRONG STATE', state, STATE_GET_TASK_INFO, 'STATE_GET_TASK_INFO')
-        return
     problem_id = int(query.data[2:])
     problem = problems.get_by_id(problem_id)
     # В зависимости от типа задачи разное поведение
@@ -356,6 +381,7 @@ async def on_startup(app):
     if USE_WEBHOOKS:
         await check_webhook()
     dispatcher.register_message_handler(start, commands=['start'])
+    dispatcher.register_message_handler(sos, commands=['sos'])
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
     dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
     dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
@@ -373,6 +399,7 @@ async def on_shutdown(app):
     await dispatcher.storage.wait_closed()
     logging.warning('Bye!')
 
+
 async def gen_conduit(*args, **kwargs):
     rows = db.get_all_solved()
     students = sorted({(row['token'], row['surname'], row['name']) for row in rows}, key=lambda x: (x[1], x[2]))
@@ -384,7 +411,7 @@ async def gen_conduit(*args, **kwargs):
         row_n = students.index(student)
         col_n = problems.index(problem)
         table[row_n][col_n] = '1'
-    s_table = ['token\tsuname\tname\t' + '\t'.join(str(x[0]) +'.' + str(x[1])+x[2] for x in problems)]
+    s_table = ['token\tsuname\tname\t' + '\t'.join(str(x[0]) + '.' + str(x[1]) + x[2] for x in problems)]
     for row, student in zip(table, students):
         s_table.append(student[0] + '\t' + student[1] + '\t' + student[2] + '\t'.join(row))
     return '\n'.join(s_table)
