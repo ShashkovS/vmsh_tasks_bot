@@ -401,7 +401,6 @@ else:
     # Create app
     app = web.Application()
     configure_app(dispatcher, app, path='/{token}/', route_name='telegram_webhook_handler')
-    app.router.add_route('*', '/conduit', gen_conduit, name='gen_conduit')
     # Setup event handlers.
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
