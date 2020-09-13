@@ -285,11 +285,9 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, u
         print('WRONG STATE', state, STATE_SENDING_TEST_ANSWER, 'STATE_SENDING_TEST_ANSWER')
         return
     selected_answer = query.data[2:]
-    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                text=f"Выбран вариант {selected_answer}.",
-                                reply_markup=None)
-    # await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-    #                                     reply_markup=None)
+    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
+    await bot.send_message(chat_id=query.message.chat.id, text=f"Выбран вариант {selected_answer}.")
     state = states.get_by_user_id(user.id)
     problem_id = state['problem_id']
     problem = problems.get_by_id(problem_id)
@@ -353,6 +351,7 @@ async def check_webhook():
 
 
 async def on_startup(app):
+    await gen_conduit()
     logging.warning('Start up!')
     if USE_WEBHOOKS:
         await check_webhook()
@@ -374,6 +373,22 @@ async def on_shutdown(app):
     await dispatcher.storage.wait_closed()
     logging.warning('Bye!')
 
+async def gen_conduit():
+    rows = db.get_all_solved()
+    students = sorted({(row['token'], row['surname'], row['name']) for row in rows}, key=lambda x: (x[1], x[2]))
+    problems = sorted({(row['list'], row['prob'], row['item']) for row in rows})
+    table = [[''] * len(problems) for i in range(len(students))]
+    for row in rows:
+        student = (row['token'], row['surname'], row['name'])
+        problem = (row['list'], row['prob'], row['item'])
+        row_n = students.index(student)
+        col_n = problems.index(problem)
+        table[row_n][col_n] = '1'
+    s_table = ['token\tsuname\tname\t' + '\t'.join(str(x[0]) +'.' + str(x[1])+x[2] for x in problems)]
+    for row, student in zip(table, students):
+        s_table.append(student[0] + '\t' + student[1] + '\t' + student[2] + '\t'.join(row))
+    return '\n'.join(s_table)
+
 
 # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
 # А вот в режиме отладки можно запустить и без вебхуков
@@ -386,6 +401,7 @@ else:
     # Create app
     app = web.Application()
     configure_app(dispatcher, app, path='/{token}/', route_name='telegram_webhook_handler')
+    app.router.add_route('*', '/conduit', gen_conduit, name='gen_conduit')
     # Setup event handlers.
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
