@@ -60,7 +60,7 @@ async def prc_get_user_info_state(message: types.Message, user: db_helper.User):
         )
         users.set_chat_id(user, message.chat.id)
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-        await prc_get_task_info_state(message, user)
+        await process_regular_message(message)
 
 
 async def prc_WTF(message: types.Message, user: db_helper.User):
@@ -70,7 +70,7 @@ async def prc_WTF(message: types.Message, user: db_helper.User):
     )
     logging.error(f"prc_WTF: {user!r} {message!r}")
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-    await prc_get_task_info_state(message, user)
+    await process_regular_message(message)
 
 
 def build_problems_keyboard(lesson_num: int, user: db_helper.User):
@@ -111,6 +111,21 @@ def build_test_answers_keyboard(choices):
             callback_data=f"{CALLBACK_ONE_OF_TEST_ANSWER_SELECTED}_{choice}",
         )
         keyboard_markup.add(lesson_button)
+    cancel_button = types.InlineKeyboardButton(
+        text="Отмена",
+        callback_data=CALLBACK_CANCEL_TASK_SUBMISSION,
+    )
+    keyboard_markup.add(cancel_button)
+    return keyboard_markup
+
+
+def build_cancel_task_submission_keyboard():
+    keyboard_markup = types.InlineKeyboardMarkup()
+    cancel_button = types.InlineKeyboardButton(
+        text="Отмена",
+        callback_data=CALLBACK_CANCEL_TASK_SUBMISSION,
+    )
+    keyboard_markup.add(cancel_button)
     return keyboard_markup
 
 
@@ -151,7 +166,7 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         text="Принято на проверку"
     )
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-    await prc_get_task_info_state(message, user)
+    await process_regular_message(message)
 
 
 async def prc_sending_test_answer_state(message: types.Message, user: db_helper.User):
@@ -179,7 +194,7 @@ async def prc_sending_test_answer_state(message: types.Message, user: db_helper.
         await bot.send_message(chat_id=message.chat.id,
                                text=f"❌ {problem.wrong_ans}")
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-    await prc_get_task_info_state(message, user)
+    await process_regular_message(message)
 
 
 state_processors = {
@@ -227,17 +242,19 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
                                                     problem.ans_validation.split(';')))
         else:
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}")
+                                        text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}",
+                                        reply_markup=build_cancel_task_submission_keyboard())
         states.set_by_user_id(user.id, STATE_SENDING_TEST_ANSWER, problem_id)
     elif problem.prob_type == PROB_TYPE_WRITTEN:
         await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                    text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.")
+                                    text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.",
+                                    reply_markup=build_cancel_task_submission_keyboard())
         states.set_by_user_id(user.id, STATE_SENDING_SOLUTION, problem_id)
     elif problem.prob_type == PROB_TYPE_ORALLY:
         await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                     text=f"Выбрана задача {problem}. Это — устная задача. Такие бот ещё не умеет принимать :(")
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-        await prc_get_task_info_state(query.message, user)
+        await process_regular_message(query.message)
 
 
 async def prc_list_selected_callback(query: types.CallbackQuery, user: db_helper.User):
@@ -264,7 +281,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, u
     if problem is None:
         logging.error('Сломался приём задач :(')
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-        await prc_get_task_info_state(query.message, user)
+        await process_regular_message(query.message)
     correct_answer = problem.cor_ans
     await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
@@ -279,7 +296,12 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, u
         await bot.send_message(chat_id=query.message.chat.id,
                                text=f"❌ {problem.wrong_ans}")
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-    await prc_get_task_info_state(query.message, user)
+    await process_regular_message(query.message)
+
+
+async def prc_cancel_task_submission_callback(query: types.CallbackQuery, user: db_helper.User):
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await process_regular_message(query.message)
 
 
 callbacks_processors = {
@@ -287,6 +309,7 @@ callbacks_processors = {
     CALLBACK_SHOW_LIST_OF_LISTS: prc_show_list_of_lists_callback,
     CALLBACK_LIST_SELECTED: prc_list_selected_callback,
     CALLBACK_ONE_OF_TEST_ANSWER_SELECTED: prc_one_of_test_answer_selected_callback,
+    CALLBACK_CANCEL_TASK_SUBMISSION: prc_cancel_task_submission_callback
 }
 
 

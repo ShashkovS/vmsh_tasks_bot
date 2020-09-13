@@ -316,7 +316,7 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
     problems = Problems()
     states = States()
     if refresh or len(users) == 0 or len(problems) == 0:
-        problems, students, teachers = load_data_from_spreadsheet.load()
+        problems, students, teachers = load_data_from_spreadsheet.load(use_pickle=not refresh)
         for student in students:
             student['type'] = USER_TYPE_STUDENT
             student['chat_id'] = None
