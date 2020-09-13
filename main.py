@@ -13,7 +13,18 @@ from aiogram.utils.executor import start_polling
 
 logging.basicConfig(level=logging.INFO)
 
-API_TOKEN = open('creds/telegram_bot_key').read().strip()
+if os.environ.get('PROD', None) == 'true':
+    logging.info('*' * 50)
+    logging.info('Production mode')
+    logging.info('*' * 50)
+    API_TOKEN = open('creds_prod/telegram_bot_key_prod').read().strip()
+    WEBHOOK_HOST = 'vmsh179bot.proj179.ru'
+    WEBHOOK_PORT = 443
+else:
+    logging.info('Developer mode')
+    API_TOKEN = open('creds/telegram_bot_key').read().strip()
+    WEBHOOK_HOST = 'vmshtasksbot.proj179.ru'
+    WEBHOOK_PORT = 443
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions')
 USE_WEBHOOKS = False
 
@@ -320,8 +331,6 @@ if __name__ == "__main__":
     start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
 else:
     USE_WEBHOOKS = True
-    WEBHOOK_HOST = 'vmshtasksbot.proj179.ru'
-    WEBHOOK_PORT = 443
     WEBHOOK_URL = "https://{}:{}/{}/".format(WEBHOOK_HOST, WEBHOOK_PORT, API_TOKEN)
     # Create app
     app = web.Application()

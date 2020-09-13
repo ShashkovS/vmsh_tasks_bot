@@ -1,7 +1,9 @@
 .idea/
 creds
+creds_prod
 students_and_probles.pickle
 students_and_probles_v2.pickle
 db/
 __pycache__/
 solutions/
+students_and_probles_v2_prod.pickle

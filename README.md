@@ -3,6 +3,7 @@
 ## Секреты
 - creds/vmsh_bot_sheets_creds.json — ключи для google API (см. https://console.developers.google.com/iam-admin/serviceaccounts/)
 - creds/telegram_bot_key — ключ телеграм-бота
+- creds/settings_sheet_key — ключ гугль-таблицы с настройками
 
 ### Как получить секреты для google API
 Попросите Сережу Шашкова, либо поищите в чате.
