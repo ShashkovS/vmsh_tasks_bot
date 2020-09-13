@@ -5,6 +5,7 @@ import datetime
 import db_helper
 import hashlib
 import re
+import asyncio
 from consts import *
 from aiogram import Bot
 from aiogram.dispatcher import Dispatcher
@@ -70,6 +71,7 @@ async def prc_WTF(message: types.Message, user: db_helper.User):
     )
     logging.error(f"prc_WTF: {user!r} {message!r}")
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await asyncio.sleep(1)
     await process_regular_message(message)
 
 
@@ -166,6 +168,7 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         text="Принято на проверку"
     )
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await asyncio.sleep(1)
     await process_regular_message(message)
 
 
@@ -194,6 +197,7 @@ async def prc_sending_test_answer_state(message: types.Message, user: db_helper.
         await bot.send_message(chat_id=message.chat.id,
                                text=f"❌ {problem.wrong_ans}")
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await asyncio.sleep(1)
     await process_regular_message(message)
 
 
@@ -229,6 +233,10 @@ async def start(message: types.Message):
 
 async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_helper.User):
     user = users.get_by_chat_id(query.message.chat.id)
+    state = states.get_by_user_id(user.id)
+    if state.get('state', None) != STATE_GET_TASK_INFO:
+        print('WRONG STATE', state, STATE_GET_TASK_INFO, 'STATE_GET_TASK_INFO')
+        return
     problem_id = int(query.data[2:])
     problem = problems.get_by_id(problem_id)
     # В зависимости от типа задачи разное поведение
@@ -236,15 +244,12 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
         # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру
         if problem.ans_type == ANS_TYPE_SELECT_ONE:
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:")
-            await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                                reply_markup=build_test_answers_keyboard(
-                                                    problem.ans_validation.split(';')))
+                                        text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:",
+                                        reply_markup=build_test_answers_keyboard(problem.ans_validation.split(';')))
         else:
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}")
-            await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                                reply_markup=build_cancel_task_submission_keyboard())
+                                        text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}",
+                                        reply_markup=build_cancel_task_submission_keyboard())
         states.set_by_user_id(user.id, STATE_SENDING_TEST_ANSWER, problem_id)
     elif problem.prob_type == PROB_TYPE_WRITTEN:
         await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -253,41 +258,49 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
         states.set_by_user_id(user.id, STATE_SENDING_SOLUTION, problem_id)
     elif problem.prob_type == PROB_TYPE_ORALLY:
         await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                    text=f"Выбрана задача {problem}. Это — устная задача. Такие бот ещё не умеет принимать :(")
+                                    text=f"Выбрана задача {problem}. Это — устная задача. Такие бот ещё не умеет принимать :(",
+                                    reply_markup=None)
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+        await asyncio.sleep(1)
         await process_regular_message(query.message)
 
 
 async def prc_list_selected_callback(query: types.CallbackQuery, user: db_helper.User):
     list_num = int(query.data[2:])
-    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                text="Теперь выберите задачу")
     user = users.get_by_chat_id(query.message.chat.id)
-    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=build_problems_keyboard(list_num, user))
+    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                text="Теперь выберите задачу",
+                                reply_markup=build_problems_keyboard(list_num, user))
 
 
 async def prc_show_list_of_lists_callback(query: types.CallbackQuery, user: db_helper.User):
     await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                text="Вот список всех листков:")
-    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=build_lessons_keyboard())
+                                text="Вот список всех листков:",
+                                reply_markup=build_lessons_keyboard())
 
 
 async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, user: db_helper.User):
+    state = states.get_by_user_id(user.id)
+    if state.get('state', None) != STATE_SENDING_TEST_ANSWER:
+        print('WRONG STATE', state, STATE_SENDING_TEST_ANSWER, 'STATE_SENDING_TEST_ANSWER')
+        return
     selected_answer = query.data[2:]
+    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                text=f"Выбран вариант {selected_answer}.",
+                                reply_markup=None)
+    # await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    #                                     reply_markup=None)
     state = states.get_by_user_id(user.id)
     problem_id = state['problem_id']
     problem = problems.get_by_id(problem_id)
     if problem is None:
         logging.error('Сломался приём задач :(')
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+        await asyncio.sleep(1)
         await process_regular_message(query.message)
     correct_answer = problem.cor_ans
-    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=None)
-    await bot.send_message(chat_id=query.message.chat.id,
-                           text=f"Выбран вариант {selected_answer}.")
+    # await bot.send_message(chat_id=query.message.chat.id,
+    #                        text=f"Выбран вариант {selected_answer}.")
     if selected_answer == correct_answer:
         db.add_result(user.id, problem.id, problem.list, None, VERDICT_SOLVED, selected_answer)
         await bot.send_message(chat_id=query.message.chat.id,
@@ -297,6 +310,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, u
         await bot.send_message(chat_id=query.message.chat.id,
                                text=f"❌ {problem.wrong_ans}")
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await asyncio.sleep(1)
     await process_regular_message(query.message)
 
 
@@ -308,9 +322,8 @@ async def prc_cancel_task_submission_callback(query: types.CallbackQuery, user: 
     #     reply_markup=build_problems_keyboard(problems.last_lesson, user),
     # )
     await bot.edit_message_text(message_id=query.message.message_id, chat_id=query.message.chat.id,
-                                text="❓ Нажимайте на задачу, чтобы сдать её")
-    await bot.edit_message_reply_markup(message_id=query.message.message_id, chat_id=query.message.chat.id,
-                                        reply_markup=build_problems_keyboard(problems.last_lesson, user))
+                                text="❓ Нажимайте на задачу, чтобы сдать её",
+                                reply_markup=build_problems_keyboard(problems.last_lesson, user))
 
 
 callbacks_processors = {
