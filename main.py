@@ -242,8 +242,9 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
                                                     problem.ans_validation.split(';')))
         else:
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}",
-                                        reply_markup=build_cancel_task_submission_keyboard())
+                                        text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}")
+            await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                                reply_markup=build_cancel_task_submission_keyboard())
         states.set_by_user_id(user.id, STATE_SENDING_TEST_ANSWER, problem_id)
     elif problem.prob_type == PROB_TYPE_WRITTEN:
         await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
