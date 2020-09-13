@@ -164,7 +164,8 @@ async def prc_sending_test_answer_state(message: types.Message, user: db_helper.
         await bot.send_message(chat_id=message.chat.id,
                                text=f"❌ Выберите один из вариантов: {', '.join(problem.ans_validation.split(';'))}")
         return
-    elif problem.ans_type != ANS_TYPE_SELECT_ONE and problem.ans_validation and not re.fullmatch(problem.ans_validation, student_answer):
+    elif problem.ans_type != ANS_TYPE_SELECT_ONE and problem.ans_validation and not re.fullmatch(problem.ans_validation,
+                                                                                                 student_answer):
         await bot.send_message(chat_id=message.chat.id,
                                text=f"❌ {problem.validation_error}")
         return
@@ -211,7 +212,7 @@ async def start(message: types.Message):
         await process_regular_message(message)
 
 
-async def prc_problems_selected_callback(query: types.CallbackQuery):
+async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_helper.User):
     user = users.get_by_chat_id(query.message.chat.id)
     problem_id = int(query.data[2:])
     problem = problems.get_by_id(problem_id)
@@ -222,7 +223,8 @@ async def prc_problems_selected_callback(query: types.CallbackQuery):
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:")
             await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                                reply_markup=build_test_answers_keyboard(problem.ans_validation.split(';')))
+                                                reply_markup=build_test_answers_keyboard(
+                                                    problem.ans_validation.split(';')))
         else:
             await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}")
@@ -238,7 +240,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery):
         await prc_get_task_info_state(query.message, user)
 
 
-async def prc_list_selected_callback(query: types.CallbackQuery):
+async def prc_list_selected_callback(query: types.CallbackQuery, user: db_helper.User):
     list_num = int(query.data[2:])
     await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                 text="Теперь выберите задачу")
@@ -247,16 +249,15 @@ async def prc_list_selected_callback(query: types.CallbackQuery):
                                         reply_markup=build_problems_keyboard(list_num, user))
 
 
-async def prc_show_list_of_lists_callback(query: types.CallbackQuery):
+async def prc_show_list_of_lists_callback(query: types.CallbackQuery, user: db_helper.User):
     await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                 text="Вот список всех листков:")
     await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=build_lessons_keyboard())
 
 
-async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery):
+async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, user: db_helper.User):
     selected_answer = query.data[2:]
-    user = users.get_by_chat_id(query.message.chat.id)
     state = states.get_by_user_id(user.id)
     problem_id = state['problem_id']
     problem = problems.get_by_id(problem_id)
@@ -291,9 +292,10 @@ callbacks_processors = {
 
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
     if query.message:
+        user = users.get_by_chat_id(query.message.chat.id)
         callback_type = query.data[0]
         callback_processor = callbacks_processors.get(callback_type, None)
-        await callback_processor(query)
+        await callback_processor(query, user)
 
 
 async def check_webhook():
