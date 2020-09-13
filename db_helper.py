@@ -2,6 +2,7 @@ import sqlite3
 import os
 from dataclasses import dataclass
 import load_data_from_spreadsheet
+from datetime import datetime
 from consts import *
 
 _APP_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -88,6 +89,7 @@ class DB:
     def update_state(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
                      last_teacher_id: int = 0):
         args = locals()
+        args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
             INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id)
@@ -95,6 +97,42 @@ class DB:
             ON CONFLICT (user_id) DO UPDATE SET 
             state = :state,
             problem_id = :problem_id
+        """, args)
+        cur.execute("""
+            INSERT INTO states_log  ( user_id,  state,  problem_id,  ts)
+            VALUES                  (:user_id, :state, :problem_id, :ts) 
+        """, args)
+        self.conn.commit()
+
+    def add_result(self, student_id: int, problem_id: int, list: int, teacher_id: int, verdict: int, answer: str):
+        args = locals()
+        args['ts'] = datetime.now().isoformat()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO results  ( student_id,  problem_id,  list,  teacher_id,  ts,  verdict,  answer)
+            VALUES               (:student_id, :problem_id, :list, :teacher_id, :ts, :verdict, :answer) 
+        """, args)
+        self.conn.commit()
+
+    def check_student_solved(self, student_id: int, list: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            select distinct problem_id from results
+            where student_id = :student_id and list = :list and verdict > 0
+        """, args)
+        rows = cur.fetchall()
+        solved_ids = {row['problem_id'] for row in rows}
+        return solved_ids
+
+    def add_message_to_log(self, from_bot: bool, tg_msg_id: int, chat_id: int,
+                           student_id: int, teacher_id: int, msg_text: str, attach_path: str):
+        args = locals()
+        args['ts'] = datetime.now().isoformat()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO messages_log  ( from_bot,  tg_msg_id,  chat_id,  student_id,  teacher_id,  ts,  msg_text,  attach_path)
+            VALUES                    (:from_bot, :tg_msg_id, :chat_id, :student_id, :teacher_id, :ts, :msg_text, :attach_path) 
         """, args)
         self.conn.commit()
 
@@ -242,6 +280,8 @@ class Problems:
             if problem.list not in self.by_list:
                 self.by_list[problem.list] = list()
             self.by_list[problem.list].append(problem)
+        self.all_lessons = sorted(list(self.by_list.keys()))
+        self.last_lesson = self.all_lessons[-1] if self.all_lessons else -1
 
     def get_by_id(self, key):
         return self.by_id.get(key, None)
@@ -251,12 +291,6 @@ class Problems:
 
     def get_by_lesson(self, lesson: int):
         return self.by_list.get(lesson, list())
-
-    def get_all_lessons(self):
-        return sorted(list(self.by_list.keys()))
-
-    def get_last_lesson(self):
-        return max(self.by_list.keys())
 
     def __repr__(self):
         return f'Problems({self.all_problems!r})'

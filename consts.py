@@ -55,3 +55,8 @@ ANS_HELP_DESCRIPTIONS = {
     ANS_TYPE_SELECT_ONE: ' — выбери один из следующих вариантов:',
     ANS_TYPE_STRING: '',
 }
+
+
+# ВЕРДИКТЫ
+VERDICT_SOLVED = 1
+VERDICT_WRONG_ANSWER = -1

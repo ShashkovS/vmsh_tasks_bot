@@ -43,22 +43,24 @@ CREATE TABLE IF NOT EXISTS states
 
 CREATE TABLE IF NOT EXISTS results
 (
-    problem_id INTEGER,
-    student_id INTEGER   NULL,
+    student_id INTEGER NOT NULL,
+    problem_id INTEGER NOT NULL,
+    list       INTEGER NOT NULL,
     teacher_id INTEGER   NULL,
     ts         timestamp NOT NULL,
     verdict    integer   NOT NULL,
+    answer     TEXT      NULL,
     FOREIGN KEY (problem_id) REFERENCES problems (id),
     FOREIGN KEY (student_id) REFERENCES users (id),
     FOREIGN KEY (teacher_id) REFERENCES users (id)
 );
 
 create index if not exists results_by_student_solved on results
-(student_id) where verdict > 0;
+(student_id, list) where verdict > 0;
 
 CREATE TABLE IF NOT EXISTS states_log
 (
-    user_id    INTEGER PRIMARY KEY,
+    user_id    INTEGER,
     state      INTEGER,
     problem_id INTEGER,
     ts         timestamp NOT NULL,

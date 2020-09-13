@@ -11,7 +11,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.webhook import configure_app, types, web
 from aiogram.utils.executor import start_polling
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 if os.environ.get('PROD', None) == 'true':
     logging.info('*' * 50)
@@ -54,7 +54,6 @@ async def prc_get_user_info_state(message: types.Message, user: db_helper.User):
             text="🔁 Неправильно, попробуйте еще раз. Пароль был вам выслан по электронной почте, он имеет вид «pa1ro1»",
         )
     else:
-        print('user', user)
         await bot.send_message(
             chat_id=message.chat.id,
             text=f"🤖 ОК, Добро пожаловать, {user.name} {user.surname}",
@@ -74,11 +73,13 @@ async def prc_WTF(message: types.Message, user: db_helper.User):
     await prc_get_task_info_state(message, user)
 
 
-def build_problems_keyboard(lesson_num: int):
+def build_problems_keyboard(lesson_num: int, user: db_helper.User):
+    solved = db.check_student_solved(user.id, lesson_num)
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     for problem in problems.get_by_lesson(lesson_num):
+        tick = '✅' if problem.id in solved else '⬜'
         task_button = types.InlineKeyboardButton(
-            text=f"{problem}",
+            text=f"{tick} {problem}",
             callback_data=f"{CALLBACK_PROBLEM_SELECTED}_{problem.id}"
         )
         keyboard_markup.add(task_button)
@@ -93,7 +94,7 @@ def build_problems_keyboard(lesson_num: int):
 
 def build_lessons_keyboard():
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    for lesson in problems.get_all_lessons():
+    for lesson in problems.all_lessons:
         lesson_button = types.InlineKeyboardButton(
             text=f"Листок {lesson}",
             callback_data=f"{CALLBACK_LIST_SELECTED}_{lesson}",
@@ -117,7 +118,7 @@ async def prc_get_task_info_state(message, user: db_helper.User):
     await bot.send_message(
         chat_id=message.chat.id,
         text="❓ Нажимайте на задачу, чтобы сдать её",
-        reply_markup=build_problems_keyboard(problems.get_last_lesson()),
+        reply_markup=build_problems_keyboard(problems.last_lesson, user),
     )
 
 
@@ -131,7 +132,6 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         downloaded_file = await bot.download_file(file_info.file_path)
         filename = file_info.file_path
         downloaded.append((downloaded_file, filename))
-        print(file_info, photo, filename)
     if message.document:
         file_id = message.document.file_id
         file_info = await bot.get_file(file_id)
@@ -139,7 +139,6 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         downloaded_file = await bot.download_file(file_info.file_path)
         filename = file_info.file_path
         downloaded.append((downloaded_file, filename))
-        print(file_info, file_id, filename)
     for bin_data, filename in downloaded:
         ext = filename[filename.rfind('.') + 1:]
         file_name = os.path.join(SOLS_PATH, str(user.id), str(states.get_by_user_id(user.id)['problem_id']),
@@ -163,7 +162,7 @@ async def prc_sending_test_answer_state(message: types.Message, user: db_helper.
     # Сначала проверим, проходит ли ответ валидацию регуляркой (если она указана)
     if problem.ans_type == ANS_TYPE_SELECT_ONE and student_answer not in problem.cor_ans.split(';'):
         await bot.send_message(chat_id=message.chat.id,
-                               text=f"❌ Выберите один из вариантов: {', '.join(problem.cor_ans.split(';'))}")
+                               text=f"❌ Выберите один из вариантов: {', '.join(problem.ans_validation.split(';'))}")
         return
     elif problem.ans_type != ANS_TYPE_SELECT_ONE and problem.ans_validation and not re.fullmatch(problem.ans_validation, student_answer):
         await bot.send_message(chat_id=message.chat.id,
@@ -171,9 +170,11 @@ async def prc_sending_test_answer_state(message: types.Message, user: db_helper.
         return
     correct_answer = problem.cor_ans.strip()
     if student_answer == correct_answer:
+        db.add_result(user.id, problem.id, problem.list, None, VERDICT_SOLVED, student_answer)
         await bot.send_message(chat_id=message.chat.id,
                                text=f"✔️ {problem.congrat}")
     else:
+        db.add_result(user.id, problem.id, problem.list, None, VERDICT_WRONG_ANSWER, student_answer)
         await bot.send_message(chat_id=message.chat.id,
                                text=f"❌ {problem.wrong_ans}")
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
@@ -194,6 +195,7 @@ async def process_regular_message(message: types.Message):
         cur_chat_state = STATE_GET_USER_INFO
     else:
         cur_chat_state = states.get_by_user_id(user.id)['state']
+        db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, None)
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
     await state_processor(message, user)
 
@@ -240,8 +242,9 @@ async def prc_list_selected_callback(query: types.CallbackQuery):
     list_num = int(query.data[2:])
     await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                 text="Теперь выберите задачу")
+    user = users.get_by_chat_id(query.message.chat.id)
     await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=build_problems_keyboard(list_num))
+                                        reply_markup=build_problems_keyboard(list_num, user))
 
 
 async def prc_show_list_of_lists_callback(query: types.CallbackQuery):
@@ -258,7 +261,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery):
     problem_id = state['problem_id']
     problem = problems.get_by_id(problem_id)
     if problem is None:
-        print('Сломался приём задач :(')
+        logging.error('Сломался приём задач :(')
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
         await prc_get_task_info_state(query.message, user)
     correct_answer = problem.cor_ans
@@ -267,9 +270,11 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery):
     await bot.send_message(chat_id=query.message.chat.id,
                            text=f"Выбран вариант {selected_answer}.")
     if selected_answer == correct_answer:
+        db.add_result(user.id, problem.id, problem.list, None, VERDICT_SOLVED, selected_answer)
         await bot.send_message(chat_id=query.message.chat.id,
                                text=f"✔️ {problem.congrat}")
     else:
+        db.add_result(user.id, problem.id, problem.list, None, VERDICT_WRONG_ANSWER, selected_answer)
         await bot.send_message(chat_id=query.message.chat.id,
                                text=f"❌ {problem.wrong_ans}")
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
@@ -285,7 +290,6 @@ callbacks_processors = {
 
 
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
-    print(query)
     if query.message:
         callback_type = query.data[0]
         callback_processor = callbacks_processors.get(callback_type, None)
