@@ -373,7 +373,7 @@ async def on_shutdown(app):
     await dispatcher.storage.wait_closed()
     logging.warning('Bye!')
 
-async def gen_conduit(request):
+async def gen_conduit(*args, **kwargs):
     rows = db.get_all_solved()
     students = sorted({(row['token'], row['surname'], row['name']) for row in rows}, key=lambda x: (x[1], x[2]))
     problems = sorted({(row['list'], row['prob'], row['item']) for row in rows})
