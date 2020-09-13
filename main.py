@@ -254,7 +254,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
         await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                     text=f"Выбрана задача {problem}. Это — устная задача. Такие бот ещё не умеет принимать :(")
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-        await process_regular_message(message)
+        await process_regular_message(query.message)
 
 
 async def prc_list_selected_callback(query: types.CallbackQuery, user: db_helper.User):
@@ -281,7 +281,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, u
     if problem is None:
         logging.error('Сломался приём задач :(')
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-        await process_regular_message(message)
+        await process_regular_message(query.message)
     correct_answer = problem.cor_ans
     await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
