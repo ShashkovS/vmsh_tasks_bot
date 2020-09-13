@@ -4,7 +4,8 @@ import io
 import datetime
 import db_helper
 import hashlib
-from states_and_callbacks_consts import *
+import re
+from consts import *
 from aiogram import Bot
 from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.webhook import configure_app, types, web
@@ -39,26 +40,26 @@ async def prc_get_user_info_state(message: types.Message, user: db_helper.User):
     if user is None:
         await bot.send_message(
             chat_id=message.chat.id,
-            text="Неправильно, попробуйте еще раз. Пароль был вам выслан по электронной почте, он имеет вид «pa1ro1»",
+            text="🔁 Неправильно, попробуйте еще раз. Пароль был вам выслан по электронной почте, он имеет вид «pa1ro1»",
         )
     else:
         print('user', user)
         await bot.send_message(
             chat_id=message.chat.id,
-            text=f"ОК, Добро пожаловать, {user.name} {user.surname}",
+            text=f"🤖 ОК, Добро пожаловать, {user.name} {user.surname}",
         )
         users.set_chat_id(user, message.chat.id)
-        states.set_by_user_id(user.id, GET_TASK_INFO_STATE)
+        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
         await prc_get_task_info_state(message, user)
 
 
 async def prc_WTF(message: types.Message, user: db_helper.User):
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Всё сломалось, бот запутался в текущей ситации :(. Начнём сначала!",
+        text="☢️ Всё сломалось, бот запутался в текущей ситации :(. Начнём сначала!",
     )
     logging.error(f"prc_WTF: {user!r} {message!r}")
-    states.set_by_user_id(user.id, GET_TASK_INFO_STATE)
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
     await prc_get_task_info_state(message, user)
 
 
@@ -67,14 +68,15 @@ def build_problems_keyboard(lesson_num: int):
     for problem in problems.get_by_lesson(lesson_num):
         task_button = types.InlineKeyboardButton(
             text=f"{problem}",
-            callback_data=f"{PROBLEM_SELECTED_CALLBACK}_{problem.id}"
+            callback_data=f"{CALLBACK_PROBLEM_SELECTED}_{problem.id}"
         )
         keyboard_markup.add(task_button)
-    to_lessons_button = types.InlineKeyboardButton(
-        text="К списку всех листков",
-        callback_data=f"{SHOW_LIST_OF_LISTS_CALLBACK}"
-    )
-    keyboard_markup.add(to_lessons_button)
+    # Пока отключаем эту фичу
+    # to_lessons_button = types.InlineKeyboardButton(
+    #     text="К списку всех листков",
+    #     callback_data=f"{CALLBACK_SHOW_LIST_OF_LISTS}"
+    # )
+    # keyboard_markup.add(to_lessons_button)
     return keyboard_markup
 
 
@@ -83,7 +85,18 @@ def build_lessons_keyboard():
     for lesson in problems.get_all_lessons():
         lesson_button = types.InlineKeyboardButton(
             text=f"Листок {lesson}",
-            callback_data=f"{LIST_SELECTED_CALLBACK}_{lesson}",
+            callback_data=f"{CALLBACK_LIST_SELECTED}_{lesson}",
+        )
+        keyboard_markup.add(lesson_button)
+    return keyboard_markup
+
+
+def build_test_answers_keyboard(choices):
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    for choice in choices:
+        lesson_button = types.InlineKeyboardButton(
+            text=choice,
+            callback_data=f"{CALLBACK_ONE_OF_TEST_ANSWER_SELECTED}_{choice}",
         )
         keyboard_markup.add(lesson_button)
     return keyboard_markup
@@ -92,11 +105,7 @@ def build_lessons_keyboard():
 async def prc_get_task_info_state(message, user: db_helper.User):
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Сейчас нужно выбрать задачу, которую Вы хотите отправить",
-    )
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text="Вот задачи текущего листка:",
+        text="❓ Нажимайте на задачу, чтобы сдать её",
         reply_markup=build_problems_keyboard(problems.get_last_lesson()),
     )
 
@@ -131,21 +140,47 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         chat_id=message.chat.id,
         text="Принято на проверку"
     )
-    states.set_by_user_id(user.id, GET_TASK_INFO_STATE)
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await prc_get_task_info_state(message, user)
+
+
+async def prc_sending_test_answer_state(message: types.Message, user: db_helper.User):
+    state = states.get_by_user_id(user.id)
+    problem_id = state['problem_id']
+    problem = problems.get_by_id(problem_id)
+    student_answer = message.text.strip()
+    # Сначала проверим, проходит ли ответ валидацию регуляркой (если она указана)
+    if problem.ans_type == ANS_TYPE_SELECT_ONE and student_answer not in problem.cor_ans.split(';'):
+        await bot.send_message(chat_id=message.chat.id,
+                               text=f"❌ Выберите один из вариантов: {', '.join(problem.cor_ans.split(';'))}")
+        return
+    elif problem.ans_type != ANS_TYPE_SELECT_ONE and problem.ans_validation and not re.fullmatch(problem.ans_validation, student_answer):
+        await bot.send_message(chat_id=message.chat.id,
+                               text=f"❌ {problem.validation_error}")
+        return
+    correct_answer = problem.cor_ans.strip()
+    if student_answer == correct_answer:
+        await bot.send_message(chat_id=message.chat.id,
+                               text=f"✔️ {problem.congrat}")
+    else:
+        await bot.send_message(chat_id=message.chat.id,
+                               text=f"❌ {problem.wrong_ans}")
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
     await prc_get_task_info_state(message, user)
 
 
 state_processors = {
-    GET_USER_INFO_STATE: prc_get_user_info_state,
-    GET_TASK_INFO_STATE: prc_get_task_info_state,
-    SENDING_SOLUTION_STATE: prc_sending_solution_state,
+    STATE_GET_USER_INFO: prc_get_user_info_state,
+    STATE_GET_TASK_INFO: prc_get_task_info_state,
+    STATE_SENDING_SOLUTION: prc_sending_solution_state,
+    STATE_SENDING_TEST_ANSWER: prc_sending_test_answer_state,
 }
 
 
 async def process_regular_message(message: types.Message):
     user = users.get_by_chat_id(message.chat.id)
     if not user:
-        cur_chat_state = GET_USER_INFO_STATE
+        cur_chat_state = STATE_GET_USER_INFO
     else:
         cur_chat_state = states.get_by_user_id(user.id)['state']
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
@@ -157,7 +192,7 @@ async def start(message: types.Message):
     if not user:
         await bot.send_message(
             chat_id=message.chat.id,
-            text="Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
+            text="🤖 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
         )
     else:
         await process_regular_message(message)
@@ -165,12 +200,29 @@ async def start(message: types.Message):
 
 async def prc_problems_selected_callback(query: types.CallbackQuery):
     user = users.get_by_chat_id(query.message.chat.id)
-    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=None)
     problem_id = int(query.data[2:])
-    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                text=f"Выбрана задача {problems.get_by_id(problem_id)}. Теперь отправьте фотографии или скан вашего решения.")
-    states.set_by_user_id(user.id, SENDING_SOLUTION_STATE, problem_id)
+    problem = problems.get_by_id(problem_id)
+    # В зависимости от типа задачи разное поведение
+    if problem.prob_type == PROB_TYPE_TEST:
+        # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру
+        if problem.ans_type == ANS_TYPE_SELECT_ONE:
+            await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:")
+            await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                                reply_markup=build_test_answers_keyboard(problem.ans_validation.split(';')))
+        else:
+            await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}")
+        states.set_by_user_id(user.id, STATE_SENDING_TEST_ANSWER, problem_id)
+    elif problem.prob_type == PROB_TYPE_WRITTEN:
+        await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                    text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.")
+        states.set_by_user_id(user.id, STATE_SENDING_SOLUTION, problem_id)
+    elif problem.prob_type == PROB_TYPE_ORALLY:
+        await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                    text=f"Выбрана задача {problem}. Это — устная задача. Такие бот ещё не умеет принимать :(")
+        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+        await prc_get_task_info_state(query.message, user)
 
 
 async def prc_list_selected_callback(query: types.CallbackQuery):
@@ -188,10 +240,36 @@ async def prc_show_list_of_lists_callback(query: types.CallbackQuery):
                                         reply_markup=build_lessons_keyboard())
 
 
+async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery):
+    selected_answer = query.data[2:]
+    user = users.get_by_chat_id(query.message.chat.id)
+    state = states.get_by_user_id(user.id)
+    problem_id = state['problem_id']
+    problem = problems.get_by_id(problem_id)
+    if problem is None:
+        print('Сломался приём задач :(')
+        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+        await prc_get_task_info_state(query.message, user)
+    correct_answer = problem.cor_ans
+    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
+    await bot.send_message(chat_id=query.message.chat.id,
+                           text=f"Выбран вариант {selected_answer}.")
+    if selected_answer == correct_answer:
+        await bot.send_message(chat_id=query.message.chat.id,
+                               text=f"✔️ {problem.congrat}")
+    else:
+        await bot.send_message(chat_id=query.message.chat.id,
+                               text=f"❌ {problem.wrong_ans}")
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await prc_get_task_info_state(query.message, user)
+
+
 callbacks_processors = {
-    PROBLEM_SELECTED_CALLBACK: prc_problems_selected_callback,
-    SHOW_LIST_OF_LISTS_CALLBACK: prc_show_list_of_lists_callback,
-    LIST_SELECTED_CALLBACK: prc_list_selected_callback,
+    CALLBACK_PROBLEM_SELECTED: prc_problems_selected_callback,
+    CALLBACK_SHOW_LIST_OF_LISTS: prc_show_list_of_lists_callback,
+    CALLBACK_LIST_SELECTED: prc_list_selected_callback,
+    CALLBACK_ONE_OF_TEST_ANSWER_SELECTED: prc_one_of_test_answer_selected_callback,
 }
 
 

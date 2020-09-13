@@ -2,6 +2,7 @@ import sqlite3
 import os
 from dataclasses import dataclass
 import load_data_from_spreadsheet
+from consts import *
 
 _APP_PATH = os.path.dirname(os.path.realpath(__file__))
 _DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -217,7 +218,7 @@ class Problem:
             self.id = db.add_problem(self.__dict__)
 
     def __str__(self):
-        return f"Задача {self.list}.{self.prob}{self.item} - {self.title}"
+        return f"Задача {self.list}.{self.prob}{self.item}. {self.title}"
 
 
 class Problems:
@@ -270,6 +271,7 @@ class States:
 
     def set_by_user_id(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
                        last_teacher_id: int = 0):
+        print(f'set_by_user_id({user_id}, {state}, {problem_id})')
         db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
 
 
@@ -282,15 +284,18 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
     if refresh or len(users) == 0 or len(problems) == 0:
         problems, students, teachers = load_data_from_spreadsheet.load()
         for student in students:
-            student['type'] = 0
+            student['type'] = USER_TYPE_STUDENT
             student['chat_id'] = None
             student['middlename'] = ''
         for teacher in teachers:
-            teacher['type'] = 1
+            teacher['type'] = USER_TYPE_TEACHER
             teacher['chat_id'] = None
         for problem in problems:
-            problem['prob_type'] = 1
-            problem['ans_type'] = 1
+            try:
+                problem['prob_type'] = PROB_TYPES[problem['prob_type']]
+                problem['ans_type'] = ANS_TYPES[problem['ans_type']]
+            except:
+                print('А-а-а-а, криво настроенные задачи!')
         # Создание юзеров автоматически зальёт их в базу
         users = Users(students + teachers)
         problems = Problems(problems)
