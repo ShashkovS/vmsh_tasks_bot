@@ -53,6 +53,9 @@ CREATE TABLE IF NOT EXISTS results
     FOREIGN KEY (teacher_id) REFERENCES users (id)
 );
 
+create index if not exists results_by_student_solved on results
+(student_id) where verdict > 0;
+
 CREATE TABLE IF NOT EXISTS states_log
 (
     user_id    INTEGER PRIMARY KEY,
