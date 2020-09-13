@@ -1,176 +1,348 @@
-import telebot
 import logging
-import tasks_helper
-import user_helper
 import os
-from state_helper import *
-from aiohttp import web
+import io
+import datetime
+import db_helper
+import hashlib
+import re
+from consts import *
+from aiogram import Bot
+from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher.webhook import configure_app, types, web
+from aiogram.utils.executor import start_polling
 
-logger = telebot.logger
-telebot.logger.setLevel(logging.WARN)  # Outputs debug messages to console.
+logging.basicConfig(level=logging.DEBUG)
 
-API_TOKEN = open('creds/telegram_bot_key').read().strip()
-WEBHOOK_HOST = 'vmshtasksbot.proj179.ru'
-WEBHOOK_LISTEN = "0.0.0.0"
-WEBHOOK_PORT = 443
-WEBHOOK_URL = "https://{}:{}/{}/".format(WEBHOOK_HOST, WEBHOOK_PORT, API_TOKEN)
-SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
+if os.environ.get('PROD', None) == 'true':
+    logging.info('*' * 50)
+    logging.info('Production mode')
+    logging.info('*' * 50)
+    API_TOKEN = open('creds_prod/telegram_bot_key_prod').read().strip()
+    WEBHOOK_HOST = 'vmsh179bot.proj179.ru'
+    WEBHOOK_PORT = 443
+else:
+    logging.info('Developer mode')
+    API_TOKEN = open('creds/telegram_bot_key').read().strip()
+    WEBHOOK_HOST = 'vmshtasksbot.proj179.ru'
+    WEBHOOK_PORT = 443
+SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions')
+USE_WEBHOOKS = False
 
-bot = telebot.TeleBot(API_TOKEN)
+# Для каждого бота своя база
+db_name = hashlib.md5(API_TOKEN.encode('utf-8')).hexdigest() + '.db'
+db, users, problems, states = db_helper.init_db_and_objects(db_name)
 
-# process only requests with correct bot token
-async def handle(request):
-    if request.match_info.get("token") == bot.token:
-        request_body_dict = await request.json()
-        update = telebot.types.Update.de_json(request_body_dict)
-        bot.process_new_updates([update])
-        return web.Response()
-    else:
-        return web.Response(status=403)
-
-
-@bot.message_handler(commands=['start'])
-def start(message):
-    set_state(message.chat.id, START_DIALOG_STATE)
-    bot.send_message(message.chat.id, "Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введи свой пароль")
-    set_state(message.chat.id, GETTING_USER_INFO_STATE)
-
-
-@bot.message_handler(commands=['update_all_quaLtzPE'])
-def update_all(message):
-    tasks_helper.build_lesson_list()
-    user_helper.build_user_list()
-    bot.send_message(message.chat.id, "Данные обновлены")
+# Запускаем API телеграм-бота
+bot = Bot(API_TOKEN)
+dispatcher = Dispatcher(bot)
 
 
-@bot.message_handler(func=lambda message: get_state(message.chat.id) == GETTING_USER_INFO_STATE)
-def get_pass(message):
-    # if message.text == "qwerty":
-    #     bot.send_message(message.chat.id, "ОК, Добро пожаловать, Акакий Акакиевич")
-    #     set_state(message.chat.id, GETTING_TASK_INFO_STATE)
-    #     set_id(message.chat.id, message.text)
-    #     get_task(message)
-    # else:
-    #     bot.send_message(message.chat.id, "Неправильно, попробуйте еще раз")
-    user = user_helper.authorize(message.text)
+async def update_all_internal_data(message: types.Message):
+    global db, users, problems, states
+    db, users, problems, states = db_helper.init_db_and_objects(db_name, refresh=True)
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Данные обновлены",
+    )
+
+
+async def prc_get_user_info_state(message: types.Message, user: db_helper.User):
+    user = users.get_by_token(message.text)
     if user is None:
-        bot.send_message(message.chat.id, "Неправильно, попробуйте еще раз")
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🔁 Неправильно, попробуйте еще раз. Пароль был вам выслан по электронной почте, он имеет вид «pa1ro1»",
+        )
     else:
-        bot.send_message(message.chat.id, "ОК, Добро пожаловать, {} {}".format(user.name, user.surname))
-        set_state(message.chat.id, GETTING_TASK_INFO_STATE)
-        set_id(message.chat.id, user.id)
-        get_task(message)
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"🤖 ОК, Добро пожаловать, {user.name} {user.surname}",
+        )
+        users.set_chat_id(user, message.chat.id)
+        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+        await prc_get_task_info_state(message, user)
+
+
+async def prc_WTF(message: types.Message, user: db_helper.User):
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="☢️ Всё сломалось, бот запутался в текущей ситации :(. Начнём сначала!",
+    )
+    logging.error(f"prc_WTF: {user!r} {message!r}")
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await prc_get_task_info_state(message, user)
+
+
+def build_problems_keyboard(lesson_num: int, user: db_helper.User):
+    solved = db.check_student_solved(user.id, lesson_num)
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    for problem in problems.get_by_lesson(lesson_num):
+        tick = '✅' if problem.id in solved else '⬜'
+        task_button = types.InlineKeyboardButton(
+            text=f"{tick} {problem}",
+            callback_data=f"{CALLBACK_PROBLEM_SELECTED}_{problem.id}"
+        )
+        keyboard_markup.add(task_button)
+    # Пока отключаем эту фичу
+    # to_lessons_button = types.InlineKeyboardButton(
+    #     text="К списку всех листков",
+    #     callback_data=f"{CALLBACK_SHOW_LIST_OF_LISTS}"
+    # )
+    # keyboard_markup.add(to_lessons_button)
+    return keyboard_markup
 
 
 def build_lessons_keyboard():
-    keyboard = telebot.types.InlineKeyboardMarkup()
-
-    for lesson in tasks_helper.get_all_lessons():
-        lesson_button = telebot.types.InlineKeyboardButton(text="Листок {}".format(lesson.number),
-                                                           callback_data='l_{}'.format(lesson.number))
-        keyboard.add(lesson_button)
-    return keyboard
-
-
-def build_tasks_keyboard(lesson_num: int):
-    keyboard = telebot.types.InlineKeyboardMarkup()
-    for task in tasks_helper.get_lesson_tasks(lesson_num):
-        task_button = telebot.types.InlineKeyboardButton(text="{}".format(task),
-                                                         callback_data="t_({},{})".format(lesson_num, task.name))
-        keyboard.add(task_button)
-    to_lessons = telebot.types.InlineKeyboardButton(text="К списку всех листков", callback_data="a")
-    keyboard.add(to_lessons)
-    return keyboard
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    for lesson in problems.all_lessons:
+        lesson_button = types.InlineKeyboardButton(
+            text=f"Листок {lesson}",
+            callback_data=f"{CALLBACK_LIST_SELECTED}_{lesson}",
+        )
+        keyboard_markup.add(lesson_button)
+    return keyboard_markup
 
 
-@bot.message_handler(func=lambda message: get_state(message.chat.id) == GETTING_TASK_INFO_STATE)
-def get_task(message):
-    bot.send_message(message.chat.id, "Сейчас нужно выбрать задачу, которую Вы хотите отправить")
-    bot.send_message(message.chat.id, "Вот задачи последнего листка:",
-                     reply_markup=build_tasks_keyboard(tasks_helper.get_last_lesson()))
+def build_test_answers_keyboard(choices):
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    for choice in choices:
+        lesson_button = types.InlineKeyboardButton(
+            text=choice,
+            callback_data=f"{CALLBACK_ONE_OF_TEST_ANSWER_SELECTED}_{choice}",
+        )
+        keyboard_markup.add(lesson_button)
+    return keyboard_markup
 
 
-@bot.callback_query_handler(lambda call: True)
-def callback_query_tasks(call):
-    if call.message:
-        if call.data[0] == 't':
-            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                          reply_markup=None)
-            task_id = call.data[3:-1].split(',')
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text="Выбрана задача {}. Теперь отправьте фотографии или скан вашего решения.".
-                                  format(tasks_helper.get_task(*task_id)))
-            set_state(call.message.chat.id, SENDING_PHOTO_STATE, task_id)
-        elif call.data[0] == 'l':
-
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text="Теперь выберите задачу")
-            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                          reply_markup=build_tasks_keyboard(call.data[2:]))
-        elif call.data[0] == 'a':
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text="Вот список всех листков:")
-            bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                          reply_markup=build_lessons_keyboard())
+async def prc_get_task_info_state(message, user: db_helper.User):
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="❓ Нажимайте на задачу, чтобы сдать её",
+        reply_markup=build_problems_keyboard(problems.last_lesson, user),
+    )
 
 
-@bot.message_handler(func=lambda message: get_state(message.chat.id) == SENDING_PHOTO_STATE,
-                     content_types=["document"])
-def get_solution_file(message):
-    file_info = bot.get_file(message.document.file_id)
-    # print(message.document.file_name)
-    downloaded_file = bot.download_file(file_info.file_path)
-    file_name = SOLS_PATH + "/{}/{}/{}/{}".format(get_id(message.chat.id), *get_data(message.chat.id),
-                                                  message.document.file_name)
-    os.makedirs(os.path.dirname(file_name), exist_ok=True)
-    with open(file_name, 'wb') as file:
-        file.write(downloaded_file)
-    bot.send_message(message.chat.id, "Принято на проверку")
-    set_state(message.chat.id, GETTING_TASK_INFO_STATE)
-    get_task(message)
+async def prc_sending_solution_state(message: types.Message, user: db_helper.User):
+    downloaded = []
+    text = message.text
+    if text:
+        downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
+    for photo in message.photo:
+        file_info = await bot.get_file(photo.file_id)
+        downloaded_file = await bot.download_file(file_info.file_path)
+        filename = file_info.file_path
+        downloaded.append((downloaded_file, filename))
+    if message.document:
+        file_id = message.document.file_id
+        file_info = await bot.get_file(file_id)
+        filename = message.document.file_name
+        downloaded_file = await bot.download_file(file_info.file_path)
+        filename = file_info.file_path
+        downloaded.append((downloaded_file, filename))
+    for bin_data, filename in downloaded:
+        ext = filename[filename.rfind('.') + 1:]
+        file_name = os.path.join(SOLS_PATH, str(user.id), str(states.get_by_user_id(user.id)['problem_id']),
+                                 datetime.datetime.now().isoformat().replace(':', '') + '.' + ext)
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        with open(file_name, 'wb') as file:
+            file.write(bin_data.read())
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Принято на проверку"
+    )
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await prc_get_task_info_state(message, user)
 
 
-@bot.message_handler(func=lambda message: get_state(message.chat.id) == SENDING_PHOTO_STATE,
-                     content_types=["photo"])
-def get_solution_photo(message):
-    file_info = bot.get_file(message.photo[0].file_id)
-    downloaded_file = bot.download_file(file_info.file_path)
-    file_name = SOLS_PATH + "/{}/{}/{}/1.png".format(get_id(message.chat.id), *get_data(message.chat.id))
-    os.makedirs(os.path.dirname(file_name), exist_ok=True)
-    with open(file_name, 'wb') as file:
-        file.write(downloaded_file)
-    bot.send_message(message.chat.id, "Принято на проверку")
-    set_state(message.chat.id, GETTING_TASK_INFO_STATE)
-    get_task(message)
+async def prc_sending_test_answer_state(message: types.Message, user: db_helper.User):
+    state = states.get_by_user_id(user.id)
+    problem_id = state['problem_id']
+    problem = problems.get_by_id(problem_id)
+    student_answer = message.text.strip()
+    # Сначала проверим, проходит ли ответ валидацию регуляркой (если она указана)
+    if problem.ans_type == ANS_TYPE_SELECT_ONE and student_answer not in problem.cor_ans.split(';'):
+        await bot.send_message(chat_id=message.chat.id,
+                               text=f"❌ Выберите один из вариантов: {', '.join(problem.ans_validation.split(';'))}")
+        return
+    elif problem.ans_type != ANS_TYPE_SELECT_ONE and problem.ans_validation and not re.fullmatch(problem.ans_validation,
+                                                                                                 student_answer):
+        await bot.send_message(chat_id=message.chat.id,
+                               text=f"❌ {problem.validation_error}")
+        return
+    correct_answer = problem.cor_ans.strip()
+    if student_answer == correct_answer:
+        db.add_result(user.id, problem.id, problem.list, None, VERDICT_SOLVED, student_answer)
+        await bot.send_message(chat_id=message.chat.id,
+                               text=f"✔️ {problem.congrat}")
+    else:
+        db.add_result(user.id, problem.id, problem.list, None, VERDICT_WRONG_ANSWER, student_answer)
+        await bot.send_message(chat_id=message.chat.id,
+                               text=f"❌ {problem.wrong_ans}")
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await prc_get_task_info_state(message, user)
 
 
-@bot.message_handler(func=lambda message: get_state(message.chat.id) == SENDING_PHOTO_STATE,
-                     content_types=["text"])
-def get_solution_text(message):
-    file_name = SOLS_PATH + "/{}/{}/{}/1.txt".format(get_id(message.chat.id), *get_data(message.chat.id))
-    os.makedirs(os.path.dirname(file_name), exist_ok=True)
-    with open(file_name, 'w') as file:
-        file.write(message.text)
-    bot.send_message(message.chat.id, "Принято на проверку")
-    set_state(message.chat.id, GETTING_TASK_INFO_STATE)
-    get_task(message)
+state_processors = {
+    STATE_GET_USER_INFO: prc_get_user_info_state,
+    STATE_GET_TASK_INFO: prc_get_task_info_state,
+    STATE_SENDING_SOLUTION: prc_sending_solution_state,
+    STATE_SENDING_TEST_ANSWER: prc_sending_test_answer_state,
+}
 
 
-@bot.message_handler()
-def what(message):
-    print("WTF")
-    print(message)
+async def process_regular_message(message: types.Message):
+    user = users.get_by_chat_id(message.chat.id)
+    if not user:
+        cur_chat_state = STATE_GET_USER_INFO
+    else:
+        cur_chat_state = states.get_by_user_id(user.id)['state']
+        db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, None)
+    state_processor = state_processors.get(cur_chat_state, prc_WTF)
+    await state_processor(message, user)
 
 
-# Remove webhook, it fails sometimes the set if there is a previous webhook
-bot.remove_webhook()
+async def start(message: types.Message):
+    user = users.get_by_chat_id(message.chat.id)
+    if not user:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
+        )
+    else:
+        await process_regular_message(message)
+
+
+async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_helper.User):
+    user = users.get_by_chat_id(query.message.chat.id)
+    problem_id = int(query.data[2:])
+    problem = problems.get_by_id(problem_id)
+    # В зависимости от типа задачи разное поведение
+    if problem.prob_type == PROB_TYPE_TEST:
+        # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру
+        if problem.ans_type == ANS_TYPE_SELECT_ONE:
+            await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:")
+            await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                                reply_markup=build_test_answers_keyboard(
+                                                    problem.ans_validation.split(';')))
+        else:
+            await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}")
+        states.set_by_user_id(user.id, STATE_SENDING_TEST_ANSWER, problem_id)
+    elif problem.prob_type == PROB_TYPE_WRITTEN:
+        await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                    text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.")
+        states.set_by_user_id(user.id, STATE_SENDING_SOLUTION, problem_id)
+    elif problem.prob_type == PROB_TYPE_ORALLY:
+        await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                    text=f"Выбрана задача {problem}. Это — устная задача. Такие бот ещё не умеет принимать :(")
+        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+        await prc_get_task_info_state(query.message, user)
+
+
+async def prc_list_selected_callback(query: types.CallbackQuery, user: db_helper.User):
+    list_num = int(query.data[2:])
+    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                text="Теперь выберите задачу")
+    user = users.get_by_chat_id(query.message.chat.id)
+    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=build_problems_keyboard(list_num, user))
+
+
+async def prc_show_list_of_lists_callback(query: types.CallbackQuery, user: db_helper.User):
+    await bot.edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                text="Вот список всех листков:")
+    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=build_lessons_keyboard())
+
+
+async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, user: db_helper.User):
+    selected_answer = query.data[2:]
+    state = states.get_by_user_id(user.id)
+    problem_id = state['problem_id']
+    problem = problems.get_by_id(problem_id)
+    if problem is None:
+        logging.error('Сломался приём задач :(')
+        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+        await prc_get_task_info_state(query.message, user)
+    correct_answer = problem.cor_ans
+    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
+    await bot.send_message(chat_id=query.message.chat.id,
+                           text=f"Выбран вариант {selected_answer}.")
+    if selected_answer == correct_answer:
+        db.add_result(user.id, problem.id, problem.list, None, VERDICT_SOLVED, selected_answer)
+        await bot.send_message(chat_id=query.message.chat.id,
+                               text=f"✔️ {problem.congrat}")
+    else:
+        db.add_result(user.id, problem.id, problem.list, None, VERDICT_WRONG_ANSWER, selected_answer)
+        await bot.send_message(chat_id=query.message.chat.id,
+                               text=f"❌ {problem.wrong_ans}")
+    states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+    await prc_get_task_info_state(query.message, user)
+
+
+callbacks_processors = {
+    CALLBACK_PROBLEM_SELECTED: prc_problems_selected_callback,
+    CALLBACK_SHOW_LIST_OF_LISTS: prc_show_list_of_lists_callback,
+    CALLBACK_LIST_SELECTED: prc_list_selected_callback,
+    CALLBACK_ONE_OF_TEST_ANSWER_SELECTED: prc_one_of_test_answer_selected_callback,
+}
+
+
+async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
+    if query.message:
+        user = users.get_by_chat_id(query.message.chat.id)
+        callback_type = query.data[0]
+        callback_processor = callbacks_processors.get(callback_type, None)
+        await callback_processor(query, user)
+
+
+async def check_webhook():
+    # Set webhook
+    webhook = await bot.get_webhook_info()  # Get current webhook status
+    if webhook.url != WEBHOOK_URL:  # If URL is bad
+        if not webhook.url:  # If URL doesnt match current - remove webhook
+            await bot.delete_webhook()
+        await bot.set_webhook(WEBHOOK_URL)  # Set new URL for webhook
+
+
+async def on_startup(app):
+    logging.warning('Start up!')
+    if USE_WEBHOOKS:
+        await check_webhook()
+    dispatcher.register_message_handler(start, commands=['start'])
+    dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
+    dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
+    dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
+
+
+async def on_shutdown(app):
+    """
+    Graceful shutdown. This method is recommended by aiohttp docs.
+    """
+    logging.warning('Shutting down..')
+    # Remove webhook.
+    await bot.delete_webhook()
+    # Close all connections.
+    await dispatcher.storage.close()
+    await dispatcher.storage.wait_closed()
+    logging.warning('Bye!')
+
 
 # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
 # А вот в режиме отладки можно запустить и без вебхуков
 if __name__ == "__main__":
-    bot.infinity_polling()
+    logging.basicConfig(level=logging.DEBUG)
+    start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
 else:
-    # Set webhook
-    bot.set_webhook(url=WEBHOOK_URL)
+    USE_WEBHOOKS = True
+    WEBHOOK_URL = "https://{}:{}/{}/".format(WEBHOOK_HOST, WEBHOOK_PORT, API_TOKEN)
+    # Create app
     app = web.Application()
-    app.router.add_post("/{token}/", handle)
+    configure_app(dispatcher, app, path='/{token}/', route_name='telegram_webhook_handler')
+    # Setup event handlers.
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
+
+    # app will be started by gunicorn
