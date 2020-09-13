@@ -301,7 +301,15 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, u
 
 async def prc_cancel_task_submission_callback(query: types.CallbackQuery, user: db_helper.User):
     states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-    await process_regular_message(query.message)
+    # await bot.send_message(
+    #     chat_id=message.chat.id,
+    #     text="❓ Нажимайте на задачу, чтобы сдать её",
+    #     reply_markup=build_problems_keyboard(problems.last_lesson, user),
+    # )
+    await bot.edit_message_text(message_id=query.message.message_id, chat_id=query.message.chat.id,
+                                text="❓ Нажимайте на задачу, чтобы сдать её")
+    await bot.edit_message_reply_markup(message_id=query.message.message_id, chat_id=query.message.chat.id,
+                                        reply_markup=build_problems_keyboard(problems.last_lesson, user))
 
 
 callbacks_processors = {
