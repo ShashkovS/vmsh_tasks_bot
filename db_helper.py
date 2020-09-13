@@ -169,6 +169,21 @@ class DB:
         rows = cur.fetchall()
         return rows
 
+    def get_all_solved(self):
+        cur = self.conn.cursor()
+        cur.execute("""
+            select
+            u.token, u.surname, u.name,
+            p.list, p.prob, p.item, min(r.ts) ts
+            from results r
+            join users u on r.student_id = u.id
+            join problems p on r.problem_id = p.id
+            where r.verdict > 0
+            group by 1, 2, 3, 4, 5, 6
+        """)
+        rows = cur.fetchall()
+        return rows
+
     def disconnect(self):
         if self.conn:
             self.conn.close()
