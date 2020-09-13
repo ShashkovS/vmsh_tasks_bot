@@ -204,11 +204,14 @@ class Users:
         self.by_id = {}
         for row in rows:
             if type(row) == dict:
+                if not row.get('surname', None):
+                    continue
                 user = User(**row)
             elif type(row) == User:
                 user = row
             else:
                 raise TypeError('Use dict or User to init Users')
+
             self.all_users.append(user)
             self.by_chat_id[user.chat_id] = user
             self.by_token[user.token] = user
@@ -269,6 +272,8 @@ class Problems:
         self.by_list = {}
         for row in rows:
             if type(row) == dict:
+                if not row.get('list', None) or not row.get('prob', None):
+                    continue
                 problem = Problem(**row)
             elif type(row) == Problem:
                 problem = row
