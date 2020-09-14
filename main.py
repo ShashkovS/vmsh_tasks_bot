@@ -177,7 +177,7 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         print(message.document.file_size)
         if message.document.file_size > 5 * 1024 * 1024:
             await bot.send_message(chat_id=message.chat.id,
-                                   text=f"❌ Размер файла превышает ограничение в 10 мегабайт")
+                                   text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
             return
         file_id = message.document.file_id
         file_info = await bot.get_file(file_id)
