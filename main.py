@@ -168,11 +168,17 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
     if text:
         downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
     # for photo in message.photo:
-    file_info = await bot.get_file(message.photo[-1].file_id)
-    downloaded_file = await bot.download_file(file_info.file_path)
-    filename = file_info.file_path
-    downloaded.append((downloaded_file, filename))
+    if message.photo:
+        file_info = await bot.get_file(message.photo[-1].file_id)
+        downloaded_file = await bot.download_file(file_info.file_path)
+        filename = file_info.file_path
+        downloaded.append((downloaded_file, filename))
     if message.document:
+        print(message.document.file_size)
+        if message.document.file_size > 5 * 1024 * 1024:
+            await bot.send_message(chat_id=message.chat.id,
+                                   text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
+            return
         file_id = message.document.file_id
         file_info = await bot.get_file(file_id)
         filename = message.document.file_name
@@ -311,7 +317,16 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
         await bot_answer_callback_query(query.id)
     elif problem.prob_type == PROB_TYPE_ORALLY:
         await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                    text=f"Выбрана задача {problem}. Это — устная задача. Её нужно сдавать в zoom-конференции: https://us02web.zoom.us/j/89206741729?pwd=WE1ZUGxpMDRoMlF5UHJLSkpDeU1rQT09, Идентификатор конференции: 892 0674 1729, Код доступа: 535079 после 17:00. После того, как вы решили устную задачу, для ускорения сдачи нужно записать ответ и основные шаги решения на бумаге. Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. Когда у вас всё готово, вы заходите в zoom-конференцию (ссылка на которую появится в 17:00, обратите внимание: не сразу!). Пожалуйста, при входе поставьте актуальную подпись: фамилию и имя школьника. Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. После окончания сдачи нужно выйти из конференции. Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. Мы постараемся успеть выделить время каждому, но не уверены, что это получится сразу на первых занятиях",
+                                    text=f"Выбрана задача {problem}. Это — устная задача. "
+                                         f"Её нужно сдавать после 17:00 в zoom-конференции. "
+                                         f"После того, как вы решили устную задачу, для ускорения сдачи нужно записать ответ и основные шаги решения на бумаге. "
+                                         f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
+                                         f"Когда у вас всё готово, вы заходите в zoom-конференцию https://us02web.zoom.us/j/89206741729?pwd=WE1ZUGxpMDRoMlF5UHJLSkpDeU1rQT09, идентификатор конференции: 892 0674 1729, код доступа: 535079. "
+                                         f"Пожалуйста, при входе поставьте актуальную подпись: фамилию и имя школьника. "
+                                         f"Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. "
+                                         f"После окончания сдачи нужно выйти из конференции. "
+                                         f"Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. "
+                                         f"Мы постараемся успеть выделить время каждому, но не уверены, что это получится сразу на первых занятиях",
                                     reply_markup=None)
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
         await bot_answer_callback_query(query.id)
