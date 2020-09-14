@@ -198,7 +198,7 @@ async def prc_sending_test_answer_state(message: types.Message, user: db_helper.
     state = states.get_by_user_id(user.id)
     problem_id = state['problem_id']
     problem = problems.get_by_id(problem_id)
-    student_answer = message.text.strip()
+    student_answer = (message.text or '').strip()
     # Сначала проверим, проходит ли ответ валидацию регуляркой (если она указана)
     if problem.ans_type == ANS_TYPE_SELECT_ONE and student_answer not in problem.cor_ans.split(';'):
         await bot.send_message(chat_id=message.chat.id,
