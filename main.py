@@ -187,7 +187,11 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         downloaded.append((downloaded_file, filename))
     for bin_data, filename in downloaded:
         ext = filename[filename.rfind('.') + 1:]
-        file_name = os.path.join(SOLS_PATH, str(user.id), str(states.get_by_user_id(user.id)['problem_id']),
+        problem_id = states.get_by_user_id(user.id)['problem_id']
+        problem = problems.get_by_id(problem_id)
+        file_name = os.path.join(SOLS_PATH,
+                                 f'{user.token} {user.surname} {user.name}',
+                                 f'{problem.list}_{problem.prob}{problem.item}',
                                  datetime.datetime.now().isoformat().replace(':', '') + '.' + ext)
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, file_name)
