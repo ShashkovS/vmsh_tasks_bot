@@ -183,6 +183,7 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         file_name = os.path.join(SOLS_PATH, str(user.id), str(states.get_by_user_id(user.id)['problem_id']),
                                  datetime.datetime.now().isoformat().replace(':', '') + '.' + ext)
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, file_name)
         with open(file_name, 'wb') as file:
             file.write(bin_data.read())
     await bot.send_message(
@@ -250,13 +251,8 @@ async def process_regular_message(message: types.Message):
         cur_chat_state = STATE_GET_USER_INFO
     else:
         cur_chat_state = states.get_by_user_id(user.id)['state']
-        if message.document:
-            db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text,
-                                  message.document.file_id)
-        elif message.photo:
-            db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text,
-                                  message.photo[-1].file_id)
-        else:
+
+        if not message.document and not message.photo:
             db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, None)
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
     await state_processor(message, user)
