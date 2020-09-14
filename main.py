@@ -166,11 +166,11 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
     text = message.text
     if text:
         downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
-    for photo in message.photo:
-        file_info = await bot.get_file(photo.file_id)
-        downloaded_file = await bot.download_file(file_info.file_path)
-        filename = file_info.file_path
-        downloaded.append((downloaded_file, filename))
+    # for photo in message.photo:
+    file_info = await bot.get_file(message.photo[-1].file_id)
+    downloaded_file = await bot.download_file(file_info.file_path)
+    filename = file_info.file_path
+    downloaded.append((downloaded_file, filename))
     if message.document:
         file_id = message.document.file_id
         file_info = await bot.get_file(file_id)
@@ -250,7 +250,14 @@ async def process_regular_message(message: types.Message):
         cur_chat_state = STATE_GET_USER_INFO
     else:
         cur_chat_state = states.get_by_user_id(user.id)['state']
-        db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, None)
+        if message.document:
+            db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text,
+                                  message.document.file_id)
+        elif message.photo:
+            db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text,
+                                  message.photo[-1].file_id)
+        else:
+            db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, None)
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
     await state_processor(message, user)
 
