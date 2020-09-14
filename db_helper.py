@@ -252,6 +252,9 @@ class Users:
     def __len__(self):
         return len(self.all_users)
 
+    def __iter__(self):
+        return iter(self.all_users)
+
 
 @dataclass
 class Problem:
@@ -318,6 +321,9 @@ class Problems:
 
     def __len__(self):
         return len(self.all_problems)
+
+    def __iter__(self):
+        return iter(self.all_problems)
 
 
 class States:
