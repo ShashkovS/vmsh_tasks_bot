@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 import os
 import io
@@ -166,11 +167,11 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
     text = message.text
     if text:
         downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
-    for photo in message.photo:
-        file_info = await bot.get_file(photo.file_id)
-        downloaded_file = await bot.download_file(file_info.file_path)
-        filename = file_info.file_path
-        downloaded.append((downloaded_file, filename))
+    # for photo in message.photo:
+    file_info = await bot.get_file(message.photo[-1].file_id)
+    downloaded_file = await bot.download_file(file_info.file_path)
+    filename = file_info.file_path
+    downloaded.append((downloaded_file, filename))
     if message.document:
         file_id = message.document.file_id
         file_info = await bot.get_file(file_id)
@@ -183,6 +184,7 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         file_name = os.path.join(SOLS_PATH, str(user.id), str(states.get_by_user_id(user.id)['problem_id']),
                                  datetime.datetime.now().isoformat().replace(':', '') + '.' + ext)
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, file_name)
         with open(file_name, 'wb') as file:
             file.write(bin_data.read())
     await bot.send_message(
@@ -250,7 +252,9 @@ async def process_regular_message(message: types.Message):
         cur_chat_state = STATE_GET_USER_INFO
     else:
         cur_chat_state = states.get_by_user_id(user.id)['state']
-        db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, None)
+
+        if not message.document and not message.photo:
+            db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, None)
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
     await state_processor(message, user)
 
@@ -307,7 +311,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
         await bot_answer_callback_query(query.id)
     elif problem.prob_type == PROB_TYPE_ORALLY:
         await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                    text=f"Выбрана задача {problem}. Это — устная задача. Такие бот ещё не умеет принимать :(",
+                                    text=f"Выбрана задача {problem}. Это — устная задача. Её нужно сдавать в zoom-конференции: https://us02web.zoom.us/j/89206741729?pwd=WE1ZUGxpMDRoMlF5UHJLSkpDeU1rQT09, Идентификатор конференции: 892 0674 1729, Код доступа: 535079 после 17:00. После того, как вы решили устную задачу, для ускорения сдачи нужно записать ответ и основные шаги решения на бумаге. Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. Когда у вас всё готово, вы заходите в zoom-конференцию (ссылка на которую появится в 17:00, обратите внимание: не сразу!). Пожалуйста, при входе поставьте актуальную подпись: фамилию и имя школьника. Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. После окончания сдачи нужно выйти из конференции. Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. Мы постараемся успеть выделить время каждому, но не уверены, что это получится сразу на первых занятиях",
                                     reply_markup=None)
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
         await bot_answer_callback_query(query.id)
