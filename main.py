@@ -42,22 +42,22 @@ dispatcher = Dispatcher(bot)
 async def bot_edit_message_text(*args, **kwargs):
     try:
         await bot.edit_message_text(*args, **kwargs)
-    except MessageNotModified:
-        pass
+    except MessageNotModified as e:
+        logging.error(f'SHIT: {e}')
 
 
 async def bot_edit_message_reply_markup(*args, **kwargs):
     try:
         await bot.edit_message_reply_markup(*args, **kwargs)
-    except MessageNotModified:
-        pass
+    except MessageNotModified as e:
+        logging.error(f'SHIT: {e}')
 
 
 async def bot_answer_callback_query(*args, **kwargs):
     try:
         await bot.answer_callback_query(*args, **kwargs)
-    except:
-        pass
+    except Exception as e:
+        logging.error(f'SHIT: {e}')
 
 
 async def update_all_internal_data(message: types.Message):
@@ -399,6 +399,7 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
             except:
                 pass  # Ошибки здесь не важны
             await start(query.message)
+            return
         callback_type = query.data[0]
         callback_processor = callbacks_processors.get(callback_type, None)
         await callback_processor(query, user)
