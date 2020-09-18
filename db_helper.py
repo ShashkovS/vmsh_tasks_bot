@@ -361,6 +361,7 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
         users = Users(students + teachers)
         problems = Problems(problems)
     users = Users()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
+    problems = Problems()  # TODO Это — долбанный костыль, перечитываем всё из БД
     return db, users, problems, states
 
 
