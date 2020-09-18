@@ -51,7 +51,7 @@ class DB:
             insert into users ( chat_id,  type,  name,  surname,  middlename,  token) 
             values            (:chat_id, :type, :name, :surname, :middlename, :token) 
             on conflict (token) do update set 
-            chat_id=excluded.chat_id, 
+            chat_id=coalesce(excluded.chat_id, chat_id), 
             type=excluded.type, 
             name=excluded.name, 
             surname=excluded.surname, 
@@ -252,6 +252,9 @@ class Users:
     def __len__(self):
         return len(self.all_users)
 
+    def __iter__(self):
+        return iter(self.all_users)
+
 
 @dataclass
 class Problem:
@@ -319,6 +322,9 @@ class Problems:
     def __len__(self):
         return len(self.all_problems)
 
+    def __iter__(self):
+        return iter(self.all_problems)
+
 
 class States:
     def get_by_user_id(self, user_id: int):
@@ -326,7 +332,6 @@ class States:
 
     def set_by_user_id(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
                        last_teacher_id: int = 0):
-        print(f'set_by_user_id({user_id}, {state}, {problem_id})')
         db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
 
 
@@ -354,6 +359,8 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
         # Создание юзеров автоматически зальёт их в базу
         users = Users(students + teachers)
         problems = Problems(problems)
+    users = Users()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
+    problems = Problems()  # TODO Это — долбанный костыль, перечитываем всё из БД
     return db, users, problems, states
 
 
