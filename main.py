@@ -300,6 +300,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
     state = states.get_by_user_id(user.id)
     problem_id = int(query.data[2:])
     problem = problems.get_by_id(problem_id)
+    print('problem', problem)
     if not problem:
         await bot_answer_callback_query(query.id)
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
