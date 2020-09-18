@@ -75,7 +75,7 @@ async def prc_get_user_info_state(message: types.Message, user: db_helper.User):
     if user is None:
         await bot.send_message(
             chat_id=message.chat.id,
-            text="🔁 Неправильно, попробуйте еще раз. Пароль был вам выслан по электронной почте, он имеет вид «pa1ro1»",
+            text="🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\nПароль был вам выслан по электронной почте, он имеет вид «pa1ro1»",
         )
     else:
         await bot.send_message(
@@ -300,6 +300,10 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
     state = states.get_by_user_id(user.id)
     problem_id = int(query.data[2:])
     problem = problems.get_by_id(problem_id)
+    if not problem:
+        await bot_answer_callback_query(query.id)
+        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+        await process_regular_message(query.message)
     # В зависимости от типа задачи разное поведение
     if problem.prob_type == PROB_TYPE_TEST:
         # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру

@@ -51,7 +51,7 @@ class DB:
             insert into users ( chat_id,  type,  name,  surname,  middlename,  token) 
             values            (:chat_id, :type, :name, :surname, :middlename, :token) 
             on conflict (token) do update set 
-            chat_id=excluded.chat_id, 
+            chat_id=coalesce(excluded.chat_id, chat_id), 
             type=excluded.type, 
             name=excluded.name, 
             surname=excluded.surname, 
@@ -360,6 +360,7 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
         # Создание юзеров автоматически зальёт их в базу
         users = Users(students + teachers)
         problems = Problems(problems)
+    users = Users()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
     return db, users, problems, states
 
 
