@@ -332,7 +332,6 @@ class States:
 
     def set_by_user_id(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
                        last_teacher_id: int = 0):
-        print(f'set_by_user_id({user_id}, {state}, {problem_id})')
         db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
 
 
@@ -362,8 +361,6 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
         problems = Problems(problems)
     users = Users()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
     problems = Problems()  # TODO Это — долбанный костыль, перечитываем всё из БД
-    print(users)
-    print(problems)
     return db, users, problems, states
 
 

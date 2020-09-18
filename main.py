@@ -174,7 +174,6 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         filename = file_info.file_path
         downloaded.append((downloaded_file, filename))
     if message.document:
-        print(message.document.file_size)
         if message.document.file_size > 5 * 1024 * 1024:
             await bot.send_message(chat_id=message.chat.id,
                                    text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
@@ -297,10 +296,9 @@ async def sos(message: types.Message):
 
 async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_helper.User):
     user = users.get_by_chat_id(query.message.chat.id)
-    state = states.get_by_user_id(user.id)
+    # state = states.get_by_user_id(user.id)
     problem_id = int(query.data[2:])
     problem = problems.get_by_id(problem_id)
-    print('problem', problem)
     if not problem:
         await bot_answer_callback_query(query.id)
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
@@ -353,7 +351,7 @@ async def prc_show_list_of_lists_callback(query: types.CallbackQuery, user: db_h
 async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, user: db_helper.User):
     state = states.get_by_user_id(user.id)
     if state.get('state', None) != STATE_SENDING_TEST_ANSWER:
-        print('WRONG STATE', state, STATE_SENDING_TEST_ANSWER, 'STATE_SENDING_TEST_ANSWER')
+        logging.info('WRONG STATE', state, STATE_SENDING_TEST_ANSWER, 'STATE_SENDING_TEST_ANSWER')
         return
     selected_answer = query.data[2:]
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
