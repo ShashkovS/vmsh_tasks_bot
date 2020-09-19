@@ -336,16 +336,21 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
         # await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
         #                             text=f"Выбрана устная задача. Её нужно сдавать после 17:00 в zoom-конференции. Желательно перед сдачей записать ответ и основные шаги решения на бумаге. Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. Когда у вас всё готово, заходите в zoom-конференцию https://us02web.zoom.us/j/89206741729?pwd=WE1ZUGxpMDRoMlF5UHJLSkpDeU1rQT09, идентификатор конференции: 892 0674 1729, код доступа: 535079. Пожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. После окончания сдачи нужно выйти из конференции. Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. Мы постараемся выделить время каждому, но не уверены, что это получится сразу на первых занятиях.",
         #                             disable_web_page_preview=True)
-        await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
-        states.set_by_user_id(user.id, STATE_GET_TASK_INFO, oral_problem_id=problem.id)
-        waitlist.enter(user.id, problem.id)
-        await bot.send_message(chat_id=query.message.chat.id,
-                               text=f"Вы успешно встали в очередь\. Чтобы выйти из очереди, нажмите `/exit_waitlist` на клавиатуре",
-                               parse_mode="MarkdownV2",
-                               reply_markup=build_exit_waitlist_keyboard())
-        await bot_answer_callback_query(query.id)
-        await asyncio.sleep(1)
-        await process_regular_message(query.message)
+        state = states.get_by_user_id(user.id)
+        if state['oral_problem_id'] is not None:
+            await bot.send_message(chat_id=query.message.chat.id,
+                                   text="Вы уже стоите в очереди\. Дождитесь, когда освободится один из преподавателей\. Тогда можно будет сдать сразу несколько задач\.",
+                                   parse_mode="MarkdownV2")
+        else:
+            await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+            waitlist.enter(user.id, problem.id)
+            await bot.send_message(chat_id=query.message.chat.id,
+                                   text="Вы успешно встали в очередь\. Чтобы выйти из очереди, нажмите `/exit_waitlist` на клавиатуре",
+                                   parse_mode="MarkdownV2",
+                                   reply_markup=build_exit_waitlist_keyboard())
+            await bot_answer_callback_query(query.id)
+            await asyncio.sleep(1)
+            await process_regular_message(query.message)
 
 
 async def prc_list_selected_callback(query: types.CallbackQuery, user: db_helper.User):
@@ -450,9 +455,6 @@ async def check_webhook():
 async def exit_waitlist(message: types.Message):
     user = users.get_by_chat_id(message.chat.id)
     waitlist.leave(user.id)
-    user_state = states.get_by_user_id(user.id)
-    user_state['oral_problem_id'] = None
-    states.set_by_user_id(**user_state)
     await bot.send_message(
         chat_id=message.chat.id,
         text="Вы успешно покинули очередь.",
