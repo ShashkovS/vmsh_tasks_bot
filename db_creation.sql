@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS waitlist
     entered timestamp NOT NULL,
     problem_id INTEGER NOT NULL,
     FOREIGN KEY (student_id) REFERENCES users (id),
-    FOREIGN KEY (problem_id) REFERENCES problems (id),
+    FOREIGN KEY (problem_id) REFERENCES problems (id)
 );
 
 create index if not exists waitlist_by_student on waitlist (student_id);

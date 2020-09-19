@@ -170,7 +170,7 @@ class DB:
         cur = self.conn.cursor()
         cur.execute("""
             SELECT * FROM waitlist
-            ORDER BY entered ASC,
+            ORDER BY entered ASC
             LIMIT :top_n
         """, args)
         return cur.fetchall()
@@ -446,6 +446,28 @@ if __name__ == '__main__':
     print(problems.get_by_key(1, 1, 'б'))
     print(problems.get_by_key(1, 1, 'бs'))
     print(len(problems))
+
+    waitlist = Waitlist()
+    states = States()
+    for i in range(1, 15):
+        waitlist.enter(i, i)
+        states.set_by_user_id(i, STATE_SENDING_SOLUTION, i)
+
+    print('WL: add 14 people')
+    wl = waitlist.top()
+    for r in wl:
+        print('wl entry = ', r)
+        print('user state = ', states.get_by_user_id(r['student_id']))
+        waitlist.leave(r['student_id'])
+    print('States after leaving waitlist:')
+    for r in wl:
+        print('user state = ', states.get_by_user_id(r['student_id']))
+
+    print('WL: new top')
+    wl = waitlist.top()
+    for r in wl:
+        print(r)
+        waitlist.leave(r['student_id'])
 
     db.disconnect()
     print('\n' * 10)
