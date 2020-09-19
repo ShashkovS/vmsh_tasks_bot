@@ -105,6 +105,15 @@ class DB:
         """, args)
         self.conn.commit()
 
+    def update_oral_problem(self, user_id: int, oral_problem_id: int = None):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            UPDATE states SET oral_problem_id = :oral_problem_id
+            WHERE user_id = :user_id
+        """, args)
+        self.conn.commit()
+
     def add_result(self, student_id: int, problem_id: int, list: int, teacher_id: int, verdict: int, answer: str):
         args = locals()
         args['ts'] = datetime.now().isoformat()
@@ -136,6 +145,35 @@ class DB:
             VALUES                    (:from_bot, :tg_msg_id, :chat_id, :student_id, :teacher_id, :ts, :msg_text, :attach_path) 
         """, args)
         self.conn.commit()
+
+    def add_user_to_waitlist(self, student_id: int, problem_id: int):
+        args = locals()
+        args['ts'] = datetime.now().isoformat()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO waitlist  ( student_id, entered, problem_id )
+            VALUES                (:student_id, :ts,    :problem_id )
+        """, args)
+        self.conn.commit()
+
+    def remove_user_from_waitlist(self, student_id: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            DELETE FROM waitlist
+            WHERE  student_id = :student_id
+        """, args)
+        self.conn.commit()
+
+    def get_waitlist_top(self, top_n: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            SELECT * FROM waitlist
+            ORDER BY entered ASC,
+            LIMIT :top_n
+        """, args)
+        return cur.fetchall()
 
     def fetch_one_state(self, user_id: int):
         cur = self.conn.cursor()
@@ -333,6 +371,19 @@ class States:
     def set_by_user_id(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
                        last_teacher_id: int = 0):
         db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
+
+
+class Waitlist:
+    def enter(self, student_id: int, problem_id: int):
+        db.update_oral_problem(student_id, problem_id)
+        db.add_user_to_waitlist(student_id, problem_id)
+
+    def leave(self, student_id: int):
+        db.update_oral_problem(student_id, None)
+        db.remove_user_from_waitlist(student_id)
+
+    def top(self) -> list:
+        return db.get_waitlist_top(10)
 
 
 def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
