@@ -19,6 +19,6 @@ for i in range(10):
         'displayName': f'Препод {i}',
     }
     print(f"Препод {i}: https://www.shashkovs.ru/jitboard.html?{urlencode(parms)}")
-    parms['displayName'] = f'Школьник {i}',
+    parms['displayName'] = f'Школьник {i}'
     print(f"Школьник {i}: https://www.shashkovs.ru/jitboard.html?{urlencode(parms)}")
 
