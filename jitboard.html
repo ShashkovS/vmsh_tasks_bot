@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ВМШ 179, приём задач</title>
+<script src='https://meet.jit.si/external_api.js'></script>
+<style type="text/css">
+html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+iframe { height: 100%; width: 49%; }
+</style>
+</head>
+<body>
+<script>
+const url = new URL(window.location.href);
+const studentId = url.searchParams.get("studentId");
+const problemId = url.searchParams.get("problemId");
+const teacherId = url.searchParams.get("teacherId");
+const displayName = url.searchParams.get("displayName");
+const secretVmshPassword = 'secretVmshPassword';
+const subject = 'ВМШ 179, приём задач';
+const boardUrl = `https://whitebophir.proj179.ru/boards/vmsh_5_6_student_${studentId}_problem_${problemId}`;
+
+if (studentId && problemId && teacherId && displayName) {
+    const roomName = `vmsh_5_6_student_${studentId}_teacher_${teacherId}`;
+    const domain = 'meet.jit.si';
+    const options = {
+        roomName,
+        width: "49%",
+        height: "100%",
+        interfaceConfigOverwrite: {
+            HIDE_INVITE_MORE_HEADER: true,
+            MOBILE_APP_PROMO: false,
+            NATIVE_APP_NAME: subject,
+            TOOLBAR_BUTTONS: [
+                'microphone', 'camera', 'desktop', 'fodeviceselection', 'hangup', 'chat', 'etherpad', 'raisehand', 'videoquality', 'tileview',
+            ],
+        },
+        userInfo: {
+            displayName,
+        },
+    };
+    const api = new JitsiMeetExternalAPI(domain, options);
+    // set new password for channel
+    api.addEventListener('participantRoleChanged', function (event) {
+        if (event.role === "moderator") {
+            api.executeCommand('password', secretVmshPassword);
+        }
+    });
+    // join a protected channel
+    api.on('passwordRequired', function () {
+        api.executeCommand('password', secretVmshPassword);
+    });
+    api.executeCommand('subject', subject);
+    // TODO Сделать логирование подключений юзеров
+    api.addEventListener('participantJoined', (event) => console.log('participantJoined', event));
+    api.addEventListener('participantLeft', (event) => console.log('participantLeft', event));
+    api.addEventListener('videoConferenceJoined', (event) => console.log('videoConferenceJoined', event));
+    api.addEventListener('videoConferenceLeft', (event) => console.log('videoConferenceLeft', event));
+
+    // Now add whiteboard frame
+    const wboFrame = document.createElement("iframe");
+    wboFrame.setAttribute("src", boardUrl);
+    wboFrame.setAttribute("frameborder", "0");
+    wboFrame.setAttribute("scrolling", "no");
+    wboFrame.setAttribute("style", "overflow: hidden;");
+    wboFrame.setAttribute("height", "100%");
+    wboFrame.setAttribute("width", "49%");
+    wboFrame.setAttribute("align", "right");
+    wboFrame.style.width = "49%";
+    wboFrame.style.height = "100%";
+    document.body.appendChild(wboFrame);
+}
+</script>
+</body>
+</html>
