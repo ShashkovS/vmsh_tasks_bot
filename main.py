@@ -33,7 +33,7 @@ USE_WEBHOOKS = False
 
 # Для каждого бота своя база
 db_name = hashlib.md5(API_TOKEN.encode('utf-8')).hexdigest() + '.db'
-db, users, problems, states = db_helper.init_db_and_objects(db_name)
+db, users, problems, states, waitlist = db_helper.init_db_and_objects(db_name)
 
 # Запускаем API телеграм-бота
 bot = aiogram.Bot(API_TOKEN)
@@ -62,8 +62,8 @@ async def bot_answer_callback_query(*args, **kwargs):
 
 
 async def update_all_internal_data(message: types.Message):
-    global db, users, problems, states
-    db, users, problems, states = db_helper.init_db_and_objects(db_name, refresh=True)
+    global db, users, problems, states, waitlist
+    db, users, problems, states, waitlist = db_helper.init_db_and_objects(db_name, refresh=True)
     await bot.send_message(
         chat_id=message.chat.id,
         text="Данные обновлены",
@@ -151,6 +151,15 @@ def build_cancel_task_submission_keyboard():
         callback_data=CALLBACK_CANCEL_TASK_SUBMISSION,
     )
     keyboard_markup.add(cancel_button)
+    return keyboard_markup
+
+
+def build_exit_waitlist_keyboard():
+    keyboard_markup = types.ReplyKeyboardMarkup(selective=True)
+    exit_button = types.KeyboardButton(
+        text="/exit_waitlist"
+    )
+    keyboard_markup.add(exit_button)
     return keyboard_markup
 
 
@@ -256,6 +265,7 @@ state_processors = {
 
 
 async def process_regular_message(message: types.Message):
+    print(message)
     user = users.get_by_chat_id(message.chat.id)
     if not user:
         cur_chat_state = STATE_GET_USER_INFO
@@ -323,10 +333,16 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
         states.set_by_user_id(user.id, STATE_SENDING_SOLUTION, problem_id)
         await bot_answer_callback_query(query.id)
     elif problem.prob_type == PROB_TYPE_ORALLY:
-        await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                    text=f"Выбрана устная задача. Её нужно сдавать после 17:00 в zoom-конференции. Желательно перед сдачей записать ответ и основные шаги решения на бумаге. Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. Когда у вас всё готово, заходите в zoom-конференцию https://us02web.zoom.us/j/89206741729?pwd=WE1ZUGxpMDRoMlF5UHJLSkpDeU1rQT09, идентификатор конференции: 892 0674 1729, код доступа: 535079. Пожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. После окончания сдачи нужно выйти из конференции. Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. Мы постараемся выделить время каждому, но не уверены, что это получится сразу на первых занятиях.",
-                                    disable_web_page_preview=True)
-        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+        # await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+        #                             text=f"Выбрана устная задача. Её нужно сдавать после 17:00 в zoom-конференции. Желательно перед сдачей записать ответ и основные шаги решения на бумаге. Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. Когда у вас всё готово, заходите в zoom-конференцию https://us02web.zoom.us/j/89206741729?pwd=WE1ZUGxpMDRoMlF5UHJLSkpDeU1rQT09, идентификатор конференции: 892 0674 1729, код доступа: 535079. Пожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. После окончания сдачи нужно выйти из конференции. Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. Мы постараемся выделить время каждому, но не уверены, что это получится сразу на первых занятиях.",
+        #                             disable_web_page_preview=True)
+        await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+        states.set_by_user_id(user.id, STATE_GET_TASK_INFO, oral_problem_id=problem.id)
+        waitlist.enter(user.id, problem.id)
+        await bot.send_message(chat_id=query.message.chat.id,
+                               text=f"Вы успешно встали в очередь\. Чтобы выйти из очереди, нажмите `/exit_waitlist` на клавиатуре",
+                               parse_mode="MarkdownV2",
+                               reply_markup=build_exit_waitlist_keyboard())
         await bot_answer_callback_query(query.id)
         await asyncio.sleep(1)
         await process_regular_message(query.message)
@@ -431,6 +447,19 @@ async def check_webhook():
         await bot.set_webhook(WEBHOOK_URL)  # Set new URL for webhook
 
 
+async def exit_waitlist(message: types.Message):
+    user = users.get_by_chat_id(message.chat.id)
+    waitlist.leave(user.id)
+    user_state = states.get_by_user_id(user.id)
+    user_state['oral_problem_id'] = None
+    states.set_by_user_id(**user_state)
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Вы успешно покинули очередь.",
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+
+
 async def on_startup(app):
     await gen_conduit()
     logging.warning('Start up!')
@@ -439,6 +468,7 @@ async def on_startup(app):
     dispatcher.register_message_handler(start, commands=['start'])
     dispatcher.register_message_handler(sos, commands=['sos'])
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
+    dispatcher.register_message_handler(exit_waitlist, commands=['exit_waitlist'])
     dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
     dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
 

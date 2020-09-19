@@ -88,13 +88,13 @@ class DB:
         return rows
 
     def update_state(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                     last_teacher_id: int = 0):
+                     last_teacher_id: int = 0, oral_problem_id: int = None):
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
-            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id)
-            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id) 
+            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id,  oral_problem_id)
+            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id, :oral_problem_id) 
             ON CONFLICT (user_id) DO UPDATE SET 
             state = :state,
             problem_id = :problem_id
@@ -369,8 +369,8 @@ class States:
         return db.fetch_one_state(user_id)
 
     def set_by_user_id(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                       last_teacher_id: int = 0):
-        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
+                       last_teacher_id: int = 0, oral_problem_id: int = None):
+        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id, oral_problem_id)
 
 
 class Waitlist:
@@ -412,7 +412,8 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
         problems = Problems(problems)
     users = Users()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
     problems = Problems()  # TODO Это — долбанный костыль, перечитываем всё из БД
-    return db, users, problems, states
+    waitlist = Waitlist()
+    return db, users, problems, states, waitlist
 
 
 if __name__ == '__main__':
