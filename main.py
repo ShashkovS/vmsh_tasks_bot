@@ -13,6 +13,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.dispatcher.webhook import configure_app, types, web
 from aiogram.utils.executor import start_polling
 from aiogram.utils.exceptions import MessageNotModified
+from urllib.parse import urlencode
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,6 +30,7 @@ else:
     WEBHOOK_HOST = 'vmshtasksbot.proj179.ru'
     WEBHOOK_PORT = 443
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions')
+WHITEBOARD_LINK = "https://www.shashkovs.ru/jitboard.html?{}"
 USE_WEBHOOKS = False
 
 # Для каждого бота своя база
@@ -465,16 +467,30 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, user: db_helper
                                         reply_markup=None)
     top = waitlist.top(1)
     student = users.get_by_id(top[0]['student_id'])
-    problem = problems.get_by_id(top[0]['oral_problem_id'])
+    problem = problems.get_by_id(top[0]['problem_id'])
     states.set_by_user_id(user.id, STATE_TEACHER_ACCEPTED_QUEUE, oral_problem_id=problem.id, last_student_id=student.id)
     waitlist.leave(student.id)
-    link = "???????TODO????????"
+
+    params = {
+        'studentId': student.id,
+        'teacherId': user.id,
+        'problemId': problem.id,
+        'displayName': f"{student.name} {student.surname}"
+    }
+
+    student_link = WHITEBOARD_LINK.format(urlencode(params))
+
+    params['displayName'] = f"{user.name} {user.middlename} {user.surname}"
+
+    teacher_link = WHITEBOARD_LINK.format(urlencode(params))
+
     student_message = await bot.send_message(chat_id=student.chat_id,
-                                             text=f"До Вас дошла очередь на сдачу задачи {problem}. Войдите в конференцию по ссылке {link}")
+                                             text=f"До Вас дошла очередь на сдачу задачи {problem}. Войдите в конференцию по ссылке {student_link}",
+                                             reply_markup=types.ReplyKeyboardRemove())
     await asyncio.sleep(2)
     await process_regular_message(student_message)
     await bot.send_message(chat_id=user.chat_id,
-                           text=f"Ваш ученик: {student}. Задача {problem}. Войдите в конференцию по ссылке {link}")
+                           text=f"Ваш ученик: {student}. Задача {problem}. Войдите в конференцию по ссылке {teacher_link}")
     await bot_answer_callback_query(query.id)
     await process_regular_message(message=query.message)
 

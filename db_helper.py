@@ -247,6 +247,9 @@ class User:
         self.chat_id = chat_id
         db.set_user_chat_id(self.id, self.chat_id)
 
+    def __str__(self):
+        return f'{self.name} {self.middlename} {self.surname}'
+
 
 class Users:
     def __init__(self, rows=None):
