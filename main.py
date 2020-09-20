@@ -466,6 +466,14 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, user: db_helper
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     top = waitlist.top(1)
+    if not top:
+        # Если в очереди пусто, то шлём сообщение и выходим.
+        await bot.send_message(chat_id=user.chat_id,
+                               text=f"Сейчас очередь пуста. Повторите через пару минут.")
+        await bot_answer_callback_query(query.id)
+        await prc_teacher_select_action(query.message, user)
+        return
+
     student = users.get_by_id(top[0]['student_id'])
     problem = problems.get_by_id(top[0]['problem_id'])
     states.set_by_user_id(user.id, STATE_TEACHER_ACCEPTED_QUEUE, oral_problem_id=problem.id, last_student_id=student.id)
