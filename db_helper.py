@@ -88,13 +88,13 @@ class DB:
         return rows
 
     def update_state(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                     last_teacher_id: int = 0, oral_problem_id: int = None):
+                     last_teacher_id: int = 0):
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
-            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id,  oral_problem_id)
-            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id, :oral_problem_id) 
+            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id)
+            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id) 
             ON CONFLICT (user_id) DO UPDATE SET 
             state = :state,
             problem_id = :problem_id
@@ -105,11 +105,11 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def update_oral_problem(self, user_id: int, oral_problem_id: int = None):
+    def update_oral_problem(self, user_id: int, problem_id: int = None):
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
-            UPDATE states SET oral_problem_id = :oral_problem_id
+            UPDATE states SET problem_id = :problem_id
             WHERE user_id = :user_id
         """, args)
         self.conn.commit()
@@ -247,6 +247,9 @@ class User:
         self.chat_id = chat_id
         db.set_user_chat_id(self.id, self.chat_id)
 
+    def __str__(self):
+        return f"{self.name} {self.surname}"
+
 
 class Users:
     def __init__(self, rows=None):
@@ -369,8 +372,8 @@ class States:
         return db.fetch_one_state(user_id)
 
     def set_by_user_id(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                       last_teacher_id: int = 0, oral_problem_id: int = None):
-        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id, oral_problem_id)
+                       last_teacher_id: int = 0):
+        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
 
 
 class Waitlist:
@@ -382,8 +385,8 @@ class Waitlist:
         db.update_oral_problem(student_id, None)
         db.remove_user_from_waitlist(student_id)
 
-    def top(self) -> list:
-        return db.get_waitlist_top(10)
+    def top(self, n: int = 10) -> list:
+        return db.get_waitlist_top(n)
 
 
 def init_db_and_objects(db_file='prod_database.db', *, refresh=False):

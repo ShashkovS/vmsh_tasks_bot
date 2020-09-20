@@ -83,8 +83,12 @@ async def prc_get_user_info_state(message: types.Message, user: db_helper.User):
             text=f"🤖 ОК, Добро пожаловать, {user.name} {user.surname}",
         )
         users.set_chat_id(user, message.chat.id)
-        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-        await process_regular_message(message)
+        if user.type == USER_TYPE_STUDENT:
+            states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
+            await process_regular_message(message)
+        elif user.type == USER_TYPE_TEACHER:
+            states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
+            await process_regular_message(message)
 
 
 async def prc_WTF(message: types.Message, user: db_helper.User):
@@ -155,7 +159,7 @@ def build_cancel_task_submission_keyboard():
 
 
 def build_exit_waitlist_keyboard():
-    keyboard_markup = types.ReplyKeyboardMarkup(selective=True)
+    keyboard_markup = types.ReplyKeyboardMarkup(selective=True, resize_keyboard=True)
     exit_button = types.KeyboardButton(
         text="/exit_waitlist"
     )
@@ -255,12 +259,50 @@ async def prc_wait_sos_request_state(message: types.Message, user: db_helper.Use
     await process_regular_message(message)
 
 
+def build_teacher_actions_keyboard():
+    keyboard = types.InlineKeyboardMarkup()
+    get_queue_top_button = types.InlineKeyboardButton(
+        text="Вызвать школьника из очереди",
+        callback_data=CALLBACK_GET_QUEUE_TOP
+    )
+    keyboard.add(get_queue_top_button)
+    return keyboard
+
+
+async def prc_teacher_select_action(message: types.Message, user: db_helper.User):
+    await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
+                           reply_markup=build_teacher_actions_keyboard())
+
+
+def build_verdict_keyboard():
+    keyboard = types.InlineKeyboardMarkup()
+    verdict_ok = types.InlineKeyboardButton(
+        text="Ученик сдал задачу",
+        callback_data=f'v_{VERDICT_SOLVED}'
+    )
+    verdict_wa = types.InlineKeyboardButton(
+        text="Ученик не сдал задачу",
+        callback_data=f'v_{VERDICT_WRONG_ANSWER}'
+    )
+    keyboard.add(verdict_ok)
+    keyboard.add(verdict_wa)
+    return keyboard
+
+
+async def prc_teacher_accepted_queue(message: types.message, user: db_helper.User):
+    await bot.send_message(chat_id=message.chat.id,
+                           text="УЧЕНИК СДАЕТ ТОЛЬКО ЭТУ ЗАДАЧУ.\n\nВыберите вердикт сдачи",
+                           reply_markup=build_verdict_keyboard())
+
+
 state_processors = {
     STATE_GET_USER_INFO: prc_get_user_info_state,
     STATE_GET_TASK_INFO: prc_get_task_info_state,
     STATE_SENDING_SOLUTION: prc_sending_solution_state,
     STATE_SENDING_TEST_ANSWER: prc_sending_test_answer_state,
     STATE_WAIT_SOS_REQUEST: prc_wait_sos_request_state,
+    STATE_TEACHER_SELECT_ACTION: prc_teacher_select_action,
+    STATE_TEACHER_ACCEPTED_QUEUE: prc_teacher_accepted_queue,
 }
 
 
@@ -337,7 +379,6 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
         #                             text=f"Выбрана устная задача. Её нужно сдавать после 17:00 в zoom-конференции. Желательно перед сдачей записать ответ и основные шаги решения на бумаге. Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. Когда у вас всё готово, заходите в zoom-конференцию https://us02web.zoom.us/j/89206741729?pwd=WE1ZUGxpMDRoMlF5UHJLSkpDeU1rQT09, идентификатор конференции: 892 0674 1729, код доступа: 535079. Пожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. После окончания сдачи нужно выйти из конференции. Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. Мы постараемся выделить время каждому, но не уверены, что это получится сразу на первых занятиях.",
         #                             disable_web_page_preview=True)
         await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
-        states.set_by_user_id(user.id, STATE_GET_TASK_INFO, oral_problem_id=problem.id)
         waitlist.enter(user.id, problem.id)
         await bot.send_message(chat_id=query.message.chat.id,
                                text=f"Вы успешно встали в очередь\. Чтобы выйти из очереди, нажмите `/exit_waitlist` на клавиатуре",
@@ -413,12 +454,49 @@ async def prc_cancel_task_submission_callback(query: types.CallbackQuery, user: 
     await bot_answer_callback_query(query.id)
 
 
+async def prc_get_queue_top_callback(query: types.CallbackQuery, user: db_helper.User):
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
+    top = waitlist.top(1)
+    student = users.get_by_id(top[0]['student_id'])
+    problem = problems.get_by_id(top[0]['problem_id'])
+    states.set_by_user_id(user.id, STATE_TEACHER_ACCEPTED_QUEUE, problem_id=problem.id, last_student_id=student.id)
+    waitlist.leave(student.id)
+    link = "???????TODO????????"
+    student_message = await bot.send_message(chat_id=student.chat_id,
+                                             text=f"До Вас дошла очередь на сдачу задачи {problem}. Войдите в конференцию по ссылке {link}")
+    await asyncio.sleep(2)
+    await process_regular_message(student_message)
+    await bot.send_message(chat_id=user.chat_id,
+                           text=f"Ваш ученик: {student}. Задача {problem}. Войдите в конференцию по ссылке {link}")
+    await bot_answer_callback_query(query.id)
+    await process_regular_message(message=query.message)
+
+
+async def prc_set_verdict_callback(query: types.CallbackQuery, user: db_helper.User):
+    state = states.get_by_user_id(user.id)
+    problem_id = state['problem_id']
+    if problem_id is None:
+        logging.info("WAT problem_id is None")
+        return
+    problem = problems.get_by_id(problem_id)
+    verdict = int(query.data.split('_')[1])
+    student_id = state['last_student_id']
+    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
+    states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
+    db.add_result(student_id, problem_id, problem.list, user.id, verdict, '')
+    await process_regular_message(query.message)
+
+
 callbacks_processors = {
     CALLBACK_PROBLEM_SELECTED: prc_problems_selected_callback,
     CALLBACK_SHOW_LIST_OF_LISTS: prc_show_list_of_lists_callback,
     CALLBACK_LIST_SELECTED: prc_list_selected_callback,
     CALLBACK_ONE_OF_TEST_ANSWER_SELECTED: prc_one_of_test_answer_selected_callback,
-    CALLBACK_CANCEL_TASK_SUBMISSION: prc_cancel_task_submission_callback
+    CALLBACK_CANCEL_TASK_SUBMISSION: prc_cancel_task_submission_callback,
+    CALLBACK_GET_QUEUE_TOP: prc_get_queue_top_callback,
+    CALLBACK_SET_VERDICT: prc_set_verdict_callback,
 }
 
 
@@ -450,14 +528,12 @@ async def check_webhook():
 async def exit_waitlist(message: types.Message):
     user = users.get_by_chat_id(message.chat.id)
     waitlist.leave(user.id)
-    user_state = states.get_by_user_id(user.id)
-    user_state['oral_problem_id'] = None
-    states.set_by_user_id(**user_state)
     await bot.send_message(
         chat_id=message.chat.id,
         text="Вы успешно покинули очередь.",
         reply_markup=types.ReplyKeyboardRemove()
     )
+    await process_regular_message(message)
 
 
 async def on_startup(app):

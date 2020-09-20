@@ -32,15 +32,13 @@ CREATE TABLE IF NOT EXISTS states
 (
     user_id         INTEGER PRIMARY KEY UNIQUE,
     state           INTEGER,
-    problem_id      INTEGER NULL,
+    problem_id      INTEGER NULL,  -- не NULL, если стоит в очереди сдавать эту задачу
     last_student_id INTEGER NULL,
     last_teacher_id INTEGER NULL,
-    oral_problem_id INTEGER NULL,  -- не NULL, если стоит в очереди сдавать эту задачу
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (problem_id) REFERENCES problems (id),
     FOREIGN KEY (last_student_id) REFERENCES users (id),
-    FOREIGN KEY (last_teacher_id) REFERENCES users (id),
-    FOREIGN KEY (oral_problem_id) REFERENCES users (id)
+    FOREIGN KEY (last_teacher_id) REFERENCES users (id)
 );
 
 CREATE TABLE IF NOT EXISTS results
