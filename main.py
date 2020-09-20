@@ -465,8 +465,8 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, user: db_helper
                                         reply_markup=None)
     top = waitlist.top(1)
     student = users.get_by_id(top[0]['student_id'])
-    problem = problems.get_by_id(top[0]['problem_id'])
-    states.set_by_user_id(user.id, STATE_TEACHER_ACCEPTED_QUEUE, problem_id=problem.id, last_student_id=student.id)
+    problem = problems.get_by_id(top[0]['oral_problem_id'])
+    states.set_by_user_id(user.id, STATE_TEACHER_ACCEPTED_QUEUE, oral_problem_id=problem.id, last_student_id=student.id)
     waitlist.leave(student.id)
     link = "???????TODO????????"
     student_message = await bot.send_message(chat_id=student.chat_id,
@@ -481,7 +481,7 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, user: db_helper
 
 async def prc_set_verdict_callback(query: types.CallbackQuery, user: db_helper.User):
     state = states.get_by_user_id(user.id)
-    problem_id = state['problem_id']
+    problem_id = state['oral_problem_id']
     if problem_id is None:
         logging.info("WAT problem_id is None")
         return
