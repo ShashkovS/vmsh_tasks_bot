@@ -180,7 +180,6 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
             return
         file_id = message.document.file_id
         file_info = await bot.get_file(file_id)
-        filename = message.document.file_name
         downloaded_file = await bot.download_file(file_info.file_path)
         filename = file_info.file_path
         downloaded.append((downloaded_file, filename))
@@ -188,10 +187,11 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         ext = filename[filename.rfind('.') + 1:]
         problem_id = states.get_by_user_id(user.id)['problem_id']
         problem = problems.get_by_id(problem_id)
+        cur_ts = datetime.datetime.now().isoformat().replace(':', '-')
         file_name = os.path.join(SOLS_PATH,
                                  f'{user.token} {user.surname} {user.name}',
-                                 f'{problem.list}_{problem.prob}{problem.item}',
-                                 datetime.datetime.now().isoformat().replace(':', '') + '.' + ext)
+                                 f'{problem.list}',
+                                 f'{problem.list}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, file_name)
         with open(file_name, 'wb') as file:
@@ -324,7 +324,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
         await bot_answer_callback_query(query.id)
     elif problem.prob_type == PROB_TYPE_ORALLY:
         await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                    text=f"Выбрана устная задача. Её нужно сдавать после 17:00 в zoom-конференции. Желательно перед сдачей записать ответ и основные шаги решения на бумаге. Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. Когда у вас всё готово, заходите в zoom-конференцию https://us02web.zoom.us/j/89206741729?pwd=WE1ZUGxpMDRoMlF5UHJLSkpDeU1rQT09, идентификатор конференции: 892 0674 1729, код доступа: 535079. Пожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. После окончания сдачи нужно выйти из конференции. Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. Мы постараемся выделить время каждому, но не уверены, что это получится сразу на первых занятиях.",
+                                    text=f"Выбрана устная задача. Её нужно сдавать после 17:00 в zoom-конференции. Желательно перед сдачей записать ответ и основные шаги решения на бумаге. Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. Когда у вас всё готово, заходите в zoom-конференцию, идентификатор конференции: 834 3300 5508, код доступа: 179179. Пожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. После окончания сдачи нужно выйти из конференции. Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. Мы постараемся выделить время каждому, но не уверены, что это получится сразу на первых занятиях.",
                                     disable_web_page_preview=True)
         states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
         await bot_answer_callback_query(query.id)
