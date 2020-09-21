@@ -82,3 +82,35 @@ CREATE TABLE IF NOT EXISTS messages_log
     FOREIGN KEY (student_id) REFERENCES users (id),
     FOREIGN KEY (teacher_id) REFERENCES users (id)
 );
+
+CREATE TABLE IF NOT EXISTS written_tasks_queue
+(
+    id          INTEGER PRIMARY KEY UNIQUE,
+    ts          timestamp NOT NULL,
+    student_id  INTEGER   NOT NULL,
+    problem_id  INTEGER   NOT NULL,
+    cur_status  INTEGER   NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES users (id),
+    FOREIGN KEY (problem_id) REFERENCES problems (id),
+    UNIQUE (student_id, problem_id)
+);
+CREATE INDEX IF NOT EXISTS written_tasks_queue_by_tst on written_tasks_queue
+(ts DESC);
+
+CREATE TABLE IF NOT EXISTS written_tasks_discussions
+(
+    id          INTEGER PRIMARY KEY UNIQUE,
+    ts          timestamp NOT NULL,
+    student_id  INTEGER   NOT NULL,
+    problem_id  INTEGER   NOT NULL,
+    teacher_id  INTEGER   NULL,
+    text        TEXT      NULL,
+    attach_path TEXT      NULL,
+    chat_id  INTEGER   NULL,
+    tg_msg_id   INTEGER   NULL,
+    FOREIGN KEY (student_id) REFERENCES users (id),
+    FOREIGN KEY (teacher_id) REFERENCES users (id),
+    FOREIGN KEY (problem_id) REFERENCES problems (id)
+);
+create index IF NOT EXISTS written_tasks_discussions_by_task on written_tasks_discussions
+(student_id, problem_id, ts);

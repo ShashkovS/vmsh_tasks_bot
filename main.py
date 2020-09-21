@@ -33,7 +33,7 @@ USE_WEBHOOKS = False
 
 # Для каждого бота своя база
 db_name = hashlib.md5(API_TOKEN.encode('utf-8')).hexdigest() + '.db'
-db, users, problems, states = db_helper.init_db_and_objects(db_name)
+db, users, problems, states, written_queue = db_helper.init_db_and_objects(db_name)
 
 # Запускаем API телеграм-бота
 bot = aiogram.Bot(API_TOKEN)
@@ -62,8 +62,8 @@ async def bot_answer_callback_query(*args, **kwargs):
 
 
 async def update_all_internal_data(message: types.Message):
-    global db, users, problems, states
-    db, users, problems, states = db_helper.init_db_and_objects(db_name, refresh=True)
+    global db, users, problems, states, written_queue
+    db, users, problems, states, written_queue = db_helper.init_db_and_objects(db_name, refresh=True)
     await bot.send_message(
         chat_id=message.chat.id,
         text="Данные обновлены",

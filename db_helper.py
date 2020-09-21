@@ -3,16 +3,19 @@ import sqlite3
 import os
 from dataclasses import dataclass
 import load_data_from_spreadsheet
-from datetime import datetime
+from datetime import datetime, timedelta
 from consts import *
 
 _APP_PATH = os.path.dirname(os.path.realpath(__file__))
 _DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+_MAX_TIME_TO_CHECK_WRITTEN_TASK = timedelta(minutes=30)
+_MAX_WRITTEN_TASKS_TO_SELECT = 5
 
 db = None
 users = None
 problems = None
 states = None
+written_queue = None
 
 
 class DB:
@@ -33,16 +36,15 @@ class DB:
         return d
 
     def _connect_to_db(self):
-        create_tables = not os.path.isfile(self.db_file)
         self.conn = sqlite3.connect(self.db_file)
         self.conn.row_factory = self._dict_factory
-        if create_tables:
-            self._create_tables()
+        # Всегда запускаем стартовый скрипт
+        self._create_tables()
 
     def _create_tables(self):
         c = self.conn.cursor()
         script = open(os.path.join(_APP_PATH, 'db_creation.sql')).read()
-        c.executescript(script)
+        res = c.executescript(script)
         self.conn.commit()
 
     def add_user(self, data: dict):
@@ -182,6 +184,73 @@ class DB:
             where r.verdict > 0
             group by 1, 2, 3, 4, 5, 6
         """)
+        rows = cur.fetchall()
+        return rows
+
+    def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int):
+        args = locals()
+        args['ts'] = datetime.now().isoformat()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO written_tasks_queue  ( ts,  student_id,  problem_id,  cur_status)
+            VALUES                           (:ts, :student_id, :problem_id, :cur_status)
+            ON CONFLICT (student_id, problem_id) do nothing 
+        """, args)
+        self.conn.commit()
+        return cur.lastrowid
+
+    def get_written_tasks(self):
+        cur = self.conn.cursor()
+        now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
+        cur.execute("""
+            select * from written_tasks_queue 
+            where cur_status = :WRITTEN_STATUS_NEW or ts < :now_minus_30_min
+            order by ts asc
+            limit :_MAX_WRITTEN_TASKS_TO_SELECT
+        """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS_NEW,
+              '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
+              'now_minus_30_min': now_minus_30_min})
+        rows = cur.fetchall()
+        return rows
+
+    def upd_written_task_status(self, student_id: int, problem_id: int, new_status: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+        UPDATE written_tasks_queue
+        SET cur_status = :new_status
+        where student_id = :student_id and problem_id = :problem_id
+        """, args)
+        self.conn.commit()
+
+    def delete_from_written_task_queue(self, student_id: int, problem_id: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+        DELETE from written_tasks_queue
+        where student_id = :student_id and problem_id = :problem_id
+        """, args)
+        self.conn.commit()
+
+    def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str):
+        args = locals()
+        args['ts'] = datetime.now().isoformat()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO written_tasks_discussions ( ts,  student_id,  problem_id,  teacher_id,  text,  attach_path)
+            VALUES                                (:ts, :student_id, :problem_id, :teacher_id, :text, :attach_path)
+        """, args)
+        self.conn.commit()
+        return cur.lastrowid
+
+    def fetch_written_task_discussion(self, student_id: int, problem_id: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            select * from written_tasks_discussions
+            where student_id = :student_id and problem_id = :problem_id
+            order by ts
+        """, args)
         rows = cur.fetchall()
         return rows
 
@@ -335,8 +404,28 @@ class States:
         db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
 
 
+class WrittenQueue:
+    def add_to_queue(self, student_id: int, problem_id: int, text: str, attach_path: str):
+        db.insert_into_written_task_queue(cur_status=WRITTEN_STATUS_NEW, **locals())
+
+    def take_top(self):
+        return db.get_written_tasks()
+
+    def mark_being_checked(self, student_id: int, problem_id: int):
+        db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_BEING_CHECKED)
+
+    def delete_from_queue(self, student_id: int, problem_id: int):
+        db.delete_from_written_task_queue(student_id, problem_id)
+
+    def add_to_discussions(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int, tg_msg_id: int):
+        db.insert_into_written_task_discussion(**locals())
+
+    def get_discussion(self, student_id: int, problem_id: int):
+        return db.fetch_written_task_discussion(student_id, problem_id)
+
+
 def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
-    global db, users, problems, states
+    global db, users, problems, states, written_queue
     db = DB(db_file)
     users = Users()
     problems = Problems()
@@ -361,7 +450,8 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
         problems = Problems(problems)
     users = Users()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
     problems = Problems()  # TODO Это — долбанный костыль, перечитываем всё из БД
-    return db, users, problems, states
+    written_queue = WrittenQueue()
+    return db, users, problems, states, written_queue
 
 
 if __name__ == '__main__':
@@ -399,9 +489,39 @@ if __name__ == '__main__':
     db.disconnect()
     print('\n' * 10)
     print('self test 2')
-    db, users, problems, states = init_db_and_objects('dummy2')
+    db, users, problems, states, written_queue = init_db_and_objects('dummy2')
     for user in users.all_users:
         print(user)
     for user in problems.all_problems:
         print(user)
     db.disconnect()
+
+    print('written queue test')
+    # def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int):
+    # def get_written_tasks(self):
+    # def upd_written_task_status(self, id: int, new_status: int):
+    # def delete_from_written_task_queue(self, id: int):
+    db, users, problems, states, written_queue = init_db_and_objects('dummy2')
+    db.insert_into_written_task_queue(123, 123, 0)
+    db.insert_into_written_task_queue(123, 123, 0)
+    db.insert_into_written_task_queue(123, 124, 0)
+    db.insert_into_written_task_queue(123, 125, 0)
+    db.insert_into_written_task_queue(123, 123, 0)
+    print(db.get_written_tasks())
+    db.upd_written_task_status(123, 125, 1)
+    print(db.get_written_tasks())
+    db.delete_from_written_task_queue(123, 123)
+    db.delete_from_written_task_queue(123, 124)
+    db.delete_from_written_task_queue(123, 125)
+    print(db.get_written_tasks())
+
+    print('written task discussion')
+    # def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str):
+    # def fetch_written_task_discussion(self, student_id: int, problem_id: int):
+    # db.insert_into_written_task_discussion(123, 123, None, 'Привет', None)
+    # db.insert_into_written_task_discussion(123, 123, None, None, '/foo/baz.txt')
+    # db.insert_into_written_task_discussion(123, 123, 999, 'Ерунда', None)
+    # db.insert_into_written_task_discussion(123, 123, 999, None, '/omg/img.png')
+    for row in db.fetch_written_task_discussion(123, 123): print(row)
+
+    print('written_queue')
