@@ -175,6 +175,7 @@ def build_teacher_actions_keyboard():
 
 def build_teacher_select_written_problem_keyboard(top: list):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
+    print(top)
     for row in top:
         student = users.get_by_id(row['student_id'])
         problem = problems.get_by_id(row['problem_id'])
