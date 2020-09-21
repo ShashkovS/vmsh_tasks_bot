@@ -414,11 +414,14 @@ class WrittenQueue:
     def mark_being_checked(self, student_id: int, problem_id: int):
         db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_BEING_CHECKED)
 
+    def mark_not_being_checked(self, student_id: int, problem_id: int):
+        db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_NEW)
+
     def delete_from_queue(self, student_id: int, problem_id: int):
         db.delete_from_written_task_queue(student_id, problem_id)
 
     def add_to_discussions(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int, tg_msg_id: int):
-        db.insert_into_written_task_discussion(**locals())
+        db.insert_into_written_task_discussion(student_id,  problem_id,  teacher_id,  text,  attach_path)
 
     def get_discussion(self, student_id: int, problem_id: int):
         return db.fetch_written_task_discussion(student_id, problem_id)
