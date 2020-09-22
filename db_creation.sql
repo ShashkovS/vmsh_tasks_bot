@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS written_tasks_discussions
     teacher_id  INTEGER   NULL,
     text        TEXT      NULL,
     attach_path TEXT      NULL,
-    chat_id  INTEGER   NULL,
+    chat_id     INTEGER   NULL,
     tg_msg_id   INTEGER   NULL,
     FOREIGN KEY (student_id) REFERENCES users (id),
     FOREIGN KEY (teacher_id) REFERENCES users (id),

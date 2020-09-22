@@ -99,7 +99,9 @@ class DB:
             VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id) 
             ON CONFLICT (user_id) DO UPDATE SET 
             state = :state,
-            problem_id = :problem_id
+            problem_id = :problem_id,
+            last_student_id = :last_student_id,
+            last_teacher_id = :last_teacher_id
         """, args)
         cur.execute("""
             INSERT INTO states_log  ( user_id,  state,  problem_id,  ts)
@@ -127,6 +129,18 @@ class DB:
         rows = cur.fetchall()
         solved_ids = {row['problem_id'] for row in rows}
         return solved_ids
+
+    def check_student_sent_written(self, student_id: int, list: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            select w.problem_id from written_tasks_queue w
+            join problems p on w.problem_id = p.id
+            where w.student_id = :student_id and p.list = :list
+        """, args)
+        rows = cur.fetchall()
+        being_checked_ids = {row['problem_id'] for row in rows}
+        return being_checked_ids
 
     def add_message_to_log(self, from_bot: bool, tg_msg_id: int, chat_id: int,
                            student_id: int, teacher_id: int, msg_text: str, attach_path: str):
@@ -232,13 +246,13 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str):
+    def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int, tg_msg_id: int):
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
-            INSERT INTO written_tasks_discussions ( ts,  student_id,  problem_id,  teacher_id,  text,  attach_path)
-            VALUES                                (:ts, :student_id, :problem_id, :teacher_id, :text, :attach_path)
+            INSERT INTO written_tasks_discussions ( ts,  student_id,  problem_id,  teacher_id,  text,  attach_path,  chat_id,  tg_msg_id)
+            VALUES                                (:ts, :student_id, :problem_id, :teacher_id, :text, :attach_path, :chat_id, :tg_msg_id)
         """, args)
         self.conn.commit()
         return cur.lastrowid
@@ -405,8 +419,8 @@ class States:
 
 
 class WrittenQueue:
-    def add_to_queue(self, student_id: int, problem_id: int, text: str, attach_path: str):
-        db.insert_into_written_task_queue(cur_status=WRITTEN_STATUS_NEW, **locals())
+    def add_to_queue(self, student_id: int, problem_id: int):
+        db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS_NEW)
 
     def take_top(self):
         return db.get_written_tasks()
@@ -421,7 +435,7 @@ class WrittenQueue:
         db.delete_from_written_task_queue(student_id, problem_id)
 
     def add_to_discussions(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int, tg_msg_id: int):
-        db.insert_into_written_task_discussion(student_id,  problem_id,  teacher_id,  text,  attach_path)
+        db.insert_into_written_task_discussion(student_id,  problem_id,  teacher_id,  text,  attach_path, chat_id, tg_msg_id)
 
     def get_discussion(self, student_id: int, problem_id: int):
         return db.fetch_written_task_discussion(student_id, problem_id)

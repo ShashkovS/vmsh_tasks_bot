@@ -109,9 +109,10 @@ async def prc_WTF(message: types.Message, user: db_helper.User):
 
 def build_problems_keyboard(lesson_num: int, user: db_helper.User):
     solved = db.check_student_solved(user.id, lesson_num)
+    being_checked = db.check_student_sent_written(user.id, lesson_num)
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     for problem in problems.get_by_lesson(lesson_num):
-        tick = '✅' if problem.id in solved else '⬜'
+        tick = '✅' if problem.id in solved else '❓' if problem.id in being_checked else '⬜'
         task_button = types.InlineKeyboardButton(
             text=f"{tick} {problem}",
             callback_data=f"{CALLBACK_PROBLEM_SELECTED}_{problem.id}"
@@ -223,7 +224,10 @@ async def prc_get_task_info_state(message, user: db_helper.User):
 
 
 async def prc_sending_solution_state(message: types.Message, user: db_helper.User):
+    problem_id = states.get_by_user_id(user.id)['problem_id']
+    problem = problems.get_by_id(problem_id)
     downloaded = []
+    file_name = None
     text = message.text
     if text:
         downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
@@ -245,8 +249,6 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         downloaded.append((downloaded_file, filename))
     for bin_data, filename in downloaded:
         ext = filename[filename.rfind('.') + 1:]
-        problem_id = states.get_by_user_id(user.id)['problem_id']
-        problem = problems.get_by_id(problem_id)
         cur_ts = datetime.datetime.now().isoformat().replace(':', '-')
         file_name = os.path.join(SOLS_PATH,
                                  f'{user.token} {user.surname} {user.name}',
@@ -256,6 +258,8 @@ async def prc_sending_solution_state(message: types.Message, user: db_helper.Use
         db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, file_name)
         with open(file_name, 'wb') as file:
             file.write(bin_data.read())
+    written_queue.add_to_queue(user.id, problem.id)
+    written_queue.add_to_discussions(user.id, problem.id, None, text, file_name, message.chat.id, message.message_id)
     await bot.send_message(
         chat_id=message.chat.id,
         text="Принято на проверку"
@@ -340,11 +344,7 @@ async def process_regular_message(message: types.Message):
 async def start(message: types.Message):
     user = users.get_by_chat_id(message.chat.id)
     if user:
-        user.set_chat_id(None)
-        if user.type == USER_TYPE_STUDENT:
-            states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-        elif user.type == USER_TYPE_TEACHER:
-            states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
+        states.set_by_user_id(user.id, STATE_GET_USER_INFO)
     await bot.send_message(
         chat_id=message.chat.id,
         text="🤖 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
@@ -502,19 +502,20 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, user: d
     problem = problems.get_by_id(int(problem_id))
     # TODO Проверить, что никто ещё не взялся проверять эту задачу
     await bot_edit_message_text(chat_id=chat_id, message_id=query.message.message_id,
-                                text=f"Отлично, проверяем задачу {problem.list}.{problem.prob}{problem.item} ({problem.title})\n"
-                                     f"Пересылаю всю переписку.\n"
+                                text=f"Проверяем задачу {problem.list}.{problem.prob}{problem.item} ({problem.title})\n"
                                      f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
                                 reply_markup=None)
     discussion = written_queue.get_discussion(student.id, problem.id)
     for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не привысить лимит
         # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
-        # if row['chat_id'] and row['tg_msg_id']:
-        #     try:
-        #         await bot.forward_message(query.message.chat.id, row['chat_id'], row['tg_msg_id'])
-        #     except aiogram.utils.exceptions.ChatNotFound:
-        #         await bot.send_message(chat_id=chat_id, text='Сообщение было удалено...')
-        if False:
+        forward_success = False
+        if row['chat_id'] and row['tg_msg_id']:
+            try:
+                await bot.forward_message(query.message.chat.id, row['chat_id'], row['tg_msg_id'])
+                forward_success = True
+            except aiogram.utils.exceptions.ChatNotFound:
+                await bot.send_message(chat_id=chat_id, text='Сообщение было удалено...')
+        if forward_success:
             pass
         elif row['text']:
             await bot.send_message(chat_id=chat_id, text=row['text'])
@@ -523,12 +524,11 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, user: d
             path = row['attach_path'].replace('/web/vmsh179bot/vmsh179bot/', '')
             input_file = types.input_file.InputFile(path)
             await bot.send_photo(chat_id=chat_id, photo=input_file)
+    states.set_by_user_id(user.id, STATE_TEACHER_IS_CHECKING_TASK, problem.id, last_teacher_id=user.id, last_student_id=student.id)
     await bot.send_message(chat_id=chat_id,
                            text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
-                                'Теперь вы можете несколькими сообщениями отправить текстовые комментарии 📈 или скриншоты 📸 вашей проверки.\n'
-                                'Также можно просто поставить плюсик, выбрать стандартный вердикт или отменить всё',
+                                'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)',
                            reply_markup=build_written_task_checking_verdict_keyboard(student, problem))
-    states.set_by_user_id(user.id, STATE_TEACHER_IS_CHECKING_TASK, problem.id, last_teacher_id=user.id, last_student_id=student.id)
     await bot_answer_callback_query(query.id)
 
 
@@ -567,15 +567,16 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, user: db_hel
     # Пересылаем переписку школьнику
     student_chat_id = users.get_by_id(student.id).chat_id
     try:
+        discussion = written_queue.get_discussion(student.id, problem.id)
+        print(discussion)
         await bot.send_message(chat_id=student_chat_id,
                                text=f"Задачу {problem.list}.{problem.prob}{problem.item} ({problem.title}) проверили и сделали замечания:\n"
                                     f"Пересылаю всю переписку.\n"
                                     f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇")
-        discussion = written_queue.get_discussion(student.id, problem.id)
         for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не привысить лимит
             # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
             if row['chat_id'] and row['tg_msg_id']:
-                await bot.forward_message(query.message.chat.id, row['chat_id'], row['tg_msg_id'])
+                await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'])
             elif row['text']:
                 await bot.send_message(chat_id=student_chat_id, text=row['text'])
             elif row['attach_path']:
