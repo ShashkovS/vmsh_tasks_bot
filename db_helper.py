@@ -408,7 +408,7 @@ class Problems:
         return self.by_id.get(key, None)
 
     def get_by_key(self, list: int, prob: int, item: ''):
-        return self.by_id.get((list, prob, item), None)
+        return self.by_key.get((list, prob, item), None)
 
     def get_by_lesson(self, lesson: int):
         return self.by_list.get(lesson, list())

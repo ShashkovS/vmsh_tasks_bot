@@ -351,6 +351,27 @@ async def start(message: types.Message):
     )
 
 
+async def recheck(message: types.Message):
+    match = re.fullmatch(r'/recheck_xd5fqk\s+(\w{6})\s+(\d+)\.(\d+)([а-я]?)\s*', message.text or '')
+    if not match:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Пришлите запрос на перепроверку в формате «/recheck_xd5fqk token problem», например «/recheck_xd5fqk aa9bb4 3.11а»",
+        )
+    else:
+        token, lst, prob, item = match.groups()
+        student = users.get_by_token(token)
+        problem = problems.get_by_key(int(lst), int(prob), item)
+        if not student:
+            await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
+        if not problem:
+            await bot.send_message(chat_id=message.chat.id, text=f"🤖 Задача {lst}.{prob}{item} не найдена")
+        if student and problem:
+            written_queue.add_to_queue(student.id, problem.id)
+            await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
+    print(message)
+
+
 async def sos(message: types.Message):
     user = users.get_by_chat_id(message.chat.id)
     if not user:
@@ -580,7 +601,9 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_help
             await bot.send_message(chat_id=student_chat_id,
                                    text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
                                    disable_notification=True)
-    except (aiogram.utils.exceptions.ChatNotFound, aiogram.utils.exceptions.MessageToForwardNotFound):
+    except (aiogram.utils.exceptions.ChatNotFound,
+            aiogram.utils.exceptions.MessageToForwardNotFound,
+            aiogram.utils.exceptions.ChatIdIsEmpty,):
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
     await process_regular_message(query.message)
 
@@ -618,7 +641,9 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, user: db_hel
         await bot.send_message(chat_id=student_chat_id,
                                text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
                                disable_notification=True)
-    except (aiogram.utils.exceptions.ChatNotFound, aiogram.utils.exceptions.MessageToForwardNotFound):
+    except (aiogram.utils.exceptions.ChatNotFound,
+            aiogram.utils.exceptions.MessageToForwardNotFound,
+            aiogram.utils.exceptions.ChatIdIsEmpty,):
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
     states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
     await bot_answer_callback_query(query.id)
@@ -671,6 +696,7 @@ async def on_startup(app):
         await check_webhook()
     dispatcher.register_message_handler(start, commands=['start'])
     dispatcher.register_message_handler(sos, commands=['sos'])
+    dispatcher.register_message_handler(recheck, commands=['recheck_xd5fqk'])
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
     dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
     dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
