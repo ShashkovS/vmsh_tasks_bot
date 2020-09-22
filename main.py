@@ -511,9 +511,9 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, user: d
         forward_success = False
         if row['chat_id'] and row['tg_msg_id']:
             try:
-                await bot.forward_message(query.message.chat.id, row['chat_id'], row['tg_msg_id'])
+                await bot.forward_message(chat_id, row['chat_id'], row['tg_msg_id'])
                 forward_success = True
-            except aiogram.utils.exceptions.ChatNotFound:
+            except (aiogram.utils.exceptions.ChatNotFound, aiogram.utils.exceptions.MessageToForwardNotFound):
                 await bot.send_message(chat_id=chat_id, text='Сообщение было удалено...')
         if forward_success:
             pass
@@ -572,7 +572,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_help
             await bot.send_message(chat_id=student_chat_id,
                                    text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
                                    disable_notification=True)
-    except aiogram.utils.exceptions.ChatNotFound:
+    except (aiogram.utils.exceptions.ChatNotFound, aiogram.utils.exceptions.MessageToForwardNotFound):
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
     states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
     await process_regular_message(query.message)
@@ -611,7 +611,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, user: db_hel
         await bot.send_message(chat_id=student_chat_id,
                                text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
                                disable_notification=True)
-    except aiogram.utils.exceptions.ChatNotFound:
+    except (aiogram.utils.exceptions.ChatNotFound, aiogram.utils.exceptions.MessageToForwardNotFound):
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
     states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
     await bot_answer_callback_query(query.id)
