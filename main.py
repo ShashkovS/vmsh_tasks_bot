@@ -547,7 +547,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_help
     try:
         discussion = written_queue.get_discussion(student.id, problem.id)
         # Находим последнее сообщение школьника
-        last_pup_post = max([rn for rn in range(len(discussion)) if discussion[rn]['teacher_id'] is None] + [len(discussion)])
+        last_pup_post = max([rn for rn in range(len(discussion)) if discussion[rn]['teacher_id'] is None] + [-2])
         teacher_comments = discussion[last_pup_post + 1:]
         if not teacher_comments:
             await bot.send_message(chat_id=student_chat_id,
