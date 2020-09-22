@@ -246,9 +246,10 @@ class DB:
         cur.execute("""
         UPDATE written_tasks_queue
         SET cur_status = :new_status
-        where student_id = :student_id and problem_id = :problem_id
+        where student_id = :student_id and problem_id = :problem_id and cur_status != :new_status
         """, args)
         self.conn.commit()
+        return cur.rowcount
 
     def delete_from_written_task_queue(self, student_id: int, problem_id: int):
         args = locals()
@@ -439,7 +440,8 @@ class WrittenQueue:
         return db.get_written_tasks()
 
     def mark_being_checked(self, student_id: int, problem_id: int):
-        db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_BEING_CHECKED)
+        updated_rows = db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_BEING_CHECKED)
+        return updated_rows > 0
 
     def mark_not_being_checked(self, student_id: int, problem_id: int):
         db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_NEW)

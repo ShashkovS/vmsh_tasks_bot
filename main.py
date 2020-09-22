@@ -500,9 +500,17 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, user: d
     _, student_id, problem_id = query.data.split('_')
     student = users.get_by_id(int(student_id))
     problem = problems.get_by_id(int(problem_id))
-    # TODO Проверить, что никто ещё не взялся проверять эту задачу
+    await bot_answer_callback_query(query.id)
+    # Блокируем задачу
+    is_unlocked = written_queue.mark_being_checked(student.id, problem.id)
+    if not is_unlocked:
+        await bot.send_message(chat_id=chat_id, text='Эту задачу уже кто-то взялся проверять.')
+        states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
+        await process_regular_message(query.message)
+        return
     await bot_edit_message_text(chat_id=chat_id, message_id=query.message.message_id,
                                 text=f"Проверяем задачу {problem.list}.{problem.prob}{problem.item} ({problem.title})\n"
+                                     f"Школьник {student.token} {student.surname} {student.name}"
                                      f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
                                 reply_markup=None)
     discussion = written_queue.get_discussion(student.id, problem.id)
@@ -529,7 +537,6 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, user: d
                            text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
                                 'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)',
                            reply_markup=build_written_task_checking_verdict_keyboard(student, problem))
-    await bot_answer_callback_query(query.id)
 
 
 async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_helper.User):
@@ -542,7 +549,8 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_help
     written_queue.delete_from_queue(student.id, problem.id)
     await bot_answer_callback_query(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text='✔ Отлично, поставили плюсик!')
+                           text=f'✔ Отлично, поставили плюсик за задачу {problem.list}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!')
+    states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
     student_chat_id = users.get_by_id(student.id).chat_id
     try:
         discussion = written_queue.get_discussion(student.id, problem.id)
@@ -574,7 +582,6 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_help
                                    disable_notification=True)
     except (aiogram.utils.exceptions.ChatNotFound, aiogram.utils.exceptions.MessageToForwardNotFound):
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
-    states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
     await process_regular_message(query.message)
 
 
@@ -587,7 +594,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, user: db_hel
     db.add_result(student.id, problem.id, problem.list, user.id, VERDICT_WRONG_ANSWER, None)
     written_queue.delete_from_queue(student.id, problem.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text='❌ Эх, поставили минусик!')
+                           text='❌ Эх, поставили минусик за задачу {problem.list}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!')
 
     # Пересылаем переписку школьнику
     student_chat_id = users.get_by_id(student.id).chat_id
