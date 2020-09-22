@@ -173,7 +173,7 @@ class DB:
             SET chat_id = :chat_id
             WHERE id = :user_id
             """, args)
-        except sqlite3.IntegrityError:
+        except:
             # Мы под одним телеграм-юзером хотим зайти под разными vmsh-юзерами. Нужно сбросить chat_id
             cur.execute("""
             UPDATE users
