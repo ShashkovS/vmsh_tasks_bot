@@ -178,7 +178,7 @@ class DB:
             cur.execute("""
             UPDATE users
             SET chat_id = NULL
-            WHERE chat_id = (select chat_id from users where id = :user_id)
+            WHERE chat_id = :chat_id
             """, args)
             cur.execute("""
             UPDATE users
