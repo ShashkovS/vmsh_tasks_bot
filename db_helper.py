@@ -167,11 +167,24 @@ class DB:
     def set_user_chat_id(self, user_id: int, chat_id: int):
         args = locals()
         cur = self.conn.cursor()
-        cur.execute("""
-        UPDATE users
-        SET chat_id = :chat_id
-        WHERE id = :user_id
-        """, args)
+        try:
+            cur.execute("""
+            UPDATE users
+            SET chat_id = :chat_id
+            WHERE id = :user_id
+            """, args)
+        except sqlite3.IntegrityError:
+            # Мы под одним телеграм-юзером хотим зайти под разными vmsh-юзерами. Нужно сбросить chat_id
+            cur.execute("""
+            UPDATE users
+            SET chat_id = NULL
+            WHERE chat_id = (select chat_id from users where id = :user_id)
+            """, args)
+            cur.execute("""
+            UPDATE users
+            SET chat_id = :chat_id
+            WHERE id = :user_id
+            """, args)
         self.conn.commit()
 
     def fetch_all_users(self):
