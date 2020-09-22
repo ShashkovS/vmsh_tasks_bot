@@ -351,6 +351,27 @@ async def start(message: types.Message):
     )
 
 
+async def recheck(message: types.Message):
+    match = re.fullmatch(r'/recheck_xd5fqk\s+(\w{6})\s+(\d+)\.(\d+)([а-я]?)\s*', message.text or '')
+    if not match:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Пришлите запрос на перепроверку в формате «/recheck_xd5fqk token problem», например «/recheck_xd5fqk aa9bb4 3.11а»",
+        )
+    else:
+        token, lst, prob, item = match.groups()
+        student = users.get_by_token(token)
+        problem = problems.get_by_key(int(lst), int(prob), item)
+        if not student:
+            await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
+        if not problem:
+            await bot.send_message(chat_id=message.chat.id, text=f"🤖 Задача {lst}.{prob}{item} не найдена")
+        if student and problem:
+            written_queue.add_to_queue(student.id, problem.id)
+            await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
+    print(message)
+
+
 async def sos(message: types.Message):
     user = users.get_by_chat_id(message.chat.id)
     if not user:
@@ -500,9 +521,17 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, user: d
     _, student_id, problem_id = query.data.split('_')
     student = users.get_by_id(int(student_id))
     problem = problems.get_by_id(int(problem_id))
-    # TODO Проверить, что никто ещё не взялся проверять эту задачу
+    await bot_answer_callback_query(query.id)
+    # Блокируем задачу
+    is_unlocked = written_queue.mark_being_checked(student.id, problem.id)
+    if not is_unlocked:
+        await bot.send_message(chat_id=chat_id, text='Эту задачу уже кто-то взялся проверять.')
+        states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
+        await process_regular_message(query.message)
+        return
     await bot_edit_message_text(chat_id=chat_id, message_id=query.message.message_id,
                                 text=f"Проверяем задачу {problem.list}.{problem.prob}{problem.item} ({problem.title})\n"
+                                     f"Школьник {student.token} {student.surname} {student.name}"
                                      f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
                                 reply_markup=None)
     discussion = written_queue.get_discussion(student.id, problem.id)
@@ -529,7 +558,6 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, user: d
                            text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
                                 'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)',
                            reply_markup=build_written_task_checking_verdict_keyboard(student, problem))
-    await bot_answer_callback_query(query.id)
 
 
 async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_helper.User):
@@ -542,7 +570,8 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_help
     written_queue.delete_from_queue(student.id, problem.id)
     await bot_answer_callback_query(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text='✔ Отлично, поставили плюсик!')
+                           text=f'✔ Отлично, поставили плюсик за задачу {problem.list}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!')
+    states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
     student_chat_id = users.get_by_id(student.id).chat_id
     try:
         discussion = written_queue.get_discussion(student.id, problem.id)
@@ -572,9 +601,10 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_help
             await bot.send_message(chat_id=student_chat_id,
                                    text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
                                    disable_notification=True)
-    except (aiogram.utils.exceptions.ChatNotFound, aiogram.utils.exceptions.MessageToForwardNotFound):
+    except (aiogram.utils.exceptions.ChatNotFound,
+            aiogram.utils.exceptions.MessageToForwardNotFound,
+            aiogram.utils.exceptions.ChatIdIsEmpty,):
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
-    states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
     await process_regular_message(query.message)
 
 
@@ -587,7 +617,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, user: db_hel
     db.add_result(student.id, problem.id, problem.list, user.id, VERDICT_WRONG_ANSWER, None)
     written_queue.delete_from_queue(student.id, problem.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text='❌ Эх, поставили минусик!')
+                           text='❌ Эх, поставили минусик за задачу {problem.list}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!')
 
     # Пересылаем переписку школьнику
     student_chat_id = users.get_by_id(student.id).chat_id
@@ -611,7 +641,9 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, user: db_hel
         await bot.send_message(chat_id=student_chat_id,
                                text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
                                disable_notification=True)
-    except (aiogram.utils.exceptions.ChatNotFound, aiogram.utils.exceptions.MessageToForwardNotFound):
+    except (aiogram.utils.exceptions.ChatNotFound,
+            aiogram.utils.exceptions.MessageToForwardNotFound,
+            aiogram.utils.exceptions.ChatIdIsEmpty,):
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
     states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
     await bot_answer_callback_query(query.id)
@@ -664,6 +696,7 @@ async def on_startup(app):
         await check_webhook()
     dispatcher.register_message_handler(start, commands=['start'])
     dispatcher.register_message_handler(sos, commands=['sos'])
+    dispatcher.register_message_handler(recheck, commands=['recheck_xd5fqk'])
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
     dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
     dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)

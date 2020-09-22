@@ -11,6 +11,7 @@ from results r
 join users u on r.student_id = u.id
 join problems p on r.problem_id = p.id
 where r.verdict > 0 and (u.type = 1 and token not like 'pass%')
+and p.list = 3
 ''')
 rows = set(cur.fetchall())
 pupils = sorted({x[0] for x in rows})
