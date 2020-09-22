@@ -214,9 +214,9 @@ class DB:
         rows = cur.fetchall()
         return rows
 
-    def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int):
+    def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int, ts: datetime = None):
         args = locals()
-        args['ts'] = datetime.now().isoformat()
+        args['ts'] = args['ts'] or datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
             INSERT INTO written_tasks_queue  ( ts,  student_id,  problem_id,  cur_status)
@@ -433,8 +433,8 @@ class States:
 
 
 class WrittenQueue:
-    def add_to_queue(self, student_id: int, problem_id: int):
-        db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS_NEW)
+    def add_to_queue(self, student_id: int, problem_id: int, ts: datetime = None):
+        db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS_NEW, ts=ts)
 
     def take_top(self):
         return db.get_written_tasks()

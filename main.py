@@ -367,7 +367,7 @@ async def recheck(message: types.Message):
         if not problem:
             await bot.send_message(chat_id=message.chat.id, text=f"🤖 Задача {lst}.{prob}{item} не найдена")
         if student and problem:
-            written_queue.add_to_queue(student.id, problem.id)
+            written_queue.add_to_queue(student.id, problem.id, ts=datetime.datetime(1, 1, 1))
             await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
     print(message)
 
