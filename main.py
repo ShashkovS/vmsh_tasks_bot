@@ -617,7 +617,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, user: db_hel
     db.add_result(student.id, problem.id, problem.list, user.id, VERDICT_WRONG_ANSWER, None)
     written_queue.delete_from_queue(student.id, problem.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text='❌ Эх, поставили минусик за задачу {problem.list}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!')
+                           text=f'❌ Эх, поставили минусик за задачу {problem.list}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!')
 
     # Пересылаем переписку школьнику
     student_chat_id = users.get_by_id(student.id).chat_id
