@@ -546,7 +546,8 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_help
     student_chat_id = users.get_by_id(student.id).chat_id
     try:
         await bot.send_message(chat_id=student_chat_id,
-                               text=f"Задачу {problem.list}.{problem.prob}{problem.item} ({problem.title}) проверили и поставили плюсик!")
+                               text=f"Задачу {problem.list}.{problem.prob}{problem.item} ({problem.title}) проверили и поставили плюсик!",
+                               disable_notification=True)
     except aiogram.utils.exceptions.ChatNotFound:
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
     states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
@@ -572,19 +573,21 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, user: db_hel
         await bot.send_message(chat_id=student_chat_id,
                                text=f"Задачу {problem.list}.{problem.prob}{problem.item} ({problem.title}) проверили и сделали замечания:\n"
                                     f"Пересылаю всю переписку.\n"
-                                    f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇")
+                                    f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
+                               disable_notification=True)
         for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не привысить лимит
             # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
             if row['chat_id'] and row['tg_msg_id']:
-                await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'])
+                await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
             elif row['text']:
-                await bot.send_message(chat_id=student_chat_id, text=row['text'])
+                await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
             elif row['attach_path']:
                 # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
                 input_file = types.input_file.InputFile(row['attach_path'])
-                await bot.send_photo(chat_id=student_chat_id, photo=input_file)
+                await bot.send_photo(chat_id=student_chat_id, photo=input_file, disable_notification=True)
         await bot.send_message(chat_id=student_chat_id,
-                               text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n')
+                               text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
+                               disable_notification=True)
     except aiogram.utils.exceptions.ChatNotFound:
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
     states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
