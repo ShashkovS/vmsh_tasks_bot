@@ -17,6 +17,8 @@ problems = None
 states = None
 written_queue = None
 
+RU_TO_EN = str.maketrans('УКЕНХВАРОСМТукехарос', 'YKEHXBAPOCMTykexapoc')
+
 
 class DB:
     """Класс, реализующий все взаимодействия с БД"""
@@ -327,14 +329,14 @@ class Users:
 
             self.all_users.append(user)
             self.by_chat_id[user.chat_id] = user
-            self.by_token[user.token] = user
+            self.by_token[user.token.strip().translate(RU_TO_EN).lower()] = user
             self.by_id[user.id] = user
 
     def get_by_chat_id(self, key):
         return self.by_chat_id.get(key, None)
 
     def get_by_token(self, key):
-        return self.by_token.get(key, None)
+        return self.by_token.get(key.strip().translate(RU_TO_EN).lower(), None)
 
     def get_by_id(self, key):
         return self.by_id.get(key, None)
