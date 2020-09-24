@@ -336,6 +336,8 @@ class Users:
         return self.by_chat_id.get(key, None)
 
     def get_by_token(self, key):
+        if not key:
+            return None
         return self.by_token.get(key.strip().translate(RU_TO_EN).lower(), None)
 
     def get_by_id(self, key):

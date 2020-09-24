@@ -603,8 +603,9 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, user: db_help
                                    disable_notification=True)
     except (aiogram.utils.exceptions.ChatNotFound,
             aiogram.utils.exceptions.MessageToForwardNotFound,
-            aiogram.utils.exceptions.ChatIdIsEmpty,):
-        logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
+            aiogram.utils.exceptions.BotBlocked,
+            aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
+        logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}\n{e}')
     await process_regular_message(query.message)
 
 
@@ -643,8 +644,9 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, user: db_hel
                                disable_notification=True)
     except (aiogram.utils.exceptions.ChatNotFound,
             aiogram.utils.exceptions.MessageToForwardNotFound,
-            aiogram.utils.exceptions.ChatIdIsEmpty,):
-        logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}')
+            aiogram.utils.exceptions.BotBlocked,
+            aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
+        logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}\n{e}')
     states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
     await bot_answer_callback_query(query.id)
     await process_regular_message(query.message)
