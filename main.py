@@ -17,7 +17,7 @@ from aiogram.utils.exceptions import MessageNotModified
 logging.basicConfig(level=logging.INFO)
 
 if os.environ.get('PROD', None) == 'true':
-    logging.info('*' * 50)
+    logging.info(('*' * 50 + '\n') * 5)
     logging.info('Production mode')
     logging.info('*' * 50)
     API_TOKEN = open('creds_prod/telegram_bot_key_prod').read().strip()
@@ -176,7 +176,6 @@ def build_teacher_actions_keyboard():
 
 def build_teacher_select_written_problem_keyboard(top: list):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
-    print(top)
     for row in top:
         student = users.get_by_id(row['student_id'])
         problem = problems.get_by_id(row['problem_id'])
@@ -369,7 +368,6 @@ async def recheck(message: types.Message):
         if student and problem:
             written_queue.add_to_queue(student.id, problem.id, ts=datetime.datetime(1, 1, 1))
             await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
-    print(message)
 
 
 async def sos(message: types.Message):
@@ -491,7 +489,6 @@ async def prc_cancel_task_submission_callback(query: types.CallbackQuery, user: 
 
 
 async def prc_get_written_task_callback(query: types.CallbackQuery, user: db_helper.User):
-    print(user)
     # Так, препод указал, что хочет проверять письменные задачи
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
     top = written_queue.take_top()
@@ -714,6 +711,7 @@ async def on_shutdown(app):
     # Close all connections.
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
+    db.disconnect()
     logging.warning('Bye!')
 
 
