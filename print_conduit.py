@@ -10,14 +10,15 @@ cur = conn.cursor()
 cur.execute('''
     select distinct
     u.token || '	' || u.surname || '	' || u.name as user,
-    p.list || '.' || p.prob  || p.item as prob
+    p.list || '.' || p.prob  || p.item as prob,
+    max(r.verdict)
     from users u 
     join results r on r.student_id = u.id 
     join problems p on r.problem_id = p.id
-    where r.verdict > 0 and (u.type = 1 and token not like 'pass%')
-    and p.list = 3
-''')
-rows = set(cur.fetchall())
+    where (u.type = 1 and token not like 'pass%') and p.list = :NLIST
+    group by 1, 2
+''', globals())
+results = {(r[0], r[1]): str(max(r[2], 0)) for r in cur.fetchall()}
 
 cur.execute('''
     select u.token || '	' || u.surname || '	' || u.name as user
@@ -49,7 +50,7 @@ for r, pupil in enumerate(pupils, start=1):
 
 for r, pupil in enumerate(pupils, start=1):
     for c, (formatted, problem) in enumerate(formated_problems, start=1):
-        table[r][c] = '1' if (pupil, problem) in rows else ''
+        table[r][c] = results.get((pupil, problem), '')
 
 stable = '\n'.join('\t'.join(row) for row in table)
 pyperclip.copy(stable)
