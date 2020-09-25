@@ -16,6 +16,7 @@ users = None
 problems = None
 states = None
 written_queue = None
+waitlist = None
 
 RU_TO_EN = str.maketrans('УКЕНХВАРОСМТукехарос', 'YKEHXBAPOCMTykexapoc')
 
@@ -92,13 +93,13 @@ class DB:
         return rows
 
     def update_state(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                     last_teacher_id: int = 0):
+                     last_teacher_id: int = 0, oral_problem_id: int = None):
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
-            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id)
-            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id) 
+            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id,  oral_problem_id)
+            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id, :oral_problem_id) 
             ON CONFLICT (user_id) DO UPDATE SET 
             state = :state,
             problem_id = :problem_id,
@@ -108,6 +109,15 @@ class DB:
         cur.execute("""
             INSERT INTO states_log  ( user_id,  state,  problem_id,  ts)
             VALUES                  (:user_id, :state, :problem_id, :ts) 
+        """, args)
+        self.conn.commit()
+
+    def update_oral_problem(self, user_id: int, oral_problem_id: int = None):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            UPDATE states SET oral_problem_id = :oral_problem_id
+            WHERE user_id = :user_id
         """, args)
         self.conn.commit()
 
@@ -154,6 +164,35 @@ class DB:
             VALUES                    (:from_bot, :tg_msg_id, :chat_id, :student_id, :teacher_id, :ts, :msg_text, :attach_path) 
         """, args)
         self.conn.commit()
+
+    def add_user_to_waitlist(self, student_id: int, problem_id: int):
+        args = locals()
+        args['ts'] = datetime.now().isoformat()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO waitlist  ( student_id, entered, problem_id )
+            VALUES                (:student_id, :ts,    :problem_id )
+        """, args)
+        self.conn.commit()
+
+    def remove_user_from_waitlist(self, student_id: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            DELETE FROM waitlist
+            WHERE  student_id = :student_id
+        """, args)
+        self.conn.commit()
+
+    def get_waitlist_top(self, top_n: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            SELECT * FROM waitlist
+            ORDER BY entered ASC
+            LIMIT :top_n
+        """, args)
+        return cur.fetchall()
 
     def fetch_one_state(self, user_id: int):
         cur = self.conn.cursor()
@@ -308,6 +347,9 @@ class User:
         self.chat_id = chat_id
         db.set_user_chat_id(self.id, self.chat_id)
 
+    def __str__(self):
+        return f'{self.name} {self.middlename} {self.surname}'
+
 
 class Users:
     def __init__(self, rows=None):
@@ -432,8 +474,21 @@ class States:
         return db.fetch_one_state(user_id)
 
     def set_by_user_id(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                       last_teacher_id: int = 0):
-        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
+                       last_teacher_id: int = 0, oral_problem_id: int = None):
+        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id, oral_problem_id)
+
+
+class Waitlist:
+    def enter(self, student_id: int, problem_id: int):
+        db.update_oral_problem(student_id, problem_id)
+        db.add_user_to_waitlist(student_id, problem_id)
+
+    def leave(self, student_id: int):
+        db.update_oral_problem(student_id, None)
+        db.remove_user_from_waitlist(student_id)
+
+    def top(self, n: int = 10) -> list:
+        return db.get_waitlist_top(n)
 
 
 class WrittenQueue:
@@ -461,7 +516,7 @@ class WrittenQueue:
 
 
 def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
-    global db, users, problems, states, written_queue
+    global db, users, problems, states, written_queue, waitlist
     db = DB(db_file)
     users = Users()
     problems = Problems()
@@ -487,7 +542,8 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
     users = Users()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
     problems = Problems()  # TODO Это — долбанный костыль, перечитываем всё из БД
     written_queue = WrittenQueue()
-    return db, users, problems, states, written_queue
+    waitlist = Waitlist()
+    return db, users, problems, states, written_queue, waitlist
 
 
 if __name__ == '__main__':
@@ -522,10 +578,32 @@ if __name__ == '__main__':
     print(problems.get_by_key(1, 1, 'бs'))
     print(len(problems))
 
+    waitlist = Waitlist()
+    states = States()
+    for i in range(1, 15):
+        waitlist.enter(i, i)
+        states.set_by_user_id(i, STATE_SENDING_SOLUTION, i)
+
+    print('WL: add 14 people')
+    wl = waitlist.top()
+    for r in wl:
+        print('wl entry = ', r)
+        print('user state = ', states.get_by_user_id(r['student_id']))
+        waitlist.leave(r['student_id'])
+    print('States after leaving waitlist:')
+    for r in wl:
+        print('user state = ', states.get_by_user_id(r['student_id']))
+
+    print('WL: new top')
+    wl = waitlist.top()
+    for r in wl:
+        print(r)
+        waitlist.leave(r['student_id'])
+
     db.disconnect()
     print('\n' * 10)
     print('self test 2')
-    db, users, problems, states, written_queue = init_db_and_objects('dummy2')
+    db, users, problems, states, written_queue, waitlist = init_db_and_objects('dummy2')
     for user in users.all_users:
         print(user)
     for user in problems.all_problems:
@@ -537,7 +615,7 @@ if __name__ == '__main__':
     # def get_written_tasks(self):
     # def upd_written_task_status(self, id: int, new_status: int):
     # def delete_from_written_task_queue(self, id: int):
-    db, users, problems, states, written_queue = init_db_and_objects('dummy2')
+    db, users, problems, states, written_queue, waitlist = init_db_and_objects('dummy2')
     db.insert_into_written_task_queue(123, 123, 0)
     db.insert_into_written_task_queue(123, 123, 0)
     db.insert_into_written_task_queue(123, 124, 0)

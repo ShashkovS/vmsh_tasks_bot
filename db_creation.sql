@@ -35,11 +35,14 @@ CREATE TABLE IF NOT EXISTS states
     problem_id      INTEGER NULL,
     last_student_id INTEGER NULL,
     last_teacher_id INTEGER NULL,
+    oral_problem_id INTEGER NULL,  -- не NULL, если стоит в очереди сдавать эту задачу
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (problem_id) REFERENCES problems (id),
     FOREIGN KEY (last_student_id) REFERENCES users (id),
-    FOREIGN KEY (last_teacher_id) REFERENCES users (id)
+    FOREIGN KEY (last_teacher_id) REFERENCES users (id),
+    FOREIGN KEY (oral_problem_id) REFERENCES users (id)
 );
+-- TODO Add alter table!!!
 
 CREATE TABLE IF NOT EXISTS results
 (
@@ -82,6 +85,18 @@ CREATE TABLE IF NOT EXISTS messages_log
     FOREIGN KEY (student_id) REFERENCES users (id),
     FOREIGN KEY (teacher_id) REFERENCES users (id)
 );
+
+CREATE TABLE IF NOT EXISTS waitlist
+(
+    id INTEGER PRIMARY KEY UNIQUE,
+    student_id INTEGER NOT NULL UNIQUE,
+    entered timestamp NOT NULL,
+    problem_id INTEGER NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES users (id),
+    FOREIGN KEY (problem_id) REFERENCES problems (id)
+);
+
+create index if not exists waitlist_by_student on waitlist (student_id);
 
 CREATE TABLE IF NOT EXISTS written_tasks_queue
 (
