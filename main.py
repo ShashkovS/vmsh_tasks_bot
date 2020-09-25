@@ -468,7 +468,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, user: db_he
             await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
             waitlist.enter(user.id, problem.id)
             await bot.send_message(chat_id=query.message.chat.id,
-                                   text="Вы успешно встали в очередь\. Чтобы выйти из очереди, нажмите `/exit_waitlist` на клавиатуре",
+                                   text="Вы встали в очередь на устную сдачу\.\nЧтобы выйти из очереди, нажмите `/exit_waitlist`",
                                    parse_mode="MarkdownV2",
                                    reply_markup=build_exit_waitlist_keyboard())
             await bot_answer_callback_query(query.id)
@@ -725,20 +725,29 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, user: db_helper
         'problemId': problem.id,
         'displayName': f"{student.name} {student.surname}"
     }
-
     student_link = WHITEBOARD_LINK.format(urlencode(params))
-
     params['displayName'] = f"{user.name} {user.middlename} {user.surname}"
-
     teacher_link = WHITEBOARD_LINK.format(urlencode(params))
-
-    student_message = await bot.send_message(chat_id=student.chat_id,
-                                             text=f"До Вас дошла очередь на сдачу задачи {problem}. Войдите в конференцию по ссылке {student_link}",
-                                             reply_markup=types.ReplyKeyboardRemove())
-    await asyncio.sleep(2)
-    await process_regular_message(student_message)
-    await bot.send_message(chat_id=user.chat_id,
-                           text=f"Ваш ученик: {student}. Задача {problem}. Войдите в конференцию по ссылке {teacher_link}")
+    # Вообще школьник мог успеть прогнать бота и запретить ему писать
+    try:
+        student_message = await bot.send_message(chat_id=student.chat_id,
+                                                 text=f"До Вас дошла очередь на сдачу задачи {problem}.\n"
+                                                      f"<a href=\"{student_link}\">Войдите в конференцию</a>.",
+                                                 reply_markup=types.ReplyKeyboardRemove(),
+                                                 parse_mode='HTML')
+    except (aiogram.utils.exceptions.ChatNotFound,
+            aiogram.utils.exceptions.MessageToForwardNotFound,
+            aiogram.utils.exceptions.BotBlocked,
+            aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
+        logging.error(f'Школьник удалил себя?? WTF? {student.chat_id}\n{e}')
+    else:
+        await asyncio.sleep(2)
+        await process_regular_message(student_message)
+        await bot.send_message(chat_id=user.chat_id,
+                               text=f"Ваш ученик: {student}.\n"
+                                    f"Задача {problem}.\n"
+                                    f"<a href=\"{teacher_link}\">Войдите в конференцию</a>",
+                               parse_mode='HTML')
     await bot_answer_callback_query(query.id)
     await process_regular_message(message=query.message)
 
@@ -764,7 +773,6 @@ callbacks_processors = {
     CALLBACK_SHOW_LIST_OF_LISTS: prc_show_list_of_lists_callback,
     CALLBACK_LIST_SELECTED: prc_list_selected_callback,
     CALLBACK_ONE_OF_TEST_ANSWER_SELECTED: prc_one_of_test_answer_selected_callback,
-    CALLBACK_CANCEL_TASK_SUBMISSION: prc_cancel_task_submission_callback,
     CALLBACK_GET_QUEUE_TOP: prc_get_queue_top_callback,
     CALLBACK_SET_VERDICT: prc_set_verdict_callback,
     CALLBACK_CANCEL_TASK_SUBMISSION: prc_cancel_task_submission_callback,
