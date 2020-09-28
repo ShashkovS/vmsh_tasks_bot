@@ -884,8 +884,9 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
                                         reply_markup=None)
     waitlist.leave(student.id)
     states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
-    await bot.send_message(chat_id=teacher.chat_id,
-                           text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
+    if teacher:
+        await bot.send_message(chat_id=teacher.chat_id,
+                               text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
     await bot_answer_callback_query(query.id)
     await process_regular_message(query.message)
 
