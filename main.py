@@ -564,7 +564,10 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: db
                                    parse_mode="MarkdownV2")
             await bot_answer_callback_query(query.id)
         else:
-            await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+            try:
+                await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+            except:
+                pass
             waitlist.enter(student.id, problem.id)
             await bot.send_message(chat_id=query.message.chat.id,
                                    text="Вы встали в очередь на устную сдачу\.\nЧтобы выйти из очереди, нажмите `/exit_waitlist`",
@@ -866,7 +869,7 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: db_helpe
     problem = problems.get_by_id(problem_id)
     verdict = int(query.data.split('_')[1])
     student_id = state['last_student_id']
-    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     await bot_answer_callback_query(query.id)
     states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
@@ -877,7 +880,7 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: db_helpe
 async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: db_helper.User):
     state = states.get_by_user_id(student.id)
     teacher = users.get_by_id(state['last_teacher_id'])
-    await bot.edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     waitlist.leave(student.id)
     states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
