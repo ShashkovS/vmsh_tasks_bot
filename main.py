@@ -460,9 +460,9 @@ async def broadcast(message: types.Message):
         return
     broadcast_message = '\n'.join(broadcast_message)
     tokens = re.split('\W+', tokens)
-    if tokens == ['*students']:
+    if tokens == ['all_students']:
         tokens = [user.token for user in users if user.type == USER_TYPE_STUDENT]
-    elif tokens == ['*teachers']:
+    elif tokens == ['all_teachers']:
         tokens = [user.token for user in users if user.type == USER_TYPE_TEACHER]
     for token in tokens:
         student = users.get_by_token(token)
