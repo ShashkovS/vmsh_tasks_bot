@@ -16,6 +16,7 @@ users = None
 problems = None
 states = None
 written_queue = None
+waitlist = None
 
 RU_TO_EN = str.maketrans('УКЕНХВАРОСМТукехарос', 'YKEHXBAPOCMTykexapoc')
 
@@ -52,11 +53,12 @@ class DB:
     def add_user(self, data: dict):
         cur = self.conn.cursor()
         cur.execute("""
-            insert into users ( chat_id,  type,  name,  surname,  middlename,  token) 
-            values            (:chat_id, :type, :name, :surname, :middlename, :token) 
+            insert into users ( chat_id,  type,  level,  name,  surname,  middlename,  token) 
+            values            (:chat_id, :type, :level, :name, :surname, :middlename, :token) 
             on conflict (token) do update set 
             chat_id=coalesce(excluded.chat_id, chat_id), 
             type=excluded.type, 
+            level=excluded.level, 
             name=excluded.name, 
             surname=excluded.surname, 
             middlename=excluded.middlename
@@ -67,9 +69,9 @@ class DB:
     def add_problem(self, data: dict):
         cur = self.conn.cursor()
         cur.execute("""
-            insert into problems ( list,  prob,  item,  title,  prob_text,  prob_type,  ans_type,  ans_validation,  validation_error,  cor_ans,  cor_ans_checker,  wrong_ans,  congrat) 
-            values               (:list, :prob, :item, :title, :prob_text, :prob_type, :ans_type, :ans_validation, :validation_error, :cor_ans, :cor_ans_checker, :wrong_ans, :congrat) 
-            on conflict (list, prob, item) do update 
+            insert into problems ( level,  lesson,  prob,  item,  title,  prob_text,  prob_type,  ans_type,  ans_validation,  validation_error,  cor_ans,  cor_ans_checker,  wrong_ans,  congrat) 
+            values               (:level, :lesson, :prob, :item, :title, :prob_text, :prob_type, :ans_type, :ans_validation, :validation_error, :cor_ans, :cor_ans_checker, :wrong_ans, :congrat) 
+            on conflict (level, lesson, prob, item) do update 
             set 
             title = excluded.title,
             prob_text = excluded.prob_text,
@@ -92,13 +94,13 @@ class DB:
         return rows
 
     def update_state(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                     last_teacher_id: int = 0):
+                     last_teacher_id: int = 0, oral_problem_id: int = None):
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
-            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id)
-            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id) 
+            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id,  oral_problem_id)
+            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id, :oral_problem_id) 
             ON CONFLICT (user_id) DO UPDATE SET 
             state = :state,
             problem_id = :problem_id,
@@ -111,34 +113,43 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def add_result(self, student_id: int, problem_id: int, list: int, teacher_id: int, verdict: int, answer: str):
+    def update_oral_problem(self, user_id: int, oral_problem_id: int = None):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            UPDATE states SET oral_problem_id = :oral_problem_id
+            WHERE user_id = :user_id
+        """, args)
+        self.conn.commit()
+
+    def add_result(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int, answer: str):
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
-            INSERT INTO results  ( student_id,  problem_id,  list,  teacher_id,  ts,  verdict,  answer)
-            VALUES               (:student_id, :problem_id, :list, :teacher_id, :ts, :verdict, :answer) 
+            INSERT INTO results  ( student_id,  problem_id,  level,  lesson,  teacher_id,  ts,  verdict,  answer)
+            VALUES               (:student_id, :problem_id, :level, :lesson, :teacher_id, :ts, :verdict, :answer) 
         """, args)
         self.conn.commit()
 
-    def check_student_solved(self, student_id: int, list: int):
+    def check_student_solved(self, student_id: int, level: str, lesson: int):
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
             select distinct problem_id from results
-            where student_id = :student_id and list = :list and verdict > 0
+            where student_id = :student_id and level = :level and lesson = :lesson and verdict > 0
         """, args)
         rows = cur.fetchall()
         solved_ids = {row['problem_id'] for row in rows}
         return solved_ids
 
-    def check_student_sent_written(self, student_id: int, list: int):
+    def check_student_sent_written(self, student_id: int, lesson: int):
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
             select w.problem_id from written_tasks_queue w
             join problems p on w.problem_id = p.id
-            where w.student_id = :student_id and p.list = :list
+            where w.student_id = :student_id and p.lesson = :lesson
         """, args)
         rows = cur.fetchall()
         being_checked_ids = {row['problem_id'] for row in rows}
@@ -154,6 +165,35 @@ class DB:
             VALUES                    (:from_bot, :tg_msg_id, :chat_id, :student_id, :teacher_id, :ts, :msg_text, :attach_path) 
         """, args)
         self.conn.commit()
+
+    def add_user_to_waitlist(self, student_id: int, problem_id: int):
+        args = locals()
+        args['ts'] = datetime.now().isoformat()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO waitlist  ( student_id, entered, problem_id )
+            VALUES                (:student_id, :ts,    :problem_id )
+        """, args)
+        self.conn.commit()
+
+    def remove_user_from_waitlist(self, student_id: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            DELETE FROM waitlist
+            WHERE  student_id = :student_id
+        """, args)
+        self.conn.commit()
+
+    def get_waitlist_top(self, top_n: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            SELECT * FROM waitlist
+            ORDER BY entered ASC
+            LIMIT :top_n
+        """, args)
+        return cur.fetchall()
 
     def fetch_one_state(self, user_id: int):
         cur = self.conn.cursor()
@@ -189,6 +229,16 @@ class DB:
             """, args)
         self.conn.commit()
 
+    def set_user_level(self, user_id: int, level: str):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+        UPDATE users
+        SET level = :level
+        WHERE id = :user_id
+        """, args)
+        self.conn.commit()
+
     def fetch_all_users(self):
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM users")
@@ -198,21 +248,6 @@ class DB:
     def fetch_all_problems(self):
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM problems")
-        rows = cur.fetchall()
-        return rows
-
-    def get_all_solved(self):
-        cur = self.conn.cursor()
-        cur.execute("""
-            select
-            u.token, u.surname, u.name,
-            p.list, p.prob, p.item, min(r.ts) ts
-            from results r
-            join users u on r.student_id = u.id
-            join problems p on r.problem_id = p.id
-            where r.verdict > 0
-            group by 1, 2, 3, 4, 5, 6
-        """)
         rows = cur.fetchall()
         return rows
 
@@ -294,6 +329,7 @@ class DB:
 class User:
     chat_id: int
     type: int
+    level: str
     name: str
     surname: str
     middlename: str
@@ -307,6 +343,13 @@ class User:
     def set_chat_id(self, chat_id: int):
         self.chat_id = chat_id
         db.set_user_chat_id(self.id, self.chat_id)
+
+    def set_level(self, level: str):
+        self.level = level
+        db.set_user_level(self.id, level)
+
+    def __str__(self):
+        return f'{self.name} {self.middlename} {self.surname}'
 
 
 class Users:
@@ -359,7 +402,8 @@ class Users:
 
 @dataclass
 class Problem:
-    list: int
+    level: str
+    lesson: int
     prob: int
     item: str
     title: str
@@ -379,7 +423,7 @@ class Problem:
             self.id = db.add_problem(self.__dict__)
 
     def __str__(self):
-        return f"Задача {self.list}.{self.prob}{self.item}. {self.title}"
+        return f"Задача {self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"
 
 
 class Problems:
@@ -392,7 +436,7 @@ class Problems:
         self.by_list = {}
         for row in rows:
             if type(row) == dict:
-                if not row.get('list', None) or not row.get('prob', None):
+                if not row.get('lesson', None) or not row.get('prob', None):
                     continue
                 problem = Problem(**row)
             elif type(row) == Problem:
@@ -400,22 +444,23 @@ class Problems:
             else:
                 raise TypeError('Use dict or Problem to init Problems')
             self.all_problems.append(problem)
-            self.by_key[(problem.list, problem.prob, problem.item,)] = problem
+            self.by_key[(problem.level, problem.lesson, problem.prob, problem.item,)] = problem
             self.by_id[problem.id] = problem
-            if problem.list not in self.by_list:
-                self.by_list[problem.list] = list()
-            self.by_list[problem.list].append(problem)
-        self.all_lessons = sorted(list(self.by_list.keys()))
-        self.last_lesson = self.all_lessons[-1] if self.all_lessons else -1
+            list_key = (problem.level, problem.lesson)
+            if list_key not in self.by_list:
+                self.by_list[list_key] = []
+            self.by_list[list_key].append(problem)
+        self.all_lessons = sorted(list(self.by_list.keys()))  # Осторожно, не тот смысл!
+        self.last_lesson = self.all_lessons[-1][1] if self.all_lessons else -1  # Говнокод
 
     def get_by_id(self, key):
         return self.by_id.get(key, None)
 
-    def get_by_key(self, list: int, prob: int, item: ''):
-        return self.by_key.get((list, prob, item), None)
+    def get_by_key(self, level: str, lesson: int, prob: int, item: ''):
+        return self.by_key.get((level, lesson, prob, item), None)
 
-    def get_by_lesson(self, lesson: int):
-        return self.by_list.get(lesson, list())
+    def get_by_lesson(self, level: str, lesson: int):
+        return self.by_list.get((level, lesson), [])
 
     def __repr__(self):
         return f'Problems({self.all_problems!r})'
@@ -432,8 +477,21 @@ class States:
         return db.fetch_one_state(user_id)
 
     def set_by_user_id(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                       last_teacher_id: int = 0):
-        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id)
+                       last_teacher_id: int = 0, oral_problem_id: int = None):
+        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id, oral_problem_id)
+
+
+class Waitlist:
+    def enter(self, student_id: int, problem_id: int):
+        db.update_oral_problem(student_id, problem_id)
+        db.add_user_to_waitlist(student_id, problem_id)
+
+    def leave(self, student_id: int):
+        db.update_oral_problem(student_id, None)
+        db.remove_user_from_waitlist(student_id)
+
+    def top(self, n: int = 10) -> list:
+        return db.get_waitlist_top(n)
 
 
 class WrittenQueue:
@@ -461,7 +519,7 @@ class WrittenQueue:
 
 
 def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
-    global db, users, problems, states, written_queue
+    global db, users, problems, states, written_queue, waitlist
     db = DB(db_file)
     users = Users()
     problems = Problems()
@@ -475,6 +533,7 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
         for teacher in teachers:
             teacher['type'] = USER_TYPE_TEACHER
             teacher['chat_id'] = None
+            teacher['level'] = None
         for problem in problems:
             try:
                 problem['prob_type'] = PROB_TYPES[problem['prob_type']]
@@ -487,7 +546,8 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
     users = Users()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
     problems = Problems()  # TODO Это — долбанный костыль, перечитываем всё из БД
     written_queue = WrittenQueue()
-    return db, users, problems, states, written_queue
+    waitlist = Waitlist()
+    return db, users, problems, states, written_queue, waitlist
 
 
 if __name__ == '__main__':
@@ -495,10 +555,10 @@ if __name__ == '__main__':
 
     db = DB('test.db')
 
-    u1 = User(None, 1, 'name', 'surname', 'middle', 'tok1')
-    u2 = User(124, 1, 'name2', 'surname2', 'middle', 'tok2')
-    u3 = User(125, 1, 'name3', 'surname3', 'middle', 'tok3')
-    u1upd = User(12312, 1, 'name1', 'surname1', 'middle', 'tok1')
+    u1 = User(None, 1, 'н', 'name', 'surname', 'middle', 'tok1')
+    u2 = User(124, 1, 'н', 'name2', 'surname2', 'middle', 'tok2')
+    u3 = User(125, 1, 'н', 'name3', 'surname3', 'middle', 'tok3')
+    u1upd = User(12312, 1, 'н', 'name1', 'surname1', 'middle', 'tok1')
 
     users = Users()
     print(users)
@@ -509,23 +569,45 @@ if __name__ == '__main__':
     print(users.get_by_id(1))
     print(len(users))
 
-    p1 = Problem(1, 1, 'а', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', 123, 'check_int', 'ЛОЖЬ!', 'Крутяк')
-    p2 = Problem(1, 1, 'б', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', 123, 'check_int', 'ЛОЖЬ!', 'Крутяк')
-    p3 = Problem(1, 2, '', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', 123, 'check_int', 'ЛОЖЬ!', 'Крутяк')
-    p2upd = Problem(1, 1, 'б', 'Гы', 'текст_upd', 0, 0, r'\d+', 'ЧИСЛО!', 123, 'check_int', 'ЛОЖЬ!', 'Крутяк')
+    p1 = Problem('н', 1, 1, 'а', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', '123', 'check_int', 'ЛОЖЬ!', 'Крутяк')
+    p2 = Problem('н', 1, 1, 'б', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', '123', 'check_int', 'ЛОЖЬ!', 'Крутяк')
+    p3 = Problem('н', 1, 2, '', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', '123', 'check_int', 'ЛОЖЬ!', 'Крутяк')
+    p2upd = Problem('н', 1, 1, 'б', 'Гы', 'текст_upd', 0, 0, r'\d+', 'ЧИСЛО!', '123', 'check_int', 'ЛОЖЬ!', 'Крутяк')
 
     problems = Problems()
     print(problems)
     print(problems.by_id[1])
-    print(problems.by_key[(1, 1, 'б')])
-    print(problems.get_by_key(1, 1, 'б'))
-    print(problems.get_by_key(1, 1, 'бs'))
+    print(problems.by_key[('н', 1, 1, 'б')])
+    print(problems.get_by_key('н', 1, 1, 'б'))
+    print(problems.get_by_key('н', 1, 1, 'бs'))
     print(len(problems))
+
+    waitlist = Waitlist()
+    states = States()
+    for i in range(1, 15):
+        waitlist.enter(i, i)
+        states.set_by_user_id(i, STATE_SENDING_SOLUTION, i)
+
+    print('WL: add 14 people')
+    wl = waitlist.top()
+    for r in wl:
+        print('wl entry = ', r)
+        print('user state = ', states.get_by_user_id(r['student_id']))
+        waitlist.leave(r['student_id'])
+    print('States after leaving waitlist:')
+    for r in wl:
+        print('user state = ', states.get_by_user_id(r['student_id']))
+
+    print('WL: new top')
+    wl = waitlist.top()
+    for r in wl:
+        print(r)
+        waitlist.leave(r['student_id'])
 
     db.disconnect()
     print('\n' * 10)
     print('self test 2')
-    db, users, problems, states, written_queue = init_db_and_objects('dummy2')
+    db, users, problems, states, written_queue, waitlist = init_db_and_objects('dummy2')
     for user in users.all_users:
         print(user)
     for user in problems.all_problems:
@@ -537,7 +619,7 @@ if __name__ == '__main__':
     # def get_written_tasks(self):
     # def upd_written_task_status(self, id: int, new_status: int):
     # def delete_from_written_task_queue(self, id: int):
-    db, users, problems, states, written_queue = init_db_and_objects('dummy2')
+    db, users, problems, states, written_queue, waitlist = init_db_and_objects('dummy2')
     db.insert_into_written_task_queue(123, 123, 0)
     db.insert_into_written_task_queue(123, 123, 0)
     db.insert_into_written_task_queue(123, 124, 0)

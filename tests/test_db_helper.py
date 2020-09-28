@@ -53,13 +53,13 @@ class ObjectRelationsMappingTest(TestCase):
             p3 = Problem(1, 2, '', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', 123, 'check_int', 'ЛОЖЬ!', 'Крутяк')
             p2upd = Problem(1, 1, 'б', 'Гы', 'текст_upd', 0, 0, r'\d+', 'ЧИСЛО!', 123, 'check_int', 'ЛОЖЬ!', 'Крутяк')
 
-            p1_data = {'list': 1, 'prob': 1, 'item': 'а', 'title': 'Гы', 'prob_text': 'текст', 'prob_type': 0,
+            p1_data = {'lesson': 1, 'prob': 1, 'item': 'а', 'title': 'Гы', 'prob_text': 'текст', 'prob_type': 0,
                        'ans_type': 0, 'ans_validation': '\\d+', 'validation_error': 'ЧИСЛО!', 'cor_ans': '123',
                        'cor_ans_checker': 'check_int', 'wrong_ans': 'ЛОЖЬ!', 'congrat': 'Крутяк', 'id': 1}
-            p2_data = {'list': 1, 'prob': 1, 'item': 'б', 'title': 'Гы', 'prob_text': 'текст_upd', 'prob_type': 0,
+            p2_data = {'lesson': 1, 'prob': 1, 'item': 'б', 'title': 'Гы', 'prob_text': 'текст_upd', 'prob_type': 0,
                        'ans_type': 0, 'ans_validation': '\\d+', 'validation_error': 'ЧИСЛО!', 'cor_ans': '123',
                        'cor_ans_checker': 'check_int', 'wrong_ans': 'ЛОЖЬ!', 'congrat': 'Крутяк', 'id': 2}
-            p3_data = {'list': 1, 'prob': 2, 'item': '', 'title': 'Гы', 'prob_text': 'текст', 'prob_type': 0,
+            p3_data = {'lesson': 1, 'prob': 2, 'item': '', 'title': 'Гы', 'prob_text': 'текст', 'prob_type': 0,
                        'ans_type': 0, 'ans_validation': '\\d+', 'validation_error': 'ЧИСЛО!', 'cor_ans': '123',
                        'cor_ans_checker': 'check_int', 'wrong_ans': 'ЛОЖЬ!', 'congrat': 'Крутяк', 'id': 3}
 

@@ -2,7 +2,7 @@ import sqlite3
 import re
 import pyperclip
 
-NLIST = 3
+NLIST = 2
 
 conn = sqlite3.connect(r'db\88b1047644e68c3cceb7ff21e1190a90.db')
 cur = conn.cursor()
@@ -10,12 +10,12 @@ cur = conn.cursor()
 cur.execute('''
     select distinct
     u.token || '	' || u.surname || '	' || u.name as user,
-    p.list || '.' || p.prob  || p.item as prob,
+    p.lesson || '.' || p.prob  || p.item as prob,
     max(r.verdict)
     from users u 
     join results r on r.student_id = u.id 
     join problems p on r.problem_id = p.id
-    where (u.type = 1 and token not like 'pass%') and p.list = :NLIST
+    where (u.type = 1 and token not like 'pass%') and p.lesson = :NLIST
     group by 1, 2
 ''', globals())
 results = {(r[0], r[1]): str(max(r[2], 0)) for r in cur.fetchall()}
@@ -29,9 +29,9 @@ cur.execute('''
 pupils = [x[0] for x in cur.fetchall()]
 
 cur.execute('''
-    select p.list || '.' || p.prob  || p.item as prob
+    select p.lesson || '.' || p.prob  || p.item as prob
     from problems p
-    where p.list = :NLIST
+    where p.lesson = :NLIST
 ''', globals())
 problems = set({x[0] for x in cur.fetchall()})
 

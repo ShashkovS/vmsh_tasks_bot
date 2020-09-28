@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users
     id         INTEGER PRIMARY KEY,
     chat_id    INTEGER NULL UNIQUE,
     type       INTEGER NOT NULL,
+    level      TEXT        NULL,
     name       TEXT    NOT NULL,
     surname    TEXT    NOT NULL,
     middlename TEXT    NULL,
@@ -12,7 +13,8 @@ CREATE TABLE IF NOT EXISTS users
 CREATE TABLE IF NOT EXISTS problems
 (
     id               INTEGER PRIMARY KEY,
-    list             INTEGER NOT NULL,
+    level            TEXT    NOT NULL,
+    lesson           INTEGER NOT NULL,
     prob             INTEGER NOT NULL,
     item             TEXT    NOT NULL,
     title            text    NOT NULL,
@@ -25,7 +27,7 @@ CREATE TABLE IF NOT EXISTS problems
     cor_ans_checker  text    null,
     wrong_ans        text    null,
     congrat          text    null,
-    UNIQUE (list, prob, item)
+    UNIQUE (level, lesson, prob, item)
 );
 
 CREATE TABLE IF NOT EXISTS states
@@ -35,17 +37,21 @@ CREATE TABLE IF NOT EXISTS states
     problem_id      INTEGER NULL,
     last_student_id INTEGER NULL,
     last_teacher_id INTEGER NULL,
+    oral_problem_id INTEGER NULL,  -- не NULL, если стоит в очереди сдавать эту задачу
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (problem_id) REFERENCES problems (id),
     FOREIGN KEY (last_student_id) REFERENCES users (id),
-    FOREIGN KEY (last_teacher_id) REFERENCES users (id)
+    FOREIGN KEY (last_teacher_id) REFERENCES users (id),
+    FOREIGN KEY (oral_problem_id) REFERENCES users (id)
 );
+-- TODO Add alter table!!!
 
 CREATE TABLE IF NOT EXISTS results
 (
     student_id INTEGER NOT NULL,
     problem_id INTEGER NOT NULL,
-    list       INTEGER NOT NULL,
+    level      TEXT    NOT NULL,
+    lesson       INTEGER NOT NULL,
     teacher_id INTEGER   NULL,
     ts         timestamp NOT NULL,
     verdict    integer   NOT NULL,
@@ -56,7 +62,7 @@ CREATE TABLE IF NOT EXISTS results
 );
 
 create index if not exists results_by_student_solved on results
-(student_id, list) where verdict > 0;
+(student_id, level, lesson) where verdict > 0;
 
 CREATE TABLE IF NOT EXISTS states_log
 (
@@ -82,6 +88,18 @@ CREATE TABLE IF NOT EXISTS messages_log
     FOREIGN KEY (student_id) REFERENCES users (id),
     FOREIGN KEY (teacher_id) REFERENCES users (id)
 );
+
+CREATE TABLE IF NOT EXISTS waitlist
+(
+    id INTEGER PRIMARY KEY UNIQUE,
+    student_id INTEGER NOT NULL UNIQUE,
+    entered timestamp NOT NULL,
+    problem_id INTEGER NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES users (id),
+    FOREIGN KEY (problem_id) REFERENCES problems (id)
+);
+
+create index if not exists waitlist_by_student on waitlist (student_id);
 
 CREATE TABLE IF NOT EXISTS written_tasks_queue
 (
