@@ -229,6 +229,16 @@ class DB:
             """, args)
         self.conn.commit()
 
+    def set_user_level(self, user_id: int, level: str):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+        UPDATE users
+        SET level = :level
+        WHERE id = :user_id
+        """, args)
+        self.conn.commit()
+
     def fetch_all_users(self):
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM users")
@@ -333,6 +343,9 @@ class User:
     def set_chat_id(self, chat_id: int):
         self.chat_id = chat_id
         db.set_user_chat_id(self.id, self.chat_id)
+
+    def set_level(self, level: str):
+        db.set_user_level(self.id, level)
 
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'

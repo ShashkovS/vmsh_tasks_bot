@@ -253,9 +253,10 @@ async def prc_teacher_select_action(message: types.Message, teacher: db_helper.U
 
 
 async def prc_get_task_info_state(message, student: db_helper.User):
+    slevel = '(уровень «Продолжающие»)' if student.level == 'п' else '(уровень «Начинающие»)'
     await bot.send_message(
         chat_id=message.chat.id,
-        text="❓ Нажимайте на задачу, чтобы сдать её",
+        text=f"❓ Нажимайте на задачу, чтобы сдать её {slevel}",
         reply_markup=build_problems_keyboard(problems.last_lesson, student),
     )
 
@@ -443,6 +444,30 @@ async def recheck(message: types.Message):
         if student and problem:
             written_queue.add_to_queue(student.id, problem.id, ts=datetime.datetime(1, 1, 1))
             await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
+
+
+async def level_novice(message: types.Message):
+    student = users.get_by_chat_id(message.chat.id)
+    if student:
+        message = await bot.send_message(
+            chat_id=message.chat.id,
+            text="Вы переведены в группу начинающих",
+        )
+        student.set_level('п')
+        states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        await process_regular_message(message)
+
+
+async def level_pro(message: types.Message):
+    student = users.get_by_chat_id(message.chat.id)
+    if student:
+        message = await bot.send_message(
+            chat_id=message.chat.id,
+            text="Вы переведены в группу продолжающих",
+        )
+        student.set_level('н')
+        states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        await process_regular_message(message)
 
 
 async def sos(message: types.Message):
@@ -846,7 +871,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: db
     student_id = state['last_student_id']
     student = users.get_by_id(student_id)
     pluses = [problems.get_by_id(prb_id) for prb_id in selected_ids]
-    human_readable_pluses = [f'{plus.lesson}.{plus.prob}{plus.item}' for plus in pluses]
+    human_readable_pluses = [f'{plus.lesson}{plus.level}.{plus.prob}{plus.item}' for plus in pluses]
     # Проставляем плюсики
     for problem in pluses:
         db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_SOLVED, None)
@@ -936,6 +961,8 @@ async def on_startup(app):
     dispatcher.register_message_handler(recheck, commands=['recheck_xd5fqk'])
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
     dispatcher.register_message_handler(exit_waitlist, commands=['exit_waitlist'])
+    dispatcher.register_message_handler(level_novice, commands=['level_novice'])
+    dispatcher.register_message_handler(level_pro, commands=['level_pro'])
     dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
     dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
 
