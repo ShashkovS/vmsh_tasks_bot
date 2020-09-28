@@ -427,6 +427,9 @@ async def start(message: types.Message):
 
 
 async def recheck(message: types.Message):
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
     match = re.fullmatch(r'/recheck_xd5fqk\s+(\w{6})\s+(\d+)([а-я])\.(\d+)([а-я]?)\s*', message.text or '')
     if not match:
         await bot.send_message(
@@ -444,6 +447,30 @@ async def recheck(message: types.Message):
         if student and problem:
             written_queue.add_to_queue(student.id, problem.id, ts=datetime.datetime(1, 1, 1))
             await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
+
+
+async def broadcast(message: types.Message):
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    text = message.text.splitlines()
+    cmd, tokens, *broadcast_message = text
+    tokens = re.split('\W+', tokens)
+    for token in tokens:
+        student = users.get_by_token(token)
+        if not student or not student.chat_id:
+            continue
+        try:
+            await bot.send_message(
+                chat_id=student.chat_id,
+                text=broadcast_message,
+            )
+        except (aiogram.utils.exceptions.ChatNotFound,
+                aiogram.utils.exceptions.MessageToForwardNotFound,
+                aiogram.utils.exceptions.BotBlocked,
+                aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
+            logging.error(f'Школьник удалил себя?? WTF? {student.chat_id}\n{e}')
+        await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)
 
 
 async def level_novice(message: types.Message):
@@ -958,6 +985,7 @@ async def on_startup(app):
         await check_webhook()
     dispatcher.register_message_handler(start, commands=['start'])
     dispatcher.register_message_handler(sos, commands=['sos'])
+    dispatcher.register_message_handler(broadcast, commands=['broadcast_wibkn96x'])
     dispatcher.register_message_handler(recheck, commands=['recheck_xd5fqk'])
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
     dispatcher.register_message_handler(exit_waitlist, commands=['exit_waitlist'])
