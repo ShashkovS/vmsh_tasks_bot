@@ -2,7 +2,7 @@ import sqlite3
 import re
 import pyperclip
 
-NLIST = 3
+NLIST = 2
 
 conn = sqlite3.connect(r'db\88b1047644e68c3cceb7ff21e1190a90.db')
 cur = conn.cursor()
