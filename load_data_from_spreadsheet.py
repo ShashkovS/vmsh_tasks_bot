@@ -50,7 +50,7 @@ def load(*, use_pickle=True):
     logging.info('Setting reload: fetching problems')
     problems = _dict_factory(
         worksheet_problems.get_all_values(),
-        ['list', 'prob', 'item', 'title', 'prob_text', 'prob_type', 'ans_type', 'ans_validation', 'validation_error', 'cor_ans', 'cor_ans_checker',
+        ['level', 'lesson', 'prob', 'item', 'title', 'prob_text', 'prob_type', 'ans_type', 'ans_validation', 'validation_error', 'cor_ans', 'cor_ans_checker',
          'wrong_ans', 'congrat', ],
     )
 
@@ -58,7 +58,7 @@ def load(*, use_pickle=True):
     worksheet_students = sheet.worksheet("Школьники")
     students = _dict_factory(
         worksheet_students.get_all_values(),
-        ['surname', 'name', 'token'],
+        ['surname', 'name', 'token', 'level'],
     )
 
     logging.info('Setting reload: fetching teachers')
