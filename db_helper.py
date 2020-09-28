@@ -345,6 +345,7 @@ class User:
         db.set_user_chat_id(self.id, self.chat_id)
 
     def set_level(self, level: str):
+        self.level = level
         db.set_user_level(self.id, level)
 
     def __str__(self):
