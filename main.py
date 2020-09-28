@@ -550,32 +550,42 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: db
         states.set_by_user_id(student.id, STATE_SENDING_SOLUTION, problem_id)
         await bot_answer_callback_query(query.id)
     elif problem.prob_type == PROB_TYPE_ORALLY:
-        # await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-        #                             text=f"Выбрана устная задача. Её нужно сдавать после 17:00 в zoom-конференции. Желательно перед сдачей записать ответ и основные шаги решения на бумаге. Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. Когда у вас всё готово, заходите в zoom-конференцию, идентификатор конференции: 834 3300 5508, код доступа: 179179. Пожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. После окончания сдачи нужно выйти из конференции. Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. Мы постараемся выделить время каждому, но не уверены, что это получится сразу на первых занятиях.",
-        #                             disable_web_page_preview=True)
-        # states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-        # await bot_answer_callback_query(query.id)
-        # await asyncio.sleep(1)
-        # await process_regular_message(query.message)
-        state = states.get_by_user_id(student.id)
-        if state['oral_problem_id'] is not None:
-            await bot.send_message(chat_id=query.message.chat.id,
-                                   text="Вы уже стоите в очереди на устную сдачу\. Дождитесь, когда освободится один из преподавателей\. Тогда можно будет сдать сразу несколько задач\.",
-                                   parse_mode="MarkdownV2")
-            await bot_answer_callback_query(query.id)
-        else:
-            try:
-                await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
-            except:
-                pass
-            waitlist.enter(student.id, problem.id)
-            await bot.send_message(chat_id=query.message.chat.id,
-                                   text="Вы встали в очередь на устную сдачу\.\nЧтобы выйти из очереди, нажмите `/exit_waitlist`",
-                                   parse_mode="MarkdownV2",
-                                   reply_markup=build_exit_waitlist_keyboard())
-            await bot_answer_callback_query(query.id)
-            await asyncio.sleep(4)
-            await process_regular_message(query.message)
+        await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                    text=f"Выбрана устная задача. "
+                                         f"Её нужно в zoom-конференции. "
+                                         f"Желательно перед сдачей записать ответ и основные шаги решения на бумаге. "
+                                         f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
+                                         f"\nКогда у вас всё готово, <b>заходите в zoom-конференцию, идентификатор конференции: 834 3300 5508, код доступа: 179971</a>. "
+                                         f"\nПожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. "
+                                         f"Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. "
+                                         f"После окончания сдачи нужно выйти из конференции. "
+                                         f"Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. "
+                                         f"Мы постараемся выделить время каждому, но ожидание может быть достаточно долгим.",
+                                    disable_web_page_preview=True)
+        states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        await bot_answer_callback_query(query.id)
+        await asyncio.sleep(5)
+        await process_regular_message(query.message)
+
+        # state = states.get_by_user_id(student.id)
+        # if state['oral_problem_id'] is not None:
+        #     await bot.send_message(chat_id=query.message.chat.id,
+        #                            text="Вы уже стоите в очереди на устную сдачу\. Дождитесь, когда освободится один из преподавателей\. Тогда можно будет сдать сразу несколько задач\.",
+        #                            parse_mode="MarkdownV2")
+        #     await bot_answer_callback_query(query.id)
+        # else:
+        #     try:
+        #         await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+        #     except:
+        #         pass
+        #     waitlist.enter(student.id, problem.id)
+        #     await bot.send_message(chat_id=query.message.chat.id,
+        #                            text="Вы встали в очередь на устную сдачу\.\nЧтобы выйти из очереди, нажмите `/exit_waitlist`",
+        #                            parse_mode="MarkdownV2",
+        #                            reply_markup=build_exit_waitlist_keyboard())
+        #     await bot_answer_callback_query(query.id)
+        #     await asyncio.sleep(4)
+        #     await process_regular_message(query.message)
 
 
 async def prc_list_selected_callback(query: types.CallbackQuery, student: db_helper.User):
