@@ -461,10 +461,11 @@ async def broadcast(message: types.Message):
         if not student or not student.chat_id:
             continue
         try:
-            await bot.send_message(
+            broad_message = await bot.send_message(
                 chat_id=student.chat_id,
                 text=broadcast_message,
             )
+            db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None, broadcast_message, None)
         except (aiogram.utils.exceptions.ChatNotFound,
                 aiogram.utils.exceptions.MessageToForwardNotFound,
                 aiogram.utils.exceptions.BotBlocked,
