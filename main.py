@@ -561,7 +561,8 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: db
                                          f"После окончания сдачи нужно выйти из конференции. "
                                          f"Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. "
                                          f"Мы постараемся выделить время каждому, но ожидание может быть достаточно долгим.",
-                                    disable_web_page_preview=True)
+                                    disable_web_page_preview=True,
+                                    parse_mode='HTML')
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
         await bot_answer_callback_query(query.id)
         await asyncio.sleep(5)
