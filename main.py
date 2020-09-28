@@ -454,7 +454,11 @@ async def broadcast(message: types.Message):
     if not teacher or teacher.type != USER_TYPE_TEACHER:
         return
     text = message.text.splitlines()
-    cmd, tokens, *broadcast_message = text
+    try:
+        cmd, tokens, *broadcast_message = text
+    except:
+        return
+    broadcast_message = '\n'.join(broadcast_message)
     tokens = re.split('\W+', tokens)
     for token in tokens:
         student = users.get_by_token(token)
@@ -481,7 +485,7 @@ async def level_novice(message: types.Message):
             chat_id=message.chat.id,
             text="Вы переведены в группу начинающих",
         )
-        student.set_level('п')
+        student.set_level('н')
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
         await process_regular_message(message)
 
@@ -493,7 +497,7 @@ async def level_pro(message: types.Message):
             chat_id=message.chat.id,
             text="Вы переведены в группу продолжающих",
         )
-        student.set_level('н')
+        student.set_level('п')
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
         await process_regular_message(message)
 
