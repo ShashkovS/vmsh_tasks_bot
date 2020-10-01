@@ -9,7 +9,7 @@ import re
 import asyncio
 from consts import *
 import aiogram
-from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher import Dispatcher, filters
 from aiogram.dispatcher.webhook import configure_app, types, web
 from aiogram.utils.executor import start_polling
 from aiogram.utils.exceptions import MessageNotModified
@@ -657,7 +657,7 @@ async def prc_cancel_task_submission_callback(query: types.CallbackQuery, studen
 async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: db_helper.User):
     # Так, препод указал, что хочет проверять письменные задачи
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
-    top = written_queue.take_top()
+    top = written_queue.take_top(teacher.id)
     if not top:
         await bot.send_message(chat_id=teacher.chat_id,
                                text=f"Ничего себе! Все письменные задачи проверены!")
@@ -686,7 +686,7 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
     problem = problems.get_by_id(int(problem_id))
     await bot_answer_callback_query(query.id)
     # Блокируем задачу
-    is_unlocked = written_queue.mark_being_checked(student.id, problem.id)
+    is_unlocked = written_queue.mark_being_checked(student.id, problem.id, teacher.id)
     if not is_unlocked:
         await bot.send_message(chat_id=chat_id, text='Эту задачу уже кто-то взялся проверять.')
         states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
@@ -733,7 +733,9 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_h
     written_queue.delete_from_queue(student.id, problem.id)
     await bot_answer_callback_query(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text=f'✔ Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!')
+                           text=f'✔ Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
+                                f'\n<pre>\\recheck_xd5fqk {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item} для исправления</pre>',
+                           parse_mode='HTML')
     states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
     student_chat_id = users.get_by_id(student.id).chat_id
     try:
@@ -781,7 +783,9 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: db_
     db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_WRONG_ANSWER, None)
     written_queue.delete_from_queue(student.id, problem.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!')
+                           text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
+                                f'\n<pre>\\recheck_xd5fqk {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item} для исправления</pre>',
+                           parse_mode='HTML')
 
     # Пересылаем переписку школьнику
     student_chat_id = users.get_by_id(student.id).chat_id

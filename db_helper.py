@@ -263,27 +263,33 @@ class DB:
         self.conn.commit()
         return cur.lastrowid
 
-    def get_written_tasks(self):
+    def get_written_tasks_to_check(self, teacher_id):
         cur = self.conn.cursor()
         now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
         cur.execute("""
             select * from written_tasks_queue 
-            where cur_status = :WRITTEN_STATUS_NEW or ts < :now_minus_30_min
+            where cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id
             order by ts asc
             limit :_MAX_WRITTEN_TASKS_TO_SELECT
         """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS_NEW,
               '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
-              'now_minus_30_min': now_minus_30_min})
+              'now_minus_30_min': now_minus_30_min,
+              'teacher_id': teacher_id})
         rows = cur.fetchall()
         return rows
 
-    def upd_written_task_status(self, student_id: int, problem_id: int, new_status: int):
+    def upd_written_task_status(self, student_id: int, problem_id: int, new_status: int, teacher_id: int = None):
         args = locals()
+        args['now_minus_30_min'] = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
+        args['teacher_ts'] = datetime.now().isoformat() if new_status > 0 else None
         cur = self.conn.cursor()
         cur.execute("""
         UPDATE written_tasks_queue
-        SET cur_status = :new_status
-        where student_id = :student_id and problem_id = :problem_id and cur_status != :new_status
+        SET cur_status = :new_status,
+            teacher_ts = :teacher_ts,
+            teacher_id = :teacher_id
+        where student_id = :student_id and problem_id = :problem_id and 
+        (cur_status != :new_status or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id)
         """, args)
         self.conn.commit()
         return cur.rowcount
@@ -297,7 +303,8 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int, tg_msg_id: int):
+    def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int,
+                                            tg_msg_id: int):
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
@@ -498,21 +505,21 @@ class WrittenQueue:
     def add_to_queue(self, student_id: int, problem_id: int, ts: datetime = None):
         db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS_NEW, ts=ts)
 
-    def take_top(self):
-        return db.get_written_tasks()
+    def take_top(self, teacher_id: int):
+        return db.get_written_tasks_to_check(teacher_id)
 
-    def mark_being_checked(self, student_id: int, problem_id: int):
-        updated_rows = db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_BEING_CHECKED)
+    def mark_being_checked(self, student_id: int, problem_id: int, teacher_id: int):
+        updated_rows = db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_BEING_CHECKED, teacher_id)
         return updated_rows > 0
 
     def mark_not_being_checked(self, student_id: int, problem_id: int):
-        db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_NEW)
+        db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_NEW, None)
 
     def delete_from_queue(self, student_id: int, problem_id: int):
         db.delete_from_written_task_queue(student_id, problem_id)
 
     def add_to_discussions(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int, tg_msg_id: int):
-        db.insert_into_written_task_discussion(student_id,  problem_id,  teacher_id,  text,  attach_path, chat_id, tg_msg_id)
+        db.insert_into_written_task_discussion(student_id, problem_id, teacher_id, text, attach_path, chat_id, tg_msg_id)
 
     def get_discussion(self, student_id: int, problem_id: int):
         return db.fetch_written_task_discussion(student_id, problem_id)
@@ -616,7 +623,7 @@ if __name__ == '__main__':
 
     print('written queue test')
     # def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int):
-    # def get_written_tasks(self):
+    # def get_written_tasks_to_check(self):
     # def upd_written_task_status(self, id: int, new_status: int):
     # def delete_from_written_task_queue(self, id: int):
     db, users, problems, states, written_queue, waitlist = init_db_and_objects('dummy2')
@@ -625,13 +632,13 @@ if __name__ == '__main__':
     db.insert_into_written_task_queue(123, 124, 0)
     db.insert_into_written_task_queue(123, 125, 0)
     db.insert_into_written_task_queue(123, 123, 0)
-    print(db.get_written_tasks())
+    print(db.get_written_tasks_to_check())
     db.upd_written_task_status(123, 125, 1)
-    print(db.get_written_tasks())
+    print(db.get_written_tasks_to_check())
     db.delete_from_written_task_queue(123, 123)
     db.delete_from_written_task_queue(123, 124)
     db.delete_from_written_task_queue(123, 125)
-    print(db.get_written_tasks())
+    print(db.get_written_tasks_to_check())
 
     print('written task discussion')
     # def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str):

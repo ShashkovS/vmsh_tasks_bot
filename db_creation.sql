@@ -108,7 +108,10 @@ CREATE TABLE IF NOT EXISTS written_tasks_queue
     student_id  INTEGER   NOT NULL,
     problem_id  INTEGER   NOT NULL,
     cur_status  INTEGER   NOT NULL,
+    teacher_ts  TIMESTAMP null,
+    teacher_id  TIMESTAMP null,
     FOREIGN KEY (student_id) REFERENCES users (id),
+    FOREIGN KEY (teacher_id) REFERENCES users (id),
     FOREIGN KEY (problem_id) REFERENCES problems (id),
     UNIQUE (student_id, problem_id)
 );
