@@ -9,7 +9,7 @@ from consts import *
 _APP_PATH = os.path.dirname(os.path.realpath(__file__))
 _DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 _MAX_TIME_TO_CHECK_WRITTEN_TASK = timedelta(minutes=30)
-_MAX_WRITTEN_TASKS_TO_SELECT = 5
+_MAX_WRITTEN_TASKS_TO_SELECT = 8
 
 db = None
 users = None
