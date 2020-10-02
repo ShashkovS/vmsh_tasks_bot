@@ -65,6 +65,9 @@ async def bot_answer_callback_query(*args, **kwargs):
 
 async def update_all_internal_data(message: types.Message):
     global db, users, problems, states, written_queue, waitlist
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
     db, users, problems, states, written_queue, waitlist = db_helper.init_db_and_objects(db_name, refresh=True)
     await bot.send_message(
         chat_id=message.chat.id,
@@ -228,7 +231,7 @@ def build_written_task_checking_verdict_keyboard(student: db_helper.User, proble
         callback_data=f"{CALLBACK_WRITTEN_TASK_BAD}_{student.id}_{problem.id}"
     ))
     keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"Отменить всю эту проверку и всё забыть",
+        text=f"Отказаться от проверки и вернуться назад",
         callback_data=f"{CALLBACK_TEACHER_CANCEL}_{student.id}_{problem.id}"
     ))
     return keyboard_markup
@@ -430,11 +433,11 @@ async def recheck(message: types.Message):
     teacher = users.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE_TEACHER:
         return
-    match = re.fullmatch(r'/recheck_xd5fqk\s+(\w{6})\s+(\d+)([а-я])\.(\d+)([а-я]?)\s*', message.text or '')
+    match = re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+(\d+)([а-я])\.(\d+)([а-я]?)\s*', message.text or '')
     if not match:
         await bot.send_message(
             chat_id=message.chat.id,
-            text="🤖 Пришлите запрос на перепроверку в формате «/recheck_xd5fqk token problem», например «/recheck_xd5fqk aa9bb4 3н.11а»",
+            text="🤖 Пришлите запрос на перепроверку в формате\n«/recheck token problem», например «/recheck aa9bb4 3н.11а»",
         )
     else:
         token, lst, level, prob, item = match.groups()
@@ -445,8 +448,28 @@ async def recheck(message: types.Message):
         if not problem:
             await bot.send_message(chat_id=message.chat.id, text=f"🤖 Задача {lst}{level}.{prob}{item} не найдена")
         if student and problem:
-            written_queue.add_to_queue(student.id, problem.id, ts=datetime.datetime(1, 1, 1))
-            await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
+            message = await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
+            await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
+
+
+async def reset_students_state(message: types.Message):
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    # Всем студентам, у которых есть chat_id ставим state STATE_GET_TASK_INFO и отправляем список задач
+    for student in users:
+        if student.type != USER_TYPE_STUDENT or not student.chat_id:
+            continue
+        states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        try:
+            message = await bot.send_message(
+                chat_id=student.chat_id,
+                text="Можно сдавать задачи!",
+            )
+            await process_regular_message(message)
+        except:
+            pass
+        await asyncio.sleep(1/20)
 
 
 async def broadcast(message: types.Message):
@@ -678,21 +701,8 @@ async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: db_he
     await process_regular_message(query.message)
 
 
-async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher: db_helper.User):
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
-    chat_id = query.message.chat.id
-    _, student_id, problem_id = query.data.split('_')
-    student = users.get_by_id(int(student_id))
-    problem = problems.get_by_id(int(problem_id))
-    await bot_answer_callback_query(query.id)
-    # Блокируем задачу
-    is_unlocked = written_queue.mark_being_checked(student.id, problem.id, teacher.id)
-    if not is_unlocked:
-        await bot.send_message(chat_id=chat_id, text='Эту задачу уже кто-то взялся проверять.')
-        states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
-        await process_regular_message(query.message)
-        return
-    await bot_edit_message_text(chat_id=chat_id, message_id=query.message.message_id,
+async def forward_discussion_and_start_checking(chat_id, message_id, student, problem, teacher):
+    await bot_edit_message_text(chat_id=chat_id, message_id=message_id,
                                 text=f"Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
                                      f"Школьник {student.token} {student.surname} {student.name}"
                                      f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
@@ -723,6 +733,23 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
                            reply_markup=build_written_task_checking_verdict_keyboard(student, problem))
 
 
+async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher: db_helper.User):
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    chat_id = query.message.chat.id
+    _, student_id, problem_id = query.data.split('_')
+    student = users.get_by_id(int(student_id))
+    problem = problems.get_by_id(int(problem_id))
+    await bot_answer_callback_query(query.id)
+    # Блокируем задачу
+    is_unlocked = written_queue.mark_being_checked(student.id, problem.id, teacher.id)
+    if not is_unlocked:
+        await bot.send_message(chat_id=chat_id, text='Эту задачу уже кто-то взялся проверять.')
+        states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
+        await process_regular_message(query.message)
+        return
+    await forward_discussion_and_start_checking(chat_id, query.message.message_id, student, problem, teacher)
+
+
 async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_helper.User):
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
     _, student_id, problem_id = query.data.split('_')
@@ -733,8 +760,8 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_h
     written_queue.delete_from_queue(student.id, problem.id)
     await bot_answer_callback_query(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text=f'✔ Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
-                                f'\n<pre>\\recheck_xd5fqk {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item} для исправления</pre>',
+                           text=f'✔ Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
+                                f'<pre>/recheck {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item}</pre>',
                            parse_mode='HTML')
     states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
     student_chat_id = users.get_by_id(student.id).chat_id
@@ -783,8 +810,8 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: db_
     db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_WRONG_ANSWER, None)
     written_queue.delete_from_queue(student.id, problem.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
-                                f'\n<pre>\\recheck_xd5fqk {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item} для исправления</pre>',
+                           text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
+                                f'<pre>/recheck {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item}</pre>',
                            parse_mode='HTML')
 
     # Пересылаем переписку школьнику
@@ -1014,7 +1041,8 @@ async def on_startup(app):
     dispatcher.register_message_handler(start, commands=['start'])
     dispatcher.register_message_handler(sos, commands=['sos'])
     dispatcher.register_message_handler(broadcast, commands=['broadcast_wibkn96x'])
-    dispatcher.register_message_handler(recheck, commands=['recheck_xd5fqk'])
+    dispatcher.register_message_handler(reset_students_state, commands=['reset_state_jvcykgny'])
+    dispatcher.register_message_handler(recheck, filters.RegexpCommandsFilter(regexp_commands=['recheck.*']))
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
     dispatcher.register_message_handler(exit_waitlist, commands=['exit_waitlist'])
     dispatcher.register_message_handler(level_novice, commands=['level_novice'])
@@ -1053,3 +1081,11 @@ else:
     app.on_shutdown.append(on_shutdown)
 
     # app will be started by gunicorn
+
+"""
+Секретные команды для учителя:
+/broadcast_wibkn96x
+/reset_state_jvcykgny
+/recheck token problem
+/update_all_quaLtzPE
+"""
