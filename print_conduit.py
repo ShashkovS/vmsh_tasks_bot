@@ -2,8 +2,8 @@ import sqlite3
 import re
 import pyperclip
 
-NLIST = 4
-NLEVEL = 'п'
+NLIST = 5
+NLEVEL = ''
 
 conn = sqlite3.connect(r'db\88b1047644e68c3cceb7ff21e1190a90.db')
 cur = conn.cursor()
@@ -16,7 +16,8 @@ cur.execute('''
     from users u 
     join results r on r.student_id = u.id 
     join problems p on r.problem_id = p.id
-    where (u.type = 1 and token not like 'pass%') and p.lesson = :NLIST and p.level = :NLEVEL
+    where (u.type = 1 and token not like 'pass%') and p.lesson = :NLIST and 
+    (p.level = :NLEVEL or ''=:NLEVEL) 
     group by 1, 2
 ''', globals())
 results = {(r[0], r[1]): str(max(r[2], 0)) for r in cur.fetchall()}
@@ -47,7 +48,7 @@ pupils = ordered_pupils
 cur.execute('''
     select p.lesson || p.level || '.' || p.prob  || p.item as prob
     from problems p
-    where p.lesson = :NLIST and p.level = :NLEVEL
+    where p.lesson = :NLIST and (p.level = :NLEVEL or ''=:NLEVEL)
 ''', globals())
 problems = set({x[0] for x in cur.fetchall()})
 
@@ -69,6 +70,6 @@ for r, pupil in enumerate(ordered_pupils, start=1):
     for c, (formatted, problem) in enumerate(formated_problems, start=1):
         table[r][c] = results.get((pupil, problem), '')
 
-stable = '\n'.join('\t'.join(row[1:]) for row in table)
+stable = '\n'.join('\t'.join(row[:]) for row in table)
 pyperclip.copy(stable)
 print(stable)
