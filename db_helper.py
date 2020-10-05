@@ -132,6 +132,15 @@ class DB:
         """, args)
         self.conn.commit()
 
+    def delete_plus(self, student_id: int, problem_id: int, verdict: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            update results set verdict = :verdict
+            where student_id = :student_id and problem_id = :problem_id and problem_id > 0
+        """, args)
+        self.conn.commit()
+
     def check_student_solved(self, student_id: int, level: str, lesson: int):
         args = locals()
         cur = self.conn.cursor()

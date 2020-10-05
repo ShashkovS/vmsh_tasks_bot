@@ -385,21 +385,30 @@ async def prc_wait_sos_request_state(message: types.Message, student: db_helper.
     await process_regular_message(message)
 
 
-def build_verdict_keyboard(plus_ids: set, student):
+def build_verdict_keyboard(plus_ids: set, minus_ids: set, student):
     lesson_num = problems.last_lesson
+    solved = db.check_student_solved(student.id, student.level, lesson_num)
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
+    minus_ids_str = ','.join(map(str, minus_ids))
     for problem in problems.get_by_lesson(student.level, lesson_num):
         if problem.prob_type == PROB_TYPE_ORALLY:
-            tick = '✅' if problem.id in plus_ids else ''
+            if problem.id in solved and problem.id not in minus_ids:
+                tick = '✅✅'
+            elif problem.id in plus_ids:
+                tick = '✔'
+            elif problem.id in minus_ids:
+                tick = '❌'
+            else:
+                tick = ''
             task_button = types.InlineKeyboardButton(
                 text=f"{tick} {problem}",
-                callback_data=f"{CALLBACK_ADD_OR_REMOVE_ORAL_PLUS}_{problem.id}_{plus_ids_str}"
+                callback_data=f"{CALLBACK_ADD_OR_REMOVE_ORAL_PLUS}_{problem.id}_{plus_ids_str}_{minus_ids_str}"
             )
             keyboard_markup.add(task_button)
     ready_button = types.InlineKeyboardButton(
         text="Готово (завершить сдачу и внести в кондуит)",
-        callback_data=f"{CALLBACK_FINISH_ORAL_ROUND}_{plus_ids_str}"
+        callback_data=f"{CALLBACK_FINISH_ORAL_ROUND}_{plus_ids_str}_{minus_ids_str}"
     )
     keyboard_markup.add(ready_button)
     return keyboard_markup
@@ -411,7 +420,7 @@ async def prc_teacher_accepted_queue(message: types.message, teacher: db_helper.
     student = users.get_by_id(student_id)
     await bot.send_message(chat_id=message.chat.id,
                            text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
-                           reply_markup=build_verdict_keyboard(plus_ids=set(), student=student))
+                           reply_markup=build_verdict_keyboard(plus_ids=set(), minus_ids=set(), student=student))
 
 
 async def prc_teacher_writes_student_name_state(message: types.message, teacher: db_helper.User):
@@ -844,6 +853,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: db_
     problem = problems.get_by_id(int(problem_id))
     # Помечаем решение как неверное и удаляем из очереди
     db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_WRONG_ANSWER, None)
+    db.delete_plus(student_id, problem.id, VERDICT_WRONG_ANSWER)
     written_queue.delete_from_queue(student.id, problem.id)
     await bot.send_message(chat_id=query.message.chat.id,
                            text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
@@ -985,38 +995,53 @@ async def prc_student_selected_callback(query: types.CallbackQuery, teacher: db_
     student = users.get_by_id(student_id)
     await bot.send_message(chat_id=query.message.chat.id,
                            text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
-                           reply_markup=build_verdict_keyboard(plus_ids=set(), student=student))
+                           reply_markup=build_verdict_keyboard(plus_ids=set(), minus_ids=set(), student=student))
     states.set_by_user_id(teacher.id, STATE_TEACHER_WRITES_STUDENT_NAME, last_student_id=student.id)
     await bot_answer_callback_query(query.id)
 
 
 async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teacher: db_helper.User):
-    _, problem_id, selected_ids = query.data.split('_')
+    _, problem_id, plus_ids, minus_ids = query.data.split('_')
     problem_id = int(problem_id)
-    selected_ids = set() if not selected_ids else {int(prb_id) for prb_id in selected_ids.split(',')}
-    selected_ids.symmetric_difference_update({problem_id})
+    plus_ids = set() if not plus_ids else {int(prb_id) for prb_id in plus_ids.split(',')}
+    minus_ids = set() if not minus_ids else {int(prb_id) for prb_id in minus_ids.split(',')}
+    # TODO
+    if problem_id in plus_ids:
+        plus_ids.discard(problem_id)
+        minus_ids.add(problem_id)
+    elif problem_id in minus_ids:
+        minus_ids.discard(problem_id)
+    else:
+        plus_ids.add(problem_id)
     state = states.get_by_user_id(teacher.id)
     student_id = state['last_student_id']
     student = users.get_by_id(student_id)
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=build_verdict_keyboard(plus_ids=selected_ids, student=student))
+                                        reply_markup=build_verdict_keyboard(plus_ids=plus_ids, minus_ids=minus_ids, student=student))
     await bot_answer_callback_query(query.id)
 
 
 async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: db_helper.User):
-    _, selected_ids = query.data.split('_')
-    selected_ids = set() if not selected_ids else {int(prb_id) for prb_id in selected_ids.split(',')}
+    _, plus_ids, minus_ids = query.data.split('_')
+    plus_ids = set() if not plus_ids else {int(prb_id) for prb_id in plus_ids.split(',')}
+    minus_ids = set() if not minus_ids else {int(prb_id) for prb_id in minus_ids.split(',')}
     state = states.get_by_user_id(teacher.id)
     student_id = state['last_student_id']
     student = users.get_by_id(student_id)
-    pluses = [problems.get_by_id(prb_id) for prb_id in selected_ids]
+    pluses = [problems.get_by_id(prb_id) for prb_id in plus_ids]
+    minuses = [problems.get_by_id(prb_id) for prb_id in minus_ids]
     human_readable_pluses = [f'{plus.lesson}{plus.level}.{plus.prob}{plus.item}' for plus in pluses]
+    human_readable_minuses = [f'{plus.lesson}{plus.level}.{plus.prob}{plus.item}' for plus in minuses]
     # Проставляем плюсики
     for problem in pluses:
         db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_SOLVED, None)
+    for problem in minuses:
+        db.delete_plus(student_id, problem.id, VERDICT_WRONG_ANSWER)
+        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_WRONG_ANSWER, None)
     await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                 text=f"Школьник: {student.token} {student.surname} {student.name}\n"
-                                     f"Поставлены плюсы за задачи: {', '.join(human_readable_pluses)}",
+                                     f"\nПоставлены плюсы за задачи: {', '.join(human_readable_pluses)}"
+                                     f"\nПоставлены минусы за задачи: {', '.join(human_readable_minuses)}",
                                 reply_markup=None)
     try:
         student_state = states.get_by_user_id(student.id)
