@@ -5,6 +5,7 @@
 # oauth2client
 # aiohttp
 # gunicorn
+# python-Levenshtein
 
 aiogram==2.9.2
 aiohttp==3.6.2
@@ -38,3 +39,4 @@ six==1.15.0
 uritemplate==3.0.1
 urllib3==1.25.10
 yarl==1.5.1
+python-Levenshtein
