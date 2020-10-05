@@ -391,21 +391,23 @@ def build_verdict_keyboard(plus_ids: set, minus_ids: set, student):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
-    for problem in problems.get_by_lesson(student.level, lesson_num):
-        if problem.prob_type == PROB_TYPE_ORALLY:
-            if problem.id in solved and problem.id not in minus_ids:
-                tick = '✅✅'
-            elif problem.id in plus_ids:
-                tick = '✔'
-            elif problem.id in minus_ids:
-                tick = '❌'
-            else:
-                tick = ''
-            task_button = types.InlineKeyboardButton(
-                text=f"{tick} {problem}",
-                callback_data=f"{CALLBACK_ADD_OR_REMOVE_ORAL_PLUS}_{problem.id}_{plus_ids_str}_{minus_ids_str}"
-            )
-            keyboard_markup.add(task_button)
+    use_problems = [problem for problem in problems.get_by_lesson(student.level, lesson_num) if problem.prob_type == PROB_TYPE_ORALLY]
+    if len(use_problems):
+        use_problems = [problem for problem in problems.get_by_lesson(student.level, lesson_num) if problem.prob_type == PROB_TYPE_WRITTEN]
+    for problem in use_problems:
+        if problem.id in solved and problem.id not in minus_ids:
+            tick = '✅✅'
+        elif problem.id in plus_ids:
+            tick = '✔'
+        elif problem.id in minus_ids:
+            tick = '❌'
+        else:
+            tick = ''
+        task_button = types.InlineKeyboardButton(
+            text=f"{tick} {problem}",
+            callback_data=f"{CALLBACK_ADD_OR_REMOVE_ORAL_PLUS}_{problem.id}_{plus_ids_str}_{minus_ids_str}"
+        )
+        keyboard_markup.add(task_button)
     ready_button = types.InlineKeyboardButton(
         text="Готово (завершить сдачу и внести в кондуит)",
         callback_data=f"{CALLBACK_FINISH_ORAL_ROUND}_{plus_ids_str}_{minus_ids_str}"
