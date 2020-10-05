@@ -14,6 +14,7 @@ from aiogram.dispatcher.webhook import configure_app, types, web
 from aiogram.utils.executor import start_polling
 from aiogram.utils.exceptions import MessageNotModified
 from urllib.parse import urlencode
+from Levenshtein import jaro_winkler
 
 logging.basicConfig(level=logging.INFO)
 
@@ -194,11 +195,16 @@ def build_teacher_actions_keyboard():
         callback_data=CALLBACK_GET_WRITTEN_TASK
     )
     keyboard.add(get_written_task_button)
-    get_queue_top_button = types.InlineKeyboardButton(
-        text="Вызвать школьника на устную сдачу",
-        callback_data=CALLBACK_GET_QUEUE_TOP
+    # get_queue_top_button = types.InlineKeyboardButton(
+    #     text="Вызвать школьника на устную сдачу",
+    #     callback_data=CALLBACK_GET_QUEUE_TOP
+    # )
+    # keyboard.add(get_queue_top_button)
+    insert_oral_pluses = types.InlineKeyboardButton(
+        text="Внести плюсы за устную сдачу",
+        callback_data=CALLBACK_INS_ORAL_PLUSSES
     )
-    keyboard.add(get_queue_top_button)
+    keyboard.add(insert_oral_pluses)
     return keyboard
 
 
@@ -212,6 +218,26 @@ def build_teacher_select_written_problem_keyboard(top: list):
             callback_data=f"{CALLBACK_WRITTEN_TASK_SELECTED}_{student.id}_{problem.id}"
         )
         keyboard_markup.add(task_button)
+    cancel = types.InlineKeyboardButton(
+        text="Отмена",
+        callback_data=f"{CALLBACK_TEACHER_CANCEL}"
+    )
+    keyboard_markup.add(cancel)
+    return keyboard_markup
+
+
+def build_select_student_keyboard(name_to_find: str):
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
+    students = sorted(
+        (user for user in users if user.type == USER_TYPE_STUDENT),
+        key=lambda user: -jaro_winkler(name_to_find.lower(), f'{user.surname} {user.name} {user.token}'.lower(), 1 / 10)
+    )
+    for student in students[:8]:
+        student_button = types.InlineKeyboardButton(
+            text=f"{student.surname} {student.name} {student.level} {student.token}",
+            callback_data=f"{CALLBACK_STUDENT_SELECTED}_{student.id}"
+        )
+        keyboard_markup.add(student_button)
     cancel = types.InlineKeyboardButton(
         text="Отмена",
         callback_data=f"{CALLBACK_TEACHER_CANCEL}"
@@ -388,6 +414,13 @@ async def prc_teacher_accepted_queue(message: types.message, teacher: db_helper.
                            reply_markup=build_verdict_keyboard(plus_ids=set(), student=student))
 
 
+async def prc_teacher_writes_student_name_state(message: types.message, teacher: db_helper.User):
+    name_to_find = message.text or ''
+    await bot.send_message(chat_id=message.chat.id,
+                           text="Выберите школьника для внесения задач",
+                           reply_markup=build_select_student_keyboard(name_to_find))
+
+
 async def prc_student_is_in_conference_state(message: types.message, student: db_helper.User):
     # Ничего не делаем, ждём callback'а
     pass
@@ -403,6 +436,7 @@ state_processors = {
     STATE_TEACHER_IS_CHECKING_TASK: prc_teacher_is_checking_task_state,
     STATE_TEACHER_ACCEPTED_QUEUE: prc_teacher_accepted_queue,
     STATE_STUDENT_IS_IN_CONFERENCE: prc_student_is_in_conference_state,
+    STATE_TEACHER_WRITES_STUDENT_NAME: prc_teacher_writes_student_name_state,
 }
 
 
@@ -575,11 +609,13 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: db
     elif problem.prob_type == PROB_TYPE_ORALLY:
         await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                     text=f"Выбрана устная задача. "
-                                         f"Её нужно в zoom-конференции. "
-                                         f"Желательно перед сдачей записать ответ и основные шаги решения на бумаге. "
-                                         f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
-                                         f"\nКогда у вас всё готово, <b>заходите в zoom-конференцию, идентификатор конференции: 834 3300 5508, код доступа: 179971</b>. "
-                                         f"\nПожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. "
+                                         f"Её нужно сдавать в zoom-конференции. "
+                                         # f"Желательно перед сдачей записать ответ и основные шаги решения на бумаге. "
+                                         # f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
+                                         # f"\nКогда у вас всё готово, "
+                                         f"<b>Заходите в zoom-конференцию, идентификатор конференции:"
+                                         f"\n<br>834 3300 5508, код доступа: 179971</b>. "
+                                         f"\n<br>Пожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. "
                                          f"Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. "
                                          f"После окончания сдачи нужно выйти из конференции. "
                                          f"Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. "
@@ -901,6 +937,15 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: db_hel
     await process_regular_message(message=query.message)
 
 
+async def prc_ins_oral_plusses(query: types.CallbackQuery, teacher: db_helper.User):
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
+    await bot.send_message(chat_id=teacher.chat_id,
+                           text=f"Введите фамилию школьника (можно начало фамилии)")
+    await bot_answer_callback_query(query.id)
+    states.set_by_user_id(teacher.id, STATE_TEACHER_WRITES_STUDENT_NAME)
+
+
 async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: db_helper.User):
     state = states.get_by_user_id(teacher.id)
     problem_id = state['oral_problem_id']
@@ -931,6 +976,18 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
                                text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
     await bot_answer_callback_query(query.id)
     await process_regular_message(query.message)
+
+
+async def prc_student_selected_callback(query: types.CallbackQuery, teacher: db_helper.User):
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    _, student_id = query.data.split('_')
+    student_id = int(student_id)
+    student = users.get_by_id(student_id)
+    await bot.send_message(chat_id=query.message.chat.id,
+                           text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
+                           reply_markup=build_verdict_keyboard(plus_ids=set(), student=student))
+    states.set_by_user_id(teacher.id, STATE_TEACHER_WRITES_STUDENT_NAME, last_student_id=student.id)
+    await bot_answer_callback_query(query.id)
 
 
 async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teacher: db_helper.User):
@@ -985,6 +1042,7 @@ callbacks_processors = {
     CALLBACK_LIST_SELECTED: prc_list_selected_callback,
     CALLBACK_ONE_OF_TEST_ANSWER_SELECTED: prc_one_of_test_answer_selected_callback,
     CALLBACK_GET_QUEUE_TOP: prc_get_queue_top_callback,
+    CALLBACK_INS_ORAL_PLUSSES: prc_ins_oral_plusses,
     CALLBACK_SET_VERDICT: prc_set_verdict_callback,
     CALLBACK_CANCEL_TASK_SUBMISSION: prc_cancel_task_submission_callback,
     CALLBACK_GET_WRITTEN_TASK: prc_get_written_task_callback,
@@ -995,6 +1053,7 @@ callbacks_processors = {
     CALLBACK_GET_OUT_OF_WAITLIST: prc_get_out_of_waitlist_callback,
     CALLBACK_ADD_OR_REMOVE_ORAL_PLUS: prc_add_or_remove_oral_plus_callback,
     CALLBACK_FINISH_ORAL_ROUND: prc_finish_oral_round_callback,
+    CALLBACK_STUDENT_SELECTED: prc_student_selected_callback,
 }
 
 

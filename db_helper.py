@@ -58,6 +58,7 @@ class DB:
             on conflict (token) do update set 
             chat_id=coalesce(excluded.chat_id, chat_id), 
             type=excluded.type, 
+            level=coalesce(level, excluded.level), 
             name=excluded.name, 
             surname=excluded.surname, 
             middlename=excluded.middlename
