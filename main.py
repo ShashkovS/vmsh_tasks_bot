@@ -991,10 +991,12 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
 
 
 async def prc_student_selected_callback(query: types.CallbackQuery, teacher: db_helper.User):
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
     _, student_id = query.data.split('_')
     student_id = int(student_id)
     student = users.get_by_id(student_id)
+    await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None,
+                                text=f"Вносим плюсики школьнику:\n"
+                                     f"{student.surname} {student.name} {student.token} уровень {student.level}")
     await bot.send_message(chat_id=query.message.chat.id,
                            text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
                            reply_markup=build_verdict_keyboard(plus_ids=set(), minus_ids=set(), student=student))
