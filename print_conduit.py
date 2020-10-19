@@ -3,7 +3,8 @@ import re
 import pyperclip
 
 NLIST = 6
-NLEVEL = ''
+NLEVEL = 'п'
+FOR_MAILS = 1  # 1/0
 
 conn = sqlite3.connect(r'db\88b1047644e68c3cceb7ff21e1190a90.db')
 cur = conn.cursor()
@@ -41,7 +42,7 @@ nu4te3 qe9qe3 hu7ka2 cy3qe7 gu6ju5 nu2pu8 wa2vu5 sa9pu8 vy4ga5 ry7ca6 fa2fa8 ve6
 '''
 
 ordered_pupils = [token_to_pupil[token] for token in order.split()]
-# pupils = ordered_pupils
+pupils = ordered_pupils
 
 
 
@@ -65,6 +66,10 @@ table = [[''] * (len(problems) + 2) for __ in range(len(pupils) + 1)]
 table[0][0] = 'token\tФамилия\tИмя\tнач/прод'
 table[0][1] = f'{NLIST:02}{NLEVEL}.Н'
 for c, (formatted, problem) in enumerate(formated_problems, start=2):
+    if FOR_MAILS:
+        formatted = formatted.strip('cс').lstrip('0')
+        formatted = formatted if '.' not in formatted else formatted[formatted.find('.')+1:].strip('cс').lstrip('0')
+        formatted = 'c' + formatted
     table[0][c] = formatted
 for r, pupil in enumerate(pupils, start=1):
     table[r][0] = pupil
@@ -75,6 +80,7 @@ for r, pupil in enumerate(pupils, start=1):
         table[r][c] = results.get((pupil, problem), '')
     table[r][1] = '1' if any(table[r][2:]) else ''
 
-stable = '\n'.join('\t'.join(row[:]) for row in table)
+startFrom = 0 if FOR_MAILS else 1
+stable = '\n'.join('\t'.join(row[startFrom:]) for row in table if not FOR_MAILS or any(row[1:]))
 pyperclip.copy(stable)
 print(stable)
