@@ -190,8 +190,9 @@ def build_exit_waitlist_keyboard():
 
 def build_teacher_actions_keyboard():
     keyboard = types.InlineKeyboardMarkup()
+    prb_count = db.get_written_tasks_count()
     get_written_task_button = types.InlineKeyboardButton(
-        text="Проверить письменную задачу",
+        text=f"Проверить письменную задачу (всего {prb_count})",
         callback_data=CALLBACK_GET_WRITTEN_TASK
     )
     keyboard.add(get_written_task_button)
@@ -249,7 +250,7 @@ def build_select_student_keyboard(name_to_find: str):
 def build_written_task_checking_verdict_keyboard(student: db_helper.User, problem: db_helper.Problem):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
     keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"✔ Засчитать задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
+        text=f"👍 Засчитать задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
         callback_data=f"{CALLBACK_WRITTEN_TASK_OK}_{student.id}_{problem.id}"
     ))
     keyboard_markup.add(types.InlineKeyboardButton(
@@ -398,7 +399,7 @@ def build_verdict_keyboard(plus_ids: set, minus_ids: set, student):
         if problem.id in solved and problem.id not in minus_ids:
             tick = '✅✅'
         elif problem.id in plus_ids:
-            tick = '✔'
+            tick = '👍'
         elif problem.id in minus_ids:
             tick = '❌'
         else:
@@ -807,7 +808,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_h
     written_queue.delete_from_queue(student.id, problem.id)
     await bot_answer_callback_query(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text=f'✔ Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
+                           text=f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
                                 f'<pre>/recheck {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item}</pre>',
                            parse_mode='HTML')
     states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)

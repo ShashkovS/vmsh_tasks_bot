@@ -287,6 +287,14 @@ class DB:
         rows = cur.fetchall()
         return rows
 
+    def get_written_tasks_count(self):
+        cur = self.conn.cursor()
+        cur.execute("""
+            select count(*) cnt from written_tasks_queue 
+        """)
+        row = cur.fetchone()
+        return row['cnt']
+
     def upd_written_task_status(self, student_id: int, problem_id: int, new_status: int, teacher_id: int = None):
         args = locals()
         args['now_minus_30_min'] = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
@@ -641,13 +649,14 @@ if __name__ == '__main__':
     db.insert_into_written_task_queue(123, 124, 0)
     db.insert_into_written_task_queue(123, 125, 0)
     db.insert_into_written_task_queue(123, 123, 0)
-    print(db.get_written_tasks_to_check())
+    print(db.get_written_tasks_to_check(-1))
     db.upd_written_task_status(123, 125, 1)
-    print(db.get_written_tasks_to_check())
+    print(db.get_written_tasks_to_check(-1))
+    print('get_written_tasks_count', db.get_written_tasks_count())
     db.delete_from_written_task_queue(123, 123)
     db.delete_from_written_task_queue(123, 124)
     db.delete_from_written_task_queue(123, 125)
-    print(db.get_written_tasks_to_check())
+    print(db.get_written_tasks_to_check(-1))
 
     print('written task discussion')
     # def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str):
