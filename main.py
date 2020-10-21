@@ -752,7 +752,7 @@ async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: db_he
 async def forward_discussion_and_start_checking(chat_id, message_id, student, problem, teacher):
     await bot_edit_message_text(chat_id=chat_id, message_id=message_id,
                                 text=f"Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
-                                     f"Школьник {student.token} {student.surname} {student.name}"
+                                     f"Школьник {student.token} {student.surname} {student.name}\n"
                                      f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
                                 reply_markup=None)
     discussion = written_queue.get_discussion(student.id, problem.id)
