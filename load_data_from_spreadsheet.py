@@ -75,8 +75,52 @@ def load(*, use_pickle=True):
     return result
 
 
+def load_teachers():
+    logging.info('Setting reload: using google')
+    import gspread
+    from oauth2client.service_account import ServiceAccountCredentials
+    scopes = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    creds = ServiceAccountCredentials.from_json_keyfile_name(google_cred_json, scopes)
+    client = gspread.authorize(creds)
+    sheet = client.open_by_key(sheets_key)
+    logging.info('Setting reload: fetching teachers')
+    worksheet_students = sheet.worksheet("Учителя")
+    teachers = _dict_factory(
+        worksheet_students.get_all_values(),
+        ['surname', 'name', 'middlename', 'token'],
+    )
+    logging.info('Setting reload: DONE')
+    return teachers[2:]
+
+
+def load_problems():
+    logging.info('Setting reload: using google')
+    import gspread
+    from oauth2client.service_account import ServiceAccountCredentials
+    scopes = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    creds = ServiceAccountCredentials.from_json_keyfile_name(google_cred_json, scopes)
+    client = gspread.authorize(creds)
+    sheet = client.open_by_key(sheets_key)
+    logging.info('Setting reload: fetching teachers')
+    worksheet_problems = sheet.worksheet("Задачи")
+    logging.info('Setting reload: fetching problems')
+    problems = _dict_factory(
+        worksheet_problems.get_all_values(),
+        ['level', 'lesson', 'prob', 'item', 'title', 'prob_text', 'prob_type', 'ans_type', 'ans_validation', 'validation_error', 'cor_ans', 'cor_ans_checker',
+         'wrong_ans', 'congrat', ],
+    )
+    logging.info('Setting reload: DONE')
+    return problems[2:]
+
+
 if __name__ == '__main__':
-    problems, students, teachers = load()
+    # problems, students, teachers = load()
+    # print(problems)
+    # print(students)
+    # print(teachers)
+
+    # teachers = load_teachers()
+    # print(teachers)
+
+    problems = load_problems()
     print(problems)
-    print(students)
-    print(teachers)
