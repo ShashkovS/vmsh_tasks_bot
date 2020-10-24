@@ -574,6 +574,38 @@ def init_db_and_objects(db_file='prod_database.db', *, refresh=False):
     return db, users, problems, states, written_queue, waitlist
 
 
+def update_teachers(db_file='prod_database.db'):
+    global users
+    teachers = load_data_from_spreadsheet.load_teachers()
+    for teacher in teachers:
+        if not teacher.get('surname', None):
+            continue
+        teacher['type'] = USER_TYPE_TEACHER
+        teacher['chat_id'] = None
+        teacher['level'] = None
+        # Создание юзеров автоматически зальёт их в базу
+        User(**teacher)
+    users = Users()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
+    return users
+
+
+def update_problems(db_file='prod_database.db'):
+    global problems
+    problems = load_data_from_spreadsheet.load_problems()
+    for problem in problems:
+        if not problem.get('lesson', None) or not problem.get('prob', None):
+            continue
+        try:
+            problem['prob_type'] = PROB_TYPES[problem['prob_type']]
+            problem['ans_type'] = ANS_TYPES[problem['ans_type']]
+        except:
+            print('А-а-а-а, криво настроенные задачи!')
+            continue
+        Problem(**row)
+    problems = Problems()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
+    return problems
+
+
 if __name__ == '__main__':
     print('Self test')
 

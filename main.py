@@ -74,12 +74,30 @@ async def update_all_internal_data(message: types.Message):
         chat_id=message.chat.id,
         text="Данные обновлены",
     )
-    user = users.get_by_chat_id(message.chat.id)
-    if user.type == USER_TYPE_STUDENT:
-        states.set_by_user_id(user.id, STATE_GET_TASK_INFO)
-    elif user.type == USER_TYPE_TEACHER:
-        states.set_by_user_id(user.id, STATE_TEACHER_SELECT_ACTION)
-    await process_regular_message(message)
+
+
+async def update_teachers(message: types.Message):
+    global users
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    users = db_helper.update_teachers(db_name)
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Данные обновлены",
+    )
+
+
+async def update_problems(message: types.Message):
+    global problems
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    problems = db_helper.update_problems(db_name)
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Данные обновлены",
+    )
 
 
 async def prc_get_user_info_state(message: types.Message, user: db_helper.User):
@@ -1133,6 +1151,8 @@ async def on_startup(app):
     dispatcher.register_message_handler(reset_students_state, commands=['reset_state_jvcykgny'])
     dispatcher.register_message_handler(recheck, filters.RegexpCommandsFilter(regexp_commands=['recheck.*']))
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
+    dispatcher.register_message_handler(update_teachers, commands=['update_teachers'])
+    dispatcher.register_message_handler(update_problems, commands=['update_problems'])
     dispatcher.register_message_handler(exit_waitlist, commands=['exit_waitlist'])
     dispatcher.register_message_handler(level_novice, commands=['level_novice'])
     dispatcher.register_message_handler(level_pro, commands=['level_pro'])
@@ -1177,4 +1197,6 @@ else:
 /reset_state_jvcykgny
 /recheck token problem
 /update_all_quaLtzPE
+/update_teachers
+/update_problems
 """
