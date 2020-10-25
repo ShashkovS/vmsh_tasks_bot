@@ -790,8 +790,19 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student, pr
         elif row['attach_path']:
             # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
             path = row['attach_path'].replace('/web/vmsh179bot/vmsh179bot/', '')
-            input_file = types.input_file.InputFile(path)
-            await bot.send_photo(chat_id=chat_id, photo=input_file)
+            file, _, ext = path.rpartition('.')
+            if ext and ext.lower() in ('jpg', 'png'):
+                input_file = types.input_file.InputFile(path)
+                await bot.send_photo(chat_id=chat_id, photo=input_file)
+            elif ext.lower() == 'txt':
+                text = open(row['attach_path'], 'r', encoding='utf-8').read()
+                await bot.send_message(chat_id=chat_id, text=text)
+            else:
+                # Хм... Странный файл
+                try:
+                    await bot.send_document(chat_id=chat_id, document=types.input_file.InputFile(path))
+                except:
+                    pass
     states.set_by_user_id(teacher.id, STATE_TEACHER_IS_CHECKING_TASK, problem.id, last_teacher_id=teacher.id, last_student_id=student.id)
     await bot.send_message(chat_id=chat_id,
                            text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
