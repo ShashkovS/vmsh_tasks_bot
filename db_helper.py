@@ -601,7 +601,7 @@ def update_problems(db_file='prod_database.db'):
         except:
             print('А-а-а-а, криво настроенные задачи!')
             continue
-        Problem(**row)
+        Problem(**problem)
     problems = Problems()  # TODO Это — долбанный костыль, чтобы не терять id-шники чатов. Перечитываем всё из БД
     return problems
 
