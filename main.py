@@ -410,9 +410,7 @@ def build_verdict_keyboard(plus_ids: set, minus_ids: set, student):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
-    use_problems = [problem for problem in problems.get_by_lesson(student.level, lesson_num) if problem.prob_type == PROB_TYPE_ORALLY]
-    if len(use_problems) == 0:
-        use_problems = [problem for problem in problems.get_by_lesson(student.level, lesson_num) if problem.prob_type == PROB_TYPE_WRITTEN]
+    use_problems = [problem for problem in problems.get_by_lesson(student.level, lesson_num) if problem.prob_type in (PROB_TYPE_ORALLY, PROB_TYPE_WRITTEN_BEFORE_ORALLY)]
     for problem in use_problems:
         if problem.id in solved and problem.id not in minus_ids:
             tick = '✅✅'
@@ -630,7 +628,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: db
                                         reply_markup=build_cancel_task_submission_keyboard())
         states.set_by_user_id(student.id, STATE_SENDING_TEST_ANSWER, problem_id)
         await bot_answer_callback_query(query.id)
-    elif problem.prob_type == PROB_TYPE_WRITTEN:
+    elif problem.prob_type in (PROB_TYPE_WRITTEN, PROB_TYPE_WRITTEN_BEFORE_ORALLY):
         await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                     text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.",
                                     reply_markup=build_cancel_task_submission_keyboard())
