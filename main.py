@@ -144,8 +144,14 @@ def build_problems_keyboard(lesson_num: int, student: db_helper.User):
             tick = '⌛'
         else:
             tick = '⬜'
+        if problem.prob_type == PROB_TYPE_TEST:
+            tp = '⋯'
+        elif problem.prob_type == PROB_TYPE_WRITTEN or problem.prob_type == PROB_TYPE_WRITTEN_BEFORE_ORALLY:
+            tp = '🖊'
+        elif problem.prob_type == PROB_TYPE_ORALLY:
+            tp = '🗣'
         task_button = types.InlineKeyboardButton(
-            text=f"{tick} {problem}",
+            text=f"{tick} {tp} {problem}",
             callback_data=f"{CALLBACK_PROBLEM_SELECTED}_{problem.id}"
         )
         keyboard_markup.add(task_button)
