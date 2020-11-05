@@ -908,7 +908,10 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: db_
         for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не привысить лимит
             # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
             if row['chat_id'] and row['tg_msg_id']:
-                await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
+                try:
+                    await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
+                except aiogram.utils.exceptions.BadRequest as e:
+                    logging.error(f'Почему-то не отфорвардилось... {student_chat_id}\n{e}')
             elif row['text']:
                 await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
             elif row['attach_path']:
