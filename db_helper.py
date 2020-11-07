@@ -399,6 +399,11 @@ class Users:
             self.by_token[user.token.strip().translate(RU_TO_EN).lower()] = user
             self.by_id[user.id] = user
 
+    def all_students(self):
+        for user in self.all_users:
+            if user.type == USER_TYPE_STUDENT:
+                yield user
+
     def get_by_chat_id(self, key):
         return self.by_chat_id.get(key, None)
 

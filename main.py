@@ -455,6 +455,12 @@ async def prc_teacher_writes_student_name_state(message: types.message, teacher:
                            reply_markup=build_select_student_keyboard(name_to_find))
 
 
+async def prc_student_is_sleeping_state(message: types.message, student: db_helper.User):
+    await bot.send_message(chat_id=message.chat.id,
+                           text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
+                                "Заходите в канал @vmsh_179_5_6_2020 кружка за новостями и решениями.")
+
+
 async def prc_student_is_in_conference_state(message: types.message, student: db_helper.User):
     # Ничего не делаем, ждём callback'а
     pass
@@ -471,6 +477,7 @@ state_processors = {
     STATE_TEACHER_ACCEPTED_QUEUE: prc_teacher_accepted_queue,
     STATE_STUDENT_IS_IN_CONFERENCE: prc_student_is_in_conference_state,
     STATE_TEACHER_WRITES_STUDENT_NAME: prc_teacher_writes_student_name_state,
+    STATE_STUDENT_IS_SLEEPING: prc_student_is_sleeping_state,
 }
 
 
@@ -520,21 +527,41 @@ async def recheck(message: types.Message):
             await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
-async def reset_students_state(message: types.Message):
+async def set_get_task_info_for_all_students(message: types.Message):
     teacher = users.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE_TEACHER:
         return
     # Всем студентам, у которых есть chat_id ставим state STATE_GET_TASK_INFO и отправляем список задач
-    for student in users:
-        if student.type != USER_TYPE_STUDENT or not student.chat_id:
-            continue
+    for student in users.all_students():
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        if not student.chat_id:
+            continue
         try:
             message = await bot.send_message(
                 chat_id=student.chat_id,
                 text="Можно сдавать задачи!",
             )
             await process_regular_message(message)
+        except:
+            pass
+        await asyncio.sleep(1/20)
+
+
+async def set_sleep_state_for_all_students(message: types.Message):
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    # Всем студентам ставим state STATE_STUDENT_IS_SLEEPING. Прекращаем приём задач
+    for student in users.all_students():
+        states.set_by_user_id(student.id, STATE_STUDENT_IS_SLEEPING)
+        if not student.chat_id:
+            continue
+        try:
+            await bot.send_message(
+                chat_id=student.chat_id,
+                text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
+                     "Заходите в канал @vmsh_179_5_6_2020 кружка за новостями и решениями.",
+            )
         except:
             pass
         await asyncio.sleep(1/20)
@@ -614,7 +641,10 @@ async def sos(message: types.Message):
 
 async def prc_problems_selected_callback(query: types.CallbackQuery, student: db_helper.User):
     student = users.get_by_chat_id(query.message.chat.id)
-    # state = states.get_by_user_id(user.id)
+    state = states.get_by_user_id(student.id)
+    if state.get('state', None) == STATE_STUDENT_IS_SLEEPING:
+        await bot_answer_callback_query(query.id)
+        return
     problem_id = int(query.data[2:])
     problem = problems.get_by_id(problem_id)
     if not problem:
@@ -1166,7 +1196,9 @@ async def on_startup(app):
     dispatcher.register_message_handler(start, commands=['start'])
     dispatcher.register_message_handler(sos, commands=['sos'])
     dispatcher.register_message_handler(broadcast, commands=['broadcast_wibkn96x'])
-    dispatcher.register_message_handler(reset_students_state, commands=['reset_state_jvcykgny'])
+    dispatcher.register_message_handler(set_get_task_info_for_all_students, commands=['reset_state_jvcykgny'])
+    dispatcher.register_message_handler(set_get_task_info_for_all_students, commands=['reset_state'])
+    dispatcher.register_message_handler(set_sleep_state_for_all_students, commands=['set_sleep_state'])
     dispatcher.register_message_handler(recheck, filters.RegexpCommandsFilter(regexp_commands=['recheck.*']))
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
     dispatcher.register_message_handler(update_teachers, commands=['update_teachers'])
@@ -1217,4 +1249,5 @@ else:
 /update_all_quaLtzPE
 /update_teachers
 /update_problems
+/set_sleep_state
 """
