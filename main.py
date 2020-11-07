@@ -641,7 +641,10 @@ async def sos(message: types.Message):
 
 async def prc_problems_selected_callback(query: types.CallbackQuery, student: db_helper.User):
     student = users.get_by_chat_id(query.message.chat.id)
-    # state = states.get_by_user_id(user.id)
+    state = states.get_by_user_id(student.id)
+    if state.get('state', None) == STATE_STUDENT_IS_SLEEPING:
+        await bot_answer_callback_query(query.id)
+        return
     problem_id = int(query.data[2:])
     problem = problems.get_by_id(problem_id)
     if not problem:
