@@ -365,7 +365,8 @@ async def prc_sending_solution_state(message: types.Message, student: db_helper.
 async def prc_teacher_is_checking_task_state(message: types.Message, teacher: db_helper.User):
     problem_id = states.get_by_user_id(teacher.id)['problem_id']
     student_id = states.get_by_user_id(teacher.id)['last_student_id']
-    written_queue.add_to_discussions(student_id, problem_id, teacher.id, message.text, None, message.chat.id, message.message_id)
+    written_queue.add_to_discussions(student_id, problem_id, teacher.id, message.text, None, message.chat.id,
+                                     message.message_id)
     await bot.send_message(chat_id=message.chat.id, text="Ок, записал")
 
 
@@ -416,7 +417,8 @@ def build_verdict_keyboard(plus_ids: set, minus_ids: set, student):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
-    use_problems = [problem for problem in problems.get_by_lesson(student.level, lesson_num) if problem.prob_type in (PROB_TYPE_ORALLY, PROB_TYPE_WRITTEN_BEFORE_ORALLY)]
+    use_problems = [problem for problem in problems.get_by_lesson(student.level, lesson_num) if
+                    problem.prob_type in (PROB_TYPE_ORALLY, PROB_TYPE_WRITTEN_BEFORE_ORALLY)]
     for problem in use_problems:
         if problem.id in solved and problem.id not in minus_ids:
             tick = '✅✅'
@@ -508,7 +510,8 @@ async def recheck(message: types.Message):
     teacher = users.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE_TEACHER:
         return
-    match = re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+(\d+)([а-я])\.(\d+)([а-я]?)\s*', message.text or '')
+    match = re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+(\d+)([а-я])\.(\d+)([а-я]?)\s*',
+                         message.text or '')
     if not match:
         await bot.send_message(
             chat_id=message.chat.id,
@@ -544,7 +547,7 @@ async def set_get_task_info_for_all_students(message: types.Message):
             await process_regular_message(message)
         except:
             pass
-        await asyncio.sleep(1/20)
+        await asyncio.sleep(1 / 20)
 
 
 async def set_sleep_state_for_all_students(message: types.Message):
@@ -564,7 +567,7 @@ async def set_sleep_state_for_all_students(message: types.Message):
             )
         except:
             pass
-        await asyncio.sleep(1/20)
+        await asyncio.sleep(1 / 20)
 
 
 async def broadcast(message: types.Message):
@@ -591,7 +594,8 @@ async def broadcast(message: types.Message):
                 chat_id=student.chat_id,
                 text=broadcast_message,
             )
-            db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None, broadcast_message, None)
+            db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None,
+                                  broadcast_message, None)
         except (aiogram.utils.exceptions.ChatNotFound,
                 aiogram.utils.exceptions.MessageToForwardNotFound,
                 aiogram.utils.exceptions.BotBlocked,
@@ -674,9 +678,9 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: db
         await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                     text=f"Выбрана устная задача. "
                                          f"Её нужно сдавать в zoom-конференции. "
-                                         # f"Желательно перед сдачей записать ответ и основные шаги решения на бумаге. "
-                                         # f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
-                                         # f"\nКогда у вас всё готово, "
+                                    # f"Желательно перед сдачей записать ответ и основные шаги решения на бумаге. "
+                                    # f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
+                                    # f"\nКогда у вас всё готово, "
                                          f"<b>Заходите в zoom-конференцию, идентификатор конференции:"
                                          f"\n842 0811 3370, код доступа: 179179</b>. "
                                          f"\nПожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. "
@@ -755,7 +759,8 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         await bot.send_message(chat_id=query.message.chat.id,
                                text=f"✔️ {problem.congrat}")
     else:
-        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_WRONG_ANSWER, selected_answer)
+        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_WRONG_ANSWER,
+                      selected_answer)
         await bot.send_message(chat_id=query.message.chat.id,
                                text=f"❌ {problem.wrong_ans}")
     states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
@@ -779,7 +784,8 @@ async def prc_cancel_task_submission_callback(query: types.CallbackQuery, studen
 
 async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: db_helper.User):
     # Так, препод указал, что хочет проверять письменные задачи
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
     top = written_queue.take_top(teacher.id)
     if not top:
         await bot.send_message(chat_id=teacher.chat_id,
@@ -795,7 +801,8 @@ async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: db_
 
 
 async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: db_helper.User):
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
     states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
     await bot_answer_callback_query(query.id)
     await process_regular_message(query.message)
@@ -837,7 +844,8 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student, pr
                     await bot.send_document(chat_id=chat_id, document=types.input_file.InputFile(path))
                 except:
                     pass
-    states.set_by_user_id(teacher.id, STATE_TEACHER_IS_CHECKING_TASK, problem.id, last_teacher_id=teacher.id, last_student_id=student.id)
+    states.set_by_user_id(teacher.id, STATE_TEACHER_IS_CHECKING_TASK, problem.id, last_teacher_id=teacher.id,
+                          last_student_id=student.id)
     await bot.send_message(chat_id=chat_id,
                            text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
                                 'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)',
@@ -845,7 +853,8 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student, pr
 
 
 async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher: db_helper.User):
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
     chat_id = query.message.chat.id
     _, student_id, problem_id = query.data.split('_')
     student = users.get_by_id(int(student_id))
@@ -862,7 +871,8 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
 
 
 async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_helper.User):
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
     _, student_id, problem_id = query.data.split('_')
     student = users.get_by_id(int(student_id))
     problem = problems.get_by_id(int(problem_id))
@@ -894,7 +904,8 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_h
             for row in teacher_comments:
                 # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
                 if row['chat_id'] and row['tg_msg_id']:
-                    await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
+                    await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
+                                              disable_notification=True)
                 elif row['text']:
                     await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
                 elif row['attach_path']:
@@ -913,7 +924,8 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_h
 
 
 async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: db_helper.User):
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                        reply_markup=None)
     _, student_id, problem_id = query.data.split('_')
     student = users.get_by_id(int(student_id))
     problem = problems.get_by_id(int(problem_id))
@@ -939,7 +951,8 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: db_
             # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
             if row['chat_id'] and row['tg_msg_id']:
                 try:
-                    await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
+                    await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
+                                              disable_notification=True)
                 except aiogram.utils.exceptions.BadRequest as e:
                     logging.error(f'Почему-то не отфорвардилось... {student_chat_id}\n{e}')
             elif row['text']:
@@ -975,7 +988,8 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: db_hel
 
     student = users.get_by_id(top[0]['student_id'])
     problem = problems.get_by_id(top[0]['problem_id'])
-    states.set_by_user_id(teacher.id, STATE_TEACHER_ACCEPTED_QUEUE, oral_problem_id=problem.id, last_student_id=student.id)
+    states.set_by_user_id(teacher.id, STATE_TEACHER_ACCEPTED_QUEUE, oral_problem_id=problem.id,
+                          last_student_id=student.id)
     waitlist.leave(student.id)
 
     params = {
@@ -994,7 +1008,8 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: db_hel
                                     f"<b><a href=\"{student_link}\">Войдите в конференцию</a></b>.",
                                reply_markup=types.ReplyKeyboardRemove(),
                                parse_mode='HTML')
-        states.set_by_user_id(student.id, STATE_STUDENT_IS_IN_CONFERENCE, oral_problem_id=problem.id, last_teacher_id=teacher.id)
+        states.set_by_user_id(student.id, STATE_STUDENT_IS_IN_CONFERENCE, oral_problem_id=problem.id,
+                              last_teacher_id=teacher.id)
         await bot.send_message(chat_id=student.chat_id, text="Нажмите по окончанию.",
                                reply_markup=build_student_in_conference_keyboard(),
                                parse_mode='HTML')
@@ -1088,7 +1103,8 @@ async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teach
     student_id = state['last_student_id']
     student = users.get_by_id(student_id)
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=build_verdict_keyboard(plus_ids=plus_ids, minus_ids=minus_ids, student=student))
+                                        reply_markup=build_verdict_keyboard(plus_ids=plus_ids, minus_ids=minus_ids,
+                                                                            student=student))
     await bot_answer_callback_query(query.id)
 
 
@@ -1099,6 +1115,14 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: db
     state = states.get_by_user_id(teacher.id)
     student_id = state['last_student_id']
     student = users.get_by_id(student_id)
+    if not student:
+        teacher_message = await bot.send_message(chat_id=query.message.chat_id,
+                                                 text=f"Что-то в боте сломалось и результат оценки не засчитан. :( Попробуйте ещё раз.")
+        await bot_answer_callback_query(query.id)
+        states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
+        await process_regular_message(teacher_message)
+        return
+
     pluses = [problems.get_by_id(prb_id) for prb_id in plus_ids]
     minuses = [problems.get_by_id(prb_id) for prb_id in minus_ids]
     human_readable_pluses = [f'{plus.lesson}{plus.level}.{plus.prob}{plus.item}' for plus in pluses]
