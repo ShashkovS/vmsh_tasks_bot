@@ -1116,7 +1116,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: db
     student_id = state['last_student_id']
     student = users.get_by_id(student_id)
     if not student:
-        teacher_message = await bot.send_message(chat_id=query.message.chat_id,
+        teacher_message = await bot.send_message(chat_id=query.message.chat.id,
                                                  text=f"Что-то в боте сломалось и результат оценки не засчитан. :( Попробуйте ещё раз.")
         await bot_answer_callback_query(query.id)
         states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
