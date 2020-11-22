@@ -33,6 +33,13 @@ else:
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions')
 WHITEBOARD_LINK = "https://www.shashkovs.ru/jitboard.html?{}"
 USE_WEBHOOKS = False
+GLOBALS_FOR_TEST_FUNCTION_CREATION = {
+    '__builtins__': None, 're': re,
+    'bool': bool, 'float': float, 'int': int, 'list': list, 'range': range, 'set': set, 'str': str, 'tuple': tuple,
+    'abs': abs, 'all': all, 'any': any, 'bin': bin, 'enumerate': enumerate, 'format': format, 'len': len,
+    'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum,
+}
+
 
 # Для каждого бота своя база
 db_name = hashlib.md5(API_TOKEN.encode('utf-8')).hexdigest() + '.db'
@@ -370,7 +377,7 @@ async def prc_teacher_is_checking_task_state(message: types.Message, teacher: db
     await bot.send_message(chat_id=message.chat.id, text="Ок, записал")
 
 
-async def prc_sending_test_answer_state(message: types.Message, student: db_helper.User):
+async def prc_sending_test_answer_state(message: types.Message, student: db_helper.User, check_functions_cache={}):
     state = states.get_by_user_id(student.id)
     problem_id = state['problem_id']
     problem = problems.get_by_id(problem_id)
@@ -385,8 +392,31 @@ async def prc_sending_test_answer_state(message: types.Message, student: db_help
         await bot.send_message(chat_id=message.chat.id,
                                text=f"❌ {problem.validation_error}")
         return
-    correct_answer = problem.cor_ans.strip()
-    if student_answer == correct_answer:
+
+    answer_is_correct = False
+    # Здесь мы проверяем ответ в зависимости от того, как проверять
+    # TODO сделать нормально
+    if problem.cor_ans_checker == 'py_func':
+        func_code = problem.cor_ans
+        func_name = re.search(r'\s*def\s+(\w+)', func_code)[1]
+        if func_name in check_functions_cache:
+            test_func = check_functions_cache[func_name]
+        else:
+            locs = {}
+            # О-о-очень опасный кусок :)
+            exec(func_code, GLOBALS_FOR_TEST_FUNCTION_CREATION, locs)
+            func_name, test_func = locs.popitem()
+            check_functions_cache[func_name] = test_func
+        answer_is_correct, additional_message = test_func(student_answer)
+        if additional_message:
+            await bot.send_message(chat_id=message.chat.id, text=additional_message)
+    else:
+        # Ура! Простое обычное понятное сравнение!
+        correct_answer = re.sub(r'[^а-яёa-z0-9+\-()*/^]+', ' ', problem.cor_ans.lower())
+        student_answer = re.sub(r'[^а-яёa-z0-9+\-()*/^]+', ' ', student_answer.lower())
+        answer_is_correct = (student_answer == correct_answer)
+
+    if answer_is_correct:
         db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_SOLVED, student_answer)
         await bot.send_message(chat_id=message.chat.id,
                                text=f"✔️ {problem.congrat}")
