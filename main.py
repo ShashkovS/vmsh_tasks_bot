@@ -314,10 +314,14 @@ async def prc_teacher_select_action(message: types.Message, teacher: db_helper.U
 
 
 async def prc_get_task_info_state(message, student: db_helper.User):
+    alarm = ''
+    if message.photo or message.document:
+        alarm = '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n' \
+                'Можно посылать несколько фотографий решения, для этого каждый раз нужно выбирать задачу.\n'
     slevel = '(уровень «Продолжающие»)' if student.level == 'п' else '(уровень «Начинающие»)'
     await bot.send_message(
         chat_id=message.chat.id,
-        text=f"❓ Нажимайте на задачу, чтобы сдать её {slevel}",
+        text=f"{alarm}❓ Нажимайте на задачу, чтобы сдать её {slevel}",
         reply_markup=build_problems_keyboard(problems.last_lesson, student),
     )
 
