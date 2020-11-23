@@ -40,7 +40,6 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
     'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum,
 }
 
-
 # Для каждого бота своя база
 db_name = hashlib.md5(API_TOKEN.encode('utf-8')).hexdigest() + '.db'
 db, users, problems, states, written_queue, waitlist = db_helper.init_db_and_objects(db_name)
@@ -564,10 +563,7 @@ async def recheck(message: types.Message):
             await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
-async def set_get_task_info_for_all_students(message: types.Message):
-    teacher = users.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE_TEACHER:
-        return
+async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
     # Всем студентам, у которых есть chat_id ставим state STATE_GET_TASK_INFO и отправляем список задач
     for student in users.all_students():
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
@@ -582,12 +578,24 @@ async def set_get_task_info_for_all_students(message: types.Message):
         except:
             pass
         await asyncio.sleep(1 / 20)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Все школьники переведены в режим сдачи задач",
+    )
 
 
-async def set_sleep_state_for_all_students(message: types.Message):
+async def set_get_task_info_for_all_students(message: types.Message):
     teacher = users.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE_TEACHER:
         return
+    asyncio.create_task(run_set_get_task_info_for_all_students_task(message.chat.id))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Создано задание по переводу в режим сдачи задач",
+    )
+
+
+async def run_set_sleep_state_task(teacher_chat_id):
     # Всем студентам ставим state STATE_STUDENT_IS_SLEEPING. Прекращаем приём задач
     for student in users.all_students():
         states.set_by_user_id(student.id, STATE_STUDENT_IS_SLEEPING)
@@ -602,23 +610,29 @@ async def set_sleep_state_for_all_students(message: types.Message):
         except:
             pass
         await asyncio.sleep(1 / 20)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Все школьники переведены в статус SLEEPING",
+    )
 
 
-async def broadcast(message: types.Message):
+async def set_sleep_state_for_all_students(message: types.Message):
     teacher = users.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE_TEACHER:
         return
-    text = message.text.splitlines()
-    try:
-        cmd, tokens, *broadcast_message = text
-    except:
-        return
-    broadcast_message = '\n'.join(broadcast_message)
-    tokens = re.split('\W+', tokens)
+    asyncio.create_task(run_set_sleep_state_task(message.chat.id))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Создано задание по переводу в статус SLEEPING",
+    )
+
+
+async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
     if tokens == ['all_students']:
         tokens = [user.token for user in users if user.type == USER_TYPE_STUDENT]
     elif tokens == ['all_teachers']:
         tokens = [user.token for user in users if user.type == USER_TYPE_TEACHER]
+    bad_tokens = []
     for token in tokens:
         student = users.get_by_token(token)
         if not student or not student.chat_id:
@@ -635,7 +649,30 @@ async def broadcast(message: types.Message):
                 aiogram.utils.exceptions.BotBlocked,
                 aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
             logging.error(f'Школьник удалил себя?? WTF? {student.chat_id}\n{e}')
+            bad_tokens.append(token)
         await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Все сообщения разосланы. Проблемы возникли с {bad_tokens!r}",
+    )
+
+
+async def broadcast(message: types.Message):
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    text = message.text.splitlines()
+    try:
+        cmd, tokens, *broadcast_message = text
+    except:
+        return
+    broadcast_message = '\n'.join(broadcast_message)
+    tokens = re.split('\W+', tokens)
+    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Создано задание рассылки сообщений",
+    )
 
 
 async def level_novice(message: types.Message):
