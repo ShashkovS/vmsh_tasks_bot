@@ -9,6 +9,7 @@ import re
 import asyncio
 from consts import *
 import aiogram
+import traceback
 from aiogram.dispatcher import Dispatcher, filters
 from aiogram.dispatcher.webhook import configure_app, types, web
 from aiogram.utils.executor import start_polling
@@ -22,6 +23,7 @@ if os.environ.get('PROD', None) == 'true':
     logging.info(('*' * 50 + '\n') * 5)
     logging.info('Production mode')
     logging.info('*' * 50)
+    production_mode = True
     API_TOKEN = open('creds_prod/telegram_bot_key_prod').read().strip()
     WEBHOOK_HOST = 'vmsh179bot.proj179.ru'
     WEBHOOK_PORT = 443
@@ -29,6 +31,7 @@ else:
     logging.info('Developer mode')
     API_TOKEN = open('creds/telegram_bot_key').read().strip()
     WEBHOOK_HOST = 'vmshtasksbot.proj179.ru'
+    production_mode = False
     WEBHOOK_PORT = 443
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions')
 WHITEBOARD_LINK = "https://www.shashkovs.ru/jitboard.html?{}"
@@ -39,6 +42,7 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
     'abs': abs, 'all': all, 'any': any, 'bin': bin, 'enumerate': enumerate, 'format': format, 'len': len,
     'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum,
 }
+VMSH_EXCEPTIONS_CHAT_ID = -1001276167216
 
 # Для каждого бота своя база
 db_name = hashlib.md5(API_TOKEN.encode('utf-8')).hexdigest() + '.db'
@@ -66,6 +70,18 @@ async def bot_edit_message_reply_markup(*args, **kwargs):
 async def bot_answer_callback_query(*args, **kwargs):
     try:
         await bot.answer_callback_query(*args, **kwargs)
+    except Exception as e:
+        logging.error(f'SHIT: {e}')
+
+
+async def bot_post_logging_message(msg):
+    if production_mode:
+        msg = 'PRODUCTION!\n' + msg
+    else:
+        msg = 'DEV MODE\n' + msg
+    try:
+        res = await bot.send_message(VMSH_EXCEPTIONS_CHAT_ID, msg)
+        # print(res) # Для определения ID приватного чата
     except Exception as e:
         logging.error(f'SHIT: {e}')
 
@@ -526,7 +542,12 @@ async def process_regular_message(message: types.Message):
         if not message.document and not message.photo:
             db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, None)
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
-    await state_processor(message, user)
+    try:
+        await state_processor(message, user)
+    except Exception as e:
+        error_text = traceback.format_exc()
+        logging.error(f'SUPERSHIT: {e}')
+        await bot_post_logging_message(error_text)
 
 
 async def start(message: types.Message):
@@ -641,6 +662,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
             broad_message = await bot.send_message(
                 chat_id=student.chat_id,
                 text=broadcast_message,
+                disable_web_page_preview=True,
             )
             db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None,
                                   broadcast_message, None)
@@ -1261,7 +1283,12 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
             return
         callback_type = query.data[0]
         callback_processor = callbacks_processors.get(callback_type, None)
-        await callback_processor(query, user)
+        try:
+            await callback_processor(query, user)
+        except Exception as e:
+            error_text = traceback.format_exc()
+            logging.error(f'SUPERSHIT: {e}')
+            await bot_post_logging_message(error_text)
 
 
 async def check_webhook():
@@ -1303,6 +1330,7 @@ async def on_startup(app):
     dispatcher.register_message_handler(level_pro, commands=['level_pro'])
     dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
     dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
+    await bot_post_logging_message('Бот начал свою работу')
 
 
 async def on_shutdown(app):
@@ -1310,6 +1338,7 @@ async def on_shutdown(app):
     Graceful shutdown. This method is recommended by aiohttp docs.
     """
     logging.warning('Shutting down..')
+    await bot_post_logging_message('Бот остановил свою работу')
     # Remove webhook.
     await bot.delete_webhook()
     # Close all connections.
