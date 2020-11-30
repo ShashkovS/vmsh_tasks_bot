@@ -52,6 +52,8 @@ PROB_TYPES = {
 # ТИПЫ ПОЛЬЗОВАТЕЛЕЙ
 USER_TYPE_STUDENT = 1
 USER_TYPE_TEACHER = 2
+STUDENT_NOVICE = 'н'
+STUDENT_PRO = 'п'
 
 
 # ВИДЫ ОТВЕТА НА ТЕСТОВЫЕ ЗАДАЧИ

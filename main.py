@@ -330,13 +330,20 @@ async def prc_teacher_select_action(message: types.Message, teacher: db_helper.U
 
 async def prc_get_task_info_state(message, student: db_helper.User):
     alarm = ''
-    if message.photo or message.document:
-        alarm = '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n' \
-                'Можно посылать несколько фотографий решения, для этого каждый раз нужно выбирать задачу.\n'
-    slevel = '(уровень «Продолжающие»)' if student.level == 'п' else '(уровень «Начинающие»)'
+    # Попытка сдать решение без выбранной задачи
+    if message.num_processed <= 1:
+        if message.photo or message.document:
+            alarm = '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n(Можно посылать несколько фотографий решения, для этого каждый раз нужно выбирать задачу.)'
+        elif message.text and len(message.text) > 20:
+            alarm = '❗❗❗ Текст НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
+        if alarm:
+            await bot.send_message(chat_id=message.chat.id, text=alarm,)
+            await asyncio.sleep(3)
+
+    slevel = '(уровень «Продолжающие»)' if student.level == STUDENT_PRO else '(уровень «Начинающие»)'
     await bot.send_message(
         chat_id=message.chat.id,
-        text=f"{alarm}❓ Нажимайте на задачу, чтобы сдать её {slevel}",
+        text=f"❓ Нажимайте на задачу, чтобы сдать её {slevel}",
         reply_markup=build_problems_keyboard(problems.last_lesson, student),
     )
 
@@ -533,6 +540,24 @@ state_processors = {
 
 
 async def process_regular_message(message: types.Message):
+    # Сначала проверяем, что этот тип сообщений мы вообще поддерживаем
+    alarm = None
+    if message.document and message.document.mime_type.startswith('image'):
+        alarm = '❗❗❗ Бот принимает только сжатые фото: отправляйте картинки по одной, ставьте галочку «Сжать/Compress»'
+    elif not message.text and not message.photo:
+        alarm = '❗❗❗ Бот принимает только текстовые сообщения и фотографии решений.'
+    if alarm:
+        try:
+            await bot.send_message(chat_id=message.chat.id, text=alarm)
+        except Exception as e:
+            logging.error(f'SHIT: {e}')
+        return
+    # Ок, теперь обрабатываем сообщение
+
+    # Может так статься, что сообщение будет ходить кругами по функциям и будет обработано несколько раз.
+    # Некоторым функциям это может быть важно
+    message.num_processed = getattr(message, 'num_processed', 0) + 1
+    print('message.num_processed', message.num_processed)
     user = users.get_by_chat_id(message.chat.id)
     if not user:
         cur_chat_state = STATE_GET_USER_INFO
@@ -651,6 +676,10 @@ async def set_sleep_state_for_all_students(message: types.Message):
 async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
     if tokens == ['all_students']:
         tokens = [user.token for user in users if user.type == USER_TYPE_STUDENT]
+    elif tokens == ['all_novice']:
+        tokens = [user.token for user in users if user.type == USER_TYPE_STUDENT and user.level == STUDENT_NOVICE]
+    elif tokens == ['all_pro']:
+        tokens = [user.token for user in users if user.type == USER_TYPE_STUDENT and user.level == STUDENT_PRO]
     elif tokens == ['all_teachers']:
         tokens = [user.token for user in users if user.type == USER_TYPE_TEACHER]
     bad_tokens = []
@@ -704,7 +733,7 @@ async def level_novice(message: types.Message):
             chat_id=message.chat.id,
             text="Вы переведены в группу начинающих",
         )
-        student.set_level('н')
+        student.set_level(STUDENT_NOVICE)
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
         await process_regular_message(message)
 
@@ -716,7 +745,7 @@ async def level_pro(message: types.Message):
             chat_id=message.chat.id,
             text="Вы переведены в группу продолжающих",
         )
-        student.set_level('п')
+        student.set_level(STUDENT_PRO)
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
         await process_regular_message(message)
 
@@ -1328,7 +1357,8 @@ async def on_startup(app):
     dispatcher.register_message_handler(exit_waitlist, commands=['exit_waitlist'])
     dispatcher.register_message_handler(level_novice, commands=['level_novice'])
     dispatcher.register_message_handler(level_pro, commands=['level_pro'])
-    dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
+    # Принимаем всё, если тип неправильный, то отправляем лесом
+    dispatcher.register_message_handler(process_regular_message, content_types=["any"])
     dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
     await bot_post_logging_message('Бот начал свою работу')
 
