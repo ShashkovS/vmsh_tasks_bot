@@ -331,14 +331,14 @@ async def prc_teacher_select_action(message: types.Message, teacher: db_helper.U
 async def prc_get_task_info_state(message, student: db_helper.User):
     alarm = ''
     # Попытка сдать решение без выбранной задачи
-    if message.num_processed <= 1:
-        if message.photo or message.document:
-            alarm = '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n(Можно посылать несколько фотографий решения, для этого каждый раз нужно выбирать задачу.)'
-        elif message.text and len(message.text) > 20:
-            alarm = '❗❗❗ Текст НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
-        if alarm:
-            await bot.send_message(chat_id=message.chat.id, text=alarm,)
-            await asyncio.sleep(3)
+    # if message.num_processed <= 1:
+    #     if message.photo or message.document:
+    #         alarm = '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n(Можно посылать несколько фотографий решения, для этого каждый раз нужно выбирать задачу.)'
+    #     elif message.text and len(message.text) > 20:
+    #         alarm = '❗❗❗ Текст НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
+    #     if alarm:
+    #         await bot.send_message(chat_id=message.chat.id, text=alarm,)
+    #         await asyncio.sleep(3)
 
     slevel = '(уровень «Продолжающие»)' if student.level == STUDENT_PRO else '(уровень «Начинающие»)'
     await bot.send_message(
@@ -556,7 +556,7 @@ async def process_regular_message(message: types.Message):
 
     # Может так статься, что сообщение будет ходить кругами по функциям и будет обработано несколько раз.
     # Некоторым функциям это может быть важно
-    message.num_processed = getattr(message, 'num_processed', 0) + 1
+    # message.num_processed = getattr(message, 'num_processed', 0) + 1
     user = users.get_by_chat_id(message.chat.id)
     if not user:
         cur_chat_state = STATE_GET_USER_INFO
@@ -612,14 +612,16 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
     # Всем студентам, у которых есть chat_id ставим state STATE_GET_TASK_INFO и отправляем список задач
     for student in users.all_students():
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        logging.INFO(f'{student.id} оживлён')
         if not student.chat_id:
             continue
         try:
-            message = await bot.send_message(
+            slevel = '(уровень «Продолжающие»)' if student.level == STUDENT_PRO else '(уровень «Начинающие»)'
+            await bot.send_message(
                 chat_id=student.chat_id,
-                text="Можно сдавать задачи!",
+                text=f"Можно сдавать задачи!\n❓ Нажимайте на задачу, чтобы сдать её {slevel}",
+                reply_markup=build_problems_keyboard(problems.last_lesson, student),
             )
-            await process_regular_message(message)
         except:
             pass
         await asyncio.sleep(1 / 20)
