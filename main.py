@@ -612,7 +612,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
     # Всем студентам, у которых есть chat_id ставим state STATE_GET_TASK_INFO и отправляем список задач
     for student in users.all_students():
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
-        logging.INFO(f'{student.id} оживлён')
+        logging.info(f'{student.id} оживлён')
         if not student.chat_id:
             continue
         try:
