@@ -557,7 +557,6 @@ async def process_regular_message(message: types.Message):
     # Может так статься, что сообщение будет ходить кругами по функциям и будет обработано несколько раз.
     # Некоторым функциям это может быть важно
     message.num_processed = getattr(message, 'num_processed', 0) + 1
-    print('message.num_processed', message.num_processed)
     user = users.get_by_chat_id(message.chat.id)
     if not user:
         cur_chat_state = STATE_GET_USER_INFO
