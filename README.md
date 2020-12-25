@@ -29,6 +29,25 @@
 - готово
 
 
+### Гугль-табличка с настройками
+- Пример таблички: https://docs.google.com/spreadsheets/d/1jnl9TkvV629YZGWzorxP2xZMSIcEt925WZKl54kXw8k/edit?usp=sharing
+- В настройках доступа табличке нужно явно добавать сервисный профайл бота.
+
+
+### Деплой
+Для выкатки приложения потребуется домен, vps и созданный телеграм-бот. Большая часть команд для первичного деплоя на подготовленный vps (на котором уже есть git, python3.8+ и свежий sqlite (см. https://number1.co.za/upgrading-sqlite-on-centos-to-3-8-3-or-later/)) вот здесь: https://github.com/ShashkovS/vmsh_tasks_bot/blob/prod/conf/initial_vps_setup.sh
+
+
+### Команды учителя
+- /broadcast_wibkn96x — Отправить сообщение в строчках 3+ всем юзерам из строчки 2. Вместо списка токенов во второй строчке можно указать all_students, all_novice, all_pro, all_teachers
+- /set_sleep_state — Перевести всех студентов в режим ожидания следующего занятия
+- /reset_state_jvcykgny — Перевести всех студентов в режим сдачи задач и показать текущий список задач
+- /recheck token problem — перепроверить студенту token задачу problem
+- /update_all_quaLtzPE — обновить вообще все настройки из гугл-таблички
+- /update_teachers — обновить настройки учителей
+- /update_problems — обновить настройки задач
+
+
 ### Запуск тестов
 Перед запуском тестов убедитесь, что у вас установлены зависимости для тестов:
 ```bash
