@@ -295,10 +295,11 @@ def build_select_student_keyboard(name_to_find: str):
 
 def build_written_task_checking_verdict_keyboard(student: db_helper.User, problem: db_helper.Problem):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
-    keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"👍 Засчитать задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
-        callback_data=f"{CALLBACK_WRITTEN_TASK_OK}_{student.id}_{problem.id}"
-    ))
+    for verdict, value in VERDICT_DECODER.items():
+        keyboard_markup.add(types.InlineKeyboardButton(
+            text=f"{value} поставить за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
+            callback_data=f"{CALLBACK_WRITTEN_TASK_OK}_{student.id}_{problem.id}_{verdict}"
+        ))
     keyboard_markup.add(types.InlineKeyboardButton(
         text=f"❌ Отклонить и переслать все сообщения выше студенту {student.surname} {student.name}",
         callback_data=f"{CALLBACK_WRITTEN_TASK_BAD}_{student.id}_{problem.id}"
@@ -938,7 +939,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student, pr
                                      f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
                                 reply_markup=None)
     discussion = written_queue.get_discussion(student.id, problem.id)
-    for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не привысить лимит
+    for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не превысить лимит
         # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
         forward_success = False
         if row['chat_id'] and row['tg_msg_id']:
@@ -996,15 +997,17 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
 async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_helper.User):
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
-    _, student_id, problem_id = query.data.split('_')
+    _, student_id, problem_id, set_verdict = query.data.split('_')
     student = users.get_by_id(int(student_id))
     problem = problems.get_by_id(int(problem_id))
+    set_verdict = int(set_verdict)
+    verdict_text = VERDICT_DECODER[set_verdict]
     # Помечаем задачу как решённую и удаляем из очереди
-    db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_SOLVED, None)
+    db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, set_verdict, None)
     written_queue.delete_from_queue(student.id, problem.id)
     await bot_answer_callback_query(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text=f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
+                           text=f'👍 Отлично, поставили {verdict_text} за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
                                 f'<pre>/recheck {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item}</pre>',
                            parse_mode='HTML')
     states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
@@ -1016,11 +1019,11 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_h
         teacher_comments = discussion[last_pup_post + 1:]
         if not teacher_comments:
             await bot.send_message(chat_id=student_chat_id,
-                                   text=f"Задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}) проверили и поставили плюсик!",
+                                   text=f"Задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}) проверили и поставили {verdict_text}!",
                                    disable_notification=True)
         else:
             await bot.send_message(chat_id=student_chat_id,
-                                   text=f"Задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}) проверили и поставили плюсик!\n"
+                                   text=f"Задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}) проверили и поставили {verdict_text}!\n"
                                         f"Вот комментарии:\n"
                                         f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
                                    disable_notification=True)
