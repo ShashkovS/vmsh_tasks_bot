@@ -542,6 +542,7 @@ state_processors = {
 
 async def process_regular_message(message: types.Message):
     # Сначала проверяем, что этот тип сообщений мы вообще поддерживаем
+    print(message)
     alarm = None
     if message.document and message.document.mime_type.startswith('image'):
         alarm = '❗❗❗ Бот принимает только сжатые фото: отправляйте картинки по одной, ставьте галочку «Сжать/Compress»'
