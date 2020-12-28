@@ -590,7 +590,7 @@ async def recheck(message: types.Message):
     teacher = users.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE_TEACHER:
         return
-    match = re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+(\d+)([а-я])\.(\d+)([а-я]?)\s*',
+    match = re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+(\w+)[\s_]+(\d+)([а-я])\.(\d+)([а-я]?)\s*',
                          message.text or '')
     if not match:
         await bot.send_message(
