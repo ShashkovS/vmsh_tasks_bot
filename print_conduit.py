@@ -1,12 +1,13 @@
 import sqlite3
 import re
 import pyperclip
+from consts import *
 
-NLIST = 12
+NLIST = 7
 NLEVEL = 'п'
 
-conn = sqlite3.connect(r'db\88b1047644e68c3cceb7ff21e1190a90.db')
-# conn = sqlite3.connect(r'db\5720f9f900cfc0382633d556e1d50ce0.db')
+# conn = sqlite3.connect(r'db\88b1047644e68c3cceb7ff21e1190a90.db')
+conn = sqlite3.connect(r'db\5720f9f900cfc0382633d556e1d50ce0.db')
 cur = conn.cursor()
 
 cur.execute('''
@@ -21,7 +22,12 @@ cur.execute('''
     (p.level = :NLEVEL or ''=:NLEVEL) 
     group by 1, 2
 ''', globals())
-results = {(r[0], r[1]): str(max(r[2], 0)) for r in cur.fetchall()}
+results = {(r[0], r[1]): max(r[2], 0) for r in cur.fetchall()}
+for key, val in results.items():
+    if val in VERDICT_DECODER:
+        results[key] = VERDICT_DECODER[val]
+    else:
+        results[key] = str(val)
 print(len(results))
 
 cur.execute('''
