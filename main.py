@@ -40,7 +40,7 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
     '__builtins__': None, 're': re,
     'bool': bool, 'float': float, 'int': int, 'list': list, 'range': range, 'set': set, 'str': str, 'tuple': tuple,
     'abs': abs, 'all': all, 'any': any, 'bin': bin, 'enumerate': enumerate, 'format': format, 'len': len,
-    'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum,
+    'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum, 'map': map,
 }
 VMSH_EXCEPTIONS_CHAT_ID = -1001276167216
 
