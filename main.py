@@ -438,7 +438,7 @@ async def prc_sending_test_answer_state(message: types.Message, student: db_help
             result = test_func(student_answer)
             answer_is_correct, additional_message = result
         except Exception as e:
-            error_text = f'PYCHECKER_ERROR: {traceback.format_exc()}\nFUNC_CODE:\n{func_code}\nRESULT:\n{result!r}'
+            error_text = f'PYCHECKER_ERROR: {traceback.format_exc()}\nFUNC_CODE:\n{func_code.replace(" ", "_")}\nENTRY:\n{student_answer}\nRESULT:\n{result!r}'
             logging.error(f'PYCHECKER_ERROR: {e}\nFUNC_CODE:\n{func_code}\nRESULT:\n{result!r}')
             await bot_post_logging_message(error_text)
 
