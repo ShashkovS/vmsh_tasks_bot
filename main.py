@@ -433,7 +433,15 @@ async def prc_sending_test_answer_state(message: types.Message, student: db_help
             exec(func_code, GLOBALS_FOR_TEST_FUNCTION_CREATION, locs)
             func_name, test_func = locs.popitem()
             check_functions_cache[func_name] = test_func
-        answer_is_correct, additional_message = test_func(student_answer)
+        result = additional_message = answer_is_correct = None
+        try:
+            result = test_func(student_answer)
+            answer_is_correct, additional_message = result
+        except Exception as e:
+            error_text = f'PYCHECKER_ERROR: {traceback.format_exc()}\nFUNC_CODE:\n{func_code}\nRESULT:\n{result!r}'
+            logging.error(f'PYCHECKER_ERROR: {e}\nFUNC_CODE:\n{func_code}\nRESULT:\n{result!r}')
+            await bot_post_logging_message(error_text)
+
         if additional_message:
             await bot.send_message(chat_id=message.chat.id, text=additional_message)
     else:
