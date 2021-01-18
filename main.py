@@ -446,9 +446,13 @@ async def prc_sending_test_answer_state(message: types.Message, student: db_help
             await bot.send_message(chat_id=message.chat.id, text=additional_message)
     else:
         # Ура! Простое обычное понятное сравнение!
-        correct_answer = re.sub(r'[^а-яёa-z0-9+\-()*/^]+', ' ', problem.cor_ans.lower())
+        correct_answer = re.sub(r'[^а-яёa-z0-9+\-()*/^;]+', ' ', problem.cor_ans.lower())
         student_answer = re.sub(r'[^а-яёa-z0-9+\-()*/^]+', ' ', student_answer.lower())
-        answer_is_correct = (student_answer == correct_answer)
+        if ';' not in correct_answer:
+            answer_is_correct = (student_answer == correct_answer)
+        else:
+            correct_answer = list(ans.strip() for ans in correct_answer.split(';'))
+            answer_is_correct = student_answer in correct_answer
 
     if answer_is_correct:
         db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_SOLVED, student_answer)
