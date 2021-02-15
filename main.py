@@ -486,7 +486,7 @@ def build_verdict_keyboard(plus_ids: set, minus_ids: set, student):
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
     use_problems = [problem for problem in problems.get_by_lesson(student.level, lesson_num) if
-                    problem.prob_type in (PROB_TYPE_ORALLY, PROB_TYPE_WRITTEN_BEFORE_ORALLY)]
+                    problem.prob_type in (PROB_TYPE_WRITTEN, PROB_TYPE_ORALLY, PROB_TYPE_WRITTEN_BEFORE_ORALLY)]
     for problem in use_problems:
         if problem.id in solved and problem.id not in minus_ids:
             tick = '✅✅'
