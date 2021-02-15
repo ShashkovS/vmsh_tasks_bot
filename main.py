@@ -739,6 +739,44 @@ async def broadcast(message: types.Message):
     )
 
 
+async def set_student_level(message: types.Message):
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    text = message.text.split()
+    try:
+        cmd, token, new_level = text
+    except:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"/set_level token н/п",
+        )
+        return
+    student = users.get_by_token(token)
+    if not student:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"Студент с токеном {token} не найден",
+        )
+    if new_level == STUDENT_NOVICE:
+        student.set_level(STUDENT_NOVICE)
+        stud_msg = "Вы переведены в группу начинающих"
+    elif new_level == STUDENT_PRO:
+        student.set_level(STUDENT_PRO)
+        stud_msg = "Вы переведены в группу продолжающих"
+    else:
+        return
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=f"Студент с токеном {token} переведён",
+    )
+    if student.chat_id:
+        try:
+            await bot.send_message(chat_id=student.chat_id, text=stud_msg)
+        except:
+            pass
+
+
 async def level_novice(message: types.Message):
     student = users.get_by_chat_id(message.chat.id)
     if student:
@@ -1353,6 +1391,18 @@ async def exit_waitlist(message: types.Message):
     await process_regular_message(message)
 
 
+async def calc_last_lesson_stat(message: types.Message):
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    stat = db.calc_last_lesson_stat()
+    msg = '\n'.join(map(lambda r: '  '.join(r.values()), stat))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=msg,
+    )
+
+
 async def on_startup(app):
     logging.warning('Start up!')
     if USE_WEBHOOKS:
@@ -1363,6 +1413,7 @@ async def on_startup(app):
     dispatcher.register_message_handler(set_get_task_info_for_all_students, commands=['reset_state_jvcykgny'])
     dispatcher.register_message_handler(set_get_task_info_for_all_students, commands=['reset_state'])
     dispatcher.register_message_handler(set_sleep_state_for_all_students, commands=['set_sleep_state'])
+    dispatcher.register_message_handler(set_student_level, commands=['set_level'])
     dispatcher.register_message_handler(recheck, filters.RegexpCommandsFilter(regexp_commands=['recheck.*']))
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
     dispatcher.register_message_handler(update_teachers, commands=['update_teachers'])
@@ -1370,6 +1421,7 @@ async def on_startup(app):
     dispatcher.register_message_handler(exit_waitlist, commands=['exit_waitlist'])
     dispatcher.register_message_handler(level_novice, commands=['level_novice'])
     dispatcher.register_message_handler(level_pro, commands=['level_pro'])
+    dispatcher.register_message_handler(calc_last_lesson_stat, commands=['stat'])
     # Принимаем всё, если тип неправильный, то отправляем лесом
     dispatcher.register_message_handler(process_regular_message, content_types=["any"])
     dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
@@ -1417,4 +1469,5 @@ else:
 /update_teachers
 /update_problems
 /set_sleep_state
+/set_level
 """
