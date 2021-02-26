@@ -27,6 +27,14 @@ if os.environ.get('PROD', None) == 'true':
     API_TOKEN = open('creds_prod/telegram_bot_key_prod').read().strip()
     WEBHOOK_HOST = 'vmsh179bot.proj179.ru'
     WEBHOOK_PORT = 443
+elif os.environ.get('EXAM', None) == 'true':
+    logging.info(('*' * 50 + '\n') * 5)
+    logging.info('Production EXAM mode')
+    logging.info('*' * 50)
+    production_mode = True
+    API_TOKEN = open('creds_exam_prod/telegram_bot_key_prod').read().strip()
+    WEBHOOK_HOST = 'exam179bot.proj179.ru'
+    WEBHOOK_PORT = 443
 else:
     logging.info('Developer mode')
     API_TOKEN = open('creds/telegram_bot_key').read().strip()
@@ -172,6 +180,8 @@ def build_problems_keyboard(lesson_num: int, student: db_helper.User):
             tp = '🖊'
         elif problem.prob_type == PROB_TYPE_ORALLY:
             tp = '🗣'
+        if os.environ.get('EXAM', None) == 'true' and tick == '✅':
+            tick = '❓'
         task_button = types.InlineKeyboardButton(
             text=f"{tick} {tp} {problem}",
             callback_data=f"{CALLBACK_PROBLEM_SELECTED}_{problem.id}"
@@ -454,14 +464,16 @@ async def prc_sending_test_answer_state(message: types.Message, student: db_help
             correct_answer = list(ans.strip() for ans in correct_answer.split(';'))
             answer_is_correct = student_answer in correct_answer
 
+    text_to_student = ''
     if answer_is_correct:
         db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_SOLVED, student_answer)
-        await bot.send_message(chat_id=message.chat.id,
-                               text=f"✔️ {problem.congrat}")
+        text_to_student = f"✔️ {problem.congrat}"
     else:
         db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_WRONG_ANSWER, student_answer)
-        await bot.send_message(chat_id=message.chat.id,
-                               text=f"❌ {problem.wrong_ans}")
+        text_to_student = f"❌ {problem.wrong_ans}"
+    if os.environ.get('EXAM', None) == 'true':
+        text_to_student = 'Ответ принят на проверку.'
+    await bot.send_message(chat_id=message.chat.id, text=text_to_student)
     states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
     await asyncio.sleep(1)
     await process_regular_message(message)
@@ -927,15 +939,17 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     correct_answer = problem.cor_ans
     # await bot.send_message(chat_id=query.message.chat.id,
     #                        text=f"Выбран вариант {selected_answer}.")
+    text_to_student = ''
     if selected_answer == correct_answer:
         db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_SOLVED, selected_answer)
-        await bot.send_message(chat_id=query.message.chat.id,
-                               text=f"✔️ {problem.congrat}")
+        text_to_student = f"✔️ {problem.congrat}"
     else:
         db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_WRONG_ANSWER,
                       selected_answer)
-        await bot.send_message(chat_id=query.message.chat.id,
-                               text=f"❌ {problem.wrong_ans}")
+        text_to_student = f"❌ {problem.wrong_ans}"
+    if os.environ.get('EXAM', None) == 'true':
+        text_to_student = 'Ответ принят на проверку.'
+    await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
     states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
     await bot_answer_callback_query(query.id)
     await asyncio.sleep(1)

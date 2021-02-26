@@ -7,6 +7,10 @@ if os.environ.get('PROD', None) == 'true':
     DUMP_FILENAME = 'students_and_probles_v2_prod.pickle'
     sheets_key = open('creds_prod/settings_sheet_key_prod').read()
     google_cred_json = 'creds_prod/vmsh_bot_sheets_creds_prod.json'
+elif os.environ.get('EXAM', None) == 'true':
+    DUMP_FILENAME = 'students_and_probles_v2_exam.pickle'
+    sheets_key = open('creds_exam_prod/settings_sheet_key_prod').read()
+    google_cred_json = 'creds_exam_prod/vmsh_bot_sheets_creds_prod.json'
 else:
     DUMP_FILENAME = 'students_and_probles_v2.pickle'
     try:

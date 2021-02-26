@@ -1,6 +1,7 @@
 .idea/
 creds
 creds_prod
+creds_exam_prod
 students_and_probles.pickle
 students_and_probles_v2.pickle
 db/
