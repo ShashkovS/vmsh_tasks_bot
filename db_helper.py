@@ -122,13 +122,14 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def add_result(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int, answer: str):
+    def add_result(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int,
+                   answer: str, res_type: int=None):
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
-            INSERT INTO results  ( student_id,  problem_id,  level,  lesson,  teacher_id,  ts,  verdict,  answer)
-            VALUES               (:student_id, :problem_id, :level, :lesson, :teacher_id, :ts, :verdict, :answer) 
+            INSERT INTO results  ( student_id,  problem_id,  level,  lesson,  teacher_id,  ts,  verdict,  answer,  res_type)
+            VALUES               (:student_id, :problem_id, :level, :lesson, :teacher_id, :ts, :verdict, :answer, :res_type) 
         """, args)
         self.conn.commit()
 

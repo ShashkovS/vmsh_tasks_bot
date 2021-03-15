@@ -455,13 +455,14 @@ async def prc_sending_test_answer_state(message: types.Message, student: db_help
             answer_is_correct = student_answer in correct_answer
 
     if answer_is_correct:
-        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_SOLVED, student_answer)
-        await bot.send_message(chat_id=message.chat.id,
-                               text=f"✔️ {problem.congrat}")
+        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_SOLVED, student_answer, RES_TYPE_TEST)
+        text_to_student = f"✔️ {problem.congrat}"
     else:
-        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_WRONG_ANSWER, student_answer)
-        await bot.send_message(chat_id=message.chat.id,
-                               text=f"❌ {problem.wrong_ans}")
+        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_WRONG_ANSWER, student_answer, RES_TYPE_TEST)
+        text_to_student = f"❌ {problem.wrong_ans}"
+    if os.environ.get('EXAM', None) == 'true':
+        text_to_student = 'Ответ принят на проверку.'
+    await bot.send_message(chat_id=message.chat.id, text=text_to_student)
     states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
     await asyncio.sleep(1)
     await process_regular_message(message)
@@ -928,14 +929,14 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     # await bot.send_message(chat_id=query.message.chat.id,
     #                        text=f"Выбран вариант {selected_answer}.")
     if selected_answer == correct_answer:
-        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_SOLVED, selected_answer)
-        await bot.send_message(chat_id=query.message.chat.id,
-                               text=f"✔️ {problem.congrat}")
+        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_SOLVED, selected_answer, RES_TYPE_TEST)
+        text_to_student = f"✔️ {problem.congrat}"
     else:
-        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_WRONG_ANSWER,
-                      selected_answer)
-        await bot.send_message(chat_id=query.message.chat.id,
-                               text=f"❌ {problem.wrong_ans}")
+        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT_WRONG_ANSWER, selected_answer, RES_TYPE_TEST)
+        text_to_student = f"❌ {problem.wrong_ans}"
+    if os.environ.get('EXAM', None) == 'true':
+        text_to_student = 'Ответ принят на проверку.'
+    await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
     states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
     await bot_answer_callback_query(query.id)
     await asyncio.sleep(1)
@@ -1050,7 +1051,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_h
     student = users.get_by_id(int(student_id))
     problem = problems.get_by_id(int(problem_id))
     # Помечаем задачу как решённую и удаляем из очереди
-    db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_SOLVED, None)
+    db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_SOLVED, None, RES_TYPE_WRITTEN)
     written_queue.delete_from_queue(student.id, problem.id)
     await bot_answer_callback_query(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
@@ -1103,7 +1104,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: db_
     student = users.get_by_id(int(student_id))
     problem = problems.get_by_id(int(problem_id))
     # Помечаем решение как неверное и удаляем из очереди
-    db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_WRONG_ANSWER, None)
+    db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_WRONG_ANSWER, None, RES_TYPE_WRITTEN)
     db.delete_plus(student_id, problem.id, VERDICT_WRONG_ANSWER)
     written_queue.delete_from_queue(student.id, problem.id)
     await bot.send_message(chat_id=query.message.chat.id,
@@ -1227,7 +1228,7 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: db_helpe
                                         reply_markup=None)
     await bot_answer_callback_query(query.id)
     states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
-    db.add_result(student_id, problem_id, problem.level, problem.lesson, teacher.id, verdict, '')
+    db.add_result(student_id, problem_id, problem.level, problem.lesson, teacher.id, verdict, '', RES_TYPE_ZOOM)
     await process_regular_message(query.message)
 
 
@@ -1302,10 +1303,10 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: db
     human_readable_minuses = [f'{plus.lesson}{plus.level}.{plus.prob}{plus.item}' for plus in minuses]
     # Проставляем плюсики
     for problem in pluses:
-        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_SOLVED, None)
+        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_SOLVED, None, RES_TYPE_ZOOM)
     for problem in minuses:
         db.delete_plus(student_id, problem.id, VERDICT_WRONG_ANSWER)
-        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_WRONG_ANSWER, None)
+        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT_WRONG_ANSWER, None, RES_TYPE_ZOOM)
     await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                 text=f"Школьник: {student.token} {student.surname} {student.name}\n"
                                      f"\nПоставлены плюсы за задачи: {', '.join(human_readable_pluses)}"

@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS results
     ts         timestamp NOT NULL,
     verdict    integer   NOT NULL,
     answer     TEXT      NULL,
+    res_type   integer null,
     FOREIGN KEY (problem_id) REFERENCES problems (id),
     FOREIGN KEY (student_id) REFERENCES users (id),
     FOREIGN KEY (teacher_id) REFERENCES users (id)
