@@ -7,3 +7,4 @@ db/
 __pycache__/
 solutions/
 students_and_probles_v2_prod.pickle
+/creds_exam_prod/
