@@ -421,6 +421,7 @@ async def prc_sending_test_answer_state(message: types.Message, student: db_help
         await bot.send_message(chat_id=message.chat.id, text=text_to_student)
         await asyncio.sleep(1)
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        logging.info(f'Ограничили студанта: {student.id}')
         await process_regular_message(message)
         return
     problem = problems.get_by_id(problem_id)
@@ -936,6 +937,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
         await asyncio.sleep(1)
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        logging.info(f'Ограничили студанта: {student.id}')
         await process_regular_message(query.message)
         return
     problem = problems.get_by_id(problem_id)
