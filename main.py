@@ -408,9 +408,9 @@ async def prc_sending_test_answer_state(message: types.Message, student: db_help
     problem_id = state['problem_id']
     try:
         per_day, per_hour = db.check_num_answers(student.id, problem_id)
-        print(per_day, per_hour)
+        logging.info(f'{per_day=}, {per_hour=}')
     except Exception as e:
-        print(e)
+        logging.info(e)
     problem = problems.get_by_id(problem_id)
     student_answer = (message.text or '').strip()
     # Сначала проверим, проходит ли ответ валидацию регуляркой (если она указана)
@@ -921,9 +921,9 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     problem_id = state['problem_id']
     try:
         per_day, per_hour = db.check_num_answers(student.id, problem_id)
-        print(per_day, per_hour)
+        logging.info(f'{per_day=}, {per_hour=}')
     except Exception as e:
-        print(e)
+        logging.info(e)
     problem = problems.get_by_id(problem_id)
     if problem is None:
         logging.error('Сломался приём задач :(')
