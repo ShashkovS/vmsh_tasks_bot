@@ -133,6 +133,20 @@ class DB:
         """, args)
         self.conn.commit()
 
+    def check_num_answers(self, student_id: int, problem_id: int):
+        cur_date = datetime.now().isoformat()[:10]
+        cur_hour = datetime.now().isoformat()[:13]
+        cur = self.conn.cursor()
+        per_day = cur.execute("""
+            select count(*) cnt from results
+            where student_id = :student_id and problem_id = :problem_id and substr(ts, 1, 10) = :cur_hour
+        """, locals()).fetchone()['cnt']
+        per_hour = cur.execute("""
+            select count(*) cnt from results
+            where student_id = :student_id and problem_id = :problem_id and substr(ts, 1, 13) = :cur_hour
+        """, locals()).fetchone()['cnt']
+        return per_day, per_hour
+
     def delete_plus(self, student_id: int, problem_id: int, verdict: int):
         args = locals()
         cur = self.conn.cursor()

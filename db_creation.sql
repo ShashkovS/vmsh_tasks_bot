@@ -65,6 +65,9 @@ CREATE TABLE IF NOT EXISTS results
 create index if not exists results_by_student_solved on results
 (student_id, level, lesson) where verdict > 0;
 
+create index if not exists results_by_student_problem on results
+(student_id, problem_id);
+
 CREATE TABLE IF NOT EXISTS states_log
 (
     user_id    INTEGER,

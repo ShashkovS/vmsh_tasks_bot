@@ -406,6 +406,11 @@ async def prc_teacher_is_checking_task_state(message: types.Message, teacher: db
 async def prc_sending_test_answer_state(message: types.Message, student: db_helper.User, check_functions_cache={}):
     state = states.get_by_user_id(student.id)
     problem_id = state['problem_id']
+    try:
+        per_day, per_hour = db.check_num_answers(student.id, problem_id)
+        print(per_day, per_hour)
+    except Exception as e:
+        print(e)
     problem = problems.get_by_id(problem_id)
     student_answer = (message.text or '').strip()
     # Сначала проверим, проходит ли ответ валидацию регуляркой (если она указана)
@@ -914,6 +919,11 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     await bot.send_message(chat_id=query.message.chat.id, text=f"Выбран вариант {selected_answer}.")
     state = states.get_by_user_id(student.id)
     problem_id = state['problem_id']
+    try:
+        per_day, per_hour = db.check_num_answers(student.id, problem_id)
+        print(per_day, per_hour)
+    except Exception as e:
+        print(e)
     problem = problems.get_by_id(problem_id)
     if problem is None:
         logging.error('Сломался приём задач :(')
