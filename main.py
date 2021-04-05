@@ -407,9 +407,9 @@ def check_test_ans_rate_limit(student_id: int, problem_id: int):
     per_day, per_hour = db.check_num_answers(student_id, problem_id)
     text_to_student = None
     if per_hour >= 3:
-        text_to_student = 'В течение одного часа бот не принимает больше 3 ответов. Отправьте ваш ответ в начале следующего часа.'
+        text_to_student = '💤⌛ В течение одного часа бот не принимает больше 3 ответов. Отправьте ваш ответ в начале следующего часа.'
     elif per_day >= 6:
-        text_to_student = 'В течение одного дня бот не принимает больше 6 ответов. Отправьте ваш ответ завтра.'
+        text_to_student = '💤⌛ В течение одного дня бот не принимает больше 6 ответов. Отправьте ваш ответ завтра.'
     return text_to_student
 
 
@@ -417,7 +417,11 @@ async def prc_sending_test_answer_state(message: types.Message, student: db_help
     state = states.get_by_user_id(student.id)
     problem_id = state['problem_id']
     text_to_student = check_test_ans_rate_limit(student.id, problem_id)
-    logging.info(f'{text_to_student=}')
+    if text_to_student:
+        await bot.send_message(chat_id=message.chat.id, text=text_to_student)
+        await asyncio.sleep(1)
+        await process_regular_message(message)
+        return
     problem = problems.get_by_id(problem_id)
     student_answer = (message.text or '').strip()
     # Сначала проверим, проходит ли ответ валидацию регуляркой (если она указана)
@@ -927,7 +931,11 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     state = states.get_by_user_id(student.id)
     problem_id = state['problem_id']
     text_to_student = check_test_ans_rate_limit(student.id, problem_id)
-    logging.info(f'{text_to_student=}')
+    if text_to_student:
+        await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
+        await asyncio.sleep(1)
+        await process_regular_message(query.message)
+        return
     problem = problems.get_by_id(problem_id)
     if problem is None:
         logging.error('Сломался приём задач :(')
