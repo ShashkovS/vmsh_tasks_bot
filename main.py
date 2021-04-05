@@ -709,10 +709,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
             )
             db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None,
                                   broadcast_message, None)
-        except (aiogram.utils.exceptions.ChatNotFound,
-                aiogram.utils.exceptions.MessageToForwardNotFound,
-                aiogram.utils.exceptions.BotBlocked,
-                aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
+        except aiogram.utils.exceptions.TelegramAPIError as e:
             logging.error(f'Школьник удалил себя?? WTF? {student.chat_id}\n{e}')
             bad_tokens.append(token)
         await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)
@@ -996,7 +993,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student, pr
             try:
                 await bot.forward_message(chat_id, row['chat_id'], row['tg_msg_id'])
                 forward_success = True
-            except (aiogram.utils.exceptions.ChatNotFound, aiogram.utils.exceptions.MessageToForwardNotFound):
+            except aiogram.utils.exceptions.TelegramAPIError:
                 await bot.send_message(chat_id=chat_id, text='Сообщение было удалено...')
         if forward_success:
             pass
@@ -1089,10 +1086,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: db_h
             await bot.send_message(chat_id=student_chat_id,
                                    text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
                                    disable_notification=True)
-    except (aiogram.utils.exceptions.ChatNotFound,
-            aiogram.utils.exceptions.MessageToForwardNotFound,
-            aiogram.utils.exceptions.BotBlocked,
-            aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
+    except aiogram.utils.exceptions.TelegramAPIError as e:
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}\n{e}')
     await process_regular_message(query.message)
 
@@ -1138,10 +1132,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: db_
         await bot.send_message(chat_id=student_chat_id,
                                text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
                                disable_notification=True)
-    except (aiogram.utils.exceptions.ChatNotFound,
-            aiogram.utils.exceptions.MessageToForwardNotFound,
-            aiogram.utils.exceptions.BotBlocked,
-            aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
+    except aiogram.utils.exceptions.TelegramAPIError as e:
         logging.error(f'Школьник удалил себя?? WTF? {student_chat_id}\n{e}')
     states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
     await bot_answer_callback_query(query.id)
@@ -1187,10 +1178,7 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: db_hel
         await bot.send_message(chat_id=student.chat_id, text="Нажмите по окончанию.",
                                reply_markup=build_student_in_conference_keyboard(),
                                parse_mode='HTML')
-    except (aiogram.utils.exceptions.ChatNotFound,
-            aiogram.utils.exceptions.MessageToForwardNotFound,
-            aiogram.utils.exceptions.BotBlocked,
-            aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
+    except aiogram.utils.exceptions.TelegramAPIError as e:
         logging.error(f'Школьник удалил себя?? WTF? {student.chat_id}\n{e}')
         # Снимаем со школьника статус сдачи
         states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
@@ -1320,10 +1308,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: db
         if student_state['state'] == STATE_STUDENT_IS_IN_CONFERENCE:
             states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
             await process_regular_message(student_message)
-    except (aiogram.utils.exceptions.ChatNotFound,
-            aiogram.utils.exceptions.MessageToForwardNotFound,
-            aiogram.utils.exceptions.BotBlocked,
-            aiogram.utils.exceptions.ChatIdIsEmpty,) as e:
+    except aiogram.utils.exceptions.TelegramAPIError as e:
         logging.error(f'Школьник удалил себя?? WTF? {student.chat_id}\n{e}')
     await bot_answer_callback_query(query.id)
     states.set_by_user_id(teacher.id, STATE_TEACHER_SELECT_ACTION)
