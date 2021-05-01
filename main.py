@@ -705,6 +705,20 @@ async def set_sleep_state_for_all_students(message: types.Message):
     )
 
 
+
+async def reset_students_state_silent(message: types.Message):
+    teacher = users.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    # Всем студентам, у которых есть chat_id ставим state STATE_GET_TASK_INFO и отправляем список задач
+    for student in users.all_students():
+        states.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Школьники тихо переведены",
+    )
+
+
 async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
     if tokens == ['all_students']:
         tokens = [user.token for user in users if user.type == USER_TYPE_STUDENT]
@@ -1424,10 +1438,12 @@ async def on_startup(app):
     dispatcher.register_message_handler(broadcast, commands=['broadcast_wibkn96x'])
     dispatcher.register_message_handler(set_get_task_info_for_all_students, commands=['reset_state_jvcykgny'])
     dispatcher.register_message_handler(set_get_task_info_for_all_students, commands=['reset_state'])
+    dispatcher.register_message_handler(reset_students_state_silent, commands=['reset_state_silent'])
     dispatcher.register_message_handler(set_sleep_state_for_all_students, commands=['set_sleep_state'])
     dispatcher.register_message_handler(set_student_level, commands=['set_level'])
     dispatcher.register_message_handler(recheck, filters.RegexpCommandsFilter(regexp_commands=['recheck.*']))
     dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
+    dispatcher.register_message_handler(update_all_internal_data, commands=['update_all'])
     dispatcher.register_message_handler(update_teachers, commands=['update_teachers'])
     dispatcher.register_message_handler(update_problems, commands=['update_problems'])
     dispatcher.register_message_handler(exit_waitlist, commands=['exit_waitlist'])
@@ -1475,9 +1491,10 @@ else:
 """
 Секретные команды для учителя:
 /broadcast_wibkn96x
-/reset_state_jvcykgny
+/reset_state
+/reset_state_silent
 /recheck token problem
-/update_all_quaLtzPE
+/update_all
 /update_teachers
 /update_problems
 /set_sleep_state
