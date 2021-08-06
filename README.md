@@ -1,9 +1,11 @@
 # Бот для проведения кружка по математике
 
 ## Секреты
-- creds/vmsh_bot_sheets_creds.json — ключи для google API (см. https://console.developers.google.com/iam-admin/serviceaccounts/)
-- creds/telegram_bot_key — ключ телеграм-бота
-- creds/settings_sheet_key — ключ гугль-таблицы с настройками
+Есть окружение test и prod. Для каждого своя папка с кредами: creds_test и creds_prod.
+
+- creds_xxxx/vmsh_bot_sheets_creds.json — ключи для google API (см. https://console.developers.google.com/iam-admin/serviceaccounts/)
+- creds_xxxx/telegram_bot_key — ключ телеграм-бота
+- creds_xxxx/settings_sheet_key — ключ гугль-таблицы с настройками
 
 ### Как получить секреты для google API
 Попросите Сережу Шашкова, либо поищите в чате.
@@ -21,7 +23,7 @@
 - в списке сервисных аккаунтов должен появиться созданный сервисный аккаунт. Над ним справа-сверху ищем ссылку "Управление сервисными аккаунтами", переходим по ней
 - находим в списке наш аккаунт, справа от него нажимаем на вертикальное троеточие ("Действия"), выбираем "Создать ключ".
 - выбираем json, "создать".
-- кладём этот файл в проект с кодом по адресу creds/vmsh_bot_sheets_creds.json
+- кладём этот файл в проект с кодом по адресу creds_xxxx/vmsh_bot_sheets_creds.json
 - запускаем бота python main.py
 - в телеграме пишем боту /hello, затем любой пароль
 - интерпретатор выкинет полотно с ошибкой, в полотне будет url типа https://console.developers.google.com/apis/api/sheets.googleapis.com/overview?project=xxxx, переходим туда

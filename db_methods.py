@@ -21,7 +21,7 @@ class DB:
         self._connect_to_db()
 
     @staticmethod
-    def _dict_factory(cursor, row):
+    def _dict_factory(cursor, row: tuple) -> dict:
         d = {}
         for idx, col in enumerate(cursor.description):
             d[col[0]] = row[idx]
@@ -36,13 +36,13 @@ class DB:
     def _create_tables(self):
         c = self.conn.cursor()
         script = open(os.path.join(_APP_PATH, 'db_creation.sql')).read()
-        res = c.executescript(script)
+        c.executescript(script)
+        # TODO yoyo migrations
         self.conn.commit()
 
     def disconnect(self):
         if self.conn:
             self.conn.close()
-            self.conn = None
 
     # ██    ██ ███████ ███████ ██████  ███████
     # ██    ██ ██      ██      ██   ██ ██
@@ -50,7 +50,7 @@ class DB:
     # ██    ██      ██ ██      ██   ██      ██
     #  ██████  ███████ ███████ ██   ██ ███████
 
-    def add_user(self, data: dict):
+    def add_user(self, data: dict) -> int:
         cur = self.conn.cursor()
         cur.execute("""
             insert into users ( chat_id,  type,  level,  name,  surname,  middlename,  token) 
@@ -99,7 +99,7 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def fetch_all_users_by_type(self, user_type: int = None):
+    def fetch_all_users_by_type(self, user_type: int = None) -> list[dict]:
         cur = self.conn.cursor()
         if user_type is not None:
             sql = "SELECT * FROM users where type = :user_type"
@@ -109,19 +109,19 @@ class DB:
         rows = cur.fetchall()
         return rows
 
-    def get_user_by_id(self, id: int):
+    def get_user_by_id(self, user_id: int) -> dict:
         cur = self.conn.cursor()
-        cur.execute("SELECT * FROM users where id = :id limit 1", locals())
+        cur.execute("SELECT * FROM users where id = :user_id limit 1", locals())
         row = cur.fetchone()
         return row
 
-    def get_user_by_token(self, token: str):
+    def get_user_by_token(self, token: str) -> dict:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM users where token = :token limit 1", locals())
         row = cur.fetchone()
         return row
 
-    def get_user_by_chat_id(self, chat_id: int):
+    def get_user_by_chat_id(self, chat_id: int) -> dict:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM users where chat_id = :chat_id limit 1", locals())
         row = cur.fetchone()
@@ -133,7 +133,7 @@ class DB:
     # ██      ██   ██ ██    ██ ██   ██ ██      ██      ██  ██  ██      ██
     # ██      ██   ██  ██████  ██████  ███████ ███████ ██      ██ ███████
 
-    def add_problem(self, data: dict):
+    def add_problem(self, data: dict) -> id:
         cur = self.conn.cursor()
         cur.execute("""
             insert into problems ( level,  lesson,  prob,  item,  title,  prob_text,  prob_type,  ans_type,  ans_validation,  validation_error,  cor_ans,  cor_ans_checker,  wrong_ans,  congrat) 
@@ -154,37 +154,37 @@ class DB:
         self.conn.commit()
         return cur.lastrowid
 
-    def fetch_all_problems(self):
+    def fetch_all_problems(self) -> list[dict]:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM problems")
         rows = cur.fetchall()
         return rows
 
-    def fetch_all_lessons(self):
+    def fetch_all_lessons(self) -> list[dict]:
         cur = self.conn.cursor()
         cur.execute("SELECT distinct level, lesson FROM problems order by lesson, level")
         rows = cur.fetchall()
         return rows
 
-    def get_last_lesson_num(self):
+    def get_last_lesson_num(self) -> int:
         cur = self.conn.cursor()
         cur.execute("SELECT max(lesson) as mx FROM problems")
         row = cur.fetchone()
         return row['mx']
 
-    def fetch_all_problems_by_lesson(self, level: str, lesson: int):
+    def fetch_all_problems_by_lesson(self, level: str, lesson: int) -> list[dict]:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM problems where level = :level and lesson = :lesson", locals())
         rows = cur.fetchall()
         return rows
 
-    def get_problem_by_id(self, id: int):
+    def get_problem_by_id(self, problem_id: int) -> dict:
         cur = self.conn.cursor()
-        cur.execute("SELECT * FROM problems where id = :id limit 1", locals())
+        cur.execute("SELECT * FROM problems where id = :problem_id limit 1", locals())
         row = cur.fetchone()
         return row
 
-    def get_problem_by_text_number(self, level: str, lesson: int, prob: int, item: ''):
+    def get_problem_by_text_number(self, level: str, lesson: int, prob: int, item: '') -> dict:
         cur = self.conn.cursor()
         cur.execute("""
             SELECT * FROM problems 
@@ -202,13 +202,13 @@ class DB:
     #      ██    ██    ██   ██    ██    ██           ██
     # ███████    ██    ██   ██    ██    ███████ ███████
 
-    def fetch_all_states(self):
+    def fetch_all_states(self) -> list[dict]:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM states")
         rows = cur.fetchall()
         return rows
 
-    def get_state_by_user_id(self, user_id: int):
+    def get_state_by_user_id(self, user_id: int) -> dict:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM states WHERE user_id = :user_id limit 1", locals())
         row = cur.fetchone()
@@ -260,7 +260,7 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def check_num_answers(self, student_id: int, problem_id: int):
+    def check_num_answers(self, student_id: int, problem_id: int) -> tuple[int, int]:
         cur_date = datetime.now().isoformat()[:10]
         cur_hour = datetime.now().isoformat()[:13]
         cur = self.conn.cursor()
@@ -283,7 +283,7 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def check_student_solved(self, student_id: int, level: str, lesson: int):
+    def check_student_solved(self, student_id: int, level: str, lesson: int) -> set:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
@@ -301,7 +301,7 @@ class DB:
     #  ███ ███  ██   ██ ██    ██       ██    ███████ ██   ████    ██    ██   ██ ███████ ██   ██  ██████   ██████  ███████  ██████  ███████
     #                                                                                               ▀▀
 
-    def check_student_sent_written(self, student_id: int, lesson: int):
+    def check_student_sent_written(self, student_id: int, lesson: int) -> set:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
@@ -313,7 +313,7 @@ class DB:
         being_checked_ids = {row['problem_id'] for row in rows}
         return being_checked_ids
 
-    def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int, ts: datetime = None):
+    def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int, ts: datetime = None) -> int:
         args = locals()
         args['ts'] = args['ts'] or datetime.now().isoformat()
         cur = self.conn.cursor()
@@ -325,13 +325,13 @@ class DB:
         self.conn.commit()
         return cur.lastrowid
 
-    def get_written_tasks_to_check(self, teacher_id):
+    def get_written_tasks_to_check(self, teacher_id) -> list[dict]:
         cur = self.conn.cursor()
         now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
         cur.execute("""
             select * from written_tasks_queue 
             where cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id
-            order by ts asc
+            order by ts
             limit :_MAX_WRITTEN_TASKS_TO_SELECT
         """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS_NEW,
               '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
@@ -340,7 +340,7 @@ class DB:
         rows = cur.fetchall()
         return rows
 
-    def get_written_tasks_count(self):
+    def get_written_tasks_count(self) -> int:
         cur = self.conn.cursor()
         cur.execute("""
             select count(*) cnt from written_tasks_queue 
@@ -348,7 +348,7 @@ class DB:
         row = cur.fetchone()
         return row['cnt']
 
-    def upd_written_task_status(self, student_id: int, problem_id: int, new_status: int, teacher_id: int = None):
+    def upd_written_task_status(self, student_id: int, problem_id: int, new_status: int, teacher_id: int = None) -> int:
         args = locals()
         args['now_minus_30_min'] = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
         args['teacher_ts'] = datetime.now().isoformat() if new_status > 0 else None
@@ -398,12 +398,12 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def get_waitlist_top(self, top_n: int):
+    def get_waitlist_top(self, top_n: int) -> list[dict]:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
             SELECT * FROM waitlist
-            ORDER BY entered ASC
+            ORDER BY entered
             LIMIT :top_n
         """, args)
         return cur.fetchall()
@@ -415,7 +415,7 @@ class DB:
     #  ███ ███  ██   ██    ██       ██    ██   ██ ███████ ██   ██ ██████  ██ ███████  ██████  ██████  ███████ ███████ ██  ██████  ██   ████ ███████
 
     def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int,
-                                            tg_msg_id: int):
+                                            tg_msg_id: int) -> int:
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
@@ -426,7 +426,7 @@ class DB:
         self.conn.commit()
         return cur.lastrowid
 
-    def fetch_written_task_discussion(self, student_id: int, problem_id: int):
+    def fetch_written_task_discussion(self, student_id: int, problem_id: int) -> list[dict]:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
@@ -460,7 +460,7 @@ class DB:
     # ██      ██      ██   ██    ██    ██    ██ ██   ██ ██           ██
     # ██      ███████ ██   ██    ██     ██████  ██   ██ ███████ ███████
 
-    def calc_last_lesson_stat(self):
+    def calc_last_lesson_stat(self) -> list[dict]:
         cur = self.conn.cursor()
         cur.execute("""
             -- Посчитать статистику решаемости по последнему занятию
@@ -483,11 +483,3 @@ class DB:
         """)
         rows = cur.fetchall()
         return rows
-
-
-db: DB = None
-
-
-def init_db(db_file: str):
-    global db
-    db = DB(db_file)

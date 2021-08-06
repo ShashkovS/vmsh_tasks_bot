@@ -40,15 +40,15 @@ cur.execute('''
     from problems p
     where p.lesson = :NLIST and (p.level = :NLEVEL or ''=:NLEVEL)
 ''', globals())
-problems = set({x[0] for x in cur.fetchall()})
+Problem = set({x[0] for x in cur.fetchall()})
 
 formated_problems = []
-for problem in problems:
+for problem in Problem:
     m = re.fullmatch('(\d+)([а-я])\.(\d+)([а-я]?)', problem)
     lst, lvl, prb, itm = m.groups()
     formated_problems.append((f'{int(lst):02}{lvl}.{int(prb):02}{itm}', problem))
 formated_problems.sort()
-table = [[''] * (len(problems) + 2) for __ in range(len(pupils) + 1)]
+table = [[''] * (len(Problem) + 2) for __ in range(len(pupils) + 1)]
 table[0][0] = 'token\tФамилия\tИмя\tнач/прод'
 table[0][1] = f'{NLIST:02}{NLEVEL}.Н'
 for c, (formatted, problem) in enumerate(formated_problems, start=2):

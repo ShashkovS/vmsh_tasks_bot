@@ -35,17 +35,17 @@ cur.execute('''
     select p.id, p.lesson || p.level || '.' || p.prob  || p.item as prob
     from problems p
 ''', globals())
-problems = {fmt_probname(x[1]): x[0] for x in cur.fetchall()}
-print(problems)
+Problem = {fmt_probname(x[1]): x[0] for x in cur.fetchall()}
+print(Problem)
 exit()
 
 formated_problems = []
-for problem in problems:
+for problem in Problem:
     m = re.fullmatch('(\d+)([а-я])\.(\d+)([а-я]?)', problem)
     lst, lvl, prb, itm = m.groups()
     formated_problems.append((f'{int(lst):02}{lvl}.{int(prb):02}{itm}', problem))
 formated_problems.sort()
-table = [[''] * (len(problems) + 1) for __ in range(len(pupils) + 1)]
+table = [[''] * (len(Problem) + 1) for __ in range(len(pupils) + 1)]
 table[0][0] = 'token\tФамилия\tИмя\tнач/прод'
 for c, (formatted, problem) in enumerate(formated_problems, start=1):
     table[0][c] = formatted

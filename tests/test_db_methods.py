@@ -20,7 +20,7 @@ initial_test_teachers = [
 
 
 
-class ObjectRelationsMappingTest(TestCase):
+class DatabaseMethodsTest(TestCase):
     def setUp(self) -> None:
         # to create db instance and access db_file field is the only way to extract file path
         self.db = DB('test.db')
