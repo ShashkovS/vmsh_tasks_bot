@@ -1,98 +1,82 @@
-# -*- coding: utf-8 -*-
+import os
+from dataclasses import asdict
+from unittest import TestCase
+
+from consts import *
+from db_methods import db
 from obj_classes import *
-exit()
 
-if __name__ == '__main__':
-    print('Self test')
+from .initial_test_data import test_students, test_teachers
 
-    db = DB('test.db')
 
-    u1 = User(None, 1, 'н', 'name', 'surname', 'middle', 'tok1')
-    u2 = User(124, 1, 'н', 'name2', 'surname2', 'middle', 'tok2')
-    u3 = User(125, 1, 'н', 'name3', 'surname3', 'middle', 'tok3')
-    u1upd = User(12312, 1, 'н', 'name1', 'surname1', 'middle', 'tok1')
 
-    User = Users()
-    print(User)
-    print(User.by_token['tok2'])
-    print(User.by_id[1])
-    print(User.by_chat_id[12312])
-    print(User.get_by_id(123))
-    print(User.get_by_id(1))
-    print(len(User))
+class UserMethodsTest(TestCase):
+    def setUp(self) -> None:
+        self.db = db
+        test_db_filename = 'unittest.db'
+        test_db_fullpath = self.db.get_db_file_full_path(test_db_filename)
+        # ensure there is no trash file from previous incorrectly handled tests present
+        try:
+            os.unlink(test_db_fullpath)
+        except FileNotFoundError:
+            pass
+        # create shiny new db instance from scratch and connect
+        self.db.setup(test_db_filename)
+        self.insert_dummy_users()
 
-    p1 = Problem('н', 1, 1, 'а', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', '123', 'check_int', 'ЛОЖЬ!', 'Крутяк')
-    p2 = Problem('н', 1, 1, 'б', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', '123', 'check_int', 'ЛОЖЬ!', 'Крутяк')
-    p3 = Problem('н', 1, 2, '', 'Гы', 'текст', 0, 0, r'\d+', 'ЧИСЛО!', '123', 'check_int', 'ЛОЖЬ!', 'Крутяк')
-    p2upd = Problem('н', 1, 1, 'б', 'Гы', 'текст_upd', 0, 0, r'\d+', 'ЧИСЛО!', '123', 'check_int', 'ЛОЖЬ!', 'Крутяк')
+    def insert_dummy_users(self):
+        for row in test_students + test_teachers:
+            real_id = self.db.add_user(row)
+            row['id'] = real_id
 
-    Problem = Problems()
-    print(Problem)
-    print(Problem.by_id[1])
-    print(Problem.by_key[('н', 1, 1, 'б')])
-    print(Problem.get_by_key('н', 1, 1, 'б'))
-    print(Problem.get_by_key('н', 1, 1, 'бs'))
-    print(len(Problem))
+    def tearDown(self) -> None:
+        self.db.disconnect()
+        os.unlink(self.db.db_file)
 
-    Waitlist = Waitlist()
-    State = States()
-    for i in range(1, 15):
-        Waitlist.enter(i, i)
-        State.set_by_user_id(i, STATE_SENDING_SOLUTION, i)
+    def test_all_getters(self):
+        """ Test this methods:
+        def all(cls) -> Generator[User, None, None]:
+        def all_students(cls) -> Generator[User, None, None]:
+        def all_teachers(cls) -> Generator[User, None, None]:
+        """
+        students = list(User.all_students())
+        teachers = list(User.all_teachers())
+        all_users = list(User.all())
+        self.assertEqual(len(students), len(test_students))
+        self.assertEqual(len(teachers), len(test_teachers))
+        self.assertEqual(len(all_users), len(students) + len(teachers))
+        self.assertListEqual([asdict(user) for user in students], test_students)
+        self.assertListEqual([asdict(user) for user in teachers], test_teachers)
+        self.assertListEqual([asdict(user) for user in all_users], test_students + test_teachers)
 
-    print('WL: add 14 people')
-    wl = Waitlist.top()
-    for r in wl:
-        print('wl entry = ', r)
-        print('user state = ', State.get_by_user_id(r['student_id']))
-        Waitlist.leave(r['student_id'])
-    print('States after leaving waitlist:')
-    for r in wl:
-        print('user state = ', State.get_by_user_id(r['student_id']))
+    def test_by_getters(self):
+        """ Test this methods:
+        def get_by_chat_id(cls, chat_id: int) -> Optional[User]:
+        def get_by_token(cls, token: str) -> Optional[User]:
+        def get_by_id(cls, id: int) -> Optional[User]:
+        """
+        for dict_user in test_students + test_teachers:
+            self.assertDictEqual(dict_user, asdict(User.get_by_id(dict_user['id'])))
+            self.assertDictEqual(dict_user, asdict(User.get_by_token(dict_user['token'])))
+            if dict_user['chat_id']:
+                self.assertDictEqual(dict_user, asdict(User.get_by_chat_id(dict_user['chat_id'])))
 
-    print('WL: new top')
-    wl = Waitlist.top()
-    for r in wl:
-        print(r)
-        Waitlist.leave(r['student_id'])
+    def test_set_level(self):
+        for dict_user in test_students + test_teachers:
+            user = User.get_by_id(dict_user['id'])
+            new_level = 'foo'
+            user.set_level(new_level)
+            user = User.get_by_id(dict_user['id'])
+            self.assertEqual(user.level, new_level)
 
-    db.disconnect()
-    print('\n' * 10)
-    print('self test 2')
-    db, User, Problem, State, WrittenQueue, Waitlist = init_db_and_objects('dummy2')
-    for user in User.all_users:
-        print(user)
-    for user in Problem.all_problems:
-        print(user)
-    db.disconnect()
-
-    print('written queue test')
-    # def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int):
-    # def get_written_tasks_to_check(self):
-    # def upd_written_task_status(self, id: int, new_status: int):
-    # def delete_from_written_task_queue(self, id: int):
-    db, User, Problem, State, WrittenQueue, Waitlist = init_db_and_objects('dummy2')
-    db.insert_into_written_task_queue(123, 123, 0)
-    db.insert_into_written_task_queue(123, 123, 0)
-    db.insert_into_written_task_queue(123, 124, 0)
-    db.insert_into_written_task_queue(123, 125, 0)
-    db.insert_into_written_task_queue(123, 123, 0)
-    print(db.get_written_tasks_to_check(-1))
-    db.upd_written_task_status(123, 125, 1)
-    print(db.get_written_tasks_to_check(-1))
-    print('get_written_tasks_count', db.get_written_tasks_count())
-    db.delete_from_written_task_queue(123, 123)
-    db.delete_from_written_task_queue(123, 124)
-    db.delete_from_written_task_queue(123, 125)
-    print(db.get_written_tasks_to_check(-1))
-
-    print('written task discussion')
-    # def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str):
-    # def fetch_written_task_discussion(self, student_id: int, problem_id: int):
-    # db.insert_into_written_task_discussion(123, 123, None, 'Привет', None)
-    # db.insert_into_written_task_discussion(123, 123, None, None, '/foo/baz.txt')
-    # db.insert_into_written_task_discussion(123, 123, 999, 'Ерунда', None)
-    # db.insert_into_written_task_discussion(123, 123, 999, None, '/omg/img.png')
-    for row in db.fetch_written_task_discussion(123, 123): print(row)
-
-    print('written_queue')
+    def test_set_chat_id(self):
+        prev_user_id = None
+        for dict_user in test_students + test_teachers:
+            user = User.get_by_id(dict_user['id'])
+            new_chat_id = 99999
+            user.set_chat_id(new_chat_id)
+            user = User.get_by_id(dict_user['id'])
+            self.assertEqual(user.chat_id, new_chat_id)
+            if prev_user_id:
+                self.assertIsNone(User.get_by_id(prev_user_id).chat_id)
+            prev_user_id = dict_user['id']

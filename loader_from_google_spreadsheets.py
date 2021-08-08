@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import pickle
-import logging
-
-logging.basicConfig(level=logging.INFO)
+from config import logger
 
 _IGNORE_FIRST_HEADER_ROWS_NUM = 2
 _PROBLEMS_HEADERS = [
@@ -25,13 +23,18 @@ def _dict_factory(rows, column_names):
 
 
 class SpreadsheetLoader:
-    def __init__(self, dump_filename: str, sheets_key: str, google_cred_json: str):
+    def __init__(self, dump_filename: str = None, sheets_key: str = None, google_cred_json: str = None):
+        self.dump_filename = dump_filename
+        self.sheets_key = sheets_key
+        self.google_cred_json = google_cred_json
+
+    def setup(self, dump_filename: str, sheets_key: str, google_cred_json: str):
         self.dump_filename = dump_filename
         self.sheets_key = sheets_key
         self.google_cred_json = google_cred_json
 
     def _connect_to_google_sheets(self):
-        logging.info('Setting reload: using google')
+        logger.info('Setting reload: using google')
         import gspread
         from oauth2client.service_account import ServiceAccountCredentials
         scopes = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -44,19 +47,19 @@ class SpreadsheetLoader:
         try:
             with open(self.dump_filename, 'rb') as f:
                 pickled = pickle.load(f)
-            logging.info('Setting reload: pickle used')
+            logger.info('Setting reload: pickle used')
             return pickled
         except FileNotFoundError:
             return None
 
     def _dump_to_pickle(self, pickled):
-        logging.info('Setting reload: DONE')
+        logger.info('Setting reload: DONE')
         with open(self.dump_filename, 'wb') as f:
             pickle.dump(pickled, f)
 
     def _load_problems(self, sheet):
         worksheet_problems = sheet.worksheet("Задачи")
-        logging.info('Setting reload: fetching problems')
+        logger.info('Setting reload: fetching problems')
         problems = _dict_factory(
             worksheet_problems.get_all_values(),
             _PROBLEMS_HEADERS,
@@ -64,7 +67,7 @@ class SpreadsheetLoader:
         return problems[_IGNORE_FIRST_HEADER_ROWS_NUM:]
 
     def _load_students(self, sheet):
-        logging.info('Setting reload: fetching students')
+        logger.info('Setting reload: fetching students')
         worksheet_students = sheet.worksheet("Школьники")
         students = _dict_factory(
             worksheet_students.get_all_values(),
@@ -73,7 +76,7 @@ class SpreadsheetLoader:
         return students[_IGNORE_FIRST_HEADER_ROWS_NUM:]
 
     def _load_teachers(self, sheet):
-        logging.info('Setting reload: fetching teachers')
+        logger.info('Setting reload: fetching teachers')
         worksheet_students = sheet.worksheet("Учителя")
         teachers = _dict_factory(
             worksheet_students.get_all_values(),
@@ -83,7 +86,7 @@ class SpreadsheetLoader:
 
     def get_all(self, *, use_pickle=True):
         if use_pickle:
-            logging.info('Setting reload: check pickle')
+            logger.info('Setting reload: check pickle')
             pickled = self._load_from_pickle()
             if pickled:
                 problems, students, teachers = pickled
@@ -97,7 +100,7 @@ class SpreadsheetLoader:
         return problems, students, teachers
 
     def get_problems(self):
-        logging.info('Problems reload: check pickle')
+        logger.info('Problems reload: check pickle')
         sheet = self._connect_to_google_sheets()
         problems_new = self._load_problems(sheet)
         problems, students, teachers = self._load_from_pickle()
@@ -106,7 +109,7 @@ class SpreadsheetLoader:
         return problems
 
     def get_students(self):
-        logging.info('Students reload: check pickle')
+        logger.info('Students reload: check pickle')
         sheet = self._connect_to_google_sheets()
         students_new = self._load_students(sheet)
         problems, students, teachers = self._load_from_pickle()
@@ -115,7 +118,7 @@ class SpreadsheetLoader:
         return students
 
     def get_teachers(self):
-        logging.info('Problems reload: check pickle')
+        logger.info('Problems reload: check pickle')
         sheet = self._connect_to_google_sheets()
         teachers_new = self._load_teachers(sheet)
         problems, students, teachers = self._load_from_pickle()
@@ -124,10 +127,12 @@ class SpreadsheetLoader:
         return teachers
 
 
-if __name__ == '__main__':
-    logging.info('Обновляем дамп с данными из гугль-таблицы')
-    import config
+google_spreadsheet_loader = SpreadsheetLoader()
 
-    google_spreadsheet_loader = SpreadsheetLoader(config.dump_filename, config.google_sheets_key, config.google_cred_json)
+if __name__ == '__main__':
+    logger.info('Обновляем дамп с данными из гугль-таблицы')
+    from config import config
+
+    google_spreadsheet_loader.setup(config.dump_filename, config.google_sheets_key, config.google_cred_json)
     problems, students, teachers = google_spreadsheet_loader.get_all(use_pickle=False)
     print(len(problems), len(students), len(teachers))

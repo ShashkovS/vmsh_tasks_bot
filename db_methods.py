@@ -14,9 +14,18 @@ class DB:
     """Класс, реализующий все взаимодействия с БД"""
     conn: sqlite3.Connection
 
-    def __init__(self, db_file='prod_database.db'):
+    def __init__(self, db_file=None):
         """Инициализация и подключение к базе"""
-        self.db_file = os.path.join(_APP_PATH, 'db', db_file)
+        self.db_file = None
+        if db_file is not None:
+            self.setup(db_file)
+
+    @staticmethod
+    def get_db_file_full_path(db_file: str):
+        return os.path.join(_APP_PATH, 'db', db_file)
+
+    def setup(self, db_file: str):
+        self.db_file = self.get_db_file_full_path(db_file)
         os.makedirs(os.path.dirname(self.db_file), exist_ok=True)
         self._connect_to_db()
 
@@ -483,3 +492,6 @@ class DB:
         """)
         rows = cur.fetchall()
         return rows
+
+
+db = DB()

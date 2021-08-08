@@ -1,18 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
-
-import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Generator
 
-import config
 from consts import *
-from db_methods import DB
-from loader_from_google_spreadsheets import SpreadsheetLoader
-
-db = DB(config.db_filename)
-google_spreadsheet_loader = SpreadsheetLoader(config.dump_filename, config.google_sheets_key, config.google_cred_json)
+from config import config, logger
+from db_methods import db
+from loader_from_google_spreadsheets import google_spreadsheet_loader
 
 
 def _normilize_token(token: str, *, RU_TO_EN=str.maketrans('УКЕНХВАРОСМТукехарос', 'YKEHXBAPOCMTykexapoc')) -> str:
@@ -44,6 +39,11 @@ class User:
 
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'
+
+    @classmethod
+    def all(cls) -> Generator[User, None, None]:
+        for user in db.fetch_all_users_by_type():
+            yield cls(**user)
 
     @classmethod
     def all_students(cls) -> Generator[User, None, None]:
@@ -182,44 +182,31 @@ class Result:
         return db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher and teacher.id, verdict, answer, res_type)
 
 
-class FromGoogle:
+class FromGoogleSpreadsheet:
     @staticmethod
     def update_all():
         problems, students, teachers = google_spreadsheet_loader.get_all()
-        for problem in problems:
-            try:
-                problem['prob_type'] = PROB_TYPES[problem['prob_type']]
-                problem['ans_type'] = ANS_TYPES[problem['ans_type']]
-            except:
-                logging.error(f'Криво настроена задача: {problem!r}')
-                continue
-            Problem(**problem)
-        for student in students:
-            student['type'] = USER_TYPE_STUDENT
-            student['chat_id'] = None
-            student['middlename'] = ''
-            User(**student)
-        for teacher in teachers:
-            teacher['type'] = USER_TYPE_TEACHER
-            teacher['chat_id'] = None
-            teacher['level'] = None
-            User(**teacher)
+        FromGoogleSpreadsheet.problems_to_db(problems)
+        FromGoogleSpreadsheet.students_to_db(students)
+        FromGoogleSpreadsheet.teachers_to_db(teachers)
 
     @staticmethod
     def update_problems():
         problems = google_spreadsheet_loader.get_problems()
-        for problem in problems:
-            try:
-                problem['prob_type'] = PROB_TYPES[problem['prob_type']]
-                problem['ans_type'] = ANS_TYPES[problem['ans_type']]
-            except:
-                logging.error(f'Криво настроена задача: {problem!r}')
-                continue
-            Problem(**problem)
+        FromGoogleSpreadsheet.problems_to_db(problems)
 
     @staticmethod
     def update_students():
         students = google_spreadsheet_loader.get_students()
+        FromGoogleSpreadsheet.students_to_db(students)
+
+    @staticmethod
+    def update_teachers():
+        teachers = google_spreadsheet_loader.get_teachers()
+        FromGoogleSpreadsheet.teachers_to_db(teachers)
+
+    @staticmethod
+    def students_to_db(students: list[dict]):
         for student in students:
             student['type'] = USER_TYPE_STUDENT
             student['chat_id'] = None
@@ -227,17 +214,31 @@ class FromGoogle:
             User(**student)
 
     @staticmethod
-    def update_teachers():
-        teachers = google_spreadsheet_loader.get_teachers()
+    def teachers_to_db(teachers: list[dict]):
         for teacher in teachers:
             teacher['type'] = USER_TYPE_TEACHER
             teacher['chat_id'] = None
             teacher['level'] = None
             User(**teacher)
 
+    @staticmethod
+    def problems_to_db(problems: list[dict]):
+        for problem in problems:
+            try:
+                problem['prob_type'] = PROB_TYPES[problem['prob_type']]
+                problem['ans_type'] = ANS_TYPES[problem['ans_type']]
+            except:
+                logger.error(f'Криво настроена задача: {problem!r}')
+                continue
+            Problem(**problem)
 
-# Если в базе нет ни одного учителя, то принудительно грузим всё из гугла
-all_teachers = list(User.all_teachers())
-if len(all_teachers) == 0:
-    FromGoogle.update_all()
-logging.info(f'В базе в текущий момент {len(all_teachers)} учителей')
+
+# db.setup(config.db_filename)
+# google_spreadsheet_loader.setup(config.dump_filename, config.google_sheets_key, config.google_cred_json)
+#
+# # Если в базе нет ни одного учителя, то принудительно грузим всё из таблицы
+# all_teachers = list(User.all_teachers())
+# if len(all_teachers) == 0:
+#     FromGoogleSpreadsheet.update_all()
+#     all_teachers = list(User.all_teachers())
+# logger.info(f'В базе в текущий момент {len(all_teachers)} учителей')
