@@ -24,16 +24,10 @@ class Config:
 
 
 def _create_logger():
-    logger = logging.getLogger(APP_LOGGER)
     # Настраиваем
-    logger.setLevel(logging.WARNING)
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.WARNING)
-    console_handler.setFormatter(logging.Formatter('%(asctime)s %(name)-8s: %(levelname)-8s %(message)s',
-                                                   datefmt='%d.%m %H:%M:%S'))
-    logger.addHandler(console_handler)
-
-    return console_handler, logger
+    logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(name)-8s: %(levelname)-8s %(message)s', datefmt='%Y-%d-%m %H:%M:%S')
+    logger = logging.getLogger(APP_LOGGER)
+    return logger
 
 
 def _setup(*, force_production=False):
@@ -85,7 +79,8 @@ def _init_sentry(dsn):
             pass
 
 
-console_handler, logger = _create_logger()
+logger = _create_logger()
+DEBUG = logging.DEBUG
 config = _setup()
 _init_sentry(config.sentry_dsn)
 logger.debug(f'{config=}')

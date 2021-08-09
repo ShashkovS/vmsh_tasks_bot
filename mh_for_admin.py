@@ -1,0 +1,193 @@
+from aiogram.dispatcher.webhook import types
+import aiogram
+import asyncio
+import re
+
+from consts import *
+from config import logger
+from obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, FromGoogleSpreadsheet, db
+from bot import bot, bot_edit_message_text, bot_edit_message_reply_markup, bot_answer_callback_query, bot_post_logging_message
+import keyboards
+
+
+async def update_all_internal_data(message: types.Message):
+    logger.debug('update_all_internal_data')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    FromGoogleSpreadsheet.update_all()
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Все данные обновлены",
+    )
+
+
+async def update_teachers(message: types.Message):
+    logger.debug('update_teachers')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    FromGoogleSpreadsheet.update_teachers()
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Учителя обновлены",
+    )
+
+
+async def update_students(message: types.Message):
+    logger.debug('update_students')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    FromGoogleSpreadsheet.update_teachers()
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Студенты обновлены",
+    )
+
+
+async def update_problems(message: types.Message):
+    logger.debug('update_problems')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    FromGoogleSpreadsheet.update_problems()
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Задачи обновлены",
+    )
+
+
+async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
+    logger.debug('run_broadcast_task')
+    if tokens == ['all_students']:
+        tokens = [user.token for user in User.all_students()]
+    elif tokens == ['all_novice']:
+        tokens = [user.token for user in User.all_students() if user.level == STUDENT_NOVICE]
+    elif tokens == ['all_pro']:
+        tokens = [user.token for user in User.all_students() if user.level == STUDENT_PRO]
+    elif tokens == ['all_teachers']:
+        tokens = [user.token for user in User.all_teachers()]
+    bad_tokens = []
+    for token in tokens:
+        student = User.get_by_token(token)
+        if not student or not student.chat_id:
+            continue
+        try:
+            broad_message = await bot.send_message(
+                chat_id=student.chat_id,
+                text=broadcast_message,
+                disable_web_page_preview=True,
+            )
+            db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None,
+                                  broadcast_message, None)
+        except aiogram.utils.exceptions.TelegramAPIError as e:
+            logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
+            bad_tokens.append(token)
+        await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Все сообщения разосланы. Проблемы возникли с {bad_tokens!r}",
+    )
+
+
+async def broadcast(message: types.Message):
+    logger.debug('broadcast')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    text = message.text.splitlines()
+    try:
+        cmd, tokens, *broadcast_message = text
+    except:
+        return
+    broadcast_message = '\n'.join(broadcast_message)
+    tokens = re.split(r'\W+', tokens)
+    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Создано задание рассылки сообщений",
+    )
+
+
+async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
+    logger.debug('run_set_get_task_info_for_all_students_task')
+    # Всем студентам, у которых есть chat_id ставим state STATE_GET_TASK_INFO и отправляем список задач
+    for student in User.all_students():
+        State.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        logger.info(f'{student.id} оживлён')
+        if not student.chat_id:
+            continue
+        try:
+            slevel = '(уровень «Продолжающие»)' if student.level == STUDENT_PRO else '(уровень «Начинающие»)'
+            await bot.send_message(
+                chat_id=student.chat_id,
+                text=f"Можно сдавать задачи!\n❓ Нажимайте на задачу, чтобы сдать её {slevel}",
+                reply_markup=keyboards.build_problems(Problem.last_lesson_num(), student),
+            )
+        except:
+            pass
+        await asyncio.sleep(1 / 20)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Все школьники переведены в режим сдачи задач",
+    )
+
+
+async def set_get_task_info_for_all_students(message: types.Message):
+    logger.debug('set_get_task_info_for_all_students')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    asyncio.create_task(run_set_get_task_info_for_all_students_task(message.chat.id))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Создано задание по переводу в режим сдачи задач",
+    )
+
+
+async def run_set_sleep_state_task(teacher_chat_id):
+    logger.debug('run_set_sleep_state_task')
+    # Всем студентам ставим state STATE_STUDENT_IS_SLEEPING. Прекращаем приём задач
+    for student in User.all_students():
+        State.set_by_user_id(student.id, STATE_STUDENT_IS_SLEEPING)
+        if not student.chat_id:
+            continue
+        try:
+            await bot.send_message(
+                chat_id=student.chat_id,
+                text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
+                     "Заходите в канал @vmsh_179_5_6_2020 кружка за новостями и решениями.",
+            )
+        except:
+            pass
+        await asyncio.sleep(1 / 20)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Все школьники переведены в статус SLEEPING",
+    )
+
+
+async def set_sleep_state_for_all_students(message: types.Message):
+    logger.debug('set_sleep_state_for_all_students')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    asyncio.create_task(run_set_sleep_state_task(message.chat.id))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Создано задание по переводу в статус SLEEPING",
+    )
+
+
+async def calc_last_lesson_stat(message: types.Message):
+    logger.debug('calc_last_lesson_stat')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE_TEACHER:
+        return
+    stat = db.calc_last_lesson_stat()
+    msg = '\n'.join(map(lambda r: '  '.join(r.values()), stat))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=msg,
+    )
