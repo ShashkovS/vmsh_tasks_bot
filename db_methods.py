@@ -4,6 +4,8 @@ import os
 from datetime import datetime, timedelta
 from consts import *
 from typing import List
+from yoyo import read_migrations
+from yoyo import get_backend
 
 _APP_PATH = os.path.dirname(os.path.realpath(__file__))
 _DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -28,6 +30,7 @@ class DB:
     def setup(self, db_file: str):
         self.db_file = self.get_db_file_full_path(db_file)
         os.makedirs(os.path.dirname(self.db_file), exist_ok=True)
+        self._run_migrations()
         self._connect_to_db()
 
     @staticmethod
@@ -40,15 +43,12 @@ class DB:
     def _connect_to_db(self):
         self.conn = sqlite3.connect(self.db_file)
         self.conn.row_factory = self._dict_factory
-        # Всегда запускаем стартовый скрипт
-        self._create_tables()
 
-    def _create_tables(self):
-        c = self.conn.cursor()
-        script = open(os.path.join(_APP_PATH, 'db_creation.sql')).read()
-        c.executescript(script)
-        # TODO yoyo migrations
-        self.conn.commit()
+    def _run_migrations(self):
+        backend = get_backend(f'sqlite:///{self.db_file}')
+        migrations = read_migrations('migrations')
+        with backend.lock():
+            backend.apply_migrations(backend.to_apply(migrations))
 
     def disconnect(self):
         if self.conn:
@@ -496,3 +496,4 @@ class DB:
 
 
 db = DB()
+db.setup('delme.db')
