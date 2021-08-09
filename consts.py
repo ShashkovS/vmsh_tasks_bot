@@ -1,98 +1,136 @@
 # -*- coding: utf-8 -*-
+from enum import Enum, IntEnum, unique
+
+
 # СОСТОЯНИЯ
 # Важно, чтобы каждый state был уникальной числовой константой, которая больше никогда не меняется
 # (так как она сохраняется в БД)
-STATE_GET_USER_INFO = 1
-STATE_GET_TASK_INFO = 2
-STATE_SENDING_SOLUTION = 3
-STATE_SENDING_TEST_ANSWER = 4
-STATE_WAIT_SOS_REQUEST = 5
-STATE_TEACHER_SELECT_ACTION = 6
-STATE_TEACHER_ACCEPTED_QUEUE = 7
-STATE_TEACHER_IS_CHECKING_TASK = 8
-STATE_STUDENT_IS_IN_CONFERENCE = 9
-STATE_TEACHER_WRITES_STUDENT_NAME = 10
-STATE_STUDENT_IS_SLEEPING = 12
+@unique
+class STATE(IntEnum):
+    GET_USER_INFO = 1
+    GET_TASK_INFO = 2
+    SENDING_SOLUTION = 3
+    SENDING_TEST_ANSWER = 4
+    WAIT_SOS_REQUEST = 5
+    TEACHER_SELECT_ACTION = 6
+    TEACHER_ACCEPTED_QUEUE = 7
+    TEACHER_IS_CHECKING_TASK = 8
+    STUDENT_IS_IN_CONFERENCE = 9
+    TEACHER_WRITES_STUDENT_NAME = 10
+    STUDENT_IS_SLEEPING = 12
 
 
 # ПРЕФИКСЫ ДАННЫХ ДЛЯ КОЛЛБЕКОВ
 # Важно, чтобы константа была уникальной буков (там хардкод взятия первой буквы)
-CALLBACK_PROBLEM_SELECTED = 't'
-CALLBACK_SHOW_LIST_OF_LISTS = 'a'
-CALLBACK_LIST_SELECTED = 'l'
-CALLBACK_ONE_OF_TEST_ANSWER_SELECTED = 'x'
-CALLBACK_CANCEL_TASK_SUBMISSION = 'c'
-CALLBACK_GET_QUEUE_TOP = 'q'
-CALLBACK_INS_ORAL_PLUSSES = 'i'
-CALLBACK_SET_VERDICT = 'v'
-CALLBACK_GET_WRITTEN_TASK = 'w'
-CALLBACK_WRITTEN_TASK_SELECTED = 'W'
-CALLBACK_TEACHER_CANCEL = 'R'
-CALLBACK_WRITTEN_TASK_OK = 'O'
-CALLBACK_WRITTEN_TASK_BAD = 'B'
-CALLBACK_GET_OUT_OF_WAITLIST = 'X'
-CALLBACK_ADD_OR_REMOVE_ORAL_PLUS = 'p'
-CALLBACK_FINISH_ORAL_ROUND = 'f'
-CALLBACK_STUDENT_SELECTED = 's'
+@unique
+class CALLBACK(Enum):
+    PROBLEM_SELECTED = 't'
+    SHOW_LIST_OF_LISTS = 'a'
+    LIST_SELECTED = 'l'
+    ONE_OF_TEST_ANSWER_SELECTED = 'x'
+    CANCEL_TASK_SUBMISSION = 'c'
+    GET_QUEUE_TOP = 'q'
+    INS_ORAL_PLUSSES = 'i'
+    SET_VERDICT = 'v'
+    GET_WRITTEN_TASK = 'w'
+    WRITTEN_TASK_SELECTED = 'W'
+    TEACHER_CANCEL = 'R'
+    WRITTEN_TASK_OK = 'O'
+    WRITTEN_TASK_BAD = 'B'
+    GET_OUT_OF_WAITLIST = 'X'
+    ADD_OR_REMOVE_ORAL_PLUS = 'p'
+    FINISH_ORAL_ROUND = 'f'
+    STUDENT_SELECTED = 's'
+
 
 # ТИПЫ ЗАДАЧ
-PROB_TYPE_TEST = 1
-PROB_TYPE_WRITTEN = 2
-PROB_TYPE_ORALLY = 3
-PROB_TYPE_WRITTEN_BEFORE_ORALLY = 4
+@unique
+class PROB_TYPE(IntEnum):
+    TEST = 1
+    WRITTEN = 2
+    ORALLY = 3
+    WRITTEN_BEFORE_ORALLY = 4
 
-PROB_TYPES = {
-    "Тест": PROB_TYPE_TEST,
-    "Письменно": PROB_TYPE_WRITTEN,
-    "Письменно<-Устно": PROB_TYPE_WRITTEN_BEFORE_ORALLY,
-    "Устно": PROB_TYPE_ORALLY,
+
+PROB_TYPES_DECODER = {
+    "Тест": PROB_TYPE.TEST,
+    "Письменно": PROB_TYPE.WRITTEN,
+    "Письменно<-Устно": PROB_TYPE.WRITTEN_BEFORE_ORALLY,
+    "Устно": PROB_TYPE.ORALLY,
 }
 
 
 # ТИПЫ ПОЛЬЗОВАТЕЛЕЙ
-USER_TYPE_STUDENT = 1
-USER_TYPE_TEACHER = 2
-STUDENT_NOVICE = 'н'
-STUDENT_PRO = 'п'
+@unique
+class USER_TYPE(IntEnum):
+    STUDENT = 1
+    TEACHER = 2
+
+
+@unique
+class LEVEL(Enum):
+    NOVICE = 'н'
+    PRO = 'п'
 
 
 # ВИДЫ ОТВЕТА НА ТЕСТОВЫЕ ЗАДАЧИ
-ANS_TYPE_NATURAL = 1  # Натуральное число
-ANS_TYPE_INTEGER = 2  # Целое число
-ANS_TYPE_FRACTION = 3  # Обыкновенная дробь (3/4, 4/4, 4)
-ANS_TYPE_FLOAT = 4  # Десятичное с точностью проверки 0.01 (типа 32.73)
-ANS_TYPE_SELECT_ONE = 5  # Выбрать один из вариантов
-ANS_TYPE_STRING = 6  # Просто какая-то строка
-ANS_TYPES = {
-    'Натуральное': ANS_TYPE_NATURAL,
-    'Целое': ANS_TYPE_INTEGER,
-    'Дробь': ANS_TYPE_FRACTION,
-    'Действительное': ANS_TYPE_FLOAT,
-    'Выбор': ANS_TYPE_SELECT_ONE,
-    'Строка': ANS_TYPE_STRING,
+@unique
+class ANS_TYPE(IntEnum):
+    DIGIT = 1  # Цифра
+    NATURAL = 2  # Натуральное
+    INTEGER = 3  # Целое
+    RATIO = 4  # Отношение
+    FLOAT = 5  # Действительное
+    FRACTION = 6  # Дроль
+    INT_SEQ = 7  # Последовательность целых
+    INT_2 = 8  # Два целых
+    INT_3 = 9  # Три целых
+    INT_4 = 10  # Четыре целых
+    SELECT_ONE = 98  # Выбрать один из вариантов
+    STRING = 99  # Просто какая-то строка
+
+ANS_TYPES_DECODER = {
+    'Цифра': ANS_TYPE.DIGIT,
+    'Натуральное': ANS_TYPE.NATURAL,
+    'Целое': ANS_TYPE.INTEGER,
+    'Отношение': ANS_TYPE.RATIO,
+    'Действительное': ANS_TYPE.FLOAT,
+    'Дробь': ANS_TYPE.FRACTION,
+    'ПоследЦелых': ANS_TYPE.INT_SEQ,
+    'ДваЦелых': ANS_TYPE.INT_2,
+    'ТриЦелых': ANS_TYPE.INT_3,
+    'ЧетыреЦелых': ANS_TYPE.INT_4,
+    'Выбор': ANS_TYPE.SELECT_ONE,
+    'Строка': ANS_TYPE.STRING,
 }
 ANS_HELP_DESCRIPTIONS = {
-    ANS_TYPE_NATURAL: ' — натуральное число (например, 179)',
-    ANS_TYPE_INTEGER: ' — целое число (например, -179)',
-    ANS_TYPE_FRACTION: ' — обыкновенную дробь (например, 2/3 или 179)',
-    ANS_TYPE_FLOAT: ' — действительное число (например, 3.14 или 179)',
-    ANS_TYPE_SELECT_ONE: ' — выбери один из следующих вариантов:',
-    ANS_TYPE_STRING: '',
+    ANS_TYPE.NATURAL: ' — натуральное число (например, 179)',
+    ANS_TYPE.INTEGER: ' — целое число (например, -179)',
+    ANS_TYPE.FRACTION: ' — обыкновенную дробь (например, 2/3 или 179)',
+    ANS_TYPE.FLOAT: ' — действительное число (например, 3.14 или 179)',
+    ANS_TYPE.SELECT_ONE: ' — выбери один из следующих вариантов:',
+    ANS_TYPE.STRING: '',
 }
 
 
 # ВЕРДИКТЫ
-VERDICT_SOLVED = 1
-VERDICT_WRONG_ANSWER = -1
+@unique
+class VERDICT(IntEnum):
+    SOLVED = 1
+    WRONG_ANSWER = -1
 
 
 # СТАТУСЫ ПРОВЕРКИ ЗАДАНИЯ
-WRITTEN_STATUS_NEW = 0
-WRITTEN_STATUS_BEING_CHECKED = 1
+@unique
+class WRITTEN_STATUS(IntEnum):
+    NEW = 0
+    BEING_CHECKED = 1
 
 
 # ТИПЫ ПРИНЯТЫХ ЗАДАЧ
-RES_TYPE_TEST = 1
-RES_TYPE_WRITTEN = 2
-RES_TYPE_ZOOM = 3
-RES_TYPE_SCHOOL = 4
+@unique
+class RES_TYPE(IntEnum):
+    TEST = 1
+    WRITTEN = 2
+    ZOOM = 3
+    SCHOOL = 4

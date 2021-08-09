@@ -13,7 +13,7 @@ import keyboards
 async def update_all_internal_data(message: types.Message):
     logger.debug('update_all_internal_data')
     teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE_TEACHER:
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_all()
     await bot.send_message(
@@ -25,7 +25,7 @@ async def update_all_internal_data(message: types.Message):
 async def update_teachers(message: types.Message):
     logger.debug('update_teachers')
     teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE_TEACHER:
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_teachers()
     await bot.send_message(
@@ -37,7 +37,7 @@ async def update_teachers(message: types.Message):
 async def update_students(message: types.Message):
     logger.debug('update_students')
     teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE_TEACHER:
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_teachers()
     await bot.send_message(
@@ -49,7 +49,7 @@ async def update_students(message: types.Message):
 async def update_problems(message: types.Message):
     logger.debug('update_problems')
     teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE_TEACHER:
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_problems()
     await bot.send_message(
@@ -63,9 +63,9 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
     if tokens == ['all_students']:
         tokens = [user.token for user in User.all_students()]
     elif tokens == ['all_novice']:
-        tokens = [user.token for user in User.all_students() if user.level == STUDENT_NOVICE]
+        tokens = [user.token for user in User.all_students() if user.level == LEVEL.NOVICE]
     elif tokens == ['all_pro']:
-        tokens = [user.token for user in User.all_students() if user.level == STUDENT_PRO]
+        tokens = [user.token for user in User.all_students() if user.level == LEVEL.PRO]
     elif tokens == ['all_teachers']:
         tokens = [user.token for user in User.all_teachers()]
     bad_tokens = []
@@ -94,7 +94,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
 async def broadcast(message: types.Message):
     logger.debug('broadcast')
     teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE_TEACHER:
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     text = message.text.splitlines()
     try:
@@ -112,14 +112,14 @@ async def broadcast(message: types.Message):
 
 async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
     logger.debug('run_set_get_task_info_for_all_students_task')
-    # Всем студентам, у которых есть chat_id ставим state STATE_GET_TASK_INFO и отправляем список задач
+    # Всем студентам, у которых есть chat_id ставим state STATE.GET_TASK_INFO и отправляем список задач
     for student in User.all_students():
-        State.set_by_user_id(student.id, STATE_GET_TASK_INFO)
+        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         logger.info(f'{student.id} оживлён')
         if not student.chat_id:
             continue
         try:
-            slevel = '(уровень «Продолжающие»)' if student.level == STUDENT_PRO else '(уровень «Начинающие»)'
+            slevel = '(уровень «Продолжающие»)' if student.level == LEVEL.PRO else '(уровень «Начинающие»)'
             await bot.send_message(
                 chat_id=student.chat_id,
                 text=f"Можно сдавать задачи!\n❓ Нажимайте на задачу, чтобы сдать её {slevel}",
@@ -137,7 +137,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
 async def set_get_task_info_for_all_students(message: types.Message):
     logger.debug('set_get_task_info_for_all_students')
     teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE_TEACHER:
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     asyncio.create_task(run_set_get_task_info_for_all_students_task(message.chat.id))
     await bot.send_message(
@@ -148,9 +148,9 @@ async def set_get_task_info_for_all_students(message: types.Message):
 
 async def run_set_sleep_state_task(teacher_chat_id):
     logger.debug('run_set_sleep_state_task')
-    # Всем студентам ставим state STATE_STUDENT_IS_SLEEPING. Прекращаем приём задач
+    # Всем студентам ставим state STATE.STUDENT_IS_SLEEPING. Прекращаем приём задач
     for student in User.all_students():
-        State.set_by_user_id(student.id, STATE_STUDENT_IS_SLEEPING)
+        State.set_by_user_id(student.id, STATE.STUDENT_IS_SLEEPING)
         if not student.chat_id:
             continue
         try:
@@ -171,7 +171,7 @@ async def run_set_sleep_state_task(teacher_chat_id):
 async def set_sleep_state_for_all_students(message: types.Message):
     logger.debug('set_sleep_state_for_all_students')
     teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE_TEACHER:
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     asyncio.create_task(run_set_sleep_state_task(message.chat.id))
     await bot.send_message(
@@ -183,7 +183,7 @@ async def set_sleep_state_for_all_students(message: types.Message):
 async def calc_last_lesson_stat(message: types.Message):
     logger.debug('calc_last_lesson_stat')
     teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE_TEACHER:
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     stat = db.calc_last_lesson_stat()
     msg = '\n'.join(map(lambda r: '  '.join(r.values()), stat))

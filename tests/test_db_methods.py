@@ -30,8 +30,8 @@ class DatabaseMethodsTest(TestCase):
         os.unlink(self.db.db_file)
 
     def test_users_add_and_fetch_all(self):
-        students = self.db.fetch_all_users_by_type(USER_TYPE_STUDENT)
-        teachers = self.db.fetch_all_users_by_type(USER_TYPE_TEACHER)
+        students = self.db.fetch_all_users_by_type(USER_TYPE.STUDENT)
+        teachers = self.db.fetch_all_users_by_type(USER_TYPE.TEACHER)
         all_users = self.db.fetch_all_users_by_type()
         self.assertEqual(len(students), len(test_students))
         self.assertEqual(len(teachers), len(test_teachers))

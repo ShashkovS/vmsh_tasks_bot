@@ -47,12 +47,12 @@ class User:
 
     @classmethod
     def all_students(cls) -> Generator[User, None, None]:
-        for user in db.fetch_all_users_by_type(USER_TYPE_STUDENT):
+        for user in db.fetch_all_users_by_type(USER_TYPE.STUDENT):
             yield cls(**user)
 
     @classmethod
     def all_teachers(cls) -> Generator[User, None, None]:
-        for user in db.fetch_all_users_by_type(USER_TYPE_TEACHER):
+        for user in db.fetch_all_users_by_type(USER_TYPE.TEACHER):
             yield cls(**user)
 
     @classmethod
@@ -148,7 +148,7 @@ class Waitlist:
 class WrittenQueue:
     @staticmethod
     def add_to_queue(student_id: int, problem_id: int, ts: datetime = None):
-        db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS_NEW, ts=ts)
+        db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS.NEW, ts=ts)
 
     @staticmethod
     def take_top(teacher_id: int):
@@ -156,12 +156,12 @@ class WrittenQueue:
 
     @staticmethod
     def mark_being_checked(student_id: int, problem_id: int, teacher_id: int):
-        updated_rows = db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_BEING_CHECKED, teacher_id)
+        updated_rows = db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS.BEING_CHECKED, teacher_id)
         return updated_rows > 0
 
     @staticmethod
     def mark_not_being_checked(student_id: int, problem_id: int):
-        db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS_NEW, None)
+        db.upd_written_task_status(student_id, problem_id, WRITTEN_STATUS.NEW, None)
 
     @staticmethod
     def delete_from_queue(student_id: int, problem_id: int):
@@ -208,7 +208,7 @@ class FromGoogleSpreadsheet:
     @staticmethod
     def students_to_db(students: List[dict]):
         for student in students:
-            student['type'] = USER_TYPE_STUDENT
+            student['type'] = USER_TYPE.STUDENT
             student['chat_id'] = None
             student['middlename'] = ''
             User(**student)
@@ -216,7 +216,7 @@ class FromGoogleSpreadsheet:
     @staticmethod
     def teachers_to_db(teachers: List[dict]):
         for teacher in teachers:
-            teacher['type'] = USER_TYPE_TEACHER
+            teacher['type'] = USER_TYPE.TEACHER
             teacher['chat_id'] = None
             teacher['level'] = None
             User(**teacher)
@@ -225,8 +225,8 @@ class FromGoogleSpreadsheet:
     def problems_to_db(problems: List[dict]):
         for problem in problems:
             try:
-                problem['prob_type'] = PROB_TYPES[problem['prob_type']]
-                problem['ans_type'] = ANS_TYPES[problem['ans_type']]
+                problem['prob_type'] = PROB_TYPES_DECODER[problem['prob_type']]
+                problem['ans_type'] = ANS_TYPES_DECODER[problem['ans_type']]
             except:
                 logger.error(f'Криво настроена задача: {problem!r}')
                 continue

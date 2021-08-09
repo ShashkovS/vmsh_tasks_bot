@@ -85,7 +85,7 @@ class DB:
                 SET chat_id = :chat_id
                 WHERE id = :user_id
             """, args)
-        except:
+        except sqlite3.IntegrityError:  # (UNIQUE constraint failed: users.chat_id)
             # Мы под одним телеграм-юзером хотим зайти под разными vmsh-юзерами. Нужно сбросить chat_id
             cur.execute("""
                 UPDATE users
@@ -358,7 +358,7 @@ class DB:
             where cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id
             order by ts
             limit :_MAX_WRITTEN_TASKS_TO_SELECT
-        """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS_NEW,
+        """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS.NEW,
               '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
               'now_minus_30_min': now_minus_30_min,
               'teacher_id': teacher_id})
