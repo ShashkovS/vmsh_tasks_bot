@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Generator
+from typing import Optional, Generator, List
 
 from consts import *
 from config import config, logger
@@ -206,7 +206,7 @@ class FromGoogleSpreadsheet:
         FromGoogleSpreadsheet.teachers_to_db(teachers)
 
     @staticmethod
-    def students_to_db(students: list[dict]):
+    def students_to_db(students: List[dict]):
         for student in students:
             student['type'] = USER_TYPE_STUDENT
             student['chat_id'] = None
@@ -214,7 +214,7 @@ class FromGoogleSpreadsheet:
             User(**student)
 
     @staticmethod
-    def teachers_to_db(teachers: list[dict]):
+    def teachers_to_db(teachers: List[dict]):
         for teacher in teachers:
             teacher['type'] = USER_TYPE_TEACHER
             teacher['chat_id'] = None
@@ -222,7 +222,7 @@ class FromGoogleSpreadsheet:
             User(**teacher)
 
     @staticmethod
-    def problems_to_db(problems: list[dict]):
+    def problems_to_db(problems: List[dict]):
         for problem in problems:
             try:
                 problem['prob_type'] = PROB_TYPES[problem['prob_type']]

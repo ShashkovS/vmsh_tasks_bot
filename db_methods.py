@@ -3,6 +3,7 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 from consts import *
+from typing import List
 
 _APP_PATH = os.path.dirname(os.path.realpath(__file__))
 _DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -108,7 +109,7 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def fetch_all_users_by_type(self, user_type: int = None) -> list[dict]:
+    def fetch_all_users_by_type(self, user_type: int = None) -> List[dict]:
         cur = self.conn.cursor()
         if user_type is not None:
             sql = "SELECT * FROM users where type = :user_type"
@@ -163,13 +164,13 @@ class DB:
         self.conn.commit()
         return cur.lastrowid
 
-    def fetch_all_problems(self) -> list[dict]:
+    def fetch_all_problems(self) -> List[dict]:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM problems")
         rows = cur.fetchall()
         return rows
 
-    def fetch_all_lessons(self) -> list[dict]:
+    def fetch_all_lessons(self) -> List[dict]:
         cur = self.conn.cursor()
         cur.execute("SELECT distinct level, lesson FROM problems order by lesson, level")
         rows = cur.fetchall()
@@ -181,7 +182,7 @@ class DB:
         row = cur.fetchone()
         return row['mx']
 
-    def fetch_all_problems_by_lesson(self, level: str, lesson: int) -> list[dict]:
+    def fetch_all_problems_by_lesson(self, level: str, lesson: int) -> List[dict]:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM problems where level = :level and lesson = :lesson", locals())
         rows = cur.fetchall()
@@ -211,7 +212,7 @@ class DB:
     #      ██    ██    ██   ██    ██    ██           ██
     # ███████    ██    ██   ██    ██    ███████ ███████
 
-    def fetch_all_states(self) -> list[dict]:
+    def fetch_all_states(self) -> List[dict]:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM states")
         rows = cur.fetchall()
@@ -334,7 +335,7 @@ class DB:
         self.conn.commit()
         return cur.lastrowid
 
-    def get_written_tasks_to_check(self, teacher_id) -> list[dict]:
+    def get_written_tasks_to_check(self, teacher_id) -> List[dict]:
         cur = self.conn.cursor()
         now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
         cur.execute("""
@@ -407,7 +408,7 @@ class DB:
         """, args)
         self.conn.commit()
 
-    def get_waitlist_top(self, top_n: int) -> list[dict]:
+    def get_waitlist_top(self, top_n: int) -> List[dict]:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
@@ -435,7 +436,7 @@ class DB:
         self.conn.commit()
         return cur.lastrowid
 
-    def fetch_written_task_discussion(self, student_id: int, problem_id: int) -> list[dict]:
+    def fetch_written_task_discussion(self, student_id: int, problem_id: int) -> List[dict]:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
@@ -469,7 +470,7 @@ class DB:
     # ██      ██      ██   ██    ██    ██    ██ ██   ██ ██           ██
     # ██      ███████ ██   ██    ██     ██████  ██   ██ ███████ ███████
 
-    def calc_last_lesson_stat(self) -> list[dict]:
+    def calc_last_lesson_stat(self) -> List[dict]:
         cur = self.conn.cursor()
         cur.execute("""
             -- Посчитать статистику решаемости по последнему занятию
