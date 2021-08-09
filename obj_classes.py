@@ -231,6 +231,7 @@ class FromGoogleSpreadsheet:
                 logger.error(f'Криво настроена задача: {problem!r}')
                 continue
             Problem(**problem)
+            db.update_lessons()
 
 
 # db.setup(config.db_filename)

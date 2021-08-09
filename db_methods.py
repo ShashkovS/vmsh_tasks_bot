@@ -170,18 +170,6 @@ class DB:
         rows = cur.fetchall()
         return rows
 
-    def fetch_all_lessons(self) -> List[dict]:
-        cur = self.conn.cursor()
-        cur.execute("SELECT distinct level, lesson FROM problems order by lesson, level")
-        rows = cur.fetchall()
-        return rows
-
-    def get_last_lesson_num(self) -> int:
-        cur = self.conn.cursor()
-        cur.execute("SELECT max(lesson) as mx FROM problems")
-        row = cur.fetchone()
-        return row['mx']
-
     def fetch_all_problems_by_lesson(self, level: str, lesson: int) -> List[dict]:
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM problems where level = :level and lesson = :lesson", locals())
@@ -205,6 +193,34 @@ class DB:
             limit 1""", locals())
         row = cur.fetchone()
         return row
+
+    # ██      ███████ ███████ ███████  ██████  ███    ██ ███████
+    # ██      ██      ██      ██      ██    ██ ████   ██ ██
+    # ██      █████   ███████ ███████ ██    ██ ██ ██  ██ ███████
+    # ██      ██           ██      ██ ██    ██ ██  ██ ██      ██
+    # ███████ ███████ ███████ ███████  ██████  ██   ████ ███████
+
+    def update_lessons(self):
+        cur = self.conn.cursor()
+        cur.execute("""
+            insert into lessons (lesson, level)
+            select distinct p.lesson, p.level
+            from problems p
+            where (p.lesson, p.level) not in (select l.lesson, l.level from lessons l)
+        """)
+
+    def fetch_all_lessons(self) -> List[dict]:
+        cur = self.conn.cursor()
+        cur.execute("SELECT level, lesson FROM lessons order by lesson, level")
+        rows = cur.fetchall()
+        return rows
+
+    def get_last_lesson_num(self) -> int:
+        cur = self.conn.cursor()
+        cur.execute("SELECT max(lesson) as mx FROM lessons")
+        row = cur.fetchone()
+        return row['mx']
+
 
     # ███████ ████████  █████  ████████ ███████ ███████
     # ██         ██    ██   ██    ██    ██      ██
