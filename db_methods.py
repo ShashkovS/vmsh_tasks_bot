@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import sqlite3
 import os
+import yoyo
 from datetime import datetime, timedelta
 from consts import *
 from typing import List
-from yoyo import read_migrations
-from yoyo import get_backend
+
 
 _APP_PATH = os.path.dirname(os.path.realpath(__file__))
 _DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
@@ -45,8 +45,8 @@ class DB:
         self.conn.row_factory = self._dict_factory
 
     def _run_migrations(self):
-        backend = get_backend(f'sqlite:///{self.db_file}')
-        migrations = read_migrations('migrations')
+        backend = yoyo.get_backend(f'sqlite:///{self.db_file}')
+        migrations = yoyo.read_migrations('migrations')
         with backend.lock():
             backend.apply_migrations(backend.to_apply(migrations))
 
@@ -220,7 +220,6 @@ class DB:
         cur.execute("SELECT max(lesson) as mx FROM lessons")
         row = cur.fetchone()
         return row['mx']
-
 
     # ███████ ████████  █████  ████████ ███████ ███████
     # ██         ██    ██   ██    ██    ██      ██
