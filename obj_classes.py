@@ -33,9 +33,9 @@ class User:
         db.set_user_chat_id(self.id, chat_id)
         self.chat_id = chat_id
 
-    def set_level(self, level: str):
-        db.set_user_level(self.id, level)
-        self.level = level
+    def set_level(self, level: LEVEL):
+        db.set_user_level(self.id, level.value)
+        self.level = level.value
 
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'

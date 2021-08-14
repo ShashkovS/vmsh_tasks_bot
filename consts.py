@@ -22,8 +22,9 @@ class STATE(IntEnum):
 
 # ПРЕФИКСЫ ДАННЫХ ДЛЯ КОЛЛБЕКОВ
 # Важно, чтобы константа была уникальной буков (там хардкод взятия первой буквы)
+# (наследование от str важно, чтобы условный CALLBACK.PROBLEM_SELECTED превращался в t, а не в своё длинное имя
 @unique
-class CALLBACK(Enum):
+class CALLBACK(str, Enum):
     PROBLEM_SELECTED = 't'
     SHOW_LIST_OF_LISTS = 'a'
     LIST_SELECTED = 'l'
@@ -88,6 +89,7 @@ class ANS_TYPE(IntEnum):
     INT_4 = 10  # Четыре целых
     SELECT_ONE = 98  # Выбрать один из вариантов
     STRING = 99  # Просто какая-то строка
+
 
 ANS_TYPES_DECODER = {
     'Цифра': ANS_TYPE.DIGIT,

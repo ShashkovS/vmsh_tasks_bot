@@ -2,9 +2,13 @@
 from config import config, logger
 import aiogram
 from aiogram.utils.exceptions import MessageNotModified
+from aiogram.dispatcher import Dispatcher
+from consts import CALLBACK
 
 # Запускаем API телеграм-бота
 bot = aiogram.Bot(config.telegram_bot_token)
+# Запускаем API телеграм-бота
+dispatcher = Dispatcher(bot)
 
 
 async def bot_edit_message_text(*args, **kwargs):
@@ -44,3 +48,15 @@ async def bot_post_logging_message(msg):
             await bot.send_message(config.exceptions_channel, f'(Exceptions chat id = {res["chat"]["id"]})')
     except Exception as e:
         logger.error(f'SHIT: {e}')
+
+
+callbacks_processors = {
+}
+
+
+def callback(key: CALLBACK):
+    def decorator(callback_func):
+        callbacks_processors[key.value] = callback_func
+        return callback_func
+
+    return decorator

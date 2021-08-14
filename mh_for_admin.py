@@ -6,10 +6,11 @@ import re
 from consts import *
 from config import logger
 from obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, FromGoogleSpreadsheet, db
-from bot import bot, bot_edit_message_text, bot_edit_message_reply_markup, bot_answer_callback_query, bot_post_logging_message
+from bot import bot, bot_edit_message_text, bot_edit_message_reply_markup, bot_answer_callback_query, bot_post_logging_message, dispatcher
 import keyboards
 
 
+@dispatcher.message_handler(commands=['update_all_quaLtzPE', 'update_all'])
 async def update_all_internal_data(message: types.Message):
     logger.debug('update_all_internal_data')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -22,6 +23,7 @@ async def update_all_internal_data(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['update_teachers'])
 async def update_teachers(message: types.Message):
     logger.debug('update_teachers')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -34,6 +36,7 @@ async def update_teachers(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['update_students'])
 async def update_students(message: types.Message):
     logger.debug('update_students')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -46,6 +49,7 @@ async def update_students(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['update_problems'])
 async def update_problems(message: types.Message):
     logger.debug('update_problems')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -91,6 +95,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
     )
 
 
+@dispatcher.message_handler(commands=['broadcast_wibkn96x', 'broadcast'])
 async def broadcast(message: types.Message):
     logger.debug('broadcast')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -134,6 +139,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
     )
 
 
+@dispatcher.message_handler(commands=['reset_state_jvcykgny', 'reset_state'])
 async def set_get_task_info_for_all_students(message: types.Message):
     logger.debug('set_get_task_info_for_all_students')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -168,6 +174,7 @@ async def run_set_sleep_state_task(teacher_chat_id):
     )
 
 
+@dispatcher.message_handler(commands=['set_sleep_state'])
 async def set_sleep_state_for_all_students(message: types.Message):
     logger.debug('set_sleep_state_for_all_students')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -180,6 +187,7 @@ async def set_sleep_state_for_all_students(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['stat'])
 async def calc_last_lesson_stat(message: types.Message):
     logger.debug('calc_last_lesson_stat')
     teacher = User.get_by_chat_id(message.chat.id)

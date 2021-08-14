@@ -6,12 +6,13 @@ import asyncio
 import traceback
 import aiogram
 from aiogram.dispatcher.webhook import types
+from aiogram.dispatcher import filters
 from urllib.parse import urlencode
 
 from consts import *
 from config import logger, config
 from obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, db
-from bot import bot, bot_edit_message_text, bot_edit_message_reply_markup, bot_answer_callback_query, bot_post_logging_message
+from bot import bot, bot_edit_message_text, bot_edit_message_reply_markup, bot_answer_callback_query, bot_post_logging_message, callback, dispatcher
 import keyboards
 
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'solutions')
@@ -286,6 +287,7 @@ state_processors = {
 }
 
 
+@dispatcher.message_handler(content_types=["any"])
 async def process_regular_message(message: types.Message):
     logger.debug('process_regular_message')
     # Сначала проверяем, что этот тип сообщений мы вообще поддерживаем
@@ -322,6 +324,7 @@ async def process_regular_message(message: types.Message):
         await bot_post_logging_message(error_text)
 
 
+@dispatcher.message_handler(commands=['start'])
 async def start(message: types.Message):
     logger.debug('start')
     user = User.get_by_chat_id(message.chat.id)
@@ -333,6 +336,7 @@ async def start(message: types.Message):
     )
 
 
+@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['recheck.*']))
 async def recheck(message: types.Message):
     logger.debug('recheck')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -358,6 +362,7 @@ async def recheck(message: types.Message):
             await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
+@dispatcher.message_handler(commands=['set_level'])
 async def set_student_level(message: types.Message):
     logger.debug('set_student_level')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -397,6 +402,7 @@ async def set_student_level(message: types.Message):
             pass
 
 
+@dispatcher.message_handler(commands=['level_novice'])
 async def level_novice(message: types.Message):
     logger.debug('level_novice')
     student = User.get_by_chat_id(message.chat.id)
@@ -410,6 +416,7 @@ async def level_novice(message: types.Message):
         await process_regular_message(message)
 
 
+@dispatcher.message_handler(commands=['level_pro'])
 async def level_pro(message: types.Message):
     logger.debug('level_pro')
     student = User.get_by_chat_id(message.chat.id)
@@ -423,6 +430,7 @@ async def level_pro(message: types.Message):
         await process_regular_message(message)
 
 
+@dispatcher.message_handler(commands=['sos'])
 async def sos(message: types.Message):
     logger.debug('sos')
     user = User.get_by_chat_id(message.chat.id)
@@ -439,6 +447,7 @@ async def sos(message: types.Message):
         State.set_by_user_id(user.id, STATE.WAIT_SOS_REQUEST)
 
 
+@callback(CALLBACK.PROBLEM_SELECTED)
 async def prc_problems_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_problems_selected_callback')
     student = User.get_by_chat_id(query.message.chat.id)
@@ -515,6 +524,8 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         #     await process_regular_message(query.message)
 
 
+
+@callback(CALLBACK.LIST_SELECTED)
 async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_list_selected_callback')
     list_num = int(query.data[2:])
@@ -525,6 +536,7 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     await bot_answer_callback_query(query.id)
 
 
+@callback(CALLBACK.SHOW_LIST_OF_LISTS)
 async def prc_show_list_of_lists_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_show_list_of_lists_callback')
     await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -533,6 +545,7 @@ async def prc_show_list_of_lists_callback(query: types.CallbackQuery, student: U
     await bot_answer_callback_query(query.id)
 
 
+@callback(CALLBACK.ONE_OF_TEST_ANSWER_SELECTED)
 async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_one_of_test_answer_selected_callback')
     state = State.get_by_user_id(student.id)
@@ -579,6 +592,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     await process_regular_message(query.message)
 
 
+@callback(CALLBACK.CANCEL_TASK_SUBMISSION)
 async def prc_cancel_task_submission_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_cancel_task_submission_callback')
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -593,6 +607,7 @@ async def prc_cancel_task_submission_callback(query: types.CallbackQuery, studen
     await bot_answer_callback_query(query.id)
 
 
+@callback(CALLBACK.GET_WRITTEN_TASK)
 async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_get_written_task_callback')
     # Так, препод указал, что хочет проверять письменные задачи
@@ -612,6 +627,7 @@ async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: Use
         # keyboards.build_teacher_actions
 
 
+@callback(CALLBACK.TEACHER_CANCEL)
 async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_teacher_cancel_callback')
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -666,6 +682,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student, pr
                            reply_markup=keyboards.build_written_task_checking_verdict(student, problem))
 
 
+@callback(CALLBACK.WRITTEN_TASK_SELECTED)
 async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_written_task_selected_callback')
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -685,6 +702,7 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
     await forward_discussion_and_start_checking(chat_id, query.message.message_id, student, problem, teacher)
 
 
+@callback(CALLBACK.WRITTEN_TASK_OK)
 async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_written_task_ok_callback')
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -736,6 +754,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     await process_regular_message(query.message)
 
 
+@callback(CALLBACK.WRITTEN_TASK_BAD)
 async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_written_task_bad_callback')
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -786,6 +805,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     await process_regular_message(query.message)
 
 
+@callback(CALLBACK.GET_QUEUE_TOP)
 async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_get_queue_top_callback')
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -841,6 +861,7 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
     await process_regular_message(message=query.message)
 
 
+@callback(CALLBACK.INS_ORAL_PLUSSES)
 async def prc_ins_oral_plusses(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_ins_oral_plusses')
     await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -851,6 +872,7 @@ async def prc_ins_oral_plusses(query: types.CallbackQuery, teacher: User):
     State.set_by_user_id(teacher.id, STATE.TEACHER_WRITES_STUDENT_NAME)
 
 
+@callback(CALLBACK.SET_VERDICT)
 async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_set_verdict_callback')
     state = State.get_by_user_id(teacher.id)
@@ -870,6 +892,7 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: User):
     await process_regular_message(query.message)
 
 
+@callback(CALLBACK.GET_OUT_OF_WAITLIST)
 async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_get_out_of_waitlist_callback')
     state = State.get_by_user_id(student.id)
@@ -885,6 +908,7 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
     await process_regular_message(query.message)
 
 
+@callback(CALLBACK.STUDENT_SELECTED)
 async def prc_student_selected_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_student_selected_callback')
     _, student_id = query.data.split('_')
@@ -900,6 +924,7 @@ async def prc_student_selected_callback(query: types.CallbackQuery, teacher: Use
     await bot_answer_callback_query(query.id)
 
 
+@callback(CALLBACK.ADD_OR_REMOVE_ORAL_PLUS)
 async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_add_or_remove_oral_plus_callback')
     _, problem_id, plus_ids, minus_ids = query.data.split('_')
@@ -923,6 +948,7 @@ async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teach
     await bot_answer_callback_query(query.id)
 
 
+@callback(CALLBACK.FINISH_ORAL_ROUND)
 async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_finish_oral_round_callback')
     _, plus_ids, minus_ids = query.data.split('_')
@@ -969,6 +995,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     await process_regular_message(query.message)
 
 
+@dispatcher.message_handler(commands=['exit_waitlist'])
 async def exit_waitlist(message: types.Message):
     logger.debug('exit_waitlist')
     user = User.get_by_chat_id(message.chat.id)
