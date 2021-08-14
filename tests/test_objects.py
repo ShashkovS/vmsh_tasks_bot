@@ -2,7 +2,6 @@ import os
 from dataclasses import asdict
 from unittest import TestCase
 
-from consts import *
 from db_methods import db
 from obj_classes import *
 
