@@ -1,13 +1,13 @@
-from aiogram.dispatcher.webhook import types
 import aiogram
+from aiogram import types
 import asyncio
 import re
 
 from consts import *
 from config import logger
-from obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, FromGoogleSpreadsheet, db
-from bot import bot, bot_edit_message_text, bot_edit_message_reply_markup, bot_answer_callback_query, bot_post_logging_message, dispatcher
-import keyboards
+from obj_classes import User, Problem, State, FromGoogleSpreadsheet, db
+from bot import bot, dispatcher
+from handlers import student_keyboards
 
 
 @dispatcher.message_handler(commands=['update_all_quaLtzPE', 'update_all'])
@@ -128,7 +128,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
             await bot.send_message(
                 chat_id=student.chat_id,
                 text=f"Можно сдавать задачи!\n❓ Нажимайте на задачу, чтобы сдать её {slevel}",
-                reply_markup=keyboards.build_problems(Problem.last_lesson_num(), student),
+                reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
             )
         except:
             pass

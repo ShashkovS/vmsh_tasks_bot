@@ -3,7 +3,7 @@ from config import config, logger
 import aiogram
 from aiogram.utils.exceptions import MessageNotModified
 from aiogram.dispatcher import Dispatcher
-from consts import CALLBACK
+from consts import CALLBACK, STATE
 
 # Запускаем API телеграм-бота
 bot = aiogram.Bot(config.telegram_bot_token)
@@ -16,7 +16,7 @@ async def bot_edit_message_text(*args, **kwargs):
     try:
         await bot.edit_message_text(*args, **kwargs)
     except MessageNotModified as e:
-        logger.INFO(f'SHIT: {e}')
+        logger.info(f'SHIT: {e}')
 
 
 async def bot_edit_message_reply_markup(*args, **kwargs):
@@ -24,7 +24,7 @@ async def bot_edit_message_reply_markup(*args, **kwargs):
     try:
         await bot.edit_message_reply_markup(*args, **kwargs)
     except MessageNotModified as e:
-        logger.INFO(f'SHIT: {e}')
+        logger.info(f'SHIT: {e}')
 
 
 async def bot_answer_callback_query(*args, **kwargs):
@@ -50,13 +50,21 @@ async def bot_post_logging_message(msg):
         logger.error(f'SHIT: {e}')
 
 
-callbacks_processors = {
-}
+callbacks_processors = {}
+state_processors = {}
 
 
-def callback(key: CALLBACK):
+def reg_callback(key: CALLBACK):
     def decorator(callback_func):
         callbacks_processors[key.value] = callback_func
+        return callback_func
+
+    return decorator
+
+
+def reg_state(state: STATE):
+    def decorator(callback_func):
+        state_processors[state.value] = callback_func
         return callback_func
 
     return decorator

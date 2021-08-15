@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
-import traceback
-from aiogram.dispatcher.webhook import configure_app, types, web
-from aiogram.utils.executor import start_polling, start_webhook
-from config import config, logger, DEBUG
+from aiogram.dispatcher.webhook import configure_app, web
+from aiogram.utils.executor import start_polling
+from config import DEBUG
 from loader_from_google_spreadsheets import google_spreadsheet_loader
 from obj_classes import User, db, FromGoogleSpreadsheet
-import message_handlers
-import mh_for_admin
+import handlers
 from bot import *
 
 if config.production_mode:
@@ -18,28 +16,6 @@ else:
     logger.info('Developer mode')
 
 USE_WEBHOOKS = False
-
-
-@dispatcher.callback_query_handler()
-async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
-    logger.debug('inline_kb_answer_callback_handler')
-    if query.message:
-        user = User.get_by_chat_id(query.message.chat.id)
-        if not user:
-            try:
-                await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
-            except:
-                pass  # Ошибки здесь не важны
-            await message_handlers.start(query.message)
-            return
-        callback_type = query.data[0]  # Вот здесь существенно используется, что callback параметризуется одной буквой
-        callback_processor = callbacks_processors.get(callback_type, None)
-        try:
-            await callback_processor(query, user)
-        except Exception as e:
-            error_text = traceback.format_exc()
-            logger.error(f'SUPERSHIT: {e}')
-            await bot_post_logging_message(error_text)
 
 
 async def check_webhook():
@@ -82,7 +58,7 @@ db.setup(config.db_filename)
 # Настраиваем загрузчик из гугль-таблиц
 google_spreadsheet_loader.setup(config.dump_filename, config.google_sheets_key, config.google_cred_json)
 
-# Если в базе нет ни одного учителя, то принудительно грузим всё из таблицы
+# Если в базе нет ни одного учителя, то принудительно грузим всё из таблицы (иначе даже админ не сможет залогиниться)
 all_teachers = list(User.all_teachers())
 if len(all_teachers) == 0:
     FromGoogleSpreadsheet.update_all()
