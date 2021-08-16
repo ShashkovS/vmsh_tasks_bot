@@ -272,41 +272,43 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         await bot_answer_callback_query(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         await process_regular_message(query.message)
+    await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                text=f"Была выбрана задача {problem}.")
     # В зависимости от типа задачи разное поведение
     if problem.prob_type == PROB_TYPE.TEST:
         # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру
         if problem.ans_type == ANS_TYPE.SELECT_ONE:
-            await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:",
-                                        reply_markup=student_keyboards.build_test_answers(problem.ans_validation.split(';')))
+            await bot.send_message(chat_id=query.message.chat.id,
+                                   text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:",
+                                   reply_markup=student_keyboards.build_test_answers(problem.ans_validation.split(';')))
         else:
-            await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}",
-                                        reply_markup=student_keyboards.build_cancel_task_submission())
+            await bot.send_message(chat_id=query.message.chat.id,
+                                   text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}",
+                                   reply_markup=student_keyboards.build_cancel_task_submission())
         State.set_by_user_id(student.id, STATE.SENDING_TEST_ANSWER, problem_id)
         await bot_answer_callback_query(query.id)
     elif problem.prob_type in (PROB_TYPE.WRITTEN, PROB_TYPE.WRITTEN_BEFORE_ORALLY):
-        await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                    text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.",
-                                    reply_markup=student_keyboards.build_cancel_task_submission())
+        await bot.send_message(chat_id=query.message.chat.id,
+                               text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.",
+                               reply_markup=student_keyboards.build_cancel_task_submission())
         State.set_by_user_id(student.id, STATE.SENDING_SOLUTION, problem_id)
         await bot_answer_callback_query(query.id)
     elif problem.prob_type == PROB_TYPE.ORALLY:
-        await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                    text=f"Выбрана устная задача. "
-                                         f"Её нужно сдавать в zoom-конференции. "
-                                    # f"Желательно перед сдачей записать ответ и основные шаги решения на бумаге. "
-                                    # f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
-                                    # f"\nКогда у вас всё готово, "
-                                         f"<b>Заходите в zoom-конференцию, идентификатор конференции:"
-                                         f"\n87370688149, код доступа: 179179</b>. "
-                                         f"\nПожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. "
-                                         f"Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. "
-                                         f"После окончания сдачи нужно выйти из конференции. "
-                                         f"Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. "
-                                         f"Мы постараемся выделить время каждому, но ожидание может быть достаточно долгим.",
-                                    disable_web_page_preview=True,
-                                    parse_mode='HTML')
+        await bot.send_message(chat_id=query.message.chat.id,
+                               text=f"Выбрана устная задача. "
+                                    f"Её нужно сдавать в zoom-конференции. "
+                               # f"Желательно перед сдачей записать ответ и основные шаги решения на бумаге. "
+                               # f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
+                               # f"\nКогда у вас всё готово, "
+                                    f"<b>Заходите в zoom-конференцию, идентификатор конференции:"
+                                    f"\n87370688149, код доступа: 179179</b>. "
+                                    f"\nПожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. "
+                                    f"Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. "
+                                    f"После окончания сдачи нужно выйти из конференции. "
+                                    f"Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. "
+                                    f"Мы постараемся выделить время каждому, но ожидание может быть достаточно долгим.",
+                               disable_web_page_preview=True,
+                               parse_mode='HTML')
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         await bot_answer_callback_query(query.id)
         await asyncio.sleep(5)
