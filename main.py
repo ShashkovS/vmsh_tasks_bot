@@ -5,7 +5,6 @@ from aiogram.utils.executor import start_polling
 from config import DEBUG
 from loader_from_google_spreadsheets import google_spreadsheet_loader
 from obj_classes import User, db, FromGoogleSpreadsheet
-import handlers
 from bot import *
 
 if config.production_mode:
@@ -31,8 +30,6 @@ async def check_webhook():
 async def on_startup(dispatcher):
     logger.debug('on_startup')
     logger.warning('Start up!')
-    # any-хендлер в виде декоратора почему-то всё перехватывает
-    dispatcher.register_message_handler(handlers.process_regular_message, content_types=["any"])
 
     if USE_WEBHOOKS:
         await check_webhook()

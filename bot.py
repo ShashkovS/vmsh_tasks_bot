@@ -4,11 +4,14 @@ import aiogram
 from aiogram.utils.exceptions import MessageNotModified
 from aiogram.dispatcher import Dispatcher
 from consts import CALLBACK, STATE
+import handlers
 
 # Запускаем API телеграм-бота
 bot = aiogram.Bot(config.telegram_bot_token)
 # Запускаем API телеграм-бота
 dispatcher = Dispatcher(bot)
+# any-хендлер в виде декоратора почему-то всё перехватывает
+dispatcher.register_message_handler(handlers.process_regular_message, content_types=["any"])
 
 
 async def bot_edit_message_text(*args, **kwargs):
