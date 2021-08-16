@@ -16,10 +16,10 @@ async def update_all_internal_data(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    FromGoogleSpreadsheet.update_all()
+    errors = FromGoogleSpreadsheet.update_all()
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Все данные обновлены",
+        text="Все данные обновлены" + (('\nОшибки:\n' + '\n'.join(errors)) if errors else ''),
     )
 
 
@@ -55,10 +55,10 @@ async def update_problems(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    FromGoogleSpreadsheet.update_problems()
+    errors = FromGoogleSpreadsheet.update_problems()
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Задачи обновлены",
+        text="Задачи обновлены" + (('\nОшибки:\n' + '\n'.join(errors)) if errors else ''),
     )
 
 

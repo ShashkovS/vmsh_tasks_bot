@@ -30,6 +30,14 @@ CREATE TABLE IF NOT EXISTS problems
     UNIQUE (level, lesson, prob, item)
 );
 
+CREATE TABLE IF NOT EXISTS lessons
+(
+    id               INTEGER PRIMARY KEY,
+    level            TEXT    NOT NULL,
+    lesson           INTEGER NOT NULL,
+    UNIQUE (lesson, level)
+);
+
 CREATE TABLE IF NOT EXISTS states
 (
     user_id         INTEGER PRIMARY KEY UNIQUE,

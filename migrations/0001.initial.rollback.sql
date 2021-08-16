@@ -13,3 +13,4 @@ drop table messages_log;
 drop table waitlist;
 drop table written_tasks_queue;
 drop table written_tasks_discussions;
+drop table lessons;

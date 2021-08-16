@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
+
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Generator, List
@@ -184,16 +186,18 @@ class Result:
 
 class FromGoogleSpreadsheet:
     @staticmethod
-    def update_all():
+    def update_all() -> List[str]:
         problems, students, teachers = google_spreadsheet_loader.get_all()
-        FromGoogleSpreadsheet.problems_to_db(problems)
+        errors = FromGoogleSpreadsheet.problems_to_db(problems)
         FromGoogleSpreadsheet.students_to_db(students)
         FromGoogleSpreadsheet.teachers_to_db(teachers)
+        return errors
 
     @staticmethod
-    def update_problems():
+    def update_problems() -> List[str]:
         problems = google_spreadsheet_loader.get_problems()
-        FromGoogleSpreadsheet.problems_to_db(problems)
+        errors = FromGoogleSpreadsheet.problems_to_db(problems)
+        return errors
 
     @staticmethod
     def update_students():
@@ -222,16 +226,31 @@ class FromGoogleSpreadsheet:
             User(**teacher)
 
     @staticmethod
-    def problems_to_db(problems: List[dict]):
+    def problems_to_db(problems: List[dict]) -> List[str]:
+        errors = []
         for problem in problems:
             try:
                 problem['prob_type'] = PROB_TYPES_DECODER[problem['prob_type']]
-                problem['ans_type'] = ANS_TYPES_DECODER[problem['ans_type']]
             except:
-                logger.error(f'Криво настроена задача: {problem!r}')
+                errors.append(f'Кривой тип задачи у {problem!r}')
+                continue
+            try:
+                if problem['prob_type'] == PROB_TYPE.TEST:
+                    problem['ans_type'] = ANS_TYPES_DECODER[problem['ans_type']]
+                else:
+                    problem['ans_type'] = ''
+            except:
+                errors.append(f'Кривой тип ответа у тестовой задачи {problem!r}')
+                continue
+            try:
+                if problem['ans_validation']:
+                    re.compile(problem['ans_validation'])
+            except:
+                errors.append(f'Не компилируется регулярка валидации у задачи {problem!r}')
                 continue
             Problem(**problem)
             db.update_lessons()
+        return errors
 
 
 # db.setup(config.db_filename)

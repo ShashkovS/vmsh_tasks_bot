@@ -15,6 +15,7 @@ from bot import (
 )
 from handlers import student_keyboards
 from handlers.main_handlers import process_regular_message
+from checkers import ANS_CHECKER, ANS_REGEX
 
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
 WHITEBOARD_LINK = "https://www.shashkovs.ru/jitboard.html?{}"
@@ -24,10 +25,7 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
     'abs': abs, 'all': all, 'any': any, 'bin': bin, 'enumerate': enumerate, 'format': format, 'len': len,
     'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum, 'map': map,
 }
-
-
-
-
+is_py_func = re.compile(r'^\s*def \w+\s*\(')
 
 
 @reg_state(STATE.GET_TASK_INFO)
@@ -102,8 +100,6 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     await process_regular_message(message)
 
 
-
-
 def check_test_ans_rate_limit(student_id: int, problem_id: int):
     logger.debug('check_test_ans_rate_limit')
     per_day, per_hour = db.check_num_answers(student_id, problem_id)
@@ -130,21 +126,21 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
         return
     problem = Problem.get_by_id(problem_id)
     student_answer = (message.text or '').strip()
-    # Сначала проверим, проходит ли ответ валидацию регуляркой (если она указана)
+    # Если тип ответа — выбор из нескольких вариантов ответа, про проверим, если ответ среди вариантов
     if problem.ans_type == ANS_TYPE.SELECT_ONE and student_answer not in problem.cor_ans.split(';'):
         await bot.send_message(chat_id=message.chat.id,
                                text=f"❌ Выберите один из вариантов: {', '.join(problem.ans_validation.split(';'))}")
         return
-    elif problem.ans_type != ANS_TYPE.SELECT_ONE and problem.ans_validation and not re.fullmatch(problem.ans_validation,
-                                                                                                 student_answer):
-        await bot.send_message(chat_id=message.chat.id,
-                               text=f"❌ {problem.validation_error}")
-        return
+    # Сначала проверим, проходит ли ответ валидацию регуляркой (для стандартных типов или если она указана)
+    elif problem.ans_type != ANS_TYPE.SELECT_ONE:
+        validation_regex = (problem.ans_validation and re.compile(problem.ans_validation)) or ANS_REGEX.get(problem.ans_type, None)
+        if validation_regex and not validation_regex.fullmatch(student_answer):
+            await bot.send_message(chat_id=message.chat.id,
+                                   text=f"❌ {problem.validation_error}")
+            return
 
-    answer_is_correct = False
     # Здесь мы проверяем ответ в зависимости от того, как проверять
-    # TODO сделать нормально
-    if problem.cor_ans_checker == 'py_func':
+    if is_py_func.match(problem.cor_ans):
         func_code = problem.cor_ans
         func_name = re.search(r'\s*def\s+(\w+)', func_code)[1]
         if func_name in check_functions_cache:
@@ -167,14 +163,13 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
         if additional_message:
             await bot.send_message(chat_id=message.chat.id, text=additional_message)
     else:
-        # Ура! Простое обычное понятное сравнение!
-        correct_answer = re.sub(r'[^а-яёa-z0-9+\-()*/^;]+', ' ', problem.cor_ans.lower())
-        student_answer = re.sub(r'[^а-яёa-z0-9+\-()*/^]+', ' ', student_answer.lower())
+        # Здесь у нас сравнение при помощи чекера. Типа равенство чисел или дробей там, или последовательностей/множеств
+        checker = ANS_CHECKER[problem.ans_type]
+        correct_answer = problem.cor_ans
         if ';' not in correct_answer:
-            answer_is_correct = (student_answer == correct_answer)
+            answer_is_correct = checker(student_answer, correct_answer)
         else:
-            correct_answer = list(ans.strip() for ans in correct_answer.split(';'))
-            answer_is_correct = student_answer in correct_answer
+            answer_is_correct = any(checker(student_answer, one_correct) for one_correct in correct_answer.split(';'))
 
     if answer_is_correct:
         db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.SOLVED, student_answer, RES_TYPE.TEST)
@@ -203,7 +198,6 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
     await process_regular_message(message)
 
 
-
 @reg_state(STATE.STUDENT_IS_SLEEPING)
 async def prc_student_is_sleeping_state(message: types.message, student: User):
     logger.debug('prc_student_is_sleeping_state')
@@ -217,10 +211,6 @@ async def prc_student_is_in_conference_state(message: types.message, student: Us
     logger.debug('prc_student_is_in_conference_state')
     # Ничего не делаем, ждём callback'а
     pass
-
-
-
-
 
 
 @dispatcher.message_handler(commands=['level_novice'])
@@ -427,10 +417,6 @@ async def prc_cancel_task_submission_callback(query: types.CallbackQuery, studen
     await bot_answer_callback_query(query.id)
 
 
-
-
-
-
 @reg_callback(CALLBACK.GET_OUT_OF_WAITLIST)
 async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_get_out_of_waitlist_callback')
@@ -445,8 +431,6 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
                                text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
     await bot_answer_callback_query(query.id)
     await process_regular_message(query.message)
-
-
 
 
 @dispatcher.message_handler(commands=['exit_waitlist'])

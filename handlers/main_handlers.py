@@ -106,8 +106,8 @@ async def process_regular_message(message: types.Message):
     else:
         cur_chat_state = State.get_by_user_id(user.id)['state']
 
-        if not message.document and not message.photo:
-            db.add_message_to_log(False, message.message_id, message.chat.id, user.id, None, message.text, None)
+    if not message.document and not message.photo:
+        db.add_message_to_log(False, message.message_id, message.chat.id, user and user.id, None, message.text, None)
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
     try:
         await state_processor(message, user)

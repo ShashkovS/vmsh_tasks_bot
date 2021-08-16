@@ -54,10 +54,10 @@ class PROB_TYPE(IntEnum):
 
 
 PROB_TYPES_DECODER = {
-    "Тест": PROB_TYPE.TEST,
-    "Письменно": PROB_TYPE.WRITTEN,
-    "Письменно<-Устно": PROB_TYPE.WRITTEN_BEFORE_ORALLY,
-    "Устно": PROB_TYPE.ORALLY,
+    "Тест": PROB_TYPE.TEST.value,
+    "Письменно": PROB_TYPE.WRITTEN.value,
+    "Письменно<-Устно": PROB_TYPE.WRITTEN_BEFORE_ORALLY.value,
+    "Устно": PROB_TYPE.ORALLY.value,
 }
 
 
@@ -82,28 +82,30 @@ class ANS_TYPE(IntEnum):
     INTEGER = 3  # Целое
     RATIO = 4  # Отношение
     FLOAT = 5  # Действительное
-    FRACTION = 6  # Дроль
+    FRACTION = 6  # Дробь
     INT_SEQ = 7  # Последовательность целых
     INT_2 = 8  # Два целых
     INT_3 = 9  # Три целых
     INT_4 = 10  # Четыре целых
+    INT_SET = 11  # Множество целых чисел
     SELECT_ONE = 98  # Выбрать один из вариантов
     STRING = 99  # Просто какая-то строка
 
 
 ANS_TYPES_DECODER = {
-    'Цифра': ANS_TYPE.DIGIT,
-    'Натуральное': ANS_TYPE.NATURAL,
-    'Целое': ANS_TYPE.INTEGER,
-    'Отношение': ANS_TYPE.RATIO,
-    'Действительное': ANS_TYPE.FLOAT,
-    'Дробь': ANS_TYPE.FRACTION,
-    'ПоследЦелых': ANS_TYPE.INT_SEQ,
-    'ДваЦелых': ANS_TYPE.INT_2,
-    'ТриЦелых': ANS_TYPE.INT_3,
-    'ЧетыреЦелых': ANS_TYPE.INT_4,
-    'Выбор': ANS_TYPE.SELECT_ONE,
-    'Строка': ANS_TYPE.STRING,
+    'Цифра': ANS_TYPE.DIGIT.value,
+    'Натуральное': ANS_TYPE.NATURAL.value,
+    'Целое': ANS_TYPE.INTEGER.value,
+    'Отношение': ANS_TYPE.RATIO.value,
+    'Действительное': ANS_TYPE.FLOAT.value,
+    'Дробь': ANS_TYPE.FRACTION.value,
+    'ПоследЦелых': ANS_TYPE.INT_SEQ.value,
+    'МножЦелых': ANS_TYPE.INT_SET.value,
+    'ДваЦелых': ANS_TYPE.INT_2.value,
+    'ТриЦелых': ANS_TYPE.INT_3.value,
+    'ЧетыреЦелых': ANS_TYPE.INT_4.value,
+    'Выбор': ANS_TYPE.SELECT_ONE.value,
+    'Строка': ANS_TYPE.STRING.value,
 }
 ANS_HELP_DESCRIPTIONS = {
     ANS_TYPE.DIGIT.value: ' — цифру (например, 0 или 7)',
@@ -113,6 +115,7 @@ ANS_HELP_DESCRIPTIONS = {
     ANS_TYPE.FLOAT.value: ' — десятичную дробь (например, 3.14 или 179)',
     ANS_TYPE.FRACTION.value: ' — обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)',
     ANS_TYPE.INT_SEQ.value: ' — последовательность целых чисел (например: 1, 7, 9)',
+    ANS_TYPE.INT_SET.value: ' — множество целых чисел (например: 1, 7, 9)',
     ANS_TYPE.INT_2.value: ' — два целых числа (например: 1, 7)',
     ANS_TYPE.INT_3.value: ' — три целых числа (например: 1, 7, 9)',
     ANS_TYPE.INT_4.value: ' — четыре целых числа (например: 0, 1, 7, 9)',
