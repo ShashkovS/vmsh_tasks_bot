@@ -31,6 +31,9 @@ async def check_webhook():
 async def on_startup(dispatcher):
     logger.debug('on_startup')
     logger.warning('Start up!')
+    # any-хендлер в виде декоратора почему-то всё перехватывает
+    dispatcher.register_message_handler(handlers.process_regular_message, content_types=["any"])
+
     if USE_WEBHOOKS:
         await check_webhook()
     await bot_post_logging_message('Бот начал свою работу')

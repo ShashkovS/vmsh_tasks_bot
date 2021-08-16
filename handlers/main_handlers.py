@@ -80,7 +80,8 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
             await bot_post_logging_message(error_text)
 
 
-@dispatcher.message_handler(content_types=["any"])
+# Важно, чтобы эта регистрация была последней
+# @dispatcher.message_handler(content_types=["any"])
 async def process_regular_message(message: types.Message):
     logger.debug('process_regular_message')
     # Сначала проверяем, что этот тип сообщений мы вообще поддерживаем
