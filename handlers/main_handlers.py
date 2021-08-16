@@ -2,6 +2,7 @@ import asyncio
 import traceback
 from aiogram.dispatcher.webhook import types
 
+
 from consts import *
 from config import logger
 from obj_classes import User, State, db
@@ -11,39 +12,23 @@ from bot import (
 )
 
 
+@reg_state(STATE.GET_USER_INFO)
 @dispatcher.message_handler(commands=['start'])
-async def start(message: types.Message):
+async def start(message: types.Message, user=None):
     logger.debug('start')
     user = User.get_by_chat_id(message.chat.id)
-    if user:
-        State.set_by_user_id(user.id, STATE.GET_USER_INFO)
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text="🤖 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
-    )
-
-
-@reg_state(STATE.GET_USER_INFO)
-async def prc_get_user_info_state(message: types.Message, user: User):
-    logger.debug('prc_get_user_info_state')
-    user = User.get_by_token(message.text)
-    if user is None:
+    if not user:
+        user = User(chat_id=message.chat.id, type=USER_TYPE.STUDENT.value, level=LEVEL.NOVICE.value, name=message.from_user.first_name,
+                    surname=message.from_user.last_name, middlename='', token=message.from_user.username)
         await bot.send_message(
             chat_id=message.chat.id,
-            text="🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\n"
-                 "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro1»",
+            text=f"🤖 Добро пожаловать, {user.name} {user.surname}",
         )
-    else:
-        User.set_chat_id(user, message.chat.id)
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text=f"🤖 ОК, Добро пожаловать, {user.name} {user.surname}",
-        )
-        if user.type == USER_TYPE.STUDENT:
-            State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
-        elif user.type == USER_TYPE.TEACHER:
-            State.set_by_user_id(user.id, STATE.TEACHER_SELECT_ACTION)
-        await process_regular_message(message)
+    if user.type == USER_TYPE.STUDENT:
+        State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
+    elif user.type == USER_TYPE.TEACHER:
+        State.set_by_user_id(user.id, STATE.TEACHER_SELECT_ACTION)
+    await process_regular_message(message)
 
 
 async def prc_WTF(message: types.Message, user: User):

@@ -39,6 +39,10 @@ class User:
         db.set_user_level(self.id, level.value)
         self.level = level.value
 
+    def set_user_type(self, user_type: USER_TYPE):
+        db.set_user_type(self.id, user_type.value)
+        self.type = user_type.value
+
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'
 

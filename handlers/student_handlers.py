@@ -241,6 +241,29 @@ async def level_pro(message: types.Message):
         await process_regular_message(message)
 
 
+@dispatcher.message_handler(commands=['set_teacher'])
+async def set_teacher(message: types.Message):
+    logger.debug('set_teacher')
+    user = User.get_by_chat_id(message.chat.id)
+    if user:
+        user.set_user_type(USER_TYPE.TEACHER)
+        message = await bot.send_message(chat_id=message.chat.id, text="Ну всё, вы теперь учитель :) (демо)")
+        State.set_by_user_id(user.id, STATE.TEACHER_SELECT_ACTION)
+        await process_regular_message(message)
+
+
+@dispatcher.message_handler(commands=['set_student'])
+async def set_student(message: types.Message):
+    logger.debug('set_student')
+    user = User.get_by_chat_id(message.chat.id)
+    if user:
+        message = await bot.send_message(chat_id=message.chat.id, text="Теперь вы снова студент (демо)")
+        user.set_user_type(USER_TYPE.STUDENT)
+        user.set_level(LEVEL.NOVICE)
+        State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
+        await process_regular_message(message)
+
+
 @dispatcher.message_handler(commands=['sos'])
 async def sos(message: types.Message):
     logger.debug('sos')
@@ -272,8 +295,10 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         await bot_answer_callback_query(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         await process_regular_message(query.message)
-    await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                text=f"Была выбрана задача {problem}.")
+    try:
+        await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+    except:
+        pass
     # В зависимости от типа задачи разное поведение
     if problem.prob_type == PROB_TYPE.TEST:
         # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру
