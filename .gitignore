@@ -1,10 +1,17 @@
 .idea/
-creds
-creds_prod
-students_and_probles.pickle
-students_and_probles_v2.pickle
-db/
 __pycache__/
+
+# креды
+creds_test
+creds_prod
+creds*
+
+# бекапы
+*.pickle
+**/*.pickle
+
+# БД
+db/
+
+# Решения
 solutions/
-students_and_probles_v2_prod.pickle
-/creds_exam_prod/

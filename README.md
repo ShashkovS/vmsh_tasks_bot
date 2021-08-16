@@ -1,9 +1,30 @@
-# Бот для проведения кружка по математике
+# Бот для проведения кружка по математике (и не только)
 
 ## Секреты
-- creds/vmsh_bot_sheets_creds.json — ключи для google API (см. https://console.developers.google.com/iam-admin/serviceaccounts/)
-- creds/telegram_bot_key — ключ телеграм-бота
-- creds/settings_sheet_key — ключ гугль-таблицы с настройками
+Есть окружение `test` и `prod`. Для каждого своя папка с кредами: creds_test и creds_prod.
+Соответственно далее `xxxx` — это `test` или `prod`.
+
+- creds_xxxx/vmsh_bot_sheets_creds_xxxx.json — ключи для google API (см. https://console.developers.google.com/iam-admin/serviceaccounts/)
+- creds_xxxx/vmsh_bot_config_xxxx.json — настройки вмш-телеграм-бота. Должны иметь вид
+    ```
+    {
+      "telegram_bot_token": "1111111111:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "google_sheets_key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "webhook_host": "someurl.proj179.ru",
+      "webhook_port": 443,
+      "dump_filename": "db/_google_data_xxxx.pickle",
+      "db_filename": "xxxx.db",
+      "sos_channel": "@some_sos_channel",
+      "exceptions_channel": -1111111111111,
+      "sentry_dsn": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbb.ingest.sentry.io/1111111"
+    }
+    ```
+    - sos_channel — имя канала (в котором бот должен быть админом), в который бот будет пересылать сообщения sos. В переменной должна быть либо строка вида "@some_sos_channel", либо число — id канала.
+    - exceptions_channel — имя канала (в котором бот должен быть админом), в который бот будет пересылать сообщения о своих запусках, остановках и падениях. В переменной должна быть либо строка вида "@some_channel", либо число — id канала. Чтобы получить id секретного канала, нужно сначала сделать его публичным, указать имя канала текстом, и запустить бота. При запуске бота они пришлёт телеграмовский id канала. После этого канал можно сделать назад приватным.
+    - sentry_dsn — это ключ для логов в sentry. Можно не указывать, если нет необходимости в логировании ошибок в sentry. 
+
+
+
 
 ### Как получить секреты для google API
 Попросите Сережу Шашкова, либо поищите в чате.
@@ -11,17 +32,17 @@
 ### Как получить секреты для google API, если вы хотите создать свои
 - идем по адресу https://console.developers.google.com/iam-admin/serviceaccounts/
 - выбираем кнопку СОЗДАТЬ ПРОЕКТ
-- в поле название проекта вводим VmshTasksBot (название может быть любым), жмём создать
+- в поле название проекта вводим `VmshTasksBot` (название может быть любым), жмём создать
 - переходим в проект, слева нажимаем на "API и сервисы"
 - слева нажимаем "Учетные данные"
 - ищем сверху по центру кнопку "+ СОЗДАТЬ УЧЕТНЫЕ ДАННЫЕ", выбираем "Сервисный аккаунт"
-- вводим название сервисного аккаунта VmshTasksBotServiceAccount (название может быть любым), жмём "создать"
+- вводим название сервисного аккаунта `VmshTasksBotServiceAccount` (название может быть любым), жмём "создать"
 - в поле "Выберите роль" нажимаем Проект > Редактор, следом "Продолжить"
 - жмём "Готово"
 - в списке сервисных аккаунтов должен появиться созданный сервисный аккаунт. Над ним справа-сверху ищем ссылку "Управление сервисными аккаунтами", переходим по ней
 - находим в списке наш аккаунт, справа от него нажимаем на вертикальное троеточие ("Действия"), выбираем "Создать ключ".
 - выбираем json, "создать".
-- кладём этот файл в проект с кодом по адресу creds/vmsh_bot_sheets_creds.json
+- кладём этот файл в проект с кодом по адресу creds_xxxx/vmsh_bot_sheets_creds.json
 - запускаем бота python main.py
 - в телеграме пишем боту /hello, затем любой пароль
 - интерпретатор выкинет полотно с ошибкой, в полотне будет url типа https://console.developers.google.com/apis/api/sheets.googleapis.com/overview?project=xxxx, переходим туда
@@ -37,16 +58,29 @@
 ### Деплой
 Для выкатки приложения потребуется домен, vps и созданный телеграм-бот. Большая часть команд для первичного деплоя на подготовленный vps (на котором уже есть git, python3.8+ и свежий sqlite (см. https://number1.co.za/upgrading-sqlite-on-centos-to-3-8-3-or-later/)) вот здесь: https://github.com/ShashkovS/vmsh_tasks_bot/blob/prod/conf/initial_vps_setup.sh
 
+### Команды для всех
+- `/start` — Начать всё сначала: ввести новый пароль и начать «новую» жизнь
 
-### Команды учителя
-- /broadcast_wibkn96x — Отправить сообщение в строчках 3+ всем юзерам из строчки 2. Вместо списка токенов во второй строчке можно указать all_students, all_novice, all_pro, all_teachers
-- /set_sleep_state — Перевести всех студентов в режим ожидания следующего занятия
-- /reset_state_jvcykgny — Перевести всех студентов в режим сдачи задач и показать текущий список задач
-- /recheck token problem — перепроверить студенту token задачу problem
-- /update_all_quaLtzPE — обновить вообще все настройки из гугл-таблички
-- /update_teachers — обновить настройки учителей
-- /update_problems — обновить настройки задач
 
+### Команды для студентов
+- `/sos` — Послать сообщение человеку
+- `/exit_waitlist` — Выйти из очереди ожидания устной сдачи
+- `/level_novice` — Перейти на уровень «Начинающие»
+- `/level_pro` — Перейти на уровень «Продолжающие»
+
+### Команды для учителей
+- `/set_level` — Установить уровень школьнику
+- `/recheck token problem` — Перепроверить студенту `token` письменную задачу `problem`
+
+### Команды для админов
+- `/broadcast` — Отправить сообщение в строчках 3+ всем юзерам из строчки 2. Вместо списка токенов во второй строчке можно указать all_students, all_novice, all_pro, all_teachers
+- `/reset_state` — Перевести всех студентов в режим сдачи задач и показать текущий список задач
+- `/set_sleep_state` — Перевести всех студентов в режим ожидания следующего занятия
+- `/update_all` —  Обновить все данные из гугль-таблички
+- `/update_teachers` — Обновить учителей из гугль-таблички
+- `/update_problems` — Обновить задачи из гугль-таблички
+- `/update_students` — Обновить студентов из гугль-таблички
+- `/stat` — Вывести статистику по текущему занятию
 
 ### Запуск тестов
 Перед запуском тестов убедитесь, что у вас установлены зависимости для тестов:
@@ -58,37 +92,3 @@ pip install -r requirements-text.txt
 ./run_tests.sh
 ```
 Если у вас не unix система или вам лень, запускайте команду `pytest -vvs tests/` напрямую.
-
-### Рулим хендлерами
-
-Мы не используем декораторы, а регистрируем все хендлеры в 
-
-    async def on_startup(app):
-        logging.warning('Start up!')
-        if USE_WEBHOOKS:
-            await check_webhook()
-        dispatcher.register_message_handler(start, commands=['start'])
-        dispatcher.register_message_handler(update_all_internal_data, commands=['update_all_quaLtzPE'])
-        dispatcher.register_message_handler(process_regular_message, content_types=["photo", "document", "text"])
-        dispatcher.register_callback_query_handler(inline_kb_answer_callback_handler)
-        
-### Рулим состояниями
-
-Под каждый state мы пишем функцию-обработчик. Добавляем её в словарь
-
-    state_processors = {
-        GET_USER_INFO_STATE: prc_get_user_info_state,
-        GET_TASK_INFO_STATE: prc_get_task_info_state,
-        SENDING_SOLUTION_STATE: prc_sending_solution_state,
-    }
-
-
-Обычные сообщения обрабатываются так:
-
-    async def process_regular_message(message: types.Message):
-        cur_chat_state = get_state(message.chat.id)
-        state_processor = state_processors.get(cur_chat_state, prc_WTF)
-        await state_processor(message)
-
-То есть определили state, вызвали соответствующую функцию.
-Здесь в нормальной ситуации мы ничего не дорабатываем
