@@ -6,6 +6,8 @@ from config import DEBUG
 from loader_from_google_spreadsheets import google_spreadsheet_loader
 from obj_classes import User, db, FromGoogleSpreadsheet
 from bot import *
+import handlers
+
 
 if config.production_mode:
     logger.info(('*' * 50 + '\n') * 5)
