@@ -1,0 +1,12 @@
+{
+  "config_name": "test",
+  "telegram_bot_token": "1111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "google_sheets_key": "1abababababababababababababababababababababa",
+  "webhook_host": "bot.domain.ru",
+  "webhook_port": 443,
+  "dump_filename": "db/_google_data_test.pickle",
+  "db_filename": "db/test.db",
+  "sos_channel": "@some_bot_sos_channel",
+  "exceptions_channel": -1123123123123,
+  "sentry_dsn": ""
+}
