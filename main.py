@@ -4,17 +4,9 @@ from aiogram.dispatcher.webhook import configure_app, web
 from aiogram.utils.executor import start_polling
 from config import DEBUG
 from loader_from_google_spreadsheets import google_spreadsheet_loader
-from obj_classes import User, db, FromGoogleSpreadsheet
+from obj_classes import db, update_from_google_if_db_is_empty
 from bot import *
 import handlers
-
-
-if config.production_mode:
-    logger.info(('*' * 50 + '\n') * 5)
-    logger.info('Production mode')
-    logger.info('*' * 50)
-else:
-    logger.info('Developer mode')
 
 USE_WEBHOOKS = False
 
@@ -33,9 +25,16 @@ async def on_startup(dispatcher):
     logger.debug('on_startup')
     logger.warning('Start up!')
 
+    # Настраиваем БД
+    db.setup(config.db_filename)
+    # Настраиваем загрузчик из гугль-таблиц
+    google_spreadsheet_loader.setup(config.dump_filename, config.google_sheets_key, config.google_cred_json)
+    # Подгружаем данные, если база пуста
+    update_from_google_if_db_is_empty()
+
     if USE_WEBHOOKS:
         await check_webhook()
-    await bot_post_logging_message('Бот начал свою работу')
+    await bot.post_logging_message('Бот начал свою работу')
 
 
 async def on_shutdown(dispatcher):
@@ -44,7 +43,7 @@ async def on_shutdown(dispatcher):
     """
     logger.debug('on_shutdown')
     logger.warning('Shutting down..')
-    await bot_post_logging_message('Бот остановил свою работу')
+    await bot.post_logging_message('Бот остановил свою работу')
     # Remove webhook.
     await bot.delete_webhook()
     # Close all connections.
@@ -54,18 +53,6 @@ async def on_shutdown(dispatcher):
     db.disconnect()
     logger.warning('Bye!')
 
-
-# Настраиваем БД
-db.setup(config.db_filename)
-# Настраиваем загрузчик из гугль-таблиц
-google_spreadsheet_loader.setup(config.dump_filename, config.google_sheets_key, config.google_cred_json)
-
-# Если в базе нет ни одного учителя, то принудительно грузим всё из таблицы (иначе даже админ не сможет залогиниться)
-all_teachers = list(User.all_teachers())
-if len(all_teachers) == 0:
-    FromGoogleSpreadsheet.update_all()
-    all_teachers = list(User.all_teachers())
-logger.info(f'В базе в текущий момент {len(all_teachers)} учителей')
 
 if __name__ == "__main__":
     # Включаем все отладочные сообщения
@@ -97,26 +84,3 @@ else:
     #     host=config.webhook_host,
     #     port=config.webhook_port,
     # )
-
-"""
-Для студентов
-start — 
-sos — 
-exit_waitlist — 
-level_novice — 
-level_pro — 
-
-Для учителей
-set_level
-recheck
-
-Для админов
-broadcast
-reset_state
-set_sleep_state
-update_all
-update_teachers
-update_problems
-update_students
-stat
-"""

@@ -9,11 +9,10 @@ from .initial_test_data import test_students, test_teachers
 class DatabaseMethodsTest(TestCase):
     def setUp(self) -> None:
         self.db = db
-        test_db_filename = 'unittest.db'
-        test_db_fullpath = self.db.get_db_file_full_path(test_db_filename)
+        test_db_filename = 'db/unittest.db'
         # ensure there is no trash file from previous incorrectly handled tests present
         try:
-            os.unlink(test_db_fullpath)
+            os.unlink(test_db_filename)
         except FileNotFoundError:
             pass
         # create shiny new db instance from scratch and connect

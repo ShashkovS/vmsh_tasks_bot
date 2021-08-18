@@ -2,6 +2,7 @@ import os
 from dataclasses import asdict
 from unittest import TestCase
 
+import consts
 from db_methods import db
 from obj_classes import *
 
@@ -12,11 +13,10 @@ from .initial_test_data import test_students, test_teachers
 class UserMethodsTest(TestCase):
     def setUp(self) -> None:
         self.db = db
-        test_db_filename = 'unittest.db'
-        test_db_fullpath = self.db.get_db_file_full_path(test_db_filename)
+        test_db_filename = 'db/unittest.db'
         # ensure there is no trash file from previous incorrectly handled tests present
         try:
-            os.unlink(test_db_fullpath)
+            os.unlink(test_db_filename)
         except FileNotFoundError:
             pass
         # create shiny new db instance from scratch and connect
@@ -63,7 +63,7 @@ class UserMethodsTest(TestCase):
     def test_set_level(self):
         for dict_user in test_students + test_teachers:
             user = User.get_by_id(dict_user['id'])
-            new_level = 'foo'
+            new_level = consts.LEVEL.NOVICE
             user.set_level(new_level)
             user = User.get_by_id(dict_user['id'])
             self.assertEqual(user.level, new_level)

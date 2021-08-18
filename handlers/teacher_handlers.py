@@ -7,10 +7,7 @@ from urllib.parse import urlencode
 from consts import *
 from config import logger
 from obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
-from bot import (
-    bot, reg_callback, dispatcher, reg_state,
-    bot_edit_message_text, bot_edit_message_reply_markup, bot_answer_callback_query, bot_post_logging_message
-)
+from bot import bot, reg_callback, dispatcher, reg_state
 from handlers import teacher_keyboards
 from handlers.main_handlers import process_regular_message
 
@@ -122,14 +119,14 @@ async def set_student_level(message: types.Message):
 async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_get_written_task_callback')
     # Так, препод указал, что хочет проверять письменные задачи
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     top = WrittenQueue.take_top(teacher.id)
     if not top:
         await bot.send_message(chat_id=teacher.chat_id,
                                text=f"Ничего себе! Все письменные задачи проверены!")
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-        await bot_answer_callback_query(query.id)
+        await bot.answer_callback_query_ig(query.id)
         await process_regular_message(query.message)
     else:
         # Даём преподу 10 топовых задач на выбор
@@ -141,16 +138,16 @@ async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: Use
 @reg_callback(CALLBACK.TEACHER_CANCEL)
 async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_teacher_cancel_callback')
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     await process_regular_message(query.message)
 
 
 async def forward_discussion_and_start_checking(chat_id, message_id, student, problem, teacher):
     logger.debug('forward_discussion_and_start_checking')
-    await bot_edit_message_text(chat_id=chat_id, message_id=message_id,
+    await bot.edit_message_text_ig(chat_id=chat_id, message_id=message_id,
                                 text=f"Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
                                      f"Школьник {student.token} {student.surname} {student.name}\n"
                                      f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
@@ -196,13 +193,13 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student, pr
 @reg_callback(CALLBACK.WRITTEN_TASK_SELECTED)
 async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_written_task_selected_callback')
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     chat_id = query.message.chat.id
     _, student_id, problem_id = query.data.split('_')
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(int(problem_id))
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     # Блокируем задачу
     is_unlocked = WrittenQueue.mark_being_checked(student.id, problem.id, teacher.id)
     if not is_unlocked:
@@ -216,7 +213,7 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
 @reg_callback(CALLBACK.WRITTEN_TASK_OK)
 async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_written_task_ok_callback')
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     _, student_id, problem_id = query.data.split('_')
     student = User.get_by_id(int(student_id))
@@ -224,7 +221,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     # Помечаем задачу как решённую и удаляем из очереди
     db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, RES_TYPE.WRITTEN)
     WrittenQueue.delete_from_queue(student.id, problem.id)
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
                            text=f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
                                 f'<pre>/recheck {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item}</pre>',
@@ -268,7 +265,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
 @reg_callback(CALLBACK.WRITTEN_TASK_BAD)
 async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_written_task_bad_callback')
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     _, student_id, problem_id = query.data.split('_')
     student = User.get_by_id(int(student_id))
@@ -312,21 +309,21 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     await process_regular_message(query.message)
 
 
 @reg_callback(CALLBACK.GET_QUEUE_TOP)
 async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_get_queue_top_callback')
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     top = Waitlist.top(1)
     if not top:
         # Если в очереди пусто, то шлём сообщение и выходим.
         await bot.send_message(chat_id=teacher.chat_id,
                                text=f"Сейчас очередь пуста. Повторите через пару минут.")
-        await bot_answer_callback_query(query.id)
+        await bot.answer_callback_query_ig(query.id)
         await prc_teacher_select_action(query.message, teacher)
         return
 
@@ -362,24 +359,24 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
         # Снимаем со школьника статус сдачи
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
     else:
-        await bot_answer_callback_query(query.id, show_alert=True)
+        await bot.answer_callback_query_ig(query.id, show_alert=True)
         await bot.send_message(chat_id=teacher.chat_id,
                                text=f"<b>Ваш ученик: {student}.\n"
                                     f"{problem}.\n"
                                     f"<a href=\"{teacher_link}\">Войдите в конференцию</a></b>",
                                parse_mode='HTML')
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     await process_regular_message(message=query.message)
 
 
 @reg_callback(CALLBACK.INS_ORAL_PLUSSES)
 async def prc_ins_oral_plusses(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_ins_oral_plusses')
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     await bot.send_message(chat_id=teacher.chat_id,
                            text=f"Введите фамилию школьника (можно начало фамилии)")
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_WRITES_STUDENT_NAME)
 
 
@@ -395,9 +392,9 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: User):
     problem = Problem.get_by_id(problem_id)
     verdict = int(query.data.split('_')[1])
     student_id = state['last_student_id']
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     db.add_result(student_id, problem_id, problem.level, problem.lesson, teacher.id, verdict, '', RES_TYPE.ZOOM)
     await process_regular_message(query.message)
@@ -409,14 +406,14 @@ async def prc_student_selected_callback(query: types.CallbackQuery, teacher: Use
     _, student_id = query.data.split('_')
     student_id = int(student_id)
     student = User.get_by_id(student_id)
-    await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None,
+    await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None,
                                 text=f"Вносим плюсики школьнику:\n"
                                      f"{student.surname} {student.name} {student.token} уровень {student.level}")
     await bot.send_message(chat_id=query.message.chat.id,
                            text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
                            reply_markup=teacher_keyboards.build_verdict(plus_ids=set(), minus_ids=set(), student=student))
     State.set_by_user_id(teacher.id, STATE.TEACHER_WRITES_STUDENT_NAME, last_student_id=student.id)
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
 
 
 @reg_callback(CALLBACK.ADD_OR_REMOVE_ORAL_PLUS)
@@ -437,10 +434,10 @@ async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teach
     state = State.get_by_user_id(teacher.id)
     student_id = state['last_student_id']
     student = User.get_by_id(student_id)
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=teacher_keyboards.build_verdict(plus_ids=plus_ids, minus_ids=minus_ids,
                                                                              student=student))
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
 
 
 @reg_callback(CALLBACK.FINISH_ORAL_ROUND)
@@ -455,7 +452,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     if not student:
         teacher_message = await bot.send_message(chat_id=query.message.chat.id,
                                                  text=f"Что-то в боте сломалось и результат оценки не засчитан. :( Попробуйте ещё раз.")
-        await bot_answer_callback_query(query.id)
+        await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
         await process_regular_message(teacher_message)
         return
@@ -470,7 +467,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     for problem in minuses:
         db.delete_plus(student_id, problem.id, VERDICT.WRONG_ANSWER)
         db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, RES_TYPE.ZOOM)
-    await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                 text=f"Школьник: {student.token} {student.surname} {student.name}\n"
                                      f"\nПоставлены плюсы за задачи: {', '.join(human_readable_pluses)}"
                                      f"\nПоставлены минусы за задачи: {', '.join(human_readable_minuses)}",
@@ -485,6 +482,6 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
             await process_regular_message(student_message)
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await process_regular_message(query.message)

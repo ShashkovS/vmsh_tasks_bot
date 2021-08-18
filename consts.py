@@ -69,7 +69,7 @@ class USER_TYPE(IntEnum):
 
 
 @unique
-class LEVEL(Enum):
+class LEVEL(str, Enum):
     NOVICE = 'н'
     PRO = 'п'
 

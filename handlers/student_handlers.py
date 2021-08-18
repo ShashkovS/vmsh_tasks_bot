@@ -9,10 +9,7 @@ from aiogram.dispatcher.webhook import types
 from consts import *
 from config import logger, config
 from obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
-from bot import (
-    bot, reg_callback, dispatcher, reg_state,
-    bot_edit_message_text, bot_edit_message_reply_markup, bot_answer_callback_query, bot_post_logging_message
-)
+from bot import bot, reg_callback, dispatcher, reg_state
 from handlers import student_keyboards
 from handlers.main_handlers import process_regular_message
 from checkers import ANS_CHECKER, ANS_REGEX
@@ -158,7 +155,7 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
         except Exception as e:
             error_text = f'PYCHECKER_ERROR: {traceback.format_exc()}\nFUNC_CODE:\n{func_code.replace(" ", "_")}\nENTRY:\n{student_answer}\nRESULT:\n{result!r}'
             logger.error(f'PYCHECKER_ERROR: {e}\nFUNC_CODE:\n{func_code}\nRESULT:\n{result!r}')
-            await bot_post_logging_message(error_text)
+            await bot.post_logging_message(error_text)
 
         if additional_message:
             await bot.send_message(chat_id=message.chat.id, text=additional_message)
@@ -264,12 +261,12 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
     student = User.get_by_chat_id(query.message.chat.id)
     state = State.get_by_user_id(student.id)
     if state.get('state', None) == STATE.STUDENT_IS_SLEEPING:
-        await bot_answer_callback_query(query.id)
+        await bot.answer_callback_query_ig(query.id)
         return
     problem_id = int(query.data[2:])
     problem = Problem.get_by_id(problem_id)
     if not problem:
-        await bot_answer_callback_query(query.id)
+        await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         await process_regular_message(query.message)
     await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -286,13 +283,13 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
                                    text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}",
                                    reply_markup=student_keyboards.build_cancel_task_submission())
         State.set_by_user_id(student.id, STATE.SENDING_TEST_ANSWER, problem_id)
-        await bot_answer_callback_query(query.id)
+        await bot.answer_callback_query_ig(query.id)
     elif problem.prob_type in (PROB_TYPE.WRITTEN, PROB_TYPE.WRITTEN_BEFORE_ORALLY):
         await bot.send_message(chat_id=query.message.chat.id,
                                text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.",
                                reply_markup=student_keyboards.build_cancel_task_submission())
         State.set_by_user_id(student.id, STATE.SENDING_SOLUTION, problem_id)
-        await bot_answer_callback_query(query.id)
+        await bot.answer_callback_query_ig(query.id)
     elif problem.prob_type == PROB_TYPE.ORALLY:
         await bot.send_message(chat_id=query.message.chat.id,
                                text=f"Выбрана устная задача. "
@@ -310,7 +307,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
                                disable_web_page_preview=True,
                                parse_mode='HTML')
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        await bot_answer_callback_query(query.id)
+        await bot.answer_callback_query_ig(query.id)
         await asyncio.sleep(5)
         await process_regular_message(query.message)
 
@@ -321,7 +318,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         #                                 "Дождитесь, когда освободится один из преподавателей\. " \
         #                                 "Тогда можно будет сдать сразу несколько задач\.",
         #                            parse_mode="MarkdownV2")
-        #     await bot_answer_callback_query(query.id)
+        #     await bot.answer_callback_query_ig(query.id)
         # else:
         #     try:
         #         await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
@@ -332,7 +329,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         #                            text="Вы встали в очередь на устную сдачу\.\nЧтобы выйти из очереди, нажмите `/exit_waitlist`",
         #                            parse_mode="MarkdownV2",
         #                            reply_markup=student_keyboards.build_exit_waitlist())
-        #     await bot_answer_callback_query(query.id)
+        #     await bot.answer_callback_query_ig(query.id)
         #     await asyncio.sleep(4)
         #     await process_regular_message(query.message)
 
@@ -342,19 +339,19 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_list_selected_callback')
     list_num = int(query.data[2:])
     student = User.get_by_chat_id(query.message.chat.id)
-    await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                 text="Теперь выберите задачу",
                                 reply_markup=student_keyboards.build_problems(list_num, student))
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
 
 
 @reg_callback(CALLBACK.SHOW_LIST_OF_LISTS)
 async def prc_show_list_of_lists_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_show_list_of_lists_callback')
-    await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                 text="Вот список всех листков:",
                                 reply_markup=student_keyboards.build_lessons())
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
 
 
 @reg_callback(CALLBACK.ONE_OF_TEST_ANSWER_SELECTED)
@@ -365,7 +362,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         logger.info('WRONG STATE', state, STATE.SENDING_TEST_ANSWER, 'STATE.SENDING_TEST_ANSWER')
         return
     selected_answer = query.data[2:]
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     await bot.send_message(chat_id=query.message.chat.id, text=f"Выбран вариант {selected_answer}.")
     state = State.get_by_user_id(student.id)
@@ -382,7 +379,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     if problem is None:
         logger.error('Сломался приём задач :(')
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        await bot_answer_callback_query(query.id)
+        await bot.answer_callback_query_ig(query.id)
         await asyncio.sleep(1)
         await process_regular_message(query.message)
         return
@@ -399,7 +396,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         text_to_student = 'Ответ принят на проверку.'
     await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     await asyncio.sleep(1)
     await process_regular_message(query.message)
 
@@ -413,10 +410,10 @@ async def prc_cancel_task_submission_callback(query: types.CallbackQuery, studen
     #     text="❓ Нажимайте на задачу, чтобы сдать её",
     #     reply_markup=student_keyboards.build_problems(problems.last_lesson, user),
     # )
-    await bot_edit_message_text(message_id=query.message.message_id, chat_id=query.message.chat.id,
+    await bot.edit_message_text_ig(message_id=query.message.message_id, chat_id=query.message.chat.id,
                                 text="❓ Нажимайте на задачу, чтобы сдать её",
                                 reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student))
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
 
 
 @reg_callback(CALLBACK.GET_OUT_OF_WAITLIST)
@@ -424,14 +421,14 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
     logger.debug('prc_get_out_of_waitlist_callback')
     state = State.get_by_user_id(student.id)
     teacher = User.get_by_id(state['last_teacher_id'])
-    await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                         reply_markup=None)
     Waitlist.leave(student.id)
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
     if teacher:
         await bot.send_message(chat_id=teacher.chat_id,
                                text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
-    await bot_answer_callback_query(query.id)
+    await bot.answer_callback_query_ig(query.id)
     await process_regular_message(query.message)
 
 

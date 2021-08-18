@@ -253,6 +253,14 @@ class FromGoogleSpreadsheet:
         return errors
 
 
+def update_from_google_if_db_is_empty():
+    # Если в базе нет ни одного учителя, то принудительно грузим всё из таблицы (иначе даже админ не сможет залогиниться)
+    all_teachers = list(User.all_teachers())
+    if len(all_teachers) == 0:
+        FromGoogleSpreadsheet.update_all()
+        all_teachers = list(User.all_teachers())
+    logger.info(f'В базе в текущий момент {len(all_teachers)} учителей')
+
 # db.setup(config.db_filename)
 # google_spreadsheet_loader.setup(config.dump_filename, config.google_sheets_key, config.google_cred_json)
 #
