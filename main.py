@@ -6,6 +6,7 @@ from helpers.config import config, logger, DEBUG
 from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 from helpers.obj_classes import db, update_from_google_if_db_is_empty
 from helpers.bot import bot, dispatcher
+import handlers
 
 USE_WEBHOOKS = False
 
@@ -22,6 +23,7 @@ async def check_webhook():
 
 async def on_startup(dispatcher):
     logger.debug('on_startup')
+    logger.debug(f'{handlers}')
     logger.warning('Start up!')
 
     # Настраиваем БД

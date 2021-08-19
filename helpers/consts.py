@@ -21,7 +21,7 @@ class STATE(IntEnum):
 
 
 # ПРЕФИКСЫ ДАННЫХ ДЛЯ КОЛЛБЕКОВ
-# Важно, чтобы константа была уникальной буков (там хардкод взятия первой буквы)
+# Важно, чтобы константа была уникальной буквой (там хардкод взятия первой буквы)
 # (наследование от str важно, чтобы условный CALLBACK.PROBLEM_SELECTED превращался в t, а не в своё длинное имя
 @unique
 class CALLBACK(str, Enum):
@@ -43,6 +43,9 @@ class CALLBACK(str, Enum):
     FINISH_ORAL_ROUND = 'f'
     STUDENT_SELECTED = 's'
 
+    def __str__(self):
+        return self.value
+
 
 # ТИПЫ ЗАДАЧ
 @unique
@@ -54,10 +57,10 @@ class PROB_TYPE(IntEnum):
 
 
 PROB_TYPES_DECODER = {
-    "Тест": PROB_TYPE.TEST.value,
-    "Письменно": PROB_TYPE.WRITTEN.value,
-    "Письменно<-Устно": PROB_TYPE.WRITTEN_BEFORE_ORALLY.value,
-    "Устно": PROB_TYPE.ORALLY.value,
+    "Тест": PROB_TYPE.TEST,
+    "Письменно": PROB_TYPE.WRITTEN,
+    "Письменно<-Устно": PROB_TYPE.WRITTEN_BEFORE_ORALLY,
+    "Устно": PROB_TYPE.ORALLY,
 }
 
 
@@ -70,10 +73,19 @@ class USER_TYPE(IntFlag):
     TEACHER_OR_ADMIN = TEACHER | ADMIN
 
 
+LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', }
+
 @unique
 class LEVEL(str, Enum):
     NOVICE = 'н'
     PRO = 'п'
+    EXPERT = 'э'
+
+    def __init__(self, value):
+        self.slevel = LEVEL_DESCRIPTION.get(self.value, None)
+
+    def __str__(self):
+        return self.value
 
 
 # ВИДЫ ОТВЕТА НА ТЕСТОВЫЕ ЗАДАЧИ
@@ -93,36 +105,42 @@ class ANS_TYPE(IntEnum):
     SELECT_ONE = 98  # Выбрать один из вариантов
     STRING = 99  # Просто какая-то строка
 
+    def __init__(self, value):
+        self.descr = None
+
+
+# ANS_HELP_DESCRIPTIONS
+for ans_type, descr in [
+    (ANS_TYPE.DIGIT, ' — цифру (например, 0 или 7)'),
+    (ANS_TYPE.NATURAL, ' — натуральное число (например, 179)'),
+    (ANS_TYPE.INTEGER, ' — целое число (например, -179)'),
+    (ANS_TYPE.RATIO, ' — отношение (например, 5/3 или -179/1)'),
+    (ANS_TYPE.FLOAT, ' — десятичную дробь (например, 3.14 или 179)'),
+    (ANS_TYPE.FRACTION, ' — обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)'),
+    (ANS_TYPE.INT_SEQ, ' — последовательность целых чисел (например: 1, 7, 9)'),
+    (ANS_TYPE.INT_SET, ' — множество целых чисел (например: 1, 7, 9)'),
+    (ANS_TYPE.INT_2, ' — два целых числа (например: 1, 7)'),
+    (ANS_TYPE.INT_3, ' — три целых числа (например: 1, 7, 9)'),
+    (ANS_TYPE.INT_4, ' — четыре целых числа (например: 0, 1, 7, 9)'),
+    (ANS_TYPE.SELECT_ONE, ' — выберите один из следующих вариантов:'),
+    (ANS_TYPE.STRING, ''),
+]:
+    ans_type.descr = descr
 
 ANS_TYPES_DECODER = {
-    'Цифра': ANS_TYPE.DIGIT.value,
-    'Натуральное': ANS_TYPE.NATURAL.value,
-    'Целое': ANS_TYPE.INTEGER.value,
-    'Отношение': ANS_TYPE.RATIO.value,
-    'Действительное': ANS_TYPE.FLOAT.value,
-    'Дробь': ANS_TYPE.FRACTION.value,
-    'ПоследЦелых': ANS_TYPE.INT_SEQ.value,
-    'МножЦелых': ANS_TYPE.INT_SET.value,
-    'ДваЦелых': ANS_TYPE.INT_2.value,
-    'ТриЦелых': ANS_TYPE.INT_3.value,
-    'ЧетыреЦелых': ANS_TYPE.INT_4.value,
-    'Выбор': ANS_TYPE.SELECT_ONE.value,
-    'Строка': ANS_TYPE.STRING.value,
-}
-ANS_HELP_DESCRIPTIONS = {
-    ANS_TYPE.DIGIT.value: ' — цифру (например, 0 или 7)',
-    ANS_TYPE.NATURAL.value: ' — натуральное число (например, 179)',
-    ANS_TYPE.INTEGER.value: ' — целое число (например, -179)',
-    ANS_TYPE.RATIO.value: ' — отношение (например, 5/3 или -179/1)',
-    ANS_TYPE.FLOAT.value: ' — десятичную дробь (например, 3.14 или 179)',
-    ANS_TYPE.FRACTION.value: ' — обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)',
-    ANS_TYPE.INT_SEQ.value: ' — последовательность целых чисел (например: 1, 7, 9)',
-    ANS_TYPE.INT_SET.value: ' — множество целых чисел (например: 1, 7, 9)',
-    ANS_TYPE.INT_2.value: ' — два целых числа (например: 1, 7)',
-    ANS_TYPE.INT_3.value: ' — три целых числа (например: 1, 7, 9)',
-    ANS_TYPE.INT_4.value: ' — четыре целых числа (например: 0, 1, 7, 9)',
-    ANS_TYPE.SELECT_ONE.value: ' — выберите один из следующих вариантов:',
-    ANS_TYPE.STRING.value: '',
+    'Цифра': ANS_TYPE.DIGIT,
+    'Натуральное': ANS_TYPE.NATURAL,
+    'Целое': ANS_TYPE.INTEGER,
+    'Отношение': ANS_TYPE.RATIO,
+    'Действительное': ANS_TYPE.FLOAT,
+    'Дробь': ANS_TYPE.FRACTION,
+    'ПоследЦелых': ANS_TYPE.INT_SEQ,
+    'МножЦелых': ANS_TYPE.INT_SET,
+    'ДваЦелых': ANS_TYPE.INT_2,
+    'ТриЦелых': ANS_TYPE.INT_3,
+    'ЧетыреЦелых': ANS_TYPE.INT_4,
+    'Выбор': ANS_TYPE.SELECT_ONE,
+    'Строка': ANS_TYPE.STRING,
 }
 
 

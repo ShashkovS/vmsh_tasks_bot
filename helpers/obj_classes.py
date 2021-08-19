@@ -28,10 +28,11 @@ class User:
     id: int = None
 
     def __post_init__(self):
-        # self.type = USER_TYPE(self.type)
-        # self.level = USER_TYPE(self.level)
         if self.id is None:
             self.id = db.add_user(self.__dict__)
+        self.type = USER_TYPE(self.type)
+        if self.level:
+            self.level = LEVEL(self.level)
 
     def set_chat_id(self, chat_id: int):
         db.set_user_chat_id(self.id, chat_id)
@@ -96,10 +97,11 @@ class Problem:
     id: int = None
 
     def __post_init__(self):
-        # self.prob_type = PROB_TYPE(self.prob_type)
-        # self.ans_type = ANS_TYPE(self.ans_type)
         if self.id is None:
             self.id = db.add_problem(self.__dict__)
+        self.prob_type = PROB_TYPE(self.prob_type)
+        if self.ans_type:
+            self.ans_type = ANS_TYPE(self.ans_type)
 
     def __str__(self):
         return f"Задача {self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"

@@ -87,7 +87,7 @@ async def set_student_level(message: types.Message):
     except:
         await bot.send_message(
             chat_id=message.chat.id,
-            text=f"/set_level token н/п",
+            text=f"/set_level token н/п/э",
         )
         return
     student = User.get_by_token(token)
@@ -102,6 +102,9 @@ async def set_student_level(message: types.Message):
     elif new_level == LEVEL.PRO:
         student.set_level(LEVEL.PRO)
         stud_msg = "Вы переведены в группу продолжающих"
+    elif new_level == LEVEL.EXPERT:
+        student.set_level(LEVEL.EXPERT)
+        stud_msg = "Вы переведены в группу экспертов"
     else:
         return
     await bot.send_message(

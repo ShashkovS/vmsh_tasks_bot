@@ -70,6 +70,8 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
         tokens = [user.token for user in User.all_students() if user.level == LEVEL.NOVICE]
     elif tokens == ['all_pro']:
         tokens = [user.token for user in User.all_students() if user.level == LEVEL.PRO]
+    elif tokens == ['all_expert']:
+        tokens = [user.token for user in User.all_students() if user.level == LEVEL.EXPERT]
     elif tokens == ['all_teachers']:
         tokens = [user.token for user in User.all_teachers()]
     bad_tokens = []
@@ -124,7 +126,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
         if not student.chat_id:
             continue
         try:
-            slevel = '(уровень «Продолжающие»)' if student.level == LEVEL.PRO else '(уровень «Начинающие»)'
+            slevel = f'(уровень «{student.level.slevel}»)'
             await bot.send_message(
                 chat_id=student.chat_id,
                 text=f"Можно сдавать задачи!\n❓ Нажимайте на задачу, чтобы сдать её {slevel}",

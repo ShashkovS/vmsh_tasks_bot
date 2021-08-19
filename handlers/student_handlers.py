@@ -40,7 +40,7 @@ async def prc_get_task_info_state(message, student: User):
     #         await bot.send_message(chat_id=message.chat.id, text=alarm,)
     #         await asyncio.sleep(3)
 
-    slevel = '(уровень «Продолжающие»)' if student.level == LEVEL.PRO else '(уровень «Начинающие»)'
+    slevel = f'(уровень «{student.level.slevel}»)'
     await bot.send_message(
         chat_id=message.chat.id,
         text=f"❓ Нажимайте на задачу, чтобы сдать её {slevel}",
@@ -238,6 +238,20 @@ async def level_pro(message: types.Message):
         await process_regular_message(message)
 
 
+@dispatcher.message_handler(commands=['level_expert'])
+async def level_expert(message: types.Message):
+    logger.debug('level_expert')
+    student = User.get_by_chat_id(message.chat.id)
+    if student:
+        message = await bot.send_message(
+            chat_id=message.chat.id,
+            text="Вы переведены в группу экспертов",
+        )
+        student.set_level(LEVEL.EXPERT)
+        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        await process_regular_message(message)
+
+
 @dispatcher.message_handler(commands=['sos'])
 async def sos(message: types.Message):
     logger.debug('sos')
@@ -282,7 +296,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
                                    reply_markup=student_keyboards.build_test_answers(problem.ans_validation.split(';')))
         else:
             await bot.send_message(chat_id=query.message.chat.id,
-                                   text=f"Выбрана задача {problem}.\nТеперь введите ответ{ANS_HELP_DESCRIPTIONS[problem.ans_type]}",
+                                   text=f"Выбрана задача {problem}.\nТеперь введите ответ{problem.ans_type.descr}",
                                    reply_markup=student_keyboards.build_cancel_task_submission())
         State.set_by_user_id(student.id, STATE.SENDING_TEST_ANSWER, problem_id)
         await bot.answer_callback_query_ig(query.id)
