@@ -21,7 +21,7 @@ async def check_webhook():
         await bot.set_webhook(WEBHOOK_URL)  # Set new URL for webhook
 
 
-async def on_startup(dispatcher):
+async def on_startup(app):
     logger.debug('on_startup')
     logger.debug(f'{handlers}')
     logger.warning('Start up!')
@@ -38,7 +38,7 @@ async def on_startup(dispatcher):
     await bot.post_logging_message('Бот начал свою работу')
 
 
-async def on_shutdown(dispatcher):
+async def on_shutdown(app):
     """
     Graceful shutdown. This method is recommended by aiohttp docs.
     """
