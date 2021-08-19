@@ -2,11 +2,10 @@
 import logging
 from aiogram.dispatcher.webhook import configure_app, web
 from aiogram.utils.executor import start_polling
-from config import DEBUG
-from loader_from_google_spreadsheets import google_spreadsheet_loader
-from obj_classes import db, update_from_google_if_db_is_empty
-from bot import *
-import handlers
+from helpers.config import config, logger, DEBUG
+from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
+from helpers.obj_classes import db, update_from_google_if_db_is_empty
+from helpers.bot import bot, dispatcher
 
 USE_WEBHOOKS = False
 

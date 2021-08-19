@@ -2,10 +2,10 @@ import asyncio
 import traceback
 from aiogram.dispatcher.webhook import types
 
-from consts import *
-from config import logger
-from obj_classes import User, State, db
-from bot import bot, reg_callback, dispatcher, reg_state, callbacks_processors, state_processors
+from helpers.consts import *
+from helpers.config import logger
+from helpers.obj_classes import User, State, db
+from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
 
 
 @dispatcher.message_handler(commands=['start'])

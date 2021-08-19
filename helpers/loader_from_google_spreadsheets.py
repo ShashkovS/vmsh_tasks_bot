@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import pickle
-from config import logger
+from helpers.config import logger
 
 _IGNORE_FIRST_HEADER_ROWS_NUM = 2
 _PROBLEMS_HEADERS = [

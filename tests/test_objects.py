@@ -2,9 +2,8 @@ import os
 from dataclasses import asdict
 from unittest import TestCase
 
-import consts
-from db_methods import db
-from obj_classes import *
+from helpers import consts
+from helpers.obj_classes import *
 
 from .initial_test_data import test_students, test_teachers
 

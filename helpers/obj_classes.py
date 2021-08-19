@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Generator, List
 
-from consts import *
-from config import config, logger
+from helpers.consts import *
+from helpers.config import config, logger
+from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 from db_methods import db
-from loader_from_google_spreadsheets import google_spreadsheet_loader
 
 
 def _normilize_token(token: str, *, RU_TO_EN=str.maketrans('УКЕНХВАРОСМТукехарос', 'YKEHXBAPOCMTykexapoc')) -> str:
@@ -28,6 +28,8 @@ class User:
     id: int = None
 
     def __post_init__(self):
+        # self.type = USER_TYPE(self.type)
+        # self.level = USER_TYPE(self.level)
         if self.id is None:
             self.id = db.add_user(self.__dict__)
 
@@ -94,6 +96,8 @@ class Problem:
     id: int = None
 
     def __post_init__(self):
+        # self.prob_type = PROB_TYPE(self.prob_type)
+        # self.ans_type = ANS_TYPE(self.ans_type)
         if self.id is None:
             self.id = db.add_problem(self.__dict__)
 

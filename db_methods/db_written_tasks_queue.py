@@ -1,7 +1,7 @@
 import sqlite3
 from typing import List
 from datetime import datetime, timedelta
-from consts import WRITTEN_STATUS
+from helpers.consts import WRITTEN_STATUS
 
 _MAX_TIME_TO_CHECK_WRITTEN_TASK = timedelta(minutes=30)
 _MAX_WRITTEN_TASKS_TO_SELECT = 8

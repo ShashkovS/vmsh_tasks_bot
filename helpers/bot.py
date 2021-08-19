@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from config import config, logger
 import aiogram
 from aiogram.utils.exceptions import MessageNotModified
 from aiogram.dispatcher import Dispatcher
-from consts import CALLBACK, STATE
+from helpers.config import config, logger
+from helpers.consts import CALLBACK, STATE
 
 
 # Добавляем методов, которые игнорируют некоторые ошибки

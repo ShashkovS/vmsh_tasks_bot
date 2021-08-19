@@ -1,7 +1,7 @@
 import os
 from unittest import TestCase
 
-from consts import *
+from helpers.consts import *
 from db_methods import db
 from .initial_test_data import test_students, test_teachers
 

@@ -4,10 +4,10 @@ from aiogram.dispatcher.webhook import types
 from aiogram.dispatcher import filters
 from urllib.parse import urlencode
 
-from consts import *
-from config import logger
-from obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
-from bot import bot, reg_callback, dispatcher, reg_state
+from helpers.consts import *
+from helpers.config import logger
+from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
+from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import teacher_keyboards
 from handlers.main_handlers import process_regular_message
 

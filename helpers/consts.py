@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from enum import Enum, IntEnum, unique
+from enum import Enum, IntEnum, IntFlag, unique
 
 
 # СОСТОЯНИЯ
@@ -63,9 +63,11 @@ PROB_TYPES_DECODER = {
 
 # ТИПЫ ПОЛЬЗОВАТЕЛЕЙ
 @unique
-class USER_TYPE(IntEnum):
+class USER_TYPE(IntFlag):
     STUDENT = 1
     TEACHER = 2
+    ADMIN = 128
+    TEACHER_OR_ADMIN = TEACHER | ADMIN
 
 
 @unique

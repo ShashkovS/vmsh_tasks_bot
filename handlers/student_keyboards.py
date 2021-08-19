@@ -1,8 +1,8 @@
 from aiogram import types
 
-from consts import *
-from config import logger
-from obj_classes import User, Problem, State, db
+from helpers.consts import *
+from helpers.config import logger
+from helpers.obj_classes import User, Problem, State, db
 
 
 def build_problems(lesson_num: int, student: User):

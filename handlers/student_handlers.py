@@ -6,13 +6,13 @@ import asyncio
 import traceback
 from aiogram.dispatcher.webhook import types
 
-from consts import *
-from config import logger, config
-from obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
-from bot import bot, reg_callback, dispatcher, reg_state
+from helpers.consts import *
+from helpers.config import logger, config
+from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
+from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import student_keyboards
 from handlers.main_handlers import process_regular_message
-from checkers import ANS_CHECKER, ANS_REGEX
+from helpers.checkers import ANS_CHECKER, ANS_REGEX
 
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
 WHITEBOARD_LINK = "https://www.shashkovs.ru/jitboard.html?{}"
@@ -269,8 +269,10 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         await process_regular_message(query.message)
-    await bot_edit_message_text(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                text=f"Была выбрана задача {problem}.")
+    try:
+        await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+    except:
+        pass
     # В зависимости от типа задачи разное поведение
     if problem.prob_type == PROB_TYPE.TEST:
         # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру

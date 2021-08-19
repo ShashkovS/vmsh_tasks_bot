@@ -3,10 +3,10 @@ from aiogram import types
 import asyncio
 import re
 
-from consts import *
-from config import logger
-from obj_classes import User, Problem, State, FromGoogleSpreadsheet, db
-from bot import bot, dispatcher
+from helpers.consts import *
+from helpers.config import logger
+from helpers.obj_classes import User, Problem, State, FromGoogleSpreadsheet, db
+from helpers.bot import bot, dispatcher
 from handlers import student_keyboards
 
 
