@@ -421,15 +421,12 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
 async def prc_cancel_task_submission_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_cancel_task_submission_callback')
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-    # await bot.send_message(
-    #     chat_id=message.chat.id,
-    #     text="❓ Нажимайте на задачу, чтобы сдать её",
-    #     reply_markup=student_keyboards.build_problems(problems.last_lesson, user),
-    # )
-    await bot.edit_message_text_ig(message_id=query.message.message_id, chat_id=query.message.chat.id,
-                                text="❓ Нажимайте на задачу, чтобы сдать её",
-                                reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student))
+    try:
+        await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+    except:
+        pass
     await bot.answer_callback_query_ig(query.id)
+    await process_regular_message(query.message)
 
 
 @reg_callback(CALLBACK.GET_OUT_OF_WAITLIST)
