@@ -11,7 +11,6 @@ APP_LOGGER = 'MathBot'
 @dataclass()
 class Config:
     config_name: str = ''
-    dump_filename: str = ''
     google_sheets_key: str = ''
     google_cred_json: str = ''
     telegram_bot_token: str = ''
@@ -58,7 +57,7 @@ def _setup(*, force_production=False):
             config_from_json = json.load(f)
     except:
         logging.critical(f'Запишите конфиг в {config_filename} в формате\n'
-                         '`{"telegram_bot_token": "...", "google_sheets_key": "...", "webhook_host": "host.ru", "webhook_port": 443, "dump_filename": "_google_data_prod.pickle", "db_filename": "test.db"}`')
+                         '`{"telegram_bot_token": "...", "google_sheets_key": "...", "webhook_host": "host.ru", "webhook_port": 443, "db_filename": "test.db"}`')
         raise
     config.__dict__.update(config_from_json)
     return config
