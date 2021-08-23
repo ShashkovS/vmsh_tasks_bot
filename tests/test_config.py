@@ -6,7 +6,7 @@ import os
 
 os.chdir('..')
 os.environ['PROD'] = 'no,test'
-import config
+from helpers import config
 
 
 class SecretsModuleAttributesTest(TestCase):

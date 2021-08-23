@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Generator, List
 
-from consts import *
-from config import config, logger
+from helpers.consts import *
+from helpers.config import config, logger
+from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 from db_methods import db
-from loader_from_google_spreadsheets import google_spreadsheet_loader
 
 
 def _normilize_token(token: str, *, RU_TO_EN=str.maketrans('УКЕНХВАРОСМТукехарос', 'YKEHXBAPOCMTykexapoc')) -> str:
@@ -30,6 +30,9 @@ class User:
     def __post_init__(self):
         if self.id is None:
             self.id = db.add_user(self.__dict__)
+        self.type = USER_TYPE(self.type)
+        if self.level:
+            self.level = LEVEL(self.level)
 
     def set_chat_id(self, chat_id: int):
         db.set_user_chat_id(self.id, chat_id)
@@ -96,6 +99,9 @@ class Problem:
     def __post_init__(self):
         if self.id is None:
             self.id = db.add_problem(self.__dict__)
+        self.prob_type = PROB_TYPE(self.prob_type)
+        if self.ans_type:
+            self.ans_type = ANS_TYPE(self.ans_type)
 
     def __str__(self):
         return f"Задача {self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"
@@ -252,6 +258,14 @@ class FromGoogleSpreadsheet:
             db.update_lessons()
         return errors
 
+
+def update_from_google_if_db_is_empty():
+    # Если в базе нет ни одного учителя, то принудительно грузим всё из таблицы (иначе даже админ не сможет залогиниться)
+    all_teachers = list(User.all_teachers())
+    if len(all_teachers) == 0:
+        FromGoogleSpreadsheet.update_all()
+        all_teachers = list(User.all_teachers())
+    logger.info(f'В базе в текущий момент {len(all_teachers)} учителей')
 
 # db.setup(config.db_filename)
 # google_spreadsheet_loader.setup(config.dump_filename, config.google_sheets_key, config.google_cred_json)

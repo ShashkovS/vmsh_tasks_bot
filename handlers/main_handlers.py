@@ -2,13 +2,10 @@ import asyncio
 import traceback
 from aiogram.dispatcher.webhook import types
 
-from consts import *
-from config import logger
-from obj_classes import User, State, db
-from bot import (
-    bot, reg_callback, dispatcher, reg_state, callbacks_processors, state_processors,
-    bot_edit_message_text, bot_edit_message_reply_markup, bot_answer_callback_query, bot_post_logging_message
-)
+from helpers.consts import *
+from helpers.config import logger
+from helpers.obj_classes import User, State, db
+from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
 
 
 @dispatcher.message_handler(commands=['start'])
@@ -65,7 +62,7 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
         user = User.get_by_chat_id(query.message.chat.id)
         if not user:
             try:
-                await bot_edit_message_reply_markup(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+                await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
             except:
                 pass  # Ошибки здесь не важны
             await start(query.message)
@@ -77,7 +74,7 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
         except Exception as e:
             error_text = traceback.format_exc()
             logger.error(f'SUPERSHIT_CALLBACK: {e}')
-            await bot_post_logging_message(error_text)
+            await bot.post_logging_message(error_text)
 
 
 # Важно, чтобы эта регистрация была последней
@@ -115,4 +112,4 @@ async def process_regular_message(message: types.Message):
     except Exception as e:
         error_text = traceback.format_exc()
         logger.error(f'SUPERSHIT_STATE: {e}')
-        await bot_post_logging_message(error_text)
+        await bot.post_logging_message(error_text)

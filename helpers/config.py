@@ -10,6 +10,7 @@ APP_LOGGER = 'MathBot'
 
 @dataclass()
 class Config:
+    config_name: str = ''
     dump_filename: str = ''
     google_sheets_key: str = ''
     google_cred_json: str = ''
@@ -63,7 +64,7 @@ def _setup(*, force_production=False):
     return config
 
 
-def _init_sentry(dsn):
+def _init_sentry(dsn: str, environment: str):
     # Добавляем отправку в sentry, если задан ключи
     if dsn:
         try:
@@ -73,8 +74,10 @@ def _init_sentry(dsn):
                 dsn=dsn,
                 integrations=[AioHttpIntegration()],
                 traces_sample_rate=1.0,
+                environment=environment
             )
             logging.info('Sentry started')
+
         except:
             pass
 
@@ -82,8 +85,15 @@ def _init_sentry(dsn):
 logger = _create_logger()
 DEBUG = logging.DEBUG
 config = _setup()
-_init_sentry(config.sentry_dsn)
+_init_sentry(config.sentry_dsn, config.config_name)
 logger.debug(f'{config=}')
+
+if config.production_mode:
+    logger.info(('*' * 50 + '\n') * 5)
+    logger.info('Production mode')
+    logger.info('*' * 50)
+else:
+    logger.info('Dev mode')
 
 # if __name__ == '__main__':
 #     # Только тестирование настроек sentry

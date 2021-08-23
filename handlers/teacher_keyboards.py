@@ -1,9 +1,9 @@
 from aiogram import types
 from Levenshtein import jaro_winkler
 
-from consts import *
-from config import logger
-from obj_classes import User, Problem, db
+from helpers.consts import *
+from helpers.config import logger
+from helpers.obj_classes import User, Problem, db
 
 
 def build_teacher_actions():

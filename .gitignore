@@ -1,17 +1,16 @@
+# ide и кеш
 .idea/
 __pycache__/
+.pytest_cache/
+tests/.pytest_cache
 
 # креды
-creds_test
-creds_prod
-creds*
-
-# бекапы
-*.pickle
-**/*.pickle
+creds_test/*.json
+creds_prod/*.json
 
 # БД
-db/
+db/*.db
+db/*.pickle
 
 # Решения
 solutions/
