@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import pickle
 from helpers.config import logger
 
 _IGNORE_FIRST_HEADER_ROWS_NUM = 2
@@ -23,13 +22,11 @@ def _dict_factory(rows, column_names):
 
 
 class SpreadsheetLoader:
-    def __init__(self, dump_filename: str = None, sheets_key: str = None, google_cred_json: str = None):
-        self.dump_filename = dump_filename
+    def __init__(self, sheets_key: str = None, google_cred_json: str = None):
         self.sheets_key = sheets_key
         self.google_cred_json = google_cred_json
 
-    def setup(self, dump_filename: str, sheets_key: str, google_cred_json: str):
-        self.dump_filename = dump_filename
+    def setup(self, sheets_key: str, google_cred_json: str):
         self.sheets_key = sheets_key
         self.google_cred_json = google_cred_json
 
@@ -42,20 +39,6 @@ class SpreadsheetLoader:
         client = gspread.authorize(creds)
         sheet = client.open_by_key(self.sheets_key)
         return sheet
-
-    def _load_from_pickle(self):
-        try:
-            with open(self.dump_filename, 'rb') as f:
-                pickled = pickle.load(f)
-            logger.info('Setting reload: pickle used')
-            return pickled
-        except FileNotFoundError:
-            return None
-
-    def _dump_to_pickle(self, pickled):
-        logger.info('Setting reload: DONE')
-        with open(self.dump_filename, 'wb') as f:
-            pickle.dump(pickled, f)
 
     def _load_problems(self, sheet):
         worksheet_problems = sheet.worksheet("Задачи")
@@ -84,46 +67,30 @@ class SpreadsheetLoader:
         )
         return teachers[_IGNORE_FIRST_HEADER_ROWS_NUM:]
 
-    def get_all(self, *, use_pickle=True):
-        if use_pickle:
-            logger.info('Setting reload: check pickle')
-            pickled = self._load_from_pickle()
-            if pickled:
-                problems, students, teachers = pickled
-                return problems, students, teachers
+    def get_all(self):
+        logger.info('All reload')
         sheet = self._connect_to_google_sheets()
         problems = self._load_problems(sheet)
         students = self._load_students(sheet)
         teachers = self._load_teachers(sheet)
-        pickled = problems, students, teachers
-        self._dump_to_pickle(pickled)
         return problems, students, teachers
 
     def get_problems(self):
-        logger.info('Problems reload: check pickle')
+        logger.info('Problems reload')
         sheet = self._connect_to_google_sheets()
-        problems_new = self._load_problems(sheet)
-        problems, students, teachers = self._load_from_pickle()
-        pickled = problems_new, students, teachers
-        self._dump_to_pickle(pickled)
+        problems = self._load_problems(sheet)
         return problems
 
     def get_students(self):
-        logger.info('Students reload: check pickle')
+        logger.info('Students reload')
         sheet = self._connect_to_google_sheets()
-        students_new = self._load_students(sheet)
-        problems, students, teachers = self._load_from_pickle()
-        pickled = problems, students_new, teachers
-        self._dump_to_pickle(pickled)
+        students = self._load_students(sheet)
         return students
 
     def get_teachers(self):
-        logger.info('Problems reload: check pickle')
+        logger.info('Problems reload')
         sheet = self._connect_to_google_sheets()
-        teachers_new = self._load_teachers(sheet)
-        problems, students, teachers = self._load_from_pickle()
-        pickled = problems, students, teachers_new
-        self._dump_to_pickle(pickled)
+        teachers = self._load_teachers(sheet)
         return teachers
 
 
@@ -133,6 +100,6 @@ if __name__ == '__main__':
     logger.info('Обновляем дамп с данными из гугль-таблицы')
     from config import config
 
-    google_spreadsheet_loader.setup(config.dump_filename, config.google_sheets_key, config.google_cred_json)
-    problems, students, teachers = google_spreadsheet_loader.get_all(use_pickle=False)
+    google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)
+    problems, students, teachers = google_spreadsheet_loader.get_all()
     print(len(problems), len(students), len(teachers))

@@ -17,7 +17,6 @@ class SecretsModuleAttributesTest(TestCase):
         telegram_bot_token_prod = config.config.telegram_bot_token
         db_prod = config.config.db_filename
         self.assertEqual(config.config.production_mode, False)
-        self.assertIsNotNone(config.config.dump_filename)
         self.assertIsNotNone(config.config.google_sheets_key)
         self.assertIsNotNone(config.config.google_cred_json)
         self.assertIsNotNone(config.config.telegram_bot_token)
@@ -30,7 +29,6 @@ class SecretsModuleAttributesTest(TestCase):
         telegram_bot_token_test = config.config.telegram_bot_token
         db_test = config.config.db_filename
         self.assertEqual(config.config.production_mode, True)
-        self.assertIsNotNone(config.config.dump_filename)
         self.assertIsNotNone(config.config.google_sheets_key)
         self.assertIsNotNone(config.config.google_cred_json)
         self.assertIsNotNone(config.config.telegram_bot_token)

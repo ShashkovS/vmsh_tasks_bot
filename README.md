@@ -12,7 +12,6 @@
       "google_sheets_key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "webhook_host": "someurl.proj179.ru",
       "webhook_port": 443,
-      "dump_filename": "db/_google_data_xxxx.pickle",
       "db_filename": "xxxx.db",
       "sos_channel": "@some_sos_channel",
       "exceptions_channel": -1111111111111,
