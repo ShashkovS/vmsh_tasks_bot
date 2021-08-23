@@ -124,7 +124,7 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
     problem = Problem.get_by_id(problem_id)
     student_answer = (message.text or '').strip()
     # Если тип ответа — выбор из нескольких вариантов ответа, про проверим, если ответ среди вариантов
-    if problem.ans_type == ANS_TYPE.SELECT_ONE and student_answer not in problem.cor_ans.split(';'):
+    if problem.ans_type == ANS_TYPE.SELECT_ONE and student_answer[:24] not in [ans.strip()[:24] for ans in problem.cor_ans.split(';')]:  # TODO 24!!!
         await bot.send_message(chat_id=message.chat.id,
                                text=f"❌ Выберите один из вариантов: {', '.join(problem.ans_validation.split(';'))}")
         return
@@ -378,8 +378,6 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         logger.info('WRONG STATE', state, STATE.SENDING_TEST_ANSWER, 'STATE.SENDING_TEST_ANSWER')
         return
     selected_answer = query.data[2:]
-    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=None)
     await bot.send_message(chat_id=query.message.chat.id, text=f"Выбран вариант {selected_answer}.")
     state = State.get_by_user_id(student.id)
     problem_id = state['problem_id']
@@ -388,6 +386,8 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
         await asyncio.sleep(1)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
+        await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
         logger.info(f'Ограничили студанта: {student.id}')
         await process_regular_message(query.message)
         return
@@ -395,6 +395,8 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     if problem is None:
         logger.error('Сломался приём задач :(')
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
+        await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
         await bot.answer_callback_query_ig(query.id)
         await asyncio.sleep(1)
         await process_regular_message(query.message)
@@ -402,7 +404,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     correct_answer = problem.cor_ans
     # await bot.send_message(chat_id=query.message.chat.id,
     #                        text=f"Выбран вариант {selected_answer}.")
-    if selected_answer == correct_answer:
+    if selected_answer[:24] == correct_answer[:24] or selected_answer[:24] in [ans.strip()[:24] for ans in correct_answer.split(';')]:  # TODO 24!!!
         db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.SOLVED, selected_answer, RES_TYPE.TEST)
         text_to_student = f"✔️ {problem.congrat}"
     else:
@@ -412,6 +414,8 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         text_to_student = 'Ответ принят на проверку.'
     await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+    # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
     await bot.answer_callback_query_ig(query.id)
     await asyncio.sleep(1)
     await process_regular_message(query.message)

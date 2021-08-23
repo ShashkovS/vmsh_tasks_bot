@@ -61,7 +61,7 @@ def build_test_answers(choices):
     for choice in choices:
         lesson_button = types.InlineKeyboardButton(
             text=choice,
-            callback_data=f"{CALLBACK.ONE_OF_TEST_ANSWER_SELECTED}_{choice}",
+            callback_data=f"{CALLBACK.ONE_OF_TEST_ANSWER_SELECTED}_{choice[:24]}",  # Максимальная длина callback_data — 65б.
         )
         keyboard_markup.add(lesson_button)
     cancel_button = types.InlineKeyboardButton(
