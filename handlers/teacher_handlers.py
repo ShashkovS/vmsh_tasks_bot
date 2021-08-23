@@ -249,7 +249,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
             for row in teacher_comments:
                 # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
                 if row['chat_id'] and row['tg_msg_id']:
-                    await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
+                    await bot.copy_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
                                               disable_notification=True)
                 elif row['text']:
                     await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
@@ -296,7 +296,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
             # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
             if row['chat_id'] and row['tg_msg_id']:
                 try:
-                    await bot.forward_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
+                    await bot.copy_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
                                               disable_notification=True)
                 except aiogram.utils.exceptions.BadRequest as e:
                     logger.error(f'Почему-то не отфорвардилось... {student_chat_id}\n{e}')
