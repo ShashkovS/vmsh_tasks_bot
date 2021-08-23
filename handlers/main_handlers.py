@@ -73,7 +73,7 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
             await callback_processor(query, user)
         except Exception as e:
             error_text = traceback.format_exc()
-            logger.error(f'SUPERSHIT_CALLBACK: {e}')
+            logger.exception(f'SUPERSHIT_CALLBACK: {e}')
             await bot.post_logging_message(error_text)
 
 
@@ -111,5 +111,5 @@ async def process_regular_message(message: types.Message):
         await state_processor(message, user)
     except Exception as e:
         error_text = traceback.format_exc()
-        logger.error(f'SUPERSHIT_STATE: {e}')
+        logger.exception(f'SUPERSHIT_STATE: {e}')
         await bot.post_logging_message(error_text)

@@ -42,7 +42,7 @@ async def update_students(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    FromGoogleSpreadsheet.update_teachers()
+    FromGoogleSpreadsheet.update_students()
     await bot.send_message(
         chat_id=message.chat.id,
         text="Студенты обновлены",

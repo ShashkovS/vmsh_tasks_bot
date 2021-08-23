@@ -28,6 +28,8 @@ class User:
     id: int = None
 
     def __post_init__(self):
+        if not self.level:
+            self.level = LEVEL.NOVICE
         if self.id is None:
             self.id = db.add_user(self.__dict__)
         self.type = USER_TYPE(self.type)
