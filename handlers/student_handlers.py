@@ -56,36 +56,37 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     downloaded = []
     file_name = None
     text = message.text
-    if text:
-        downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
-        downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
-    # for photo in message.photo:
-    if message.photo:
-        file_info = await bot.get_file(message.photo[-1].file_id)
-        downloaded_file = await bot.download_file(file_info.file_path)
-        filename = file_info.file_path
-        downloaded.append((downloaded_file, filename))
-    if message.document:
-        if message.document.file_size > 5 * 1024 * 1024:
-            await bot.send_message(chat_id=message.chat.id,
-                                   text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
-            return
-        file_id = message.document.file_id
-        file_info = await bot.get_file(file_id)
-        downloaded_file = await bot.download_file(file_info.file_path)
-        filename = file_info.file_path
-        downloaded.append((downloaded_file, filename))
-    for bin_data, filename in downloaded:
-        ext = filename[filename.rfind('.') + 1:]
-        cur_ts = datetime.datetime.now().isoformat().replace(':', '-')
-        file_name = os.path.join(SOLS_PATH,
-                                 f'{student.token} {student.surname} {student.name}',
-                                 f'{problem.lesson}',
-                                 f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
-        os.makedirs(os.path.dirname(file_name), exist_ok=True)
-        db.add_message_to_log(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
-        with open(file_name, 'wb') as file:
-            file.write(bin_data.read())
+    # Перестали сохранять файлы к себе, вроде в этом нет необходимости
+    # if text:
+    #     downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
+    #     downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
+    # # for photo in message.photo:
+    # if message.photo:
+    #     file_info = await bot.get_file(message.photo[-1].file_id)
+    #     downloaded_file = await bot.download_file(file_info.file_path)
+    #     filename = file_info.file_path
+    #     downloaded.append((downloaded_file, filename))
+    # if message.document:
+    #     if message.document.file_size > 5 * 1024 * 1024:
+    #         await bot.send_message(chat_id=message.chat.id,
+    #                                text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
+    #         return
+    #     file_id = message.document.file_id
+    #     file_info = await bot.get_file(file_id)
+    #     downloaded_file = await bot.download_file(file_info.file_path)
+    #     filename = file_info.file_path
+    #     downloaded.append((downloaded_file, filename))
+    # for bin_data, filename in downloaded:
+    #     ext = filename[filename.rfind('.') + 1:]
+    #     cur_ts = datetime.datetime.now().isoformat().replace(':', '-')
+    #     file_name = os.path.join(SOLS_PATH,
+    #                              f'{student.token} {student.surname} {student.name}',
+    #                              f'{problem.lesson}',
+    #                              f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
+    #     os.makedirs(os.path.dirname(file_name), exist_ok=True)
+    #     db.add_message_to_log(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
+    #     with open(file_name, 'wb') as file:
+    #         file.write(bin_data.read())
     WrittenQueue.add_to_queue(student.id, problem.id)
     WrittenQueue.add_to_discussions(student.id, problem.id, None, text, file_name, message.chat.id, message.message_id)
     await bot.send_message(
