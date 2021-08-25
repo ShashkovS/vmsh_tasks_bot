@@ -91,7 +91,7 @@ async def process_regular_message(message: types.Message):
         try:
             await bot.send_message(chat_id=message.chat.id, text=alarm)
         except Exception as e:
-            logger.error(f'SHIT: {e}')
+            logger.exception(f'SHIT: {e}')
         return
     # Ок, теперь обрабатываем сообщение
 

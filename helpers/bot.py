@@ -13,28 +13,28 @@ class BotIg(aiogram.Bot):
         try:
             await self.edit_message_text(*args, **kwargs)
         except MessageNotModified as e:
-            logger.info(f'SHIT: {e}')
+            pass
 
     async def edit_message_reply_markup_ig(self, *args, **kwargs):
         logger.debug('bot.edit_message_reply_markup_ig')
         try:
             await self.edit_message_reply_markup(*args, **kwargs)
         except MessageNotModified as e:
-            logger.info(f'SHIT: {e}')
+            pass
 
     async def answer_callback_query_ig(self, *args, **kwargs):
         logger.debug('bot.answer_callback_query_ig')
         try:
             await self.answer_callback_query(*args, **kwargs)
         except Exception as e:
-            logger.error(f'SHIT: {e}')
+            logger.exception(f'SHIT: {e}')
 
     async def delete_message_ig(self, *args, **kwargs):
         logger.debug('bot.delete_message_ig')
         try:
             await self.delete_message_ig(*args, **kwargs)
         except Exception as e:
-            logger.error(f'SHIT: {e}')
+            logger.exception(f'SHIT: {e}')
 
     async def post_logging_message(self, msg):
         logger.debug('bot.post_logging_message')
@@ -48,7 +48,7 @@ class BotIg(aiogram.Bot):
             if type(config.exceptions_channel) == str:
                 await self.send_message(config.exceptions_channel, f'(Exceptions chat id = {res["chat"]["id"]})')
         except Exception as e:
-            logger.error(f'SHIT: {e}')
+            logger.exception(f'SHIT: {e}')
 
 
 # Запускаем API телеграм-бота
