@@ -29,6 +29,13 @@ class BotIg(aiogram.Bot):
         except Exception as e:
             logger.error(f'SHIT: {e}')
 
+    async def delete_message_ig(self, *args, **kwargs):
+        logger.debug('bot.delete_message_ig')
+        try:
+            await self.delete_message_ig(*args, **kwargs)
+        except Exception as e:
+            logger.error(f'SHIT: {e}')
+
     async def post_logging_message(self, msg):
         logger.debug('bot.post_logging_message')
         if config.production_mode:

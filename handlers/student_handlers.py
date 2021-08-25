@@ -279,16 +279,14 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         return
     problem_id = int(query.data[2:])
     problem = Problem.get_by_id(problem_id)
+    await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
     if not problem:
         await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         await process_regular_message(query.message)
-    try:
-        await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
-    except:
-        pass
+        return
     # В зависимости от типа задачи разное поведение
-    if problem.prob_type == PROB_TYPE.TEST:
+    elif problem.prob_type == PROB_TYPE.TEST:
         # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру
         if problem.ans_type == ANS_TYPE.SELECT_ONE:
             await bot.send_message(chat_id=query.message.chat.id,
