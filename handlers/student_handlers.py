@@ -56,36 +56,37 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     downloaded = []
     file_name = None
     text = message.text
-    if text:
-        downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
-        downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
-    # for photo in message.photo:
-    if message.photo:
-        file_info = await bot.get_file(message.photo[-1].file_id)
-        downloaded_file = await bot.download_file(file_info.file_path)
-        filename = file_info.file_path
-        downloaded.append((downloaded_file, filename))
-    if message.document:
-        if message.document.file_size > 5 * 1024 * 1024:
-            await bot.send_message(chat_id=message.chat.id,
-                                   text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
-            return
-        file_id = message.document.file_id
-        file_info = await bot.get_file(file_id)
-        downloaded_file = await bot.download_file(file_info.file_path)
-        filename = file_info.file_path
-        downloaded.append((downloaded_file, filename))
-    for bin_data, filename in downloaded:
-        ext = filename[filename.rfind('.') + 1:]
-        cur_ts = datetime.datetime.now().isoformat().replace(':', '-')
-        file_name = os.path.join(SOLS_PATH,
-                                 f'{student.token} {student.surname} {student.name}',
-                                 f'{problem.lesson}',
-                                 f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
-        os.makedirs(os.path.dirname(file_name), exist_ok=True)
-        db.add_message_to_log(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
-        with open(file_name, 'wb') as file:
-            file.write(bin_data.read())
+    # Перестали сохранять файлы к себе, вроде в этом нет необходимости
+    # if text:
+    #     downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
+    #     downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
+    # # for photo in message.photo:
+    # if message.photo:
+    #     file_info = await bot.get_file(message.photo[-1].file_id)
+    #     downloaded_file = await bot.download_file(file_info.file_path)
+    #     filename = file_info.file_path
+    #     downloaded.append((downloaded_file, filename))
+    # if message.document:
+    #     if message.document.file_size > 5 * 1024 * 1024:
+    #         await bot.send_message(chat_id=message.chat.id,
+    #                                text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
+    #         return
+    #     file_id = message.document.file_id
+    #     file_info = await bot.get_file(file_id)
+    #     downloaded_file = await bot.download_file(file_info.file_path)
+    #     filename = file_info.file_path
+    #     downloaded.append((downloaded_file, filename))
+    # for bin_data, filename in downloaded:
+    #     ext = filename[filename.rfind('.') + 1:]
+    #     cur_ts = datetime.datetime.now().isoformat().replace(':', '-')
+    #     file_name = os.path.join(SOLS_PATH,
+    #                              f'{student.token} {student.surname} {student.name}',
+    #                              f'{problem.lesson}',
+    #                              f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
+    #     os.makedirs(os.path.dirname(file_name), exist_ok=True)
+    #     db.add_message_to_log(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
+    #     with open(file_name, 'wb') as file:
+    #         file.write(bin_data.read())
     WrittenQueue.add_to_queue(student.id, problem.id)
     WrittenQueue.add_to_discussions(student.id, problem.id, None, text, file_name, message.chat.id, message.message_id)
     await bot.send_message(
@@ -279,16 +280,14 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         return
     problem_id = int(query.data[2:])
     problem = Problem.get_by_id(problem_id)
+    await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
     if not problem:
         await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         await process_regular_message(query.message)
-    try:
-        await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
-    except:
-        pass
+        return
     # В зависимости от типа задачи разное поведение
-    if problem.prob_type == PROB_TYPE.TEST:
+    elif problem.prob_type == PROB_TYPE.TEST:
         # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру
         if problem.ans_type == ANS_TYPE.SELECT_ONE:
             await bot.send_message(chat_id=query.message.chat.id,
