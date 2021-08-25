@@ -32,7 +32,7 @@ class BotIg(aiogram.Bot):
     async def delete_message_ig(self, *args, **kwargs):
         logger.debug('bot.delete_message_ig')
         try:
-            await self.delete_message_ig(*args, **kwargs)
+            await self.delete_message(*args, **kwargs)
         except Exception as e:
             logger.exception(f'SHIT: {e}')
 
