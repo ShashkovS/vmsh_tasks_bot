@@ -3,7 +3,7 @@ import traceback
 from aiogram.dispatcher.webhook import types
 
 from helpers.consts import *
-from helpers.config import logger
+from helpers.config import logger, config
 from helpers.obj_classes import User, State, db
 from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
 
@@ -113,3 +113,23 @@ async def process_regular_message(message: types.Message):
         error_text = traceback.format_exc()
         logger.exception(f'SUPERSHIT_STATE: {e}')
         await bot.post_logging_message(error_text)
+
+
+@dispatcher.channel_post_handler(lambda message: message.chat.id == config.sos_channel or '@' + message.chat.username == config.sos_channel)
+async def prc_sos_reply(message: types.Message):
+    logger.debug('prc_sos_reply')
+    # Обрабатываем только ответы из sos-чата
+    if not message.reply_to_message:
+        try:
+            await bot.send_message(chat_id=message.chat.id, text='Выбирайте в меню «Ответить», чтобы сразу пересылать сообщение')
+        except Exception as e:
+            logger.exception(f'SHIT: {e}')
+    else:
+        try:
+            to_chat_id = message.reply_to_message.forward_from.id
+            await bot.send_message(to_chat_id, text='— ' + message.reply_to_message.text)
+            await bot.copy_message(to_chat_id, message.chat.id, message.message_id)
+            await bot.send_message(chat_id=message.chat.id, text='Переслал.')
+        except Exception as e:
+            await bot.send_message(chat_id=message.chat.id, text='Не получилось послать ответ. Попробуйте вручную.')
+            logger.exception(f'SHIT: {e}')
