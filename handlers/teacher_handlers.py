@@ -55,24 +55,29 @@ async def recheck(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    match = re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+(\d+)([а-я])\.(\d+)([а-я]?)\s*',
-                         message.text or '')
-    if not match:
+    prob = prob_id = None
+    if (match := re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+(\d+)([а-я])\.(\d+)([а-я]?)\s*', message.text or '')):
+        token, lst, level, prob, item = match.groups()
+        problem = Problem.get_by_key(level, int(lst), int(prob), item)
+    elif (match := re.fullmatch(r'/recheck(?:_xd5fqk)?_([^_]*)_([^_]*)', message.text or '')):
+        token, prob_id = match.groups()
+        problem = Problem.get_by_id(prob_id)
+    else:
         await bot.send_message(
             chat_id=message.chat.id,
             text="🤖 Пришлите запрос на перепроверку в формате\n«/recheck token problem», например «/recheck aa9bb4 3н.11а»",
         )
-    else:
-        token, lst, level, prob, item = match.groups()
-        student = User.get_by_token(token)
-        problem = Problem.get_by_key(level, int(lst), int(prob), item)
-        if not student:
-            await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
-        if not problem:
-            await bot.send_message(chat_id=message.chat.id, text=f"🤖 Задача {lst}{level}.{prob}{item} не найдена")
-        if student and problem:
-            message = await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
-            await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
+        return
+    student = User.get_by_token(token)
+    if not student:
+        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
+    if not problem and prob is not None:
+        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Задача {lst}{level}.{prob}{item} не найдена")
+    if not problem and prob_id is not None:
+        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Задача с id {prob_id} не найдена")
+    if student and problem:
+        message = await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
+        await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
 @dispatcher.message_handler(commands=['set_level'])
@@ -226,8 +231,9 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await bot.answer_callback_query_ig(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text=f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
-                                f'<pre>/recheck {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item}</pre>',
+                           text=f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
+                                f'Для исправления: '
+                                f'/recheck_{student.token}_{problem.id}',
                            parse_mode='HTML')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     student_chat_id = User.get_by_id(student.id).chat_id
@@ -279,8 +285,8 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await bot.send_message(chat_id=query.message.chat.id,
                            text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
-                                f'школьнику {student.token} {student.surname} {student.name}! Для исправления:\n'
-                                f'<pre>/recheck {student.token} {problem.lesson}{problem.level}.{problem.prob}{problem.item}</pre>',
+                                f'школьнику {student.token} {student.surname} {student.name}! Для исправления: '
+                                f'/recheck_{student.token}_{problem.id}',
                            parse_mode='HTML')
 
     # Пересылаем переписку школьнику
