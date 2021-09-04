@@ -120,10 +120,12 @@ async def prc_sos_reply(message: types.Message):
     logger.debug('prc_sos_reply')
     # Обрабатываем только ответы из sos-чата
     if not message.reply_to_message:
-        try:
-            await bot.send_message(chat_id=message.chat.id, text='Выбирайте в меню «Ответить», чтобы сразу пересылать сообщение')
-        except Exception as e:
-            logger.exception(f'SHIT: {e}')
+        # Отправляем сообщение только на продакшене (чтобы боты друг с другом не спорили)
+        if config.production_mode:
+            try:
+                await bot.send_message(chat_id=message.chat.id, text='Выбирайте в меню «Ответить», чтобы сразу пересылать сообщение')
+            except Exception as e:
+                logger.exception(f'SHIT: {e}')
     else:
         try:
             to_chat_id = message.reply_to_message.forward_from.id
@@ -133,3 +135,21 @@ async def prc_sos_reply(message: types.Message):
         except Exception as e:
             await bot.send_message(chat_id=message.chat.id, text='Не получилось послать ответ. Попробуйте вручную.')
             logger.exception(f'SHIT: {e}')
+
+@dispatcher.message_handler(commands=['online'])
+async def mode_online(message: types.Message):
+    logger.debug('mode_online')
+    user = User.get_by_chat_id(message.chat.id)
+    if user:
+        await bot.send_message(chat_id=message.chat.id, text="Теперь вы работаете в режиме «Онлайн»", )
+        user.set_online_mode(ONLINE_MODE.ONLINE)
+
+@dispatcher.message_handler(commands=['in_school'])
+@dispatcher.message_handler(commands=['inschool'])
+@dispatcher.message_handler(commands=['school'])
+async def mode_school(message: types.Message):
+    logger.debug('mode_school')
+    user = User.get_by_chat_id(message.chat.id)
+    if user:
+        await bot.send_message(chat_id=message.chat.id, text="Теперь вы работаете в режиме «Очно в школе»", )
+        user.set_online_mode(ONLINE_MODE.SCHOOL)

@@ -14,15 +14,16 @@ class DB_USER():
     def add_user(self, data: dict) -> int:
         cur = self.conn.cursor()
         cur.execute("""
-            insert into users ( chat_id,  type,  level,  name,  surname,  middlename,  token) 
-            values            (:chat_id, :type, :level, :name, :surname, :middlename, :token) 
+            insert into users ( chat_id,  type,  level,  name,  surname,  middlename,  token,  online) 
+            values            (:chat_id, :type, :level, :name, :surname, :middlename, :token, :online) 
             on conflict (token) do update set 
             chat_id=coalesce(excluded.chat_id, chat_id), 
             type=excluded.type, 
             level=coalesce(level, excluded.level), 
             name=excluded.name, 
             surname=excluded.surname, 
-            middlename=excluded.middlename
+            middlename=excluded.middlename,
+            online=excluded.online
         """, data)
         self.conn.commit()
         return cur.lastrowid
@@ -56,6 +57,16 @@ class DB_USER():
         cur.execute("""
             UPDATE users
             SET level = :level
+            WHERE id = :user_id
+        """, args)
+        self.conn.commit()
+
+    def set_user_online_mode(self, user_id: int, online: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            UPDATE users
+            SET online = :online
             WHERE id = :user_id
         """, args)
         self.conn.commit()

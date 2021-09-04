@@ -7,8 +7,8 @@ _PROBLEMS_HEADERS = [
     'title', 'prob_text', 'prob_type', 'ans_type', 'ans_validation', 'validation_error',
     'cor_ans', 'cor_ans_checker', 'wrong_ans', 'congrat',
 ]
-_STUDENTS_HEADERS = ['surname', 'name', 'token', 'level']
-_TEACHERS_HEADERS = ['surname', 'name', 'middlename', 'token']
+_STUDENTS_HEADERS = ['surname', 'name', 'token', 'level', 'online']
+_TEACHERS_HEADERS = ['surname', 'name', 'middlename', 'token', 'online']
 
 
 def _dict_factory(rows, column_names):

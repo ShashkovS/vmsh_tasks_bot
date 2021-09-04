@@ -1,1 +1,2 @@
 pytest~=6.0.2
+aresponses~=2.1.4
