@@ -471,11 +471,15 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     human_readable_pluses = [f'{plus.lesson}{plus.level}.{plus.prob}{plus.item}' for plus in pluses]
     human_readable_minuses = [f'{plus.lesson}{plus.level}.{plus.prob}{plus.item}' for plus in minuses]
     # Проставляем плюсики
+    if teacher.online == ONLINE_MODE.SCHOOL:
+        res_type = RES_TYPE.SCHOOL
+    else:
+        res_type = RES_TYPE.ZOOM
     for problem in pluses:
-        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, RES_TYPE.ZOOM)
+        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, res_type)
     for problem in minuses:
         db.delete_plus(student_id, problem.id, VERDICT.WRONG_ANSWER)
-        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, RES_TYPE.ZOOM)
+        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, res_type)
     # Формируем сообщение с итоговым результатом проверки
     text = f"Школьник: {student.token} {student.surname} {student.name}\n"
     if human_readable_pluses:
@@ -485,6 +489,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                 text=text,
                                 reply_markup=None)
+    # Посылаем сообщения школьнику о проверке
     try:
         student_state = State.get_by_user_id(student.id)
         student_message = await bot.send_message(chat_id=student.chat_id,
