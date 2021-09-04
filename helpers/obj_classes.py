@@ -25,16 +25,22 @@ class User:
     surname: str
     middlename: str
     token: str
+    online: int
     id: int = None
 
     def __post_init__(self):
+        # Заполняем дефолтные значения
         if not self.level:
             self.level = LEVEL.NOVICE
+        if not self.online:
+            self.online = ONLINE_MODE.ONLINE
+        # Заливаем в базу, если значение не из базы
         if self.id is None:
             self.id = db.add_user(self.__dict__)
+        # Превращаем константы в enum'ы
         self.type = USER_TYPE(self.type)
-        if self.level:
-            self.level = LEVEL(self.level)
+        self.level = LEVEL(self.level) if self.level else None
+        self.online = ONLINE_MODE(self.online) if self.online else None
 
     def set_chat_id(self, chat_id: int):
         db.set_user_chat_id(self.id, chat_id)
@@ -42,7 +48,11 @@ class User:
 
     def set_level(self, level: LEVEL):
         db.set_user_level(self.id, level.value)
-        self.level = level.value
+        self.level = level
+
+    def set_online_mode(self, online: ONLINE_MODE):
+        db.set_user_online_mode(self.id, online.value)
+        self.online = online
 
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'
@@ -223,6 +233,10 @@ class FromGoogleSpreadsheet:
             student['type'] = USER_TYPE.STUDENT
             student['chat_id'] = None
             student['middlename'] = ''
+            try:
+                student['online'] = ONLINE_MODE_DECODER[student['online']]
+            except:
+                student['online'] = ONLINE_MODE.ONLINE
             User(**student)
 
     @staticmethod
@@ -231,6 +245,10 @@ class FromGoogleSpreadsheet:
             teacher['type'] = USER_TYPE.TEACHER
             teacher['chat_id'] = None
             teacher['level'] = None
+            try:
+                teacher['online'] = ONLINE_MODE_DECODER[teacher['online']]
+            except:
+                teacher['online'] = ONLINE_MODE.ONLINE
             User(**teacher)
 
     @staticmethod

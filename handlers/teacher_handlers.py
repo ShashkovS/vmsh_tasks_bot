@@ -37,7 +37,7 @@ async def prc_teacher_accepted_queue(message: types.message, teacher: User):
     student = User.get_by_id(student_id)
     await bot.send_message(chat_id=message.chat.id,
                            text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
-                           reply_markup=teacher_keyboards.build_verdict(plus_ids=set(), minus_ids=set(), student=student))
+                           reply_markup=teacher_keyboards.build_verdict_for_oral_problems(plus_ids=set(), minus_ids=set(), student=student, online=teacher.online))
 
 
 @reg_state(STATE.TEACHER_WRITES_STUDENT_NAME)
@@ -420,7 +420,7 @@ async def prc_student_selected_callback(query: types.CallbackQuery, teacher: Use
                                      f"{student.surname} {student.name} {student.token} уровень {student.level}")
     await bot.send_message(chat_id=query.message.chat.id,
                            text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
-                           reply_markup=teacher_keyboards.build_verdict(plus_ids=set(), minus_ids=set(), student=student))
+                           reply_markup=teacher_keyboards.build_verdict_for_oral_problems(plus_ids=set(), minus_ids=set(), student=student, online=teacher.online))
     State.set_by_user_id(teacher.id, STATE.TEACHER_WRITES_STUDENT_NAME, last_student_id=student.id)
     await bot.answer_callback_query_ig(query.id)
 
@@ -444,8 +444,8 @@ async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teach
     student_id = state['last_student_id']
     student = User.get_by_id(student_id)
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=teacher_keyboards.build_verdict(plus_ids=plus_ids, minus_ids=minus_ids,
-                                                                             student=student))
+                                        reply_markup=teacher_keyboards.build_verdict_for_oral_problems(plus_ids=plus_ids, minus_ids=minus_ids,
+                                                                                                       student=student, online=teacher.online))
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -476,10 +476,14 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     for problem in minuses:
         db.delete_plus(student_id, problem.id, VERDICT.WRONG_ANSWER)
         db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, RES_TYPE.ZOOM)
+    # Формируем сообщение с итоговым результатом проверки
+    text = f"Школьник: {student.token} {student.surname} {student.name}\n"
+    if human_readable_pluses:
+        text += f"\nПоставлены плюсы «+++» за задачи: {', '.join(human_readable_pluses)}"
+    if human_readable_minuses:
+        text += f"\nПоставлены минусы «−−−» за задачи: {', '.join(human_readable_minuses)}"
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                text=f"Школьник: {student.token} {student.surname} {student.name}\n"
-                                     f"\nПоставлены плюсы за задачи: {', '.join(human_readable_pluses)}"
-                                     f"\nПоставлены минусы за задачи: {', '.join(human_readable_minuses)}",
+                                text=text,
                                 reply_markup=None)
     try:
         student_state = State.get_by_user_id(student.id)

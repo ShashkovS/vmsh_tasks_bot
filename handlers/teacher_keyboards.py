@@ -100,15 +100,19 @@ def build_student_in_conference():
     return keyboard_markup
 
 
-def build_verdict(plus_ids: set, minus_ids: set, student):
-    logger.debug('keyboards.build_verdict')
+def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User, online: ONLINE_MODE):
+    logger.debug('keyboards.build_verdict_for_oral_problems')
     lesson_num = Problem.last_lesson_num()
     solved = db.check_student_solved(student.id, student.level, lesson_num)
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
-    use_problems = [problem for problem in Problem.get_by_lesson(student.level, lesson_num) if
-                    problem.prob_type in (PROB_TYPE.WRITTEN, PROB_TYPE.ORALLY, PROB_TYPE.WRITTEN_BEFORE_ORALLY)]
+    if online == ONLINE_MODE.SCHOOL:
+        select_problem_types = list(PROB_TYPE)  # В школе принимаем все задачи
+    else:
+        select_problem_types = (PROB_TYPE.ORALLY, PROB_TYPE.WRITTEN_BEFORE_ORALLY)  # Дистанционно — только устные
+    use_problems = [problem for problem in Problem.get_by_lesson(student.level, lesson_num)
+                    if problem.prob_type in select_problem_types]
     for problem in use_problems:
         if problem.id in solved and problem.id not in minus_ids:
             tick = '✅✅'

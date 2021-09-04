@@ -165,3 +165,14 @@ class RES_TYPE(IntEnum):
     WRITTEN = 2
     ZOOM = 3
     SCHOOL = 4
+
+# Режим работы
+@unique
+class ONLINE_MODE(IntEnum):
+    ONLINE = 1
+    SCHOOL = 2
+
+ONLINE_MODE_DECODER = {
+    'онлайн': ONLINE_MODE.ONLINE,
+    'в школе': ONLINE_MODE.SCHOOL
+}
