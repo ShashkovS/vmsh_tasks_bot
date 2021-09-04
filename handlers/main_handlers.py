@@ -115,7 +115,7 @@ async def process_regular_message(message: types.Message):
         await bot.post_logging_message(error_text)
 
 
-@dispatcher.channel_post_handler(lambda message: message.chat.id == config.sos_channel or '@' + message.chat.username == config.sos_channel)
+@dispatcher.channel_post_handler(lambda message: message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel)
 async def prc_sos_reply(message: types.Message):
     logger.debug('prc_sos_reply')
     # Обрабатываем только ответы из sos-чата
