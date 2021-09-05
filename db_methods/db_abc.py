@@ -31,6 +31,8 @@ class DB_CONNECTION:
 
     def _connect_to_db(self):
         self.conn = sqlite3.connect(self.db_file)
+        # Set journal mode to WAL.
+        self.conn.execute('PRAGMA journal_mode=WAL')
         self.conn.row_factory = self._dict_factory
 
     def _run_migrations(self):
