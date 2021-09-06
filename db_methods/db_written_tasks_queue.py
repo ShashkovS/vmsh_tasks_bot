@@ -45,15 +45,26 @@ class DB_WRITTENTASKQUEUE:
     def get_written_tasks_to_check(self, teacher_id) -> List[dict]:
         cur = self.conn.cursor()
         now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
+        # order = 'prob, item' if order_by_problem_num else 'ts'
         cur.execute("""
-            select * from written_tasks_queue 
+            select wq.* from written_tasks_queue wq
+            join problems p on wq.problem_id = p.id
             where cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id
-            order by ts
+            order by p.prob, p.item
             limit :_MAX_WRITTEN_TASKS_TO_SELECT
         """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS.NEW,
               '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
               'now_minus_30_min': now_minus_30_min,
               'teacher_id': teacher_id})
+        # cur.execute("""
+        #     select * from written_tasks_queue
+        #     where cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id
+        #     order by ts
+        #     limit :_MAX_WRITTEN_TASKS_TO_SELECT
+        # """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS.NEW,
+        #       '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
+        #       'now_minus_30_min': now_minus_30_min,
+        #       'teacher_id': teacher_id})
         rows = cur.fetchall()
         return rows
 
