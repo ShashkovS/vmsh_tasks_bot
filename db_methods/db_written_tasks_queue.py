@@ -46,11 +46,12 @@ class DB_WRITTENTASKQUEUE:
         cur = self.conn.cursor()
         now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
         # order = 'prob, item' if order_by_problem_num else 'ts'
+        # TODO Удалить этот кусок треша!
         cur.execute("""
             select wq.* from written_tasks_queue wq
             join problems p on wq.problem_id = p.id
             where cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id
-            order by p.prob, p.item
+            order by p.prob, p.id
             limit :_MAX_WRITTEN_TASKS_TO_SELECT
         """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS.NEW,
               '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
