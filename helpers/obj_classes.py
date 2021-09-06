@@ -255,6 +255,8 @@ class FromGoogleSpreadsheet:
     def problems_to_db(problems: List[dict]) -> List[str]:
         errors = []
         for problem in problems:
+            if problem['level'] == problem['lesson'] == problem['lesson'] == problem['item'] == '':
+                continue
             try:
                 problem['prob_type'] = PROB_TYPES_DECODER[problem['prob_type']]
             except:
