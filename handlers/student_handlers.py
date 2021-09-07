@@ -138,8 +138,8 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
             return
 
     # Здесь мы проверяем ответ в зависимости от того, как проверять
-    if is_py_func.match(problem.cor_ans):
-        func_code = problem.cor_ans
+    if problem.cor_ans_checker and is_py_func.match(problem.cor_ans_checker):
+        func_code = problem.cor_ans_checker
         func_name = re.search(r'\s*def\s+(\w+)', func_code)[1]
         if func_name in check_functions_cache:
             test_func = check_functions_cache[func_name]
