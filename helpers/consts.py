@@ -75,6 +75,7 @@ class USER_TYPE(IntFlag):
 
 LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', }
 
+
 @unique
 class LEVEL(str, Enum):
     NOVICE = 'н'
@@ -149,6 +150,26 @@ ANS_TYPES_DECODER = {
 class VERDICT(IntEnum):
     SOLVED = 1
     WRONG_ANSWER = -1
+    VERDICT_PLUS = 17
+    VERDICT_PLUS_DOT = 16
+    VERDICT_PLUS_MINUS = 15
+    VERDICT_PLUS_DIV_2 = 14
+    VERDICT_MINUS_PLUS = 13
+    VERDICT_MINUS_DOT = 12
+    VERDICT_MINUS = 11
+
+
+VERDICT_DECODER = {
+    VERDICT.SOLVED: '+',
+    VERDICT.WRONG_ANSWER: '−',
+    VERDICT.VERDICT_PLUS: '+',
+    VERDICT.VERDICT_PLUS_DOT: '+.',
+    VERDICT.VERDICT_PLUS_MINUS: '+−',
+    VERDICT.VERDICT_PLUS_DIV_2: '+/2',
+    VERDICT.VERDICT_MINUS_PLUS: '−+',
+    VERDICT.VERDICT_MINUS_DOT: '−.',
+    VERDICT.VERDICT_MINUS: '−',
+}
 
 
 # СТАТУСЫ ПРОВЕРКИ ЗАДАНИЯ
@@ -166,11 +187,13 @@ class RES_TYPE(IntEnum):
     ZOOM = 3
     SCHOOL = 4
 
+
 # Режим работы
 @unique
 class ONLINE_MODE(IntEnum):
     ONLINE = 1
     SCHOOL = 2
+
 
 ONLINE_MODE_DECODER = {
     'онлайн': ONLINE_MODE.ONLINE,

@@ -201,3 +201,24 @@ async def calc_last_lesson_stat(message: types.Message):
         chat_id=message.chat.id,
         text=msg,
     )
+
+
+@dispatcher.message_handler(commands=['student_results'])
+async def student_results(message: types.Message):
+    logger.debug('student_results')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    token = student = None
+    if (match := re.match(r'/student_results\s+(\S+)', message.text or '')):
+        token = match.group(1)
+        student = User.get_by_token(token)
+    if not student:
+        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент {token} не найден", )
+        return
+
+    # r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict
+    rows = db.list_student_results(student.id, Problem.last_lesson_num())
+    lines = [f'{row["ts"][5:16]} {row["lesson"]:02}{row["level"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
+             for row in rows]
+    await bot.send_message(chat_id=message.chat.id, parse_mode="MarkdownV2", text='```' + '\n'.join(lines) + '```')
