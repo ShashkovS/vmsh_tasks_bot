@@ -11,7 +11,6 @@ from helpers.config import logger, config
 from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import student_keyboards
-from handlers.main_handlers import process_regular_message
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
 
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
@@ -25,27 +24,30 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
 is_py_func = re.compile(r'^\s*def \w+\s*\(')
 
 
+async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1):
+    if sleep > 0:
+        await asyncio.sleep(sleep)
+    await bot.send_message(
+        chat_id=chat_id,
+        text=f"❓ Нажимайте на задачу, чтобы сдать её (уровень «{student.level.slevel}»)",
+        reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
+    )
+
 @reg_state(STATE.GET_TASK_INFO)
 async def prc_get_task_info_state(message, student: User):
     logger.debug('prc_get_task_info_state')
-    # alarm = ''
+    alarm = ''
     # Попытка сдать решение без выбранной задачи
-    # if message.num_processed <= 1:
-    #     if message.photo or message.document:
-    #         alarm = '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n' \
-    #                 '(Можно посылать несколько фотографий решения, для этого каждый раз нужно выбирать задачу.)'
-    #     elif message.text and len(message.text) > 20:
-    #         alarm = '❗❗❗ Текст НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
-    #     if alarm:
-    #         await bot.send_message(chat_id=message.chat.id, text=alarm,)
-    #         await asyncio.sleep(3)
-
-    slevel = f'(уровень «{student.level.slevel}»)'
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text=f"❓ Нажимайте на задачу, чтобы сдать её {slevel}",
-        reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
-    )
+    if message.photo or message.document:
+        alarm = '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n' \
+                '(Можно посылать несколько фотографий решения, для этого каждый раз нужно выбирать задачу.)'
+    elif message.text and len(message.text) > 20:
+        alarm = '❗❗❗ Текст НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
+    sleep = 0
+    if alarm:
+        await bot.send_message(chat_id=message.chat.id, text=alarm,)
+        sleep = 3
+    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student, sleep=sleep))
 
 
 @reg_state(STATE.SENDING_SOLUTION)
@@ -53,10 +55,10 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     logger.debug('prc_sending_solution_state')
     problem_id = State.get_by_user_id(student.id)['problem_id']
     problem = Problem.get_by_id(problem_id)
-    downloaded = []
     file_name = None
     text = message.text
     # Перестали сохранять файлы к себе, вроде в этом нет необходимости
+    # downloaded = []
     # if text:
     #     downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
     #     downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
@@ -94,8 +96,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
         text="Принято на проверку"
     )
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-    await asyncio.sleep(1)
-    await process_regular_message(message)
+    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 def check_test_ans_rate_limit(student_id: int, problem_id: int):
@@ -117,10 +118,9 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
     text_to_student = check_test_ans_rate_limit(student.id, problem_id)
     if text_to_student:
         await bot.send_message(chat_id=message.chat.id, text=text_to_student)
-        await asyncio.sleep(1)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         logger.info(f'Ограничили студанта: {student.id}')
-        await process_regular_message(message)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
         return
     problem = Problem.get_by_id(problem_id)
     student_answer = (message.text or '').strip()
@@ -179,8 +179,7 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
         text_to_student = 'Ответ принят на проверку.'
     await bot.send_message(chat_id=message.chat.id, text=text_to_student)
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-    await asyncio.sleep(1)
-    await process_regular_message(message)
+    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 @reg_state(STATE.WAIT_SOS_REQUEST)
@@ -192,8 +191,7 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
         logger.info(f'Не удалось переслать SOS-сообщение в канал {config.sos_channel}')
     await bot.send_message(chat_id=message.chat.id, text=f"Переслал сообщение.")
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-    await asyncio.sleep(1)
-    await process_regular_message(message)
+    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 @reg_state(STATE.STUDENT_IS_SLEEPING)
@@ -201,7 +199,7 @@ async def prc_student_is_sleeping_state(message: types.message, student: User):
     logger.debug('prc_student_is_sleeping_state')
     await bot.send_message(chat_id=message.chat.id,
                            text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
-                                "Заходите в канал @vmsh_179_5_6_2020 кружка за новостями и решениями.")
+                                "Заходите в канал @vmsh_179_5_7_2021 кружка за новостями и решениями.")
 
 
 @reg_state(STATE.STUDENT_IS_IN_CONFERENCE)
@@ -222,7 +220,7 @@ async def level_novice(message: types.Message):
         )
         student.set_level(LEVEL.NOVICE)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        await process_regular_message(message)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 @dispatcher.message_handler(commands=['level_pro'])
@@ -236,7 +234,7 @@ async def level_pro(message: types.Message):
         )
         student.set_level(LEVEL.PRO)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        await process_regular_message(message)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 @dispatcher.message_handler(commands=['level_expert'])
@@ -250,7 +248,7 @@ async def level_expert(message: types.Message):
         )
         student.set_level(LEVEL.EXPERT)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        await process_regular_message(message)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 @dispatcher.message_handler(commands=['sos'])
@@ -284,7 +282,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
     if not problem:
         await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        await process_regular_message(query.message)
+        asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
         return
     # В зависимости от типа задачи разное поведение
     elif problem.prob_type == PROB_TYPE.TEST:
@@ -323,8 +321,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
                                parse_mode='HTML')
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         await bot.answer_callback_query_ig(query.id)
-        await asyncio.sleep(5)
-        await process_regular_message(query.message)
+        asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student, sleep=5))
 
         # state = states.get_by_user_id(student.id)
         # if state['oral_problem_id'] is not None:
@@ -345,8 +342,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         #                            parse_mode="MarkdownV2",
         #                            reply_markup=student_keyboards.build_exit_waitlist())
         #     await bot.answer_callback_query_ig(query.id)
-        #     await asyncio.sleep(4)
-        #     await process_regular_message(query.message)
+        #     asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student, sleep=4))
 
 
 @reg_callback(CALLBACK.LIST_SELECTED)
@@ -383,12 +379,11 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     text_to_student = check_test_ans_rate_limit(student.id, problem_id)
     if text_to_student:
         await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
-        await asyncio.sleep(1)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
         await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
         logger.info(f'Ограничили студанта: {student.id}')
-        await process_regular_message(query.message)
+        asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
         return
     problem = Problem.get_by_id(problem_id)
     if problem is None:
@@ -397,8 +392,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
         await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
         await bot.answer_callback_query_ig(query.id)
-        await asyncio.sleep(1)
-        await process_regular_message(query.message)
+        asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
         return
     correct_answer = problem.cor_ans
     # await bot.send_message(chat_id=query.message.chat.id,
@@ -416,8 +410,7 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
     # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
     await bot.answer_callback_query_ig(query.id)
-    await asyncio.sleep(1)
-    await process_regular_message(query.message)
+    asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
 
 
 @reg_callback(CALLBACK.CANCEL_TASK_SUBMISSION)
@@ -429,7 +422,7 @@ async def prc_cancel_task_submission_callback(query: types.CallbackQuery, studen
     except:
         pass
     await bot.answer_callback_query_ig(query.id)
-    await process_regular_message(query.message)
+    asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student, sleep=0))
 
 
 @reg_callback(CALLBACK.GET_OUT_OF_WAITLIST)
@@ -445,7 +438,7 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
         await bot.send_message(chat_id=teacher.chat_id,
                                text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
     await bot.answer_callback_query_ig(query.id)
-    await process_regular_message(query.message)
+    asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
 
 
 @dispatcher.message_handler(commands=['exit_waitlist'])
@@ -458,4 +451,4 @@ async def exit_waitlist(message: types.Message):
         text="Вы успешно покинули очередь.",
         reply_markup=types.ReplyKeyboardRemove()
     )
-    await process_regular_message(message)
+    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user))
