@@ -90,7 +90,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
         except aiogram.utils.exceptions.TelegramAPIError as e:
             logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
             bad_tokens.append(token)
-        await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)
+        await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
     await bot.send_message(
         chat_id=teacher_chat_id,
         text=f"Все сообщения разосланы. Проблемы возникли с {bad_tokens!r}",
@@ -165,7 +165,7 @@ async def run_set_sleep_state_task(teacher_chat_id):
             await bot.send_message(
                 chat_id=student.chat_id,
                 text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
-                     "Заходите в канал @vmsh_179_5_6_2020 кружка за новостями и решениями.",
+                     "Заходите в канал @vmsh_179_5_7_2021 кружка за новостями и решениями.",
             )
         except:
             pass
