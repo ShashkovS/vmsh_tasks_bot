@@ -197,5 +197,7 @@ class ONLINE_MODE(IntEnum):
 
 ONLINE_MODE_DECODER = {
     'онлайн': ONLINE_MODE.ONLINE,
-    'в школе': ONLINE_MODE.SCHOOL
+    'в школе': ONLINE_MODE.SCHOOL,
+    'online': ONLINE_MODE.ONLINE,
+    'school': ONLINE_MODE.SCHOOL,
 }

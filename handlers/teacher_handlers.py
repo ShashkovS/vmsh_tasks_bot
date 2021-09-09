@@ -547,13 +547,10 @@ async def set_online(message: types.Message):
     student = User.get_by_token(token)
     if not student:
         await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
-    if new_online == ONLINE_MODE.ONLINE:
-        student.set_online_mode(ONLINE_MODE.ONLINE)
-    elif new_online == ONLINE_MODE.SCHOOL:
-        student.set_online_mode(ONLINE_MODE.SCHOOL)
-    else:
-        return
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text=f"Студент с токеном {token} переведён",
-    )
+    new_online = ONLINE_MODE_DECODER.get(new_online.strip(), None)
+    if new_online:
+        student.set_online_mode(new_online)
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"Студент с токеном {token} переведён",
+        )
