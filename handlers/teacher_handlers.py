@@ -525,7 +525,7 @@ async def find_student(message: types.Message):
         key=lambda user: -jaro_winkler(search.lower(), f'{user.surname} {user.name} {user.token}'.lower(), 1 / 10)
     )
     if students:
-        lines = [f'f"{student.surname} {student.name} {student.level} {student.token} {ONLINE_MODE(student.online).__str__()[12:]}"'
+        lines = [f'{student.surname:<20} {student.name:<15} {student.level} {student.token} {ONLINE_MODE(student.online).__str__()[12:]}'
                  for student in students[:10]]
         await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
     else:
