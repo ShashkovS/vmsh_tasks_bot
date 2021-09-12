@@ -11,10 +11,11 @@ class DatabaseMethodsTest(TestCase):
         self.db = db
         test_db_filename = 'db/unittest.db'
         # ensure there is no trash file from previous incorrectly handled tests present
-        try:
-            os.unlink(test_db_filename)
-        except FileNotFoundError:
-            pass
+        for file in [test_db_filename, test_db_filename + '-shm', test_db_filename + '-wal']:
+            try:
+                os.unlink(file)
+            except FileNotFoundError:
+                pass
         # create shiny new db instance from scratch and connect
         self.db.setup(test_db_filename)
         self.insert_dummy_users()
@@ -81,6 +82,32 @@ class DatabaseMethodsTest(TestCase):
         self.db.set_user_level(student2['id'], new_level2)
         self.assertEqual(self.db.get_user_by_id(student1['id'])['level'], new_level1)
         self.assertEqual(self.db.get_user_by_id(student2['id'])['level'], new_level2)
+
+    def test_webtokens(self):
+        student1 = self.db.get_user_by_token(test_students[-1]['token'])
+        student2 = self.db.get_user_by_token(test_students[0]['token'])
+        token1 = 'token1'
+        token2 = 'token2'
+        self.assertIsNone(self.db.get_webtoken_by_user_id(student1['id']))
+        self.assertIsNone(self.db.get_webtoken_by_user_id(student2['id']))
+        self.assertIsNone(self.db.get_user_id_by_webtoken(token1))
+        self.assertIsNone(self.db.get_user_id_by_webtoken(token2))
+        self.db.add_webtoken(student1['id'], token1)
+        self.assertEqual(self.db.get_webtoken_by_user_id(student1['id']), token1)
+        self.assertIsNone(self.db.get_webtoken_by_user_id(student2['id']))
+        self.assertEqual(self.db.get_user_id_by_webtoken(token1), student1['id'])
+        self.assertIsNone(self.db.get_user_id_by_webtoken(token2))
+        self.db.add_webtoken(student2['id'], token2)
+        self.assertEqual(self.db.get_webtoken_by_user_id(student1['id']), token1)
+        self.assertEqual(self.db.get_webtoken_by_user_id(student2['id']), token2)
+        self.assertEqual(self.db.get_user_id_by_webtoken(token1), student1['id'])
+        self.assertEqual(self.db.get_user_id_by_webtoken(token2), student2['id'])
+        token2new = 'token2new'
+        self.db.add_webtoken(student2['id'], token2new)
+        self.assertEqual(self.db.get_webtoken_by_user_id(student1['id']), token1)
+        self.assertEqual(self.db.get_webtoken_by_user_id(student2['id']), token2new)
+        self.assertEqual(self.db.get_user_id_by_webtoken(token1), student1['id'])
+        self.assertEqual(self.db.get_user_id_by_webtoken(token2new), student2['id'])
 
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)

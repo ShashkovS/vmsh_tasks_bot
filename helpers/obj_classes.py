@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Generator, List
+import secrets
 
 from helpers.consts import *
 from helpers.config import config, logger
@@ -288,6 +289,29 @@ def update_from_google_if_db_is_empty():
         FromGoogleSpreadsheet.update_all()
         all_teachers = list(User.all_teachers())
     logger.info(f'В базе в текущий момент {len(all_teachers)} учителей')
+
+
+class Webtoken:
+    @staticmethod
+    def gen_new_webtoken(tok_len=16, chars='23456789abcdefghijkmnpqrstuvwxyz') -> str:
+        return ''.join(secrets.choice(chars) for _ in range(tok_len))
+
+    @staticmethod
+    def user_by_webtoken(webtoken: str) -> Optional[User]:
+        if not webtoken:
+            return None
+        user_id = db.get_user_id_by_webtoken(webtoken)
+        return user_id and User.get_by_id(user_id)  # None -> None
+
+    @staticmethod
+    def webtoken_by_user(user: User) -> str:
+        if not user:
+            return None
+        webtoken = db.get_webtoken_by_user_id(user.id)
+        if webtoken is None:
+            webtoken = Webtoken.gen_new_webtoken()
+            db.add_webtoken(user.id, webtoken)
+        return webtoken
 
 # db.setup(config.db_filename)
 # google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)

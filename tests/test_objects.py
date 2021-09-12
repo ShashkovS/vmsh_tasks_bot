@@ -78,3 +78,18 @@ class UserMethodsTest(TestCase):
             if prev_user_id:
                 self.assertIsNone(User.get_by_id(prev_user_id).chat_id)
             prev_user_id = dict_user['id']
+
+    def test_webtokens(self):
+        student1 = User.get_by_token(test_students[-1]['token'])
+        student2 = User.get_by_token(test_students[0]['token'])
+        self.assertIsNone(Webtoken.user_by_webtoken('trash'))
+        webtoken1 = Webtoken.webtoken_by_user(student1)
+        self.assertIsNone(Webtoken.user_by_webtoken('trash'))
+        self.assertEqual(Webtoken.user_by_webtoken(webtoken1), student1)
+        self.assertEqual(Webtoken.webtoken_by_user(student1), webtoken1)
+        webtoken2 = Webtoken.webtoken_by_user(student2)
+        self.assertIsNone(Webtoken.user_by_webtoken('trash'))
+        self.assertEqual(Webtoken.user_by_webtoken(webtoken2), student2)
+        self.assertEqual(Webtoken.webtoken_by_user(student2), webtoken2)
+        self.assertIsNone(Webtoken.user_by_webtoken(None))
+        self.assertIsNone(Webtoken.webtoken_by_user(None))
