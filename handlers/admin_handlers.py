@@ -23,6 +23,7 @@ async def update_all_internal_data(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['ut'])
 @dispatcher.message_handler(commands=['update_teachers'])
 async def update_teachers(message: types.Message):
     logger.debug('update_teachers')
@@ -36,6 +37,7 @@ async def update_teachers(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['us'])
 @dispatcher.message_handler(commands=['update_students'])
 async def update_students(message: types.Message):
     logger.debug('update_students')
@@ -49,6 +51,7 @@ async def update_students(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['up'])
 @dispatcher.message_handler(commands=['update_problems'])
 async def update_problems(message: types.Message):
     logger.debug('update_problems')
@@ -203,7 +206,7 @@ async def calc_last_lesson_stat(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['student_results'])
+@dispatcher.message_handler(commands=['student_results', 'sr'])
 async def student_results(message: types.Message):
     logger.debug('student_results')
     teacher = User.get_by_chat_id(message.chat.id)

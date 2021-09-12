@@ -16,3 +16,4 @@ db/*.pickle
 
 # Решения
 solutions/
+/db/archive/

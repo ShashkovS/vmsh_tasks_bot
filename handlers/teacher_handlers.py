@@ -82,7 +82,7 @@ async def recheck(message: types.Message):
         await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
-@dispatcher.message_handler(commands=['set_level'])
+@dispatcher.message_handler(commands=['set_level', 'sl'])
 async def set_student_level(message: types.Message):
     logger.debug('set_student_level')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -508,7 +508,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     await process_regular_message(query.message)
 
 
-@dispatcher.message_handler(commands=['find_student'])
+@dispatcher.message_handler(commands=['find_student', 'fs'])
 async def find_student(message: types.Message):
     logger.debug('find_student')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -532,7 +532,7 @@ async def find_student(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, text='Не нашлось ни одного студента')
 
 
-@dispatcher.message_handler(commands=['set_online'])
+@dispatcher.message_handler(commands=['set_online', 'so'])
 async def set_online(message: types.Message):
     logger.debug('set_online')
     teacher = User.get_by_chat_id(message.chat.id)
