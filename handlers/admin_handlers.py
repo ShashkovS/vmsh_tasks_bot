@@ -213,7 +213,7 @@ async def student_results(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     token = student = None
-    if (match := re.match(r'/student_results\s+(\S+)', message.text or '')):
+    if (match := re.match(r'/\w+\s+(\S+)', message.text or '')):
         token = match.group(1)
         student = User.get_by_token(token)
     if not student:
