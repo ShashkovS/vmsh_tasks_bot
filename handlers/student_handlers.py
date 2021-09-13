@@ -187,7 +187,7 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
     logger.debug('prc_wait_sos_request_state')
     try:
         await bot.send_message(config.sos_channel, parse_mode="HTML",
-                               text=f'<pre>{student.surname:<20} {student.name:<15} {student.level} {student.token} {ONLINE_MODE(student.online).__str__()[12:]}</pre>')
+                               text=f'<pre>{student.surname} {student.name} {student.level} {student.token} {ONLINE_MODE(student.online).__str__()[12:]}</pre>')
         await bot.forward_message(config.sos_channel, message.chat.id, message.message_id)
     except:
         logger.info(f'Не удалось переслать SOS-сообщение в канал {config.sos_channel}')
