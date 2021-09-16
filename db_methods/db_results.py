@@ -41,7 +41,7 @@ class DB_RESULT:
         cur = self.conn.cursor()
         cur.execute("""
             update results set verdict = :verdict
-            where student_id = :student_id and problem_id = :problem_id and problem_id > 0
+            where student_id = :student_id and problem_id = :problem_id and problem_id > 0 and verdict > 0
         """, args)
         self.conn.commit()
 

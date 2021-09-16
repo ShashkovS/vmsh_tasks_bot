@@ -283,7 +283,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     problem = Problem.get_by_id(int(problem_id))
     # Помечаем решение как неверное и удаляем из очереди
     db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, RES_TYPE.WRITTEN)
-    db.delete_plus(student_id, problem.id, VERDICT.WRONG_ANSWER)
+    db.delete_plus(student_id, problem.id, VERDICT.REJECTED_ANSWER)
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await bot.send_message(chat_id=query.message.chat.id,
                            text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
@@ -481,7 +481,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     for problem in pluses:
         db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, res_type)
     for problem in minuses:
-        db.delete_plus(student_id, problem.id, VERDICT.WRONG_ANSWER)
+        db.delete_plus(student_id, problem.id, VERDICT.REJECTED_ANSWER)
         db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, res_type)
     # Формируем сообщение с итоговым результатом проверки
     text = f"Школьник: {student.token} {student.surname} {student.name}\n"
