@@ -24,7 +24,7 @@ async def start(message: types.Message):
 async def prc_get_user_info_state(message: types.Message, user: User):
     logger.debug('prc_get_user_info_state')
     user = User.get_by_token(message.text)
-    db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username)
+    db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text.strip())
     if user is None:
         await bot.send_message(
             chat_id=message.chat.id,
