@@ -1,5 +1,6 @@
 from aiogram import types
 from Levenshtein import jaro_winkler
+from typing import List, Tuple
 
 from helpers.consts import *
 from helpers.config import logger
@@ -15,6 +16,11 @@ def build_teacher_actions():
         callback_data=CALLBACK.GET_WRITTEN_TASK
     )
     keyboard.add(get_written_task_button)
+    get_written_task_button = types.InlineKeyboardButton(
+        text=f"Проверять конкретную письменную",
+        callback_data=CALLBACK.SELECT_WRITTEN_TASK_TO_CHECK
+    )
+    keyboard.add(get_written_task_button)
     # get_queue_top_button = types.InlineKeyboardButton(
     #     text="Вызвать школьника на устную сдачу",
     #     callback_data=Callback.GET_QUEUE_TOP
@@ -25,6 +31,32 @@ def build_teacher_actions():
         callback_data=CALLBACK.INS_ORAL_PLUSSES
     )
     keyboard.add(insert_oral_pluses)
+    return keyboard
+
+
+def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int]]):
+    logger.debug('build_select_problem_to_check')
+    problems_and_counts.sort(key=lambda el: (el[0].lesson, el[0].level, el[0].prob, el[0].item))
+    keyboard = types.InlineKeyboardMarkup()
+    for problem, cnt in problems_and_counts:
+        if problem.prob_type == PROB_TYPE.TEST:
+            tp = '⋯'
+        elif problem.prob_type == PROB_TYPE.WRITTEN or problem.prob_type == PROB_TYPE.WRITTEN_BEFORE_ORALLY:
+            tp = '🖊'
+        elif problem.prob_type == PROB_TYPE.ORALLY:
+            tp = '🗣'
+        else:
+            tp = '?'
+        task_button = types.InlineKeyboardButton(
+            text=f"{tp} {problem} — {cnt}",
+            callback_data=f"{CALLBACK.CHECK_ONLY_SELECTED_WRITEN_TASK}_{problem.id}"
+        )
+        keyboard.add(task_button)
+    cancel = types.InlineKeyboardButton(
+        text="Отмена",
+        callback_data=f"{CALLBACK.TEACHER_CANCEL}"
+    )
+    keyboard.add(cancel)
     return keyboard
 
 

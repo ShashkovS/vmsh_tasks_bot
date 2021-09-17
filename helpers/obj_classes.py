@@ -172,8 +172,8 @@ class WrittenQueue:
         db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS.NEW, ts=ts)
 
     @staticmethod
-    def take_top(teacher_id: int):
-        return db.get_written_tasks_to_check(teacher_id)
+    def take_top(teacher_id: int, problem_id=None):
+        return db.get_written_tasks_to_check(teacher_id, problem_id)
 
     @staticmethod
     def mark_being_checked(student_id: int, problem_id: int, teacher_id: int):

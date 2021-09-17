@@ -12,12 +12,28 @@ from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import teacher_keyboards
 from handlers.main_handlers import process_regular_message
 
+DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK = {}
+
 
 @reg_state(STATE.TEACHER_SELECT_ACTION)
 async def prc_teacher_select_action(message: types.Message, teacher: User):
     logger.debug('prc_teacher_select_action')
-    await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
-                           reply_markup=teacher_keyboards.build_teacher_actions())
+    locked_problem_id = DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK.get(teacher.id, None)
+    if not locked_problem_id:
+        await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
+                               reply_markup=teacher_keyboards.build_teacher_actions())
+    else:
+        top = WrittenQueue.take_top(teacher.id, locked_problem_id)
+        if not top:
+            DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK[teacher.id] = None
+            await bot.send_message(chat_id=teacher.chat_id,
+                                   text=f"Ничего себе! Все письменные задачи проверены!")
+            State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+            await process_regular_message(message)
+        else:
+            # Даём преподу 10 топовых задач на выбор
+            await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
+                                   reply_markup=teacher_keyboards.build_teacher_select_written_problem(top))
 
 
 @reg_state(STATE.TEACHER_IS_CHECKING_TASK)
@@ -145,11 +161,46 @@ async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: Use
         # teacher_keyboards.build_teacher_actions
 
 
+@reg_callback(CALLBACK.SELECT_WRITTEN_TASK_TO_CHECK)
+async def prc_SELECT_WRITTEN_TASK_TO_CHECK_callback(query: types.CallbackQuery, teacher: User):
+    logger.debug('prc_SELECT_WRITTEN_TASK_TO_CHECK_callback')
+    # Так, препод указал, что хочет проверять письменные задачи
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    rows = db.get_written_tasks_count_by_id()
+    problems_and_counts = [(Problem.get_by_id(row['problem_id']), row['cnt']) for row in rows]
+    await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
+                           reply_markup=teacher_keyboards.build_select_problem_to_check(problems_and_counts))
+    await bot.answer_callback_query_ig(query.id)
+
+
+@reg_callback(CALLBACK.CHECK_ONLY_SELECTED_WRITEN_TASK)
+async def prc_CHECK_ONLY_SELECTED_WRITEN_TASK_callback(query: types.CallbackQuery, teacher: User):
+    logger.debug('prc_CHECK_ONLY_SELECTED_WRITEN_TASK_callback')
+    # Так, препод указал, что хочет только вот эту конкретную письменную задачу
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                           reply_markup=None)
+    problem_id = int(query.data[2:])
+    DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK[teacher.id] = problem_id
+    top = WrittenQueue.take_top(teacher.id, problem_id)
+    if not top:
+        await bot.send_message(chat_id=teacher.chat_id,
+                               text=f"Ничего себе! Все письменные задачи проверены!")
+        State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+        await bot.answer_callback_query_ig(query.id)
+        await process_regular_message(query.message)
+    else:
+        # Даём преподу 10 топовых задач на выбор
+        await bot.answer_callback_query_ig(query.id)
+        await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
+                               reply_markup=teacher_keyboards.build_teacher_select_written_problem(top))
+
+
 @reg_callback(CALLBACK.TEACHER_CANCEL)
 async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_teacher_cancel_callback')
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
+    DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK[teacher.id] = None
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
     await process_regular_message(query.message)
