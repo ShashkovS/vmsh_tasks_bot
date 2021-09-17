@@ -24,11 +24,18 @@ async def start(message: types.Message):
 async def prc_get_user_info_state(message: types.Message, user: User):
     logger.debug('prc_get_user_info_state')
     user = User.get_by_token(message.text)
+    db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username)
     if user is None:
         await bot.send_message(
             chat_id=message.chat.id,
             text="🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\n"
-                 "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro1»",
+                 "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro2ll»",
+        )
+    elif user.type == USER_TYPE.DELETED:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🔁 Этот пароль был заблокирован.\n"
+                 "Скорее всего новый пароль был выслан по электронной почте, не забудьте проверить спам.",
         )
     else:
         User.set_chat_id(user, message.chat.id)

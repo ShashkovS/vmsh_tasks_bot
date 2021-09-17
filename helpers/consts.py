@@ -71,6 +71,7 @@ class USER_TYPE(IntFlag):
     TEACHER = 2
     ADMIN = 128
     TEACHER_OR_ADMIN = TEACHER | ADMIN
+    DELETED = -1
 
 
 LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', }
