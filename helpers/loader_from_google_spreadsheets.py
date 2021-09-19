@@ -7,7 +7,7 @@ _PROBLEMS_HEADERS = [
     'title', 'prob_text', 'prob_type', 'ans_type', 'ans_validation', 'validation_error',
     'cor_ans', 'cor_ans_checker', 'wrong_ans', 'congrat',
 ]
-_STUDENTS_HEADERS = ['surname', 'name', 'token', 'level', 'online']
+_STUDENTS_HEADERS = ['surname', 'name', 'token', 'level', 'online', 'grade', 'birthday']
 _TEACHERS_HEADERS = ['surname', 'name', 'middlename', 'token', 'online']
 
 

@@ -210,7 +210,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student, pr
     logger.debug('forward_discussion_and_start_checking')
     await bot.edit_message_text_ig(chat_id=chat_id, message_id=message_id,
                                    text=f"Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
-                                        f"Школьник {student.token} {student.surname} {student.name}\n"
+                                        f"{student.name_for_teacher()}\n"
                                         f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
                                    reply_markup=None)
     discussion = WrittenQueue.get_discussion(student.id, problem.id)
@@ -469,8 +469,7 @@ async def prc_student_selected_callback(query: types.CallbackQuery, teacher: Use
     student_id = int(student_id)
     student = User.get_by_id(student_id)
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None,
-                                   text=f"Вносим плюсики школьнику:\n"
-                                        f"{student.surname} {student.name} {student.token} уровень {student.level}")
+                                   text=f"Вносим плюсики школьнику:\n" + student.name_for_teacher())
     await bot.send_message(chat_id=query.message.chat.id,
                            text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
                            reply_markup=teacher_keyboards.build_verdict_for_oral_problems(plus_ids=set(), minus_ids=set(), student=student,

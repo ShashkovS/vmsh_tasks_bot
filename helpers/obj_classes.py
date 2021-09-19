@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, Generator, List
 import secrets
 
@@ -27,6 +27,8 @@ class User:
     middlename: str
     token: str
     online: int
+    grade: int
+    birthday: date
     id: int = None
 
     def __post_init__(self):
@@ -57,6 +59,17 @@ class User:
 
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'
+
+    def name_for_teacher(self):
+        if self.birthday:
+            age = f"возраст: {((datetime.now().date() - date.fromisoformat(self.birthday)).days / 365.25):0.1f}"
+        else:
+            age = ''
+        if self.grade:
+            grade = f'класс: {self.grade}'
+        else:
+            grade = ''
+        return f'{self.name} {self.surname} {self.token}\nуровень: {self.level} {grade} {age}'
 
     @classmethod
     def all(cls) -> Generator[User, None, None]:
@@ -232,8 +245,10 @@ class FromGoogleSpreadsheet:
     def students_to_db(students: List[dict]):
         for student in students:
             student['type'] = USER_TYPE.STUDENT
-            student['chat_id'] = None
             student['middlename'] = ''
+            student['chat_id'] = None
+            student['birthday'] = student['birthday'] or None
+            student['grade'] = int(student['grade']) if student['grade'] else None
             try:
                 student['online'] = ONLINE_MODE_DECODER[student['online']]
             except:
@@ -244,8 +259,8 @@ class FromGoogleSpreadsheet:
     def teachers_to_db(teachers: List[dict]):
         for teacher in teachers:
             teacher['type'] = USER_TYPE.TEACHER
-            teacher['chat_id'] = None
-            teacher['level'] = None
+            for non_teacher_key in ['chat_id', 'level', 'grade', 'birthday']:
+                teacher[non_teacher_key] = None
             try:
                 teacher['online'] = ONLINE_MODE_DECODER[teacher['online']]
             except:

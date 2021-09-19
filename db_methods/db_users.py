@@ -14,8 +14,8 @@ class DB_USER():
     def add_user(self, data: dict) -> int:
         cur = self.conn.cursor()
         cur.execute("""
-            insert into users ( chat_id,  type,  level,  name,  surname,  middlename,  token,  online) 
-            values            (:chat_id, :type, :level, :name, :surname, :middlename, :token, :online) 
+            insert into users ( chat_id,  type,  level,  name,  surname,  middlename,  token,  online,  grade,  birthday) 
+            values            (:chat_id, :type, :level, :name, :surname, :middlename, :token, :online, :grade, :birthday) 
             on conflict (token) do update set 
             chat_id=coalesce(excluded.chat_id, chat_id), 
             type=excluded.type, 
@@ -23,7 +23,9 @@ class DB_USER():
             name=excluded.name, 
             surname=excluded.surname, 
             middlename=excluded.middlename,
-            online=excluded.online
+            online=coalesce(online, excluded.online), 
+            grade=excluded.grade, 
+            birthday=excluded.birthday
         """, data)
         self.conn.commit()
         return cur.lastrowid
