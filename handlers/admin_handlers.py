@@ -23,6 +23,7 @@ async def update_all_internal_data(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['ut'])
 @dispatcher.message_handler(commands=['update_teachers'])
 async def update_teachers(message: types.Message):
     logger.debug('update_teachers')
@@ -36,6 +37,7 @@ async def update_teachers(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['us'])
 @dispatcher.message_handler(commands=['update_students'])
 async def update_students(message: types.Message):
     logger.debug('update_students')
@@ -49,6 +51,7 @@ async def update_students(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['up'])
 @dispatcher.message_handler(commands=['update_problems'])
 async def update_problems(message: types.Message):
     logger.debug('update_problems')
@@ -90,7 +93,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
         except aiogram.utils.exceptions.TelegramAPIError as e:
             logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
             bad_tokens.append(token)
-        await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)
+        await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
     await bot.send_message(
         chat_id=teacher_chat_id,
         text=f"Все сообщения разосланы. Проблемы возникли с {bad_tokens!r}",
@@ -165,7 +168,7 @@ async def run_set_sleep_state_task(teacher_chat_id):
             await bot.send_message(
                 chat_id=student.chat_id,
                 text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
-                     "Заходите в канал @vmsh_179_5_6_2020 кружка за новостями и решениями.",
+                     "Заходите в канал @vmsh_179_5_7_2021 кружка за новостями и решениями.",
             )
         except:
             pass
@@ -201,3 +204,27 @@ async def calc_last_lesson_stat(message: types.Message):
         chat_id=message.chat.id,
         text=msg,
     )
+
+
+@dispatcher.message_handler(commands=['student_results', 'sr'])
+async def student_results(message: types.Message):
+    logger.debug('student_results')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    token = student = None
+    if (match := re.match(r'/\w+\s+(\S+)', message.text or '')):
+        token = match.group(1)
+        student = User.get_by_token(token)
+    if not student:
+        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент {token} не найден", )
+        return
+
+    # r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict
+    rows = db.list_student_results(student.id, Problem.last_lesson_num())
+    if rows:
+        lines = [f'{row["ts"][5:16]} {row["lesson"]:02}{row["level"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
+                 for row in rows]
+        await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
+    else:
+        await bot.send_message(chat_id=message.chat.id, text='Нет ни одной посылки (или что-то пошло не так)')

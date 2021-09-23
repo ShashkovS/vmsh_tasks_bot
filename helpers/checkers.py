@@ -59,7 +59,6 @@ def int_sec_eq(x, y):
 
 
 def int_set_eq(x, y):
-    print(to_int_set(x), to_int_set(y))
     return to_int_set(x) == to_int_set(y)
 
 

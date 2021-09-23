@@ -33,6 +33,11 @@ class BotIg(aiogram.Bot):
         logger.debug('bot.delete_message_ig')
         try:
             await self.delete_message(*args, **kwargs)
+        except aiogram.utils.exceptions.MessageCantBeDeleted:
+            try:
+                await self.edit_message_reply_markup_ig(*args, reply_markup=None, **kwargs)
+            except MessageNotModified as e:
+                pass
         except Exception as e:
             logger.exception(f'SHIT: {e}')
 

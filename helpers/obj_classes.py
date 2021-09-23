@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, Generator, List
+import secrets
 
 from helpers.consts import *
 from helpers.config import config, logger
@@ -26,6 +27,8 @@ class User:
     middlename: str
     token: str
     online: int
+    grade: int
+    birthday: date
     id: int = None
 
     def __post_init__(self):
@@ -50,12 +53,27 @@ class User:
         db.set_user_level(self.id, level.value)
         self.level = level
 
+    def set_user_type(self, user_type: USER_TYPE):
+        db.set_user_type(self.id, user_type.value)
+        self.type = user_type.value
+
     def set_online_mode(self, online: ONLINE_MODE):
         db.set_user_online_mode(self.id, online.value)
         self.online = online
 
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'
+
+    def name_for_teacher(self):
+        if self.birthday:
+            age = f"возраст: {((datetime.now().date() - date.fromisoformat(self.birthday)).days / 365.25):0.1f}"
+        else:
+            age = ''
+        if self.grade:
+            grade = f'класс: {self.grade}'
+        else:
+            grade = ''
+        return f'{self.name} {self.surname} {self.token}\nуровень: {self.level} {grade} {age}'
 
     @classmethod
     def all(cls) -> Generator[User, None, None]:
@@ -171,8 +189,8 @@ class WrittenQueue:
         db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS.NEW, ts=ts)
 
     @staticmethod
-    def take_top(teacher_id: int):
-        return db.get_written_tasks_to_check(teacher_id)
+    def take_top(teacher_id: int, problem_id=None):
+        return db.get_written_tasks_to_check(teacher_id, problem_id)
 
     @staticmethod
     def mark_being_checked(student_id: int, problem_id: int, teacher_id: int):
@@ -231,8 +249,10 @@ class FromGoogleSpreadsheet:
     def students_to_db(students: List[dict]):
         for student in students:
             student['type'] = USER_TYPE.STUDENT
-            student['chat_id'] = None
             student['middlename'] = ''
+            student['chat_id'] = None
+            student['birthday'] = student['birthday'] or None
+            student['grade'] = int(student['grade']) if student['grade'] else None
             try:
                 student['online'] = ONLINE_MODE_DECODER[student['online']]
             except:
@@ -243,8 +263,8 @@ class FromGoogleSpreadsheet:
     def teachers_to_db(teachers: List[dict]):
         for teacher in teachers:
             teacher['type'] = USER_TYPE.TEACHER
-            teacher['chat_id'] = None
-            teacher['level'] = None
+            for non_teacher_key in ['chat_id', 'level', 'grade', 'birthday']:
+                teacher[non_teacher_key] = None
             try:
                 teacher['online'] = ONLINE_MODE_DECODER[teacher['online']]
             except:
@@ -255,6 +275,8 @@ class FromGoogleSpreadsheet:
     def problems_to_db(problems: List[dict]) -> List[str]:
         errors = []
         for problem in problems:
+            if problem['level'] == problem['lesson'] == problem['lesson'] == problem['item'] == '':
+                continue
             try:
                 problem['prob_type'] = PROB_TYPES_DECODER[problem['prob_type']]
             except:
@@ -286,6 +308,29 @@ def update_from_google_if_db_is_empty():
         FromGoogleSpreadsheet.update_all()
         all_teachers = list(User.all_teachers())
     logger.info(f'В базе в текущий момент {len(all_teachers)} учителей')
+
+
+class Webtoken:
+    @staticmethod
+    def gen_new_webtoken(tok_len=16, chars='23456789abcdefghijkmnpqrstuvwxyz') -> str:
+        return ''.join(secrets.choice(chars) for _ in range(tok_len))
+
+    @staticmethod
+    def user_by_webtoken(webtoken: str) -> Optional[User]:
+        if not webtoken:
+            return None
+        user_id = db.get_user_id_by_webtoken(webtoken)
+        return user_id and User.get_by_id(user_id)  # None -> None
+
+    @staticmethod
+    def webtoken_by_user(user: User) -> str:
+        if not user:
+            return None
+        webtoken = db.get_webtoken_by_user_id(user.id)
+        if webtoken is None:
+            webtoken = Webtoken.gen_new_webtoken()
+            db.add_webtoken(user.id, webtoken)
+        return webtoken
 
 # db.setup(config.db_filename)
 # google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)

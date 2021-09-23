@@ -41,7 +41,7 @@ class DB_RESULT:
         cur = self.conn.cursor()
         cur.execute("""
             update results set verdict = :verdict
-            where student_id = :student_id and problem_id = :problem_id and problem_id > 0
+            where student_id = :student_id and problem_id = :problem_id and problem_id > 0 and verdict > 0
         """, args)
         self.conn.commit()
 
@@ -55,3 +55,15 @@ class DB_RESULT:
         rows = cur.fetchall()
         solved_ids = {row['problem_id'] for row in rows}
         return solved_ids
+
+    def list_student_results(self, student_id: int, lesson: int) -> list[dict]:
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            select r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict from results r
+            join problems p on r.problem_id = p.id
+            where r.student_id = :student_id and r.lesson = :lesson
+            order by r.ts
+        """, args)
+        rows = cur.fetchall()
+        return rows

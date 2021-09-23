@@ -23,6 +23,16 @@ class DB_FEATURES:
         """, args)
         self.conn.commit()
 
+    def log_signon(self, user_id: int, chat_id: int, first_name: str, last_name: str, username: str, token: str):
+        args = locals()
+        args['ts'] = datetime.now().isoformat()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO signons ( ts,  user_id,  chat_id,  first_name,  last_name,  username,  token)
+            VALUES              (:ts, :user_id, :chat_id, :first_name, :last_name, :username, :token) 
+        """, args)
+        self.conn.commit()
+
     # ███████ ███████  █████  ████████ ██    ██ ██████  ███████ ███████
     # ██      ██      ██   ██    ██    ██    ██ ██   ██ ██      ██
     # █████   █████   ███████    ██    ██    ██ ██████  █████   ███████
