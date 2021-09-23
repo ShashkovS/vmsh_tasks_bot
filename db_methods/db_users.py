@@ -73,6 +73,16 @@ class DB_USER():
         """, args)
         self.conn.commit()
 
+    def set_user_type(self, user_id: int, user_type: str):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            UPDATE users
+            SET type = :user_type
+            WHERE id = :user_id
+        """, args)
+        self.conn.commit()
+
     def fetch_all_users_by_type(self, user_type: int = None) -> List[dict]:
         cur = self.conn.cursor()
         if user_type is not None:

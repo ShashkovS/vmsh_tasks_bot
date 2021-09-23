@@ -604,3 +604,16 @@ async def set_online(message: types.Message):
             chat_id=message.chat.id,
             text=f"Студент с токеном {token} переведён",
         )
+
+
+@dispatcher.message_handler(commands=['set_teacher', 'st'])
+async def set_teacher(message: types.Message):
+    '''
+    После тестирования ответов в боте учителю нужно снова вернуться в своё учительское состояние.
+    '''
+    logger.debug('set_teacher')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+    await process_regular_message(message)

@@ -53,6 +53,10 @@ class User:
         db.set_user_level(self.id, level.value)
         self.level = level
 
+    def set_user_type(self, user_type: USER_TYPE):
+        db.set_user_type(self.id, user_type.value)
+        self.type = user_type.value
+
     def set_online_mode(self, online: ONLINE_MODE):
         db.set_user_online_mode(self.id, online.value)
         self.online = online
