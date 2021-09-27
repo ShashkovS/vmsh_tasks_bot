@@ -221,7 +221,8 @@ async def level_novice(message: types.Message):
             text="Вы переведены в группу начинающих",
         )
         student.set_level(LEVEL.NOVICE)
-        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
@@ -235,7 +236,8 @@ async def level_pro(message: types.Message):
             text="Вы переведены в группу продолжающих",
         )
         student.set_level(LEVEL.PRO)
-        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
@@ -249,7 +251,8 @@ async def level_expert(message: types.Message):
             text="Вы переведены в группу экспертов",
         )
         student.set_level(LEVEL.EXPERT)
-        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 

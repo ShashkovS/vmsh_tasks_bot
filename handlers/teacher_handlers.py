@@ -597,6 +597,7 @@ async def set_online(message: types.Message):
     student = User.get_by_token(token)
     if not student:
         await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
+        return
     new_online = ONLINE_MODE_DECODER.get(new_online.strip(), None)
     if new_online:
         student.set_online_mode(new_online)
