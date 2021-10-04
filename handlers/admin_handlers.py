@@ -69,14 +69,18 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
     logger.debug('run_broadcast_task')
     if tokens == ['all_students']:
         tokens = [user.token for user in User.all_students()]
+    elif tokens == ['all_teachers']:
+        tokens = [user.token for user in User.all_teachers()]
     elif tokens == ['all_novice']:
         tokens = [user.token for user in User.all_students() if user.level == LEVEL.NOVICE]
     elif tokens == ['all_pro']:
         tokens = [user.token for user in User.all_students() if user.level == LEVEL.PRO]
     elif tokens == ['all_expert']:
         tokens = [user.token for user in User.all_students() if user.level == LEVEL.EXPERT]
-    elif tokens == ['all_teachers']:
-        tokens = [user.token for user in User.all_teachers()]
+    elif tokens == ['all_online']:
+        tokens = [user.token for user in User.all_students() if user.online == ONLINE_MODE.ONLINE]
+    elif tokens == ['all_school']:
+        tokens = [user.token for user in User.all_students() if user.online == ONLINE_MODE.SCHOOL]
     bad_tokens = []
     for token in tokens:
         student = User.get_by_token(token)
