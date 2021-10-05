@@ -23,8 +23,7 @@ async def update_all_internal_data(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['ut'])
-@dispatcher.message_handler(commands=['update_teachers'])
+@dispatcher.message_handler(commands=['update_teachers', 'ut'])
 async def update_teachers(message: types.Message):
     logger.debug('update_teachers')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -37,8 +36,7 @@ async def update_teachers(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['us'])
-@dispatcher.message_handler(commands=['update_students'])
+@dispatcher.message_handler(commands=['update_students', 'us'])
 async def update_students(message: types.Message):
     logger.debug('update_students')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -51,8 +49,7 @@ async def update_students(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['up'])
-@dispatcher.message_handler(commands=['update_problems'])
+@dispatcher.message_handler(commands=['update_problems', 'up'])
 async def update_problems(message: types.Message):
     logger.debug('update_problems')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -121,6 +118,44 @@ async def broadcast(message: types.Message):
     await bot.send_message(
         chat_id=message.chat.id,
         text="Создано задание рассылки сообщений",
+    )
+
+
+TEACHER_COMMANDS = [
+    aiogram.types.BotCommand(command='online', description='Дистанционный приём'),
+    aiogram.types.BotCommand(command='in_school', description='Очный приём'),
+    aiogram.types.BotCommand(command='find_student', description='Найти студента'),
+    aiogram.types.BotCommand(command='set_level', description='Поставить студенту уровень'),
+    aiogram.types.BotCommand(command='set_online', description='Поменять студенту режим очно/дистант'),
+    aiogram.types.BotCommand(command='level_novice', description='Перейти на уровень «Начинающие»'),
+    aiogram.types.BotCommand(command='level_pro', description='Перейти на уровень «Продолжающие»'),
+    aiogram.types.BotCommand(command='level_expert', description='Перейти на уровень «Профессионалы»'),
+    aiogram.types.BotCommand(command='set_teacher', description='Снова стать учителем'),
+]
+
+
+async def update_teachers_commands(teacher_chat_id):
+    for user in User.all_teachers():
+        if not user.chat_id:
+            continue
+        bot.set_my_commands(commands=TEACHER_COMMANDS, scope=aiogram.types.BotCommandScope(type='chat', chat_id=user.chat_id))
+        await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Команды учителей обновлены",
+    )
+
+
+@dispatcher.message_handler(commands=['update_teachers_commands'])
+async def update_teachers_commands(message: types.Message):  # setMyCommands
+    logger.debug('update_teachers_commands')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    asyncio.create_task(update_teachers_commands(message.chat.id))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Создано задание обновления статусов",
     )
 
 
