@@ -134,7 +134,7 @@ TEACHER_COMMANDS = [
 ]
 
 
-async def update_teachers_commands(teacher_chat_id):
+async def update_teachers_commands_task(teacher_chat_id):
     for user in User.all_teachers():
         if not user.chat_id:
             continue
@@ -147,12 +147,12 @@ async def update_teachers_commands(teacher_chat_id):
 
 
 @dispatcher.message_handler(commands=['update_teachers_commands'])
-async def update_teachers_commands(message: types.Message):  # setMyCommands
+async def update_teachers_commands(message: types.Message):
     logger.debug('update_teachers_commands')
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    asyncio.create_task(update_teachers_commands(message.chat.id))
+    asyncio.create_task(update_teachers_commands_task(message.chat.id))
     await bot.send_message(
         chat_id=message.chat.id,
         text="Создано задание обновления статусов",
