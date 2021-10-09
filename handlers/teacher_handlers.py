@@ -67,7 +67,7 @@ async def prc_teacher_writes_student_name_state(message: types.message, teacher:
                            reply_markup=teacher_keyboards.build_select_student(name_to_find))
 
 
-@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['recheck.*']))
+@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?recheck.*']))
 async def recheck(message: types.Message):
     logger.debug('recheck')
     teacher = User.get_by_chat_id(message.chat.id)

@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from helpers.consts import *
 from db_methods import db
-from .initial_test_data import test_students, test_teachers
+from .initial_test_data import test_students, test_teachers, test_problems
 
 
 class DatabaseMethodsTest(TestCase):
@@ -19,10 +19,16 @@ class DatabaseMethodsTest(TestCase):
         # create shiny new db instance from scratch and connect
         self.db.setup(test_db_filename)
         self.insert_dummy_users()
+        self.insert_dummy_problems()
 
     def insert_dummy_users(self):
         for row in test_students + test_teachers:
             real_id = self.db.add_user(row)
+            row['id'] = real_id
+
+    def insert_dummy_problems(self):
+        for row in test_problems:
+            real_id = self.db.add_problem(row)
             row['id'] = real_id
 
     def tearDown(self) -> None:
@@ -108,6 +114,30 @@ class DatabaseMethodsTest(TestCase):
         self.assertEqual(self.db.get_webtoken_by_user_id(student2['id']), token2new)
         self.assertEqual(self.db.get_user_id_by_webtoken(token1), student1['id'])
         self.assertEqual(self.db.get_user_id_by_webtoken(token2new), student2['id'])
+
+    def test_results(self):
+        student1 = test_students[-1]
+        student2 = test_students[0]
+        answer1 = '17'
+        answer2 = '18'
+        verdict1 = 1
+        verdict2 = -1
+        for problem in test_problems:
+            for student in test_students:
+                self.db.add_result(student["id"], problem["id"], problem["level"], problem["lesson"], None, verdict1, answer1)
+                self.db.add_result(student["id"], problem["id"], problem["level"], problem["lesson"], None, verdict2, answer2)
+        problem = test_problems[2]
+        for_recheck = self.db.get_results_for_recheck_by_problem_id(problem["id"])
+        new_verdict = 99
+        for row in for_recheck:
+            row["verdict"] = new_verdict
+        self.db.update_verdicts(for_recheck)
+        results = self.db.list_student_results(student2["id"], problem["lesson"])
+        for res in results:
+            if res["problem_id"] == problem["id"]:
+                self.assertEqual(res["verdict"], new_verdict)
+            else:
+                self.assertIn(res["verdict"], [verdict1, verdict2])
 
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)

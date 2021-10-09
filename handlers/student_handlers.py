@@ -4,6 +4,8 @@ import datetime
 import re
 import asyncio
 import traceback
+import enum
+from typing import Tuple, Optional
 from aiogram.dispatcher.webhook import types
 
 from helpers.consts import *
@@ -33,6 +35,7 @@ async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1)
         reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
     )
 
+
 @reg_state(STATE.GET_TASK_INFO)
 async def prc_get_task_info_state(message, student: User):
     logger.debug('prc_get_task_info_state')
@@ -45,7 +48,7 @@ async def prc_get_task_info_state(message, student: User):
         alarm = '❗❗❗ Текст НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
     sleep = 0
     if alarm:
-        await bot.send_message(chat_id=message.chat.id, text=alarm,)
+        await bot.send_message(chat_id=message.chat.id, text=alarm, )
         sleep = 3
     asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student, sleep=sleep))
 
@@ -110,56 +113,55 @@ def check_test_ans_rate_limit(student_id: int, problem_id: int):
     return text_to_student
 
 
-@reg_state(STATE.SENDING_TEST_ANSWER)
-async def prc_sending_test_answer_state(message: types.Message, student: User, check_functions_cache={}):
-    logger.debug('prc_sending_test_answer_state')
-    state = State.get_by_user_id(student.id)
-    problem_id = state['problem_id']
-    text_to_student = check_test_ans_rate_limit(student.id, problem_id)
-    if text_to_student:
-        await bot.send_message(chat_id=message.chat.id, text=text_to_student)
-        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        logger.info(f'Ограничили студанта: {student.id}')
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
-        return
-    problem = Problem.get_by_id(problem_id)
-    student_answer = (message.text or '').strip()
+def run_py_func_checker(problem: Problem, student_answer: str, *, check_functions_cache={}) -> Tuple[bool, Optional[str], Optional[str]]:
+    func_code = problem.cor_ans_checker
+    func_name = re.search(r'\s*def\s+(\w+)', func_code)[1]
+    if func_name in check_functions_cache:
+        test_func = check_functions_cache[func_name]
+    else:
+        locs = {}
+        # О-о-очень опасный кусок :)
+        exec(func_code, GLOBALS_FOR_TEST_FUNCTION_CREATION, locs)
+        func_name, test_func = locs.popitem()
+        check_functions_cache[func_name] = test_func
+    result = additional_message = answer_is_correct = error_text = None
+    try:
+        result = test_func(student_answer)
+        answer_is_correct, additional_message = result
+    except Exception as e:
+        error_text = f'PYCHECKER_ERROR: {traceback.format_exc()}\nFUNC_CODE:\n{func_code.replace(" ", "_")}\nENTRY:\n{student_answer}\nRESULT:\n{result!r}'
+        logger.error(f'PYCHECKER_ERROR: {e}\nFUNC_CODE:\n{func_code}\nRESULT:\n{result!r}')
+    return answer_is_correct, additional_message, error_text
+
+
+@unique
+class ANS_CHECK_VERDICT(IntEnum):
+    INCORRECT_SELECT = -2
+    VALIDATION_NOT_PASSED = -3
+    RATE_LIMIT = -4
+    CORRECT = 1
+    WRONG = -1
+
+
+def check_test_problem_answer(problem: Problem, student: Optional[User], student_answer: str, *, check_functions_cache={}) -> Tuple[ANS_CHECK_VERDICT, Optional[str], Optional[str]]:
+    logger.debug('check_test_problem_answer')
+    additional_message = error_text = None
+    # Проверяем на перебор
+    if student:
+        text_to_student = check_test_ans_rate_limit(student.id, problem.id) if student.type == USER_TYPE.STUDENT else None
+        if text_to_student:
+            return ANS_CHECK_VERDICT.RATE_LIMIT, text_to_student, error_text
     # Если тип ответа — выбор из нескольких вариантов ответа, про проверим, если ответ среди вариантов
     if problem.ans_type == ANS_TYPE.SELECT_ONE and student_answer[:24] not in [ans.strip()[:24] for ans in problem.cor_ans.split(';')]:  # TODO 24!!!
-        await bot.send_message(chat_id=message.chat.id,
-                               text=f"❌ Выберите один из вариантов: {', '.join(problem.ans_validation.split(';'))}")
-        return
+        return ANS_CHECK_VERDICT.INCORRECT_SELECT, additional_message, error_text
     # Сначала проверим, проходит ли ответ валидацию регуляркой (для стандартных типов или если она указана)
-    elif problem.ans_type != ANS_TYPE.SELECT_ONE:
+    if problem.ans_type != ANS_TYPE.SELECT_ONE:
         validation_regex = (problem.ans_validation and re.compile(problem.ans_validation)) or ANS_REGEX.get(problem.ans_type, None)
         if validation_regex and not validation_regex.fullmatch(student_answer):
-            await bot.send_message(chat_id=message.chat.id,
-                                   text=f"❌ {problem.validation_error}")
-            return
-
+            return ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED, additional_message, error_text
     # Здесь мы проверяем ответ в зависимости от того, как проверять
     if problem.cor_ans_checker and is_py_func.match(problem.cor_ans_checker):
-        func_code = problem.cor_ans_checker
-        func_name = re.search(r'\s*def\s+(\w+)', func_code)[1]
-        if func_name in check_functions_cache:
-            test_func = check_functions_cache[func_name]
-        else:
-            locs = {}
-            # О-о-очень опасный кусок :)
-            exec(func_code, GLOBALS_FOR_TEST_FUNCTION_CREATION, locs)
-            func_name, test_func = locs.popitem()
-            check_functions_cache[func_name] = test_func
-        result = additional_message = answer_is_correct = None
-        try:
-            result = test_func(student_answer)
-            answer_is_correct, additional_message = result
-        except Exception as e:
-            error_text = f'PYCHECKER_ERROR: {traceback.format_exc()}\nFUNC_CODE:\n{func_code.replace(" ", "_")}\nENTRY:\n{student_answer}\nRESULT:\n{result!r}'
-            logger.error(f'PYCHECKER_ERROR: {e}\nFUNC_CODE:\n{func_code}\nRESULT:\n{result!r}')
-            await bot.post_logging_message(error_text)
-
-        if additional_message:
-            await bot.send_message(chat_id=message.chat.id, text=additional_message)
+        answer_is_correct, additional_message, error_text = run_py_func_checker(problem, student_answer)
     else:
         # Здесь у нас сравнение при помощи чекера. Типа равенство чисел или дробей там, или последовательностей/множеств
         checker = ANS_CHECKER[problem.ans_type]
@@ -168,18 +170,48 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
             answer_is_correct = checker(student_answer, correct_answer)
         else:
             answer_is_correct = any(checker(student_answer, one_correct) for one_correct in correct_answer.split(';'))
-
     if answer_is_correct:
-        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.SOLVED, student_answer, RES_TYPE.TEST)
-        text_to_student = f"✔️ {problem.congrat}"
+        return ANS_CHECK_VERDICT.CORRECT, additional_message, error_text
+    return ANS_CHECK_VERDICT.WRONG, additional_message, error_text
+
+
+async def check_answer_and_react(chat_id: int, problem: Problem, student: User, student_answer: str):
+    check_verict, additional_message, error_text = check_test_problem_answer(problem, student, student_answer)
+    if error_text:
+        await bot.post_logging_message(error_text)
+    if additional_message:
+        await bot.send_message(chat_id=chat_id, text=additional_message)
+    if check_verict == ANS_CHECK_VERDICT.INCORRECT_SELECT:
+        await bot.send_message(chat_id=chat_id, text=f"❌ Выберите один из вариантов: {', '.join(problem.ans_validation.split(';'))}")
+    elif check_verict == ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED:
+        await bot.send_message(chat_id=chat_id, text=f"❌ {problem.validation_error}")
+    elif check_verict == ANS_CHECK_VERDICT.RATE_LIMIT:
+        logger.info(f'Ограничили студента: {student.id}')
+        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        asyncio.create_task(sleep_and_send_problems_keyboard(chat_id, student))
     else:
-        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.WRONG_ANSWER, student_answer, RES_TYPE.TEST)
-        text_to_student = f"❌ {problem.wrong_ans}"
-    if os.environ.get('EXAM', None) == 'true':
-        text_to_student = 'Ответ принят на проверку.'
-    await bot.send_message(chat_id=message.chat.id, text=text_to_student)
-    State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+        if check_verict == ANS_CHECK_VERDICT.CORRECT:
+            db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.SOLVED, student_answer, RES_TYPE.TEST)
+            text_to_student = f"✔️ {problem.congrat}"
+        # elif check_verict == ANS_CHECK_VERDICT.WRONG:
+        else:
+            db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.WRONG_ANSWER, student_answer, RES_TYPE.TEST)
+            text_to_student = f"❌ {problem.wrong_ans}"
+        if os.environ.get('EXAM', None) == 'true':
+            text_to_student = 'Ответ принят на проверку.'
+        await bot.send_message(chat_id=chat_id, text=text_to_student)
+        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        asyncio.create_task(sleep_and_send_problems_keyboard(chat_id, student))
+
+
+@reg_state(STATE.SENDING_TEST_ANSWER)
+async def prc_sending_test_answer_state(message: types.Message, student: User, check_functions_cache={}):
+    logger.debug('prc_sending_test_answer_state')
+    state = State.get_by_user_id(student.id)
+    problem_id = state['problem_id']
+    problem = Problem.get_by_id(problem_id)
+    student_answer = (message.text or '').strip()
+    await check_answer_and_react(message.chat.id, problem, student, student_answer)
 
 
 @reg_state(STATE.WAIT_SOS_REQUEST)
@@ -295,7 +327,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         if problem.ans_type == ANS_TYPE.SELECT_ONE:
             await bot.send_message(chat_id=query.message.chat.id,
                                    text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:",
-                                   reply_markup=student_keyboards.build_test_answers(problem.ans_validation.split(';')))
+                                   reply_markup=student_keyboards.build_test_answers(problem))
         else:
             await bot.send_message(chat_id=query.message.chat.id,
                                    text=f"Выбрана задача {problem}.\nТеперь введите ответ{problem.ans_type.descr}",
@@ -356,8 +388,8 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     list_num = int(query.data[2:])
     student = User.get_by_chat_id(query.message.chat.id)
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                text="Теперь выберите задачу",
-                                reply_markup=student_keyboards.build_problems(list_num, student))
+                                   text="Теперь выберите задачу",
+                                   reply_markup=student_keyboards.build_problems(list_num, student))
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -365,57 +397,33 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
 async def prc_show_list_of_lists_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_show_list_of_lists_callback')
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                text="Вот список всех листков:",
-                                reply_markup=student_keyboards.build_lessons())
+                                   text="Вот список всех листков:",
+                                   reply_markup=student_keyboards.build_lessons())
     await bot.answer_callback_query_ig(query.id)
 
 
 @reg_callback(CALLBACK.ONE_OF_TEST_ANSWER_SELECTED)
 async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_one_of_test_answer_selected_callback')
-    state = State.get_by_user_id(student.id)
-    if state.get('state', None) != STATE.SENDING_TEST_ANSWER:
-        logger.info('WRONG STATE', state, STATE.SENDING_TEST_ANSWER, 'STATE.SENDING_TEST_ANSWER')
-        return
-    selected_answer = query.data[2:]
-    await bot.send_message(chat_id=query.message.chat.id, text=f"Выбран вариант {selected_answer}.")
-    state = State.get_by_user_id(student.id)
-    problem_id = state['problem_id']
-    text_to_student = check_test_ans_rate_limit(student.id, problem_id)
-    if text_to_student:
-        await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
-        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
-        await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
-        logger.info(f'Ограничили студанта: {student.id}')
-        asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
-        return
-    problem = Problem.get_by_id(problem_id)
+    problem = selected_answer = problem_id = None
+    splitted = query.data.split('_', maxsplit=2)
+    if len(splitted) == 3:
+        _, problem_id, selected_answer = splitted
+        problem = Problem.get_by_id(problem_id)
+
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    await bot.answer_callback_query_ig(query.id)
+
     if problem is None:
         logger.error('Сломался приём задач :(')
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
-        await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
-        await bot.answer_callback_query_ig(query.id)
         asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
         return
-    correct_answer = problem.cor_ans
-    # await bot.send_message(chat_id=query.message.chat.id,
-    #                        text=f"Выбран вариант {selected_answer}.")
-    if selected_answer[:24] == correct_answer[:24] or selected_answer[:24] in [ans.strip()[:24] for ans in correct_answer.split(';')]:  # TODO 24!!!
-        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.SOLVED, selected_answer, RES_TYPE.TEST)
-        text_to_student = f"✔️ {problem.congrat}"
-    else:
-        db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.WRONG_ANSWER, selected_answer, RES_TYPE.TEST)
-        text_to_student = f"❌ {problem.wrong_ans}"
-    if os.environ.get('EXAM', None) == 'true':
-        text_to_student = 'Ответ принят на проверку.'
-    await bot.send_message(chat_id=query.message.chat.id, text=text_to_student)
-    State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-    # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
-    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
-    await bot.answer_callback_query_ig(query.id)
-    asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
+
+    await bot.send_message(chat_id=query.message.chat.id, text=f"Выбран вариант {selected_answer}.")
+
+    await check_answer_and_react(query.message.chat.id, problem, student, selected_answer)
 
 
 @reg_callback(CALLBACK.CANCEL_TASK_SUBMISSION)
@@ -436,7 +444,7 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
     state = State.get_by_user_id(student.id)
     teacher = User.get_by_id(state['last_teacher_id'])
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                        reply_markup=None)
+                                           reply_markup=None)
     Waitlist.leave(student.id)
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
     if teacher:

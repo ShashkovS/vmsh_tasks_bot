@@ -8,6 +8,7 @@ from helpers.config import logger
 from helpers.obj_classes import User, Problem, State, FromGoogleSpreadsheet, db
 from helpers.bot import bot, dispatcher
 from handlers import student_keyboards
+from handlers.student_handlers import check_test_problem_answer, ANS_CHECK_VERDICT
 
 
 @dispatcher.message_handler(commands=['update_all_quaLtzPE', 'update_all'])
@@ -156,6 +157,48 @@ async def update_teachers_commands(message: types.Message):
     await bot.send_message(
         chat_id=message.chat.id,
         text="Создано задание обновления статусов",
+    )
+
+
+async def recheck_problem_task(teacher_chat_id: int, problem: Problem):
+    for_recheck = db.get_results_for_recheck_by_problem_id(problem.id)
+    oks = errs = changes = 0
+    for row in for_recheck:
+        check_verdict, _, error_text = check_test_problem_answer(problem, student=None, student_answer=row["answer"])
+        if error_text:
+            await bot.post_logging_message(error_text)
+        old_verdict = row["verdict"]
+        if check_verdict == ANS_CHECK_VERDICT.CORRECT:
+            row["verdict"] = VERDICT.SOLVED
+            oks += 1
+        else:
+            row["verdict"] = VERDICT.WRONG_ANSWER
+            errs += 1
+        changes += old_verdict != row["verdict"]
+    db.update_verdicts(for_recheck)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Задача {problem} перепроверена. {oks} плюсов, {errs} минусов. Исправлено {changes} посылок",
+    )
+
+
+@dispatcher.message_handler(commands=['problem_recheck', 'prc'])
+async def problem_recheck(message: types.Message):
+    logger.debug('problem_recheck')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    problem = None
+    if match := re.fullmatch(r'/\w+?\s+(\d+)([а-я])\.(\d+)([а-я]?)\s*', message.text or ''):
+        lst, level, prob, item = match.groups()
+        problem = Problem.get_by_key(level, int(lst), int(prob), item)
+    if problem is None:
+        await bot.send_message(chat_id=message.chat.id, text=f"Задача не найдена")
+        return
+    asyncio.create_task(recheck_problem_task(message.chat.id, problem))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Создано задание по перепроверке тестовой задачи",
     )
 
 
