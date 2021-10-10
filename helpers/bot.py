@@ -26,6 +26,8 @@ class BotIg(aiogram.Bot):
         logger.debug('bot.answer_callback_query_ig')
         try:
             await self.answer_callback_query(*args, **kwargs)
+        except aiogram.utils.exceptions.InvalidQueryID:
+            pass
         except Exception as e:
             logger.exception(f'SHIT: {e}')
 
@@ -33,6 +35,8 @@ class BotIg(aiogram.Bot):
         logger.debug('bot.delete_message_ig')
         try:
             await self.delete_message(*args, **kwargs)
+        except aiogram.utils.exceptions.MessageToDeleteNotFound:
+            pass
         except aiogram.utils.exceptions.MessageCantBeDeleted:
             try:
                 await self.edit_message_reply_markup_ig(*args, reply_markup=None, **kwargs)
