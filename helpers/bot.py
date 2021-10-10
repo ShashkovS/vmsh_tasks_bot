@@ -57,7 +57,7 @@ class BotIg(aiogram.Bot):
 
 
 # Запускаем API телеграм-бота
-bot = BotIg(config.telegram_bot_token)
+bot = BotIg(config.telegram_bot_token, timeout=5)
 # Запускаем API телеграм-бота
 dispatcher = Dispatcher(bot)
 
