@@ -44,6 +44,7 @@ class CALLBACK(str, Enum):
     ADD_OR_REMOVE_ORAL_PLUS = 'p'
     FINISH_ORAL_ROUND = 'f'
     STUDENT_SELECTED = 's'
+    CHANGE_LEVEL = 'L'
 
     def __str__(self):
         return self.value

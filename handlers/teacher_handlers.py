@@ -1,5 +1,6 @@
 import re
 import aiogram
+import asyncio
 from aiogram.dispatcher.webhook import types
 from aiogram.dispatcher import filters
 from urllib.parse import urlencode
@@ -11,6 +12,7 @@ from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import teacher_keyboards
 from handlers.main_handlers import process_regular_message
+from handlers.student_handlers import sleep_and_send_problems_keyboard
 
 
 def get_problem_lock(teacher_id: int):
@@ -551,9 +553,9 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     # Формируем сообщение с итоговым результатом проверки
     text = f"Школьник: {student.token} {student.surname} {student.name}\n"
     if human_readable_pluses:
-        text += f"\nПоставлены плюсы «+++» за задачи: {', '.join(human_readable_pluses)}"
+        text += f"\nПоставлены плюсы 👍 за задачи: {', '.join(human_readable_pluses)}"
     if human_readable_minuses:
-        text += f"\nПоставлены минусы «−−−» за задачи: {', '.join(human_readable_minuses)}"
+        text += f"\nПоставлены минусы ❌ за задачи: {', '.join(human_readable_minuses)}"
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text=text,
                                    reply_markup=None)
@@ -633,3 +635,25 @@ async def set_teacher(message: types.Message):
         return
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await process_regular_message(message)
+
+
+@reg_callback(CALLBACK.CHANGE_LEVEL)
+async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
+    logger.debug('prc_get_written_task_callback')
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                           reply_markup=None)
+    _, student_id, lvl = query.data.split('_')
+    student = User.get_by_id(int(student_id))
+    level = LEVEL(lvl)
+    if student:
+        student.set_level(level)
+        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        if student.chat_id:
+            message = await bot.send_message(
+                chat_id=student.chat_id,
+                text=f"Вам изменён уровень на «{level.slevel}»",
+            )
+            asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+        query.data = f'{CALLBACK.STUDENT_SELECTED}_{student_id}'
+        await prc_student_selected_callback(query, teacher)

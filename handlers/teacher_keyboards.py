@@ -145,6 +145,7 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
         select_problem_types = (PROB_TYPE.ORALLY, PROB_TYPE.WRITTEN_BEFORE_ORALLY)  # Дистанционно — только устные
     use_problems = [problem for problem in Problem.get_by_lesson(student.level, lesson_num)
                     if problem.prob_type in select_problem_types]
+    problem_buttons = []
     for problem in use_problems:
         if problem.id in solved and problem.id not in minus_ids:
             tick = '✅✅'
@@ -154,11 +155,27 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
             tick = '❌'
         else:
             tick = ''
+        if online == ONLINE_MODE.SCHOOL:
+            text = f"{tick} {problem.lesson}{problem.level}.{problem.prob}{problem.item}"
+        else:
+            text = f"{tick} {problem}"
         task_button = types.InlineKeyboardButton(
-            text=f"{tick} {problem}",
+            text=text,
             callback_data=f"{CALLBACK.ADD_OR_REMOVE_ORAL_PLUS}_{problem.id}_{plus_ids_str}_{minus_ids_str}"
         )
-        keyboard_markup.add(task_button)
+        problem_buttons.append(task_button)
+    if online == ONLINE_MODE.SCHOOL:
+        for i in range(0, len(problem_buttons), 4):
+            keyboard_markup.row(*problem_buttons[i:i+4])
+    else:
+        for task_button in problem_buttons:
+            keyboard_markup.add(task_button)
+    row_btns = []
+    for lvl in LEVEL:
+        if student.level != lvl:
+            row_btns.append(types.InlineKeyboardButton(text=f"Уровень: {lvl} «{lvl.slevel}»",
+                                                       callback_data=f"{CALLBACK.CHANGE_LEVEL}_{student.id}_{lvl}"))
+    keyboard_markup.row(*row_btns)
     ready_button = types.InlineKeyboardButton(
         text="Готово (завершить сдачу и внести в кондуит)",
         callback_data=f"{CALLBACK.FINISH_ORAL_ROUND}_{plus_ids_str}_{minus_ids_str}"
