@@ -161,6 +161,37 @@ class DatabaseMethodsTest(TestCase):
         self.assertEqual(kv.pop('foo2', None), 'baz2')
         self.assertIsNone(kv.get('foo2', None))
 
+        db = self.db
+        def get_problem_lock(teacher_id: int):
+            key = f'{teacher_id}_pl'
+            value = db.kv.get(key, None)
+            return int(value) if value else None
+
+        def del_problem_lock(teacher_id: int):
+            key = f'{teacher_id}_pl'
+            db.kv.pop(key, None)
+
+        def set_problem_lock(teacher_id: int, problem_id: int):
+            key = f'{teacher_id}_pl'
+            value = f'{problem_id}'
+            db.kv[key] = value
+
+        self.assertIsNone(get_problem_lock(123))
+        del_problem_lock(123)
+        self.assertIsNone(get_problem_lock(123))
+        set_problem_lock(123, 23)
+        set_problem_lock(124, 24)
+        set_problem_lock(125, 25)
+        self.assertEqual(get_problem_lock(123), 23)
+        self.assertEqual(get_problem_lock(124), 24)
+        self.assertEqual(get_problem_lock(125), 25)
+        set_problem_lock(123, 123)
+        self.assertEqual(get_problem_lock(123), 123)
+        self.assertEqual(get_problem_lock(124), 24)
+        self.assertEqual(get_problem_lock(125), 25)
+        del_problem_lock(123)
+        self.assertIsNone(get_problem_lock(123))
+
 
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)

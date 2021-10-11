@@ -59,6 +59,12 @@ class KeyValueStore(dict):
         self.conn.commit()
         return item['value']
 
+    def get(self, key, default=None):
+        item = self.conn.execute('SELECT value FROM kv WHERE key = ?', (key,)).fetchone()
+        if item is None:
+            return default
+        return item['value']
+
     def __setitem__(self, key, value):
         self.conn.execute('REPLACE INTO kv (key, value) VALUES (?,?)', (key, value))
         self.conn.commit()
