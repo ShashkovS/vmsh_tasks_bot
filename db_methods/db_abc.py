@@ -5,7 +5,6 @@ import os
 
 DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
-
 class KeyValueStore(dict):
     def __init__(self, conn):
         self.conn = conn
@@ -57,15 +56,18 @@ class KeyValueStore(dict):
         if item is None:
             return default
         self.conn.execute('DELETE FROM kv WHERE key = ?', (key,))
+        self.conn.commit()
         return item['value']
 
     def __setitem__(self, key, value):
         self.conn.execute('REPLACE INTO kv (key, value) VALUES (?,?)', (key, value))
+        self.conn.commit()
 
     def __delitem__(self, key):
         if key not in self:
             raise KeyError(key)
         self.conn.execute('DELETE FROM kv WHERE key = ?', (key,))
+        self.conn.commit()
 
     def __iter__(self):
         return self.iterkeys()
