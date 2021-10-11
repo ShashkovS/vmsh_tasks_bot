@@ -139,6 +139,29 @@ class DatabaseMethodsTest(TestCase):
             else:
                 self.assertIn(res["verdict"], [verdict1, verdict2])
 
+    def test_key_value_storage(self):
+        kv = self.db.kv
+        self.assertEqual(len(kv), 0)
+        kv['foo1'] = 'baz1'
+        kv['foo2'] = 'baz2'
+        kv['foo3'] = 'baz3'
+        self.assertEqual(len(kv), 3)
+        self.assertEqual(kv['foo1'], 'baz1')
+        kv['foo1'] = 'baz11'
+        self.assertEqual(kv['foo1'], 'baz11')
+        self.assertEqual(kv['foo2'], 'baz2')
+        del kv['foo1']
+        self.assertRaises(KeyError, lambda: kv['foo1'])
+        self.assertIsNone(kv.get('foo1', None))
+        self.assertIsNone(kv.pop('foo1', None))
+        self.assertTrue('foo2' in kv)
+        self.assertFalse('foo1' in kv)
+        self.assertListEqual(kv.keys(), ['foo2', 'foo3'])
+        self.assertListEqual(kv.values(), ['baz2', 'baz3'])
+        self.assertEqual(kv.pop('foo2', None), 'baz2')
+        self.assertIsNone(kv.get('foo2', None))
+
+
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)
     # def fetch_all_lessons(self)

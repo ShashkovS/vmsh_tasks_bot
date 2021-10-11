@@ -12,20 +12,35 @@ from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import teacher_keyboards
 from handlers.main_handlers import process_regular_message
 
-DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK = {}
+
+def get_problem_lock(teacher_id: int):
+    key = f'{teacher_id}_pl'
+    value = db.kv.get(key, None)
+    return int(value) if value else None
+
+
+def del_problem_lock(teacher_id: int):
+    key = f'{teacher_id}_pl'
+    db.kv.pop(key, None)
+
+
+def set_problem_lock(teacher_id: int, problem_id: int):
+    key = f'{teacher_id}_pl'
+    value = f'{problem_id}'
+    db.kv[key] = value
 
 
 @reg_state(STATE.TEACHER_SELECT_ACTION)
 async def prc_teacher_select_action(message: types.Message, teacher: User):
     logger.debug('prc_teacher_select_action')
-    locked_problem_id = DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK.get(teacher.id, None)
+    locked_problem_id = get_problem_lock(teacher.id)
     if not locked_problem_id:
         await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
                                reply_markup=teacher_keyboards.build_teacher_actions())
     else:
         top = WrittenQueue.take_top(teacher.id, locked_problem_id)
         if not top:
-            DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK[teacher.id] = None
+            del_problem_lock(teacher.id)
             await bot.send_message(chat_id=teacher.chat_id,
                                    text=f"Ничего себе! Все письменные задачи проверены!")
             State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
@@ -180,7 +195,7 @@ async def prc_CHECK_ONLY_SELECTED_WRITEN_TASK_callback(query: types.CallbackQuer
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
     problem_id = int(query.data[2:])
-    DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK[teacher.id] = problem_id
+    set_problem_lock(teacher.id, problem_id)
     top = WrittenQueue.take_top(teacher.id, problem_id)
     if not top:
         await bot.send_message(chat_id=teacher.chat_id,
@@ -200,7 +215,7 @@ async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User)
     logger.debug('prc_teacher_cancel_callback')
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
-    DELME_TRASH_HOOK_TO_LOCK_PROBLEM_TO_CHECK[teacher.id] = None
+    del_problem_lock(teacher.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
     await process_regular_message(query.message)
