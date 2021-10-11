@@ -136,7 +136,7 @@ async def prc_sos_reply(message: types.Message):
     else:
         try:
             to_chat_id = message.reply_to_message.forward_from.id
-            await bot.send_message(to_chat_id, text='— ' + message.reply_to_message.text)
+            await bot.send_message(to_chat_id, text='— ' + (message.reply_to_message.text or ''))
             await bot.copy_message(to_chat_id, message.chat.id, message.message_id)
             await bot.send_message(chat_id=message.chat.id, text='Переслал.')
         except Exception as e:
