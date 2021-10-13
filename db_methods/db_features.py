@@ -33,6 +33,16 @@ class DB_FEATURES:
         """, args)
         self.conn.commit()
 
+    def log_change(self, user_id: int, change_type: str, new_value: str):
+        args = locals()
+        args['ts'] = datetime.now().isoformat()
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO user_changes_log ( ts,  user_id,  change_type,  new_value)
+            VALUES                       (:ts, :user_id, :change_type, :new_value) 
+        """, args)
+        self.conn.commit()
+
     # ███████ ███████  █████  ████████ ██    ██ ██████  ███████ ███████
     # ██      ██      ██   ██    ██    ██    ██ ██   ██ ██      ██
     # █████   █████   ███████    ██    ██    ██ ██████  █████   ███████

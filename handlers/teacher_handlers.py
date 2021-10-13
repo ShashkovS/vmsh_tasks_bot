@@ -56,11 +56,20 @@ async def prc_teacher_select_action(message: types.Message, teacher: User):
 @reg_state(STATE.TEACHER_IS_CHECKING_TASK)
 async def prc_teacher_is_checking_task_state(message: types.Message, teacher: User):
     logger.debug('prc_teacher_is_checking_task_state')
-    problem_id = State.get_by_user_id(teacher.id)['problem_id']
-    student_id = State.get_by_user_id(teacher.id)['last_student_id']
+    teacher_state = State.get_by_user_id(teacher.id)
+    problem_id = teacher_state['problem_id']
+    student_id = teacher_state['last_student_id']
     WrittenQueue.add_to_discussions(student_id, problem_id, teacher.id, message.text, None, message.chat.id,
                                     message.message_id)
-    await bot.send_message(chat_id=message.chat.id, text="Ок, записал")
+    prev_keyboard = db.get_last_keyboard(teacher.id)
+    # await bot.send_message(chat_id=message.chat.id, text="Ок, записал")
+    keyb_msg = await bot.send_message(chat_id=message.chat.id,
+                                      text='Ок, записал',
+                                      reply_markup=teacher_keyboards.build_written_task_checking_verdict(User.get_by_id(student_id),
+                                                                                                         Problem.get_by_id(problem_id)))
+    if prev_keyboard:
+        await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'], reply_markup=None)
+    db.set_last_keyboard(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
 @reg_state(STATE.TEACHER_ACCEPTED_QUEUE)
@@ -223,7 +232,7 @@ async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User)
     await process_regular_message(query.message)
 
 
-async def forward_discussion_and_start_checking(chat_id, message_id, student, problem, teacher):
+async def forward_discussion_and_start_checking(chat_id, message_id, student: User, problem: Problem, teacher: User):
     logger.debug('forward_discussion_and_start_checking')
     await bot.edit_message_text_ig(chat_id=chat_id, message_id=message_id,
                                    text=f"Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
@@ -262,10 +271,11 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student, pr
                     pass
     State.set_by_user_id(teacher.id, STATE.TEACHER_IS_CHECKING_TASK, problem.id, last_teacher_id=teacher.id,
                          last_student_id=student.id)
-    await bot.send_message(chat_id=chat_id,
-                           text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
-                                'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)',
-                           reply_markup=teacher_keyboards.build_written_task_checking_verdict(student, problem))
+    keyb_msg = await bot.send_message(chat_id=chat_id,
+                                      text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
+                                           'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)',
+                                      reply_markup=teacher_keyboards.build_written_task_checking_verdict(student, problem))
+    db.set_last_keyboard(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
 @reg_callback(CALLBACK.WRITTEN_TASK_SELECTED)

@@ -29,11 +29,12 @@ is_py_func = re.compile(r'^\s*def \w+\s*\(')
 async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1):
     if sleep > 0:
         await asyncio.sleep(sleep)
-    await bot.send_message(
+    keyb_msg = await bot.send_message(
         chat_id=chat_id,
         text=f"❓ Нажимайте на задачу, чтобы сдать её (уровень «{student.level.slevel}»)",
         reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
     )
+    db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
 @reg_state(STATE.GET_TASK_INFO)
@@ -387,9 +388,10 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_list_selected_callback')
     list_num = int(query.data[2:])
     student = User.get_by_chat_id(query.message.chat.id)
-    await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    keyb_msg = await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text="Теперь выберите задачу",
                                    reply_markup=student_keyboards.build_problems(list_num, student))
+    db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
     await bot.answer_callback_query_ig(query.id)
 
 

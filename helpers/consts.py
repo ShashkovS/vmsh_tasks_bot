@@ -207,3 +207,10 @@ ONLINE_MODE_DECODER = {
     'online': ONLINE_MODE.ONLINE,
     'school': ONLINE_MODE.SCHOOL,
 }
+
+
+# Тип изменения в параметрах юзера
+@unique
+class CHANGE(str, Enum):
+    LEVEL = 'L'
+    ONLINE = 'O'

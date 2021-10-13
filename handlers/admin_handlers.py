@@ -212,11 +212,12 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
             continue
         try:
             slevel = f'(уровень «{student.level.slevel}»)'
-            await bot.send_message(
+            keyb_msg = await bot.send_message(
                 chat_id=student.chat_id,
                 text=f"Можно сдавать задачи!\n❓ Нажимайте на задачу, чтобы сдать её {slevel}",
                 reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
             )
+            db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
         except:
             pass
         await asyncio.sleep(1 / 20)

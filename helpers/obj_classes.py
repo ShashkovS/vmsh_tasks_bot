@@ -51,6 +51,7 @@ class User:
 
     def set_level(self, level: LEVEL):
         db.set_user_level(self.id, level.value)
+        db.log_change(self.id, CHANGE.LEVEL, level.value)
         self.level = level
 
     def set_user_type(self, user_type: USER_TYPE):
@@ -59,6 +60,7 @@ class User:
 
     def set_online_mode(self, online: ONLINE_MODE):
         db.set_user_online_mode(self.id, online.value)
+        db.log_change(self.id, CHANGE.ONLINE, online.value)
         self.online = online
 
     def __str__(self):
