@@ -39,10 +39,6 @@ class DB_STATE:
             last_student_id = :last_student_id,
             last_teacher_id = :last_teacher_id
         """, args)
-        cur.execute("""
-            INSERT INTO states_log  ( user_id,  state,  problem_id,  ts)
-            VALUES                  (:user_id, :state, :problem_id, :ts) 
-        """, args)
         self.conn.commit()
 
     def update_oral_problem(self, user_id: int, oral_problem_id: int = None):

@@ -8,7 +8,6 @@ drop table users;
 drop table problems;
 drop table states;
 drop table results;
-drop table states_log;
 drop table messages_log;
 drop table waitlist;
 drop table written_tasks_queue;
