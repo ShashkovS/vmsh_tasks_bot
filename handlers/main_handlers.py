@@ -141,6 +141,7 @@ async def prc_sos_reply(message: types.Message):
             await bot.send_message(chat_id=message.chat.id, text='Переслал.')
         except Exception as e:
             await bot.send_message(chat_id=message.chat.id, text='Не получилось послать ответ. Попробуйте вручную.')
+            await bot.send_message(chat_id=message.chat.id, text=str(message))
             logger.exception(f'SHIT: {e}')
 
 @dispatcher.message_handler(commands=['online'])
