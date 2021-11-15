@@ -147,6 +147,8 @@ class ANS_CHECK_VERDICT(IntEnum):
 def check_test_problem_answer(problem: Problem, student: Optional[User], student_answer: str, *, check_functions_cache={}) -> Tuple[ANS_CHECK_VERDICT, Optional[str], Optional[str]]:
     logger.debug('check_test_problem_answer')
     additional_message = error_text = None
+    if student_answer is None:
+        student_answer = ''
     # Проверяем на перебор
     if student:
         text_to_student = check_test_ans_rate_limit(student.id, problem.id) if student.type == USER_TYPE.STUDENT else None

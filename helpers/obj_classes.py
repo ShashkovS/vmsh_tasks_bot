@@ -299,7 +299,7 @@ class FromGoogleSpreadsheet:
                 errors.append(f'Не компилируется регулярка валидации у задачи {problem!r}')
                 continue
             Problem(**problem)
-            db.update_lessons()
+        db.update_lessons()
         return errors
 
 

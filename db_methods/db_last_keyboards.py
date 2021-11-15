@@ -31,5 +31,6 @@ class DB_LAST_KEYBOARD:
             delete from last_keyboards
             where user_id = :user_id
         """, locals())
-        rows = cur.fetchall()
+        rows = cur.rowcount
         self.conn.commit()
+        return rows
