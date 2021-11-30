@@ -144,9 +144,10 @@ class ANS_CHECK_VERDICT(IntEnum):
     WRONG = -1
 
 
-def check_test_problem_answer(problem: Problem, student: Optional[User], student_answer: str, *, check_functions_cache={}) -> Tuple[ANS_CHECK_VERDICT, Optional[str], Optional[str]]:
+def check_test_problem_answer(problem: Problem, student: Optional[User], student_answer: str, *, check_functions_cache={}) -> Tuple[
+    ANS_CHECK_VERDICT, Optional[str], Optional[str]]:
     logger.debug('check_test_problem_answer')
-    additional_message = error_text = None
+    answer_is_correct = additional_message = error_text = None
     if student_answer is None:
         student_answer = ''
     # Проверяем на перебор
@@ -169,10 +170,25 @@ def check_test_problem_answer(problem: Problem, student: Optional[User], student
         # Здесь у нас сравнение при помощи чекера. Типа равенство чисел или дробей там, или последовательностей/множеств
         checker = ANS_CHECKER[problem.ans_type]
         correct_answer = problem.cor_ans
-        if ';' not in correct_answer:
-            answer_is_correct = checker(student_answer, correct_answer)
-        else:
-            answer_is_correct = any(checker(student_answer, one_correct) for one_correct in correct_answer.split(';'))
+        if problem.ans_type != ANS_TYPE.POLYNOMIAL:
+            if ';' not in correct_answer:
+                answer_is_correct = checker(student_answer, correct_answer)
+            else:
+                answer_is_correct = any(checker(student_answer, one_correct) for one_correct in correct_answer.split(';'))
+        elif problem.ans_type == ANS_TYPE.POLYNOMIAL:
+            # Чтобы давать информативное сообщение об ошибке, мы выдаём вход, на котором ответы отличаются.
+            valid, func_values = checker(student_answer)
+            if not valid:
+                answer_is_correct = False
+                additional_message = func_values
+            else:
+                corr_func_values = checker(correct_answer)
+                answer_is_correct = True
+                for x, (stv, crv) in enumerate(zip(func_values, corr_func_values)):
+                    if stv != crv:
+                        answer_is_correct = False
+                        additional_message = f'При n={x} получилось {stv}, а должно было получиться {crv}'
+                        break
     if answer_is_correct:
         return ANS_CHECK_VERDICT.CORRECT, additional_message, error_text
     return ANS_CHECK_VERDICT.WRONG, additional_message, error_text
@@ -392,8 +408,8 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     list_num = int(query.data[2:])
     student = User.get_by_chat_id(query.message.chat.id)
     keyb_msg = await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                   text="Теперь выберите задачу",
-                                   reply_markup=student_keyboards.build_problems(list_num, student))
+                                              text="Теперь выберите задачу",
+                                              reply_markup=student_keyboards.build_problems(list_num, student))
     db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
     await bot.answer_callback_query_ig(query.id)
 
