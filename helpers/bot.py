@@ -8,6 +8,8 @@ from helpers.consts import CALLBACK, STATE
 
 # Добавляем методов, которые игнорируют некоторые ошибки
 class BotIg(aiogram.Bot):
+    username: aiogram.types.User
+
     async def edit_message_text_ig(self, *args, **kwargs):
         logger.debug('bot.edit_message_text_ig')
         try:
@@ -47,12 +49,9 @@ class BotIg(aiogram.Bot):
 
     async def post_logging_message(self, msg):
         logger.debug('bot.post_logging_message')
-        if config.production_mode:
-            msg = 'PRODUCTION!\n' + msg
-        else:
-            msg = 'DEV MODE\n' + msg
+        bot_type = 'PRODUCTION' if config.production_mode else 'DEV MODE'
         try:
-            res = await self.send_message(config.exceptions_channel, msg)
+            res = await self.send_message(config.exceptions_channel, f'{bot_type} @{bot.username}\n{msg}')
             # У секрентного чата id — это число. А у открытого — это строка.
             if type(config.exceptions_channel) == str:
                 await self.send_message(config.exceptions_channel, f'(Exceptions chat id = {res["chat"]["id"]})')

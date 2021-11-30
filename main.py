@@ -6,6 +6,8 @@ from helpers.config import config, logger, DEBUG
 from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 from helpers.obj_classes import db, update_from_google_if_db_is_empty
 from helpers.bot import bot, dispatcher
+from asyncio import sleep
+from random import uniform
 import handlers
 
 USE_WEBHOOKS = False
@@ -13,6 +15,9 @@ USE_WEBHOOKS = False
 
 async def check_webhook():
     logger.debug('check_webhook')
+    # Ждём слуайное время от 0 до 2 секунд. Чтобы несколько worker'ов не пытались получить хук одновременно
+    # TODO сделать через блокировку в базе
+    await sleep(uniform(0, 2))
     # Set webhook
     webhook = await bot.get_webhook_info()  # Get current webhook status
     if webhook.url != WEBHOOK_URL:  # If URL is bad
@@ -35,7 +40,8 @@ async def on_startup(app):
 
     if USE_WEBHOOKS:
         await check_webhook()
-    await bot.post_logging_message('Бот начал свою работу')
+    bot.username = (await bot.me).username
+    await bot.post_logging_message(f'Бот начал свою работу')
 
 
 async def on_shutdown(app):

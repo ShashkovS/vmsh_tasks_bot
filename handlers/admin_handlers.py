@@ -4,7 +4,7 @@ import asyncio
 import re
 
 from helpers.consts import *
-from helpers.config import logger
+from helpers.config import logger, config
 from helpers.obj_classes import User, Problem, State, FromGoogleSpreadsheet, db
 from helpers.bot import bot, dispatcher
 from handlers import student_keyboards
@@ -92,7 +92,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
             )
             db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None,
                                   broadcast_message, None)
-        except aiogram.utils.exceptions.TelegramAPIError as e:
+        except aiogram.exceptions.TelegramAPIError as e:
             logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
             bad_tokens.append(token)
         await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
