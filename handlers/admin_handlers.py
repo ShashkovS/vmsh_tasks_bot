@@ -311,3 +311,23 @@ async def student_results(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
     else:
         await bot.send_message(chat_id=message.chat.id, text='Нет ни одной посылки (или что-то пошло не так)')
+
+
+@dispatcher.message_handler(commands=['oral2written'])
+async def oral2written(message: types.Message):
+    logger.debug('oral2written')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    Problem.oral_to_written()
+    await bot.send_message(chat_id=message.chat.id, text='Готово')
+
+
+@dispatcher.message_handler(commands=['written2oral'])
+async def written2oral(message: types.Message):
+    logger.debug('written2oral')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    Problem.written_to_oral()
+    await bot.send_message(chat_id=message.chat.id, text='Готово')
