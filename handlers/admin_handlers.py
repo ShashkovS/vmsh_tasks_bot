@@ -102,7 +102,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
     )
 
 
-@dispatcher.message_handler(commands=['broadcast_wibkn96x', 'broadcast'])
+@dispatcher.message_handler(commands=['broadcast_wibkn96x', 'broadcast', 'broadcast_html'])
 async def broadcast(message: types.Message):
     logger.debug('broadcast')
     teacher = User.get_by_chat_id(message.chat.id)

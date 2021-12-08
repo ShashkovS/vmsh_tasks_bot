@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Дистанционный приём кружка по математике для 5-7 класса 179-й школы</title>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        @media (orientation: landscape) {
+            .video {
+                width: 27%;
+                /*max-width: 20rem;*/
+                height: 99%;
+                overflow: hidden;
+                border: none;
+            }
+
+            .board {
+                width: 72%;
+                /*min-width: calc(99.9vw - 20rem);*/
+                height: 99%;
+            }
+        }
+        @media (orientation: portrait) {
+            .video {
+                width: 100%;
+                max-height: 23rem;
+                height: 35vh;
+                overflow: hidden;
+                border: none;
+            }
+
+            .board {
+                width: 100%;
+                min-height: calc(99.9vh - 23rem);
+                height: 64.9vh;
+            }
+        }
+        /* The Modal (background) */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    padding-top: 50px; /* Location of the box */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    font-family: Arial, Helvetica, Garuda, sans-serif; line-height: 1.3;
+    font-size: 200%;
+}
+.modal button {
+    font-family: Arial, Helvetica, Garuda, sans-serif; line-height: 1.5;
+    font-size: 100%;
+    display: inline-block;
+}
+/* Modal Content */
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+#opponentName {
+    position: absolute;
+    background-color: rgba(255,255,255,0.5);
+    font-size: 120%;
+    padding-left: 1rem;
+    display: none;
+}
+#problemButtons {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: rgba(255,255,255,0.5);
+    font-size: 120%;
+    padding-left: 1rem;
+    display: block;
+}
+    </style>
+<script>
+    const url = new URL(window.location.href);
+    // const room = [[room]];
+    const room = 'hello';
+    const boardUrl = `https://whitebophir.proj179.ru/boards/${room}`;
+
+    function showOpponentName(name) {
+        const op = document.getElementById('opponentName');
+        op.innerText = name;
+        op.style.display = "block";
+    }
+
+    function initVideoFrame(video=0, room='room') {
+        const videoUrl = `https://brie.fi/ng/${room}?audio=1&video=${video}&fs=0&invite=0&prefs=1&share=0&chat=1`;
+        const briefiFrame = document.createElement("iframe");
+        briefiFrame.setAttribute("id", "briefiFrame");
+        briefiFrame.setAttribute("src", videoUrl);
+        briefiFrame.setAttribute("scrolling", "no");
+        briefiFrame.setAttribute("align", "left");
+        briefiFrame.setAttribute("allow", "camera; microphone; fullscreen; speaker; display-capture");
+        briefiFrame.className = "video";
+        briefiFrame.onmessage = ((e)=>console.log('!!!', e));
+        document.body.appendChild(briefiFrame);
+    }
+
+    function initWhiteboardFrame() {
+    // Now add whiteboard frame
+        const wboFrame = document.createElement("iframe");
+        wboFrame.setAttribute("id", "wboFrame");
+        wboFrame.setAttribute("src", boardUrl);
+        wboFrame.setAttribute("scrolling", "no");
+        wboFrame.setAttribute("align", "right");
+        wboFrame.className = "board";
+        document.body.appendChild(wboFrame);
+    }
+
+    function setWhiteboardName(url) {
+        console.log('setWhiteboardName');
+        const wboFrame = document.getElementById("wboFrame");
+        wboFrame.src = url;
+    }
+
+    window.addEventListener("message", (event) => {
+        console.log('event from iframe', event);
+    }, false);
+    console.log('something changed');
+    window.onmessage = (event) => {
+        console.warn('event from iframe', event);
+    };
+    function showPopup(html, button1, buttonTitle1, buttonOnclick1, button2=undefined, buttonTitle2=undefined, buttonOnclick2=undefined) {
+        const popup = document.getElementById("popup");
+        const popupText = document.getElementById("popupText");
+        const popupButton1 = document.getElementById("popupButton1");
+        const popupButton2 = document.getElementById("popupButton2");
+        popupText.innerHTML = html;
+        popupButton1.innerText = button1;
+        popupButton1.title = buttonTitle1;
+        popupButton1.onclick = buttonOnclick1;
+        if (button2 === undefined) {
+            popupButton2.style.display = "none";
+        } else {
+            popupButton2.style.display = "inline-block";
+            popupButton2.innerText = button2;
+            popupButton2.onclick = buttonOnclick2;
+            popupButton1.title = buttonTitle2;
+        }
+        popup.style.display = "block";
+    }
+    function hidePopup() {
+        const popup = document.getElementById("popup");
+        popup.style.display = "none";
+    }
+    function askIfVideoIsSuccessfull() {
+        showPopup(`Запустилось ли видео?`,
+                   '👌 Да!', 'Да, я могу видеть себя!', ()=>intro(),
+                   '⚠ Нет :(', 'Нет, у меня чёрное окно', ()=>tryToTurnOnMic());
+    }
+    function tryToTurnOnMic() {
+        showPopup(`В браузере в строке с адресом либо слева, либо справа нарисована перечёркнутая камера или что-то похожее.<br>Нажмите на эту пиктограмму и разрешите доступ к камере и микрофону.<br>После этого перезагрузите страницу.`,
+                   '👌 Получилось!', 'Да, я могу видеть себя!', ()=>intro(),
+                   '⚠ Нет, после перезагрузки не работает :(', 'Нет, у меня чёрное окно', ()=>oopsGoOnZoom());
+    }
+    function intro() {
+        initWhiteboardFrame();
+        showPopup(`Замечательно! Теперь вы можете заранее сделать пометки к задачам (выбирайте нужную)`,
+                   '👌 Поехали!', 'Начать работать!', ()=>loadBoardAndCo());
+    }
+    function oopsGoOnZoom() {
+        // TODO ХАРДКОД БОТА!!!
+        showPopup(`Печально. Тогда он-лайн схема для вас такая: открываете приложение zoom и стартуете новую конференцию.<br>В левом верхнем углу зелёный щит. Кликаете на него и копируете ссылку на вашу конференцию.<br>Запускаете вмш-телеграм-бота и пишете команду с вашей ссылкой вида <br><code>/set_zoom https://us02web.zoom.us/j/123?pwd=ABC</code>`,
+                   'Ясно, запускаю zoom и вставляю номер конференции в бота', 'Перейти в бота', ()=>window.location.href="https://t.me/vmsh179bot");
+    }
+    function loadBoardAndCo() {
+        hidePopup();
+        showOpponentName("Иванов Иван qwery, 5кл, 8.2лет");
+    }
+
+
+    function audioAndVideoCheck() {
+        hidePopup();
+        initVideoFrame(1, 'room');
+        setTimeout(()=>askIfVideoIsSuccessfull(), 3000);
+    }
+</script>
+</head>
+<body>
+<div id="opponentName"></div>
+<div id="popup" class="modal">
+  <div class="modal-content">
+    <p id="popupText"></p>
+      <button id="popupButton1"></button>
+      <button id="popupButton2"></button>
+  </div>
+</div>
+<div id="problemButtons"></div>
+
+<script>
+    showPopup(`Для дистанционного приёма нужны микрофон и камера.
+               <br>
+               Сейчас браузер попросит доступ к микрофону и камере, его нужно разрешить.`,
+               'Проверяем видеосвязь',
+               `После нажатия мы включим окно с видео и нужно будет дать доступ к микрофону и камере`,
+        ()=>audioAndVideoCheck() );
+</script>
+</body>
+</html>

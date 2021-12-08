@@ -118,20 +118,6 @@ def build_written_task_checking_verdict(student: User, problem: Problem):
     return keyboard_markup
 
 
-def build_student_in_conference():
-    logger.debug('keyboards.build_student_in_conference')
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"✔ Беседа окончена",
-        callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
-    ))
-    keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"❌ Отказаться от устной сдачи",
-        callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
-    ))
-    return keyboard_markup
-
-
 def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User, online: ONLINE_MODE):
     logger.debug('keyboards.build_verdict_for_oral_problems')
     lesson_num = Problem.last_lesson_num()

@@ -7,6 +7,7 @@ import traceback
 import enum
 from typing import Tuple, Optional
 from aiogram.dispatcher.webhook import types
+from aiogram.utils.exceptions import BadRequest
 
 from helpers.consts import *
 from helpers.config import logger, config
@@ -400,6 +401,45 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         #                            reply_markup=student_keyboards.build_exit_waitlist())
         #     await bot.answer_callback_query_ig(query.id)
         #     asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student, sleep=4))
+#         # await bot.send_message(chat_id=query.message.chat.id,
+#         #                        text=f"Выбрана устная задача. "
+#         #                             f"Её нужно сдавать в zoom-конференции. "
+#         #                        # f"Желательно перед сдачей записать ответ и основные шаги решения на бумаге. "
+#         #                        # f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
+#         #                        # f"\nКогда у вас всё готово, "
+#         #                             f"<b>Заходите в zoom-конференцию, идентификатор конференции:"
+#         #                             f"\n83488340620, код доступа: 179179</b>. "
+#         #                             f"\nПожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. "
+#         #                             f"Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. "
+#         #                             f"После окончания сдачи нужно выйти из конференции. "
+#         #                             f"Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. "
+#         #                             f"Мы постараемся выделить время каждому, но ожидание может быть достаточно долгим.",
+#         #                        disable_web_page_preview=True,
+#         #                        parse_mode='HTML')
+#         # State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+#         # await bot.answer_callback_query_ig(query.id)
+#         # asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student, sleep=5))
+#
+#         state = State.get_by_user_id(student.id)
+#         if state['oral_problem_id'] is not None:
+#             await bot.send_message(chat_id=query.message.chat.id,
+#                                    text="Вы уже стоите в очереди на устную сдачу\. " \
+#                                         "Дождитесь, когда освободится один из преподавателей\. " \
+#                                         "Тогда можно будет сдать сразу несколько задач\.",
+#                                    parse_mode="MarkdownV2")
+#             await bot.answer_callback_query_ig(query.id)
+#         else:
+#             try:
+#                 await bot.delete_message(chat_id=query.message.chat.id, message_id=query.message.message_id)
+#             except:
+#                 pass
+#             Waitlist.enter(student.id, problem.id)
+#             await bot.send_message(chat_id=query.message.chat.id,
+#                                    text="Вы встали в очередь на устную сдачу\.\nЧтобы выйти из очереди, нажмите `/exit_waitlist`",
+#                                    parse_mode="MarkdownV2",
+#                                    reply_markup=student_keyboards.build_exit_waitlist())
+#             await bot.answer_callback_query_ig(query.id)
+#             asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student, sleep=4))
 
 
 @reg_callback(CALLBACK.LIST_SELECTED)
@@ -467,6 +507,11 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
     Waitlist.leave(student.id)
+    db.delete_url_by_user_id(student.id)
+    try:
+        await bot.unpin_chat_message(chat_id=query.message.chat.id)
+    except BadRequest:
+        pass
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
     if teacher:
         await bot.send_message(chat_id=teacher.chat_id,
@@ -480,9 +525,35 @@ async def exit_waitlist(message: types.Message):
     logger.debug('exit_waitlist')
     user = User.get_by_chat_id(message.chat.id)
     Waitlist.leave(user.id)
+    db.delete_url_by_user_id(user.id)
+    try:
+        await bot.unpin_chat_message(chat_id=message.chat.id)
+    except BadRequest:
+        pass
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Вы успешно покинули очередь.",
+        text="Вы успешно покинули очередь на устную сдачу.",
         reply_markup=types.ReplyKeyboardRemove()
     )
     asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user))
+
+
+@dispatcher.message_handler(commands=['set_zoom'])
+async def set_zoom(message: types.Message):
+    logger.debug('set_zoom')
+    user = User.get_by_chat_id(message.chat.id)
+    zoom_conf = re.search(r'https://[\w?=._/-]*zoom[\w?=._/-]*', message.text or '')
+    if not zoom_conf:
+        await bot.send_message(chat_id=message.chat.id,
+                               text="Не смог найти в сообщении адрес конференции.")
+        await bot.send_message(chat_id=message.chat.id,
+                               text="Открываете приложение zoom и стартуете новую конференцию.<br>В левом верхнем углу зелёный щит. Кликаете на него и копируете ссылку на вашу конференцию.<br>Запускаете вмш-телеграм-бота и пишете команду с вашей ссылкой вида <br><code>/set_zoom https://us02web.zoom.us/j/123?pwd=ABC</code>",
+                               parse_mode="HTML")
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user, sleep=5))
+    else:
+        zoom_url = zoom_conf.group()
+        db.add_zoom_conf(user.id, zoom_url)
+        msg = await bot.send_message(chat_id=message.chat.id,
+                               text=f"Ожидайте вашей очереди и не выходите из конференции {zoom_url}.\nВыполните команду /exit_waitlist для отмены.",)
+        await bot.pin_chat_message(chat_id=message.chat.id, message_id=msg.message_id)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user, sleep=5))

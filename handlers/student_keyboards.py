@@ -92,3 +92,17 @@ def build_exit_waitlist():
     )
     keyboard_markup.add(exit_button)
     return keyboard_markup
+
+
+def build_student_in_conference():
+    logger.debug('keyboards.build_student_in_conference')
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    keyboard_markup.add(types.InlineKeyboardButton(
+        text=f"✔ Беседа окончена",
+        callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
+    ))
+    keyboard_markup.add(types.InlineKeyboardButton(
+        text=f"❌ Отказаться от устной сдачи",
+        callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
+    ))
+    return keyboard_markup

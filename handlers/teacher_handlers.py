@@ -3,6 +3,7 @@ import aiogram
 import asyncio
 from aiogram.dispatcher.webhook import types
 from aiogram.dispatcher import filters
+from aiogram.utils.exceptions import BadRequest
 from urllib.parse import urlencode
 from Levenshtein import jaro_winkler
 
@@ -10,7 +11,7 @@ from helpers.consts import *
 from helpers.config import logger
 from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
-from handlers import teacher_keyboards
+from handlers import teacher_keyboards, student_keyboards
 from handlers.main_handlers import process_regular_message
 from handlers.student_handlers import sleep_and_send_problems_keyboard
 
@@ -421,6 +422,11 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
     State.set_by_user_id(teacher.id, STATE.TEACHER_ACCEPTED_QUEUE, oral_problem_id=problem.id,
                          last_student_id=student.id)
     Waitlist.leave(student.id)
+    db.delete_url_by_user_id(student.id)
+    try:
+        await bot.unpin_chat_message(chat_id=student.chat_id)
+    except BadRequest:
+        pass
 
     params = {
         'studentId': student.id,
@@ -441,7 +447,7 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
         State.set_by_user_id(student.id, STATE.STUDENT_IS_IN_CONFERENCE, oral_problem_id=problem.id,
                              last_teacher_id=teacher.id)
         await bot.send_message(chat_id=student.chat_id, text="Нажмите по окончанию.",
-                               reply_markup=teacher_keyboards.build_student_in_conference(),
+                               reply_markup=student_keyboards.build_student_in_conference(),
                                parse_mode='HTML')
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
