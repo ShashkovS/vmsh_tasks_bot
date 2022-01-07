@@ -63,7 +63,7 @@ async def update_problems(message: types.Message):
     )
 
 
-async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
+async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode=False):
     logger.debug('run_broadcast_task')
     if tokens == ['all_students']:
         tokens = [user.token for user in User.all_students()]
@@ -79,7 +79,9 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
         tokens = [user.token for user in User.all_students() if user.online == ONLINE_MODE.ONLINE]
     elif tokens == ['all_school']:
         tokens = [user.token for user in User.all_students() if user.online == ONLINE_MODE.SCHOOL]
+    parse_mode = 'HTML' if html_mode else None
     bad_tokens = []
+    sent = 0
     for token in tokens:
         student = User.get_by_token(token)
         if not student or not student.chat_id:
@@ -89,7 +91,9 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
                 chat_id=student.chat_id,
                 text=broadcast_message,
                 disable_web_page_preview=True,
+                parse_mode=parse_mode,
             )
+            sent += 1
             db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None,
                                   broadcast_message, None)
         except aiogram.exceptions.TelegramAPIError as e:
@@ -98,7 +102,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message):
         await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=f"Все сообщения разосланы. Проблемы возникли с {bad_tokens!r}",
+        text=f"Все сообщения разосланы ({sent} штук). Проблемы возникли с {bad_tokens!r}",
     )
 
 
@@ -113,9 +117,10 @@ async def broadcast(message: types.Message):
         cmd, tokens, *broadcast_message = text
     except:
         return
+    html_mode = 'html' in cmd
     broadcast_message = '\n'.join(broadcast_message)
     tokens = re.split(r'\W+', tokens)
-    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message))
+    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode))
     await bot.send_message(
         chat_id=message.chat.id,
         text="Создано задание рассылки сообщений",
