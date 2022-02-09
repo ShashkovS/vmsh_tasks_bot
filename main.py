@@ -82,6 +82,16 @@ else:
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
 
+    # TODO test
+    from aiohttp import web as aioweb
+    routes = aioweb.RouteTableDef()
+    @routes.get('/tst')
+    async def get_tst(request):
+        print('get_tst')
+        return aioweb.Response(text='Yup! It works!', content_type='text/html')
+    app.add_routes(routes)
+    # TODO test
+
     # app will be started by gunicorn, so no need to start_webhook
     # start_webhook(
     #     dispatcher=dispatcher,
