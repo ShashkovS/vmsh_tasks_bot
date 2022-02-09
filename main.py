@@ -71,6 +71,7 @@ if __name__ == "__main__":
     # В режиме отладки запускаем без вебхуков
     start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
 else:
+
     # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
     USE_WEBHOOKS = True
     WEBHOOK_URL = "https://{}:{}/{}/".format(config.webhook_host, config.webhook_port, config.telegram_bot_token)
@@ -87,8 +88,12 @@ else:
     routes = aioweb.RouteTableDef()
     @routes.get('/tst')
     async def get_tst(request):
-        print('get_tst')
         return aioweb.Response(text='Yup! It works!', content_type='text/html')
+
+    @routes.post('/zoomevents')
+    async def post_zoomevents(request):
+        print(request)
+        return aioweb.Response(status=200)
     app.add_routes(routes)
     # TODO test
 
