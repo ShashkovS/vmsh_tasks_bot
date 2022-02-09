@@ -91,10 +91,15 @@ else:
         return aioweb.Response(text='Yup! It works!', content_type='text/html')
 
     @routes.post('/zoomevents')
-    async def post_zoomevents(request):
+    async def post_zoomevents(request: web.Request):
         print(request)
+        try:
+            logger.info(str(request.headers) + ';' + str(await request.text()))
+        except Exception as e:
+            logger.info(e)
         return aioweb.Response(status=200)
     app.add_routes(routes)
+    logger.info('zoomevents route working')
     # TODO test
 
     # app will be started by gunicorn, so no need to start_webhook
