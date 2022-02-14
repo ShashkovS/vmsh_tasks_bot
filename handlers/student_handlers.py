@@ -367,9 +367,11 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
             conf_id = '83488340620'
             passcode = '179179'
         else:
-            conf_id = '83052557082'
-            passcode = 'exp179'
-            hint = 'ВАЖНО: ДРУГАЯ КОНФЕРЕНЦИЯ!\n'
+            conf_id = '83488340620'
+            passcode = '179179'
+            # conf_id = '83052557082'
+            # passcode = 'exp179'
+            hint = 'КОНФЕРЕНЦИЯ КАКАЯ БЫЛА РАНЬШЕ!\n'
         text = (
             f"{hint}"
             f"Выбрана устная задача. "
