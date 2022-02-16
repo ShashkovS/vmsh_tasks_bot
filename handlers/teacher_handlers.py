@@ -699,3 +699,7 @@ async def zoom_queue(message: types.Message):
         chat_id=message.chat.id,
         text='Очередь в конференции:\n' + '\n'.join(show_queue)
     )
+    teacher_state = State.get_by_user_id(teacher.id)
+    if teacher_state['state'] == STATE.TEACHER_SELECT_ACTION:
+        await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
+                               reply_markup=teacher_keyboards.build_teacher_actions())
