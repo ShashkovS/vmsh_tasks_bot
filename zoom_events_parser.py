@@ -57,8 +57,8 @@ async def post_zoomevents(request: web.Request):
         logger.warning(str(request.headers) + ';' + str(await request.text()))
     except Exception as e:
         logger.warning(e)
-    if request.Authorization != ZOOM_AUTH:
-        return web.Response(status=200)
+    # if request.Authorization != ZOOM_AUTH:
+    #     return web.Response(status=200)
     try:
         data = await request.json()
         event, event_ts, is_circle, participant = parse_json(data)
