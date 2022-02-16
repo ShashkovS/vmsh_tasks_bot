@@ -42,7 +42,11 @@ class DB_ZOOM_QUEUE:
         cur.execute("""
             select * from zoom_queue
             order by enter_ts
-            limit 10
+            limit 15
         """)
         rows = cur.fetchall()
         return rows
+
+    def get_queue_count(self):
+        rows = self.conn.execute('SELECT COUNT(*) cnt FROM zoom_queue').fetchone()['cnt']
+        return rows if rows is not None else 0

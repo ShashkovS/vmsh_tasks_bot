@@ -693,6 +693,8 @@ async def zoom_queue(message: types.Message):
         waits_min = (waits.seconds + 30) // 60
         alert = '!!' if row['status'] > 0 else ''
         show_queue.append(f'{waits_min} мин   {row["zoom_user_name"]}  {alert}')
+    in_queue = db.get_queue_count()
+    show_queue.append(f'\nВсего в очереди: {in_queue} человек')
     await bot.send_message(
         chat_id=message.chat.id,
         text='Очередь в конференции:\n' + '\n'.join(show_queue)
