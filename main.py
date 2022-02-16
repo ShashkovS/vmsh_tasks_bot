@@ -9,6 +9,7 @@ from helpers.bot import bot, dispatcher
 from asyncio import sleep
 from random import uniform
 import handlers
+import zoom_events_parser
 
 USE_WEBHOOKS = False
 
@@ -82,26 +83,8 @@ else:
     # Setup event handlers.
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
-
-    # TODO test
-    from aiohttp import web as aioweb
-    routes = aioweb.RouteTableDef()
-    @routes.get('/tst')
-    async def get_tst(request):
-        return aioweb.Response(text='Yup! It works!', content_type='text/html')
-
-    @routes.post('/zoomevents')
-    async def post_zoomevents(request: web.Request):
-        print(request)
-        try:
-            logger.warning(str(request.headers) + ';' + str(await request.text()))
-        except Exception as e:
-            logger.warning(e)
-        return aioweb.Response(status=200)
-    app.add_routes(routes)
-    logger.warning('zoomevents route working')
-    # TODO test
-
+    # Дополнительные хендлеры
+    app.add_routes(zoom_events_parser.routes)
     # app will be started by gunicorn, so no need to start_webhook
     # start_webhook(
     #     dispatcher=dispatcher,

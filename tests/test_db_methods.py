@@ -1,5 +1,6 @@
 import os
 from unittest import TestCase
+from datetime import datetime
 
 from helpers.consts import *
 from db_methods import db
@@ -162,6 +163,7 @@ class DatabaseMethodsTest(TestCase):
         self.assertIsNone(kv.get('foo2', None))
 
         db = self.db
+
         def get_problem_lock(teacher_id: int):
             key = f'{teacher_id}_pl'
             value = db.kv.get(key, None)
@@ -192,6 +194,40 @@ class DatabaseMethodsTest(TestCase):
         del_problem_lock(123)
         self.assertIsNone(get_problem_lock(123))
 
+    def test_zoom_queue(self):
+        db = self.db
+        ts1 = datetime(2022, 1, 1, 1)
+        ts2 = datetime(2022, 1, 1, 2)
+        ts3 = datetime(2022, 1, 1, 3)
+        db.add_to_queue('name1', ts1)
+        db.add_to_queue('name2', ts3)
+        db.add_to_queue('name3', ts2)
+        db.mark_joined('name2')
+        queue = db.get_first_from_queue()
+        self.assertListEqual(queue, [
+            {'zoom_user_name': 'name1', 'enter_ts': '2022-01-01T01:00:00', 'status': 0},
+            {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0},
+            {'zoom_user_name': 'name2', 'enter_ts': '2022-01-01T03:00:00', 'status': 1},
+        ])
+        db.add_to_queue('name2', ts1)
+        db.add_to_queue('name3', datetime.now())
+        queue = db.get_first_from_queue()
+        self.assertListEqual(queue, [
+            {'zoom_user_name': 'name1', 'enter_ts': '2022-01-01T01:00:00', 'status': 0},
+            {'zoom_user_name': 'name2', 'enter_ts': '2022-01-01T01:00:00', 'status': 0},
+            {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0}
+        ])
+        db.remove_from_queue('name2')
+        queue = db.get_first_from_queue()
+        self.assertListEqual(queue, [
+            {'zoom_user_name': 'name1', 'enter_ts': '2022-01-01T01:00:00', 'status': 0},
+            {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0}
+        ])
+        db.remove_from_queue('name1')
+        queue = db.get_first_from_queue()
+        self.assertListEqual(queue, [
+            {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0}
+        ])
 
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)

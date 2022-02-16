@@ -1,3 +1,4 @@
+import datetime
 import re
 import aiogram
 import asyncio
@@ -673,3 +674,26 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
             asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
         query.data = f'{CALLBACK.STUDENT_SELECTED}_{student_id}'
         await prc_student_selected_callback(query, teacher)
+
+
+@dispatcher.message_handler(commands=['zoom_queue', 'z'])
+async def zoom_queue(message: types.Message):
+    '''
+    Вывести очередь школьников
+    '''
+    logger.debug('zoom_queue')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    queue = db.get_first_from_queue()
+    # [{'zoom_user_name': 'name3', 'enter_ts': '2022-01-01 02:00:00', 'status': 0}]
+    show_queue = []
+    for row in queue:
+        waits = datetime.datetime.now() - datetime.datetime.fromisoformat(row['enter_ts'])
+        waits_min = (waits.seconds + 30) // 60
+        alert = '!!' if row['status'] > 0 else ''
+        show_queue.append(f'{waits_min} мин   {row["zoom_user_name"]}  {alert}')
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text='Очередь в конференции:\n' + '\n'.join(show_queue)
+    )
