@@ -676,7 +676,7 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
         await prc_student_selected_callback(query, teacher)
 
 
-@dispatcher.message_handler(commands=['zoom_queue', 'z'])
+@dispatcher.message_handler(commands=['zoom_queue', 'z', 'zall'])
 async def zoom_queue(message: types.Message):
     '''
     Вывести очередь школьников
@@ -685,7 +685,8 @@ async def zoom_queue(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    queue = db.get_first_from_queue()
+    show_all = 'all' in message.text
+    queue = db.get_first_from_queue(show_all)
     # [{'zoom_user_name': 'name3', 'enter_ts': '2022-01-01 02:00:00', 'status': 0}]
     show_queue = []
     for row in queue:

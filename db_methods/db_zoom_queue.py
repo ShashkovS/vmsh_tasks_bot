@@ -37,13 +37,14 @@ class DB_ZOOM_QUEUE:
         """, args)
         self.conn.commit()
 
-    def get_first_from_queue(self):
+    def get_first_from_queue(self, show_all=False):
         cur = self.conn.cursor()
+        show = 150 if show_all else 15
         cur.execute("""
             select * from zoom_queue
             order by enter_ts
-            limit 15
-        """)
+            limit :show
+        """, {'show': show})
         rows = cur.fetchall()
         return rows
 
