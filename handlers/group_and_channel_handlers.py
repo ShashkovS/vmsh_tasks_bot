@@ -1,6 +1,7 @@
 import re
 from aiogram.dispatcher.webhook import types
 from aiogram.dispatcher.filters import ChatTypeFilter, RegexpCommandsFilter
+from aiogram.utils.exceptions import MessageCantBeDeleted
 
 from helpers.bot import bot, dispatcher
 from helpers.config import logger, config
@@ -22,7 +23,13 @@ async def group_message_handler(message: types.Message):
     # Ссылка без комментариев — это спам. Пересылаем её в exception и удаляем
     elif message.text and URL_REGEX.fullmatch(message.text):
         await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)
-        await bot.delete_message(message.chat.id, message.message_id)
+        try:
+            await bot.delete_message(message.chat.id, message.message_id)
+        except MessageCantBeDeleted:
+            await bot.send_message(config.exceptions_channel, 'Сообщение выше удалить не удалось :(')
+        except Exception as e:
+            logger.exception(f'SHIT: {e}')
+            await bot.send_message(config.exceptions_channel, 'Сообщение выше удалить не удалось :(')
 
 
 @dispatcher.channel_post_handler(lambda message: message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel)
