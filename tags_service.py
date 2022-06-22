@@ -126,7 +126,7 @@ def update_tags(payload: str, user: User) -> bool:
     problem = Problem.get_by_key(level, int(lesson), int(prob), PUNCTS[int(item)] if item else '')
     if not problem:
         return False
-    problem.update_tags(dumps(tags), user)
+    problem.update_tags(dumps(tags, ensure_ascii=False), user)
     return True
 
 
