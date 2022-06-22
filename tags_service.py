@@ -14,7 +14,7 @@ __ALL__ = ['routes']
 STRICT_COOKIE = dict(domain=None, path='/tag', max_age=2592000, secure=True, httponly=True, samesite='Strict')
 DEBUG_COOKIE = dict(domain=None, path='/tag', max_age=2592000, secure=False, httponly=True, samesite='Strict')
 COOKIE_NAME = 'tags'
-use_cookie: dict = None  # Устанавливается в момент старта приложения
+use_cookie: STRICT_COOKIE  # Устанавливается в момент старта приложения
 
 tag_regex = re.compile(r'tag_(\d+)_([а-яa-z])_(\d+)(?:_(\d+))?')
 PUNCTS = 'абвгдежзиклмнопрстуфхцчшщъыьэюя'
