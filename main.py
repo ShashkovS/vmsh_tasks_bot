@@ -10,6 +10,7 @@ from asyncio import sleep
 from random import uniform
 import handlers
 import zoom_events_parser
+import tags_service
 
 USE_WEBHOOKS = False
 
@@ -85,6 +86,7 @@ else:
     app.on_shutdown.append(on_shutdown)
     # Дополнительные хендлеры
     app.add_routes(zoom_events_parser.routes)
+    app.add_routes(tags_service.routes)
     # app will be started by gunicorn, so no need to start_webhook
     # start_webhook(
     #     dispatcher=dispatcher,

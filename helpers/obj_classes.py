@@ -169,6 +169,16 @@ class Problem:
         for level in LEVEL:
             db.update_problem_type(level, lesson, PROB_TYPE.WRITTEN_BEFORE_ORALLY, PROB_TYPE.ORALLY)
 
+    @staticmethod
+    def get_all_tags():
+        return db.get_all_tags()
+
+    def update_tags(self, tags: str, user: User):
+        return db.add_tags(self.id, tags, user.id)
+
+    def get_tags(self):
+        return db.get_tags_by_problem_id(self.id)
+
 
 class State:
     @staticmethod

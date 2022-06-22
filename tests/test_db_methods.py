@@ -229,6 +229,24 @@ class DatabaseMethodsTest(TestCase):
             {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0}
         ])
 
+    def test_problem_tags(self):
+        db = self.db
+        ts1 = datetime(2022, 1, 1, 1)
+        ts2 = datetime(2022, 1, 1, 2)
+        ts3 = datetime(2022, 1, 1, 3)
+        problems = db.get_all_tags()
+        self.assertEqual(len(problems), len(test_problems))
+        self.assertIsNone(problems[0]['tags'])
+        db.add_tags(7, 'tags1', 17)
+        self.assertEqual(db.get_tags_by_problem_id(7),'tags1')
+        db.add_tags(7, 'tags2', 18)
+        self.assertEqual(db.get_tags_by_problem_id(7), 'tags2')
+        self.assertIsNone(db.get_tags_by_problem_id(8))
+        problems = db.get_all_tags()
+        prob_7 = [prob for prob in problems if prob['id'] == 7][0]
+        self.assertEqual(prob_7['tags'], 'tags2')
+
+
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)
     # def fetch_all_lessons(self)
