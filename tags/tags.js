@@ -7,7 +7,7 @@ const prob_ids_to_send_tags = new Set();
 let dbTags = null;
 let updateTimeout = null;
 
-fetch('/tags/get_tags', {
+fetch('/tag/get_tags', {
     method: 'GET',
     headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
 }).then(res => res.json())
@@ -17,8 +17,8 @@ fetch('/tags/get_tags', {
     });
 
 function initSocket() {
-    // socket = new WebSocket("ws://127.0.0.1:8080/tags/ws");
-    socket = new WebSocket("wss://vmsh179bot2.proj179.ru/tags/ws");
+    // socket = new WebSocket("ws://127.0.0.1:8080/tag/ws");
+    socket = new WebSocket(`wss://${window.location.hostname}/tag/ws`);
     socket.onmessage = function (event) {
         const data = JSON.parse(event.data);
         const id = data['id'];

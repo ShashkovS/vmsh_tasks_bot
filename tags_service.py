@@ -48,7 +48,7 @@ def add_tags_page_response(user: User, page=0):
     return web.Response(text=templates['tags' + str(page)], content_type='text/html')
 
 
-@routes.get('/tag/{page}')
+@routes.get('/tag/p/{page}')
 async def get_tags(request):
     print('get_tags')
     page = request.match_info['page']
@@ -62,7 +62,7 @@ async def get_tags(request):
         return add_tags_page_response(user, page)
 
 
-@routes.post('/tag/{page}')
+@routes.post('/tag/p/{page}')
 async def post_tags(request):
     print('get_tags')
     page = request.match_info['page']
@@ -79,7 +79,7 @@ async def post_tags(request):
         return web.Response(text=templates['login'], content_type='text/html')
 
 
-@routes.get('/tags/get_tags')
+@routes.get('/tag/get_tags')
 async def get_tags(request):
     print('get_tags')
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
@@ -97,11 +97,6 @@ async def get_tags(request):
         data[id] = tags
     return web.json_response(data=data)
 
-
-@routes.get('/tags/socket')
-async def getsocket(request):
-    user = Webtoken.user_by_webtoken(request.cookies.get(COOKIE_NAME, None))
-    return web.Response(text=templates['socket'], content_type='text/html')
 
 
 user_id_to_websocket = weakref.WeakValueDictionary()
@@ -135,7 +130,7 @@ def update_tags(payload: str, user: User) -> bool:
     return True
 
 
-@routes.get('/tags/ws')
+@routes.get('/tag/ws')
 async def websocket(request):
     user = Webtoken.user_by_webtoken(request.cookies.get(COOKIE_NAME, None))
     # Без правильной куки прибиваем
