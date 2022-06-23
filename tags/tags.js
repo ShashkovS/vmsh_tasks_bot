@@ -29,7 +29,10 @@ function initSocket() {
         for (let tag of freshTags) {
             if (!curTags.includes(tag)) {
                 amsifySuggestags.addTag(tag, animate = true);
-            }
+            }   // Делаем бирку зелёной, типа в базе
+            console.log(amsifySuggestags);
+            const $item = $(amsifySuggestags.selectors.inputArea).find('[data-val="' + tag + '"]')
+            $item.css('background-color', '#28a745');
         }
         for (let tag of curTags) {
             if (!freshTags.includes(tag)) {
@@ -40,7 +43,8 @@ function initSocket() {
         console.log(`[message] Данные получены с сервера: ${event.data}`);
     };
     socket.onclose = function (event) {
-        console.log(`[close] Соединение закрыто чисто, код=${event.code} причина=${event.reason}`);
+        console.log(`[close] Соединение закрыто, код=${event.code} причина=${event.reason}`);
+        socket = null;
         setTimeout(initSocket, 1000);
     };
     socket.onerror = function (error) {
@@ -58,8 +62,14 @@ function sendAllUpdates() {
     const tagsToUpdateIterator = prob_ids_to_send_tags.values();
     let nextTag;
     while (nextTag = tagsToUpdateIterator.next().value) {
-        socket.send(JSON.stringify({id: nextTag, tags: allTags[nextTag].tagNames}));
-        prob_ids_to_send_tags.delete(nextTag); // todo удалять тогда, когда пришёл ответ
+        if (!socket) initSocket();
+        try {
+            socket.send(JSON.stringify({id: nextTag, tags: allTags[nextTag].tagNames}));
+            prob_ids_to_send_tags.delete(nextTag); // todo удалять тогда, когда пришёл ответ
+        } catch (e) {
+            updateTimeout = setTimeout(sendAllUpdates, 1000);
+            return;
+        }
     }
     updateTimeout = null;
 }

@@ -44,34 +44,28 @@ templates = {
 
 
 def add_tags_page_response(user: User, page=0):
-    print('add_tags_page_response')
     return web.Response(text=templates['tags' + str(page)], content_type='text/html')
 
 
 @routes.get('/tag/p/{page}')
 async def get_tags(request):
-    print('get_tags')
     page = request.match_info['page']
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
     user = Webtoken.user_by_webtoken(cookie_webtoken)
     if not user:
-        print('return login')
         return web.Response(text=templates['login'], content_type='text/html')
     else:
-        print('return board')
         return add_tags_page_response(user, page)
 
 
 @routes.post('/tag/p/{page}')
 async def post_tags(request):
-    print('get_tags')
     page = request.match_info['page']
     data = await request.post()
     token = data.get('password', None)
     user = User.get_by_token(token)
     cookie_webtoken = Webtoken.webtoken_by_user(user)
     if cookie_webtoken:
-        print('return board')
         response = add_tags_page_response(user, page)
         response.set_cookie(name=COOKIE_NAME, value=cookie_webtoken, **use_cookie)
         return response
@@ -81,32 +75,19 @@ async def post_tags(request):
 
 @routes.get('/tag/get_tags')
 async def get_tags(request):
-    print('get_tags')
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
     user = Webtoken.user_by_webtoken(cookie_webtoken)
     if not user:
-        print('return login')
         return web.Response(text=templates['login'], content_type='text/html')
     problems = Problem.get_all_tags()
     # p.id, p.level, p.lesson, p.prob, p.item, pt.tags
     data = {}
     for problem in problems:
-        item = '' if not problem['item'] else f'_{PUNCTS.index(problem["item"])+1:02}'
+        item = '' if not problem['item'] else f'_{PUNCTS.index(problem["item"]) + 1:02}'
         tags = [] if not problem["tags"] else loads(problem["tags"])
         id = f'tag_{problem["lesson"]:02}_{problem["level"]}_{problem["prob"]:02}{item}'
         data[id] = tags
     return web.json_response(data=data)
-
-
-
-user_id_to_websocket = weakref.WeakValueDictionary()
-
-
-def remove_from_ws_set(id):
-    try:
-        del user_id_to_websocket[id]
-    except KeyError:
-        pass
 
 
 def update_tags(payload: str, user: User) -> bool:
@@ -130,6 +111,9 @@ def update_tags(payload: str, user: User) -> bool:
     return True
 
 
+ws_connections = weakref.WeakSet()
+
+
 @routes.get('/tag/ws')
 async def websocket(request):
     user = Webtoken.user_by_webtoken(request.cookies.get(COOKIE_NAME, None))
@@ -138,27 +122,24 @@ async def websocket(request):
         return
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    user_id_to_websocket[user.id] = ws
-
-    print('wow-wow', dict(user_id_to_websocket))
+    ws_connections.add(ws)
     # Этот цикл «зависает» до тех пор, пока коннекшн не сдохнет
     try:
         async for msg in ws:
-            print(msg, user)
             if msg.type == WSMsgType.TEXT:
                 if msg.data == 'close':
                     await ws.close()
-                    remove_from_ws_set(user.id)
+                    break
                 else:
                     success = update_tags(msg.data, user)
                     if not success:
                         continue
-                    for other_user_id, other_ws in user_id_to_websocket.items():
+                    for other_ws in ws_connections:
                         await other_ws.send_str(msg.data)
             elif msg.type == WSMsgType.ERROR:
                 print(ws.exception())
     finally:
-        remove_from_ws_set(user.id)
+        ws_connections.discard(ws)
     print('websocket connection closed')
 
     return ws
@@ -173,7 +154,7 @@ async def on_startup(app):
 async def on_shutdown(app):
     logger.warning('Shutting down..')
     db.disconnect()
-    for user, ws in user_id_to_websocket:
+    for ws in ws_connections:
         await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
     logger.warning('Bye!')
 
