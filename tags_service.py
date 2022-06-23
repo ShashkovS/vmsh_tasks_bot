@@ -104,7 +104,7 @@ def update_tags(payload: str, user: User) -> bool:
     if not match:
         return False
     lesson, level, prob, item = match.groups()
-    problem = Problem.get_by_key(level, int(lesson), int(prob), PUNCTS[int(item)] if item else '')
+    problem = Problem.get_by_key(level, int(lesson), int(prob), PUNCTS[int(item)-1] if item else '')
     if not problem:
         return False
     problem.update_tags(dumps(tags, ensure_ascii=False), user)
