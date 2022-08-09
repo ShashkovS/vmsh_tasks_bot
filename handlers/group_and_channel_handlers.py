@@ -11,13 +11,20 @@ URL_REGEX = re.compile(r'\s*(https?:\/\/)?([\w\.]+)\.([a-zрф]{2,6}\.?)(\/[\w\.
 
 
 @dispatcher.message_handler(ChatTypeFilter(types.ChatType.SUPERGROUP), content_types=types.ContentType.ANY)
+@dispatcher.message_handler(ChatTypeFilter(types.ChatType.GROUP), content_types=types.ContentType.ANY)
 @dispatcher.message_handler(ChatTypeFilter(types.ChatType.SUPERGROUP), RegexpCommandsFilter(regexp_commands=['.*']))
 async def group_message_handler(message: types.Message):
     # Если сообщение от админа, то игнорируем его
     if message.from_user.username == 'GroupAnonymousBot':
         return
+    # Сообщения про новеньких и удалившихся удаляем
+    elif message.new_chat_members or message.left_chat_member:
+        try:
+            await bot.delete_message(message.chat.id, message.message_id)
+        except Exception as e:
+            logger.exception(f'SHIT: {e}')
     # Кто-то пишет команду в группе, а не в боте
-    if message.text and re.match(r'^\s*/[a-z_]{2,}', message.text):
+    elif message.text and re.match(r'^\s*/[a-z_]{2,}', message.text):
         await bot.send_message(message.chat.id, text=f'Кажется, это сообщение лично для меня. Заходите: @{bot.username}',
                                reply_to_message_id=message.message_id)
     # Ссылка без комментариев — это спам. Пересылаем её в exception и удаляем

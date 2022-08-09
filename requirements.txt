@@ -7,6 +7,8 @@
 # gunicorn
 # python-Levenshtein
 # yoyo-migrations
+# uvloop
+# orjson
 
 aiogram==2.14.3
 aiohttp==3.7.4.post0
