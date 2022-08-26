@@ -246,6 +246,33 @@ class DatabaseMethodsTest(TestCase):
         prob_7 = [prob for prob in problems if prob['id'] == 7][0]
         self.assertEqual(prob_7['tags'], 'tags2')
 
+    def test_media_groups(self):
+        db = self.db
+        media_group_id = 123
+        media_group_id_2 = 1234
+        media_group_id_3 = 1235
+        problem_id = 12
+
+        saved_problem_id = db.media_group_check(media_group_id)
+        self.assertIsNone(saved_problem_id)
+
+        db.media_group_add(media_group_id, problem_id)
+        saved_problem_id = db.media_group_check(media_group_id)
+        self.assertEqual(problem_id, saved_problem_id)
+
+        saved_problem_id = db.media_group_check(media_group_id_2)
+        self.assertIsNone(saved_problem_id)
+        saved_problem_id = db.media_group_check(media_group_id_3)
+        self.assertIsNone(saved_problem_id)
+
+        db.media_group_add(media_group_id_2, problem_id)
+        db.media_group_add(media_group_id_3, problem_id)
+
+        saved_problem_id = db.media_group_check(media_group_id_2)
+        self.assertEqual(problem_id, saved_problem_id)
+        saved_problem_id = db.media_group_check(media_group_id_3)
+        self.assertEqual(problem_id, saved_problem_id)
+
 
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)

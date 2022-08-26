@@ -58,10 +58,27 @@ async def prc_get_task_info_state(message, student: User):
 @reg_state(STATE.SENDING_SOLUTION)
 async def prc_sending_solution_state(message: types.Message, student: User):
     logger.debug('prc_sending_solution_state')
-    problem_id = State.get_by_user_id(student.id)['problem_id']
+
+    # Особый случай — это медиа-группы. Если несколько картинок в одном сообщении,
+    # то к нам в бот они придут в виде нескольких сообщений с одинаковым media_group_id.
+    # Поэтому если media_group_id задан, то для первого сообщения нужно сохранить, к какой он задаче,
+    # а потом уже брать id задачи из
+    problem_id = None
+    next_media_group_message = False
+    if message.media_group_id:
+        problem_id = db.media_group_check(message.media_group_id)
+        if problem_id:
+            next_media_group_message = True
+        else:
+            problem_id = State.get_by_user_id(student.id)['problem_id']
+            db.media_group_add(message.media_group_id, problem_id)
+    if not problem_id:
+        problem_id = State.get_by_user_id(student.id)['problem_id']
     problem = Problem.get_by_id(problem_id)
     file_name = None
     text = message.text
+
+
     # Перестали сохранять файлы к себе, вроде в этом нет необходимости
     # downloaded = []
     # if text:
@@ -94,14 +111,15 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     #     db.add_message_to_log(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
     #     with open(file_name, 'wb') as file:
     #         file.write(bin_data.read())
-    WrittenQueue.add_to_queue(student.id, problem.id)
     WrittenQueue.add_to_discussions(student.id, problem.id, None, text, file_name, message.chat.id, message.message_id)
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text="Принято на проверку"
-    )
-    State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+    if not next_media_group_message:
+        WrittenQueue.add_to_queue(student.id, problem.id)
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="Принято на проверку"
+        )
+        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 def check_test_ans_rate_limit(student_id: int, problem_id: int):
