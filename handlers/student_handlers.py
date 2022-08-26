@@ -25,7 +25,7 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
     'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum, 'map': map,
 }
 is_py_func = re.compile(r'^\s*def \w+\s*\(')
-
+MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
 
 async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1):
     if sleep > 0:
@@ -151,19 +151,26 @@ def check_test_problem_answer(problem: Problem, student: Optional[User], student
     answer_is_correct = additional_message = error_text = None
     if student_answer is None:
         student_answer = ''
+
     # Проверяем на перебор
-    if student:
+    if student:  # При перепроверке данная проверка не выполняется
         text_to_student = check_test_ans_rate_limit(student.id, problem.id) if student.type == USER_TYPE.STUDENT else None
         if text_to_student:
             return ANS_CHECK_VERDICT.RATE_LIMIT, text_to_student, error_text
-    # Если тип ответа — выбор из нескольких вариантов ответа, про проверим, если ответ среди вариантов
-    if problem.ans_type == ANS_TYPE.SELECT_ONE and student_answer[:24] not in [ans.strip()[:24] for ans in problem.cor_ans.split(';')]:  # TODO 24!!!
-        return ANS_CHECK_VERDICT.INCORRECT_SELECT, additional_message, error_text
+
+    # Если тип ответа — выбор из нескольких вариантов ответа, то это «простой» особый случай
+    if problem.ans_type == ANS_TYPE.SELECT_ONE:
+        student_answer_cut = student_answer.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower()
+        if student_answer_cut in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in problem.cor_ans.split(';')]:
+            return ANS_CHECK_VERDICT.CORRECT, additional_message, error_text
+        if student_answer_cut not in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in problem.ans_validation.split(';')]:
+            return ANS_CHECK_VERDICT.INCORRECT_SELECT, additional_message, error_text
+        return ANS_CHECK_VERDICT.WRONG, additional_message, error_text
+
     # Сначала проверим, проходит ли ответ валидацию регуляркой (для стандартных типов или если она указана)
-    if problem.ans_type != ANS_TYPE.SELECT_ONE:
-        validation_regex = (problem.ans_validation and re.compile(problem.ans_validation)) or ANS_REGEX.get(problem.ans_type, None)
-        if validation_regex and not validation_regex.fullmatch(student_answer):
-            return ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED, additional_message, error_text
+    validation_regex = (problem.ans_validation and re.compile(problem.ans_validation)) or ANS_REGEX.get(problem.ans_type, None)
+    if validation_regex and not validation_regex.fullmatch(student_answer):
+        return ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED, additional_message, error_text
     # Здесь мы проверяем ответ в зависимости от того, как проверять
     if problem.cor_ans_checker and is_py_func.match(problem.cor_ans_checker):
         answer_is_correct, additional_message, error_text = run_py_func_checker(problem, student_answer)
@@ -349,8 +356,9 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
                                    text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:",
                                    reply_markup=student_keyboards.build_test_answers(problem))
         else:
+            answer_recommendation = problem.validation_error or f'Теперь введите ответ{problem.ans_type.descr}'
             await bot.send_message(chat_id=query.message.chat.id,
-                                   text=f"Выбрана задача {problem}.\nТеперь введите ответ{problem.ans_type.descr}",
+                                   text=f"Выбрана задача {problem}.\n{answer_recommendation}",
                                    reply_markup=student_keyboards.build_cancel_task_submission())
         State.set_by_user_id(student.id, STATE.SENDING_TEST_ANSWER, problem_id)
         await bot.answer_callback_query_ig(query.id)
