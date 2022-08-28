@@ -75,6 +75,8 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
         tokens = [user.token for user in User.all_students() if user.level == LEVEL.PRO]
     elif tokens == ['all_expert']:
         tokens = [user.token for user in User.all_students() if user.level == LEVEL.EXPERT]
+    elif tokens == ['all_gr8']:
+        tokens = [user.token for user in User.all_students() if user.level == LEVEL.GR8]
     elif tokens == ['all_online']:
         tokens = [user.token for user in User.all_students() if user.online == ONLINE_MODE.ONLINE]
     elif tokens == ['all_school']:

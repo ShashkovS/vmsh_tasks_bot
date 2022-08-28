@@ -156,6 +156,9 @@ async def set_student_level(message: types.Message):
     elif new_level == LEVEL.EXPERT:
         student.set_level(LEVEL.EXPERT)
         stud_msg = "Вы переведены в группу экспертов"
+    elif new_level == LEVEL.GR8:
+        student.set_level(LEVEL.GR8)
+        stud_msg = "Вы переведены в группу 8 класса"
     else:
         return
     await bot.send_message(

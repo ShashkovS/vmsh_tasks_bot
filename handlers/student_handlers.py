@@ -295,7 +295,9 @@ async def level_novice(message: types.Message):
     if student:
         message = await bot.send_message(
             chat_id=message.chat.id,
-            text="Вы переведены в группу начинающих",
+            text="Вы переведены в группу начинающих. "
+                 "Успехов в занятиях! "
+                 "Вопросы можно задавать в группе @vmsh_179_5_7_2022_chat.",
         )
         student.set_level(LEVEL.NOVICE)
         if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
@@ -310,7 +312,9 @@ async def level_pro(message: types.Message):
     if student:
         message = await bot.send_message(
             chat_id=message.chat.id,
-            text="Вы переведены в группу продолжающих",
+            text="Вы переведены в группу продолжающих. "
+                 "Следите за сложностью, если не получается больше половины задач, то лучше перейти в группу «начинающих». "
+                 "Это будет комфортнее и полезнее!",
         )
         student.set_level(LEVEL.PRO)
         if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
@@ -325,9 +329,28 @@ async def level_expert(message: types.Message):
     if student:
         message = await bot.send_message(
             chat_id=message.chat.id,
-            text="Вы переведены в группу экспертов",
+            text="Вы переведены в группу экспертов. "
+                 "Здесь будут сложные задачи, не переборщите со сложностью :) "
+                 "Успехов!",
         )
         student.set_level(LEVEL.EXPERT)
+        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+
+@dispatcher.message_handler(commands=['level_gr8'])
+async def level_expert(message: types.Message):
+    logger.debug('level_gr8')
+    student = User.get_by_chat_id(message.chat.id)
+    if student:
+        message = await bot.send_message(
+            chat_id=message.chat.id,
+            text="Вы переведены в группу восьмого класса. Обратите внимание, что эта группа для «опытных» учеников 8 класса. "
+                 "Если будет сложновато, рекомендуем группы «Продолжающие» или «Эксперты». "
+                 "Вот канал вашего класса: @vmsh_179_8_2022. "
+                 "А вот группа для обсуждений: @vmsh_179_8_2022_chat",
+        )
+        student.set_level(LEVEL.GR8)
         if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
@@ -397,7 +420,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
             passcode = '179179'
             # conf_id = '83052557082'
             # passcode = 'exp179'
-            hint = 'КОНФЕРЕНЦИЯ КАКАЯ БЫЛА РАНЬШЕ!\n'
+            # hint = 'КОНФЕРЕНЦИЯ КАКАЯ БЫЛА РАНЬШЕ!\n'
         text = (
             f"{hint}"
             f"Выбрана устная задача. "
