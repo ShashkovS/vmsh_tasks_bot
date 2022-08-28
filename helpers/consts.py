@@ -77,7 +77,7 @@ class USER_TYPE(IntFlag):
     DELETED = -1
 
 
-LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', '8': 'Восьмиклассники' }
+LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', 'В': 'Восьмиклассники' }
 
 
 @unique
@@ -85,7 +85,7 @@ class LEVEL(str, Enum):
     NOVICE = 'н'
     PRO = 'п'
     EXPERT = 'э'
-    GR8 = '8'
+    GR8 = 'В'
 
     def __init__(self, value):
         self.slevel = LEVEL_DESCRIPTION.get(self.value, None)
