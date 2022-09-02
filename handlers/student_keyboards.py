@@ -7,13 +7,13 @@ from helpers.obj_classes import User, Problem, State, db
 
 def build_problems(lesson_num: int, student: User):
     logger.debug('keyboards.build_problems')
-    solved = db.check_student_solved(student.id, student.level, lesson_num)
-    being_checked = db.check_student_sent_written(student.id, lesson_num)
+    solved = set(db.check_student_solved(student.id, lesson_num))
+    being_checked = set(db.check_student_sent_written(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     for problem in Problem.get_by_lesson(student.level, lesson_num):
-        if problem.id in solved:
+        if problem.synonyms & solved:
             tick = '✅'
-        elif problem.id in being_checked:
+        elif problem.synonyms & being_checked:
             tick = '❓'
         elif problem.prob_type == PROB_TYPE.ORALLY and State.get_by_user_id(student.id)['oral_problem_id'] is not None:
             tick = '⌛'

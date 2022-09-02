@@ -72,3 +72,12 @@ class DB_PROBLEM:
             WHERE level = :level and lesson = :lesson and prob_type = :from_prob_type
         """, args)
         self.conn.commit()
+
+    def update_synonyms(self):
+        cur = self.conn.cursor()
+        cur.execute("""
+            update problems
+            set synonyms = (select group_concat(id, ';') from problems p2 where p2.lesson=problems.lesson and p2.title=problems.title)
+            where 1=1;
+        """)
+        self.conn.commit()

@@ -126,6 +126,7 @@ class Problem:
     cor_ans_checker: str
     wrong_ans: str
     congrat: str
+    synonyms: set = None  # Список синонимичных задач
     id: int = None
 
     def __post_init__(self):
@@ -134,6 +135,10 @@ class Problem:
         self.prob_type = PROB_TYPE(self.prob_type)
         if self.ans_type:
             self.ans_type = ANS_TYPE(self.ans_type)
+        if self.synonyms and type(self.synonyms) != set:
+            self.synonyms = set(map(int, self.synonyms.split(';')))
+        else:
+            self.synonyms = {self.id}
 
     def __str__(self):
         return f"Задача {self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"
@@ -321,7 +326,9 @@ class FromGoogleSpreadsheet:
                 errors.append(f'Не компилируется регулярка валидации у задачи {problem!r}')
                 continue
             Problem(**problem)
+        # TODO Попахивает риском продолбать важное :(
         db.update_lessons()
+        db.update_synonyms()
         return errors
 
 

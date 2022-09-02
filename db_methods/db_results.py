@@ -46,12 +46,12 @@ class DB_RESULT:
         """, args)
         self.conn.commit()
 
-    def check_student_solved(self, student_id: int, level: str, lesson: int) -> set:
+    def check_student_solved(self, student_id: int, lesson: int) -> set:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
             select distinct problem_id from results
-            where student_id = :student_id and level = :level and lesson = :lesson and verdict > 0
+            where student_id = :student_id and lesson = :lesson and verdict > 0
         """, args)
         rows = cur.fetchall()
         solved_ids = {row['problem_id'] for row in rows}
