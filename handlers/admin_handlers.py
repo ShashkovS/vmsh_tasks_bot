@@ -8,7 +8,7 @@ from helpers.config import logger, config
 from helpers.obj_classes import User, Problem, State, FromGoogleSpreadsheet, db
 from helpers.bot import bot, dispatcher
 from handlers import student_keyboards
-from handlers.student_handlers import check_test_problem_answer, ANS_CHECK_VERDICT
+from handlers.student_handlers import check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard
 
 
 @dispatcher.message_handler(commands=['update_all_quaLtzPE', 'update_all'])
@@ -170,23 +170,30 @@ async def update_teachers_commands(message: types.Message):
 async def recheck_problem_task(teacher_chat_id: int, problem: Problem):
     for_recheck = db.get_results_for_recheck_by_problem_id(problem.id)
     oks = errs = changes = 0
+    students_to_update_keyboards = set()
     for row in for_recheck:
         check_verdict, _, error_text = check_test_problem_answer(problem, student=None, student_answer=row["answer"])
         if error_text:
             await bot.post_logging_message(error_text)
-        old_verdict = row["verdict"]
+        row["old_verdict"] = old_verdict = row["verdict"]
         if check_verdict == ANS_CHECK_VERDICT.CORRECT:
             row["verdict"] = VERDICT.SOLVED
             oks += 1
         else:
             row["verdict"] = VERDICT.WRONG_ANSWER
             errs += 1
-        changes += old_verdict != row["verdict"]
+        if old_verdict != row["verdict"]:
+            changes += 1
+            students_to_update_keyboards.add(row['student_id'])
     db.update_verdicts(for_recheck)
     await bot.send_message(
         chat_id=teacher_chat_id,
         text=f"Задача {problem} перепроверена. {oks} плюсов, {errs} минусов. Исправлено {changes} посылок",
     )
+    # Обновляем клавиатуры школьникам
+    for student_id in students_to_update_keyboards:
+        student = User.get_by_id(student_id)
+        await refresh_last_student_keyboard(student)
 
 
 @dispatcher.message_handler(commands=['problem_recheck', 'prc'])
@@ -218,13 +225,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
         if not student.chat_id:
             continue
         try:
-            slevel = f'(уровень «{student.level.slevel}»)'
-            keyb_msg = await bot.send_message(
-                chat_id=student.chat_id,
-                text=f"Можно сдавать задачи!\n❓ Нажимайте на задачу, чтобы сдать её {slevel}",
-                reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
-            )
-            db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
+            await post_problem_keyboard(student.chat_id, student)
         except:
             pass
         await asyncio.sleep(1 / 20)

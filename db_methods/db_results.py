@@ -73,7 +73,7 @@ class DB_RESULT:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
-            select r.ROWID, r.answer, r.verdict from results r
+            select r.ROWID, r.student_id, r.answer, r.verdict from results r
             where r.problem_id = :problem_id
         """, args)
         rows = cur.fetchall()

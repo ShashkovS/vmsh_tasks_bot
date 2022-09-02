@@ -27,15 +27,38 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
 is_py_func = re.compile(r'^\s*def \w+\s*\(')
 MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
 
-async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1):
-    if sleep > 0:
-        await asyncio.sleep(sleep)
+
+async def post_problem_keyboard(chat_id: int, student: User):
+    prev_keyboard = db.get_last_keyboard(student.id)
+    if prev_keyboard:
+        try:
+            await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'], reply_markup=None)
+        except:
+            pass
     keyb_msg = await bot.send_message(
         chat_id=chat_id,
         text=f"❓ Нажимайте на задачу, чтобы сдать её (уровень «{student.level.slevel}»)",
         reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
     )
     db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
+
+
+async def refresh_last_student_keyboard(student: User):
+    if not student:
+        return
+    prev_keyboard = db.get_last_keyboard(student.id)
+    if prev_keyboard:
+        await bot.edit_message_reply_markup_ig(
+            chat_id=prev_keyboard['chat_id'],
+            message_id=prev_keyboard['tg_msg_id'],
+            reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student)
+        )
+
+
+async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1):
+    if sleep > 0:
+        await asyncio.sleep(sleep)
+    await post_problem_keyboard(chat_id, student)
 
 
 @reg_state(STATE.GET_TASK_INFO)
@@ -77,7 +100,6 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     problem = Problem.get_by_id(problem_id)
     file_name = None
     text = message.text
-
 
     # Перестали сохранять файлы к себе, вроде в этом нет необходимости
     # downloaded = []
@@ -338,6 +360,7 @@ async def level_expert(message: types.Message):
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
+
 @dispatcher.message_handler(commands=['level_gr8'])
 async def level_expert(message: types.Message):
     logger.debug('level_gr8')
@@ -466,6 +489,8 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         #                            reply_markup=student_keyboards.build_exit_waitlist())
         #     await bot.answer_callback_query_ig(query.id)
         #     asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student, sleep=4))
+
+
 #         # await bot.send_message(chat_id=query.message.chat.id,
 #         #                        text=f"Выбрана устная задача. "
 #         #                             f"Её нужно сдавать в zoom-конференции. "
@@ -512,10 +537,7 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_list_selected_callback')
     list_num = int(query.data[2:])
     student = User.get_by_chat_id(query.message.chat.id)
-    keyb_msg = await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                              text="Теперь выберите задачу",
-                                              reply_markup=student_keyboards.build_problems(list_num, student))
-    db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
+    await post_problem_keyboard(student.chat_id, student)
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -619,6 +641,6 @@ async def set_zoom(message: types.Message):
         zoom_url = zoom_conf.group()
         db.add_zoom_conf(user.id, zoom_url)
         msg = await bot.send_message(chat_id=message.chat.id,
-                               text=f"Ожидайте вашей очереди и не выходите из конференции {zoom_url}.\nВыполните команду /exit_waitlist для отмены.",)
+                                     text=f"Ожидайте вашей очереди и не выходите из конференции {zoom_url}.\nВыполните команду /exit_waitlist для отмены.", )
         await bot.pin_chat_message(chat_id=message.chat.id, message_id=msg.message_id)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user, sleep=5))

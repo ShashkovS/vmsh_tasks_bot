@@ -14,7 +14,7 @@ from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import teacher_keyboards, student_keyboards
 from handlers.main_handlers import process_regular_message
-from handlers.student_handlers import sleep_and_send_problems_keyboard
+from handlers.student_handlers import sleep_and_send_problems_keyboard, refresh_last_student_keyboard, WHITEBOARD_LINK
 
 
 def get_problem_lock(teacher_id: int):
@@ -321,6 +321,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
                                 f'/recheck_{student.token}_{problem.id}',
                            parse_mode='HTML')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+    await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
     student_chat_id = User.get_by_id(student.id).chat_id
     try:
         discussion = WrittenQueue.get_discussion(student.id, problem.id)
@@ -368,6 +369,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, RES_TYPE.WRITTEN)
     db.delete_plus(student_id, problem.id, VERDICT.REJECTED_ANSWER)
     WrittenQueue.delete_from_queue(student.id, problem.id)
+    await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
     await bot.send_message(chat_id=query.message.chat.id,
                            text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
                                 f'школьнику {student.token} {student.surname} {student.name}! Для исправления: '
@@ -496,6 +498,8 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: User):
     await bot.answer_callback_query_ig(query.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     db.add_result(student_id, problem_id, problem.level, problem.lesson, teacher.id, verdict, '', RES_TYPE.ZOOM)
+    student = User.get_by_id(student_id)
+    await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
     await process_regular_message(query.message)
 
 
@@ -570,6 +574,8 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     for problem in minuses:
         db.delete_plus(student_id, problem.id, VERDICT.REJECTED_ANSWER)
         db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, res_type)
+    await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
+
     # Формируем сообщение с итоговым результатом проверки
     text = f"Школьник: {student.token} {student.surname} {student.name}\n"
     if human_readable_pluses:
