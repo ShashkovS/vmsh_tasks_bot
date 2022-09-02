@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import aiogram
-from aiogram.utils.exceptions import MessageNotModified
+from aiogram.utils.exceptions import MessageNotModified, MessageToEditNotFound
 from aiogram.dispatcher import Dispatcher
 from helpers.config import config, logger
 from helpers.consts import CALLBACK, STATE
@@ -21,7 +21,7 @@ class BotIg(aiogram.Bot):
         logger.debug('bot.edit_message_reply_markup_ig')
         try:
             await self.edit_message_reply_markup(*args, **kwargs)
-        except MessageNotModified as e:
+        except (MessageNotModified, MessageToEditNotFound) as e:
             pass
 
     async def answer_callback_query_ig(self, *args, **kwargs):

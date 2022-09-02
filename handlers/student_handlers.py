@@ -406,7 +406,9 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         return
     problem_id = int(query.data[2:])
     problem = Problem.get_by_id(problem_id)
+    # Удаляем сообщение с клавиатурой-списком задач
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
+    db.del_last_keyboard(student.id)
     if not problem:
         await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
