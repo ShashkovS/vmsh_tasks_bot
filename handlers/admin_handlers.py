@@ -220,6 +220,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
     logger.debug('run_set_get_task_info_for_all_students_task')
     # Всем студентам, у которых есть chat_id ставим state STATE.GET_TASK_INFO и отправляем список задач
     for student in User.all_students():
+        db.del_last_keyboard(student.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         logger.info(f'{student.id} оживлён')
         if not student.chat_id:
@@ -259,7 +260,6 @@ async def run_set_sleep_state_task(teacher_chat_id):
             await post_problem_keyboard(student.chat_id, student, blocked=True)
         except:
             pass
-        db.del_last_keyboard(student.id)
         try:
             await prc_student_is_sleeping_state(None, student)
         except:
