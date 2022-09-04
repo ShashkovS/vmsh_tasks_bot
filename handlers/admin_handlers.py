@@ -8,7 +8,7 @@ from helpers.config import logger, config
 from helpers.obj_classes import User, Problem, State, FromGoogleSpreadsheet, db
 from helpers.bot import bot, dispatcher
 from handlers import student_keyboards
-from handlers.student_handlers import check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard
+from handlers.student_handlers import check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard, prc_student_is_sleeping_state
 
 
 @dispatcher.message_handler(commands=['update_all_quaLtzPE', 'update_all'])
@@ -256,11 +256,12 @@ async def run_set_sleep_state_task(teacher_chat_id):
         if not student.chat_id:
             continue
         try:
-            await bot.send_message(
-                chat_id=student.chat_id,
-                text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
-                     "Заходите в канал @vmsh_179_5_7_2021 кружка за новостями и решениями.",
-            )
+            await post_problem_keyboard(student.chat_id, student, blocked=True)
+        except:
+            pass
+        db.del_last_keyboard(student.id)
+        try:
+            await prc_student_is_sleeping_state(None, student)
         except:
             pass
         await asyncio.sleep(1 / 20)

@@ -28,16 +28,20 @@ is_py_func = re.compile(r'^\s*def \w+\s*\(')
 MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
 
 
-async def post_problem_keyboard(chat_id: int, student: User):
+async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
     prev_keyboard = db.get_last_keyboard(student.id)
     if prev_keyboard:
         try:
             await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'], reply_markup=None)
         except:
             pass
+    if not blocked:
+        text = f"❓ Нажимайте на задачу, чтобы сдать её (уровень «{student.level.slevel}»)"
+    else:
+        text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
     keyb_msg = await bot.send_message(
         chat_id=chat_id,
-        text=f"❓ Нажимайте на задачу, чтобы сдать её (уровень «{student.level.slevel}»)",
+        text=text,
         reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
     )
     db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
@@ -298,9 +302,17 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
 @reg_state(STATE.STUDENT_IS_SLEEPING)
 async def prc_student_is_sleeping_state(message: types.message, student: User):
     logger.debug('prc_student_is_sleeping_state')
-    await bot.send_message(chat_id=message.chat.id,
+    if student.level == LEVEL.NOVICE:
+        channel = '@vmsh_179_5_7_2022'
+    elif student.level == LEVEL.PRO:
+        channel = '@vmsh_179_5_7_2022'
+    elif student.level == LEVEL.EXPERT:
+        channel = '@vmsh_179_5_7_2022'
+    elif student.level == LEVEL.GR8:
+        channel = '@vmsh_179_8_2022'
+    await bot.send_message(chat_id=message.chat.id if message else student.chat_id,
                            text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
-                                "Заходите в канал @vmsh_179_5_7_2021 кружка за новостями и решениями.")
+                                f"Заходите в канал {channel} кружка за новостями и решениями.")
 
 
 @reg_state(STATE.STUDENT_IS_IN_CONFERENCE)
