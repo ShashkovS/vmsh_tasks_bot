@@ -67,13 +67,12 @@ class User:
         return f'{self.name} {self.middlename} {self.surname}'
 
     def name_for_teacher(self):
+        age = ''
         if self.birthday:
             try:
                 age = f"возраст: {((datetime.now().date() - date.fromisoformat(self.birthday)).days / 365.25):0.1f}"
             except Exception as e:
                 logger.exception(f'Дата рождения не парсится: {self.birthday}')
-        else:
-            age = ''
         if self.grade:
             grade = f'класс: {self.grade}'
         else:
