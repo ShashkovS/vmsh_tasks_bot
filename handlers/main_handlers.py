@@ -74,6 +74,10 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
                 pass  # Ошибки здесь не важны
             await start(query.message)
             return
+        # Если нет данных, то игнорируем
+        # (это специальные кнопки «без реакции»)
+        if not query.data:
+            return
         callback_type = query.data[0]  # Вот здесь существенно используется, что callback параметризуется одной буквой
         callback_processor = callbacks_processors.get(callback_type, None)
         try:
@@ -109,7 +113,12 @@ async def process_regular_message(message: types.Message):
     if not user:
         cur_chat_state = STATE.GET_USER_INFO
     else:
-        cur_chat_state = State.get_by_user_id(user.id)['state']
+        cur_chat_state = State.get_by_user_id(user.id)
+        if cur_chat_state:
+            cur_chat_state = cur_chat_state['state']
+    if not cur_chat_state:
+        State.set_by_user_id(user.id, STATE.GET_USER_INFO)
+        return
 
     if not message.document and not message.photo:
         db.add_message_to_log(False, message.message_id, message.chat.id, user and user.id, None, message.text, None)
