@@ -203,7 +203,7 @@ async def problem_recheck(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     problem = None
-    if match := re.fullmatch(r'/\w+?\s+(\d+)([а-я])\.(\d+)([а-я]?)\s*', message.text or ''):
+    if match := re.fullmatch(r'/\w+?\s+(\d+)([а-яА-Яa-zA-Z]\w*)\.(\d+)([а-я]?)\s*', message.text or ''):
         lst, level, prob, item = match.groups()
         problem = Problem.get_by_key(level, int(lst), int(prob), item)
     if problem is None:
