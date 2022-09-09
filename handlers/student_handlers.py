@@ -36,12 +36,14 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
         except:
             pass
     if not blocked:
-        text = f"❓ Нажимайте на задачу, чтобы сдать её (уровень «{student.level.slevel}»)"
+        text = f"❓ Нажимайте на задачу, чтобы сдать её\n(выбран уровень «{student.level.slevel}», здесь <a href=\"{student.level.url}\">условия</a>)"
     else:
         text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
     keyb_msg = await bot.send_message(
         chat_id=chat_id,
         text=text,
+        parse_mode='HTML',
+        disable_web_page_preview=True,
         reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
     )
     db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)

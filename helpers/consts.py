@@ -78,6 +78,12 @@ class USER_TYPE(IntFlag):
 
 
 LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', 'В': 'Восьмиклассники' }
+LEVEL_URL = {
+    'н': 'https://shashkovs.ru/vmsh/2022/n/',
+    'п': 'https://shashkovs.ru/vmsh/2022/p/',
+    'э': 'https://shashkovs.ru/vmsh/2022/x/',
+    'В': 'https://shashkovs.ru/vmsh/2022/8/'
+}
 
 
 @unique
@@ -89,6 +95,7 @@ class LEVEL(str, Enum):
 
     def __init__(self, value):
         self.slevel = LEVEL_DESCRIPTION.get(self.value, None)
+        self.url = LEVEL_URL.get(self.value, None)
 
     def __str__(self):
         return self.value
