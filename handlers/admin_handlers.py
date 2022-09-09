@@ -65,26 +65,26 @@ async def update_problems(message: types.Message):
 
 async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode=False):
     logger.debug('run_broadcast_task')
-    if tokens == ['all_students']:
-        tokens = [user.token for user in User.all_students()]
-    elif tokens == ['all_teachers']:
-        tokens = [user.token for user in User.all_teachers()]
-    elif tokens == ['all_novice']:
-        tokens = [user.token for user in User.all_students() if user.level == LEVEL.NOVICE]
-    elif tokens == ['all_pro']:
-        tokens = [user.token for user in User.all_students() if user.level == LEVEL.PRO]
-    elif tokens == ['all_expert']:
-        tokens = [user.token for user in User.all_students() if user.level == LEVEL.EXPERT]
-    elif tokens == ['all_gr8']:
-        tokens = [user.token for user in User.all_students() if user.level == LEVEL.GR8]
-    elif tokens == ['all_online']:
-        tokens = [user.token for user in User.all_students() if user.online == ONLINE_MODE.ONLINE]
-    elif tokens == ['all_school']:
-        tokens = [user.token for user in User.all_students() if user.online == ONLINE_MODE.SCHOOL]
+    if 'all_students' in tokens:
+        tokens.extend(user.token for user in User.all_students())
+    elif 'all_teachers' in tokens:
+        tokens.extend(user.token for user in User.all_teachers())
+    elif 'all_novice' in tokens:
+        tokens.extend(user.token for user in User.all_students() if user.level == LEVEL.NOVICE)
+    elif 'all_pro' in tokens:
+        tokens.extend(user.token for user in User.all_students() if user.level == LEVEL.PRO)
+    elif 'all_expert' in tokens:
+        tokens.extend(user.token for user in User.all_students() if user.level == LEVEL.EXPERT)
+    elif 'all_gr8' in tokens:
+        tokens.extend(user.token for user in User.all_students() if user.level == LEVEL.GR8)
+    elif 'all_online' in tokens:
+        tokens.extend(user.token for user in User.all_students() if user.online == ONLINE_MODE.ONLINE)
+    elif 'all_school' in tokens:
+        tokens.extend(user.token for user in User.all_students() if user.online == ONLINE_MODE.SCHOOL)
     parse_mode = 'HTML' if html_mode else None
     bad_tokens = []
     sent = 0
-    for token in tokens:
+    for token in set(tokens):
         student = User.get_by_token(token)
         if not student or not student.chat_id:
             continue
