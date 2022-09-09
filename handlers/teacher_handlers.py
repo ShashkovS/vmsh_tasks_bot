@@ -7,14 +7,15 @@ from aiogram.dispatcher import filters
 from aiogram.utils.exceptions import BadRequest
 from urllib.parse import urlencode
 from Levenshtein import jaro_winkler
+from random import randrange
 
 from helpers.consts import *
 from helpers.config import logger
 from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import teacher_keyboards, student_keyboards
-from handlers.main_handlers import process_regular_message
 from handlers.student_handlers import sleep_and_send_problems_keyboard, refresh_last_student_keyboard, WHITEBOARD_LINK
+from handlers.main_handlers import process_regular_message  # TODO Удалить использование этой функции
 
 
 def get_problem_lock(teacher_id: int):
@@ -34,25 +35,43 @@ def set_problem_lock(teacher_id: int, problem_id: int):
     db.kv[key] = value
 
 
+async def take_random_written_problem_and_start_check(teacher: User, problem_id: int):
+    top = WrittenQueue.take_top(teacher.id, problem_id)
+    # if top:
+        # # Даём преподу 10 топовых задач на выбор
+        # await bot.answer_callback_query_ig(query.id)
+        # await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
+        #                        reply_markup=teacher_keyboards.build_teacher_select_written_problem(top))
+    while top:
+        # Даём преподу случайную задачу
+        choice = randrange(0, len(top))
+        taken = top.pop(choice)
+        student = User.get_by_id(taken['student_id'])
+        problem = Problem.get_by_id(taken['problem_id'])
+        # Блокируем задачу
+        is_unlocked = WrittenQueue.mark_being_checked(student.id, problem.id, teacher.id)
+        if not is_unlocked:
+            continue
+        await forward_discussion_and_start_checking(teacher.chat_id, None, student, problem, teacher)
+        break
+    else:
+        del_problem_lock(teacher.id)
+        await bot.send_message(chat_id=teacher.chat_id,
+                               text=f"Ничего себе! Все эти письменные задачи проверены!")
+        State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+        asyncio.create_task(prc_teacher_select_action(None, teacher))
+
+
 @reg_state(STATE.TEACHER_SELECT_ACTION)
 async def prc_teacher_select_action(message: types.Message, teacher: User):
+    use_chat_id = (message and message.chat and message.chat.id) or (teacher and teacher.chat_id) or None
     logger.debug('prc_teacher_select_action')
     locked_problem_id = get_problem_lock(teacher.id)
     if not locked_problem_id:
-        await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
+        await bot.send_message(chat_id=use_chat_id, text="Выберите действие",
                                reply_markup=teacher_keyboards.build_teacher_actions())
     else:
-        top = WrittenQueue.take_top(teacher.id, locked_problem_id)
-        if not top:
-            del_problem_lock(teacher.id)
-            await bot.send_message(chat_id=teacher.chat_id,
-                                   text=f"Ничего себе! Все письменные задачи проверены!")
-            State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-            await process_regular_message(message)
-        else:
-            # Даём преподу 10 топовых задач на выбор
-            await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
-                                   reply_markup=teacher_keyboards.build_teacher_select_written_problem(top))
+        await take_random_written_problem_and_start_check(teacher, locked_problem_id)
 
 
 @reg_state(STATE.TEACHER_IS_CHECKING_TASK)
@@ -184,7 +203,7 @@ async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: Use
                                text=f"Ничего себе! Все письменные задачи проверены!")
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
         await bot.answer_callback_query_ig(query.id)
-        await process_regular_message(query.message)
+        asyncio.create_task(prc_teacher_select_action(None, teacher))
     else:
         # Даём преподу 10 топовых задач на выбор
         await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
@@ -212,18 +231,10 @@ async def prc_CHECK_ONLY_SELECTED_WRITEN_TASK_callback(query: types.CallbackQuer
                                            reply_markup=None)
     problem_id = int(query.data[2:])
     set_problem_lock(teacher.id, problem_id)
-    top = WrittenQueue.take_top(teacher.id, problem_id)
-    if not top:
-        await bot.send_message(chat_id=teacher.chat_id,
-                               text=f"Ничего себе! Все письменные задачи проверены!")
-        State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-        await bot.answer_callback_query_ig(query.id)
-        await process_regular_message(query.message)
-    else:
-        # Даём преподу 10 топовых задач на выбор
-        await bot.answer_callback_query_ig(query.id)
-        await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
-                               reply_markup=teacher_keyboards.build_teacher_select_written_problem(top))
+    State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+    await bot.answer_callback_query_ig(query.id)
+    # Всё, теперь задача залочена,prc_teacher_select_action будет сама выбирать задачу
+    asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
 @reg_callback(CALLBACK.TEACHER_CANCEL)
@@ -234,16 +245,19 @@ async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User)
     del_problem_lock(teacher.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
-    await process_regular_message(query.message)
+    asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
 async def forward_discussion_and_start_checking(chat_id, message_id, student: User, problem: Problem, teacher: User):
     logger.debug('forward_discussion_and_start_checking')
-    await bot.edit_message_text_ig(chat_id=chat_id, message_id=message_id,
-                                   text=f"Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
-                                        f"{student.name_for_teacher()}\n"
-                                        f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
-                                   reply_markup=None)
+    text = (f"Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
+            f"{student.name_for_teacher()}\n"
+            f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇")
+    # Если передан message_id, то обновляем сообщение (там была кнопка). Если нет, то отправляем новое.
+    if message_id:
+        await bot.edit_message_text_ig(chat_id=chat_id, message_id=message_id, text=text, reply_markup=None)
+    else:
+        await bot.send_message(chat_id=chat_id, text=text)
     discussion = WrittenQueue.get_discussion(student.id, problem.id)
     for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не привысить лимит
         # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
@@ -298,7 +312,7 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
     if not is_unlocked:
         await bot.send_message(chat_id=chat_id, text='Эту задачу уже кто-то взялся проверять.')
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-        await process_regular_message(query.message)
+        asyncio.create_task(prc_teacher_select_action(None, teacher))
         return
     await forward_discussion_and_start_checking(chat_id, query.message.message_id, student, problem, teacher)
 
@@ -354,7 +368,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
                                    disable_notification=True)
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
-    await process_regular_message(query.message)
+    asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
 @reg_callback(CALLBACK.WRITTEN_TASK_BAD)
@@ -406,7 +420,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
         logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
-    await process_regular_message(query.message)
+    asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
 @reg_callback(CALLBACK.GET_QUEUE_TOP)
@@ -500,7 +514,7 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: User):
     db.add_result(student_id, problem_id, problem.level, problem.lesson, teacher.id, verdict, '', RES_TYPE.ZOOM)
     student = User.get_by_id(student_id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
-    await process_regular_message(query.message)
+    asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
 @reg_callback(CALLBACK.STUDENT_SELECTED)
@@ -557,7 +571,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
                                                  text=f"Что-то в боте сломалось и результат оценки не засчитан. :( Попробуйте ещё раз.")
         await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-        await process_regular_message(teacher_message)
+        asyncio.create_task(prc_teacher_select_action(None, teacher))
         return
 
     pluses = [Problem.get_by_id(prb_id) for prb_id in plus_ids]
@@ -598,7 +612,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
     await bot.answer_callback_query_ig(query.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-    await process_regular_message(query.message)
+    asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
 @dispatcher.message_handler(commands=['find_student', 'fs'])
@@ -660,7 +674,7 @@ async def set_teacher(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-    await process_regular_message(message)
+    asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
 @reg_callback(CALLBACK.CHANGE_LEVEL)
