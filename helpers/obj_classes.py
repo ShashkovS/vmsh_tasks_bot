@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from typing import Optional, Generator, List
 import secrets
+import orjson
 
 from helpers.consts import *
 from helpers.config import config, logger
@@ -190,12 +191,17 @@ class Problem:
 class State:
     @staticmethod
     def get_by_user_id(user_id: int):
-        return db.get_state_by_user_id(user_id) or {}
+        state = db.get_state_by_user_id(user_id) or {}
+        if state['info']:
+            state['info'] = orjson.loads(state['info'])
+        return state
 
     @staticmethod
     def set_by_user_id(user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                       last_teacher_id: int = 0, oral_problem_id: int = None):
-        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id, oral_problem_id)
+                       last_teacher_id: int = 0, oral_problem_id: int = None, info=None):
+        if info is not None:
+            info = orjson.dumps(info)
+        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id, oral_problem_id, info)
 
 
 class Waitlist:
@@ -237,8 +243,9 @@ class WrittenQueue:
         db.delete_from_written_task_queue(student_id, problem_id)
 
     @staticmethod
-    def add_to_discussions(student_id: int, problem_id: int, teacher_id: Optional[int], text: str, attach_path: Optional[str], chat_id: int, tg_msg_id: int):
-        db.insert_into_written_task_discussion(student_id, problem_id, teacher_id, text, attach_path, chat_id, tg_msg_id)
+    def add_to_discussions(student_id: int, problem_id: int, teacher_id: Optional[int], text: str, attach_path: Optional[str], chat_id: int, tg_msg_id: int) -> int:
+        wtd_id = db.insert_into_written_task_discussion(student_id, problem_id, teacher_id, text, attach_path, chat_id, tg_msg_id)
+        return wtd_id
 
     @staticmethod
     def get_discussion(student_id: int, problem_id: int):

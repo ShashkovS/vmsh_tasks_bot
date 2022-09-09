@@ -80,14 +80,18 @@ async def prc_teacher_is_checking_task_state(message: types.Message, teacher: Us
     teacher_state = State.get_by_user_id(teacher.id)
     problem_id = teacher_state['problem_id']
     student_id = teacher_state['last_student_id']
-    WrittenQueue.add_to_discussions(student_id, problem_id, teacher.id, message.text, None, message.chat.id,
-                                    message.message_id)
+    wtd_id = WrittenQueue.add_to_discussions(student_id, problem_id, teacher.id, message.text, None, message.chat.id,
+                                             message.message_id)
+    teacher_state['info'].append(wtd_id)  # Добавляем id в список добавленных
+    State.set_by_user_id(**teacher_state)
     prev_keyboard = db.get_last_keyboard(teacher.id)
+    reply_markup = teacher_keyboards.build_written_task_checking_verdict(User.get_by_id(student_id),
+                                                                         Problem.get_by_id(problem_id),
+                                                                         teacher_state['info'])
     # await bot.send_message(chat_id=message.chat.id, text="Ок, записал")
     keyb_msg = await bot.send_message(chat_id=message.chat.id,
                                       text='Ок, записал',
-                                      reply_markup=teacher_keyboards.build_written_task_checking_verdict(User.get_by_id(student_id),
-                                                                                                         Problem.get_by_id(problem_id)))
+                                      reply_markup=reply_markup)
     if prev_keyboard:
         await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'], reply_markup=None)
     db.set_last_keyboard(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
@@ -240,6 +244,10 @@ async def prc_CHECK_ONLY_SELECTED_WRITEN_TASK_callback(query: types.CallbackQuer
 @reg_callback(CALLBACK.TEACHER_CANCEL)
 async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_teacher_cancel_callback')
+    _, _, wtd_ids_to_remove = query.data.partition('_del_')
+    if wtd_ids_to_remove:
+        wtd_ids_to_remove = list(map(int, wtd_ids_to_remove.split(',')))  # TODO А-а-а! ТРЕШНЯК!!!
+        db.remove_written_task_discussion_by_ids(wtd_ids_to_remove)
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
     del_problem_lock(teacher.id)
@@ -289,7 +297,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
                 except:
                     pass
     State.set_by_user_id(teacher.id, STATE.TEACHER_IS_CHECKING_TASK, problem.id, last_teacher_id=teacher.id,
-                         last_student_id=student.id)
+                         last_student_id=student.id, info=[])  # info — список сообщений, которые нужно удалить
     keyb_msg = await bot.send_message(chat_id=chat_id,
                                       text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
                                            'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)',

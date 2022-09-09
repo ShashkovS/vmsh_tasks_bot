@@ -18,12 +18,13 @@ class DB_WRITTEN_TASK_DISCUSSION:
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
-        cur.execute("""
+        wtd_id = cur.execute("""
             INSERT INTO written_tasks_discussions ( ts,  student_id,  problem_id,  teacher_id,  text,  attach_path,  chat_id,  tg_msg_id)
             VALUES                                (:ts, :student_id, :problem_id, :teacher_id, :text, :attach_path, :chat_id, :tg_msg_id)
-        """, args)
+            returning id
+        """, args).fetchone()['id']
         self.conn.commit()
-        return cur.lastrowid
+        return wtd_id
 
     def fetch_written_task_discussion(self, student_id: int, problem_id: int) -> List[dict]:
         args = locals()
@@ -35,3 +36,12 @@ class DB_WRITTEN_TASK_DISCUSSION:
         """, args)
         rows = cur.fetchall()
         return rows
+
+    def remove_written_task_discussion_by_ids(self, wtd_ids_to_remove: List[int]):
+        assert all(type(id) == int for id in wtd_ids_to_remove)
+        cur = self.conn.cursor()
+        cur.execute(f'''
+            delete from written_tasks_discussions
+            where id in ({",".join(map(str, wtd_ids_to_remove))})
+        ''')
+        self.conn.commit()

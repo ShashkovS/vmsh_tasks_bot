@@ -26,18 +26,19 @@ class DB_STATE:
         return row
 
     def update_state(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                     last_teacher_id: int = 0, oral_problem_id: int = None):
+                     last_teacher_id: int = 0, oral_problem_id: int = None, info: bytes = None):
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
-            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id,  oral_problem_id)
-            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id, :oral_problem_id) 
+            INSERT INTO states  ( user_id,  state,  problem_id,  last_student_id,  last_teacher_id,  oral_problem_id,  info)
+            VALUES              (:user_id, :state, :problem_id, :last_student_id, :last_teacher_id, :oral_problem_id, :info) 
             ON CONFLICT (user_id) DO UPDATE SET 
             state = :state,
             problem_id = :problem_id,
             last_student_id = :last_student_id,
-            last_teacher_id = :last_teacher_id
+            last_teacher_id = :last_teacher_id,
+            info = :info
         """, args)
         self.conn.commit()
 

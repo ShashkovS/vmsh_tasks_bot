@@ -100,7 +100,7 @@ def build_select_student(name_to_find: str):
     return keyboard_markup
 
 
-def build_written_task_checking_verdict(student: User, problem: Problem):
+def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids_to_remove: List = None):
     logger.debug('keyboards.build_written_task_checking_verdict')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
     keyboard_markup.add(types.InlineKeyboardButton(
@@ -113,7 +113,7 @@ def build_written_task_checking_verdict(student: User, problem: Problem):
     ))
     keyboard_markup.add(types.InlineKeyboardButton(
         text=f"Отказаться от проверки и вернуться назад",
-        callback_data=f"{CALLBACK.TEACHER_CANCEL}_{student.id}_{problem.id}"
+        callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"  # TODO А-а-а! ТРЕШНЯК!!!
     ))
     return keyboard_markup
 
