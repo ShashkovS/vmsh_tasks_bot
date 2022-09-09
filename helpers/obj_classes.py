@@ -20,13 +20,13 @@ def _normilize_token(token: str, *, RU_TO_EN=str.maketrans('УКЕНХВАРОС
 @dataclass
 class User:
     chat_id: int
-    type: int
-    level: str
+    type: USER_TYPE
+    level: LEVEL
     name: str
     surname: str
     middlename: str
     token: str
-    online: int
+    online: ONLINE_MODE
     grade: int
     birthday: date
     id: int = None
@@ -190,7 +190,7 @@ class Problem:
 class State:
     @staticmethod
     def get_by_user_id(user_id: int):
-        return db.get_state_by_user_id(user_id)
+        return db.get_state_by_user_id(user_id) or {}
 
     @staticmethod
     def set_by_user_id(user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
