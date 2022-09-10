@@ -78,9 +78,9 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
     elif 'all_gr8' in tokens:
         tokens.extend(user.token for user in User.all_students() if user.level == LEVEL.GR8)
     elif 'all_online' in tokens:
-        tokens.extend(user.token for user in User.all_students() if user.online == ONLINE_MODE.ONLINE)
+        tokens.extend(user.token for user in User.all_students() if user.online == ONLINE_MODE.ONLINE and user.level != LEVEL.GR8)  # TODO Trash!
     elif 'all_school' in tokens:
-        tokens.extend(user.token for user in User.all_students() if user.online == ONLINE_MODE.SCHOOL)
+        tokens.extend(user.token for user in User.all_students() if user.online == ONLINE_MODE.SCHOOL and user.level != LEVEL.GR8)  # TODO Trash!
     parse_mode = 'HTML' if html_mode else None
     bad_tokens = []
     sent = 0
