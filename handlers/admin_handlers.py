@@ -88,7 +88,6 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
         tokens |= {user.token for user in all_students if user.online == ONLINE_MODE.SCHOOL and user.level != LEVEL.GR8}  # TODO Trash
     parse_mode = 'HTML' if html_mode else None
     logger.warn(f'tokens after: {len(tokens)} {tokens!r}')
-    return
     bad_tokens = []
     sent = 0
     for token in tokens:
@@ -329,21 +328,22 @@ async def student_results(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, text='Нет ни одной посылки (или что-то пошло не так)')
 
 
-@dispatcher.message_handler(commands=['oral2written'])
+@dispatcher.message_handler(commands=['oral2written', 'written2oral'])
 async def oral2written(message: types.Message):
     logger.debug('oral2written')
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    Problem.oral_to_written()
-    await bot.send_message(chat_id=message.chat.id, text='Готово')
-
-
-@dispatcher.message_handler(commands=['written2oral'])
-async def written2oral(message: types.Message):
-    logger.debug('written2oral')
-    teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE.TEACHER:
-        return
-    Problem.written_to_oral()
+    cmd, *slevels = message.text.split()
+    levels = None
+    if slevels:
+        try:
+            levels = [LEVEL(x) for x in slevels]
+        except Exception as e:
+            await bot.send_message(chat_id=message.chat.id, text='Кривой уровень, не парсится')
+            return
+    if cmd == '/oral2written':
+        Problem.oral_to_written(levels)
+    elif cmd == '/written2oral':
+        Problem.written_to_oral(levels)
     await bot.send_message(chat_id=message.chat.id, text='Готово')

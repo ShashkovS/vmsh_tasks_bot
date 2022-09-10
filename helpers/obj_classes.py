@@ -166,15 +166,15 @@ class Problem:
         return db.get_last_lesson_num()
 
     @classmethod
-    def oral_to_written(cls):
+    def oral_to_written(cls, levels=LEVEL):
         lesson = cls.last_lesson_num()
-        for level in LEVEL:
+        for level in levels:
             db.update_problem_type(level, lesson, PROB_TYPE.ORALLY, PROB_TYPE.WRITTEN_BEFORE_ORALLY)
 
     @classmethod
-    def written_to_oral(cls):
+    def written_to_oral(cls, levels=LEVEL):
         lesson = cls.last_lesson_num()
-        for level in LEVEL:
+        for level in levels:
             db.update_problem_type(level, lesson, PROB_TYPE.WRITTEN_BEFORE_ORALLY, PROB_TYPE.ORALLY)
 
     @staticmethod
