@@ -1,3 +1,5 @@
+import logging
+
 import aiogram
 from aiogram import types
 import asyncio
@@ -65,26 +67,31 @@ async def update_problems(message: types.Message):
 
 async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode=False):
     logger.debug('run_broadcast_task')
+    tokens = set(tokens)
+    logger.warn(f'tokens before: {tokens!r}')
+    all_students = User.all_students()
     if 'all_students' in tokens:
-        tokens.extend(user.token for user in User.all_students())
+        tokens |= {user.token for user in all_students}
     elif 'all_teachers' in tokens:
-        tokens.extend(user.token for user in User.all_teachers())
+        tokens |= {user.token for user in all_students}
     elif 'all_novice' in tokens:
-        tokens.extend(user.token for user in User.all_students() if user.level == LEVEL.NOVICE)
+        tokens |= {user.token for user in all_students if user.level == LEVEL.NOVICE}
     elif 'all_pro' in tokens:
-        tokens.extend(user.token for user in User.all_students() if user.level == LEVEL.PRO)
+        tokens |= {user.token for user in all_students if user.level == LEVEL.PRO}
     elif 'all_expert' in tokens:
-        tokens.extend(user.token for user in User.all_students() if user.level == LEVEL.EXPERT)
+        tokens |= {user.token for user in all_students if user.level == LEVEL.EXPERT}
     elif 'all_gr8' in tokens:
-        tokens.extend(user.token for user in User.all_students() if user.level == LEVEL.GR8)
+        tokens |= {user.token for user in all_students if user.level == LEVEL.GR8}
     elif 'all_online' in tokens:
-        tokens.extend(user.token for user in User.all_students() if user.online == ONLINE_MODE.ONLINE and user.level != LEVEL.GR8)  # TODO Trash!
+        tokens |= {user.token for user in all_students if user.online == ONLINE_MODE.ONLINE and user.level != LEVEL.GR8}  # TODO Trash
     elif 'all_school' in tokens:
-        tokens.extend(user.token for user in User.all_students() if user.online == ONLINE_MODE.SCHOOL and user.level != LEVEL.GR8)  # TODO Trash!
+        tokens |= {user.token for user in all_students if user.online == ONLINE_MODE.SCHOOL and user.level != LEVEL.GR8}  # TODO Trash
     parse_mode = 'HTML' if html_mode else None
+    logger.warn(f'tokens after: {len(tokens)} {tokens!r}')
+    return
     bad_tokens = []
     sent = 0
-    for token in set(tokens):
+    for token in tokens:
         student = User.get_by_token(token)
         if not student or not student.chat_id:
             continue
