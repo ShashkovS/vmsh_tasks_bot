@@ -239,7 +239,7 @@ def check_test_problem_answer(problem: Problem, student: Optional[User], student
                 corr_func_values = checker(correct_answer)
                 answer_is_correct = True
                 for x, (stv, crv) in enumerate(zip(func_values, corr_func_values)):
-                    if stv != crv:
+                    if abs(stv - crv) > 1e-8:
                         answer_is_correct = False
                         additional_message = f'При n={x} получилось {stv}, а должно было получиться {crv}'
                         break
