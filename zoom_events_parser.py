@@ -8,7 +8,7 @@ routes = web.RouteTableDef()
 __ALL__ = ['routes']
 
 ZOOM_AUTH = 'BAKPekpQQgW1C3S6MEP4-g'
-ZOOM_ID = "83488340620"
+ZOOM_ID = "87196763644"
 TIMEZONE = timedelta(hours=3)
 
 
