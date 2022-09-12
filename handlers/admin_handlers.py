@@ -68,7 +68,9 @@ async def update_problems(message: types.Message):
 async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode=False):
     logger.debug('run_broadcast_task')
     tokens = set(tokens)
-    all_students = User.all_students()
+    all_students = None
+    if any(tok.startswith('all_') for tok in tokens):
+        all_students = User.all_students()
     if 'all_students' in tokens:
         tokens |= {user.token for user in all_students}
     elif 'all_teachers' in tokens:
@@ -86,7 +88,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
     elif 'all_school' in tokens:
         tokens |= {user.token for user in all_students if user.online == ONLINE_MODE.SCHOOL and user.level != LEVEL.GR8}  # TODO Trash
     parse_mode = 'HTML' if html_mode else None
-    logger.warn(repr(tokens))
+    logger.warn(f'{len(tokens)}, {repr(tokens)}')
     return
     bad_tokens = []
     sent = 0
