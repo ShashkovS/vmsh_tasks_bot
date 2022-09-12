@@ -452,10 +452,10 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         instruction_url = r'https://t.me/vmsh_179_5_7_2021/739'
         hint = ''
         if problem.level != LEVEL.EXPERT:
-            conf_id = '83488340620'
+            conf_id = '87196763644'
             passcode = '179179'
         else:
-            conf_id = '83488340620'
+            conf_id = '87196763644'
             passcode = '179179'
             # conf_id = '83052557082'
             # passcode = 'exp179'
