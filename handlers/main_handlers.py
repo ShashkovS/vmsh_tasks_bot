@@ -138,6 +138,8 @@ async def mode_online(message: types.Message):
     if user:
         await bot.send_message(chat_id=message.chat.id, text="Теперь вы работаете в режиме «Онлайн»", )
         user.set_online_mode(ONLINE_MODE.ONLINE)
+    else:
+        await start(message)
 
 
 @dispatcher.message_handler(commands=['in_school'])
@@ -149,3 +151,5 @@ async def mode_school(message: types.Message):
     if user:
         await bot.send_message(chat_id=message.chat.id, text="Теперь вы работаете в режиме «Очно в школе»", )
         user.set_online_mode(ONLINE_MODE.SCHOOL)
+    else:
+        await start(message)
