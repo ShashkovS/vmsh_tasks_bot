@@ -73,7 +73,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
     if 'all_students' in tokens:
         tokens |= {user.token for user in all_students}
     elif 'all_teachers' in tokens:
-        tokens |= {user.token for user in all_students}
+        tokens |= {user.token for user in User.all_teachers()}
     elif 'all_novice' in tokens:
         tokens |= {user.token for user in all_students if user.level == LEVEL.NOVICE}
     elif 'all_pro' in tokens:
