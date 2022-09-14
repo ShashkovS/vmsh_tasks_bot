@@ -202,11 +202,11 @@ async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: Use
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
     top = WrittenQueue.take_top(teacher.id)
+    await bot.answer_callback_query_ig(query.id)
     if not top:
         await bot.send_message(chat_id=teacher.chat_id,
                                text=f"Ничего себе! Все письменные задачи проверены!")
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-        await bot.answer_callback_query_ig(query.id)
         asyncio.create_task(prc_teacher_select_action(None, teacher))
     else:
         # Даём преподу 10 топовых задач на выбор
@@ -498,7 +498,8 @@ async def prc_ins_oral_plusses(query: types.CallbackQuery, teacher: User):
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
     await bot.send_message(chat_id=teacher.chat_id,
-                           text=f"Введите фамилию школьника (можно начало фамилии)")
+                           text=f"Введите фамилию школьника (можно начало фамилии), чтобы внести плюсы",
+                           reply_markup=teacher_keyboards.build_cancel_keyboard())
     await bot.answer_callback_query_ig(query.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_WRITES_STUDENT_NAME)
 
@@ -526,15 +527,20 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: User):
 
 
 @reg_callback(CALLBACK.STUDENT_SELECTED)
-async def prc_student_selected_callback(query: types.CallbackQuery, teacher: User):
+async def prc_student_selected_callback(query: types.CallbackQuery, teacher: User, *, remove_old_buttons=True):
     logger.debug('prc_student_selected_callback')
     _, student_id = query.data.split('_')
     student_id = int(student_id)
     student = User.get_by_id(student_id)
-    await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None,
-                                   text=f"Вносим плюсики школьнику:\n" + student.name_for_teacher())
+    msg_text = f"Вносим плюсики школьнику:\n" + student.name_for_teacher()
+    if remove_old_buttons:
+        await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None, text=msg_text)
+    else:  # TODO ФИЧА НЕ РАБОТАЕТ!!
+        await bot.send_message(chat_id=query.message.chat.id, reply_markup=None, text=msg_text)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
+                           text="Отметьте задачи, за которые нужно поставить плюсики"
+                                "\n(и нажмите «Готово»)"
+                                f"\n(у вас сейчас режим «{'В ШКОЛЕ' if teacher.online == ONLINE_MODE.SCHOOL else 'ОНЛАЙН'}», /online и /school для переключения)",
                            reply_markup=teacher_keyboards.build_verdict_for_oral_problems(plus_ids=set(), minus_ids=set(), student=student,
                                                                                           online=teacher.online))
     State.set_by_user_id(teacher.id, STATE.TEACHER_WRITES_STUDENT_NAME, last_student_id=student.id)
@@ -619,8 +625,11 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
     await bot.answer_callback_query_ig(query.id)
-    State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-    asyncio.create_task(prc_teacher_select_action(None, teacher))
+    # Сохраняем учителю режим внесения устных задач
+    # State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+    # asyncio.create_task(prc_teacher_select_action(None, teacher))
+    # Сразу работает в режиме «ведите фамилию»
+    await prc_ins_oral_plusses(query, teacher)
 
 
 @dispatcher.message_handler(commands=['find_student', 'fs'])
@@ -688,8 +697,9 @@ async def set_teacher(message: types.Message):
 @reg_callback(CALLBACK.CHANGE_LEVEL)
 async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_get_written_task_callback')
-    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                           reply_markup=None)
+    # Пока не трогаем старую клаву
+    # await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
+    #                                        reply_markup=None)
     _, student_id, lvl = query.data.split('_')
     student = User.get_by_id(int(student_id))
     level = LEVEL(lvl)
@@ -703,8 +713,14 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
                 text=f"Вам изменён уровень на «{level.slevel}»",
             )
             asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+        await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=f"Перевели школьника на уровень «{level.slevel}»."
+                 f"\nОбратите внимание, плюсы по старому уровню НЕ БЫЛИ ВНЕСЕНЫ. Простите, это сложно исправить.",
+        )
         query.data = f'{CALLBACK.STUDENT_SELECTED}_{student_id}'
         await prc_student_selected_callback(query, teacher)
+    await bot.answer_callback_query_ig(query.id)
 
 
 @dispatcher.message_handler(commands=['zoom_queue', 'z', 'zall'])

@@ -34,6 +34,17 @@ def build_teacher_actions():
     return keyboard
 
 
+def build_cancel_keyboard():
+    logger.debug('build_cancel_keyboard')
+    keyboard = types.InlineKeyboardMarkup()
+    cancel = types.InlineKeyboardButton(
+        text="Отмена",
+        callback_data=f"{CALLBACK.TEACHER_CANCEL}"
+    )
+    keyboard.add(cancel)
+    return keyboard
+
+
 def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int]]):
     logger.debug('build_select_problem_to_check')
     problems_and_counts.sort(key=lambda el: (el[0].lesson, el[0].level, el[0].prob, el[0].item))
@@ -167,4 +178,9 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
         callback_data=f"{CALLBACK.FINISH_ORAL_ROUND}_{plus_ids_str}_{minus_ids_str}"
     )
     keyboard_markup.add(ready_button)
+    cancel = types.InlineKeyboardButton(
+        text="Отмена (ничего не трогать и выйти)",
+        callback_data=f"{CALLBACK.TEACHER_CANCEL}"
+    )
+    keyboard_markup.add(cancel)
     return keyboard_markup
