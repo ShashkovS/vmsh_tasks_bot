@@ -36,7 +36,8 @@ def set_problem_lock(teacher_id: int, problem_id: int):
 
 
 async def take_random_written_problem_and_start_check(teacher: User, problem_id: int):
-    top = WrittenQueue.take_top(teacher.id, problem_id)
+    problem = Problem.get_by_id(problem_id)
+    top = WrittenQueue.take_top_synonyms(teacher.id, problem.synonyms)
     # if top:
         # # Даём преподу 10 топовых задач на выбор
         # await bot.answer_callback_query_ig(query.id)
@@ -116,6 +117,28 @@ async def prc_teacher_writes_student_name_state(message: types.message, teacher:
     await bot.send_message(chat_id=message.chat.id,
                            text="Выберите школьника для внесения задач",
                            reply_markup=teacher_keyboards.build_select_student(name_to_find))
+
+
+@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?oralrecheck.*']))
+async def oral_recheck(message: types.Message):
+    logger.debug('oral_recheck')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    if (match := re.fullmatch(r'/oralrecheck_([^_]*)', message.text or '')):
+        token = match.group(1)
+    else:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Пришлите запрос на перепроверку в формате\n«/oralrecheck_token», например «/oralrecheck_aa9bb4»",
+        )
+        return
+    student = User.get_by_token(token)
+    if not student:
+        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
+    # if student:
+    #     message = await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
+    #     await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
 @dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?recheck.*']))
@@ -220,8 +243,11 @@ async def prc_SELECT_WRITTEN_TASK_TO_CHECK_callback(query: types.CallbackQuery, 
     logger.debug('prc_SELECT_WRITTEN_TASK_TO_CHECK_callback')
     # Так, препод указал, что хочет проверять письменные задачи
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
-    rows = db.get_written_tasks_count_by_id()
-    problems_and_counts = [(Problem.get_by_id(row['problem_id']), row['cnt']) for row in rows]
+    rows = db.get_written_tasks_count_by_synonyms()
+    problems_and_counts = []
+    for row in rows:
+        first_problem_id = row['synonyms'].split(';')[0]
+        problems_and_counts.append((Problem.get_by_id(first_problem_id), row['cnt']))
     await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
                            reply_markup=teacher_keyboards.build_select_problem_to_check(problems_and_counts))
     await bot.answer_callback_query_ig(query.id)
