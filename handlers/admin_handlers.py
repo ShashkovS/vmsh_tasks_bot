@@ -304,7 +304,7 @@ async def calc_last_lesson_stat(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['student_results', 'sr'])
+@dispatcher.message_handler(commands=['student_results', 'sr', 'all_student_results', 'asr'])
 async def student_results(message: types.Message):
     logger.debug('student_results')
     teacher = User.get_by_chat_id(message.chat.id)
