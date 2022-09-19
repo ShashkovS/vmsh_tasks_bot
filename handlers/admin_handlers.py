@@ -304,7 +304,7 @@ async def calc_last_lesson_stat(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['student_results', 'sr'])
+@dispatcher.message_handler(commands=['student_results', 'sr', 'all_student_results', 'asr'])
 async def student_results(message: types.Message):
     logger.debug('student_results')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -319,7 +319,10 @@ async def student_results(message: types.Message):
         return
 
     # r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict
-    rows = db.list_student_results(student.id, Problem.last_lesson_num())
+    if 'asr' in message.text or 'all_' in message.text:
+        rows = db.list_all_student_results(student.id, Problem.last_lesson_num())
+    else:
+        rows = db.list_student_results(student.id, Problem.last_lesson_num())
     if rows:
         lines = [f'{row["ts"][5:16]} {row["lesson"]:02}{row["level"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
                  for row in rows]

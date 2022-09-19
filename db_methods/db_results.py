@@ -69,6 +69,18 @@ class DB_RESULT:
         rows = cur.fetchall()
         return rows
 
+    def list_all_student_results(self, student_id: int) -> list[dict]:
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            select r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict, r.problem_id from results r
+            join problems p on r.problem_id = p.id
+            where r.student_id = :student_id
+            order by r.ts
+        """, args)
+        rows = cur.fetchall()
+        return rows
+
     def get_results_for_recheck_by_problem_id(self, problem_id: int) -> list[dict]:
         args = locals()
         cur = self.conn.cursor()
