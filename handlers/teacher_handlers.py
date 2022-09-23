@@ -625,6 +625,8 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         res_type = RES_TYPE.ZOOM
     for problem in pluses:
         db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, res_type)
+        # А ещё нужно удалить эту задачу из очереди на письменную проверку
+        db.delete_from_written_task_queue(student_id, problem.id)
     for problem in minuses:
         db.delete_plus(student_id, problem.id, RES_TYPE.SCHOOL, VERDICT.REJECTED_ANSWER)
         db.delete_plus(student_id, problem.id, RES_TYPE.ZOOM, VERDICT.REJECTED_ANSWER)
