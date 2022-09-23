@@ -37,12 +37,14 @@ class DB_RESULT:
         """, locals()).fetchone()['cnt']
         return per_day, per_hour
 
-    def delete_plus(self, student_id: int, problem_id: int, verdict: int):
+    def delete_plus(self, student_id: int, problem_id: int, res_type: int, new_verdict: int):
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
-            update results set verdict = :verdict
-            where student_id = :student_id and problem_id = :problem_id and problem_id > 0 and verdict > 0
+            update results set verdict = :new_verdict
+            where 
+            student_id = :student_id and problem_id = :problem_id and problem_id > 0 and verdict > 0
+            and (:res_type is null or res_type = :res_type)
         """, args)
         self.conn.commit()
 
