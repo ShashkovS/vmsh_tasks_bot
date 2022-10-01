@@ -90,7 +90,7 @@ async def process_regular_message(message: types.Message):
     logger.debug('process_regular_message')
     # Сначала проверяем, что этот тип сообщений мы вообще поддерживаем
     alarm = None
-    if message.document and message.document.mime_type.startswith('image'):
+    if message.document and message.document.mime_type and message.document.mime_type.startswith('image'):
         alarm = '❗❗❗ Бот принимает только сжатые фото: отправляйте картинки по одной, ставьте галочку «Сжать/Compress»'
     elif not message.text and not message.photo:
         alarm = '❗❗❗ Бот принимает только текстовые сообщения и фотографии решений.'
