@@ -1,3 +1,4 @@
+import asyncio
 import re
 from aiogram.dispatcher.webhook import types
 from aiogram.dispatcher.filters import ChatTypeFilter, RegexpCommandsFilter
@@ -8,6 +9,12 @@ from helpers.config import logger, config
 from helpers.obj_classes import User
 
 URL_REGEX = re.compile(r'\s*(https?:\/\/)?([\w\.]+)\.([a-zрф]{2,6}\.?)(\/[\w\.]*)*\/?\s*')
+
+
+async def delete_messages_after(messages: list, timeout: int):  # List[types.Message]
+    await asyncio.sleep(timeout)
+    for message in messages:
+        await bot.delete_message_ig(chat_id=message.chat.id, message_id=message.message_id)
 
 
 @dispatcher.message_handler(ChatTypeFilter(types.ChatType.SUPERGROUP), content_types=types.ContentType.ANY)
@@ -25,8 +32,9 @@ async def group_message_handler(message: types.Message):
             logger.exception(f'SHIT: {e}')
     # Кто-то пишет команду в группе, а не в боте
     elif message.text and re.match(r'^\s*/[a-z_]{2,}', message.text):
-        await bot.send_message(message.chat.id, text=f'Кажется, это сообщение лично для меня. Заходите: @{bot.username}',
+        reply_msg = await bot.send_message(message.chat.id, text=f'Кажется, это сообщение лично для меня. Заходите: @{bot.username}',
                                reply_to_message_id=message.message_id)
+        asyncio.create_task(delete_messages_after([message, reply_msg], timeout=10))
     # Ссылка без комментариев — это спам. Пересылаем её в exception и удаляем
     elif message.text and URL_REGEX.fullmatch(message.text):
         await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)

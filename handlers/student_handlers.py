@@ -329,13 +329,13 @@ async def level_novice(message: types.Message):
     logger.debug('level_novice')
     student = User.get_by_chat_id(message.chat.id)
     if student:
+        student.set_level(LEVEL.NOVICE)
         message = await bot.send_message(
             chat_id=message.chat.id,
             text="Вы переведены в группу начинающих. "
                  "Успехов в занятиях! "
                  "Вопросы можно задавать в группе @vmsh_179_5_7_2022_chat.",
         )
-        student.set_level(LEVEL.NOVICE)
         if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
