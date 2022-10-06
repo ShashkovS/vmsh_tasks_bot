@@ -1,5 +1,5 @@
 import re
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 VALID_ONE_PARM_FUNC = re.compile(r'[ \d+\-*/()nkijm^]+')
 VALID_VARS = re.compile(r'[nkijm]')
@@ -14,7 +14,7 @@ def run_expr_on(expr: str, vals: list):
     return result
 
 
-def calc_first_10_values(expr: str) -> Tuple[bool, Union[str, list[float]]]:
+def calc_first_10_values(expr: str) -> Tuple[bool, Union[str, List[float]]]:
     if len(expr) > 50:
         return False, f'Выражение слишком длинное'
     if wrong := VALID_ONE_PARM_FUNC.sub('', expr):
