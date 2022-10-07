@@ -19,6 +19,7 @@ class DB_LESSON:
             from problems p
             where (p.lesson, p.level) not in (select l.lesson, l.level from lessons l)
         """)
+        self.conn.commit()
 
     def fetch_all_lessons(self) -> List[dict]:
         cur = self.conn.cursor()

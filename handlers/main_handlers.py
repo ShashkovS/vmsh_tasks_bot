@@ -74,6 +74,10 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
                 pass  # Ошибки здесь не важны
             await start(query.message)
             return
+        # Если нет данных, то игнорируем
+        # (это специальные кнопки «без реакции»)
+        if not query.data:
+            return
         callback_type = query.data[0]  # Вот здесь существенно используется, что callback параметризуется одной буквой
         callback_processor = callbacks_processors.get(callback_type, None)
         try:
@@ -109,7 +113,12 @@ async def process_regular_message(message: types.Message):
     if not user:
         cur_chat_state = STATE.GET_USER_INFO
     else:
-        cur_chat_state = State.get_by_user_id(user.id)['state']
+        cur_chat_state = State.get_by_user_id(user.id)
+        if cur_chat_state:
+            cur_chat_state = cur_chat_state['state']
+    if not cur_chat_state:
+        State.set_by_user_id(user.id, STATE.GET_USER_INFO)
+        return
 
     if not message.document and not message.photo:
         db.add_message_to_log(False, message.message_id, message.chat.id, user and user.id, None, message.text, None)
@@ -122,27 +131,6 @@ async def process_regular_message(message: types.Message):
         await bot.post_logging_message(error_text)
 
 
-@dispatcher.channel_post_handler(lambda message: message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel)
-async def prc_sos_reply(message: types.Message):
-    logger.debug('prc_sos_reply')
-    # Обрабатываем только ответы из sos-чата
-    if not message.reply_to_message:
-        # Отправляем сообщение только на продакшене (чтобы боты друг с другом не спорили)
-        if config.production_mode:
-            try:
-                await bot.send_message(chat_id=message.chat.id, text='Выбирайте в меню «Ответить», чтобы сразу пересылать сообщение')
-            except Exception as e:
-                logger.exception(f'SHIT: {e}')
-    else:
-        try:
-            to_chat_id = message.reply_to_message.forward_from.id
-            await bot.send_message(to_chat_id, text='— ' + message.reply_to_message.text)
-            await bot.copy_message(to_chat_id, message.chat.id, message.message_id)
-            await bot.send_message(chat_id=message.chat.id, text='Переслал.')
-        except Exception as e:
-            await bot.send_message(chat_id=message.chat.id, text='Не получилось послать ответ. Попробуйте вручную.')
-            logger.exception(f'SHIT: {e}')
-
 @dispatcher.message_handler(commands=['online'])
 async def mode_online(message: types.Message):
     logger.debug('mode_online')
@@ -150,6 +138,9 @@ async def mode_online(message: types.Message):
     if user:
         await bot.send_message(chat_id=message.chat.id, text="Теперь вы работаете в режиме «Онлайн»", )
         user.set_online_mode(ONLINE_MODE.ONLINE)
+    else:
+        await start(message)
+
 
 @dispatcher.message_handler(commands=['in_school'])
 @dispatcher.message_handler(commands=['inschool'])
@@ -160,3 +151,5 @@ async def mode_school(message: types.Message):
     if user:
         await bot.send_message(chat_id=message.chat.id, text="Теперь вы работаете в режиме «Очно в школе»", )
         user.set_online_mode(ONLINE_MODE.SCHOOL)
+    else:
+        await start(message)

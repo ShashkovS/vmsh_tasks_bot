@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from typing import Optional, Generator, List
 import secrets
+import orjson
 
 from helpers.consts import *
 from helpers.config import config, logger
@@ -20,13 +21,13 @@ def _normilize_token(token: str, *, RU_TO_EN=str.maketrans('УКЕНХВАРОС
 @dataclass
 class User:
     chat_id: int
-    type: int
-    level: str
+    type: USER_TYPE
+    level: LEVEL
     name: str
     surname: str
     middlename: str
     token: str
-    online: int
+    online: ONLINE_MODE
     grade: int
     birthday: date
     id: int = None
@@ -51,6 +52,7 @@ class User:
 
     def set_level(self, level: LEVEL):
         db.set_user_level(self.id, level.value)
+        db.log_change(self.id, CHANGE.LEVEL, level.value)
         self.level = level
 
     def set_user_type(self, user_type: USER_TYPE):
@@ -59,16 +61,19 @@ class User:
 
     def set_online_mode(self, online: ONLINE_MODE):
         db.set_user_online_mode(self.id, online.value)
+        db.log_change(self.id, CHANGE.ONLINE, online.value)
         self.online = online
 
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'
 
     def name_for_teacher(self):
+        age = ''
         if self.birthday:
-            age = f"возраст: {((datetime.now().date() - date.fromisoformat(self.birthday)).days / 365.25):0.1f}"
-        else:
-            age = ''
+            try:
+                age = f"возраст: {((datetime.now().date() - date.fromisoformat(self.birthday)).days / 365.25):0.1f}"
+            except Exception as e:
+                logger.exception(f'Дата рождения не парсится: {self.birthday}')
         if self.grade:
             grade = f'класс: {self.grade}'
         else:
@@ -124,6 +129,7 @@ class Problem:
     cor_ans_checker: str
     wrong_ans: str
     congrat: str
+    synonyms: set = None  # Список синонимичных задач
     id: int = None
 
     def __post_init__(self):
@@ -132,6 +138,10 @@ class Problem:
         self.prob_type = PROB_TYPE(self.prob_type)
         if self.ans_type:
             self.ans_type = ANS_TYPE(self.ans_type)
+        if self.synonyms and type(self.synonyms) != set:
+            self.synonyms = set(map(int, self.synonyms.split(';')))
+        else:
+            self.synonyms = {self.id}
 
     def __str__(self):
         return f"Задача {self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"
@@ -155,16 +165,43 @@ class Problem:
     def last_lesson_num() -> int:
         return db.get_last_lesson_num()
 
+    @classmethod
+    def oral_to_written(cls, levels=None):
+        lesson = cls.last_lesson_num()
+        for level in levels or LEVEL:
+            db.update_problem_type(level, lesson, PROB_TYPE.ORALLY, PROB_TYPE.WRITTEN_BEFORE_ORALLY)
+
+    @classmethod
+    def written_to_oral(cls, levels=None):
+        lesson = cls.last_lesson_num()
+        for level in levels or LEVEL:
+            db.update_problem_type(level, lesson, PROB_TYPE.WRITTEN_BEFORE_ORALLY, PROB_TYPE.ORALLY)
+
+    @staticmethod
+    def get_all_tags():
+        return db.get_all_tags()
+
+    def update_tags(self, tags: str, user: User):
+        return db.add_tags(self.id, tags, user.id)
+
+    def get_tags(self):
+        return db.get_tags_by_problem_id(self.id)
+
 
 class State:
     @staticmethod
     def get_by_user_id(user_id: int):
-        return db.get_state_by_user_id(user_id)
+        state = db.get_state_by_user_id(user_id) or {}
+        if state['info']:
+            state['info'] = orjson.loads(state['info'])
+        return state
 
     @staticmethod
     def set_by_user_id(user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0,
-                       last_teacher_id: int = 0, oral_problem_id: int = None):
-        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id, oral_problem_id)
+                       last_teacher_id: int = 0, oral_problem_id: int = None, info=None):
+        if info is not None:
+            info = orjson.dumps(info)
+        db.update_state(user_id, state, problem_id, last_student_id, last_teacher_id, oral_problem_id, info)
 
 
 class Waitlist:
@@ -189,8 +226,12 @@ class WrittenQueue:
         db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS.NEW, ts=ts)
 
     @staticmethod
-    def take_top(teacher_id: int, problem_id=None):
-        return db.get_written_tasks_to_check(teacher_id, problem_id)
+    def take_top_synonyms(teacher_id: int, synonyms: set):
+        return db.get_written_tasks_to_check(teacher_id, synonyms)
+
+    @staticmethod
+    def take_top(teacher_id: int):
+        return db.get_written_tasks_to_check(teacher_id, None)
 
     @staticmethod
     def mark_being_checked(student_id: int, problem_id: int, teacher_id: int):
@@ -206,8 +247,9 @@ class WrittenQueue:
         db.delete_from_written_task_queue(student_id, problem_id)
 
     @staticmethod
-    def add_to_discussions(student_id: int, problem_id: int, teacher_id: Optional[int], text: str, attach_path: Optional[str], chat_id: int, tg_msg_id: int):
-        db.insert_into_written_task_discussion(student_id, problem_id, teacher_id, text, attach_path, chat_id, tg_msg_id)
+    def add_to_discussions(student_id: int, problem_id: int, teacher_id: Optional[int], text: str, attach_path: Optional[str], chat_id: int, tg_msg_id: int) -> int:
+        wtd_id = db.insert_into_written_task_discussion(student_id, problem_id, teacher_id, text, attach_path, chat_id, tg_msg_id)
+        return wtd_id
 
     @staticmethod
     def get_discussion(student_id: int, problem_id: int):
@@ -297,7 +339,9 @@ class FromGoogleSpreadsheet:
                 errors.append(f'Не компилируется регулярка валидации у задачи {problem!r}')
                 continue
             Problem(**problem)
-            db.update_lessons()
+        # TODO Попахивает риском продолбать важное :(
+        db.update_lessons()
+        db.update_synonyms()
         return errors
 
 

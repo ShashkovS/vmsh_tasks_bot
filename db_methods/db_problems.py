@@ -63,3 +63,21 @@ class DB_PROBLEM:
             limit 1""", locals())
         row = cur.fetchone()
         return row
+
+    def update_problem_type(self, level: str, lesson: int, from_prob_type: int, to_prob_type: int):
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            UPDATE problems SET prob_type = :to_prob_type
+            WHERE level = :level and lesson = :lesson and prob_type = :from_prob_type
+        """, args)
+        self.conn.commit()
+
+    def update_synonyms(self):
+        cur = self.conn.cursor()
+        cur.execute("""
+            update problems
+            set synonyms = (select group_concat(id, ';') from problems p2 where p2.lesson=problems.lesson and p2.title=problems.title)
+            where 1=1;
+        """)
+        self.conn.commit()

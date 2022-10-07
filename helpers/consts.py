@@ -44,6 +44,7 @@ class CALLBACK(str, Enum):
     ADD_OR_REMOVE_ORAL_PLUS = 'p'
     FINISH_ORAL_ROUND = 'f'
     STUDENT_SELECTED = 's'
+    CHANGE_LEVEL = 'L'
 
     def __str__(self):
         return self.value
@@ -76,7 +77,13 @@ class USER_TYPE(IntFlag):
     DELETED = -1
 
 
-LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', }
+LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', 'В': 'Восьмиклассники' }
+LEVEL_URL = {
+    'н': 'https://shashkovs.ru/vmsh/2022/n/',
+    'п': 'https://shashkovs.ru/vmsh/2022/p/',
+    'э': 'https://shashkovs.ru/vmsh/2022/x/',
+    'В': 'https://shashkovs.ru/vmsh/2022/8/'
+}
 
 
 @unique
@@ -84,9 +91,11 @@ class LEVEL(str, Enum):
     NOVICE = 'н'
     PRO = 'п'
     EXPERT = 'э'
+    GR8 = 'В'
 
     def __init__(self, value):
         self.slevel = LEVEL_DESCRIPTION.get(self.value, None)
+        self.url = LEVEL_URL.get(self.value, None)
 
     def __str__(self):
         return self.value
@@ -106,6 +115,7 @@ class ANS_TYPE(IntEnum):
     INT_3 = 9  # Три целых
     INT_4 = 10  # Четыре целых
     INT_SET = 11  # Множество целых чисел
+    POLYNOMIAL = 12  # Многочлен
     SELECT_ONE = 98  # Выбрать один из вариантов
     STRING = 99  # Просто какая-то строка
 
@@ -127,6 +137,7 @@ for ans_type, descr in [
     (ANS_TYPE.INT_3, ' — три целых числа (например: 1, 7, 9)'),
     (ANS_TYPE.INT_4, ' — четыре целых числа (например: 0, 1, 7, 9)'),
     (ANS_TYPE.SELECT_ONE, ' — выберите один из следующих вариантов:'),
+    (ANS_TYPE.POLYNOMIAL, ' — выражение от n (например: 2n**2 + n(n+1)/2):'),
     (ANS_TYPE.STRING, ''),
 ]:
     ans_type.descr = descr
@@ -144,6 +155,7 @@ ANS_TYPES_DECODER = {
     'ТриЦелых': ANS_TYPE.INT_3,
     'ЧетыреЦелых': ANS_TYPE.INT_4,
     'Выбор': ANS_TYPE.SELECT_ONE,
+    'Многочлен': ANS_TYPE.POLYNOMIAL,
     'Строка': ANS_TYPE.STRING,
 }
 
@@ -206,3 +218,10 @@ ONLINE_MODE_DECODER = {
     'online': ONLINE_MODE.ONLINE,
     'school': ONLINE_MODE.SCHOOL,
 }
+
+
+# Тип изменения в параметрах юзера
+@unique
+class CHANGE(str, Enum):
+    LEVEL = 'L'
+    ONLINE = 'O'

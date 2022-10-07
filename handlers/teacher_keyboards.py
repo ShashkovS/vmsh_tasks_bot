@@ -34,9 +34,21 @@ def build_teacher_actions():
     return keyboard
 
 
+def build_cancel_keyboard():
+    logger.debug('build_cancel_keyboard')
+    keyboard = types.InlineKeyboardMarkup()
+    cancel = types.InlineKeyboardButton(
+        text="Отмена",
+        callback_data=f"{CALLBACK.TEACHER_CANCEL}"
+    )
+    keyboard.add(cancel)
+    return keyboard
+
+
 def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int]]):
     logger.debug('build_select_problem_to_check')
-    problems_and_counts.sort(key=lambda el: (el[0].lesson, el[0].level, el[0].prob, el[0].item))
+    # Сортировка уже в sql-запросе
+    # problems_and_counts.sort(key=lambda el: (el[0].lesson, el[0].level, el[0].prob, el[0].item))
     keyboard = types.InlineKeyboardMarkup()
     for problem, cnt in problems_and_counts:
         if problem.prob_type == PROB_TYPE.TEST:
@@ -100,7 +112,7 @@ def build_select_student(name_to_find: str):
     return keyboard_markup
 
 
-def build_written_task_checking_verdict(student: User, problem: Problem):
+def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids_to_remove: List = None):
     logger.debug('keyboards.build_written_task_checking_verdict')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
     keyboard_markup.add(types.InlineKeyboardButton(
@@ -113,21 +125,7 @@ def build_written_task_checking_verdict(student: User, problem: Problem):
     ))
     keyboard_markup.add(types.InlineKeyboardButton(
         text=f"Отказаться от проверки и вернуться назад",
-        callback_data=f"{CALLBACK.TEACHER_CANCEL}_{student.id}_{problem.id}"
-    ))
-    return keyboard_markup
-
-
-def build_student_in_conference():
-    logger.debug('keyboards.build_student_in_conference')
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"✔ Беседа окончена",
-        callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
-    ))
-    keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"❌ Отказаться от устной сдачи",
-        callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
+        callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"  # TODO А-а-а! ТРЕШНЯК!!!
     ))
     return keyboard_markup
 
@@ -135,7 +133,7 @@ def build_student_in_conference():
 def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User, online: ONLINE_MODE):
     logger.debug('keyboards.build_verdict_for_oral_problems')
     lesson_num = Problem.last_lesson_num()
-    solved = db.check_student_solved(student.id, student.level, lesson_num)
+    solved = set(db.check_student_solved(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
@@ -145,8 +143,9 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
         select_problem_types = (PROB_TYPE.ORALLY, PROB_TYPE.WRITTEN_BEFORE_ORALLY)  # Дистанционно — только устные
     use_problems = [problem for problem in Problem.get_by_lesson(student.level, lesson_num)
                     if problem.prob_type in select_problem_types]
+    problem_buttons = []
     for problem in use_problems:
-        if problem.id in solved and problem.id not in minus_ids:
+        if problem.synonyms & solved and problem.id not in minus_ids:
             tick = '✅✅'
         elif problem.id in plus_ids:
             tick = '👍'
@@ -154,14 +153,35 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
             tick = '❌'
         else:
             tick = ''
+        if online == ONLINE_MODE.SCHOOL:
+            text = f"{tick} {problem.lesson}{problem.level}.{problem.prob}{problem.item}"
+        else:
+            text = f"{tick} {problem}"
         task_button = types.InlineKeyboardButton(
-            text=f"{tick} {problem}",
+            text=text,
             callback_data=f"{CALLBACK.ADD_OR_REMOVE_ORAL_PLUS}_{problem.id}_{plus_ids_str}_{minus_ids_str}"
         )
-        keyboard_markup.add(task_button)
+        problem_buttons.append(task_button)
+    if online == ONLINE_MODE.SCHOOL:
+        for i in range(0, len(problem_buttons), 4):
+            keyboard_markup.row(*problem_buttons[i:i+4])
+    else:
+        for task_button in problem_buttons:
+            keyboard_markup.add(task_button)
+    row_btns = []
+    for lvl in LEVEL:
+        if student.level != lvl:
+            row_btns.append(types.InlineKeyboardButton(text=f"Уровень: {lvl} «{lvl.slevel}»",
+                                                       callback_data=f"{CALLBACK.CHANGE_LEVEL}_{student.id}_{lvl}"))
+    keyboard_markup.row(*row_btns)
     ready_button = types.InlineKeyboardButton(
         text="Готово (завершить сдачу и внести в кондуит)",
         callback_data=f"{CALLBACK.FINISH_ORAL_ROUND}_{plus_ids_str}_{minus_ids_str}"
     )
     keyboard_markup.add(ready_button)
+    cancel = types.InlineKeyboardButton(
+        text="Отмена (ничего не трогать и выйти)",
+        callback_data=f"{CALLBACK.TEACHER_CANCEL}"
+    )
+    keyboard_markup.add(cancel)
     return keyboard_markup

@@ -6,13 +6,20 @@ from helpers.config import config, logger, DEBUG
 from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 from helpers.obj_classes import db, update_from_google_if_db_is_empty
 from helpers.bot import bot, dispatcher
+from asyncio import sleep
+from random import uniform
 import handlers
+import zoom_events_parser
+import tags_service
 
 USE_WEBHOOKS = False
 
 
 async def check_webhook():
     logger.debug('check_webhook')
+    # Ждём слуайное время от 0 до 2 секунд. Чтобы несколько worker'ов не пытались получить хук одновременно
+    # TODO сделать через блокировку в базе
+    await sleep(uniform(0, 2))
     # Set webhook
     webhook = await bot.get_webhook_info()  # Get current webhook status
     if webhook.url != WEBHOOK_URL:  # If URL is bad
@@ -35,7 +42,8 @@ async def on_startup(app):
 
     if USE_WEBHOOKS:
         await check_webhook()
-    await bot.post_logging_message('Бот начал свою работу')
+    bot.username = (await bot.me).username
+    await bot.post_logging_message(f'Бот начал свою работу')
 
 
 async def on_shutdown(app):
@@ -65,6 +73,7 @@ if __name__ == "__main__":
     # В режиме отладки запускаем без вебхуков
     start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
 else:
+
     # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
     USE_WEBHOOKS = True
     WEBHOOK_URL = "https://{}:{}/{}/".format(config.webhook_host, config.webhook_port, config.telegram_bot_token)
@@ -75,7 +84,9 @@ else:
     # Setup event handlers.
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
-
+    # Дополнительные хендлеры
+    app.add_routes(zoom_events_parser.routes)
+    app.add_routes(tags_service.routes)
     # app will be started by gunicorn, so no need to start_webhook
     # start_webhook(
     #     dispatcher=dispatcher,

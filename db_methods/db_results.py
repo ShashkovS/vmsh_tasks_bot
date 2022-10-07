@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+from typing import List, Tuple, Dict
 
 
 # ██████  ███████ ███████ ██    ██ ██      ████████ ███████
@@ -36,21 +37,23 @@ class DB_RESULT:
         """, locals()).fetchone()['cnt']
         return per_day, per_hour
 
-    def delete_plus(self, student_id: int, problem_id: int, verdict: int):
+    def delete_plus(self, student_id: int, problem_id: int, res_type: int, new_verdict: int):
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
-            update results set verdict = :verdict
-            where student_id = :student_id and problem_id = :problem_id and problem_id > 0 and verdict > 0
+            update results set verdict = :new_verdict
+            where 
+            student_id = :student_id and problem_id = :problem_id and problem_id > 0 and verdict > 0
+            and (:res_type is null or res_type = :res_type)
         """, args)
         self.conn.commit()
 
-    def check_student_solved(self, student_id: int, level: str, lesson: int) -> set:
+    def check_student_solved(self, student_id: int, lesson: int) -> set:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
             select distinct problem_id from results
-            where student_id = :student_id and level = :level and lesson = :lesson and verdict > 0
+            where student_id = :student_id and lesson = :lesson and verdict > 0
         """, args)
         rows = cur.fetchall()
         solved_ids = {row['problem_id'] for row in rows}
@@ -60,10 +63,44 @@ class DB_RESULT:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
-            select r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict from results r
+            select r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict, r.problem_id from results r
             join problems p on r.problem_id = p.id
             where r.student_id = :student_id and r.lesson = :lesson
             order by r.ts
         """, args)
         rows = cur.fetchall()
         return rows
+
+    def list_all_student_results(self, student_id: int) -> list[dict]:
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            select r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict, r.problem_id from results r
+            join problems p on r.problem_id = p.id
+            where r.student_id = :student_id
+            order by r.ts
+        """, args)
+        rows = cur.fetchall()
+        return rows
+
+    def get_results_for_recheck_by_problem_id(self, problem_id: int) -> list[dict]:
+        args = locals()
+        cur = self.conn.cursor()
+        cur.execute("""
+            select r.ROWID, r.student_id, r.answer, r.verdict from results r
+            where r.problem_id = :problem_id
+        """, args)
+        rows = cur.fetchall()
+        return rows
+
+    def update_verdicts(self, new_verdicts: Dict):
+        cur = self.conn.cursor()
+        cur.execute("begin")
+        for row in new_verdicts:
+            cur.execute("""
+                update results
+                set verdict = :verdict
+                where rowid = :rowid
+            """, row)
+        cur.execute("commit")
+        self.conn.commit()

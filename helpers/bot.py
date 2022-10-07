@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import aiogram
-from aiogram.utils.exceptions import MessageNotModified
+from aiogram.utils.exceptions import MessageNotModified, MessageToEditNotFound
 from aiogram.dispatcher import Dispatcher
 from helpers.config import config, logger
 from helpers.consts import CALLBACK, STATE
@@ -8,6 +8,8 @@ from helpers.consts import CALLBACK, STATE
 
 # Добавляем методов, которые игнорируют некоторые ошибки
 class BotIg(aiogram.Bot):
+    username: aiogram.types.User
+
     async def edit_message_text_ig(self, *args, **kwargs):
         logger.debug('bot.edit_message_text_ig')
         try:
@@ -19,13 +21,15 @@ class BotIg(aiogram.Bot):
         logger.debug('bot.edit_message_reply_markup_ig')
         try:
             await self.edit_message_reply_markup(*args, **kwargs)
-        except MessageNotModified as e:
+        except (MessageNotModified, MessageToEditNotFound) as e:
             pass
 
     async def answer_callback_query_ig(self, *args, **kwargs):
         logger.debug('bot.answer_callback_query_ig')
         try:
             await self.answer_callback_query(*args, **kwargs)
+        except aiogram.utils.exceptions.InvalidQueryID:
+            pass
         except Exception as e:
             logger.exception(f'SHIT: {e}')
 
@@ -33,6 +37,8 @@ class BotIg(aiogram.Bot):
         logger.debug('bot.delete_message_ig')
         try:
             await self.delete_message(*args, **kwargs)
+        except aiogram.utils.exceptions.MessageToDeleteNotFound:
+            pass
         except aiogram.utils.exceptions.MessageCantBeDeleted:
             try:
                 await self.edit_message_reply_markup_ig(*args, reply_markup=None, **kwargs)
@@ -43,12 +49,9 @@ class BotIg(aiogram.Bot):
 
     async def post_logging_message(self, msg):
         logger.debug('bot.post_logging_message')
-        if config.production_mode:
-            msg = 'PRODUCTION!\n' + msg
-        else:
-            msg = 'DEV MODE\n' + msg
+        bot_type = 'PRODUCTION' if config.production_mode else 'DEV MODE'
         try:
-            res = await self.send_message(config.exceptions_channel, msg)
+            res = await self.send_message(config.exceptions_channel, f'{bot_type} @{bot.username}\n{msg}')
             # У секрентного чата id — это число. А у открытого — это строка.
             if type(config.exceptions_channel) == str:
                 await self.send_message(config.exceptions_channel, f'(Exceptions chat id = {res["chat"]["id"]})')
@@ -57,7 +60,7 @@ class BotIg(aiogram.Bot):
 
 
 # Запускаем API телеграм-бота
-bot = BotIg(config.telegram_bot_token)
+bot = BotIg(config.telegram_bot_token, timeout=5)
 # Запускаем API телеграм-бота
 dispatcher = Dispatcher(bot)
 

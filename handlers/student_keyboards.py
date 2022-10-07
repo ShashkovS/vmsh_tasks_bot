@@ -7,13 +7,13 @@ from helpers.obj_classes import User, Problem, State, db
 
 def build_problems(lesson_num: int, student: User):
     logger.debug('keyboards.build_problems')
-    solved = db.check_student_solved(student.id, student.level, lesson_num)
-    being_checked = db.check_student_sent_written(student.id, lesson_num)
+    solved = set(db.check_student_solved(student.id, lesson_num))
+    being_checked = set(db.check_student_sent_written(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     for problem in Problem.get_by_lesson(student.level, lesson_num):
-        if problem.id in solved:
+        if problem.synonyms & solved:
             tick = '✅'
-        elif problem.id in being_checked:
+        elif problem.synonyms & being_checked:
             tick = '❓'
         elif problem.prob_type == PROB_TYPE.ORALLY and State.get_by_user_id(student.id)['oral_problem_id'] is not None:
             tick = '⌛'
@@ -55,13 +55,14 @@ def build_lessons():
     return keyboard_markup
 
 
-def build_test_answers(choices):
+def build_test_answers(problem: Problem):
     logger.debug('keyboards.build_test_answers')
+    choices = problem.ans_validation.split(';')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     for choice in choices:
         lesson_button = types.InlineKeyboardButton(
             text=choice,
-            callback_data=f"{CALLBACK.ONE_OF_TEST_ANSWER_SELECTED}_{choice[:24]}",  # Максимальная длина callback_data — 65б.
+            callback_data=f"{CALLBACK.ONE_OF_TEST_ANSWER_SELECTED}_{problem.id}_{choice[:24]}",  # Максимальная длина callback_data — 65 байт.
         )
         keyboard_markup.add(lesson_button)
     cancel_button = types.InlineKeyboardButton(
@@ -90,4 +91,18 @@ def build_exit_waitlist():
         text="/exit_waitlist Выйти из очереди"
     )
     keyboard_markup.add(exit_button)
+    return keyboard_markup
+
+
+def build_student_in_conference():
+    logger.debug('keyboards.build_student_in_conference')
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    keyboard_markup.add(types.InlineKeyboardButton(
+        text=f"✔ Беседа окончена",
+        callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
+    ))
+    keyboard_markup.add(types.InlineKeyboardButton(
+        text=f"❌ Отказаться от устной сдачи",
+        callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
+    ))
     return keyboard_markup

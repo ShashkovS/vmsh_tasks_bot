@@ -8,7 +8,6 @@ from helpers.obj_classes import *
 from .initial_test_data import test_students, test_teachers
 
 
-
 class UserMethodsTest(TestCase):
     def setUp(self) -> None:
         self.db = db
@@ -54,6 +53,9 @@ class UserMethodsTest(TestCase):
         def get_by_id(cls, id: int) -> Optional[User]:
         """
         for dict_user in test_students + test_teachers:
+            dict_user['level'] = LEVEL(dict_user['level'] or 'н')
+            dict_user['online'] = ONLINE_MODE(dict_user['online'])
+            dict_user['type'] = USER_TYPE(dict_user['type'])
             self.assertDictEqual(dict_user, asdict(User.get_by_id(dict_user['id'])))
             self.assertDictEqual(dict_user, asdict(User.get_by_token(dict_user['token'])))
             if dict_user['chat_id']:
@@ -93,3 +95,6 @@ class UserMethodsTest(TestCase):
         self.assertEqual(Webtoken.webtoken_by_user(student2), webtoken2)
         self.assertIsNone(Webtoken.user_by_webtoken(None))
         self.assertIsNone(Webtoken.webtoken_by_user(None))
+
+    def test_problem_lock(self):
+        pass

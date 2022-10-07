@@ -1,9 +1,10 @@
 import os
 from unittest import TestCase
+from datetime import datetime
 
 from helpers.consts import *
 from db_methods import db
-from .initial_test_data import test_students, test_teachers
+from .initial_test_data import test_students, test_teachers, test_problems
 
 
 class DatabaseMethodsTest(TestCase):
@@ -19,10 +20,16 @@ class DatabaseMethodsTest(TestCase):
         # create shiny new db instance from scratch and connect
         self.db.setup(test_db_filename)
         self.insert_dummy_users()
+        self.insert_dummy_problems()
 
     def insert_dummy_users(self):
         for row in test_students + test_teachers:
             real_id = self.db.add_user(row)
+            row['id'] = real_id
+
+    def insert_dummy_problems(self):
+        for row in test_problems:
+            real_id = self.db.add_problem(row)
             row['id'] = real_id
 
     def tearDown(self) -> None:
@@ -108,6 +115,164 @@ class DatabaseMethodsTest(TestCase):
         self.assertEqual(self.db.get_webtoken_by_user_id(student2['id']), token2new)
         self.assertEqual(self.db.get_user_id_by_webtoken(token1), student1['id'])
         self.assertEqual(self.db.get_user_id_by_webtoken(token2new), student2['id'])
+
+    def test_results(self):
+        student1 = test_students[-1]
+        student2 = test_students[0]
+        answer1 = '17'
+        answer2 = '18'
+        verdict1 = 1
+        verdict2 = -1
+        for problem in test_problems:
+            for student in test_students:
+                self.db.add_result(student["id"], problem["id"], problem["level"], problem["lesson"], None, verdict1, answer1)
+                self.db.add_result(student["id"], problem["id"], problem["level"], problem["lesson"], None, verdict2, answer2)
+        problem = test_problems[2]
+        for_recheck = self.db.get_results_for_recheck_by_problem_id(problem["id"])
+        new_verdict = 99
+        for row in for_recheck:
+            row["verdict"] = new_verdict
+        self.db.update_verdicts(for_recheck)
+        results = self.db.list_student_results(student2["id"], problem["lesson"])
+        for res in results:
+            if res["problem_id"] == problem["id"]:
+                self.assertEqual(res["verdict"], new_verdict)
+            else:
+                self.assertIn(res["verdict"], [verdict1, verdict2])
+
+    def test_key_value_storage(self):
+        kv = self.db.kv
+        self.assertEqual(len(kv), 0)
+        kv['foo1'] = 'baz1'
+        kv['foo2'] = 'baz2'
+        kv['foo3'] = 'baz3'
+        self.assertEqual(len(kv), 3)
+        self.assertEqual(kv['foo1'], 'baz1')
+        kv['foo1'] = 'baz11'
+        self.assertEqual(kv['foo1'], 'baz11')
+        self.assertEqual(kv['foo2'], 'baz2')
+        del kv['foo1']
+        self.assertRaises(KeyError, lambda: kv['foo1'])
+        self.assertIsNone(kv.get('foo1', None))
+        self.assertIsNone(kv.pop('foo1', None))
+        self.assertTrue('foo2' in kv)
+        self.assertFalse('foo1' in kv)
+        self.assertListEqual(kv.keys(), ['foo2', 'foo3'])
+        self.assertListEqual(kv.values(), ['baz2', 'baz3'])
+        self.assertEqual(kv.pop('foo2', None), 'baz2')
+        self.assertIsNone(kv.get('foo2', None))
+
+        db = self.db
+
+        def get_problem_lock(teacher_id: int):
+            key = f'{teacher_id}_pl'
+            value = db.kv.get(key, None)
+            return int(value) if value else None
+
+        def del_problem_lock(teacher_id: int):
+            key = f'{teacher_id}_pl'
+            db.kv.pop(key, None)
+
+        def set_problem_lock(teacher_id: int, problem_id: int):
+            key = f'{teacher_id}_pl'
+            value = f'{problem_id}'
+            db.kv[key] = value
+
+        self.assertIsNone(get_problem_lock(123))
+        del_problem_lock(123)
+        self.assertIsNone(get_problem_lock(123))
+        set_problem_lock(123, 23)
+        set_problem_lock(124, 24)
+        set_problem_lock(125, 25)
+        self.assertEqual(get_problem_lock(123), 23)
+        self.assertEqual(get_problem_lock(124), 24)
+        self.assertEqual(get_problem_lock(125), 25)
+        set_problem_lock(123, 123)
+        self.assertEqual(get_problem_lock(123), 123)
+        self.assertEqual(get_problem_lock(124), 24)
+        self.assertEqual(get_problem_lock(125), 25)
+        del_problem_lock(123)
+        self.assertIsNone(get_problem_lock(123))
+
+    def test_zoom_queue(self):
+        db = self.db
+        ts1 = datetime(2022, 1, 1, 1)
+        ts2 = datetime(2022, 1, 1, 2)
+        ts3 = datetime(2022, 1, 1, 3)
+        db.add_to_queue('name1', ts1)
+        db.add_to_queue('name2', ts3)
+        db.add_to_queue('name3', ts2)
+        db.mark_joined('name2')
+        queue = db.get_first_from_queue()
+        self.assertListEqual(queue, [
+            {'zoom_user_name': 'name1', 'enter_ts': '2022-01-01T01:00:00', 'status': 0},
+            {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0},
+            {'zoom_user_name': 'name2', 'enter_ts': '2022-01-01T03:00:00', 'status': 1},
+        ])
+        db.add_to_queue('name2', ts1)
+        db.add_to_queue('name3', datetime.now())
+        queue = db.get_first_from_queue()
+        self.assertListEqual(queue, [
+            {'zoom_user_name': 'name1', 'enter_ts': '2022-01-01T01:00:00', 'status': 0},
+            {'zoom_user_name': 'name2', 'enter_ts': '2022-01-01T01:00:00', 'status': 0},
+            {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0}
+        ])
+        db.remove_from_queue('name2')
+        queue = db.get_first_from_queue()
+        self.assertListEqual(queue, [
+            {'zoom_user_name': 'name1', 'enter_ts': '2022-01-01T01:00:00', 'status': 0},
+            {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0}
+        ])
+        db.remove_from_queue('name1')
+        queue = db.get_first_from_queue()
+        self.assertListEqual(queue, [
+            {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0}
+        ])
+
+    def test_problem_tags(self):
+        db = self.db
+        ts1 = datetime(2022, 1, 1, 1)
+        ts2 = datetime(2022, 1, 1, 2)
+        ts3 = datetime(2022, 1, 1, 3)
+        problems = db.get_all_tags()
+        self.assertEqual(len(problems), len(test_problems))
+        self.assertIsNone(problems[0]['tags'])
+        db.add_tags(7, 'tags1', 17)
+        self.assertEqual(db.get_tags_by_problem_id(7),'tags1')
+        db.add_tags(7, 'tags2', 18)
+        self.assertEqual(db.get_tags_by_problem_id(7), 'tags2')
+        self.assertIsNone(db.get_tags_by_problem_id(8))
+        problems = db.get_all_tags()
+        prob_7 = [prob for prob in problems if prob['id'] == 7][0]
+        self.assertEqual(prob_7['tags'], 'tags2')
+
+    def test_media_groups(self):
+        db = self.db
+        media_group_id = 123
+        media_group_id_2 = 1234
+        media_group_id_3 = 1235
+        problem_id = 12
+
+        saved_problem_id = db.media_group_check(media_group_id)
+        self.assertIsNone(saved_problem_id)
+
+        db.media_group_add(media_group_id, problem_id)
+        saved_problem_id = db.media_group_check(media_group_id)
+        self.assertEqual(problem_id, saved_problem_id)
+
+        saved_problem_id = db.media_group_check(media_group_id_2)
+        self.assertIsNone(saved_problem_id)
+        saved_problem_id = db.media_group_check(media_group_id_3)
+        self.assertIsNone(saved_problem_id)
+
+        db.media_group_add(media_group_id_2, problem_id)
+        db.media_group_add(media_group_id_3, problem_id)
+
+        saved_problem_id = db.media_group_check(media_group_id_2)
+        self.assertEqual(problem_id, saved_problem_id)
+        saved_problem_id = db.media_group_check(media_group_id_3)
+        self.assertEqual(problem_id, saved_problem_id)
+
 
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)
