@@ -148,7 +148,7 @@ async def recheck(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     prob = prob_id = None
-    if (match := re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+(\d+)([а-я])\.(\d+)([а-я]?)\s*', message.text or '')):
+    if (match := re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+(\d+)([а-яА-Я]\w*)\.(\d+)([а-я]?)\s*', message.text or '')):
         token, lst, level, prob, item = match.groups()
         problem = Problem.get_by_key(level, int(lst), int(prob), item)
     elif (match := re.fullmatch(r'/recheck(?:_xd5fqk)?_([^_]*)_([^_]*)', message.text or '')):
