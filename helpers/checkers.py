@@ -12,6 +12,12 @@ class Ne:
     def __eq__(self, other):
         return False
 
+    def __le__(self, other):
+        return False
+
+    def __ge__(self, other):
+        return False
+
     def __repr__(self):
         return '≠'
 
@@ -55,6 +61,21 @@ def frac_eq(x, y):
     return to_frac(x) == to_frac(y)
 
 
+def close_to(x, y):
+    x_float = to_frac(x)
+    # y — это выражение вида 14.3+-0.4 — то есть число плюс-минус точность
+    y = y.replace('+-', '±').replace('-+', '±')
+    if '±' not in y:
+        return x_float == to_frac(y)
+    try:
+        y, eps = y.split('±')
+        y = float(y)
+        eps = float(eps)
+        return y - eps <= x_float <= y + eps
+    except:
+        return False
+
+
 def int_sec_eq(x, y):
     return to_int_seq(x) == to_int_seq(y)
 
@@ -76,6 +97,7 @@ ANS_CHECKER = {
     ANS_TYPE.INTEGER: int_eq,  # целое число (например, -179)',
     ANS_TYPE.RATIO: frac_eq,  # отношение (например, 5/3 или -179/1)',
     ANS_TYPE.FLOAT: frac_eq,  # десятичную дробь (например, 3.14 или 179)',
+    ANS_TYPE.FLOAT_EPS: close_to,  # десятичную дробь (например, 3.14 или 179)',
     ANS_TYPE.FRACTION: frac_eq,  # обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)',
     ANS_TYPE.INT_SEQ: int_sec_eq,  # последовательность целых чисел (например: 1, 7, 9)',
     ANS_TYPE.INT_SET: int_set_eq,  # множество целых чисел (например: 1, 7, 9)',
@@ -86,13 +108,16 @@ ANS_CHECKER = {
     ANS_TYPE.POLYNOMIAL: calc_first_10_values,  # выражение от n (например: 2n**2 + n(n+1)/2)',
     ANS_TYPE.STRING: str_eq,  # строка
 }
+
 ANS_REGEX = {
     ANS_TYPE.DIGIT: re.compile(r'^\s*\d\s*$'),  # цифру (например, 0 или 7)',
     ANS_TYPE.NATURAL: re.compile(r'^\s*\d+\s*$'),  # натуральное число (например, 179)',
     ANS_TYPE.INTEGER: re.compile(r'^\s*[-+]?\d+\s*$'),  # целое число (например, -179)',
     ANS_TYPE.RATIO: re.compile(r'^\s*[-+]?\d+(?:\/\d+)?\s*$'),  # отношение (например, 5/3 или -179/1)',
     ANS_TYPE.FLOAT: re.compile(r'^\s*[-+]?(?=\d|\.\d)\d*(?:\.\d*)?(?:[eE][-+]?\d+)?\s*$'),  # десятичную дробь (например, 3.14 или 179)',
-    ANS_TYPE.FRACTION: re.compile(r'^\s*[-+]?(?=\d+|\.\d+)\d*(?:(?:/\d+)?|(?:\.\d*)?(?:[eE][-+]?\d+)?)\s*$'),  # обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)',
+    ANS_TYPE.FLOAT_EPS: re.compile(r'^\s*[-+]?(?=\d|\.\d)\d*(?:\.\d*)?(?:[eE][-+]?\d+)?\s*$'),  # десятичную дробь (например, 3.14 или 179)',
+    # обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)',
+    ANS_TYPE.FRACTION: re.compile(r'^\s*[-+]?(?=\d+|\.\d+)\d*(?:(?:/\d+)?|(?:\.\d*)?(?:[eE][-+]?\d+)?)\s*$'),
     ANS_TYPE.INT_SEQ: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+)*[^\d+-]*$'),  # последовательность целых чисел (например: 1, 7, 9)',
     ANS_TYPE.INT_SET: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+)*[^\d+-]*$'),  # множество целых чисел (например: 1, 7, 9)',
     ANS_TYPE.INT_2: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+){1}[^\d+-]*$'),  # два целых числа (например: 1, 7)',
