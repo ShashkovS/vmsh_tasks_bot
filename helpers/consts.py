@@ -26,6 +26,7 @@ class STATE(IntEnum):
 @unique
 class CALLBACK(str, Enum):
     PROBLEM_SELECTED = 't'
+    SOS_PROBLEM_SELECTED = 'T'
     SHOW_LIST_OF_LISTS = 'a'
     LIST_SELECTED = 'l'
     ONE_OF_TEST_ANSWER_SELECTED = 'x'
@@ -45,6 +46,8 @@ class CALLBACK(str, Enum):
     FINISH_ORAL_ROUND = 'f'
     STUDENT_SELECTED = 's'
     CHANGE_LEVEL = 'L'
+    PROBLEM_SOS = 'A'
+    OTHER_SOS = 'C'
 
     def __str__(self):
         return self.value

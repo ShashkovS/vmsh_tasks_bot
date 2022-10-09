@@ -290,9 +290,16 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
 @reg_state(STATE.WAIT_SOS_REQUEST)
 async def prc_wait_sos_request_state(message: types.Message, student: User):
     logger.debug('prc_wait_sos_request_state')
+    state = State.get_by_user_id(student.id)
+    problem_id = state.get("problem_id", None)
+    if problem_id:
+        problem = Problem.get_by_id(problem_id)
+        problem_text = f"{problem}"
+    else:
+        problem_text = ""
     try:
         await bot.send_message(config.sos_channel, parse_mode="HTML",
-                               text=f'<pre>{student.surname} {student.name} {student.level} {student.token} {ONLINE_MODE(student.online).__str__()[12:]}</pre>')
+                               text=f'<pre>{student.surname} {student.name} {student.level} {student.token} {ONLINE_MODE(student.online).__str__()[12:]}</pre>{problem_text}')
         await bot.forward_message(config.sos_channel, message.chat.id, message.message_id)
     except:
         logger.info(f'Не удалось переслать SOS-сообщение в канал {config.sos_channel}')
@@ -403,11 +410,39 @@ async def sos(message: types.Message):
             text="🤖 Привет! Без пароля я не знаю, кому помогать... Пожалуйста, введите свой пароль",
         )
     else:
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text="🤖 Так, опишите вашу проблему. И я перешлю это сообщение живому человеку.",
-        )
-        State.set_by_user_id(user.id, STATE.WAIT_SOS_REQUEST)
+        sos_message = await bot.send_message(chat_id=message.chat.id,
+                                             text="🤖 Какой у вас вопрос?",
+                                             reply_markup=student_keyboards.build_student_sos_actions())
+        bot.delete_messages_after(sos_message, 30)
+
+
+@reg_callback(CALLBACK.PROBLEM_SOS)
+async def prc_problem_sos_callback(query: types.CallbackQuery, student: User):
+    await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
+    await bot.send_message(chat_id=query.message.chat.id,
+                           text="🤖 По какой задаче у вас вопрос❓",
+                           reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student,
+                                                                         is_sos_question=True))
+    await bot.answer_callback_query_ig(query.id)
+
+
+@reg_callback(CALLBACK.OTHER_SOS)
+async def prc_problems_other_sos_callback(query: types.CallbackQuery, student: User):
+    await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
+    State.set_by_user_id(student.id, STATE.WAIT_SOS_REQUEST)
+    await bot.send_message(chat_id=query.message.chat.id,
+                           text="Напишите ваш вопрос")
+    await bot.answer_callback_query_ig(query.id)
+
+
+@reg_callback(CALLBACK.SOS_PROBLEM_SELECTED)
+async def prc_problem_sos_problem_selected_callback(query: types.CallbackQuery, student: User):
+    problem_id = int(query.data[2:])
+    problem = Problem.get_by_id(problem_id)
+    State.set_by_user_id(student.id, STATE.WAIT_SOS_REQUEST, problem_id=problem_id)
+    await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                   text=f"Напишите ваш вопрос по задаче\n{problem}:")
+    await bot.answer_callback_query_ig(query.id)
 
 
 @reg_callback(CALLBACK.PROBLEM_SELECTED)
