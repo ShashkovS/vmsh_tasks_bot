@@ -10,14 +10,15 @@ from helpers.obj_classes import User, Problem, db
 def build_teacher_actions():
     logger.debug('keyboards.build_teacher_actions')
     keyboard = types.InlineKeyboardMarkup()
+    sos_count = db.get_sos_tasks_count()
     prb_count = db.get_written_tasks_count()
     get_written_task_button = types.InlineKeyboardButton(
-        text=f"Проверить письменную задачу (всего {prb_count})",
-        callback_data=CALLBACK.GET_WRITTEN_TASK
+        text=f"Ответить на вопрос (всего {sos_count})",
+        callback_data=CALLBACK.GET_SOS_TASK
     )
     keyboard.add(get_written_task_button)
     get_written_task_button = types.InlineKeyboardButton(
-        text=f"Проверять конкретную письменную",
+        text=f"Проверять письменные (всего {prb_count})",
         callback_data=CALLBACK.SELECT_WRITTEN_TASK_TO_CHECK
     )
     keyboard.add(get_written_task_button)
@@ -77,10 +78,10 @@ def build_teacher_select_written_problem(top: list):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
     for row in top:
         student = User.get_by_id(row['student_id'])
-        problem = Problem.get_by_id(row['problem_id'])
+        problem = Problem.get_by_id(abs(row['problem_id']))  # убираем знак, он может быть отрицательным при вопросе
         task_button = types.InlineKeyboardButton(
             text=f"{problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}) {student.surname} {student.name}",
-            callback_data=f"{CALLBACK.WRITTEN_TASK_SELECTED}_{student.id}_{problem.id}"
+            callback_data=f"{CALLBACK.WRITTEN_TASK_SELECTED}_{student.id}_{row['problem_id']}"
         )
         keyboard_markup.add(task_button)
     cancel = types.InlineKeyboardButton(
@@ -125,7 +126,23 @@ def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids
     ))
     keyboard_markup.add(types.InlineKeyboardButton(
         text=f"Отказаться от проверки и вернуться назад",
-        callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"  # TODO А-а-а! ТРЕШНЯК!!!
+        callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"
+        # TODO А-а-а! ТРЕШНЯК!!!
+    ))
+    return keyboard_markup
+
+
+def build_answer_verdict(student: User, problem: Problem, wtd_ids_to_remove: List = None):
+    logger.debug('keyboards.build_answer_verdict')
+    keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
+    keyboard_markup.add(types.InlineKeyboardButton(
+        text=f"Отправить ответ на вопрос",
+        callback_data=f"{CALLBACK.SEND_ANSWER}_{student.id}_{-problem.id}"
+    ))
+    keyboard_markup.add(types.InlineKeyboardButton(
+        text=f"Не отвечать на вопрос и вернуться назад",
+        callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"
+        # TODO А-а-а! ТРЕШНЯК!!!
     ))
     return keyboard_markup
 

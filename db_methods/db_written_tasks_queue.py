@@ -42,45 +42,59 @@ class DB_WRITTENTASKQUEUE:
         self.conn.commit()
         return cur.lastrowid
 
-    def get_written_tasks_to_check(self, teacher_id, synonyms: set = None) -> List[dict]:
+    def get_written_tasks_to_check(self, teacher_id, synonyms: set) -> List[dict]:
         cur = self.conn.cursor()
         now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
         # order = 'prob, item' if order_by_problem_num else 'ts'
-        if synonyms is None:
-            # TODO Удалить этот кусок треша!
+        rows = []
+        for problem_id in synonyms:
             cur.execute("""
-                select wq.* from written_tasks_queue wq
-                -- join problems p on wq.problem_id = p.id
-                where cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id
-                order by ts -- p.prob, p.id
+                select * from written_tasks_queue
+                where (cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id)
+                      and problem_id = :problem_id
+                order by ts
                 limit :_MAX_WRITTEN_TASKS_TO_SELECT
             """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS.NEW,
                   '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
                   'now_minus_30_min': now_minus_30_min,
-                  'teacher_id': teacher_id})
-            rows = cur.fetchall()
-        else:
-            rows = []
-            for problem_id in synonyms:
-                cur.execute("""
-                    select * from written_tasks_queue
-                    where (cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id)
-                          and problem_id = :problem_id
-                    order by ts
-                    limit :_MAX_WRITTEN_TASKS_TO_SELECT
-                """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS.NEW,
-                      '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
-                      'now_minus_30_min': now_minus_30_min,
-                      'teacher_id': teacher_id,
-                      'problem_id': problem_id})
-                rows.extend(cur.fetchall())
+                  'teacher_id': teacher_id,
+                  'problem_id': problem_id})
+            rows.extend(cur.fetchall())
+        return rows
+
+    def get_sos_tasks_to_check(self, teacher_id) -> List[dict]:
+        cur = self.conn.cursor()
+        now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
+        # order = 'prob, item' if order_by_problem_num else 'ts'
+        # TODO Удалить этот кусок треша!
+        cur.execute("""
+            select wq.* from written_tasks_queue wq
+            -- join problems p on wq.problem_id = p.id
+            where 
+            (cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id)
+            and problem_id < 0  -- < 0 - это SOS
+            order by ts -- p.prob, p.id
+            limit :_MAX_WRITTEN_TASKS_TO_SELECT
+        """, {'WRITTEN_STATUS_NEW': WRITTEN_STATUS.NEW,
+              '_MAX_WRITTEN_TASKS_TO_SELECT': _MAX_WRITTEN_TASKS_TO_SELECT,
+              'now_minus_30_min': now_minus_30_min,
+              'teacher_id': teacher_id})
+        rows = cur.fetchall()
         return rows
 
     def get_written_tasks_count(self) -> int:
         cur = self.conn.cursor()
         cur.execute("""
-            select count(*) cnt from written_tasks_queue 
+            select count(*) cnt from written_tasks_queue where problem_id > 0 -- >0 - значит решение
         """)
+        row = cur.fetchone()
+        return row['cnt']
+
+    def get_sos_tasks_count(self) -> int:
+        cur = self.conn.cursor()
+        cur.execute("""
+               select count(*) cnt from written_tasks_queue where problem_id < 0 -- >0 - значит решение
+           """)
         row = cur.fetchone()
         return row['cnt']
 

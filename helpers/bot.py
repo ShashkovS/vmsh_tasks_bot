@@ -66,7 +66,7 @@ class BotIg(aiogram.Bot):
         for message in messages:
             await self.delete_message_ig(chat_id=message.chat.id, message_id=message.message_id)
 
-    async def delete_messages_after(self, messages: list, timeout: int):  # List[types.Message]
+    def delete_messages_after(self, messages: list, timeout: int):  # List[types.Message]
         asyncio.create_task(self.delete_messages_after_task(messages, timeout))
 
 

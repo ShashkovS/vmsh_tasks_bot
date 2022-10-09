@@ -103,7 +103,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
             db.media_group_add(message.media_group_id, problem_id)
     if not problem_id:
         problem_id = State.get_by_user_id(student.id)['problem_id']
-    problem = Problem.get_by_id(problem_id)
+    problem = Problem.get_by_id(abs(problem_id))  # Убираем знак (он отрицательный, если это не решение, а вопрос)
     file_name = None
     text = message.text
 
@@ -139,12 +139,12 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     #     db.add_message_to_log(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
     #     with open(file_name, 'wb') as file:
     #         file.write(bin_data.read())
-    WrittenQueue.add_to_discussions(student.id, problem.id, None, text, file_name, message.chat.id, message.message_id)
+    WrittenQueue.add_to_discussions(student.id, problem_id, None, text, file_name, message.chat.id, message.message_id)
     if not next_media_group_message:
-        WrittenQueue.add_to_queue(student.id, problem.id)
+        WrittenQueue.add_to_queue(student.id, problem_id)
         await bot.send_message(
             chat_id=message.chat.id,
-            text="Принято на проверку"
+            text="Принято на проверку" if (problem_id > 0) else "Вопрос записан"
         )
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
@@ -419,10 +419,12 @@ async def sos(message: types.Message):
 @reg_callback(CALLBACK.PROBLEM_SOS)
 async def prc_problem_sos_callback(query: types.CallbackQuery, student: User):
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
-    await bot.send_message(chat_id=query.message.chat.id,
-                           text="🤖 По какой задаче у вас вопрос❓",
-                           reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student,
-                                                                         is_sos_question=True))
+    problem_sos_message = await bot.send_message(chat_id=query.message.chat.id,
+                                                 text="🤖 По какой задаче у вас вопрос❓",
+                                                 reply_markup=student_keyboards.build_problems(
+                                                     Problem.last_lesson_num(), student,
+                                                     is_sos_question=True))
+    bot.delete_messages_after(problem_sos_message, 30)
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -440,8 +442,12 @@ async def prc_problem_sos_problem_selected_callback(query: types.CallbackQuery, 
     problem_id = int(query.data[2:])
     problem = Problem.get_by_id(problem_id)
     State.set_by_user_id(student.id, STATE.WAIT_SOS_REQUEST, problem_id=problem_id)
-    await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                   text=f"Напишите ваш вопрос по задаче\n{problem}:")
+    await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
+    await bot.send_message(chat_id=query.message.chat.id,
+                           text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 с вашим вопросом.",
+                           reply_markup=student_keyboards.build_cancel_task_submission())
+    State.set_by_user_id(student.id, STATE.SENDING_SOLUTION,
+                         -problem_id)  # -problem_id - ВОПРОС по задаче, а не РЕШЕНИЕ
     await bot.answer_callback_query_ig(query.id)
 
 

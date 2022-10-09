@@ -230,8 +230,8 @@ class WrittenQueue:
         return db.get_written_tasks_to_check(teacher_id, synonyms)
 
     @staticmethod
-    def take_top(teacher_id: int):
-        return db.get_written_tasks_to_check(teacher_id, None)
+    def take_sos_top(teacher_id: int):
+        return db.get_sos_tasks_to_check(teacher_id)
 
     @staticmethod
     def mark_being_checked(student_id: int, problem_id: int, teacher_id: int):
