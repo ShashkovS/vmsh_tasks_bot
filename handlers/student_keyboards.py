@@ -5,7 +5,7 @@ from helpers.config import logger
 from helpers.obj_classes import User, Problem, State, db
 
 
-def build_problems(lesson_num: int, student: User):
+def build_problems(lesson_num: int, student: User, is_sos_question=False):
     logger.debug('keyboards.build_problems')
     solved = set(db.check_student_solved(student.id, lesson_num))
     being_checked = set(db.check_student_sent_written(student.id, lesson_num))
@@ -27,9 +27,15 @@ def build_problems(lesson_num: int, student: User):
             tp = '🗣'
         else:
             tp = '?'
+        if is_sos_question:
+            use_callback = CALLBACK.SOS_PROBLEM_SELECTED
+            tt = '❓'
+        else:
+            use_callback = CALLBACK.PROBLEM_SELECTED
+            tt = ""
         task_button = types.InlineKeyboardButton(
-            text=f"{tick} {tp} {problem}",
-            callback_data=f"{CALLBACK.PROBLEM_SELECTED}_{problem.id}"
+            text=f"{tt}{tick} {tp} {problem}{tt}",
+            callback_data=f"{use_callback}_{problem.id}"
         )
         keyboard_markup.add(task_button)
     # Пока отключаем эту фичу
@@ -106,3 +112,18 @@ def build_student_in_conference():
         callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
     ))
     return keyboard_markup
+
+def build_student_sos_actions():
+    logger.debug('keyboards.build_student_sos_actions')
+    keyboard = types.InlineKeyboardMarkup()
+    button = types.InlineKeyboardButton(
+        text=f"Вопрос по задаче",
+        callback_data=CALLBACK.PROBLEM_SOS
+    )
+    keyboard.add(button)
+    button = types.InlineKeyboardButton(
+        text=f"Другой вопрос",
+        callback_data=CALLBACK.OTHER_SOS
+    )
+    keyboard.add(button)
+    return keyboard

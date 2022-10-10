@@ -23,7 +23,7 @@ class DB_RESULT:
         """, args)
         self.conn.commit()
 
-    def check_num_answers(self, student_id: int, problem_id: int) -> tuple[int, int]:
+    def check_num_answers(self, student_id: int, problem_id: int) -> Tuple[int, int]:
         cur_date = datetime.now().isoformat()[:10]
         cur_hour = datetime.now().isoformat()[:13]
         cur = self.conn.cursor()
@@ -59,7 +59,7 @@ class DB_RESULT:
         solved_ids = {row['problem_id'] for row in rows}
         return solved_ids
 
-    def list_student_results(self, student_id: int, lesson: int) -> list[dict]:
+    def list_student_results(self, student_id: int, lesson: int) -> List[dict]:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
@@ -71,7 +71,7 @@ class DB_RESULT:
         rows = cur.fetchall()
         return rows
 
-    def list_all_student_results(self, student_id: int) -> list[dict]:
+    def list_all_student_results(self, student_id: int) -> List[dict]:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
@@ -83,7 +83,7 @@ class DB_RESULT:
         rows = cur.fetchall()
         return rows
 
-    def get_results_for_recheck_by_problem_id(self, problem_id: int) -> list[dict]:
+    def get_results_for_recheck_by_problem_id(self, problem_id: int) -> List[dict]:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""

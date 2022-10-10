@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import aiogram
+import asyncio
 from aiogram.utils.exceptions import MessageNotModified, MessageToEditNotFound
 from aiogram.dispatcher import Dispatcher
 from helpers.config import config, logger
@@ -57,6 +58,16 @@ class BotIg(aiogram.Bot):
                 await self.send_message(config.exceptions_channel, f'(Exceptions chat id = {res["chat"]["id"]})')
         except Exception as e:
             logger.exception(f'SHIT: {e}')
+
+    async def delete_messages_after_task(self, messages: list, timeout: int):  # List[types.Message]
+        await asyncio.sleep(timeout)
+        if type(messages) == aiogram.types.Message:
+            messages = [messages]
+        for message in messages:
+            await self.delete_message_ig(chat_id=message.chat.id, message_id=message.message_id)
+
+    def delete_messages_after(self, messages: list, timeout: int):  # List[types.Message]
+        asyncio.create_task(self.delete_messages_after_task(messages, timeout))
 
 
 # Запускаем API телеграм-бота

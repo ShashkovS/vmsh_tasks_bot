@@ -88,7 +88,10 @@ async def prc_teacher_is_checking_task_state(message: types.Message, teacher: Us
     prev_keyboard = db.get_last_keyboard(teacher.id)
     reply_markup = teacher_keyboards.build_written_task_checking_verdict(User.get_by_id(student_id),
                                                                          Problem.get_by_id(problem_id),
-                                                                         teacher_state['info'])
+                                                                         teacher_state['info']) if (
+            problem_id > 0) else teacher_keyboards.build_answer_verdict(User.get_by_id(student_id),
+                                                                        Problem.get_by_id(-problem_id),
+                                                                        teacher_state['info'])
     # await bot.send_message(chat_id=message.chat.id, text="Ок, записал")
     keyb_msg = await bot.send_message(chat_id=message.chat.id,
                                       text='Ок, записал',
@@ -218,22 +221,22 @@ async def set_student_level(message: types.Message):
             pass
 
 
-@reg_callback(CALLBACK.GET_WRITTEN_TASK)
+@reg_callback(CALLBACK.GET_SOS_TASK)
 async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_get_written_task_callback')
     # Так, препод указал, что хочет проверять письменные задачи
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
-    top = WrittenQueue.take_top(teacher.id)
+    top = WrittenQueue.take_sos_top(teacher.id)
     await bot.answer_callback_query_ig(query.id)
     if not top:
         await bot.send_message(chat_id=teacher.chat_id,
-                               text=f"Ничего себе! Все письменные задачи проверены!")
+                               text=f"Ничего себе! Вопросов нет")
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
         asyncio.create_task(prc_teacher_select_action(None, teacher))
     else:
         # Даём преподу 10 топовых задач на выбор
-        await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
+        await bot.send_message(chat_id=teacher.chat_id, text="Выберите вопрос",
                                reply_markup=teacher_keyboards.build_teacher_select_written_problem(top))
         # teacher_keyboards.build_teacher_actions
 
@@ -282,17 +285,22 @@ async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User)
     asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
-async def forward_discussion_and_start_checking(chat_id, message_id, student: User, problem: Problem, teacher: User):
+async def forward_discussion_and_start_checking(chat_id, message_id, student: User, problem: Problem, teacher: User,
+                                                is_sos=False):
     logger.debug('forward_discussion_and_start_checking')
     text = (f"Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
             f"{student.name_for_teacher()}\n"
-            f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇")
+            f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇") if (not is_sos) else (
+        f"Вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
+        f"{student.name_for_teacher()}\n"
+        f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇")  # обрабатываем SOS
     # Если передан message_id, то обновляем сообщение (там была кнопка). Если нет, то отправляем новое.
     if message_id:
         await bot.edit_message_text_ig(chat_id=chat_id, message_id=message_id, text=text, reply_markup=None)
     else:
         await bot.send_message(chat_id=chat_id, text=text)
-    discussion = WrittenQueue.get_discussion(student.id, problem.id)
+    discussion = WrittenQueue.get_discussion(student.id,
+                                             problem.id if (not is_sos) else (-problem.id))  # обрабатываем SOS
     for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не привысить лимит
         # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
         forward_success = False
@@ -322,13 +330,20 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
                     await bot.send_document(chat_id=chat_id, document=types.input_file.InputFile(path))
                 except:
                     pass
-    State.set_by_user_id(teacher.id, STATE.TEACHER_IS_CHECKING_TASK, problem.id, last_teacher_id=teacher.id,
-                         last_student_id=student.id, info=[])  # info — список сообщений, которые нужно удалить
+    State.set_by_user_id(teacher.id, STATE.TEACHER_IS_CHECKING_TASK, problem.id if (not is_sos) else (-problem.id),
+                         last_teacher_id=teacher.id,
+                         last_student_id=student.id,
+                         info=[])  # info — список сообщений, которые нужно удалить #добавил учёт SOS
     keyb_msg = await bot.send_message(chat_id=chat_id,
                                       text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
-                                           'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)',
-                                      reply_markup=teacher_keyboards.build_written_task_checking_verdict(student, problem))
+                                           'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)'
+                                      if (not is_sos) else '⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
+                                                           'Напишите ответ (можно приложить картинку)',
+                                      reply_markup=teacher_keyboards.build_written_task_checking_verdict(student,
+                                                                                                         problem) if (
+                                          not is_sos) else teacher_keyboards.build_answer_verdict(student, problem))
     db.set_last_keyboard(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
+
 
 
 @reg_callback(CALLBACK.WRITTEN_TASK_SELECTED)
@@ -339,17 +354,20 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
     chat_id = query.message.chat.id
     _, student_id, problem_id = query.data.split('_')
     student = User.get_by_id(int(student_id))
-    problem = Problem.get_by_id(int(problem_id))
+    problem = Problem.get_by_id(abs(int(problem_id)))  # убираем знак, если вопрос
     await bot.answer_callback_query_ig(query.id)
     # Блокируем задачу
-    is_unlocked = WrittenQueue.mark_being_checked(student.id, problem.id, teacher.id)
+    is_unlocked = WrittenQueue.mark_being_checked(student.id, problem_id, teacher.id)
     if not is_unlocked:
         await bot.send_message(chat_id=chat_id, text='Эту задачу уже кто-то взялся проверять.')
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
         asyncio.create_task(prc_teacher_select_action(None, teacher))
         return
-    await forward_discussion_and_start_checking(chat_id, query.message.message_id, student, problem, teacher)
-
+    if (int(problem_id) > 0):
+        await forward_discussion_and_start_checking(chat_id, query.message.message_id, student, problem, teacher)
+    else:
+        await forward_discussion_and_start_checking(chat_id, query.message.message_id, student, problem, teacher,
+                                                    is_sos=True)
 
 @reg_callback(CALLBACK.WRITTEN_TASK_OK)
 async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User):
@@ -449,6 +467,53 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
                 await bot.send_photo(chat_id=student_chat_id, photo=input_file, disable_notification=True)
         await bot.send_message(chat_id=student_chat_id,
                                text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
+                               disable_notification=True)
+    except aiogram.utils.exceptions.TelegramAPIError as e:
+        logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
+    State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+    await bot.answer_callback_query_ig(query.id)
+    asyncio.create_task(prc_teacher_select_action(None, teacher))
+
+
+@reg_callback(CALLBACK.SEND_ANSWER)
+async def prc_send_answer_callback(query: types.CallbackQuery, teacher: User):
+    logger.debug('prc_send_answer_callback')
+    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
+                                           reply_markup=None)
+    _, student_id, problem_id = query.data.split('_')
+    student = User.get_by_id(int(student_id))
+    problem = Problem.get_by_id(-int(problem_id))  # убираем минус SOS
+    # Помечаем решение как неверное и удаляем из очереди
+    WrittenQueue.delete_from_queue(student.id, -problem.id)  # возвращаем минус SOS
+    await bot.send_message(chat_id=query.message.chat.id,
+                           text='Ответ записан',
+                           parse_mode='HTML')
+
+    # Пересылаем переписку школьнику
+    student_chat_id = User.get_by_id(student.id).chat_id
+    try:
+        discussion = WrittenQueue.get_discussion(student.id, -problem.id)  # возвращаем минус SOS
+        await bot.send_message(chat_id=student_chat_id,
+                               text=f"Есть ответ на вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}).\n"
+                                    f"Пересылаю всю переписку.\n"
+                                    f"⬇⬇⬇⬇",
+                               disable_notification=True)
+        for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не превысить лимит
+            # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
+            if row['chat_id'] and row['tg_msg_id']:
+                try:
+                    await bot.copy_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
+                                           disable_notification=True)
+                except aiogram.utils.exceptions.BadRequest as e:
+                    logger.error(f'Почему-то не отфорвардилось... {student_chat_id}\n{e}')
+            elif row['text']:
+                await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
+            elif row['attach_path']:
+                # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
+                input_file = types.input_file.InputFile(row['attach_path'])
+                await bot.send_photo(chat_id=student_chat_id, photo=input_file, disable_notification=True)
+        await bot.send_message(chat_id=student_chat_id,
+                               text='⬆⬆⬆⬆\n',
                                disable_notification=True)
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
