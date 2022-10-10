@@ -10,6 +10,17 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     solved = set(db.check_student_solved(student.id, lesson_num))
     being_checked = set(db.check_student_sent_written(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    # Кнопки с вопросами
+    if not is_sos_question:
+        que1 = types.InlineKeyboardButton(
+            text=f"Вопрос по задаче",
+            callback_data=CALLBACK.PROBLEM_SOS
+        )
+        que2 = types.InlineKeyboardButton(
+            text=f"Другой вопрос",
+            callback_data=CALLBACK.OTHER_SOS
+        )
+        keyboard_markup.row(que1, que2)
     for problem in Problem.get_by_lesson(student.level, lesson_num):
         if problem.synonyms & solved:
             tick = '✅'
