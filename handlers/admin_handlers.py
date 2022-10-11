@@ -241,6 +241,29 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
         text=f"Все школьники переведены в режим сдачи задач",
     )
 
+async def update_all_student_keyboards(teacher_chat_id):
+    logger.debug('update_all_student_keyboards')
+    for student in User.all_students():
+        updated = await refresh_last_student_keyboard(student)
+        if updated:
+            await asyncio.sleep(1 / 20)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Все плюсики обновлены",
+    )
+
+
+@dispatcher.message_handler(commands=['reset_keyboards'])
+async def reset_keyboards(message: types.Message):
+    logger.debug('reset_keyboards')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    asyncio.create_task(update_all_student_keyboards(message.chat.id))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Создано задание по обновлению плюсиков запущено",
+    )
 
 @dispatcher.message_handler(commands=['reset_state_jvcykgny', 'reset_state'])
 async def set_get_task_info_for_all_students(message: types.Message):

@@ -49,9 +49,9 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
     db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
-async def refresh_last_student_keyboard(student: User):
+async def refresh_last_student_keyboard(student: User) -> bool:
     if not student:
-        return
+        return False
     prev_keyboard = db.get_last_keyboard(student.id)
     if prev_keyboard:
         await bot.edit_message_reply_markup_ig(
@@ -59,6 +59,8 @@ async def refresh_last_student_keyboard(student: User):
             message_id=prev_keyboard['tg_msg_id'],
             reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student)
         )
+        return True
+    return False
 
 
 async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1):
