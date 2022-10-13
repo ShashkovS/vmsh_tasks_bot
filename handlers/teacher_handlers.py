@@ -467,7 +467,10 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
                 await bot.send_photo(chat_id=student_chat_id, photo=input_file, disable_notification=True)
         await bot.send_message(chat_id=student_chat_id,
                                text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
-                               disable_notification=True)
+                               disable_notification=True,
+                               reply_markup=student_keyboards.build_student_reaction_on_task_bad_verdict(
+                                   extra_params={'tg_msg_id': discussion[-1]['tg_msg_id']})
+                               )
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)

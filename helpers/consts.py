@@ -49,6 +49,7 @@ class CALLBACK(str, Enum):
     PROBLEM_SOS = 'A'
     OTHER_SOS = 'C'
     SEND_ANSWER = 'h'
+    STUDENT_REACTION = 'r'
 
     def __str__(self):
         return self.value
