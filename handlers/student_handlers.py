@@ -44,7 +44,7 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
         text=text,
         parse_mode='HTML',
         disable_web_page_preview=True,
-        reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student),
+        reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student),
     )
     db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
@@ -57,7 +57,7 @@ async def refresh_last_student_keyboard(student: User) -> bool:
         await bot.edit_message_reply_markup_ig(
             chat_id=prev_keyboard['chat_id'],
             message_id=prev_keyboard['tg_msg_id'],
-            reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(), student)
+            reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student)
         )
         return True
     return False
@@ -424,7 +424,7 @@ async def prc_problem_sos_callback(query: types.CallbackQuery, student: User):
     problem_sos_message = await bot.send_message(chat_id=query.message.chat.id,
                                                  text="🤖 По какой задаче у вас вопрос❓",
                                                  reply_markup=student_keyboards.build_problems(
-                                                     Problem.last_lesson_num(), student,
+                                                     Problem.last_lesson_num(student.level), student,
                                                      is_sos_question=True))
     bot.delete_messages_after(problem_sos_message, 30)
     await bot.answer_callback_query_ig(query.id)

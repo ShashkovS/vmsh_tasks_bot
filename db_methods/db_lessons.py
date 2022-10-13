@@ -27,8 +27,11 @@ class DB_LESSON:
         rows = cur.fetchall()
         return rows
 
-    def get_last_lesson_num(self) -> int:
+    def get_last_lesson_num(self, level: str = None) -> int:
         cur = self.conn.cursor()
-        cur.execute("SELECT max(lesson) as mx FROM lessons")
+        cur.execute('''SELECT max(lesson) as mx 
+                       FROM lessons
+                       where :level is null or :level = level
+                       ''', locals())
         row = cur.fetchone()
         return row['mx']

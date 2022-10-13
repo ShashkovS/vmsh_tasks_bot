@@ -149,7 +149,7 @@ def build_answer_verdict(student: User, problem: Problem, wtd_ids_to_remove: Lis
 
 def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User, online: ONLINE_MODE):
     logger.debug('keyboards.build_verdict_for_oral_problems')
-    lesson_num = Problem.last_lesson_num()
+    lesson_num = Problem.last_lesson_num(student.level)
     solved = set(db.check_student_solved(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))

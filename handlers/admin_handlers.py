@@ -345,7 +345,7 @@ async def student_results(message: types.Message):
     if 'asr' in message.text or 'all_' in message.text:
         rows = db.list_all_student_results(student.id)
     else:
-        rows = db.list_student_results(student.id, Problem.last_lesson_num())
+        rows = db.list_student_results(student.id, Problem.last_lesson_num(student.level))
     if rows:
         lines = [f'{row["ts"][5:16]} {row["lesson"]:02}{row["level"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
                  for row in rows]

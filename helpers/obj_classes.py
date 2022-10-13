@@ -162,8 +162,8 @@ class Problem:
         return [cls(**problem) for problem in problems]
 
     @staticmethod
-    def last_lesson_num() -> int:
-        return db.get_last_lesson_num()
+    def last_lesson_num(level: str = None) -> int:
+        return db.get_last_lesson_num(level)
 
     @classmethod
     def oral_to_written(cls, levels=None):
