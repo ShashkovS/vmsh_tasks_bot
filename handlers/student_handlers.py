@@ -1,6 +1,7 @@
 import os
 import io
 import datetime
+import json
 import re
 import asyncio
 import traceback
@@ -662,6 +663,23 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
                                text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
     await bot.answer_callback_query_ig(query.id)
     asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
+
+
+@reg_callback(CALLBACK.STUDENT_REACTION)
+async def prc_student_reaction_on_task_bad_verdict(query: types.CallbackQuery, student: User):
+    """Коллбек на реакцию студента на отрицательный вердикт по письменной работе."""
+    logger.debug('prc_student_reaction_on_task_bad_verdict')
+
+    def decode_extra_params(ep: dict) -> str:
+        """Вспомогательная функция декодирующая строку закодированную encode_extra_params обратно в словарь."""
+        return json.loads(ep.replace('-', ':'))
+
+    extra_params = decode_extra_params(query.data.split(':')[-1])
+
+    if extra_params['reaction'] in ('ok', 'not_clear', 'discussion'):
+        db.write_student_reaction_on_task_bad_verdict(extra_params['tg_msg_id'], extra_params['reaction'])
+    else:
+        logger.warning('Unknown student reaction on TASK_BAD!!')
 
 
 @dispatcher.message_handler(commands=['exit_waitlist'])
