@@ -12,6 +12,8 @@ from helpers.config import config, logger, DEBUG
 from helpers.obj_classes import db, Webtoken, User
 from web import trash_print_results
 
+__ALL__ = ['routes']
+
 routes = web.RouteTableDef()
 routes.static('/online/static', 'templates')
 
@@ -171,16 +173,16 @@ async def on_shutdown(app):
     logger.warning('Bye!')
 
 
-app = web.Application()
-app.add_routes(routes)
-app.on_startup.append(on_startup)
-app.on_shutdown.append(on_shutdown)
 
 if __name__ == "__main__":
     # Включаем все отладочные сообщения
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(DEBUG)
     use_cookie = DEBUG_COOKIE
+
+    app = web.Application()
+    app.add_routes(routes)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
+
     web.run_app(app)
-else:
-    pass
