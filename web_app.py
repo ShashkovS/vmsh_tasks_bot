@@ -1,16 +1,22 @@
+'''
+Здесь совершенно ужасный код.
+Это стартовая версия веб-приложения в очень зачаточном состоянии.
+Требуется большой рефакторинг
+'''
+
 import logging
 import re
 from aiohttp import web, WSMsgType
 
 from helpers.config import config, logger, DEBUG
 from helpers.obj_classes import db, Webtoken, User
+from web import trash_print_results
 
 routes = web.RouteTableDef()
 routes.static('/online/static', 'templates')
 
-
-STRICT_COOKIE = dict(domain=None, path='/online', max_age=2592000, secure=True, httponly=True, samesite='Strict')
-DEBUG_COOKIE = dict(domain=None, path='/online', max_age=2592000, secure=False, httponly=True, samesite='Strict')
+STRICT_COOKIE = dict(domain=None, path='/', max_age=2592000, secure=True, httponly=True, samesite='Strict')
+DEBUG_COOKIE = dict(domain=None, path='/', max_age=2592000, secure=False, httponly=True, samesite='Strict')
 COOKIE_NAME = 'l'
 use_cookie = None
 
@@ -25,6 +31,7 @@ def prerate_template(template: str) -> str:
 
 templates = {
     'login': open('templates/login.min.html', 'r', encoding='utf-8').read(),
+    'login_res': open('templates/login_res.html', 'r', encoding='utf-8').read(),
     'socket': open('templates/socket.html', 'r', encoding='utf-8').read(),
     'board': prerate_template(open('templates/board.html', 'r', encoding='utf-8').read())
 }
@@ -63,6 +70,30 @@ async def post_online(request):
         return response
     else:
         return web.Response(text=templates['login'], content_type='text/html')
+
+
+@routes.get('/res')
+async def print_res(request):
+    print('res')
+    cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
+    user = Webtoken.user_by_webtoken(cookie_webtoken)
+    if not user:
+        return web.Response(text=templates['login_res'], content_type='text/html')
+    else:
+        return web.Response(text=trash_print_results.get_html(), content_type='text/html')
+
+@routes.post('/res')
+async def login_res(request):
+    print('login_res')
+    data = await request.post()
+    token = data.get('password', None)
+    user = User.get_by_token(token)
+    cookie_webtoken = Webtoken.webtoken_by_user(user)
+    if cookie_webtoken:
+        response = web.Response(text=trash_print_results.get_html(), content_type='text/html')
+        response.set_cookie(name=COOKIE_NAME, value=cookie_webtoken, **use_cookie)
+        return response
+    return web.Response(text=templates['login_res'], content_type='text/html')
 
 
 @routes.get('/online/webtoken/{webtoken}')
