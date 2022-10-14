@@ -20,7 +20,7 @@ routes.static('/online/static', 'templates')
 STRICT_COOKIE = dict(domain=None, path='/', max_age=2592000, secure=True, httponly=True, samesite='Strict')
 DEBUG_COOKIE = dict(domain=None, path='/', max_age=2592000, secure=False, httponly=True, samesite='Strict')
 COOKIE_NAME = 'l'
-use_cookie = None
+use_cookie = STRICT_COOKIE
 
 
 def prerate_template(template: str) -> str:
