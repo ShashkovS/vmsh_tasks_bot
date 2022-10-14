@@ -11,7 +11,7 @@ def get_results(cur):
         join (select level, max(lesson) as lesson from lessons group by level) as last  
         join results r on r.student_id = u.id and u.level = last.level and r.lesson = last.lesson
         join problems p on r.problem_id = p.id
-        where (u.type = 1 and token not like 'pass%' and token not like 'qwerty%') 
+        where u.type = 1 
         -- and p.lesson = :NLIST
         group by 1, 2
     ''', globals())
@@ -23,7 +23,7 @@ def get_pupils(cur):
     cur.execute('''
         select u.token || '	' || u.surname || '	' || u.name || '	' || u.level as user
         from users u 
-        where u.type = 1 and token not like 'pass%'
+        where u.type = 1 -- and token not like 'pass%'
         order by u.level, u.surname, u.name, u.token
     ''')
     pupils = [x['user'] for x in cur.fetchall()]

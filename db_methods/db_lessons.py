@@ -21,9 +21,14 @@ class DB_LESSON:
         """)
         self.conn.commit()
 
-    def fetch_all_lessons(self) -> List[dict]:
+    def fetch_all_lessons(self, level: str = None) -> List[dict]:
         cur = self.conn.cursor()
-        cur.execute("SELECT level, lesson FROM lessons order by lesson, level")
+        cur.execute('''
+            SELECT level, lesson 
+            FROM lessons 
+            where :level is null or :level = level
+            order by lesson, level
+            ''', locals())
         rows = cur.fetchall()
         return rows
 

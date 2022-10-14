@@ -71,7 +71,7 @@ def close_to(x, y):
         y, eps = y.split('±')
         y = float(y)
         eps = float(eps)
-        return y - eps <= x_float <= y + eps
+        return y - eps - eps / 1e6 <= x_float <= y + eps + eps / 1e6  # Добавка 1e6 для того, чтобы 0.3±0.1 нормально работало с 0.2 и 0.4
     except:
         return False
 
