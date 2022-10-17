@@ -1,3 +1,6 @@
+-- Для корректной работы на винде требуется установить env'var
+-- PYTHONUTF8=1
+
 drop table if exists student_reaction_enum;
 CREATE TABLE student_reaction_enum
 (
