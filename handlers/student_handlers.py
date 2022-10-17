@@ -673,16 +673,13 @@ async def prc_student_reaction_on_task_bad_verdict(query: types.CallbackQuery, s
     """Коллбек на реакцию студента на отрицательный вердикт по письменной работе."""
     logger.debug('prc_student_reaction_on_task_bad_verdict')
 
-    def decode_extra_params(ep: dict) -> str:
-        """Вспомогательная функция декодирующая строку закодированную encode_extra_params обратно в словарь."""
-        return json.loads(ep.replace('-', ':'))
+    extra_params = json.loads(query.data.split(':')[-1].replace('-', ':'))
 
-    extra_params = decode_extra_params(query.data.split(':')[-1])
+    db.write_student_reaction_on_task_bad_verdict(extra_params['tg_msg_id'], extra_params['reaction'])
+    await query.message.edit_text(query.message.text.split()[0] + f"\nВы выбрали: {db.student_reaction(extra_params['reaction'])}",
+                                  reply_markup=student_keyboards.build_student_reaction_on_task_bad_verdict(extra_params))
+    await query.answer(f'Принято')
 
-    if extra_params['reaction'] in ('ok', 'not_clear', 'discussion'):
-        db.write_student_reaction_on_task_bad_verdict(extra_params['tg_msg_id'], extra_params['reaction'])
-    else:
-        logger.warning('Unknown student reaction on TASK_BAD!!')
 
 
 @dispatcher.message_handler(commands=['exit_waitlist'])

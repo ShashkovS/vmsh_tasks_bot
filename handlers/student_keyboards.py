@@ -143,42 +143,32 @@ def build_student_sos_actions():
     return keyboard
 
 
+def add_reaction_button(keyboard: types.InlineKeyboardMarkup,
+                        call_back_info: CallbackData,
+                        extra_params: dict,
+                        reaction_n: int) -> None:
+    """Вспомогательная функция регистрации кнопки, используемая в функции
+    `build_student_reaction_on_task_bad_verdict`
+    """
+    extra_params['reaction'] = reaction_n
+    ep = json.dumps(extra_params).replace(':', '-')
+    button = types.InlineKeyboardButton(
+        text=db.student_reaction(reaction_n),
+        callback_data=call_back_info.new(extra_params=ep)
+    )
+    keyboard.add(button)
+
+
 def build_student_reaction_on_task_bad_verdict(extra_params: dict = {}):
     """Создает инлайн клавиатуру для ученика получающего отрицательный вердикт по письменной работе.
     (В результате нажатия учителем "Отклонить и переслать все сообщения выше студенту ...").
     """
     logger.debug('keyboards.build_student_reaction_on_task_bad_verdict')
 
-    def encode_extra_params(ep: dict) -> str:
-        """Вспомогательная функция кодирующая словарь в строку без двоеточий.
-        В исходном словаре не должно быть знаков '-' !!!
-        """
-        return json.dumps(ep).replace(':', '-')
-
     call_back_info = CallbackData(CALLBACK.STUDENT_REACTION, "extra_params")
-
     keyboard = types.InlineKeyboardMarkup()
 
-    extra_params['reaction'] = 'ok'
-    ep = encode_extra_params(extra_params)
-    button = types.InlineKeyboardButton(
-        text="👌 Ок. Всё понял.",
-        callback_data=call_back_info.new(extra_params=ep)
-    )
-    keyboard.add(button)
-    extra_params['reaction'] = 'not_clear'
-    ep = encode_extra_params(extra_params)
-    button = types.InlineKeyboardButton(
-        text="😒 Что-то всё-равно непонятно...",
-        callback_data=call_back_info.new(extra_params=ep)
-    )
-    keyboard.add(button)
-    extra_params['reaction'] = 'discussion'
-    ep = encode_extra_params(extra_params)
-    button = types.InlineKeyboardButton(
-        text="🙋 Не согласен!",
-        callback_data=call_back_info.new(extra_params=ep)
-    )
-    keyboard.add(button)
+    for i in range(db.student_ractions_number()):
+        add_reaction_button(keyboard, call_back_info, extra_params, i)
 
     return keyboard
