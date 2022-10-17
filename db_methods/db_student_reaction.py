@@ -24,6 +24,13 @@ class DB_STUDENT_REACTION():
         self.conn.commit()
         return cur.lastrowid
 
+    def student_reactions(self) -> list:
+        """Возвращает все реакции студента (вместе с эмоджи) в виде списка."""
+        cur = self.conn.cursor()
+        cur.execute("""SELECT emoji, reaction FROM student_reaction_enum ORDER BY reaction_id;""")
+        res = cur.fetchall()
+        return [' '.join((chr(r['emoji']), r['reaction'])) for r in res]
+
     def student_reaction(self, reaction_n: int) -> str:
         """Возвращает текст реакции студента (вместе с эмоджи) в зависимости от номера реакции ученика."""
         cur = self.conn.cursor()
@@ -32,8 +39,3 @@ class DB_STUDENT_REACTION():
         res = cur.fetchone()
         return ' '.join((chr(res['emoji']), res['reaction']))
 
-    def student_ractions_number(self) -> int:
-        """Возвращает число реакций ученика."""
-        cur = self.conn.cursor()
-        cur.execute("""SELECT count() FROM student_reaction_enum;""")
-        return cur.fetchone()['count()']
