@@ -1,10 +1,7 @@
 import os
-import io
-import datetime
 import re
 import asyncio
 import traceback
-import enum
 from typing import Tuple, Optional
 from aiogram.dispatcher.webhook import types
 from aiogram.utils.exceptions import BadRequest
@@ -665,6 +662,24 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
                                text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
     await bot.answer_callback_query_ig(query.id)
     asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
+
+
+@reg_callback(CALLBACK.STUDENT_REACTION)
+async def prc_student_reaction_on_task_bad_verdict(query: types.CallbackQuery, student: User):
+    """Коллбек на реакцию студента на отрицательный вердикт по письменной работе."""
+    logger.debug('prc_student_reaction_on_task_bad_verdict')
+    callback, result_id, reaction_id = query.data.split('_')
+    reaction_id = int(reaction_id)
+    result_id = int(result_id)
+    try:
+        db.write_student_reaction_on_task_bad_verdict(result_id, reaction_id)
+    except Exception:
+        logger.error('Ошибка записи реакции ученика в БД.')
+    else:
+        original_message = query.message.text.split()[0]
+        await query.message.edit_text(f"{original_message}\nОценка проверки: {db.get_student_reaction_by_id(reaction_id)}",
+                                      reply_markup=None)
+        await query.answer(f'Принято')
 
 
 @dispatcher.message_handler(commands=['exit_waitlist'])

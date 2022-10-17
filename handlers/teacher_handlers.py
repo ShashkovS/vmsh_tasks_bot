@@ -432,7 +432,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(int(problem_id))
     # Помечаем решение как неверное и удаляем из очереди
-    db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, RES_TYPE.WRITTEN)
+    result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None, RES_TYPE.WRITTEN)
     db.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
@@ -465,9 +465,16 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
                 # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
                 input_file = types.input_file.InputFile(row['attach_path'])
                 await bot.send_photo(chat_id=student_chat_id, photo=input_file, disable_notification=True)
-        await bot.send_message(chat_id=student_chat_id,
-                               text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
-                               disable_notification=True)
+    except aiogram.utils.exceptions.TelegramAPIError as e:
+        logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
+    try:
+        # Отправляем сообщение с возможностью оценить проверку
+        await bot.send_message(
+            chat_id=student_chat_id,
+            text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
+            disable_notification=True,
+            reply_markup=student_keyboards.build_student_reaction_on_task_bad_verdict(result_id)
+        )
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
