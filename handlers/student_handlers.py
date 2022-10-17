@@ -672,14 +672,17 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
 async def prc_student_reaction_on_task_bad_verdict(query: types.CallbackQuery, student: User):
     """Коллбек на реакцию студента на отрицательный вердикт по письменной работе."""
     logger.debug('prc_student_reaction_on_task_bad_verdict')
-
     extra_params = json.loads(query.data.split(':')[-1].replace('-', ':'))
-
-    db.write_student_reaction_on_task_bad_verdict(extra_params['tg_msg_id'], extra_params['reaction'])
-    await query.message.edit_text(query.message.text.split()[0] + f"\nВы выбрали: {db.student_reaction(extra_params['reaction'])}",
-                                  reply_markup=student_keyboards.build_student_reaction_on_task_bad_verdict(extra_params))
-    await query.answer(f'Принято')
-
+    reaction = extra_params['reaction']
+    try:
+        db.write_student_reaction_on_task_bad_verdict(extra_params['tg_msg_id'], reaction)
+    except Exception:
+        logger.error('Ошибка записи реакции ученика в БД.')
+    else:
+        await query.message.edit_text(query.message.text.split()[0] + f"\nВы выбрали: {db.student_reaction(reaction)}",
+                                      reply_markup=student_keyboards.build_student_reaction_on_task_bad_verdict(
+                                          extra_params))
+        await query.answer(f'Принято')
 
 
 @dispatcher.message_handler(commands=['exit_waitlist'])

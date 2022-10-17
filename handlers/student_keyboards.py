@@ -146,14 +146,15 @@ def build_student_sos_actions():
 def add_reaction_button(keyboard: types.InlineKeyboardMarkup,
                         call_back_info: CallbackData,
                         extra_params: dict,
-                        reaction_n: int) -> None:
+                        reaction_n: int,
+                        reaction: str) -> None:
     """Вспомогательная функция регистрации кнопки, используемая в функции
     `build_student_reaction_on_task_bad_verdict`
     """
     extra_params['reaction'] = reaction_n
     ep = json.dumps(extra_params).replace(':', '-')
     button = types.InlineKeyboardButton(
-        text=db.student_reaction(reaction_n),
+        text=reaction,
         callback_data=call_back_info.new(extra_params=ep)
     )
     keyboard.add(button)
@@ -168,7 +169,7 @@ def build_student_reaction_on_task_bad_verdict(extra_params: dict = {}):
     call_back_info = CallbackData(CALLBACK.STUDENT_REACTION, "extra_params")
     keyboard = types.InlineKeyboardMarkup()
 
-    for i in range(db.student_ractions_number()):
-        add_reaction_button(keyboard, call_back_info, extra_params, i)
+    for rn, r in enumerate(db.student_reactions()):
+        add_reaction_button(keyboard, call_back_info, extra_params, rn, r)
 
     return keyboard
