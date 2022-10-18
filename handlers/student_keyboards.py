@@ -124,6 +124,7 @@ def build_student_in_conference():
     ))
     return keyboard_markup
 
+
 def build_student_sos_actions():
     logger.debug('keyboards.build_student_sos_actions')
     keyboard = types.InlineKeyboardMarkup()
@@ -137,4 +138,20 @@ def build_student_sos_actions():
         callback_data=CALLBACK.OTHER_SOS
     )
     keyboard.add(button)
+    return keyboard
+
+
+def build_student_reaction_on_task_bad_verdict(result_id: int):
+    """Создает инлайн клавиатуру для ученика получающего отрицательный вердикт по письменной работе.
+    (В результате нажатия учителем "Отклонить и переслать все сообщения выше студенту ...").
+    """
+    logger.debug('keyboards.build_student_reaction_on_task_bad_verdict')
+    keyboard = types.InlineKeyboardMarkup()
+    for reaction in db.student_reactions():
+        keyboard.add(
+            types.InlineKeyboardButton(
+                text=reaction['reaction'],
+                callback_data=f'{CALLBACK.STUDENT_REACTION}_{result_id}_{reaction["reaction_id"]}'
+            )
+        )
     return keyboard
