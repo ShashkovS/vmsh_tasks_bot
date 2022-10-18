@@ -32,7 +32,7 @@ def prerate_template(template: str) -> str:
 
 
 templates = {
-    'login': open('templates/login.min.html', 'r', encoding='utf-8').read(),
+    'login': open('templates/login.html', 'r', encoding='utf-8').read(),
     'login_res': open('templates/login_res.html', 'r', encoding='utf-8').read(),
     'socket': open('templates/socket.html', 'r', encoding='utf-8').read(),
     'board': prerate_template(open('templates/board.html', 'r', encoding='utf-8').read())
