@@ -17,6 +17,7 @@ MAT_REGEX = re.compile(r"""(?iu)\b(?:(?:[уyu]|[нзnz3][аa]|(?:хитро|не
 @dispatcher.message_handler(ChatTypeFilter(types.ChatType.SUPERGROUP), content_types=types.ContentType.ANY)
 @dispatcher.message_handler(ChatTypeFilter(types.ChatType.GROUP), content_types=types.ContentType.ANY)
 @dispatcher.message_handler(ChatTypeFilter(types.ChatType.SUPERGROUP), RegexpCommandsFilter(regexp_commands=['.*']))
+@dispatcher.message_handler(ChatTypeFilter(types.ChatType.GROUP), RegexpCommandsFilter(regexp_commands=['.*']))
 async def group_message_handler(message: types.Message):
     # Если сообщение от админа, то игнорируем его
     if message.from_user.username == 'GroupAnonymousBot':
@@ -33,15 +34,27 @@ async def group_message_handler(message: types.Message):
                                reply_to_message_id=message.message_id)
         bot.delete_messages_after([message, reply_msg], timeout=10)
     # Ссылка без комментариев — это спам. Пересылаем её в exception и удаляем
-    elif message.text and (URL_REGEX.fullmatch(message.text) or MAT_REGEX.search(message.text)):
-        await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)
-        try:
-            await bot.delete_message(message.chat.id, message.message_id)
-        except MessageCantBeDeleted:
-            await bot.send_message(config.exceptions_channel, 'Сообщение выше удалить не удалось :(')
-        except Exception as e:
-            logger.exception(f'SHIT: {e}')
-            await bot.send_message(config.exceptions_channel, 'Сообщение выше удалить не удалось :(')
+    elif message.text:
+        message_is_url_only = URL_REGEX.fullmatch(message.text)
+        mat_detected = MAT_REGEX.search(message.text)
+        if message_is_url_only or mat_detected:
+            await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)
+            # Удаляем сообщение
+            try:
+                await bot.delete_message(message.chat.id, message.message_id)
+            except MessageCantBeDeleted:
+                await bot.send_message(config.exceptions_channel, 'Сообщение выше удалить не удалось :(')
+            except Exception as e:
+                logger.exception(f'SHIT: {e}')
+                await bot.send_message(config.exceptions_channel, 'Сообщение выше удалить не удалось :(')
+            # Баним пользователя
+            try:
+                await bot.ban_chat_member(message.chat.id, message.from_user.id, revoke_messages=True)
+                await bot.send_message(config.exceptions_channel, f'Пользователь {message.from_user!r} забанен')
+            except Exception as e:
+                logger.exception(f'SHIT: {e}')
+                await bot.send_message(config.exceptions_channel, 'Юзера выше не удалось забанить :(')
+
 
 
 @dispatcher.channel_post_handler(lambda message: message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel)
@@ -55,7 +68,7 @@ async def prc_sos_reply(message: types.Message):
     # Обрабатываем только ответы из sos-чата (если токен явно не указан)
     if not student and not message.reply_to_message:
         # Отправляем сообщение только на продакшене (чтобы боты друг с другом не спорили)
-        if config.production_mode:
+        # if config.production_mode:
             try:
                 await bot.send_message(chat_id=message.chat.id, text='Выбирайте в меню «Ответить», чтобы сразу пересылать сообщение')
             except Exception as e:

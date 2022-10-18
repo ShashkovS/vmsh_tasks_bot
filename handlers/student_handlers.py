@@ -453,7 +453,6 @@ async def prc_problem_sos_problem_selected_callback(query: types.CallbackQuery, 
 @reg_callback(CALLBACK.PROBLEM_SELECTED)
 async def prc_problems_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_problems_selected_callback')
-    student = User.get_by_chat_id(query.message.chat.id)
     state = State.get_by_user_id(student.id)
     if state.get('state', None) == STATE.STUDENT_IS_SLEEPING:
         await bot.answer_callback_query_ig(query.id)
