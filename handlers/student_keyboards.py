@@ -50,25 +50,25 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
         )
         keyboard_markup.add(task_button)
     # Пока отключаем эту фичу
-    # to_lessons_button = types.InlineKeyboardButton(
-    #     text="К списку всех листков",
-    #     callback_data=f"{Callback.SHOW_LIST_OF_LISTS}"
-    # )
-    # keyboard_markup.add(to_lessons_button)
+    to_lessons_button = types.InlineKeyboardButton(
+        text="К списку всех листков",
+        callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
+    )
+    keyboard_markup.add(to_lessons_button)
     return keyboard_markup
 
 
-def build_lessons():
+def build_lessons(level):
     logger.debug('keyboards.build_lessons')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     logger.error('Здесь не добавлена обработка level')
     # TODO add level
-    # for lesson in problems.all_lessons:
-    #     lesson_button = types.InlineKeyboardButton(
-    #         text=f"Листок {lesson}",
-    #         callback_data=f"{Callback.LIST_SELECTED}_{lesson}",
-    #     )
-    #     keyboard_markup.add(lesson_button)
+    for lesson in db.fetch_all_lessons(level):
+        lesson_button = types.InlineKeyboardButton(
+            text=f"Листок {lesson['lesson']}",
+            callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
+        )
+        keyboard_markup.add(lesson_button)
     return keyboard_markup
 
 

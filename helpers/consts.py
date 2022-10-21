@@ -82,10 +82,10 @@ class USER_TYPE(IntFlag):
     DELETED = -1
 
 
-LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', 'В': 'Восьмиклассники' }
+LEVEL_DESCRIPTION = {'н': '8Б физика', 'п': '11Г астрономия', 'э': 'Эксперты', 'В': 'Восьмиклассники' }
 LEVEL_URL = {
-    'н': 'https://shashkovs.ru/vmsh/2022/n/',
-    'п': 'https://shashkovs.ru/vmsh/2022/p/',
+    'н': 'https://drive.google.com/drive/folders/1-5RBc8PGRJlv8sV0HthuUu3XNE2V4rB0',
+    'п': 'https://drive.google.com/drive/folders/1-5RBc8PGRJlv8sV0HthuUu3XNE2V4rB0',
     'э': 'https://shashkovs.ru/vmsh/2022/x/',
     'В': 'https://shashkovs.ru/vmsh/2022/8/'
 }
