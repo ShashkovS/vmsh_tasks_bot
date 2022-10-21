@@ -369,6 +369,24 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
         await forward_discussion_and_start_checking(chat_id, query.message.message_id, student, problem, teacher,
                                                     is_sos=True)
 
+
+async def _teacher_reaction(query: types.CallbackQuery, result_id):
+    """Функция, отправляющая учителю, принявшему или отклонившему письменную работу ученика.
+    клавиатуру (с сообщением) для оценки решения ученика.
+    """
+    msg = await query.message.answer(text='Ваша оценка решения: ',
+                                     reply_markup=teacher_keyboards.build_teacher_reaction_on_solution(result_id))
+
+    # Удаляем клавиатуру учителя для оценки решения ученика
+    await asyncio.sleep(15)  # время до удаления клавиатуры, в секундах
+    try:
+        await msg.edit_reply_markup(reply_markup=None)
+    except aiogram.utils.exceptions.MessageNotModified:
+        logger.debug('MessageNotModified - при удалении клавиатуры учителя для оценки решения ученика')
+    else:
+        await msg.edit_text(msg.text + "\n🤷 не оценено")
+
+
 @reg_callback(CALLBACK.WRITTEN_TASK_OK)
 async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_written_task_ok_callback')
@@ -386,6 +404,8 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
                                 f'Для исправления: '
                                 f'/recheck_{student.token}_{problem.id}',
                            parse_mode='HTML')
+    teacher_reaction_task = asyncio.create_task(_teacher_reaction(query, result_id))
+
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
     student_chat_id = User.get_by_id(student.id).chat_id
@@ -422,25 +442,6 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
         logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
     asyncio.create_task(prc_teacher_select_action(None, teacher))
 
-    await _teacher_reaction(query, result_id)
-
-
-async def _teacher_reaction(query: types.CallbackQuery, result_id):
-    """Функция, отправляющая учителю, принявшему или отклонившему письменную работу ученика.
-    клавиатуру (с сообщением) для оценки решения ученика.
-    """
-    msg = await query.message.answer(text='Ваша оценка решения: ',
-                                     reply_markup=teacher_keyboards.build_teacher_reaction_on_solution(result_id))
-
-    # Удаляем клавиатуру учителя для оценки решения ученика
-    await asyncio.sleep(10)  # время до удаления клавиатуры, в секундах
-    try:
-        await msg.edit_reply_markup(reply_markup=None)
-    except aiogram.utils.exceptions.MessageNotModified:
-        logger.debug('MessageNotModified - при удалении клавиатуры учителя для оценки решения ученика')
-    else:
-        await msg.edit_text(msg.text + "\n🤷 не оценено")
-
 
 @reg_callback(CALLBACK.WRITTEN_TASK_BAD)
 async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: User):
@@ -460,6 +461,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
                                               f'школьнику {student.token} {student.surname} {student.name}! Для исправления: '
                                               f'/recheck_{student.token}_{problem.id}',
                                          parse_mode='HTML')
+    teacher_reaction_task = asyncio.create_task(_teacher_reaction(query, result_id))
 
     # Пересылаем переписку школьнику
     student_chat_id = User.get_by_id(student.id).chat_id
@@ -499,8 +501,6 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
     asyncio.create_task(prc_teacher_select_action(None, teacher))
-
-    await _teacher_reaction(query, result_id)
 
 
 @reg_callback(CALLBACK.SEND_ANSWER)
