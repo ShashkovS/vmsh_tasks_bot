@@ -378,7 +378,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(int(problem_id))
     # Помечаем задачу как решённую и удаляем из очереди
-    db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, RES_TYPE.WRITTEN)
+    result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, RES_TYPE.WRITTEN)
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await bot.answer_callback_query_ig(query.id)
     await bot.send_message(chat_id=query.message.chat.id,
@@ -422,6 +422,25 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
         logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
     asyncio.create_task(prc_teacher_select_action(None, teacher))
 
+    await _teacher_reaction(query, result_id)
+
+
+async def _teacher_reaction(query: types.CallbackQuery, result_id):
+    """Функция, отправляющая учителю, принявшему или отклонившему письменную работу ученика.
+    клавиатуру (с сообщением) для оценки решения ученика.
+    """
+    msg = await query.message.answer(text='Ваша оценка решения: ',
+                                     reply_markup=teacher_keyboards.build_teacher_reaction_on_solution(result_id))
+
+    # Удаляем клавиатуру учителя для оценки решения ученика
+    await asyncio.sleep(10)  # время до удаления клавиатуры, в секундах
+    try:
+        await msg.edit_reply_markup(reply_markup=None)
+    except aiogram.utils.exceptions.MessageNotModified:
+        logger.debug('MessageNotModified - при удалении клавиатуры учителя для оценки решения ученика')
+    else:
+        await msg.edit_text(msg.text + "\n🤷 не оценено")
+
 
 @reg_callback(CALLBACK.WRITTEN_TASK_BAD)
 async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: User):
@@ -436,11 +455,11 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     db.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
-    await bot.send_message(chat_id=query.message.chat.id,
-                           text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
-                                f'школьнику {student.token} {student.surname} {student.name}! Для исправления: '
-                                f'/recheck_{student.token}_{problem.id}',
-                           parse_mode='HTML')
+    teacher_msg = await bot.send_message(chat_id=query.message.chat.id,
+                                         text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
+                                              f'школьнику {student.token} {student.surname} {student.name}! Для исправления: '
+                                              f'/recheck_{student.token}_{problem.id}',
+                                         parse_mode='HTML')
 
     # Пересылаем переписку школьнику
     student_chat_id = User.get_by_id(student.id).chat_id
@@ -480,6 +499,8 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
     asyncio.create_task(prc_teacher_select_action(None, teacher))
+
+    await _teacher_reaction(query, result_id)
 
 
 @reg_callback(CALLBACK.SEND_ANSWER)
@@ -852,3 +873,21 @@ async def zoom_queue(message: types.Message):
     if teacher_state['state'] == STATE.TEACHER_SELECT_ACTION:
         await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
                                reply_markup=teacher_keyboards.build_teacher_actions())
+
+
+@reg_callback(CALLBACK.TEACHER_REACTION)
+async def prc_teacher_reaction_solution(query: types.CallbackQuery, student: User):
+    """Коллбек на реакцию учителя на решенеие ученика в письменной работе."""
+    logger.debug('prc_teacher_reaction_solution')
+    callback, result_id, reaction_id = query.data.split('_')
+    reaction_id = int(reaction_id)
+    result_id = int(result_id)
+    try:
+        db.write_teacher_reaction_on_solution(result_id, reaction_id)
+    except Exception:
+        logger.error('Ошибка записи реакции учителя в БД.')
+    else:
+        original_message = query.message.text.split('\n')[0]
+        await query.message.edit_text(f"{original_message}\n{db.get_teacher_reaction_by_id(reaction_id)}",
+                                      reply_markup=None)
+        await query.answer(f'Принято')
