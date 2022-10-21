@@ -61,8 +61,6 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
 def build_lessons(level):
     logger.debug('keyboards.build_lessons')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    logger.error('Здесь не добавлена обработка level')
-    # TODO add level
     for lesson in db.fetch_all_lessons(level):
         lesson_button = types.InlineKeyboardButton(
             text=f"Листок {lesson['lesson']}",
