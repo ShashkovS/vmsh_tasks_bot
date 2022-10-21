@@ -1,116 +1,103 @@
 from db_methods import db
 
-
-def get_results(cur):
+def get_lessons_and_levels(cur):
     cur.execute('''
-        select distinct
+        select lesson, r.level, count(*) cnt
+        from results r
+        join users u on r.student_id = u.id
+        where u.type = 1
+          and u.level = r.level
+          and u.surname not like 'ЯЯ%' and u.name not like 'ЯЯ%'
+        group by 1, 2
+        order by 1 desc, 2;
+    ''')
+    return cur.fetchall()
+
+
+def get_results(cur, lesson, level, show_answers=False):
+    if show_answers:
+        verd = "GROUP_CONCAT(r.answer, '  |  ')"
+    else:
+        verd = 'max(r.verdict)'
+    cur.execute(f'''
+        select
         u.token || '	' || u.surname || '	' || u.name || '	' || u.level as user,
         p.lesson || p.level || '.' || p.prob  || p.item as full_prob,
-        max(r.verdict) as max_verdict
+        {verd} as max_verdict
         from users u 
-        join (select level, max(lesson) as lesson from lessons group by level) as last  
-        join results r on r.student_id = u.id and u.level = last.level and r.lesson = last.lesson
+        join results r on r.student_id = u.id
         join problems p on r.problem_id = p.id
-        where u.type = 1 
-        -- and p.lesson = :NLIST
+        where u.type = 1 and u.level = :level and r.level = :level and r.lesson = :lesson
+              and u.surname not like 'ЯЯ%' and u.name not like 'ЯЯ%' 
         group by 1, 2
-    ''', globals())
-    results = {(r['user'], r['full_prob']): str(max(r['max_verdict'], 0)) for r in cur.fetchall()}
+    ''', locals())
+    if show_answers:
+        results = {(r['user'], r['full_prob']): r['max_verdict'] for r in cur.fetchall()}
+    else:
+        results = {(r['user'], r['full_prob']): str(max(r['max_verdict'], 0)) for r in cur.fetchall()}
     return results
 
 
-def get_pupils(cur):
+def get_pupils(cur, level):
     cur.execute('''
         select u.token || '	' || u.surname || '	' || u.name || '	' || u.level as user
         from users u 
         where u.type = 1 -- and token not like 'pass%'
+        and u.level = :level
+        and u.surname not like 'ЯЯ%'
+        and u.name not like 'ЯЯ%'
         order by u.level, u.surname, u.name, u.token
-    ''')
+    ''', locals())
     pupils = [x['user'] for x in cur.fetchall()]
     return pupils
 
 
-def get_problems(cur):
+def get_problems(cur, lesson, level):
     cur.execute('''
         select p.lesson, p.level, p.prob, p.item,
         p.lesson || p.level || '.' || p.prob  || p.item as full_prob
         from problems p
-        join (select level, max(lesson) as lesson from lessons group by level) as last on p.level = last.level and p.lesson = last.lesson  
-        -- where p.lesson = :NLIST
+        where p.lesson = :lesson and p.level = :level
         order by p.lesson, p.level, p.prob, p.item
-    ''', globals())
+    ''', locals())
     problems = cur.fetchall()
     return problems
 
 
 def create_conduit_table(problems, pupils, results):
-    t_rows = len(pupils) + 1
-
-    n_level = [problem for problem in problems if problem['level'] == 'н']
-    p_level = [problem for problem in problems if problem['level'] == 'п']
-    x_level = [problem for problem in problems if problem['level'] == 'э']
-
-    t_cols = 1 + len(n_level) + len(p_level) + len(x_level) + 5
-
+    t_rows = 1 + len(pupils)
+    t_cols = 3 + len(problems)
     table = [[''] * t_cols for __ in range(t_rows)]
-
     # Заполняем заголовочную строчку
     table[0][:3] = ['Фамилия', 'Имя', 'уровень']
-    # Заполняем заголовочный столбец (он для отладки)
+    # Заполняем заголовочные столбцы
     for r, pupil in enumerate(pupils, start=1):
         table[r][0:3] = pupil.split('\t')[1:]
-
-    nH_col = 3
-    pH_col = 3 + len(n_level)
-    xH_col = 3 + len(n_level) + len(p_level)
-
-    table[0][nH_col] = f'н.Н'
-    for i in range(1, len(n_level) + 1):
-        table[0][nH_col + i] = n_level[i - 1]['full_prob']
-    table[0][pH_col] = f'п.Н'
-    for i in range(1, len(p_level) + 1):
-        table[0][pH_col + i] = p_level[i - 1]['full_prob']
-    table[0][xH_col] = f'э.Н'
-    for i in range(1, len(x_level) + 1):
-        table[0][xH_col + i] = x_level[i - 1]['full_prob']
-    for c, problem in enumerate(n_level, start=1):
-        table[0][nH_col + c] = f'{problem["lesson"]:02}{problem["level"]}.{problem["prob"]:02}{problem["item"]}'
-    for c, problem in enumerate(p_level, start=1):
-        table[0][pH_col + c] = f'{problem["lesson"]:02}{problem["level"]}.{problem["prob"]:02}{problem["item"]}'
-    for c, problem in enumerate(x_level, start=1):
-        table[0][xH_col + c] = f'{problem["lesson"]:02}{problem["level"]}.{problem["prob"]:02}{problem["item"]}'
+    # Заполняем заголовочную строку
+    for col, problem in enumerate(problems, start=3):
+        table[0][col] = problem['full_prob']
     # Теперь заполняем всю таблицу целиком
     for r, pupil in enumerate(pupils, start=1):
-        for c, problem in enumerate(n_level, start=1):
-            table[r][nH_col + c] = results.get((pupil, problem["full_prob"]), '')
-        for c, problem in enumerate(p_level, start=1):
-            table[r][pH_col + c] = results.get((pupil, problem["full_prob"]), '')
-        for c, problem in enumerate(x_level, start=1):
-            table[r][xH_col + c] = results.get((pupil, problem["full_prob"]), '')
-        nH = ''.join(table[r][nH_col + 1:nH_col + 1 + len(n_level)]).strip('')
-        pH = ''.join(table[r][pH_col + 1:pH_col + 1 + len(p_level)]).strip('')
-        xH = ''.join(table[r][xH_col + 1:xH_col + 1 + len(x_level)]).strip('')
-        table[r][nH_col] = '1' if nH != '' and nH != '0' else ''
-        table[r][pH_col] = '1' if pH != '' and pH != '0' else ''
-        table[r][xH_col] = '1' if xH != '' and xH != '0' else ''
+        for col, problem in enumerate(problems, start=3):
+            table[r][col] = results.get((pupil, problem["full_prob"]), '')
     return table
 
 
-def table_to_html(table):
+def table_to_html(tables):
     styles = '''
 <style>
-#res {
+.res {
   font-family: Arial, Helvetica, sans-serif;
   border-collapse: collapse;
   white-space:nowrap;
 }
-#res td, #res th {
+.res td, .res th {
   border: 1px solid #ddd;
   padding: 0px;
 }
-#res tr:nth-child(even){background-color: #f2f2f2;}
-#res tr:hover {background-color: #ddd;}
-#res th {
+.res tr:nth-child(even){background-color: #f2f2f2;}
+.res tr:hover {background-color: #ddd;}
+.res th {
   padding-top: 12px;
   padding-bottom: 12px;
   text-align: left;
@@ -119,11 +106,15 @@ def table_to_html(table):
 }
 </style>
 '''
-    html = ['<!DOCTYPE html>', '<meta charset="utf-8">', '<head>', styles, '</head>', '<body>', '<table id="res">']
-    html.append('<tr><th>' + '</th><th>'.join(table[0]) + '</th></tr>')
-    for i in range(1, len(table)):
-        row = table[i]
-        html.append('<tr><td>' + '</td><td>'.join(row) + '</th></tr>')
+    html = ['<!DOCTYPE html>', '<meta charset="utf-8">', '<head>', styles, '</head>', '<body>']
+    for table in tables:
+        html.append('<table class="res">')
+        html.append('<tr><th>' + '</th><th>'.join(table[0]) + '</th></tr>')
+        for i in range(1, len(table)):
+            row = table[i]
+            html.append('<tr><td>' + '</td><td>'.join(row) + '</th></tr>')
+        html.append('</table>')
+        html.append('<hr style="margin:2rem;">')
     html.extend(['</table>', '</body>', '</html>'])
     html = '\n'.join(html)
     return html
@@ -131,9 +122,17 @@ def table_to_html(table):
 
 def get_html():
     cur = db.conn.cursor()
-    results = get_results(cur)
-    pupils = get_pupils(cur)
-    problems = get_problems(cur)
-    table = create_conduit_table(problems, pupils, results)
-    html = table_to_html(table)
+    lessons_and_levels = get_lessons_and_levels(cur)
+    tables = []
+    for row in lessons_and_levels:
+        lesson, level = row['lesson'], row['level']
+        pupils = get_pupils(cur, level)
+        problems = get_problems(cur, lesson, level)
+        results = get_results(cur, lesson, level, show_answers=False)
+        table = create_conduit_table(problems, pupils, results)
+        tables.append(table)
+        results = get_results(cur, lesson, level, show_answers=True)
+        table = create_conduit_table(problems, pupils, results)
+        tables.append(table)
+    html = table_to_html(tables)
     return html
