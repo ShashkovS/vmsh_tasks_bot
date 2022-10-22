@@ -432,7 +432,8 @@ async def prc_problems_other_sos_callback(query: types.CallbackQuery, student: U
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
     State.set_by_user_id(student.id, STATE.WAIT_SOS_REQUEST)
     await bot.send_message(chat_id=query.message.chat.id,
-                           text="Напишите ваш вопрос")
+                           text="Напишите ваш вопрос",
+                           reply_markup=student_keyboards.build_cancel_task_submission())
     await bot.answer_callback_query_ig(query.id)
 
 

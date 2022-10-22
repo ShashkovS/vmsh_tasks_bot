@@ -3,6 +3,25 @@
 По разным файлам раскиданы API для чтения/записи/обновления, сгруппированные по смыслу.
 Здесь мы соединяем это всё в супер-класс DB, который умеет все-все-все методы
 """
+
+# Можно было бы подгружать все модули автоматом, но тогда подсказки в IDE работают хуже
+"""
+from pathlib import Path
+
+modules = Path(__file__).parent.glob('db*.py')
+__all__ = [module.stem for module in modules]
+all_db_classes = []
+for module in __all__:
+    imported_module = __import__(module)
+    classes = [getattr(imported_module, db_class) for db_class in dir(imported_module) if db_class.startswith('DB_')]
+    all_db_classes.extend(classes)
+print(all_db_classes)
+
+
+class DB(*all_db_classes):
+    pass
+"""
+
 from .db_abc import DB_CONNECTION
 from .db_users import DB_USER
 from .db_problems import DB_PROBLEM
