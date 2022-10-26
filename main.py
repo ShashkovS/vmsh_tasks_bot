@@ -57,7 +57,7 @@ async def on_shutdown(app):
     # Remove webhook.
     await bot.delete_webhook()
     # Close all connections.
-    # await bot.close()
+    await bot.close()
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
     db.disconnect()
