@@ -3,6 +3,8 @@ import re
 import asyncio
 import traceback
 from typing import Tuple, Optional
+
+import aiogram.utils.exceptions
 from aiogram.dispatcher.webhook import types
 from aiogram.utils.exceptions import BadRequest
 
@@ -676,9 +678,14 @@ async def prc_student_reaction_on_task_bad_verdict(query: types.CallbackQuery, s
     except Exception:
         logger.error('Ошибка записи реакции ученика в БД.')
     else:
+        old_text = query.message.text
         original_message = query.message.text.split()[0]
-        await query.message.edit_text(f"{original_message}\nОценка проверки: {db.get_student_reaction_by_id(reaction_id)}",
-                                      reply_markup=None)
+        new_text = f"{original_message}\nОценка проверки: {db.get_student_reaction_by_id(reaction_id)}"
+        if old_text != new_text:
+            try:
+                await query.message.edit_text(new_text, reply_markup=None)
+            except aiogram.utils.exceptions.MessageNotModified:
+                pass
         await query.answer(f'Принято')
 
 
