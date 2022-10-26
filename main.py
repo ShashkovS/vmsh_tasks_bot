@@ -59,7 +59,8 @@ async def on_shutdown(app):
     # Close all connections.
     # Здесь какая-то ерунда, зачем-то выводится вот такое предупреждение:
     # https://github.com/aiogram/aiogram/blob/a852b9559612e3b9d542588a4539e64c50393a9c/aiogram/bot/base.py#L208
-    await bot.get_session().close()
+    if bot._session:
+        await bot._session.close()
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
     db.disconnect()
