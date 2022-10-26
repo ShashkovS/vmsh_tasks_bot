@@ -648,6 +648,14 @@ async def prc_student_selected_callback(query: types.CallbackQuery, teacher: Use
 @reg_callback(CALLBACK.ADD_OR_REMOVE_ORAL_PLUS)
 async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_add_or_remove_oral_plus_callback')
+    state = State.get_by_user_id(teacher.id)
+    student_id = state['last_student_id']
+    student = User.get_by_id(student_id)
+    if not student:
+        # Что-то сломалось
+        await prc_teacher_cancel_callback(query, teacher)
+        await bot.answer_callback_query_ig(query.id)
+        return
     _, problem_id, plus_ids, minus_ids = query.data.split('_')
     problem_id = int(problem_id)
     plus_ids = set() if not plus_ids else {int(prb_id) for prb_id in plus_ids.split(',')}
@@ -660,9 +668,6 @@ async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teach
         minus_ids.discard(problem_id)
     else:
         plus_ids.add(problem_id)
-    state = State.get_by_user_id(teacher.id)
-    student_id = state['last_student_id']
-    student = User.get_by_id(student_id)
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=teacher_keyboards.build_verdict_for_oral_problems(plus_ids=plus_ids, minus_ids=minus_ids,
                                                                                                           student=student, online=teacher.online))
