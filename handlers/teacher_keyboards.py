@@ -202,3 +202,19 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
     )
     keyboard_markup.add(cancel)
     return keyboard_markup
+
+
+def build_teacher_reaction_on_solution(result_id: int):
+    """Создает инлайн клавиатуру для учителя для оценки решения ученика
+    после принятия/отклонения учителем письменной работы.
+    """
+    logger.debug('keyboards.build_teacher_reaction_on_solution')
+    keyboard = types.InlineKeyboardMarkup()
+    for reaction in db.teacher_reactions():
+        keyboard.add(
+            types.InlineKeyboardButton(
+                text=reaction['reaction'],
+                callback_data=f'{CALLBACK.TEACHER_REACTION}_{result_id}_{reaction["reaction_id"]}'
+            )
+        )
+    return keyboard

@@ -369,6 +369,58 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
         await forward_discussion_and_start_checking(chat_id, query.message.message_id, student, problem, teacher,
                                                     is_sos=True)
 
+
+async def forward_discussion_to_student(student: User, problem: Problem, solved: bool):
+    """ Отправить студенту вердикт проверки и переслать переписку.
+    Если задача решена, то пересылаются только последние комментарии учителя.
+    Если не решена, то пересылается вся переписка, чтобы было понятно, о чём речь в целом.
+    """
+    # Обновляем студенту клавиатуру со списком задач
+    await refresh_last_student_keyboard(student)
+    # Получаем id сообщений с перепиской
+    discussion = WrittenQueue.get_discussion(student.id, problem.id)
+    # Находим последнее сообщение школьника
+    last_pup_post = max([rn for rn in range(len(discussion)) if discussion[rn]['teacher_id'] is None] + [-2])
+    last_teacher_messages = discussion[last_pup_post + 1:]
+    if solved:
+        messages_to_forward = last_teacher_messages
+    else:
+        # Берём последние 20 сообщений, чтобы не превысить лимит
+        messages_to_forward = discussion[-20:]
+    text_problem_part = f"Задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})"
+    if solved and not messages_to_forward:
+        text_vedict_part = "проверили и поставили плюсик!"
+    elif solved and messages_to_forward:
+        text_vedict_part = "проверили и поставили плюсик!\nВот комментарии:\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    elif not solved and not last_teacher_messages:
+        text_vedict_part = "проверили и не засчитали без комментариев :(\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    else:
+        text_vedict_part = "проверили и сделали замечания:\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    await bot.send_message(chat_id=student.chat_id, text=f"{text_problem_part} {text_vedict_part}", disable_notification=True)
+    try:
+        for row in messages_to_forward:
+            # Только пересылаем сообщения, без вариантов
+            if row['teacher_id']:
+                await bot.copy_message(student.chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
+            else:
+                await bot.forward_message(student.chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
+            # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
+            # if row['chat_id'] and row['tg_msg_id']:
+            #     await bot.copy_message(student.chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
+            # elif row['text']:
+            #     await bot.send_message(chat_id=student.chat_id, text=row['text'], disable_notification=True)
+            # elif row['attach_path']:
+            #     # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
+            #     input_file = types.input_file.InputFile(row['attach_path'])
+            #     await bot.send_photo(chat_id=student.chat_id, photo=input_file, disable_notification=True)
+        if messages_to_forward:
+            await bot.send_message(chat_id=student.chat_id,
+                                   text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
+                                   disable_notification=True)
+    except aiogram.utils.exceptions.TelegramAPIError as e:
+        logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
+
+
 @reg_callback(CALLBACK.WRITTEN_TASK_OK)
 async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_written_task_ok_callback')
@@ -378,48 +430,18 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(int(problem_id))
     # Помечаем задачу как решённую и удаляем из очереди
-    db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, RES_TYPE.WRITTEN)
+    result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, RES_TYPE.WRITTEN)
     WrittenQueue.delete_from_queue(student.id, problem.id)
-    await bot.answer_callback_query_ig(query.id)
-    await bot.send_message(chat_id=query.message.chat.id,
+    reaction_msg = await bot.send_message(chat_id=query.message.chat.id,
                            text=f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
                                 f'Для исправления: '
                                 f'/recheck_{student.token}_{problem.id}',
+                           reply_markup=teacher_keyboards.build_teacher_reaction_on_solution(result_id),
                            parse_mode='HTML')
+    bot.remove_markup_after(reaction_msg, 15)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-    await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
-    student_chat_id = User.get_by_id(student.id).chat_id
-    try:
-        discussion = WrittenQueue.get_discussion(student.id, problem.id)
-        # Находим последнее сообщение школьника
-        last_pup_post = max([rn for rn in range(len(discussion)) if discussion[rn]['teacher_id'] is None] + [-2])
-        teacher_comments = discussion[last_pup_post + 1:]
-        if not teacher_comments:
-            await bot.send_message(chat_id=student_chat_id,
-                                   text=f"Задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}) проверили и поставили плюсик!",
-                                   disable_notification=True)
-        else:
-            await bot.send_message(chat_id=student_chat_id,
-                                   text=f"Задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}) проверили и поставили плюсик!\n"
-                                        f"Вот комментарии:\n"
-                                        f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
-                                   disable_notification=True)
-            for row in teacher_comments:
-                # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
-                if row['chat_id'] and row['tg_msg_id']:
-                    await bot.copy_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
-                                           disable_notification=True)
-                elif row['text']:
-                    await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
-                elif row['attach_path']:
-                    # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
-                    input_file = types.input_file.InputFile(row['attach_path'])
-                    await bot.send_photo(chat_id=student_chat_id, photo=input_file, disable_notification=True)
-            await bot.send_message(chat_id=student_chat_id,
-                                   text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
-                                   disable_notification=True)
-    except aiogram.utils.exceptions.TelegramAPIError as e:
-        logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
+    await bot.answer_callback_query_ig(query.id)
+    asyncio.create_task(forward_discussion_to_student(student, problem, solved=True))
     asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
@@ -436,49 +458,15 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     db.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
-    await bot.send_message(chat_id=query.message.chat.id,
-                           text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
-                                f'школьнику {student.token} {student.surname} {student.name}! Для исправления: '
-                                f'/recheck_{student.token}_{problem.id}',
-                           parse_mode='HTML')
-
-    # Пересылаем переписку школьнику
-    student_chat_id = User.get_by_id(student.id).chat_id
-    try:
-        discussion = WrittenQueue.get_discussion(student.id, problem.id)
-        await bot.send_message(chat_id=student_chat_id,
-                               text=f"Задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}) проверили и сделали замечания:\n"
-                                    f"Пересылаю всю переписку.\n"
-                                    f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇",
-                               disable_notification=True)
-        for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не привысить лимит
-            # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
-            if row['chat_id'] and row['tg_msg_id']:
-                try:
-                    await bot.copy_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
-                                           disable_notification=True)
-                except aiogram.utils.exceptions.BadRequest as e:
-                    logger.error(f'Почему-то не отфорвардилось... {student_chat_id}\n{e}')
-            elif row['text']:
-                await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
-            elif row['attach_path']:
-                # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
-                input_file = types.input_file.InputFile(row['attach_path'])
-                await bot.send_photo(chat_id=student_chat_id, photo=input_file, disable_notification=True)
-    except aiogram.utils.exceptions.TelegramAPIError as e:
-        logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
-    try:
-        # Отправляем сообщение с возможностью оценить проверку
-        await bot.send_message(
-            chat_id=student_chat_id,
-            text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
-            disable_notification=True,
-            reply_markup=student_keyboards.build_student_reaction_on_task_bad_verdict(result_id)
-        )
-    except aiogram.utils.exceptions.TelegramAPIError as e:
-        logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
+    teacher_msg = await bot.send_message(chat_id=query.message.chat.id,
+                                         text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
+                                              f'школьнику {student.token} {student.surname} {student.name}! Для исправления: '
+                                              f'/recheck_{student.token}_{problem.id}',
+                                         parse_mode='HTML')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
+    # Пересылаем переписку школьнику
+    asyncio.create_task(forward_discussion_to_student(student, problem, solved=False))
     asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
@@ -857,3 +845,21 @@ async def zoom_queue(message: types.Message):
     if teacher_state['state'] == STATE.TEACHER_SELECT_ACTION:
         await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
                                reply_markup=teacher_keyboards.build_teacher_actions())
+
+
+@reg_callback(CALLBACK.TEACHER_REACTION)
+async def prc_teacher_reaction_solution(query: types.CallbackQuery, student: User):
+    """Коллбек на реакцию учителя на решенеие ученика в письменной работе."""
+    logger.debug('prc_teacher_reaction_solution')
+    callback, result_id, reaction_id = query.data.split('_')
+    reaction_id = int(reaction_id)
+    result_id = int(result_id)
+    try:
+        db.write_teacher_reaction_on_solution(result_id, reaction_id)
+    except Exception:
+        logger.error('Ошибка записи реакции учителя в БД.')
+    else:
+        original_message = query.message.text.split('\n')[0]
+        await query.message.edit_text(f"{original_message}\n{db.get_teacher_reaction_by_id(reaction_id)}",
+                                      reply_markup=None)
+        await query.answer(f'Принято')

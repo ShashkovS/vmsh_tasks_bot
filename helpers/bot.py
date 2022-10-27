@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import aiogram
 import asyncio
+from typing import List, Union
 from aiogram.utils.exceptions import MessageNotModified, MessageToEditNotFound
 from aiogram.dispatcher import Dispatcher
+from aiogram.types import Message
 from helpers.config import config, logger
 from helpers.consts import CALLBACK, STATE
 
@@ -59,15 +61,25 @@ class BotIg(aiogram.Bot):
         except Exception as e:
             logger.exception(f'SHIT: {e}')
 
-    async def delete_messages_after_task(self, messages: list, timeout: int):  # List[types.Message]
+    async def delete_messages_after_task(self, messages: Union[List[Message], Message], timeout: int):  # List[types.Message]
         await asyncio.sleep(timeout)
-        if type(messages) == aiogram.types.Message:
+        if type(messages) == Message:
             messages = [messages]
         for message in messages:
             await self.delete_message_ig(chat_id=message.chat.id, message_id=message.message_id)
 
-    def delete_messages_after(self, messages: list, timeout: int):  # List[types.Message]
+    async def remove_markup_after_task(self, messages: Union[List[Message], Message], timeout: int):  # List[types.Message]
+        await asyncio.sleep(timeout)
+        if type(messages) == Message:
+            messages = [messages]
+        for message in messages:
+            await self.edit_message_reply_markup_ig(chat_id=message.chat.id, message_id=message.message_id, reply_markup=None)
+
+    def delete_messages_after(self, messages: Union[List[Message], Message], timeout: int):
         asyncio.create_task(self.delete_messages_after_task(messages, timeout))
+
+    def remove_markup_after(self, messages: Union[List[Message], Message], timeout: int):
+        asyncio.create_task(self.remove_markup_after_task(messages, timeout))
 
 
 # Запускаем API телеграм-бота
