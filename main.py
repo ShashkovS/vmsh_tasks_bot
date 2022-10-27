@@ -12,6 +12,7 @@ import handlers
 import zoom_events_parser
 import tags_service
 import web_app
+import game_web_app
 
 USE_WEBHOOKS = False
 
@@ -92,6 +93,7 @@ else:
     app.add_routes(zoom_events_parser.routes)
     app.add_routes(tags_service.routes)
     app.add_routes(web_app.routes)
+    app.add_routes(game_web_app.routes)
     # app will be started by gunicorn, so no need to start_webhook
     # start_webhook(
     #     dispatcher=dispatcher,
