@@ -370,23 +370,6 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
                                                     is_sos=True)
 
 
-async def _teacher_reaction(query: types.CallbackQuery, result_id):
-    """Функция, отправляющая учителю, принявшему или отклонившему письменную работу ученика.
-    клавиатуру (с сообщением) для оценки решения ученика.
-    """
-    msg = await query.message.answer(text='Ваша оценка решения: ',
-                                     reply_markup=teacher_keyboards.build_teacher_reaction_on_solution(result_id))
-
-    # Удаляем клавиатуру учителя для оценки решения ученика
-    await asyncio.sleep(15)  # время до удаления клавиатуры, в секундах
-    try:
-        await msg.edit_reply_markup(reply_markup=None)
-    except aiogram.utils.exceptions.MessageNotModified:
-        logger.debug('MessageNotModified - при удалении клавиатуры учителя для оценки решения ученика')
-    else:
-        await msg.edit_text(msg.text + "\n🤷 не оценено")
-
-
 @reg_callback(CALLBACK.WRITTEN_TASK_OK)
 async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_written_task_ok_callback')
@@ -399,12 +382,13 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, RES_TYPE.WRITTEN)
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await bot.answer_callback_query_ig(query.id)
-    await bot.send_message(chat_id=query.message.chat.id,
+    reaction_msg = await bot.send_message(chat_id=query.message.chat.id,
                            text=f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
                                 f'Для исправления: '
                                 f'/recheck_{student.token}_{problem.id}',
+                           reply_markup=teacher_keyboards.build_teacher_reaction_on_solution(result_id),
                            parse_mode='HTML')
-    teacher_reaction_task = asyncio.create_task(_teacher_reaction(query, result_id))
+    bot.remove_markup_after(reaction_msg, 15)
 
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
@@ -461,8 +445,6 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
                                               f'школьнику {student.token} {student.surname} {student.name}! Для исправления: '
                                               f'/recheck_{student.token}_{problem.id}',
                                          parse_mode='HTML')
-    teacher_reaction_task = asyncio.create_task(_teacher_reaction(query, result_id))
-
     # Пересылаем переписку школьнику
     student_chat_id = User.get_by_id(student.id).chat_id
     try:
