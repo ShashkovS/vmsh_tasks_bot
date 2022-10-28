@@ -273,6 +273,15 @@ class DatabaseMethodsTest(TestCase):
         saved_problem_id = db.media_group_check(media_group_id_3)
         self.assertEqual(problem_id, saved_problem_id)
 
+    def test_game_methods(self):
+        self.db.set_student_command(3, 179)
+        self.db.set_student_command(3, 179)
+        self.db.set_student_command(1, 179)
+        self.db.set_student_command(2, 179)
+        self.db.set_student_command(3, 178)
+        self.assertTrue(self.db.add_payment(3, 15, 10, 1))
+        self.db.add_payment(2, 15, 10, 1)
+        self.assertFalse(self.db.add_payment(3, 15, 10, 1))
 
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)
