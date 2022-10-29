@@ -12,7 +12,8 @@
   - python версии ⩾ 3.9 (не обязательно системный);
   - nginx;
   - systemd;
-  - SSL-сертификат (например, от certbot'а от let's encrypt).
+  - SSL-сертификат (например, от certbot'а от let's encrypt);
+  - nats-server для межпроцессных взаимодействий. Нужно для корректной работы web-socket'ов.
 
 
 ## Создание бота и каланов в телеграме
@@ -246,6 +247,67 @@ nginx -t
 ``` bash
 sudo systemctl reload nginx.service
 ```
+
+
+#### Устанавливаем nats-server для пересылки сообщений между потоками. Нужно при работе в несколько потоков
+``` bash
+# Устанавливаем golang и nats
+cd ~
+wget https://dl.google.com/go/go1.19.2.linux-amd64.tar.gz
+sudo tar -C /usr/local -xf go1.19.2.linux-amd64.tar.gz
+# Проверяем golang
+/usr/local/go/bin/go version
+# Создаём пользователя для nats
+sudo useradd nats -b /web/ -m -U -s /bin/false
+sudo chown -R nats:nats /web/nats
+sudo usermod -a -G nats serge
+sudo chmod -R ug+rwXs,o-rwx /web/nats
+# ставим nats
+GO111MODULE=on sudo /usr/local/go/bin/go install github.com/nats-io/nats-server/v2@latest
+# Смотрим, куда оно установилось
+/usr/local/go/bin/go env GOPATH
+# Копируем бинарь
+sudo cp ~/go/bin/nats-server /web/nats/nats-server
+# Создаём конфиг
+echo "port: 4222
+net: '127.0.0.1'
+pid: /web/nats/nats.pid
+" > /web/nats/nats.config
+# Проверяем запуск
+/web/nats/nats-server -c /web/nats/nats.config
+# создаём сервис
+echo '[Unit]
+Description=NATS Server
+After=network.target ntp.service
+
+[Service]
+PIDFile=/web/nats/nats.pid
+Restart=on-failure
+PrivateTmp=true
+Type=simple
+WorkingDirectory=/web/nats
+Environment="PATH=/web/vmsh179bot/vmsh179bot_env/bin"
+ExecStart=/web/nats/nats-server -c /web/nats/nats.config
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s SIGINT $MAINPID
+User=nats
+Group=nats
+
+[Install]
+WantedBy=multi-user.target
+' > /web/nats/nats.service
+sudo ln -s /web/nats/nats.service /etc/systemd/system/nats.service
+# Снова подновляем права
+sudo chown -R nats:nats /web/nats
+# запускаем
+sudo systemctl daemon-reload
+sudo systemctl enable nats
+sudo systemctl start nats
+# Проверяем логи
+sudo systemctl status nats
+sudo journalctl -u nats
+```
+
 
 #### Секреты и настройки
 Есть окружение `test` и `prod`. Для каждого своя папка с кредами: creds_test и creds_prod.
