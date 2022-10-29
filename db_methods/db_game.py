@@ -7,10 +7,11 @@ class DB_GAME():
     conn: sqlite3.Connection
 
     def get_student_payments(self, user_id: int) -> List[dict]:
-        cur = self.conn.cursor()
-        return cur.execute("""
-            SELECT (ts,amount) FROM game_payments where student_id = :user_id
-        """, locals())
+        return self.conn.execute('''
+            SELECT ts, amount FROM game_payments
+            where student_id = :user_id
+            order by ts
+        ''', locals()).fetchall()
 
     def add_payment(self, user_id: int, x: int, y: int, amount: int) -> bool:
         cur = self.conn.cursor()
@@ -26,20 +27,20 @@ class DB_GAME():
                     values (:command_id, :x, :y)
                 ''', locals())
                 cell_id = cur.lastrowid
-                res = cur.execute("""
+                res = cur.execute('''
                       INSERT INTO game_payments  ( ts, student_id, amount, cell_id)
                       VALUES               (:ts, :user_id, :amount, :cell_id)
-                """, locals())
+                ''', locals())
                 return True
         except:
             return False
 
     def get_opened_cells(self, user_id: int) -> List[dict]:
-        self.conn.execute("""
+        return self.conn.execute("""
         SELECT x, y 
         FROM game_map_opened_cells
         where command_id = (SELECT command_id from game_students_commands WHERE student_id = :user_id)
-        """, locals())
+        """, locals()).fetchall()
 
     def set_student_command(self, user_id: int, command_id: int) -> int:
         cur = self.conn.cursor()

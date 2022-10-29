@@ -275,14 +275,19 @@ class DatabaseMethodsTest(TestCase):
 
     def test_game_methods(self):
         self.db.set_student_command(3, 179)
-        self.db.set_student_command(3, 179)
+        self.db.set_student_command(3, 178)
+        self.assertEqual(self.db.get_student_command(3), 178)
+
         self.db.set_student_command(1, 179)
         self.db.set_student_command(2, 179)
         self.db.set_student_command(3, 178)
+        self.assertEqual(self.db.get_student_command(1), 179)
+
         self.assertTrue(self.db.add_payment(3, 15, 10, 1))
         self.db.add_payment(2, 15, 10, 1)
         self.assertFalse(self.db.add_payment(3, 15, 10, 1))
-
+        self.assertEqual(self.db.get_student_payments(3)[0]['amount'], 1)
+        self.assertEqual(self.db.get_opened_cells(3), [{'x': 15, 'y': 10}])
     # def add_problem(self, data: dict)
     # def fetch_all_problems(self)
     # def fetch_all_lessons(self)
