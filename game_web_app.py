@@ -109,10 +109,10 @@ async def post_online(request):
     # - список покупок с timestamp'ами
     # - текущую карту
     # - команду студента
+    student_command = db.get_student_command(user.id)
     solved = db.get_student_solved(user.id, Problem.last_lesson_num(user.level))  # ts, title
     payments = db.get_student_payments(user.id)  # ts, amount
-    opened = db.get_opened_cells(user.id)  # x, y
-    student_command = db.get_student_command(user.id)
+    opened = db.get_opened_cells(student_command)  # x, y
     # Собираем из решённых задач и оплат event'ы
     events = []
     for paym in payments:

@@ -35,11 +35,11 @@ class DB_GAME():
         except:
             return False
 
-    def get_opened_cells(self, user_id: int) -> List[dict]:
+    def get_opened_cells(self, student_command: int) -> List[dict]:
         return self.conn.execute("""
         SELECT x, y 
         FROM game_map_opened_cells
-        where command_id = (SELECT command_id from game_students_commands WHERE student_id = :user_id)
+        where command_id = :student_command
         """, locals()).fetchall()
 
     def set_student_command(self, user_id: int, command_id: int) -> int:
