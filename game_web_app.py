@@ -195,6 +195,7 @@ async def websocket(request):
         elif msg.type == WSMsgType.ERROR:
             print(ws.exception())
         print(msg)
+    user_id_to_websocket.pop(user.id, None)
     print('websocket connection closed')
     return ws
 

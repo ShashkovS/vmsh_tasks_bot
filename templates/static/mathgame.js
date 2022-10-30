@@ -141,7 +141,7 @@ async function postData(url = '', data = {}) {
 function postBuy($cell, amount) {
   postData('/game/buy', {x: $cell.coln, y: $cell.rown, amount})
     .then(resp => {
-      console.log(resp);
+      // console.log(resp);
       $cell.className = 'so';
       scene.opened.push($cell.cellID);
       updateMap();
@@ -152,7 +152,7 @@ function postBuy($cell, amount) {
 function postFlag($cell) {
   postData('/game/flag', {x: $cell.coln, y: $cell.rown})
     .then(resp => {
-      console.log(resp);
+      // console.log(resp);
     });
 }
 
@@ -179,7 +179,7 @@ function fetchInitialData() {
   scene.$header.innerHTML = `<div><p><span>...⚡</span> — загружаем информацию...</p></div>`;
   postData('/game/me', {})
     .then(resp => {
-      console.log(resp);
+      // console.log(resp);
       refreshData(resp);
       updateMap();
       renderHeader();
@@ -384,11 +384,12 @@ function initialMapRender() {
 
 function prepareWebsockets() {
   scene.curWebSocket = null;
+  scene.wsConnectInterval = null;
   function onWebSocketOpen(ev) {
-    console.log('Websocket open', ev);
+    // console.log('Websocket open', ev);
   }
   function onWebSocketMessage(ev) {
-    console.log('Message', ev);
+    // console.log('Message', ev);
     const resp = JSON.parse(ev.data);
     refreshData(resp);
     updateMap();
@@ -396,11 +397,12 @@ function prepareWebsockets() {
   }
   function onWebSocketClose(ev) {
     if (ev.wasClean) {
-      console.log('Clean connection end')
+      // console.log('Clean connection end')
     } else {
-      console.log('Connection broken')
+      // console.log('Connection broken')
     }
     scene.curWebSocket = null;
+    scene.wsConnectInterval = setInterval(() => {scene.curWebSocket = createWebSocketConnection()}, 2000);
   }
   function createWebSocketConnection() {
     let ws;
@@ -412,8 +414,13 @@ function prepareWebsockets() {
     ws.onopen = onWebSocketOpen;
     ws.onmessage = onWebSocketMessage;
     ws.onclose = onWebSocketClose;
+    if (scene.wsConnectInterval) {
+      clearInterval(scene.wsConnectInterval);
+      scene.wsConnectInterval = null;
+    }
     return ws;
   }
+  scene.wsConnectInterval = setInterval(() => {scene.curWebSocket = createWebSocketConnection()}, 2000);
   scene.curWebSocket = createWebSocketConnection();
 }
 
