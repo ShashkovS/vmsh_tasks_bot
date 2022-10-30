@@ -7,7 +7,6 @@
 import logging
 import re
 
-import orjson
 from aiohttp import web, WSMsgType
 from operator import itemgetter
 from time import perf_counter
@@ -125,6 +124,7 @@ def get_map_opened(command_id) -> List[List]:
     opened = [[r['x'], r['y']] for r in opened]
     return opened
 
+
 def get_map_flags(command_id) -> List[List]:
     # TODO Кеширование!
     flags = db.get_flags_by_command(command_id)  # x, y
@@ -212,8 +212,19 @@ async def nats_handle_map_update(command_id):
                 logger.exception('Отправка данных через websocket отвалилась')
 
 
-async def nats_handle_student_update(data):
-    print(f"nats_handle_student_update {data=}")
+async def nats_handle_student_update(student_id):
+    logger.debug(f"nats_handle_student_update {student_id=}")
+    student = User.get_by_id(student_id)
+    if not student:
+        return
+    ws = user_id_to_websocket.get(student_id, None)
+    if ws is None:
+        return
+    data = get_game_data(User.get_by_id(student_id))
+    try:
+        await ws.send_json(data)
+    except Exception as e:
+        logger.exception('Отправка данных через websocket отвалилась')
 
 
 if __name__ == "__main__":

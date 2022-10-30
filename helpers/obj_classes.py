@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import asyncio
 import re
 from dataclasses import dataclass
 from datetime import datetime, date
@@ -12,6 +13,7 @@ from helpers.consts import *
 from helpers.config import config, logger
 from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 from db_methods import db
+from helpers.nats_brocker import vmsh_nats
 
 
 def _normilize_token(token: str, *, RU_TO_EN=str.maketrans('УКЕНХВАРОСМТукехарос', 'YKEHXBAPOCMTykexapoc')) -> str:

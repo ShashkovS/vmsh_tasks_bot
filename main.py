@@ -13,6 +13,9 @@ import zoom_events_parser
 import tags_service
 import web_app
 import game_web_app
+from helpers.nats_brocker import vmsh_nats
+from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE
+
 
 USE_WEBHOOKS = False
 
@@ -45,6 +48,12 @@ async def on_startup(app):
     if USE_WEBHOOKS:
         await check_webhook()
     bot.username = (await bot.me).username
+
+    # Подключаемся к NATS
+    await vmsh_nats.setup()
+    await vmsh_nats.subscribe(NATS_GAME_MAP_UPDATE, game_web_app.nats_handle_map_update)
+    await vmsh_nats.subscribe(NATS_GAME_STUDENT_UPDATE, game_web_app.nats_handle_student_update)
+
     await bot.post_logging_message(f'Бот начал свою работу')
 
 
@@ -64,6 +73,7 @@ async def on_shutdown(app):
         await bot._session.close()
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
+    await vmsh_nats.disconnect()
     db.disconnect()
     logger.warning('Bye!')
 
