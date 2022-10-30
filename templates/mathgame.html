@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.50, maximum-scale=2.00, minimum-scale=0.250">
+  <title>Кооперативная игра по математике</title>
+  <link rel="stylesheet" href="static/mathgame.css">
+  <script src="static/mathgame.js"></script>
+</head>
+<body onload="init()">
+<button id="fullScreenButton" onclick="toggleFullscreen()">&#x26F6;</button>
+<div id="header"></div>
+<div id="game">
+  <div id="popup" class="modal">
+    <div id="modal-content">
+      <p id="popupText"></p>
+      <button id="popupButton1"></button>
+      <button id="popupButton2"></button>
+    </div>
+  </div>
+  <table id="gameTable"></table>
+</div>
+</body>
+</html>

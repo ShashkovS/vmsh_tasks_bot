@@ -53,7 +53,7 @@ class DB_GAME():
         self.conn.commit()
         return cur.lastrowid
 
-    def get_student_command(self,user_id : int) -> int:
+    def get_student_command(self, user_id : int) -> int:
         res = self.conn.execute("""
                             SELECT
                             command_id
@@ -61,5 +61,3 @@ class DB_GAME():
                             student_id =:user_id
                         """, locals()).fetchone()
         return res and res['command_id']
-
-

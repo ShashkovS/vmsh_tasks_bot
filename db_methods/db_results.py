@@ -107,3 +107,12 @@ class DB_RESULT:
             """, row)
         cur.execute("commit")
         self.conn.commit()
+
+    def get_student_solved(self, student_id: int, lesson: int) -> List[dict]:
+        return self.conn.execute("""
+            select min(ts) ts, p.title from results r
+            join problems p on r.problem_id = p.id
+            where student_id = :student_id and r.lesson = :lesson and verdict > 0
+            group by p.title, p.synonyms 
+            order by 1
+        """, locals()).fetchall()

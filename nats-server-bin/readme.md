@@ -6,14 +6,14 @@ https://github.com/nats-io/nats-server/releases (файл nats-server-v*.*.*-win
 
 ### Сервис в Windows
 
-Дальше его нужно запустить как службу при помощи команды (в админском терминале)
+Дальше его нужно добавить как службу при помощи команды (в админском терминале)
 ```bash
 sc.exe create nats-server binPath= "%NATS_PATH%\nats-server.exe --addr 127.0.0.1 --port 4222 --name vmshtasksbotnats"
-sc.exe start nats-server
 ```
-Чтобы потом остановить его, нужно выполнить команду
+Дальше его можно запускать/останавливать при помощи
 ```bash
-nats-server.exe --signal stop
+sc.exe start nats-server
+sc.exe stop nats-server
 ```
 
 ### Просто процесс в отдельном терминале
