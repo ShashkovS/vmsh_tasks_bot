@@ -276,7 +276,6 @@ function updateMap() {
       if (scene.map[rown][coln] === "x") {
         continue;
       }
-      ;
       if (rown === 0 || coln === 0 || coln === scene.width - 1 || rown === scene.height - 1) {
         continue;
       } // Рамку не трогаем
