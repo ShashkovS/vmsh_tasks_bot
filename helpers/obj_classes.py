@@ -258,8 +258,11 @@ class WrittenQueue:
 
 class Result:
     @staticmethod
-    def add(student: User, problem: Problem, teacher: User, verdict: int, answer: str, res_type: int = None):
-        return db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher and teacher.id, verdict, answer, res_type)
+    def add(student: User, problem: Problem, teacher: Optional[User], verdict: VERDICT, answer: Optional[str], res_type: RES_TYPE) -> int:
+        result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher and teacher.id, verdict, answer, res_type)
+        if verdict > 0:
+            asyncio.create_task(vmsh_nats.publish(NATS_GAME_MAP_UPDATE, student.id))
+        return result_id
 
 
 class FromGoogleSpreadsheet:

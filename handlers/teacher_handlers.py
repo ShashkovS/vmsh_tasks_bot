@@ -11,7 +11,7 @@ from random import randrange
 
 from helpers.consts import *
 from helpers.config import logger
-from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
+from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, db
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import teacher_keyboards, student_keyboards
 from handlers.student_handlers import sleep_and_send_problems_keyboard, refresh_last_student_keyboard, WHITEBOARD_LINK
@@ -435,8 +435,8 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(int(problem_id))
     # Помечаем задачу как решённую и удаляем из очереди
-    result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None,
-                              RES_TYPE.WRITTEN)
+    result_id = Result.add(student, problem, teacher, VERDICT.SOLVED, None, RES_TYPE.WRITTEN)
+
     WrittenQueue.delete_from_queue(student.id, problem.id)
     reaction_msg = await bot.send_message(chat_id=query.message.chat.id,
                                           text=f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
@@ -460,8 +460,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(int(problem_id))
     # Помечаем решение как неверное и удаляем из очереди
-    result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER,
-                              None, RES_TYPE.WRITTEN)
+    result_id = Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, RES_TYPE.WRITTEN)
     db.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
@@ -613,8 +612,8 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: User):
                                            reply_markup=None)
     await bot.answer_callback_query_ig(query.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-    db.add_result(student_id, problem_id, problem.level, problem.lesson, teacher.id, verdict, '', RES_TYPE.ZOOM)
     student = User.get_by_id(student_id)
+    Result.add(student, problem, teacher, verdict, None, RES_TYPE.ZOOM)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
     asyncio.create_task(prc_teacher_select_action(None, teacher))
 
@@ -700,14 +699,13 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     else:
         res_type = RES_TYPE.ZOOM
     for problem in pluses:
-        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.SOLVED, None, res_type)
+        Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type)
         # А ещё нужно удалить эту задачу из очереди на письменную проверку
         db.delete_from_written_task_queue(student_id, problem.id)
     for problem in minuses:
         db.delete_plus(student_id, problem.id, RES_TYPE.SCHOOL, VERDICT.REJECTED_ANSWER)
         db.delete_plus(student_id, problem.id, RES_TYPE.ZOOM, VERDICT.REJECTED_ANSWER)
-        db.add_result(student_id, problem.id, problem.level, problem.lesson, teacher.id, VERDICT.WRONG_ANSWER, None,
-                      res_type)
+        Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, res_type)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
 
     # Формируем сообщение с итоговым результатом проверки

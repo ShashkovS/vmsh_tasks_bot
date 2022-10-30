@@ -10,7 +10,7 @@ from aiogram.utils.exceptions import BadRequest
 
 from helpers.consts import *
 from helpers.config import logger, config
-from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, db
+from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, db
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import student_keyboards
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
@@ -265,11 +265,11 @@ async def check_answer_and_react(chat_id: int, problem: Problem, student: User, 
         asyncio.create_task(sleep_and_send_problems_keyboard(chat_id, student))
     else:
         if check_verict == ANS_CHECK_VERDICT.CORRECT:
-            db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.SOLVED, student_answer, RES_TYPE.TEST)
+            Result.add(student, problem, None, VERDICT.SOLVED, student_answer, RES_TYPE.TEST)
             text_to_student = f"✔️ {problem.congrat}"
         # elif check_verict == ANS_CHECK_VERDICT.WRONG:
         else:
-            db.add_result(student.id, problem.id, problem.level, problem.lesson, None, VERDICT.WRONG_ANSWER, student_answer, RES_TYPE.TEST)
+            Result.add(student, problem, None, VERDICT.WRONG_ANSWER, student_answer, RES_TYPE.TEST)
             text_to_student = f"❌ {problem.wrong_ans}"
         if os.environ.get('EXAM', None) == 'true':
             text_to_student = 'Ответ принят на проверку.'
