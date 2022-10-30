@@ -61,3 +61,27 @@ class DB_GAME():
                             student_id =:user_id
                         """, locals()).fetchone()
         return res and res['command_id']
+    def set_student_flag(self, user_id : int, x : int, y : int) -> int:
+        command_id = self.get_student_command(user_id)
+        self.conn.execute("""
+                    INSERT INTO game_map_flags ( student_id,  command_id,x,y)
+                    VALUES                             (:user_id, :command_id, :x, :y) 
+                    on conflict (student_id,command_id) do update set 
+                    x = excluded.x,
+                    y = excluded.y
+                """, locals())
+        self.conn.commit()
+        return self.conn.cursor().lastrowid
+
+    def get_flags_by_command(self, command_id) -> List[dict]:
+            return self.conn.execute("""
+                            SELECT
+                            x, y
+                            from game_map_flags WHERE
+                            command_id =:command_id
+                        """, locals()).fetchall()
+
+
+
+
+
