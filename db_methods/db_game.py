@@ -13,10 +13,9 @@ class DB_GAME():
             order by ts
         ''', locals()).fetchall()
 
-    def add_payment(self, user_id: int, x: int, y: int, amount: int) -> bool:
+    def add_payment(self, user_id: int, command_id: int, x: int, y: int, amount: int) -> bool:
         cur = self.conn.cursor()
         ts = datetime.now().isoformat()
-        command_id = self.get_student_command(user_id)
         cur = self.conn.cursor()
 
         try:
@@ -53,7 +52,7 @@ class DB_GAME():
         self.conn.commit()
         return cur.lastrowid
 
-    def get_student_command(self, user_id : int) -> int:
+    def get_student_command(self, user_id: int) -> int:
         res = self.conn.execute("""
                             SELECT
                             command_id
@@ -61,27 +60,39 @@ class DB_GAME():
                             student_id =:user_id
                         """, locals()).fetchone()
         return res and res['command_id']
-    def set_student_flag(self, user_id : int, x : int, y : int) -> int:
-        command_id = self.get_student_command(user_id)
+
+    def get_all_students_by_command(self, command_id: int) -> List[int]:
+        res = self.conn.execute("""
+                            SELECT
+                            student_id
+                            from game_students_commands WHERE
+                            command_id =:command_id
+                        """, locals()).fetchall()
+        return res and [row['student_id'] for row in res]
+
+    def set_student_flag(self, user_id: int, command_id: int, x: int, y: int) -> int:
         self.conn.execute("""
-                    INSERT INTO game_map_flags ( student_id,  command_id,x,y)
-                    VALUES                             (:user_id, :command_id, :x, :y) 
-                    on conflict (student_id,command_id) do update set 
+                    INSERT INTO game_map_flags ( student_id,  command_id,  x,  y)
+                    VALUES                     (:user_id,    :command_id, :x, :y) 
+                    on conflict (student_id, command_id) do update set 
                     x = excluded.x,
                     y = excluded.y
                 """, locals())
         self.conn.commit()
         return self.conn.cursor().lastrowid
 
-    def get_flags_by_command(self, command_id) -> List[dict]:
-            return self.conn.execute("""
-                            SELECT
-                            x, y
-                            from game_map_flags WHERE
-                            command_id =:command_id
-                        """, locals()).fetchall()
+    def get_flags_by_command(self, command_id: int) -> List[dict]:
+        return self.conn.execute("""
+            SELECT
+            x, y
+            from game_map_flags WHERE
+            command_id =:command_id
+        """, locals()).fetchall()
 
-
-
-
-
+    def get_flag_by_student_and_command(self, user_id: int, command_id: int) -> List[int]:
+        return self.conn.execute("""
+            SELECT
+            x, y
+            from game_map_flags WHERE
+            command_id =:command_id and student_id
+        """, locals()).fetchall()

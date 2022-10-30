@@ -20,7 +20,7 @@ CREATE TABLE game_payments
     student_id INT       NOT NULL,
     amount     INT       NOT NULL,
     cell_id    INT       NOT NULL,
-    FOREIGN KEY (student_id) REFERENCES user (id),
+    FOREIGN KEY (student_id) REFERENCES users (id),
     FOREIGN KEY (cell_id) REFERENCES game_map_opened_cells (id)
 );
 
@@ -30,5 +30,5 @@ CREATE TABLE game_students_commands
     id         INT PRIMARY KEY,
     student_id INT NOT NULL UNIQUE,
     command_id INT NOT NULL,
-    FOREIGN KEY (student_id) REFERENCES user (id)
+    FOREIGN KEY (student_id) REFERENCES users (id)
 );

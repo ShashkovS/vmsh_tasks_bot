@@ -2,6 +2,7 @@ const CELL_SIZE_IN_REM = 3;
 const MODAL_WIDTH_IN_CELLS = 5;
 const MODAL_HEIGHT_IN_CELLS = 3;
 const FOG_OF_WAR = 15;
+const FOR_OPACITY_LEN = 12;
 
 
 const mapAsString = `
@@ -72,8 +73,9 @@ const scene = {
   width: undefined,
   height: undefined,
   opened: [],
-  scores: {}, // scores: {1:1}
-
+  scores: {},
+  flags: {},
+  myFlag: undefined,
 };
 
 
@@ -141,27 +143,44 @@ function postBuy($cell, amount) {
     .then(resp => {
       console.log(resp);
       $cell.className = 'so';
-      const cellID = $cell.rown * scene.width + $cell.coln;
-      scene.opened.push(cellID);
-      updateMap();
+      scene.opened.push($cell.cellID);
       updateMap();
       renderHeader();
     });
 }
+
+function postFlag($cell) {
+  postData('/game/flag', {x: $cell.coln, y: $cell.rown})
+    .then(resp => {
+      console.log(resp);
+    });
+}
+
+
+function refreshData(response) {
+  scene.opened.push(...response.opened.map(([x, y]) => y * scene.width + x));
+  for (const diff of response.events) {
+    if (diff > 0) {
+      scene.scores[diff] = (scene.scores[diff] | 0) + 1;
+    } else {
+      buy(-diff);
+    }
+  }
+  scene.flags = {};
+  response.flags.forEach(([x, y]) => {
+    const cellId = y * scene.width + x;
+    scene.flags[cellId] = (scene.flags[cellId] | 0) + 1;
+  })
+  scene.myFlag = response.myFlag && response.myFlag.length === 2 && response.myFlag.y * scene.width + response.myFlag.x;
+}
+
 
 function fetchInitialData() {
   scene.$header.innerHTML = `<div><p><span>...⚡</span> — загружаем информацию...</p></div>`;
   postData('/game/me', {})
     .then(resp => {
       console.log(resp);
-      scene.opened.push(...resp.opened.map(([x, y]) => y * scene.width + x));
-      for (const diff of resp.events) {
-        if (diff > 0) {
-          scene.scores[diff] = (scene.scores[diff] | 0) + 1;
-        } else {
-          buy(-diff);
-        }
-      }
+      refreshData(resp);
       updateMap();
       renderHeader();
     });
@@ -175,6 +194,17 @@ function yesClicked($cell, amount) {
   renderHeader();
   hidePopup();
   postBuy($cell, amount);
+}
+
+function flagYesClicked($cell) {
+  if (scene.myFlag) {
+    scene.flags[scene.myFlag] = Math.max(0, (scene.flags[scene.myFlag] | 0) - 1);
+  }
+  scene.myFlag = $cell.cellID;
+  scene.flags[scene.myFlag] = (scene.flags[scene.myFlag] | 0) + 1;
+  updateMap();
+  hidePopup();
+  postFlag($cell);
 }
 
 function noClicked($cell) {
@@ -212,7 +242,8 @@ function onCellClick(ev) {
     }
   } else {
     $cell.classList.add('selected');
-    showPopup(centerX, centerY, `Можно изучать<br>только соседние`, 'Ясно', 'Закрыть окно', () => okClicked($cell));
+    // showPopup(centerX, centerY, `Можно изучать<br>только соседние`, 'Ясно', 'Закрыть окно', () => okClicked($cell));
+    showPopup(centerX, centerY, `Поставить флаг <br>для всех в ячейку?`, '🚩 Да!', 'Да, поставить флаг!', () => flagYesClicked($cell), 'Нет', 'Нет, вернуться назад', () => noClicked($cell));
   }
 }
 
@@ -280,10 +311,10 @@ function updateMap() {
         continue;
       } // Рамку не трогаем
       for (const diff of [-1, 1, -scene.width - 1, -scene.width, -scene.width + 1, +scene.width - 1, +scene.width, +scene.width + 1]) {
-        const newCellID = cellID + diff;
-        if (distances.get(newCellID) === undefined) {
-          distances.set(newCellID, distances.get(cellID) + 1);
-          nextLayer.add(newCellID);
+        const newcellID = cellID + diff;
+        if (distances.get(newcellID) === undefined) {
+          distances.set(newcellID, distances.get(cellID) + 1);
+          nextLayer.add(newcellID);
         }
       }
     }
@@ -298,8 +329,7 @@ function updateMap() {
     for (let coln = 0; coln < valuesRow.length; coln += 1) {
       const cellValue = valuesRow[coln];
       const $cell = scene.$cells[rown][coln];
-      const cellID = rown * scene.width + coln;
-      const dist = distances.get(cellID);
+      const dist = distances.get($cell.cellID);
       const isBorder = rown === 0 || coln === 0 || coln === scene.width - 1 || rown === scene.height - 1;
       if (dist < FOG_OF_WAR || isBorder) {
         $cell.textContent = cellValue;
@@ -309,8 +339,8 @@ function updateMap() {
         } else {
           $cell.onclick = $cell.ondblclick = null;
         }
-        if (!isBorder && FOG_OF_WAR - dist <= 8) {
-          $cell.style.opacity = (FOG_OF_WAR - dist) / 8;
+        if (!isBorder && FOG_OF_WAR - dist <= FOR_OPACITY_LEN) {
+          $cell.style.opacity = (FOG_OF_WAR - dist) / FOR_OPACITY_LEN;
         } else {
           $cell.style.opacity = 1;
         }
@@ -319,6 +349,14 @@ function updateMap() {
         $cell.className = 'fog';
         $cell.onclick = $cell.ondblclick = null;
       }
+      // Добавляем в ячейку флаги
+      const addFlagsHtmls = [];
+      for (let flRep=0; flRep < (scene.flags[$cell.cellID] | 0); flRep++) {
+        const rx = (Math.random()*1.5).toFixed(2);
+        const ry = (-0.6 - Math.random()*1.8).toFixed(2); // от -2.4 до -0.6
+        addFlagsHtmls.push(`<div class="flag" style="top: ${ry}rem; left: ${rx}rem; "></div>`)
+      }
+      $cell.innerHTML = $cell.textContent + addFlagsHtmls.join('');
     }
   }
   // Заголовок
@@ -339,6 +377,7 @@ function initialMapRender() {
       $cellsRow.push($cell);
       $cell.coln = coln;
       $cell.rown = rown;
+      $cell.cellID = rown * scene.width + coln;
     }
   }
 }
@@ -350,6 +389,10 @@ function prepareWebsockets() {
   }
   function onWebSocketMessage(ev) {
     console.log('Message', ev);
+    const resp = JSON.parse(ev.data);
+    refreshData(resp);
+    updateMap();
+    renderHeader();
   }
   function onWebSocketClose(ev) {
     if (ev.wasClean) {

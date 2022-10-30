@@ -6,13 +6,17 @@
 
 import logging
 import re
+
+import orjson
 from aiohttp import web, WSMsgType
 from operator import itemgetter
 from time import perf_counter
+from typing import List, Dict
 
 from helpers.config import config, logger, DEBUG
 from helpers.obj_classes import db, Webtoken, User, Problem
 from helpers.nats_brocker import vmsh_nats
+from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE
 
 __ALL__ = ['routes']
 
@@ -86,33 +90,63 @@ async def get_webtoken(request):
 
 
 @routes.post('/game/buy')
-async def post_online(request):
+async def post_game_buy(request):
     data = await request.json()
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
     user = Webtoken.user_by_webtoken(cookie_webtoken)
     if not user:
         return web.json_response(data={'error': 'relogin'})
     # todo validate
-    db.add_payment(user.id, data['x'], data['y'], data['amount'])
+    command_id = db.get_student_command(user.id)
+    db.add_payment(user.id, command_id, data['x'], data['y'], data['amount'])
+    # Отправляем всем уведомление, что открылась новая ячейка на карте
+    await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
     return web.json_response(data={'ok': 'sure'})
 
 
-@routes.post('/game/me')
-async def post_online(request):
-    st = perf_counter()
+@routes.post('/game/flag')
+async def post_game_flag(request):
+    data = await request.json()
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
     user = Webtoken.user_by_webtoken(cookie_webtoken)
     if not user:
         return web.json_response(data={'error': 'relogin'})
+    # todo validate
+    command_id = db.get_student_command(user.id)
+    db.set_student_flag(user.id, command_id, data['x'], data['y'])
+    # Отправляем всем уведомление, что открылась новая ячейка на карте (или появился флаг)
+    await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
+    return web.json_response(data={'ok': 'sure'})
+
+
+def get_map_opened(command_id) -> List[List]:
+    # TODO Кеширование!
+    opened = db.get_opened_cells(command_id)  # x, y
+    opened = [[r['x'], r['y']] for r in opened]
+    return opened
+
+def get_map_flags(command_id) -> List[List]:
+    # TODO Кеширование!
+    flags = db.get_flags_by_command(command_id)  # x, y
+    flags = [[r['x'], r['y']] for r in flags]
+    return flags
+
+
+def get_game_data(student: User) -> dict:
     # Нужно получить
     # - список решённых задач с timestamp'ами
     # - список покупок с timestamp'ами
     # - текущую карту
     # - команду студента
-    student_command = db.get_student_command(user.id)
-    solved = db.get_student_solved(user.id, Problem.last_lesson_num(user.level))  # ts, title
-    payments = db.get_student_payments(user.id)  # ts, amount
-    opened = db.get_opened_cells(student_command)  # x, y
+    # - список флагов на карте
+    # - личный флаг студента
+    st = perf_counter()
+    student_command = db.get_student_command(student.id)
+    solved = db.get_student_solved(student.id, Problem.last_lesson_num(student.level))  # ts, title
+    payments = db.get_student_payments(student.id)  # ts, amount
+    opened = get_map_opened(student_command)
+    flags = get_map_flags(student_command)
+    my_flag = db.get_flag_by_student_and_command(student.id, student_command)
     # Собираем из решённых задач и оплат event'ы
     events = []
     for paym in payments:
@@ -124,13 +158,23 @@ async def post_online(request):
     events.sort(key=itemgetter(0))
     events = [ev[1] for ev in events]
     # Собираем карту  TODO Сделать минимальное кеширование
-    opened = [[r['x'], r['y']] for r in opened]
+    data = {'events': events, 'opened': opened, 'flags': flags, 'myFlag': my_flag}
     en = perf_counter()
-    print(en - st, 'seconds')  # TODO Удалить
-    return web.json_response(data={'events': events, 'opened': opened})
+    print(f'get_game_data {en - st:0.3f} seconds')  # TODO Удалить
+    return data
 
 
-user_id_to_websocket = {}
+@routes.post('/game/me')
+async def post_online(request):
+    cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
+    user = Webtoken.user_by_webtoken(cookie_webtoken)
+    if not user:
+        return web.json_response(data={'error': 'relogin'})
+    data = get_game_data(user)
+    return web.json_response(data=data)
+
+
+user_id_to_websocket: Dict[int, web.WebSocketResponse] = {}
 
 
 @routes.get('/game/ws')
@@ -148,11 +192,6 @@ async def websocket(request):
             if msg.data == 'close':
                 await ws.close()
                 user_id_to_websocket.pop(user.id, None)
-            else:
-                for other_user_id, other_ws in user_id_to_websocket.items():
-                    if other_user_id == user.id:
-                        continue
-                    await other_ws.send_str(msg.data + '/' + user.surname)
         elif msg.type == WSMsgType.ERROR:
             print(ws.exception())
         print(msg)
@@ -160,8 +199,21 @@ async def websocket(request):
     return ws
 
 
-async def nats_message_handler(data):
-    print(f"Received '{data=}")
+async def nats_handle_map_update(command_id):
+    logger.debug(f"nats_handle_map_update {command_id=}")
+    students = db.get_all_students_by_command(command_id)
+    for student_id in students:
+        ws = user_id_to_websocket.get(student_id, None)
+        if ws is not None:
+            data = get_game_data(User.get_by_id(student_id))
+            try:
+                await ws.send_json(data)
+            except Exception as e:
+                logger.exception('Отправка данных через websocket отвалилась')
+
+
+async def nats_handle_student_update(data):
+    print(f"nats_handle_student_update {data=}")
 
 
 if __name__ == "__main__":
@@ -176,7 +228,8 @@ if __name__ == "__main__":
         db.setup(config.db_filename)
         # Подключаемся к NATS
         await vmsh_nats.setup()
-        await vmsh_nats.subscribe(nats_message_handler)
+        await vmsh_nats.subscribe(NATS_GAME_MAP_UPDATE, nats_handle_map_update)
+        await vmsh_nats.subscribe(NATS_GAME_STUDENT_UPDATE, nats_handle_student_update)
 
 
     async def on_shutdown(app):
