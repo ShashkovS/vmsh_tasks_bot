@@ -75,7 +75,8 @@ async def on_shutdown(app):
             if ref:
                 await ref.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
     # Завершаем, если вдруг что-то ещё живо
-    await asyncio.gather(*asyncio.all_tasks() - {asyncio.current_task()})
+    if USE_WEBHOOKS:
+        await asyncio.gather(*asyncio.all_tasks() - {asyncio.current_task()})
     # Close all connections.
     # Здесь какая-то ерунда, зачем-то выводится вот такое предупреждение:
     # https://github.com/aiogram/aiogram/blob/a852b9559612e3b9d542588a4539e64c50393a9c/aiogram/bot/base.py#L208
