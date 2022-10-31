@@ -96,7 +96,7 @@ async def post_game_buy(request):
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
     user = Webtoken.user_by_webtoken(cookie_webtoken)
     if not user:
-        return web.json_response(data={'error': 'relogin'})
+        return web.json_response(data={'error': 'relogin'}, status=401)
     # todo validate
     command = db.get_student_command(user.id)
     command_id = command['command_id'] if command else -1
@@ -104,9 +104,9 @@ async def post_game_buy(request):
     y = data.get('y', None)
     amount = data.get('amount', None)
     if not amount or type(amount) != int or not (1 <= amount <= 10):
-        return web.json_response(data={'ok': 'ignored'})
+        return web.json_response(data={'ok': 'ignored'}, status=400)
     if not x or not y or type(x) != x or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
-        return web.json_response(data={'ok': 'ignored'})
+        return web.json_response(data={'ok': 'ignored'}, status=400)
     db.add_payment(user.id, command_id, x, y, amount)
     # Отправляем всем уведомление, что открылась новая ячейка на карте
     await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
@@ -119,7 +119,7 @@ async def post_game_flag(request):
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
     user = Webtoken.user_by_webtoken(cookie_webtoken)
     if not user:
-        return web.json_response(data={'error': 'relogin'})
+        return web.json_response(data={'error': 'relogin'}, status=401)
     # todo validate
     command = db.get_student_command(user.id)
     command_id = command['command_id'] if command else -1
@@ -193,7 +193,7 @@ async def post_online(request):
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
     user = Webtoken.user_by_webtoken(cookie_webtoken)
     if not user:
-        return web.json_response(data={'error': 'relogin'})
+        return web.json_response(data={'error': 'relogin'}, status=401)
     data = get_game_data(user)
     return web.json_response(data=data)
 

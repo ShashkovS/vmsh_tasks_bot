@@ -146,6 +146,12 @@ function postBuy($cell, amount) {
       scene.opened.push($cell.cellID);
       updateMap();
       renderHeader();
+    })
+    .catch(err => {
+      console.log(err);
+      updateMap();
+      renderHeader();
+      $cell.style.border = '3px solid #f00';
     });
 }
 
@@ -191,10 +197,12 @@ function fetchInitialData() {
 function yesClicked($cell, amount) {
   $cell.textContent = "...";
   $cell.onclick = null;
-  buy(amount);
+  const successBuy = buy(amount);
   renderHeader();
   hidePopup();
-  postBuy($cell, amount);
+  if (successBuy) {
+    postBuy($cell, amount);
+  }
 }
 
 function flagYesClicked($cell) {
