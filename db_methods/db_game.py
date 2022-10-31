@@ -41,13 +41,14 @@ class DB_GAME():
         where command_id = :student_command
         """, locals()).fetchall()
 
-    def set_student_command(self, user_id: int, command_id: int) -> int:
+    def set_student_command(self, user_id: int, level: str, command_id: int) -> int:
         cur = self.conn.cursor()
         cur.execute("""
-                    INSERT INTO game_students_commands ( student_id,  command_id)
-                    VALUES                             (:user_id, :command_id) 
+                    INSERT INTO game_students_commands ( student_id,  command_id, level)
+                    VALUES                             (:user_id, :command_id, :level) 
                     on conflict (student_id) do update set 
-                    command_id = excluded.command_id
+                    command_id = excluded.command_id,
+                    level = excluded.level
                 """, locals())
         self.conn.commit()
         return cur.lastrowid

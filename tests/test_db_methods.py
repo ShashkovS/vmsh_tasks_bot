@@ -282,13 +282,13 @@ class DatabaseMethodsTest(TestCase):
         self.assertEqual(problem_id, saved_problem_id)
 
     def test_game_methods(self):
-        self.db.set_student_command(3, 179)
-        self.db.set_student_command(3, 178)
+        self.db.set_student_command(3, 'н', 179)
+        self.db.set_student_command(3, 'н', 178)
         self.assertEqual(self.db.get_student_command(3)['command_id'], 178)
 
-        self.db.set_student_command(1, 179)
-        self.db.set_student_command(2, 179)
-        self.db.set_student_command(3, 178)
+        self.db.set_student_command(1, 'н', 179)
+        self.db.set_student_command(2, 'н', 179)
+        self.db.set_student_command(3, 'н', 178)
         self.assertEqual(self.db.get_student_command(1)['command_id'], 179)
 
         self.assertTrue(self.db.add_payment(3, 15, 10, 1))

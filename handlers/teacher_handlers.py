@@ -898,7 +898,7 @@ async def set_game_command(message: types.Message):
     if not student:
         await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
         return
-    db.set_student_command(student.id, command_id)
+    db.set_student_command(student.id, student.level, command_id)
     await bot.send_message(
         chat_id=message.chat.id,
         text=f"Студент с токеном {token} переведён в команду {command_id}",
