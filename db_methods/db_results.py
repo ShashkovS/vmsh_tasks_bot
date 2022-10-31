@@ -113,6 +113,6 @@ class DB_RESULT:
             select min(ts) ts, p.title, p.level from results r
             join problems p on r.problem_id = p.id
             where student_id = :student_id and r.lesson = :lesson and verdict > 0
-            group by p.title, p.synonyms 
+            group by p.title, p.level 
             order by 1
         """, locals()).fetchall()

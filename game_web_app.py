@@ -167,11 +167,16 @@ def get_game_data(student: User) -> dict:
     events = []
     for paym in payments:
         events.append([paym['ts'], -paym['amount']])
+    used_titles = set()
     for solv in solved:
-        score = solv['title'][:2].rstrip('⚡')
+        score, clear_title = solv['title'].split('⚡')
         score = int(score) if score.isdecimal() else 2
+        if clear_title in used_titles:
+            continue
+        else:
+            used_titles.add(clear_title)
         # Защита от продолжающих, которые решают задачи начинающих. Они получают в 2 раза меньше баллов
-        if solv['level'] == 'н' and student.level != 'н':
+        if solv['level'] == 'н' and command['level'] != 'н':
             score //= 2
         events.append([solv['ts'], score])
     events.sort(key=itemgetter(0))
