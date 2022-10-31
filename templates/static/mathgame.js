@@ -353,8 +353,8 @@ function updateMap() {
       // Добавляем в ячейку флаги
       const addFlagsHtmls = [];
       for (let flRep=0; flRep < (scene.flags[$cell.cellID] | 0); flRep++) {
-        const rx = (Math.random()*1.5).toFixed(2);
-        const ry = (-0.6 - Math.random()*1.8).toFixed(2); // от -2.4 до -0.6
+        const rx = ((flRep * 0.71) % 1.5).toFixed(2);
+        const ry = (-0.6 - (flRep * 0.61) % 1.8).toFixed(2); // от -2.4 до -0.6
         addFlagsHtmls.push(`<div class="flag" style="top: ${ry}rem; left: ${rx}rem; "></div>`)
       }
       $cell.innerHTML = $cell.textContent + addFlagsHtmls.join('');
@@ -407,10 +407,10 @@ function prepareWebsockets() {
   }
   function createWebSocketConnection() {
     let ws;
-    try {
-      ws = new WebSocket('wss://' + window.location.host + '/game/ws');
-    } catch (err) {
+    if (window.location.host.startsWith('127.0.0.1')) {
       ws = new WebSocket('ws://' + window.location.host + '/game/ws');
+    } else {
+      ws = new WebSocket('wss://' + window.location.host + '/game/ws');
     }
     ws.onopen = onWebSocketOpen;
     ws.onmessage = onWebSocketMessage;
@@ -440,6 +440,7 @@ function init() {
   updateMap();
   fetchInitialData();
   prepareWebsockets();
+  setInterval(() => fetchInitialData(), 60*1000);
 }
 
 function toggleFullscreen() {

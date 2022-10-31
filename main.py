@@ -2,20 +2,21 @@
 import logging
 from aiogram.dispatcher.webhook import configure_app, web
 from aiogram.utils.executor import start_polling
-from helpers.config import config, logger, DEBUG
-from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
-from helpers.obj_classes import db, update_from_google_if_db_is_empty
-from helpers.bot import bot, dispatcher
 import asyncio
+from aiohttp import WSCloseCode
 from random import uniform
 import handlers
 import zoom_events_parser
 import tags_service
 import web_app
 import game_web_app
+
+from helpers.config import config, logger, DEBUG
+from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
+from helpers.obj_classes import db, update_from_google_if_db_is_empty
+from helpers.bot import bot, dispatcher
 from helpers.nats_brocker import vmsh_nats
 from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE
-
 
 USE_WEBHOOKS = False
 
@@ -63,12 +64,18 @@ async def on_shutdown(app):
     """
     logger.debug('on_shutdown')
     logger.warning('Shutting down..')
-    # Завершаем все висящие задания
-    await asyncio.gather(*asyncio.all_tasks() - {asyncio.current_task()})
-    # Пишем, что останавливаемся
-    await bot.post_logging_message('Бот остановил свою работу')
     # Remove webhook.
     await bot.delete_webhook()
+    # Пишем, что останавливаемся
+    await bot.post_logging_message('Бот остановил свою работу')
+    # Останавливаем все websocket'ы
+    for user_id, websockets in game_web_app.user_id_to_websocket.items():
+        for ws in set(websockets):
+            ref = ws()
+            if ref:
+                await ref.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
+    # Завершаем, если вдруг что-то ещё живо
+    await asyncio.gather(*asyncio.all_tasks() - {asyncio.current_task()})
     # Close all connections.
     # Здесь какая-то ерунда, зачем-то выводится вот такое предупреждение:
     # https://github.com/aiogram/aiogram/blob/a852b9559612e3b9d542588a4539e64c50393a9c/aiogram/bot/base.py#L208
@@ -78,8 +85,6 @@ async def on_shutdown(app):
     await dispatcher.storage.wait_closed()
     await vmsh_nats.disconnect()
     db.disconnect()
-    # Повторно завершаем, если вдруг что-то ещё живо
-    await asyncio.gather(*asyncio.all_tasks() - {asyncio.current_task()})
     logger.warning('Bye!')
 
 

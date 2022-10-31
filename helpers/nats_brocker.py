@@ -37,7 +37,6 @@ class NATS:
 
     async def subscribe(self, topic: str, callback):
         async def wrapped_callback(msg):
-            print(repr(msg))
             data = orjson.loads(msg.data)
             await callback(data)
 
@@ -56,7 +55,7 @@ class NATS:
     async def disconnect(self):
         for topic, sub in self.subsciptions.items():
             await sub.unsubscribe()
-            del self.subsciptions[topic]
+        self.subsciptions = {}
         if self.nc:
             await self.nc.drain()
         self.nats_is_working = False

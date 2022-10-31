@@ -7,8 +7,9 @@
 import logging
 import re
 import os
+import weakref
 
-from aiohttp import web, WSMsgType
+from aiohttp import web, WSMsgType, WSCloseCode
 from operator import itemgetter
 from time import perf_counter
 from typing import List, Dict
@@ -181,7 +182,8 @@ async def post_online(request):
     return web.json_response(data=data)
 
 
-user_id_to_websocket: Dict[int, web.WebSocketResponse] = {}
+# В этом словаре мы храним список слабых ссылок на вебсокеты пользователей
+user_id_to_websocket: Dict[int, List[weakref.ReferenceType[web.WebSocketResponse]]] = {}
 
 
 @routes.get('/game/ws')
@@ -191,19 +193,29 @@ async def websocket(request):
         return
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    user_id_to_websocket[user.id] = ws
+    if user.id not in user_id_to_websocket:
+        user_id_to_websocket[user.id] = []
+    cur_user_websockets = user_id_to_websocket[user.id]
+    cur_user_websockets.append(weakref.ref(ws))
 
     # Этот цикл «зависает» до тех пор, пока коннекшн не сдохнет
-    async for msg in ws:
-        if msg.type == WSMsgType.TEXT:
-            if msg.data == 'close':
-                await ws.close()
-                user_id_to_websocket.pop(user.id, None)
-        elif msg.type == WSMsgType.ERROR:
-            print(ws.exception())
-        print(msg)
-    user_id_to_websocket.pop(user.id, None)
-    print('websocket connection closed')
+    try:
+        async for msg in ws:
+            if msg.type == WSMsgType.TEXT:
+                if msg.data == 'close':
+                    await ws.close()
+                    for ws_ind in range(len(cur_user_websockets) - 1, -1, -1):
+                        ref = cur_user_websockets[ws_ind]()
+                        if ref is None or ref is ws:
+                            cur_user_websockets.pop(ws_ind)
+            elif msg.type == WSMsgType.ERROR:
+                print(ws.exception())
+    finally:
+        # Удаляем все ссылки на текущй коннекшн
+        for ws_ind in range(len(cur_user_websockets) - 1, -1, -1):
+            ref = cur_user_websockets[ws_ind]()
+            if ref is None or ref is ws:
+                cur_user_websockets.pop(ws_ind)
     return ws
 
 
@@ -211,11 +223,10 @@ async def nats_handle_map_update(command_id):
     logger.warning(f"nats_handle_map_update {command_id=}, {os.getpid()=}, {len(user_id_to_websocket)=}")
     students = db.get_all_students_by_command(command_id)
     for student_id in students:
-        ws = user_id_to_websocket.get(student_id, None)
-        if ws is not None:
+        for ws in set(user_id_to_websocket.get(student_id, [])):
             data = get_game_data(User.get_by_id(student_id))
             try:
-                await ws.send_json(data)
+                await ws().send_json(data)
             except Exception as e:
                 logger.exception('Отправка данных через websocket отвалилась')
 
@@ -225,14 +236,14 @@ async def nats_handle_student_update(student_id):
     student = User.get_by_id(student_id)
     if not student:
         return
-    ws = user_id_to_websocket.get(student_id, None)
-    if ws is None:
-        return
-    data = get_game_data(User.get_by_id(student_id))
-    try:
-        await ws.send_json(data)
-    except Exception as e:
-        logger.exception('Отправка данных через websocket отвалилась')
+    data = None
+    for ws in set(user_id_to_websocket.get(student_id, [])):
+        if data is None:
+            data = get_game_data(User.get_by_id(student_id))
+        try:
+            await ws().send_json(data)
+        except Exception as e:
+            logger.exception('Отправка данных через websocket отвалилась')
 
 
 if __name__ == "__main__":
@@ -255,6 +266,12 @@ if __name__ == "__main__":
         logger.warning('Shutting down..')
         db.disconnect()
         await vmsh_nats.disconnect()
+        # Останавливаем все websocket'ы
+        for user_id, websockets in user_id_to_websocket.items():
+            for ws in set(websockets):
+                ref = ws()
+                if ref:
+                    await ref.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
         logger.warning('Bye!')
 
 
