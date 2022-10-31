@@ -90,7 +90,7 @@ class DB_RESULT:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
-            select r.ROWID, r.student_id, r.answer, r.verdict from results r
+            select r.id, r.student_id, r.answer, r.verdict from results r
             where r.problem_id = :problem_id
         """, args)
         rows = cur.fetchall()
@@ -103,7 +103,7 @@ class DB_RESULT:
             cur.execute("""
                 update results
                 set verdict = :verdict
-                where rowid = :rowid
+                where id = :id
             """, row)
         cur.execute("commit")
         self.conn.commit()
