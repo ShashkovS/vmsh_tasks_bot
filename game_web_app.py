@@ -168,7 +168,7 @@ def get_game_data(student: User) -> dict:
     # Собираем карту  TODO Сделать минимальное кеширование
     data = {'events': events, 'opened': opened, 'flags': flags, 'myFlag': my_flag}
     en = perf_counter()
-    print(f'get_game_data {en - st:0.3f} seconds')  # TODO Удалить
+    logger.warning(f'get_game_data {en - st:0.3f} seconds')  # TODO Удалить
     return data
 
 
