@@ -100,8 +100,12 @@ async def post_game_buy(request):
     # todo validate
     command = db.get_student_command(user.id)
     command_id = command['command_id'] if command else -1
-    x, y, amount = data['x'], data['y'], data['amount']
-    if amount < 1 or amount > 10:
+    x = data.get('x', None)
+    y = data.get('y', None)
+    amount = data.get('amount', None)
+    if not amount or type(amount) != int or not (1 <= amount <= 10):
+        return web.json_response(data={'ok': 'ignored'})
+    if not x or not y or type(x) != x or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
         return web.json_response(data={'ok': 'ignored'})
     db.add_payment(user.id, command_id, x, y, amount)
     # Отправляем всем уведомление, что открылась новая ячейка на карте
@@ -119,7 +123,11 @@ async def post_game_flag(request):
     # todo validate
     command = db.get_student_command(user.id)
     command_id = command['command_id'] if command else -1
-    db.set_student_flag(user.id, command_id, data['x'], data['y'])
+    x = data.get('x', None)
+    y = data.get('y', None)
+    if not x or not y or type(x) != x or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
+        return web.json_response(data={'ok': 'ignored'})
+    db.set_student_flag(user.id, command_id, x, y)
     # Отправляем всем уведомление, что открылась новая ячейка на карте (или появился флаг)
     await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
     return web.json_response(data={'ok': 'sure'})
