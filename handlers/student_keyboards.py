@@ -2,7 +2,7 @@ from aiogram import types
 
 from helpers.consts import *
 from helpers.config import logger
-from helpers.obj_classes import User, Problem, State, db
+from helpers.obj_classes import User, Problem, State, db, Webtoken
 
 
 def build_problems(lesson_num: int, student: User, is_sos_question=False):
@@ -57,7 +57,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     # keyboard_markup.add(to_lessons_button)
     to_lessons_button = types.InlineKeyboardButton(
         text="Открыть командную игру",
-        url=f'https://vmsh179bot2.proj179.ru/game/webtoken/{db.get_webtoken_by_user_id(student.id)}'
+        url=f'https://vmsh179bot2.proj179.ru/game/webtoken/{Webtoken.webtoken_by_user(student)}'
     )
     keyboard_markup.add(to_lessons_button)
     return keyboard_markup

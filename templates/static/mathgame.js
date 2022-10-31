@@ -407,9 +407,9 @@ function prepareWebsockets() {
   function createWebSocketConnection() {
     let ws;
     try {
-      ws = new WebSocket('ws://' + window.location.host + '/game/ws');
-    } catch (err) {
       ws = new WebSocket('wss://' + window.location.host + '/game/ws');
+    } catch (err) {
+      ws = new WebSocket('ws://' + window.location.host + '/game/ws');
     }
     ws.onopen = onWebSocketOpen;
     ws.onmessage = onWebSocketMessage;
