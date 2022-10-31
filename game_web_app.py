@@ -6,6 +6,7 @@
 
 import logging
 import re
+import os
 
 from aiohttp import web, WSMsgType
 from operator import itemgetter
@@ -207,7 +208,7 @@ async def websocket(request):
 
 
 async def nats_handle_map_update(command_id):
-    logger.debug(f"nats_handle_map_update {command_id=}")
+    logger.warning(f"nats_handle_map_update {command_id=}, {os.getpid()=}, {len(user_id_to_websocket)=}")
     students = db.get_all_students_by_command(command_id)
     for student_id in students:
         ws = user_id_to_websocket.get(student_id, None)
@@ -220,7 +221,7 @@ async def nats_handle_map_update(command_id):
 
 
 async def nats_handle_student_update(student_id):
-    logger.debug(f"nats_handle_student_update {student_id=}")
+    logger.warning(f"nats_handle_student_update {student_id=}, {os.getpid()=}, {len(user_id_to_websocket)=}")
     student = User.get_by_id(student_id)
     if not student:
         return

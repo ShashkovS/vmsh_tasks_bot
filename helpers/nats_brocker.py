@@ -28,6 +28,7 @@ class NATS:
             logger.critical(f'Работаем без nats-server.')
             logger.critical(f'В таком режиме работа с несколькими процессами может быть некорректной')
             return
+        logger.warning(f'Успешно подключились к nats на {self.nats_server_url}')
         nc.connect_timeout = 0.5
         nc.reconnect_time_wait = 0.5
         nc.max_reconnect_attempts = 100
