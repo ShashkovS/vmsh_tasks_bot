@@ -100,7 +100,10 @@ async def post_game_buy(request):
     # todo validate
     command = db.get_student_command(user.id)
     command_id = command['command_id'] if command else -1
-    db.add_payment(user.id, command_id, data['x'], data['y'], data['amount'])
+    x, y, amount = data['x'], data['y'], data['amount']
+    if amount < 1 or amount > 10:
+        return web.json_response(data={'ok': 'ignored'})
+    db.add_payment(user.id, command_id, x, y, amount)
     # Отправляем всем уведомление, что открылась новая ячейка на карте
     await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
     return web.json_response(data={'ok': 'sure'})
