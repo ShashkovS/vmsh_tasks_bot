@@ -200,6 +200,7 @@ function yesClicked($cell, amount) {
   const successBuy = buy(amount);
   renderHeader();
   hidePopup();
+  console.log(`Пытаемся открыть ячейку ${$cell.coln} ${$cell.rown} за ${amount}`);
   if (successBuy) {
     postBuy($cell, amount);
   }
