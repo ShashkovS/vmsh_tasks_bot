@@ -159,6 +159,7 @@ function postFlag($cell) {
 
 function refreshData(response) {
   scene.opened.push(...response.opened.map(([x, y]) => y * scene.width + x));
+  scene.scores = {};
   for (const diff of response.events) {
     if (diff > 0) {
       scene.scores[diff] = (scene.scores[diff] | 0) + 1;
