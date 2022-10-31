@@ -55,11 +55,11 @@ class DB_GAME():
     def get_student_command(self, user_id: int) -> int:
         res = self.conn.execute("""
                             SELECT
-                            command_id
+                            command_id, level
                             from game_students_commands WHERE
                             student_id =:user_id
                         """, locals()).fetchone()
-        return res and res['command_id']
+        return res
 
     def get_all_students_by_command(self, command_id: int) -> List[int]:
         res = self.conn.execute("""

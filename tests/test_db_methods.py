@@ -1,6 +1,8 @@
+# Для работы по виндой нужны PYTHONUTF8=1
 import os
 from unittest import TestCase
 from datetime import datetime
+from random import randint
 
 from helpers.consts import *
 from db_methods import db
@@ -10,7 +12,7 @@ from .initial_test_data import test_students, test_teachers, test_problems
 class DatabaseMethodsTest(TestCase):
     def setUp(self) -> None:
         self.db = db
-        test_db_filename = 'db/unittest.db'
+        test_db_filename = f'db/unittest_{randint(0, 999):03}.db'
         # ensure there is no trash file from previous incorrectly handled tests present
         for file in [test_db_filename, test_db_filename + '-shm', test_db_filename + '-wal']:
             try:
@@ -19,6 +21,12 @@ class DatabaseMethodsTest(TestCase):
                 pass
         # create shiny new db instance from scratch and connect
         self.db.setup(test_db_filename)
+        # Making it blazing fast
+        self.db.conn.execute('''      PRAGMA journal_mode = OFF;       ''')
+        self.db.conn.execute('''      PRAGMA synchronous = 0;       ''')
+        self.db.conn.execute('''      PRAGMA cache_size = 1000000;       ''')
+        self.db.conn.execute('''      PRAGMA locking_mode = EXCLUSIVE;       ''')
+        self.db.conn.execute('''      PRAGMA temp_store = MEMORY;       ''')
         self.insert_dummy_users()
         self.insert_dummy_problems()
 
@@ -276,12 +284,12 @@ class DatabaseMethodsTest(TestCase):
     def test_game_methods(self):
         self.db.set_student_command(3, 179)
         self.db.set_student_command(3, 178)
-        self.assertEqual(self.db.get_student_command(3), 178)
+        self.assertEqual(self.db.get_student_command(3)['command_id'], 178)
 
         self.db.set_student_command(1, 179)
         self.db.set_student_command(2, 179)
         self.db.set_student_command(3, 178)
-        self.assertEqual(self.db.get_student_command(1), 179)
+        self.assertEqual(self.db.get_student_command(1)['command_id'], 179)
 
         self.assertTrue(self.db.add_payment(3, 15, 10, 1))
         self.db.add_payment(2, 15, 10, 1)

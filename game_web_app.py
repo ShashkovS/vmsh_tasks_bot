@@ -96,7 +96,8 @@ async def post_game_buy(request):
     if not user:
         return web.json_response(data={'error': 'relogin'})
     # todo validate
-    command_id = db.get_student_command(user.id)
+    command = db.get_student_command(user.id)
+    command_id = command['command_id'] if command else -1
     db.add_payment(user.id, command_id, data['x'], data['y'], data['amount'])
     # Отправляем всем уведомление, что открылась новая ячейка на карте
     await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
@@ -111,7 +112,8 @@ async def post_game_flag(request):
     if not user:
         return web.json_response(data={'error': 'relogin'})
     # todo validate
-    command_id = db.get_student_command(user.id)
+    command = db.get_student_command(user.id)
+    command_id = command['command_id'] if command else -1
     db.set_student_flag(user.id, command_id, data['x'], data['y'])
     # Отправляем всем уведомление, что открылась новая ячейка на карте (или появился флаг)
     await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
@@ -141,7 +143,8 @@ def get_game_data(student: User) -> dict:
     # - список флагов на карте
     # - личный флаг студента
     st = perf_counter()
-    student_command = db.get_student_command(student.id)
+    command = db.get_student_command(student.id)
+    student_command = command['command_id'] if command else -1
     solved = db.get_student_solved(student.id, Problem.last_lesson_num(student.level))  # ts, title
     payments = db.get_student_payments(student.id)  # ts, amount
     opened = get_map_opened(student_command)
@@ -150,7 +153,12 @@ def get_game_data(student: User) -> dict:
     # Собираем из решённых задач и оплат event'ы
     events = []
     for paym in payments:
-        events.append([paym['ts'], -paym['amount']])
+        # Защита от продолжающих, которые решают задачи начинающих. Они получают в 2 раза меньше баллов
+        if paym['level'] == 'н' and student.level != 'н':
+            amount = paym['amount'] // 2
+        else:
+            amount = paym['amount']
+        events.append([paym['ts'], -amount])
     for solv in solved:
         score = solv['title'][:2].rstrip('⚡')
         score = int(score) if score.isdecimal() else 1
