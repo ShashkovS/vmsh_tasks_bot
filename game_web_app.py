@@ -104,8 +104,10 @@ async def post_game_buy(request):
     y = data.get('y', None)
     amount = data.get('amount', None)
     if not amount or type(amount) != int or not (1 <= amount <= 10):
+        logger.warning(f'post_game_buy {data=} ignored')
         return web.json_response(data={'ok': 'ignored'}, status=400)
     if not x or not y or type(x) != x or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
+        logger.warning(f'post_game_buy {data=} ignored')
         return web.json_response(data={'ok': 'ignored'}, status=400)
     db.add_payment(user.id, command_id, x, y, amount)
     # Отправляем всем уведомление, что открылась новая ячейка на карте
@@ -126,6 +128,7 @@ async def post_game_flag(request):
     x = data.get('x', None)
     y = data.get('y', None)
     if not x or not y or type(x) != x or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
+        logger.warning(f'post_game_buy {data=} ignored')
         return web.json_response(data={'ok': 'ignored'})
     db.set_student_flag(user.id, command_id, x, y)
     # Отправляем всем уведомление, что открылась новая ячейка на карте (или появился флаг)
