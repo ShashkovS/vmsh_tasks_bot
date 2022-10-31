@@ -882,11 +882,15 @@ async def set_game_command(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    print(message)
-    text = message.text.split()
+    parts = message.text.split()
+    command_id = None
+    if len(parts) == 2:
+        cmd, command_id = parts
+        token = teacher.token
+    elif len(parts) == 3:
+        cmd, token, command_id = parts
     try:
-        cmd, token, command = text
-        command = int(command)
+        command_id = int(command_id)
     except:
         await bot.send_message(chat_id=message.chat.id, text=f"/set_game_command token number", )
         return
@@ -894,8 +898,8 @@ async def set_game_command(message: types.Message):
     if not student:
         await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
         return
-    db.set_student_command(student.id, command)
+    db.set_student_command(student.id, command_id)
     await bot.send_message(
         chat_id=message.chat.id,
-        text=f"Студент с токеном {token} переведён в команду {command}",
+        text=f"Студент с токеном {token} переведён в команду {command_id}",
     )
