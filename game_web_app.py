@@ -153,15 +153,13 @@ def get_game_data(student: User) -> dict:
     # Собираем из решённых задач и оплат event'ы
     events = []
     for paym in payments:
-        # Защита от продолжающих, которые решают задачи начинающих. Они получают в 2 раза меньше баллов
-        if paym['level'] == 'н' and student.level != 'н':
-            amount = paym['amount'] // 2
-        else:
-            amount = paym['amount']
-        events.append([paym['ts'], -amount])
+        events.append([paym['ts'], -paym['amount']])
     for solv in solved:
         score = solv['title'][:2].rstrip('⚡')
-        score = int(score) if score.isdecimal() else 1
+        score = int(score) if score.isdecimal() else 2
+        # Защита от продолжающих, которые решают задачи начинающих. Они получают в 2 раза меньше баллов
+        if solv['level'] == 'н' and student.level != 'н':
+            score //= 2
         events.append([solv['ts'], score])
     events.sort(key=itemgetter(0))
     events = [ev[1] for ev in events]
