@@ -136,6 +136,16 @@ p, h1, h2, h3, h4, h5, h6 {
     height: 3rem;
 }
 
+#gameTable .closedChest {
+    background-image: url(treasure-chest.png);
+    background-size: cover;
+}
+
+#gameTable .openedChest {
+    background-image: url(treasure-chest-opened.png);
+    background-size: cover;
+}
+
 #gameTable .sx {
     background: black;
     border: none;
@@ -200,6 +210,7 @@ p, h1, h2, h3, h4, h5, h6 {
     line-height: 1.3;
     font-size: 140%;
     text-align: center;
+    hyphens: auto;
 }
 
 .modal button {
@@ -221,5 +232,6 @@ p, h1, h2, h3, h4, h5, h6 {
     height: 9rem;
     border: 1px solid #888;
     transform: translate(-50%, -50%);
-
+    overflow-wrap: break-word;
+    overflow-y: auto;
 }

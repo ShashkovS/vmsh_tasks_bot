@@ -95,5 +95,27 @@ class DB_GAME():
             SELECT
             x, y
             from game_map_flags WHERE
-            command_id =:command_id and student_id
+            command_id =:command_id and student_id = :user_id
+        """, locals()).fetchall()
+
+
+    def add_student_chest(self, user_id: int, command_id: int, x: int, y: int, bonus: int) -> int:
+        ts = datetime.now().isoformat()
+        self.conn.execute("""
+                    INSERT INTO game_map_chests ( ts,  student_id,  command_id,  x,  y,  bonus)
+                    VALUES                      (:ts, :user_id,    :command_id, :x, :y, :bonus) 
+                    on conflict (student_id, command_id, x, y) do update set 
+                    bonus = excluded.bonus
+                """, locals())
+        self.conn.commit()
+        return self.conn.cursor().lastrowid
+
+
+    def get_student_chests(self, user_id: int, command_id: int) -> List[dict]:
+        return self.conn.execute("""
+            SELECT
+            ts, bonus, x, y
+            from game_map_chests WHERE
+            command_id = :command_id and student_id = :user_id 
+            order by ts
         """, locals()).fetchall()
