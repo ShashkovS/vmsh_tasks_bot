@@ -152,11 +152,11 @@ def build_student_reaction_on_task_bad_verdict(result_id: int):
     """
     logger.debug('keyboards.build_student_reaction_on_task_bad_verdict')
     keyboard = types.InlineKeyboardMarkup()
-    for reaction in db.student_reactions():
+    for reaction in db.get_reactions(REACTION.WRITTEN_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],
-                callback_data=f'{CALLBACK.STUDENT_REACTION}_{result_id}_{reaction["reaction_id"]}'
+                callback_data=f'{CALLBACK.REACTION}_{result_id}_{reaction["reaction_id"]}_{REACTION.WRITTEN_STUDENT}'
             )
         )
     return keyboard

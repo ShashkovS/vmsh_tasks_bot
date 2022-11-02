@@ -374,7 +374,7 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
                                                     is_sos=True)
 
 
-async def forward_discussion_to_student(student: User, problem: Problem, solved: bool):
+async def forward_discussion_to_student(student: User, problem: Problem, solved: bool, result_id: int = None):
     """ Отправить студенту вердикт проверки и переслать переписку.
     Если задача решена, то пересылаются только последние комментарии учителя.
     Если не решена, то пересылается вся переписка, чтобы было понятно, о чём речь в целом.
@@ -418,10 +418,16 @@ async def forward_discussion_to_student(student: User, problem: Problem, solved:
             #     # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
             #     input_file = types.input_file.InputFile(row['attach_path'])
             #     await bot.send_photo(chat_id=student.chat_id, photo=input_file, disable_notification=True)
+        if solved:
+            student_reaction_keyboard = None
+        else:
+            student_reaction_keyboard = student_keyboards.build_student_reaction_on_task_bad_verdict(result_id)
         if messages_to_forward:
             await bot.send_message(chat_id=student.chat_id,
                                    text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
+                                   reply_markup=student_reaction_keyboard,
                                    disable_notification=True)
+
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
 
@@ -472,7 +478,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
     # Пересылаем переписку школьнику
-    asyncio.create_task(forward_discussion_to_student(student, problem, solved=False))
+    asyncio.create_task(forward_discussion_to_student(student, problem, solved=False, result_id=result_id))
     asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
@@ -858,20 +864,21 @@ async def zoom_queue(message: types.Message):
                                reply_markup=teacher_keyboards.build_teacher_actions())
 
 
-@reg_callback(CALLBACK.TEACHER_REACTION)
+@reg_callback(CALLBACK.REACTION)
 async def prc_teacher_reaction_solution(query: types.CallbackQuery, student: User):
     """Коллбек на реакцию учителя на решенеие ученика в письменной работе."""
     logger.debug('prc_teacher_reaction_solution')
-    callback, result_id, reaction_id = query.data.split('_')
+    callback, result_id, reaction_id, reaction_type_id = query.data.split('_')
+    reaction_type_id = int(reaction_type_id)
     reaction_id = int(reaction_id)
     result_id = int(result_id)
     try:
-        db.write_teacher_reaction_on_solution(result_id, reaction_id)
+        db.write_reaction(reaction_type_id, result_id, reaction_id)
     except Exception:
         logger.error('Ошибка записи реакции учителя в БД.')
     else:
         original_message = query.message.text.split('\n')[0]
-        await query.message.edit_text(f"{original_message}\n{db.get_teacher_reaction_by_id(reaction_id)}",
+        await query.message.edit_text(f"{original_message}\n{db.get_reaction_by_id(reaction_id)}",
                                       reply_markup=None)
         await query.answer(f'Принято')
 
