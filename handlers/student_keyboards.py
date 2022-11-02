@@ -56,7 +56,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     # )
     # keyboard_markup.add(to_lessons_button)
     to_lessons_button = types.InlineKeyboardButton(
-        text="Открыть командную игру",
+        text="🕹🎲 Открыть командную игру 🎉🏆",
         url=f'https://vmsh179bot2.proj179.ru/game/webtoken/{Webtoken.webtoken_by_user(student)}'
     )
     keyboard_markup.add(to_lessons_button)
