@@ -234,3 +234,8 @@ ONLINE_MODE_DECODER = {
 class CHANGE(str, Enum):
     LEVEL = 'L'
     ONLINE = 'O'
+
+
+# Константы для имён topic'ов в nats
+NATS_GAME_MAP_UPDATE = 'map_upd'
+NATS_GAME_STUDENT_UPDATE = 'stud_upd'

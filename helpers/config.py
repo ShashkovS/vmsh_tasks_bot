@@ -21,6 +21,7 @@ class Config:
     sos_channel: Union[str, int] = ''
     exceptions_channel: Union[str, int] = ''
     sentry_dsn: Optional[str] = ''
+    nats_server = "nats://127.0.0.1:4222"
 
 
 def _create_logger():

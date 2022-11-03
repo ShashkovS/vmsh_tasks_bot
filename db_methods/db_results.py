@@ -90,7 +90,7 @@ class DB_RESULT:
         args = locals()
         cur = self.conn.cursor()
         cur.execute("""
-            select r.ROWID, r.student_id, r.answer, r.verdict from results r
+            select r.id, r.student_id, r.answer, r.verdict from results r
             where r.problem_id = :problem_id
         """, args)
         rows = cur.fetchall()
@@ -103,7 +103,16 @@ class DB_RESULT:
             cur.execute("""
                 update results
                 set verdict = :verdict
-                where rowid = :rowid
+                where id = :id
             """, row)
         cur.execute("commit")
         self.conn.commit()
+
+    def get_student_solved(self, student_id: int, lesson: int) -> List[dict]:
+        return self.conn.execute("""
+            select min(ts) ts, p.title, p.level from results r
+            join problems p on r.problem_id = p.id
+            where student_id = :student_id and r.lesson = :lesson and verdict > 0
+            group by p.title, p.level 
+            order by 1
+        """, locals()).fetchall()

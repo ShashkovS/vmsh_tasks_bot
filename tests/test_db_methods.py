@@ -1,6 +1,8 @@
+# Для работы по виндой нужны PYTHONUTF8=1
 import os
 from unittest import TestCase
 from datetime import datetime
+from random import randint
 
 from helpers.consts import *
 from db_methods import db
@@ -8,9 +10,10 @@ from .initial_test_data import test_students, test_teachers, test_problems
 
 
 class DatabaseMethodsTest(TestCase):
-    def setUp(self) -> None:
+    def setUp(self, counter=[0]) -> None:
         self.db = db
-        test_db_filename = 'db/unittest.db'
+        test_db_filename = f'db/unittest_{counter[0]:03}.db'
+        counter[0] += 1
         # ensure there is no trash file from previous incorrectly handled tests present
         for file in [test_db_filename, test_db_filename + '-shm', test_db_filename + '-wal']:
             try:
@@ -19,6 +22,12 @@ class DatabaseMethodsTest(TestCase):
                 pass
         # create shiny new db instance from scratch and connect
         self.db.setup(test_db_filename)
+        # Making it blazing fast
+        self.db.conn.execute('''      PRAGMA journal_mode = OFF;       ''')
+        self.db.conn.execute('''      PRAGMA synchronous = 0;       ''')
+        self.db.conn.execute('''      PRAGMA cache_size = 1000000;       ''')
+        self.db.conn.execute('''      PRAGMA locking_mode = EXCLUSIVE;       ''')
+        self.db.conn.execute('''      PRAGMA temp_store = MEMORY;       ''')
         self.insert_dummy_users()
         self.insert_dummy_problems()
 
@@ -34,7 +43,11 @@ class DatabaseMethodsTest(TestCase):
 
     def tearDown(self) -> None:
         self.db.disconnect()
-        os.unlink(self.db.db_file)
+        self.db.conn.close()
+        try:
+            os.unlink(self.db.db_file)
+        except PermissionError:
+            pass
 
     def test_users_add_and_fetch_all(self):
         students = self.db.fetch_all_users_by_type(USER_TYPE.STUDENT)
@@ -272,6 +285,43 @@ class DatabaseMethodsTest(TestCase):
         self.assertEqual(problem_id, saved_problem_id)
         saved_problem_id = db.media_group_check(media_group_id_3)
         self.assertEqual(problem_id, saved_problem_id)
+
+    def test_game_methods(self):
+        self.db.set_student_command(3, 'н', 179)
+        self.db.set_student_command(3, 'н', 178)
+        self.assertEqual(self.db.get_student_command(3)['command_id'], 178)
+
+        self.db.set_student_command(1, 'н', 179)
+        self.db.set_student_command(2, 'н', 179)
+        self.db.set_student_command(3, 'н', 178)
+        self.assertEqual(self.db.get_student_command(1)['command_id'], 179)
+
+        self.assertTrue(self.db.add_payment(3, 178, 15, 10, 1))
+        self.db.add_payment(2, 179, 15, 10, 1)
+        self.assertFalse(self.db.add_payment(3, 178, 15, 10, 1))
+        self.assertEqual(self.db.get_student_payments(3)[0]['amount'], 1)
+        self.assertEqual(self.db.get_opened_cells(178), [{'x': 15, 'y': 10}])
+        self.db.set_student_flag(2, 179, 12, 13)
+        self.db.set_student_flag(2, 179, 11, 13)
+        self.db.set_student_flag(1, 179, 20, 10)
+        self.assertEqual(db.get_flags_by_command(179), [{'x': 11, 'y': 13}, {'x': 20, 'y': 10}])
+        self.db.set_student_flag(1, 179, 11, 13)
+        self.assertEqual(self.db.get_flags_by_command(179), [{'x': 11, 'y': 13}, {'x': 11, 'y': 13}])
+
+        self.assertListEqual(self.db.get_student_chests(3, 333), [])
+        self.db.add_student_chest(3, 333, 1, 1, 5)
+        self.db.add_student_chest(4, 333, 1, 1, 6)
+        self.db.add_student_chest(3, 3333, 1, 1, 7)
+        self.db.add_student_chest(3, 333, 1, 2, 55)
+        chests = self.db.get_student_chests(3, 333)
+        self.assertEqual(len(chests), 2)
+        self.assertEqual(chests[0]['bonus'], 5)
+        self.assertEqual(chests[1]['bonus'], 55)
+        self.db.add_student_chest(3, 333, 1, 2, 555)
+        chests = self.db.get_student_chests(3, 333)
+        self.assertEqual(len(chests), 2)
+        self.assertEqual(chests[0]['bonus'], 5)
+        self.assertEqual(chests[1]['bonus'], 555)
 
 
     # def add_problem(self, data: dict)

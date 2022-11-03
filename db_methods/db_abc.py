@@ -92,7 +92,8 @@ class DB_CONNECTION:
 
     def setup(self, db_file: str):
         self.db_file = db_file
-        os.makedirs(os.path.dirname(self.db_file), exist_ok=True)
+        if db_file != ':memory:':
+            os.makedirs(os.path.dirname(self.db_file), exist_ok=True)
         self._run_migrations()
         self._connect_to_db()
 
