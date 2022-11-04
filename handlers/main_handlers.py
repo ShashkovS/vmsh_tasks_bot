@@ -6,7 +6,7 @@ from helpers.consts import *
 from helpers.config import logger, config
 from helpers.obj_classes import User, State, db
 from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
-
+from student_handlers import post_problem_keyboard
 
 @dispatcher.message_handler(commands=['start'])
 async def start(message: types.Message):
@@ -22,6 +22,7 @@ async def start(message: types.Message):
         text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/p/#09-p",
     )
     State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
+    await post_problem_keyboard(message.chat.id, user)
 
 
 @reg_state(STATE.GET_USER_INFO)
