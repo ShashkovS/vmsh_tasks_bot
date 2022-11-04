@@ -207,7 +207,7 @@ const scene = {
 
 function showPopupWide($cell, html, button1, buttonTitle1, buttonOnclick1) {
   const curRem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-  scene.$modal.style.top = `${window.scrollY+CELL_SIZE_IN_REM*curRem}px`;
+  scene.$modal.style.top = `${window.scrollY + CELL_SIZE_IN_REM * curRem}px`;
   scene.$modal.style.left = `${scene.$gameTable.offsetLeft + window.scrollX}px`;
   scene.$modal.style.width = `${Math.min(window.innerWidth, 1000)}px`;
   scene.$modal.style.height = `calc(100% - ${CELL_SIZE_IN_REM}rem)`;
@@ -363,158 +363,62 @@ async function sleep(ms) {
 }
 
 async function runTLAnimation(response) {
-  //const timeLine = new URL(window.location).searchParams.get('command_id');
- // console.log("DDDDDDDD")
- // console.log(response[0]['ts'])
+  scene.$header.innerHTML = `<div></div>`;
   let timeOut = new URL(window.location).searchParams.get('ms');
   let realtime = false;
-  var timePeriod;
-  var minDelta;
-  if (timeOut===undefined){
-    if (1000/response.length < 4){
-      timeOut = 4;
+  let timePeriod;
+  let minDelta;
+  if (timeOut === undefined) {
+    timeOut = Math.max(4, 1000 / response.length);
+  } else if (timeOut === '0') {
+    realtime = true;
+    const timeBegin = new Date(response[0]['ts']);
+    const timeEnd = new Date(response[response.length - 1]['ts']);
+    timePeriod = timeEnd.getTime() - timeBegin.getTime();
+    minDelta = timePeriod;
+    for (let i = 1; i < response.length; i++) {
+      let deltaNew = new Date(response[i]['ts']).getTime() - (new Date(response[i - 1]['ts']).getTime());
+      if (deltaNew < minDelta) {
+        minDelta = deltaNew;
+      }
+    }
+  }
+  for (let i = 0; i < response.length; i++) {
+    let timeToSleep = 0;
+    if (!realtime || i === 0) {
+      timeToSleep = +timeOut;
     } else {
-      timeOut = 1000 / response.length;
+      const delta = new Date(response[i]['ts']).getTime() - (new Date(response[i - 1]['ts']).getTime());
+      const d = delta / minDelta * 0.1; // 10ms — минимальный шаг времени
+      timeToSleep = Math.min(20, d);
     }
-  }
-  else{
-    if (timeOut == 0){
-      realtime = true;
-      const timeBegin = new Date(response[0]['ts']);
-      const timeEnd = new Date(response[response.length-1]['ts']);
-      timePeriod = timeEnd.getTime() - timeBegin.getTime();
-      minDelta = timePeriod;
-      for (let i = 1; i < response.length;i ++){
-        let deltaNew = new Date(response[i]['ts']).getTime() - (new Date(response[i-1]['ts']).getTime());
-        if (deltaNew < minDelta){
-          minDelta = deltaNew;
-        }
-      }
-    }
-  }
-  const distances = new Map();
-  let curLayer = new Set();
-
-  for (let i =0; i < response.length;i++) {
-    if (!(realtime)){
-      await sleep (timeOut);
-    }
-    else{
-      if (i==0){
-        await sleep (timeOut);
-      } else{
-        let delta =  new Date(response[i]['ts']).getTime() - (new Date(response[i-1]['ts']).getTime())
-       // console.log(delta);
-        //const wholeTime = new URL(window.location).searchParams.get('wt') || 500;
-        let d = delta/minDelta*40;
-       // console.log(d);
-        if (d > 300){
-          await sleep (300);
-        }
-        else {
-          await sleep(d);
-        }
-      }
-    }
-   // console.log(response[i]);
+    await sleep(timeToSleep);
     const coln = response[i]['x'];
     const rown = response[i]['y'];
-    scene.map[rown][coln] = "o";
-    const valuesRow = scene.map[rown];
-    const cellValue = valuesRow[coln];
-    const $cell = scene.$cells[rown][coln];
-    const distances = new Map();
-    let curLayer = new Set();
-    for (let rown = 0; rown < scene.map.length; rown += 1) {
-      for (let coln = 0; coln < scene.map[0].length; coln += 1) {
-        if (scene.map[rown][coln] === "o") {
-          const cellID = rown * scene.width + coln;
-          distances.set(cellID, 0);
-          curLayer.add(cellID);
-        }
-      }
-    }
-    let steps = 0;
-    while (curLayer.size > 0 && steps < FOG_OF_WAR) {
-      let nextLayer = new Set();
-      for (const cellID of curLayer) {
-        const rown = Math.trunc(cellID / scene.width);
-        const coln = cellID % scene.width;
-        if (scene.map[rown][coln] === "x") {
-          continue;
-        }
-        if (rown === 0 || coln === 0 || coln === scene.width - 1 || rown === scene.height - 1) {
-          continue;
-        } // Рамку не трогаем
-        for (const diff of [-1, 1, -scene.width - 1, -scene.width, -scene.width + 1, +scene.width - 1, +scene.width, +scene.width + 1]) {
-          const newcellID = cellID + diff;
-          if (distances.get(newcellID) === undefined) {
-            distances.set(newcellID, distances.get(cellID) + 1);
-            nextLayer.add(newcellID);
-          }
-        }
-      }
-      curLayer = nextLayer;
-      steps += 1;
-    }
-
-
-    // Теперь обновляем стили
-    for (let rown = 0; rown < scene.map.length; rown += 1) {
-      const valuesRow = scene.map[rown];
-      for (let coln = 0; coln < valuesRow.length; coln += 1) {
-        const cellValue = valuesRow[coln];
-        const $cell = scene.$cells[rown][coln];
-        const dist = distances.get($cell.cellID);
-        const isBorder = rown === 0 || coln === 0 || coln === scene.width - 1 || rown === scene.height - 1;
-        if (dist < FOG_OF_WAR || isBorder) {
-          $cell.textContent = cellValue;
-          $cell.className = `s${cellValue}`;
-          if (+cellValue) {
-            $cell.onclick = $cell.ondblclick = onCellClick;
-          } else {
-            $cell.onclick = $cell.ondblclick = null;
-          }
-          if (!isBorder && FOG_OF_WAR - dist <= FOR_OPACITY_LEN) {
-            $cell.style.opacity = (FOG_OF_WAR - dist) / FOR_OPACITY_LEN;
-          } else {
-            $cell.style.opacity = 1;
-          }
-        }
-      }
-    }
-
-    $cell.textContent = cellValue;
-    $cell.className = `s${cellValue}`;
-    $cell.onclick = $cell.ondblclick = null;
-    $cell.style.opacity = 1;
+    const cellID = rown * scene.width + coln;
+    scene.opened.push(cellID);
+    updateMap();
+    renderHeader();
   }
-
-  // Заголовок
-  renderHeader();
+  scene.$header.innerHTML = `<div>Завершено</div>`;
 }
 
 function fetchInitialData() {
   scene.$header.innerHTML = `<div><p><span>...⚡</span> — загружаем информацию...</p></div>`;
-  //debugger
   const tlCommandId = new URL(window.location).searchParams.get('command_id');
 
-  if (tlCommandId===undefined) {
+  if (tlCommandId === undefined) {
     postData('/game/me', {})
-        .then(resp => {
-          // console.log(resp);
-          refreshData(resp);
-          updateMap();
-          renderHeader();
-        });
-  }
-  else {
+      .then(resp => {
+        refreshData(resp);
+        updateMap();
+        renderHeader();
+      });
+  } else {
     postData(`/game/timeline/${tlCommandId}`, {})
-        .then(resp => {
-          console.log(resp);
-
-          runTLAnimation(resp);
-        });
+      .then(resp => {
+        runTLAnimation(resp);
+      });
   }
 }
 

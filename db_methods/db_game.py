@@ -39,13 +39,16 @@ class DB_GAME():
         FROM game_map_opened_cells
         where command_id = :student_command
         """, locals()).fetchall()
+
     def get_opened_cells_timeline (self,student_command: int) -> List[dict]:
         return self.conn.execute("""
-        SELECT game_payments.ts, game_map_opened_cells.x, game_map_opened_cells.y 
-        FROM game_payments,game_map_opened_cells
-        where (game_map_opened_cells.command_id = :student_command) and (game_payments.cell_id = game_map_opened_cells.id)
-        order by game_payments.ts
+        SELECT gp.ts, oc.x, oc.y 
+        FROM game_map_opened_cells oc 
+        join game_payments gp on gp.cell_id = oc.id
+        where oc.command_id = :student_command
+        order by gp.ts
         """, locals()).fetchall()
+
     def set_student_command(self, user_id: int, level: str, command_id: int) -> int:
         cur = self.conn.cursor()
         cur.execute("""
