@@ -358,16 +358,120 @@ function refreshData(response) {
   scene.myFlag = response.myFlag && response.myFlag.length === 2 && response.myFlag.y * scene.width + response.myFlag.x;
 }
 
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function runTLAnimation(response) {
+  //const timeLine = new URL(window.location).searchParams.get('command_id');
+ // console.log("DDDDDDDD")
+ // console.log(response[0]['ts'])
+  const distances = new Map();
+  let curLayer = new Set();
+
+  for (let i =0; i < response.length;i++) {
+    console.log(response[i]);
+    const coln = response[i]['x'];
+    const rown = response[i]['y'];
+    scene.map[rown][coln] = "o";
+    const valuesRow = scene.map[rown];
+    const cellValue = valuesRow[coln];
+    const $cell = scene.$cells[rown][coln];
+    const distances = new Map();
+    let curLayer = new Set();
+    for (let rown = 0; rown < scene.map.length; rown += 1) {
+      for (let coln = 0; coln < scene.map[0].length; coln += 1) {
+        if (scene.map[rown][coln] === "o") {
+          const cellID = rown * scene.width + coln;
+          distances.set(cellID, 0);
+          curLayer.add(cellID);
+        }
+      }
+    }
+    let steps = 0;
+    while (curLayer.size > 0 && steps < FOG_OF_WAR) {
+      let nextLayer = new Set();
+      for (const cellID of curLayer) {
+        const rown = Math.trunc(cellID / scene.width);
+        const coln = cellID % scene.width;
+        if (scene.map[rown][coln] === "x") {
+          continue;
+        }
+        if (rown === 0 || coln === 0 || coln === scene.width - 1 || rown === scene.height - 1) {
+          continue;
+        } // Рамку не трогаем
+        for (const diff of [-1, 1, -scene.width - 1, -scene.width, -scene.width + 1, +scene.width - 1, +scene.width, +scene.width + 1]) {
+          const newcellID = cellID + diff;
+          if (distances.get(newcellID) === undefined) {
+            distances.set(newcellID, distances.get(cellID) + 1);
+            nextLayer.add(newcellID);
+          }
+        }
+      }
+      curLayer = nextLayer;
+      steps += 1;
+    }
+
+
+    // Теперь обновляем стили
+    for (let rown = 0; rown < scene.map.length; rown += 1) {
+      const valuesRow = scene.map[rown];
+      for (let coln = 0; coln < valuesRow.length; coln += 1) {
+        const cellValue = valuesRow[coln];
+        const $cell = scene.$cells[rown][coln];
+        const dist = distances.get($cell.cellID);
+        const isBorder = rown === 0 || coln === 0 || coln === scene.width - 1 || rown === scene.height - 1;
+        if (dist < FOG_OF_WAR || isBorder) {
+          $cell.textContent = cellValue;
+          $cell.className = `s${cellValue}`;
+          if (+cellValue) {
+            $cell.onclick = $cell.ondblclick = onCellClick;
+          } else {
+            $cell.onclick = $cell.ondblclick = null;
+          }
+          if (!isBorder && FOG_OF_WAR - dist <= FOR_OPACITY_LEN) {
+            $cell.style.opacity = (FOG_OF_WAR - dist) / FOR_OPACITY_LEN;
+          } else {
+            $cell.style.opacity = 1;
+          }
+        }
+      }
+    }
+
+    $cell.textContent = cellValue;
+    $cell.className = `s${cellValue}`;
+    $cell.onclick = $cell.ondblclick = null;
+    $cell.style.opacity = 1;
+    const timeOut = new URL(window.location).searchParams.get('ms') || 4;
+    await sleep (timeOut);
+  }
+
+  // Заголовок
+  renderHeader();
+}
 
 function fetchInitialData() {
   scene.$header.innerHTML = `<div><p><span>...⚡</span> — загружаем информацию...</p></div>`;
-  postData('/game/me', {})
-    .then(resp => {
-      // console.log(resp);
-      refreshData(resp);
-      updateMap();
-      renderHeader();
-    });
+  //debugger
+  const tlCommandId = new URL(window.location).searchParams.get('command_id');
+
+  if (tlCommandId===undefined) {
+    postData('/game/me', {})
+        .then(resp => {
+          // console.log(resp);
+          refreshData(resp);
+          updateMap();
+          renderHeader();
+        });
+  }
+  else {
+    postData(`/game/timeline/${tlCommandId}`, {})
+        .then(resp => {
+          console.log(resp);
+
+          runTLAnimation(resp);
+        });
+  }
 }
 
 

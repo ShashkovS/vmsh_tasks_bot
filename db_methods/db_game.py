@@ -12,7 +12,6 @@ class DB_GAME():
             where student_id = :user_id
             order by ts
         ''', locals()).fetchall()
-
     def add_payment(self, user_id: int, command_id: int, x: int, y: int, amount: int) -> bool:
         cur = self.conn.cursor()
         ts = datetime.now().isoformat()
@@ -40,7 +39,13 @@ class DB_GAME():
         FROM game_map_opened_cells
         where command_id = :student_command
         """, locals()).fetchall()
-
+    def get_opened_cells_timeline (self,student_command: int) -> List[dict]:
+        return self.conn.execute("""
+        SELECT game_payments.ts, game_map_opened_cells.x, game_map_opened_cells.y 
+        FROM game_payments,game_map_opened_cells
+        where (game_map_opened_cells.command_id = :student_command) and (game_payments.cell_id = game_map_opened_cells.id)
+        order by game_payments.ts
+        """, locals()).fetchall()
     def set_student_command(self, user_id: int, level: str, command_id: int) -> int:
         cur = self.conn.cursor()
         cur.execute("""

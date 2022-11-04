@@ -17,7 +17,7 @@ from typing import List, Dict
 from helpers.config import config, logger, DEBUG
 from helpers.obj_classes import db, Webtoken, User, Problem
 from helpers.nats_brocker import vmsh_nats
-from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE
+from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE, USER_TYPE
 
 __ALL__ = ['routes']
 
@@ -78,6 +78,19 @@ async def post_online(request):
         return response
     else:
         return web.Response(text=templates['login'], content_type='text/html')
+
+# @routes.get('/gametimeline') ####убрать
+# async def get_gametimeline(request):
+#     print('gametimeline')
+#     command_id = request.query['command_id']
+#     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
+#     user = Webtoken.user_by_webtoken(cookie_webtoken)
+#     if not user:
+#         print('return login')
+#         return web.Response(text=templates['login'], content_type='text/html')
+#     else:
+#         print('return board')
+#         return board_response(user)
 
 
 @routes.get('/game/webtoken/{webtoken}')
@@ -226,6 +239,15 @@ async def post_online(request):
     data = get_game_data(user)
     return web.json_response(data=data)
 
+@routes.post('/game/timeline/{command_id}')
+async def post_timeline(request):
+    cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
+    user = Webtoken.user_by_webtoken(cookie_webtoken)
+    if (not user) or (not user.type == USER_TYPE.TEACHER):
+        return web.json_response(data={'error': 'relogin'}, status=401)
+    command_id = request.match_info['command_id']
+    data = db.get_opened_cells_timeline(command_id)
+    return web.json_response(data=data)
 
 # В этом словаре мы храним список слабых ссылок на вебсокеты пользователей
 user_id_to_websocket: Dict[int, List[weakref.ReferenceType[web.WebSocketResponse]]] = {}
