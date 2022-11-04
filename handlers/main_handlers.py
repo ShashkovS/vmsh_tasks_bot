@@ -6,7 +6,7 @@ from helpers.consts import *
 from helpers.config import logger, config
 from helpers.obj_classes import User, State, db
 from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
-from student_handlers import post_problem_keyboard
+from handlers.student_handlers import post_problem_keyboard
 
 @dispatcher.message_handler(commands=['start'])
 async def start(message: types.Message):
