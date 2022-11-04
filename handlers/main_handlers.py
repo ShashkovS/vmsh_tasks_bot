@@ -16,10 +16,11 @@ async def start(message: types.Message):
         user = User(message.chat.id, USER_TYPE.STUDENT, LEVEL.PRO, message.chat.first_name or '', message.chat.last_name or '', '',
                     str(message.chat.id), ONLINE_MODE.ONLINE, 12, None)
     db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
-    db.set_student_command(user.id, user.level, command_id=1)
+    db.set_student_command(user.id, LEVEL.NOVICE, command_id=1)
     await bot.send_message(
         chat_id=message.chat.id,
-        text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/p/#09-p",
+        text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/p/#09-p.\n"
+             "Если задачи окажутся сложноватыми, то можно выполнить команду /level_novice и решать вот эти задачи https://shashkovs.ru/vmsh/2022/n/#09-n, они попроще.",
     )
     State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
     await post_problem_keyboard(message.chat.id, user)
