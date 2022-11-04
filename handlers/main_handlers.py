@@ -21,7 +21,7 @@ async def start(message: types.Message):
         chat_id=message.chat.id,
         text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/p/#09-p",
     )
-    State.set_by_user_id(user.id, STATE.GET_USER_INFO)
+    State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
 
 
 @reg_state(STATE.GET_USER_INFO)
