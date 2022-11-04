@@ -366,11 +366,57 @@ async function runTLAnimation(response) {
   //const timeLine = new URL(window.location).searchParams.get('command_id');
  // console.log("DDDDDDDD")
  // console.log(response[0]['ts'])
+  let timeOut = new URL(window.location).searchParams.get('ms');
+  let realtime = false;
+  var timePeriod;
+  var minDelta;
+  if (timeOut===undefined){
+    if (1000/response.length < 4){
+      timeOut = 4;
+    } else {
+      timeOut = 1000 / response.length;
+    }
+  }
+  else{
+    if (timeOut == 0){
+      realtime = true;
+      const timeBegin = new Date(response[0]['ts']);
+      const timeEnd = new Date(response[response.length-1]['ts']);
+      timePeriod = timeEnd.getTime() - timeBegin.getTime();
+      minDelta = timePeriod;
+      for (let i = 1; i < response.length;i ++){
+        let deltaNew = new Date(response[i]['ts']).getTime() - (new Date(response[i-1]['ts']).getTime());
+        if (deltaNew < minDelta){
+          minDelta = deltaNew;
+        }
+      }
+    }
+  }
   const distances = new Map();
   let curLayer = new Set();
 
   for (let i =0; i < response.length;i++) {
-    console.log(response[i]);
+    if (!(realtime)){
+      await sleep (timeOut);
+    }
+    else{
+      if (i==0){
+        await sleep (timeOut);
+      } else{
+        let delta =  new Date(response[i]['ts']).getTime() - (new Date(response[i-1]['ts']).getTime())
+       // console.log(delta);
+        //const wholeTime = new URL(window.location).searchParams.get('wt') || 500;
+        let d = delta/minDelta*40;
+       // console.log(d);
+        if (d > 300){
+          await sleep (300);
+        }
+        else {
+          await sleep(d);
+        }
+      }
+    }
+   // console.log(response[i]);
     const coln = response[i]['x'];
     const rown = response[i]['y'];
     scene.map[rown][coln] = "o";
@@ -442,8 +488,6 @@ async function runTLAnimation(response) {
     $cell.className = `s${cellValue}`;
     $cell.onclick = $cell.ondblclick = null;
     $cell.style.opacity = 1;
-    const timeOut = new URL(window.location).searchParams.get('ms') || 4;
-    await sleep (timeOut);
   }
 
   // Заголовок
