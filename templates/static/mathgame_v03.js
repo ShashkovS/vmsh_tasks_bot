@@ -405,9 +405,9 @@ async function runTLAnimation(response) {
 
 function fetchInitialData() {
   scene.$header.innerHTML = `<div><p><span>...⚡</span> — загружаем информацию...</p></div>`;
-  const tlCommandId = new URL(window.location).searchParams.get('command_id');
+  const tlCommandId = parseInt(new URL(window.location).searchParams.get('command_id'));
 
-  if (tlCommandId === undefined) {
+  if (! (tlCommandId > 0)) {
     postData('/game/me', {})
       .then(resp => {
         refreshData(resp);
