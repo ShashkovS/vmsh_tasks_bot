@@ -1,3 +1,5 @@
+"use strict";
+
 const CELL_SIZE_IN_REM = 3;
 const MODAL_WIDTH_IN_CELLS = 5;
 const MODAL_HEIGHT_IN_CELLS = 3;
@@ -338,9 +340,9 @@ function postOpenChest($cell) {
 }
 
 function refreshData(response) {
-  scene.opened.push(...response.opened.map(([x, y]) => y * scene.width + x));
+  scene.opened.push(...response['opened'].map(([x, y]) => y * scene.width + x));
   scene.scores = {};
-  for (const diff of response.events) {
+  for (const diff of response['events']) {
     if (diff > 0) {
       scene.scores[diff] = (scene.scores[diff] | 0) + 1;
     } else {
@@ -348,58 +350,60 @@ function refreshData(response) {
     }
   }
   scene.flags = {};
-  response.flags.forEach(([x, y]) => {
+  response['flags'].forEach(([x, y]) => {
     const cellId = y * scene.width + x;
     scene.flags[cellId] = (scene.flags[cellId] | 0) + 1;
   });
-  response.chests.forEach(([x, y]) => {
+  response['chests'].forEach(([x, y]) => {
     scene.$cells[y][x].chest.isOpened = true;
   });
-  scene.myFlag = response.myFlag && response.myFlag.length === 2 && response.myFlag.y * scene.width + response.myFlag.x;
+  scene.myFlag = response['myFlag'] && response['myFlag'].length === 2 && response['myFlag'].y * scene.width + response['myFlag'].x;
 }
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+
 async function runTLAnimation(response) {
+  // Парсим timestamp'ы
+  response.forEach(obj => obj.tss = new Date(obj.ts).getTime());
   scene.$header.innerHTML = `<div></div>`;
   let timeOut = new URL(window.location).searchParams.get('ms');
   let realtime = false;
   let timePeriod;
-  let minDelta;
-  if (timeOut === undefined) {
+  const destAnimationDurMs = (new URL(window.location).searchParams.get('dur'))*1000 || 20000;
+  debugger;
+  if (timeOut === undefined || timeOut === null) {
     timeOut = Math.max(4, 1000 / response.length);
   } else if (timeOut === '0') {
     realtime = true;
-    const timeBegin = new Date(response[0]['ts']);
-    const timeEnd = new Date(response[response.length - 1]['ts']);
-    timePeriod = timeEnd.getTime() - timeBegin.getTime();
-    minDelta = timePeriod;
-    for (let i = 1; i < response.length; i++) {
-      let deltaNew = new Date(response[i]['ts']).getTime() - (new Date(response[i - 1]['ts']).getTime());
-      if (deltaNew < minDelta) {
-        minDelta = deltaNew;
-      }
-    }
+    timePeriod = response[response.length - 1].tss - response[0].tss;
   }
+  let prevSleepStart = response[0].tss;
   for (let i = 0; i < response.length; i++) {
     let timeToSleep = 0;
-    if (!realtime || i === 0) {
+    if (!realtime) {
       timeToSleep = +timeOut;
     } else {
-      const delta = new Date(response[i]['ts']).getTime() - (new Date(response[i - 1]['ts']).getTime());
-      const d = delta / minDelta * 0.1; // 10ms — минимальный шаг времени
-      timeToSleep = Math.min(20, d);
+      const delta = (response[i].tss - prevSleepStart) / timePeriod * destAnimationDurMs;
+      if (delta > 4) {
+        timeToSleep = delta;
+        prevSleepStart = response[i].tss;
+      }
     }
-    await sleep(timeToSleep);
     const coln = response[i]['x'];
     const rown = response[i]['y'];
     const cellID = rown * scene.width + coln;
     scene.opened.push(cellID);
-    updateMap();
-    renderHeader();
+    if (timeToSleep >= 1) {
+      await sleep(timeToSleep);
+      updateMap();
+      renderHeader();
+    }
   }
+  updateMap();
+  renderHeader();
   scene.$header.innerHTML = `<div>Завершено</div>`;
 }
 
@@ -495,7 +499,6 @@ function renderHeader() {
   }
 }
 
-
 function tryToBuy(amount) {
   for (const [key, value] of Object.entries(scene.scores)) {
     if (value > 0 && key >= amount) {
@@ -515,7 +518,6 @@ function onClosedChestClick(ev) {
   $cell.chest.isOpened = true;
   $cell.className = 'openedChest';
   $cell.onclick = $cell.ondblclick = showChestSecret;
-  $cell.textContent = '';
   scene.scores[$cell.chest.bonus] = (scene.scores[$cell.chest.bonus] | 0) + 1;
   postOpenChest($cell);
   showChestSecret(ev);
@@ -607,7 +609,6 @@ function updateMap() {
         if ($cell.chest) {
           if ($cell.chest.isOpened) {
             $cell.classList.add('openedChest');
-            $cell.textContent = '';
             $cell.onclick = $cell.ondblclick = showChestSecret;
           } else {
             $cell.classList.add('closedChest');
@@ -757,6 +758,7 @@ function init() {
   setInterval(() => fetchInitialData(), 60 * 1000);
 }
 
+
 function toggleFullscreen() {
   if (document.fullscreenElement) {
     document.exitFullscreen();
@@ -764,3 +766,6 @@ function toggleFullscreen() {
     document.documentElement.requestFullscreen();
   }
 }
+
+window.addEventListener('load', init);
+
