@@ -53,8 +53,9 @@ class NATS:
             await self.subsciptions[topic](obj)
 
     async def disconnect(self):
-        for topic, sub in self.subsciptions.items():
-            await sub.unsubscribe()
+        if self.nats_is_working:
+            for topic, sub in self.subsciptions.items():
+                await sub.unsubscribe()
         self.subsciptions = {}
         if self.nc:
             await self.nc.drain()
