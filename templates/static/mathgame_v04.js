@@ -637,7 +637,6 @@ function updateMap() {
   renderHeader();
 }
 
-
 function initialMapRender() {
   scene.$cells = [];
   for (let rown = 0; rown < scene.map.length; rown += 1) {
