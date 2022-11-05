@@ -322,6 +322,7 @@ class DatabaseMethodsTest(TestCase):
         self.assertEqual(len(chests), 2)
         self.assertEqual(chests[0]['bonus'], 5)
         self.assertEqual(chests[1]['bonus'], 555)
+        print(self.db.get_opened_cells_timeline(179))
 
 
     # def add_problem(self, data: dict)
