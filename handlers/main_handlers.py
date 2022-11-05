@@ -16,7 +16,19 @@ async def start(message: types.Message):
         user = User(message.chat.id, USER_TYPE.STUDENT, LEVEL.PRO, message.chat.first_name or '', message.chat.last_name or '', '',
                     str(message.chat.id), ONLINE_MODE.ONLINE, 12, None)
     db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
-    db.set_student_command(user.id, LEVEL.NOVICE, command_id=1)
+    row = db.conn.execute('''
+        select command_id, count(*) cnt from game_map_opened_cells
+        group by command_id order by command_id desc
+        limit 1;
+    ''').fetchone()
+    if not row:
+        command_id = 1
+    else:
+        command_id = row['command_id']
+        cnt = row['cnt']
+        if cnt > 200:
+            command_id += 1
+    db.set_student_command(user.id, LEVEL.NOVICE, command_id)
     await bot.send_message(
         chat_id=message.chat.id,
         text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/p/#09-p.\n"
