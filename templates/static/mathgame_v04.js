@@ -355,6 +355,7 @@ function refreshData(response) {
     scene.flags[cellId] = (scene.flags[cellId] | 0) + 1;
   });
   response['chests'].forEach(([x, y]) => {
+    if (x < 0 || y < 0) return;
     try {
       scene.$cells[y][x].chest.isOpened = true;
     } catch (e) {
