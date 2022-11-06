@@ -355,7 +355,11 @@ function refreshData(response) {
     scene.flags[cellId] = (scene.flags[cellId] | 0) + 1;
   });
   response['chests'].forEach(([x, y]) => {
-    scene.$cells[y][x].chest.isOpened = true;
+    try {
+      scene.$cells[y][x].chest.isOpened = true;
+    } catch (e) {
+      console.log(e);
+    }
   });
   scene.myFlag = response['myFlag'] && response['myFlag'].length === 2 && response['myFlag'].y * scene.width + response['myFlag'].x;
 }
