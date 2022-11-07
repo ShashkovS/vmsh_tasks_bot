@@ -218,3 +218,17 @@ def build_teacher_reaction_on_solution(result_id: int):
             )
         )
     return keyboard
+
+
+def build_teacher_reaction_oral(result_id: int):
+    """Создает инлайн клавиатуру для учителя для оценки устной сдачи ученика."""
+    logger.debug('keyboards.build_teacher_reaction_oral')
+    keyboard = types.InlineKeyboardMarkup()
+    for reaction in db.get_reactions(REACTION.ORAL_TEACHER):
+        keyboard.add(
+            types.InlineKeyboardButton(
+                text=reaction['reaction'],
+                callback_data=f'{CALLBACK.REACTION}_{reaction["reaction_id"]}_{REACTION.ORAL_TEACHER}'
+            )
+        )
+    return keyboard

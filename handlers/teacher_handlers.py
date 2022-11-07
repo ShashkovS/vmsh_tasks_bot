@@ -704,14 +704,15 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         res_type = RES_TYPE.SCHOOL
     else:
         res_type = RES_TYPE.ZOOM
+    zoom_conversation_id = db.allocate_conversation()
     for problem in pluses:
-        Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type)
+        Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type, zoom_conversation_id=zoom_conversation_id)
         # А ещё нужно удалить эту задачу из очереди на письменную проверку
         db.delete_from_written_task_queue(student_id, problem.id)
     for problem in minuses:
         db.delete_plus(student_id, problem.id, RES_TYPE.SCHOOL, VERDICT.REJECTED_ANSWER)
         db.delete_plus(student_id, problem.id, RES_TYPE.ZOOM, VERDICT.REJECTED_ANSWER)
-        Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, res_type)
+        Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, res_type, zoom_conversation_id=zoom_conversation_id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
 
     # Формируем сообщение с итоговым результатом проверки
@@ -728,6 +729,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         student_state = State.get_by_user_id(student.id)
         student_message = await bot.send_message(chat_id=student.chat_id,
                                                  text=f"В результате устного приёма вам поставили плюсики за задачи: {', '.join(human_readable_pluses)}",
+                                                 reply_markup=student_keyboards.build_student_reaction_oral(),
                                                  disable_notification=True)
         if student_state['state'] == STATE.STUDENT_IS_IN_CONFERENCE:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -862,25 +864,6 @@ async def zoom_queue(message: types.Message):
     if teacher_state['state'] == STATE.TEACHER_SELECT_ACTION:
         await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
                                reply_markup=teacher_keyboards.build_teacher_actions())
-
-
-@reg_callback(CALLBACK.REACTION)
-async def prc_teacher_reaction_solution(query: types.CallbackQuery, student: User):
-    """Коллбек на реакцию учителя на решенеие ученика в письменной работе."""
-    logger.debug('prc_teacher_reaction_solution')
-    callback, result_id, reaction_id, reaction_type_id = query.data.split('_')
-    reaction_type_id = int(reaction_type_id)
-    reaction_id = int(reaction_id)
-    result_id = int(result_id)
-    try:
-        db.write_reaction(reaction_type_id, result_id, reaction_id)
-    except Exception:
-        logger.error('Ошибка записи реакции учителя в БД.')
-    else:
-        original_message = query.message.text.split('\n')[0]
-        await query.message.edit_text(f"{original_message}\n{db.get_reaction_by_id(reaction_id)}",
-                                      reply_markup=None)
-        await query.answer(f'Принято')
 
 
 @dispatcher.message_handler(commands=['set_game_command', 'sg'])

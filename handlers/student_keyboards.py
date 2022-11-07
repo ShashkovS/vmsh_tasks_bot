@@ -160,3 +160,17 @@ def build_student_reaction_on_task_bad_verdict(result_id: int):
             )
         )
     return keyboard
+
+
+def build_student_reaction_oral():
+    """Создает инлайн клавиатуру для ученика для оценки устной сдачи."""
+    logger.debug('keyboards.build_student_reaction_oral')
+    keyboard = types.InlineKeyboardMarkup()
+    for reaction in db.get_reactions(REACTION.ORAL_STUDENT):
+        keyboard.add(
+            types.InlineKeyboardButton(
+                text=reaction['reaction'],
+                callback_data=f'{CALLBACK.REACTION}_{reaction["reaction_id"]}_{REACTION.ORAL_STUDENT}'
+            )
+        )
+    return keyboard

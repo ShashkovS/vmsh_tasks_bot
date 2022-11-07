@@ -5,12 +5,12 @@ from datetime import datetime
 class DB_REACTION():
     conn: sqlite3.Connection
 
-    def write_reaction(self, reaction_type_id: int, result_id: int, reaction_id: int) -> int:
+    def write_reaction(self, *, reaction_type_id: int, reaction_id: int, result_id: int = None) -> int:
         """Записывает в БД в отношение reaction реакцию ученика/учителя на письменную/устную сдачу."""
         ts = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
-            INSERT into reaction ( ts,  reaction_type_id,  result_id,  reaction_id)
+            INSERT INTO reaction ( ts,  reaction_type_id,  result_id,  reaction_id)
                           VALUES (:ts, :reaction_type_id, :result_id, :reaction_id);
         """, locals())
         self.conn.commit()

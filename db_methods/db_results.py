@@ -13,13 +13,13 @@ class DB_RESULT:
     conn: sqlite3.Connection
 
     def add_result(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int,
-                   answer: str, res_type: int = None) -> int:
+                   answer: str, res_type: int = None, zoom_conversation_id: int = None) -> int:
         args = locals()
         args['ts'] = datetime.now().isoformat()
         cur = self.conn.cursor()
         res = cur.execute("""
-            INSERT INTO results  ( student_id,  problem_id,  level,  lesson,  teacher_id,  ts,  verdict,  answer,  res_type)
-            VALUES               (:student_id, :problem_id, :level, :lesson, :teacher_id, :ts, :verdict, :answer, :res_type)
+            INSERT INTO results  ( student_id,  problem_id,  level,  lesson,  teacher_id,  ts,  verdict,  answer,  res_type, zoom_conversation_id)
+            VALUES               (:student_id, :problem_id, :level, :lesson, :teacher_id, :ts, :verdict, :answer, :res_type, :zoom_conversation_id)
             returning id
         """, args)
         id = res.fetchone()['id']
