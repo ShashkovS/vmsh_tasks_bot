@@ -283,7 +283,7 @@ function convertMap(mapAsString) {
     const cellId = y * width + x;
     chests[cellId] = {amount, html, bonus, isOpened: false};
   }
-  return {map, width, height, chests};
+  return {map, width, height, chests, opened: [], scores: [], flags: {}};
 }
 
 async function postData(url = '', data = {}) {
@@ -370,15 +370,39 @@ async function sleep(ms) {
 }
 
 
-async function runTLAnimation(response) {
+
+const colors = ['#ff0044', '#68386c', '#b55088', '#f6757a', '#c0cbdc', '#8b9bb4', '#5a6988', '#3a4466', '#262b44', '#193c3e', '#124e89', '#0099db', '#2ce8f5', '#feae34', '#fee761', '#63c74d', '#3e8948', '#265c42', '#ead4aa', '#e4a672', '#b86f50', '#f77622', '#733e39', '#be4a2f', '#d77643', '#a22633', '#e43b44'];
+// const commands = [10004, 114, 10014, 106, 111, 10012, 108, 10002, 107, 110, 10003, 115, 10018, 10009, 103, 10000, 113, 10010, 10017, 109, 10013, 105, 102, 10008, 10016, 112, 10006, 101, 10007, 10011, 116, 104, 10005, 10001, 10015, 118];
+const commands = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 118, 10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018]
+async function runAll() {
+  let tlCommandId = commands.shift();
+    console.log('команда')
+    await postData(`/game/timeline/${tlCommandId}`, {})
+      .then(resp => {
+        runTLAnimation(resp, tlCommandId);
+      });
+}
+
+
+
+async function runTLAnimation(response, tlCommandId) {
   // Парсим timestamp'ы
+  Object.assign(scene, convertMap(mapAsString));
+  for (const $row of scene.$cells) {
+    for (const $cell of $row) {
+      $cell.style.background = null;
+      $cell.style.color = null;
+    }
+  }
+  updateMap();
+  const studentColors = {};
+  let lastUsedColor = 0;
   response.forEach(obj => obj.tss = new Date(obj.ts).getTime());
-  scene.$header.innerHTML = `<div></div>`;
+  scene.$header.innerHTML = `<div>Команда ${tlCommandId}</div>`;
   let timeOut = new URL(window.location).searchParams.get('ms');
   let realtime = false;
   let timePeriod;
   const destAnimationDurMs = (new URL(window.location).searchParams.get('dur'))*1000 || 20000;
-  debugger;
   if (timeOut === undefined || timeOut === null) {
     timeOut = Math.max(4, 1000 / response.length);
   } else if (timeOut === '0') {
@@ -387,6 +411,13 @@ async function runTLAnimation(response) {
   }
   let prevSleepStart = response[0].tss;
   for (let i = 0; i < response.length; i++) {
+    const student_id = response[i].student_id;
+    if (studentColors[student_id] === undefined) {
+      studentColors[student_id] = colors[lastUsedColor];
+      lastUsedColor += 1;
+    }
+    const useColor = studentColors[student_id];
+
     let timeToSleep = 0;
     if (!realtime) {
       timeToSleep = +timeOut;
@@ -401,15 +432,19 @@ async function runTLAnimation(response) {
     const rown = response[i]['y'];
     const cellID = rown * scene.width + coln;
     scene.opened.push(cellID);
+    scene.$cells[rown][coln].style.background = useColor;
+    scene.$cells[rown][coln].style.color = useColor;
     if (timeToSleep >= 1) {
       await sleep(timeToSleep);
       updateMap();
-      renderHeader();
     }
   }
   updateMap();
-  renderHeader();
-  scene.$header.innerHTML = `<div>Завершено</div>`;
+  scene.$header.innerHTML = `<div>Завершено. Команда ${tlCommandId}</div>`;
+  // await sleep(300);
+  // alert(tlCommandId);
+  await sleep(3000);
+  await runAll();
 }
 
 function fetchInitialData() {
@@ -599,7 +634,9 @@ function updateMap() {
       const isBorder = rown === 0 || coln === 0 || coln === scene.width - 1 || rown === scene.height - 1;
       if (dist < FOG_OF_WAR || isBorder) {
         $cell.textContent = cellValue;
-        $cell.className = `s${cellValue}`;
+        if (cellValue !== 'o') {
+          $cell.className = `s${cellValue}`;
+        }
         if (+cellValue) {
           $cell.onclick = $cell.ondblclick = onCellClick;
         } else {
@@ -639,7 +676,7 @@ function updateMap() {
     }
   }
   // Заголовок
-  renderHeader();
+  // renderHeader();
 }
 
 
@@ -745,22 +782,24 @@ function init() {
 
 
   updateMap();
-  if (!DEBUG) {
-    fetchInitialData();
-  } else {
-    const response = {
-      opened: [],
-      events: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
-      flags: [],
-      myFlag: null,
-      chests: [],
-    };
-    refreshData(response);
-    updateMap();
-    renderHeader();
-  }
-  prepareWebsockets();
-  setInterval(() => fetchInitialData(), 60 * 1000);
+  // runAll();
+  setTimeout(runAll, 3000);
+  // if (!DEBUG) {
+  //   fetchInitialData();
+  // } else {
+  //   const response = {
+  //     opened: [],
+  //     events: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+  //     flags: [],
+  //     myFlag: null,
+  //     chests: [],
+  //   };
+  //   refreshData(response);
+  //   updateMap();
+  //   renderHeader();
+  // }
+  // prepareWebsockets();
+  // setInterval(() => fetchInitialData(), 60 * 1000);
 }
 
 
@@ -774,3 +813,5 @@ function toggleFullscreen() {
 
 window.addEventListener('load', init);
 
+
+// http://127.0.0.1:8080/game?ms=0&dur=2
