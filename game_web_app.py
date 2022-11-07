@@ -228,7 +228,7 @@ def get_game_data(student: User) -> dict:
     # Собираем карту  TODO Сделать минимальное кеширование
     data = {'events': events, 'opened': opened, 'flags': flags, 'myFlag': my_flag, 'chests': chests}
     en = perf_counter()
-    logger.warning(f'get_game_data {en - st:0.3f} seconds')  # TODO Удалить
+    # logger.warning(f'get_game_data {en - st:0.3f} seconds')  # TODO Удалить
     return data
 
 
@@ -289,7 +289,7 @@ async def websocket(request):
 
 
 async def nats_handle_map_update(command_id):
-    logger.warning(f"nats_handle_map_update {command_id=}, {os.getpid()=}, {len(user_id_to_websocket)=}")
+    # logger.warning(f"nats_handle_map_update {command_id=}, {os.getpid()=}, {len(user_id_to_websocket)=}")
     students = db.get_all_students_by_command(command_id)
     for student_id in students:
         for ws in set(user_id_to_websocket.get(student_id, [])):
@@ -301,7 +301,7 @@ async def nats_handle_map_update(command_id):
 
 
 async def nats_handle_student_update(student_id):
-    logger.warning(f"nats_handle_student_update {student_id=}, {os.getpid()=}, {len(user_id_to_websocket)=}")
+    # logger.warning(f"nats_handle_student_update {student_id=}, {os.getpid()=}, {len(user_id_to_websocket)=}")
     student = User.get_by_id(student_id)
     if not student:
         return
