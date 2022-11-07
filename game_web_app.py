@@ -211,6 +211,8 @@ def get_game_data(student: User) -> dict:
     chests = [[r['x'], r['y']] for r in chests_rows]
     used_titles = set()
     for solv in solved:
+        if '⚡' not in solv['title']:
+            continue
         score, clear_title = solv['title'].split('⚡')
         score = int(score) if score.isdecimal() else 2
         if clear_title in used_titles:

@@ -42,7 +42,7 @@ class DB_GAME():
 
     def get_opened_cells_timeline (self,student_command: int) -> List[dict]:
         return self.conn.execute("""
-        SELECT gp.ts, oc.x, oc.y 
+        SELECT gp.ts, oc.x, oc.y, gp.student_id
         FROM game_map_opened_cells oc 
         join game_payments gp on gp.cell_id = oc.id
         where oc.command_id = :student_command
