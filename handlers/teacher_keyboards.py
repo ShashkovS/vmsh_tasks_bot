@@ -220,7 +220,7 @@ def build_teacher_reaction_on_solution(result_id: int):
     return keyboard
 
 
-def build_teacher_reaction_oral(result_id: int):
+def build_teacher_reaction_oral(zoom_conversation_id: int):
     """Создает инлайн клавиатуру для учителя для оценки устной сдачи ученика."""
     logger.debug('keyboards.build_teacher_reaction_oral')
     keyboard = types.InlineKeyboardMarkup()
@@ -228,7 +228,7 @@ def build_teacher_reaction_oral(result_id: int):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],
-                callback_data=f'{CALLBACK.REACTION}_{reaction["reaction_id"]}_{REACTION.ORAL_TEACHER}'
+                callback_data=f'{CALLBACK.REACTION}_{zoom_conversation_id}_{reaction["reaction_id"]}_{REACTION.ORAL_TEACHER}'
             )
         )
     return keyboard

@@ -704,7 +704,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         res_type = RES_TYPE.SCHOOL
     else:
         res_type = RES_TYPE.ZOOM
-    zoom_conversation_id = db.allocate_conversation()
+    zoom_conversation_id = db.allocate_conversation(student_id=student_id, teacher_id=teacher.id)
     for problem in pluses:
         Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type, zoom_conversation_id=zoom_conversation_id)
         # А ещё нужно удалить эту задачу из очереди на письменную проверку
@@ -729,7 +729,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         student_state = State.get_by_user_id(student.id)
         student_message = await bot.send_message(chat_id=student.chat_id,
                                                  text=f"В результате устного приёма вам поставили плюсики за задачи: {', '.join(human_readable_pluses)}",
-                                                 reply_markup=student_keyboards.build_student_reaction_oral(),
+                                                 reply_markup=student_keyboards.build_student_reaction_oral(zoom_conversation_id),
                                                  disable_notification=True)
         if student_state['state'] == STATE.STUDENT_IS_IN_CONFERENCE:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -742,6 +742,9 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     # asyncio.create_task(prc_teacher_select_action(None, teacher))
     # Сразу работает в режиме «ведите фамилию»
     await prc_ins_oral_plusses(query, teacher)
+    # Предлагаем учителю оставить отзыв о устной сдаче
+    await query.message.edit_reply_markup(reply_markup=teacher_keyboards.build_teacher_reaction_oral(zoom_conversation_id))
+    bot.remove_markup_after(query.message, 15)
 
 
 @dispatcher.message_handler(commands=['find_student', 'fs'])
