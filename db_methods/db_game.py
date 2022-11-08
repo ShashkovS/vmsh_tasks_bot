@@ -12,7 +12,6 @@ class DB_GAME():
             where student_id = :user_id
             order by ts
         ''', locals()).fetchall()
-
     def add_payment(self, user_id: int, command_id: int, x: int, y: int, amount: int) -> bool:
         cur = self.conn.cursor()
         ts = datetime.now().isoformat()
@@ -39,6 +38,15 @@ class DB_GAME():
         SELECT x, y 
         FROM game_map_opened_cells
         where command_id = :student_command
+        """, locals()).fetchall()
+
+    def get_opened_cells_timeline (self,student_command: int) -> List[dict]:
+        return self.conn.execute("""
+        SELECT gp.ts, oc.x, oc.y, gp.student_id
+        FROM game_map_opened_cells oc 
+        join game_payments gp on gp.cell_id = oc.id
+        where oc.command_id = :student_command
+        order by gp.ts
         """, locals()).fetchall()
 
     def set_student_command(self, user_id: int, level: str, command_id: int) -> int:
@@ -95,5 +103,27 @@ class DB_GAME():
             SELECT
             x, y
             from game_map_flags WHERE
-            command_id =:command_id and student_id
+            command_id =:command_id and student_id = :user_id
+        """, locals()).fetchall()
+
+
+    def add_student_chest(self, user_id: int, command_id: int, x: int, y: int, bonus: int) -> int:
+        ts = datetime.now().isoformat()
+        self.conn.execute("""
+                    INSERT INTO game_map_chests ( ts,  student_id,  command_id,  x,  y,  bonus)
+                    VALUES                      (:ts, :user_id,    :command_id, :x, :y, :bonus) 
+                    on conflict (student_id, command_id, x, y) do update set 
+                    bonus = excluded.bonus
+                """, locals())
+        self.conn.commit()
+        return self.conn.cursor().lastrowid
+
+
+    def get_student_chests(self, user_id: int, command_id: int) -> List[dict]:
+        return self.conn.execute("""
+            SELECT
+            ts, bonus, x, y
+            from game_map_chests WHERE
+            command_id = :command_id and student_id = :user_id 
+            order by ts
         """, locals()).fetchall()
