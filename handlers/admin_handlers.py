@@ -347,9 +347,13 @@ async def student_results(message: types.Message):
     else:
         rows = db.list_student_results(student.id, Problem.last_lesson_num(student.level))
     if rows:
-        lines = [f'{row["ts"][5:16]} {row["lesson"]:02}{row["level"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
-                 for row in rows]
-        await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
+        lessons = {row['lesson'] for row in rows}
+        for lesson in sorted(lessons):
+            lines = [f'{row["ts"][5:16]} {row["lesson"]:02}{row["level"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
+                     for row in rows
+                     if row['lesson'] == lesson
+                     ]
+            await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
     else:
         await bot.send_message(chat_id=message.chat.id, text='Нет ни одной посылки (или что-то пошло не так)')
 

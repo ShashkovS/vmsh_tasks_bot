@@ -112,7 +112,7 @@ def table_to_html(tables):
         html.append('<tr><th>' + '</th><th>'.join(table[0]) + '</th></tr>')
         for i in range(1, len(table)):
             row = table[i]
-            html.append('<tr><td>' + '</td><td>'.join(row) + '</th></tr>')
+            html.append('<tr><td>' + '</td><td>'.join(map(str, row)) + '</th></tr>')
         html.append('</table>')
         html.append('<hr style="margin:2rem;">')
     html.extend(['</table>', '</body>', '</html>'])
