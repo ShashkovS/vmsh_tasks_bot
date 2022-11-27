@@ -194,7 +194,7 @@ class State:
     @staticmethod
     def get_by_user_id(user_id: int):
         state = db.get_state_by_user_id(user_id) or {}
-        if state.get('info'):
+        if state.get('info', None):
             state['info'] = orjson.loads(state['info'])
         return state
 
