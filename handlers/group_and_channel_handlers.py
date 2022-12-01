@@ -10,7 +10,7 @@ from helpers.obj_classes import User
 
 URL_REGEX = re.compile(r'\s*(https?:\/\/)?([\w\.]+)\.([a-zрф]{2,6}\.?)(\/[\w\.]*)*\/?\s*')
 MAT_REGEX = re.compile(r"""(?iu)\b(?:(?:[уyu]|[нзnz3][аa]|(?:хитро|не)?[вvwb][зz3]?[ыьъi]|[сsc][ьъ']|(?:и|[рpr][аa4])[зсzs]ъ?|(?:[оo0][тбtb6]|[пp][оo0][дd9])[ьъ']?|(?:.\B)+?[оаеиeo])?-?(?:[еёe][бb6](?!о[рй])|и[пб][ае][тц]).*?|(?:[нn][иеаaie]|(?:[дпdp]|[вv][еe3][рpr][тt])[оo0]|[рpr][аa][зсzc3]|[з3z]?[аa]|с(?:ме)?|[оo0](?:[тt]|дно)?|апч)?-?[хxh][уuy](?:[яйиеёюuie]|ли(?!ган)).*?|(?:[вvw][зы3z]|(?:три|два|четыре)жды|(?:н|[сc][уuy][кk])[аa])?-?[бb6][лl](?:[яy](?!(?:х|ш[кн]|мб)[ауеыио]).*?|[еэe][дтdt][ь']?)|(?:[рp][аa][сзc3z]|[знzn][аa]|[соsc]|[вv][ыi]?|[пp](?:[еe][рpr][еe]|[рrp][оиioеe]|[оo0][дd])|и[зс]ъ?|[аоao][тt])?[пpn][иеёieu][зz3][дd9].*?|(?:[зz3][аa])?[пp][иеieu][дd][аоеaoe]?[рrp](?:ну.*?|[оаoa][мm]|(?:[аa][сcs])?(?:[иiu](?:[лl][иiu])?[нщктлtlsn]ь?)?|(?:[оo](?:ч[еиei])?|[аa][сcs])?[кk](?:[оo]й)?|[юu][гg])[ауеыauyei]?|[мm][аa][нnh][дd](?:[ауеыayueiи](?:[лl](?:[иi][сзc3щ])?[ауеыauyei])?|[оo][йi]|[аоao][вvwb][оo](?:ш|sh)[ь']?(?:[e]?[кk][ауеayue])?|юк(?:ов|[ауи])?)|[мm][уuy][дd6](?:[яyаиоaiuo0].*?|[еe]?[нhn](?:[ьюия'uiya]|ей))|мля(?:[тд]ь)?|лять|(?:[нз]а|по)х|м[ао]л[ао]фь(?:[яию]|[её]й))\b""")
-
+OK_URL_REGEX = re.compile(r't\.me\/vmsh')
 
 
 
@@ -35,7 +35,7 @@ async def group_message_handler(message: types.Message):
         bot.delete_messages_after([message, reply_msg], timeout=10)
     # Ссылка без комментариев — это спам. Пересылаем её в exception и удаляем
     elif message.text:
-        message_is_url_only = URL_REGEX.fullmatch(message.text)
+        message_is_url_only = URL_REGEX.fullmatch(message.text) and not OK_URL_REGEX.search(message.text)
         mat_detected = MAT_REGEX.search(message.text)
         if message_is_url_only or mat_detected:
             await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)
@@ -47,6 +47,7 @@ async def group_message_handler(message: types.Message):
             except Exception as e:
                 logger.exception(f'SHIT: {e}')
                 await bot.send_message(config.exceptions_channel, 'Сообщение выше удалить не удалось :(')
+        if mat_detected:
             # Баним пользователя
             try:
                 await bot.ban_chat_member(message.chat.id, message.from_user.id, revoke_messages=True)
