@@ -704,7 +704,13 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         res_type = RES_TYPE.SCHOOL
     else:
         res_type = RES_TYPE.ZOOM
-    zoom_conversation_id = db.allocate_conversation(student_id=student_id, teacher_id=teacher.id)
+    # Определяем занятие и уровень по задаче, за которую ставим плюс или минус
+    any_problem = pluses[0] if pluses else minuses[0] if minuses else None
+    if any_problem:
+        zoom_conversation_id = db.allocate_conversation(student_id=student_id, teacher_id=teacher.id, lesson=any_problem.lesson, level=any_problem.level)
+    else:
+        zoom_conversation_id = None
+    # Заливаем плюсы и минусы в базу
     for problem in pluses:
         Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type, zoom_conversation_id=zoom_conversation_id)
         # А ещё нужно удалить эту задачу из очереди на письменную проверку
@@ -724,27 +730,35 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text=text,
                                    reply_markup=None)
-    # Посылаем сообщения школьнику о проверке
+    # Предлагаем учителю оставить отзыв о устной сдаче, если есть хотя бы одна отметка
+    if any_problem:
+        zoom_reaction_msg = await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=f"Оцените устную сдачу:",
+            reply_markup = teacher_keyboards.build_teacher_reaction_oral(zoom_conversation_id)
+        )
+        bot.delete_messages_after(zoom_reaction_msg, 15)
+
+    # Посылаем сообщения школьнику о проверке (если хотя бы одна задача проверена)
     try:
+        if any_problem:
+            student_message = await bot.send_message(chat_id=student.chat_id,
+                                                     text=f"В результате устного приёма вам поставили плюсики за задачи: {', '.join(human_readable_pluses)}",
+                                                     reply_markup=student_keyboards.build_student_reaction_oral(zoom_conversation_id),
+                                                     disable_notification=True)
+        # Этот кусок для не работающего пока функционала
         student_state = State.get_by_user_id(student.id)
-        student_message = await bot.send_message(chat_id=student.chat_id,
-                                                 text=f"В результате устного приёма вам поставили плюсики за задачи: {', '.join(human_readable_pluses)}",
-                                                 reply_markup=student_keyboards.build_student_reaction_oral(zoom_conversation_id),
-                                                 disable_notification=True)
         if student_state['state'] == STATE.STUDENT_IS_IN_CONFERENCE:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
             await process_regular_message(student_message)
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
+    # Ура, сообщение обработано!
     await bot.answer_callback_query_ig(query.id)
-    # Сохраняем учителю режим внесения устных задач
+    # Сохраняем учителю режим внесения устных задач, сразу работает в режиме «ведите фамилию»
+    await prc_ins_oral_plusses(query, teacher)
     # State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     # asyncio.create_task(prc_teacher_select_action(None, teacher))
-    # Сразу работает в режиме «ведите фамилию»
-    await prc_ins_oral_plusses(query, teacher)
-    # Предлагаем учителю оставить отзыв о устной сдаче
-    await query.message.edit_reply_markup(reply_markup=teacher_keyboards.build_teacher_reaction_oral(zoom_conversation_id))
-    bot.remove_markup_after(query.message, 15)
 
 
 @dispatcher.message_handler(commands=['find_student', 'fs'])

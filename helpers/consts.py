@@ -246,6 +246,6 @@ class REACTION(IntEnum):
     Смотри также отношение `reaction_type_enum` в БД.
     """
     WRITTEN_STUDENT = 0
-    WRITTEN_TEACHER = 1
-    ORAL_STUDENT = 2
-    ORAL_TEACHER = 3
+    WRITTEN_TEACHER = 100
+    ORAL_STUDENT = 200
+    ORAL_TEACHER = 300

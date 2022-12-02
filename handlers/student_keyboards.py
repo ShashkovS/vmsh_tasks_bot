@@ -152,11 +152,11 @@ def build_student_reaction_on_task_bad_verdict(result_id: int):
     """
     logger.debug('keyboards.build_student_reaction_on_task_bad_verdict')
     keyboard = types.InlineKeyboardMarkup()
-    for reaction in db.get_reactions(REACTION.WRITTEN_STUDENT):
+    for reaction in db.get_reactions_enum(REACTION.WRITTEN_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],
-                callback_data=f'{CALLBACK.REACTION}_{result_id}_{reaction["reaction_id"]}_{REACTION.WRITTEN_STUDENT}'
+                callback_data=f'{CALLBACK.REACTION}_{result_id}_None_{reaction["reaction_id"]}_{REACTION.WRITTEN_STUDENT}'
             )
         )
     return keyboard
@@ -166,11 +166,11 @@ def build_student_reaction_oral(zoom_conversation_id: int):
     """Создает инлайн клавиатуру для ученика для оценки устной сдачи."""
     logger.debug('keyboards.build_student_reaction_oral')
     keyboard = types.InlineKeyboardMarkup()
-    for reaction in db.get_reactions(REACTION.ORAL_STUDENT):
+    for reaction in db.get_reactions_enum(REACTION.ORAL_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],
-                callback_data=f'{CALLBACK.REACTION}_{zoom_conversation_id}_{reaction["reaction_id"]}_{REACTION.ORAL_STUDENT}'
+                callback_data=f'{CALLBACK.REACTION}_None_{zoom_conversation_id}_{reaction["reaction_id"]}_{REACTION.ORAL_STUDENT}'
             )
         )
     return keyboard
