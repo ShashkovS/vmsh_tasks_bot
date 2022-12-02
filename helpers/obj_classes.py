@@ -194,7 +194,7 @@ class State:
     @staticmethod
     def get_by_user_id(user_id: int):
         state = db.get_state_by_user_id(user_id) or {}
-        if state['info']:
+        if state.get('info', None):
             state['info'] = orjson.loads(state['info'])
         return state
 
@@ -260,8 +260,8 @@ class WrittenQueue:
 
 class Result:
     @staticmethod
-    def add(student: User, problem: Problem, teacher: Optional[User], verdict: VERDICT, answer: Optional[str], res_type: RES_TYPE) -> int:
-        result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher and teacher.id, verdict, answer, res_type)
+    def add(student: User, problem: Problem, teacher: Optional[User], verdict: VERDICT, answer: Optional[str], res_type: RES_TYPE, zoom_conversation_id: int = None) -> int:
+        result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher and teacher.id, verdict, answer, res_type, zoom_conversation_id)
         if verdict > 0:
             asyncio.create_task(vmsh_nats.publish(NATS_GAME_STUDENT_UPDATE, student.id))
         return result_id

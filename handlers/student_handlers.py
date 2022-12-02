@@ -666,29 +666,6 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
     asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
 
 
-@reg_callback(CALLBACK.STUDENT_REACTION)
-async def prc_student_reaction_on_task_bad_verdict(query: types.CallbackQuery, student: User):
-    """Коллбек на реакцию студента на отрицательный вердикт по письменной работе."""
-    logger.debug('prc_student_reaction_on_task_bad_verdict')
-    callback, result_id, reaction_id = query.data.split('_')
-    reaction_id = int(reaction_id)
-    result_id = int(result_id)
-    try:
-        db.write_student_reaction_on_task_bad_verdict(result_id, reaction_id)
-    except Exception:
-        logger.error('Ошибка записи реакции ученика в БД.')
-    else:
-        old_text = query.message.text
-        original_message = query.message.text.split()[0]
-        new_text = f"{original_message}\nОценка проверки: {db.get_student_reaction_by_id(reaction_id)}"
-        if old_text != new_text:
-            try:
-                await query.message.edit_text(new_text, reply_markup=None)
-            except aiogram.utils.exceptions.MessageNotModified:
-                pass
-        await query.answer(f'Принято')
-
-
 @dispatcher.message_handler(commands=['exit_waitlist'])
 async def exit_waitlist(message: types.Message):
     logger.debug('exit_waitlist')

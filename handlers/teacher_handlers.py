@@ -374,7 +374,7 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
                                                     is_sos=True)
 
 
-async def forward_discussion_to_student(student: User, problem: Problem, solved: bool):
+async def forward_discussion_to_student(student: User, problem: Problem, solved: bool, result_id: int = None):
     """ Отправить студенту вердикт проверки и переслать переписку.
     Если задача решена, то пересылаются только последние комментарии учителя.
     Если не решена, то пересылается вся переписка, чтобы было понятно, о чём речь в целом.
@@ -418,10 +418,16 @@ async def forward_discussion_to_student(student: User, problem: Problem, solved:
             #     # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
             #     input_file = types.input_file.InputFile(row['attach_path'])
             #     await bot.send_photo(chat_id=student.chat_id, photo=input_file, disable_notification=True)
+        if solved:
+            student_reaction_keyboard = None
+        else:
+            student_reaction_keyboard = student_keyboards.build_student_reaction_on_task_bad_verdict(result_id)
         if messages_to_forward:
             await bot.send_message(chat_id=student.chat_id,
                                    text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n',
+                                   reply_markup=student_reaction_keyboard,
                                    disable_notification=True)
+
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
 
@@ -472,7 +478,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
     # Пересылаем переписку школьнику
-    asyncio.create_task(forward_discussion_to_student(student, problem, solved=False))
+    asyncio.create_task(forward_discussion_to_student(student, problem, solved=False, result_id=result_id))
     asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
@@ -698,14 +704,21 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         res_type = RES_TYPE.SCHOOL
     else:
         res_type = RES_TYPE.ZOOM
+    # Определяем занятие и уровень по задаче, за которую ставим плюс или минус
+    any_problem = pluses[0] if pluses else minuses[0] if minuses else None
+    if any_problem:
+        zoom_conversation_id = db.allocate_conversation(student_id=student_id, teacher_id=teacher.id, lesson=any_problem.lesson, level=any_problem.level)
+    else:
+        zoom_conversation_id = None
+    # Заливаем плюсы и минусы в базу
     for problem in pluses:
-        Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type)
+        Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type, zoom_conversation_id=zoom_conversation_id)
         # А ещё нужно удалить эту задачу из очереди на письменную проверку
         db.delete_from_written_task_queue(student_id, problem.id)
     for problem in minuses:
         db.delete_plus(student_id, problem.id, RES_TYPE.SCHOOL, VERDICT.REJECTED_ANSWER)
         db.delete_plus(student_id, problem.id, RES_TYPE.ZOOM, VERDICT.REJECTED_ANSWER)
-        Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, res_type)
+        Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, res_type, zoom_conversation_id=zoom_conversation_id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
 
     # Формируем сообщение с итоговым результатом проверки
@@ -717,23 +730,35 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text=text,
                                    reply_markup=None)
-    # Посылаем сообщения школьнику о проверке
+    # Предлагаем учителю оставить отзыв о устной сдаче, если есть хотя бы одна отметка
+    if any_problem:
+        zoom_reaction_msg = await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=f"Оцените устную сдачу:",
+            reply_markup = teacher_keyboards.build_teacher_reaction_oral(zoom_conversation_id)
+        )
+        bot.delete_messages_after(zoom_reaction_msg, 15)
+
+    # Посылаем сообщения школьнику о проверке (если хотя бы одна задача проверена)
     try:
+        if any_problem:
+            student_message = await bot.send_message(chat_id=student.chat_id,
+                                                     text=f"В результате устного приёма вам поставили плюсики за задачи: {', '.join(human_readable_pluses)}",
+                                                     reply_markup=student_keyboards.build_student_reaction_oral(zoom_conversation_id),
+                                                     disable_notification=True)
+        # Этот кусок для не работающего пока функционала
         student_state = State.get_by_user_id(student.id)
-        student_message = await bot.send_message(chat_id=student.chat_id,
-                                                 text=f"В результате устного приёма вам поставили плюсики за задачи: {', '.join(human_readable_pluses)}",
-                                                 disable_notification=True)
         if student_state['state'] == STATE.STUDENT_IS_IN_CONFERENCE:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
             await process_regular_message(student_message)
     except aiogram.utils.exceptions.TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
+    # Ура, сообщение обработано!
     await bot.answer_callback_query_ig(query.id)
-    # Сохраняем учителю режим внесения устных задач
+    # Сохраняем учителю режим внесения устных задач, сразу работает в режиме «ведите фамилию»
+    await prc_ins_oral_plusses(query, teacher)
     # State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     # asyncio.create_task(prc_teacher_select_action(None, teacher))
-    # Сразу работает в режиме «ведите фамилию»
-    await prc_ins_oral_plusses(query, teacher)
 
 
 @dispatcher.message_handler(commands=['find_student', 'fs'])
@@ -856,24 +881,6 @@ async def zoom_queue(message: types.Message):
     if teacher_state['state'] == STATE.TEACHER_SELECT_ACTION:
         await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
                                reply_markup=teacher_keyboards.build_teacher_actions())
-
-
-@reg_callback(CALLBACK.TEACHER_REACTION)
-async def prc_teacher_reaction_solution(query: types.CallbackQuery, student: User):
-    """Коллбек на реакцию учителя на решенеие ученика в письменной работе."""
-    logger.debug('prc_teacher_reaction_solution')
-    callback, result_id, reaction_id = query.data.split('_')
-    reaction_id = int(reaction_id)
-    result_id = int(result_id)
-    try:
-        db.write_teacher_reaction_on_solution(result_id, reaction_id)
-    except Exception:
-        logger.error('Ошибка записи реакции учителя в БД.')
-    else:
-        original_message = query.message.text.split('\n')[0]
-        await query.message.edit_text(f"{original_message}\n{db.get_teacher_reaction_by_id(reaction_id)}",
-                                      reply_markup=None)
-        await query.answer(f'Принято')
 
 
 @dispatcher.message_handler(commands=['set_game_command', 'sg'])
