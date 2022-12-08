@@ -93,7 +93,6 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     # то к нам в бот они придут в виде нескольких сообщений с одинаковым media_group_id.
     # Поэтому если media_group_id задан, то для первого сообщения нужно сохранить, к какой он задаче,
     # а потом уже брать id задачи из
-    problem_id = None
     next_media_group_message = False
     logger.warning(f'{message.media_group_id=}')
     if message.media_group_id:
@@ -103,10 +102,14 @@ async def prc_sending_solution_state(message: types.Message, student: User):
             next_media_group_message = True
         else:
             problem_id = State.get_by_user_id(student.id)['problem_id']
-            db.media_group_add(message.media_group_id, problem_id)
-    if not problem_id:
+            duplicate = db.media_group_add(message.media_group_id, problem_id)
+            # Могло так случиться, что в другом потоке в параллель добавили
+            if duplicate:
+                problem_id = db.media_group_check(message.media_group_id)
+                next_media_group_message = True
+                logger.warning(f'duplicate {problem_id=} {message.media_group_id=}')
+    else:
         problem_id = State.get_by_user_id(student.id)['problem_id']
-    problem = Problem.get_by_id(abs(problem_id))  # Убираем знак (он отрицательный, если это не решение, а вопрос)
     file_name = None
     text = message.text
 

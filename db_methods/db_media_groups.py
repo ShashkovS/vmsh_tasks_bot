@@ -15,7 +15,7 @@ class DB_MEDIA_GROUPS():
         ''', locals()).fetchone()
         return saved_problem_id and saved_problem_id['problem_id']
 
-    def media_group_add(self, media_group_id: int, problem_id: int) -> Optional[int]:
+    def media_group_add(self, media_group_id: int, problem_id: int) -> bool:
         ts = datetime.now().isoformat()
         cur = self.conn.cursor()
         cur.execute("""
@@ -24,4 +24,5 @@ class DB_MEDIA_GROUPS():
             on conflict (media_group_id) DO NOTHING
         """, locals())
         self.conn.commit()
-        return cur.lastrowid
+        duplicate = cur.rowcount == 0
+        return duplicate
