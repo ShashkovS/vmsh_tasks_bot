@@ -94,10 +94,10 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     # Поэтому если media_group_id задан, то для первого сообщения нужно сохранить, к какой он задаче,
     # а потом уже брать id задачи из
     next_media_group_message = False
-    logger.warning(f'{message.media_group_id=}')
+    logger.warning(f'{message.media_group_id=} {os.getpid()=}')
     if message.media_group_id:
         problem_id = db.media_group_check(message.media_group_id)
-        logger.warning(f'{message.media_group_id=} {problem_id=}')
+        logger.warning(f'{message.media_group_id=} {problem_id=} {os.getpid()=}')
         if problem_id:
             next_media_group_message = True
         else:
@@ -107,7 +107,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
             if duplicate:
                 problem_id = db.media_group_check(message.media_group_id)
                 next_media_group_message = True
-                logger.warning(f'duplicate {problem_id=} {message.media_group_id=}')
+                logger.warning(f'duplicate {problem_id=} {message.media_group_id=} {os.getpid()=}')
     else:
         problem_id = State.get_by_user_id(student.id)['problem_id']
     file_name = None
