@@ -95,10 +95,10 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     # а потом уже брать id задачи из
     problem_id = None
     next_media_group_message = False
-    logger.warning('message.media_group_id', message.media_group_id)
+    logger.warning(f'{message.media_group_id=}')
     if message.media_group_id:
         problem_id = db.media_group_check(message.media_group_id)
-        logger.warning('message.media_group_id', message.media_group_id, 'problem_id', problem_id)
+        logger.warning(f'{message.media_group_id=} {problem_id=}')
         if problem_id:
             next_media_group_message = True
         else:
