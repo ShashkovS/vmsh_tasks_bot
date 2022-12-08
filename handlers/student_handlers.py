@@ -80,7 +80,7 @@ async def prc_get_task_info_state(message, student: User):
     # Попытка сдать решение без выбранной задачи
     if message.photo or message.document:
         alarm = '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n' \
-                '(Можно посылать несколько фотографий решения, для этого каждый раз нужно выбирать задачу.)'
+                '(Можно посылать несколько фотографий решения в виде галереи, либо каждый раз нужно выбирать задачу.)'
     elif message.text and len(message.text) > 20:
         alarm = '❗❗❗ Текст НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
     sleep = 0
@@ -93,15 +93,13 @@ async def prc_get_task_info_state(message, student: User):
 @reg_state(STATE.SENDING_SOLUTION)
 async def prc_sending_solution_state(message: types.Message, student: User):
     logger.debug('prc_sending_solution_state')
-    # Особый случай — это медиа-группы. Если несколько картинок в одном сообщении,
+    # Особый случай — это медиа-группы. Если несколько картинок  в одном сообщении,
     # то к нам в бот они придут в виде нескольких сообщений с одинаковым media_group_id.
     # Поэтому если media_group_id задан, то для первого сообщения нужно сохранить, к какой он задаче,
-    # а потом уже брать id задачи из
+    # а потом уже брать id задачи из сохранённого
     next_media_group_message = False
-    logger.warning(f'{message.media_group_id=} {os.getpid()=}')
     if message.media_group_id:
         problem_id = db.media_group_check(message.media_group_id)
-        logger.warning(f'{message.media_group_id=} {problem_id=} {os.getpid()=}')
         if problem_id:
             next_media_group_message = True
         else:
@@ -111,7 +109,6 @@ async def prc_sending_solution_state(message: types.Message, student: User):
             if duplicate:
                 problem_id = db.media_group_check(message.media_group_id)
                 next_media_group_message = True
-                logger.warning(f'duplicate {problem_id=} {message.media_group_id=} {os.getpid()=}')
     else:
         problem_id = State.get_by_user_id(student.id)['problem_id']
     file_name = None
