@@ -81,7 +81,7 @@ async def prc_get_task_info_state(message, student: User):
     sleep = 0
     if alarm:
         await bot.send_message(chat_id=message.chat.id, text=alarm, )
-        sleep = 3
+        sleep = 8
     asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student, sleep=sleep))
 
 
@@ -95,8 +95,10 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     # а потом уже брать id задачи из
     problem_id = None
     next_media_group_message = False
+    logger.warning('message.media_group_id', message.media_group_id)
     if message.media_group_id:
         problem_id = db.media_group_check(message.media_group_id)
+        logger.warning('message.media_group_id', message.media_group_id, 'problem_id', problem_id)
         if problem_id:
             next_media_group_message = True
         else:
@@ -148,7 +150,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
             text="Принято на проверку" if (problem_id > 0) else "Вопрос записан"
         )
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id,   student))
 
 
 def check_test_ans_rate_limit(student_id: int, problem_id: int):
