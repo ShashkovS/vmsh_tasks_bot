@@ -71,6 +71,11 @@ async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1)
 @reg_state(STATE.GET_TASK_INFO)
 async def prc_get_task_info_state(message, student: User):
     logger.debug('prc_get_task_info_state')
+    # Возможно, тут прилетел хвост галереи, которую мы успешно уже обработали.
+    if message.media_group_id and db.media_group_check(message.media_group_id):
+        await prc_sending_solution_state(message, student)
+        return
+    # Обрабатываем как обычно
     alarm = ''
     # Попытка сдать решение без выбранной задачи
     if message.photo or message.document:
@@ -88,7 +93,6 @@ async def prc_get_task_info_state(message, student: User):
 @reg_state(STATE.SENDING_SOLUTION)
 async def prc_sending_solution_state(message: types.Message, student: User):
     logger.debug('prc_sending_solution_state')
-
     # Особый случай — это медиа-группы. Если несколько картинок в одном сообщении,
     # то к нам в бот они придут в виде нескольких сообщений с одинаковым media_group_id.
     # Поэтому если media_group_id задан, то для первого сообщения нужно сохранить, к какой он задаче,
