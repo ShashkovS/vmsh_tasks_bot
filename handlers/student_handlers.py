@@ -726,3 +726,14 @@ async def set_zoom(message: types.Message):
                                      text=f"Ожидайте вашей очереди и не выходите из конференции {zoom_url}.\nВыполните команду /exit_waitlist для отмены.", )
         await bot.pin_chat_message(chat_id=message.chat.id, message_id=msg.message_id)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user, sleep=5))
+
+@dispatcher.message_handler(commands=['zq'])
+async def stand_in_zoom_queue(message: types.Message):
+    logger.debug('stand_in_zoom_queue')
+    user = User.get_by_chat_id(message.chat.id)
+    db.add_to_queue_by_id(user.id)
+    await bot.send_message(chat_id=message.chat.id, text="Вы встали в zoom-очередь")
+    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user, sleep=5))
+    #    msg = await bot.send_message(chat_id=message.chat.id,
+    #                                text=f"Ожидайте вашей очереди и не выходите из конференции {zoom_url}.\nВыполните команду /exit_waitlist для отмены.", )
+    #    await bot.pin_chat_message(chat_id=message.chat.id, message_id=msg.message_id)

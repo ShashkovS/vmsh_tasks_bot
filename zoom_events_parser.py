@@ -8,7 +8,7 @@ routes = web.RouteTableDef()
 __ALL__ = ['routes']
 
 ZOOM_AUTH = 'BAKPekpQQgW1C3S6MEP4-g'
-ZOOM_ID = "87196763644"
+ZOOM_ID = "3720025044"
 TIMEZONE = timedelta(hours=3)
 
 
@@ -32,19 +32,19 @@ def process_event(event: str, event_ts: datetime, participant: dict):
     if False:
         pass
     elif event == "meeting.participant_joined_waiting_room":
-        db.add_to_queue(user_name, event_ts, status=0)
-    elif event == "meeting.participant_joined":
-        db.mark_joined(user_name, status=1)
-    elif event == "meeting.participant_admitted":
-        db.mark_joined(user_name, status=1)
-    elif event == "meeting.participant_left":
-        db.remove_from_queue(user_name)
-    elif event == "meeting.participant_joined_breakout_room":
-        db.remove_from_queue(user_name)
-    elif event == "meeting.participant_left_breakout_room":
-        db.remove_from_queue(user_name)
-    elif event == "meeting.participant_left_waiting_room":
-        db.remove_from_queue(user_name)
+        db.add_to_queue_by_zoom_name(user_name)
+    # elif event == "meeting.participant_joined":
+    #     db.mark_joined(user_name, status=1)
+    # elif event == "meeting.participant_admitted":
+    #     db.mark_joined(user_name, status=1)
+    # elif event == "meeting.participant_left":
+    #     db.remove_from_queue(user_name)
+    # elif event == "meeting.participant_joined_breakout_room":
+    #     db.remove_from_queue(user_name)
+    # elif event == "meeting.participant_left_breakout_room":
+    #     db.remove_from_queue(user_name)
+    # elif event == "meeting.participant_left_waiting_room":
+    #     db.remove_from_queue(user_name)
     elif event == "meeting.ended":
         pass
     elif event == "meeting.started":

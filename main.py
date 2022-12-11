@@ -96,8 +96,15 @@ if __name__ == "__main__":
     from aiogram.contrib.middlewares.logging import LoggingMiddleware
 
     dispatcher.middleware.setup(LoggingMiddleware())
+    # zoom
+    app = web.Application()
+    app.dispatcher = dispatcher
+    configure_app(dispatcher, app, path='/{token}/', route_name='telegram_webhook_handler')
+    app.add_routes(zoom_events_parser.routes)
+
     # В режиме отладки запускаем без вебхуков
     start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
+
 else:
 
     # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
@@ -114,7 +121,7 @@ else:
     app.add_routes(zoom_events_parser.routes)
     app.add_routes(tags_service.routes)
     app.add_routes(web_app.routes)
-    app.add_routes(game_web_app.routes)
+    # app.add_routes(game_web_app.routes)
     # app will be started by gunicorn, so no need to start_webhook
     # start_webhook(
     #     dispatcher=dispatcher,

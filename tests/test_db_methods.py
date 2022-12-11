@@ -102,6 +102,11 @@ class DatabaseMethodsTest(TestCase):
         self.db.set_user_level(student2['id'], new_level2)
         self.assertEqual(self.db.get_user_by_id(student1['id'])['level'], new_level1)
         self.assertEqual(self.db.get_user_by_id(student2['id'])['level'], new_level2)
+    def test_get_full_user_name_by_id (self):
+        testData = {1: "н Григорий Ющенко", 2: "п София Алексеевна Полякова", 3: "п София Борисовна Полякова", 4: "п Антон Михайлович Михеенко 2011-11-22", 5: "п Антон Михайлович Михеенко 2022-11-22", 6: "н Михаил Наумов",
+7: "н Амир М. Файзуллин", 8: "н Марк Шерман"} #возможно, при добавлении новых dummy пользователей в initial_test_data возникнут проблемы !!!
+        for i in testData.keys():
+            self.assertEqual(self.db.get_full_user_name_by_id(i),testData[i])
 
     def test_webtokens(self):
         student1 = self.db.get_user_by_token(test_students[-1]['token'])
