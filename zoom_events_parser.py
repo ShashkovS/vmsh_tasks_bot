@@ -41,13 +41,16 @@ def process_event(event: str, event_ts: datetime, participant: dict):
     elif event == "meeting.participant_admitted":
         db.mark_joined(user_name, status=1)
     elif event == "meeting.participant_left":
-        db.remove_from_queue(user_name)
+        # Помечаем, что его нет в конфе, есть в очереди
+        db.mark_joined(user_name, status=-1)
+        # db.remove_from_queue(user_name)
     elif event == "meeting.participant_joined_breakout_room":
         db.remove_from_queue(user_name)
     elif event == "meeting.participant_left_breakout_room":
         db.remove_from_queue(user_name)
     elif event == "meeting.participant_left_waiting_room":
-        db.remove_from_queue(user_name)
+        db.mark_joined(user_name, status=-1)
+        # db.remove_from_queue(user_name)
     elif event == "meeting.ended":
         pass
     elif event == "meeting.started":
