@@ -24,7 +24,8 @@ def parse_json(data: dict):
     object = payload['object']
     is_circle = object['id'] == ZOOM_ID
     participant = object.get('participant', {})
-    return event, event_ts, is_circle, participant
+    breakout_room_uuid = object.get('breakout_room_uuid', None)
+    return event, event_ts, is_circle, participant, breakout_room_uuid
 
 
 def process_event(event: str, event_ts: datetime, participant: dict):
@@ -53,21 +54,28 @@ def process_event(event: str, event_ts: datetime, participant: dict):
 
 @routes.post('/zoomevents')
 async def post_zoomevents(request: web.Request):
-    try:
-        logger.warning(str(request.headers) + ';' + str(await request.text()))
-    except Exception as e:
-        logger.warning(e)
+    # try:
+    #     logger.warning(str(request.headers) + ';' + str(await request.text()))
+    # except Exception as e:
+    #     logger.warning(e)
     # if request.Authorization != ZOOM_AUTH:
     #     return web.Response(status=200)
     try:
         data = await request.json()
-        event, event_ts, is_circle, participant = parse_json(data)
+        event, event_ts, is_circle, participant, breakout_room_uuid = parse_json(data)
     except Exception as e:
         logger.error(e)
         return web.Response(status=400)
     if not is_circle or not participant:
         return web.Response(status=200)
     process_event(event, event_ts, participant)
+    zoom_user_name = participant['user_name']
+    zoom_user_id = participant.get('user_id', None)
+    user_id = None
+    db.conn.execute('''
+        insert into zoom_events ( event_ts,  event,  zoom_user_name,  zoom_user_id,  breakout_room_uuid,  user_id)
+                         values (:event_ts, :event, :zoom_user_name, :zoom_user_id, :breakout_room_uuid, :user_id)
+    ''', locals())
     return web.Response(status=200)
 
 # import json
