@@ -1,8 +1,10 @@
 from aiohttp import web
 from datetime import datetime, timedelta
+from Levenshtein import distance
+import re
 from helpers.consts import *
 from helpers.config import logger, config
-from helpers.obj_classes import db
+from helpers.obj_classes import db, User
 
 routes = web.RouteTableDef()
 __ALL__ = ['routes']
@@ -77,6 +79,52 @@ async def post_zoomevents(request: web.Request):
                          values (:event_ts, :event, :zoom_user_name, :zoom_user_id, :breakout_room_uuid, :user_id)
     ''', locals())
     return web.Response(status=200)
+
+
+def prepare_zoom_name(name: str):
+    name = name.encode('utf-16', 'surrogatepass').decode('utf-16')
+    name = name.lower()
+    name = name.replace('_', ' ')
+    name = name.replace('ё', 'е')
+    name = re.sub(r'[^а-яА-ЯёЁa-zA-Z.]+', ' ', name)
+    # Удаляем уровень
+    name = re.sub(r'нач.нающ\w*', ' ', name)
+    name = re.sub(r'пр.д.лжающ\w*', ' ', name)
+    name = re.sub(r'эксперт\w*', ' ', name)
+    name = re.sub(r'\b(?:нач|пр|экс|нач|пр|экс|группа)\b', ' ', name)
+    name = re.sub(r'^\s*[нпэв8]\b', '', name)
+    name = re.sub(r'\s*\b[нпэв8]$', '', name)
+    # Удаляем пометку, что это принимающий
+    teacher_name = re.sub(r'(?:прин.*|провер.*)щ\w*', ' ', name)
+    if teacher_name != name:
+        name = teacher_name
+        is_teacher = True
+    else:
+        is_teacher = False
+    # Удаляем лишние пробелы
+    name = re.sub(r' {2,}', ' ', name).strip(' .')
+    return name, is_teacher
+
+
+def prepare_db_name(name: str) -> str:  # удалим букву отчества
+    return re.sub(r'\b[А-Яа-яёЁ]\.', '', name).lower().replace('ё', '').strip(' .')
+
+
+def find_user_id_by_zoom_username(name_to_find: str) -> int:  # возвращаем -1 в случае неудачи
+    prepared_name, is_teacher = prepare_zoom_name(name_to_find)
+    all_users = User.all_teachers() if is_teacher else User.all_students()
+    distances = []
+    for user in all_users:
+        db_surname = prepare_db_name(user.surname)
+        db_name = prepare_db_name(user.name)
+        d = min(distance(prepared_name, f'{db_surname} {db_name}'), distance(prepared_name, f'{db_name} {db_surname}'))  # score_cutoff=4
+        if d < 3:
+            distances.append((str(user), d))
+    distances.sort(key=lambda triple: -triple[1])
+    # distances.append(('', 10))
+    # TODO Доделать
+    print(name_to_find, distances)
+    return -1
 
 # import json
 # events = json.load(open(f'X:\_zoom_events.json', 'r', encoding='utf-8'))
