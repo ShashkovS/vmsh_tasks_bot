@@ -1,7 +1,6 @@
 import sqlite3
 from typing import List
 
-
 # ██    ██ ███████ ███████ ██████  ███████
 # ██    ██ ██      ██      ██   ██ ██
 # ██    ██ ███████ █████   ██████  ███████
@@ -98,6 +97,24 @@ class DB_USER():
         cur.execute("SELECT * FROM users where id = :user_id limit 1", locals())
         row = cur.fetchone()
         return row
+
+    def get_full_user_name_by_id (self,user_id :int) -> str: #медленно работает, надо поменьше запускать
+        cur = self.conn.cursor()
+        cur.execute("SELECT * FROM users where id = :user_id limit 1", locals())
+        user = cur.fetchone()
+        username = user['name']
+        usersurname = user['surname']
+        userfullname = ' '.join([user['level'], username, usersurname])
+        checkrows = cur.execute("SELECT * FROM users where name = :username and surname = :usersurname ", locals()).fetchall()
+        if len(checkrows) > 1:
+            usermiddlename = user['middlename']
+            userfullname = ' '.join([user['level'], username, usermiddlename, usersurname])
+            checkrows = cur.execute("SELECT * FROM users where name = :username and surname = :usersurname and middlename = :usermiddlename",
+                                    locals()).fetchall()
+            if len(checkrows) > 1:
+                userbirthday = user['birthday']
+                userfullname = ' '.join([user['level'],username,usermiddlename,usersurname,userbirthday])
+        return userfullname
 
     def get_user_by_token(self, token: str) -> dict:
         cur = self.conn.cursor()

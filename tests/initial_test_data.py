@@ -1,7 +1,13 @@
 test_students = [
     {"chat_id": None, "type": 1, "level": "н", "name": "Григорий", "surname": "Ющенко", "middlename": "", "token": "token1", "online": 1, "grade": None, "birthday": None},
-    {"chat_id": 1230, "type": 1, "level": "п", "name": "София", "surname": "Полякова", "middlename": "", "token": "token2", "online": 2, "grade": None, "birthday": None},
-    {"chat_id": 1231, "type": 1, "level": "п", "name": "Антон", "surname": "Михеенко", "middlename": "", "token": "token3", "online": 1, "grade": None, "birthday": None},
+    {"chat_id": 1230, "type": 1, "level": "п", "name": "София", "surname": "Полякова", "middlename": "Алексеевна", "token": "token2", "online": 2, "grade": None, "birthday": None},
+    {"chat_id": 1234, "type": 1, "level": "п", "name": "София", "surname": "Полякова", "middlename": "Борисовна",
+     "token": "token7", "online": 2, "grade": None, "birthday": None},
+
+    {"chat_id": 1231, "type": 1, "level": "п", "name": "Антон", "surname": "Михеенко", "middlename": "Михайлович", "token": "token3", "online": 1, "grade": None, "birthday": "2011-11-22"},
+    {"chat_id": None, "type": 1, "level": "п", "name": "Антон", "surname": "Михеенко", "middlename": "Михайлович",
+     "token": "token8", "online": 1, "grade": None, "birthday": "2022-11-22"},
+
     {"chat_id": None, "type": 1, "level": "н", "name": "Михаил", "surname": "Наумов", "middlename": "", "token": "token4", "online": 2, "grade": None, "birthday": None},
     {"chat_id": 1232, "type": 1, "level": "н", "name": "Амир М.", "surname": "Файзуллин", "middlename": "", "token": "token5", "online": 1, "grade": None, "birthday": None},
     {"chat_id": 1233, "type": 1, "level": "н", "name": "Марк", "surname": "Шерман", "middlename": "", "token": "token6", "online": 1, "grade": None, "birthday": None},
