@@ -34,12 +34,13 @@ if __name__ == "__main__":
 else:
     # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
     app = web.Application()
-    # Важно, что текущий on_startup первый
+    # Важно, что текущие on_startup и on_shutdown первые. Мы потом развернём список on_shutdown в обратном порядке
     app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
     # Теперь настраиваем все модули
     for module in apps.all_apps:
         module.configue(app)
-    # Важно, что текущий on_shutdown — последний
-    app.on_shutdown.append(on_shutdown)
+    # Обращаем on_shutdown, чтобы приложения закрывались в правильном порядке
+    app.on_shutdown[:] = app.on_shutdown[::-1]
     # Ну всё, можно делать заключительные приготовления
     apps.tg_bot.start_bot_in_webhook_mode(app)
