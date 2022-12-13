@@ -96,7 +96,10 @@ class SpreadsheetLoader:
 
     def close(self):
         if self.client and self.client.session:
-            self.client.session.close()
+            try:
+                self.client.session.close()
+            except:
+                pass
 
 
 google_spreadsheet_loader = SpreadsheetLoader()

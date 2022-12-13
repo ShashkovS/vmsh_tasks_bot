@@ -64,7 +64,9 @@ async def on_shutdown(app):
     all_async_tasks_but_current = list(asyncio.all_tasks() - {asyncio.current_task()})
     for i in range(len(all_async_tasks_but_current) - 1, -1, -1):
         task = all_async_tasks_but_current[i]
-        if 'start_polling' in task.get_coro().__qualname__:
+        coro_name = task.get_coro().__qualname__
+        # TODO Это, конечно, отстой... Но хз, как сделать лучше
+        if 'start_polling' in coro_name or 'Client._' in coro_name or 'Subscription._' in coro_name:
             all_async_tasks_but_current.pop(i)
         else:
             logger.warning(f'Pending task: {task.get_coro().__qualname__}')

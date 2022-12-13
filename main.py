@@ -19,6 +19,7 @@ async def on_shutdown(app):
     """
     logger.debug('on_shutdown')
     logger.warning('Shutting down..')
+    # К этому моменту все задания уже должны быть закончены. Поэтому закрываем прямо всё
     all_async_tasks_but_current = list(asyncio.all_tasks() - {asyncio.current_task()})
     logger.warning(f'Tasks to wait: {all_async_tasks_but_current!r}')
     if all_async_tasks_but_current:
