@@ -10,7 +10,6 @@ from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 from helpers.obj_classes import db, update_from_google_if_db_is_empty
 from helpers.config import config, logger, DEBUG
 from helpers.bot import bot, dispatcher
-from helpers.nats_brocker import vmsh_nats
 
 USE_WEBHOOKS = False
 routes = None
@@ -79,7 +78,6 @@ async def on_shutdown(app):
         await bot._session.close()
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
-    await vmsh_nats.disconnect()
     if __name__ == "__main__":
         db.disconnect()
     logger.warning('Bye!')
