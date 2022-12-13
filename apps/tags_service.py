@@ -158,7 +158,7 @@ async def on_shutdown(app):
         db.disconnect()
     for ws in ws_connections:
         await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
-    logger.warning('Bye!')
+    logger.warning('tags Bye!')
 
 
 def configue(app):

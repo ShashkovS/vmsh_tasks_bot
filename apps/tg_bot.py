@@ -80,7 +80,7 @@ async def on_shutdown(app):
     await dispatcher.storage.wait_closed()
     if __name__ == "__main__":
         db.disconnect()
-    logger.warning('Bye!')
+    logger.warning('bot Bye!')
 
 
 def start_bot_in_polling_mode():
