@@ -7,7 +7,7 @@ from helpers.config import logger, config
 from helpers.obj_classes import db, User
 
 routes = web.RouteTableDef()
-__ALL__ = ['routes']
+__ALL__ = ['routes', 'on_startup', 'on_shutdown']
 
 ZOOM_AUTH = 'BAKPekpQQgW1C3S6MEP4-g'
 ZOOM_ID = "87196763644"
@@ -130,6 +130,26 @@ def find_user_id_by_zoom_username(name_to_find: str) -> int:  # возвраща
     print(name_to_find, distances)
     return -1
 
+
+async def on_startup(app):
+    logger.debug('zoom on_startup')
+    # Настраиваем БД
+    if __name__ == "__main__":
+        db.setup(config.db_filename)
+
+
+async def on_shutdown(app):
+    logger.debug('zoom on_shutdown')
+    if __name__ == "__main__":
+        db.disconnect()
+
+
+def configue(app):
+    app.add_routes(routes)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
+
+
 # import json
 # events = json.load(open(f'X:\_zoom_events.json', 'r', encoding='utf-8'))
 # user_history = {}
@@ -147,3 +167,10 @@ def find_user_id_by_zoom_username(name_to_find: str) -> int:  # возвраща
 # user_history_v2 = {v: ', '.join(h) for v, h in user_history.items()}
 # c = Counter(user_history_v2.values())
 # print(c)
+
+
+if __name__ == "__main__":
+    # Включаем все отладочные сообщения
+    app = web.Application()
+    configue(app)
+    web.run_app(app)
