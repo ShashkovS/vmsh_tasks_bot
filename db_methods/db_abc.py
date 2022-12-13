@@ -5,6 +5,7 @@ import os
 
 DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
+
 class KeyValueStore(dict):
     def __init__(self, conn):
         self.conn = conn
@@ -87,10 +88,14 @@ class DB_CONNECTION:
         """Инициализация и подключение к базе"""
         self.db_file = None
         self.kv = None
+        self.conn = None
         if db_file is not None:
             self.setup(db_file)
 
     def setup(self, db_file: str):
+        # # Если уже есть подключение, то ничего не делаем
+        if self.conn is not None:
+            return
         self.db_file = db_file
         if db_file != ':memory:':
             os.makedirs(os.path.dirname(self.db_file), exist_ok=True)
@@ -112,11 +117,13 @@ class DB_CONNECTION:
         self.conn.row_factory = self._dict_factory
 
     def _run_migrations(self):
-        backend = yoyo.get_backend(f'sqlite:///{self.db_file}')
         migrations = yoyo.read_migrations('migrations')
-        with backend.lock():
-            backend.apply_migrations(backend.to_apply(migrations))
+        with yoyo.get_backend(f'sqlite:///{self.db_file}') as backend:
+            with backend.lock():
+                backend.apply_migrations(backend.to_apply(migrations))
 
     def disconnect(self):
-        if self.conn:
+        if self.conn is not None:
+            self.conn.rollback()
             self.conn.close()
+        self.conn = None

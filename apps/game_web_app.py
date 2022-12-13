@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 import re
-import os
 import weakref
 
 from aiohttp import web, WSMsgType, WSCloseCode
@@ -16,12 +15,12 @@ from operator import itemgetter
 from time import perf_counter
 from typing import List, Dict
 
-from helpers.config import config, logger, DEBUG
+from helpers.config import config, logger, DEBUG, APP_PATH
 from helpers.obj_classes import db, Webtoken, User, Problem
 from helpers.nats_brocker import vmsh_nats
 from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE, USER_TYPE
 
-__ALL__ = ['routes']
+__ALL__ = ['routes', 'on_startup', 'on_shutdown']
 
 NATS_SERVER = f"nats://127.0.0.1:4222"
 
@@ -43,8 +42,8 @@ def prerate_template(template: str) -> str:
 
 
 templates = {
-    'login': open('templates/login.html', 'r', encoding='utf-8').read(),
-    'game': open('templates/mathgame.html', 'r', encoding='utf-8').read(),
+    'login': open(APP_PATH / 'templates/login.html', 'r', encoding='utf-8').read(),
+    'game': open(APP_PATH / 'templates/mathgame.html', 'r', encoding='utf-8').read(),
 }
 
 
@@ -80,6 +79,7 @@ async def post_online(request):
         return response
     else:
         return web.Response(text=templates['login'], content_type='text/html')
+
 
 # @routes.get('/gametimeline') ####убрать
 # async def get_gametimeline(request):
@@ -243,6 +243,7 @@ async def post_online(request):
     data = get_game_data(user)
     return web.json_response(data=data)
 
+
 @routes.post('/game/timeline/{command_id}')
 async def post_timeline(request):
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
@@ -253,8 +254,9 @@ async def post_timeline(request):
     data = db.get_opened_cells_timeline(command_id)
     return web.json_response(data=data)
 
+
 # В этом словаре мы храним список слабых ссылок на вебсокеты пользователей
-user_id_to_websocket: Dict[int, List[weakref.ReferenceType[web.WebSocketResponse]]] = {}
+_user_id_to_websocket: Dict[int, List[weakref.ReferenceType[web.WebSocketResponse]]] = {}
 
 
 @routes.get('/game/ws')
@@ -264,9 +266,9 @@ async def websocket(request):
         return
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    if user.id not in user_id_to_websocket:
-        user_id_to_websocket[user.id] = []
-    cur_user_websockets = user_id_to_websocket[user.id]
+    if user.id not in _user_id_to_websocket:
+        _user_id_to_websocket[user.id] = []
+    cur_user_websockets = _user_id_to_websocket[user.id]
     cur_user_websockets.append(weakref.ref(ws))
 
     # Этот цикл «зависает» до тех пор, пока коннекшн не сдохнет
@@ -294,7 +296,7 @@ async def nats_handle_map_update(command_id):
     # logger.warning(f"nats_handle_map_update {command_id=}, {os.getpid()=}, {len(user_id_to_websocket)=}")
     students = db.get_all_students_by_command(command_id)
     for student_id in students:
-        for ws in set(user_id_to_websocket.get(student_id, [])):
+        for ws in set(_user_id_to_websocket.get(student_id, [])):
             data = get_game_data(User.get_by_id(student_id))
             try:
                 await ws().send_json(data)
@@ -308,13 +310,44 @@ async def nats_handle_student_update(student_id):
     if not student:
         return
     data = None
-    for ws in set(user_id_to_websocket.get(student_id, [])):
+    for ws in set(_user_id_to_websocket.get(student_id, [])):
         if data is None:
             data = get_game_data(User.get_by_id(student_id))
         try:
             await ws().send_json(data)
         except Exception as e:
             logger.exception('Отправка данных через websocket отвалилась')
+
+
+async def on_startup(app):
+    logger.debug('game on_startup')
+    if __name__ == "__main__":
+        # Настраиваем БД
+        db.setup(config.db_filename)
+    # Подключаемся к NATS
+    await vmsh_nats.setup()
+    await vmsh_nats.subscribe(NATS_GAME_MAP_UPDATE, nats_handle_map_update)
+    await vmsh_nats.subscribe(NATS_GAME_STUDENT_UPDATE, nats_handle_student_update)
+
+
+async def on_shutdown(app):
+    logger.warning('game on_shutdown')
+    if __name__ == "__main__":
+        db.disconnect()
+    await vmsh_nats.disconnect()
+    # Останавливаем все websocket'ы
+    for user_id, websockets in _user_id_to_websocket.items():
+        for ws in set(websockets):
+            ref = ws()
+            if ref:
+                await ref.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
+    logger.warning('game web app Bye!')
+
+
+def configue(app):
+    app.add_routes(routes)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
 
 
 # Откладка по конкретному студенту
@@ -327,36 +360,8 @@ if __name__ == "__main__":
     # Включаем все отладочные сообщения
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(DEBUG)
-
-
-    async def on_startup(app):
-        logger.debug('on_startup')
-        # Настраиваем БД
-        db.setup(config.db_filename)
-        # Подключаемся к NATS
-        await vmsh_nats.setup()
-        await vmsh_nats.subscribe(NATS_GAME_MAP_UPDATE, nats_handle_map_update)
-        await vmsh_nats.subscribe(NATS_GAME_STUDENT_UPDATE, nats_handle_student_update)
-
-
-    async def on_shutdown(app):
-        logger.warning('Shutting down..')
-        db.disconnect()
-        await vmsh_nats.disconnect()
-        # Останавливаем все websocket'ы
-        for user_id, websockets in user_id_to_websocket.items():
-            for ws in set(websockets):
-                ref = ws()
-                if ref:
-                    await ref.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
-        logger.warning('Bye!')
-
-
     use_cookie = DEBUG_COOKIE
-
     app = web.Application()
-    app.add_routes(routes)
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
+    configue(app)
     print('Open http://127.0.0.1:8080/game')
     web.run_app(app)

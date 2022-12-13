@@ -2,7 +2,6 @@
 import os
 from unittest import TestCase
 from datetime import datetime
-from random import randint
 
 from helpers.consts import *
 from db_methods import db
@@ -10,10 +9,10 @@ from .initial_test_data import test_students, test_teachers, test_problems
 
 
 class DatabaseMethodsTest(TestCase):
-    def setUp(self, counter=[0]) -> None:
+    def setUp(self) -> None:
+        print(f'setup, id={id(self)}, {self!r}')
         self.db = db
-        test_db_filename = f'db/unittest_{counter[0]:03}.db'
-        counter[0] += 1
+        test_db_filename = f'db/unittest.db'
         # ensure there is no trash file from previous incorrectly handled tests present
         for file in [test_db_filename, test_db_filename + '-shm', test_db_filename + '-wal']:
             try:
@@ -31,6 +30,14 @@ class DatabaseMethodsTest(TestCase):
         self.insert_dummy_users()
         self.insert_dummy_problems()
 
+    def tearDown(self) -> None:
+        print(f'tearDown, id={id(self)}')
+        self.db.disconnect()
+        try:
+            os.unlink(self.db.db_file)
+        except PermissionError:
+            pass
+
     def insert_dummy_users(self):
         for row in test_students + test_teachers:
             real_id = self.db.add_user(row)
@@ -40,14 +47,6 @@ class DatabaseMethodsTest(TestCase):
         for row in test_problems:
             real_id = self.db.add_problem(row)
             row['id'] = real_id
-
-    def tearDown(self) -> None:
-        self.db.disconnect()
-        self.db.conn.close()
-        try:
-            os.unlink(self.db.db_file)
-        except PermissionError:
-            pass
 
     def test_users_add_and_fetch_all(self):
         students = self.db.fetch_all_users_by_type(USER_TYPE.STUDENT)

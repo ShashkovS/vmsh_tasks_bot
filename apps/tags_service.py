@@ -3,13 +3,13 @@ import weakref
 from aiohttp import web, WSMsgType, WSCloseCode
 from datetime import datetime, timedelta
 from helpers.consts import *
-from helpers.config import logger, config, logging
+from helpers.config import logger, config, logging, APP_PATH
 from helpers.obj_classes import db, Webtoken, User, Problem
 from json import dumps, loads
 
 routes = web.RouteTableDef()
 routes.static('/tags/static', 'tags')
-__ALL__ = ['routes']
+__ALL__ = ['routes', 'on_startup', 'on_shutdown']
 
 STRICT_COOKIE = dict(domain=None, path='/tag', max_age=2592000, secure=True, httponly=True, samesite='Strict')
 DEBUG_COOKIE = dict(domain=None, path='/tag', max_age=2592000, secure=False, httponly=True, samesite='Strict')
@@ -34,12 +34,12 @@ def prerate_template(template: str) -> str:
 
 
 templates = {
-    'login': open('tags/login.tags.html', 'r', encoding='utf-8').read(),
-    'tags0': open('tags/tags0.html', 'r', encoding='utf-8').read(),
-    'tags1': open('tags/tags1.html', 'r', encoding='utf-8').read().replace('src="Сайт_Баз/', r'src="https://shashkovs.ru/cdn/Сайт_Баз/'),
-    'tags2': open('tags/tags2.html', 'r', encoding='utf-8').read().replace('src="Сайт_Баз/', r'src="https://shashkovs.ru/cdn/Сайт_Баз/'),
-    'tags3': open('tags/tags3.html', 'r', encoding='utf-8').read().replace('src="Сайт_Баз/', r'src="https://shashkovs.ru/cdn/Сайт_Баз/'),
-    'tags4': open('tags/tags4.html', 'r', encoding='utf-8').read().replace('src="Сайт_Баз/', r'src="https://shashkovs.ru/cdn/Сайт_Баз/'),
+    'login': open(APP_PATH / 'tags/login.tags.html', 'r', encoding='utf-8').read(),
+    'tags0': open(APP_PATH / 'tags/tags0.html', 'r', encoding='utf-8').read(),
+    'tags1': open(APP_PATH / 'tags/tags1.html', 'r', encoding='utf-8').read().replace('src="Сайт_Баз/', r'src="https://shashkovs.ru/cdn/Сайт_Баз/'),
+    'tags2': open(APP_PATH / 'tags/tags2.html', 'r', encoding='utf-8').read().replace('src="Сайт_Баз/', r'src="https://shashkovs.ru/cdn/Сайт_Баз/'),
+    'tags3': open(APP_PATH / 'tags/tags3.html', 'r', encoding='utf-8').read().replace('src="Сайт_Баз/', r'src="https://shashkovs.ru/cdn/Сайт_Баз/'),
+    'tags4': open(APP_PATH / 'tags/tags4.html', 'r', encoding='utf-8').read().replace('src="Сайт_Баз/', r'src="https://shashkovs.ru/cdn/Сайт_Баз/'),
 }
 
 
@@ -104,7 +104,7 @@ def update_tags(payload: str, user: User) -> bool:
     if not match:
         return False
     lesson, level, prob, item = match.groups()
-    problem = Problem.get_by_key(level, int(lesson), int(prob), PUNCTS[int(item)-1] if item else '')
+    problem = Problem.get_by_key(level, int(lesson), int(prob), PUNCTS[int(item) - 1] if item else '')
     if not problem:
         return False
     problem.update_tags(dumps(tags, ensure_ascii=False), user)
@@ -146,29 +146,33 @@ async def websocket(request):
 
 
 async def on_startup(app):
-    logger.debug('on_startup')
+    logger.debug('tags on_startup')
     # Настраиваем БД
-    db.setup(config.db_filename)
+    if __name__ == "__main__":
+        db.setup(config.db_filename)
 
 
 async def on_shutdown(app):
-    logger.warning('Shutting down..')
-    db.disconnect()
+    logger.warning('tags on_shutdown')
+    if __name__ == "__main__":
+        db.disconnect()
     for ws in ws_connections:
         await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
-    logger.warning('Bye!')
+    logger.warning('tags Bye!')
+
+
+def configue(app):
+    app.add_routes(routes)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
 
 
 if __name__ == "__main__":
     # Включаем все отладочные сообщения
-    app = web.Application()
-    app.add_routes(routes)
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(logging.DEBUG)
+    app = web.Application()
+    configue(app)
     use_cookie = DEBUG_COOKIE
     print('Test on http://127.0.0.1:8080/tagst')
     web.run_app(app)
-else:
-    pass
