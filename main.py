@@ -8,7 +8,7 @@ from db_methods import db
 
 
 async def on_startup(app):
-    logger.warning('Start up!')
+    logger.warning('MainApp Start up!')
     # Настраиваем БД
     db.setup(config.db_filename)
 
@@ -17,15 +17,15 @@ async def on_shutdown(app):
     """
     Graceful shutdown. This method is recommended by aiohttp docs.
     """
-    logger.debug('on_shutdown')
-    logger.warning('Shutting down..')
+    logger.warning('on_shutdown')
+    logger.warning('MainApp Shutting down..')
     # К этому моменту все задания уже должны быть закончены. Поэтому закрываем прямо всё
     all_async_tasks_but_current = list(asyncio.all_tasks() - {asyncio.current_task()})
     logger.warning(f'Tasks to wait: {all_async_tasks_but_current!r}')
     if all_async_tasks_but_current:
         await asyncio.wait(all_async_tasks_but_current, timeout=20)
     db.disconnect()
-    logger.warning('Bye!')
+    logger.warning('MainApp Bye!')
 
 
 if __name__ == "__main__":

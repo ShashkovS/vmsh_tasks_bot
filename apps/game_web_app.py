@@ -331,7 +331,7 @@ async def on_startup(app):
 
 
 async def on_shutdown(app):
-    logger.debug('game on_shutdown')
+    logger.warning('game on_shutdown')
     if __name__ == "__main__":
         db.disconnect()
     await vmsh_nats.disconnect()

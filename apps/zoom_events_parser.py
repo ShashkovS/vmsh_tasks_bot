@@ -139,9 +139,10 @@ async def on_startup(app):
 
 
 async def on_shutdown(app):
-    logger.debug('zoom on_shutdown')
+    logger.warning('zoom on_shutdown')
     if __name__ == "__main__":
         db.disconnect()
+    logger.warning('zoom Bye!')
 
 
 def configue(app):
