@@ -52,9 +52,9 @@ def process_event(event: str, event_ts: datetime, participant: dict):
         db.mark_joined(user_name, status=-1)
         # db.remove_from_queue(user_name)
     elif event == "meeting.ended":
-        pass
+        db.remove_old_from_zoom_queue()
     elif event == "meeting.started":
-        pass
+        db.remove_old_from_zoom_queue()
 
 
 @routes.post('/zoomevents')

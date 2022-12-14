@@ -873,6 +873,8 @@ async def zoom_queue(message: types.Message):
             alert = ' (в основном зале)'
         elif row['status'] == -1:
             alert = ' (нет в конфе)'
+            # Если нет в конфе, то и не показываем
+            continue
         else:
             alert = ''
         show_queue.append(f'{waits_min} мин   {row["zoom_user_name"]}  {alert}')
