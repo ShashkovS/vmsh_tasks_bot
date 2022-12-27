@@ -91,24 +91,28 @@ p, h1, h2, h3, h4, h5, h6 {
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-around;
-    background-color: rgba(255,255,255,0.6);
+    background-color: rgba(255, 255, 255, 0.6);
     border: 3px solid green;
     font-size: 1.5rem;
     font-weight: bold;
 }
+
 #header div {
     padding: 0.2rem;
     vertical-align: middle;
 }
+
 #header p {
     white-space: nowrap;
     vertical-align: middle;
 }
+
 #header span {
-    border: 3px solid rgba(0,0,255,0.5);
+    border: 3px solid rgba(0, 0, 255, 0.5);
     padding: 2px 0 2px 0.5rem;
-    background: rgba(0,0,255,0.25);
+    background: rgba(0, 0, 255, 0.25);
 }
+
 #gameTable td:hover {
     border: 2px solid red;
     box-shadow: inset 0 0 10px 5px rgba(255, 0, 0, 0.5);
@@ -160,38 +164,46 @@ p, h1, h2, h3, h4, h5, h6 {
     background: greenyellow;
     color: greenyellow;
 }
+
 .s1 {
     background: #fff7ec;
 }
+
 .s2 {
     background: #fee8c8;
 }
+
 .s3 {
     background: #fdd49e;
 }
+
 .s4 {
     background: #fdbb84;
 }
+
 .s5 {
     background: #fc8d59;
 }
+
 .s6 {
     background: #ef6548;
 }
+
 .s7 {
     background: #d7301f;
 }
+
 .s8 {
     background: #b30000;
 }
+
 .s9 {
     background: #7f0000;
 }
+
 .s10 {
     background: #7f0000;
 }
-
-
 
 
 /* The Modal (background) */
@@ -234,4 +246,37 @@ p, h1, h2, h3, h4, h5, h6 {
     transform: translate(-50%, -50%);
     overflow-wrap: break-word;
     overflow-y: auto;
+}
+
+
+.play-button {
+    position: relative;
+    top: -100px;
+    left: -100px;
+    width: 100px;
+    height: 100px;
+    display: block;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    padding: 0;
+    margin: 0 auto;
+    user-select: none;
+    background-color: rgba(0, 0, 0, 0.6);
+    transition: background-color 0.5s ease;
+}
+
+.play-button:after {
+    position: absolute;
+    top: calc(50% - 25px);
+    left: calc(50% - 14px);
+    display: block;
+    content: '';
+    box-sizing: border-box;
+    border-color: transparent transparent transparent #fff;
+    border-style: solid;
+    border-width: 26px 0 26px 40px;
+}
+
+.play-button:hover {
+    background-color: rgba(0, 33, 66, 0.9);
 }
