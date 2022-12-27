@@ -26,7 +26,7 @@ async def start(message: types.Message):
     else:
         command_id = row['command_id']
         cnt = row['cnt']
-        if cnt > 200:
+        if cnt > 150:
             command_id += 1
     db.set_student_command(user.id, LEVEL.NOVICE, command_id)
     await bot.send_message(
@@ -44,11 +44,8 @@ async def prc_get_user_info_state(message: types.Message, user: User):
     user = User.get_by_token(message.text)
     db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
     if user is None:
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text="🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\n"
-                 "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro2ll»",
-        )
+        await start(message)
+        return
     elif user.type == USER_TYPE.DELETED:
         await bot.send_message(
             chat_id=message.chat.id,
@@ -129,7 +126,8 @@ async def process_regular_message(message: types.Message):
     # message.num_processed = getattr(message, 'num_processed', 0) + 1
     user = User.get_by_chat_id(message.chat.id)
     if not user:
-        cur_chat_state = STATE.GET_USER_INFO
+        await start(message)
+        return
     else:
         cur_chat_state = State.get_by_user_id(user.id)
         if cur_chat_state:
