@@ -321,10 +321,11 @@ async def calc_last_lesson_stat(message: types.Message):
         return
     stat = db.calc_last_lesson_stat()
     msg = '\n'.join(map(lambda r: '  '.join(r.values()), stat))
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text=msg,
-    )
+    for i in range(0, len(msg), 4096):
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=msg[i:i+4096],
+        )
 
 
 @dispatcher.message_handler(commands=['student_results', 'sr', 'all_student_results', 'asr'])
