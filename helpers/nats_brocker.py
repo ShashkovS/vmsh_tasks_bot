@@ -18,6 +18,7 @@ class NATS:
     def __init__(self):
         self.nats_is_working = False
         self.subsciptions = {}
+        self.nc = None
 
     async def setup(self, nats_server_url=NATS_SERVER):
         self.nats_server_url = nats_server_url

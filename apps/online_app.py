@@ -8,11 +8,11 @@ import logging
 import re
 from aiohttp import web, WSMsgType
 
-from helpers.config import config, logger, DEBUG
+from helpers.config import config, logger, DEBUG, APP_PATH
 from helpers.obj_classes import db, Webtoken, User
 from web import trash_print_results
 
-__ALL__ = ['routes']
+__ALL__ = ['routes', 'on_startup', 'on_shutdown']
 
 routes = web.RouteTableDef()
 routes.static('/online/static', 'templates')
@@ -32,10 +32,10 @@ def prerate_template(template: str) -> str:
 
 
 templates = {
-    'login': open('templates/login.html', 'r', encoding='utf-8').read(),
-    'login_res': open('templates/login_res.html', 'r', encoding='utf-8').read(),
-    'socket': open('templates/socket.html', 'r', encoding='utf-8').read(),
-    'board': prerate_template(open('templates/board.html', 'r', encoding='utf-8').read())
+    'login': open(APP_PATH / 'templates/login.html', 'r', encoding='utf-8').read(),
+    'login_res': open(APP_PATH / 'templates/login_res.html', 'r', encoding='utf-8').read(),
+    'socket': open(APP_PATH / 'templates/socket.html', 'r', encoding='utf-8').read(),
+    'board': prerate_template(open(APP_PATH / 'templates/board.html', 'r', encoding='utf-8').read())
 }
 
 
@@ -83,6 +83,7 @@ async def print_res(request):
         return web.Response(text=templates['login_res'], content_type='text/html')
     else:
         return web.Response(text=trash_print_results.get_html(), content_type='text/html')
+
 
 @routes.post('/res')
 async def login_res(request):
@@ -162,16 +163,23 @@ async def websocket(request):
 
 
 async def on_startup(app):
-    logger.debug('on_startup')
+    logger.debug('online on_startup')
     # Настраиваем БД
-    db.setup(config.db_filename)
+    if __name__ == "__main__":
+        db.setup(config.db_filename)
 
 
 async def on_shutdown(app):
-    logger.warning('Shutting down..')
-    db.disconnect()
-    logger.warning('Bye!')
+    logger.warning('online on_shutdown')
+    if __name__ == "__main__":
+        db.disconnect()
+    logger.warning('online Bye!')
 
+
+def configue(app):
+    app.add_routes(routes)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
 
 
 if __name__ == "__main__":
@@ -179,10 +187,6 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(DEBUG)
     use_cookie = DEBUG_COOKIE
-
     app = web.Application()
-    app.add_routes(routes)
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
-
+    configue(app)
     web.run_app(app)

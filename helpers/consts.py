@@ -49,8 +49,7 @@ class CALLBACK(str, Enum):
     PROBLEM_SOS = 'A'
     OTHER_SOS = 'C'
     SEND_ANSWER = 'h'
-    STUDENT_REACTION = 'r'
-    TEACHER_REACTION = 'S'
+    REACTION = 'r'
 
     def __str__(self):
         return self.value
@@ -239,3 +238,14 @@ class CHANGE(str, Enum):
 # Константы для имён topic'ов в nats
 NATS_GAME_MAP_UPDATE = 'map_upd'
 NATS_GAME_STUDENT_UPDATE = 'stud_upd'
+
+
+@unique
+class REACTION(IntEnum):
+    """ Реакции учителя и ученика на письменную и устную сдачу задач.
+    Смотри также отношение `reaction_type_enum` в БД.
+    """
+    WRITTEN_STUDENT = 0
+    WRITTEN_TEACHER = 100
+    ORAL_STUDENT = 200
+    ORAL_TEACHER = 300

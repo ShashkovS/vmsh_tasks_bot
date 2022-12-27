@@ -25,6 +25,7 @@ class SpreadsheetLoader:
     def __init__(self, sheets_key: str = None, google_cred_json: str = None):
         self.sheets_key = sheets_key
         self.google_cred_json = google_cred_json
+        self.client = None
 
     def setup(self, sheets_key: str, google_cred_json: str):
         self.sheets_key = sheets_key
@@ -36,7 +37,7 @@ class SpreadsheetLoader:
         from oauth2client.service_account import ServiceAccountCredentials
         scopes = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         creds = ServiceAccountCredentials.from_json_keyfile_name(self.google_cred_json, scopes)
-        client = gspread.authorize(creds)
+        self.client = client = gspread.authorize(creds)
         sheet = client.open_by_key(self.sheets_key)
         return sheet
 
@@ -92,6 +93,13 @@ class SpreadsheetLoader:
         sheet = self._connect_to_google_sheets()
         teachers = self._load_teachers(sheet)
         return teachers
+
+    def close(self):
+        if self.client and self.client.session:
+            try:
+                self.client.session.close()
+            except:
+                pass
 
 
 google_spreadsheet_loader = SpreadsheetLoader()

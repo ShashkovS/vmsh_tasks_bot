@@ -71,29 +71,32 @@ async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1)
 @reg_state(STATE.GET_TASK_INFO)
 async def prc_get_task_info_state(message, student: User):
     logger.debug('prc_get_task_info_state')
+    # Возможно, тут прилетел хвост галереи, которую мы успешно уже обработали.
+    if message.media_group_id and db.media_group_check(message.media_group_id):
+        await prc_sending_solution_state(message, student)
+        return
+    # Обрабатываем как обычно
     alarm = ''
     # Попытка сдать решение без выбранной задачи
     if message.photo or message.document:
         alarm = '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n' \
-                '(Можно посылать несколько фотографий решения, для этого каждый раз нужно выбирать задачу.)'
+                '(Можно посылать несколько фотографий решения в виде галереи, либо каждый раз нужно выбирать задачу.)'
     elif message.text and len(message.text) > 20:
         alarm = '❗❗❗ Текст НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
     sleep = 0
     if alarm:
         await bot.send_message(chat_id=message.chat.id, text=alarm, )
-        sleep = 3
+        sleep = 8
     asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student, sleep=sleep))
 
 
 @reg_state(STATE.SENDING_SOLUTION)
 async def prc_sending_solution_state(message: types.Message, student: User):
     logger.debug('prc_sending_solution_state')
-
-    # Особый случай — это медиа-группы. Если несколько картинок в одном сообщении,
+    # Особый случай — это медиа-группы. Если несколько картинок  в одном сообщении,
     # то к нам в бот они придут в виде нескольких сообщений с одинаковым media_group_id.
     # Поэтому если media_group_id задан, то для первого сообщения нужно сохранить, к какой он задаче,
-    # а потом уже брать id задачи из
-    problem_id = None
+    # а потом уже брать id задачи из сохранённого
     next_media_group_message = False
     if message.media_group_id:
         problem_id = db.media_group_check(message.media_group_id)
@@ -101,10 +104,13 @@ async def prc_sending_solution_state(message: types.Message, student: User):
             next_media_group_message = True
         else:
             problem_id = State.get_by_user_id(student.id)['problem_id']
-            db.media_group_add(message.media_group_id, problem_id)
-    if not problem_id:
+            duplicate = db.media_group_add(message.media_group_id, problem_id)
+            # Могло так случиться, что в другом потоке в параллель добавили
+            if duplicate:
+                problem_id = db.media_group_check(message.media_group_id)
+                next_media_group_message = True
+    else:
         problem_id = State.get_by_user_id(student.id)['problem_id']
-    problem = Problem.get_by_id(abs(problem_id))  # Убираем знак (он отрицательный, если это не решение, а вопрос)
     file_name = None
     text = message.text
 
@@ -148,7 +154,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
             text="Принято на проверку" if (problem_id > 0) else "Вопрос записан"
         )
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id,   student))
 
 
 def check_test_ans_rate_limit(student_id: int, problem_id: int):
@@ -664,29 +670,6 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
                                text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
     await bot.answer_callback_query_ig(query.id)
     asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
-
-
-@reg_callback(CALLBACK.STUDENT_REACTION)
-async def prc_student_reaction_on_task_bad_verdict(query: types.CallbackQuery, student: User):
-    """Коллбек на реакцию студента на отрицательный вердикт по письменной работе."""
-    logger.debug('prc_student_reaction_on_task_bad_verdict')
-    callback, result_id, reaction_id = query.data.split('_')
-    reaction_id = int(reaction_id)
-    result_id = int(result_id)
-    try:
-        db.write_student_reaction_on_task_bad_verdict(result_id, reaction_id)
-    except Exception:
-        logger.error('Ошибка записи реакции ученика в БД.')
-    else:
-        old_text = query.message.text
-        original_message = query.message.text.split()[0]
-        new_text = f"{original_message}\nОценка проверки: {db.get_student_reaction_by_id(reaction_id)}"
-        if old_text != new_text:
-            try:
-                await query.message.edit_text(new_text, reply_markup=None)
-            except aiogram.utils.exceptions.MessageNotModified:
-                pass
-        await query.answer(f'Принято')
 
 
 @dispatcher.message_handler(commands=['exit_waitlist'])

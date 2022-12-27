@@ -37,6 +37,14 @@ class DB_ZOOM_QUEUE:
         """, args)
         self.conn.commit()
 
+    def remove_old_from_zoom_queue(self):
+        cur = self.conn.cursor()
+        cur.execute("""
+            DELETE from zoom_queue
+            where (julianday(CURRENT_TIMESTAMP) - julianday(enter_ts)) > 0.5;
+        """)
+        self.conn.commit()
+
     def get_first_from_queue(self, show_all=False):
         cur = self.conn.cursor()
         show = 150 if show_all else 15
