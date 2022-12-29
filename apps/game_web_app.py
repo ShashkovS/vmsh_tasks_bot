@@ -19,6 +19,7 @@ from helpers.config import config, logger, DEBUG, APP_PATH
 from helpers.obj_classes import db, Webtoken, User, Problem
 from helpers.nats_brocker import vmsh_nats
 from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE, USER_TYPE
+from helpers.bot import bot
 
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
 
@@ -31,6 +32,7 @@ STRICT_COOKIE = dict(domain=None, path='/', max_age=2592000, secure=True, httpon
 DEBUG_COOKIE = dict(domain=None, path='/', max_age=2592000, secure=False, httponly=True, samesite='Strict')
 COOKIE_NAME = 'l'
 use_cookie = STRICT_COOKIE
+SEND_OPEN_CHEST_TO_BOT = True
 
 
 def prerate_template(template: str) -> str:
@@ -169,6 +171,17 @@ async def post_game_chest(request):
     db.add_student_chest(user.id, command_id, x, y, bonus)
     # Отправляем всем уведомление, что у студента появились новые «деньги»
     await vmsh_nats.publish(NATS_GAME_STUDENT_UPDATE, user.id)
+    if SEND_OPEN_CHEST_TO_BOT:
+        if bonus % 10 == 1 and bonus % 100 != 11:
+            suffix = f'{bonus} балл'
+        elif 2 <= bonus % 10 <= 4 and not 11 <= bonus % 100 <= 14:
+            suffix = f'{bonus} балла'
+        else:
+            suffix = f'{bonus} баллов'
+        try:
+            await bot.send_message(chat_id=user.chat_id, text=f'Вы открыли сундук, там на дне {suffix}')
+        except:
+            pass
     return web.json_response(data={'ok': 'sure'})
 
 
@@ -358,6 +371,7 @@ def configue(app):
 
 if __name__ == "__main__":
     # Включаем все отладочные сообщения
+    SEND_OPEN_CHEST_TO_BOT = False
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(DEBUG)
     use_cookie = DEBUG_COOKIE
