@@ -77,7 +77,16 @@ class DB_PROBLEM:
         cur = self.conn.cursor()
         cur.execute("""
             update problems
-            set synonyms = (select group_concat(id, ';') from problems p2 where p2.lesson=problems.lesson and p2.title=problems.title)
+            set synonyms = (
+                select group_concat(id, ';') 
+                from problems p2 
+                where p2.lesson=problems.lesson and 
+                ( 
+                  p2.title = problems.title
+                    or -- Отдельный кейс для названий с ценой
+                  p2.title like '%⚡%' and ltrim(p2.title,'0123456789⚡ ') = ltrim(problems.title,'0123456789⚡ ')
+                )
+            )
             where 1=1;
         """)
         self.conn.commit()
