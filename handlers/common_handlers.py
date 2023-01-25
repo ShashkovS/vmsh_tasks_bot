@@ -31,7 +31,10 @@ async def prc_reaction(query: types.CallbackQuery, student: User):
         if old_text != new_text:
             with suppress(aiogram.utils.exceptions.MessageNotModified):
                 await query.message.edit_text(new_text, reply_markup=None)
-        await query.answer(f'Принято')
+        try:
+            await query.answer(f'Принято')
+        except aiogram.utils.exceptions.InvalidQueryID:
+            pass
     # ученик
     elif reaction_type_id in (REACTION.WRITTEN_STUDENT, REACTION.ORAL_STUDENT):
         original_message = query.message.text.split()[0] if reaction_type_id == REACTION.WRITTEN_STUDENT else query.message.text
@@ -39,4 +42,7 @@ async def prc_reaction(query: types.CallbackQuery, student: User):
         if old_text != new_text:
             with suppress(aiogram.utils.exceptions.MessageNotModified):
                 await query.message.edit_text(new_text, reply_markup=None)
-        await query.answer(f'Принято')
+        try:
+            await query.answer(f'Принято')
+        except aiogram.utils.exceptions.InvalidQueryID:
+            pass
