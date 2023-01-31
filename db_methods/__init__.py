@@ -35,7 +35,6 @@ from .db_features import DB_FEATURES
 from .db_webtokens import DB_WEBTOKEN
 from .db_last_keyboards import DB_LAST_KEYBOARD
 from .db_zoom_queue import DB_ZOOM_QUEUE
-from .db_problem_tags import DB_PROBLEM_TAGS
 from .db_media_groups import DB_MEDIA_GROUPS
 # from .db_zoom_confs import DB_ZOOM_CONF
 from .db_reaction import DB_REACTION
@@ -44,7 +43,7 @@ from .db_zoom_conversation import DB_ZOOM_CONVERSATION
 
 class DB(DB_CONNECTION, DB_USER, DB_PROBLEM, DB_LESSON, DB_STATE, DB_RESULT, DB_WRITTENTASKQUEUE, DB_WAITLIST, DB_WRITTEN_TASK_DISCUSSION, DB_FEATURES,
          DB_WEBTOKEN, DB_LAST_KEYBOARD,
-         DB_ZOOM_QUEUE, DB_PROBLEM_TAGS,
+         DB_ZOOM_QUEUE,
          DB_MEDIA_GROUPS,
          # DB_ZOOM_CONF,
          DB_REACTION,

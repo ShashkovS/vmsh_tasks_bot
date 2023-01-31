@@ -14,34 +14,34 @@ class DB_FEATURES:
 
     def add_message_to_log(self, from_bot: bool, tg_msg_id: int, chat_id: int,
                            student_id: int, teacher_id: int, msg_text: str, attach_path: str):
-        args = locals()
-        args['ts'] = datetime.now().isoformat()
-        cur = self.conn.cursor()
-        cur.execute("""
-            INSERT INTO messages_log  ( from_bot,  tg_msg_id,  chat_id,  student_id,  teacher_id,  ts,  msg_text,  attach_path)
-            VALUES                    (:from_bot, :tg_msg_id, :chat_id, :student_id, :teacher_id, :ts, :msg_text, :attach_path) 
-        """, args)
-        self.conn.commit()
+        """Записать сообщение в лог отправленных сообщений.
+        Данные из лога дальше никак не используются (кроме анализа инцидентов)"""
+        ts = datetime.now().isoformat()
+        with self.conn as conn:
+            conn.execute("""
+                INSERT INTO messages_log  ( from_bot,  tg_msg_id,  chat_id,  student_id,  teacher_id,  ts,  msg_text,  attach_path)
+                VALUES                    (:from_bot, :tg_msg_id, :chat_id, :student_id, :teacher_id, :ts, :msg_text, :attach_path) 
+            """, locals())
 
     def log_signon(self, user_id: int, chat_id: int, first_name: str, last_name: str, username: str, token: str):
-        args = locals()
-        args['ts'] = datetime.now().isoformat()
-        cur = self.conn.cursor()
-        cur.execute("""
-            INSERT INTO signons ( ts,  user_id,  chat_id,  first_name,  last_name,  username,  token)
-            VALUES              (:ts, :user_id, :chat_id, :first_name, :last_name, :username, :token) 
-        """, args)
-        self.conn.commit()
+        """Сохранить данные пользователя, который успешно залогинился.
+        Данные из лога дальше никак не используются (кроме анализа инцидентов)"""
+        ts = datetime.now().isoformat()
+        with self.conn as conn:
+            conn.execute("""
+                INSERT INTO signons ( ts,  user_id,  chat_id,  first_name,  last_name,  username,  token)
+                VALUES              (:ts, :user_id, :chat_id, :first_name, :last_name, :username, :token) 
+            """, locals())
 
     def log_change(self, user_id: int, change_type: str, new_value: str):
-        args = locals()
-        args['ts'] = datetime.now().isoformat()
-        cur = self.conn.cursor()
-        cur.execute("""
-            INSERT INTO user_changes_log ( ts,  user_id,  change_type,  new_value)
-            VALUES                       (:ts, :user_id, :change_type, :new_value) 
-        """, args)
-        self.conn.commit()
+        """Сохранить факт смены режима, уровня и т.п.
+        Данные из лога дальше никак не используются (кроме анализа инцидентов)"""
+        ts = datetime.now().isoformat()
+        with self.conn as conn:
+            conn.execute("""
+                INSERT INTO user_changes_log ( ts,  user_id,  change_type,  new_value)
+                VALUES                       (:ts, :user_id, :change_type, :new_value) 
+            """, locals())
 
     # ███████ ███████  █████  ████████ ██    ██ ██████  ███████ ███████
     # ██      ██      ██   ██    ██    ██    ██ ██   ██ ██      ██
@@ -50,9 +50,10 @@ class DB_FEATURES:
     # ██      ███████ ██   ██    ██     ██████  ██   ██ ███████ ███████
 
     def calc_last_lesson_stat(self) -> List[dict]:
-        cur = self.conn.cursor()
-        cur.execute("""
-            -- Посчитать статистику решаемости по последнему занятию
+        """Посчитать статистику решаемости по последнему занятию.
+        Возвращает список словарей с ключами prb, frac, perc, title
+        """
+        cur = self.conn.execute("""
             with pre as (
                 select r.lesson, r.level, p.prob, p.item,
                        p.title, r.student_id,

@@ -14,17 +14,14 @@ class DB_RESULT:
 
     def add_result(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int,
                    answer: str, res_type: int = None, zoom_conversation_id: int = None) -> int:
-        args = locals()
-        args['ts'] = datetime.now().isoformat()
-        cur = self.conn.cursor()
-        res = cur.execute("""
-            INSERT INTO results  ( student_id,  problem_id,  level,  lesson,  teacher_id,  ts,  verdict,  answer,  res_type, zoom_conversation_id)
-            VALUES               (:student_id, :problem_id, :level, :lesson, :teacher_id, :ts, :verdict, :answer, :res_type, :zoom_conversation_id)
-            returning id
-        """, args)
-        id = res.fetchone()['id']
-        self.conn.commit()
-        return id
+        ts = datetime.now().isoformat()
+        with self.conn as conn:
+            cur = conn.execute("""
+                INSERT INTO results  ( student_id,  problem_id,  level,  lesson,  teacher_id,  ts,  verdict,  answer,  res_type, zoom_conversation_id)
+                VALUES               (:student_id, :problem_id, :level, :lesson, :teacher_id, :ts, :verdict, :answer, :res_type, :zoom_conversation_id)
+                returning id
+            """, locals())
+            return cur.fetchone()['id']
 
     def check_num_answers(self, student_id: int, problem_id: int) -> Tuple[int, int]:
         cur_date = datetime.now().isoformat()[:10]
@@ -41,72 +38,55 @@ class DB_RESULT:
         return per_day, per_hour
 
     def delete_plus(self, student_id: int, problem_id: int, res_type: int, new_verdict: int):
-        args = locals()
-        cur = self.conn.cursor()
-        cur.execute("""
-            update results set verdict = :new_verdict
-            where 
-            student_id = :student_id and problem_id = :problem_id and problem_id > 0 and verdict > 0
-            and (:res_type is null or res_type = :res_type)
-        """, args)
+        with self.conn as conn:
+            conn.execute("""
+                update results set verdict = :new_verdict
+                where 
+                student_id = :student_id and problem_id = :problem_id and problem_id > 0 and verdict > 0
+                and (:res_type is null or res_type = :res_type)
+            """, locals())
         self.conn.commit()
 
     def check_student_solved(self, student_id: int, lesson: int) -> set:
-        args = locals()
-        cur = self.conn.cursor()
-        cur.execute("""
+        cur = self.conn.execute("""
             select distinct problem_id from results
             where student_id = :student_id and lesson = :lesson and verdict > 0
-        """, args)
+        """, locals())
         rows = cur.fetchall()
         solved_ids = {row['problem_id'] for row in rows}
         return solved_ids
 
     def list_student_results(self, student_id: int, lesson: int) -> List[dict]:
-        args = locals()
-        cur = self.conn.cursor()
-        cur.execute("""
+        return self.conn.execute("""
             select r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict, r.problem_id from results r
             join problems p on r.problem_id = p.id
             where r.student_id = :student_id and r.lesson = :lesson
             order by r.ts
-        """, args)
-        rows = cur.fetchall()
-        return rows
+        """, locals()).fetchall()
 
     def list_all_student_results(self, student_id: int) -> List[dict]:
-        args = locals()
-        cur = self.conn.cursor()
-        cur.execute("""
+        return self.conn.execute("""
             select r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict, r.problem_id from results r
             join problems p on r.problem_id = p.id
             where r.student_id = :student_id
             order by r.ts
-        """, args)
-        rows = cur.fetchall()
-        return rows
+        """, locals()).fetchall()
 
     def get_results_for_recheck_by_problem_id(self, problem_id: int) -> List[dict]:
-        args = locals()
-        cur = self.conn.cursor()
-        cur.execute("""
+        return self.conn.execute("""
             select r.id, r.student_id, r.answer, r.verdict from results r
             where r.problem_id = :problem_id
-        """, args)
-        rows = cur.fetchall()
-        return rows
+        """, locals()).fetchall()
 
     def update_verdicts(self, new_verdicts: Dict):
-        cur = self.conn.cursor()
-        cur.execute("begin")
-        for row in new_verdicts:
-            cur.execute("""
-                update results
-                set verdict = :verdict
-                where id = :id
-            """, row)
-        cur.execute("commit")
-        self.conn.commit()
+        with self.conn as conn:
+            conn.execute("begin")
+            for row in new_verdicts:
+                conn.execute("""
+                    update results
+                    set verdict = :verdict
+                    where id = :id
+                """, row)
 
     def get_student_solved(self, student_id: int, lesson: int) -> List[dict]:
         return self.conn.execute("""

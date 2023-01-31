@@ -2,7 +2,7 @@
 import aiogram
 import asyncio
 from typing import List, Union
-from aiogram.utils.exceptions import MessageNotModified, MessageToEditNotFound
+from aiogram.utils.exceptions import MessageNotModified, MessageToEditNotFound, ChatNotFound
 from aiogram.dispatcher import Dispatcher
 from aiogram.types import Message
 from helpers.config import config, logger
@@ -24,7 +24,7 @@ class BotIg(aiogram.Bot):
         logger.debug('bot.edit_message_reply_markup_ig')
         try:
             await self.edit_message_reply_markup(*args, **kwargs)
-        except (MessageNotModified, MessageToEditNotFound) as e:
+        except (MessageNotModified, MessageToEditNotFound, ChatNotFound) as e:
             pass
 
     async def answer_callback_query_ig(self, *args, **kwargs):

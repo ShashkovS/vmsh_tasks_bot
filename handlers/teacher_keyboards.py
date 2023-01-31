@@ -147,9 +147,10 @@ def build_answer_verdict(student: User, problem: Problem, wtd_ids_to_remove: Lis
     return keyboard_markup
 
 
-def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User, online: ONLINE_MODE):
+def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User, online: ONLINE_MODE, lesson_num=None):
     logger.debug('keyboards.build_verdict_for_oral_problems')
-    lesson_num = Problem.last_lesson_num(student.level)
+    if lesson_num is None:
+        lesson_num = Problem.last_lesson_num(student.level)
     solved = set(db.check_student_solved(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
@@ -162,7 +163,7 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
                     if problem.prob_type in select_problem_types]
     problem_buttons = []
     for problem in use_problems:
-        if problem.synonyms & solved and problem.id not in minus_ids:
+        if problem.synonyms_set() & solved and problem.id not in minus_ids:
             tick = '✅✅'
         elif problem.id in plus_ids:
             tick = '👍'
