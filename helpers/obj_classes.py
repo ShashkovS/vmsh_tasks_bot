@@ -131,7 +131,7 @@ class Problem:
     cor_ans_checker: str
     wrong_ans: str
     congrat: str
-    synonyms: str  # Список синонимичных задач
+    synonyms: str = None  # Список синонимичных задач
     id: int = None
 
     def __post_init__(self):
