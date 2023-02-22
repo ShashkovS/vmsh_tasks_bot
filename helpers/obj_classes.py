@@ -131,7 +131,7 @@ class Problem:
     cor_ans_checker: str
     wrong_ans: str
     congrat: str
-    synonyms: set = None  # Список синонимичных задач
+    synonyms: str = None  # Список синонимичных задач
     id: int = None
 
     def __post_init__(self):
@@ -140,10 +140,6 @@ class Problem:
         self.prob_type = PROB_TYPE(self.prob_type)
         if self.ans_type:
             self.ans_type = ANS_TYPE(self.ans_type)
-        if self.synonyms and type(self.synonyms) != set:
-            self.synonyms = set(map(int, self.synonyms.split(';')))
-        else:
-            self.synonyms = {self.id}
 
     def __str__(self):
         return f"Задача {self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"
@@ -189,6 +185,9 @@ class Problem:
     def get_tags(self):
         return db.get_tags_by_problem_id(self.id)
 
+    def synonyms_set(self):
+        return set(map(int, self.synonyms.split(';')))
+
 
 class State:
     @staticmethod
@@ -228,7 +227,7 @@ class WrittenQueue:
         db.insert_into_written_task_queue(student_id, problem_id, cur_status=WRITTEN_STATUS.NEW, ts=ts)
 
     @staticmethod
-    def take_top_synonyms(teacher_id: int, synonyms: set):
+    def take_top_synonyms(teacher_id: int, synonyms: str):
         return db.get_written_tasks_to_check(teacher_id, synonyms)
 
     @staticmethod

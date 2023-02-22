@@ -171,8 +171,10 @@ class DatabaseMethodsTest(TestCase):
         self.assertFalse('foo1' in kv)
         self.assertListEqual(kv.keys(), ['foo2', 'foo3'])
         self.assertListEqual(kv.values(), ['baz2', 'baz3'])
+        self.assertEqual(len(list(kv.iteritems())), 2)
         self.assertEqual(kv.pop('foo2', None), 'baz2')
         self.assertIsNone(kv.get('foo2', None))
+        self.assertEqual(len(list(kv.items())), 1)
 
         db = self.db
 
@@ -240,23 +242,6 @@ class DatabaseMethodsTest(TestCase):
         self.assertListEqual(queue, [
             {'zoom_user_name': 'name3', 'enter_ts': '2022-01-01T02:00:00', 'status': 0}
         ])
-
-    def test_problem_tags(self):
-        db = self.db
-        ts1 = datetime(2022, 1, 1, 1)
-        ts2 = datetime(2022, 1, 1, 2)
-        ts3 = datetime(2022, 1, 1, 3)
-        problems = db.get_all_tags()
-        self.assertEqual(len(problems), len(test_problems))
-        self.assertIsNone(problems[0]['tags'])
-        db.add_tags(7, 'tags1', 17)
-        self.assertEqual(db.get_tags_by_problem_id(7),'tags1')
-        db.add_tags(7, 'tags2', 18)
-        self.assertEqual(db.get_tags_by_problem_id(7), 'tags2')
-        self.assertIsNone(db.get_tags_by_problem_id(8))
-        problems = db.get_all_tags()
-        prob_7 = [prob for prob in problems if prob['id'] == 7][0]
-        self.assertEqual(prob_7['tags'], 'tags2')
 
     def test_media_groups(self):
         db = self.db

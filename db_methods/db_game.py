@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List
+from typing import List, Dict
 from datetime import datetime
 
 
@@ -7,20 +7,24 @@ class DB_GAME():
     conn: sqlite3.Connection
 
     def get_student_payments(self, user_id: int) -> List[dict]:
+        """Получить все игровые траты данного студента.
+        Возвращает список словарей с ключами ts, amount"""
         return self.conn.execute('''
             SELECT ts, amount FROM game_payments
             where student_id = :user_id
             order by ts
         ''', locals()).fetchall()
-    def add_payment(self, user_id: int, command_id: int, x: int, y: int, amount: int) -> bool:
-        cur = self.conn.cursor()
-        ts = datetime.now().isoformat()
-        cur = self.conn.cursor()
 
+    def add_payment(self, user_id: int, command_id: int, x: int, y: int, amount: int) -> bool:
+        """Записывает в базу факт открытия клетки в игре.
+        В транзакции клетка помечается открытой и записывается трата.
+        Если «деньги» успешно списаны, то возвращается True.
+        Иначе (например, если клетка уже куплена), возвращается False"""
+        ts = datetime.now().isoformat()
         try:
-            with self.conn:
-                self.conn.execute('BEGIN TRANSACTION')
-                cur = self.conn.execute('''
+            with self.conn as conn:
+                conn.execute('BEGIN TRANSACTION')
+                cur = conn.execute('''
                     insert into game_map_opened_cells (command_id, x, y)
                     values (:command_id, :x, :y)
                 ''', locals())
@@ -34,63 +38,73 @@ class DB_GAME():
             return False
 
     def get_opened_cells(self, student_command: int) -> List[dict]:
+        """Получить список всех открытых клеток данного студента.
+        Возвращет список словарей с ключами x и y"""
         return self.conn.execute("""
-        SELECT x, y 
-        FROM game_map_opened_cells
-        where command_id = :student_command
+            SELECT x, y 
+            FROM game_map_opened_cells
+            where command_id = :student_command
         """, locals()).fetchall()
 
-    def get_opened_cells_timeline (self,student_command: int) -> List[dict]:
+    def get_opened_cells_timeline(self, student_command: int) -> List[dict]:
+        """Получить последовательность игровых событий данной команды.
+        Возвращает список словарей с ключами ts, x, y, student_id"""
         return self.conn.execute("""
-        SELECT gp.ts, oc.x, oc.y, gp.student_id
-        FROM game_map_opened_cells oc 
-        join game_payments gp on gp.cell_id = oc.id
-        where oc.command_id = :student_command
-        order by gp.ts
+            SELECT gp.ts, oc.x, oc.y, gp.student_id
+            FROM game_map_opened_cells oc 
+            join game_payments gp on gp.cell_id = oc.id
+            where oc.command_id = :student_command
+            order by gp.ts
         """, locals()).fetchall()
 
     def set_student_command(self, user_id: int, level: str, command_id: int) -> int:
-        cur = self.conn.cursor()
-        cur.execute("""
-                    INSERT INTO game_students_commands ( student_id,  command_id, level)
-                    VALUES                             (:user_id, :command_id, :level) 
-                    on conflict (student_id) do update set 
-                    command_id = excluded.command_id,
-                    level = excluded.level
-                """, locals())
-        self.conn.commit()
-        return cur.lastrowid
+        """Записать или обновить id команды студента"""
+        with self.conn as conn:
+            cur = conn.execute("""
+                INSERT INTO game_students_commands ( student_id,  command_id, level)
+                VALUES                             (:user_id, :command_id, :level) 
+                on conflict (student_id) do update set 
+                command_id = excluded.command_id,
+                level = excluded.level
+            """, locals())
+            return cur.lastrowid
 
-    def get_student_command(self, user_id: int) -> int:
+    def get_student_command(self, user_id: int) -> Dict:
+        """Получить id команды и её уровень для данного студента.
+        Возвращает словарь с ключами {command_id, level}"""
         res = self.conn.execute("""
-                            SELECT
-                            command_id, level
-                            from game_students_commands WHERE
-                            student_id =:user_id
-                        """, locals()).fetchone()
+            SELECT
+            command_id, level
+            from game_students_commands WHERE
+            student_id =:user_id
+        """, locals()).fetchone()
         return res
 
     def get_all_students_by_command(self, command_id: int) -> List[int]:
+        """Получить id всех студентов данной команды"""
         res = self.conn.execute("""
-                            SELECT
-                            student_id
-                            from game_students_commands WHERE
-                            command_id =:command_id
-                        """, locals()).fetchall()
+            SELECT
+            student_id
+            from game_students_commands WHERE
+            command_id =:command_id
+        """, locals()).fetchall()
         return res and [row['student_id'] for row in res]
 
-    def set_student_flag(self, user_id: int, command_id: int, x: int, y: int) -> int:
-        self.conn.execute("""
-                    INSERT INTO game_map_flags ( student_id,  command_id,  x,  y)
-                    VALUES                     (:user_id,    :command_id, :x, :y) 
-                    on conflict (student_id, command_id) do update set 
-                    x = excluded.x,
-                    y = excluded.y
-                """, locals())
-        self.conn.commit()
-        return self.conn.cursor().lastrowid
+    def set_student_flag(self, student_id: int, command_id: int, x: int, y: int) -> int:
+        """Обновить координаты флага данного студента (или записать их)"""
+        with self.conn as conn:
+            cur = conn.execute("""
+                INSERT INTO game_map_flags ( student_id,  command_id,  x,  y)
+                VALUES                     (:student_id, :command_id, :x, :y) 
+                on conflict (student_id, command_id) do update set 
+                x = excluded.x,
+                y = excluded.y
+            """, locals())
+            return cur.lastrowid
 
     def get_flags_by_command(self, command_id: int) -> List[dict]:
+        """Получить список всех флагов данной команды.
+        Возвращает список словарей с ключами x, y"""
         return self.conn.execute("""
             SELECT
             x, y
@@ -99,6 +113,7 @@ class DB_GAME():
         """, locals()).fetchall()
 
     def get_flag_by_student_and_command(self, user_id: int, command_id: int) -> List[int]:
+        """Получить координаты флага данного студента"""
         return self.conn.execute("""
             SELECT
             x, y
@@ -106,20 +121,21 @@ class DB_GAME():
             command_id =:command_id and student_id = :user_id
         """, locals()).fetchall()
 
-
     def add_student_chest(self, user_id: int, command_id: int, x: int, y: int, bonus: int) -> int:
+        """Добавить открытый студентом сундук"""
         ts = datetime.now().isoformat()
-        self.conn.execute("""
-                    INSERT INTO game_map_chests ( ts,  student_id,  command_id,  x,  y,  bonus)
-                    VALUES                      (:ts, :user_id,    :command_id, :x, :y, :bonus) 
-                    on conflict (student_id, command_id, x, y) do update set 
-                    bonus = excluded.bonus
-                """, locals())
-        self.conn.commit()
-        return self.conn.cursor().lastrowid
-
+        with self.conn as conn:
+            cur = conn.execute("""
+                        INSERT INTO game_map_chests ( ts,  student_id,  command_id,  x,  y,  bonus)
+                        VALUES                      (:ts, :user_id,    :command_id, :x, :y, :bonus) 
+                        on conflict (student_id, command_id, x, y) do update set 
+                        bonus = excluded.bonus
+                    """, locals())
+            return cur.lastrowid
 
     def get_student_chests(self, user_id: int, command_id: int) -> List[dict]:
+        """Получить список сундуков, которые студент открыл.
+        Возвращает список словарей с ключами {ts, bonus, x, y}"""
         return self.conn.execute("""
             SELECT
             ts, bonus, x, y
