@@ -255,7 +255,7 @@ async def prc_SELECT_WRITTEN_TASK_TO_CHECK_callback(query: types.CallbackQuery, 
     problems_and_counts = []
     for row in rows:
         first_problem_id = row['synonyms'].split(';')[0]
-        problems_and_counts.append((Problem.get_by_id(first_problem_id), row['cnt']))
+        problems_and_counts.append((Problem.get_by_id(first_problem_id), row['cnt'], row['days_waits']))
     await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
                            reply_markup=teacher_keyboards.build_select_problem_to_check(problems_and_counts))
     await bot.answer_callback_query_ig(query.id)

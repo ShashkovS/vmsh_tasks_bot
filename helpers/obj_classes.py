@@ -144,6 +144,9 @@ class Problem:
     def __str__(self):
         return f"Задача {self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"
 
+    def str_num(self):
+        return f"{self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"
+
     @classmethod
     def get_by_id(cls, id: int) -> Optional[Problem]:
         problem = db.get_problem_by_id(id)

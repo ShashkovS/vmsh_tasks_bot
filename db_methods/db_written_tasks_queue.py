@@ -97,10 +97,13 @@ class DB_WRITTENTASKQUEUE:
 
     def get_written_tasks_count_by_synonyms(self) -> List[dict]:
         return self.conn.execute("""
-            select synonyms, count(*) cnt from written_tasks_queue wq 
+            select 
+                synonyms, count(*) cnt,
+                round(JULIANDAY(datetime()) - JULIANDAY(min(ts)), 1) days_waits
+            from written_tasks_queue wq
             join problems p on wq.problem_id = p.id
             group by synonyms
-            order by synonyms
+            order by min(ts);
         """).fetchall()
 
     def upd_written_task_status(self, student_id: int, problem_id: int, new_status: int, teacher_id: int = None) -> int:
