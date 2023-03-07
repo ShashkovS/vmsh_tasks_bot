@@ -125,3 +125,11 @@ class DB_WRITTENTASKQUEUE:
             DELETE from written_tasks_queue
             where student_id = :student_id and problem_id = :problem_id
             """, locals())
+
+    def reset_beeing_checked(self) -> int:
+        new_status = WRITTEN_STATUS.NEW
+        with self.conn as conn:
+            return conn.execute("""
+                UPDATE written_tasks_queue
+                SET cur_status = :new_status
+            """, locals()).rowcount
