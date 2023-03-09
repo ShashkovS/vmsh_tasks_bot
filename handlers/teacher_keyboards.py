@@ -95,9 +95,10 @@ def build_teacher_select_written_problem(top: list):
 def build_select_student(name_to_find: str):
     logger.debug('keyboards.build_select_student')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
+    name_to_find_lower = name_to_find.lower()
     students = sorted(
         User.all_students(),
-        key=lambda user: -jaro_winkler(name_to_find.lower(), f'{user.surname} {user.name} {user.token}'.lower(), 1 / 10)
+        key=lambda user: -jaro_winkler(name_to_find_lower, f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1/32)
     )
     for student in students[:8]:
         student_button = types.InlineKeyboardButton(

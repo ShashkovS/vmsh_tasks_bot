@@ -775,7 +775,7 @@ async def find_student(message: types.Message):
         return
     students = sorted(
         User.all_students(),
-        key=lambda user: -jaro_winkler(search.lower(), f'{user.surname} {user.name} {user.token}'.lower(), 1 / 10)
+        key=lambda user: -jaro_winkler(search.lower(), f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1/32)
     )
     if students:
         lines = [
