@@ -7,7 +7,10 @@ from helpers.obj_classes import User, Problem, State, db, Webtoken
 
 def build_problems(lesson_num: int, student: User, is_sos_question=False):
     logger.debug('keyboards.build_problems')
-    solved = set(db.check_student_solved(student.id, lesson_num))
+    if CURRENT_BOT_MODE == BOT_MODE.NORMAL:
+        solved = set(db.check_student_solved(student.id, lesson_num))
+    elif CURRENT_BOT_MODE == BOT_MODE.EXAM:
+        solved = set(db.check_student_tried(student.id, lesson_num))
     being_checked = set(db.check_student_sent_written(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     # Кнопки с вопросами

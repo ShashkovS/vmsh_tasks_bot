@@ -56,6 +56,15 @@ class DB_RESULT:
         solved_ids = {row['problem_id'] for row in rows}
         return solved_ids
 
+    def check_student_tried(self, student_id: int, lesson: int) -> set:
+        cur = self.conn.execute("""
+            select distinct problem_id from results
+            where student_id = :student_id and lesson = :lesson
+        """, locals())
+        rows = cur.fetchall()
+        solved_ids = {row['problem_id'] for row in rows}
+        return solved_ids
+
     def list_student_results(self, student_id: int, lesson: int) -> List[dict]:
         return self.conn.execute("""
             select r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict, r.problem_id from results r
