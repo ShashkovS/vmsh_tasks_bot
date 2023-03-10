@@ -23,8 +23,10 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
         keyboard_markup.row(que1, que2)
     for problem in Problem.get_by_lesson(student.level, lesson_num):
         synonyms_set = problem.synonyms_set()
-        if synonyms_set & solved:
+        if CURRENT_BOT_MODE == BOT_MODE.NORMAL and synonyms_set & solved:
             tick = '✅'
+        elif CURRENT_BOT_MODE == BOT_MODE.EXAM and synonyms_set & solved:
+            tick = '❓'
         elif synonyms_set & being_checked:
             tick = '❓'
         elif problem.prob_type == PROB_TYPE.ORALLY and State.get_by_user_id(student.id)['oral_problem_id'] is not None:

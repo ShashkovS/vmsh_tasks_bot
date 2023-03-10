@@ -2,6 +2,14 @@
 from enum import Enum, IntEnum, IntFlag, unique
 
 
+@unique
+class BOT_MODE(IntEnum):
+    NORMAL = 0
+    EXAM = 2
+
+CURRENT_BOT_MODE = BOT_MODE.EXAM
+
+
 # СОСТОЯНИЯ
 # Важно, чтобы каждый state был уникальной числовой константой, которая больше никогда не меняется
 # (так как она сохраняется в БД)
@@ -82,7 +90,7 @@ class USER_TYPE(IntFlag):
     DELETED = -1
 
 
-LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', 'В': 'Восьмиклассники' }
+LEVEL_DESCRIPTION = {'т': 'Тестирование', 'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', 'В': 'Восьмиклассники' }
 LEVEL_URL = {
     'н': 'https://shashkovs.ru/vmsh/2022/n/',
     'п': 'https://shashkovs.ru/vmsh/2022/p/',
@@ -93,6 +101,7 @@ LEVEL_URL = {
 
 @unique
 class LEVEL(str, Enum):
+    TESING = 'т'
     NOVICE = 'н'
     PRO = 'п'
     EXPERT = 'э'

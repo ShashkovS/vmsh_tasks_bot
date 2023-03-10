@@ -35,9 +35,9 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
         except:
             pass
     if not blocked:
-        text = f"❓ Нажимайте на задачу, чтобы сдать её\n(выбран уровень «{student.level.slevel}», здесь <a href=\"{student.level.url}\">условия</a>)"
+        text = f"❓ Когда начнётся собеседование, нажимайте на задачу, чтобы сдать её.\nВопросы можно задавать в любой момент.\n<a href='https://www.shashkovs.ru/nabor7/'>Информация</a>"
     else:
-        text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
+        text = f"🤖 Приём задач ботом окончен до начала следующего собеседования."
     keyb_msg = await bot.send_message(
         chat_id=chat_id,
         text=text,
@@ -277,7 +277,7 @@ async def check_answer_and_react(chat_id: int, problem: Problem, student: User, 
         else:
             Result.add(student, problem, None, VERDICT.WRONG_ANSWER, student_answer, RES_TYPE.TEST)
             text_to_student = f"❌ {problem.wrong_ans}"
-        if os.environ.get('EXAM', None) == 'true':
+        if CURRENT_BOT_MODE == BOT_MODE.EXAM == 'true':
             text_to_student = 'Ответ принят на проверку.'
         await bot.send_message(chat_id=chat_id, text=text_to_student)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -338,7 +338,22 @@ async def prc_student_is_in_conference_state(message: types.message, student: Us
     pass
 
 
-@dispatcher.message_handler(commands=['level_novice'])
+@dispatcher.message_handler(commands=['level_testing'])
+async def level_testing(message: types.Message):
+    logger.debug('level_testing')
+    student = User.get_by_chat_id(message.chat.id)
+    if student:
+        student.set_level(LEVEL.TESING)
+        message = await bot.send_message(
+            chat_id=message.chat.id,
+            text="Вы переведены в тестируемых",
+        )
+        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+
+
+@dispatcher.message_handler(commands=['xxx_level_novice'])
 async def level_novice(message: types.Message):
     logger.debug('level_novice')
     student = User.get_by_chat_id(message.chat.id)
@@ -355,7 +370,7 @@ async def level_novice(message: types.Message):
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['level_pro'])
+@dispatcher.message_handler(commands=['xxx_level_pro'])
 async def level_pro(message: types.Message):
     logger.debug('level_pro')
     student = User.get_by_chat_id(message.chat.id)
@@ -372,7 +387,7 @@ async def level_pro(message: types.Message):
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['level_expert'])
+@dispatcher.message_handler(commands=['xxx_level_expert'])
 async def level_expert(message: types.Message):
     logger.debug('level_expert')
     student = User.get_by_chat_id(message.chat.id)
@@ -389,7 +404,7 @@ async def level_expert(message: types.Message):
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['level_gr8'])
+@dispatcher.message_handler(commands=['xxx_level_gr8'])
 async def level_expert(message: types.Message):
     logger.debug('level_gr8')
     student = User.get_by_chat_id(message.chat.id)
