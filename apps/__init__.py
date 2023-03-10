@@ -6,7 +6,7 @@ import apps.zoom_events_parser
 # Должен быть порядок, в котором всё инициируется
 all_apps = [
     tg_bot,
-    game_web_app,
+    # game_web_app,
     results_app,
-    zoom_events_parser,
+    # zoom_events_parser,
 ]
