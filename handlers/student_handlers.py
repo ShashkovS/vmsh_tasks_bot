@@ -35,7 +35,7 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
         except:
             pass
     if not blocked:
-        text = f"❓ Когда начнётся собеседование, нажимайте на задачу, чтобы сдать её.\nВопросы можно задавать в любой момент.\n<a href='https://www.shashkovs.ru/nabor7/'>Информация</a>"
+        text = f"❓ Сейчас можно сдать <a href='https://www.shashkovs.ru/nabor7/#test'>тестовую задачу</a>. Нужно сдать только ответ в пункт а) и фотографию решения в пункт б).\nВопросы можно задавать в любой момент.\n<a href='https://www.shashkovs.ru/nabor7/'>Информация</a>"
     else:
         text = f"🤖 Приём задач ботом окончен до начала следующего собеседования."
     keyb_msg = await bot.send_message(
@@ -277,7 +277,7 @@ async def check_answer_and_react(chat_id: int, problem: Problem, student: User, 
         else:
             Result.add(student, problem, None, VERDICT.WRONG_ANSWER, student_answer, RES_TYPE.TEST)
             text_to_student = f"❌ {problem.wrong_ans}"
-        if CURRENT_BOT_MODE == BOT_MODE.EXAM == 'true':
+        if CURRENT_BOT_MODE == BOT_MODE.EXAM:
             text_to_student = 'Ответ принят на проверку.'
         await bot.send_message(chat_id=chat_id, text=text_to_student)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -507,7 +507,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         await bot.answer_callback_query_ig(query.id)
     elif problem.prob_type in (PROB_TYPE.WRITTEN, PROB_TYPE.WRITTEN_BEFORE_ORALLY):
         await bot.send_message(chat_id=query.message.chat.id,
-                               text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.",
+                               text=f"Выбрана задача {problem}.\nТеперь отправьте фотографию 📸 вашего решения.",
                                reply_markup=student_keyboards.build_cancel_task_submission())
         State.set_by_user_id(student.id, STATE.SENDING_SOLUTION, problem_id)
         await bot.answer_callback_query_ig(query.id)
