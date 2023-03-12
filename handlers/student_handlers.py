@@ -208,10 +208,11 @@ def check_test_problem_answer(problem: Problem, student: Optional[User], student
         student_answer = ''
 
     # Проверяем на перебор
-    if student:  # При перепроверке данная проверка не выполняется
-        text_to_student = check_test_ans_rate_limit(student.id, problem.id) if student.type == USER_TYPE.STUDENT else None
-        if text_to_student:
-            return ANS_CHECK_VERDICT.RATE_LIMIT, text_to_student, error_text
+    # В тестировании отключена
+    # if student:  # При перепроверке данная проверка не выполняется
+    #     text_to_student = check_test_ans_rate_limit(student.id, problem.id) if student.type == USER_TYPE.STUDENT else None
+    #     if text_to_student:
+    #         return ANS_CHECK_VERDICT.RATE_LIMIT, text_to_student, error_text
 
     # Если тип ответа — выбор из нескольких вариантов ответа, то это «простой» особый случай
     if problem.ans_type == ANS_TYPE.SELECT_ONE:
