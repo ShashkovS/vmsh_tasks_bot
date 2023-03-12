@@ -320,17 +320,9 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
 @reg_state(STATE.STUDENT_IS_SLEEPING)
 async def prc_student_is_sleeping_state(message: types.message, student: User):
     logger.debug('prc_student_is_sleeping_state')
-    if student.level == LEVEL.NOVICE:
-        channel = '@vmsh_179_5_7_2022'
-    elif student.level == LEVEL.PRO:
-        channel = '@vmsh_179_5_7_2022'
-    elif student.level == LEVEL.EXPERT:
-        channel = '@vmsh_179_5_7_2022'
-    elif student.level == LEVEL.GR8:
-        channel = '@vmsh_179_8_2022'
     await bot.send_message(chat_id=message.chat.id if message else student.chat_id,
-                           text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
-                                f"Заходите в канал {channel} кружка за новостями и решениями.")
+                           text="🤖 Приём задач ботом окончен до начала собеседования.\n"
+                                f"Подробная информация здесь: https://www.shashkovs.ru/nabor7/")
 
 
 @reg_state(STATE.STUDENT_IS_IN_CONFERENCE)
