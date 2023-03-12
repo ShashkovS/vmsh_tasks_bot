@@ -69,10 +69,10 @@ def create_conduit_table(problems, pupils, results):
     t_cols = 3 + len(problems)
     table = [[''] * t_cols for __ in range(t_rows)]
     # Заполняем заголовочную строчку
-    table[0][:3] = ['Фамилия', 'Имя', 'уровень']
+    table[0][:3] = ['token', 'Фамилия', 'Имя']
     # Заполняем заголовочные столбцы
     for r, pupil in enumerate(pupils, start=1):
-        table[r][0:3] = pupil.split('\t')[1:]
+        table[r][0:3] = pupil.split('\t')[:3]
     # Заполняем заголовочную строку
     for col, problem in enumerate(problems, start=3):
         table[0][col] = problem['full_prob']
