@@ -264,8 +264,8 @@ class Result:
     @staticmethod
     def add(student: User, problem: Problem, teacher: Optional[User], verdict: VERDICT, answer: Optional[str], res_type: RES_TYPE, zoom_conversation_id: int = None) -> int:
         result_id = db.add_result(student.id, problem.id, problem.level, problem.lesson, teacher and teacher.id, verdict, answer, res_type, zoom_conversation_id)
-        if verdict > 0:
-            asyncio.create_task(vmsh_nats.publish(NATS_GAME_STUDENT_UPDATE, student.id))
+        # if verdict > 0:
+        #     asyncio.create_task(vmsh_nats.publish(NATS_GAME_STUDENT_UPDATE, student.id))
         return result_id
 
 
