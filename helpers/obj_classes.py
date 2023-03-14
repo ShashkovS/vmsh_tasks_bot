@@ -142,7 +142,7 @@ class Problem:
             self.ans_type = ANS_TYPE(self.ans_type)
 
     def __str__(self):
-        return f"Задача {self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"
+        return f"Задача {self.prob}{self.item}. {self.title}"
 
     def str_num(self):
         return f"{self.lesson}{self.level}.{self.prob}{self.item}. {self.title}"
