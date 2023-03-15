@@ -290,6 +290,8 @@ async def forward_all_messages(message: types.Message):
     text = message.text.strip().split()
     try:
         cmd, token, start, end = text
+        start = int(start)
+        end = int(end)
     except:
         return
     student = User.get_by_token(token)
