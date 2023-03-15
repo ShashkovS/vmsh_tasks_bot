@@ -281,6 +281,37 @@ async def set_get_task_info_for_all_students(message: types.Message):
     )
 
 
+@dispatcher.message_handler(commands=['forward_all'])
+async def forward_all_messages(message: types.Message):
+    logger.debug('forward_all_messages')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    text = message.text.strip().split()
+    try:
+        cmd, token, start, end = text
+    except:
+        return
+    student = User.get_by_token(token)
+    if not student or not student.chat_id:
+        return
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Начинаем пересылать",
+    )
+    errors = []
+    for id in range(start, end+1):
+        try:
+            await bot.forward_message(message.chat.id, student.chat_id, id)
+            await asyncio.sleep(1 / 20)
+        except Exception as e:
+            errors.append((id, e.__class__.__name__))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Ошибки: " + '\n'.join(str(row) for row in errors),
+    )
+
+
 async def run_set_sleep_state_task(teacher_chat_id):
     logger.debug('run_set_sleep_state_task')
     # Всем студентам ставим state STATE.STUDENT_IS_SLEEPING. Прекращаем приём задач
