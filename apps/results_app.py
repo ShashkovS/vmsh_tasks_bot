@@ -11,6 +11,7 @@ from aiohttp import web, WSMsgType
 from helpers.config import config, logger, DEBUG, APP_PATH
 from helpers.obj_classes import db, Webtoken, User
 from web import trash_print_results
+from helpers.consts import USER_TYPE
 
 __ALL__ = ['routes']
 
@@ -43,6 +44,8 @@ async def login_res(request):
     data = await request.post()
     token = data.get('password', None)
     user = User.get_by_token(token)
+    if user.type != USER_TYPE.TEACHER:
+        return web.Response(text=templates['login_res'], content_type='text/html')
     cookie_webtoken = Webtoken.webtoken_by_user(user)
     if cookie_webtoken:
         response = web.Response(text=trash_print_results.get_html(), content_type='text/html')
