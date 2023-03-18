@@ -43,6 +43,9 @@ async def prc_get_user_info_state(message: types.Message, user: User):
             chat_id=message.chat.id,
             text=f"🤖 ОК, Добро пожаловать, {user.name} {user.surname}",
         )
+        # DANGER!!! TODO: REMOVE THIS TRASH
+        if user.type == USER_TYPE.STUDENT and user.middlename == 'wrt':
+            State.set_by_user_id(user.id, STATE.SURVEY)
         if user.type == USER_TYPE.STUDENT:
             State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
         elif user.type == USER_TYPE.TEACHER:
