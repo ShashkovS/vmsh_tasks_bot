@@ -481,7 +481,10 @@ async def set_state_to_tokens(message: types.Message):
         if user:
             State.set_by_user_id(user.id, state)
             if user.chat_id and state in (STATE.SURVEY, STATE.GET_TASK_INFO):
-                await post_problem_keyboard(user.chat_id, user)
+                try:
+                    await post_problem_keyboard(user.chat_id, user)
+                except Exception as e:
+                    logger.exception(e)
                 await asyncio.sleep(1/20)
             done += 1
     await bot.send_message(chat_id=message.chat.id, text=f'Установлено состояние {state} {done} пользователям')
