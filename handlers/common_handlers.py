@@ -1,13 +1,16 @@
+import asyncio
+
 import aiogram
 from aiogram.dispatcher.webhook import types
 from aiogram.utils.exceptions import BadRequest
 from contextlib import suppress
 
+from handlers import sleep_and_send_problems_keyboard
 from handlers.common_keyboards import build_survey
 from helpers.consts import *
 from helpers.config import logger
 from helpers.obj_classes import User, db
-from helpers.bot import reg_callback, bot
+from helpers.bot import reg_callback, bot, reg_state
 
 
 @reg_callback(CALLBACK.REACTION)
@@ -67,3 +70,19 @@ async def prc_survey(query: types.CallbackQuery, user: User):
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=build_survey(user, survey, selection_ids))
     await bot.answer_callback_query_ig(query.id)
+
+@reg_state(STATE.SURVEY)
+async def prc_survey_state(message, student: User):
+    logger.debug('prc_survey_state')
+    # Обрабатываем как обычно
+    alarm = ''
+    # Попытка послать что-то во время опроса
+    if message.photo or message.document:
+        alarm = '❗❗❗ Файл НЕ ПРИНЯТ'
+    elif message.text and len(message.text) > 5:
+        alarm = '❗❗❗ Текст НЕ ПРИНЯТ'
+    sleep = 0
+    if alarm:
+        await bot.send_message(chat_id=message.chat.id, text=alarm, )
+        sleep = 8
+    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student, sleep=sleep))
