@@ -302,7 +302,7 @@ async def forward_all_messages(message: types.Message):
         text="Начинаем пересылать",
     )
     errors = []
-    for id in range(start, end+1):
+    for id in range(start, end + 1):
         try:
             await bot.forward_message(message.chat.id, student.chat_id, id)
             await asyncio.sleep(1 / 20)
@@ -421,3 +421,67 @@ async def reset_checked(message: types.Message):
     logger.debug('reset_checked')
     db.reset_beeing_checked()
     await bot.send_message(chat_id=message.chat.id, text='Готово')
+
+
+@dispatcher.message_handler(commands=['create_survey'])
+async def create_survey(message: types.Message):
+    logger.debug('create_survey')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    text = message.text.strip()
+    try:
+        survey_type = SURVEY_TYPES(re.match(r'/create_survey\s+(\w)', text).group(1))
+        user_type = USER_TYPE(int(re.match(r'/create_survey\s+(?:\w)\s+(\w)', text).group(1)))
+        choices = re.findall(r'^[-*]\s+(.*)', text, flags=re.MULTILINE)
+        question = re.fullmatch(r'/create_survey\s+\w\s+\w\n([\s\S]*?)(?:^[-*]\s+(?:.*)\n?)+\s*', text, flags=re.MULTILINE).group(1).strip()
+    except Exception as e:
+        await bot.send_message(chat_id=message.chat.id, text='/create_survey r/c 1/2\nВопрос\n- Один\n- Два')
+        return
+    survey_id = db.add_survey(survey_type, user_type, True, question, choices)
+    text = f'''Опрос с id={survey_id} создан.
+    {survey_type=}
+    {user_type=}
+    {question=}
+    {choices=}
+    '''
+    await bot.send_message(chat_id=message.chat.id, text=text)
+
+
+@dispatcher.message_handler(commands=['disable_survey'])
+async def disable_survey(message: types.Message):
+    logger.debug('disable_survey')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    cmd, survey_id = message.text.strip().split()
+    try:
+        survey_id = int(survey_id)
+    except Exception as e:
+        return
+    db.disable_survey(survey_id)
+    await bot.send_message(chat_id=message.chat.id, text=f'Опрос {survey_id} отключён')
+
+@dispatcher.message_handler(commands=['set_state_to_tokens'])
+async def set_state_to_tokens(message: types.Message):
+    logger.debug('set_state_to_tokens')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    try:
+        first, second = message.text.strip().splitlines()
+        cmd, state_id = first.split()
+        state = STATE(int(state_id))
+        tokens = second.split()
+    except Exception as e:
+        return
+    done = 0
+    for token in tokens:
+        user = User.get_by_token(token)
+        if user:
+            State.set_by_user_id(user.id, state)
+            if user.chat_id and state in (STATE.SURVEY, STATE.GET_TASK_INFO):
+                await post_problem_keyboard(user.chat_id, user)
+                await asyncio.sleep(1/20)
+            done += 1
+    await bot.send_message(chat_id=message.chat.id, text=f'Установлено состояние {state} {done} пользователям')

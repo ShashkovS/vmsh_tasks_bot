@@ -14,7 +14,7 @@ from helpers.consts import *
 from helpers.config import logger, config
 from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, db
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
-from handlers import student_keyboards
+from handlers import student_keyboards, common_keyboards
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
 
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
@@ -36,22 +36,40 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
             await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'], reply_markup=None)
         except:
             pass
-    if not blocked:
-        text = f"❓ Сдайте ответы и черновики ваших решений.\n" \
-               f"ТЕСТИРОВАНИЕ\n" \
-               f"Ответы — в задачи с пометкой «Ответ»\n" \
-               f"Фотографии черновиков 📷 — в задачи с пометкой «Решение»\n" \
-               f"<a href='https://www.shashkovs.ru/nabor7/'>Информация</a>"
+
+    # Теперь здесь странное. Если студент в статусе ОПРОС, то вместо списка задач выводим опрос.
+    student_state = State.get_by_user_id(student.id)
+    if student_state['state'] == STATE.SURVEY:
+        surveys = db.get_active_surveys(student.type)
+        survey = surveys[0]
+        survey_result = db.get_survey_result(student.id, survey['id'])
+        keyb_msg = await bot.send_message(
+            chat_id=chat_id,
+            text=survey['question'],
+            parse_mode='HTML',
+            disable_web_page_preview=True,
+            disable_notification=True,
+            reply_markup=common_keyboards.build_survey(student, survey, survey_result),
+        )
+        db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
     else:
-        text = f"🤖 Приём задач ботом окончен до начала следующего собеседования."
-    keyb_msg = await bot.send_message(
-        chat_id=chat_id,
-        text=text,
-        parse_mode='HTML',
-        disable_web_page_preview=True,
-        reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student),
-    )
-    db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
+        if not blocked:
+            text = f"❓ Сдайте ответы и черновики ваших решений.\n" \
+                   f"ТЕСТИРОВАНИЕ\n" \
+                   f"Ответы — в задачи с пометкой «Ответ»\n" \
+                   f"Фотографии черновиков 📷 — в задачи с пометкой «Решение»\n" \
+                   f"<a href='https://www.shashkovs.ru/nabor7/'>Информация</a>"
+        else:
+            text = f"🤖 Приём задач ботом окончен до начала следующего собеседования."
+        keyb_msg = await bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            parse_mode='HTML',
+            disable_web_page_preview=True,
+            disable_notification=True,
+            reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student),
+        )
+        db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
 async def refresh_last_student_keyboard(student: User) -> bool:

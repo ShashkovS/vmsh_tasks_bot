@@ -40,6 +40,7 @@ from .db_media_groups import DB_MEDIA_GROUPS
 from .db_reaction import DB_REACTION
 from .db_game import DB_GAME
 from .db_zoom_conversation import DB_ZOOM_CONVERSATION
+from .db_survey import DB_SURVEY
 
 class DB(DB_CONNECTION, DB_USER, DB_PROBLEM, DB_LESSON, DB_STATE, DB_RESULT, DB_WRITTENTASKQUEUE, DB_WAITLIST, DB_WRITTEN_TASK_DISCUSSION, DB_FEATURES,
          DB_WEBTOKEN, DB_LAST_KEYBOARD,
@@ -49,6 +50,7 @@ class DB(DB_CONNECTION, DB_USER, DB_PROBLEM, DB_LESSON, DB_STATE, DB_RESULT, DB_
          DB_REACTION,
          DB_GAME,
          DB_ZOOM_CONVERSATION,
+         DB_SURVEY,
          ):
     pass
 

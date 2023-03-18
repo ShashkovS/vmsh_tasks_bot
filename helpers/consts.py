@@ -26,6 +26,7 @@ class STATE(IntEnum):
     STUDENT_IS_IN_CONFERENCE = 9
     TEACHER_WRITES_STUDENT_NAME = 10
     STUDENT_IS_SLEEPING = 12
+    SURVEY = 13
 
 
 # ПРЕФИКСЫ ДАННЫХ ДЛЯ КОЛЛБЕКОВ
@@ -58,6 +59,7 @@ class CALLBACK(str, Enum):
     OTHER_SOS = 'C'
     SEND_ANSWER = 'h'
     REACTION = 'r'
+    SURVEY = 'S'
 
     def __str__(self):
         return self.value
@@ -258,3 +260,10 @@ class REACTION(IntEnum):
     WRITTEN_TEACHER = 100
     ORAL_STUDENT = 200
     ORAL_TEACHER = 300
+
+
+@unique
+class SURVEY_TYPES(str, Enum):
+    """Виды опросов"""
+    RADIO = 'r'
+    CHECKBOX = 'c'
