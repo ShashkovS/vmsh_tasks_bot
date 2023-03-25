@@ -1,19 +1,19 @@
 import sqlite3
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 
 class DB_SURVEY():
     conn: sqlite3.Connection
 
-    def add_survey(self, survey_type: str, for_user_type: int, is_active: bool, question: str, choices: List[str]) -> int:
+    def add_survey(self, survey_type: str, is_active: bool, question: str, choices: List[str]) -> int:
         """Записывает в БД в отношение reaction реакцию ученика/учителя на письменную/устную сдачу."""
         ts = datetime.now().isoformat()
         with self.conn as conn:
             conn.execute("""begin""")
             survey_id = conn.execute("""
-                INSERT INTO surveys ( survey_type,  for_user_type,  is_active,  question,  ts)
-                             VALUES (:survey_type, :for_user_type,  :is_active, :question, :ts);
+                INSERT INTO surveys ( survey_type,  is_active,  question,  ts)
+                             VALUES (:survey_type, :is_active, :question, :ts);
             """, locals()).lastrowid
             for text in choices:
                 conn.execute("""
@@ -22,21 +22,39 @@ class DB_SURVEY():
                 """, locals())
         return survey_id
 
-    def get_active_surveys(self, for_user_type: int) -> List[dict]:
-        """Возвращает список всех активных опросов
-        вместе с вариантами ответов"""
-        surveys = self.conn.execute("""
-            SELECT * FROM surveys 
-            WHERE is_active = true and for_user_type = :for_user_type
-            order by id;
-        """, locals()).fetchall()
-        for survey in surveys:
+    def assign_survey(self, survey_id: int, users: List[int]) -> int:
+        """Назначает данным студентам данный опрос"""
+        with self.conn as conn:
+            conn.executemany("""
+                INSERT INTO survey_assigns ( user_id,  survey_id)
+                                    VALUES (?,         ?        )
+                ON CONFLICT (user_id) DO UPDATE SET 
+                survey_id = excluded.survey_id
+            """, [(user_id, survey_id) for user_id in users])
+        return survey_id
+
+    def get_survey_assigns(self, survey_id) -> List[int]:
+        """Получить список id пользователей, которым назначен опрос"""
+        rows = self.conn.execute("""
+                        SELECT user_id FROM survey_assigns 
+                        WHERE survey_id = :survey_id;
+                    """, locals()).fetchall()
+        return [row['user_id'] for row in rows]
+
+    def get_active_survey(self, user_id: int) -> Optional[dict]:
+        """Возвращает опрос для данного студента"""
+        survey = self.conn.execute("""
+            SELECT s.* FROM surveys s
+            join survey_assigns sa on s.id = sa.survey_id
+            WHERE s.is_active = true and sa.user_id = :user_id;
+        """, locals()).fetchone()
+        if survey:
             survey_id = survey['id']
             survey['choices'] = self.conn.execute("""
                 SELECT * FROM survey_choices 
                 WHERE survey_id = :survey_id;
             """, locals()).fetchall()
-        return surveys
+        return survey
 
     def get_survey_by_id(self, survey_id: int) -> dict:
         """Возвращает список всех активных опросов

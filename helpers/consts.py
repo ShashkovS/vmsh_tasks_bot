@@ -26,7 +26,6 @@ class STATE(IntEnum):
     STUDENT_IS_IN_CONFERENCE = 9
     TEACHER_WRITES_STUDENT_NAME = 10
     STUDENT_IS_SLEEPING = 12
-    SURVEY = 13
 
 
 # ПРЕФИКСЫ ДАННЫХ ДЛЯ КОЛЛБЕКОВ

@@ -37,11 +37,9 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
         except:
             pass
 
-    # Теперь здесь странное. Если студент в статусе ОПРОС, то вместо списка задач выводим опрос.
-    student_state = State.get_by_user_id(student.id)
-    if student_state['state'] == STATE.SURVEY:
-        surveys = db.get_active_surveys(student.type)
-        survey = surveys[0]
+    # Теперь здесь странное. Если студенту назначен опрос, то показываем его
+    survey = db.get_active_survey(student.id)
+    if survey:
         survey_result = db.get_survey_result(student.id, survey['id'])
         keyb_msg = await bot.send_message(
             chat_id=chat_id,
