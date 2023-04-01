@@ -66,7 +66,7 @@ async def update_problems(message: types.Message):
     )
 
 
-async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode=False):
+async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode=False, quite=False):
     logger.debug('run_broadcast_task')
     tokens = set(tokens)
     all_students = None
@@ -101,6 +101,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
                 text=broadcast_message,
                 disable_web_page_preview=True,
                 parse_mode=parse_mode,
+                disable_notification=quite,
             )
             sent += 1
             db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None,
@@ -127,9 +128,10 @@ async def broadcast(message: types.Message):
     except:
         return
     html_mode = 'html' in cmd
+    quite = 'quite' in cmd
     broadcast_message = '\n'.join(broadcast_message)
     tokens = re.split(r'\W+', tokens)
-    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode))
+    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, quite))
     await bot.send_message(
         chat_id=message.chat.id,
         text="Создано задание рассылки сообщений",
