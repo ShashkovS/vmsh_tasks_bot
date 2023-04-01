@@ -128,7 +128,7 @@ async def broadcast(message: types.Message):
     except:
         return
     html_mode = 'html' in cmd
-    quite = 'quite' in cmd
+    quite = 'quiet' in cmd
     broadcast_message = '\n'.join(broadcast_message)
     tokens = re.split(r'\W+', tokens)
     asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, quite))
