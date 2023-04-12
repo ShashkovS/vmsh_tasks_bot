@@ -726,6 +726,10 @@ async def students_my_results(message: types.Message):
                      for row in rows
                      if row['lesson'] == lesson
                      ]
-            await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
+            for i in range(0, len(lines), 20):
+                try:
+                    await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines[i:i+20]) + '</pre>')
+                except aiogram.utils.exceptions.MessageIsTooLong:
+                    pass
     else:
         await bot.send_message(chat_id=message.chat.id, text='Нет ни одной посылки (или что-то пошло не так)')
