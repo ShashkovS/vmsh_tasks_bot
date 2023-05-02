@@ -258,34 +258,34 @@ const chestsAsObj = [
 А рассмотрение соответствующих траекторий на глобусе позволит во всём разобраться.</p>`
   },
   {"x": 53, "y": 9, "bonus": 2, "amount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=24015" target="_blank" rel="noopener noreferrer">Летающие острова</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=24015" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/24015.png" alt="24015"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :)`
   },
   {"x": 33, "y": 31, "bonus": 2, "amount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=6971 " target="_blank" rel="noopener noreferrer">Пропущенные буквы</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=6971 " target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/6971.png" alt="6971 "> <div class="play-button"></div></a><br> Когда решите, сдайте ответ в бот, это добавит вам баллов :)`
   },
   {"x": 41, "y": 31, "bonus": 2, "asmount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=9234 " target="_blank" rel="noopener noreferrer">Небоскрёбы</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=9234 " target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/9234.png" alt="9234 "> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :)`
   },
   {"x": 7, "y": 65, "bonus": 2, "amount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=28476" target="_blank" rel="noopener noreferrer">Самоссылающийся тест</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=28476" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/28476.png" alt="28476"> <div class="play-button"></div></a><br> Когда решите, сдайте ответ в бот, это добавит вам баллов :)`
   },
   {"x": 19, "y": 55, "bonus": 2, "amount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=22564" target="_blank" rel="noopener noreferrer">Соседи</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=22564" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/22564.png" alt="22564"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :)`
   },
   {"x": 73, "y": 3, "bonus": 2, "amount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=14592" target="_blank" rel="noopener noreferrer">Площадь грани</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=14592" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/14592.png" alt="14592"> <div class="play-button"></div></a><br> Когда решите, сдайте ответ в бот, это добавит вам баллов :)`
   },
   {"x": 1, "y": 77, "bonus": 2, "amount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=20938" target="_blank" rel="noopener noreferrer">Головоломка с шашками</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=20938" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/20938.png" alt="20938"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :)`
   },
   {"x": 65, "y": 15, "bonus": 2, "amount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=11979" target="_blank" rel="noopener noreferrer">Общие друзья</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=11979" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/11979.png" alt="11979"> <div class="play-button"></div></a><br> Когда решите, сдайте ответ в бот, это добавит вам баллов :)`
   },
   {"x": 33, "y": 53, "bonus": 2, "amount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=28221" target="_blank" rel="noopener noreferrer">Лампочка</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=28221" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/28221.png" alt="28221"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :)`
   },
   {"x": 75, "y": 13, "bonus": 2, "amount": 8, "html":
-`<p></p>`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=20997" target="_blank" rel="noopener noreferrer">Собрать всех вместе</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=20997" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/20997.png" alt="20997"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :)`
   },
   {"x": 59, "y": 31, "bonus": 2, "amount": 8, "html":
 `<p></p>`
