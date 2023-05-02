@@ -31,8 +31,8 @@ async def start(message: types.Message):
     db.set_student_command(user.id, LEVEL.NOVICE, command_id)
     await bot.send_message(
         chat_id=message.chat.id,
-        text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/p/#17-p.\n"
-             "Если задачи окажутся сложноватыми, то можно выполнить команду /level_novice и решать вот эти задачи https://shashkovs.ru/vmsh/2022/n/#17-n, они попроще.",
+        text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/p/#34-p.\n"
+             "Если задачи окажутся сложноватыми, то можно выполнить команду /level_novice и решать вот эти задачи https://shashkovs.ru/vmsh/2022/n/#34-n, они попроще.",
     )
     State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
     await post_problem_keyboard(message.chat.id, user)
