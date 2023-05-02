@@ -10,7 +10,8 @@ from helpers.config import logger, config
 from helpers.obj_classes import User, Problem, State, FromGoogleSpreadsheet, db
 from helpers.bot import bot, dispatcher
 from handlers import student_keyboards
-from handlers.student_handlers import check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard, prc_student_is_sleeping_state
+from handlers.student_handlers import check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard, \
+    prc_student_is_sleeping_state
 
 
 @dispatcher.message_handler(commands=['update_all_quaLtzPE', 'update_all'])
@@ -241,6 +242,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
         text=f"Все школьники переведены в режим сдачи задач",
     )
 
+
 async def update_all_student_keyboards(teacher_chat_id):
     logger.debug('update_all_student_keyboards')
     for student in User.all_students():
@@ -264,6 +266,7 @@ async def reset_keyboards(message: types.Message):
         chat_id=message.chat.id,
         text="Создано задание по обновлению плюсиков запущено",
     )
+
 
 @dispatcher.message_handler(commands=['reset_state_jvcykgny', 'reset_state'])
 async def set_get_task_info_for_all_students(message: types.Message):
@@ -324,7 +327,7 @@ async def calc_last_lesson_stat(message: types.Message):
     for i in range(0, len(msg), 4096):
         await bot.send_message(
             chat_id=message.chat.id,
-            text=msg[i:i+4096],
+            text=msg[i:i + 4096],
         )
 
 
@@ -377,4 +380,11 @@ async def oral2written(message: types.Message):
         Problem.oral_to_written(levels)
     elif cmd == '/written2oral':
         Problem.written_to_oral(levels)
+    await bot.send_message(chat_id=message.chat.id, text='Готово')
+
+
+@dispatcher.message_handler(commands=['reset_checked'])
+async def reset_checked(message: types.Message):
+    logger.debug('reset_checked')
+    db.reset_beeing_checked()
     await bot.send_message(chat_id=message.chat.id, text='Готово')

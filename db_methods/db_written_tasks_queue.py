@@ -97,10 +97,13 @@ class DB_WRITTENTASKQUEUE:
 
     def get_written_tasks_count_by_synonyms(self) -> List[dict]:
         return self.conn.execute("""
-            select synonyms, count(*) cnt from written_tasks_queue wq 
+            select 
+                synonyms, count(*) cnt,
+                round(JULIANDAY(datetime()) - JULIANDAY(min(ts)), 1) days_waits
+            from written_tasks_queue wq
             join problems p on wq.problem_id = p.id
             group by synonyms
-            order by synonyms
+            order by min(ts);
         """).fetchall()
 
     def upd_written_task_status(self, student_id: int, problem_id: int, new_status: int, teacher_id: int = None) -> int:
@@ -122,3 +125,11 @@ class DB_WRITTENTASKQUEUE:
             DELETE from written_tasks_queue
             where student_id = :student_id and problem_id = :problem_id
             """, locals())
+
+    def reset_beeing_checked(self) -> int:
+        new_status = WRITTEN_STATUS.NEW
+        with self.conn as conn:
+            return conn.execute("""
+                UPDATE written_tasks_queue
+                SET cur_status = :new_status
+            """, locals()).rowcount

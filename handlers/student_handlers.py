@@ -709,3 +709,27 @@ async def set_zoom(message: types.Message):
                                      text=f"Ожидайте вашей очереди и не выходите из конференции {zoom_url}.\nВыполните команду /exit_waitlist для отмены.", )
         await bot.pin_chat_message(chat_id=message.chat.id, message_id=msg.message_id)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user, sleep=5))
+
+
+@dispatcher.message_handler(commands=['results'])
+async def students_my_results(message: types.Message):
+    logger.debug('students_my_results')
+    student = User.get_by_chat_id(message.chat.id)
+    rows = db.list_all_student_results(student.id)
+    if rows:
+        lessons = {row['lesson'] for row in rows}
+        for lesson in sorted(lessons):
+            lines = [f'{row["ts"][5:16]} ' \
+                     f'{row["lesson"]:02}{row["level"]}.{row["prob"]:02}{row["item"]:<1} ' \
+                     f'{VERDICT_DECODER[row["verdict"]]} ' \
+                     f'{row["answer"] if row["answer"] is not None else ""}'
+                     for row in rows
+                     if row['lesson'] == lesson
+                     ]
+            for i in range(0, len(lines), 20):
+                try:
+                    await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines[i:i+20]) + '</pre>')
+                except aiogram.utils.exceptions.MessageIsTooLong:
+                    pass
+    else:
+        await bot.send_message(chat_id=message.chat.id, text='Нет ни одной посылки (или что-то пошло не так)')

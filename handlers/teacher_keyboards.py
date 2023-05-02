@@ -46,22 +46,22 @@ def build_cancel_keyboard():
     return keyboard
 
 
-def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int]]):
+def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int, float]]):
     logger.debug('build_select_problem_to_check')
     # Сортировка уже в sql-запросе
     # problems_and_counts.sort(key=lambda el: (el[0].lesson, el[0].level, el[0].prob, el[0].item))
     keyboard = types.InlineKeyboardMarkup()
-    for problem, cnt in problems_and_counts:
+    for problem, cnt, days_waits in problems_and_counts:
         if problem.prob_type == PROB_TYPE.TEST:
             tp = '⋯'
-        elif problem.prob_type == PROB_TYPE.WRITTEN or problem.prob_type == PROB_TYPE.WRITTEN_BEFORE_ORALLY:
+        elif problem.prob_type == PROB_TYPE.WRITTEN:
             tp = '🖊'
-        elif problem.prob_type == PROB_TYPE.ORALLY:
+        elif problem.prob_type == PROB_TYPE.ORALLY or problem.prob_type == PROB_TYPE.WRITTEN_BEFORE_ORALLY:
             tp = '🗣'
         else:
             tp = '?'
         task_button = types.InlineKeyboardButton(
-            text=f"{tp} {problem} — {cnt}",
+            text=f"{tp} {problem.str_num()} ({cnt}шт, {days_waits}дн)",
             callback_data=f"{CALLBACK.CHECK_ONLY_SELECTED_WRITEN_TASK}_{problem.id}"
         )
         keyboard.add(task_button)
@@ -95,9 +95,10 @@ def build_teacher_select_written_problem(top: list):
 def build_select_student(name_to_find: str):
     logger.debug('keyboards.build_select_student')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
+    name_to_find_lower = name_to_find.lower()
     students = sorted(
         User.all_students(),
-        key=lambda user: -jaro_winkler(name_to_find.lower(), f'{user.surname} {user.name} {user.token}'.lower(), 1 / 10)
+        key=lambda user: -jaro_winkler(name_to_find_lower, f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1/32)
     )
     for student in students[:8]:
         student_button = types.InlineKeyboardButton(
