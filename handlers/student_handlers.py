@@ -743,5 +743,5 @@ async def get_my_password(message: types.Message):
         return
     await bot.send_message(
         chat_id=message.chat.id, parse_mode = "HTML",
-        text=f"🤖 Ваш пароль:<br><pre>{user.token}</pre>",
+        text=f"🤖 Ваш пароль:\n<pre>{user.token}</pre>",
     )
