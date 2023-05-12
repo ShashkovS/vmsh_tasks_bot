@@ -276,7 +276,7 @@ const chestsAsObj = [
       `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=14592" target="_blank" rel="noopener noreferrer">Площадь грани</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=14592" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/14592.png" alt="14592"> <div class="play-button"></div></a><br> Когда решите, сдайте ответ в бот, это добавит вам баллов :)`
   },
   {"x": 1, "y": 77, "bonus": 3, "amount": 8, "html":
-      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=20938" target="_blank" rel="noopener noreferrer">Головоломка с шашками</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=20938" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/20938.png" alt="20938"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :)`
+      `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=28506" target="_blank" rel="noopener noreferrer">Цветные кирпичи</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=28506" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/28506.png" alt="28506"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :)`
   },
   {"x": 65, "y": 15, "bonus": 3, "amount": 8, "html":
       `В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=11979" target="_blank" rel="noopener noreferrer">Общие друзья</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=11979" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/11979.png" alt="11979"> <div class="play-button"></div></a><br> Когда решите, сдайте ответ в бот, это добавит вам баллов :)`
@@ -1035,4 +1035,3 @@ function toggleFullscreen() {
 }
 
 window.addEventListener('load', init);
-
