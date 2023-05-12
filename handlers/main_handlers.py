@@ -26,8 +26,8 @@ async def start(message: types.Message):
     else:
         command_id = row['command_id']
         cnt = row['cnt']
-        if cnt > 150:
-            command_id += 1
+        # if cnt > 450:
+        #     command_id += 1
     db.set_student_command(user.id, LEVEL.NOVICE, command_id)
     await bot.send_message(
         chat_id=message.chat.id,

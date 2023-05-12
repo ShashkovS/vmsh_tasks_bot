@@ -6,12 +6,13 @@ from datetime import datetime
 class DB_GAME():
     conn: sqlite3.Connection
 
-    def get_student_payments(self, user_id: int) -> List[dict]:
+    def get_student_payments(self, user_id: int, command_id: int) -> List[dict]:
         """Получить все игровые траты данного студента.
         Возвращает список словарей с ключами ts, amount"""
         return self.conn.execute('''
-            SELECT ts, amount FROM game_payments
-            where student_id = :user_id
+            SELECT gp.ts, gp.amount FROM game_payments gp
+            join game_map_opened_cells gmoc on gp.cell_id = gmoc.id
+            where student_id = :user_id and gmoc.command_id = :command_id
             order by ts
         ''', locals()).fetchall()
 
@@ -36,6 +37,16 @@ class DB_GAME():
                 return True
         except:
             return False
+
+    def check_neighbours(self, student_command: int, x: int, y: int,) -> bool:
+        """Проверить, что хотя бы одна соседняя ячейка открыта"""
+        return bool(self.conn.execute("""
+            SELECT 1 
+            FROM game_map_opened_cells
+            where command_id = :student_command and
+            ((x = :x and (y = :y - 1 or y = :y + 1))) or (y = :y and (x = :x - 1 or x = :x + 1))
+            limit 1 
+        """, locals()).fetchone())
 
     def get_opened_cells(self, student_command: int) -> List[dict]:
         """Получить список всех открытых клеток данного студента.

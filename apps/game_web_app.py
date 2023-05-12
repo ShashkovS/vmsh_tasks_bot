@@ -126,6 +126,8 @@ async def post_game_buy(request):
     if not x or not y or type(x) != int or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
         logger.warning(f'post_game_buy {data=} ignored')
         return web.json_response(data={'ok': 'ignored'}, status=400)
+    if not (0 <= x <= 5 and 0 <= y <= 5) and not db.check_neighbours(command_id, x, y):
+        return web.json_response(data={'ok': 'ignored'}, status=400)
     db.add_payment(user.id, command_id, x, y, amount)
     # Отправляем всем уведомление, что открылась новая ячейка на карте
     await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
@@ -212,7 +214,7 @@ def get_game_data(student: User) -> dict:
     command = db.get_student_command(student.id)
     student_command = command['command_id'] if command else -1
     solved = db.get_student_solved(student.id, Problem.last_lesson_num(student.level))  # ts, title
-    payments = db.get_student_payments(student.id)  # ts, amount
+    payments = db.get_student_payments(student.id, student_command)  # ts, amount
     opened = get_map_opened(student_command)
     flags = get_map_flags(student_command)
     my_flag = db.get_flag_by_student_and_command(student.id, student_command)
@@ -229,14 +231,14 @@ def get_game_data(student: User) -> dict:
         if '⚡' not in solv['title']:
             continue
         score, clear_title = solv['title'].split('⚡')
-        score = int(score) if score.isdecimal() else 2
+        score = int(score) if score.strip().isdecimal() else 2
         if clear_title in used_titles:
             continue
         else:
             used_titles.add(clear_title)
-        # Защита от продолжающих, которые решают задачи начинающих. Они получают в 2 раза меньше баллов
+        # Защита от продолжающих, которые решают задачи начинающих. Они получают в 1.5 раза меньше баллов
         if solv['level'] == 'н' and command['level'] != 'н':
-            score //= 2
+            score = int(round(score / 1.5))
         events.append([solv['ts'], score])
     events.sort(key=itemgetter(0))
     events = [ev[1] for ev in events]
