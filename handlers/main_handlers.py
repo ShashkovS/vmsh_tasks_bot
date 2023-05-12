@@ -13,7 +13,7 @@ async def start(message: types.Message):
     logger.debug('start')
     user = User.get_by_chat_id(message.chat.id)
     if not user:
-        user = User(message.chat.id, USER_TYPE.STUDENT, LEVEL.PRO, message.chat.first_name or '', message.chat.last_name or '', '',
+        user = User(message.chat.id, USER_TYPE.STUDENT, LEVEL.NOVICE, message.chat.first_name or '', message.chat.last_name or '', '',
                     str(message.chat.id), ONLINE_MODE.ONLINE, 12, None)
     db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
     row = db.conn.execute('''
@@ -25,14 +25,14 @@ async def start(message: types.Message):
         command_id = 1
     else:
         command_id = row['command_id']
-        cnt = row['cnt']
+        # cnt = row['cnt']
         # if cnt > 450:
         #     command_id += 1
     db.set_student_command(user.id, LEVEL.NOVICE, command_id)
     await bot.send_message(
         chat_id=message.chat.id,
-        text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/p/#34-p.\n"
-             "Если задачи окажутся сложноватыми, то можно выполнить команду /level_novice и решать вот эти задачи https://shashkovs.ru/vmsh/2022/n/#34-n, они попроще.",
+        text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/n/#34-n.\n"
+             "Если задачи окажутся простоватыми, то можно выполнить команду /level_pro и решать вот эти задачи https://shashkovs.ru/vmsh/2022/p/#34-p, они сложнее и их больше.",
     )
     State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
     await post_problem_keyboard(message.chat.id, user)
