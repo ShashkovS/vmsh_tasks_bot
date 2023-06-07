@@ -27,7 +27,7 @@ is_py_func = re.compile(r'^\s*def \w+\s*\(')
 MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
 
 
-async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
+async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, show_lesson=None):
     prev_keyboard = db.get_last_keyboard(student.id)
     if prev_keyboard:
         try:
@@ -38,12 +38,14 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
         text = f"❓ Нажимайте на задачу, чтобы сдать её\n(выбран уровень «{student.level.slevel}», здесь <a href=\"{student.level.url}\">условия</a>)"
     else:
         text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
+    if show_lesson is None:
+        show_lesson = Problem.last_lesson_num(student.level)
     keyb_msg = await bot.send_message(
         chat_id=chat_id,
         text=text,
         parse_mode='HTML',
         disable_web_page_preview=True,
-        reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student),
+        reply_markup=student_keyboards.build_problems(show_lesson, student),
     )
     db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
@@ -600,9 +602,9 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
 @reg_callback(CALLBACK.LIST_SELECTED)
 async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_list_selected_callback')
-    list_num = int(query.data[2:])
+    lesson = int(query.data[2:])
     student = User.get_by_chat_id(query.message.chat.id)
-    await post_problem_keyboard(student.chat_id, student)
+    await post_problem_keyboard(student.chat_id, student, show_lesson=lesson)
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -611,7 +613,7 @@ async def prc_show_list_of_lists_callback(query: types.CallbackQuery, student: U
     logger.debug('prc_show_list_of_lists_callback')
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text="Вот список всех листков:",
-                                   reply_markup=student_keyboards.build_lessons())
+                                   reply_markup=student_keyboards.build_lessons(student.level))
     await bot.answer_callback_query_ig(query.id)
 
 
