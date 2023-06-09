@@ -1,7 +1,8 @@
-import sqlite3
 from typing import List
 from datetime import datetime, timedelta
 from helpers.consts import WRITTEN_STATUS
+
+from .db_abc import DB_ABC, sql
 
 _MAX_TIME_TO_CHECK_WRITTEN_TASK = timedelta(minutes=30)
 _MAX_WRITTEN_TASKS_TO_SELECT = 8
@@ -15,11 +16,9 @@ _MAX_WRITTEN_TASKS_TO_SELECT = 8
 #                                                                                               ▀▀
 
 
-class DB_WRITTENTASKQUEUE:
-    conn: sqlite3.Connection
-
+class DB_WRITTENTASKQUEUE(DB_ABC):
     def check_student_sent_written(self, student_id: int, lesson: int) -> set:
-        cur = self.conn.execute("""
+        cur = self.db.conn.execute("""
             select w.problem_id from written_tasks_queue w
             join problems p on w.problem_id = p.id
             where w.student_id = :student_id and p.lesson = :lesson
@@ -30,7 +29,7 @@ class DB_WRITTENTASKQUEUE:
 
     def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int, ts: datetime = None) -> int:
         ts = ts or datetime.now().isoformat()
-        with self.conn as conn:
+        with self.db.conn as conn:
             return conn.execute("""
                 INSERT INTO written_tasks_queue  ( ts,  student_id,  problem_id,  cur_status)
                 VALUES                           (:ts, :student_id, :problem_id, :cur_status)
@@ -40,7 +39,7 @@ class DB_WRITTENTASKQUEUE:
     def get_written_tasks_to_check(self, teacher_id, synonyms: str) -> List[dict]:
         now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
         # order = 'prob, item' if order_by_problem_num else 'ts'
-        return self.conn.execute(
+        return self.db.conn.execute(
             """
                 select * from written_tasks_queue
                 where (cur_status = :WRITTEN_STATUS_NEW or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id)
@@ -61,7 +60,7 @@ class DB_WRITTENTASKQUEUE:
         now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
         # order = 'prob, item' if order_by_problem_num else 'ts'
         # TODO Удалить этот кусок треша!
-        return self.conn.execute(
+        return self.db.conn.execute(
             """
                 select wq.* from written_tasks_queue wq
                 -- join problems p on wq.problem_id = p.id
@@ -79,24 +78,24 @@ class DB_WRITTENTASKQUEUE:
             }).fetchall()
 
     def get_written_tasks_count(self) -> int:
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             select count(*) cnt from written_tasks_queue where problem_id > 0 -- >0 - значит решение
         """).fetchone()['cnt']
 
     def get_sos_tasks_count(self) -> int:
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             select count(*) cnt from written_tasks_queue where problem_id < 0 -- < 0 - значит вопрос
         """).fetchone()['cnt']
 
     def get_written_tasks_count_by_id(self) -> List[dict]:
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             select problem_id, count(*) cnt 
             from written_tasks_queue 
             group by problem_id
         """).fetchall()
 
     def get_written_tasks_count_by_synonyms(self) -> List[dict]:
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             select 
                 synonyms, count(*) cnt,
                 round(JULIANDAY(datetime()) - JULIANDAY(min(ts)), 1) days_waits
@@ -109,7 +108,7 @@ class DB_WRITTENTASKQUEUE:
     def upd_written_task_status(self, student_id: int, problem_id: int, new_status: int, teacher_id: int = None) -> int:
         now_minus_30_min = (datetime.now() - _MAX_TIME_TO_CHECK_WRITTEN_TASK).isoformat()
         teacher_ts = datetime.now().isoformat() if new_status > 0 else None
-        with self.conn as conn:
+        with self.db.conn as conn:
             return conn.execute("""
                 UPDATE written_tasks_queue
                 SET cur_status = :new_status,
@@ -120,7 +119,7 @@ class DB_WRITTENTASKQUEUE:
             """, locals()).rowcount
 
     def delete_from_written_task_queue(self, student_id: int, problem_id: int):
-        with self.conn as conn:
+        with self.db.conn as conn:
             conn.execute("""
             DELETE from written_tasks_queue
             where student_id = :student_id and problem_id = :problem_id
@@ -128,8 +127,11 @@ class DB_WRITTENTASKQUEUE:
 
     def reset_beeing_checked(self) -> int:
         new_status = WRITTEN_STATUS.NEW
-        with self.conn as conn:
+        with self.db.conn as conn:
             return conn.execute("""
                 UPDATE written_tasks_queue
                 SET cur_status = :new_status
             """, locals()).rowcount
+
+
+written_task_queue = DB_WRITTENTASKQUEUE(sql)

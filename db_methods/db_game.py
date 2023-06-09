@@ -1,15 +1,14 @@
-import sqlite3
 from typing import List, Dict
 from datetime import datetime
 
+from .db_abc import DB_ABC, sql
 
-class DB_GAME():
-    conn: sqlite3.Connection
 
+class DB_GAME(DB_ABC):
     def get_student_payments(self, user_id: int, command_id: int) -> List[dict]:
         """Получить все игровые траты данного студента.
         Возвращает список словарей с ключами ts, amount"""
-        return self.conn.execute('''
+        return self.db.conn.execute('''
             SELECT gp.ts, gp.amount FROM game_payments gp
             join game_map_opened_cells gmoc on gp.cell_id = gmoc.id
             where student_id = :user_id and gmoc.command_id = :command_id
@@ -23,7 +22,7 @@ class DB_GAME():
         Иначе (например, если клетка уже куплена), возвращается False"""
         ts = datetime.now().isoformat()
         try:
-            with self.conn as conn:
+            with self.db.conn as conn:
                 conn.execute('BEGIN TRANSACTION')
                 cur = conn.execute('''
                     insert into game_map_opened_cells (command_id, x, y)
@@ -38,9 +37,9 @@ class DB_GAME():
         except:
             return False
 
-    def check_neighbours(self, student_command: int, x: int, y: int,) -> bool:
+    def check_neighbours(self, student_command: int, x: int, y: int, ) -> bool:
         """Проверить, что хотя бы одна соседняя ячейка открыта"""
-        return bool(self.conn.execute("""
+        return bool(self.db.conn.execute("""
             SELECT 1 
             FROM game_map_opened_cells
             where command_id = :student_command and
@@ -51,7 +50,7 @@ class DB_GAME():
     def get_opened_cells(self, student_command: int) -> List[dict]:
         """Получить список всех открытых клеток данного студента.
         Возвращет список словарей с ключами x и y"""
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             SELECT x, y 
             FROM game_map_opened_cells
             where command_id = :student_command
@@ -60,7 +59,7 @@ class DB_GAME():
     def get_opened_cells_timeline(self, student_command: int) -> List[dict]:
         """Получить последовательность игровых событий данной команды.
         Возвращает список словарей с ключами ts, x, y, student_id"""
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             SELECT gp.ts, oc.x, oc.y, gp.student_id
             FROM game_map_opened_cells oc 
             join game_payments gp on gp.cell_id = oc.id
@@ -70,7 +69,7 @@ class DB_GAME():
 
     def set_student_command(self, user_id: int, level: str, command_id: int) -> int:
         """Записать или обновить id команды студента"""
-        with self.conn as conn:
+        with self.db.conn as conn:
             cur = conn.execute("""
                 INSERT INTO game_students_commands ( student_id,  command_id, level)
                 VALUES                             (:user_id, :command_id, :level) 
@@ -83,7 +82,7 @@ class DB_GAME():
     def get_student_command(self, user_id: int) -> Dict:
         """Получить id команды и её уровень для данного студента.
         Возвращает словарь с ключами {command_id, level}"""
-        res = self.conn.execute("""
+        res = self.db.conn.execute("""
             SELECT
             command_id, level
             from game_students_commands WHERE
@@ -93,7 +92,7 @@ class DB_GAME():
 
     def get_all_students_by_command(self, command_id: int) -> List[int]:
         """Получить id всех студентов данной команды"""
-        res = self.conn.execute("""
+        res = self.db.conn.execute("""
             SELECT
             student_id
             from game_students_commands WHERE
@@ -103,7 +102,7 @@ class DB_GAME():
 
     def set_student_flag(self, student_id: int, command_id: int, x: int, y: int) -> int:
         """Обновить координаты флага данного студента (или записать их)"""
-        with self.conn as conn:
+        with self.db.conn as conn:
             cur = conn.execute("""
                 INSERT INTO game_map_flags ( student_id,  command_id,  x,  y)
                 VALUES                     (:student_id, :command_id, :x, :y) 
@@ -116,7 +115,7 @@ class DB_GAME():
     def get_flags_by_command(self, command_id: int) -> List[dict]:
         """Получить список всех флагов данной команды.
         Возвращает список словарей с ключами x, y"""
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             SELECT
             x, y
             from game_map_flags WHERE
@@ -125,7 +124,7 @@ class DB_GAME():
 
     def get_flag_by_student_and_command(self, user_id: int, command_id: int) -> List[int]:
         """Получить координаты флага данного студента"""
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             SELECT
             x, y
             from game_map_flags WHERE
@@ -135,7 +134,7 @@ class DB_GAME():
     def add_student_chest(self, user_id: int, command_id: int, x: int, y: int, bonus: int) -> int:
         """Добавить открытый студентом сундук"""
         ts = datetime.now().isoformat()
-        with self.conn as conn:
+        with self.db.conn as conn:
             cur = conn.execute("""
                         INSERT INTO game_map_chests ( ts,  student_id,  command_id,  x,  y,  bonus)
                         VALUES                      (:ts, :user_id,    :command_id, :x, :y, :bonus) 
@@ -147,10 +146,13 @@ class DB_GAME():
     def get_student_chests(self, user_id: int, command_id: int) -> List[dict]:
         """Получить список сундуков, которые студент открыл.
         Возвращает список словарей с ключами {ts, bonus, x, y}"""
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             SELECT
             ts, bonus, x, y
             from game_map_chests WHERE
             command_id = :command_id and student_id = :user_id 
             order by ts
         """, locals()).fetchall()
+
+
+game = DB_GAME(sql)

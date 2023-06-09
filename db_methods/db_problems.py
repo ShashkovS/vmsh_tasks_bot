@@ -1,5 +1,6 @@
-import sqlite3
 from typing import List
+
+from .db_abc import DB_ABC, sql
 
 
 # ██████  ██████   ██████  ██████  ██      ███████ ███    ███ ███████
@@ -8,13 +9,11 @@ from typing import List
 # ██      ██   ██ ██    ██ ██   ██ ██      ██      ██  ██  ██      ██
 # ██      ██   ██  ██████  ██████  ███████ ███████ ██      ██ ███████
 
-class DB_PROBLEM:
-    conn: sqlite3.Connection
-
+class DB_PROBLEM(DB_ABC):
     def add_problem(self, data: dict) -> int:
         """Записать в базу (или обновить) новую задачу.
         Уникальным ключом является тройка (level, lesson, prob, item)"""
-        with self.conn as conn:
+        with self.db.conn as conn:
             cur = conn.execute("""
                 insert into problems ( level,  lesson,  prob,  item,  title,  prob_text,  prob_type,  ans_type,  
                                        ans_validation,  validation_error,  cor_ans,  cor_ans_checker,  wrong_ans,  congrat) 
@@ -37,20 +36,20 @@ class DB_PROBLEM:
 
     def fetch_all_problems(self) -> List[dict]:
         """Получить список вообще всех задача"""
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             SELECT * FROM problems
         """).fetchall()
 
     def fetch_all_problems_by_lesson(self, level: str, lesson: int) -> List[dict]:
         """Получить список задач данного урока и данного уровня"""
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             SELECT * FROM problems 
             where level = :level and lesson = :lesson
         """, locals()).fetchall()
 
     def get_problem_by_id(self, problem_id: int) -> dict:
         """Получить атрибуты задачи про её id"""
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             SELECT * FROM problems 
             where id = :problem_id limit 1
         """, locals()).fetchone()
@@ -58,7 +57,7 @@ class DB_PROBLEM:
     def get_problem_by_text_number(self, level: str, lesson: int, prob: int, item: '') -> dict:
         """Получить атрибуты задачи по тройке (level, lesson, prob, item),
         которая является уникальным идентификатором задачи"""
-        return self.conn.execute("""
+        return self.db.conn.execute("""
             SELECT * FROM problems 
             where level = :level
               and lesson = :lesson
@@ -69,7 +68,7 @@ class DB_PROBLEM:
 
     def update_problem_type(self, level: str, lesson: int, from_prob_type: int, to_prob_type: int):
         """Обновить тип данной задачи (например, с устной на письменную)"""
-        with self.conn as conn:
+        with self.db.conn as conn:
             conn.execute("""
                 UPDATE problems SET prob_type = :to_prob_type
                 WHERE level = :level and lesson = :lesson and prob_type = :from_prob_type
@@ -81,7 +80,7 @@ class DB_PROBLEM:
         Благодаря этому у всех синонимичных задач совпадает поле synonyms.
         К сожалению, поля всех задач нужно обновлять при любом обновлении задач.
         Пока это не является проблемой из-за малого числа задач (тысячи, но не сотни тысяч)"""
-        with self.conn as conn:
+        with self.db.conn as conn:
             conn.execute("""
                 update problems
                 set synonyms = (
@@ -96,3 +95,6 @@ class DB_PROBLEM:
                 )
                 where 1=1;
             """)
+
+
+problem = DB_PROBLEM(sql)

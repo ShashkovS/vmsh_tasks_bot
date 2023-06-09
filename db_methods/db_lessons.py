@@ -1,5 +1,5 @@
-import sqlite3
 from typing import List
+from .db_abc import DB_ABC, sql
 
 
 # ██      ███████ ███████ ███████  ██████  ███    ██ ███████
@@ -8,13 +8,11 @@ from typing import List
 # ██      ██           ██      ██ ██    ██ ██  ██ ██      ██
 # ███████ ███████ ███████ ███████  ██████  ██   ████ ███████
 
-class DB_LESSON:
-    conn: sqlite3.Connection
-
+class DB_LESSON(DB_ABC):
     def update_lessons(self):
         """Создать записи с уроками на основе списка задач.
         По записи на каждую возможную пару (lesson, level)"""
-        with self.conn as conn:
+        with self.db.conn as conn:
             conn.execute("""
                 insert into lessons (lesson, level)
                 select distinct p.lesson, p.level
@@ -25,7 +23,7 @@ class DB_LESSON:
     def fetch_all_lessons(self, level: str = None) -> List[dict]:
         """Получить список всех уроков.
         Возвращает список словарей с ключами level, lesson"""
-        return self.conn.execute('''
+        return self.db.conn.execute('''
             SELECT level, lesson 
             FROM lessons 
             where :level is null or :level = level
@@ -34,10 +32,13 @@ class DB_LESSON:
 
     def get_last_lesson_num(self, level: str = None) -> int:
         """Получить номер последнего урока данного уровня или вообще любого уровня"""
-        cur = self.conn.execute('''
+        cur = self.db.conn.execute('''
             SELECT max(lesson) as mx 
             FROM lessons
             where :level is null or :level = level
         ''', locals())
         row = cur.fetchone()
         return row['mx']
+
+
+lesson = DB_LESSON(sql)
