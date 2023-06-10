@@ -21,19 +21,19 @@ from handlers.main_handlers import process_regular_message  # TODO Удалит�
 
 def get_problem_lock(teacher_id: int):
     key = f'{teacher_id}_pl'
-    value = db.kv.get(key, None)
+    value = db.sql.kv.get(key, None)
     return int(value) if value else None
 
 
 def del_problem_lock(teacher_id: int):
     key = f'{teacher_id}_pl'
-    db.kv.pop(key, None)
+    db.sql.kv.pop(key, None)
 
 
 def set_problem_lock(teacher_id: int, problem_id: int):
     key = f'{teacher_id}_pl'
     value = f'{problem_id}'
-    db.kv[key] = value
+    db.sql.kv[key] = value
 
 
 async def take_random_written_problem_and_start_check(teacher: User, problem_id: int):
