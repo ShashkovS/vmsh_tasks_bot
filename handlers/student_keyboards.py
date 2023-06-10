@@ -2,13 +2,14 @@ from aiogram import types
 
 from helpers.consts import *
 from helpers.config import logger
-from helpers.obj_classes import User, Problem, State, db, Webtoken
+from models import User, Problem, State
+import db_methods as db
 
 
 def build_problems(lesson_num: int, student: User, is_sos_question=False):
     logger.debug('keyboards.build_problems')
-    solved = set(db.check_student_solved(student.id, lesson_num))
-    being_checked = set(db.check_student_sent_written(student.id, lesson_num))
+    solved = set(db.result.check_student_solved(student.id, lesson_num))
+    being_checked = set(db.written_task_queue.check_student_sent_written(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     # to_game_button = types.InlineKeyboardButton(
     #     text="🕹🎲 Открыть командную игру 🎉🏆",
@@ -77,7 +78,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
 def build_lessons(level):
     logger.debug('keyboards.build_lessons')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    for lesson in db.fetch_all_lessons(level):
+    for lesson in db.lesson.get_all(level):
         lesson_button = types.InlineKeyboardButton(
             text=f"Листок {lesson['lesson']}",
             callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
@@ -161,7 +162,7 @@ def build_student_reaction_on_task_bad_verdict(result_id: int):
     """
     logger.debug('keyboards.build_student_reaction_on_task_bad_verdict')
     keyboard = types.InlineKeyboardMarkup()
-    for reaction in db.get_reactions_enum(REACTION.WRITTEN_STUDENT):
+    for reaction in db.reaction.enum(REACTION.WRITTEN_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],
@@ -175,7 +176,7 @@ def build_student_reaction_oral(zoom_conversation_id: int):
     """Создает инлайн клавиатуру для ученика для оценки устной сдачи."""
     logger.debug('keyboards.build_student_reaction_oral')
     keyboard = types.InlineKeyboardMarkup()
-    for reaction in db.get_reactions_enum(REACTION.ORAL_STUDENT):
+    for reaction in db.reaction.enum(REACTION.ORAL_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],

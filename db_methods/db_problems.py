@@ -10,7 +10,7 @@ from .db_abc import DB_ABC, sql
 # ██      ██   ██  ██████  ██████  ███████ ███████ ██      ██ ███████
 
 class DB_PROBLEM(DB_ABC):
-    def add_problem(self, data: dict) -> int:
+    def insert(self, data: dict) -> int:
         """Записать в базу (или обновить) новую задачу.
         Уникальным ключом является тройка (level, lesson, prob, item)"""
         with self.db.conn as conn:
@@ -34,27 +34,27 @@ class DB_PROBLEM(DB_ABC):
             """, data)
             return cur.lastrowid
 
-    def fetch_all_problems(self) -> List[dict]:
+    def get_all(self) -> List[dict]:
         """Получить список вообще всех задача"""
         return self.db.conn.execute("""
             SELECT * FROM problems
         """).fetchall()
 
-    def fetch_all_problems_by_lesson(self, level: str, lesson: int) -> List[dict]:
+    def get_all_by_lesson(self, level: str, lesson: int) -> List[dict]:
         """Получить список задач данного урока и данного уровня"""
         return self.db.conn.execute("""
             SELECT * FROM problems 
             where level = :level and lesson = :lesson
         """, locals()).fetchall()
 
-    def get_problem_by_id(self, problem_id: int) -> dict:
+    def get_by_id(self, problem_id: int) -> dict:
         """Получить атрибуты задачи про её id"""
         return self.db.conn.execute("""
             SELECT * FROM problems 
             where id = :problem_id limit 1
         """, locals()).fetchone()
 
-    def get_problem_by_text_number(self, level: str, lesson: int, prob: int, item: '') -> dict:
+    def get_by_text_number(self, level: str, lesson: int, prob: int, item: '') -> dict:
         """Получить атрибуты задачи по тройке (level, lesson, prob, item),
         которая является уникальным идентификатором задачи"""
         return self.db.conn.execute("""
@@ -66,7 +66,7 @@ class DB_PROBLEM(DB_ABC):
             limit 1
         """, locals()).fetchone()
 
-    def update_problem_type(self, level: str, lesson: int, from_prob_type: int, to_prob_type: int):
+    def update_type(self, level: str, lesson: int, from_prob_type: int, to_prob_type: int):
         """Обновить тип данной задачи (например, с устной на письменную)"""
         with self.db.conn as conn:
             conn.execute("""

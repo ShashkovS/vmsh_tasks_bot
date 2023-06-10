@@ -1,4 +1,4 @@
-from db_methods import db
+import db_methods as db
 
 def get_lessons_and_levels(cur):
     cur.execute('''

@@ -12,7 +12,7 @@ class DB_FEATURES(DB_ABC):
     # ██      ██    ██ ██    ██      ██
     # ███████  ██████   ██████  ███████
 
-    def add_message_to_log(self, from_bot: bool, tg_msg_id: int, chat_id: int,
+    def insert(self, from_bot: bool, tg_msg_id: int, chat_id: int,
                            student_id: int, teacher_id: int, msg_text: str, attach_path: str):
         """Записать сообщение в лог отправленных сообщений.
         Данные из лога дальше никак не используются (кроме анализа инцидентов)"""
@@ -75,4 +75,4 @@ class DB_FEATURES(DB_ABC):
         return rows
 
 
-features = DB_FEATURES(sql)
+log = DB_FEATURES(sql)

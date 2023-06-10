@@ -6,8 +6,10 @@ import asyncio
 import re
 
 from helpers.consts import *
-from helpers.config import logger, config
-from helpers.obj_classes import User, Problem, State, FromGoogleSpreadsheet, db
+from helpers.config import logger
+from models import User, Problem, State
+from models.spreadsheets import FromGoogleSpreadsheet
+import db_methods as db
 from helpers.bot import bot, dispatcher
 from handlers import student_keyboards
 from handlers.student_handlers import check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard, \
@@ -103,7 +105,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
                 parse_mode=parse_mode,
             )
             sent += 1
-            db.add_message_to_log(True, broad_message.message_id, broad_message.chat.id, student.id, None,
+            db.log.insert(True, broad_message.message_id, broad_message.chat.id, student.id, None,
                                   broadcast_message, None)
         except aiogram.exceptions.TelegramAPIError as e:
             logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
@@ -175,7 +177,7 @@ async def update_teachers_commands(message: types.Message):
 
 
 async def recheck_problem_task(teacher_chat_id: int, problem: Problem):
-    for_recheck = db.get_results_for_recheck_by_problem_id(problem.id)
+    for_recheck = db.result.get_for_recheck_by_problem_id(problem.id)
     oks = errs = changes = 0
     students_to_update_keyboards = set()
     for row in for_recheck:
@@ -192,7 +194,7 @@ async def recheck_problem_task(teacher_chat_id: int, problem: Problem):
         if old_verdict != row["verdict"]:
             changes += 1
             students_to_update_keyboards.add(row['student_id'])
-    db.update_verdicts(for_recheck)
+    db.result.update_verdicts(for_recheck)
     await bot.send_message(
         chat_id=teacher_chat_id,
         text=f"Задача {problem} перепроверена. {oks} плюсов, {errs} минусов. Исправлено {changes} посылок",
@@ -227,7 +229,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
     logger.debug('run_set_get_task_info_for_all_students_task')
     # Всем студентам, у которых есть chat_id ставим state STATE.GET_TASK_INFO и отправляем список задач
     for student in User.all_students():
-        db.del_last_keyboard(student.id)
+        db.last_keyboard.delete(student.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         logger.info(f'{student.id} оживлён')
         if not student.chat_id:
@@ -322,7 +324,7 @@ async def calc_last_lesson_stat(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    stat = db.calc_last_lesson_stat()
+    stat = db.report.calc_last_lesson_stat()
     msg = '\n'.join(map(lambda r: '  '.join(r.values()), stat))
     for i in range(0, len(msg), 4096):
         await bot.send_message(
@@ -347,9 +349,9 @@ async def student_results(message: types.Message):
 
     # r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict
     if 'asr' in message.text or 'all_' in message.text:
-        rows = db.list_all_student_results(student.id)
+        rows = db.result.list_all_student_results(student.id)
     else:
-        rows = db.list_student_results(student.id, Problem.last_lesson_num(student.level))
+        rows = db.result.list_student_results(student.id, Problem.last_lesson_num(student.level))
     if rows:
         lessons = {row['lesson'] for row in rows}
         for lesson in sorted(lessons):
@@ -386,5 +388,5 @@ async def oral2written(message: types.Message):
 @dispatcher.message_handler(commands=['reset_checked'])
 async def reset_checked(message: types.Message):
     logger.debug('reset_checked')
-    db.reset_beeing_checked()
+    db.written_task_queue.reset_beeing_checked()
     await bot.send_message(chat_id=message.chat.id, text='Готово')

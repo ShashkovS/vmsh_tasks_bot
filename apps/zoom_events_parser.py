@@ -4,7 +4,9 @@ from Levenshtein import distance
 import re
 from helpers.consts import *
 from helpers.config import logger, config
-from helpers.obj_classes import db, User
+from models import User
+import db_methods as db
+
 
 routes = web.RouteTableDef()
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
@@ -35,26 +37,26 @@ def process_event(event: str, event_ts: datetime, participant: dict):
     if False:
         pass
     elif event == "meeting.participant_joined_waiting_room":
-        db.add_to_queue(user_name, event_ts, status=0)
+        db.zoom_queue.insert(user_name, event_ts, status=0)
     elif event == "meeting.participant_joined":
-        db.mark_joined(user_name, status=1)
+        db.zoom_queue.mark_joined(user_name, status=1)
     elif event == "meeting.participant_admitted":
-        db.mark_joined(user_name, status=1)
+        db.zoom_queue.mark_joined(user_name, status=1)
     elif event == "meeting.participant_left":
         # Помечаем, что его нет в конфе, есть в очереди
-        db.mark_joined(user_name, status=-1)
-        # db.remove_from_queue(user_name)
+        db.zoom_queue.mark_joined(user_name, status=-1)
+        # db.zoom_queue.delete(user_name)
     elif event == "meeting.participant_joined_breakout_room":
-        db.remove_from_queue(user_name)
+        db.zoom_queue.delete(user_name)
     elif event == "meeting.participant_left_breakout_room":
-        db.remove_from_queue(user_name)
+        db.zoom_queue.delete(user_name)
     elif event == "meeting.participant_left_waiting_room":
-        db.mark_joined(user_name, status=-1)
-        # db.remove_from_queue(user_name)
+        db.zoom_queue.mark_joined(user_name, status=-1)
+        # db.zoom_queue.delete(user_name)
     elif event == "meeting.ended":
-        db.remove_old_from_zoom_queue()
+        db.zoom_queue.remove_old_from_zoom_queue()
     elif event == "meeting.started":
-        db.remove_old_from_zoom_queue()
+        db.zoom_queue.remove_old_from_zoom_queue()
 
 
 @routes.post('/zoomevents')
@@ -135,7 +137,7 @@ async def on_startup(app):
     logger.debug('zoom on_startup')
     # Настраиваем БД
     if __name__ == "__main__":
-        db.setup(config.db_filename)
+        db.sql.setup(config.db_filename)
 
 
 async def on_shutdown(app):

@@ -12,7 +12,7 @@ from .db_abc import DB_ABC, sql
 
 
 class DB_WRITTEN_TASK_DISCUSSION(DB_ABC):
-    def insert_into_written_task_discussion(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int,
+    def insert(self, student_id: int, problem_id: int, teacher_id: int, text: str, attach_path: str, chat_id: int,
                                             tg_msg_id: int) -> int:
         ts = datetime.now().isoformat()
         with self.db.conn as conn:
@@ -22,14 +22,14 @@ class DB_WRITTEN_TASK_DISCUSSION(DB_ABC):
                 returning id
             """, locals()).fetchone()['id']
 
-    def fetch_written_task_discussion(self, student_id: int, problem_id: int) -> List[dict]:
+    def get(self, student_id: int, problem_id: int) -> List[dict]:
         return self.db.conn.execute("""
             select * from written_tasks_discussions
             where student_id = :student_id and problem_id = :problem_id
             order by ts
         """, locals()).fetchall()
 
-    def remove_written_task_discussion_by_ids(self, wtd_ids_to_remove: List[int]):
+    def delete(self, wtd_ids_to_remove: List[int]):
         assert all(type(id) == int for id in wtd_ids_to_remove)
         with self.db.conn as conn:
             conn.execute(f'''

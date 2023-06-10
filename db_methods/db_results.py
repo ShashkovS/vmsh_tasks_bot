@@ -12,7 +12,7 @@ from .db_abc import DB_ABC, sql
 
 
 class DB_RESULT(DB_ABC):
-    def add_result(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int,
+    def insert(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int,
                    answer: str, res_type: int = None, zoom_conversation_id: int = None) -> int:
         ts = datetime.now().isoformat()
         with self.db.conn as conn:
@@ -72,7 +72,7 @@ class DB_RESULT(DB_ABC):
             order by r.ts
         """, locals()).fetchall()
 
-    def get_results_for_recheck_by_problem_id(self, problem_id: int) -> List[dict]:
+    def get_for_recheck_by_problem_id(self, problem_id: int) -> List[dict]:
         return self.db.conn.execute("""
             select r.id, r.student_id, r.answer, r.verdict from results r
             where r.problem_id = :problem_id

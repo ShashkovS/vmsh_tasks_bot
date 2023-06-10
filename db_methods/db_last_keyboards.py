@@ -4,7 +4,7 @@ from .db_abc import DB_ABC, sql
 
 
 class DB_LAST_KEYBOARD(DB_ABC):
-    def set_last_keyboard(self, user_id: int, chat_id: int, tg_msg_id: int):
+    def update(self, user_id: int, chat_id: int, tg_msg_id: int):
         """Сохранить «координаты» сообщения со списком задач данного студента.
         Это нужно для того, чтобы потом обновлять это сообщение:
         актуализировать сданные задачи и их статусы,
@@ -18,7 +18,7 @@ class DB_LAST_KEYBOARD(DB_ABC):
                 tg_msg_id = excluded.tg_msg_id
             """, locals())
 
-    def get_last_keyboard(self, user_id: int) -> Optional[dict]:
+    def get(self, user_id: int) -> Optional[dict]:
         """Получить «координаты» сообщения с клавиатурой-списком.
         Возвращает словарь с ключами user_id chat_id tg_msg_id"""
         return self.db.conn.execute("""
@@ -26,7 +26,7 @@ class DB_LAST_KEYBOARD(DB_ABC):
             where user_id = :user_id
         """, locals()).fetchone()
 
-    def del_last_keyboard(self, user_id: int):
+    def delete(self, user_id: int):
         """Удалить «координаты» сообщения с клавой данного студента"""
         with self.db.conn as conn:
             cur = conn.execute("""

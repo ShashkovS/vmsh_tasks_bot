@@ -4,7 +4,7 @@ from .db_abc import DB_ABC, sql
 
 
 class DB_REACTION(DB_ABC):
-    def write_reaction(self, *, result_id: int = None, zoom_conversation_id: int = None, reaction_type_id: int, reaction_id: int) -> int:
+    def insert(self, *, result_id: int = None, zoom_conversation_id: int = None, reaction_type_id: int, reaction_id: int) -> int:
         """Записывает в БД в отношение reaction реакцию ученика/учителя на письменную/устную сдачу."""
         ts = datetime.now().isoformat()
         with self.db.conn as conn:
@@ -13,7 +13,7 @@ class DB_REACTION(DB_ABC):
                                VALUES (:ts, :result_id, :zoom_conversation_id, :reaction_id, :reaction_type_id);
             """, locals()).lastrowid
 
-    def get_reaction_by_id(self, reaction_id: int) -> str:
+    def get_by_id(self, reaction_id: int) -> str:
         """Возвращает текст реакции (вместе с эмоджи) в зависимости от номера реакции."""
         cur = self.db.conn.execute("""
             SELECT reaction FROM reaction_enum 
@@ -22,7 +22,7 @@ class DB_REACTION(DB_ABC):
         res = cur.fetchone()
         return res['reaction']
 
-    def get_reactions_enum(self, reaction_type_id: int) -> list:
+    def enum(self, reaction_type_id: int) -> list:
         """ Возвращает все реакции для данного типа реакции (вместе с эмоджи)
         в виде списка словарей (с ключами 'reaction_id' и 'reaction').
         """
@@ -33,7 +33,7 @@ class DB_REACTION(DB_ABC):
             ORDER BY reaction_id;
         """, locals()).fetchall()
 
-    def get_reaction_types(self) -> list:
+    def types(self) -> list:
         """ Возвращает все типы реакции в виде списка словарей
         (с ключами 'reaction_type_id' и 'reaction_type').
         """

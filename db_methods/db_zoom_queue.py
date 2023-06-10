@@ -5,7 +5,7 @@ from .db_abc import DB_ABC, sql
 
 
 class DB_ZOOM_QUEUE(DB_ABC):
-    def add_to_queue(self, zoom_user_name: str, enter_ts: datetime, status: int = 0):
+    def insert(self, zoom_user_name: str, enter_ts: datetime, status: int = 0):
         enter_ts = enter_ts.isoformat()
         with self.db.conn as conn:
             return conn.execute("""
@@ -23,7 +23,7 @@ class DB_ZOOM_QUEUE(DB_ABC):
                 WHERE zoom_user_name = :zoom_user_name
             """, locals())
 
-    def remove_from_queue(self, zoom_user_name: str):
+    def delete(self, zoom_user_name: str):
         with self.db.conn as conn:
             conn.execute("""
                 DELETE from zoom_queue

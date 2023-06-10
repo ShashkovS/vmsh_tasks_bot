@@ -5,11 +5,11 @@ from aiogram.utils.executor import start_polling
 import asyncio
 from random import uniform
 
-import handlers
-from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
-from helpers.obj_classes import db, update_from_google_if_db_is_empty
 from helpers.config import config, logger, DEBUG
 from helpers.bot import bot, dispatcher
+import db_methods as db
+from models.spreadsheets import google_spreadsheet_loader, update_from_google_if_db_is_empty
+import handlers
 
 USE_WEBHOOKS = False
 routes = None
@@ -33,7 +33,7 @@ async def on_startup(app):
     logger.debug(f'{handlers}')
 
     # Настраиваем БД
-    db.setup(config.db_filename)
+    db.sql.setup(config.db_filename)
 
     # Настраиваем загрузчик из гугль-таблиц
     google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)

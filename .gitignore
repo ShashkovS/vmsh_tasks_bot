@@ -12,6 +12,9 @@ creds_prod/*.json
 db/*.db
 db/*.db-wal
 db/*.db-shm
+db/*.sqlite
+db/*.sqlite-wal
+db/*.sqlite-shm
 db/*.pickle
 
 # Решения

@@ -4,7 +4,8 @@ from aiogram.dispatcher.webhook import types
 
 from helpers.consts import *
 from helpers.config import logger, config
-from helpers.obj_classes import User, State, db
+from models import User, State
+import db_methods as db
 from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
 
 
@@ -24,7 +25,7 @@ async def start(message: types.Message):
 async def prc_get_user_info_state(message: types.Message, user: User):
     logger.debug('prc_get_user_info_state')
     user = User.get_by_token(message.text)
-    db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
+    db.log.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
     if user is None:
         await bot.send_message(
             chat_id=message.chat.id,
@@ -121,7 +122,7 @@ async def process_regular_message(message: types.Message):
         return
 
     if not message.document and not message.photo:
-        db.add_message_to_log(False, message.message_id, message.chat.id, user and user.id, None, message.text, None)
+        db.log.insert(False, message.message_id, message.chat.id, user and user.id, None, message.text, None)
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
     try:
         await state_processor(message, user)

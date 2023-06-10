@@ -9,7 +9,8 @@ import re
 from aiohttp import web, WSMsgType
 
 from helpers.config import config, logger, DEBUG, APP_PATH
-from helpers.obj_classes import db, Webtoken, User
+from models import Webtoken, User
+import db_methods as db
 from web import trash_print_results
 
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
@@ -166,7 +167,7 @@ async def on_startup(app):
     logger.debug('online on_startup')
     # Настраиваем БД
     if __name__ == "__main__":
-        db.setup(config.db_filename)
+        db.sql.setup(config.db_filename)
 
 
 async def on_shutdown(app):

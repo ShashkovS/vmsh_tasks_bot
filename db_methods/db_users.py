@@ -11,7 +11,7 @@ from .db_abc import DB_ABC, sql
 
 
 class DB_USER(DB_ABC):
-    def add_user(self, data: dict) -> int:
+    def insert(self, data: dict) -> int:
         with self.db.conn as conn:
             cur = conn.execute("""
                 insert into users ( chat_id,  type,  level,  name,  surname,  middlename,  token,  online,  grade,  birthday) 
@@ -29,7 +29,7 @@ class DB_USER(DB_ABC):
             """, data)
             return cur.lastrowid
 
-    def set_user_chat_id(self, user_id: int, chat_id: int):
+    def set_chat_id(self, user_id: int, chat_id: int):
         with self.db.conn as conn:
             conn.execute('begin')
             # Мы под одним телеграм-юзером хотим зайти под разными vmsh-юзерами. Нужно сбросить chat_id
@@ -44,7 +44,7 @@ class DB_USER(DB_ABC):
                 WHERE id = :user_id
             """, locals())
 
-    def set_user_level(self, user_id: int, level: str):
+    def set_level(self, user_id: int, level: str):
         with self.db.conn as conn:
             conn.execute("""
                 UPDATE users
@@ -52,7 +52,7 @@ class DB_USER(DB_ABC):
                 WHERE id = :user_id
             """, locals())
 
-    def set_user_online_mode(self, user_id: int, online: int):
+    def set_online_mode(self, user_id: int, online: int):
         with self.db.conn as conn:
             conn.execute("""
                 UPDATE users
@@ -60,7 +60,7 @@ class DB_USER(DB_ABC):
                 WHERE id = :user_id
             """, locals())
 
-    def set_user_type(self, user_id: int, user_type: str):
+    def set_type(self, user_id: int, user_type: str):
         with self.db.conn as conn:
             conn.execute("""
                 UPDATE users
@@ -68,25 +68,25 @@ class DB_USER(DB_ABC):
                 WHERE id = :user_id
             """, locals())
 
-    def fetch_all_users_by_type(self, user_type: int = None) -> List[dict]:
+    def get_all_by_type(self, user_type: int = None) -> List[dict]:
         return self.db.conn.execute('''
             SELECT * FROM users 
             where :user_type is null or type = :user_type
         ''', locals()).fetchall()
 
-    def get_user_by_id(self, user_id: int) -> dict:
+    def get_by_id(self, user_id: int) -> dict:
         return self.db.conn.execute('''
             SELECT * FROM users 
             where id = :user_id limit 1
         ''', locals()).fetchone()
 
-    def get_user_by_token(self, token: str) -> dict:
+    def get_by_token(self, token: str) -> dict:
         return self.db.conn.execute('''
             SELECT * FROM users 
             where token = :token limit 1
         ''', locals()).fetchone()
 
-    def get_user_by_chat_id(self, chat_id: int) -> dict:
+    def get_by_chat_id(self, chat_id: int) -> dict:
         return self.db.conn.execute('''
             SELECT * FROM users 
             where chat_id = :chat_id limit 1

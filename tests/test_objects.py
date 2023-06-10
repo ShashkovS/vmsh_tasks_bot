@@ -2,8 +2,9 @@ import os
 from dataclasses import asdict
 from unittest import TestCase
 
-from helpers import consts
-from helpers.obj_classes import *
+from helpers.consts import *
+import db_methods as db
+from models import *
 
 from .initial_test_data import test_students, test_teachers
 
@@ -18,17 +19,17 @@ class UserMethodsTest(TestCase):
         except FileNotFoundError:
             pass
         # create shiny new db instance from scratch and connect
-        self.db.setup(test_db_filename)
+        self.db.sql.setup(test_db_filename)
         self.insert_dummy_users()
 
     def insert_dummy_users(self):
         for row in test_students + test_teachers:
-            real_id = self.db.add_user(row)
+            real_id = self.db.user.insert(row)
             row['id'] = real_id
 
     def tearDown(self) -> None:
-        self.db.disconnect()
-        os.unlink(self.db.db_file)
+        self.db.sql.disconnect()
+        os.unlink(self.db.sql.db_file)
 
     def test_all_getters(self):
         """ Test this methods:
@@ -64,7 +65,7 @@ class UserMethodsTest(TestCase):
     def test_set_level(self):
         for dict_user in test_students + test_teachers:
             user = User.get_by_id(dict_user['id'])
-            new_level = consts.LEVEL.NOVICE
+            new_level = LEVEL.NOVICE
             user.set_level(new_level)
             user = User.get_by_id(dict_user['id'])
             self.assertEqual(user.level, new_level)

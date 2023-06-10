@@ -27,7 +27,7 @@ class DB_WRITTENTASKQUEUE(DB_ABC):
         being_checked_ids = {row['problem_id'] for row in rows}
         return being_checked_ids
 
-    def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int, ts: datetime = None) -> int:
+    def insert(self, student_id: int, problem_id: int, cur_status: int, ts: datetime = None) -> int:
         ts = ts or datetime.now().isoformat()
         with self.db.conn as conn:
             return conn.execute("""
@@ -118,7 +118,7 @@ class DB_WRITTENTASKQUEUE(DB_ABC):
                 (cur_status != :new_status or teacher_ts < :now_minus_30_min or teacher_id = :teacher_id)
             """, locals()).rowcount
 
-    def delete_from_written_task_queue(self, student_id: int, problem_id: int):
+    def delete(self, student_id: int, problem_id: int):
         with self.db.conn as conn:
             conn.execute("""
             DELETE from written_tasks_queue

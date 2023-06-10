@@ -10,7 +10,8 @@ from aiogram.utils.exceptions import BadRequest
 
 from helpers.consts import *
 from helpers.config import logger, config
-from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, db
+import db_methods as db
+from models import User, Problem, State, Waitlist, WrittenQueue, Result
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import student_keyboards
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
@@ -28,7 +29,7 @@ MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
 
 
 async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, show_lesson=None):
-    prev_keyboard = db.get_last_keyboard(student.id)
+    prev_keyboard = db.last_keyboard.get(student.id)
     if prev_keyboard:
         try:
             await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'], reply_markup=None)
@@ -47,13 +48,13 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, s
         disable_web_page_preview=True,
         reply_markup=student_keyboards.build_problems(show_lesson, student),
     )
-    db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
+    db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
 async def refresh_last_student_keyboard(student: User) -> bool:
     if not student:
         return False
-    prev_keyboard = db.get_last_keyboard(student.id)
+    prev_keyboard = db.last_keyboard.get(student.id)
     if prev_keyboard:
         await bot.edit_message_reply_markup_ig(
             chat_id=prev_keyboard['chat_id'],
@@ -74,7 +75,7 @@ async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1)
 async def prc_get_task_info_state(message, student: User):
     logger.debug('prc_get_task_info_state')
     # Возможно, тут прилетел хвост галереи, которую мы успешно уже обработали.
-    if message.media_group_id and db.media_group_check(message.media_group_id):
+    if message.media_group_id and db.media_group.check(message.media_group_id):
         await prc_sending_solution_state(message, student)
         return
     # Обрабатываем как обычно
@@ -101,15 +102,15 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     # а потом уже брать id задачи из сохранённого
     next_media_group_message = False
     if message.media_group_id:
-        problem_id = db.media_group_check(message.media_group_id)
+        problem_id = db.media_group.check(message.media_group_id)
         if problem_id:
             next_media_group_message = True
         else:
             problem_id = State.get_by_user_id(student.id)['problem_id']
-            duplicate = db.media_group_add(message.media_group_id, problem_id)
+            duplicate = db.media_group.insert(message.media_group_id, problem_id)
             # Могло так случиться, что в другом потоке в параллель добавили
             if duplicate:
-                problem_id = db.media_group_check(message.media_group_id)
+                problem_id = db.media_group.check(message.media_group_id)
                 next_media_group_message = True
     else:
         problem_id = State.get_by_user_id(student.id)['problem_id']
@@ -145,7 +146,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     #                              f'{problem.lesson}',
     #                              f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
     #     os.makedirs(os.path.dirname(file_name), exist_ok=True)
-    #     db.add_message_to_log(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
+    #     db.log.insert(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
     #     with open(file_name, 'wb') as file:
     #         file.write(bin_data.read())
     WrittenQueue.add_to_discussions(student.id, problem_id, None, text, file_name, message.chat.id, message.message_id)
@@ -161,7 +162,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
 
 def check_test_ans_rate_limit(student_id: int, problem_id: int):
     logger.debug('check_test_ans_rate_limit')
-    per_day, per_hour = db.check_num_answers(student_id, problem_id)
+    per_day, per_hour = db.result.check_num_answers(student_id, problem_id)
     text_to_student = None
     if per_hour >= 3:
         text_to_student = '💤⌛ В течение одного часа бот не принимает больше 3 ответов. Отправьте ваш ответ в начале следующего часа.'
@@ -472,7 +473,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
     problem = Problem.get_by_id(problem_id)
     # Удаляем сообщение с клавиатурой-списком задач
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
-    db.del_last_keyboard(student.id)
+    db.last_keyboard.delete(student.id)
     if not problem:
         await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -717,7 +718,7 @@ async def set_zoom(message: types.Message):
 async def students_my_results(message: types.Message):
     logger.debug('students_my_results')
     student = User.get_by_chat_id(message.chat.id)
-    rows = db.list_all_student_results(student.id)
+    rows = db.result.list_all_student_results(student.id)
     if rows:
         lessons = {row['lesson'] for row in rows}
         for lesson in sorted(lessons):

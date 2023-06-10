@@ -4,13 +4,13 @@ import asyncio
 
 import apps
 from helpers.config import config, logger
-from db_methods import db
+import db_methods as db
 
 
 async def on_startup(app):
     logger.warning('MainApp Start up!')
     # Настраиваем БД
-    db.setup(config.db_filename)
+    db.sql.setup(config.db_filename)
 
 
 async def on_shutdown(app):

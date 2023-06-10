@@ -9,7 +9,7 @@ import logging
 
 
 from helpers import consts
-from helpers.obj_classes import *
+from models import *
 
 from .initial_test_data import test_students, test_teachers
 from .dataset import *
@@ -30,7 +30,7 @@ class UserMethodsTest(IsolatedAsyncioTestCase):
         except FileNotFoundError:
             pass
         # create shiny new db instance from scratch and connect
-        self.db.setup(test_db_filename)
+        self.db.sql.setup(test_db_filename)
         self.insert_dummy_users()
         # fake telegram
         # self._bot = Bot(TOKEN, parse_mode=types.ParseMode.MARKDOWN_V2)
@@ -38,7 +38,7 @@ class UserMethodsTest(IsolatedAsyncioTestCase):
 
     def insert_dummy_users(self):
         for row in test_students + test_teachers:
-            real_id = self.db.add_user(row)
+            real_id = self.db.user.insert(row)
             row['id'] = real_id
 
     def tearDown(self) -> None:

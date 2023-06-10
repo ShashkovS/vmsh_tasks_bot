@@ -5,7 +5,7 @@ from .db_abc import DB_ABC, sql
 
 
 class DB_MEDIA_GROUPS(DB_ABC):
-    def media_group_check(self, media_group_id: int) -> Optional[int]:
+    def check(self, media_group_id: int) -> Optional[int]:
         """Получить номер задачи, к которой относится данная медиа-группа.
         Или None, если группа новая"""
         saved_problem_id = self.db.conn.execute('''
@@ -14,7 +14,7 @@ class DB_MEDIA_GROUPS(DB_ABC):
         ''', locals()).fetchone()
         return saved_problem_id and saved_problem_id['problem_id']
 
-    def media_group_add(self, media_group_id: int, problem_id: int) -> bool:
+    def insert(self, media_group_id: int, problem_id: int) -> bool:
         """Сохранить номер задачи, к которой привязана данная медиагруппа.
         Необходимо для того, чтобы понять, к какой задаче относятся
         вторая и далее отправленная фотка с решением"""
