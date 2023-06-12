@@ -173,7 +173,7 @@ async def on_startup(app):
 async def on_shutdown(app):
     logger.warning('online on_shutdown')
     if __name__ == "__main__":
-        db.disconnect()
+        db.sql.disconnect()
     logger.warning('online Bye!')
 
 

@@ -24,7 +24,7 @@ async def on_shutdown(app):
     logger.warning(f'Tasks to wait: {all_async_tasks_but_current!r}')
     if all_async_tasks_but_current:
         await asyncio.wait(all_async_tasks_but_current, timeout=20)
-    db.disconnect()
+    db.sql.disconnect()
     logger.warning('MainApp Bye!')
 
 

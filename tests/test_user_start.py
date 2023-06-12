@@ -42,7 +42,7 @@ class UserMethodsTest(IsolatedAsyncioTestCase):
             row['id'] = real_id
 
     def tearDown(self) -> None:
-        self.db.disconnect()
+        self.db.sql.disconnect()
         os.unlink(self.db.db_file)
 
     async def test_something(self):

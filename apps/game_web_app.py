@@ -349,7 +349,7 @@ async def on_startup(app):
 async def on_shutdown(app):
     logger.warning('game on_shutdown')
     if __name__ == "__main__":
-        db.disconnect()
+        db.sql.disconnect()
     await vmsh_nats.disconnect()
     # Останавливаем все websocket'ы
     for user_id, websockets in _user_id_to_websocket.items():

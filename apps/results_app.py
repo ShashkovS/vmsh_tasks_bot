@@ -62,7 +62,7 @@ async def on_startup(app):
 async def on_shutdown(app):
     logger.warning('results on_shutdown')
     if __name__ == "__main__":
-        db.disconnect()
+        db.sql.disconnect()
     logger.warning('results Bye!')
 
 
