@@ -1,3 +1,4 @@
+import logging
 import nats
 import nats.errors
 import nats.aio.client
@@ -22,12 +23,14 @@ class NATS:
 
     async def setup(self, nats_server_url=NATS_SERVER):
         self.nats_server_url = nats_server_url
+        nats_logger = logging.getLogger('nats')
+        nats_logger.setLevel(logging.CRITICAL)
         try:
             nc = await nats.connect(self.nats_server_url, connect_timeout=0.5, reconnect_time_wait=0.5, max_reconnect_attempts=2)
         except nats.errors.NoServersError:
-            logger.critical(f'Не удалось подключиться к nats-server по адресу {self.nats_server_url!r}.')
-            logger.critical(f'Работаем без nats-server.')
-            logger.critical(f'В таком режиме работа с несколькими процессами может быть некорректной')
+            logger.warning(f'Не удалось подключиться к nats-server по адресу {self.nats_server_url!r}.')
+            logger.warning(f'Работаем без nats-server.')
+            logger.warning(f'В таком режиме работа с несколькими процессами может быть некорректной')
             return
         logger.warning(f'Успешно подключились к nats на {self.nats_server_url}')
         nc.connect_timeout = 0.5
