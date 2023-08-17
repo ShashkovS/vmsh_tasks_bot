@@ -12,6 +12,40 @@ from .db_abc import DB_ABC, sql
 
 
 class DB_RESULT(DB_ABC):
+    """
+    The DB_RESULT class is a subclass of the DB_ABC abstract class. It provides methods to interact with the "results" table in the database.
+
+    Methods:
+    - insert(student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int,
+             answer: str, res_type: int = None, zoom_conversation_id: int = None) -> int:
+        Inserts a new record into the "results" table with the given parameters and returns the ID of the new record.
+
+    - check_num_answers(student_id: int, problem_id: int) -> Tuple[int, int]:
+        Returns the number of answers for a given student and problem, both per day and per hour.
+
+    - delete_plus(student_id: int, problem_id: int, res_type: int, new_verdict: int):
+        Updates the verdict of certain records in the "results" table based on the given parameters.
+
+    - check_student_solved(student_id: int, lesson: int) -> set:
+        Returns a set of problem IDs for which a given student has a solved verdict in a specific lesson.
+
+    - list_student_results(student_id: int, lesson: int) -> List[dict]:
+        Returns a list of dictionaries representing the results of a given student in a specific lesson. Each dictionary contains the timestamp, level, lesson, problem, item, answer, verdict, and problem ID.
+
+    - list_all_student_results(student_id: int) -> List[dict]:
+        Returns a list of dictionaries representing all the results of a given student. Each dictionary contains the timestamp, level, lesson, problem, item, answer, verdict, and problem ID.
+
+    - get_for_recheck_by_problem_id(problem_id: int) -> List[dict]:
+        Returns a list of dictionaries representing the results that need to be rechecked for a given problem ID. Each dictionary contains the ID, student ID, answer, and verdict.
+
+    - update_verdicts(new_verdicts: Dict):
+        Updates the verdicts of multiple records in the "results" table based on a dictionary mapping IDs to verdicts.
+
+    - get_student_solved(student_id: int, lesson: int) -> List[dict]:
+        Returns a list of dictionaries representing the problems that a given student has solved in a specific lesson. Each dictionary contains the minimum timestamp, problem title, and problem level.
+
+    Note: This class assumes the existence of a "results" table in the database, and the database connection is represented by a "db" object with a "conn" attribute.
+    """
     def insert(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int,
                    answer: str, res_type: int = None, zoom_conversation_id: int = None) -> int:
         ts = datetime.now().isoformat()

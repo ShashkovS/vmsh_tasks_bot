@@ -42,6 +42,9 @@ async def on_startup(app):
 
     if USE_WEBHOOKS:
         await check_webhook()
+    else:
+        asyncio.create_task(dispatcher.start_polling())
+
     bot.username = (await bot.me).username
 
     await bot.post_logging_message(f'Бот начал свою работу')
@@ -91,8 +94,6 @@ def start_bot_in_polling_mode():
     logging.getLogger('aiogram').setLevel(DEBUG)
     from aiogram.contrib.middlewares.logging import LoggingMiddleware
     dispatcher.middleware.setup(LoggingMiddleware())
-    # В режиме отладки запускаем без вебхуков
-    start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
 
 
 def start_bot_in_webhook_mode(app):
@@ -123,3 +124,5 @@ if __name__ == "__main__":
     app = web.Application()
     configue(app)
     start_bot_in_polling_mode()
+    # В режиме отладки запускаем без вебхуков
+    start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
