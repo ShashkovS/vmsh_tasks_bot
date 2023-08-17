@@ -30,7 +30,8 @@ async def prc_get_user_info_state(message: types.Message, user: User):
         await bot.send_message(
             chat_id=message.chat.id,
             text="🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\n"
-                 "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro2ll»",
+                 "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro2ll»\n"
+                 "(см. также https://shashkovs.ru/vmsh/2023/n/about.html#application)",
         )
     elif user.type == USER_TYPE.DELETED:
         await bot.send_message(
@@ -48,7 +49,21 @@ async def prc_get_user_info_state(message: types.Message, user: User):
             State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
         elif user.type == USER_TYPE.TEACHER:
             State.set_by_user_id(user.id, STATE.TEACHER_SELECT_ACTION)
+        elif user.type == USER_TYPE.DEACTIVATED_STUDENT:
+            State.set_by_user_id(user.id, STATE.USER_IS_NOT_ACTIVATED)
         await process_regular_message(message)
+
+
+@reg_state(STATE.USER_IS_NOT_ACTIVATED)
+async def prc_user_is_not_activated_state(message: types.Message, user: User):
+    logger.debug('prc_user_is_not_activated_state')
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="🔁 Привет!\n"
+             "Для начала обучения нужно оставить заявку на обучение на кружке на mos,ru.\n"
+             "Через несколько рабочих дней на почту придёт инструкция, а ваш аккаунт будет активирован.\n"
+             "Подробно про оформление: https://shashkovs.ru/vmsh/2023/n/about.html#application",
+    )
 
 
 async def prc_WTF(message: types.Message, user: User):
@@ -114,9 +129,13 @@ async def process_regular_message(message: types.Message):
     if not user:
         cur_chat_state = STATE.GET_USER_INFO
     else:
-        cur_chat_state = State.get_by_user_id(user.id)
-        if cur_chat_state:
-            cur_chat_state = cur_chat_state['state']
+        if user.type == USER_TYPE.DEACTIVATED_STUDENT:
+            cur_chat_state = STATE.USER_IS_NOT_ACTIVATED
+            State.set_by_user_id(user.id, STATE.USER_IS_NOT_ACTIVATED)
+        else:
+            cur_chat_state = State.get_by_user_id(user.id)
+            if cur_chat_state:
+                cur_chat_state = cur_chat_state['state']
     if not cur_chat_state:
         State.set_by_user_id(user.id, STATE.GET_USER_INFO)
         return
