@@ -62,11 +62,11 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
         )
         keyboard_markup.add(task_button)
     # Пока отключаем эту фичу
-    to_lessons_button = types.InlineKeyboardButton(
-        text="К списку всех листков",
-        callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
-    )
-    keyboard_markup.add(to_lessons_button)
+    # to_lessons_button = types.InlineKeyboardButton(
+    #     text="К списку всех листков",
+    #     callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
+    # )
+    # keyboard_markup.add(to_lessons_button)
     # to_game_button = types.InlineKeyboardButton(
     #     text="🕹🎲 Открыть командную игру 🎉🏆",
     #     url=f'https://vmsh179botprodbackup.proj179.ru/game/webtoken/{Webtoken.webtoken_by_user(student)}'

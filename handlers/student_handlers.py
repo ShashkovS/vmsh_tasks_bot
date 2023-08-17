@@ -322,11 +322,11 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
 async def prc_student_is_sleeping_state(message: types.message, student: User):
     logger.debug('prc_student_is_sleeping_state')
     if student.level == LEVEL.NOVICE:
-        channel = '@vmsh_179_5_7_2022'
+        channel = '@vmsh_179_5_7_2023'
     elif student.level == LEVEL.PRO:
-        channel = '@vmsh_179_5_7_2022'
+        channel = '@vmsh_179_5_7_2023'
     elif student.level == LEVEL.EXPERT:
-        channel = '@vmsh_179_5_7_2022'
+        channel = '@vmsh_179_5_7_2023'
     elif student.level == LEVEL.GR8:
         channel = '@vmsh_179_8_2022'
     await bot.send_message(chat_id=message.chat.id if message else student.chat_id,
@@ -351,7 +351,7 @@ async def level_novice(message: types.Message):
             chat_id=message.chat.id,
             text="Вы переведены в группу начинающих. "
                  "Успехов в занятиях! "
-                 "Вопросы можно задавать в группе @vmsh_179_5_7_2022_chat.",
+                 "Вопросы можно задавать в группе @vmsh_179_5_7_2023_chat.",
         )
         if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -392,22 +392,22 @@ async def level_expert(message: types.Message):
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['level_gr8'])
-async def level_expert(message: types.Message):
-    logger.debug('level_gr8')
-    student = User.get_by_chat_id(message.chat.id)
-    if student:
-        message = await bot.send_message(
-            chat_id=message.chat.id,
-            text="Вы переведены в группу восьмого класса. Обратите внимание, что эта группа для «опытных» учеников 8 класса. "
-                 "Если будет сложновато, рекомендуем группы «Продолжающие» или «Эксперты». "
-                 "Вот канал вашего класса: @vmsh_179_8_2022. "
-                 "А вот группа для обсуждений: @vmsh_179_8_2022_chat",
-        )
-        student.set_level(LEVEL.GR8)
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
-            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+# @dispatcher.message_handler(commands=['level_gr8'])
+# async def level_expert(message: types.Message):
+#     logger.debug('level_gr8')
+#     student = User.get_by_chat_id(message.chat.id)
+#     if student:
+#         message = await bot.send_message(
+#             chat_id=message.chat.id,
+#             text="Вы переведены в группу восьмого класса. Обратите внимание, что эта группа для «опытных» учеников 8 класса. "
+#                  "Если будет сложновато, рекомендуем группы «Продолжающие» или «Эксперты». "
+#                  "Вот канал вашего класса: @vmsh_179_8_2022. "
+#                  "А вот группа для обсуждений: @vmsh_179_8_2022_chat",
+#         )
+#         student.set_level(LEVEL.GR8)
+#         if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+#             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+#         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 @dispatcher.message_handler(commands=['sos'])
@@ -500,7 +500,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         State.set_by_user_id(student.id, STATE.SENDING_SOLUTION, problem_id)
         await bot.answer_callback_query_ig(query.id)
     elif problem.prob_type == PROB_TYPE.ORALLY:
-        instruction_url = r'https://t.me/vmsh_179_5_7_2022/55'
+        instruction_url = r'https://t.me/vmsh_179_5_7_2023/55'
         hint = ''
         if problem.level != LEVEL.EXPERT:
             conf_id = '87196763644'
