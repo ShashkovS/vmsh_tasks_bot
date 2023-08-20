@@ -8,6 +8,7 @@ from helpers.consts import *
 from helpers.config import logger
 from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 import db_methods as db
+from .state import State
 from .user import User
 from .problem import Problem
 
@@ -48,7 +49,9 @@ class FromGoogleSpreadsheet:
                 student['online'] = ONLINE_MODE_DECODER[student['online']]
             except:
                 student['online'] = ONLINE_MODE.ONLINE
-            User(**student)
+            user = User(**student)
+            State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
+
 
     @staticmethod
     def teachers_to_db(teachers: List[dict]):
