@@ -301,7 +301,7 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
 async def prc_wait_sos_request_state(message: types.Message, student: User):
     logger.debug('prc_wait_sos_request_state')
     state = State.get_by_user_id(student.id)
-    problem_id = state.get("problem_id", None)
+    problem_id = state["problem_id"]
     if problem_id:
         problem = Problem.get_by_id(problem_id)
         problem_text = f"{problem}"
