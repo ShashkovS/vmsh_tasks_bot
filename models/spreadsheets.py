@@ -51,7 +51,6 @@ class FromGoogleSpreadsheet:
             except:
                 student['online'] = ONLINE_MODE.ONLINE
             user = User(**student)
-            print(repr(user))
             State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
 
 
