@@ -353,7 +353,7 @@ async def level_novice(message: types.Message):
                  "Успехов в занятиях! "
                  "Вопросы можно задавать в группе @vmsh_179_5_7_2023_chat.",
         )
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
@@ -370,7 +370,7 @@ async def level_pro(message: types.Message):
                  "Это будет комфортнее и полезнее!",
         )
         student.set_level(LEVEL.PRO)
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
@@ -387,7 +387,7 @@ async def level_expert(message: types.Message):
                  "Успехов!",
         )
         student.set_level(LEVEL.EXPERT)
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
@@ -405,7 +405,7 @@ async def level_expert(message: types.Message):
 #                  "А вот группа для обсуждений: @vmsh_179_8_2022_chat",
 #         )
 #         student.set_level(LEVEL.GR8)
-#         if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+#         if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
 #             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
 #         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 

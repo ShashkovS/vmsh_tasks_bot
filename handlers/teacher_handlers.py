@@ -836,7 +836,7 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
     level = LEVEL(lvl)
     if student:
         student.set_level(level)
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         if student.chat_id:
             message = await bot.send_message(
