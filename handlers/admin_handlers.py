@@ -325,7 +325,7 @@ async def calc_last_lesson_stat(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     stat = db.report.calc_last_lesson_stat()
-    msg = '\n'.join(map(lambda r: '  '.join(r.values()), stat))
+    msg = '\n'.join(map(lambda r: '  '.join(r), stat))
     for i in range(0, len(msg), 4096):
         await bot.send_message(
             chat_id=message.chat.id,
