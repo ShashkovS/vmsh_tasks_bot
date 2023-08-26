@@ -39,6 +39,7 @@ class FromGoogleSpreadsheet:
 
     @staticmethod
     def students_to_db(students: List[dict]):
+        print(students)
         for student in students:
             student['type'] = USER_TYPE.STUDENT
             student['middlename'] = ''
@@ -50,6 +51,7 @@ class FromGoogleSpreadsheet:
             except:
                 student['online'] = ONLINE_MODE.ONLINE
             user = User(**student)
+            print(repr(user))
             State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
 
 

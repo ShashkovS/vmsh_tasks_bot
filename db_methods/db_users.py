@@ -26,8 +26,9 @@ class DB_USER(DB_ABC):
                 online=coalesce(online, excluded.online), 
                 grade=excluded.grade, 
                 birthday=excluded.birthday
+                returning id
             """, data)
-            return cur.lastrowid
+            return cur.fetchone()['id']
 
     def set_chat_id(self, user_id: int, chat_id: int):
         with self.db.conn as conn:
