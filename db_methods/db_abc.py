@@ -102,20 +102,20 @@ class DB_CONNECTION:
         self._run_migrations()
         self._connect_to_db()
 
-    # @staticmethod
-    # def _dict_factory(cursor, row: tuple) -> dict:
-    #     d = {}
-    #     for idx, col in enumerate(cursor.description):
-    #         d[col[0]] = row[idx]
-    #     return d
+    @staticmethod
+    def _dict_factory(cursor, row: tuple) -> dict:
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
 
     def _connect_to_db(self):
         self.conn = sqlite3.connect(self.db_file)
         self.kv = _KeyValueStore(self.conn)
         # Set journal mode to WAL.
         self.conn.execute('PRAGMA journal_mode=WAL')
-        # self.conn.row_factory = self._dict_factory
-        self.conn.row_factory = sqlite3.Row
+        self.conn.row_factory = self._dict_factory
+        # self.conn.row_factory = sqlite3.Row
 
     def _run_migrations(self):
         migrations = yoyo.read_migrations('migrations')
