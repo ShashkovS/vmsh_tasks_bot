@@ -28,11 +28,6 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
         )
         keyboard_markup.row(que1, que2)
     for problem in Problem.get_by_lesson(student.level, lesson_num):
-        # Временно !!!!!!!!!!!!!!!!!!!!!
-        if problem.prob_type != PROB_TYPE.TEST:
-            continue
-        # Временно !!!!!!!!!!!!!!!!!!!!!
-
         synonyms_set = problem.synonyms_set()
         if synonyms_set & solved:
             tick = '✅'
