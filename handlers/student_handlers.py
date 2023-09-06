@@ -36,7 +36,9 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, s
         except:
             pass
     if not blocked:
-        text = f"❓ Нажимайте на задачу, чтобы сдать её\n(выбран уровень «{student.level.slevel}», здесь <a href=\"{student.level.url}\">условия</a>)"
+        text = (f"❓ Нажимайте на задачу, чтобы сдать её\n"
+                f"(уровень «{student.level.slevel}», "
+                f"<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2023\">канал кружка</a>)")
     else:
         text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
     if show_lesson is None:
