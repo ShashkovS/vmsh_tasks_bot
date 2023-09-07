@@ -776,11 +776,14 @@ async def find_student(message: types.Message):
         return
     students = sorted(
         User.all_students(),
-        key=lambda user: -jaro_winkler(search.lower(), f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1/32)
+        key=lambda user: min(
+            -jaro_winkler(search.lower(), f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1/32),
+            -jaro_winkler(search, user.token, prefix_weight=1/32),
+        )
     )
     if students:
         lines = [
-            f'{student.surname:<20} {student.name:<15} {student.level} {student.token} {ONLINE_MODE(student.online).__str__()[12:]}'
+            f'{student.surname:<20} {student.name:<15} {student.level} {student.token} {"🏫" if student.online == ONLINE_MODE.SCHOOL else "📡"}'
             for student in students[:10]]
         await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
     else:
