@@ -247,17 +247,27 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
 
 async def update_all_student_keyboards(teacher_chat_id):
     logger.debug('update_all_student_keyboards')
+    num_updated = 0
+    errors = []
+    not_updated = 0
     for student in User.all_students():
         try:
             updated = await refresh_last_student_keyboard(student)
+            num_updated += 1
+            not_updated += not updated
         except Exception as e:
             logger.exception(e)
             updated = True
+            errors.append(student.token)
         if updated:
             await asyncio.sleep(1 / 20)
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=f"Все плюсики обновлены",
+        text=f"Все плюсики обновлены: {num_updated} обновлено, {not_updated} не обновлено, {len(errors)} ошибок.",
+    )
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=f"Ошибки по: `{'`, `'.join(errors)}`",
     )
 
 
