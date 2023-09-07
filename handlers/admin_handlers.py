@@ -248,7 +248,11 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
 async def update_all_student_keyboards(teacher_chat_id):
     logger.debug('update_all_student_keyboards')
     for student in User.all_students():
-        updated = await refresh_last_student_keyboard(student)
+        try:
+            updated = await refresh_last_student_keyboard(student)
+        except Exception as e:
+            logger.exception(e)
+            updated = True
         if updated:
             await asyncio.sleep(1 / 20)
     await bot.send_message(
