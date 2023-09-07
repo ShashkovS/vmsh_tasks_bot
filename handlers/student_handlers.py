@@ -36,9 +36,16 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, s
         except:
             pass
     if not blocked:
-        text = (f"❓ Нажимайте на задачу, чтобы сдать её\n"
-                f"(уровень «{student.level.slevel}», "
-                f"<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2023\">канал кружка</a>)")
+        if student.online == ONLINE_MODE.ONLINE:
+            online = "📡дистанционно📡"
+        elif student.online == ONLINE_MODE.SCHOOL:
+            online = "🏫в школе🏫"
+        else:
+            online = '?'
+        text = (f"❓ <b>Нажимайте на задачу, чтобы сдать её</b>\n"
+                f"{student.name} {student.surname}\n"
+                f"уровень «{student.level.slevel}», режим {online}\n"
+                f"<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2023\">канал кружка</a>")
     else:
         text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
     if show_lesson is None:
