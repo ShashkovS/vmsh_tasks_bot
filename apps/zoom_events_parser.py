@@ -79,11 +79,11 @@ async def post_zoomevents(request: web.Request):
     zoom_user_name = participant['user_name']
     zoom_user_id = participant.get('user_id', None)
     user_id = None
-    db.conn.execute('''
+    db.sql.conn.execute('''
         insert into zoom_events ( event_ts,  event,  zoom_user_name,  zoom_user_id,  breakout_room_uuid,  user_id)
                          values (:event_ts, :event, :zoom_user_name, :zoom_user_id, :breakout_room_uuid, :user_id)
     ''', locals())
-    db.conn.commit()
+    db.sql.conn.commit()
     return web.Response(status=200)
 
 

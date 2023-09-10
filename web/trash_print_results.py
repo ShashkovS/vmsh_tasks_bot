@@ -121,7 +121,7 @@ def table_to_html(tables):
 
 
 def get_html():
-    cur = db.conn.cursor()
+    cur = db.sql.conn.cursor()
     lessons_and_levels = get_lessons_and_levels(cur)
     tables = []
     for row in lessons_and_levels:
