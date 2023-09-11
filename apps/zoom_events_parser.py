@@ -61,6 +61,10 @@ def process_event(event: str, event_ts: datetime, participant: dict):
 
 
 def zoom_event_validation(data):
+    # http POST <your_endpoint_url_here> \
+    #   payload:='{"plainToken": "qgg8vlvZRS6UYooatFL8Aw"}' \
+    #   event_ts:=1654503849680 \
+    #   event="endpoint.url_validation"
     plainToken = data['payload']['plainToken']
     hash_for_validate = hmac.new(ZOOM_WEBHOOK_SECRET_TOKEN.encode('utf-8'),
                                  plainToken.encode('utf-8'),
