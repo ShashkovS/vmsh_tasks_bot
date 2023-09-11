@@ -2,16 +2,17 @@ from aiohttp import web
 from datetime import datetime, timedelta
 from Levenshtein import distance
 import re
+import hmac
 from helpers.consts import *
 from helpers.config import logger, config
 from models import User
 import db_methods as db
 
-
 routes = web.RouteTableDef()
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
 
-ZOOM_AUTH = 'BAKPekpQQgW1C3S6MEP4-g'
+ZOOM_WEBHOOK_SECRET_TOKEN = 'bX0XxlS-QsygnbKXeXBtrw'
+
 ZOOM_ID = "87196763644"
 TIMEZONE = timedelta(hours=3)
 
@@ -34,7 +35,7 @@ def parse_json(data: dict):
 
 def process_event(event: str, event_ts: datetime, participant: dict):
     user_name = participant['user_name']
-    if False:
+    if event == "endpoint.url_validation":
         pass
     elif event == "meeting.participant_joined_waiting_room":
         db.zoom_queue.insert(user_name, event_ts, status=0)
@@ -59,6 +60,17 @@ def process_event(event: str, event_ts: datetime, participant: dict):
         db.zoom_queue.remove_old_from_zoom_queue()
 
 
+def zoom_event_validation(data):
+    plainToken = data['payload']['plainToken']
+    hash_for_validate = hmac.new(ZOOM_WEBHOOK_SECRET_TOKEN.encode('utf-8'),
+                                 plainToken.encode('utf-8'),
+                                 digestmod='sha256').hexdigest()
+    return web.json_response(data={
+        "plainToken": plainToken,
+        "encryptedToken": hash_for_validate
+    }, status=200)
+
+
 @routes.post('/zoomevents')
 async def post_zoomevents(request: web.Request):
     # try:
@@ -69,6 +81,8 @@ async def post_zoomevents(request: web.Request):
     #     return web.Response(status=200)
     try:
         data = await request.json()
+        if data['event'] == 'endpoint.url_validation':
+            return zoom_event_validation(data)
         event, event_ts, is_circle, participant, breakout_room_uuid = parse_json(data)
     except Exception as e:
         logger.error(e)
