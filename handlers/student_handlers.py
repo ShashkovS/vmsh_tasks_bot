@@ -509,7 +509,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         State.set_by_user_id(student.id, STATE.SENDING_SOLUTION, problem_id)
         await bot.answer_callback_query_ig(query.id)
     elif problem.prob_type == PROB_TYPE.ORALLY:
-        instruction_url = r'https://t.me/vmsh_179_5_7_2023/55'
+        instruction_url = r'https://t.me/vmsh_179_5_7_2023/78'
         hint = ''
         if problem.level != LEVEL.EXPERT:
             conf_id = '87196763644'
