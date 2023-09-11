@@ -872,7 +872,7 @@ async def zoom_queue(message: types.Message):
     show_queue = []
     for row in queue:
         waits = datetime.datetime.now() - datetime.datetime.fromisoformat(row['enter_ts'])
-        waits_min = (waits.seconds + 30) // 60
+        waits_min = (waits.total_seconds() + 30) // 60
         if row['status'] == 1:
             alert = ' (в основном зале)'
         elif row['status'] == -1:

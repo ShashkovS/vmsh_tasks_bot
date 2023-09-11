@@ -34,7 +34,7 @@ class DB_ZOOM_QUEUE(DB_ABC):
         with self.db.conn as conn:
             conn.execute("""
                 DELETE from zoom_queue
-                where (julianday(CURRENT_TIMESTAMP) - julianday(enter_ts)) > 0.5;
+                where (julianday(datetime(CURRENT_TIMESTAMP, '+3 hours')) - julianday(enter_ts)) > 0.5;
             """, locals())
 
     def get_first_from_queue(self, show_all=False):
