@@ -56,8 +56,11 @@ class BotIg(aiogram.Bot):
     async def post_logging_message(self, msg):
         logger.debug('bot.post_logging_message')
         bot_type = 'PRODUCTION' if config.production_mode else 'DEV MODE'
+        full_msg = f'{bot_type} @{bot.username}\n{msg}'
+        if len(full_msg) > 4096:
+            full_msg = full_msg[:4096]
         try:
-            res = await self.send_message(config.exceptions_channel, f'{bot_type} @{bot.username}\n{msg}')
+            res = await self.send_message(config.exceptions_channel, full_msg)
             # У секрентного чата id — это число. А у открытого — это строка.
             if type(config.exceptions_channel) == str:
                 await self.send_message(config.exceptions_channel, f'(Exceptions chat id = {res["chat"]["id"]})')
