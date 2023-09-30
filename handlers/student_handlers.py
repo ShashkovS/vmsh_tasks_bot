@@ -80,7 +80,7 @@ async def refresh_last_student_keyboard(student: User, force=False) -> bool:
         except Exception as e:
             return False
     if not prev_keyboard and force:
-        await post_problem_keyboard(prev_keyboard['chat_id'], student, disable_notification=True)
+        await post_problem_keyboard(student.chat_id, student, disable_notification=True)
         return True
     return False
 
