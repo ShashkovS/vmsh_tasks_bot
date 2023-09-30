@@ -6,7 +6,7 @@ from typing import Tuple, Optional
 
 import aiogram.utils.exceptions
 from aiogram.dispatcher.webhook import types
-from aiogram.utils.exceptions import BadRequest
+from aiogram.utils.exceptions import BadRequest, MessageNotModified, MessageToEditNotFound, ChatNotFound
 
 from helpers.consts import *
 from helpers.config import logger, config
@@ -28,7 +28,7 @@ is_py_func = re.compile(r'^\s*def \w+\s*\(')
 MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
 
 
-async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, show_lesson=None):
+async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, show_lesson=None, disable_notification=False):
     prev_keyboard = db.last_keyboard.get(student.id)
     if prev_keyboard:
         try:
@@ -56,20 +56,31 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, s
         parse_mode='HTML',
         disable_web_page_preview=True,
         reply_markup=student_keyboards.build_problems(show_lesson, student),
+        disable_notification=disable_notification,
     )
     db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
-async def refresh_last_student_keyboard(student: User) -> bool:
+async def refresh_last_student_keyboard(student: User, force=False) -> bool:
     if not student:
         return False
     prev_keyboard = db.last_keyboard.get(student.id)
     if prev_keyboard:
-        await bot.edit_message_reply_markup_ig(
-            chat_id=prev_keyboard['chat_id'],
-            message_id=prev_keyboard['tg_msg_id'],
-            reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student)
-        )
+        try:
+            updated = await bot.edit_message_reply_markup(
+                chat_id=prev_keyboard['chat_id'],
+                message_id=prev_keyboard['tg_msg_id'],
+                reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student)
+            )
+            return bool(updated)
+        except MessageNotModified as e:
+            return True
+        except MessageToEditNotFound as e:
+            prev_keyboard = None
+        except Exception as e:
+            return False
+    if not prev_keyboard and force:
+        await post_problem_keyboard(prev_keyboard['chat_id'], student, disable_notification=True)
         return True
     return False
 

@@ -106,7 +106,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
             )
             sent += 1
             db.log.insert(True, broad_message.message_id, broad_message.chat.id, student.id, None,
-                                  broadcast_message, None)
+                          broadcast_message, None)
         except aiogram.exceptions.TelegramAPIError as e:
             logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
             bad_tokens.append(token)
@@ -245,14 +245,14 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
     )
 
 
-async def update_all_student_keyboards(teacher_chat_id):
+async def update_all_student_keyboards(teacher_chat_id, force=False):
     logger.debug('update_all_student_keyboards')
     num_updated = 0
     errors = []
     not_updated = 0
     for student in User.all_students():
         try:
-            updated = await refresh_last_student_keyboard(student)
+            updated = await refresh_last_student_keyboard(student, force)
             num_updated += 1
             not_updated += not updated
         except Exception as e:
@@ -271,16 +271,20 @@ async def update_all_student_keyboards(teacher_chat_id):
     )
 
 
-@dispatcher.message_handler(commands=['reset_keyboards'])
+@dispatcher.message_handler(commands=['reset_keyboards', 'rk', 'reset_keyboards_force', 'rkf'])
 async def reset_keyboards(message: types.Message):
     logger.debug('reset_keyboards')
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    asyncio.create_task(update_all_student_keyboards(message.chat.id))
+    force = 'force' in message or 'rkf' in message
+    asyncio.create_task(update_all_student_keyboards(
+        message.chat.id,
+        force=force
+    ))
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Создано задание по обновлению плюсиков запущено",
+        text=f"Создано задание по обновлению плюсиков запущено, {force=}",
     )
 
 
