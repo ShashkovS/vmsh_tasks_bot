@@ -277,7 +277,7 @@ async def reset_keyboards(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    force = 'force' in message or 'rkf' in message
+    force = 'force' in message.text or 'rkf' in message.text
     asyncio.create_task(update_all_student_keyboards(
         message.chat.id,
         force=force
