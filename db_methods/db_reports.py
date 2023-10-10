@@ -11,21 +11,22 @@ class DB_REPORTS(DB_ABC):
         """
         cur = self.db.conn.execute("""
             with pre as (
-                select r.lesson, r.level, p.prob, p.item,
+                select r.lesson, r.level, p.prob, p.item, r.problem_id,
                        p.title, r.student_id,
                        case when max(r.verdict) > 0 then 1 else 0 end verdict
                 from results r
-                         join problems p on r.problem_id = p.id
+                join problems p on r.problem_id = p.id
                 where p.lesson = (select max(lesson) as last_lesson from problems)
-                group by 1, 2, 3, 4, 5, 6
+                group by 1, 2, 3, 4, 5, 6, 7
             ),
                  res as (
             select lesson || level || '.' || prob || item as prb, title, sum(verdict) plus,
-                   (select count(distinct student_id) from pre as pre2 where pre.level = pre2.level) tot
+                   (select count(distinct student_id) from pre as pre2 where pre.level = pre2.level) tot,
+                   (select count(distinct student_id) from results as rr where rr.problem_id = pre.problem_id) dist_prob
             from pre
             group by lesson, level, prob, item, title
             order by level, prob, item)
-            select prb, plus||'/'||tot as frac, replace(round(plus*100.0/tot,1), '.', ',')||'%' perc, title from res
+            select prb, plus||'/'||dist_prob||'/'||tot as frac, replace(round(plus*100.0/tot,1), '.', ',')||'%' perc, title from res
         """)
         rows = cur.fetchall()
         return rows
