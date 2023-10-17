@@ -4,10 +4,10 @@ from aiogram.utils.exceptions import BadRequest
 from contextlib import suppress
 
 from helpers.consts import *
-from helpers.config import logger
+from helpers.config import logger, config
 import db_methods as db
-from models import User
-from helpers.bot import reg_callback
+from models import User, Webtoken
+from helpers.bot import reg_callback, dispatcher, bot
 
 
 @reg_callback(CALLBACK.REACTION)
@@ -47,3 +47,28 @@ async def prc_reaction(query: types.CallbackQuery, student: User):
             await query.answer(f'Принято')
         except aiogram.utils.exceptions.InvalidQueryID:
             pass
+
+
+@dispatcher.message_handler(commands=['password'])
+async def get_my_password(message: types.Message):
+    logger.debug('password')
+    user = User.get_by_chat_id(message.chat.id)
+    if not user:
+        return
+    await bot.send_message(
+        chat_id=message.chat.id, parse_mode = "HTML",
+        text=f"🤖 Ваш пароль:\n<pre>{user.token}</pre>",
+    )
+
+
+@dispatcher.message_handler(commands=['statw'])
+async def get_statw_url(message: types.Message):
+    logger.debug('statw')
+    user = User.get_by_chat_id(message.chat.id)
+    if not user:
+        return
+    url = f'https://{config.webhook_host}/stat/webtoken/{Webtoken.webtoken_by_user(user)}'
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=url,
+    )

@@ -39,6 +39,16 @@ async def print_stat(request):
         return web.Response(text=trash_print_stats.get_html(), content_type='text/html')
 
 
+@routes.get('/stat/webtoken/{webtoken}')
+async def get_stat_webtoken(request):
+    webtoken = request.match_info['webtoken']
+    user = Webtoken.user_by_webtoken(webtoken)
+    response = web.HTTPSeeOther('/stat')
+    if user:
+        response.set_cookie(name=COOKIE_NAME, value=webtoken, **use_cookie)
+    return response
+
+
 @routes.post('/res')
 async def login_res(request):
     print('login_res')
