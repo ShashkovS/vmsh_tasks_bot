@@ -39,14 +39,29 @@ async def print_stat(request):
         return web.Response(text=trash_print_stats.get_html(), content_type='text/html')
 
 
-@routes.get('/stat/webtoken/{webtoken}')
-async def get_stat_webtoken(request):
-    webtoken = request.match_info['webtoken']
-    user = Webtoken.user_by_webtoken(webtoken)
-    response = web.HTTPSeeOther('/stat')
-    if user:
-        response.set_cookie(name=COOKIE_NAME, value=webtoken, **use_cookie)
-    return response
+@routes.post('/stat')
+async def login_stat(request):
+    print('login_res')
+    data = await request.post()
+    token = data.get('password', None)
+    user = User.get_by_token(token)
+    cookie_webtoken = Webtoken.webtoken_by_user(user)
+    if cookie_webtoken:
+        response = web.Response(text=trash_print_stats.get_html(), content_type='text/html')
+        response.set_cookie(name=COOKIE_NAME, value=cookie_webtoken, **use_cookie)
+        return response
+    return web.Response(text=templates['login_res'], content_type='text/html')
+
+
+@routes.get('/res')
+async def show_res(request):
+    print('stat')
+    cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
+    user = Webtoken.user_by_webtoken(cookie_webtoken)
+    if not user:
+        return web.Response(text=templates['login_res'], content_type='text/html')
+    else:
+        return web.Response(text=trash_print_results.get_html(), content_type='text/html')
 
 
 @routes.post('/res')
