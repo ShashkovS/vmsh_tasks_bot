@@ -73,6 +73,6 @@ async def get_statw_url(message: types.Message):
         text=url,
     )
     await bot.send_message(
-        chat_id=message.chat.id, parse_mode = "HTML",
-        text=f"(Ваш пароль:\n<pre>{user.token}</pre>)",
+        chat_id=message.chat.id, parse_mode="HTML",
+        text=f"Ваш пароль:\n<code>{user.token}</code>",
     )
