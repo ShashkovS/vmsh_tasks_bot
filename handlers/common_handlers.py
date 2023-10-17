@@ -67,8 +67,12 @@ async def get_statw_url(message: types.Message):
     user = User.get_by_chat_id(message.chat.id)
     if not user:
         return
-    url = f'https://{config.webhook_host}/stat/webtoken/{Webtoken.webtoken_by_user(user)}'
+    url = f'https://{config.webhook_host}/stat'
     await bot.send_message(
         chat_id=message.chat.id,
         text=url,
+    )
+    await bot.send_message(
+        chat_id=message.chat.id, parse_mode = "HTML",
+        text=f"(Ваш пароль:\n<pre>{user.token}</pre>)",
     )
