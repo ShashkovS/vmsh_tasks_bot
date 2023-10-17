@@ -12,6 +12,7 @@ from helpers.config import config, logger, DEBUG, APP_PATH
 import db_methods as db
 from models import Webtoken, User
 from web import trash_print_results
+from web import trash_print_stats
 
 __ALL__ = ['routes']
 
@@ -27,15 +28,15 @@ templates = {
 }
 
 
-@routes.get('/res')
-async def print_res(request):
-    print('res')
+@routes.get('/stat')
+async def print_stat(request):
+    print('stat')
     cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
     user = Webtoken.user_by_webtoken(cookie_webtoken)
     if not user:
         return web.Response(text=templates['login_res'], content_type='text/html')
     else:
-        return web.Response(text=trash_print_results.get_html(), content_type='text/html')
+        return web.Response(text=trash_print_stats.get_html(), content_type='text/html')
 
 
 @routes.post('/res')
