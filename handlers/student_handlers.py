@@ -11,6 +11,7 @@ from aiogram.utils.exceptions import BadRequest, MessageNotModified, MessageToEd
 from helpers.consts import *
 from helpers.config import logger, config
 import db_methods as db
+from helpers.features import RESULT_MODE, FEATURES
 from models import User, Problem, State, Waitlist, WrittenQueue, Result
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import student_keyboards
@@ -300,7 +301,7 @@ async def check_answer_and_react(chat_id: int, problem: Problem, student: User, 
         else:
             Result.add(student, problem, None, VERDICT.WRONG_ANSWER, student_answer, RES_TYPE.TEST)
             text_to_student = f"❌ {problem.wrong_ans}"
-        if os.environ.get('EXAM', None) == 'true':
+        if RESULT_MODE == FEATURES.RESULT_AFTER:
             text_to_student = 'Ответ принят на проверку.'
         await bot.send_message(chat_id=chat_id, text=text_to_student)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
