@@ -1,5 +1,7 @@
+import datetime
 import os
 import re
+import io
 import asyncio
 import traceback
 from typing import Tuple, Optional
@@ -11,7 +13,7 @@ from aiogram.utils.exceptions import BadRequest, MessageNotModified, MessageToEd
 from helpers.consts import *
 from helpers.config import logger, config
 import db_methods as db
-from helpers.features import RESULT_MODE, FEATURES
+from helpers.features import RESULT_MODE, FEATURES, SAVE_SOL_MODE
 from models import User, Problem, State, Waitlist, WrittenQueue, Result
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import student_keyboards
@@ -138,38 +140,41 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     file_name = None
     text = message.text
 
-    # Перестали сохранять файлы к себе, вроде в этом нет необходимости
-    # downloaded = []
-    # if text:
-    #     downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
-    #     downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
-    # # for photo in message.photo:
-    # if message.photo:
-    #     file_info = await bot.get_file(message.photo[-1].file_id)
-    #     downloaded_file = await bot.download_file(file_info.file_path)
-    #     filename = file_info.file_path
-    #     downloaded.append((downloaded_file, filename))
-    # if message.document:
-    #     if message.document.file_size > 5 * 1024 * 1024:
-    #         await bot.send_message(chat_id=message.chat.id,
-    #                                text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
-    #         return
-    #     file_id = message.document.file_id
-    #     file_info = await bot.get_file(file_id)
-    #     downloaded_file = await bot.download_file(file_info.file_path)
-    #     filename = file_info.file_path
-    #     downloaded.append((downloaded_file, filename))
-    # for bin_data, filename in downloaded:
-    #     ext = filename[filename.rfind('.') + 1:]
-    #     cur_ts = datetime.datetime.now().isoformat().replace(':', '-')
-    #     file_name = os.path.join(SOLS_PATH,
-    #                              f'{student.token} {student.surname} {student.name}',
-    #                              f'{problem.lesson}',
-    #                              f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
-    #     os.makedirs(os.path.dirname(file_name), exist_ok=True)
-    #     db.log.insert(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
-    #     with open(file_name, 'wb') as file:
-    #         file.write(bin_data.read())
+    if SAVE_SOL_MODE == FEATURES.SAVE_SOL_ON_DRIVE:
+        try:
+            downloaded = []
+            if text:
+                downloaded.append((io.BytesIO(text.encode('utf-8')), 'text.txt'))
+            # for photo in message.photo:
+            if message.photo:
+                file_info = await bot.get_file(message.photo[-1].file_id)
+                downloaded_file = await bot.download_file(file_info.file_path)
+                filename = file_info.file_path
+                downloaded.append((downloaded_file, filename))
+            if message.document:
+                if message.document.file_size > 5 * 1024 * 1024:
+                    await bot.send_message(chat_id=message.chat.id,
+                                           text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
+                    return
+                file_id = message.document.file_id
+                file_info = await bot.get_file(file_id)
+                downloaded_file = await bot.download_file(file_info.file_path)
+                filename = file_info.file_path
+                downloaded.append((downloaded_file, filename))
+            problem = Problem.get_by_id(problem_id)
+            for bin_data, filename in downloaded:
+                ext = filename[filename.rfind('.') + 1:]
+                cur_ts = datetime.datetime.now().isoformat().replace(':', '-')
+                file_name = os.path.join(SOLS_PATH,
+                                         f'{student.token} {student.surname} {student.name}',
+                                         f'{problem.lesson}',
+                                         f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
+                os.makedirs(os.path.dirname(file_name), exist_ok=True)
+                db.log.insert(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
+                with open(file_name, 'wb') as file:
+                    file.write(bin_data.read())
+        except Exception as e:
+            logger.exception(e)
     WrittenQueue.add_to_discussions(student.id, problem_id, None, text, file_name, message.chat.id, message.message_id)
     if not next_media_group_message:
         WrittenQueue.add_to_queue(student.id, problem_id)
