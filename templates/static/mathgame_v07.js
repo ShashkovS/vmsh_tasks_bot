@@ -3,8 +3,8 @@
 const CELL_SIZE_IN_REM = 3;
 const MODAL_WIDTH_IN_CELLS = 5;
 const MODAL_HEIGHT_IN_CELLS = 3;
-const FOG_OF_WAR = 8;
-const FOR_OPACITY_LEN = 8;
+const FOG_OF_WAR = 6;
+const FOR_OPACITY_LEN = 6;
 
 const DEBUG = false;
 
