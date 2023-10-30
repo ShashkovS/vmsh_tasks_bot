@@ -10,88 +10,180 @@ const DEBUG = false;
 
 const mapAsString = `
 x\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx
-x\t1\t1\t1\t1\t2\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t1\to\to\to\to\to\to\to\to\to\to\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t7\t7\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx
-x\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t3\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\to\to\t1\t1\t1\t1\t1\tx\t1\tx\t1\t1\t1\tx\t1\t1\tx\tx\tx\tx\tx\t1\tx\t1\t7\t1\t1\t1\tx
-x\t1\t1\t1\tx\tx\tx\t1\t1\t1\t1\t3\t4\t3\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\tx\t1\tx\t1\t1\t1\tx\t1\t1\tx\t1\t1\t9\t1\t1\tx\t1\t7\t1\t1\t1\tx
-x\t1\t1\tx\t1\tx\t10\tx\t1\t1\t1\t1\tx\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\tx\t1\tx\t1\t1\t1\tx\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t7\t1\t1\t1\tx
-x\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\tx\tx\t1\t1\t1\tx\t5\t5\t5\t5\t5\tx\t5\t5\t5\t5\t5\t5\tx\t4\tx\tx\tx\tx\tx\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t7\t2\t2\t2\tx
-x\t1\t1\t1\tx\tx\tx\t1\t1\t1\tx\t1\tx\t1\tx\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\tx\t1\tx\t1\t10\t.\tx\t1\t1\tx\t1\t2\t1\t2\t1\tx\t1\t7\t1\t1\t1\tx
-x\t1\t1\tx\t9\tx\t1\tx\t1\t1\t1\t1\tx\t1\t1\t1\t1\tx\t1\t5\t5\t5\t5\tx\t1\t5\t5\t5\t5\t5\tx\t1\tx\t1\t1\t1\tx\t1\t1\tx\t1\t1\t2\t1\t1\tx\t1\t7\t2\t2\t2\tx
-x\t1\tx\t1\t1\tx\t1\t1\tx\t1\t1\tx\tx\tx\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\tx\t1\tx\t1\t1\t1\tx\t1\t1\tx\t1\t2\t1\t2\t1\t8\t1\t7\t1\t1\t1\tx
-x\t1\t1\t1\tx\tx\tx\t1\t1\t1\tx\t1\tx\t8\tx\t1\t1\tx\t1\t2\t1\t2\t1\tx\tx\tx\tx\t1\t1\t1\tx\t1\tx\t1\t1\t1\tx\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t7\t2\t2\t2\tx
-x\t1\t1\t1\t1\t6\t1\t1\t1\tx\t1\t1\tx\t1\t1\tx\t1\tx\t1\t2\t1\t2\t1\t1\t8\t1\tx\tx\tx\t5\tx\t1\t1\t1\t1\t7\t7\t7\t1\t1\t1\t1\t1\t1\t1\t1\t1\t7\t1\t1\t1\tx
-x\t1\t1\t1\t1\t6\t1\t1\t1\t1\t1\tx\tx\tx\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\tx
-x\t1\t1\t1\t1\t6\t1\t1\t1\t1\t1\t6\t6\t6\t1\t1\t1\t5\t1\t1\t1\t1\tx\tx\tx\tx\tx\t1\t1\t1\t3\t1\t1\t1\t1\tx\tx\tx\t1\t1\t1\t3\t1\t1\t1\t1\tx\tx\tx\t1\t1\tx
-x\tx\t5\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t5\tx\tx\t7\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\tx\t1\tx\t1\tx\t1\t1\tx\t1\t1\t1\tx\t1\tx\t1\tx\t1\tx
-x\t1\t1\t1\tx\t1\t1\t1\t1\t5\t1\t1\t1\t4\t1\t1\t1\t5\t1\t1\t1\t1\tx\t7\t7\t1\t1\t1\t1\tx\tx\tx\t1\t1\t1\t1\tx\t1\t1\t1\tx\tx\tx\t1\t1\t1\t1\tx\t1\t1\t1\tx
-x\t1\t7\t1\tx\t1\t1\t2\t1\t3\t1\t4\t1\t2\t1\t4\t1\t3\t1\t1\t1\t7\tx\t7\t7\t7\t1\t1\tx\t1\tx\t1\tx\t1\t1\t1\t3\t1\t1\tx\t1\tx\t1\tx\t1\t1\t1\t3\t1\t1\t1\tx
-x\t1\t1\t1\tx\t10\t1\t4\t1\t1\t1\t6\t1\t1\t1\t5\t1\t1\t1\t1\t7\t7\t7\t7\t7\t7\t7\t1\t1\t1\tx\t1\t1\t1\t1\t1\t3\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t3\t1\t1\t1\tx
-x\tx\t5\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t7\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t5\tx\tx
-x\t1\t1\t1\t6\t1\t1\t1\t1\t1\t1\t3\t1\t1\t7\t1\t1\t3\t1\t1\t1\t1\t7\t7\t7\t1\t1\t1\t1\t1\t1\t7\t1\t1\t1\t1\t1\t1\t1\t1\t1\t2\t1\t1\t1\t1\t7\t1\t1\t1\t1\tx
-x\t1\t1\tx\tx\tx\t1\t1\t1\t1\t1\t5\t1\t1\t6\t1\t1\t5\t1\t1\t1\t1\t1\t7\t1\t1\t1\t1\t1\t1\t1\t6\t1\t1\t1\t1\t2\t1\t1\t1\t2\t2\t2\t1\t1\t1\t6\t1\t1\t2\t1\tx
-x\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t7\t1\t1\t5\t1\t1\t7\t1\t1\t2\t1\t2\t1\t1\t1\t1\t1\t1\t1\t1\t5\t1\t1\t1\t2\t2\t2\t1\t1\t1\t2\t1\t1\t1\t1\t5\t1\t2\t2\t2\tx
-x\t2\t2\t2\tx\t1\t2\t2\t2\t1\t1\tx\t1\t1\t4\t1\t1\tx\t1\t1\t1\t2\t1\t1\t1\t1\t1\t1\t1\t1\t1\t4\t1\t1\t1\t1\t2\t1\t1\t1\t1\t1\t1\t1\t1\t1\t4\t1\t1\t2\t1\tx
-x\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\t10\tx\t1\t3\t1\tx\t9\tx\t1\t2\t1\t2\t1\t1\t1\t1\t1\t1\t1\t1\t3\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t3\t1\t1\t1\t1\tx
-x\t2\t2\t2\tx\t1\t1\t1\t1\tx\t1\t1\t1\tx\t1\tx\t1\t1\t1\tx\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t2\t1\t1\tx\t1\t1\t1\tx\tx\tx\tx\tx\t1\tx\t1\t2\t1\tx\t1\t1\tx
-x\t1\t1\t1\tx\t7\t5\t3\t1\tx\t1\t1\t1\t1\tx\t1\t1\t1\t1\tx\t1\t1\t1\tx\tx\t1\t1\t1\tx\tx\t1\t1\t1\tx\t1\tx\t1\t1\t1\t1\tx\t1\t1\t1\tx\t1\t1\t1\tx\t1\t1\tx
-x\t2\t2\t2\tx\t1\t1\t1\t1\tx\t1\t1\t1\t2\t1\t2\t1\t1\t1\tx\t1\t1\t1\tx\t1\tx\t1\tx\t1\tx\t1\t1\tx\t1\t8\t1\tx\t1\t1\t1\tx\t1\t1\t1\tx\t1\t1\t1\tx\t1\t1\tx
-x\t1\t1\t1\tx\t1\t1\t2\t1\tx\t1\t1\t1\t1\t2\t1\t1\t1\t1\tx\t1\t2\t1\tx\t1\t1\tx\t1\t1\tx\t1\t1\tx\t1\t1\t1\tx\t1\t2\t1\tx\t1\t1\t1\tx\tx\tx\tx\tx\t1\t1\tx
-x\t1\t1\t1\tx\t1\t1\t3\t1\t1\tx\t1\t1\t2\t1\t2\t1\t1\tx\t1\t1\t3\t1\tx\t1\t1\t1\t1\t1\tx\t1\t1\tx\tx\t6\tx\tx\t1\t3\t1\tx\t1\t1\t1\tx\t1\t8\t1\tx\t1\t1\tx
-x\t1\t1\tx\tx\tx\t1\t4\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t1\t1\t4\t1\tx\t1\t2\t1\t2\t1\tx\t1\t1\tx\t1\t1\t1\tx\t1\t4\t1\tx\t1\t1\t1\tx\t1\t1\t1\tx\t1\t1\tx
-x\t1\t1\t1\t1\t1\t1\t5\t1\t1\t1\t1\tx\t1\t1\t1\tx\t1\t1\t1\t1\t5\t1\t1\t1\t1\t2\t1\t1\t4\t4\t4\t4\t1\t1\t1\t1\t1\t5\t1\t1\t1\t1\t6\t1\t1\t1\t1\t1\t1\t1\tx
-x\t7\t7\t7\t1\t1\t1\t6\t1\t1\t1\t1\t1\tx\t1\tx\t1\t1\t1\t1\t1\t6\t1\t1\t1\t2\t1\t2\t1\t4\t4\t4\t4\t1\t1\t1\t1\t1\t6\t1\t1\t1\t6\t6\t6\t1\t1\t1\t7\t7\t7\tx
-x\t7\t7\t7\t1\t1\t1\t7\t1\t1\t1\t1\t1\t6\t6\t6\t1\t1\t1\t1\t1\t7\t1\t1\t1\t1\t1\t1\t1\t4\t4\t4\t4\t1\t1\t1\t1\t1\t7\t1\t1\t1\t1\t6\t1\t1\t1\t1\t7\t7\t7\tx
-x\tx\t7\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t5\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t7\tx\tx
-x\t7\t7\t7\t2\t2\t2\t2\t2\t2\t6\t2\t2\t2\t3\t2\t2\t2\t6\t2\t2\t2\t2\t2\t2\t2\t2\t6\t2\t2\t2\t2\t2\t2\t6\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t7\t7\t7\tx
-x\t7\t7\t7\t2\t2\t2\t2\t2\t2\t6\t2\t2\t2\t2\t2\t2\t2\t6\t2\t2\t2\t2\t2\t2\t2\t2\t6\t2\t2\t2\t2\t2\t2\tx\t1\t1\t1\t1\tx\tx\tx\t1\t1\t1\t1\tx\t1\t7\t7\t7\tx
-x\t2\t2\t2\t2\tx\t2\t2\t2\t2\tx\t2\t2\tx\t2\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\t2\tx\t2\t2\t2\t2\t2\tx\tx\tx\t1\t1\tx\t1\tx\t1\tx\t1\t1\tx\tx\tx\t1\t1\t1\tx
-x\t2\t2\t2\tx\t2\tx\t2\t2\tx\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\t2\t2\tx\t2\tx\t1\tx\t1\t1\t1\tx\t1\t1\t1\tx\t1\tx\t10\tx\t1\t1\tx
-x\t2\t2\t2\tx\t2\t2\t2\tx\t2\tx\t2\tx\t2\tx\t2\t2\tx\tx\tx\t2\t2\tx\tx\tx\t2\tx\t2\tx\t2\t2\t2\t2\t2\tx\t1\t1\t1\t1\t5\t5\t5\t1\t1\t1\t1\tx\t1\t1\t1\t1\tx
-x\t2\t2\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\t2\t2\t2\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx
-x\t2\t2\t2\t2\tx\t2\t2\tx\t2\tx\t2\t2\tx\t2\t2\tx\t2\tx\t2\tx\t2\tx\t2\tx\t2\t2\tx\t2\t2\t2\t2\t2\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx
-x\t2\t7\t2\t2\t6\t2\t2\t2\t3\t2\t2\t2\t6\t2\t2\t2\t2\t3\t2\t2\t2\t2\t6\t2\t2\t2\t2\t2\t2\t2\t7\t2\tx\t1\t1\tx\t1\t1\tx\tx\tx\tx\tx\t1\tx\tx\tx\tx\tx\t1\tx
-x\t7\t7\t7\t2\t6\t2\t2\t2\t2\t2\t2\t2\t6\t2\t2\t2\t2\t2\t2\t2\t2\t2\t6\t2\t2\t2\t2\t2\t2\t7\t7\t7\tx\t1\tx\tx\t1\t1\t7\t10\t7\t1\tx\t1\tx\t1\t1\t1\tx\t1\tx
-x\tx\t7\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t5\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t7\tx\tx\t1\t1\tx\t1\t1\t7\t7\t7\tx\tx\t1\tx\t1\t1\t1\tx\t1\tx
-x\t7\t7\t7\t1\t1\t6\t1\t1\t1\t1\t1\t1\t1\t6\t6\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t7\t7\t7\tx\t1\t1\tx\t1\t1\t1\t1\tx\tx\t1\t1\tx\tx\tx\tx\tx\t1\tx
-x\t1\t7\t1\t1\t1\t6\t1\t1\t1\t1\t1\t1\t1\t6\t6\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t7\t1\tx\t1\t1\tx\t1\t1\t1\tx\tx\t1\t1\t7\t8\t7\t1\tx\tx\t1\tx
-x\t1\tx\t1\t1\t1\tx\t1\t1\tx\tx\t1\t1\t1\tx\tx\t1\t1\tx\tx\tx\t1\tx\t1\t1\tx\t1\t1\t2\t2\t2\t2\t2\tx\t1\t1\tx\t1\t1\t1\tx\t1\t1\t1\t1\t7\t1\tx\tx\t1\t1\tx
-x\t1\tx\tx\t1\tx\tx\t1\tx\t1\t1\tx\t1\tx\t6\t8\tx\t1\tx\t1\t1\t1\tx\t1\t1\tx\t1\t1\t2\t3\t3\t3\t3\tx\t1\t1\tx\t9\t1\t1\tx\t1\t1\t1\t1\t1\tx\tx\t1\t1\t1\tx
-x\t1\tx\t1\tx\t1\tx\t1\tx\t1\t1\tx\t1\t1\t1\tx\t1\t1\tx\t1\t1\t1\tx\t1\t1\tx\t1\t1\t2\t3\t4\t4\t4\tx\t1\tx\tx\tx\t1\t1\tx\t1\t1\t1\t1\tx\tx\t1\t1\t1\t1\tx
-x\t1\tx\t1\t8\t1\tx\t1\tx\t1\t1\tx\t1\tx\t1\t1\tx\t1\tx\t1\t1\t1\t1\t1\t1\tx\t1\t1\t2\t3\t4\t5\t5\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx
-x\t1\tx\t1\t1\t1\tx\t1\t1\tx\tx\t1\t1\t1\tx\tx\t1\t1\tx\t1\t1\t1\tx\t1\t1\t5\t1\t1\t2\t3\t4\t5\t6\tx\t7\t7\t7\t7\t7\t7\t7\t7\t7\t7\t7\t7\t7\t7\t7\t7\t1\tx
-x\t1\t3\t3\t3\t3\t3\t1\t1\t6\t6\t1\t1\t1\t1\t1\t1\t1\t6\t1\t1\t1\t6\t1\t1\tx\t1\t1\t2\t3\t4\t5\t6\t7\t6\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx
-x\t7\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t7\tx
-x\t7\t6\t5\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\tx\tx\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\tx\t8\t3\t3\tx\t3\t3\t3\t3\t3\tx\t3\t3\t3\t3\t3\t3\t3\t5\t6\t7\tx
-x\t6\t5\t3\t3\t3\t3\t3\t3\t3\t3\tx\t3\tx\t3\t3\tx\t3\tx\t3\tx\t3\tx\t3\tx\tx\tx\tx\tx\t3\tx\tx\t3\t3\tx\t3\tx\tx\tx\t3\tx\t3\t3\t3\t3\t3\t3\t3\t3\t5\t6\tx
-x\t5\t3\t3\t3\t3\t3\t3\t3\t3\t3\tx\tx\t8\t3\t3\tx\tx\t3\t3\t3\tx\t3\t3\t3\t3\tx\t3\t3\t3\tx\t3\tx\t3\tx\t3\tx\t8\t3\t3\tx\t3\t3\t3\t3\t3\t3\t3\t3\t3\t5\tx
-x\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\tx\t3\tx\t3\t3\tx\t3\t3\t3\tx\t8\t3\t3\t3\t3\tx\t3\t3\t3\tx\tx\t3\t3\tx\t3\tx\tx\tx\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\tx
-x\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\tx\t3\t3\tx\t3\t3\t3\t3\tx\t3\t3\t3\t3\t3\t3\tx\t3\t3\t3\t3\t3\t3\t3\t3\t3\tx\t3\t3\t3\tx\t3\t3\t3\t3\t3\t3\t3\t3\t3\t3\tx
+x\to\to\to\t1\t1\t2\t6\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\tx\t1\t1\t1\t1\tx\t1\t1\t4\t1\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\t5\t3\tx\t3\t5\t10\tx
+x\to\to\to\t1\t1\t2\tx\tx\tx\tx\tx\tx\tx\t4\tx\t4\t4\tx\t1\t3\t3\t1\tx\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t4\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t3\tx\t1\t3\t5\tx
+x\to\to\to\t1\t1\t2\tx\t1\t1\t1\tx\t4\tx\t8\tx\t1\t1\tx\t1\t1\t1\t1\t4\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t4\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t3\tx\t1\t1\t3\tx
+x\t1\t1\t1\t1\t1\t2\t3\t1\t4\t1\t4\t1\tx\tx\tx\t1\t1\tx\tx\tx\tx\tx\tx\t3\t3\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t3\tx\t1\t1\t1\tx
+x\t2\t2\t2\t2\t2\t2\tx\t4\tx\t1\t1\t1\t1\t1\t1\t1\t1\t4\t1\t1\t1\t1\t1\t1\t1\tx\t2\t1\t2\t1\t2\t1\t2\t1\tx\tx\tx\tx\t7\tx\tx\tx\tx\tx\tx\t3\tx\t6\tx\tx\tx
+x\t5\tx\tx\tx\t4\tx\tx\tx\tx\tx\t1\t1\t1\t1\t1\t1\t1\t4\t1\t1\t1\t1\t1\t1\t1\tx\t1\t2\t1\t2\t1\t2\t1\t2\t5\t1\t1\t1\t1\t1\t1\tx\t2\t2\tx\t1\t2\t1\t2\t1\tx
+x\t1\t1\t1\tx\t1\t1\t1\t2\t2\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t2\t1\t2\t1\t2\t1\t2\t1\tx\t1\t1\t1\t1\t1\t1\tx\t2\t2\tx\t2\t1\t2\t1\t2\tx
+x\t1\t3\t1\tx\t1\t1\t1\t2\t2\tx\t8\t6\t3\t1\t1\t1\t3\t1\t1\t1\t3\t1\t1\t1\t3\tx\t1\t2\t1\t2\t1\t2\t1\t2\tx\t1\t1\t1\t1\t1\t1\tx\t2\t2\tx\t1\t2\t1\t2\t1\tx
+x\t1\t3\t1\tx\t1\t1\t1\t2\t2\tx\t6\t3\t1\t3\t1\t3\t1\t3\t1\t3\t1\t3\t1\t3\t1\t4\t2\t1\t2\t1\t2\t1\t2\t1\tx\t1\t1\t1\t1\t1\t1\tx\t2\t2\tx\t2\t1\t2\t1\t2\tx
+x\t1\t1\t1\tx\t1\t1\t1\t2\t2\tx\t3\t1\t1\t1\t3\t1\t1\t1\t3\t1\t1\t1\t3\t1\t1\t4\t1\t2\t1\t2\t1\t2\t1\t2\tx\t1\t1\t1\t1\t1\t1\tx\t2\t2\tx\tx\tx\tx\tx\tx\tx
+x\tx\tx\tx\tx\t5\tx\tx\tx\tx\tx\tx\t6\t6\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\t1\t1\t1\t1\t1\tx\tx\t6\tx\t4\t4\t4\tx\t9\tx
+x\t1\t1\t1\tx\t1\tx\t2\t2\t2\t2\t2\t2\t2\tx\t3\t2\t3\tx\t1\t1\t1\t1\t5\t2\t5\t1\t1\t1\t1\tx\t3\t3\t3\t9\tx\t1\t1\t1\t1\t1\t1\t3\t3\t3\t3\t3\tx\t5\t5\t5\tx
+x\t1\t3\t1\tx\t1\tx\t2\t2\t2\t2\t2\t2\t2\tx\t2\t3\t2\tx\t1\t3\t3\t1\tx\t2\tx\t1\t3\t3\t1\tx\t5\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx
+x\t1\t3\t1\tx\t1\tx\t6\t6\tx\tx\tx\tx\tx\tx\t3\t2\t3\tx\t1\t1\t1\t1\tx\t2\tx\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t6\t1\t1\tx\t1\t2\t1\t2\t1\t2\t1\t2\t1\tx
+x\t1\t1\t1\tx\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\tx\tx\tx\tx\tx\t6\tx\tx\tx\tx\tx\tx\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\tx\t2\t4\t5\t1\t2\t4\t5\t1\t2\tx
+x\t1\t3\t1\tx\t1\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t6\tx\t1\t1\t1\t1\t1\t1\t4\t2\t2\t4\t4\tx\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\tx\t1\t5\t4\t2\t1\t5\t4\t2\t1\tx
+x\t1\t3\t1\tx\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t2\t6\t1\t1\t1\t1\t1\t1\t4\t2\t2\t4\t8\tx\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\tx\t2\t4\t5\t1\t2\t4\t5\t1\t2\tx
+x\t1\t1\t1\t5\t1\t5\t1\t3\t1\t3\t1\t3\t1\t3\t1\tx\t6\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\t1\tx\t1\t5\t4\t2\t1\t5\t4\t2\t1\tx
+x\tx\tx\tx\tx\t6\tx\t1\t3\t1\t3\t1\t3\t1\t3\t1\tx\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t4\t1\t1\t1\t1\t1\t1\t1\tx\t2\t1\t2\t1\t2\t1\t2\t1\t2\tx
+x\t1\t1\t1\tx\t2\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t2\tx\t1\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\tx\tx\tx\tx\t7\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t4\t4\tx
+x\t1\t3\t1\tx\t2\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\tx\t1\tx\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\tx\t1\tx\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\tx
+x\t1\t3\t1\t6\t2\t6\t2\t1\t2\t1\t2\t1\t2\t1\t2\t1\t2\tx\t1\tx\t2\tx\tx\tx\tx\tx\tx\tx\tx\t2\tx\t1\tx\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\tx
+x\t1\t1\t1\t6\t2\t6\t1\t2\t1\t2\t1\t2\t1\t2\t1\t2\t1\tx\t1\tx\t2\tx\t3\t3\t3\t3\t3\t3\t6\t2\tx\t1\tx\t2\t2\tx\t2\t2\tx\tx\tx\tx\tx\t2\tx\tx\tx\tx\tx\t2\tx
+x\tx\tx\tx\tx\t7\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\tx\t2\tx\t3\tx\tx\tx\tx\t3\tx\t2\tx\t1\tx\t2\tx\tx\t2\t2\t2\t2\t2\t2\tx\t2\tx\t2\t2\t2\tx\t2\tx
+x\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t1\tx\t2\tx\t3\tx\t9\t10\tx\t3\tx\t2\tx\t1\tx\t2\t2\tx\t2\t2\t2\t2\t2\tx\tx\t2\tx\t2\t2\t2\tx\t2\tx
+x\t1\t3\t1\tx\tx\tx\t4\tx\tx\tx\tx\tx\t1\t3\t1\t3\t1\tx\t1\tx\t2\tx\t3\t7\t8\t9\tx\t3\tx\t2\tx\t1\tx\t2\t2\tx\t2\t2\t2\t2\tx\tx\t2\t2\tx\tx\tx\tx\tx\t2\tx
+x\t1\t3\t1\t5\t1\t1\t1\t1\t1\t1\t1\tx\t1\t3\t1\t3\t1\tx\t1\tx\t2\tx\t3\tx\tx\tx\tx\t3\tx\t2\tx\t1\tx\t2\t2\tx\t2\t2\t2\tx\tx\t2\t2\t2\t2\t2\t2\tx\tx\t2\tx
+x\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\tx\t2\tx\t3\t3\t3\t3\t3\t3\tx\t2\tx\t1\tx\t2\t2\tx\t2\t2\t2\tx\t2\t2\t2\t2\t2\t2\tx\tx\t2\t2\tx
+x\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t5\tx\tx\tx\t1\tx\t2\tx\tx\tx\tx\tx\tx\tx\tx\t2\tx\t1\tx\t2\t2\tx\t2\t2\t2\tx\t2\t2\t2\t2\t2\tx\tx\t2\t2\t2\tx
+x\t1\t1\tx\t1\t1\t1\t4\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\tx\t1\t5\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\tx\t1\tx\t2\tx\tx\tx\t2\t2\tx\t2\t2\t2\t2\tx\tx\t2\t2\t2\t2\tx
+x\t1\t1\tx\t1\t3\t1\tx\t1\t3\t1\tx\t1\t1\t1\t1\t1\t1\tx\t1\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\tx\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\tx
+x\t1\t1\tx\t1\t3\t1\tx\t1\t3\t1\tx\t3\t3\t3\t3\t3\t3\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\tx
+x\t1\t1\t3\t1\t1\t1\tx\t1\t1\t1\t5\t1\t1\t1\t1\t1\t1\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t7\tx\tx\tx\tx\tx\tx
+x\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\t1\t1\t1\t1\t1\tx\t8\tx\t1\t1\tx\t1\t1\tx\t1\t1\tx\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t2\t3\t4\t5\t5\t5\t4\t3\t2\t1\tx
+x\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t3\t3\t3\t3\t3\t3\tx\t4\tx\t1\t1\tx\t1\t1\tx\t1\t1\tx\t1\t3\t1\tx\t1\t3\t3\t3\t1\tx\t1\t2\t3\t4\t4\t4\t4\t4\t3\t2\t1\tx
+x\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t2\tx\t1\t1\tx\t1\t1\tx\t1\t1\tx\t1\t3\t1\tx\t1\t3\t9\t3\t1\tx\t1\t2\t3\t3\t3\t3\t3\t3\t3\t2\t1\tx
+x\t5\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t4\tx\tx\tx\tx\t1\t1\tx\t1\t1\tx\t1\t1\tx\t1\t1\t1\tx\t1\t3\t3\t3\t1\tx\t1\t2\t2\t2\t2\t2\t2\t2\t2\t2\t1\tx
+x\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\tx\t1\t1\t1\t1\t1\t1\t1\t1\tx\tx\t4\tx\tx\t4\tx\tx\t4\tx\t1\t3\t1\tx\t1\t1\t1\t1\t1\t6\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\tx
+x\t2\t2\t2\t2\t2\t2\t2\t2\t2\t2\tx\t1\t1\t1\t1\t1\t1\t1\t1\t5\t1\t1\t5\t2\t2\t2\t2\t2\tx\t1\t3\t1\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t7\tx
+x\tx\tx\tx\tx\tx\tx\tx\tx\tx\t6\tx\tx\tx\tx\tx\tx\tx\tx\t5\tx\tx\t5\tx\tx\tx\tx\tx\tx\tx\t1\t1\t1\t5\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t2\tx
+x\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t6\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\tx\tx\tx\tx\tx\tx\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t1\t2\tx\tx
+x\t1\t3\t1\t3\t1\t3\t1\t3\t1\t3\t1\tx\tx\tx\tx\tx\tx\t1\t1\tx\t1\t3\t1\t3\t1\t3\t1\tx\t9\t3\t3\t3\tx\t1\t1\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t2\tx\tx\tx
+x\t1\t3\t1\t3\t1\t3\t1\t3\t1\t3\t1\t1\t1\t1\t3\t3\tx\t1\t1\tx\t1\t3\t1\t3\t1\t3\t1\tx\tx\tx\tx\t6\tx\t4\tx\tx\tx\tx\tx\t1\t1\t1\t1\t1\t1\t1\t2\tx\tx\t8\tx
+x\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t1\t3\t3\tx\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t1\t5\t1\t1\t1\tx\t2\t2\t2\t2\t2\tx\t1\t1\t1\t1\t1\t1\t2\tx\tx\t1\t1\tx
+x\tx\tx\tx\tx\t6\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t6\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\t1\t3\t1\tx\t2\t2\t2\t2\t2\tx\t1\t1\t1\t1\t1\t2\t7\tx\t1\t1\t1\tx
+x\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\t5\t1\t1\t1\tx\t1\tx\t1\t1\t1\tx\t1\t1\t1\t1\t1\t1\t1\t5\t1\t3\t1\tx\tx\tx\tx\tx\t4\tx\t1\t1\t1\t1\t2\t7\t7\to\t1\t1\t3\tx
+x\t1\t1\t1\t1\t1\t1\tx\t1\t3\t1\tx\t1\t1\t1\tx\t1\tx\t1\tx\t1\tx\t1\t3\t3\t1\t3\t3\t1\tx\t1\t1\t1\tx\t1\t1\t1\t1\t1\tx\t1\t1\t1\t2\tx\tx\to\to\t1\t3\t5\tx
+x\t3\t1\t1\t1\t1\t1\tx\t3\t5\t3\tx\t1\t1\t2\tx\t1\tx\t1\tx\t1\tx\t1\t1\t1\t1\t1\t1\t1\tx\t1\t3\t1\tx\t1\t1\t1\t1\t1\tx\t1\t1\t2\tx\tx\t1\t1\t1\t3\t5\t6\tx
+x\t5\t3\t1\t1\t1\t1\tx\t1\t3\t1\tx\t1\t2\t4\tx\t1\tx\t1\tx\t1\tx\t1\t3\t3\t1\t3\t3\t1\tx\t1\t3\t1\tx\t1\t1\t1\t1\t1\tx\t1\t2\tx\tx\t1\t1\t1\t3\t5\t6\t7\tx
+x\t10\t5\t3\t1\t1\t1\t5\t1\t1\t1\tx\t2\t4\t8\tx\t1\t1\t1\tx\t1\t4\t1\t1\t1\t1\t1\t1\t1\tx\t1\t1\t1\t5\t1\t1\t1\t1\t1\t5\t2\tx\tx\t8\t1\t1\t3\t5\t6\t7\t10\tx
 x\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx
 `;
 
 const chestsAsObj = [
-  {x: 46, y: 27, amount: 8,  bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=10116" target="_blank" rel="noopener noreferrer">Финиш</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=10116" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/10116.png" alt="10116"> <div class="play-button"></div></a> <br>Добраться до финиша без левых поворотов не так-то просто!<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 45, y: 44, amount: 8,  bonus: 2, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=11939" target="_blank" rel="noopener noreferrer">Рыцари</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=11939" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/11939.png" alt="11939"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :) <br>Это — люто сложная задача. Я сам решал её больше часа. Интересно, хоть кто-нибудь справится?'},
-  {x: 45, y: 8,  amount: 8,  bonus: 2, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=11996" target="_blank" rel="noopener noreferrer">Мешок кофе</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=11996" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/11996.png" alt="11996"> <div class="play-button"></div></a><br> Когда решите за 3 взвешивания, сделайте скриншот и сдайте в бот, это добавит вам баллов :) <br>У нас была немного похожая задача, но она была менее амбициозной :)'},
-  {x: 40, y: 41, amount: 10, bonus: 2, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=12215" target="_blank" rel="noopener noreferrer">Нить Ариадны</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=12215" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/12215.png" alt="12215"> <div class="play-button"></div></a><br> Когда найдёте решение из 10 батарей, сделайте скриншот и сдайте в бот, это добавит вам баллов :) <br>Найти решение из 10 батарей оооочень непросто :)'},
-  {x: 13, y: 9,  amount: 8,  bonus: 2, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=14149" target="_blank" rel="noopener noreferrer">Космический лабиринт</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=14149" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/14149.png" alt="14149"> <div class="play-button"></div></a> <br> Найти решение за 4 хода почти невозможно :)<br> Когда найдёте такое решение, сделайте скриншот и сдайте в бот, это добавит вам баллов :) '},
-  {x: 17, y: 22, amount: 9,  bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=14240" target="_blank" rel="noopener noreferrer">Огоньки</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=14240" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/14240.png" alt="14240"> <div class="play-button"></div></a> <br>Это — очень красивая головоломка :)<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 37, y: 46, amount: 9,  bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=16045" target="_blank" rel="noopener noreferrer">Корабль в тумане</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=16045" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/16045.png" alt="16045"> <div class="play-button"></div></a> <br> По мотивам одной очень известной игры :)<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 42, y: 3,  amount: 9,  bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=19585" target="_blank" rel="noopener noreferrer">Найди спрятанное</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=19585" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/19585.png" alt="19585"> <div class="play-button"></div></a> <br> Оказывается, всегда достаточно 3 батискафов :)<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 11, y: 22, amount: 10, bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=19664" target="_blank" rel="noopener noreferrer">Узор</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=19664" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/19664.png" alt="19664"> <div class="play-button"></div></a> <br> Игра, кстати, называется «Тантрикс», она родом из Новой Зеландии.<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 15, y: 46, amount: 8,  bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=19696" target="_blank" rel="noopener noreferrer">Набери пятнадцать</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=19696" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/19696.png" alt="19696"> <div class="play-button"></div></a> <br>Эта игра изоморфна... Ой, о чём это я<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 24, y: 10, amount: 8,  bonus: 2, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=19712" target="_blank" rel="noopener noreferrer">Корабль с драконом</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=19712" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/19712.png" alt="19712"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот и сдайте в бот, это добавит вам баллов :) <br> Английское название головоломки — «rush hour»'},
-  {x: 34, y: 6,  amount: 10, bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=21271" target="_blank" rel="noopener noreferrer">Олаф строитель</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=21271" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/21271.png" alt="21271"> <div class="play-button"></div></a> <br> Тетрис с приключениями :)<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 4, y: 7,   amount: 9,  bonus: 2, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=22432" target="_blank" rel="noopener noreferrer">Равновесие</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=22432" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/22432.png" alt="22432"> <div class="play-button"></div></a><br> Когда решите, сделайте скриншот б сдайте в бот, это добавит вам баллов :) <br> Задание немного на физику. Правильные слова — «момент силы» :)'},
-  {x: 47, y: 36, amount: 10, bonus: 2, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=22494" target="_blank" rel="noopener noreferrer">Закрась одним цветом</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=22494" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/22494.png" alt="22494"> <div class="play-button"></div></a><br> Когда решите вторую картинку за 5 ходов, сделайте скриншот и сдайте в бот, это добавит вам баллов :) <br> Подготовка этой задачи с иллюстратором была очень увлекательна :)'},
-  {x: 34, y: 25, amount: 8,  bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=23675" target="_blank" rel="noopener noreferrer">Голубь</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=23675" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/23675.png" alt="23675"> <div class="play-button"></div></a> <br> Есть известная задача по математике: при каком максимальном соотношении скорости дворника и голубя у последнего есть шанс спастись? Сложная задача.<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 6, y: 4,   amount: 10, bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=23995" target="_blank" rel="noopener noreferrer">Доставка пиццы</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=23995" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/23995.png" alt="23995"> <div class="play-button"></div></a> <br>Это вообще про программирование. Но во многом благодаря этой идее у нас вообще есть Интернет.<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 4, y: 48,  amount: 8,  bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=24132" target="_blank" rel="noopener noreferrer">Багаж в аэропорту</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=24132" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/24132.png" alt="24132"> <div class="play-button"></div></a>Это немного про программирование. Называние «задача о максимальном потоке» <br><br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 5, y: 16,  amount: 10, bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=24670" target="_blank" rel="noopener noreferrer">Квадраты и пути</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=24670" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/24670.png" alt="24670"> <div class="play-button"></div></a> <br>Вряд ли вы заметите, но эта задача про бублик :)<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 31, y: 52, amount: 8, bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=12086" target="_blank" rel="noopener noreferrer">Границы крепости</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=12086" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/12086.png" alt="12086"> <div class="play-button"></div></a> <br>Проверить правильность решения придётся самостоятельно :)<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 13, y: 54, amount: 8, bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=12239" target="_blank" rel="noopener noreferrer">Кладоискатель</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=12239" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/12239.png" alt="12239"> <div class="play-button"></div></a> <br>Проверить правильность решения придётся самостоятельно :)<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 37, y: 54, amount: 8, bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=21107" target="_blank" rel="noopener noreferrer">Библиотека</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=21107" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/21107.png" alt="21107"> <div class="play-button"></div></a> <br>Не думаю, что вы придумаете минимальное решение :)<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
-  {x: 21, y: 55, amount: 8, bonus: 3, html: 'В качестве бонуса вам игра-задачка «<a href="https://olympiads.uchi.ru/preview_card?id=22335" target="_blank" rel="noopener noreferrer">Пути на кубе</a>» с одной из олимпиад на Учи.ру. Кликайте на картинку, что открыть: <br> <a href="https://olympiads.uchi.ru/preview_card?id=22335" target="_blank" rel="noopener noreferrer"><img style="width: 80%; max-width: 80vw;" src="https://shashkovs.ru/ex/22335.png" alt="22335"> <div class="play-button"></div></a> <br>Обожаю эту задачу :) Мне пришлось написать хитрую программу, чтобы эффективно придумывать условия для этой задачи.<br>Сдавать задачу в бот не нужно, баллы вы получите авансом :)'},
+  {
+    x: 50, y: 1, amount: 10, bonus: 3,
+    html: `Известный американский физик и математик, один из создателей векторного анализа Джозайя Гиббс (1839–1903), был очень неразговорчивым человеком и обычно молчал на заседаниях Ученого Совета Йельского университета, в котором преподавал. Но однажды он не сдержался. На одном из заседаний зашел спор о том, чему больше уделять внимания в новых программах — иностранным языкам или математике. Не выдержав, Гиббс поднялся с места и произнес целую речь: «Математика — это язык!»`,
+  },
+  {
+    x: 14, y: 3, amount: 8, bonus: 2,
+    html: `Когда Харди навещал в больнице Рамануджана, он, по его словам, начал разговор с того, что «пожаловался» на то, что приехал на такси со скучным, непримечательным номером «1729». Рамануджан разволновался и воскликнул: «Харди, ну как же, Харди, это же число — наименьшее натуральное число, представимое в виде суммы кубов двумя различными способами!». Вот эти способы: 1729 = 1³ + 12³ = 9³ + 10³`,
+  },
+  {
+    x: 11, y: 8, amount: 8, bonus: 2,
+    html: `С именем знаменитого Пьера Ферма связано много тайн. Однажды он получил письмо с вопросом: «Является ли простым число 100895598169?» Ферма незамедлительно ответил, что это двенадцатизначное число является произведением двух простых чисел: 898423 и 112303. Способ исследования числа он не раскрыл.<br><a href="http://kvant.mccme.ru/1972/07/tak_ili_ne_tak_dejstvoval_ferm.htm" target="_blank">Продолжение истории</a>.`,
+  },
+  {
+    x: 50, y: 11, amount: 9, bonus: 2,
+    html: `Что лучше: вечное блаженство или бутерброд с ветчиной? На первый взгляд кажется, что вечное блаженство лучше, но в действительности можно доказать, что это не так! Судите сами. Что лучше вечного блаженства? <i>Ничего</i>. А бутербод с ветчиной лучше, чем <i>ничего</i>. Следовательно, бутерброд с ветчиной лучше, чем вечное блаженство.`,
+  },
+  {
+    x: 34, y: 12, amount: 9, bonus: 2,
+    html: `Когда математик Джордж Данциг был еще студентом, он часто засиживался за занятиями до поздней ночи. Однажды он из-за этого проспал и опоздал на полчаса на лекцию профессора Неймана. Усевшись за парту Джордж быстро переписал две задачи с доски, решив, что это домашнее задание. Задачи были очень сложны, но к следующему занятию он всё-таки их сделал. Когда он принёс решения профессору, Нейман молча взял листки с решениями и убрал в портфель, так что Джордж решил, что профессор всё ещё сердится на него за то опоздание. А через несколько недель профессор Нейман с криком ворвался в дом Джорджа в шесть утра! Оказалось, что студент Джордж Данциг нашёл правильное решение двух задач из области математический статистики, которые до тех пор считались неразрешимыми. Сам Джордж об этом и не подозревал, так как на занятие опоздал и не слышал, что говорил профессор Нейман о задачах на доске. Он попросту не знал о репутации этих двух задач!`,
+  },
+  {
+    x: 29, y: 17, amount: 8, bonus: 2,
+    html: `Любые две грани тетраэдра имеют общее ребро, а любые две вершины соединены общим ребром.
+А может ли быть какой-то другой многогранник у которого любые две грани имеют общее ребро?
+Пока удалось построить только один такой многогранник: в 1977 году Лайош Силлаши построил полиэдральный тор (многогранник Силлаши).
+<br>
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Szilassi_polyhedron.gif/220px-Szilassi_polyhedron.gif">
+<br>
+У нас в 179-й школе есть крупная модель этого многогранника. Может быть, вам удастся уговорить кого-нибудь из старших преподавателей вам её показать?`,
+  },
+  {
+    x: 25, y: 25, amount: 9, bonus: 2,
+    html: `В 1852 году английский ботаник и логик Фрэнсис Гутри работал в типографии. При составлении карты графств Англии, он обратил внимание, что для такой цели хватает четырёх красок.
+Гутри рассказал об этом своему брату, а тот — известному математику Августу де Моргану.
+Де Морган заинтересовался вопросом: можно ли любую карту покрасить в 4 цвета?
+От него этот забавный вопрос стал известен математикам Англии, и довольно неожиданно оказалось, что, несмотря на внешнюю простоту, доказать утверждение никак не получается.
+В 1878 году Артур Кэли официально сформулировал «Проблему четырёх красок».
+За решение проблемы брались самые авторитетные математики не только Англии, но и мира.
+Несколько раз задача объявлялась решённой, но затем в решений находили ошибку. Ошибки исправлялись, но годы спустя обнаруживались новые — в исправленных решениях.
+Теорема о четырёх красках была доказана только через 100 лет, в 1976 году — и стала первой математической теоремой, доказанной с помощью компьютерных вычислений.`,
+  },
+  {
+    x: 26, y: 25, amount: 10, bonus: 9,
+    html: `Гугол — это число вида 100...00 со 100 нулями.
+В 1938 году известный американский математик Эдвард Казнер гулял по парку с двумя своими племянниками и обсуждал с ними большие числа. В ходе разговора зашла речь о числе со ста нулями, у которого не было собственного названия. Один из племянников, девятилетний Милтон Сиротта, предложил назвать это число «гугол» (англ. googol). 
+Термин «гугол» не имеет серьёзного теоретического и практического значения. Казнер предложил его для того, чтобы проиллюстрировать разницу между невообразимо большим числом и бесконечностью: гугол больше, чем количество атомов в известной нам части Вселенной, которых, по разным оценкам, насчитывается от 10⁷⁹ до 10⁸¹.
+Название компании Google является искажённым написанием слова «googol». Создатели известной поисковой машины хотели использовать термин «googol» в качестве названия, но при регистрации выяснилось, что такой домен уже занят.`,
+  },
+  {
+    x: 25, y: 26, amount: 8, bonus: 2,
+    html: `Пожалуй, один из лучших ответов на вопрос «Кому нужна математика?» дал математик по имени Мартин Гротшел.
+Как-то раз немецкое правительство решило выделить целевым образом значительные суммы на развитие самых
+передовых и необходимых областей науки. На заседание государственной комиссии были приглашены представители всех наук. Гротшел представлял математику и выступал последним. Заседание уже подходило к концу, чиновники сидели осоловевшие от обрушенного на них потока информации и энтузиазма ораторов. Гротшел вышел на трибуну и сказал примерно следующее:
+<br>
+— Уважаемые господа! Я не буду утомлять вас длинной речью, а просто приведу пример. Недавно мы получили заказ от большой страховой компании, планирующей создать автосервис для своих клиентов. Идея очень проста: если у клиента в дороге сломалась машина, он может позвонить по телефону и к нему тут же приедет аварийная служба. Вопрос в том, как правильно организовать такой сервис. В принципе, задачу можно решить довольно просто — например, приставить к каждому клиенту личную аварийную машину с механиком. Тогда клиент в любой момент немедленно получит помощь. Но это очень дорого! Другой вариант — вообще не связываться с аварийным сервисом. Клиенты могут ждать до бесконечности, зато это не будет стоить им ни цента. Так вот. Если вас эти решения не устраивают, то я должен вам сообщить, что для любых других вариантов понадобится математика! Спасибо за внимание.`,
+  },
+  {
+    x: 26, y: 26, amount: 9, bonus: 2,
+    html: `Легковой автомобиль — довольно сложная штука. И вот оказывается, сделать так, чтобы он мог поворачивать без проскальзывания колёс, не получится без геометрии! При повороте передние колёса не параллельны друг другу и поворачиваются каждое на свой угол. Механическую конструкцию, которая обеспечивает поворот колёс на нужный угол, придумал француз, каретных дел мастер Шарль Жанто (Charles Jeantand). Однако для карет, передвигавшихся с малыми скоростями, это было не так существенно, как для машин, и изобретение Жанто было забыто. Лишь почти через три четверти века два отца автомобилестроения, два немца, два инженера — Готтлиб Даймлер (Gottlieb Wilhelm Daimler) и Карл Бенц (Karl Friedrich Michael Benz) — изобретая свои автомобили, возвращаются к трапеции Жанто. В 1889 году Даймлер получает патент на «способ независимого управления передними колёсами с разновеликими радиусами поворота».
+<br>
+На сайте <a href="https://etudes.ru/etudes/steering-geometry/" target="_blank">математических этюдов</a> есть подробности про эту конструкцию.`,
+  },
+  {
+    x: 19, y: 34, amount: 8, bonus: 2,
+    html: `Имя Николая Ивановича Лобачевского не гремело в мировом научном сообществе, пока он был жив. Современник Пушкина и Пирогова, он не получал премий, о нем не писали на первых полосах газет, хотя как ректор одного из ведущих российских университетов он был известен — как в Казани, так и за ее пределами. Первые публикации Лобачевского по неевклидовой геометрии вышли в 1829–1830 гг. в журнале «Казанский вестник»
+Что же такое неевклидова геометрия? Это — геометрическая теория, основанная на тех же основных аксиомах, что и обычная евклидова геометрия, за исключением аксиомы о параллельных прямых.
+В аксиоме «На плоскости через точку, не лежащую на данной прямой, можно провести ровно одну прямую, параллельную данной» концовка заменена на «можно провести по крайней мере две прямые, не пересекающие данную».
+Оказывается, геометрия Лобачевского связана со специальной теорией относительности, без хорошего понимания которой невозможно сделать GPS.`,
+  },
+  {
+    x: 36, y: 36, amount: 9, bonus: 2,
+    html: `Неваляшка возвращается в своё исходное положение благодаря грузу внизу игрушки. А в 2006-м году венгерские математики Домокош и Варконьи придумали пример выпуклого тела (без полостей и «грузов»), обладающее этим свойством. Они назвали его гё́мбёц. На это у них ушло 10 лет.<br><a href="https://www.youtube.com/watch?v=J-5TIS49Kt8&t=1s" target="_blank">О гёмбёце рассказывает математик Николай Андреев</a>`,
+  },
+  {
+    x: 29, y: 42, amount: 9, bonus: 2,
+    html: `Паркетом называют разбиение плоскости на многоугольники так, что любые две фигуры пересекаются либо по целой стороне, либо по вершине, либо не пересекаются вообще. Разумеется, придумать таких разбиений можно очень много, но математиков интересуют только достаточно симметричные паркеты. Легко придумать паркет из треугольников (любых) или прямоугольников. Однако наиболее сложный случай паркета на плоскости — это пятиугольный паркет. В 1918 году Карл Райнхардт описал пять классов таких паркетов. Долгое время этот список считался полным, пока в 1968 году Роберт Кершнер вдруг не обнаружил еще три таких класса. В 1975 году математик Ричард Джеймс увеличил это число до девяти. Тут в истории начинается самое интересное — об открытии Джеймса написал журнал Scientific American.
+Статью увидела Мардж Райс, американская домохозяйка и по совместительству математик-любитель. Разработав собственную систему записи пятиугольных замощений она за 10 лет довела их количество до 14. И вот, наконец, спустя 30 лет ученые из Вашингтонского университета в Ботелле открыли 15-е замощение. Сделали они это с помощью компьютера. И вот наконец в июле 2017 года стало известно, что француз Михаэль Рао доказал, что ничего, кроме этих семейств, нет.
+<br>
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/PentagonTilings15.svg/1920px-PentagonTilings15.svg.png" style="width:100%">
+`,
+  },
+  {
+    x: 50, y: 43, amount: 8, bonus: 2,
+    html: `Формулу для площади круга можно запомнить при помощи пиццы. Пицца радиусом <i>ц</i> и толщиной <i>а</i> имеет объём <i>пи</i>∙<i>ц</i>∙<i>ц</i>∙<i>а</i> = 𝜋 ц²∙a`,
+  },
+  {
+    x: 1, y: 50, amount: 10, bonus: 3,
+    html: `Известный немецкий алгебраист Эрнст Эдуард Куммер (1810–1893) очень плохо умел считать в уме. Если при чтении лекции ему надо было выполнить простенький расчет, он обычно прибегал к помощи студентов.
+Однажды ему надо было умножить 7 на 9. Он начал вслух рассуждать:
+<br>
+— Гм... это не может быть 61, потому что 61 — простое число. Это не может быть и 65, потому что 65 делится на 5. 67 — тоже простое число, а 69 — явно слишком много. Остается только 63...`,
+  },
+  {
+    x: 14, y: 50, amount: 8, bonus: 2,
+    html: `Рассказывают, что знаменитый французский математик и просветитель Жан Даламбер (1717–1783) каждый раз, когда излагал студентам собственную теорему, неизменно говорил: «А сейчас, господа, мы переходим к теореме, имя которой я имею честь носить!»`,
+  },
+  {
+    x: 43, y: 50, amount: 8, bonus: 2,
+    html: `Многие известные физики-теоретики отличались незаурядными математическими способностями. Одним из них был нобелевский лауреат Поль Дирак.
+Дирак, будучи еще студентом, участвовал в математическом конкурсе, где в числе других была и такая задача.
+<br>
+Три рыбака наловили рыбы и легли спать. Первый из них проснулся утром и решил уехать домой. Своих товарищей он не стал будить, а разделил всю рыбу на три части. Но при этом одна рыба оказалась лишней. Недолго думая, он швырнул ее в воду, забрал свою часть и уехал домой. Потом проснулся второй рыбак. Он не знал, что первый рыбак уже уехал, и тоже поделил всю рыбу на три равные части, и, конечно, одна рыба оказалась лишней. Он тоже закинул он ее подальше от берега и со своей долей удалился. Последний рыбак тоже не заметил, что его товарищей уже нет. Разделил ее на три равные части, выбросил одну лишнюю рыбу в воду, забрал свою долю и был таков.
+В задаче спрашивалось, какое наименьшее количество рыб могло быть у рыбаков.
+<br>
+Дирак предложил такое решение: рыб было (–2). После того как первый рыбак совершил поступок, швырнув одну рыбу в воду, их стало (–2) – 1 = –3. Потом он ушел, унося под мышкой (–1) рыбу. Рыб стало (–3) – (–1) = –2. Второй и третий рыбаки просто повторили поступок их товарища.`,
+  },
+  {
+    x: 50, y: 50, amount: 10, bonus: 5,
+    html: `Однажды к Эрнесту Резерфорду за помощью обратился его коллега из Копенгагена, который принимал экзамен по физике и собирался поставить студенту неуд, но студент был категорически не согласен и говорил, что заслуживает высший балл.
+В билете просили объяснить, как с помощью барометра определить высоту здания. 
+Ответ студента был таким: "Нужно подняться с барометром на крышу здания, привязать его к длинной веревке, спустить его по веревке вниз, потом втянуть его обратно и измерить длину веревки, которая покажет точную высоту здания".
+Резерфорд отметил, что экзамен был по физике и следовало бы при ответе продемонстрировать знания по предмету.
+В ответ студент предложил Резерфорду в общей сложности больше тридцати вариантов.
+<br>
+— Ладно, оценка "отлично". Но скажите, неужели вы в самом деле не знали традиционного ответа, которого от вас ждал преподаватель с разницой давлений?
+<br>
+— Знал, конечно. Но я за время обучения в школе и колледже по горло насытился тем, что учителя навязывают ученикам свой способ мышления и решения.
+<br>
+Студента этого звали Нильс Бор.`,
+  },
 ];
 
 
@@ -281,7 +373,7 @@ async function sleep(ms) {
 
 const colors = ['#ff0044', '#68386c', '#b55088', '#f6757a', '#c0cbdc', '#8b9bb4', '#5a6988', '#3a4466', '#262b44', '#193c3e', '#124e89', '#0099db', '#2ce8f5', '#feae34', '#fee761', '#63c74d', '#3e8948', '#265c42', '#ead4aa', '#e4a672', '#b86f50', '#f77622', '#733e39', '#be4a2f', '#d77643', '#a22633', '#e43b44'];
 // const commands = [10004, 114, 10014, 106, 111, 10012, 108, 10002, 107, 110, 10003, 115, 10018, 10009, 103, 10000, 113, 10010, 10017, 109, 10013, 105, 102, 10008, 10016, 112, 10006, 101, 10007, 10011, 116, 104, 10005, 10001, 10015, 118];
-const commands = [200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 1200, 1201, 1202, 1203, 1204, 1205, 1206, 1207, 1208, 1209, 1210, 1211, 1212, 1213, 1214, 1215, 1216, 1217]
+const commands = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 118, 10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018]
 async function runAll() {
   let tlCommandId = commands.shift();
     console.log('команда')
@@ -543,8 +635,7 @@ function updateMap() {
       if (dist < FOG_OF_WAR || isBorder) {
         $cell.textContent = cellValue;
         if (cellValue !== 'o') {
-          // $cell.className = `s${cellValue}`;
-          $cell.className = cellValue === 'x' ? `sx` : `s1`;
+          $cell.className = `s${cellValue}`;
         }
         if (+cellValue) {
           $cell.onclick = $cell.ondblclick = onCellClick;

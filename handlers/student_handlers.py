@@ -757,3 +757,15 @@ async def students_my_results(message: types.Message):
                     pass
     else:
         await bot.send_message(chat_id=message.chat.id, text='Нет ни одной посылки (или что-то пошло не так)')
+
+
+@dispatcher.message_handler(commands=['password'])
+async def get_my_password(message: types.Message):
+    logger.debug('password')
+    user = User.get_by_chat_id(message.chat.id)
+    if not user:
+        return
+    await bot.send_message(
+        chat_id=message.chat.id, parse_mode = "HTML",
+        text=f"🤖 Ваш пароль:\n<pre>{user.token}</pre>",
+    )

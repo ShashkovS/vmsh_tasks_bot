@@ -7,18 +7,36 @@ from helpers.config import logger, config
 from models import User, State
 import db_methods as db
 from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
-
+from handlers.student_handlers import post_problem_keyboard
 
 @dispatcher.message_handler(commands=['start'])
 async def start(message: types.Message):
     logger.debug('start')
     user = User.get_by_chat_id(message.chat.id)
-    if user:
-        State.set_by_user_id(user.id, STATE.GET_USER_INFO)
+    if not user:
+        user = User(message.chat.id, USER_TYPE.STUDENT, LEVEL.NOVICE, message.chat.first_name or '', message.chat.last_name or '', '',
+                    str(message.chat.id), ONLINE_MODE.ONLINE, 12, None)
+    db.log.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
+    row = db.sql.conn.execute('''
+        select command_id, count(*) cnt from game_map_opened_cells
+        group by command_id order by command_id desc
+        limit 1;
+    ''').fetchone()
+    if not row:
+        command_id = 1
+    else:
+        command_id = row['command_id']
+        # cnt = row['cnt']
+        # if cnt > 450:
+        #     command_id += 1
+    db.set_student_command(user.id, LEVEL.NOVICE, command_id)
     await bot.send_message(
         chat_id=message.chat.id,
-        text="🤖 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
+        text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2022/n/#34-n.\n"
+             "Если задачи окажутся простоватыми, то можно выполнить команду /level_pro и решать вот эти задачи https://shashkovs.ru/vmsh/2022/p/#34-p, они сложнее и их больше.",
     )
+    State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
+    await post_problem_keyboard(message.chat.id, user)
 
 
 @reg_state(STATE.GET_USER_INFO)
@@ -27,12 +45,8 @@ async def prc_get_user_info_state(message: types.Message, user: User):
     user = User.get_by_token(message.text)
     db.log.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
     if user is None:
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text="🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\n"
-                 "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro2ll»\n"
-                 "(см. также https://shashkovs.ru/vmsh/2023/n/about.html#application)",
-        )
+        await start(message)
+        return
     elif user.type == USER_TYPE.DELETED:
         await bot.send_message(
             chat_id=message.chat.id,
@@ -127,7 +141,8 @@ async def process_regular_message(message: types.Message):
     # message.num_processed = getattr(message, 'num_processed', 0) + 1
     user = User.get_by_chat_id(message.chat.id)
     if not user:
-        cur_chat_state = STATE.GET_USER_INFO
+        await start(message)
+        return
     else:
         if user.type == USER_TYPE.DEACTIVATED_STUDENT:
             cur_chat_state = STATE.USER_IS_NOT_ACTIVATED
