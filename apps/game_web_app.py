@@ -16,9 +16,10 @@ from time import perf_counter
 from typing import List, Dict
 
 from helpers.config import config, logger, DEBUG, APP_PATH
-from helpers.obj_classes import db, Webtoken, User, Problem
+import db_methods as db
+from models import Webtoken, User, Problem
 from helpers.nats_brocker import vmsh_nats
-from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE, USER_TYPE
+from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE, USER_TYPE, LEVEL
 from helpers.bot import bot
 
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
@@ -115,7 +116,7 @@ async def post_game_buy(request):
     if not user:
         return web.json_response(data={'error': 'relogin'}, status=401)
     # todo validate
-    command = db.get_student_command(user.id)
+    command = db.game.get_student_command(user.id)
     command_id = command['command_id'] if command else -1
     x = data.get('x', None)
     y = data.get('y', None)
@@ -126,9 +127,9 @@ async def post_game_buy(request):
     if not x or not y or type(x) != int or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
         logger.warning(f'post_game_buy {data=} ignored')
         return web.json_response(data={'ok': 'ignored'}, status=400)
-    if not (0 <= x <= 5 and 0 <= y <= 5) and not db.check_neighbours(command_id, x, y):
+    if not (0 <= x <= 5 and 0 <= y <= 5) and not db.game.check_neighbours(command_id, x, y):
         return web.json_response(data={'ok': 'ignored'}, status=400)
-    db.add_payment(user.id, command_id, x, y, amount)
+    db.game.add_payment(user.id, command_id, x, y, amount)
     # Отправляем всем уведомление, что открылась новая ячейка на карте
     await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
     return web.json_response(data={'ok': 'sure'})
@@ -142,14 +143,14 @@ async def post_game_flag(request):
     if not user:
         return web.json_response(data={'error': 'relogin'}, status=401)
     # todo validate
-    command = db.get_student_command(user.id)
+    command = db.game.get_student_command(user.id)
     command_id = command['command_id'] if command else -1
     x = data.get('x', None)
     y = data.get('y', None)
     if not x or not y or type(x) != int or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
         logger.warning(f'post_game_buy {data=} ignored')
         return web.json_response(data={'ok': 'ignored'})
-    db.set_student_flag(user.id, command_id, x, y)
+    db.game.set_student_flag(user.id, command_id, x, y)
     # Отправляем всем уведомление, что открылась новая ячейка на карте (или появился флаг)
     await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
     return web.json_response(data={'ok': 'sure'})
@@ -162,7 +163,7 @@ async def post_game_chest(request):
     user = Webtoken.user_by_webtoken(cookie_webtoken)
     if not user:
         return web.json_response(data={'error': 'relogin'}, status=401)
-    command = db.get_student_command(user.id)
+    command = db.game.get_student_command(user.id)
     command_id = command['command_id'] if command else -1
     x = data.get('x', None)
     y = data.get('y', None)
@@ -170,7 +171,7 @@ async def post_game_chest(request):
     if not x or not y or type(x) != int or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200 or not bonus or type(bonus) != int or not 1 <= bonus <= 10:
         logger.warning(f'post_game_buy {data=} ignored')
         return web.json_response(data={'ok': 'ignored'}, status=400)
-    db.add_student_chest(user.id, command_id, x, y, bonus)
+    db.game.add_student_chest(user.id, command_id, x, y, bonus)
     # Отправляем всем уведомление, что у студента появились новые «деньги»
     await vmsh_nats.publish(NATS_GAME_STUDENT_UPDATE, user.id)
     if SEND_OPEN_CHEST_TO_BOT:
@@ -189,14 +190,14 @@ async def post_game_chest(request):
 
 def get_map_opened(command_id) -> List[List]:
     # TODO Кеширование!
-    opened = db.get_opened_cells(command_id)  # x, y
+    opened = db.game.get_opened_cells(command_id)  # x, y
     opened = [[r['x'], r['y']] for r in opened]
     return opened
 
 
 def get_map_flags(command_id) -> List[List]:
     # TODO Кеширование!
-    flags = db.get_flags_by_command(command_id)  # x, y
+    flags = db.game.get_flags_by_command(command_id)  # x, y
     flags = [[r['x'], r['y']] for r in flags]
     return flags
 
@@ -211,14 +212,14 @@ def get_game_data(student: User) -> dict:
     # - личный флаг студента
     # - список открытых сундуков
     st = perf_counter()
-    command = db.get_student_command(student.id)
+    command = db.game.get_student_command(student.id)
     student_command = command['command_id'] if command else -1
-    solved = db.get_student_solved(student.id, Problem.last_lesson_num(student.level))  # ts, title
-    payments = db.get_student_payments(student.id, student_command)  # ts, amount
+    solved = db.result.get_student_solved(student.id, Problem.last_lesson_num(student.level))  # ts, title
+    payments = db.game.get_student_payments(student.id, student_command)  # ts, amount
     opened = get_map_opened(student_command)
     flags = get_map_flags(student_command)
-    my_flag = db.get_flag_by_student_and_command(student.id, student_command)
-    chests_rows = db.get_student_chests(student.id, student_command)
+    my_flag = db.game.get_flag_by_student_and_command(student.id, student_command)
+    chests_rows = db.game.get_student_chests(student.id, student_command)
     # Собираем из решённых задач и оплат event'ы
     events = []
     for paym in payments:
@@ -237,7 +238,11 @@ def get_game_data(student: User) -> dict:
         else:
             used_titles.add(clear_title)
         # Защита от продолжающих, которые решают задачи начинающих. Они получают в 1.5 раза меньше баллов
-        if solv['level'] == 'н' and command['level'] != 'н':
+        if solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.PRO:
+            score = int(round(score / 1.5))
+        elif solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.EXPERT:
+            score = int(round(score / 2))
+        elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.EXPERT:
             score = int(round(score / 1.5))
         events.append([solv['ts'], score])
     events.sort(key=itemgetter(0))
@@ -266,7 +271,7 @@ async def post_timeline(request):
     if (not user) or (not user.type == USER_TYPE.TEACHER):
         return web.json_response(data={'error': 'relogin'}, status=401)
     command_id = request.match_info['command_id']
-    data = db.get_opened_cells_timeline(command_id)
+    data = db.game.get_opened_cells_timeline(command_id)
     return web.json_response(data=data)
 
 
@@ -309,7 +314,7 @@ async def websocket(request):
 
 async def nats_handle_map_update(command_id):
     # logger.warning(f"nats_handle_map_update {command_id=}, {os.getpid()=}, {len(user_id_to_websocket)=}")
-    students = db.get_all_students_by_command(command_id)
+    students = db.game.get_all_students_by_command(command_id)
     for student_id in students:
         for ws in set(_user_id_to_websocket.get(student_id, [])):
             data = get_game_data(User.get_by_id(student_id))
@@ -338,7 +343,7 @@ async def on_startup(app):
     logger.debug('game on_startup')
     if __name__ == "__main__":
         # Настраиваем БД
-        db.setup(config.db_filename)
+        db.sql.setup(config.db_filename)
     # Подключаемся к NATS
     await vmsh_nats.setup()
     await vmsh_nats.subscribe(NATS_GAME_MAP_UPDATE, nats_handle_map_update)
@@ -348,7 +353,7 @@ async def on_startup(app):
 async def on_shutdown(app):
     logger.warning('game on_shutdown')
     if __name__ == "__main__":
-        db.disconnect()
+        db.sql.disconnect()
     await vmsh_nats.disconnect()
     # Останавливаем все websocket'ы
     for user_id, websockets in _user_id_to_websocket.items():
@@ -366,7 +371,7 @@ def configue(app):
 
 
 # Откладка по конкретному студенту
-# db.setup(config.db_filename)
+# db.sql.setup(config.db_filename)
 # print(get_game_data(User.get_by_token('be9fu3ha')))
 # exit()
 

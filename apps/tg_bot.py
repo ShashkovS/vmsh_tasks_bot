@@ -5,11 +5,11 @@ from aiogram.utils.executor import start_polling
 import asyncio
 from random import uniform
 
-import handlers
-from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
-from helpers.obj_classes import db, update_from_google_if_db_is_empty
 from helpers.config import config, logger, DEBUG
 from helpers.bot import bot, dispatcher
+import db_methods as db
+from models.spreadsheets import google_spreadsheet_loader, update_from_google_if_db_is_empty
+import handlers
 
 USE_WEBHOOKS = False
 routes = None
@@ -33,7 +33,7 @@ async def on_startup(app):
     logger.debug(f'{handlers}')
 
     # Настраиваем БД
-    db.setup(config.db_filename)
+    db.sql.setup(config.db_filename)
 
     # Настраиваем загрузчик из гугль-таблиц
     google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)
@@ -42,6 +42,9 @@ async def on_startup(app):
 
     if USE_WEBHOOKS:
         await check_webhook()
+    else:
+        asyncio.create_task(dispatcher.start_polling())
+
     bot.username = (await bot.me).username
 
     await bot.post_logging_message(f'Бот начал свою работу')
@@ -79,7 +82,7 @@ async def on_shutdown(app):
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
     if __name__ == "__main__":
-        db.disconnect()
+        db.sql.disconnect()
     logger.warning('bot Bye!')
 
 
@@ -91,8 +94,6 @@ def start_bot_in_polling_mode():
     logging.getLogger('aiogram').setLevel(DEBUG)
     from aiogram.contrib.middlewares.logging import LoggingMiddleware
     dispatcher.middleware.setup(LoggingMiddleware())
-    # В режиме отладки запускаем без вебхуков
-    start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
 
 
 def start_bot_in_webhook_mode(app):
@@ -123,3 +124,5 @@ if __name__ == "__main__":
     app = web.Application()
     configue(app)
     start_bot_in_polling_mode()
+    # В режиме отладки запускаем без вебхуков
+    start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)

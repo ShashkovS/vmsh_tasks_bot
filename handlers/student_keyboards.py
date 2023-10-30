@@ -1,20 +1,21 @@
 from aiogram import types
 
 from helpers.consts import *
-from helpers.config import logger
-from helpers.obj_classes import User, Problem, State, db, Webtoken
+from helpers.config import logger, config
+from models import User, Problem, State, Webtoken
+import db_methods as db
 
 
 def build_problems(lesson_num: int, student: User, is_sos_question=False):
     logger.debug('keyboards.build_problems')
-    solved = set(db.check_student_solved(student.id, lesson_num))
-    being_checked = set(db.check_student_sent_written(student.id, lesson_num))
+    solved = set(db.result.check_student_solved(student.id, lesson_num))
+    being_checked = set(db.written_task_queue.check_student_sent_written(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    to_lessons_button = types.InlineKeyboardButton(
+    to_game_button = types.InlineKeyboardButton(
         text="🕹🎲 Открыть командную игру 🎉🏆",
-        url=f'https://vmsh179bot3.proj179.ru/game/webtoken/{Webtoken.webtoken_by_user(student)}'
+        url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
     )
-    keyboard_markup.add(to_lessons_button)
+    keyboard_markup.add(to_game_button)
     # Кнопки с вопросами
     if not is_sos_question:
         que1 = types.InlineKeyboardButton(
@@ -58,28 +59,26 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     # Пока отключаем эту фичу
     # to_lessons_button = types.InlineKeyboardButton(
     #     text="К списку всех листков",
-    #     callback_data=f"{Callback.SHOW_LIST_OF_LISTS}"
+    #     callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
     # )
     # keyboard_markup.add(to_lessons_button)
-    to_lessons_button = types.InlineKeyboardButton(
+    to_game_button = types.InlineKeyboardButton(
         text="🕹🎲 Открыть командную игру 🎉🏆",
-        url=f'https://vmsh179bot3.proj179.ru/game/webtoken/{Webtoken.webtoken_by_user(student)}'
+        url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
     )
-    keyboard_markup.add(to_lessons_button)
+    keyboard_markup.add(to_game_button)
     return keyboard_markup
 
 
-def build_lessons():
+def build_lessons(level):
     logger.debug('keyboards.build_lessons')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    logger.error('Здесь не добавлена обработка level')
-    # TODO add level
-    # for lesson in problems.all_lessons:
-    #     lesson_button = types.InlineKeyboardButton(
-    #         text=f"Листок {lesson}",
-    #         callback_data=f"{Callback.LIST_SELECTED}_{lesson}",
-    #     )
-    #     keyboard_markup.add(lesson_button)
+    for lesson in db.lesson.get_all(level):
+        lesson_button = types.InlineKeyboardButton(
+            text=f"Листок {lesson['lesson']}",
+            callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
+        )
+        keyboard_markup.add(lesson_button)
     return keyboard_markup
 
 
@@ -158,7 +157,7 @@ def build_student_reaction_on_task_bad_verdict(result_id: int):
     """
     logger.debug('keyboards.build_student_reaction_on_task_bad_verdict')
     keyboard = types.InlineKeyboardMarkup()
-    for reaction in db.get_reactions_enum(REACTION.WRITTEN_STUDENT):
+    for reaction in db.reaction.enum(REACTION.WRITTEN_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],
@@ -172,7 +171,7 @@ def build_student_reaction_oral(zoom_conversation_id: int):
     """Создает инлайн клавиатуру для ученика для оценки устной сдачи."""
     logger.debug('keyboards.build_student_reaction_oral')
     keyboard = types.InlineKeyboardMarkup()
-    for reaction in db.get_reactions_enum(REACTION.ORAL_STUDENT):
+    for reaction in db.reaction.enum(REACTION.ORAL_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],

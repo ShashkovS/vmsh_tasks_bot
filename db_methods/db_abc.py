@@ -6,7 +6,7 @@ import os
 DB_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 
-class KeyValueStore(dict):
+class _KeyValueStore(dict):
     def __init__(self, conn):
         self.conn = conn
         self.conn.execute("CREATE TABLE IF NOT EXISTS kv (key text unique, value text)")
@@ -111,10 +111,11 @@ class DB_CONNECTION:
 
     def _connect_to_db(self):
         self.conn = sqlite3.connect(self.db_file)
-        self.kv = KeyValueStore(self.conn)
+        self.kv = _KeyValueStore(self.conn)
         # Set journal mode to WAL.
         self.conn.execute('PRAGMA journal_mode=WAL')
         self.conn.row_factory = self._dict_factory
+        # self.conn.row_factory = sqlite3.Row
 
     def _run_migrations(self):
         migrations = yoyo.read_migrations('migrations')
@@ -127,3 +128,21 @@ class DB_CONNECTION:
             self.conn.rollback()
             self.conn.close()
         self.conn = None
+
+
+class DB_ABC:
+    db: DB_CONNECTION
+
+    def __init__(self, db: DB_CONNECTION):
+        self.conn = None
+        self.db = db
+
+
+# Перед использованием объекта db, нужно открыть коннекшн командой вида
+# db.sql.setup(db_file="some.db")
+sql = DB_CONNECTION()
+
+if __name__ == '__main__':
+    sql.setup(':memory:')
+    sql.kv['foo'] = 'baz'
+    assert sql.kv['foo'] == 'baz'

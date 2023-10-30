@@ -41,7 +41,11 @@ class Config:
 
 def _create_logger():
     # Настраиваем
-    logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(name)-8s: %(levelname)-8s %(message)s', datefmt='%Y-%d-%m %H:%M:%S')
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(asctime)s %(name)-8s: %(levelname)-8s %(message)s',
+        datefmt='%Y-%d-%m %H:%M:%S'
+    )
     logger = logging.getLogger(APP_LOGGER)
     return logger
 

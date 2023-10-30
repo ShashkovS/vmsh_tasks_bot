@@ -9,8 +9,11 @@ import re
 from aiohttp import web, WSMsgType
 
 from helpers.config import config, logger, DEBUG, APP_PATH
-from helpers.obj_classes import db, Webtoken, User
+import db_methods as db
+from helpers.consts import USER_TYPE
+from models import Webtoken, User
 from web import trash_print_results
+from web import trash_print_stats
 
 __ALL__ = ['routes']
 
@@ -26,17 +29,7 @@ templates = {
 }
 
 
-@routes.get('/res')
-async def print_res(request):
-    print('res')
-    cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
-    user = Webtoken.user_by_webtoken(cookie_webtoken)
-    if not user:
-        return web.Response(text=templates['login_res'], content_type='text/html')
-    else:
-        return web.Response(text=trash_print_results.get_html(), content_type='text/html')
-
-
+@routes.post('/stat')
 @routes.post('/res')
 async def login_res(request):
     print('login_res')
@@ -45,23 +38,49 @@ async def login_res(request):
     user = User.get_by_token(token)
     cookie_webtoken = Webtoken.webtoken_by_user(user)
     if cookie_webtoken:
-        response = web.Response(text=trash_print_results.get_html(), content_type='text/html')
+        response = web.HTTPFound(request.url)
         response.set_cookie(name=COOKIE_NAME, value=cookie_webtoken, **use_cookie)
         return response
     return web.Response(text=templates['login_res'], content_type='text/html')
+
+
+@routes.get('/stat')
+async def print_stat(request):
+    print('stat')
+    cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
+    user = Webtoken.user_by_webtoken(cookie_webtoken)
+    if not user:
+        return web.Response(text=templates['login_res'], content_type='text/html')
+    elif user.type == USER_TYPE.TEACHER:
+        return web.Response(text=trash_print_stats.get_html(), content_type='text/html')
+    else:
+        return web.Response(status=401)
+
+
+@routes.get('/res')
+async def show_res(request):
+    print('res')
+    cookie_webtoken = request.cookies.get(COOKIE_NAME, None)
+    user = Webtoken.user_by_webtoken(cookie_webtoken)
+    if not user:
+        return web.Response(text=templates['login_res'], content_type='text/html')
+    elif user.type == USER_TYPE.TEACHER:
+        return web.Response(text=trash_print_results.get_html(), content_type='text/html')
+    else:
+        return web.Response(status=401)
 
 
 async def on_startup(app):
     logger.debug('results on_startup')
     # Настраиваем БД
     if __name__ == "__main__":
-        db.setup(config.db_filename)
+        db.sql.setup(config.db_filename)
 
 
 async def on_shutdown(app):
     logger.warning('results on_shutdown')
     if __name__ == "__main__":
-        db.disconnect()
+        db.sql.disconnect()
     logger.warning('results Bye!')
 
 

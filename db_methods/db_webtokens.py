@@ -1,12 +1,10 @@
-import sqlite3
 from typing import List
 
+from .db_abc import DB_ABC, sql
 
-class DB_WEBTOKEN():
-    conn: sqlite3.Connection
-
-    def add_webtoken(self, user_id: int, webtoken: str) -> int:
-        with self.conn as conn:
+class DB_WEBTOKEN(DB_ABC):
+    def insert(self, user_id: int, webtoken: str) -> int:
+        with self.db.conn as conn:
             cur = conn.execute("""
                 insert into webtokens ( user_id,  webtoken) 
                 values                (:user_id, :webtoken) 
@@ -15,18 +13,21 @@ class DB_WEBTOKEN():
             """, locals())
             return cur.lastrowid
 
-    def get_webtoken_by_user_id(self, user_id: int) -> List[dict]:
-        cur = self.conn.execute("""
+    def get_by_user_id(self, user_id: int) -> List[dict]:
+        cur = self.db.conn.execute("""
             SELECT webtoken FROM webtokens 
             where user_id = :user_id
         """, locals())
         row = cur.fetchone()
         return row and row['webtoken']  # None if not found
 
-    def get_user_id_by_webtoken(self, webtoken: str) -> List[dict]:
-        cur = self.conn.execute("""
+    def get_user_id(self, webtoken: str) -> List[dict]:
+        cur = self.db.conn.execute("""
             SELECT user_id FROM webtokens 
             where webtoken = :webtoken
         """, locals())
         row = cur.fetchone()
         return row and row['user_id']  # None if not found
+
+
+web_token = DB_WEBTOKEN(sql)

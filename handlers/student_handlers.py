@@ -2,15 +2,17 @@ import os
 import re
 import asyncio
 import traceback
+from ast import literal_eval
 from typing import Tuple, Optional
 
 import aiogram.utils.exceptions
 from aiogram.dispatcher.webhook import types
-from aiogram.utils.exceptions import BadRequest
+from aiogram.utils.exceptions import BadRequest, MessageNotModified, MessageToEditNotFound, ChatNotFound
 
 from helpers.consts import *
 from helpers.config import logger, config
-from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, db
+import db_methods as db
+from models import User, Problem, State, Waitlist, WrittenQueue, Result
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import student_keyboards
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
@@ -21,43 +23,65 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
     '__builtins__': None, 're': re,
     'bool': bool, 'float': float, 'int': int, 'list': list, 'range': range, 'set': set, 'str': str, 'tuple': tuple,
     'abs': abs, 'all': all, 'any': any, 'bin': bin, 'enumerate': enumerate, 'format': format, 'len': len,
-    'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum, 'map': map,
+    'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum, 'map': map, 'literal_eval': literal_eval,
 }
 is_py_func = re.compile(r'^\s*def \w+\s*\(')
 MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
 
 
-async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False):
-    prev_keyboard = db.get_last_keyboard(student.id)
+async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, show_lesson=None, disable_notification=False):
+    prev_keyboard = db.last_keyboard.get(student.id)
     if prev_keyboard:
         try:
             await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'], reply_markup=None)
         except:
             pass
     if not blocked:
-        text = f"❓ Нажимайте на задачу, чтобы сдать её\n(выбран уровень «{student.level.slevel}», здесь <a href=\"{student.level.url}\">условия</a>)"
+        if student.online == ONLINE_MODE.ONLINE:
+            online = "📡дистанционно📡"
+        elif student.online == ONLINE_MODE.SCHOOL:
+            online = "🏫в школе🏫"
+        else:
+            online = '?'
+        text = (f"❓ <b>Нажимайте на задачу, чтобы сдать её</b>\n"
+                f"{student.name} {student.surname}\n"
+                f"уровень «{student.level.slevel}», режим {online}\n"
+                f"<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2023\">канал кружка</a>")
     else:
         text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
+    if show_lesson is None:
+        show_lesson = Problem.last_lesson_num(student.level)
     keyb_msg = await bot.send_message(
         chat_id=chat_id,
         text=text,
         parse_mode='HTML',
         disable_web_page_preview=True,
-        reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student),
+        reply_markup=student_keyboards.build_problems(show_lesson, student),
+        disable_notification=disable_notification,
     )
-    db.set_last_keyboard(student.id, keyb_msg.chat.id, keyb_msg.message_id)
+    db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
-async def refresh_last_student_keyboard(student: User) -> bool:
+async def refresh_last_student_keyboard(student: User, force=False) -> bool:
     if not student:
         return False
-    prev_keyboard = db.get_last_keyboard(student.id)
+    prev_keyboard = db.last_keyboard.get(student.id)
     if prev_keyboard:
-        await bot.edit_message_reply_markup_ig(
-            chat_id=prev_keyboard['chat_id'],
-            message_id=prev_keyboard['tg_msg_id'],
-            reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student)
-        )
+        try:
+            updated = await bot.edit_message_reply_markup(
+                chat_id=prev_keyboard['chat_id'],
+                message_id=prev_keyboard['tg_msg_id'],
+                reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student)
+            )
+            return bool(updated)
+        except MessageNotModified as e:
+            return True
+        except MessageToEditNotFound as e:
+            prev_keyboard = None
+        except Exception as e:
+            return False
+    if not prev_keyboard and force and student.chat_id:
+        await post_problem_keyboard(student.chat_id, student, disable_notification=True)
         return True
     return False
 
@@ -72,7 +96,7 @@ async def sleep_and_send_problems_keyboard(chat_id: int, student: User, sleep=1)
 async def prc_get_task_info_state(message, student: User):
     logger.debug('prc_get_task_info_state')
     # Возможно, тут прилетел хвост галереи, которую мы успешно уже обработали.
-    if message.media_group_id and db.media_group_check(message.media_group_id):
+    if message.media_group_id and db.media_group.check(message.media_group_id):
         await prc_sending_solution_state(message, student)
         return
     # Обрабатываем как обычно
@@ -99,15 +123,15 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     # а потом уже брать id задачи из сохранённого
     next_media_group_message = False
     if message.media_group_id:
-        problem_id = db.media_group_check(message.media_group_id)
+        problem_id = db.media_group.check(message.media_group_id)
         if problem_id:
             next_media_group_message = True
         else:
             problem_id = State.get_by_user_id(student.id)['problem_id']
-            duplicate = db.media_group_add(message.media_group_id, problem_id)
+            duplicate = db.media_group.insert(message.media_group_id, problem_id)
             # Могло так случиться, что в другом потоке в параллель добавили
             if duplicate:
-                problem_id = db.media_group_check(message.media_group_id)
+                problem_id = db.media_group.check(message.media_group_id)
                 next_media_group_message = True
     else:
         problem_id = State.get_by_user_id(student.id)['problem_id']
@@ -143,7 +167,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
     #                              f'{problem.lesson}',
     #                              f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
     #     os.makedirs(os.path.dirname(file_name), exist_ok=True)
-    #     db.add_message_to_log(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
+    #     db.log.insert(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
     #     with open(file_name, 'wb') as file:
     #         file.write(bin_data.read())
     WrittenQueue.add_to_discussions(student.id, problem_id, None, text, file_name, message.chat.id, message.message_id)
@@ -159,7 +183,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
 
 def check_test_ans_rate_limit(student_id: int, problem_id: int):
     logger.debug('check_test_ans_rate_limit')
-    per_day, per_hour = db.check_num_answers(student_id, problem_id)
+    per_day, per_hour = db.result.check_num_answers(student_id, problem_id)
     text_to_student = None
     if per_hour >= 3:
         text_to_student = '💤⌛ В течение одного часа бот не принимает больше 3 ответов. Отправьте ваш ответ в начале следующего часа.'
@@ -298,7 +322,7 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
 async def prc_wait_sos_request_state(message: types.Message, student: User):
     logger.debug('prc_wait_sos_request_state')
     state = State.get_by_user_id(student.id)
-    problem_id = state.get("problem_id", None)
+    problem_id = state["problem_id"]
     if problem_id:
         problem = Problem.get_by_id(problem_id)
         problem_text = f"{problem}"
@@ -319,11 +343,11 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
 async def prc_student_is_sleeping_state(message: types.message, student: User):
     logger.debug('prc_student_is_sleeping_state')
     if student.level == LEVEL.NOVICE:
-        channel = '@vmsh_179_5_7_2022'
+        channel = '@vmsh_179_5_7_2023'
     elif student.level == LEVEL.PRO:
-        channel = '@vmsh_179_5_7_2022'
+        channel = '@vmsh_179_5_7_2023'
     elif student.level == LEVEL.EXPERT:
-        channel = '@vmsh_179_5_7_2022'
+        channel = '@vmsh_179_5_7_2023'
     elif student.level == LEVEL.GR8:
         channel = '@vmsh_179_8_2022'
     await bot.send_message(chat_id=message.chat.id if message else student.chat_id,
@@ -348,9 +372,9 @@ async def level_novice(message: types.Message):
             chat_id=message.chat.id,
             text="Вы переведены в группу начинающих. "
                  "Успехов в занятиях! "
-                 "Вопросы можно задавать в группе @vmsh_179_5_7_2022_chat.",
+                 "Вопросы можно задавать в группе @vmsh_179_5_7_2023_chat.",
         )
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
@@ -367,7 +391,7 @@ async def level_pro(message: types.Message):
                  "Это будет комфортнее и полезнее!",
         )
         student.set_level(LEVEL.PRO)
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
@@ -384,27 +408,27 @@ async def level_expert(message: types.Message):
                  "Успехов!",
         )
         student.set_level(LEVEL.EXPERT)
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['level_gr8'])
-async def level_expert(message: types.Message):
-    logger.debug('level_gr8')
-    student = User.get_by_chat_id(message.chat.id)
-    if student:
-        message = await bot.send_message(
-            chat_id=message.chat.id,
-            text="Вы переведены в группу восьмого класса. Обратите внимание, что эта группа для «опытных» учеников 8 класса. "
-                 "Если будет сложновато, рекомендуем группы «Продолжающие» или «Эксперты». "
-                 "Вот канал вашего класса: @vmsh_179_8_2022. "
-                 "А вот группа для обсуждений: @vmsh_179_8_2022_chat",
-        )
-        student.set_level(LEVEL.GR8)
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
-            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+# @dispatcher.message_handler(commands=['level_gr8'])
+# async def level_expert(message: types.Message):
+#     logger.debug('level_gr8')
+#     student = User.get_by_chat_id(message.chat.id)
+#     if student:
+#         message = await bot.send_message(
+#             chat_id=message.chat.id,
+#             text="Вы переведены в группу восьмого класса. Обратите внимание, что эта группа для «опытных» учеников 8 класса. "
+#                  "Если будет сложновато, рекомендуем группы «Продолжающие» или «Эксперты». "
+#                  "Вот канал вашего класса: @vmsh_179_8_2022. "
+#                  "А вот группа для обсуждений: @vmsh_179_8_2022_chat",
+#         )
+#         student.set_level(LEVEL.GR8)
+#         if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
+#             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+#         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 @dispatcher.message_handler(commands=['sos'])
@@ -463,14 +487,14 @@ async def prc_problem_sos_problem_selected_callback(query: types.CallbackQuery, 
 async def prc_problems_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_problems_selected_callback')
     state = State.get_by_user_id(student.id)
-    if state.get('state', None) == STATE.STUDENT_IS_SLEEPING:
+    if state and state['state'] == STATE.STUDENT_IS_SLEEPING:
         await bot.answer_callback_query_ig(query.id)
         return
     problem_id = int(query.data[2:])
     problem = Problem.get_by_id(problem_id)
     # Удаляем сообщение с клавиатурой-списком задач
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
-    db.del_last_keyboard(student.id)
+    db.last_keyboard.delete(student.id)
     if not problem:
         await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -497,14 +521,14 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         State.set_by_user_id(student.id, STATE.SENDING_SOLUTION, problem_id)
         await bot.answer_callback_query_ig(query.id)
     elif problem.prob_type == PROB_TYPE.ORALLY:
-        instruction_url = r'https://t.me/vmsh_179_5_7_2022/55'
+        instruction_url = r'https://t.me/vmsh_179_5_7_2023/78'
         hint = ''
         if problem.level != LEVEL.EXPERT:
             conf_id = '87196763644'
-            passcode = '179179'
+            passcode = '179179179'
         else:
             conf_id = '87196763644'
-            passcode = '179179'
+            passcode = '179179179'
             # conf_id = '83052557082'
             # passcode = 'exp179'
             # hint = 'КОНФЕРЕНЦИЯ КАКАЯ БЫЛА РАНЬШЕ!\n'
@@ -563,7 +587,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
 #         #                        # f"Делайте рисунок очень крупным, чтобы можно было показать его преподавателю через видеокамеру. "
 #         #                        # f"\nКогда у вас всё готово, "
 #         #                             f"<b>Заходите в zoom-конференцию, идентификатор конференции:"
-#         #                             f"\n83488340620, код доступа: 179179</b>. "
+#         #                             f"\n83488340620, код доступа: 179179179</b>. "
 #         #                             f"\nПожалуйста, при входе поставьте актуальную подпись: ваши фамилию и имя. "
 #         #                             f"Как только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. "
 #         #                             f"После окончания сдачи нужно выйти из конференции. "
@@ -600,9 +624,9 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
 @reg_callback(CALLBACK.LIST_SELECTED)
 async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_list_selected_callback')
-    list_num = int(query.data[2:])
+    lesson = int(query.data[2:])
     student = User.get_by_chat_id(query.message.chat.id)
-    await post_problem_keyboard(student.chat_id, student)
+    await post_problem_keyboard(student.chat_id, student, show_lesson=lesson)
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -611,7 +635,7 @@ async def prc_show_list_of_lists_callback(query: types.CallbackQuery, student: U
     logger.debug('prc_show_list_of_lists_callback')
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text="Вот список всех листков:",
-                                   reply_markup=student_keyboards.build_lessons())
+                                   reply_markup=student_keyboards.build_lessons(student.level))
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -715,7 +739,7 @@ async def set_zoom(message: types.Message):
 async def students_my_results(message: types.Message):
     logger.debug('students_my_results')
     student = User.get_by_chat_id(message.chat.id)
-    rows = db.list_all_student_results(student.id)
+    rows = db.result.list_all_student_results(student.id)
     if rows:
         lessons = {row['lesson'] for row in rows}
         for lesson in sorted(lessons):

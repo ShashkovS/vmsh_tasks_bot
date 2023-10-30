@@ -18,6 +18,7 @@ class STATE(IntEnum):
     STUDENT_IS_IN_CONFERENCE = 9
     TEACHER_WRITES_STUDENT_NAME = 10
     STUDENT_IS_SLEEPING = 12
+    USER_IS_NOT_ACTIVATED = -2
 
 
 # ПРЕФИКСЫ ДАННЫХ ДЛЯ КОЛЛБЕКОВ
@@ -80,14 +81,14 @@ class USER_TYPE(IntFlag):
     ADMIN = 128
     TEACHER_OR_ADMIN = TEACHER | ADMIN
     DELETED = -1
+    DEACTIVATED_STUDENT = -2
 
 
-LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', 'В': 'Восьмиклассники' }
+LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты'}
 LEVEL_URL = {
-    'н': 'https://shashkovs.ru/vmsh/2022/n/#34-n',
-    'п': 'https://shashkovs.ru/vmsh/2022/p/#34-p',
-    'э': 'https://shashkovs.ru/vmsh/2022/x/',
-    'В': 'https://shashkovs.ru/vmsh/2022/8/'
+    'н': 'https://shashkovs.ru/vmsh/2023/n/',
+    'п': 'https://shashkovs.ru/vmsh/2023/p/',
+    'э': 'https://shashkovs.ru/vmsh/2023/x/',
 }
 
 

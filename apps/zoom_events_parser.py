@@ -2,14 +2,17 @@ from aiohttp import web
 from datetime import datetime, timedelta
 from Levenshtein import distance
 import re
+import hmac
 from helpers.consts import *
 from helpers.config import logger, config
-from helpers.obj_classes import db, User
+from models import User
+import db_methods as db
 
 routes = web.RouteTableDef()
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
 
-ZOOM_AUTH = 'BAKPekpQQgW1C3S6MEP4-g'
+ZOOM_WEBHOOK_SECRET_TOKEN = 'bX0XxlS-QsygnbKXeXBtrw'
+
 ZOOM_ID = "87196763644"
 TIMEZONE = timedelta(hours=3)
 
@@ -32,29 +35,44 @@ def parse_json(data: dict):
 
 def process_event(event: str, event_ts: datetime, participant: dict):
     user_name = participant['user_name']
-    if False:
+    if event == "endpoint.url_validation":
         pass
     elif event == "meeting.participant_joined_waiting_room":
-        db.add_to_queue(user_name, event_ts, status=0)
+        db.zoom_queue.insert(user_name, event_ts, status=0)
     elif event == "meeting.participant_joined":
-        db.mark_joined(user_name, status=1)
+        db.zoom_queue.mark_joined(user_name, status=1)
     elif event == "meeting.participant_admitted":
-        db.mark_joined(user_name, status=1)
+        db.zoom_queue.mark_joined(user_name, status=1)
     elif event == "meeting.participant_left":
         # Помечаем, что его нет в конфе, есть в очереди
-        db.mark_joined(user_name, status=-1)
-        # db.remove_from_queue(user_name)
+        db.zoom_queue.mark_joined(user_name, status=-1)
+        # db.zoom_queue.delete(user_name)
     elif event == "meeting.participant_joined_breakout_room":
-        db.remove_from_queue(user_name)
+        db.zoom_queue.delete(user_name)
     elif event == "meeting.participant_left_breakout_room":
-        db.remove_from_queue(user_name)
+        db.zoom_queue.delete(user_name)
     elif event == "meeting.participant_left_waiting_room":
-        db.mark_joined(user_name, status=-1)
-        # db.remove_from_queue(user_name)
+        db.zoom_queue.mark_joined(user_name, status=-1)
+        # db.zoom_queue.delete(user_name)
     elif event == "meeting.ended":
-        db.remove_old_from_zoom_queue()
+        db.zoom_queue.remove_old_from_zoom_queue()
     elif event == "meeting.started":
-        db.remove_old_from_zoom_queue()
+        db.zoom_queue.remove_old_from_zoom_queue()
+
+
+def zoom_event_validation(data):
+    # http POST <your_endpoint_url_here> \
+    #   payload:='{"plainToken": "qgg8vlvZRS6UYooatFL8Aw"}' \
+    #   event_ts:=1654503849680 \
+    #   event="endpoint.url_validation"
+    plainToken = data['payload']['plainToken']
+    hash_for_validate = hmac.new(ZOOM_WEBHOOK_SECRET_TOKEN.encode('utf-8'),
+                                 plainToken.encode('utf-8'),
+                                 digestmod='sha256').hexdigest()
+    return web.json_response(data={
+        "plainToken": plainToken,
+        "encryptedToken": hash_for_validate
+    }, status=200)
 
 
 @routes.post('/zoomevents')
@@ -67,6 +85,8 @@ async def post_zoomevents(request: web.Request):
     #     return web.Response(status=200)
     try:
         data = await request.json()
+        if data['event'] == 'endpoint.url_validation':
+            return zoom_event_validation(data)
         event, event_ts, is_circle, participant, breakout_room_uuid = parse_json(data)
     except Exception as e:
         logger.error(e)
@@ -77,11 +97,11 @@ async def post_zoomevents(request: web.Request):
     zoom_user_name = participant['user_name']
     zoom_user_id = participant.get('user_id', None)
     user_id = None
-    db.conn.execute('''
+    db.sql.conn.execute('''
         insert into zoom_events ( event_ts,  event,  zoom_user_name,  zoom_user_id,  breakout_room_uuid,  user_id)
                          values (:event_ts, :event, :zoom_user_name, :zoom_user_id, :breakout_room_uuid, :user_id)
     ''', locals())
-    db.conn.commit()
+    db.sql.conn.commit()
     return web.Response(status=200)
 
 
@@ -135,13 +155,13 @@ async def on_startup(app):
     logger.debug('zoom on_startup')
     # Настраиваем БД
     if __name__ == "__main__":
-        db.setup(config.db_filename)
+        db.sql.setup(config.db_filename)
 
 
 async def on_shutdown(app):
     logger.warning('zoom on_shutdown')
     if __name__ == "__main__":
-        db.disconnect()
+        db.sql.disconnect()
     logger.warning('zoom Bye!')
 
 

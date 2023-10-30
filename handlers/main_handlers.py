@@ -4,7 +4,8 @@ from aiogram.dispatcher.webhook import types
 
 from helpers.consts import *
 from helpers.config import logger, config
-from helpers.obj_classes import User, State, db
+from models import User, State
+import db_methods as db
 from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
 from handlers.student_handlers import post_problem_keyboard
 
@@ -15,8 +16,8 @@ async def start(message: types.Message):
     if not user:
         user = User(message.chat.id, USER_TYPE.STUDENT, LEVEL.NOVICE, message.chat.first_name or '', message.chat.last_name or '', '',
                     str(message.chat.id), ONLINE_MODE.ONLINE, 12, None)
-    db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
-    row = db.conn.execute('''
+    db.log.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
+    row = db.sql.conn.execute('''
         select command_id, count(*) cnt from game_map_opened_cells
         group by command_id order by command_id desc
         limit 1;
@@ -42,7 +43,7 @@ async def start(message: types.Message):
 async def prc_get_user_info_state(message: types.Message, user: User):
     logger.debug('prc_get_user_info_state')
     user = User.get_by_token(message.text)
-    db.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
+    db.log.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
     if user is None:
         await start(message)
         return
@@ -62,7 +63,21 @@ async def prc_get_user_info_state(message: types.Message, user: User):
             State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
         elif user.type == USER_TYPE.TEACHER:
             State.set_by_user_id(user.id, STATE.TEACHER_SELECT_ACTION)
+        elif user.type == USER_TYPE.DEACTIVATED_STUDENT:
+            State.set_by_user_id(user.id, STATE.USER_IS_NOT_ACTIVATED)
         await process_regular_message(message)
+
+
+@reg_state(STATE.USER_IS_NOT_ACTIVATED)
+async def prc_user_is_not_activated_state(message: types.Message, user: User):
+    logger.debug('prc_user_is_not_activated_state')
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="🔁 Привет!\n"
+             "Для начала обучения нужно оставить заявку на обучение на кружке на mos,ru.\n"
+             "Через несколько рабочих дней на почту придёт инструкция, а ваш аккаунт будет активирован.\n"
+             "Подробно про оформление: https://shashkovs.ru/vmsh/2023/n/about.html#application",
+    )
 
 
 async def prc_WTF(message: types.Message, user: User):
@@ -129,15 +144,19 @@ async def process_regular_message(message: types.Message):
         await start(message)
         return
     else:
-        cur_chat_state = State.get_by_user_id(user.id)
-        if cur_chat_state:
-            cur_chat_state = cur_chat_state['state']
+        if user.type == USER_TYPE.DEACTIVATED_STUDENT:
+            cur_chat_state = STATE.USER_IS_NOT_ACTIVATED
+            State.set_by_user_id(user.id, STATE.USER_IS_NOT_ACTIVATED)
+        else:
+            cur_chat_state = State.get_by_user_id(user.id)
+            if cur_chat_state:
+                cur_chat_state = cur_chat_state['state']
     if not cur_chat_state:
         State.set_by_user_id(user.id, STATE.GET_USER_INFO)
         return
 
     if not message.document and not message.photo:
-        db.add_message_to_log(False, message.message_id, message.chat.id, user and user.id, None, message.text, None)
+        db.log.insert(False, message.message_id, message.chat.id, user and user.id, None, message.text, None)
     state_processor = state_processors.get(cur_chat_state, prc_WTF)
     try:
         await state_processor(message, user)

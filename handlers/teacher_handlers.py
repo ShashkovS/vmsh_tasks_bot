@@ -11,7 +11,8 @@ from random import randrange
 
 from helpers.consts import *
 from helpers.config import logger
-from helpers.obj_classes import User, Problem, State, Waitlist, WrittenQueue, Result, db
+import db_methods as db
+from models import User, Problem, State, Waitlist, WrittenQueue, Result
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
 from handlers import teacher_keyboards, student_keyboards
 from handlers.student_handlers import sleep_and_send_problems_keyboard, refresh_last_student_keyboard, WHITEBOARD_LINK
@@ -20,19 +21,19 @@ from handlers.main_handlers import process_regular_message  # TODO Удалит�
 
 def get_problem_lock(teacher_id: int):
     key = f'{teacher_id}_pl'
-    value = db.kv.get(key, None)
+    value = db.sql.kv.get(key, None)
     return int(value) if value else None
 
 
 def del_problem_lock(teacher_id: int):
     key = f'{teacher_id}_pl'
-    db.kv.pop(key, None)
+    db.sql.kv.pop(key, None)
 
 
 def set_problem_lock(teacher_id: int, problem_id: int):
     key = f'{teacher_id}_pl'
     value = f'{problem_id}'
-    db.kv[key] = value
+    db.sql.kv[key] = value
 
 
 async def take_random_written_problem_and_start_check(teacher: User, problem_id: int):
@@ -85,7 +86,7 @@ async def prc_teacher_is_checking_task_state(message: types.Message, teacher: Us
                                              message.message_id)
     teacher_state['info'].append(wtd_id)  # Добавляем id в список добавленных
     State.set_by_user_id(**teacher_state)
-    prev_keyboard = db.get_last_keyboard(teacher.id)
+    prev_keyboard = db.last_keyboard.get(teacher.id)
     reply_markup = teacher_keyboards.build_written_task_checking_verdict(User.get_by_id(student_id),
                                                                          Problem.get_by_id(problem_id),
                                                                          teacher_state['info']) if (
@@ -99,7 +100,7 @@ async def prc_teacher_is_checking_task_state(message: types.Message, teacher: Us
     if prev_keyboard:
         await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'],
                                                reply_markup=None)
-    db.set_last_keyboard(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
+    db.last_keyboard.update(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
 @reg_state(STATE.TEACHER_ACCEPTED_QUEUE)
@@ -251,7 +252,7 @@ async def prc_SELECT_WRITTEN_TASK_TO_CHECK_callback(query: types.CallbackQuery, 
     # Так, препод указал, что хочет проверять письменные задачи
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
-    rows = db.get_written_tasks_count_by_synonyms()
+    rows = db.written_task_queue.get_written_tasks_count_by_synonyms()
     problems_and_counts = []
     for row in rows:
         first_problem_id = row['synonyms'].split(';')[0]
@@ -281,7 +282,7 @@ async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User)
     _, _, wtd_ids_to_remove = query.data.partition('_del_')
     if wtd_ids_to_remove:
         wtd_ids_to_remove = list(map(int, wtd_ids_to_remove.split(',')))  # TODO А-а-а! ТРЕШНЯК!!!
-        db.remove_written_task_discussion_by_ids(wtd_ids_to_remove)
+        db.written_task_discussion.delete(wtd_ids_to_remove)
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
     del_problem_lock(teacher.id)
@@ -347,7 +348,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
                                       reply_markup=teacher_keyboards.build_written_task_checking_verdict(student,
                                                                                                          problem) if (
                                           not is_sos) else teacher_keyboards.build_answer_verdict(student, problem))
-    db.set_last_keyboard(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
+    db.last_keyboard.update(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
 @reg_callback(CALLBACK.WRITTEN_TASK_SELECTED)
@@ -467,7 +468,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     problem = Problem.get_by_id(int(problem_id))
     # Помечаем решение как неверное и удаляем из очереди
     result_id = Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, RES_TYPE.WRITTEN)
-    db.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
+    db.result.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
     teacher_msg = await bot.send_message(chat_id=query.message.chat.id,
@@ -707,17 +708,17 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     # Определяем занятие и уровень по задаче, за которую ставим плюс или минус
     any_problem = pluses[0] if pluses else minuses[0] if minuses else None
     if any_problem:
-        zoom_conversation_id = db.allocate_conversation(student_id=student_id, teacher_id=teacher.id, lesson=any_problem.lesson, level=any_problem.level)
+        zoom_conversation_id = db.zoom_conversation.insert(student_id=student_id, teacher_id=teacher.id, lesson=any_problem.lesson, level=any_problem.level)
     else:
         zoom_conversation_id = None
     # Заливаем плюсы и минусы в базу
     for problem in pluses:
         Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type, zoom_conversation_id=zoom_conversation_id)
         # А ещё нужно удалить эту задачу из очереди на письменную проверку
-        db.delete_from_written_task_queue(student_id, problem.id)
+        db.written_task_queue.delete(student_id, problem.id)
     for problem in minuses:
-        db.delete_plus(student_id, problem.id, RES_TYPE.SCHOOL, VERDICT.REJECTED_ANSWER)
-        db.delete_plus(student_id, problem.id, RES_TYPE.ZOOM, VERDICT.REJECTED_ANSWER)
+        db.result.delete_plus(student_id, problem.id, RES_TYPE.SCHOOL, VERDICT.REJECTED_ANSWER)
+        db.result.delete_plus(student_id, problem.id, RES_TYPE.ZOOM, VERDICT.REJECTED_ANSWER)
         Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, res_type, zoom_conversation_id=zoom_conversation_id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
 
@@ -775,11 +776,14 @@ async def find_student(message: types.Message):
         return
     students = sorted(
         User.all_students(),
-        key=lambda user: -jaro_winkler(search.lower(), f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1/32)
+        key=lambda user: min(
+            -jaro_winkler(search.lower(), f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1/32),
+            -jaro_winkler(search, user.token, prefix_weight=1/32),
+        )
     )
     if students:
         lines = [
-            f'{student.surname:<20} {student.name:<15} {student.level} {student.token} {ONLINE_MODE(student.online).__str__()[12:]}'
+            f'{student.surname:<20} {student.name:<15} {student.level} {student.token} {"🏫" if student.online == ONLINE_MODE.SCHOOL else "📡"}'
             for student in students[:10]]
         await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
     else:
@@ -835,7 +839,7 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
     level = LEVEL(lvl)
     if student:
         student.set_level(level)
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
+        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         if student.chat_id:
             message = await bot.send_message(
@@ -863,12 +867,12 @@ async def zoom_queue(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     show_all = 'all' in message.text
-    queue = db.get_first_from_queue(show_all)
+    queue = db.zoom_queue.get_first_from_queue(show_all)
     # [{'zoom_user_name': 'name3', 'enter_ts': '2022-01-01 02:00:00', 'status': 0}]
     show_queue = []
     for row in queue:
         waits = datetime.datetime.now() - datetime.datetime.fromisoformat(row['enter_ts'])
-        waits_min = (waits.seconds + 30) // 60
+        waits_min = (waits.total_seconds() + 30) // 60
         if row['status'] == 1:
             alert = ' (в основном зале)'
         elif row['status'] == -1:
@@ -878,7 +882,7 @@ async def zoom_queue(message: types.Message):
         else:
             alert = ''
         show_queue.append(f'{waits_min} мин   {row["zoom_user_name"]}  {alert}')
-    in_queue = db.get_queue_count()
+    in_queue = db.zoom_queue.get_queue_count()
     show_queue.append(f'\nВсего в очереди: {in_queue} человек')
     await bot.send_message(
         chat_id=message.chat.id,
@@ -912,7 +916,7 @@ async def set_game_command(message: types.Message):
     if not student:
         await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
         return
-    db.set_student_command(student.id, student.level, command_id)
+    db.game.set_student_command(student.id, student.level, command_id)
     await bot.send_message(
         chat_id=message.chat.id,
         text=f"Студент с токеном {token} переведён в команду {command_id}",

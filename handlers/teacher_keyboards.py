@@ -4,14 +4,15 @@ from typing import List, Tuple
 
 from helpers.consts import *
 from helpers.config import logger
-from helpers.obj_classes import User, Problem, db
+import db_methods as db
+from models import User, Problem
 
 
 def build_teacher_actions():
     logger.debug('keyboards.build_teacher_actions')
     keyboard = types.InlineKeyboardMarkup()
-    sos_count = db.get_sos_tasks_count()
-    prb_count = db.get_written_tasks_count()
+    sos_count = db.written_task_queue.get_sos_tasks_count()
+    prb_count = db.written_task_queue.get_written_tasks_count()
     get_written_task_button = types.InlineKeyboardButton(
         text=f"Ответить на вопрос (всего {sos_count})",
         callback_data=CALLBACK.GET_SOS_TASK
@@ -152,7 +153,7 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
     logger.debug('keyboards.build_verdict_for_oral_problems')
     if lesson_num is None:
         lesson_num = Problem.last_lesson_num(student.level)
-    solved = set(db.check_student_solved(student.id, lesson_num))
+    solved = set(db.result.check_student_solved(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
@@ -212,7 +213,7 @@ def build_teacher_reaction_on_solution(result_id: int):
     """
     logger.debug('keyboards.build_teacher_reaction_on_solution')
     keyboard = types.InlineKeyboardMarkup()
-    for reaction in db.get_reactions_enum(REACTION.WRITTEN_TEACHER):
+    for reaction in db.reaction.enum(REACTION.WRITTEN_TEACHER):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],
@@ -226,7 +227,7 @@ def build_teacher_reaction_oral(zoom_conversation_id: int):
     """Создает инлайн клавиатуру для учителя для оценки устной сдачи ученика."""
     logger.debug('keyboards.build_teacher_reaction_oral')
     keyboard = types.InlineKeyboardMarkup()
-    for reaction in db.get_reactions_enum(REACTION.ORAL_TEACHER):
+    for reaction in db.reaction.enum(REACTION.ORAL_TEACHER):
         keyboard.add(
             types.InlineKeyboardButton(
                 text=reaction['reaction'],

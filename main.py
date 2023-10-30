@@ -4,13 +4,15 @@ import asyncio
 
 import apps
 from helpers.config import config, logger
-from db_methods import db
+import db_methods as db
+
+LOCAL_APP_PORT = 8179
 
 
 async def on_startup(app):
     logger.warning('MainApp Start up!')
     # Настраиваем БД
-    db.setup(config.db_filename)
+    db.sql.setup(config.db_filename)
 
 
 async def on_shutdown(app):
@@ -24,15 +26,11 @@ async def on_shutdown(app):
     logger.warning(f'Tasks to wait: {all_async_tasks_but_current!r}')
     if all_async_tasks_but_current:
         await asyncio.wait(all_async_tasks_but_current, timeout=20)
-    db.disconnect()
+    db.sql.disconnect()
     logger.warning('MainApp Bye!')
 
 
-if __name__ == "__main__":
-    # В режиме отладки запускаем в режиме long polling, соответственно у нас нет web-приложений, только голый бот
-    apps.tg_bot.start_bot_in_polling_mode()
-else:
-    # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
+def prepare_app():
     app = web.Application()
     # Важно, что текущие on_startup и on_shutdown первые. Мы потом развернём список on_shutdown в обратном порядке
     app.on_startup.append(on_startup)
@@ -42,5 +40,24 @@ else:
         module.configue(app)
     # Обращаем on_shutdown, чтобы приложения закрывались в правильном порядке
     app.on_shutdown[:] = app.on_shutdown[::-1]
+    if __name__ == '__main__':
+        url_prefix = f'http://127.0.0.1:{LOCAL_APP_PORT}'
+    else:
+        url_prefix = f'https://{config.webhook_host}'
+    logger.info('Routes:')
+    for route in app.router.routes():
+        logger.info(f'{route.method}: {url_prefix}{route.resource.canonical}')
+        print(f'{route.method}: {url_prefix}{route.resource.canonical}')
+
+    return app
+
+
+app = prepare_app()
+if __name__ == "__main__":
+    # Start aiohttp server
+    apps.tg_bot.start_bot_in_polling_mode()
+    webapp_task = asyncio.create_task(web.run_app(app, port=LOCAL_APP_PORT))
+else:
+    # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
     # Ну всё, можно делать заключительные приготовления
     apps.tg_bot.start_bot_in_webhook_mode(app)

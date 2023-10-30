@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
 
-import importlib
+importlib
 import os
 
 os.chdir('..')

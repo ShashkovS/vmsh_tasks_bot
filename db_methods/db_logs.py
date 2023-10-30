@@ -1,10 +1,10 @@
-import sqlite3
 from typing import List
 from datetime import datetime
 
+from .db_abc import DB_ABC, sql
 
-class DB_FEATURES:
-    conn: sqlite3.Connection
+
+class DB_FEATURES(DB_ABC):
 
     # ██       ██████   ██████  ███████
     # ██      ██    ██ ██       ██
@@ -12,12 +12,12 @@ class DB_FEATURES:
     # ██      ██    ██ ██    ██      ██
     # ███████  ██████   ██████  ███████
 
-    def add_message_to_log(self, from_bot: bool, tg_msg_id: int, chat_id: int,
+    def insert(self, from_bot: bool, tg_msg_id: int, chat_id: int,
                            student_id: int, teacher_id: int, msg_text: str, attach_path: str):
         """Записать сообщение в лог отправленных сообщений.
         Данные из лога дальше никак не используются (кроме анализа инцидентов)"""
         ts = datetime.now().isoformat()
-        with self.conn as conn:
+        with self.db.conn as conn:
             conn.execute("""
                 INSERT INTO messages_log  ( from_bot,  tg_msg_id,  chat_id,  student_id,  teacher_id,  ts,  msg_text,  attach_path)
                 VALUES                    (:from_bot, :tg_msg_id, :chat_id, :student_id, :teacher_id, :ts, :msg_text, :attach_path) 
@@ -27,7 +27,7 @@ class DB_FEATURES:
         """Сохранить данные пользователя, который успешно залогинился.
         Данные из лога дальше никак не используются (кроме анализа инцидентов)"""
         ts = datetime.now().isoformat()
-        with self.conn as conn:
+        with self.db.conn as conn:
             conn.execute("""
                 INSERT INTO signons ( ts,  user_id,  chat_id,  first_name,  last_name,  username,  token)
                 VALUES              (:ts, :user_id, :chat_id, :first_name, :last_name, :username, :token) 
@@ -37,7 +37,7 @@ class DB_FEATURES:
         """Сохранить факт смены режима, уровня и т.п.
         Данные из лога дальше никак не используются (кроме анализа инцидентов)"""
         ts = datetime.now().isoformat()
-        with self.conn as conn:
+        with self.db.conn as conn:
             conn.execute("""
                 INSERT INTO user_changes_log ( ts,  user_id,  change_type,  new_value)
                 VALUES                       (:ts, :user_id, :change_type, :new_value) 
@@ -53,7 +53,7 @@ class DB_FEATURES:
         """Посчитать статистику решаемости по последнему занятию.
         Возвращает список словарей с ключами prb, frac, perc, title
         """
-        cur = self.conn.execute("""
+        cur = self.db.conn.execute("""
             with pre as (
                 select r.lesson, r.level, p.prob, p.item,
                        p.title, r.student_id,
@@ -73,3 +73,6 @@ class DB_FEATURES:
         """)
         rows = cur.fetchall()
         return rows
+
+
+log = DB_FEATURES(sql)
