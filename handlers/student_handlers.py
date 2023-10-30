@@ -2,6 +2,7 @@ import os
 import re
 import asyncio
 import traceback
+from ast import literal_eval
 from typing import Tuple, Optional
 
 import aiogram.utils.exceptions
@@ -22,7 +23,7 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
     '__builtins__': None, 're': re,
     'bool': bool, 'float': float, 'int': int, 'list': list, 'range': range, 'set': set, 'str': str, 'tuple': tuple,
     'abs': abs, 'all': all, 'any': any, 'bin': bin, 'enumerate': enumerate, 'format': format, 'len': len,
-    'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum, 'map': map,
+    'max': max, 'min': min, 'round': round, 'sorted': sorted, 'sum': sum, 'map': map, 'literal_eval': literal_eval,
 }
 is_py_func = re.compile(r'^\s*def \w+\s*\(')
 MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
