@@ -1,8 +1,8 @@
 from aiogram import types
 
 from helpers.consts import *
-from helpers.config import logger
-from models import User, Problem, State
+from helpers.config import logger, config
+from models import User, Problem, State, Webtoken
 import db_methods as db
 
 
@@ -11,11 +11,11 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     solved = set(db.result.check_student_solved(student.id, lesson_num))
     being_checked = set(db.written_task_queue.check_student_sent_written(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    # to_game_button = types.InlineKeyboardButton(
-    #     text="🕹🎲 Открыть командную игру 🎉🏆",
-    #     url=f'https://vmsh179botprodbackup.proj179.ru/game/webtoken/{Webtoken.webtoken_by_user(student)}'
-    # )
-    # keyboard_markup.add(to_game_button)
+    to_game_button = types.InlineKeyboardButton(
+        text="🕹🎲 Открыть командную игру 🎉🏆",
+        url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
+    )
+    keyboard_markup.add(to_game_button)
     # Кнопки с вопросами
     if not is_sos_question:
         que1 = types.InlineKeyboardButton(
@@ -62,11 +62,11 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     #     callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
     # )
     # keyboard_markup.add(to_lessons_button)
-    # to_game_button = types.InlineKeyboardButton(
-    #     text="🕹🎲 Открыть командную игру 🎉🏆",
-    #     url=f'https://vmsh179botprodbackup.proj179.ru/game/webtoken/{Webtoken.webtoken_by_user(student)}'
-    # )
-    # keyboard_markup.add(to_game_button)
+    to_game_button = types.InlineKeyboardButton(
+        text="🕹🎲 Открыть командную игру 🎉🏆",
+        url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
+    )
+    keyboard_markup.add(to_game_button)
     return keyboard_markup
 
 

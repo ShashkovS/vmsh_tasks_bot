@@ -19,7 +19,7 @@ from helpers.config import config, logger, DEBUG, APP_PATH
 import db_methods as db
 from models import Webtoken, User, Problem
 from helpers.nats_brocker import vmsh_nats
-from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE, USER_TYPE
+from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE, USER_TYPE, LEVEL
 from helpers.bot import bot
 
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
@@ -238,7 +238,11 @@ def get_game_data(student: User) -> dict:
         else:
             used_titles.add(clear_title)
         # Защита от продолжающих, которые решают задачи начинающих. Они получают в 1.5 раза меньше баллов
-        if solv['level'] == 'н' and command['level'] != 'н':
+        if solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.PRO:
+            score = int(round(score / 1.5))
+        elif solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.EXPERT:
+            score = int(round(score / 2))
+        elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.EXPERT:
             score = int(round(score / 1.5))
         events.append([solv['ts'], score])
     events.sort(key=itemgetter(0))
