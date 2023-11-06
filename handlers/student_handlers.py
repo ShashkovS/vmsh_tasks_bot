@@ -809,18 +809,18 @@ async def game_info(message: types.Message):
     report = []
     for ts, tp, diff, title in events:
         if tp == '$':
-            report.append(f'-{diff}⚡')
+            report.append(f'{diff:+}⚡')
             for try_amount in range(-diff, 11):
                 if scores_count.get(try_amount, 0) > 0:
                     scores_count[try_amount] -= 1
-                rem = try_amount - diff
+                rem = try_amount + diff
                 if rem > 0:
                     scores_count[rem] = scores_count.get(rem, 0) + 1
         elif tp == '🗝':
-            report.append(f'+{diff}⚡ за сундук')
+            report.append(f'{diff:+}⚡ за сундук')
             scores_count[diff] = scores_count.get(diff, 0) + 1
         elif tp == '+':
-            report.append(f'+{diff}⚡ за задачу «{title}»')
+            report.append(f'{diff:+}⚡ за задачу «{title}»')
             scores_count[diff] = scores_count.get(diff, 0) + 1
         report.append(', '.join(f'({dif}⚡)×{cnt}' for (dif, cnt) in sorted(scores_count.items()) if cnt > 0))
     report = '\n'.join(report)
