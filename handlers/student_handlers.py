@@ -804,9 +804,10 @@ async def game_info(message: types.Message):
             score = int(round(score / 2))
         elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.EXPERT:
             score = int(round(score / 1.5))
-        events.append([solv['ts'], '+', score, clear_title])
+        events.append([solv['ts'], '+', score, clear_title.strip()])
     events.sort(key=itemgetter(0))
     report = []
+    tp = None
     for ts, tp, diff, title in events:
         if tp == '$':
             report.append(f'{diff:+}⚡')
@@ -824,7 +825,11 @@ async def game_info(message: types.Message):
         elif tp == '+':
             report.append(f'{diff:+}⚡ за задачу «{title}»')
             scores_count[diff] = scores_count.get(diff, 0) + 1
-        report.append(', '.join(f'{dif}⚡×{cnt}' for (dif, cnt) in sorted(scores_count.items()) if cnt > 0))
+        if tp != '$':
+            report.append('    ' + ', '.join(f'{dif}⚡×{cnt}' for (dif, cnt) in sorted(scores_count.items()) if cnt > 0))
+    if tp == '$':
+        report.append('    ' + ', '.join(f'{dif}⚡×{cnt}' for (dif, cnt) in sorted(scores_count.items()) if cnt > 0))
     report = '\n'.join(report)
     for i in range(0, len(report), 4000):
         await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text=f'<pre>{report[i:i + 4000]}</pre>')
+        await asyncio.sleep(1/20)
