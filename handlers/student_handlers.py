@@ -811,18 +811,20 @@ async def game_info(message: types.Message):
         if tp == '$':
             report.append(f'{diff:+}⚡')
             for try_amount in range(-diff, 11):
-                if scores_count.get(try_amount, 0) > 0:
-                    scores_count[try_amount] -= 1
+                if scores_count.get(try_amount, 0) <= 0:
+                    continue
+                scores_count[try_amount] -= 1
                 rem = try_amount + diff
                 if rem > 0:
                     scores_count[rem] = scores_count.get(rem, 0) + 1
+                break
         elif tp == '🗝':
             report.append(f'{diff:+}⚡ за сундук')
             scores_count[diff] = scores_count.get(diff, 0) + 1
         elif tp == '+':
             report.append(f'{diff:+}⚡ за задачу «{title}»')
             scores_count[diff] = scores_count.get(diff, 0) + 1
-        report.append(', '.join(f'({dif}⚡)×{cnt}' for (dif, cnt) in sorted(scores_count.items()) if cnt > 0))
+        report.append(', '.join(f'{dif}⚡×{cnt}' for (dif, cnt) in sorted(scores_count.items()) if cnt > 0))
     report = '\n'.join(report)
     for i in range(0, len(report), 4000):
         await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text=f'<pre>{report[i:i + 4000]}</pre>')
