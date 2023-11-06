@@ -3,6 +3,7 @@ import re
 import asyncio
 import traceback
 from ast import literal_eval
+from operator import itemgetter
 from typing import Tuple, Optional
 
 import aiogram.utils.exceptions
@@ -178,7 +179,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
             text="Принято на проверку" if (problem_id > 0) else "Вопрос записан"
         )
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id,   student))
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 def check_test_ans_rate_limit(student_id: int, problem_id: int):
@@ -752,8 +753,76 @@ async def students_my_results(message: types.Message):
                      ]
             for i in range(0, len(lines), 20):
                 try:
-                    await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines[i:i+20]) + '</pre>')
+                    await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines[i:i + 20]) + '</pre>')
                 except aiogram.utils.exceptions.MessageIsTooLong:
                     pass
     else:
         await bot.send_message(chat_id=message.chat.id, text='Нет ни одной посылки (или что-то пошло не так)')
+
+
+@dispatcher.message_handler(commands=['game_info'])
+async def game_info(message: types.Message):
+    """Отчёт по плюсам и минусам в игре.
+    См. также get_game_data.
+    """
+    logger.debug('game_info')
+    student = User.get_by_chat_id(message.chat.id)
+    if student and student.type == USER_TYPE.TEXT:
+        try:
+            cmd, token = message.text.split()
+            student = User.get_by_token(token)
+        except:
+            pass
+    if not student:
+        return
+    command = db.game.get_student_command(student.id)
+    student_command = command['command_id'] if command else -1
+    solved = db.result.get_student_solved(student.id, Problem.last_lesson_num(student.level))  # ts, title
+    payments = db.game.get_student_payments(student.id, student_command)  # ts, amount
+    chests_rows = db.game.get_student_chests(student.id, student_command)
+    # Собираем из решённых задач и оплат event'ы
+    events = []
+    for paym in payments:
+        events.append([paym['ts'], '$', -paym['amount'], None])
+    for chest in chests_rows:
+        events.append([chest['ts'], '🗝', chest['bonus'], None])
+    used_titles = set()
+    scores_count = {}
+    for solv in solved:
+        if '⚡' not in solv['title']:
+            continue
+        score, clear_title = solv['title'].split('⚡')
+        score = int(score) if score.strip().isdecimal() else 2
+        if clear_title in used_titles:
+            continue
+        else:
+            used_titles.add(clear_title)
+        # Защита от продолжающих, которые решают задачи начинающих. Они получают в 1.5 раза меньше баллов
+        if solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.PRO:
+            score = int(round(score / 1.5))
+        elif solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.EXPERT:
+            score = int(round(score / 2))
+        elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.EXPERT:
+            score = int(round(score / 1.5))
+        events.append([solv['ts'], '+', score, clear_title])
+    events.sort(key=itemgetter(0))
+    report = []
+    for ts, tp, diff, title in events:
+        if tp == '$':
+            report.append(f'-{diff}⚡')
+            for try_amount in range(-diff, 11):
+                if scores_count.get(try_amount, 0) > 0:
+                    scores_count[try_amount] -= 1
+                rem = try_amount - diff
+                if rem > 0:
+                    scores_count[rem] = scores_count.get(rem, 0) + 1
+        elif tp == '🗝':
+            report.append(f'+{diff}⚡ за сундук')
+            scores_count[diff] = scores_count.get(diff, 0) + 1
+        elif tp == '+':
+            report.append(f'+{diff}⚡ за задачу «{title}»')
+            scores_count[diff] = scores_count.get(diff, 0) + 1
+        report.append(', '.join(f'({dif}⚡)×{cnt}' for (dif, cnt) in sorted(scores_count.items()) if cnt > 0))
+    report = '\n'.join(report)
+    for i in range(0, len(report), 4000):
+        await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text=f'<pre>{report[i:i + 4000]}</pre>')
