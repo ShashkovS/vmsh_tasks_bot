@@ -767,7 +767,7 @@ async def game_info(message: types.Message):
     """
     logger.debug('game_info')
     student = User.get_by_chat_id(message.chat.id)
-    if student and student.type == USER_TYPE.TEXT:
+    if student and student.type == USER_TYPE.TEACHER:
         try:
             cmd, token = message.text.split()
             student = User.get_by_token(token)
