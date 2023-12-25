@@ -374,6 +374,11 @@ async def level_novice(message: types.Message):
     logger.debug('level_novice')
     student = User.get_by_chat_id(message.chat.id)
     if student:
+        # TODO Delete
+        await bot.send_message(chat_id=message.chat.id, text="Возможность отключена до 20:00")
+        return
+        # TODO Delete
+
         student.set_level(LEVEL.NOVICE)
         message = await bot.send_message(
             chat_id=message.chat.id,
@@ -391,6 +396,11 @@ async def level_pro(message: types.Message):
     logger.debug('level_pro')
     student = User.get_by_chat_id(message.chat.id)
     if student:
+        # TODO Delete
+        await bot.send_message(chat_id=message.chat.id, text="Возможность отключена до 20:00")
+        return
+        # TODO Delete
+
         message = await bot.send_message(
             chat_id=message.chat.id,
             text="Вы переведены в группу продолжающих. "
@@ -408,6 +418,11 @@ async def level_expert(message: types.Message):
     logger.debug('level_expert')
     student = User.get_by_chat_id(message.chat.id)
     if student:
+        # TODO Delete
+        await bot.send_message(chat_id=message.chat.id, text="Возможность отключена до 20:00")
+        return
+        # TODO Delete
+
         message = await bot.send_message(
             chat_id=message.chat.id,
             text="Вы переведены в группу экспертов. "
@@ -838,4 +853,4 @@ async def game_info(message: types.Message):
     report = '\n'.join(report)
     for i in range(0, len(report), 4000):
         await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text=f'<pre>{report[i:i + 4000]}</pre>')
-        await asyncio.sleep(1/20)
+        await asyncio.sleep(1 / 20)
