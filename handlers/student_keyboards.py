@@ -42,7 +42,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
             else:
                 tick = '⬜'
         elif RESULT_MODE == FEATURES.RESULT_AFTER:
-            if synonyms_set & student_tried:
+            if synonyms_set & student_tried or synonyms_set & being_checked:
                 tick = '❓'
             else:
                 tick = '⬜'
