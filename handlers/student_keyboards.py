@@ -30,16 +30,15 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
         keyboard_markup.row(que1, que2)
     for problem in Problem.get_by_lesson(student.level, lesson_num):
         synonyms_set = problem.synonyms_set()
-        if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
-            if synonyms_set & solved:
-                tick = '✅'
-            elif synonyms_set & being_checked:
-                tick = '❓'
-            elif problem.prob_type == PROB_TYPE.ORALLY and State.get_by_user_id(student.id)['oral_problem_id'] is not None:
-                tick = '⌛'
-            else:
-                tick = '⬜'
+        if synonyms_set & solved:
+            tick = '✅'
+        elif synonyms_set & being_checked:
+            tick = '❓'
+        elif problem.prob_type == PROB_TYPE.ORALLY and State.get_by_user_id(student.id)['oral_problem_id'] is not None:
+            tick = '⌛'
         else:
+            tick = '⬜'
+        if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY and tick != '⬜':
             tick = '❓'
 
         if problem.prob_type == PROB_TYPE.TEST:
