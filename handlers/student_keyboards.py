@@ -38,7 +38,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
             tick = '⌛'
         else:
             tick = '⬜'
-        if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY and tick != '⬜':
+        if RESULT_MODE == FEATURES.RESULT_AFTER and tick != '⬜':
             tick = '❓'
 
         if problem.prob_type == PROB_TYPE.TEST:
