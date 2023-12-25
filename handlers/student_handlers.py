@@ -374,11 +374,6 @@ async def level_novice(message: types.Message):
     logger.debug('level_novice')
     student = User.get_by_chat_id(message.chat.id)
     if student:
-        # TODO Delete
-        await bot.send_message(chat_id=message.chat.id, text="Возможность отключена до 20:00")
-        return
-        # TODO Delete
-
         student.set_level(LEVEL.NOVICE)
         message = await bot.send_message(
             chat_id=message.chat.id,
@@ -396,11 +391,6 @@ async def level_pro(message: types.Message):
     logger.debug('level_pro')
     student = User.get_by_chat_id(message.chat.id)
     if student:
-        # TODO Delete
-        await bot.send_message(chat_id=message.chat.id, text="Возможность отключена до 20:00")
-        return
-        # TODO Delete
-
         message = await bot.send_message(
             chat_id=message.chat.id,
             text="Вы переведены в группу продолжающих. "
@@ -418,11 +408,6 @@ async def level_expert(message: types.Message):
     logger.debug('level_expert')
     student = User.get_by_chat_id(message.chat.id)
     if student:
-        # TODO Delete
-        await bot.send_message(chat_id=message.chat.id, text="Возможность отключена до 20:00")
-        return
-        # TODO Delete
-
         message = await bot.send_message(
             chat_id=message.chat.id,
             text="Вы переведены в группу экспертов. "
