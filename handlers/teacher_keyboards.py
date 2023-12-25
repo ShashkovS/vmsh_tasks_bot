@@ -5,6 +5,7 @@ from typing import List, Tuple
 from helpers.consts import *
 from helpers.config import logger
 import db_methods as db
+from helpers.features import VERDICT_MODE, FEATURES
 from models import User, Problem
 
 
@@ -118,14 +119,23 @@ def build_select_student(name_to_find: str):
 def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids_to_remove: List = None):
     logger.debug('keyboards.build_written_task_checking_verdict')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
-    keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"👍 Засчитать задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
-        callback_data=f"{CALLBACK.WRITTEN_TASK_OK}_{student.id}_{problem.id}"
-    ))
-    keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"❌ Отклонить и переслать все сообщения выше студенту {student.surname} {student.name}",
-        callback_data=f"{CALLBACK.WRITTEN_TASK_BAD}_{student.id}_{problem.id}"
-    ))
+    # TODO сделать нормально
+    if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
+        keyboard_markup.add(types.InlineKeyboardButton(
+            text=f"👍 Засчитать задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
+            callback_data=f"{CALLBACK.WRITTEN_TASK_OK}_{student.id}_{problem.id}_{VERDICT.SOLVED}"
+        ))
+        keyboard_markup.add(types.InlineKeyboardButton(
+            text=f"❌ Отклонить и переслать все сообщения выше студенту {student.surname} {student.name}",
+            callback_data=f"{CALLBACK.WRITTEN_TASK_BAD}_{student.id}_{problem.id}_{VERDICT.WRONG_ANSWER}"
+        ))
+    else:
+        for verdict in VERDICT_MODE.value:
+            value = VERDICT_DECODER[verdict]
+            keyboard_markup.add(types.InlineKeyboardButton(
+                text=f"{value} поставить за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
+                callback_data=f"{CALLBACK.WRITTEN_TASK_OK}_{student.id}_{problem.id}_{verdict}"
+            ))
     keyboard_markup.add(types.InlineKeyboardButton(
         text=f"Отказаться от проверки и вернуться назад",
         callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"

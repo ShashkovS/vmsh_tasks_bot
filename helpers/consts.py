@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from enum import Enum, IntEnum, IntFlag, unique
 
-
 # СОСТОЯНИЯ
 # Важно, чтобы каждый state был уникальной числовой константой, которая больше никогда не меняется
 # (так как она сохраняется в БД)
@@ -190,9 +189,9 @@ VERDICT_DECODER = {
     VERDICT.REJECTED_ANSWER: '?->−',
     VERDICT.VERDICT_PLUS: '+',
     VERDICT.VERDICT_PLUS_DOT: '+.',
-    VERDICT.VERDICT_PLUS_MINUS: '+−',
-    VERDICT.VERDICT_PLUS_DIV_2: '+/2',
-    VERDICT.VERDICT_MINUS_PLUS: '−+',
+    VERDICT.VERDICT_PLUS_MINUS: '±',
+    VERDICT.VERDICT_PLUS_DIV_2: '⨧',
+    VERDICT.VERDICT_MINUS_PLUS: '∓',
     VERDICT.VERDICT_MINUS_DOT: '−.',
     VERDICT.VERDICT_MINUS: '−',
 }
