@@ -19,6 +19,37 @@ from handlers import teacher_keyboards, student_keyboards
 from handlers.student_handlers import sleep_and_send_problems_keyboard, refresh_last_student_keyboard, WHITEBOARD_LINK
 from handlers.main_handlers import process_regular_message  # TODO Удалить использование этой функции
 
+CHECK_MILESTONES = {
+    1: '🌟 — ура! Первая задача! ❤️',
+    10: '🔟✨ — ура! 10 задач! ❤️',
+    50: '🏅🎉 — ура! 50 задач! ❤️',
+    100: '💯🏆 — ура! 100 задач! ❤️',
+    200: '2️⃣🎖️✨ — ура! 200 задач! ❤️',
+    300: '3️⃣🥉🎆 — ура! 300 задач! ❤️',
+    400: '4️⃣🥈🌠 — ура! 400 задач! ❤️',
+    500: '5️⃣🥇💫 — ура! 500 задач! ❤️',
+    600: '6️⃣🏵️🌈 — ура! 600 задач! ❤️',
+    700: '7️⃣🌟🎇 — ура! 700 задач! ❤️',
+    800: '8️⃣🏆✨ — ура! 800 задач! ❤️',
+    900: '9️⃣💖🎊 — ура! 900 задач! ❤️',
+    1000: '1️⃣0️⃣0️⃣0️⃣👑🎉 — ура! 1000 задач! ❤️',
+    1100: '1️⃣1️⃣0️⃣0️⃣🌠✨ — ура! 1100 задач! ❤️',
+    1200: '1️⃣2️⃣0️⃣0️⃣🏅🌈 — ура! 1200 задач! ❤️',
+    1300: '1️⃣3️⃣0️⃣0️⃣🥉💫 — ура! 1300 задач! ❤️',
+    1400: '1️⃣4️⃣0️⃣0️⃣🥈🎆 — ура! 1400 задач! ❤️',
+    1500: '1️⃣5️⃣0️⃣0️⃣🥇🎇 — ура! 1500 задач! ❤️',
+    1600: '1️⃣6️⃣0️⃣0️⃣🏵️✨ — ура! 1600 задач! ❤️',
+    1700: '1️⃣7️⃣0️⃣0️⃣🌟🎊 — ура! 1700 задач! ❤️',
+    1800: '1️⃣8️⃣0️⃣0️⃣🏆🌠 — ура! 1800 задач! ❤️',
+    1900: '1️⃣9️⃣0️⃣0️⃣💖✨ — ура! 1900 задач! ❤️',
+    2000: '2️⃣0️⃣0️⃣0️⃣👑🎉 — ура! 2000 задач! ❤️',
+    2100: '2️⃣1️⃣0️⃣0️⃣🌠🌈 — ура! 2100 задач! ❤️',
+    2200: '2️⃣2️⃣0️⃣0️⃣🏅💫 — ура! 2200 задач! ❤️',
+    2300: '2️⃣3️⃣0️⃣0️⃣🥉🎆 — ура! 2300 задач! ❤️',
+    2400: '2️⃣4️⃣0️⃣0️⃣🥈🎇 — ура! 2400 задач! ❤️',
+    2500: '2️⃣5️⃣0️⃣0️⃣🥇✨ — ура! 2500 задач! ❤️',
+}
+
 
 def get_problem_lock(teacher_id: int):
     key = f'{teacher_id}_pl'
@@ -455,17 +486,24 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     problem = Problem.get_by_id(int(problem_id))
     # Помечаем задачу как решённую и удаляем из очереди
     result_id = Result.add(student, problem, teacher, set_verdict, None, RES_TYPE.WRITTEN)
+    plus, minus = db.result.check_stat(problem.lesson, teacher.id)
+    tot_checked = plus + minus
+    milestone = CHECK_MILESTONES.get(tot_checked, '')
+    if milestone:
+        milestone = f'\n=====\n{milestone}\n====='
     if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
         text = (
-            f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
-            f'Для исправления: '
-            f'/recheck_{student.token}_{problem.id}')
+            f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
+            f'\nВсего проверено задач: {tot_checked} (+{plus}, -{minus}){milestone}'
+            f'\nДля исправления:'
+            f' /recheck_{student.token}_{problem.id}')
     else:
         verdict_text = VERDICT_DECODER[set_verdict]
         text = (
             f'👍 Поставили {verdict_text} за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
-            f'Для исправления: '
-            f'/recheck_{student.token}_{problem.id}')
+            f'\nВсего проверено задач: {tot_checked} (+{plus}, -{minus}){milestone}'
+            f'\nДля исправления:'
+            f' /recheck_{student.token}_{problem.id}')
 
     WrittenQueue.delete_from_queue(student.id, problem.id)
     reaction_msg = await bot.send_message(chat_id=query.message.chat.id,
@@ -494,12 +532,19 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     # Помечаем решение как неверное и удаляем из очереди
     result_id = Result.add(student, problem, teacher, set_verdict, None, RES_TYPE.WRITTEN)
     db.result.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
+    plus, minus = db.result.check_stat(problem.lesson, teacher.id)
+    tot_checked = plus + minus
+    milestone = CHECK_MILESTONES.get(tot_checked, '')
+    if milestone:
+        milestone = f'\n=====\n{milestone}\n====='
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
     teacher_msg = await bot.send_message(chat_id=query.message.chat.id,
                                          text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
-                                              f'школьнику {student.token} {student.surname} {student.name}! Для исправления: '
-                                              f'/recheck_{student.token}_{problem.id}',
+                                              f'школьнику {student.token} {student.surname} {student.name}!'
+                                              f'\nВсего проверено задач: {tot_checked} (+{plus}, -{minus}){milestone}'
+                                              f'\nДля исправления:'
+                                              f' /recheck_{student.token}_{problem.id}',
                                          parse_mode='HTML')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
