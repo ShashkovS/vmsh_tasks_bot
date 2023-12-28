@@ -512,6 +512,8 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
                                           parse_mode='HTML')
     bot.remove_markup_after(reaction_msg, 15)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+    if milestone:
+        await asyncio.sleep(1)
     await bot.answer_callback_query_ig(query.id)
     if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
         asyncio.create_task(refresh_last_student_keyboard(student))  # Обновляем студенту клавиатуру со списком задач
@@ -547,6 +549,8 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
                                               f' /recheck_{student.token}_{problem.id}',
                                          parse_mode='HTML')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+    if milestone:
+        await asyncio.sleep(1)
     await bot.answer_callback_query_ig(query.id)
     # Пересылаем переписку школьнику
     if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
