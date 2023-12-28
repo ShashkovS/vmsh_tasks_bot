@@ -97,7 +97,7 @@ async def take_random_written_problem_and_start_check(teacher: User, problem_id:
 
 
 @reg_state(STATE.TEACHER_SELECT_ACTION)
-async def prc_teacher_select_action(message: types.Message, teacher: User, sleep_before: 0):
+async def prc_teacher_select_action(message: types.Message, teacher: User, sleep_before=0):
     use_chat_id = (message and message.chat and message.chat.id) or (teacher and teacher.chat_id) or None
     if sleep_before > 0:
         await asyncio.sleep(sleep_before)
