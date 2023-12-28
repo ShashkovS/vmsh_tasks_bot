@@ -97,8 +97,10 @@ async def take_random_written_problem_and_start_check(teacher: User, problem_id:
 
 
 @reg_state(STATE.TEACHER_SELECT_ACTION)
-async def prc_teacher_select_action(message: types.Message, teacher: User):
+async def prc_teacher_select_action(message: types.Message, teacher: User, sleep_before: 0):
     use_chat_id = (message and message.chat and message.chat.id) or (teacher and teacher.chat_id) or None
+    if sleep_before > 0:
+        await asyncio.sleep(sleep_before)
     logger.debug('prc_teacher_select_action')
     locked_problem_id = get_problem_lock(teacher.id)
     if not locked_problem_id:
@@ -512,13 +514,11 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
                                           parse_mode='HTML')
     bot.remove_markup_after(reaction_msg, 15)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-    if milestone:
-        await asyncio.sleep(1)
     await bot.answer_callback_query_ig(query.id)
     if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
         asyncio.create_task(refresh_last_student_keyboard(student))  # Обновляем студенту клавиатуру со списком задач
         asyncio.create_task(forward_discussion_to_student(student, problem, set_verdict))
-    asyncio.create_task(prc_teacher_select_action(None, teacher))
+    asyncio.create_task(prc_teacher_select_action(None, teacher, 1 if milestone else 0))
 
 
 # TODO Обойтись одним колбеком
@@ -549,14 +549,12 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
                                               f' /recheck_{student.token}_{problem.id}',
                                          parse_mode='HTML')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
-    if milestone:
-        await asyncio.sleep(1)
     await bot.answer_callback_query_ig(query.id)
     # Пересылаем переписку школьнику
     if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
         asyncio.create_task(refresh_last_student_keyboard(student))  # Обновляем студенту клавиатуру со списком задач
         asyncio.create_task(forward_discussion_to_student(student, problem, set_verdict, result_id=result_id))
-    asyncio.create_task(prc_teacher_select_action(None, teacher))
+    asyncio.create_task(prc_teacher_select_action(None, teacher, 1 if milestone else 0))
 
 
 @reg_callback(CALLBACK.SEND_ANSWER)
