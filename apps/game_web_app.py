@@ -121,7 +121,7 @@ async def post_game_buy(request):
     x = data.get('x', None)
     y = data.get('y', None)
     amount = data.get('amount', None)
-    chest = data.get('amount', None)
+    chest = data.get('chest', None)
     if chest == 'chest':
         amount = 0
     else:
