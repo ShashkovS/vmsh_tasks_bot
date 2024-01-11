@@ -121,14 +121,18 @@ async def post_game_buy(request):
     x = data.get('x', None)
     y = data.get('y', None)
     amount = data.get('amount', None)
-    if not amount or type(amount) != int or not (1 <= amount <= 10):
-        logger.warning(f'post_game_buy {data=} ignored')
-        return web.json_response(data={'ok': 'ignored'}, status=400)
-    if not x or not y or type(x) != int or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
-        logger.warning(f'post_game_buy {data=} ignored')
-        return web.json_response(data={'ok': 'ignored'}, status=400)
-    if not (0 <= x <= 5 and 0 <= y <= 5) and not db.game.check_neighbours(command_id, x, y):
-        return web.json_response(data={'ok': 'ignored'}, status=400)
+    chest = data.get('amount', None)
+    if chest == 'chest':
+        amount = 0
+    else:
+        if not amount or type(amount) != int or not (1 <= amount <= 10):
+            logger.warning(f'post_game_buy {data=} ignored')
+            return web.json_response(data={'ok': 'ignored'}, status=400)
+        if not x or not y or type(x) != int or type(y) != int or not 0 <= x <= 200 or not 0 <= y <= 200:
+            logger.warning(f'post_game_buy {data=} ignored')
+            return web.json_response(data={'ok': 'ignored'}, status=400)
+        if not (0 <= x <= 5 and 0 <= y <= 5) and not db.game.check_neighbours(command_id, x, y):
+            return web.json_response(data={'ok': 'ignored'}, status=400)
     db.game.add_payment(user.id, command_id, x, y, amount)
     # Отправляем всем уведомление, что открылась новая ячейка на карте
     await vmsh_nats.publish(NATS_GAME_MAP_UPDATE, command_id)
