@@ -46,8 +46,9 @@ class DB_RESULT(DB_ABC):
 
     Note: This class assumes the existence of a "results" table in the database, and the database connection is represented by a "db" object with a "conn" attribute.
     """
+
     def insert(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int,
-                   answer: str, res_type: int = None, zoom_conversation_id: int = None) -> int:
+               answer: str, res_type: int = None, zoom_conversation_id: int = None) -> int:
         ts = datetime.now().isoformat()
         with self.db.conn as conn:
             cur = conn.execute("""
@@ -85,6 +86,15 @@ class DB_RESULT(DB_ABC):
         cur = self.db.conn.execute("""
             select distinct problem_id from results
             where student_id = :student_id and lesson = :lesson and verdict > 0
+        """, locals())
+        rows = cur.fetchall()
+        solved_ids = {row['problem_id'] for row in rows}
+        return solved_ids
+
+    def check_student_tried(self, student_id: int, lesson: int) -> set:
+        cur = self.db.conn.execute("""
+            select distinct problem_id from results
+            where student_id = :student_id and lesson = :lesson
         """, locals())
         rows = cur.fetchall()
         solved_ids = {row['problem_id'] for row in rows}
@@ -130,6 +140,17 @@ class DB_RESULT(DB_ABC):
             group by p.title, p.level 
             order by 1
         """, locals()).fetchall()
+
+    def check_stat(self, lesson: int, teacher_id: int) -> Tuple[int, int]:
+        stat = self.db.conn.execute('''
+            select sum(verdict > 0) plus, sum(verdict <= 0) minus from results
+            where lesson = :lesson and teacher_id = :teacher_id and res_type = 2;
+        ''', {'lesson': lesson, 'teacher_id': teacher_id}).fetchone()
+        if stat:
+            plus, minus = stat['plus'], stat['minus']
+        else:
+            plus, minus = 0, 0
+        return plus, minus
 
 
 result = DB_RESULT(sql)

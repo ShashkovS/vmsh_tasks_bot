@@ -3,6 +3,7 @@ from aiogram import types
 from helpers.consts import *
 from helpers.config import logger, config
 from models import User, Problem, State, Webtoken
+from helpers.features import RESULT_MODE, FEATURES
 import db_methods as db
 
 
@@ -10,6 +11,8 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     logger.debug('keyboards.build_problems')
     solved = set(db.result.check_student_solved(student.id, lesson_num))
     being_checked = set(db.written_task_queue.check_student_sent_written(student.id, lesson_num))
+    if RESULT_MODE == FEATURES.RESULT_AFTER:
+        student_tried = set(db.result.check_student_tried(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     # to_game_button = types.InlineKeyboardButton(
     #     text="🕹🎲 Открыть командную игру 🎉🏆",
@@ -29,14 +32,21 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
         keyboard_markup.row(que1, que2)
     for problem in Problem.get_by_lesson(student.level, lesson_num):
         synonyms_set = problem.synonyms_set()
-        if synonyms_set & solved:
-            tick = '✅'
-        elif synonyms_set & being_checked:
-            tick = '❓'
-        elif problem.prob_type == PROB_TYPE.ORALLY and State.get_by_user_id(student.id)['oral_problem_id'] is not None:
-            tick = '⌛'
-        else:
-            tick = '⬜'
+        if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
+            if synonyms_set & solved:
+                tick = '✅'
+            elif synonyms_set & being_checked:
+                tick = '❓'
+            elif problem.prob_type == PROB_TYPE.ORALLY and State.get_by_user_id(student.id)['oral_problem_id'] is not None:
+                tick = '⌛'
+            else:
+                tick = '⬜'
+        elif RESULT_MODE == FEATURES.RESULT_AFTER:
+            if synonyms_set & student_tried or synonyms_set & being_checked:
+                tick = '❓'
+            else:
+                tick = '⬜'
+
         if problem.prob_type == PROB_TYPE.TEST:
             tp = '⋯'
         elif problem.prob_type == PROB_TYPE.WRITTEN or problem.prob_type == PROB_TYPE.WRITTEN_BEFORE_ORALLY:

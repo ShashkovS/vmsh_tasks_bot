@@ -3,10 +3,17 @@ import db_methods as db
 
 
 def calc_violin_plot_data(cursor):
+    # cursor.execute('''
+    #     -- Число задач студентов по занятиям
+    #     select lesson, s.student_id, s.level, sum(score) sol
+    #     from temp_real_problem_scores s
+    #     group by 1, 2, 3
+    #     order by lesson, level;
+    # ''')
     cursor.execute('''
         -- Число задач студентов по занятиям
-        select lesson, s.student_id, s.level, sum(score) sol
-        from temp_real_problem_scores s
+        select r.lesson, r.student_id, r.level, count(distinct problem_id) sol from results r
+        where r.verdict > 0
         group by 1, 2, 3
         order by lesson, level;
     ''')
@@ -27,16 +34,46 @@ def calc_violin_plot_data(cursor):
 
 
 def calc_stat_table_data(cursor):
+    # cursor.execute('''
+    #     -- Статистика по задачам
+    #     select p.lesson, p.level, p.lesson || p.level ||'.' || p.prob || p.item p, p.title,
+    #     round(sum(score)) sol,
+    #     (select count(distinct student_id) from results r where r.problem_id = p.id) tried,
+    #     count(*) cnt
+    #     from temp_real_problem_scores s
+    #     join problems p on s.problem_id = p.id
+    #     group by 1, 2, 3, 4
+    #     order by p.lesson desc, s.level, p.prob, p.item
+    #     ;
+    # ''')
     cursor.execute('''
         -- Статистика по задачам
+        with
+        tot as (
+            select r1.lesson, r1.level, count(distinct student_id) cnt
+            from results r1
+            group by 1, 2
+        ),
+        sol as (
+            select r2.lesson, r2.level, r2.problem_id, count(distinct student_id) cnt
+            from results r2
+            where r2.verdict > 0
+            group by 1, 2, 3
+        ),
+        try as (
+            select r3.lesson, r3.level, r3.problem_id, count(distinct student_id) cnt
+            from results r3
+            group by 1, 2, 3
+        )
         select p.lesson, p.level, p.lesson || p.level ||'.' || p.prob || p.item p, p.title,
-        round(sum(score)) sol,
-        (select count(distinct student_id) from results r where r.problem_id = p.id) tried,
-        count(*) cnt
-        from temp_real_problem_scores s
-        join problems p on s.problem_id = p.id
-        group by 1, 2, 3, 4
-        order by p.lesson desc, s.level, p.prob, p.item
+             ifnull(sol.cnt, 0) as sol,
+             ifnull(try.cnt, 0) as tried,
+             ifnull(tot.cnt, 0) as cnt
+        from problems p
+        left join tot on tot.lesson = p.lesson and tot.level = p.level
+        left join sol on sol.lesson = p.lesson and sol.level = p.level and sol.problem_id = p.id
+        left join try on try.lesson = p.lesson and try.level = p.level and try.problem_id = p.id
+        order by p.lesson desc, p.level, p.prob, p.item
         ;
     ''')
     all_rows = cursor.fetchall()

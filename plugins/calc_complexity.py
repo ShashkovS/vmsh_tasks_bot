@@ -4,6 +4,12 @@ import numpy as np
 from helpers.config import config
 
 
+COMPL_CALC_WEIGHT = 2
+COMPL_ONE_WEIGHT = 1
+SIMPLE_CALC_WEIGHT = 9999
+SIMPLE_ONE_WEIGHT = 1
+
+
 def get_conn() -> sqlite3.Connection:
     def dict_factory(cursor, row):
         return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
@@ -95,7 +101,7 @@ def create_dummy_problem_complexity_table_and_pupil_strength(cur: sqlite3.Cursor
 
 def create_student_visits_table(cur: sqlite3.Cursor):
     print('create_student_visits_table...')
-    scripts = '''
+    scripts = f'''
     -- Суммарная статистика по каждому занятию
     drop table if exists temp_lesson_scores;
     create table temp_lesson_scores as
@@ -115,11 +121,12 @@ def create_student_visits_table(cur: sqlite3.Cursor):
 
     -- Итоговые силы по каждому занятию-уровню
     drop table if exists temp_student_per_lesson_level_strength;
+    -- Идея с COMPL_ONE_WEIGHT в том, что если все задачи халявные, то большой рейтинг в решении сложных задач получить нельзя
     create table temp_student_per_lesson_level_strength as
     select
         ss.student_id, ss.lesson, ss.level,
-        (ss.total - ss.total_weak) * 20.0 / (19.0 * (ls.cnt - ls.sum_for_weak) + 1.0 * cnt) as simple_prob_strength,
-        ss.total_strong * 3.0 / (2.0 * ls.sum_for_strong + 1.0 * cnt) as compl_prob_strength
+        (ss.total - ss.total_weak) * {SIMPLE_CALC_WEIGHT+SIMPLE_ONE_WEIGHT:0.2f} / ({SIMPLE_CALC_WEIGHT:0.2f} * (ls.cnt - ls.sum_for_weak) + {SIMPLE_ONE_WEIGHT:0.2f} * cnt) as simple_prob_strength,
+        ss.total_strong * {COMPL_CALC_WEIGHT+COMPL_ONE_WEIGHT:0.2f} / ({COMPL_CALC_WEIGHT:0.2f} * ls.sum_for_strong + {COMPL_ONE_WEIGHT:0.2f} * cnt) as compl_prob_strength
     from temp_student_per_lesson_level_score ss
     join temp_lesson_scores ls on ss.lesson=ls.lesson and ss.level=ls.level
     join student_strength ps on ss.student_id = ps.student_id
@@ -193,7 +200,7 @@ def create_real_problem_scores(cur: sqlite3.Cursor):
 
 
 def create_result_rolling_window_scores(cur: sqlite3.Cursor):
-    scripts = '''
+    scripts = f'''
     -- Таблица окон для вычислений
     drop table if exists temp_7_window;
     create table temp_7_window (lesson, st, en);
@@ -210,8 +217,9 @@ def create_result_rolling_window_scores(cur: sqlite3.Cursor):
         s.student_id,
         w.lesson,
         b.level,
-        10.0 * ((sum(s.score) - sum(s.score * c.for_weak)) * 20.0 / (19.0 * (sum(c.for_weak > 0) - sum(c.for_weak)) + 1.0 * sum(c.for_weak > 0))) as simple_prob_strength,
-        10.0 * (sum(s.score * c.for_strong) * 3.0 / (2.0 * sum(c.for_strong) + 1.0 * sum(c.for_strong > 0))) as compl_prob_strength,
+        10.0 * ((sum(s.score) - sum(s.score * c.for_weak)) * {SIMPLE_CALC_WEIGHT + SIMPLE_ONE_WEIGHT:0.2f} / ({SIMPLE_CALC_WEIGHT:0.2f} * (sum(c.for_weak > 0) - sum(c.for_weak)) + {SIMPLE_ONE_WEIGHT:0.2f} * sum(c.for_weak > 0))) as simple_prob_strength,
+        10.0 * (sum(s.score * c.for_strong) * {COMPL_CALC_WEIGHT + COMPL_ONE_WEIGHT:0.2f}  / ({COMPL_CALC_WEIGHT:0.2f}  * sum(c.for_strong) + {COMPL_ONE_WEIGHT:0.2f}  * sum(c.for_strong > 0))) as compl_prob_strength,
+        10.0 * (sum(1 * c.for_strong) * {COMPL_CALC_WEIGHT + COMPL_ONE_WEIGHT:0.2f}  / ({COMPL_CALC_WEIGHT:0.2f}  * sum(c.for_strong) + {COMPL_ONE_WEIGHT:0.2f}  * sum(c.for_strong > 0))) as max_compl_prob_strength,
 -- Тупо суммы    
 --        sum(s.score * c.for_weak)/count(distinct s.lesson) as simple_prob_strength,
 --        sum(s.score * c.for_strong)/count(distinct s.lesson) as compl_prob_strength,
@@ -288,16 +296,16 @@ def calc(data, prob_compl_for_strong, prob_compl_for_weak, pup_compl_prob_streng
         for curr_pup in range(num_pupils):
             solved_vec = data[curr_pup, :] >= SOLVED_THRESHOLD  # Вектор задач, которые школьник решИл
             tried_vec = data[curr_pup, :] >= 0  # Вектор задач, которые школьник решАл
-            # Сила школьника в сложных задачах --- доля сложности, которую он порвал
-            # Ясно, что нерешённая сложная задача сильно уменьшает эту долю
-            pup_compl_prob_strength[curr_pup] = \
-                np.dot(data[curr_pup, solved_vec], prob_compl_for_strong[solved_vec]) * \
-                3 / (2 * sum(prob_compl_for_strong[tried_vec]) + sum(prob_compl_for_strong[tried_vec] > 0))
             # Сила школьника в простых задачах --- доля (единица минус сложностей) задач, которые он решил
             # Если школьник не решил простую задачу, то он потерял почти единицу в числителе
             pup_simple_prob_strength[curr_pup] = \
-                np.dot(data[curr_pup, solved_vec], 1 - prob_compl_for_weak[solved_vec]) * \
-                20 / (19 * sum(1 - prob_compl_for_weak[tried_vec]) + 1 * sum(prob_compl_for_weak[tried_vec] > 0))
+                np.dot(data[curr_pup, solved_vec], 1 - prob_compl_for_weak[solved_vec]) * (SIMPLE_CALC_WEIGHT+SIMPLE_ONE_WEIGHT) \
+                 / (SIMPLE_CALC_WEIGHT * sum(1 - prob_compl_for_weak[tried_vec]) + SIMPLE_ONE_WEIGHT * sum(prob_compl_for_weak[tried_vec] > 0))
+            # Сила школьника в сложных задачах --- доля сложности, которую он порвал
+            # Ясно, что нерешённая сложная задача сильно уменьшает эту долю
+            pup_compl_prob_strength[curr_pup] = \
+                np.dot(data[curr_pup, solved_vec], prob_compl_for_strong[solved_vec]) * (COMPL_CALC_WEIGHT+COMPL_ONE_WEIGHT) \
+                / (COMPL_CALC_WEIGHT * sum(prob_compl_for_strong[tried_vec]) + COMPL_ONE_WEIGHT * sum(prob_compl_for_strong[tried_vec] > 0))
         # Переоцениваем сложность задач
         for curr_prob in range(num_problems):
             solved_vec = data[:, curr_prob] >= SOLVED_THRESHOLD  # Вектор школьников, решИвших задачу
