@@ -14,11 +14,11 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     if RESULT_MODE == FEATURES.RESULT_AFTER:
         student_tried = set(db.result.check_student_tried(student.id, lesson_num))
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    to_game_button = types.InlineKeyboardButton(
-        text="🕹🎲 Открыть командную игру 🎉🏆",
-        url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
-    )
-    keyboard_markup.add(to_game_button)
+    # to_game_button = types.InlineKeyboardButton(
+    #     text="🕹🎲 Открыть командную игру 🎉🏆",
+    #     url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
+    # )
+    # keyboard_markup.add(to_game_button)
     # Кнопки с вопросами
     if not is_sos_question:
         que1 = types.InlineKeyboardButton(
@@ -72,11 +72,11 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     #     callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
     # )
     # keyboard_markup.add(to_lessons_button)
-    to_game_button = types.InlineKeyboardButton(
-        text="🕹🎲 Открыть командную игру 🎉🏆",
-        url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
-    )
-    keyboard_markup.add(to_game_button)
+    # to_game_button = types.InlineKeyboardButton(
+    #     text="🕹🎲 Открыть командную игру 🎉🏆",
+    #     url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
+    # )
+    # keyboard_markup.add(to_game_button)
     return keyboard_markup
 
 
