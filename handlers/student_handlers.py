@@ -328,17 +328,13 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
 @reg_state(STATE.WAIT_SOS_REQUEST)
 async def prc_wait_sos_request_state(message: types.Message, student: User):
     logger.debug('prc_wait_sos_request_state')
-    state = State.get_by_user_id(student.id)
-    problem_id = state["problem_id"]
-    if problem_id:
-        problem = Problem.get_by_id(problem_id)
-        problem_text = f"{problem}"
-    else:
-        problem_text = ""
     try:
-        await bot.send_message(config.sos_channel, parse_mode="HTML",
-                               text=f'<pre>{student.surname} {student.name} {student.level} {student.token} {ONLINE_MODE(student.online).__str__()[12:]}</pre>{problem_text}')
-        await bot.forward_message(config.sos_channel, message.chat.id, message.message_id)
+        text = f'❓❓❓❓\n<code>{student.surname}</code> <code>{student.name}</code>\n<code>{student.level}</code> <code>{student.token}</code> {ONLINE_MODE(student.online).__str__()[12:]}'
+        hdr_msg = await bot.send_message(config.sos_channel, parse_mode="HTML", text=text)
+        que_msg = await bot.forward_message(config.sos_channel, message.chat.id, message.message_id)
+        db.question.add(student.id, message.chat.id, message.message_id, message.text,
+                        hdr_msg.chat.id, hdr_msg.message_id,
+                        que_msg.message_id)
     except:
         logger.info(f'Не удалось переслать SOS-сообщение в канал {config.sos_channel}')
     await bot.send_message(chat_id=message.chat.id, text=f"Переслал сообщение.")
