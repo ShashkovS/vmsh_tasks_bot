@@ -82,14 +82,14 @@ class DB_RESULT(DB_ABC):
             """, locals())
         self.db.conn.commit()
 
-    def check_student_solved(self, student_id: int, lesson: int) -> set:
+    def check_student_solved(self, student_id: int, lesson: int) -> Dict[int, int]:
         cur = self.db.conn.execute("""
-            select distinct problem_id from results
+            select problem_id, max(verdict) verdict from results
             where student_id = :student_id and lesson = :lesson and verdict > 0
+            group by problem_id
         """, locals())
         rows = cur.fetchall()
-        solved_ids = {row['problem_id'] for row in rows}
-        return solved_ids
+        return {row['problem_id']: row['verdict'] for row in rows}
 
     def check_student_tried(self, student_id: int, lesson: int) -> set:
         cur = self.db.conn.execute("""

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from enum import Enum, IntEnum, IntFlag, unique
 
+
 # СОСТОЯНИЯ
 # Важно, чтобы каждый state был уникальной числовой константой, которая больше никогда не меняется
 # (так как она сохраняется в БД)
@@ -169,6 +170,7 @@ ANS_TYPES_DECODER = {
 
 
 # ВЕРДИКТЫ
+# Важно, что чем больше вердикт как число, тем выше оценка
 @unique
 class VERDICT(IntEnum):
     SOLVED = 1
@@ -194,6 +196,38 @@ VERDICT_DECODER = {
     VERDICT.VERDICT_MINUS_PLUS: '∓',
     VERDICT.VERDICT_MINUS_DOT: '−.',
     VERDICT.VERDICT_MINUS: '−',
+}
+
+VERDICT_TO_TICK = {
+    VERDICT.SOLVED: '✅',
+    VERDICT.WRONG_ANSWER: '⬜',
+    VERDICT.REJECTED_ANSWER: '⬜−',
+    VERDICT.VERDICT_PLUS: '✅+',
+    VERDICT.VERDICT_PLUS_DOT: '✅+.',
+    VERDICT.VERDICT_PLUS_MINUS: '🟨±',
+    VERDICT.VERDICT_PLUS_DIV_2: '🟧+∕2',
+    VERDICT.VERDICT_MINUS_PLUS: '⬜∓',
+    VERDICT.VERDICT_MINUS_DOT: '⬜−.',
+    VERDICT.VERDICT_MINUS: '⬜−',
+}
+
+VERDICT_TO_NUM = {
+    VERDICT.SOLVED: 1.0,
+    VERDICT.WRONG_ANSWER: 0.0,
+    VERDICT.REJECTED_ANSWER: 0.0,
+    VERDICT.VERDICT_PLUS: 1.0,
+    VERDICT.VERDICT_PLUS_DOT: 0.95,
+    VERDICT.VERDICT_PLUS_MINUS: 0.7,
+    VERDICT.VERDICT_PLUS_DIV_2: 0.5,
+    VERDICT.VERDICT_MINUS_PLUS: 0.25,
+    VERDICT.VERDICT_MINUS_DOT: 0.05,
+    VERDICT.VERDICT_MINUS: 0.0,
+}
+
+VERDICTS_SOLVED = {
+    VERDICT.SOLVED,
+    VERDICT.VERDICT_PLUS,
+    VERDICT.VERDICT_PLUS_DOT,
 }
 
 
