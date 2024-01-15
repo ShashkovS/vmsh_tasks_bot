@@ -16,19 +16,18 @@ MAT_REGEX = re.compile(
 OK_URL_REGEX = re.compile(r't\.me\/vmsh')
 
 
+def check_sos_channel(message: types.Message):
+    return message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel
 
-@dispatcher.channel_post_handler(lambda message: message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel,
-                                 content_types=types.ContentType.ANY)
-@dispatcher.channel_post_handler(lambda message: message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel,
-                                 RegexpCommandsFilter(regexp_commands=['.*']))
-@dispatcher.message_handler(lambda message: message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel,
-                                 content_types=types.ContentType.ANY)
-@dispatcher.message_handler(lambda message: message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel,
-                                 RegexpCommandsFilter(regexp_commands=['.*']))
+
+@dispatcher.channel_post_handler(check_sos_channel, content_types=types.ContentType.ANY)
+@dispatcher.channel_post_handler(check_sos_channel, RegexpCommandsFilter(regexp_commands=['.*']))
+@dispatcher.message_handler(check_sos_channel, content_types=types.ContentType.ANY)
+@dispatcher.message_handler(check_sos_channel, RegexpCommandsFilter(regexp_commands=['.*']))
 async def prc_sos_reply(message: types.Message):
     logger.debug('prc_sos_reply')
     # Ботов нафиг
-    if message.from_user.is_bot:
+    if message.from_user and message.from_user.is_bot:
         return
     # Только ответы
     if not message.reply_to_message:
