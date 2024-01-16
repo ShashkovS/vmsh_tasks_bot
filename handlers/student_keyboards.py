@@ -33,7 +33,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     for problem in Problem.get_by_lesson(student.level, lesson_num):
         synonyms_set = problem.synonyms_set()
         if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
-            max_verdict = VERDICT.WRONG_ANSWER if not solved else max(solved.get(prob_id, VERDICT.WRONG_ANSWER) for prob_id in synonyms_set)
+            max_verdict = VERDICT.NO_ANSWER if not solved else max(solved.get(prob_id, VERDICT.NO_ANSWER) for prob_id in synonyms_set)
             verdict_tick = VERDICT_TO_TICK[max_verdict]
             if max_verdict in VERDICTS_SOLVED:
                 tick = verdict_tick

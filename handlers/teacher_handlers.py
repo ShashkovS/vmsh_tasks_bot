@@ -495,14 +495,14 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
         text = (
             f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
-            f'\nВсего проверено задач: {tot_checked} (+{plus}, -{minus}){milestone}'
+            f'\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
             f'\nДля исправления:'
             f' /recheck_{student.token}_{problem.id}')
     else:
         verdict_text = VERDICT_TO_TICK[set_verdict]
         text = (
             f'👍 Поставили {verdict_text} за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
-            f'\nВсего проверено задач: {tot_checked} (+{plus}, -{minus}){milestone}'
+            f'\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
             f'\nДля исправления:'
             f' /recheck_{student.token}_{problem.id}')
 
@@ -543,7 +543,7 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     teacher_msg = await bot.send_message(chat_id=query.message.chat.id,
                                          text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
                                               f'школьнику {student.token} {student.surname} {student.name}!'
-                                              f'\nВсего проверено задач: {tot_checked} (+{plus}, -{minus}){milestone}'
+                                              f'\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
                                               f'\nДля исправления:'
                                               f' /recheck_{student.token}_{problem.id}',
                                          parse_mode='HTML')
