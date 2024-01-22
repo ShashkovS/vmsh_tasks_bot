@@ -13,7 +13,8 @@ def calc_violin_plot_data(cursor):
     cursor.execute('''
         -- Число задач студентов по занятиям
         select r.lesson, r.student_id, r.level, count(distinct problem_id) sol from results r
-        where r.verdict > 0
+        join verdicts v on r.verdict = v.id
+        where v.val > 0
         group by 1, 2, 3
         order by lesson, level;
     ''')
@@ -57,7 +58,8 @@ def calc_stat_table_data(cursor):
         sol as (
             select r2.lesson, r2.level, r2.problem_id, count(distinct student_id) cnt
             from results r2
-            where r2.verdict > 0
+            join verdicts v2 on r2.verdict = v2.id
+            where v2.val >= 0.9
             group by 1, 2, 3
         ),
         try as (

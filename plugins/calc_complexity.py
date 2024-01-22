@@ -35,18 +35,24 @@ def create_results_with_scores_for_test_problems_and_synonim_duplicates(cur: sql
     create table temp_problem_scores as
         with
         tries as (
-            select r.student_id, p.synonyms, r.verdict > 0 sol, row_number() over (partition by r.student_id, p.synonyms order by r.ts ) rn
-            from results r join problems p on r.problem_id = p.id
+            select r.student_id, p.synonyms, v.val, row_number() over (partition by r.student_id, p.synonyms order by r.ts ) rn
+            from results r 
+            join problems p on r.problem_id = p.id
+            join verdicts v on r.verdict = v.id
+        ),
+        max_val as (
+            select student_id, synonyms, max(val) val from tries
+            group by 1, 2
         ),
         first_success as (
-            select student_id, synonyms, min(rn) try from tries
-            where sol
+            select t.student_id, t.synonyms, t.val, min(t.rn) try from tries t
+            join max_val m on m.student_id = t.student_id and m.synonyms = t.synonyms and m.val = t.val 
             group by 1, 2
         )
         select distinct student_id, first_success.synonyms,
                case
-                   when p.prob_type = 1 then max(33.0/64.0, 1 - (try-1.0)*3.0/64.0) -- Только точно представимые числа
-                   else 1
+                   when p.prob_type = 1 then max(33.0/64.0, 1 - (try-1.0)*3.0/64.0)*val -- Только точно представимые числа
+                   else val
                end score from first_success
         join problems p on first_success.synonyms = p.synonyms
         where p.lesson >= 0 and p.prob > 0;
