@@ -55,14 +55,19 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, s
         text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
     if show_lesson is None:
         show_lesson = Problem.last_lesson_num(student.level)
-    keyb_msg = await bot.send_message(
-        chat_id=chat_id,
-        text=text,
-        parse_mode='HTML',
-        disable_web_page_preview=True,
-        reply_markup=student_keyboards.build_problems(show_lesson, student),
-        disable_notification=disable_notification,
-    )
+    try:
+        keyb_msg = await bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            parse_mode='HTML',
+            disable_web_page_preview=True,
+            reply_markup=student_keyboards.build_problems(show_lesson, student),
+            disable_notification=disable_notification,
+        )
+    except (aiogram.utils.exceptions.BotBlocked, aiogram.utils.exceptions.UserDeactivated):
+        # Дальше писать смысла нет
+        student.set_chat_id(None)
+        return
     db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
