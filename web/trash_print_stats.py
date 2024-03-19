@@ -50,31 +50,31 @@ def calc_stat_table_data(cursor):
     cursor.execute('''
         -- Статистика по задачам
         with
-        tot as (
-            select r1.lesson, r1.level, count(distinct student_id) cnt
-            from results r1
-            group by 1, 2
-        ),
         sol as (
             select r2.lesson, r2.level, r2.problem_id, count(distinct student_id) cnt
             from results r2
             join verdicts v2 on r2.verdict = v2.id
-            where v2.val >= 0.9
+            where v2.val >= 0.4
             group by 1, 2, 3
         ),
         try as (
             select r3.lesson, r3.level, r3.problem_id, count(distinct student_id) cnt
             from results r3
             group by 1, 2, 3
+        ),
+        tot as (
+            select r1.lesson, r1.level, count(distinct student_id) cnt
+            from results r1
+            group by 1, 2
         )
         select p.lesson, p.level, p.lesson || p.level ||'.' || p.prob || p.item p, p.title,
              ifnull(sol.cnt, 0) as sol,
              ifnull(try.cnt, 0) as tried,
              ifnull(tot.cnt, 0) as cnt
         from problems p
-        left join tot on tot.lesson = p.lesson and tot.level = p.level
         left join sol on sol.lesson = p.lesson and sol.level = p.level and sol.problem_id = p.id
         left join try on try.lesson = p.lesson and try.level = p.level and try.problem_id = p.id
+        left join tot on tot.lesson = p.lesson and tot.level = p.level
         order by p.lesson desc, p.level, p.prob, p.item
         ;
     ''')
