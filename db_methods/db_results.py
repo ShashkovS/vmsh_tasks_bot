@@ -82,14 +82,14 @@ class DB_RESULT(DB_ABC):
             """, locals())
         self.db.conn.commit()
 
-    def check_student_solved(self, student_id: int, lesson: int) -> set:
+    def check_student_solved(self, student_id: int, lesson: int) -> Dict[int, int]:
         cur = self.db.conn.execute("""
-            select distinct problem_id from results
+            select problem_id, max(verdict) verdict from results
             where student_id = :student_id and lesson = :lesson and verdict > 0
+            group by problem_id
         """, locals())
         rows = cur.fetchall()
-        solved_ids = {row['problem_id'] for row in rows}
-        return solved_ids
+        return {row['problem_id']: row['verdict'] for row in rows}
 
     def check_student_tried(self, student_id: int, lesson: int) -> set:
         cur = self.db.conn.execute("""
@@ -143,7 +143,8 @@ class DB_RESULT(DB_ABC):
 
     def check_stat(self, lesson: int, teacher_id: int) -> Tuple[int, int]:
         stat = self.db.conn.execute('''
-            select sum(verdict > 0) plus, sum(verdict <= 0) minus from results
+            select sum(v.val >= 0.8) plus, sum(v.val < 0.8) minus from results r
+            join verdicts v on r.verdict = v.id
             where lesson = :lesson and teacher_id = :teacher_id and res_type = 2;
         ''', {'lesson': lesson, 'teacher_id': teacher_id}).fetchone()
         if stat:

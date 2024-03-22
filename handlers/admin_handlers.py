@@ -68,7 +68,7 @@ async def update_problems(message: types.Message):
     )
 
 
-async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode=False):
+async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode: bool = False, reply_to_message: types.Message = None):
     logger.debug('run_broadcast_task')
     tokens = set(tokens)
     all_students = None
@@ -98,12 +98,15 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
         if not student or not student.chat_id:
             continue
         try:
-            broad_message = await bot.send_message(
-                chat_id=student.chat_id,
-                text=broadcast_message,
-                disable_web_page_preview=True,
-                parse_mode=parse_mode,
-            )
+            if reply_to_message:
+                broad_message = await bot.copy_message(student.chat_id, reply_to_message.chat.id, reply_to_message.message_id)
+            else:
+                broad_message = await bot.send_message(
+                    chat_id=student.chat_id,
+                    text=broadcast_message,
+                    disable_web_page_preview=True,
+                    parse_mode=parse_mode,
+                )
             sent += 1
             db.log.insert(True, broad_message.message_id, broad_message.chat.id, student.id, None,
                           broadcast_message, None)
@@ -129,9 +132,12 @@ async def broadcast(message: types.Message):
     except:
         return
     html_mode = 'html' in cmd
-    broadcast_message = '\n'.join(broadcast_message)
+    if message.reply_to_message:
+        broadcast_message = message.reply_to_message.text or ''
+    else:
+        broadcast_message = '\n'.join(broadcast_message)
     tokens = re.split(r'\W+', tokens)
-    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode))
+    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, message.reply_to_message))
     await bot.send_message(
         chat_id=message.chat.id,
         text="Создано задание рассылки сообщений",

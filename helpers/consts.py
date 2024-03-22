@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from enum import Enum, IntEnum, IntFlag, unique
 
+
 # СОСТОЯНИЯ
 # Важно, чтобы каждый state был уникальной числовой константой, которая больше никогда не меняется
 # (так как она сохраняется в БД)
@@ -169,31 +170,73 @@ ANS_TYPES_DECODER = {
 
 
 # ВЕРДИКТЫ
+# Важно, что чем больше вердикт как число, тем выше оценка
 @unique
 class VERDICT(IntEnum):
-    SOLVED = 1
-    WRONG_ANSWER = -1
+    NO_ANSWER = -32768
     REJECTED_ANSWER = -2
-    VERDICT_PLUS = 17
-    VERDICT_PLUS_DOT = 16
-    VERDICT_PLUS_MINUS = 15
-    VERDICT_PLUS_DIV_2 = 14
-    VERDICT_MINUS_PLUS = 13
-    VERDICT_MINUS_DOT = 12
+    WRONG_ANSWER = -1
     VERDICT_MINUS = 11
+    VERDICT_MINUS_DOT = 12
+    VERDICT_MINUS_PLUS = 13
+    VERDICT_PLUS_DIV_2 = 14
+    VERDICT_PLUS_MINUS = 15
+    VERDICT_PLUS_DOT = 16
+    VERDICT_PLUS = 17
+    OLD_SOLVED = 1
+    SOLVED = 18
 
 
 VERDICT_DECODER = {
-    VERDICT.SOLVED: '+',
-    VERDICT.WRONG_ANSWER: '−',
+    VERDICT.NO_ANSWER: '',
     VERDICT.REJECTED_ANSWER: '?->−',
-    VERDICT.VERDICT_PLUS: '+',
-    VERDICT.VERDICT_PLUS_DOT: '+.',
-    VERDICT.VERDICT_PLUS_MINUS: '±',
-    VERDICT.VERDICT_PLUS_DIV_2: '⨧',
-    VERDICT.VERDICT_MINUS_PLUS: '∓',
-    VERDICT.VERDICT_MINUS_DOT: '−.',
+    VERDICT.WRONG_ANSWER: '−',
     VERDICT.VERDICT_MINUS: '−',
+    VERDICT.VERDICT_MINUS_DOT: '−.',
+    VERDICT.VERDICT_MINUS_PLUS: '∓',
+    VERDICT.VERDICT_PLUS_DIV_2: '⨧',
+    VERDICT.VERDICT_PLUS_MINUS: '±',
+    VERDICT.VERDICT_PLUS_DOT: '+.',
+    VERDICT.VERDICT_PLUS: '+',
+    VERDICT.OLD_SOLVED: '+',
+    VERDICT.SOLVED: '+',
+}
+
+VERDICT_TO_TICK = {
+    VERDICT.NO_ANSWER: '⬜',
+    VERDICT.REJECTED_ANSWER: '🟥−',
+    VERDICT.WRONG_ANSWER: '🟥−',
+    VERDICT.VERDICT_MINUS: '🟥−',
+    VERDICT.VERDICT_MINUS_DOT: '🟥−.',
+    VERDICT.VERDICT_MINUS_PLUS: '🟥∓',
+    VERDICT.VERDICT_PLUS_DIV_2: '🟧+∕2',
+    VERDICT.VERDICT_PLUS_MINUS: '🟨±',
+    VERDICT.VERDICT_PLUS_DOT: '✅+.',
+    VERDICT.VERDICT_PLUS: '✅+',
+    VERDICT.OLD_SOLVED: '✅+',
+    VERDICT.SOLVED: '✅+',
+}
+
+VERDICT_TO_NUM = {
+    VERDICT.NO_ANSWER: 0.0,
+    VERDICT.REJECTED_ANSWER: 0.0,
+    VERDICT.WRONG_ANSWER: 0.0,
+    VERDICT.VERDICT_MINUS: 0.0,
+    VERDICT.VERDICT_MINUS_DOT: 0.05,
+    VERDICT.VERDICT_MINUS_PLUS: 0.25,
+    VERDICT.VERDICT_PLUS_DIV_2: 0.5,
+    VERDICT.VERDICT_PLUS_MINUS: 0.7,
+    VERDICT.VERDICT_PLUS_DOT: 0.95,
+    VERDICT.VERDICT_PLUS: 1.0,
+    VERDICT.OLD_SOLVED: 1.0,
+    VERDICT.SOLVED: 1.0,
+}
+
+VERDICTS_SOLVED = {
+    VERDICT.SOLVED,
+    VERDICT.OLD_SOLVED,
+    VERDICT.VERDICT_PLUS,
+    VERDICT.VERDICT_PLUS_DOT,
 }
 
 

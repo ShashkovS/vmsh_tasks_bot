@@ -28,6 +28,11 @@ async def check_webhook():
         await bot.set_webhook(WEBHOOK_URL)  # Set new URL for webhook
 
 
+async def log_bot_name(username):
+    await asyncio.sleep(1)
+    logger.info(f'Бот начал свою работу: https://t.me/{username}')
+
+
 async def on_startup(app):
     logger.warning('bot on_startup')
     logger.debug(f'{handlers}')
@@ -48,6 +53,7 @@ async def on_startup(app):
     bot.username = (await bot.me).username
 
     await bot.post_logging_message(f'Бот начал свою работу')
+    asyncio.create_task(log_bot_name(bot.username))
 
 
 async def on_shutdown(app):

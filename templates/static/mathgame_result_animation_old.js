@@ -113,52 +113,52 @@ x\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\
 `;
 
 const chestsAsObj = [
-  {"x": 19, "y": 1, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 49, "y": 1, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 89, "y": 1, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 61, "y": 3, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 27, "y": 5, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 73, "y": 7, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 1, "y": 9, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 53, "y": 13, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 89, "y": 13, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 23, "y": 15, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 88, "y": 16, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 49, "y": 21, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 73, "y": 23, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 11, "y": 27, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 3, "y": 31, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 55, "y": 31, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 39, "y": 35, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 79, "y": 39, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 97, "y": 39, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 17, "y": 41, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 25, "y": 43, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 29, "y": 43, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 53, "y": 45, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 3, "y": 49, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 27, "y": 53, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 47, "y": 55, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 73, "y": 55, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 99, "y": 55, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 19, "y": 61, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 43, "y": 63, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 81, "y": 63, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 65, "y": 67, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 1, "y": 71, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 7, "y": 71, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 21, "y": 75, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 55, "y": 75, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 81, "y": 75, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 35, "y": 77, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 13, "y": 81, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 97, "y": 83, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 69, "y": 87, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 13, "y": 89, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 49, "y": 89, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 23, "y": 97, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 69, "y": 97, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
-  {"x": 85, "y": 97, "bonus": 2, "amount": 8, "html": "Вжух! Случайная ячейка открыта!"},
+  {"x":19,"y":1,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":49,"y":1,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":89,"y":1,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":61,"y":3,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":27,"y":5,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":73,"y":7,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":1,"y":9,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":53,"y":13,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":89,"y":13,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":23,"y":15,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":88,"y":16,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":49,"y":21,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":73,"y":23,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":11,"y":27,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":3,"y":31,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":55,"y":31,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":39,"y":35,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":79,"y":39,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":97,"y":39,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":17,"y":41,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":25,"y":43,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":29,"y":43,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":53,"y":45,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":3,"y":49,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":27,"y":53,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":47,"y":55,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":73,"y":55,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":99,"y":55,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":19,"y":61,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":43,"y":63,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":81,"y":63,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":65,"y":67,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":1,"y":71,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":7,"y":71,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":21,"y":75,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":55,"y":75,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":81,"y":75,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":35,"y":77,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":13,"y":81,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":97,"y":83,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":69,"y":87,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":13,"y":89,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":49,"y":89,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":23,"y":97,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":69,"y":97,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
+  {"x":85,"y":97,"bonus":2,"amount":8,"html":"Вжух! Случайная ячейка открыта!"},
 ];
 
 
@@ -247,9 +247,9 @@ function hidePopup() {
 
 function convertMap(mapAsString) {
   const map = mapAsString
-      .trim()
-      .split('\n')
-      .map((row) => row.trim().split('\t').map((cell) => parseInt(cell) || cell));
+    .trim()
+    .split('\n')
+    .map((row) => row.trim().split('\t').map((cell) => parseInt(cell) || cell));
   const width = map[0].length;
   const height = map.length;
   const chests = {};
@@ -285,33 +285,33 @@ function succesBuy($cell) {
 
 function postBuy($cell, amount) {
   postData('/game/buy', {x: $cell.coln, y: $cell.rown, amount})
-      .then(resp => () => succesBuy($cell))
-      .catch(err => {
-        console.log(err);
-        updateMap();
-        renderHeader();
-        $cell.style.border = '3px solid #f00';
-      });
+    .then(resp => () => succesBuy($cell))
+    .catch(err => {
+      console.log(err);
+      updateMap();
+      renderHeader();
+      $cell.style.border = '3px solid #f00';
+    });
 }
 
 function postFlag($cell) {
   postData('/game/flag', {x: $cell.coln, y: $cell.rown})
-      .then(resp => {
-        // console.log(resp);
-      });
+    .then(resp => {
+      // console.log(resp);
+    });
 }
 
 function postOpenChest($cell) {
   postData('/game/chest', {x: $cell.coln, y: $cell.rown, bonus: $cell.chest.bonus})
-      .then(resp => {
-        // console.log(resp);
-      })
-      .catch(err => {
-        console.log(err);
-        updateMap();
-        renderHeader();
-        $cell.style.border = '3px solid #f00';
-      });
+    .then(resp => {
+      // console.log(resp);
+    })
+    .catch(err => {
+      console.log(err);
+      updateMap();
+      renderHeader();
+      $cell.style.border = '3px solid #f00';
+    });
 }
 
 function refreshData(response) {
@@ -341,27 +341,22 @@ function refreshData(response) {
 }
 
 async function sleep(ms) {
-  if (ms > 0) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  } else {
-    return Promise.resolve();
-  }
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 
-// const colors = ['#ff0044', '#68386c', '#b55088', '#f6757a', '#c0cbdc', '#8b9bb4', '#5a6988', '#3a4466', '#262b44', '#193c3e', '#124e89', '#0099db', '#2ce8f5', '#feae34', '#fee761', '#63c74d', '#3e8948', '#265c42', '#ead4aa', '#e4a672', '#b86f50', '#f77622', '#733e39', '#be4a2f', '#d77643', '#a22633', '#e43b44'];
-const colors = ['#F0F8FF', '#FAEBD7', '#00FFFF', '#7FFFD4', '#F0FFFF', '#F5F5DC', '#FFE4C4', '#000000', '#FFEBCD', '#0000FF', '#8A2BE2', '#A52A2A', '#DEB887', '#5F9EA0', '#7FFF00', '#D2691E', '#FF7F50', '#6495ED', '#FFF8DC', '#DC143C', '#00FFFF', '#00008B', '#008B8B', '#B8860B', '#A9A9A9', '#006400', '#A9A9A9', '#BDB76B', '#8B008B', '#556B2F', '#FF8C00', '#9932CC', '#8B0000', '#E9967A', '#8FBC8F', '#483D8B', '#2F4F4F', '#2F4F4F', '#00CED1', '#9400D3', '#FF1493', '#00BFFF', '#696969', '#696969', '#1E90FF', '#B22222', '#FFFAF0', '#228B22', '#FF00FF', '#DCDCDC'];
-// const commands = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109];
-const commands = [104];
 
+const colors = ['#ff0044', '#68386c', '#b55088', '#f6757a', '#c0cbdc', '#8b9bb4', '#5a6988', '#3a4466', '#262b44', '#193c3e', '#124e89', '#0099db', '#2ce8f5', '#feae34', '#fee761', '#63c74d', '#3e8948', '#265c42', '#ead4aa', '#e4a672', '#b86f50', '#f77622', '#733e39', '#be4a2f', '#d77643', '#a22633', '#e43b44'];
+const commands = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109]
 async function runAll() {
   let tlCommandId = commands.shift();
-  console.log('команда');
-  await postData(`/game/timeline/${tlCommandId}`, {})
+    console.log('команда')
+    await postData(`/game/timeline/${tlCommandId}`, {})
       .then(resp => {
         runTLAnimation(resp, tlCommandId);
       });
 }
+
 
 
 async function runTLAnimation(response, tlCommandId) {
@@ -371,41 +366,52 @@ async function runTLAnimation(response, tlCommandId) {
     for (const $cell of $row) {
       $cell.style.background = null;
       $cell.style.color = null;
-      $cell.style.opacity = 1;
     }
   }
   updateMap();
   const studentColors = {};
   let lastUsedColor = 0;
+  response.forEach(obj => obj.tss = new Date(obj.ts).getTime());
   scene.$header.innerHTML = `<div>Команда ${tlCommandId}</div>`;
-  const destAnimationDurMs = (new URL(window.location).searchParams.get('dur')) * 1000 || 3000;
-  const frameDurMs = 32;
-  const frames = Math.ceil(destAnimationDurMs / frameDurMs);
-  const perFrame = Math.ceil(response.length / frames);
-  let rInd = -1;
-  let calcStartMs = undefined;
-  for (let f = 0; f < frames; f++) {
-    updateMap();
-    calcStartMs = Date.now();
-    for (let pf = 0; pf < perFrame; pf++) {
-      rInd += 1;
-      if (rInd >= response.length) continue;
-      const student_id = response[rInd].student_id;
-      if (studentColors[student_id] === undefined) {
-        studentColors[student_id] = colors[lastUsedColor];
-        lastUsedColor += 1;
-        lastUsedColor = lastUsedColor % colors.length;
-      }
-      const useColor = studentColors[student_id];
-      const coln = response[rInd]['x'];
-      const rown = response[rInd]['y'];
-      const cellID = rown * scene.width + coln;
-      scene.opened.push(cellID);
-      scene.$cells[rown][coln].style.background = useColor;
-      scene.$cells[rown][coln].style.color = useColor;
+  let timeOut = new URL(window.location).searchParams.get('ms');
+  let realtime = false;
+  let timePeriod;
+  const destAnimationDurMs = (new URL(window.location).searchParams.get('dur'))*1000 || 20000;
+  if (timeOut === undefined || timeOut === null) {
+    timeOut = Math.max(4, 1000 / response.length);
+  } else if (timeOut === '0') {
+    realtime = true;
+    timePeriod = response[response.length - 1].tss - response[0].tss;
+  }
+  let prevSleepStart = response[0].tss;
+  for (let i = 0; i < response.length; i++) {
+    const student_id = response[i].student_id;
+    if (studentColors[student_id] === undefined) {
+      studentColors[student_id] = colors[lastUsedColor];
+      lastUsedColor += 1;
     }
-    const pass = Date.now() - calcStartMs;
-    await sleep(Math.max(0, frameDurMs - pass));
+    const useColor = studentColors[student_id];
+
+    let timeToSleep = 0;
+    if (!realtime) {
+      timeToSleep = +timeOut;
+    } else {
+      const delta = (response[i].tss - prevSleepStart) / timePeriod * destAnimationDurMs;
+      if (delta > 4) {
+        timeToSleep = delta;
+        prevSleepStart = response[i].tss;
+      }
+    }
+    const coln = response[i]['x'];
+    const rown = response[i]['y'];
+    const cellID = rown * scene.width + coln;
+    scene.opened.push(cellID);
+    scene.$cells[rown][coln].style.background = useColor;
+    scene.$cells[rown][coln].style.color = useColor;
+    if (timeToSleep >= 1) {
+      await sleep(timeToSleep);
+      updateMap();
+    }
   }
   updateMap();
   scene.$header.innerHTML = `<div>Завершено. Команда ${tlCommandId}</div>`;
@@ -419,18 +425,18 @@ function fetchInitialData() {
   scene.$header.innerHTML = `<div><p><span>...⚡</span> — загружаем информацию...</p></div>`;
   const tlCommandId = parseInt(new URL(window.location).searchParams.get('command_id'));
 
-  if (!(tlCommandId > 0)) {
+  if (! (tlCommandId > 0)) {
     postData('/game/me', {})
-        .then(resp => {
-          refreshData(resp);
-          updateMap();
-          renderHeader();
-        });
+      .then(resp => {
+        refreshData(resp);
+        updateMap();
+        renderHeader();
+      });
   } else {
     postData(`/game/timeline/${tlCommandId}`, {})
-        .then(resp => {
-          runTLAnimation(resp);
-        });
+      .then(resp => {
+        runTLAnimation(resp);
+      });
   }
 }
 

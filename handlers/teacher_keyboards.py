@@ -131,9 +131,8 @@ def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids
         ))
     else:
         for verdict in VERDICT_MODE.value:
-            value = VERDICT_DECODER[verdict]
             keyboard_markup.add(types.InlineKeyboardButton(
-                text=f"{value} поставить за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
+                text=f"{VERDICT_TO_TICK[verdict]} за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
                 callback_data=f"{CALLBACK.WRITTEN_TASK_OK}_{student.id}_{problem.id}_{verdict}"
             ))
     keyboard_markup.add(types.InlineKeyboardButton(
@@ -163,7 +162,7 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
     logger.debug('keyboards.build_verdict_for_oral_problems')
     if lesson_num is None:
         lesson_num = Problem.last_lesson_num(student.level)
-    solved = set(db.result.check_student_solved(student.id, lesson_num))
+    solved = {problem_id for (problem_id, verdict) in db.result.check_student_solved(student.id, lesson_num).items() if verdict in VERDICTS_SOLVED}
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
