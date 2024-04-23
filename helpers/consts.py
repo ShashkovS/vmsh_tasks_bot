@@ -123,6 +123,11 @@ class ANS_TYPE(IntEnum):
     INT_SET = 11  # Множество целых чисел
     POLYNOMIAL = 12  # Многочлен
     FLOAT_EPS = 13  # Действительное с указанием точности
+    TIME = 14  # Время
+    DATE = 15  # Дата
+    WEEKDAY = 16  # День недели
+    FRAC_SEQ = 17  # Последовательность дробей
+    MULTISET = 18  # Мультимножество
     SELECT_ONE = 98  # Выбрать один из вариантов
     STRING = 99  # Просто какая-то строка
 
@@ -146,6 +151,11 @@ for ans_type, descr in [
     (ANS_TYPE.SELECT_ONE, ' — выберите один из следующих вариантов:'),
     (ANS_TYPE.POLYNOMIAL, ' — выражение от n (например: 2n**2 + n(n+1)/2):'),
     (ANS_TYPE.FLOAT_EPS, ' — десятичную дробь (например, 3.14 или 179)'),
+    (ANS_TYPE.TIME, '— время (например, 12:08, 3:15:24)'),
+    (ANS_TYPE.DATE, '— дату (например, 31.12, 2024-02-16, 11.02.1986)'),
+    (ANS_TYPE.WEEKDAY, '— день недели (например, Суббота)'),
+    (ANS_TYPE.FRAC_SEQ, '— последовательность дробей (например, 2/5,3.75, -1)'),
+    (ANS_TYPE.MULTISET, '— мультимножество (например, 1, 1, 2, 5, 7, 2/5, 2/5, -1.2, -1.2)'),
     (ANS_TYPE.STRING, ''),
 ]:
     ans_type.descr = descr
@@ -166,6 +176,11 @@ ANS_TYPES_DECODER = {
     'Многочлен': ANS_TYPE.POLYNOMIAL,
     'Строка': ANS_TYPE.STRING,
     'ЧислоТочность': ANS_TYPE.FLOAT_EPS,
+    'Время': ANS_TYPE.TIME,
+    'Дата': ANS_TYPE.DATE,
+    'ДеньНедели': ANS_TYPE.WEEKDAY,
+    'ПоследДробей': ANS_TYPE.FRAC_SEQ,
+    'МультиМнож': ANS_TYPE.MULTISET,
 }
 
 

@@ -240,6 +240,8 @@ def check_test_problem_answer(problem: Problem, student: Optional[User], student
     answer_is_correct = additional_message = error_text = None
     if student_answer is None:
         student_answer = ''
+    else:
+        student_answer = student_answer.strip()  # strip spaces!!!
 
     # Проверяем на перебор
     if student:  # При перепроверке данная проверка не выполняется
@@ -249,7 +251,7 @@ def check_test_problem_answer(problem: Problem, student: Optional[User], student
 
     # Если тип ответа — выбор из нескольких вариантов ответа, то это «простой» особый случай
     if problem.ans_type == ANS_TYPE.SELECT_ONE:
-        student_answer_cut = student_answer.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower()
+        student_answer_cut = student_answer[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower()
         if student_answer_cut in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in problem.cor_ans.split(';')]:
             return ANS_CHECK_VERDICT.CORRECT, additional_message, error_text
         if student_answer_cut not in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in problem.ans_validation.split(';')]:
@@ -514,6 +516,12 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         if problem.ans_type == ANS_TYPE.SELECT_ONE:
             await bot.send_message(chat_id=query.message.chat.id,
                                    text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:",
+                                   reply_markup=student_keyboards.build_test_answers(problem))
+        elif problem.ans_type == ANS_TYPE.WEEKDAY:
+            # Мерзкий хардкод :(
+            problem.ans_validation = 'Понедельник;Вторник;Среда;Четверг;Пятница;Суббота;Воскресенье'
+            await bot.send_message(chat_id=query.message.chat.id,
+                                   text=f"Выбрана задача {problem}.\nВыберите ответ — день недели:",
                                    reply_markup=student_keyboards.build_test_answers(problem))
         else:
             answer_recommendation = problem.validation_error or f'Теперь введите ответ{problem.ans_type.descr}'
