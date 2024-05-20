@@ -86,7 +86,7 @@ def build_lessons(level):
     logger.debug('keyboards.build_lessons')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     for lesson in db.lesson.get_all(level):
-        if lesson >= 33:  # TODO HARDCODE!!
+        if lesson['lesson'] >= 33:  # TODO HARDCODE!!
             lesson_button = types.InlineKeyboardButton(
                 text=f"Листок {lesson['lesson']}",
                 callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
