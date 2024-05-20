@@ -69,11 +69,11 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
         )
         keyboard_markup.add(task_button)
     # Пока отключаем эту фичу
-    # to_lessons_button = types.InlineKeyboardButton(
-    #     text="К списку всех листков",
-    #     callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
-    # )
-    # keyboard_markup.add(to_lessons_button)
+    to_lessons_button = types.InlineKeyboardButton(
+        text="К списку всех листков",
+        callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
+    )
+    keyboard_markup.add(to_lessons_button)
     # to_game_button = types.InlineKeyboardButton(
     #     text="🕹🎲 Открыть командную игру 🎉🏆",
     #     url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
@@ -86,11 +86,12 @@ def build_lessons(level):
     logger.debug('keyboards.build_lessons')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     for lesson in db.lesson.get_all(level):
-        lesson_button = types.InlineKeyboardButton(
-            text=f"Листок {lesson['lesson']}",
-            callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
-        )
-        keyboard_markup.add(lesson_button)
+        if lesson >= 33:  # TODO HARDCODE!!
+            lesson_button = types.InlineKeyboardButton(
+                text=f"Листок {lesson['lesson']}",
+                callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
+            )
+            keyboard_markup.add(lesson_button)
     return keyboard_markup
 
 
