@@ -180,6 +180,8 @@ async def edtplus(message: types.Message):
     student = User.get_by_token(token)
     if not student:
         await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
+    state = State.get_by_user_id(teacher.id)
+    State.set_by_user_id(teacher.id, state['state'], last_student_id=student.id)
     await prc_teacher_accepted_queue(message, teacher, online=ONLINE_MODE.SCHOOL, lesson_num=int(lesson), student=student)
 
 
