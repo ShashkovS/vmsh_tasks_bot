@@ -138,17 +138,49 @@ async def prc_teacher_is_checking_task_state(message: types.Message, teacher: Us
 
 
 @reg_state(STATE.TEACHER_ACCEPTED_QUEUE)
-async def prc_teacher_accepted_queue(message: types.message, teacher: User):
+async def prc_teacher_accepted_queue(message: types.message, teacher: User, online=None, lesson_num=None, student: User = None):
     logger.debug('prc_teacher_accepted_queue')
-    state = State.get_by_user_id(teacher.id)
-    student_id = state['last_student_id']
-    student = User.get_by_id(student_id)
+    # при вызове из команды могут быть «силой» установлены параметры online, lesson_num, student_id
+    if student is None:
+        state = State.get_by_user_id(teacher.id)
+        student_id = state['last_student_id']
+        student = User.get_by_id(student_id)
+    if not student:
+        return
+    if online is None:
+        online = teacher.online
+
+    reply_markup = teacher_keyboards.build_verdict_for_oral_problems(
+        plus_ids=set(),
+        minus_ids=set(),
+        student=student,
+        online=online,
+        lesson_num=lesson_num,
+    )
     await bot.send_message(chat_id=message.chat.id,
                            text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
-                           reply_markup=teacher_keyboards.build_verdict_for_oral_problems(plus_ids=set(),
-                                                                                          minus_ids=set(),
-                                                                                          student=student,
-                                                                                          online=teacher.online))
+                           reply_markup=reply_markup)
+
+
+@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?edtplus.*']))
+async def edtplus(message: types.Message):
+    logger.debug('edtplus')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    if (match := re.fullmatch(r'/edtplus_([^_]*)_([^_]*)', message.text or '')):
+        lesson = match.group(1)
+        token = match.group(1)
+    else:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Пришлите запрос на простановку плюсов в формате\n«/edtplus_lesson_token», например «/edtplus_12_aa9bb4»",
+        )
+        return
+    student = User.get_by_token(token)
+    if not student:
+        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
+    await prc_teacher_accepted_queue(message, teacher, online=False, lesson_num=int(lesson), student=student)
 
 
 @reg_state(STATE.TEACHER_WRITES_STUDENT_NAME)
@@ -158,28 +190,6 @@ async def prc_teacher_writes_student_name_state(message: types.message, teacher:
     await bot.send_message(chat_id=message.chat.id,
                            text="Выберите школьника для внесения задач",
                            reply_markup=teacher_keyboards.build_select_student(name_to_find))
-
-
-@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?oralrecheck.*']))
-async def oral_recheck(message: types.Message):
-    logger.debug('oral_recheck')
-    teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE.TEACHER:
-        return
-    if (match := re.fullmatch(r'/oralrecheck_([^_]*)', message.text or '')):
-        token = match.group(1)
-    else:
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text="🤖 Пришлите запрос на перепроверку в формате\n«/oralrecheck_token», например «/oralrecheck_aa9bb4»",
-        )
-        return
-    student = User.get_by_token(token)
-    if not student:
-        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
-    # if student:
-    #     message = await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
-    #     await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
 @dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?recheck.*']))
@@ -801,6 +811,11 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         text += f"\nПоставлены плюсы 👍 за задачи: {', '.join(human_readable_pluses)}"
     if human_readable_minuses:
         text += f"\nПоставлены минусы ❌ за задачи: {', '.join(human_readable_minuses)}"
+    if any_problem:
+        lesson = any_problem.lesson
+    else:
+        lesson = Problem.last_lesson_num(student.level)
+    text += f'\nДля исправления /edtplus_{lesson}_{student.token}'
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text=text,
                                    reply_markup=None)
