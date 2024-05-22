@@ -757,10 +757,13 @@ async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teach
         minus_ids.discard(problem_id)
     else:
         plus_ids.add(problem_id)
+    reply_markup = teacher_keyboards.build_verdict_for_oral_problems(
+        plus_ids=plus_ids, minus_ids=minus_ids,
+        student=student, online=teacher.online
+    )
+    lesson_num = Problem.get_by_id(problem_id).lesson
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                           reply_markup=teacher_keyboards.build_verdict_for_oral_problems(
-                                               plus_ids=plus_ids, minus_ids=minus_ids,
-                                               student=student, online=teacher.online))
+                                           reply_markup=reply_markup, lesson_num=lesson_num)
     await bot.answer_callback_query_ig(query.id)
 
 
