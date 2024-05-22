@@ -170,7 +170,7 @@ async def edtplus(message: types.Message):
         return
     if (match := re.fullmatch(r'/edtplus_([^_]*)_([^_]*)', message.text or '')):
         lesson = match.group(1)
-        token = match.group(1)
+        token = match.group(2)
     else:
         await bot.send_message(
             chat_id=message.chat.id,

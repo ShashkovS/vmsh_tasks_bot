@@ -339,7 +339,7 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
         text = (f'❓❓❓❓\n'
                 f'<code>{student.surname}</code> <code>{student.name}</code>\n'
                 f'<code>{student.level}</code> <code>{student.token}</code> {ONLINE_MODE(student.online).__str__()[12:]}\n'
-                f'\nКоманда для правки плюсов: <code>/edtplus_{Problem.last_lesson_num(student.level)}_{student.token}</code>')
+                f'Команда для правки плюсов: <code>/edtplus_{Problem.last_lesson_num(student.level)}_{student.token}</code>')
         hdr_msg = await bot.send_message(config.sos_channel, parse_mode="HTML", text=text)
         que_msg = await bot.forward_message(config.sos_channel, message.chat.id, message.message_id)
         db.question.add(student.id, message.chat.id, message.message_id, message.text,
