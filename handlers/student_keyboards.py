@@ -69,7 +69,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
             callback_data=f"{use_callback}_{problem.id}"
         )
         keyboard_markup.add(task_button)
-    if PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW:
+    if PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL or PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL:
         to_lessons_button = types.InlineKeyboardButton(
             text="К списку всех листков",
             callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
@@ -87,13 +87,20 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
 def build_lessons(level):
     logger.debug('keyboards.build_lessons')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
-    for lesson in db.lesson.get_all(level):
-        if lesson['lesson'] >= 33:  # TODO HARDCODE!!
-            lesson_button = types.InlineKeyboardButton(
-                text=f"Листок {lesson['lesson']}",
-                callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
-            )
-            keyboard_markup.add(lesson_button)
+    all_lessons = db.lesson.get_all(level)
+    # PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL or PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL
+    use_lessons = []
+    if PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL:
+        use_lessons = all_lessons
+    elif PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_PREV and all_lessons:
+        last = max(lesson['lesson'] for lesson in all_lessons)
+        use_lessons = [lesson for lesson in all_lessons if lesson['lesson'] >= last - 1]  # ахтунг! int !!
+    for lesson in use_lessons:
+        lesson_button = types.InlineKeyboardButton(
+            text=f"Листок {lesson['lesson']}",
+            callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
+        )
+        keyboard_markup.add(lesson_button)
     return keyboard_markup
 
 
