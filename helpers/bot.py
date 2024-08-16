@@ -239,7 +239,7 @@ class BotIg(aiogram.Bot):
         for t in TIMEOUTS:
             try:
                 await rate_lim(chat_id)
-                logger.info(f'{chat_id=} {text=}')
+                logger.warning(f'{chat_id=} {text=}')
                 return await super().send_message(
                     chat_id, text, parse_mode, entities, disable_web_page_preview, message_thread_id,
                     disable_notification, protect_content, reply_to_message_id, allow_sending_without_reply,
