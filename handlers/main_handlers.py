@@ -41,16 +41,17 @@ async def prc_get_user_info_state(message: types.Message, user: User):
         )
     else:
         User.set_chat_id(user, message.chat.id)
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text=f"🤖 ОК, Добро пожаловать, {user.name} {user.surname}",
-        )
         if user.type == USER_TYPE.STUDENT:
             State.set_by_user_id(user.id, STATE.GET_USER_INFO)
         elif user.type == USER_TYPE.TEACHER:
             State.set_by_user_id(user.id, STATE.TEACHER_SELECT_ACTION)
         elif user.type == USER_TYPE.DEACTIVATED_STUDENT:
             State.set_by_user_id(user.id, STATE.USER_IS_NOT_ACTIVATED)
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"🤖 ОК, Добро пожаловать, {user.name} {user.surname}",
+        )
+        await asyncio.sleep(1)
         await process_regular_message(message)
 
 
