@@ -42,7 +42,7 @@ async def prc_get_user_info_state(message: types.Message, user: User):
     else:
         User.set_chat_id(user, message.chat.id)
         if user.type == USER_TYPE.STUDENT:
-            State.set_by_user_id(user.id, STATE.GET_USER_INFO)
+            State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
         elif user.type == USER_TYPE.TEACHER:
             State.set_by_user_id(user.id, STATE.TEACHER_SELECT_ACTION)
         elif user.type == USER_TYPE.DEACTIVATED_STUDENT:
