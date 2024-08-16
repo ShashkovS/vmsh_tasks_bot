@@ -50,7 +50,7 @@ async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, s
         text = (f"❓ <b>Нажимайте на задачу, чтобы сдать её</b>\n"
                 f"{student.name} {student.surname}\n"
                 f"уровень «{student.level.slevel}», режим {online}\n"
-                f"<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2023\">канал кружка</a>")
+                f"<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2024\">канал кружка</a>")
     else:
         text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
     if show_lesson is None:
@@ -356,11 +356,11 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
 async def prc_student_is_sleeping_state(message: types.message, student: User):
     logger.debug('prc_student_is_sleeping_state')
     if student.level == LEVEL.NOVICE:
-        channel = '@vmsh_179_5_7_2023'
+        channel = '@vmsh_179_5_7_2024'
     elif student.level == LEVEL.PRO:
-        channel = '@vmsh_179_5_7_2023'
+        channel = '@vmsh_179_5_7_2024'
     elif student.level == LEVEL.EXPERT:
-        channel = '@vmsh_179_5_7_2023'
+        channel = '@vmsh_179_5_7_2024'
     elif student.level == LEVEL.GR8:
         channel = '@vmsh_179_8_2022'
     await bot.send_message(chat_id=message.chat.id if message else student.chat_id,
@@ -385,7 +385,7 @@ async def level_novice(message: types.Message):
             chat_id=message.chat.id,
             text="Вы переведены в группу начинающих. "
                  "Успехов в занятиях! "
-                 "Вопросы можно задавать в группе @vmsh_179_5_7_2023_chat.",
+                 "Вопросы можно задавать в группе @vmsh_179_5_7_2024_chat.",
         )
         if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -540,7 +540,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         State.set_by_user_id(student.id, STATE.SENDING_SOLUTION, problem_id)
         await bot.answer_callback_query_ig(query.id)
     elif problem.prob_type == PROB_TYPE.ORALLY:
-        instruction_url = r'https://t.me/vmsh_179_5_7_2023/78'
+        instruction_url = r'https://t.me/vmsh_179_5_7_2024/78'
         hint = ''
         if problem.level != LEVEL.EXPERT:
             conf_id = '87196763644'
