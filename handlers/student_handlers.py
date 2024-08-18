@@ -33,11 +33,15 @@ is_py_func = re.compile(r'^\s*def \w+\s*\(')
 MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
 
 
-async def post_problem_keyboard(chat_id: int, student: User, *, blocked=False, show_lesson=None, disable_notification=False):
+async def post_problem_keyboard(
+    chat_id: int, student: User, *, blocked=False, show_lesson=None, disable_notification=False
+):
     prev_keyboard = db.last_keyboard.get(student.id)
     if prev_keyboard:
         try:
-            await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'], reply_markup=None)
+            await bot.edit_message_reply_markup_ig(
+                chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'], reply_markup=None
+            )
         except:
             pass
     if not blocked:
@@ -160,8 +164,10 @@ async def prc_sending_solution_state(message: types.Message, student: User):
                 downloaded.append((downloaded_file, filename))
             if message.document:
                 if message.document.file_size > 5 * 1024 * 1024:
-                    await bot.send_message(chat_id=message.chat.id,
-                                           text=f"❌ Размер файла превышает ограничение в 5 мегабайт")
+                    await bot.send_message(
+                        chat_id=message.chat.id,
+                        text=f"❌ Размер файла превышает ограничение в 5 мегабайт"
+                    )
                     return
                 file_id = message.document.file_id
                 file_info = await bot.get_file(file_id)
@@ -172,10 +178,12 @@ async def prc_sending_solution_state(message: types.Message, student: User):
             for bin_data, filename in downloaded:
                 ext = filename[filename.rfind('.') + 1:]
                 cur_ts = datetime.datetime.now().isoformat().replace(':', '-')
-                file_name = os.path.join(SOLS_PATH,
-                                         f'{student.token} {student.surname} {student.name}',
-                                         f'{problem.lesson}',
-                                         f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}')
+                file_name = os.path.join(
+                    SOLS_PATH,
+                    f'{student.token} {student.surname} {student.name}',
+                    f'{problem.lesson}',
+                    f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}'
+                )
                 os.makedirs(os.path.dirname(file_name), exist_ok=True)
                 db.log.insert(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
                 with open(file_name, 'wb') as file:
@@ -204,7 +212,8 @@ def check_test_ans_rate_limit(student_id: int, problem_id: int):
     return text_to_student
 
 
-def run_py_func_checker(problem: Problem, student_answer: str, *, check_functions_cache={}) -> Tuple[bool, Optional[str], Optional[str]]:
+def run_py_func_checker(problem: Problem, student_answer: str, *, check_functions_cache={}) -> Tuple[
+    bool, Optional[str], Optional[str]]:
     func_code = problem.cor_ans_checker
     func_name = re.search(r'\s*def\s+(\w+)', func_code)[1]
     if func_name in check_functions_cache:
@@ -234,7 +243,9 @@ class ANS_CHECK_VERDICT(IntEnum):
     WRONG = -1
 
 
-def check_test_problem_answer(problem: Problem, student: Optional[User], student_answer: str, *, check_functions_cache={}) -> Tuple[
+def check_test_problem_answer(
+    problem: Problem, student: Optional[User], student_answer: str, *, check_functions_cache={}
+) -> Tuple[
     ANS_CHECK_VERDICT, Optional[str], Optional[str]]:
     logger.debug('check_test_problem_answer')
     answer_is_correct = additional_message = error_text = None
@@ -245,21 +256,27 @@ def check_test_problem_answer(problem: Problem, student: Optional[User], student
 
     # Проверяем на перебор
     if student:  # При перепроверке данная проверка не выполняется
-        text_to_student = check_test_ans_rate_limit(student.id, problem.id) if student.type == USER_TYPE.STUDENT else None
+        text_to_student = check_test_ans_rate_limit(
+            student.id, problem.id
+        ) if student.type == USER_TYPE.STUDENT else None
         if text_to_student:
             return ANS_CHECK_VERDICT.RATE_LIMIT, text_to_student, error_text
 
     # Если тип ответа — выбор из нескольких вариантов ответа, то это «простой» особый случай
     if problem.ans_type == ANS_TYPE.SELECT_ONE:
         student_answer_cut = student_answer[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower()
-        if student_answer_cut in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in problem.cor_ans.split(';')]:
+        if student_answer_cut in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in
+                                  problem.cor_ans.split(';')]:
             return ANS_CHECK_VERDICT.CORRECT, additional_message, error_text
-        if student_answer_cut not in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in problem.ans_validation.split(';')]:
+        if student_answer_cut not in [ans.strip()[:MAX_CALLBACK_PAYLOAD_HOOK_LIMIT].strip().lower() for ans in
+                                      problem.ans_validation.split(';')]:
             return ANS_CHECK_VERDICT.INCORRECT_SELECT, additional_message, error_text
         return ANS_CHECK_VERDICT.WRONG, additional_message, error_text
 
     # Сначала проверим, проходит ли ответ валидацию регуляркой (для стандартных типов или если она указана)
-    validation_regex = (problem.ans_validation and re.compile(problem.ans_validation)) or ANS_REGEX.get(problem.ans_type, None)
+    validation_regex = (problem.ans_validation and re.compile(problem.ans_validation)) or ANS_REGEX.get(
+        problem.ans_type, None
+    )
     if validation_regex and not validation_regex.fullmatch(student_answer):
         return ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED, additional_message, error_text
     # Здесь мы проверяем ответ в зависимости от того, как проверять
@@ -273,7 +290,9 @@ def check_test_problem_answer(problem: Problem, student: Optional[User], student
             if ';' not in correct_answer:
                 answer_is_correct = checker(student_answer, correct_answer)
             else:
-                answer_is_correct = any(checker(student_answer, one_correct) for one_correct in correct_answer.split(';'))
+                answer_is_correct = any(
+                    checker(student_answer, one_correct) for one_correct in correct_answer.split(';')
+                )
         elif problem.ans_type == ANS_TYPE.POLYNOMIAL:
             # Чтобы давать информативное сообщение об ошибке, мы выдаём вход, на котором ответы отличаются.
             valid, func_values = checker(student_answer)
@@ -300,7 +319,9 @@ async def check_answer_and_react(chat_id: int, problem: Problem, student: User, 
     if additional_message:
         await bot.send_message(chat_id=chat_id, text=additional_message)
     if check_verict == ANS_CHECK_VERDICT.INCORRECT_SELECT:
-        await bot.send_message(chat_id=chat_id, text=f"❌ Выберите один из вариантов: {', '.join(problem.ans_validation.split(';'))}")
+        await bot.send_message(
+            chat_id=chat_id, text=f"❌ Выберите один из вариантов: {', '.join(problem.ans_validation.split(';'))}"
+        )
     elif check_verict == ANS_CHECK_VERDICT.VALIDATION_NOT_PASSED:
         await bot.send_message(chat_id=chat_id, text=f"❌ {problem.validation_error}")
     elif check_verict == ANS_CHECK_VERDICT.RATE_LIMIT:
@@ -342,9 +363,11 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
                 f'Команда для правки плюсов: <code>/edtplus_{Problem.last_lesson_num(student.level)}_{student.token}</code>')
         hdr_msg = await bot.send_message(config.sos_channel, parse_mode="HTML", text=text)
         que_msg = await bot.forward_message(config.sos_channel, message.chat.id, message.message_id)
-        db.question.add(student.id, message.chat.id, message.message_id, message.text,
-                        hdr_msg.chat.id, hdr_msg.message_id,
-                        que_msg.message_id)
+        db.question.add(
+            student.id, message.chat.id, message.message_id, message.text,
+            hdr_msg.chat.id, hdr_msg.message_id,
+            que_msg.message_id
+        )
     except:
         logger.info(f'Не удалось переслать SOS-сообщение в канал {config.sos_channel}')
     await bot.send_message(chat_id=message.chat.id, text=f"Переслал сообщение.")
@@ -363,9 +386,11 @@ async def prc_student_is_sleeping_state(message: types.message, student: User):
         channel = '@vmsh_179_5_7_2024'
     elif student.level == LEVEL.GR8:
         channel = '@vmsh_179_8_2022'
-    await bot.send_message(chat_id=message.chat.id if message else student.chat_id,
-                           text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
-                                f"Заходите в канал {channel} кружка за новостями и решениями.")
+    await bot.send_message(
+        chat_id=message.chat.id if message else student.chat_id,
+        text="🤖 Приём задач ботом окончен до начала следующего занятия.\n"
+             f"Заходите в канал {channel} кружка за новостями и решениями."
+    )
 
 
 @reg_state(STATE.STUDENT_IS_IN_CONFERENCE)
@@ -449,25 +474,47 @@ async def sos(message: types.Message):
     logger.debug('sos')
     user = User.get_by_chat_id(message.chat.id)
     if not user:
+        token = f'unknown{message.chat.id}'
+        if message.chat.username:
+            token += f'@{message.chat.username}'
+        new_unknown_user = User(
+            message.chat.id, USER_TYPE.UNKNOWN, LEVEL.NO_LEVEL,
+            message.chat.first_name or '',
+            message.chat.last_name or '',
+            '',
+            token, ONLINE_MODE.ONLINE, 12, None
+        )
+        db.log.log_signon(
+            new_unknown_user and new_unknown_user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username,
+            token
+        )
+        State.set_by_user_id(new_unknown_user.id, STATE.WAIT_SOS_REQUEST)
         await bot.send_message(
             chat_id=message.chat.id,
-            text="🤖 Привет! Без пароля я не знаю, кому помогать... Пожалуйста, введите свой пароль",
+            text="🤖 Привет! Без пароля мы не знаем, как вас зовут...\n"
+                 "Поэтому сначала напишите ФИО ученика, о котором идёт речь.\n"
+                 "И потом — вопрос.",
         )
     else:
-        sos_message = await bot.send_message(chat_id=message.chat.id,
-                                             text="🤖 Какой у вас вопрос?",
-                                             reply_markup=student_keyboards.build_student_sos_actions())
+        sos_message = await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Какой у вас вопрос?",
+            reply_markup=student_keyboards.build_student_sos_actions()
+        )
         bot.delete_messages_after(sos_message, 30)
 
 
 @reg_callback(CALLBACK.PROBLEM_SOS)
 async def prc_problem_sos_callback(query: types.CallbackQuery, student: User):
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
-    problem_sos_message = await bot.send_message(chat_id=query.message.chat.id,
-                                                 text="🤖 По какой задаче у вас вопрос❓",
-                                                 reply_markup=student_keyboards.build_problems(
-                                                     Problem.last_lesson_num(student.level), student,
-                                                     is_sos_question=True))
+    problem_sos_message = await bot.send_message(
+        chat_id=query.message.chat.id,
+        text="🤖 По какой задаче у вас вопрос❓",
+        reply_markup=student_keyboards.build_problems(
+            Problem.last_lesson_num(student.level), student,
+            is_sos_question=True
+        )
+    )
     bot.delete_messages_after(problem_sos_message, 30)
     await bot.answer_callback_query_ig(query.id)
 
@@ -476,9 +523,11 @@ async def prc_problem_sos_callback(query: types.CallbackQuery, student: User):
 async def prc_problems_other_sos_callback(query: types.CallbackQuery, student: User):
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
     State.set_by_user_id(student.id, STATE.WAIT_SOS_REQUEST)
-    await bot.send_message(chat_id=query.message.chat.id,
-                           text="Напишите ваш вопрос",
-                           reply_markup=student_keyboards.build_cancel_task_submission())
+    await bot.send_message(
+        chat_id=query.message.chat.id,
+        text="Напишите ваш вопрос",
+        reply_markup=student_keyboards.build_cancel_task_submission()
+    )
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -488,11 +537,15 @@ async def prc_problem_sos_problem_selected_callback(query: types.CallbackQuery, 
     problem = Problem.get_by_id(problem_id)
     State.set_by_user_id(student.id, STATE.WAIT_SOS_REQUEST, problem_id=problem_id)
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
-    await bot.send_message(chat_id=query.message.chat.id,
-                           text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 с вашим вопросом.",
-                           reply_markup=student_keyboards.build_cancel_task_submission())
-    State.set_by_user_id(student.id, STATE.SENDING_SOLUTION,
-                         -problem_id)  # -problem_id - ВОПРОС по задаче, а не РЕШЕНИЕ
+    await bot.send_message(
+        chat_id=query.message.chat.id,
+        text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 с вашим вопросом.",
+        reply_markup=student_keyboards.build_cancel_task_submission()
+    )
+    State.set_by_user_id(
+        student.id, STATE.SENDING_SOLUTION,
+        -problem_id
+    )  # -problem_id - ВОПРОС по задаче, а не РЕШЕНИЕ
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -517,26 +570,34 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
     elif problem.prob_type == PROB_TYPE.TEST:
         # Если это выбор из нескольких вариантов, то нужно сделать клавиатуру
         if problem.ans_type == ANS_TYPE.SELECT_ONE:
-            await bot.send_message(chat_id=query.message.chat.id,
-                                   text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:",
-                                   reply_markup=student_keyboards.build_test_answers(problem))
+            await bot.send_message(
+                chat_id=query.message.chat.id,
+                text=f"Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:",
+                reply_markup=student_keyboards.build_test_answers(problem)
+            )
         elif problem.ans_type == ANS_TYPE.WEEKDAY:
             # Мерзкий хардкод :(
             problem.ans_validation = 'Понедельник;Вторник;Среда;Четверг;Пятница;Суббота;Воскресенье'
-            await bot.send_message(chat_id=query.message.chat.id,
-                                   text=f"Выбрана задача {problem}.\nВыберите ответ — день недели:",
-                                   reply_markup=student_keyboards.build_test_answers(problem))
+            await bot.send_message(
+                chat_id=query.message.chat.id,
+                text=f"Выбрана задача {problem}.\nВыберите ответ — день недели:",
+                reply_markup=student_keyboards.build_test_answers(problem)
+            )
         else:
             answer_recommendation = problem.validation_error or f'Теперь введите ответ{problem.ans_type.descr}'
-            await bot.send_message(chat_id=query.message.chat.id,
-                                   text=f"Выбрана задача {problem}.\n{answer_recommendation}",
-                                   reply_markup=student_keyboards.build_cancel_task_submission())
+            await bot.send_message(
+                chat_id=query.message.chat.id,
+                text=f"Выбрана задача {problem}.\n{answer_recommendation}",
+                reply_markup=student_keyboards.build_cancel_task_submission()
+            )
         State.set_by_user_id(student.id, STATE.SENDING_TEST_ANSWER, problem_id)
         await bot.answer_callback_query_ig(query.id)
     elif problem.prob_type in (PROB_TYPE.WRITTEN, PROB_TYPE.WRITTEN_BEFORE_ORALLY):
-        await bot.send_message(chat_id=query.message.chat.id,
-                               text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.",
-                               reply_markup=student_keyboards.build_cancel_task_submission())
+        await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=f"Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения.",
+            reply_markup=student_keyboards.build_cancel_task_submission()
+        )
         State.set_by_user_id(student.id, STATE.SENDING_SOLUTION, problem_id)
         await bot.answer_callback_query_ig(query.id)
     elif problem.prob_type == PROB_TYPE.ORALLY:
@@ -569,10 +630,12 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
             f"Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. "
             f"Мы постараемся выделить время каждому, но ожидание может быть достаточно долгим."
         )
-        await bot.send_message(chat_id=query.message.chat.id,
-                               text=text,
-                               disable_web_page_preview=True,
-                               parse_mode='HTML')
+        await bot.send_message(
+            chat_id=query.message.chat.id,
+            text=text,
+            disable_web_page_preview=True,
+            parse_mode='HTML'
+        )
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         await bot.answer_callback_query_ig(query.id)
         asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student, sleep=5))
@@ -652,9 +715,11 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
 @reg_callback(CALLBACK.SHOW_LIST_OF_LISTS)
 async def prc_show_list_of_lists_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_show_list_of_lists_callback')
-    await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                   text="Вот список всех листков:",
-                                   reply_markup=student_keyboards.build_lessons(student.level))
+    await bot.edit_message_text_ig(
+        chat_id=query.message.chat.id, message_id=query.message.message_id,
+        text="Вот список всех листков:",
+        reply_markup=student_keyboards.build_lessons(student.level)
+    )
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -667,7 +732,9 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         _, problem_id, selected_answer = splitted
         problem = Problem.get_by_id(problem_id)
 
-    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+    await bot.edit_message_reply_markup_ig(
+        chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None
+    )
     await bot.answer_callback_query_ig(query.id)
 
     if problem is None:
@@ -699,8 +766,10 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
     logger.debug('prc_get_out_of_waitlist_callback')
     state = State.get_by_user_id(student.id)
     teacher = User.get_by_id(state['last_teacher_id'])
-    await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                           reply_markup=None)
+    await bot.edit_message_reply_markup_ig(
+        chat_id=query.message.chat.id, message_id=query.message.message_id,
+        reply_markup=None
+    )
     Waitlist.leave(student.id)
     db.delete_url_by_user_id(student.id)
     try:
@@ -709,8 +778,10 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
         pass
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
     if teacher:
-        await bot.send_message(chat_id=teacher.chat_id,
-                               text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n")
+        await bot.send_message(
+            chat_id=teacher.chat_id,
+            text=f"Ученик {student.surname} {student.name} {student.token} завершил устную сдачу.\n"
+        )
     await bot.answer_callback_query_ig(query.id)
     asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
 
@@ -739,17 +810,22 @@ async def set_zoom(message: types.Message):
     user = User.get_by_chat_id(message.chat.id)
     zoom_conf = re.search(r'https://[\w?=._/-]*zoom[\w?=._/-]*', message.text or '')
     if not zoom_conf:
-        await bot.send_message(chat_id=message.chat.id,
-                               text="Не смог найти в сообщении адрес конференции.")
-        await bot.send_message(chat_id=message.chat.id,
-                               text="Открываете приложение zoom и стартуете новую конференцию.<br>В левом верхнем углу зелёный щит. Кликаете на него и копируете ссылку на вашу конференцию.<br>Запускаете вмш-телеграм-бота и пишете команду с вашей ссылкой вида <br><code>/set_zoom https://us02web.zoom.us/j/123?pwd=ABC</code>",
-                               parse_mode="HTML")
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="Не смог найти в сообщении адрес конференции."
+        )
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="Открываете приложение zoom и стартуете новую конференцию.<br>В левом верхнем углу зелёный щит. Кликаете на него и копируете ссылку на вашу конференцию.<br>Запускаете вмш-телеграм-бота и пишете команду с вашей ссылкой вида <br><code>/set_zoom https://us02web.zoom.us/j/123?pwd=ABC</code>",
+            parse_mode="HTML"
+        )
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user, sleep=5))
     else:
         zoom_url = zoom_conf.group()
         db.add_zoom_conf(user.id, zoom_url)
-        msg = await bot.send_message(chat_id=message.chat.id,
-                                     text=f"Ожидайте вашей очереди и не выходите из конференции {zoom_url}.\nВыполните команду /exit_waitlist для отмены.", )
+        msg = await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"Ожидайте вашей очереди и не выходите из конференции {zoom_url}.\nВыполните команду /exit_waitlist для отмены.", )
         await bot.pin_chat_message(chat_id=message.chat.id, message_id=msg.message_id)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user, sleep=5))
 
@@ -771,7 +847,9 @@ async def students_my_results(message: types.Message):
                      ]
             for i in range(0, len(lines), 20):
                 try:
-                    await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines[i:i + 20]) + '</pre>')
+                    await bot.send_message(
+                        chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines[i:i + 20]) + '</pre>'
+                    )
                 except aiogram.utils.exceptions.MessageIsTooLong:
                     pass
     else:
