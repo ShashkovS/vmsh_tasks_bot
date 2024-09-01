@@ -108,7 +108,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
                     parse_mode=parse_mode,
                 )
             sent += 1
-            db.log.insert(True, broad_message.message_id, broad_message.chat.id, student.id, None,
+            db.log.insert(True, broad_message.message_id, student.chat_id, student.id, None,
                           broadcast_message, None)
         except aiogram.exceptions.TelegramAPIError as e:
             logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
