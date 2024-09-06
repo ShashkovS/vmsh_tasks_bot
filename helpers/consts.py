@@ -86,9 +86,9 @@ class USER_TYPE(IntFlag):
 
 LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты'}
 LEVEL_URL = {
-    'н': 'https://shashkovs.ru/vmsh/2023/n/',
-    'п': 'https://shashkovs.ru/vmsh/2023/p/',
-    'э': 'https://shashkovs.ru/vmsh/2023/x/',
+    'н': 'https://shashkovs.ru/vmsh/2024/n/',
+    'п': 'https://shashkovs.ru/vmsh/2024/p/',
+    'э': 'https://shashkovs.ru/vmsh/2024/x/',
 }
 
 
