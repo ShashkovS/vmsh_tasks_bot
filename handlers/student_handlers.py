@@ -36,6 +36,14 @@ MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
 async def post_problem_keyboard(
     chat_id: int, student: User, *, blocked=False, show_lesson=None, disable_notification=False
 ):
+    if student.type == USER_TYPE.UNKNOWN:
+        State.set_by_user_id(student.id, STATE.GET_USER_INFO)
+        await bot.send_message(
+            chat_id=chat_id,
+            text='Необходимо авторизоваться и ввести пароль',
+        )
+        return
+
     prev_keyboard = db.last_keyboard.get(student.id)
     if prev_keyboard:
         try:
