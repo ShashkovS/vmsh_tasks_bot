@@ -528,7 +528,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     await bot.answer_callback_query_ig(query.id)
     if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
         asyncio.create_task(refresh_last_student_keyboard(student))  # Обновляем студенту клавиатуру со списком задач
-        asyncio.create_task(forward_discussion_to_student(student, problem, set_verdict))
+        asyncio.create_task(forward_discussion_to_student(student, problem, set_verdict, result_id=result_id))
     asyncio.create_task(prc_teacher_select_action(None, teacher, 1 if milestone else 0))
 
 
