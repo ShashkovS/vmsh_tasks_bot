@@ -345,6 +345,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
             f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇") if (not is_sos) else (
         f"Вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
         f"{student.name_for_teacher()}\n"
+        f"/recheck_{student.token}_{problem.id}\n"
         f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇")  # обрабатываем SOS
     # Если передан message_id, то обновляем сообщение (там была кнопка). Если нет, то отправляем новое.
     if message_id:
