@@ -106,7 +106,8 @@ async def prc_teacher_select_action(message: types.Message, teacher: User, sleep
     if not locked_problem_id:
         sos_count = db.written_task_queue.get_sos_tasks_count()
         prb_count = db.written_task_queue.get_written_tasks_count()
-        keyb_msg = await bot.send_message(chat_id=use_chat_id, text=f"Выберите действие ({prb_count}✏️, {sos_count}❓)",
+        text = f"Выберите действие ({prb_count}✏️, {sos_count}❓)"
+        keyb_msg = await bot.send_message(chat_id=use_chat_id, text=text,
                                           reply_markup=teacher_keyboards.build_teacher_actions(sos_count, prb_count))
         db.last_keyboard.update(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
     else:
@@ -306,7 +307,10 @@ async def prc_SELECT_WRITTEN_TASK_TO_CHECK_callback(query: types.CallbackQuery, 
     for row in rows:
         first_problem_id = row['synonyms'].split(';')[0]
         problems_and_counts.append((Problem.get_by_id(first_problem_id), row['cnt'], row['days_waits']))
-    await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
+    sos_count = db.written_task_queue.get_sos_tasks_count()
+    prb_count = db.written_task_queue.get_written_tasks_count()
+    text = f"Выберите задачу для проверки ({prb_count}✏️, {sos_count}❓)"
+    await bot.send_message(chat_id=teacher.chat_id, text=text,
                            reply_markup=teacher_keyboards.build_select_problem_to_check(problems_and_counts))
     await bot.answer_callback_query_ig(query.id)
 
