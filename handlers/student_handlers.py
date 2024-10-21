@@ -222,16 +222,15 @@ def check_test_ans_rate_limit(student_id: int, problem_id: int):
 
 def run_py_func_checker(problem: Problem, student_answer: str, *, check_functions_cache={}) -> Tuple[
     bool, Optional[str], Optional[str]]:
-    func_code = problem.cor_ans_checker
-    func_name = re.search(r'\s*def\s+(\w+)', func_code)[1]
-    if func_name in check_functions_cache:
-        test_func = check_functions_cache[func_name]
+    func_code = problem.cor_ans_checker.strip()
+    if func_code in check_functions_cache:
+        test_func = check_functions_cache[func_code]
     else:
         locs = {}
         # О-о-очень опасный кусок :)
         exec(func_code, GLOBALS_FOR_TEST_FUNCTION_CREATION, locs)
         func_name, test_func = locs.popitem()
-        check_functions_cache[func_name] = test_func
+        check_functions_cache[func_code] = test_func
     result = additional_message = answer_is_correct = error_text = None
     try:
         result = test_func(student_answer)
@@ -496,7 +495,8 @@ async def sos(message: types.Message):
             token, ONLINE_MODE.ONLINE, 12, None
         )
         db.log.log_signon(
-            new_unknown_user and new_unknown_user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username,
+            new_unknown_user and new_unknown_user.id, message.chat.id, message.chat.first_name, message.chat.last_name,
+            message.chat.username,
             token
         )
         State.set_by_user_id(new_unknown_user.id, STATE.WAIT_SOS_REQUEST)
