@@ -104,8 +104,11 @@ async def prc_teacher_select_action(message: types.Message, teacher: User, sleep
     logger.debug('prc_teacher_select_action')
     locked_problem_id = get_problem_lock(teacher.id)
     if not locked_problem_id:
-        await bot.send_message(chat_id=use_chat_id, text="Выберите действие",
-                               reply_markup=teacher_keyboards.build_teacher_actions())
+        sos_count = db.written_task_queue.get_sos_tasks_count()
+        prb_count = db.written_task_queue.get_written_tasks_count()
+        keyb_msg = await bot.send_message(chat_id=use_chat_id, text=f"Выберите действие ({prb_count}✏️, {sos_count}❓)",
+                                          reply_markup=teacher_keyboards.build_teacher_actions(sos_count, prb_count))
+        db.last_keyboard.update(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
     else:
         await take_random_written_problem_and_start_check(teacher, locked_problem_id)
 
@@ -985,8 +988,7 @@ async def zoom_queue(message: types.Message):
     )
     teacher_state = State.get_by_user_id(teacher.id)
     if teacher_state['state'] == STATE.TEACHER_SELECT_ACTION:
-        await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
-                               reply_markup=teacher_keyboards.build_teacher_actions())
+        await prc_teacher_select_action(message, teacher, 1)
 
 
 @dispatcher.message_handler(commands=['set_game_command', 'sg'])

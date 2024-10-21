@@ -9,11 +9,9 @@ from helpers.features import VERDICT_MODE, FEATURES
 from models import User, Problem
 
 
-def build_teacher_actions():
+def build_teacher_actions(sos_count, prb_count):
     logger.debug('keyboards.build_teacher_actions')
     keyboard = types.InlineKeyboardMarkup()
-    sos_count = db.written_task_queue.get_sos_tasks_count()
-    prb_count = db.written_task_queue.get_written_tasks_count()
     get_written_task_button = types.InlineKeyboardButton(
         text=f"Ответить на вопрос (всего {sos_count})",
         callback_data=CALLBACK.GET_SOS_TASK
