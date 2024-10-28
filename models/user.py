@@ -74,7 +74,7 @@ class User:
             grade = f'класс: {self.grade}'
         else:
             grade = ''
-        return f'{self.name} {self.surname} {self.token}\nуровень: {self.level} {grade} {age}'
+        return f'{self.name} {self.surname} `{self.token}`\nуровень: {self.level} {grade} {age}'
 
     @classmethod
     def all(cls) -> Generator[User, None, None]:

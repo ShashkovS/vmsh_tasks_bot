@@ -82,13 +82,15 @@ class USER_TYPE(IntFlag):
     TEACHER_OR_ADMIN = TEACHER | ADMIN
     DELETED = -1
     DEACTIVATED_STUDENT = -2
+    UNKNOWN = -4
 
 
-LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты'}
+LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', '@': 'Без уровня'}
 LEVEL_URL = {
     'н': 'https://shashkovs.ru/vmsh/2024/n/',
     'п': 'https://shashkovs.ru/vmsh/2024/p/',
     'э': 'https://shashkovs.ru/vmsh/2024/x/',
+    '@': 'https://shashkovs.ru/vmsh/2024/n/',
 }
 
 
@@ -98,6 +100,7 @@ class LEVEL(str, Enum):
     PRO = 'п'
     EXPERT = 'э'
     GR8 = 'В'
+    NO_LEVEL = '@'
 
     def __init__(self, value):
         self.slevel = LEVEL_DESCRIPTION.get(self.value, None)

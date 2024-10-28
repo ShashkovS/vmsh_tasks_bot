@@ -104,8 +104,12 @@ async def prc_teacher_select_action(message: types.Message, teacher: User, sleep
     logger.debug('prc_teacher_select_action')
     locked_problem_id = get_problem_lock(teacher.id)
     if not locked_problem_id:
-        await bot.send_message(chat_id=use_chat_id, text="Выберите действие",
-                               reply_markup=teacher_keyboards.build_teacher_actions())
+        sos_count = db.written_task_queue.get_sos_tasks_count()
+        prb_count = db.written_task_queue.get_written_tasks_count()
+        text = f"Выберите действие ({prb_count}✏️, {sos_count}❓)"
+        keyb_msg = await bot.send_message(chat_id=use_chat_id, text=text,
+                                          reply_markup=teacher_keyboards.build_teacher_actions(sos_count, prb_count))
+        db.last_keyboard.update(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
     else:
         await take_random_written_problem_and_start_check(teacher, locked_problem_id)
 
@@ -138,17 +142,51 @@ async def prc_teacher_is_checking_task_state(message: types.Message, teacher: Us
 
 
 @reg_state(STATE.TEACHER_ACCEPTED_QUEUE)
-async def prc_teacher_accepted_queue(message: types.message, teacher: User):
+async def prc_teacher_accepted_queue(message: types.message, teacher: User, online=None, lesson_num=None, student: User = None):
     logger.debug('prc_teacher_accepted_queue')
-    state = State.get_by_user_id(teacher.id)
-    student_id = state['last_student_id']
-    student = User.get_by_id(student_id)
+    # при вызове из команды могут быть «силой» установлены параметры online, lesson_num, student_id
+    if student is None:
+        state = State.get_by_user_id(teacher.id)
+        student_id = state['last_student_id']
+        student = User.get_by_id(student_id)
+    if not student:
+        return
+    if online is None:
+        online = teacher.online
+
+    reply_markup = teacher_keyboards.build_verdict_for_oral_problems(
+        plus_ids=set(),
+        minus_ids=set(),
+        student=student,
+        online=online,
+        lesson_num=lesson_num,
+    )
     await bot.send_message(chat_id=message.chat.id,
                            text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
-                           reply_markup=teacher_keyboards.build_verdict_for_oral_problems(plus_ids=set(),
-                                                                                          minus_ids=set(),
-                                                                                          student=student,
-                                                                                          online=teacher.online))
+                           reply_markup=reply_markup)
+
+
+@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?edtplus.*']))
+async def edtplus(message: types.Message):
+    logger.debug('edtplus')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    if (match := re.fullmatch(r'/edtplus_([^_]*)_([^_]*)', message.text or '')):
+        lesson = match.group(1)
+        token = match.group(2)
+    else:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Пришлите запрос на простановку плюсов в формате\n«/edtplus_lesson_token», например «/edtplus_12_aa9bb4»",
+        )
+        return
+    student = User.get_by_token(token)
+    if not student:
+        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
+    state = State.get_by_user_id(teacher.id)
+    State.set_by_user_id(teacher.id, state['state'], last_student_id=student.id)
+    await prc_teacher_accepted_queue(message, teacher, online=ONLINE_MODE.SCHOOL, lesson_num=int(lesson), student=student)
 
 
 @reg_state(STATE.TEACHER_WRITES_STUDENT_NAME)
@@ -158,28 +196,6 @@ async def prc_teacher_writes_student_name_state(message: types.message, teacher:
     await bot.send_message(chat_id=message.chat.id,
                            text="Выберите школьника для внесения задач",
                            reply_markup=teacher_keyboards.build_select_student(name_to_find))
-
-
-@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?oralrecheck.*']))
-async def oral_recheck(message: types.Message):
-    logger.debug('oral_recheck')
-    teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE.TEACHER:
-        return
-    if (match := re.fullmatch(r'/oralrecheck_([^_]*)', message.text or '')):
-        token = match.group(1)
-    else:
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text="🤖 Пришлите запрос на перепроверку в формате\n«/oralrecheck_token», например «/oralrecheck_aa9bb4»",
-        )
-        return
-    student = User.get_by_token(token)
-    if not student:
-        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
-    # if student:
-    #     message = await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
-    #     await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
 @dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?recheck.*']))
@@ -291,7 +307,10 @@ async def prc_SELECT_WRITTEN_TASK_TO_CHECK_callback(query: types.CallbackQuery, 
     for row in rows:
         first_problem_id = row['synonyms'].split(';')[0]
         problems_and_counts.append((Problem.get_by_id(first_problem_id), row['cnt'], row['days_waits']))
-    await bot.send_message(chat_id=teacher.chat_id, text="Выберите задачу для проверки",
+    sos_count = db.written_task_queue.get_sos_tasks_count()
+    prb_count = db.written_task_queue.get_written_tasks_count()
+    text = f"Выберите задачу для проверки ({prb_count}✏️, {sos_count}❓)"
+    await bot.send_message(chat_id=teacher.chat_id, text=text,
                            reply_markup=teacher_keyboards.build_select_problem_to_check(problems_and_counts))
     await bot.answer_callback_query_ig(query.id)
 
@@ -333,6 +352,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
             f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇") if (not is_sos) else (
         f"Вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
         f"{student.name_for_teacher()}\n"
+        f"/recheck_{student.token}_{problem.id}\n"
         f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇")  # обрабатываем SOS
     # Если передан message_id, то обновляем сообщение (там была кнопка). Если нет, то отправляем новое.
     if message_id:
@@ -516,7 +536,7 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     await bot.answer_callback_query_ig(query.id)
     if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
         asyncio.create_task(refresh_last_student_keyboard(student))  # Обновляем студенту клавиатуру со списком задач
-        asyncio.create_task(forward_discussion_to_student(student, problem, set_verdict))
+        asyncio.create_task(forward_discussion_to_student(student, problem, set_verdict, result_id=result_id))
     asyncio.create_task(prc_teacher_select_action(None, teacher, 1 if milestone else 0))
 
 
@@ -745,10 +765,14 @@ async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teach
         minus_ids.discard(problem_id)
     else:
         plus_ids.add(problem_id)
+    lesson_num = Problem.get_by_id(problem_id).lesson
+    reply_markup = teacher_keyboards.build_verdict_for_oral_problems(
+        plus_ids=plus_ids, minus_ids=minus_ids,
+        student=student, online=teacher.online,
+        lesson_num=lesson_num,
+    )
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
-                                           reply_markup=teacher_keyboards.build_verdict_for_oral_problems(
-                                               plus_ids=plus_ids, minus_ids=minus_ids,
-                                               student=student, online=teacher.online))
+                                           reply_markup=reply_markup)
     await bot.answer_callback_query_ig(query.id)
 
 
@@ -801,6 +825,11 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         text += f"\nПоставлены плюсы 👍 за задачи: {', '.join(human_readable_pluses)}"
     if human_readable_minuses:
         text += f"\nПоставлены минусы ❌ за задачи: {', '.join(human_readable_minuses)}"
+    if any_problem:
+        lesson = any_problem.lesson
+    else:
+        lesson = Problem.last_lesson_num(student.level)
+    text += f'\nДля исправления /edtplus_{lesson}_{student.token}'
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text=text,
                                    reply_markup=None)
@@ -963,8 +992,7 @@ async def zoom_queue(message: types.Message):
     )
     teacher_state = State.get_by_user_id(teacher.id)
     if teacher_state['state'] == STATE.TEACHER_SELECT_ACTION:
-        await bot.send_message(chat_id=message.chat.id, text="Выберите действие",
-                               reply_markup=teacher_keyboards.build_teacher_actions())
+        await prc_teacher_select_action(message, teacher, 1)
 
 
 @dispatcher.message_handler(commands=['set_game_command', 'sg'])
