@@ -1,5 +1,6 @@
 import datetime
 import re
+
 import aiogram
 import asyncio
 from aiogram.dispatcher.webhook import types
@@ -172,10 +173,11 @@ async def edtplus(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
+    lesson = token = None
     if (match := re.fullmatch(r'/edtplus_([^_]*)_([^_]*)', message.text or '')):
         lesson = match.group(1)
         token = match.group(2)
-    else:
+    if not lesson or not lesson.isdecimal():
         await bot.send_message(
             chat_id=message.chat.id,
             text="🤖 Пришлите запрос на простановку плюсов в формате\n«/edtplus_lesson_token», например «/edtplus_12_aa9bb4»",
