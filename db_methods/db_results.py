@@ -83,6 +83,7 @@ class DB_RESULT(DB_ABC):
         self.db.conn.commit()
 
     def check_student_solved(self, student_id: int, lesson: int) -> Dict[int, int]:
+        # todo здесь плохо вычисляется вердикт, так как нужно джойнить с вердиктами
         cur = self.db.conn.execute("""
             select problem_id, max(verdict) verdict from results
             where student_id = :student_id and lesson = :lesson and verdict > 0
@@ -136,7 +137,8 @@ class DB_RESULT(DB_ABC):
         return self.db.conn.execute("""
             select min(ts) ts, p.title, p.level from results r
             join problems p on r.problem_id = p.id
-            where student_id = :student_id and r.lesson = :lesson and verdict > 0
+            join verdicts v on r.verdict = v.id
+            where student_id = :student_id and r.lesson = :lesson and v.val >= 0.8
             group by p.title, p.level 
             order by 1
         """, locals()).fetchall()
