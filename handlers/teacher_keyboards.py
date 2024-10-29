@@ -160,7 +160,11 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
     logger.debug('keyboards.build_verdict_for_oral_problems')
     if lesson_num is None:
         lesson_num = Problem.last_lesson_num(student.level)
-    solved = {problem_id for (problem_id, verdict) in db.result.check_student_solved(student.id, lesson_num).items() if verdict in VERDICTS_SOLVED}
+    solved = {
+        problem_id
+        for (problem_id, verdict) in db.result.check_student_solved(student.id, lesson_num).items()
+        if verdict in VERDICTS_SOLVED
+    }
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
