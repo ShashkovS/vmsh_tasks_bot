@@ -241,13 +241,23 @@ def get_game_data(student: User) -> dict:
             continue
         else:
             used_titles.add(clear_title)
+        # # Защита от продолжающих, которые решают задачи начинающих. Они получают в 1.5 раза меньше баллов
+        # if solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.PRO:
+        #     score = int(round(score / 1.5))
+        # elif solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.EXPERT:
+        #     score = int(round(score / 2))
+        # elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.EXPERT:
+        #     score = int(round(score / 1.5))
+        # ТОЛЬКО НА ТЕКУЩУЮ ИГРУ!!! TODO!
         # Защита от продолжающих, которые решают задачи начинающих. Они получают в 1.5 раза меньше баллов
         if solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.PRO:
-            score = int(round(score / 1.5))
+            score = int(round(score / 1.2))
+        elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.NOVICE:
+            score = int(round(score * 1.2))
         elif solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.EXPERT:
             score = int(round(score / 2))
         elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.EXPERT:
-            score = int(round(score / 1.5))
+            score = int(round(score / 1.0))
         events.append([solv['ts'], score])
     events.sort(key=itemgetter(0))
     events = [ev[1] for ev in events]
