@@ -29,6 +29,7 @@ class Config:
     google_cred_json: str = ''
     telegram_bot_token: str = ''
     webhook_host: str = ''
+    webhook_path: str = ''
     webhook_port: int = -1
     production_mode: bool = False
     db_filename: str = ''
@@ -43,6 +44,8 @@ class Config:
     prev_problems_mode: str = "prev_problems_hidden"
     game_mode: str = "game_hidden"
     reg_mode: str = "reg_needed"
+    rate_limit: str = "rate_limit_3_and_6"
+    apps: str = "tg_bot, game_web_app, results_app, zoom_events_parser"
 
 
 def _create_logger():

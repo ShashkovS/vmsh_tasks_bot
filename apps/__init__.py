@@ -1,12 +1,24 @@
-import apps.tg_bot
-import apps.game_web_app
-import apps.results_app
-import apps.zoom_events_parser
+from helpers.config import config
 
 # Должен быть порядок, в котором всё инициируется
-all_apps = [
-    tg_bot,
-    game_web_app,
-    results_app,
-    zoom_events_parser,
-]
+all_apps = []
+
+if 'tg_bot' in config.apps:
+    import apps.tg_bot
+
+    all_apps.append(tg_bot)
+
+if 'game_web_app' in config.apps:
+    import apps.game_web_app
+
+    all_apps.append(game_web_app)
+
+if 'results_app' in config.apps:
+    import apps.results_app
+
+    all_apps.append(results_app)
+
+if 'zoom_events_parser' in config.apps:
+    import apps.zoom_events_parser
+
+    all_apps.append(zoom_events_parser)

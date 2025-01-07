@@ -41,6 +41,10 @@ class FEATURES(Enum):
     REG_NEEDED = 'reg_needed'
     REG_ANYBODY = 'reg_anybody'
 
+    #### TEST_ANS_RATE_LIMIT ####
+    RATE_LIMIT_NONE = 'rate_limit_none'
+    RATE_LIMIT_3_AND_6 = 'rate_limit_3_and_6'
+
 
 if config.verdict_mode == 'verdict_plus_minus':
     VERDICT_MODE = FEATURES.VERDICT_PLUS_MINUS
@@ -66,4 +70,7 @@ assert GAME_MODE.value.startswith('game')
 REG_MODE = FEATURES(config.reg_mode)
 assert REG_MODE.value.startswith('reg')
 
-logger.info(f'{RESULT_MODE=}\n{SAVE_SOL_MODE=}\n{PREV_PROBLEMS_MODE=}\n{GAME_MODE=}\n{REG_MODE=}')
+RATE_LIMIT_MODE = FEATURES(config.rate_limit)
+assert RATE_LIMIT_MODE.value.startswith('rate')
+
+logger.info(f'{RESULT_MODE=}\n{SAVE_SOL_MODE=}\n{PREV_PROBLEMS_MODE=}\n{GAME_MODE=}\n{REG_MODE=}\n{RATE_LIMIT_MODE=}')

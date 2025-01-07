@@ -51,6 +51,7 @@ class CALLBACK(str, Enum):
     OTHER_SOS = 'C'
     SEND_ANSWER = 'h'
     REACTION = 'r'
+    SURVEY = 'S'
 
     def __str__(self):
         return self.value
@@ -85,7 +86,7 @@ class USER_TYPE(IntFlag):
     UNKNOWN = -4
 
 
-LEVEL_DESCRIPTION = {'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', '@': 'Без уровня'}
+LEVEL_DESCRIPTION = {'т': 'Тестирование', 'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', '@': 'Без уровня'}
 LEVEL_URL = {
     'н': 'https://shashkovs.ru/vmsh/2024/n/',
     'п': 'https://shashkovs.ru/vmsh/2024/p/',
@@ -96,6 +97,7 @@ LEVEL_URL = {
 
 @unique
 class LEVEL(str, Enum):
+    TESING = 'т'
     NOVICE = 'н'
     PRO = 'п'
     EXPERT = 'э'
@@ -310,3 +312,10 @@ class REACTION(IntEnum):
     WRITTEN_TEACHER = 100
     ORAL_STUDENT = 200
     ORAL_TEACHER = 300
+
+
+@unique
+class SURVEY_TYPES(str, Enum):
+    """Виды опросов"""
+    RADIO = 'r'
+    CHECKBOX = 'c'
