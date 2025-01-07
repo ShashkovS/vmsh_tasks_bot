@@ -25,7 +25,7 @@ class User:
     token: str
     online: ONLINE_MODE
     grade: int
-    birthday: date
+    birthday: Optional[date]
     id: int = None
 
     def __post_init__(self):
