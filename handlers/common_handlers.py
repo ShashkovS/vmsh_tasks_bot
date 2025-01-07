@@ -4,7 +4,7 @@ from aiogram.utils.exceptions import BadRequest
 from contextlib import suppress
 
 from helpers.consts import *
-from helpers.config import logger, config
+from helpers.config import logger
 import db_methods as db
 from models import User, Webtoken
 from helpers.bot import reg_callback, dispatcher, bot
@@ -78,21 +78,4 @@ async def get_my_password(message: types.Message):
     await bot.send_message(
         chat_id=message.chat.id, parse_mode = "HTML",
         text=f"🤖 Ваш пароль:\n<pre>{user.token}</pre>",
-    )
-
-
-@dispatcher.message_handler(commands=['statw'])
-async def get_statw_url(message: types.Message):
-    logger.debug('statw')
-    user = User.get_by_chat_id(message.chat.id)
-    if not user:
-        return
-    url = f'https://{config.webhook_host}/stat'
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text=url,
-    )
-    await bot.send_message(
-        chat_id=message.chat.id, parse_mode="HTML",
-        text=f"Ваш пароль:\n<code>{user.token}</code>",
     )

@@ -215,9 +215,7 @@ async def mode_online(message: types.Message):
         await start(message)
 
 
-@dispatcher.message_handler(commands=['in_school'])
-@dispatcher.message_handler(commands=['inschool'])
-@dispatcher.message_handler(commands=['school'])
+@dispatcher.message_handler(commands=['in_school', 'inschool', 'school'])
 async def mode_school(message: types.Message):
     logger.debug('mode_school')
     user = User.get_by_chat_id(message.chat.id)

@@ -1000,32 +1000,3 @@ async def zoom_queue(message: types.Message):
     teacher_state = State.get_by_user_id(teacher.id)
     if teacher_state['state'] == STATE.TEACHER_SELECT_ACTION:
         await prc_teacher_select_action(message, teacher, 1)
-
-
-@dispatcher.message_handler(commands=['set_game_command', 'sg'])
-async def set_game_command(message: types.Message):
-    logger.debug('set_game_command')
-    teacher = User.get_by_chat_id(message.chat.id)
-    if not teacher or teacher.type != USER_TYPE.TEACHER:
-        return
-    parts = message.text.split()
-    command_id = None
-    if len(parts) == 2:
-        cmd, command_id = parts
-        token = teacher.token
-    elif len(parts) == 3:
-        cmd, token, command_id = parts
-    try:
-        command_id = int(command_id)
-    except:
-        await bot.send_message(chat_id=message.chat.id, text=f"/set_game_command token number", )
-        return
-    student = User.get_by_token(token)
-    if not student:
-        await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
-        return
-    db.game.set_student_command(student.id, student.level, command_id)
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text=f"Студент с токеном {token} переведён в команду {command_id}",
-    )

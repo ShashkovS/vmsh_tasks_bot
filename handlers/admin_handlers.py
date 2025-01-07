@@ -6,7 +6,7 @@ import asyncio
 import re
 
 from helpers.consts import *
-from helpers.config import logger
+from helpers.config import logger, config
 from models import User, Problem, State
 from models.spreadsheets import FromGoogleSpreadsheet
 import db_methods as db
@@ -261,7 +261,8 @@ TEACHER_COMMANDS = [
     aiogram.types.BotCommand(command='level_pro', description='Перейти на уровень «Продолжающие»'),
     aiogram.types.BotCommand(command='level_expert', description='Перейти на уровень «Профессионалы»'),
     aiogram.types.BotCommand(command='set_teacher', description='Снова стать учителем'),
-    aiogram.types.BotCommand(command='statw', description='Снова стать учителем'),
+    aiogram.types.BotCommand(command='statw', description='Посмотреть статистику'),
+    aiogram.types.BotCommand(command='student_results', description='Посмотреть результаты школьника'),
 ]
 
 
@@ -467,6 +468,23 @@ async def calc_last_lesson_stat(message: types.Message):
         )
 
 
+@dispatcher.message_handler(commands=['statw'])
+async def get_statw_url(message: types.Message):
+    logger.debug('statw')
+    user = User.get_by_chat_id(message.chat.id)
+    if not user:
+        return
+    url = f'https://{config.webhook_host}/stat'
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=url,
+    )
+    await bot.send_message(
+        chat_id=message.chat.id, parse_mode="HTML",
+        text=f"Ваш пароль:\n<code>{user.token}</code>",
+    )
+
+
 @dispatcher.message_handler(commands=['student_results', 'sr', 'all_student_results', 'asr'])
 async def student_results(message: types.Message):
     logger.debug('student_results')
@@ -524,3 +542,32 @@ async def reset_checked(message: types.Message):
     logger.debug('reset_checked')
     db.written_task_queue.reset_beeing_checked()
     await bot.send_message(chat_id=message.chat.id, text='Готово')
+
+
+@dispatcher.message_handler(commands=['set_game_command', 'sg'])
+async def set_game_command(message: types.Message):
+    logger.debug('set_game_command')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    parts = message.text.split()
+    command_id = None
+    if len(parts) == 2:
+        cmd, command_id = parts
+        token = teacher.token
+    elif len(parts) == 3:
+        cmd, token, command_id = parts
+    try:
+        command_id = int(command_id)
+    except:
+        await bot.send_message(chat_id=message.chat.id, text=f"/set_game_command token number", )
+        return
+    student = User.get_by_token(token)
+    if not student:
+        await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
+        return
+    db.game.set_student_command(student.id, student.level, command_id)
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=f"Студент с токеном {token} переведён в команду {command_id}",
+    )
