@@ -4,35 +4,84 @@ from aiogram.dispatcher.webhook import types
 
 from helpers.consts import *
 from helpers.config import logger, config
+from helpers.features import REG_MODE, FEATURES
 from models import User, State
 import db_methods as db
 from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
+from handlers.student_handlers import post_problem_keyboard
+
+
+def assign_default_game_command(user):
+    # TODO Треш, конечно. Нужно отсюда убрать и переделать
+    row = db.sql.conn.execute(
+        '''
+                select command_id, count(*) cnt from game_map_opened_cells
+                group by command_id order by command_id desc
+                limit 1;
+            '''
+    ).fetchone()
+    if not row:
+        command_id = 1
+    else:
+        command_id = row['command_id']
+        cnt = row['cnt']
+        if cnt > 450 and command_id <= 1:
+            command_id += 1
+    db.game.set_student_command(user.id, LEVEL.NOVICE, command_id)
 
 
 @dispatcher.message_handler(commands=['start'])
 async def start(message: types.Message):
     logger.debug('start')
     user = User.get_by_chat_id(message.chat.id)
-    if user:
-        State.set_by_user_id(user.id, STATE.GET_USER_INFO)
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text="🤖 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль",
-    )
-
-
-@reg_state(STATE.GET_USER_INFO)
-async def prc_get_user_info_state(message: types.Message, user: User):
-    logger.debug('prc_get_user_info_state')
-    user = User.get_by_token(message.text)
-    db.log.log_signon(user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username, message.text)
-    if user is None:
+    if REG_MODE == FEATURES.REG_NEEDED:
+        if user:
+            State.set_by_user_id(user.id, STATE.GET_USER_INFO)
         await bot.send_message(
             chat_id=message.chat.id,
             text="🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\n"
                  "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro2ll»\n"
                  "(см. также https://shashkovs.ru/vmsh/2024/n/about.html#application)",
         )
+    elif REG_MODE == FEATURES.REG_ANYBODY:
+        if not user:
+            user = User(
+                message.chat.id, USER_TYPE.STUDENT, LEVEL.NOVICE,
+                name=message.chat.first_name or '',
+                surname=message.chat.last_name or '',
+                middlename='',
+                token=str(message.chat.id),
+                online=ONLINE_MODE.ONLINE,
+                grade=12,
+                birthday=None
+            )
+            assign_default_game_command(user)
+        db.log.log_signon(
+            user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username,
+            message.text
+        )
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2024/n/#09-n.\n"
+                 "Если задачи окажутся простоватыми, то можно выполнить команду /level_pro и решать вот эти "
+                 "задачи https://shashkovs.ru/vmsh/2024/p/#09-p, они сложнее и их больше.",
+        )
+        await post_problem_keyboard(message.chat.id, user)
+    else:
+        raise ValueError(f'Wrong {REG_MODE=}')
+
+
+@reg_state(STATE.GET_USER_INFO)
+async def prc_get_user_info_state(message: types.Message, user: User):
+    logger.debug('prc_get_user_info_state')
+    user = User.get_by_token(message.text)
+    db.log.log_signon(
+        user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username,
+        message.text
+    )
+    if user is None:
+        await start(message)
+        return
     elif user.type == USER_TYPE.DELETED:
         await bot.send_message(
             chat_id=message.chat.id,
@@ -86,7 +135,9 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
         user = User.get_by_chat_id(query.message.chat.id)
         if not user:
             try:
-                await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None)
+                await bot.edit_message_reply_markup_ig(
+                    chat_id=query.message.chat.id, message_id=query.message.message_id, reply_markup=None
+                )
             except:
                 pass  # Ошибки здесь не важны
             await start(query.message)
@@ -128,7 +179,8 @@ async def process_regular_message(message: types.Message):
     # message.num_processed = getattr(message, 'num_processed', 0) + 1
     user = User.get_by_chat_id(message.chat.id)
     if not user:
-        cur_chat_state = STATE.GET_USER_INFO
+        await start(message)
+        return
     else:
         if user.type == USER_TYPE.DEACTIVATED_STUDENT:
             cur_chat_state = STATE.USER_IS_NOT_ACTIVATED
@@ -163,9 +215,7 @@ async def mode_online(message: types.Message):
         await start(message)
 
 
-@dispatcher.message_handler(commands=['in_school'])
-@dispatcher.message_handler(commands=['inschool'])
-@dispatcher.message_handler(commands=['school'])
+@dispatcher.message_handler(commands=['in_school', 'inschool', 'school'])
 async def mode_school(message: types.Message):
     logger.debug('mode_school')
     user = User.get_by_chat_id(message.chat.id)

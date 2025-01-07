@@ -15,10 +15,10 @@ from aiogram.utils.exceptions import BadRequest, MessageNotModified, MessageToEd
 from helpers.consts import *
 from helpers.config import logger, config
 import db_methods as db
-from helpers.features import RESULT_MODE, FEATURES, SAVE_SOL_MODE
+from helpers.features import RESULT_MODE, FEATURES, SAVE_SOL_MODE, RATE_LIMIT_MODE
 from models import User, Problem, State, Waitlist, WrittenQueue, Result
 from helpers.bot import bot, reg_callback, dispatcher, reg_state
-from handlers import student_keyboards
+from handlers import student_keyboards, common_keyboards
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
 
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
@@ -52,35 +52,50 @@ async def post_problem_keyboard(
             )
         except:
             pass
-    if not blocked:
-        if student.online == ONLINE_MODE.ONLINE:
-            online = "📡дистанционно📡"
-        elif student.online == ONLINE_MODE.SCHOOL:
-            online = "🏫в школе🏫"
-        else:
-            online = '?'
-        text = (f"❓ <b>Нажимайте на задачу, чтобы сдать её</b>\n"
-                f"{student.name} {student.surname}\n"
-                f"уровень «{student.level.slevel}», режим {online}\n"
-                f"<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2024\">канал кружка</a>")
-    else:
-        text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
-    if show_lesson is None:
-        show_lesson = Problem.last_lesson_num(student.level)
-    try:
+
+    # Теперь здесь странное. Если студенту назначен опрос, то показываем его
+    survey = db.survey.get_active_survey(student.id)
+    if survey:
+        survey_result = db.survey.get_survey_result(student.id, survey['id'])
         keyb_msg = await bot.send_message(
             chat_id=chat_id,
-            text=text,
+            text=survey['question'],
             parse_mode='HTML',
             disable_web_page_preview=True,
-            reply_markup=student_keyboards.build_problems(show_lesson, student),
-            disable_notification=disable_notification,
+            disable_notification=True,
+            reply_markup=common_keyboards.build_survey(student, survey, survey_result),
         )
-    except (aiogram.utils.exceptions.BotBlocked, aiogram.utils.exceptions.UserDeactivated):
-        # Дальше писать смысла нет
-        student.set_chat_id(None)
-        return
-    db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
+        db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
+    else:
+        if not blocked:
+            if student.online == ONLINE_MODE.ONLINE:
+                online = "📡дистанционно📡"
+            elif student.online == ONLINE_MODE.SCHOOL:
+                online = "🏫в школе🏫"
+            else:
+                online = '?'
+            text = (f"❓ <b>Нажимайте на задачу, чтобы сдать её</b>\n"
+                    f"{student.name} {student.surname}\n"
+                    f"уровень «{student.level.slevel}», режим {online}\n"
+                    f"<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2024\">канал кружка</a>")
+        else:
+            text = f"🤖 Приём задач ботом окончен до начала следующего занятия."
+        if show_lesson is None:
+            show_lesson = Problem.last_lesson_num(student.level)
+        try:
+            keyb_msg = await bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                parse_mode='HTML',
+                disable_web_page_preview=True,
+                reply_markup=student_keyboards.build_problems(show_lesson, student),
+                disable_notification=disable_notification,
+            )
+        except (aiogram.utils.exceptions.BotBlocked, aiogram.utils.exceptions.UserDeactivated):
+            # Дальше писать смысла нет
+            student.set_chat_id(None)
+            return
+        db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
 async def refresh_last_student_keyboard(student: User, force=False) -> bool:
@@ -261,13 +276,14 @@ def check_test_problem_answer(
     else:
         student_answer = student_answer.strip()  # strip spaces!!!
 
-    # Проверяем на перебор
-    if student:  # При перепроверке данная проверка не выполняется
-        text_to_student = check_test_ans_rate_limit(
-            student.id, problem.id
-        ) if student.type == USER_TYPE.STUDENT else None
-        if text_to_student:
-            return ANS_CHECK_VERDICT.RATE_LIMIT, text_to_student, error_text
+    if RATE_LIMIT_MODE == FEATURES.RATE_LIMIT_3_AND_6:
+        # Проверяем на перебор
+        if student:  # При перепроверке данная проверка не выполняется
+            text_to_student = check_test_ans_rate_limit(
+                student.id, problem.id
+            ) if student.type == USER_TYPE.STUDENT else None
+            if text_to_student:
+                return ANS_CHECK_VERDICT.RATE_LIMIT, text_to_student, error_text
 
     # Если тип ответа — выбор из нескольких вариантов ответа, то это «простой» особый случай
     if problem.ans_type == ANS_TYPE.SELECT_ONE:
@@ -423,6 +439,21 @@ async def level_novice(message: types.Message):
                  "Вопросы можно задавать в группе @vmsh_179_5_7_2024_chat.",
         )
         if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
+            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+
+
+@dispatcher.message_handler(commands=['level_testing'])
+async def level_testing(message: types.Message):
+    logger.debug('level_testing')
+    student = User.get_by_chat_id(message.chat.id)
+    if student:
+        student.set_level(LEVEL.TESING)
+        message = await bot.send_message(
+            chat_id=message.chat.id,
+            text="Вы переведены в тестируемых",
+        )
+        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 

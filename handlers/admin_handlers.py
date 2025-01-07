@@ -6,14 +6,16 @@ import asyncio
 import re
 
 from helpers.consts import *
-from helpers.config import logger
+from helpers.config import logger, config
 from models import User, Problem, State
 from models.spreadsheets import FromGoogleSpreadsheet
 import db_methods as db
 from helpers.bot import bot, dispatcher
 from handlers import student_keyboards
-from handlers.student_handlers import check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard, \
-    prc_student_is_sleeping_state
+from handlers.student_handlers import (
+    check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard,
+    prc_student_is_sleeping_state,
+)
 
 
 @dispatcher.message_handler(commands=['update_all_quaLtzPE', 'update_all'])
@@ -68,7 +70,7 @@ async def update_problems(message: types.Message):
     )
 
 
-async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode: bool = False, reply_to_message: types.Message = None):
+async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode: bool = False, reply_to_message: types.Message = None, quite=False):
     logger.debug('run_broadcast_task')
     tokens = set(tokens)
     all_students = None
@@ -106,10 +108,13 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
                     text=broadcast_message,
                     disable_web_page_preview=True,
                     parse_mode=parse_mode,
+                    disable_notification=quite,
                 )
             sent += 1
-            db.log.insert(True, broad_message.message_id, student.chat_id, student.id, None,
-                          broadcast_message, None)
+            db.log.insert(
+                True, broad_message.message_id, student.chat_id, student.id, None,
+                broadcast_message, None
+            )
         except aiogram.exceptions.TelegramAPIError as e:
             logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
             bad_tokens.append(token)
@@ -120,7 +125,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
     )
 
 
-@dispatcher.message_handler(commands=['broadcast_wibkn96x', 'broadcast', 'broadcast_html'])
+@dispatcher.message_handler(commands=['broadcast_wibkn96x', 'broadcast', 'broadcast_html', 'broadcast_quiet', 'broadcast_html_quiet'])
 async def broadcast(message: types.Message):
     logger.debug('broadcast')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -132,16 +137,118 @@ async def broadcast(message: types.Message):
     except:
         return
     html_mode = 'html' in cmd
+    quite = 'quiet' in cmd
     if message.reply_to_message:
         broadcast_message = message.reply_to_message.text or ''
     else:
         broadcast_message = '\n'.join(broadcast_message)
     tokens = re.split(r'\W+', tokens)
-    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, message.reply_to_message))
+    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, message.reply_to_message, quite))
     await bot.send_message(
         chat_id=message.chat.id,
         text="Создано задание рассылки сообщений",
     )
+
+
+@dispatcher.message_handler(commands=['forward_all'])
+async def forward_all_messages(message: types.Message):
+    logger.debug('forward_all_messages')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    text = message.text.strip().split()
+    try:
+        cmd, token, start, end = text
+        start = int(start)
+        end = int(end)
+    except:
+        return
+    student = User.get_by_token(token)
+    if not student or not student.chat_id:
+        return
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Начинаем пересылать",
+    )
+    errors = []
+    for id in range(start, end + 1):
+        try:
+            await bot.forward_message(message.chat.id, student.chat_id, id)
+            await asyncio.sleep(1 / 20)
+        except Exception as e:
+            errors.append((id, e.__class__.__name__))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text="Ошибки: " + '\n'.join(str(row) for row in errors),
+    )
+
+
+@dispatcher.message_handler(commands=['create_survey'])
+async def create_survey(message: types.Message):
+    logger.debug('create_survey')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    text = message.text.strip()
+    try:
+        survey_type = SURVEY_TYPES(re.match(r'/create_survey\s+(\w)', text).group(1))
+        choices = re.findall(r'^[-*]\s+(.*)', text, flags=re.MULTILINE)
+        question = re.fullmatch(r'/create_survey\s+\w *\n([\s\S]*?)(?:^[-*]\s+(?:.*)\n?)+\s*', text, flags=re.MULTILINE).group(1).strip()
+    except Exception as e:
+        await bot.send_message(chat_id=message.chat.id, text='/create_survey r/c\nВопрос\n- Один\n- Два')
+        return
+    survey_id = db.survey.add_survey(survey_type, True, question, choices)
+    text = f'''Опрос с id={survey_id} создан.
+    {survey_type=}
+    {question=}
+    {choices=}
+    '''
+    await bot.send_message(chat_id=message.chat.id, text=text)
+
+
+@dispatcher.message_handler(commands=['disable_survey'])
+async def disable_survey(message: types.Message):
+    logger.debug('disable_survey')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    cmd, survey_id = message.text.strip().split()
+    try:
+        survey_id = int(survey_id)
+    except Exception as e:
+        return
+    db.survey.disable_survey(survey_id)
+    await bot.send_message(chat_id=message.chat.id, text=f'Опрос {survey_id} отключён')
+
+
+@dispatcher.message_handler(commands=['assign_survey_to_tokens'])
+async def assign_survey_to_tokens(message: types.Message):
+    logger.debug('assign_survey_to_tokens')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    try:
+        first, second = message.text.strip().splitlines()
+        cmd, survey_id = first.split()
+        survey_id = int(survey_id)
+        survey = db.survey.get_survey_by_id(survey_id)
+        assert survey is not None
+        tokens = second.split()
+    except Exception as e:
+        await bot.send_message(chat_id=message.chat.id, text=f'/assign_survey_to_tokens surv_id\ntok1 tok2 tok3')
+        return
+    done = 0
+    users = [User.get_by_token(token) for token in tokens]
+    db.survey.assign_survey(survey_id, [user.id for user in users if user])
+    for user in users:
+        if user and user.chat_id:
+            try:
+                await post_problem_keyboard(user.chat_id, user)
+            except Exception as e:
+                logger.exception(e)
+            await asyncio.sleep(1 / 20)
+            done += 1
+    await bot.send_message(chat_id=message.chat.id, text=f'Назначен опрос {survey_id} {done} пользователям')
 
 
 TEACHER_COMMANDS = [
@@ -154,6 +261,8 @@ TEACHER_COMMANDS = [
     aiogram.types.BotCommand(command='level_pro', description='Перейти на уровень «Продолжающие»'),
     aiogram.types.BotCommand(command='level_expert', description='Перейти на уровень «Профессионалы»'),
     aiogram.types.BotCommand(command='set_teacher', description='Снова стать учителем'),
+    aiogram.types.BotCommand(command='statw', description='Посмотреть статистику'),
+    aiogram.types.BotCommand(command='student_results', description='Посмотреть результаты школьника'),
 ]
 
 
@@ -284,10 +393,12 @@ async def reset_keyboards(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     force = 'force' in message.text or 'rkf' in message.text
-    asyncio.create_task(update_all_student_keyboards(
-        message.chat.id,
-        force=force
-    ))
+    asyncio.create_task(
+        update_all_student_keyboards(
+            message.chat.id,
+            force=force
+        )
+    )
     await bot.send_message(
         chat_id=message.chat.id,
         text=f"Создано задание по обновлению плюсиков запущено, {force=}",
@@ -357,6 +468,23 @@ async def calc_last_lesson_stat(message: types.Message):
         )
 
 
+@dispatcher.message_handler(commands=['statw'])
+async def get_statw_url(message: types.Message):
+    logger.debug('statw')
+    user = User.get_by_chat_id(message.chat.id)
+    if not user:
+        return
+    url = f'https://{config.webhook_host}/stat'
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=url,
+    )
+    await bot.send_message(
+        chat_id=message.chat.id, parse_mode="HTML",
+        text=f"Ваш пароль:\n<code>{user.token}</code>",
+    )
+
+
 @dispatcher.message_handler(commands=['student_results', 'sr', 'all_student_results', 'asr'])
 async def student_results(message: types.Message):
     logger.debug('student_results')
@@ -414,3 +542,32 @@ async def reset_checked(message: types.Message):
     logger.debug('reset_checked')
     db.written_task_queue.reset_beeing_checked()
     await bot.send_message(chat_id=message.chat.id, text='Готово')
+
+
+@dispatcher.message_handler(commands=['set_game_command', 'sg'])
+async def set_game_command(message: types.Message):
+    logger.debug('set_game_command')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    parts = message.text.split()
+    command_id = None
+    if len(parts) == 2:
+        cmd, command_id = parts
+        token = teacher.token
+    elif len(parts) == 3:
+        cmd, token, command_id = parts
+    try:
+        command_id = int(command_id)
+    except:
+        await bot.send_message(chat_id=message.chat.id, text=f"/set_game_command token number", )
+        return
+    student = User.get_by_token(token)
+    if not student:
+        await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
+        return
+    db.game.set_student_command(student.id, student.level, command_id)
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=f"Студент с токеном {token} переведён в команду {command_id}",
+    )

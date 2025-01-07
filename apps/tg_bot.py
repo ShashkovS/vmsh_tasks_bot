@@ -106,7 +106,8 @@ def start_bot_in_webhook_mode(app):
     # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
     global USE_WEBHOOKS, WEBHOOK_URL
     USE_WEBHOOKS = True
-    WEBHOOK_URL = "https://{}:{}/{}/".format(config.webhook_host, config.webhook_port, config.telegram_bot_token)
+    path = f'/{config.webhook_path}' if config.webhook_path else ''
+    WEBHOOK_URL = f"https://{config.webhook_host}:{config.webhook_port}{path}/{config.telegram_bot_token}/"
     configure_app(app.dispatcher, app, path='/{token}/', route_name='telegram_webhook_handler')
 
     # app will be started by gunicorn, so no need to start_webhook

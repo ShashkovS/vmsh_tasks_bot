@@ -98,8 +98,8 @@ class DB_RESULT(DB_ABC):
             where student_id = :student_id and lesson = :lesson
         """, locals())
         rows = cur.fetchall()
-        solved_ids = {row['problem_id'] for row in rows}
-        return solved_ids
+        tried_ids = {row['problem_id'] for row in rows}
+        return tried_ids
 
     def list_student_results(self, student_id: int, lesson: int) -> List[dict]:
         return self.db.conn.execute("""

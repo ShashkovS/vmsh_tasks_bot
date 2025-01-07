@@ -29,6 +29,7 @@ class Config:
     google_cred_json: str = ''
     telegram_bot_token: str = ''
     webhook_host: str = ''
+    webhook_path: str = ''
     webhook_port: int = -1
     production_mode: bool = False
     db_filename: str = ''
@@ -37,6 +38,14 @@ class Config:
     sentry_dsn: Optional[str] = ''
     nats_server = "nats://127.0.0.1:4222"
     logging_level = logging.WARNING
+    verdict_mode: str = "verdict_plus_minus_half"
+    result_mode: str = "result_immediately"
+    save_sol_mode: str = "save_sol_in_tg_only"
+    prev_problems_mode: str = "prev_problems_hidden"
+    game_mode: str = "game_hidden"
+    reg_mode: str = "reg_needed"
+    rate_limit: str = "rate_limit_3_and_6"
+    apps: str = "tg_bot, game_web_app, results_app, zoom_events_parser"
 
 
 def _create_logger():
@@ -76,8 +85,10 @@ def _setup(*, force_production=False):
         with open(config_filename, 'r') as f:
             config_from_json = json.load(f)
     except:
-        logging.critical(f'Запишите конфиг в {config_filename} в формате\n'
-                         '`{"telegram_bot_token": "...", "google_sheets_key": "...", "webhook_host": "host.ru", "webhook_port": 443, "db_filename": "test.db"}`')
+        logging.critical(
+            f'Запишите конфиг в {config_filename} в формате\n'
+            '`{"telegram_bot_token": "...", "google_sheets_key": "...", "webhook_host": "host.ru", "webhook_port": 443, "db_filename": "test.db"}`'
+        )
         raise
 
     # Определяем абсолютный путь к БД
@@ -85,6 +96,7 @@ def _setup(*, force_production=False):
 
     # Обновляем настройки
     config.__dict__.update(config_from_json)
+    assert config.config_name != '', f'{config.config_name=}, but needs to be meanfull string'
     return config
 
 
