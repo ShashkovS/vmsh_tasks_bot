@@ -10,18 +10,24 @@ from helpers.config import config, logger, DEBUG
 __all__ = ['vmsh_nats']
 
 NATS_SERVER = config.nats_server  # "nats://127.0.0.1:4222"
+NATS_TOPIC_PREFIX = config.config_name
 
 
 class NATS:
     """Класс, реализующий все взаимодействия с БД"""
     nc: nats.aio.client.Client
 
-    def __init__(self):
+    def __init__(self, topic_prefix: str = NATS_TOPIC_PREFIX):
         self.nats_is_working = False
+        self.topic_prefix: str = topic_prefix
         self.subsciptions = {}
         self.nc = None
 
     async def setup(self, nats_server_url=NATS_SERVER):
+        if nats_server_url is None:
+            logger.warning(f'Работаем без nats-server.')
+            logger.warning(f'В таком режиме работа с несколькими процессами может быть некорректной')
+            return
         self.nats_server_url = nats_server_url
         nats_logger = logging.getLogger('nats')
         nats_logger.setLevel(logging.CRITICAL)
@@ -40,6 +46,8 @@ class NATS:
         self.nats_is_working = True
 
     async def subscribe(self, topic: str, callback):
+        topic = self.topic_prefix + '_' + topic
+
         async def wrapped_callback(msg):
             data = orjson.loads(msg.data)
             await callback(data)
@@ -50,6 +58,7 @@ class NATS:
             self.subsciptions[topic] = callback
 
     async def publish(self, topic: str, obj):
+        topic = self.topic_prefix + '_' + topic
         # В тестовых целях работаем напрямую без NATS
         if self.nats_is_working:
             await self.nc.publish(topic, orjson.dumps(obj))

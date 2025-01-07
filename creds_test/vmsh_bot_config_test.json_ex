@@ -7,5 +7,18 @@
   "db_filename": "db/test.db",
   "sos_channel": "@some_bot_sos_channel",
   "exceptions_channel": -1123123123123,
-  "sentry_dsn": ""
+  "sentry_dsn": "",
+  "nats_server": "nats://127.0.0.1:4222",
+  "verdict_mode_help": "verdict_plus_minus_half | ",
+  "verdict_mode": "verdict_plus_minus_half",
+  "result_mode_help": "res_immed | res_after",
+  "result_mode": "res_immed",
+  "save_sol_mode_help": "save_sol_in_tg_only | save_on_drive",
+  "save_sol_mode": "save_sol_in_tg_only",
+  "prev_problems_mode_help": "prev_problems_hide | prev_problems_prev | prev_problems_show_all",
+  "prev_problems_mode": "prev_problems_hide",
+  "game_mode_help": "game_hide | game_show",
+  "game_mode": "game_hide",
+  "reg_mode_help": "reg_needed | reg_anybody",
+  "reg_mode": "reg_needed"
 }
