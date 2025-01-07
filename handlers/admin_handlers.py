@@ -197,7 +197,7 @@ async def create_survey(message: types.Message):
     except Exception as e:
         await bot.send_message(chat_id=message.chat.id, text='/create_survey r/c\nВопрос\n- Один\n- Два')
         return
-    survey_id = db.add_survey(survey_type, True, question, choices)
+    survey_id = db.survey.add_survey(survey_type, True, question, choices)
     text = f'''Опрос с id={survey_id} создан.
     {survey_type=}
     {question=}
@@ -217,7 +217,7 @@ async def disable_survey(message: types.Message):
         survey_id = int(survey_id)
     except Exception as e:
         return
-    db.disable_survey(survey_id)
+    db.survey.disable_survey(survey_id)
     await bot.send_message(chat_id=message.chat.id, text=f'Опрос {survey_id} отключён')
 
 
@@ -231,7 +231,7 @@ async def assign_survey_to_tokens(message: types.Message):
         first, second = message.text.strip().splitlines()
         cmd, survey_id = first.split()
         survey_id = int(survey_id)
-        survey = db.get_survey_by_id(survey_id)
+        survey = db.survey.get_survey_by_id(survey_id)
         assert survey is not None
         tokens = second.split()
     except Exception as e:
@@ -239,7 +239,7 @@ async def assign_survey_to_tokens(message: types.Message):
         return
     done = 0
     users = [User.get_by_token(token) for token in tokens]
-    db.assign_survey(survey_id, [user.id for user in users if user])
+    db.survey.assign_survey(survey_id, [user.id for user in users if user])
     for user in users:
         if user and user.chat_id:
             try:
