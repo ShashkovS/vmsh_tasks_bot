@@ -391,7 +391,7 @@ async def prc_wait_sos_request_state(message: types.Message, student: User):
         )
     except:
         logger.info(f'Не удалось переслать SOS-сообщение в канал {config.sos_channel}')
-    await bot.send_message(chat_id=message.chat.id, text=f"Переслал сообщение.")
+    await bot.send_message(chat_id=message.chat.id, text=msgs.question_accepted)
     if student.type == USER_TYPE.UNKNOWN:
         State.set_by_user_id(student.id, STATE.GET_USER_INFO)
     else:
