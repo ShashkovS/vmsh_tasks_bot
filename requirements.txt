@@ -5,7 +5,7 @@
 # oauth2client
 # aiohttp
 # gunicorn
-# python-Levenshtein
+# levenshtein
 # yoyo-migrations
 # uvloop
 # orjson

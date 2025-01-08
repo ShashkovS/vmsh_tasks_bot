@@ -12,6 +12,7 @@ from random import randrange
 
 from helpers.consts import *
 from helpers.config import logger
+from helpers.msg_texts import msgs
 import db_methods as db
 from helpers.features import VERDICT_MODE, FEATURES, RESULT_MODE
 from models import User, Problem, State, Waitlist, WrittenQueue, Result
@@ -260,16 +261,16 @@ async def set_student_level(message: types.Message):
         )
     if new_level == LEVEL.NOVICE:
         student.set_level(LEVEL.NOVICE)
-        stud_msg = "Вы переведены в группу начинающих"
+        stud_msg = msgs.you_are_in_novice_now
     elif new_level == LEVEL.PRO:
         student.set_level(LEVEL.PRO)
-        stud_msg = "Вы переведены в группу продолжающих"
+        stud_msg = msgs.you_are_in_pro_now
     elif new_level == LEVEL.EXPERT:
         student.set_level(LEVEL.EXPERT)
-        stud_msg = "Вы переведены в группу экспертов"
+        stud_msg = msgs.you_are_expert_now
     elif new_level == LEVEL.GR8:
         student.set_level(LEVEL.GR8)
-        stud_msg = "Вы переведены в группу 8 класса"
+        stud_msg = msgs.you_are_grade8_now
     else:
         return
     await bot.send_message(
@@ -458,19 +459,19 @@ async def forward_discussion_to_student(student: User, problem: Problem, verdict
 
     if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
         if solved and not messages_to_forward:
-            text_vedict_part = "проверили и поставили плюсик!"
+            text_vedict_part = msgs.verdict_plus_no_comments
         elif solved and messages_to_forward:
-            text_vedict_part = "проверили и поставили плюсик!\nВот комментарии:\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+            text_vedict_part = msgs.verdict_plus_with_comments
         elif not solved and not last_teacher_messages:
-            text_vedict_part = "проверили и не засчитали без комментариев :(\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+            text_vedict_part = msgs.verdict_minus_no_comments
         else:
-            text_vedict_part = "проверили и сделали замечания:\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+            text_vedict_part = msgs.verdict_minus_with_comments
     else:
-        text_vedict_part = f"проверили и поставили {VERDICT_TO_TICK[verdict]}"
+        verdict_tick = VERDICT_TO_TICK[verdict]
         if last_teacher_messages:
-            text_vedict_part += '\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇'
+            text_vedict_part = msgs.verdict_tick_with_comments.format_map({'verdict_tick': verdict_tick})
         else:
-            text_vedict_part += ' без комментариев'
+            text_vedict_part = msgs.verdict_tick_no_comments.format_map({'verdict_tick': verdict_tick})
     await bot.send_message(chat_id=student.chat_id, text=f"{text_problem_part} {text_vedict_part}",
                            disable_notification=True)
     try:
@@ -602,9 +603,7 @@ async def prc_send_answer_callback(query: types.CallbackQuery, teacher: User):
     try:
         discussion = WrittenQueue.get_discussion(student.id, -problem.id)  # возвращаем минус SOS
         await bot.send_message(chat_id=student_chat_id,
-                               text=f"Есть ответ на вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}).\n"
-                                    f"Пересылаю всю переписку.\n"
-                                    f"⬇⬇⬇⬇",
+                               text=msgs.problem_question_answer.format_map({'problem': problem}),
                                disable_notification=True)
         for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не превысить лимит
             # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
@@ -852,8 +851,9 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     # Посылаем сообщения школьнику о проверке (если хотя бы одна задача проверена)
     try:
         if any_problem:
+            pluses_list = ', '.join(human_readable_pluses)
             student_message = await bot.send_message(chat_id=student.chat_id,
-                                                     text=f"В результате устного приёма вам поставили плюсики за задачи: {', '.join(human_readable_pluses)}",
+                                                     text=msgs.oral_accepted_problems.format_map({'pluses_list': pluses_list}),
                                                      reply_markup=student_keyboards.build_student_reaction_oral(zoom_conversation_id),
                                                      disable_notification=True)
         # Этот кусок для не работающего пока функционала
@@ -953,7 +953,7 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
         if student.chat_id:
             message = await bot.send_message(
                 chat_id=student.chat_id,
-                text=f"Вам изменён уровень на «{level.slevel}»",
+                text=msgs.your_level_changed_to.format_map({'level': level}),
             )
             asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
         await bot.send_message(

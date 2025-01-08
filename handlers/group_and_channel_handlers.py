@@ -8,6 +8,8 @@ import db_methods as db
 from helpers.bot import bot, dispatcher
 from helpers.config import logger, config
 from helpers.consts import ONLINE_MODE
+from helpers.msg_texts import msgs
+
 from models import User
 
 URL_REGEX = re.compile(r'\s*(https?:\/\/)?([\w\.]+)\.([a-zрф]{2,6}\.?)(\/[\w\.]*)*\/?\s*')
@@ -37,7 +39,7 @@ async def prc_sos_reply(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, text='Отвечайте на пересланные сообщения с вопросом')
         return
     try:
-        await bot.send_message(question_record['chat_id'], text='Вот ответ на этот вопрос:', reply_to_message_id=question_record['question_msg_id'])
+        await bot.send_message(question_record['chat_id'], text=msgs.here_is_your_answer, reply_to_message_id=question_record['question_msg_id'])
         await bot.copy_message(question_record['chat_id'], message.chat.id, message.message_id)
         student = User.get_by_chat_id(question_record['chat_id'])
         if student:
@@ -67,7 +69,7 @@ async def group_message_handler(message: types.Message):
             logger.exception(f'SHIT: {e}')
     # Кто-то пишет команду в группе, а не в боте
     elif message.text and re.match(r'^\s*/[a-z_]{2,}', message.text):
-        reply_msg = await bot.send_message(message.chat.id, text=f'Кажется, это сообщение лично для меня. Заходите: @{bot.username}',
+        reply_msg = await bot.send_message(message.chat.id, text=msgs.this_message_is_for_bot.format_map({'username': bot.username}),
                                            reply_to_message_id=message.message_id)
         bot.delete_messages_after([message, reply_msg], timeout=10)
     # Ссылка без комментариев — это спам. Пересылаем её в exception и удаляем

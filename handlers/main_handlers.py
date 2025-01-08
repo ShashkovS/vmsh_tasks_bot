@@ -8,6 +8,7 @@ from helpers.features import REG_MODE, FEATURES
 from models import User, State
 import db_methods as db
 from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
+from helpers.msg_texts import msgs
 from handlers.student_handlers import post_problem_keyboard
 
 
@@ -39,9 +40,7 @@ async def start(message: types.Message):
             State.set_by_user_id(user.id, STATE.GET_USER_INFO)
         await bot.send_message(
             chat_id=message.chat.id,
-            text="🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\n"
-                 "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro2ll»\n"
-                 "(см. также https://shashkovs.ru/vmsh/2024/n/about.html#application)",
+            text=msgs.start_if_reg_needed,
         )
     elif REG_MODE == FEATURES.REG_ANYBODY:
         if not user:
@@ -62,9 +61,7 @@ async def start(message: types.Message):
         )
         await bot.send_message(
             chat_id=message.chat.id,
-            text="🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2024/n/#09-n.\n"
-                 "Если задачи окажутся простоватыми, то можно выполнить команду /level_pro и решать вот эти "
-                 "задачи https://shashkovs.ru/vmsh/2024/p/#09-p, они сложнее и их больше.",
+            text=msgs.start_if_reg_anybody,
         )
         await post_problem_keyboard(message.chat.id, user)
     else:
@@ -85,8 +82,7 @@ async def prc_get_user_info_state(message: types.Message, user: User):
     elif user.type == USER_TYPE.DELETED:
         await bot.send_message(
             chat_id=message.chat.id,
-            text="🔁 Этот пароль был заблокирован.\n"
-                 "Скорее всего новый пароль был выслан по электронной почте, не забудьте проверить спам.",
+            text=msgs.this_password_is_blocked,
         )
     else:
         User.set_chat_id(user, message.chat.id)
@@ -98,7 +94,7 @@ async def prc_get_user_info_state(message: types.Message, user: User):
             State.set_by_user_id(user.id, STATE.USER_IS_NOT_ACTIVATED)
         await bot.send_message(
             chat_id=message.chat.id,
-            text=f"🤖 ОК, Добро пожаловать, {user.name} {user.surname}",
+            text=msgs.welcome_user.format_map({'user': user}),
         )
         await asyncio.sleep(1)
         await process_regular_message(message)
@@ -109,10 +105,7 @@ async def prc_user_is_not_activated_state(message: types.Message, user: User):
     logger.debug('prc_user_is_not_activated_state')
     await bot.send_message(
         chat_id=message.chat.id,
-        text="🔁 Привет!\n"
-             "Для начала обучения нужно оставить заявку на обучение на кружке на mos,ru.\n"
-             "Через несколько рабочих дней на почту придёт инструкция, а ваш аккаунт будет активирован.\n"
-             "Подробно про оформление: https://shashkovs.ru/vmsh/2024/n/about.html#application",
+        text=msgs.user_is_not_activated,
     )
 
 
@@ -120,7 +113,7 @@ async def prc_WTF(message: types.Message, user: User):
     logger.debug('prc_WTF')
     await bot.send_message(
         chat_id=message.chat.id,
-        text="☢️ Всё сломалось, бот запутался в текущей ситации :(. Начнём сначала!",
+        text=msgs.bot_internal_error,
     )
     logger.error(f"prc_WTF: {user!r} {message!r}")
     State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
@@ -163,9 +156,9 @@ async def process_regular_message(message: types.Message):
     # Сначала проверяем, что этот тип сообщений мы вообще поддерживаем
     alarm = None
     if message.document and message.document.mime_type and message.document.mime_type.startswith('image'):
-        alarm = '❗❗❗ Бот принимает только сжатые фото: отправляйте картинки по одной, ставьте галочку «Сжать/Compress»'
+        alarm = msgs.error_only_compressed_images
     elif not message.text and not message.photo:
-        alarm = '❗❗❗ Бот принимает только текстовые сообщения и фотографии решений.'
+        alarm = msgs.error_only_images_and_texts
     if alarm:
         try:
             await bot.send_message(chat_id=message.chat.id, text=alarm)
@@ -209,7 +202,7 @@ async def mode_online(message: types.Message):
     logger.debug('mode_online')
     user = User.get_by_chat_id(message.chat.id)
     if user:
-        await bot.send_message(chat_id=message.chat.id, text="Теперь вы работаете в режиме «Онлайн»", )
+        await bot.send_message(chat_id=message.chat.id, text=msgs.you_are_in_online_mode_now, )
         user.set_online_mode(ONLINE_MODE.ONLINE)
     else:
         await start(message)
@@ -220,7 +213,7 @@ async def mode_school(message: types.Message):
     logger.debug('mode_school')
     user = User.get_by_chat_id(message.chat.id)
     if user:
-        await bot.send_message(chat_id=message.chat.id, text="Теперь вы работаете в режиме «Очно в школе»", )
+        await bot.send_message(chat_id=message.chat.id, text=msgs.you_are_in_offline_mode_now, )
         user.set_online_mode(ONLINE_MODE.SCHOOL)
     else:
         await start(message)

@@ -8,6 +8,7 @@ from helpers.config import logger
 import db_methods as db
 from models import User, Webtoken
 from helpers.bot import reg_callback, dispatcher, bot
+from helpers.msg_texts import msgs
 from handlers.common_keyboards import build_survey
 
 
@@ -34,7 +35,7 @@ async def prc_reaction(query: types.CallbackQuery, student: User):
             with suppress(aiogram.utils.exceptions.MessageNotModified):
                 await query.message.edit_text(new_text, reply_markup=None)
         try:
-            await query.answer(f'Принято')
+            await query.answer(msgs.reaction_accepted)
         except aiogram.utils.exceptions.InvalidQueryID:
             pass
     # ученик
@@ -45,7 +46,7 @@ async def prc_reaction(query: types.CallbackQuery, student: User):
             with suppress(aiogram.utils.exceptions.MessageNotModified):
                 await query.message.edit_text(new_text, reply_markup=None)
         try:
-            await query.answer(f'Принято')
+            await query.answer(msgs.reaction_accepted)
         except aiogram.utils.exceptions.InvalidQueryID:
             pass
 
@@ -77,5 +78,5 @@ async def get_my_password(message: types.Message):
         return
     await bot.send_message(
         chat_id=message.chat.id, parse_mode = "HTML",
-        text=f"🤖 Ваш пароль:\n<pre>{user.token}</pre>",
+        text=msgs.your_password.format_map({"user": user}),
     )

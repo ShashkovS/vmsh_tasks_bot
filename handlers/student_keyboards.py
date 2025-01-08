@@ -2,6 +2,7 @@ from aiogram import types
 
 from helpers.consts import *
 from helpers.config import logger, config
+from helpers.msg_texts import msgs
 from models import User, Problem, State, Webtoken
 from helpers.features import RESULT_MODE, FEATURES, PREV_PROBLEMS_MODE, GAME_MODE
 import db_methods as db
@@ -16,18 +17,18 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
     if GAME_MODE == FEATURES.GAME_SHOW:
         to_game_button = types.InlineKeyboardButton(
-            text="🕹🎲 Открыть командную игру 🎉🏆",
+            text=msgs.open_game,
             url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
         )
         keyboard_markup.add(to_game_button)
     # Кнопки с вопросами
     if not is_sos_question:
         que1 = types.InlineKeyboardButton(
-            text=f"Вопрос по задаче",
+            text=msgs.problem_question,
             callback_data=CALLBACK.PROBLEM_SOS
         )
         que2 = types.InlineKeyboardButton(
-            text=f"Другой вопрос",
+            text=msgs.other_question,
             callback_data=CALLBACK.OTHER_SOS
         )
         keyboard_markup.row(que1, que2)
@@ -71,13 +72,13 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
         keyboard_markup.add(task_button)
     if PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL or PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL:
         to_lessons_button = types.InlineKeyboardButton(
-            text="К списку всех листков",
+            text=msgs.to_list_of_topics,
             callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
         )
         keyboard_markup.add(to_lessons_button)
     if GAME_MODE == FEATURES.GAME_SHOW:
         to_game_button = types.InlineKeyboardButton(
-            text="🕹🎲 Открыть командную игру 🎉🏆",
+            text=msgs.open_game,
             url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
         )
         keyboard_markup.add(to_game_button)
@@ -96,8 +97,9 @@ def build_lessons(level):
         last = max(lesson['lesson'] for lesson in all_lessons)
         use_lessons = [lesson for lesson in all_lessons if lesson['lesson'] >= last - 1]  # ахтунг! int !!
     for lesson in use_lessons:
+        lesson_num = lesson['lesson']
         lesson_button = types.InlineKeyboardButton(
-            text=f"Листок {lesson['lesson']}",
+            text=msgs.topic_hint.format_map({'lesson_num': lesson_num}),
             callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
         )
         keyboard_markup.add(lesson_button)
@@ -115,7 +117,7 @@ def build_test_answers(problem: Problem):
         )
         keyboard_markup.add(lesson_button)
     cancel_button = types.InlineKeyboardButton(
-        text="Отмена",
+        text=msgs.cancel,
         callback_data=CALLBACK.CANCEL_TASK_SUBMISSION,
     )
     keyboard_markup.add(cancel_button)
@@ -126,7 +128,7 @@ def build_cancel_task_submission():
     logger.debug('keyboards.build_cancel_task_submission')
     keyboard_markup = types.InlineKeyboardMarkup()
     cancel_button = types.InlineKeyboardButton(
-        text="Отмена",
+        text=msgs.cancel,
         callback_data=CALLBACK.CANCEL_TASK_SUBMISSION,
     )
     keyboard_markup.add(cancel_button)
@@ -161,12 +163,12 @@ def build_student_sos_actions():
     logger.debug('keyboards.build_student_sos_actions')
     keyboard = types.InlineKeyboardMarkup()
     button = types.InlineKeyboardButton(
-        text=f"Вопрос по задаче",
+        text=msgs.problem_question,
         callback_data=CALLBACK.PROBLEM_SOS
     )
     keyboard.add(button)
     button = types.InlineKeyboardButton(
-        text=f"Другой вопрос",
+        text=msgs.other_question,
         callback_data=CALLBACK.OTHER_SOS
     )
     keyboard.add(button)
