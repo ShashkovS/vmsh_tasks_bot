@@ -562,7 +562,7 @@ async def prc_problem_sos_problem_selected_callback(query: types.CallbackQuery, 
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
     await bot.send_message(
         chat_id=query.message.chat.id,
-        text=msgs.sos_problem_selected.format_map({'problem', problem}),
+        text=msgs.sos_problem_selected.format_map({'problem': problem}),
         reply_markup=student_keyboards.build_cancel_task_submission()
     )
     State.set_by_user_id(
