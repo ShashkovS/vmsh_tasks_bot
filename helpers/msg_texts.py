@@ -3,145 +3,133 @@
 class Msgs:
 
     # handlers\common_handlers.py
-    reaction_accepted = 'Принято'
-    your_password = "🤖 Ваш пароль:\n<pre>{user.token}</pre>"
+    reaction_accepted = 'Accepted'
+    your_password = "🤖 Your password:\n<pre>{user.token}</pre>"
 
     # handlers\group_and_channel_handlers.py
-    here_is_your_answer = 'Вот ответ на этот вопрос:'
-    this_message_is_for_bot = 'Кажется, это сообщение лично для меня. Заходите: @{username}'
+    here_is_your_answer = 'Here’s the answer to your question:'
+    this_message_is_for_bot = 'It seems this message is meant for me. Join me here: @{username}'
 
     # handlers\main_handlers.py
     start_if_reg_needed = (
-        "🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\n"
-        "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro2ll»\n"
-        "(см. также https://shashkovs.ru/vmsh/2024/n/about.html#application)"
+        "🔁 Hi! This is the bot for Tech Leaders project admission.\n"
+        "Please enter your password."
     )
     start_if_reg_anybody = (
-        "🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2024/n/#09-n.\n"
-        "Если задачи окажутся простоватыми, то можно выполнить команду /level_pro и решать вот эти "
-        "задачи https://shashkovs.ru/vmsh/2024/p/#09-p, они сложнее и их больше."
+        ValueError('NOT USED')
     )
     this_password_is_blocked = (
-        "🔁 Этот пароль был заблокирован.\n"
-        "Скорее всего новый пароль был выслан по электронной почте, не забудьте проверить спам."
+        "🔁 This password has been blocked. "
+        "Most likely, a new password was sent to your email. Don’t forget to check your spam folder."
     )
-    welcome_user = "🤖 ОК, Добро пожаловать, {user.name} {user.surname}"
+    welcome_user = "🤖 Great, Welcome to the club, {user.name} {user.surname}"
     user_is_not_activated = (
-        "🔁 Привет!\n"
-        "Для начала обучения нужно оставить заявку на обучение на кружке на mos,ru.\n"
-        "Через несколько рабочих дней на почту придёт инструкция, а ваш аккаунт будет активирован.\n"
-        "Подробно про оформление: https://shashkovs.ru/vmsh/2024/n/about.html#application"
+        ValueError('NOT USED')
     )
-    bot_internal_error = "☢️ Всё сломалось, бот запутался в текущей ситации :(. Начнём сначала!"
-    error_only_compressed_images = '❗❗❗ Бот принимает только сжатые фото: отправляйте картинки по одной, ставьте галочку «Сжать/Compress»'
-    error_only_images_and_texts = '❗❗❗ Бот принимает только текстовые сообщения и фотографии решений.'
-    you_are_in_online_mode_now = "Теперь вы работаете в режиме «Онлайн»"
-    you_are_in_offline_mode_now = "Теперь вы работаете в режиме «Очно в школе»"
+    bot_internal_error = "☢️ Something went wrong, the bot got confused. Let’s start over!"
+    error_only_compressed_images = '❗❗❗ The bot only accepts compressed images. Send pictures one by one and check the “Compress” option.'
+    error_only_images_and_texts = '❗❗❗ The bot only accepts text messages and photos of solutions.'
+    you_are_in_online_mode_now = "You are now working in 'Online' mode."
+    you_are_in_offline_mode_now = "You are now working in 'In-School' mode."
 
     # handlers\student_handlers.py
-    auth_needed = 'Необходимо авторизоваться и ввести пароль'
-    online_mode_hint = "📡дистанционно📡"
-    offline_mode_hint = "🏫в школе🏫"
+    auth_needed = 'You need to log in and enter your password.'
+    online_mode_hint = "📡remote📡"
+    offline_mode_hint = "🏫in school🏫"
     problems_keyboard_header = (
-        "❓ <b>Нажимайте на задачу, чтобы сдать её</b>\n"
+        "❓ <b>Click on a problem to submit it</b>\n"
         "{student.name} {student.surname}\n"
-        "уровень «{student.level.slevel}», режим {mode_hint}\n"
-        "<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2024\">канал кружка</a>"
     )
-    solutions_are_not_accepted_now = "🤖 Приём задач ботом окончен до начала следующего занятия."
+    solutions_are_not_accepted_now = "🤖 Submission is closed now."
     error_file_is_not_accepted = (
-        '❗❗❗ Файл НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
-        '(Можно посылать несколько фотографий решения в виде галереи, либо каждый раз нужно выбирать задачу.)'
+        '❗❗❗ File NOT ACCEPTED! Please select a problem first! '
+        'You can send multiple solution photos as a gallery or select a problem each time.'
     )
-    error_text_is_not_accepted_now = '❗❗❗ Текст НЕ ПРИНЯТ на проверку! Сначала выберите задачу!\n'
-    error_file_is_too_large = "❌ Размер файла превышает ограничение в 5 мегабайт"
-    sol_accepted = "Принято на проверку"
-    question_accepted = "Вопрос записан"
-    hour_rate_limit_error = '💤⌛ В течение одного часа бот не принимает больше 3 ответов. Отправьте ваш ответ в начале следующего часа.'
-    dayly_rate_limit_error = '💤⌛ В течение одного дня бот не принимает больше 6 ответов. Отправьте ваш ответ завтра.'
-    poly_check_error_hint = 'При n={x} получилось {stv}, а должно было получиться {crv}'
-    error_select_one_of = "❌ Выберите один из вариантов: {variants}"
-    results_after_answer_accepted = 'Ответ принят на проверку.'
+    error_text_is_not_accepted_now = '❗❗❗ Text NOT ACCEPTED! Please select a problem first!'
+    error_file_is_too_large = "❌ File size exceeds the 5MB limit."
+    sol_accepted = "Solution submitted for review."
+    question_accepted = "Question recorded."
+    hour_rate_limit_error = '💤⌛ The bot accepts no more than 3 answers per hour. Please try again at the beginning of the next hour.'
+    dayly_rate_limit_error = '💤⌛ The bot accepts no more than 6 answers per day. Please try again tomorrow.'
+    poly_check_error_hint = 'For n={x}, you got {stv}, but it should be {crv}.'
+    error_select_one_of = "❌ Select one of the options: {variants}"
+    results_after_answer_accepted = 'Answer submitted for review.'
     student_is_sleeping_state_msg = (
-        "🤖 Приём задач ботом окончен до начала следующего занятия.\n"
-        "Заходите в канал @vmsh_179_5_7_2024 кружка за новостями и решениями."
+        "🤖 Submission is closed now."
     )
     you_are_in_novice_now = (
-        "Вы переведены в группу начинающих. "
-        "Успехов в занятиях! "
-        "Вопросы можно задавать в группе @vmsh_179_5_7_2024_chat."
+        ValueError('NOT USED')
     )
-    you_are_in_testing_now = "Вы переведены в тестируемых"
+    you_are_in_testing_now = ValueError('NOT USED')
     you_are_in_pro_now = (
-        "Вы переведены в группу продолжающих. "
-        "Следите за сложностью, если не получается больше половины задач, то лучше перейти в группу «начинающих». "
-        "Это будет комфортнее и полезнее!"
+        ValueError('NOT USED')
     )
     you_are_expert_now = (
-        "Вы переведены в группу экспертов. "
-        "Здесь будут сложные задачи, не переборщите со сложностью :) "
-        "Успехов!"
+        ValueError('NOT USED')
     )
     you_are_grade8_now = (
-        "Вы переведены в группу 8 класса. "
-        "Здесь будут сложные задачи, не переборщите со сложностью :) "
-        "Успехов!"
+        ValueError('NOT USED')
     )
     error_sos_without_auth = (
-        "🤖 Привет! Без пароля мы не знаем, как вас зовут...\n"
-        "Поэтому сначала напишите ФИО ученика, о котором идёт речь.\n"
-        "И потом — вопрос."
+        "🤖 Hi! Without a password, we don’t know your name... "
+        "So first, provide the full name of the student in question, "
+        "then ask your question."
     )
-    sos_what_is_your_question = "🤖 Какой у вас вопрос?"
-    sos_which_problem_question = "🤖 По какой задаче у вас вопрос❓"
-    sos_other_question = "Напишите ваш вопрос"
-    sos_problem_selected = "Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 с вашим вопросом."
-    answer_select_one_of = "Выбрана задача {problem}.\nВыберите ответ — один из следующих вариантов:"
-    answer_select_day_of_week = "Выбрана задача {problem}.\nВыберите ответ — день недели:"
-    answer_now_enter_answer = 'Теперь введите ответ{problem.ans_type.descr}'
-    answer_follow_recommendations = "Выбрана задача {problem}.\n{answer_recommendation}"
-    answer_send_text_or_photo = "Выбрана задача {problem}.\nТеперь отправьте текст 📈 или фотографии 📸 вашего решения."
+    sos_what_is_your_question = "🤖 What’s your question?"
+    sos_which_problem_question = "🤖 Which problem is your question about❓"
+    sos_other_question = "Please write your question."
+    sos_problem_selected = (
+        "Problem {problem} selected. Now send the text 📈 or photos 📸 with your question."
+    )
+    answer_select_one_of = (
+        "Problem {problem} selected. Choose an answer from the following options:"
+    )
+    answer_select_day_of_week = (
+        "Problem {problem} selected. Choose an answer—day of the week:"
+    )
+    answer_now_enter_answer = 'Now enter your answer{problem.ans_type.descr}.'
+    answer_follow_recommendations = (
+        "Problem {problem} selected.\n{answer_recommendation}"
+    )
+    answer_send_text_or_photo = (
+        "Problem {problem} selected. Now send photos 📸 of your solution."
+    )
     zoom_instruction = (
-        "Выбрана устная задача. "
-        "\n<b>Заходите в zoom-конференцию («Войти» в zoom)"
-        "\nИдентификатор конференции: <pre>{87196763644}</pre>"
-        "\nкод доступа: <pre>{179179179}</pre></b>"
-        "\n\nПожалуйста, при входе поставьте подпись:"
-        "\n<b><pre>{student.level} {student.surname} {student.name}</pre></b>"
-        "\n(<a href=\"{https://t.me/vmsh_179_5_7_2024/78}\">инструкция</a>)"
-        "\n\nКак только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. "
-        "После окончания сдачи нужно выйти из конференции. "
-        "Когда у вас появится следующая устная задача, этот путь нужно будет повторить заново. "
-        "Мы постараемся выделить время каждому, но ожидание может быть достаточно долгим."
+        ValueError('NOT USED')
     )
-    list_of_all_topics = "Вот список всех листков:"
-    select_one_of_answer_selected = "Выбран вариант {selected_answer}."
-    left_zoom_queue = "Вы успешно покинули очередь на устную сдачу."
-    error_nothing_was_sent = 'Нет ни одной посылки (или что-то пошло не так)'
-    game_for_chest = '{diff:+}⚡ за сундук'
-    game_for_problem = '{diff:+}⚡ за задачу «{title}»'
+    list_of_all_topics = ValueError('NOT USED')
+    select_one_of_answer_selected = "Option {selected_answer} selected."
+    left_zoom_queue = "You successfully left the queue for the oral session."
+    error_nothing_was_sent = 'No submissions found (or something went wrong).'
+    game_for_chest = '{diff:+}⚡ for a chest.'
+    game_for_problem = '{diff:+}⚡ for problem “{title}”.'
 
     # handlers\student_keyboards.py
-    open_game = "🕹🎲 Открыть командную игру 🎉🏆"
-    problem_question = "Вопрос по задаче"
-    other_question = "Другой вопрос"
-    to_list_of_topics = "К списку всех листков"
-    topic_hint = "Листок {lesson_num}"
-    cancel = "Отмена"
+    open_game = "🕹🎲 Start a team game 🎉🏆"
+    problem_question = "Question about the problem."
+    other_question = "Other question."
+    to_list_of_topics = "To the list of all worksheets."
+    topic_hint = "Worksheet {lesson_num}."
+    cancel = "Cancel."
 
     # handlers\teacher_handlers.py
-    verdict_plus_no_comments = "проверили и поставили плюсик!"
-    verdict_plus_with_comments = "проверили и поставили плюсик!\nВот комментарии:\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
-    verdict_minus_no_comments = "проверили и не засчитали без комментариев :(\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
-    verdict_minus_with_comments = "проверили и сделали замечания:\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
-    verdict_tick_no_comments = "проверили и поставили {verdict_tick} без комментариев"
-    verdict_tick_with_comments = "проверили и поставили {verdict_tick}\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
-    problem_question_answer = (
-        "Есть ответ на вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}).\n"
-        "Пересылаю всю переписку.\n"
-        "⬇⬇⬇⬇"
+    verdict_plus_no_comments = "Reviewed and approved!"
+    verdict_plus_with_comments = "Reviewed and approved! Here are the comments:\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    verdict_minus_no_comments = (
+        "Reviewed and not approved, no comments provided. Forwarding all correspondence.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
     )
-    oral_accepted_problems = "В результате устного приёма вам поставили плюсики за задачи: {pluses_list}"
-    your_level_changed_to = "Вам изменён уровень на «{level.slevel}»"
+    verdict_minus_with_comments = (
+        "Reviewed and feedback provided:\nForwarding all correspondence.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    )
+    verdict_tick_no_comments = "Reviewed and marked as {verdict_tick} without comments."
+    verdict_tick_with_comments = "Reviewed and marked as {verdict_tick}.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    problem_question_answer = (
+        "Here’s the answer to the question about problem {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}). "
+        "Forwarding all correspondence.\n⬇⬇⬇⬇"
+    )
+    oral_accepted_problems = (
+        "As a result of the oral session, you were approved for the following problems: {pluses_list}."
+    )
+    your_level_changed_to = "Your level has been changed to «{level.slevel}»."
 
 msgs = Msgs()
