@@ -86,7 +86,7 @@ class USER_TYPE(IntFlag):
     UNKNOWN = -4
 
 
-LEVEL_DESCRIPTION = {'т': 'Тестирование', 'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', '@': 'Без уровня'}
+LEVEL_DESCRIPTION = {'t': 'Тестирование', 'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', '@': 'Без уровня'}
 LEVEL_URL = {
     'н': 'https://shashkovs.ru/vmsh/2024/n/',
     'п': 'https://shashkovs.ru/vmsh/2024/p/',
@@ -97,7 +97,7 @@ LEVEL_URL = {
 
 @unique
 class LEVEL(str, Enum):
-    TESING = 'т'
+    TESING = 't'
     NOVICE = 'н'
     PRO = 'п'
     EXPERT = 'э'
