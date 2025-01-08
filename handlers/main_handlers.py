@@ -172,8 +172,11 @@ async def process_regular_message(message: types.Message):
     # message.num_processed = getattr(message, 'num_processed', 0) + 1
     user = User.get_by_chat_id(message.chat.id)
     if not user:
-        await start(message)
-        return
+        if REG_MODE == FEATURES.REG_ANYBODY:
+            await start(message)
+            return
+        else:
+            cur_chat_state = STATE.GET_USER_INFO
     else:
         if user.type == USER_TYPE.DEACTIVATED_STUDENT:
             cur_chat_state = STATE.USER_IS_NOT_ACTIVATED
