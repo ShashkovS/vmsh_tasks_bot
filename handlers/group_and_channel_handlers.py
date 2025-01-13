@@ -77,7 +77,7 @@ async def group_message_handler(message: types.Message):
         too_short_user_sign = len(user_sign) <= 5
         text_to_check = (message.text or '') + ' ' + (message.html_text or '') + ' ' + user_sign
         # Ссылка без комментариев — это спам. Пересылаем её в exception и удаляем
-        message_is_url_only = URL_REGEX.fullmatch(message.text) and not OK_URL_REGEX.search(text_to_check)
+        message_is_url_only = URL_REGEX.fullmatch(message.text or message.html_text) and not OK_URL_REGEX.search(text_to_check)
         mat_detected = MAT_REGEX.search(text_to_check)
         all_urls = BOT_URL.findall(text_to_check)
         bad_urls = any(
