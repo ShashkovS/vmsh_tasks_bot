@@ -2,7 +2,7 @@ import asyncio
 import re
 from aiogram.dispatcher.webhook import types
 from aiogram.dispatcher.filters import ChatTypeFilter, RegexpCommandsFilter
-from aiogram.utils.exceptions import MessageCantBeDeleted
+from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToForwardNotFound
 
 import db_methods as db
 from helpers.bot import bot, dispatcher
@@ -102,7 +102,10 @@ async def group_message_handler(message: types.Message):
         )
         from_bad_bot_message = message.from_user.is_bot and ('vmsh' not in message.from_user.username and message.from_user.id != bot.id)
         if message_is_url_only or mat_detected or bad_urls or from_bad_bot_message or too_short_user_sign:
-            await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)
+            try:
+                await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)
+            except MessageToForwardNotFound:
+                pass
             # Удаляем сообщение
             try:
                 await bot.delete_message(message.chat.id, message.message_id)
