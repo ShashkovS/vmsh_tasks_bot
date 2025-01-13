@@ -82,9 +82,12 @@ async def group_message_handler(message: types.Message):
 
     # Кто-то пишет команду в группе, а не в боте
     if text and re.match(r'^\s*/[a-z_]{2,}', text):
-        reply_msg = await bot.send_message(message.chat.id, text=msgs.this_message_is_for_bot.format_map({'username': bot.username}),
-                                           reply_to_message_id=message.message_id)
-        bot.delete_messages_after([message, reply_msg], timeout=10)
+        try:
+            reply_msg = await bot.send_message(message.chat.id, text=msgs.this_message_is_for_bot.format_map({'username': bot.username}),
+                                               reply_to_message_id=message.message_id)
+            bot.delete_messages_after([message, reply_msg], timeout=10)
+        except Exception as e:
+            logger.error(e)
     elif text or html_text:
         user_sign = (message.from_user.first_name or '') + ' ' + (message.from_user.last_name or '') + ' ' + (message.from_user.username or '')
         too_short_user_sign = len(user_sign) <= 5
