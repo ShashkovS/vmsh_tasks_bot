@@ -47,7 +47,7 @@ async def prc_sos_reply(message: types.Message):
             await bot.edit_message_text(chat_id=question_record['sos_chat_id'], message_id=question_record['sos_header_msg_id'], text=new_text,
                                         parse_mode="HTML")
         await bot.send_message(chat_id=message.chat.id, text='Переслал.')
-        db.question.mark_as_answered(message.chat.id, message.reply_to_message.message_id, message.text)
+        db.question.mark_as_answered(message.chat.id, message.reply_to_message.message_id, text)
     except Exception as e:
         await bot.send_message(chat_id=message.chat.id, text='Не получилось послать ответ. Попробуйте указать токен первым словом или ответить вручную.')
         logger.exception(f'SHIT: {e}')
@@ -67,17 +67,30 @@ async def group_message_handler(message: types.Message):
             await bot.delete_message(message.chat.id, message.message_id)
         except Exception as e:
             logger.exception(f'SHIT: {e}')
+        return
+
+    text = ''
+    try:
+        text = message.text or ''
+    except:
+        pass
+    html_text = ''
+    try:
+        html_text = message.html_text or ''
+    except:
+        pass
+
     # Кто-то пишет команду в группе, а не в боте
-    elif message.text and re.match(r'^\s*/[a-z_]{2,}', message.text):
+    if text and re.match(r'^\s*/[a-z_]{2,}', text):
         reply_msg = await bot.send_message(message.chat.id, text=msgs.this_message_is_for_bot.format_map({'username': bot.username}),
                                            reply_to_message_id=message.message_id)
         bot.delete_messages_after([message, reply_msg], timeout=10)
-    elif message.text or message.html_text:
+    elif text or html_text:
         user_sign = (message.from_user.first_name or '') + ' ' + (message.from_user.last_name or '') + ' ' + (message.from_user.username or '')
         too_short_user_sign = len(user_sign) <= 5
-        text_to_check = (message.text or '') + ' ' + (message.html_text or '') + ' ' + user_sign
+        text_to_check = (text or '') + ' ' + (html_text or '') + ' ' + user_sign
         # Ссылка без комментариев — это спам. Пересылаем её в exception и удаляем
-        message_is_url_only = URL_REGEX.fullmatch(message.text or message.html_text) and not OK_URL_REGEX.search(text_to_check)
+        message_is_url_only = URL_REGEX.fullmatch(text or html_text) and not OK_URL_REGEX.search(text_to_check)
         mat_detected = MAT_REGEX.search(text_to_check)
         all_urls = BOT_URL.findall(text_to_check)
         bad_urls = any(
