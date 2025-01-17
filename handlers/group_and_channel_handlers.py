@@ -45,7 +45,7 @@ async def prc_sos_reply(message: types.Message):
         student = User.get_by_chat_id(question_record['chat_id'])
         if student:
             new_text = f'✅✅✅✅\n<code>{student.surname}</code> <code>{student.name}</code>\n<code>{student.level}</code> <code>{student.token}</code> {ONLINE_MODE(student.online).__str__()[12:]}'
-            await bot.edit_message_text(chat_id=question_record['sos_chat_id'], message_id=question_record['sos_header_msg_id'], text=new_text,
+            await bot.edit_message_text_ig(chat_id=question_record['sos_chat_id'], message_id=question_record['sos_header_msg_id'], text=new_text,
                                         parse_mode="HTML")
         await bot.send_message(chat_id=message.chat.id, text='Переслал.')
         db.question.mark_as_answered(message.chat.id, message.reply_to_message.message_id, message.text)
