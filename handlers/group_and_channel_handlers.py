@@ -48,7 +48,7 @@ async def prc_sos_reply(message: types.Message):
             await bot.edit_message_text(chat_id=question_record['sos_chat_id'], message_id=question_record['sos_header_msg_id'], text=new_text,
                                         parse_mode="HTML")
         await bot.send_message(chat_id=message.chat.id, text='Переслал.')
-        db.question.mark_as_answered(message.chat.id, message.reply_to_message.message_id, text)
+        db.question.mark_as_answered(message.chat.id, message.reply_to_message.message_id, message.text)
     except Exception as e:
         await bot.send_message(chat_id=message.chat.id, text='Не получилось послать ответ. Попробуйте указать токен первым словом или ответить вручную.')
         logger.exception(f'SHIT: {e}')
