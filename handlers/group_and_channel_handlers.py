@@ -16,7 +16,8 @@ URL_REGEX = re.compile(r'\s*(https?:\/\/)?([\w\.]+)\.([a-zрф]{2,6}\.?)(\/[\w\.
 MAT_REGEX = re.compile(
     r"""(?iu)\b(?:(?:[уyu]|[нзnz3][аa]|(?:хитро|не)?[вvwb][зz3]?[ыьъi]|[сsc][ьъ']|(?:и|[рpr][аa4])[зсzs]ъ?|(?:[оo0][тбtb6]|[пp][оo0][дd9])[ьъ']?|(?:.\B)+?[оаеиeo])?-?(?:[еёe][бb6](?!о[рй])|и[пб][ае][тц]).*?|(?:[нn][иеаaie]|(?:[дпdp]|[вv][еe3][рpr][тt])[оo0]|[рpr][аa][зсzc3]|[з3z]?[аa]|с(?:ме)?|[оo0](?:[тt]|дно)?|апч)?-?[хxh][уuy](?:[яйиеёюuie]|ли(?!ган)).*?|(?:[вvw][зы3z]|(?:три|два|четыре)жды|(?:н|[сc][уuy][кk])[аa])?-?[бb6][лl](?:[яy](?!(?:х|ш[кн]|мб)[ауеыио]).*?|[еэe][дтdt][ь']?)|(?:[рp][аa][сзc3z]|[знzn][аa]|[соsc]|[вv][ыi]?|[пp](?:[еe][рpr][еe]|[рrp][оиioеe]|[оo0][дd])|и[зс]ъ?|[аоao][тt])?[пpn][иеёieu][зz3][дd9].*?|(?:[зz3][аa])?[пp][иеieu][дd][аоеaoe]?[рrp](?:ну.*?|[оаoa][мm]|(?:[аa][сcs])?(?:[иiu](?:[лl][иiu])?[нщктлtlsn]ь?)?|(?:[оo](?:ч[еиei])?|[аa][сcs])?[кk](?:[оo]й)?|[юu][гg])[ауеыauyei]?|[мm][аa][нnh][дd](?:[ауеыayueiи](?:[лl](?:[иi][сзc3щ])?[ауеыauyei])?|[оo][йi]|[аоao][вvwb][оo](?:ш|sh)[ь']?(?:[e]?[кk][ауеayue])?|юк(?:ов|[ауи])?)|[мm][уuy][дd6](?:[яyаиоaiuo0].*?|[еe]?[нhn](?:[ьюия'uiya]|ей))|мля(?:[тд]ь)?|лять|(?:[нз]а|по)х|м[ао]л[ао]фь(?:[яию]|[её]й))\b""")
 OK_URL_REGEX = re.compile(r't\.me\/vmsh')
-BOT_URL = re.compile(r'(?:(?<=t\.me/)|(?<=@))\w+bot\b')
+BOT_URL = re.compile(r'(?:(?<=t\.me/)|(?<=@))\w+bot\b', flags=re.IGNORECASE)
+SOME_TYPICAL_SPAM = re.compile(r'бонанз|играю в этом казино|КТО ХОЧЕТ ЗАРАБОТАТЬ|онлайн казик|\bинтим\b', flags=re.IGNORECASE)
 
 def check_sos_channel(message: types.Message):
     return message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel
@@ -94,7 +95,7 @@ async def group_message_handler(message: types.Message):
         text_to_check = (text or '') + ' ' + (html_text or '') + ' ' + user_sign
         # Ссылка без комментариев — это спам. Пересылаем её в exception и удаляем
         message_is_url_only = URL_REGEX.fullmatch(text or html_text) and not OK_URL_REGEX.search(text_to_check)
-        mat_detected = MAT_REGEX.search(text_to_check)
+        mat_detected = MAT_REGEX.search(text_to_check) or SOME_TYPICAL_SPAM.search(text_to_check)
         all_urls = BOT_URL.findall(text_to_check)
         bad_urls = any(
             url.endswith('bot') and not url.startswith('vmsh')
