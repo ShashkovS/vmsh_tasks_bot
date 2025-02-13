@@ -70,8 +70,7 @@ def set_problem_lock(teacher_id: int, problem_id: int):
     db.sql.kv[key] = value
 
 
-async def take_random_written_problem_and_start_check(teacher: User, problem_id: int):
-    problem = Problem.get_by_id(problem_id)
+async def take_random_written_problem_and_start_check(teacher: User, problem: Problem):
     top = WrittenQueue.take_top_synonyms(teacher.id, problem.synonyms)
     # if top:
     # # Даём преподу 10 топовых задач на выбор
@@ -105,7 +104,9 @@ async def prc_teacher_select_action(message: types.Message, teacher: User, sleep
         await asyncio.sleep(sleep_before)
     logger.debug('prc_teacher_select_action')
     locked_problem_id = get_problem_lock(teacher.id)
-    if not locked_problem_id:
+    if locked_problem_id:
+        problem = Problem.get_by_id(locked_problem_id)
+    if not locked_problem_id or not problem:
         sos_count = db.written_task_queue.get_sos_tasks_count()
         prb_count = db.written_task_queue.get_written_tasks_count()
         text = f"Выберите действие ({prb_count}✏️, {sos_count}❓)"
@@ -113,7 +114,7 @@ async def prc_teacher_select_action(message: types.Message, teacher: User, sleep
                                           reply_markup=teacher_keyboards.build_teacher_actions(sos_count, prb_count))
         db.last_keyboard.update(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
     else:
-        await take_random_written_problem_and_start_check(teacher, locked_problem_id)
+        await take_random_written_problem_and_start_check(teacher, problem)
 
 
 @reg_state(STATE.TEACHER_IS_CHECKING_TASK)
