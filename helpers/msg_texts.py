@@ -53,7 +53,7 @@ class Msgs:
     error_text_is_not_accepted_now = '❗❗❗ Text NOT ACCEPTED! Please select a problem first!'
     error_file_is_too_large = "❌ File size exceeds the 5MB limit."
     sol_accepted = "Solution submitted for review."
-    question_accepted = "Question recorded."
+    question_accepted = "Your question has been saved. We will respond shortly."
     hour_rate_limit_error = '💤⌛ The bot accepts no more than 3 answers per hour. Please try again at the beginning of the next hour.'
     dayly_rate_limit_error = '💤⌛ The bot accepts no more than 6 answers per day. Please try again tomorrow.'
     poly_check_error_hint = 'For n={x}, you got {stv}, but it should be {crv}.'
