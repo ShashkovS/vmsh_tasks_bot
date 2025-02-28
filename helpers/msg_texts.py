@@ -46,11 +46,15 @@ class Msgs:
         "{student.name} {student.surname}\n"
     )
     solutions_are_not_accepted_now = "🤖 Submission is closed now."
+    # error_file_is_not_accepted = (
+    #     '❗❗❗ File NOT ACCEPTED! Please select a problem first! '
+    #     'You can send multiple solution photos as a gallery or select a problem each time.'
+    # )
+    # error_text_is_not_accepted_now = '❗❗❗ Text NOT ACCEPTED! Please select a problem first!'
     error_file_is_not_accepted = (
-        '❗❗❗ File NOT ACCEPTED! Please select a problem first! '
-        'You can send multiple solution photos as a gallery or select a problem each time.'
+        '❗❗❗ File NOT ACCEPTED! Please "Ask a question" button first!'
     )
-    error_text_is_not_accepted_now = '❗❗❗ Text NOT ACCEPTED! Please select a problem first!'
+    error_text_is_not_accepted_now = '❗❗❗ Text NOT ACCEPTED! Please "Ask a question" button first!'
     error_file_is_too_large = "❌ File size exceeds the 5MB limit."
     sol_accepted = "Solution submitted for review."
     question_accepted = "Your question has been saved. We will respond shortly."
