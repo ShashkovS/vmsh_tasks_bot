@@ -16,7 +16,8 @@ class Msgs:
         "Please enter your password."
     )
     start_if_reg_anybody = (
-        ValueError('NOT USED')
+        "🔁 Hi! This is the bot for Tech Leaders project support.\n"
+        "You can ask your question and get answer here."
     )
     this_password_is_blocked = (
         "🔁 This password has been blocked. "
@@ -36,8 +37,12 @@ class Msgs:
     auth_needed = 'You need to log in and enter your password.'
     online_mode_hint = "📡remote📡"
     offline_mode_hint = "🏫in school🏫"
+    # problems_keyboard_header = (
+    #     "❓ <b>Click on a problem to submit it</b>\n"
+    #     "{student.name} {student.surname}\n"
+    # )
     problems_keyboard_header = (
-        "❓ <b>Click on a problem to submit it</b>\n"
+        "❓ <b>Click a question button to ask a question.</b>\n"
         "{student.name} {student.surname}\n"
     )
     solutions_are_not_accepted_now = "🤖 Submission is closed now."
@@ -107,7 +112,7 @@ class Msgs:
     # handlers\student_keyboards.py
     open_game = "🕹🎲 Start a team game 🎉🏆"
     problem_question = "Question about the problem."
-    other_question = "Other question."
+    other_question = "Ask a question"
     to_list_of_topics = "To the list of all worksheets."
     topic_hint = "Worksheet {lesson_num}."
     cancel = "Cancel."

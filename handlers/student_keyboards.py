@@ -23,53 +23,54 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
         keyboard_markup.add(to_game_button)
     # Кнопки с вопросами
     if not is_sos_question:
-        que1 = types.InlineKeyboardButton(
-            text=msgs.problem_question,
-            callback_data=CALLBACK.PROBLEM_SOS
-        )
+        # que1 = types.InlineKeyboardButton(
+        #     text=msgs.problem_question,
+        #     callback_data=CALLBACK.PROBLEM_SOS
+        # )
         que2 = types.InlineKeyboardButton(
             text=msgs.other_question,
             callback_data=CALLBACK.OTHER_SOS
         )
-        keyboard_markup.row(que1, que2)
-    for problem in Problem.get_by_lesson(student.level, lesson_num):
-        synonyms_set = problem.synonyms_set()
-        if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
-            max_verdict = VERDICT.NO_ANSWER if not solved else max(solved.get(prob_id, VERDICT.NO_ANSWER) for prob_id in synonyms_set)
-            verdict_tick = VERDICT_TO_TICK[max_verdict]
-            if max_verdict in VERDICTS_SOLVED:
-                tick = verdict_tick
-            elif synonyms_set & being_checked:
-                tick = '❓'
-            elif problem.prob_type == PROB_TYPE.ORALLY and State.get_by_user_id(student.id)['oral_problem_id'] is not None:
-                tick = '⌛'
-            else:
-                tick = verdict_tick
-        elif RESULT_MODE == FEATURES.RESULT_AFTER:
-            if synonyms_set & student_tried or synonyms_set & being_checked:
-                tick = '❓'
-            else:
-                tick = '⬜'
-
-        if problem.prob_type == PROB_TYPE.TEST:
-            tp = '⋯'
-        elif problem.prob_type == PROB_TYPE.WRITTEN or problem.prob_type == PROB_TYPE.WRITTEN_BEFORE_ORALLY:
-            tp = '🖊'
-        elif problem.prob_type == PROB_TYPE.ORALLY:
-            tp = '🗣'
-        else:
-            tp = '?'
-        if is_sos_question:
-            use_callback = CALLBACK.SOS_PROBLEM_SELECTED
-            tt = '❓'
-        else:
-            use_callback = CALLBACK.PROBLEM_SELECTED
-            tt = ""
-        task_button = types.InlineKeyboardButton(
-            text=f"{tt}{tick} {tp} {problem}{tt}",
-            callback_data=f"{use_callback}_{problem.id}"
-        )
-        keyboard_markup.add(task_button)
+        # keyboard_markup.row(que1, que2)
+        keyboard_markup.row(que2)
+    # for problem in Problem.get_by_lesson(student.level, lesson_num):
+    #     synonyms_set = problem.synonyms_set()
+    #     if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
+    #         max_verdict = VERDICT.NO_ANSWER if not solved else max(solved.get(prob_id, VERDICT.NO_ANSWER) for prob_id in synonyms_set)
+    #         verdict_tick = VERDICT_TO_TICK[max_verdict]
+    #         if max_verdict in VERDICTS_SOLVED:
+    #             tick = verdict_tick
+    #         elif synonyms_set & being_checked:
+    #             tick = '❓'
+    #         elif problem.prob_type == PROB_TYPE.ORALLY and State.get_by_user_id(student.id)['oral_problem_id'] is not None:
+    #             tick = '⌛'
+    #         else:
+    #             tick = verdict_tick
+    #     elif RESULT_MODE == FEATURES.RESULT_AFTER:
+    #         if synonyms_set & student_tried or synonyms_set & being_checked:
+    #             tick = '❓'
+    #         else:
+    #             tick = '⬜'
+    #
+    #     if problem.prob_type == PROB_TYPE.TEST:
+    #         tp = '⋯'
+    #     elif problem.prob_type == PROB_TYPE.WRITTEN or problem.prob_type == PROB_TYPE.WRITTEN_BEFORE_ORALLY:
+    #         tp = '🖊'
+    #     elif problem.prob_type == PROB_TYPE.ORALLY:
+    #         tp = '🗣'
+    #     else:
+    #         tp = '?'
+    #     if is_sos_question:
+    #         use_callback = CALLBACK.SOS_PROBLEM_SELECTED
+    #         tt = '❓'
+    #     else:
+    #         use_callback = CALLBACK.PROBLEM_SELECTED
+    #         tt = ""
+    #     task_button = types.InlineKeyboardButton(
+    #         text=f"{tt}{tick} {tp} {problem}{tt}",
+    #         callback_data=f"{use_callback}_{problem.id}"
+    #     )
+    #     keyboard_markup.add(task_button)
     if PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL or PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL:
         to_lessons_button = types.InlineKeyboardButton(
             text=msgs.to_list_of_topics,
