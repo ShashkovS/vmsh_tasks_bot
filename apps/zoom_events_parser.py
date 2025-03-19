@@ -12,6 +12,9 @@ routes = web.RouteTableDef()
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
 
 ZOOM_WEBHOOK_SECRET_TOKEN = 'bX0XxlS-QsygnbKXeXBtrw'
+ZOOM_WEBHOOK_VERIFICATION_TOKEN = 'ezOcb3l6RrCFZ5t-cb9LqA'
+ZOOM_WEBHOOK_VERIFICATION_TOKEN = 'kP-kZvL-QF2-caB08Vib0Q'
+
 
 ZOOM_ID = "87196763644"
 TIMEZONE = timedelta(hours=3)
