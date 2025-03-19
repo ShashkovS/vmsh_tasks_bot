@@ -17,7 +17,12 @@ MAT_REGEX = re.compile(
     r"""(?iu)\b(?:(?:[уyu]|[нзnz3][аa]|(?:хитро|не)?[вvwb][зz3]?[ыьъi]|[сsc][ьъ']|(?:и|[рpr][аa4])[зсzs]ъ?|(?:[оo0][тбtb6]|[пp][оo0][дd9])[ьъ']?|(?:.\B)+?[оаеиeo])?-?(?:[еёe][бb6](?!о[рй])|и[пб][ае][тц]).*?|(?:[нn][иеаaie]|(?:[дпdp]|[вv][еe3][рpr][тt])[оo0]|[рpr][аa][зсzc3]|[з3z]?[аa]|с(?:ме)?|[оo0](?:[тt]|дно)?|апч)?-?[хxh][уuy](?:[яйиеёюuie]|ли(?!ган)).*?|(?:[вvw][зы3z]|(?:три|два|четыре)жды|(?:н|[сc][уuy][кk])[аa])?-?[бb6][лl](?:[яy](?!(?:х|ш[кн]|мб)[ауеыио]).*?|[еэe][дтdt][ь']?)|(?:[рp][аa][сзc3z]|[знzn][аa]|[соsc]|[вv][ыi]?|[пp](?:[еe][рpr][еe]|[рrp][оиioеe]|[оo0][дd])|и[зс]ъ?|[аоao][тt])?[пpn][иеёieu][зz3][дd9].*?|(?:[зz3][аa])?[пp][иеieu][дd][аоеaoe]?[рrp](?:ну.*?|[оаoa][мm]|(?:[аa][сcs])?(?:[иiu](?:[лl][иiu])?[нщктлtlsn]ь?)?|(?:[оo](?:ч[еиei])?|[аa][сcs])?[кk](?:[оo]й)?|[юu][гg])[ауеыauyei]?|[мm][аa][нnh][дd](?:[ауеыayueiи](?:[лl](?:[иi][сзc3щ])?[ауеыauyei])?|[оo][йi]|[аоao][вvwb][оo](?:ш|sh)[ь']?(?:[e]?[кk][ауеayue])?|юк(?:ов|[ауи])?)|[мm][уuy][дd6](?:[яyаиоaiuo0].*?|[еe]?[нhn](?:[ьюия'uiya]|ей))|мля(?:[тд]ь)?|лять|(?:[нз]а|по)х|м[ао]л[ао]фь(?:[яию]|[её]й))\b""")
 OK_URL_REGEX = re.compile(r't\.me\/leaders')
 BOT_URL = re.compile(r'(?:(?<=t\.me/)|(?<=@))\w+bot\b', flags=re.IGNORECASE)
-SOME_TYPICAL_SPAM = re.compile(r'бонанз|играю в этом казино|КТО ХОЧЕТ ЗАРАБОТАТЬ|онлайн казик|\bинтим\b', flags=re.IGNORECASE)
+SOME_TYPICAL_SPAM = re.compile(
+    r'бонанз|играю в этом казино|КТО ХОЧЕТ ЗАРАБОТАТЬ|онлайн казик|\bинтим\b'
+    r'|срочно.*требу.тся.*человек|лучшее казино|официальное казино|(?:доход|оплата).*от.*рублей.*(?:месяц|день)'
+    r'|пишите в лс',
+    flags=re.IGNORECASE
+)
 
 def check_sos_channel(message: types.Message):
     return message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel
@@ -80,6 +85,12 @@ async def group_message_handler(message: types.Message):
         html_text = message.html_text or ''
     except:
         pass
+    has_buttons = False
+    try:
+        has_buttons = message.reply_markup and message.reply_markup.inline_keyboard
+        print(f'{has_buttons=}')
+    except:
+        pass
 
     # Кто-то пишет команду в группе, а не в боте
     if text and re.match(r'^\s*/[a-z_]{2,}', text):
@@ -89,7 +100,7 @@ async def group_message_handler(message: types.Message):
             bot.delete_messages_after([message, reply_msg], timeout=10)
         except Exception as e:
             logger.error(e)
-    elif text or html_text:
+    elif text or html_text or has_buttons:
         user_sign = (message.from_user.first_name or '') + ' ' + (message.from_user.last_name or '') + ' ' + (message.from_user.username or '')
         too_short_user_sign = len(user_sign) <= 5
         text_to_check = (text or '') + ' ' + (html_text or '') + ' ' + user_sign
@@ -102,7 +113,7 @@ async def group_message_handler(message: types.Message):
             for url in all_urls
         )
         from_bad_bot_message = message.from_user.is_bot and ('leaders' not in message.from_user.username and message.from_user.id != bot.id)
-        if message_is_url_only or mat_detected or bad_urls or from_bad_bot_message or too_short_user_sign:
+        if message_is_url_only or mat_detected or bad_urls or from_bad_bot_message or too_short_user_sign or has_buttons:
             try:
                 await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)
             except MessageToForwardNotFound:
