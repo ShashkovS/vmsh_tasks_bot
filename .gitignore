@@ -20,3 +20,4 @@ db/*.pickle
 # Решения
 solutions/
 /db/archive/
+/production.db
