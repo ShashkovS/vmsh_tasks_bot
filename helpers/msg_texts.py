@@ -13,7 +13,7 @@ class Msgs:
     # handlers\main_handlers.py
     start_if_reg_needed = (
         "🔁 Привет! Это бот для сдачи задач на ВМШ. Пожалуйста, введите свой пароль.\n"
-        "Пароль был вам выслан по электронной почте, он имеет вид «pa1ro2ll»\n"
+        "Пароль высылается по электронной почте, указанной на mosru. Он имеет вид «pa1ss2wo3rd»\n"
         "(см. также https://shashkovs.ru/vmsh/2025/n/about.html#application)"
     )
     start_if_reg_anybody = (
