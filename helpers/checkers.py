@@ -176,7 +176,7 @@ ANS_CHECKER = {
     ANS_TYPE.SELECT_ONE: str_eq,  # выберите один из следующих вариантов:',
     ANS_TYPE.POLYNOMIAL: calc_first_10_values,  # выражение от n (например: 2n**2 + n(n+1)/2)',
     ANS_TYPE.TIME: time_eq,  # время (например, 12:08, 3:15:24)'),
-    ANS_TYPE.DATE: date_eq,  # дату (например, 31.12, 2024-02-16, 11.02.1986)'),
+    ANS_TYPE.DATE: date_eq,  # дату (например, 31.12, 2025-02-16, 11.02.1986)'),
     ANS_TYPE.WEEKDAY: weekday_eq,  # день недели (например, Суббота)'),
     ANS_TYPE.FRAC_SEQ: frac_seq_eq,  # последовательность дробей (например, 2/5,3.75, -1)'),
     ANS_TYPE.MULTISET: frac_multiset_eq,  # мультимножество (например, 1, 1, 2, 5, 7, 2/5, 2/5, -1.2, -1.2)'),
@@ -201,7 +201,7 @@ ANS_REGEX = {
     ANS_TYPE.INT_4: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+){3}[^\d+-]*$'),  # четыре целых числа (например: 0, 1, 7, 9)',
     ANS_TYPE.POLYNOMIAL: re.compile(r'^[ \d+\-*/()nkijm^]+$'),  # выражение от n (например: 2n**2 + n(n+1)/2)',
     ANS_TYPE.TIME: re.compile(r'\d{1,2}(?:\D{1,2}\d{1,2}){1,2}'),  # время (например, 12:08, 3:15:24)'),
-    ANS_TYPE.DATE: re.compile(r'\d{1,4}(?:\D{1,2}\d{1,4}){1,2}'),  # дату (например, 31.12, 2024-02-16, 11.02.1986)'),
+    ANS_TYPE.DATE: re.compile(r'\d{1,4}(?:\D{1,2}\d{1,4}){1,2}'),  # дату (например, 31.12, 2025-02-16, 11.02.1986)'),
     ANS_TYPE.WEEKDAY: re.compile(r'(?:п.?н|вт|ср|ч.?т|п.?т|с.?б|в.?с).*$', flags=re.IGNORECASE),
     # день недели (например, Суббота)'),
     ANS_TYPE.FRAC_SEQ: re.compile(

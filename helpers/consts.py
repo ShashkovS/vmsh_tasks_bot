@@ -88,10 +88,10 @@ class USER_TYPE(IntFlag):
 
 LEVEL_DESCRIPTION = {'т': 'Тестирование', 'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', '@': 'Без уровня'}
 LEVEL_URL = {
-    'н': 'https://shashkovs.ru/vmsh/2024/n/',
-    'п': 'https://shashkovs.ru/vmsh/2024/p/',
-    'э': 'https://shashkovs.ru/vmsh/2024/x/',
-    '@': 'https://shashkovs.ru/vmsh/2024/n/',
+    'н': 'https://shashkovs.ru/vmsh/2025/n/',
+    'п': 'https://shashkovs.ru/vmsh/2025/p/',
+    'э': 'https://shashkovs.ru/vmsh/2025/x/',
+    '@': 'https://shashkovs.ru/vmsh/2025/n/',
 }
 
 
@@ -157,7 +157,7 @@ for ans_type, descr in [
     (ANS_TYPE.POLYNOMIAL, ' — выражение от n (например: 2n**2 + n(n+1)/2):'),
     (ANS_TYPE.FLOAT_EPS, ' — десятичную дробь (например, 3.14 или 179)'),
     (ANS_TYPE.TIME, '— время (например, 12:08, 3:15:24)'),
-    (ANS_TYPE.DATE, '— дату (например, 31.12, 2024-02-16, 11.02.1986)'),
+    (ANS_TYPE.DATE, '— дату (например, 31.12, 2025-02-16, 11.02.1986)'),
     (ANS_TYPE.WEEKDAY, '— день недели (например, Суббота)'),
     (ANS_TYPE.FRAC_SEQ, '— последовательность дробей (например, 2/5,3.75, -1)'),
     (ANS_TYPE.MULTISET, '— мультимножество (например, 1, 1, 2, 5, 7, 2/5, 2/5, -1.2, -1.2)'),
