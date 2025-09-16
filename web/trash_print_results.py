@@ -20,7 +20,7 @@ def get_results(cur, lesson, level, show_answers=False):
     if show_answers:
         verd = "GROUP_CONCAT(r.answer, '  |  ')"
     else:
-        verd = 'max(r.verdict)'
+        verd = 'max(v.val)'
     cur.execute(f'''
         select
         u.token || '	' || u.surname || '	' || u.name || '	' || u.level as user,
@@ -28,13 +28,14 @@ def get_results(cur, lesson, level, show_answers=False):
         {verd} as max_verdict
         from users u 
         join results r on r.student_id = u.id
+        join verdicts v on r.verdict = v.verdict
         join problems p on r.problem_id = p.id
         where u.type = 1 and u.level = :level and r.level = :level and r.lesson = :lesson
               and u.surname not like 'ЯЯ%' and u.name not like 'ЯЯ%' 
         group by 1, 2
     ''', locals())
     if show_answers:
-        results = {(r['user'], r['full_prob']): VERDICT_DECODER(r['max_verdict']) for r in cur.fetchall()}
+        results = {(r['user'], r['full_prob']): str(r['max_verdict']) for r in cur.fetchall()}
     else:
         results = {(r['user'], r['full_prob']): str(max(r['max_verdict'], 0)) for r in cur.fetchall()}
     return results
