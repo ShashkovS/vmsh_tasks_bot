@@ -28,7 +28,7 @@ def get_results(cur, lesson, level, show_answers=False):
         {verd} as max_verdict
         from users u 
         join results r on r.student_id = u.id
-        join verdicts v on r.verdict = v.verdict
+        join verdicts v on r.verdict = v.id
         join problems p on r.problem_id = p.id
         where u.type = 1 and u.level = :level and r.level = :level and r.lesson = :lesson
               and u.surname not like 'ЯЯ%' and u.name not like 'ЯЯ%' 
