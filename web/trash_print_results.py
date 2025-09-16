@@ -9,7 +9,7 @@ def get_lessons_and_levels(cur):
         join users u on r.student_id = u.id
         where u.type = 1
           and u.level = r.level
-          and u.surname not like 'ЯЯ%' and u.name not like 'ЯЯ%'
+          and u.surname not like 'surname%' and u.name not like 'surname%'
         group by 1, 2
         order by 1 desc, 2;
     ''')
@@ -31,7 +31,7 @@ def get_results(cur, lesson, level, show_answers=False):
         join verdicts v on r.verdict = v.id
         join problems p on r.problem_id = p.id
         where u.type = 1 and u.level = :level and r.level = :level and r.lesson = :lesson
-              and u.surname not like 'ЯЯ%' and u.name not like 'ЯЯ%' 
+              and u.surname not like 'surname%' and u.name not like 'surname%' 
         group by 1, 2
     ''', locals())
     if show_answers:
@@ -47,8 +47,8 @@ def get_pupils(cur, level):
         from users u 
         where u.type = 1 -- and token not like 'pass%'
         and u.level = :level
-        and u.surname not like 'ЯЯ%'
-        and u.name not like 'ЯЯ%'
+        and u.surname not like 'surname%'
+        and u.name not like 'surname%'
         order by u.level, u.surname, u.name, u.token
     ''', locals())
     pupils = [x['user'] for x in cur.fetchall()]
