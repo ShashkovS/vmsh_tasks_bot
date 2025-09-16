@@ -222,6 +222,16 @@ VERDICT_DECODER = {
     VERDICT.SOLVED: '+',
 }
 
+VERDICT_VAL_DECODER = {
+    1: '+',
+    0.95: '+.',
+    0.7: '±',
+    0.5: '+/2',
+    0.25: '∓',
+    0.05: '−.',
+    0: '−',
+}
+
 VERDICT_TO_TICK = {
     VERDICT.NO_ANSWER: '⬜',
     VERDICT.REJECTED_ANSWER: '🟥−',
