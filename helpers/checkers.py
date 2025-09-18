@@ -8,6 +8,8 @@ __ALL__ = ['ANS_CHECKER']
 
 no_space = re.compile(r'\s+')
 frac = re.compile(r'(?:[-+]?(?=\d|\.\d)\d*(?:/\d+|(?:\.\d*)?(?:[eE][-+]?\d+)?|))')
+re_frac = re.compile(r'([-+]?) ?(?:(\d+)\s+(\d+\s*\/\s*\d+)|(\d+\s*\/\s*\d+|\d*[.]\d+|\d+))')
+re_frac_comma = re.compile(r'([-+]?) ?(?:(\d+)\s+(\d+\s*\/\s*\d+)|(\d+\s*\/\s*\d+|\d*[.,]\d+|\d+))')
 weekday = re.compile(r'.*(?:(п.?н)|(вт)|(ср)|(ч.?т)|(п.?т)|(с.?б)|(в.?с)).*', flags=re.IGNORECASE)
 
 
@@ -28,6 +30,15 @@ class Ne:
 ne = Ne()
 
 
+def parse_mixed_frac(match):
+    sgn = -1 if match.group(1) == '-' else 1
+    normal = match.group(4)
+    if normal:
+        return sgn * Fraction(normal.replace(' ', '').replace(',', '.'))
+    else:
+        return sgn * (int(match.group(2)) + Fraction(match.group(3).replace(' ', '').replace(',', '.')))
+
+
 def to_int(x):
     try:
         return int(no_space.sub('', x))
@@ -38,6 +49,13 @@ def to_int(x):
 def to_frac(x):
     try:
         return Fraction(no_space.sub('', x))
+    except:
+        return ne
+
+
+def to_mixed_frac(x):
+    try:
+        return parse_mixed_frac(re_frac_comma.search(x))
     except:
         return ne
 
@@ -110,6 +128,10 @@ def frac_eq(x, y):
     return to_frac(x) == to_frac(y)
 
 
+def mixed_frac_eq(x, y):
+    return to_mixed_frac(x) == to_mixed_frac(y)
+
+
 def close_to(x, y):
     x_float = to_frac(x)
     # y — это выражение вида 14.3+-0.4 — то есть число плюс-минус точность
@@ -168,6 +190,7 @@ ANS_CHECKER = {
     ANS_TYPE.FLOAT: frac_eq,  # десятичную дробь (например, 3.14 или 179)',
     ANS_TYPE.FLOAT_EPS: close_to,  # десятичную дробь (например, 3.14 или 179)',
     ANS_TYPE.FRACTION: frac_eq,  # обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)',
+    ANS_TYPE.MIXED_FRACTION: mixed_frac_eq,  # обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)',
     ANS_TYPE.INT_SEQ: int_sec_eq,  # последовательность целых чисел (например: 1, 7, 9)',
     ANS_TYPE.INT_SET: int_set_eq,  # множество целых чисел (например: 1, 7, 9)',
     ANS_TYPE.INT_2: int_sec_eq,  # два целых числа (например: 1, 7)',
@@ -194,6 +217,7 @@ ANS_REGEX = {
     ANS_TYPE.FLOAT_EPS: frac,  # десятичную дробь (например, 3.14 или 179)',
     # обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)',
     ANS_TYPE.FRACTION: re.compile(r'[-+]?(?=\d+|\.\d+)\d*(?:(?:/\d+)?|(?:\.\d*)?(?:[eE][-+]?\d+)?)'),
+    ANS_TYPE.MIXED_FRACTION: re.compile(r'([-+]?) ?(?:(\d+)\s+(\d+\s*\/\s*\d+)|(\d+\s*\/\s*\d+|\d*[.,]\d+|\d+))'),
     ANS_TYPE.INT_SEQ: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+)*[^\d+-]*$'),  # последовательность целых чисел (например: 1, 7, 9)',
     ANS_TYPE.INT_SET: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+)*[^\d+-]*$'),  # множество целых чисел (например: 1, 7, 9)',
     ANS_TYPE.INT_2: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+){1}[^\d+-]*$'),  # два целых числа (например: 1, 7)',

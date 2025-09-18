@@ -121,6 +121,7 @@ class ANS_TYPE(IntEnum):
     RATIO = 4  # Отношение
     FLOAT = 5  # Действительное
     FRACTION = 6  # Дробь
+    MIXED_FRACTION = 19  # Смешанная дробь
     INT_SEQ = 7  # Последовательность целых
     INT_2 = 8  # Два целых
     INT_3 = 9  # Три целых
@@ -148,6 +149,7 @@ for ans_type, descr in [
     (ANS_TYPE.RATIO, ' — отношение (например, 5/3 или -179/1)'),
     (ANS_TYPE.FLOAT, ' — десятичную дробь (например, 3.14 или 179)'),
     (ANS_TYPE.FRACTION, ' — обыкновенную или десятичную дробь (например, 7/3, -3.14 или 179)'),
+    (ANS_TYPE.MIXED_FRACTION, ' — смешанная дробь (например, 1 2/3, -4/5'),
     (ANS_TYPE.INT_SEQ, ' — последовательность целых чисел (например: 1, 7, 9)'),
     (ANS_TYPE.INT_SET, ' — множество целых чисел (например: 1, 7, 9)'),
     (ANS_TYPE.INT_2, ' — два целых числа (например: 1, 7)'),
@@ -172,6 +174,7 @@ ANS_TYPES_DECODER = {
     'Отношение': ANS_TYPE.RATIO,
     'Действительное': ANS_TYPE.FLOAT,
     'Дробь': ANS_TYPE.FRACTION,
+    'СмешДробь': ANS_TYPE.MIXED_FRACTION,
     'ПоследЦелых': ANS_TYPE.INT_SEQ,
     'МножЦелых': ANS_TYPE.INT_SET,
     'ДваЦелых': ANS_TYPE.INT_2,
