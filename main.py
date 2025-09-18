@@ -5,6 +5,8 @@ import asyncio
 import apps
 from helpers.config import config, logger
 import db_methods as db
+from helpers.features import set_features
+from helpers.msg_texts import msgs
 
 LOCAL_APP_PORT = 8179
 
@@ -13,6 +15,11 @@ async def on_startup(app):
     logger.warning('MainApp Start up!')
     # Настраиваем БД
     db.sql.setup(config.db_filename)
+    bot_settings = db.settings.get_settings()
+    config.update_from_dict(bot_settings)
+    set_features(config)
+    ui_messages = db.settings.get_ui_messages()
+    msgs.update_from_dict(ui_messages)
 
 
 async def on_shutdown(app):

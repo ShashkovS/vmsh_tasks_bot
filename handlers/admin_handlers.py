@@ -4,6 +4,7 @@ import aiogram
 from aiogram import types
 import asyncio
 import re
+from pprint import pformat
 
 from helpers.consts import *
 from helpers.config import logger, config
@@ -54,6 +55,38 @@ async def update_students(message: types.Message):
     await bot.send_message(
         chat_id=message.chat.id,
         text="Студенты обновлены",
+    )
+
+
+@dispatcher.message_handler(commands=['update_bot_settings'])
+async def update_bot_settings(message: types.Message):
+    logger.debug('update_bot_settings')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    FromGoogleSpreadsheet.update_bot_settings()
+    new_settings = db.settings.get_settings()
+    new_settings_s = pformat(new_settings, indent=2)
+    html = f'''New settings:\n<pre>{new_settings_s}</pre>\nRestart bot to apply them'''
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=html,
+        parse_mode=types.ParseMode.HTML,
+    )
+
+
+@dispatcher.message_handler(commands=['update_ui_messages'])
+async def update_ui_messages(message: types.Message):
+    logger.debug('update_ui_messages')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    FromGoogleSpreadsheet.update_ui_messages()
+    html = f'''UI messages updated\nRestart bot to apply them'''
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=html,
+        parse_mode=types.ParseMode.HTML,
     )
 
 

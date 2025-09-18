@@ -15,10 +15,12 @@ from .problem import Problem
 class FromGoogleSpreadsheet:
     @staticmethod
     def update_all() -> List[str]:
-        problems, students, teachers = google_spreadsheet_loader.get_all()
+        problems, students, teachers, ui_messages, bot_settings = google_spreadsheet_loader.get_all_from_spreadsheet()
         errors = FromGoogleSpreadsheet.problems_to_db(problems)
         FromGoogleSpreadsheet.students_to_db(students)
         FromGoogleSpreadsheet.teachers_to_db(teachers)
+        FromGoogleSpreadsheet.ui_messages_to_db(ui_messages)
+        FromGoogleSpreadsheet.bot_settings_to_db(bot_settings)
         return errors
 
     @staticmethod
@@ -36,6 +38,16 @@ class FromGoogleSpreadsheet:
     def update_teachers():
         teachers = google_spreadsheet_loader.get_teachers()
         FromGoogleSpreadsheet.teachers_to_db(teachers)
+
+    @staticmethod
+    def update_ui_messages():
+        ui_messages = google_spreadsheet_loader.get_ui_messages()
+        FromGoogleSpreadsheet.ui_messages_to_db(ui_messages)
+
+    @staticmethod
+    def update_bot_settings():
+        bot_settings = google_spreadsheet_loader.get_bot_settings()
+        FromGoogleSpreadsheet.bot_settings_to_db(bot_settings)
 
     @staticmethod
     def students_to_db(students: List[dict]):
@@ -65,6 +77,22 @@ class FromGoogleSpreadsheet:
             except:
                 teacher['online'] = ONLINE_MODE.ONLINE
             User(**teacher)
+
+    @staticmethod
+    def ui_messages_to_db(ui_messages: List[dict]):
+        for ui_message in ui_messages:
+            key = ui_message['key']
+            value = ui_message['value']
+            if key and value:
+                db.settings.add_ui_message(key, value)
+
+    @staticmethod
+    def bot_settings_to_db(bot_settings: List[dict]):
+        for bot_setting in bot_settings:
+            key = bot_setting['key']
+            value = bot_setting['value']
+            if key and value:
+                db.settings.add_setting(key, value)
 
     @staticmethod
     def problems_to_db(problems: List[dict]) -> List[str]:

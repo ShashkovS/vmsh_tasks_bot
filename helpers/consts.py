@@ -224,6 +224,7 @@ VERDICT_DECODER = {
 
 VERDICT_VAL_DECODER = {
     1: '+',
+    1.0: '+',
     0.95: '+.',
     0.7: '±',
     0.5: '+/2',

@@ -47,6 +47,9 @@ class Config:
     rate_limit: str = "rate_limit_3_and_6"
     apps: str = "tg_bot, game_web_app, results_app, zoom_events_parser"
 
+    def update_from_dict(self, update_dict: dict):
+        for key, value in update_dict.items():
+            setattr(self, key, value)
 
 def _create_logger():
     # Настраиваем
@@ -95,7 +98,7 @@ def _setup(*, force_production=False):
     config_from_json['db_filename'] = _absolute_path(config_from_json['db_filename'])
 
     # Обновляем настройки
-    config.__dict__.update(config_from_json)
+    config.update_from_dict(config_from_json)
     assert config.config_name != '', f'{config.config_name=}, but needs to be meanfull string'
     return config
 

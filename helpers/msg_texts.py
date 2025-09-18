@@ -144,6 +144,10 @@ class Msgs:
     oral_accepted_problems = "В результате устного приёма вам поставили плюсики за задачи: {pluses_list}"
     your_level_changed_to = "Вам изменён уровень на «{level.slevel}»"
 
+    def update_from_dict(self, ui_messages_dict: dict):
+        for key, value in ui_messages_dict.items():
+            setattr(self, key, value)
+
 msgs = Msgs()
 
 # for attr in ['reaction_accepted', 'your_password', 'here_is_your_answer', 'this_message_is_for_bot', 'start_if_reg_needed', 'start_if_reg_anybody', 'this_password_is_blocked', 'welcome_user', 'user_is_not_activated', 'bot_internal_error', 'error_only_compressed_images', 'error_only_images_and_texts', 'you_are_in_online_mode_now', 'you_are_in_offline_mode_now', 'auth_needed', 'online_mode_hint', 'offline_mode_hint', 'problems_keyboard_header', 'solutions_are_not_accepted_now', 'error_file_is_not_accepted', 'error_text_is_not_accepted_now', 'error_file_is_too_large', 'sol_accepted', 'question_accepted', 'hour_rate_limit_error', 'dayly_rate_limit_error', 'poly_check_error_hint', 'error_select_one_of', 'results_after_answer_accepted', 'student_is_sleeping_state_msg', 'you_are_in_novice_now', 'you_are_in_testing_now', 'you_are_in_pro_now', 'you_are_expert_now', 'you_are_grade8_now', 'error_sos_without_auth', 'sos_what_is_your_question', 'sos_which_problem_question', 'sos_other_question', 'sos_problem_selected', 'answer_select_one_of', 'answer_select_day_of_week', 'answer_now_enter_answer', 'answer_follow_recommendations', 'answer_send_text_or_photo', 'zoom_instruction', 'list_of_all_topics', 'select_one_of_answer_selected', 'left_zoom_queue', 'error_nothing_was_sent', 'game_for_chest', 'game_for_problem', 'open_game', 'problem_question', 'other_question', 'to_list_of_topics', 'topic_hint', 'cancel', 'verdict_plus_no_comments', 'verdict_plus_with_comments', 'verdict_minus_no_comments', 'verdict_minus_with_comments', 'verdict_tick_no_comments', 'verdict_tick_with_comments', 'problem_question_answer', 'oral_accepted_problems', 'your_level_changed_to', 'msgs' ]:

@@ -9,6 +9,8 @@ _PROBLEMS_HEADERS = [
 ]
 _STUDENTS_HEADERS = ['surname', 'name', 'token', 'level', 'online', 'grade', 'birthday']
 _TEACHERS_HEADERS = ['surname', 'name', 'middlename', 'token', 'online']
+_UI_MESSAGES_HEADERS = ['key', 'value']
+_BOT_SETTINGS_HEADERS = ['key', 'value']
 
 
 def _dict_factory(rows, column_names):
@@ -68,13 +70,33 @@ class SpreadsheetLoader:
         )
         return teachers[_IGNORE_FIRST_HEADER_ROWS_NUM:]
 
-    def get_all(self):
+    def _load_ui_messages(self, sheet):
+        logger.info('Setting reload: fetching ui_messages')
+        worksheet_students = sheet.worksheet("_BotUIMsgs")
+        ui_messages = _dict_factory(
+            worksheet_students.get_all_values(),
+            _UI_MESSAGES_HEADERS,
+        )
+        return ui_messages[_IGNORE_FIRST_HEADER_ROWS_NUM:]
+
+    def _load_bot_settings(self, sheet):
+        logger.info('Setting reload: fetching bot settings')
+        worksheet_students = sheet.worksheet("_BotSettings")
+        bot_settings = _dict_factory(
+            worksheet_students.get_all_values(),
+            _BOT_SETTINGS_HEADERS,
+        )
+        return bot_settings[_IGNORE_FIRST_HEADER_ROWS_NUM:]
+
+    def get_all_from_spreadsheet(self):
         logger.info('All reload')
         sheet = self._connect_to_google_sheets()
         problems = self._load_problems(sheet)
         students = self._load_students(sheet)
         teachers = self._load_teachers(sheet)
-        return problems, students, teachers
+        ui_messages = self._load_ui_messages(sheet)
+        bot_settings = self._load_bot_settings(sheet)
+        return problems, students, teachers, ui_messages, bot_settings
 
     def get_problems(self):
         logger.info('Problems reload')
@@ -94,6 +116,18 @@ class SpreadsheetLoader:
         teachers = self._load_teachers(sheet)
         return teachers
 
+    def get_ui_messages(self):
+        logger.info('Problems reload')
+        sheet = self._connect_to_google_sheets()
+        ui_messages = self._load_ui_messages(sheet)
+        return ui_messages
+
+    def get_bot_settings(self):
+        logger.info('Problems reload')
+        sheet = self._connect_to_google_sheets()
+        bot_settings = self._load_bot_settings(sheet)
+        return bot_settings
+
     def close(self):
         if self.client and self.client.session:
             try:
@@ -109,5 +143,5 @@ if __name__ == '__main__':
     from config import config
 
     google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)
-    problems, students, teachers = google_spreadsheet_loader.get_all()
+    problems, students, teachers, ui_messages, bot_settings = google_spreadsheet_loader.get_all_from_spreadsheet()
     print(len(problems), len(students), len(teachers))
