@@ -604,3 +604,19 @@ async def set_game_command(message: types.Message):
         chat_id=message.chat.id,
         text=f"Студент с токеном {token} переведён в команду {command_id}",
     )
+
+@dispatcher.message_handler(commands=['set_admin'])
+async def set_admin(message: types.Message):
+    logger.debug('set_admin')
+    user = User.get_by_chat_id(message.chat.id)
+    if not user:
+        return
+    parts = message.text.split()
+    if len(parts) == 2:
+        cmd, secret = parts
+        if config.set_admin_secret and secret.strip() == config.set_admin_secret:
+            user.set_user_type(USER_TYPE.TEACHER)
+            await bot.send_message(
+                chat_id=message.chat.id,
+                text="Admin rights gained!",
+            )

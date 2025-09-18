@@ -46,6 +46,7 @@ class Config:
     reg_mode: str = "reg_needed"
     rate_limit: str = "rate_limit_3_and_6"
     apps: str = "tg_bot, game_web_app, results_app, zoom_events_parser"
+    set_admin_secret: str = ""
 
     def update_from_dict(self, update_dict: dict):
         for key, value in update_dict.items():

@@ -45,7 +45,8 @@ async def start(message: types.Message):
     elif REG_MODE == FEATURES.REG_ANYBODY:
         if not user:
             user = User(
-                message.chat.id, USER_TYPE.STUDENT, LEVEL.NOVICE,
+                message.chat.id, USER_TYPE.STUDENT,
+                LEVEL.MATH_CLUB,  # TODO remove this group trash
                 name=message.chat.first_name or '',
                 surname=message.chat.last_name or '',
                 middlename='',

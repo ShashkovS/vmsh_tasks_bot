@@ -86,12 +86,20 @@ class USER_TYPE(IntFlag):
     UNKNOWN = -4
 
 
-LEVEL_DESCRIPTION = {'т': 'Тестирование', 'н': 'Начинающие', 'п': 'Продолжающие', 'э': 'Эксперты', '@': 'Без уровня'}
+LEVEL_DESCRIPTION = {
+    'т': 'Тестирование',
+    'н': 'Начинающие',
+    'п': 'Продолжающие',
+    'э': 'Эксперты',
+    '@': 'Без уровня',
+    'm': 'MathClub',
+}
 LEVEL_URL = {
     'н': 'https://shashkovs.ru/vmsh/2025/n/',
     'п': 'https://shashkovs.ru/vmsh/2025/p/',
     'э': 'https://shashkovs.ru/vmsh/2025/x/',
     '@': 'https://shashkovs.ru/vmsh/2025/n/',
+    'm': '',
 }
 
 
@@ -103,6 +111,7 @@ class LEVEL(str, Enum):
     EXPERT = 'э'
     GR8 = 'В'
     NO_LEVEL = '@'
+    MATH_CLUB = 'm'
 
     def __init__(self, value):
         self.slevel = LEVEL_DESCRIPTION.get(self.value, None)
