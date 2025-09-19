@@ -35,9 +35,9 @@ def get_results(cur, lesson, level, show_answers=False):
         group by 1, 2
     ''', locals())
     if show_answers:
-        results = {(r['user'], r['full_prob']): VERDICT_VAL_DECODER.get(r['max_verdict'], str(r['max_verdict'])) for r in cur.fetchall()}
+        results = {(r['user'], r['full_prob']): r['max_verdict'] for r in cur.fetchall()}
     else:
-        results = {(r['user'], r['full_prob']): str(max(r['max_verdict'], 0)) for r in cur.fetchall()}
+        results = {(r['user'], r['full_prob']): VERDICT_VAL_DECODER.get(r['max_verdict'], str(r['max_verdict'])) for r in cur.fetchall()}
     return results
 
 
