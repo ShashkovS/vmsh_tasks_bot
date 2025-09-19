@@ -63,7 +63,8 @@ class NATS:
         if self.nats_is_working:
             await self.nc.publish(topic, orjson.dumps(obj))
         else:
-            await self.subsciptions[topic](obj)
+            if topic in self.subsciptions:
+                await self.subsciptions[topic](obj)
 
     async def disconnect(self):
         if self.nats_is_working:
