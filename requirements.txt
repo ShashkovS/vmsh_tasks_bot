@@ -60,3 +60,5 @@ wheel==0.45.1
 yarl==1.20.1
 yoyo-migrations==9.0.0
 zipp==3.23.0
+mathsolvers @ git+https://github.com/ShashkovS/mathsolvers.git
+# pip install --upgrade git+https://github.com/ShashkovS/mathsolvers.git

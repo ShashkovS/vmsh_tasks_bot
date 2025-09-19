@@ -2,7 +2,9 @@ from fractions import Fraction
 import re
 from collections import Counter
 from helpers.consts import ANS_TYPE
+from helpers.config import logger
 from helpers.calc_ans_func_values import calc_first_10_values
+from mathsolvers import MathWorker, CompareVerdict
 
 __ALL__ = ['ANS_CHECKER']
 
@@ -10,7 +12,9 @@ no_space = re.compile(r'\s+')
 frac = re.compile(r'(?:[-+]?(?=\d|\.\d)\d*(?:/\d+|(?:\.\d*)?(?:[eE][-+]?\d+)?|))')
 re_frac = re.compile(r'([-+]?) ?(?:(\d+)\s+(\d+\s*\/\s*\d+)|(\d+\s*\/\s*\d+|\d*[.]\d+|\d+))')
 re_frac_comma = re.compile(r'([-+]?) ?(?:(\d+)\s+(\d+\s*\/\s*\d+)|(\d+\s*\/\s*\d+|\d*[.,]\d+|\d+))')
-weekday = re.compile(r'.*(?:(п.?н)|(вт)|(ср)|(ч.?т)|(п.?т)|(с.?б)|(в.?с)).*', flags=re.IGNORECASE)
+weekday = re.compile(r'.*(?:(п.?н|mon?)|(вт|tue?)|(ср|wed?)|(ч.?т|thu?)|(п.?т|fri?)|(с.?б|sat?)|(в.?с|sun?)).*', flags=re.IGNORECASE)
+
+worker = MathWorker()
 
 
 class Ne:
@@ -163,6 +167,15 @@ def frac_multiset_eq(x, y):
     return to_frac_multiset(x) == to_frac_multiset(y)
 
 
+def symb_eq(x, y):
+    try:
+        res: CompareVerdict = worker.strict_compare_v2(x, y, timeout=1.0)
+        return res == CompareVerdict.EQUAL
+    except Exception as e:
+        logger.exception(e)
+        return False
+
+
 def time_eq(x, y):
     return to_time(x) == to_time(y)
 
@@ -204,6 +217,7 @@ ANS_CHECKER = {
     ANS_TYPE.FRAC_SEQ: frac_seq_eq,  # последовательность дробей (например, 2/5,3.75, -1)'),
     ANS_TYPE.MULTISET: frac_multiset_eq,  # мультимножество (например, 1, 1, 2, 5, 7, 2/5, 2/5, -1.2, -1.2)'),
     ANS_TYPE.STRING: str_eq,  # строка
+    ANS_TYPE.SYMB_EXPRESSION: symb_eq,  # строка
 }
 
 
@@ -223,7 +237,7 @@ ANS_REGEX = {
     ANS_TYPE.INT_2: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+){1}[^\d+-]*$'),  # два целых числа (например: 1, 7)',
     ANS_TYPE.INT_3: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+){2}[^\d+-]*$'),  # три целых числа (например: 1, 7, 9)',
     ANS_TYPE.INT_4: re.compile(r'^[^\d+-]*[-+]?\d+(?:[^\d+-]+[-+]?\d+){3}[^\d+-]*$'),  # четыре целых числа (например: 0, 1, 7, 9)',
-    ANS_TYPE.POLYNOMIAL: re.compile(r'^[ \d+\-*/()nkijm^]+$'),  # выражение от n (например: 2n**2 + n(n+1)/2)',
+    ANS_TYPE.POLYNOMIAL: re.compile(r'^[ \d+\-*/()nkijmxyzt^]+$'),  # выражение от n (например: 2n**2 + n(n+1)/2)',
     ANS_TYPE.TIME: re.compile(r'\d{1,2}(?:\D{1,2}\d{1,2}){1,2}'),  # время (например, 12:08, 3:15:24)'),
     ANS_TYPE.DATE: re.compile(r'\d{1,4}(?:\D{1,2}\d{1,4}){1,2}'),  # дату (например, 31.12, 2025-02-16, 11.02.1986)'),
     ANS_TYPE.WEEKDAY: re.compile(r'(?:п.?н|вт|ср|ч.?т|п.?т|с.?б|в.?с).*$', flags=re.IGNORECASE),
@@ -233,6 +247,7 @@ ANS_REGEX = {
     # последовательность дробей (например, 2/5,3.75, -1)'),
     ANS_TYPE.MULTISET: re.compile(
         r'^(?:[^0-9eE.+/-]*(?:[-+]?(?=\d|\.\d)\d*(?:/\d+|(?:\.\d*)?(?:[eE][-+]?\d+)?|))[^0-9eE.+/-]*)+$'),
+    ANS_TYPE.SYMB_EXPRESSION: re.compile('^.*$'),
     # мультимножество (например, 1, 1, 2, 5, 7, 2/5, 2/5, -1.2, -1.2)'),
     ANS_TYPE.SELECT_ONE: None,  # выберите один из следующих вариантов:',
     ANS_TYPE.STRING: None,  # строка

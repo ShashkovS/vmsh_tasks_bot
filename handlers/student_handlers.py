@@ -323,7 +323,7 @@ def check_test_problem_answer(
                 _, corr_func_values = checker(correct_answer)
                 answer_is_correct = True
                 for x, (stv, crv) in enumerate(zip(func_values, corr_func_values)):
-                    if abs(stv - crv) > 1e-8:
+                    if abs(float(stv) - float(crv)) > 1e-8:
                         answer_is_correct = False
                         additional_message = msgs.poly_check_error_hint.format_map({'x': x, 'stv': stv, 'crv': crv})
                         break
@@ -413,6 +413,21 @@ async def prc_student_is_in_conference_state(message: types.message, student: Us
     logger.debug('prc_student_is_in_conference_state')
     # Ничего не делаем, ждём callback'а
     pass
+
+
+@dispatcher.message_handler(commands=['ss', 'set_student'])
+async def set_student(message: types.Message):
+    logger.debug('set_student')
+    student = User.get_by_chat_id(message.chat.id)
+    if student:
+        student.set_level(LEVEL.MATH_CLUB)
+        message = await bot.send_message(
+            chat_id=message.chat.id,
+            text=msgs.you_are_in_novice_now,
+        )
+        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
+            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
 @dispatcher.message_handler(commands=['level_novice'])
