@@ -8,15 +8,12 @@ from helpers.config import logger, config
 from models import User
 import db_methods as db
 
+
 routes = web.RouteTableDef()
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
 
-ZOOM_WEBHOOK_SECRET_TOKEN = 'bX0XxlS-QsygnbKXeXBtrw'
-ZOOM_WEBHOOK_VERIFICATION_TOKEN = 'ezOcb3l6RrCFZ5t-cb9LqA'
-ZOOM_WEBHOOK_VERIFICATION_TOKEN = 'kP-kZvL-QF2-caB08Vib0Q'
 
-
-ZOOM_ID = "87196763644"
+ZOOM_IDS = {"87196763644", "81545323205"}
 TIMEZONE = timedelta(hours=3)
 
 
@@ -30,7 +27,7 @@ def parse_json(data: dict):
     event_ts = datetime.utcfromtimestamp(data['event_ts'] / 1000) + TIMEZONE
     payload = data['payload']
     object = payload['object']
-    is_circle = object['id'] == ZOOM_ID
+    is_circle = object['id'] in ZOOM_IDS
     participant = object.get('participant', {})
     breakout_room_uuid = object.get('breakout_room_uuid', None)
     return event, event_ts, is_circle, participant, breakout_room_uuid
@@ -69,7 +66,7 @@ def zoom_event_validation(data):
     #   event_ts:=1654503849680 \
     #   event="endpoint.url_validation"
     plainToken = data['payload']['plainToken']
-    hash_for_validate = hmac.new(ZOOM_WEBHOOK_SECRET_TOKEN.encode('utf-8'),
+    hash_for_validate = hmac.new(config.zoom_secret_token.encode('utf-8'),
                                  plainToken.encode('utf-8'),
                                  digestmod='sha256').hexdigest()
     return web.json_response(data={
