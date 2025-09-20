@@ -423,7 +423,7 @@ async def set_student(message: types.Message):
         student.set_level(LEVEL.MATH_CLUB)
         message = await bot.send_message(
             chat_id=message.chat.id,
-            text=msgs.you_are_in_novice_now,
+            text=msgs.you_are_club_student_now,
         )
         if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)

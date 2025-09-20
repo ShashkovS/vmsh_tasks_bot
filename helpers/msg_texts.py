@@ -71,6 +71,7 @@ class Msgs:
         "Успехов в занятиях! "
         "Вопросы можно задавать в группе @vmsh_179_5_7_2025_chat."
     )
+    you_are_club_student_now = "you_are_club_student_now"
     you_are_in_testing_now = "Вы переведены в тестируемых"
     you_are_in_pro_now = (
         "Вы переведены в группу продолжающих. "
