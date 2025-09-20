@@ -91,6 +91,7 @@ async def post_zoomevents(request: web.Request):
     except Exception as e:
         logger.error(e)
         return web.Response(status=400)
+    logger.info(f'zoom {data=}')  # TODO: убрать
     if not is_circle or not participant:
         return web.Response(status=200)
     process_event(event, event_ts, participant)
