@@ -18,16 +18,13 @@ def get_lessons_and_levels(cur):
     return cur.fetchall()
 
 
-def get_results(cur, lesson, level, show_answers=False):
-    if show_answers:
-        verd = "GROUP_CONCAT(r.answer, '  |  ')"
-    else:
-        verd = 'max(v.val)'
+def get_results(cur, lesson, level):
     cur.execute(f'''
         select
         u.token || '	' || u.surname || '	' || u.name || '	' || u.level as user,
         p.lesson || p.level || '.' || p.prob  || p.item as full_prob,
-        {verd} as max_verdict
+        max(v.val) as max_verdict,
+        GROUP_CONCAT(r.answer, '  |  ') as all_answers
         from users u 
         join results r on r.student_id = u.id
         join verdicts v on r.verdict = v.id
@@ -36,11 +33,7 @@ def get_results(cur, lesson, level, show_answers=False):
               and u.surname not like 'surname%' and u.name not like 'surname%' 
         group by 1, 2
     ''', locals())
-    if show_answers:
-        results = {(r['user'], r['full_prob']): r['max_verdict'] for r in cur.fetchall()}
-    else:
-        results = {(r['user'], r['full_prob']): VERDICT_VAL_DECODER.get(r['max_verdict'], str(r['max_verdict'])) for r
-                   in cur.fetchall()}
+    results = {(r['user'], r['full_prob']): (r['max_verdict'], r['all_answers']) for r in cur.fetchall()}
     return results
 
 
@@ -74,29 +67,60 @@ def get_problems(cur, lesson, level):
     return problems
 
 
-def create_conduit_table(problems, pupils, results):
+def create_conduit_table_verdicts(problems, pupils, results):
     t_rows = 1 + len(pupils)
     t_cols = 3 + len(problems)
     table = [[''] * t_cols for __ in range(t_rows)]
-    # Заполняем заголовочную строчку
     table[0][:3] = ['Фамилия', 'Имя', 'уровень']
-    # Заполняем заголовочные столбцы
     for r, pupil in enumerate(pupils, start=1):
         table[r][0:3] = pupil.split('\t')[1:]
-    # Заполняем заголовочную строку
     for col, problem in enumerate(problems, start=3):
         table[0][col] = problem['full_prob']
-    # Теперь заполняем всю таблицу целиком
     for r, pupil in enumerate(pupils, start=1):
         for col, problem in enumerate(problems, start=3):
-            val = results.get((pupil, problem["full_prob"]), '')
-            if val is None:  # Replace None with 'img'
-                val = 'img'
-            table[r][col] = val
+            val = results.get((pupil, problem["full_prob"]))
+            if val is not None:
+                verdict_val = val[0]
+                table[r][col] = VERDICT_VAL_DECODER.get(verdict_val, str(verdict_val))
     return table
 
 
-def table_to_html(tables, show_answers_flags):
+def create_conduit_table_answers(problems, pupils, results):
+    t_rows = 1 + len(pupils)
+    t_cols = 3 + len(problems)
+    table_data = [[''] * t_cols for __ in range(t_rows)]
+    table_classes = [[''] * t_cols for __ in range(t_rows)]
+
+    table_data[0][:3] = ['Фамилия', 'Имя', 'уровень']
+    for r, pupil in enumerate(pupils, start=1):
+        table_data[r][0:3] = pupil.split('\t')[1:]
+    for col, problem in enumerate(problems, start=3):
+        table_data[0][col] = problem['full_prob']
+
+    for r, pupil in enumerate(pupils, start=1):
+        for col, problem in enumerate(problems, start=3):
+            val = results.get((pupil, problem["full_prob"]))
+            if val is None:
+                table_data[r][col] = ''
+                table_classes[r][col] = ''
+            else:
+                verdict_val, all_answers = val
+                if all_answers is None:
+                    table_data[r][col] = 'img'  # Assuming None means an image was sent
+                else:
+                    table_data[r][col] = all_answers
+
+                # Apply highlight classes based on verdict
+                if verdict_val == 1.0:
+                    table_classes[r][col] = "plus"
+                elif verdict_val == 0.0:
+                    table_classes[r][col] = "minus"
+                elif verdict_val > 0.0:  # Any partial credit
+                    table_classes[r][col] = "partial-credit"
+    return table_data, table_classes
+
+
+def table_to_html(tables_and_classes):
     styles = '''
 <style>
 .res {
@@ -137,6 +161,15 @@ def table_to_html(tables, show_answers_flags):
     white-space: normal;
     word-break: break-all; /* Allow breaking anywhere */
 }
+.answer-table .plus {
+    background-color: #D4EDDA; /* Light green for '+' */
+}
+.answer-table .minus {
+    background-color: #F8D7DA; /* Light red for '-' */
+}
+.answer-table .partial-credit {
+    background-color: #FFF3CD; /* Light yellow for partial credit */
+}
 /* Align name and surname to the left */
 .res td:nth-child(1), .res td:nth-child(2) {
   text-align: left;
@@ -144,20 +177,24 @@ def table_to_html(tables, show_answers_flags):
 </style>
 '''
     html_output = ['<!DOCTYPE html>', '<meta charset="utf-8">', '<head>', styles, '</head>', '<body>']
-    for i, table in enumerate(tables):
-        is_answer_table = show_answers_flags[i]
+
+    for i, (table_data, table_classes, is_answer_table) in enumerate(tables_and_classes):
         table_class = "res " + ("answer-table" if is_answer_table else "verdict-table")
 
         html_output.append(f'<table class="{table_class}">')
-        html_output.append('<thead><tr><th>' + '</th><th>'.join(map(html.escape, table[0])) + '</th></tr></thead>')
+        html_output.append('<thead><tr><th>' + '</th><th>'.join(map(html.escape, table_data[0])) + '</th></tr></thead>')
         html_output.append('<tbody>')
-        for r in range(1, len(table)):
-            row = table[r]
+        for r in range(1, len(table_data)):
+            row_data = table_data[r]
+            row_class = table_classes[r] if is_answer_table else [''] * len(
+                row_data)  # Use row_class for answer table, or empty for verdict table
             row_html_cells = []
-            for col_idx, cell_value in enumerate(row):
+            for col_idx, cell_value in enumerate(row_data):
                 escaped_value = html.escape(str(cell_value))  # HTML escape all values
 
-                cell_class = ""
+                cell_class = row_class[
+                    col_idx] if is_answer_table and col_idx >= 3 else ""  # Start with the answer highlight class if it's an answer table
+
                 if not is_answer_table and col_idx >= 3:  # Apply conditional styling only for verdict tables and problem columns
                     if cell_value == '+':
                         cell_class = "plus"
@@ -182,24 +219,22 @@ def table_to_html(tables, show_answers_flags):
 def get_html():
     cur = db.sql.conn.cursor()
     lessons_and_levels = get_lessons_and_levels(cur)
-    tables = []
-    show_answers_flags = []
+    tables_and_classes = []
+
     for row in lessons_and_levels:
         lesson, level = row['lesson'], row['level']
         pupils = get_pupils(cur, level)
         problems = get_problems(cur, lesson, level)
 
+        results = get_results(cur, lesson, level)
+
         # Table for verdicts (plusses and minuses)
-        results_verdicts = get_results(cur, lesson, level, show_answers=False)
-        table_verdicts = create_conduit_table(problems, pupils, results_verdicts)
-        tables.append(table_verdicts)
-        show_answers_flags.append(False)  # Flag for verdict table
+        table_verdicts = create_conduit_table_verdicts(problems, pupils, results)
+        tables_and_classes.append((table_verdicts, None, False))  # No specific classes for verdict table cells
 
-        # Table for answers
-        results_answers = get_results(cur, lesson, level, show_answers=True)
-        table_answers = create_conduit_table(problems, pupils, results_answers)
-        tables.append(table_answers)
-        show_answers_flags.append(True)  # Flag for answer table
+        # Table for answers, with highlighting
+        table_answers_data, table_answers_classes = create_conduit_table_answers(problems, pupils, results)
+        tables_and_classes.append((table_answers_data, table_answers_classes, True))
 
-    html_output = table_to_html(tables, show_answers_flags)
+    html_output = table_to_html(tables_and_classes)
     return html_output
