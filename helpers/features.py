@@ -12,6 +12,15 @@ _VERDICT_PLUS_STEPS = (
     VERDICT.VERDICT_MINUS_DOT, VERDICT.VERDICT_MINUS
 )
 
+VERDICT_MODE: str = ''
+RESULT_MODE: str = ''
+SAVE_SOL_MODE: str = ''
+PREV_PROBLEMS_MODE: str = ''
+GAME_MODE: str = ''
+REG_MODE: str = ''
+RATE_LIMIT_MODE: str = ''
+SYNONYMS_MODE: str = ''
+
 
 @unique
 class FEATURES(Enum):
@@ -45,9 +54,14 @@ class FEATURES(Enum):
     RATE_LIMIT_NONE = 'rate_limit_none'
     RATE_LIMIT_3_AND_6 = 'rate_limit_3_and_6'
 
+    ### SYNONYMS ###
+    SYNONYMS_JOIN = 'synonyms_join'
+    SYNONYMS_IGNORE = 'synonyms_ignore'
+
+
 
 def set_features(config):
-    global VERDICT_MODE, RESULT_MODE, SAVE_SOL_MODE, PREV_PROBLEMS_MODE, GAME_MODE, REG_MODE, RATE_LIMIT_MODE
+    global VERDICT_MODE, RESULT_MODE, SAVE_SOL_MODE, PREV_PROBLEMS_MODE, GAME_MODE, REG_MODE, RATE_LIMIT_MODE, SYNONYMS_MODE
     if config.verdict_mode == 'verdict_plus_minus':
         VERDICT_MODE = FEATURES.VERDICT_PLUS_MINUS
     elif config.verdict_mode == 'verdict_plus_minus_half':
@@ -75,6 +89,9 @@ def set_features(config):
 
     RATE_LIMIT_MODE = FEATURES(config.rate_limit)
     assert RATE_LIMIT_MODE.value.startswith('rate')
+
+    SYNONYMS_MODE = FEATURES(config.synonyms_mode)
+    assert SYNONYMS_MODE.value.startswith('synonyms')
 
     logger.info(
         f'{RESULT_MODE=}\n{SAVE_SOL_MODE=}\n{PREV_PROBLEMS_MODE=}\n{GAME_MODE=}\n{REG_MODE=}\n{RATE_LIMIT_MODE=}'

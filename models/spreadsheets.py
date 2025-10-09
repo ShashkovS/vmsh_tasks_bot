@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import re
+from pyexpat import features
 from typing import List
 
 from helpers.consts import *
 from helpers.config import logger
+from helpers.features import SYNONYMS_MODE, FEATURES
 from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 import db_methods as db
 from .state import State
@@ -122,7 +124,7 @@ class FromGoogleSpreadsheet:
             Problem(**problem)
         # TODO Попахивает риском продолбать важное :(
         db.lesson.update()
-        db.problem.update_synonyms()
+        db.problem.update_synonyms(join=SYNONYMS_MODE == FEATURES.SYNONYMS_JOIN)
         return errors
 
 

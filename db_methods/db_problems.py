@@ -74,27 +74,34 @@ class DB_PROBLEM(DB_ABC):
                 WHERE level = :level and lesson = :lesson and prob_type = :from_prob_type
             """, locals())
 
-    def update_synonyms(self):
+    def update_synonyms(self, join=True):
         """Синонимичными считаются задачи с одинаковым названием и одинаковым номером урока.
         В поле synonyms хранится список id-шников всех синонимичных задач в порядке возрастания.
         Благодаря этому у всех синонимичных задач совпадает поле synonyms.
         К сожалению, поля всех задач нужно обновлять при любом обновлении задач.
         Пока это не является проблемой из-за малого числа задач (тысячи, но не сотни тысяч)"""
         with self.db.conn as conn:
-            conn.execute("""
-                update problems
-                set synonyms = (
-                    select group_concat(id, ';') 
-                    from problems p2 
-                    where p2.lesson=problems.lesson and 
-                    ( 
-                      p2.title = problems.title
-                        or -- Отдельный кейс для названий с ценой
-                      p2.title like '%⚡%' and ltrim(p2.title,'0123456789⚡ ') = ltrim(problems.title,'0123456789⚡ ')
+            if join:
+                conn.execute("""
+                    update problems
+                    set synonyms = (
+                        select group_concat(id, ';') 
+                        from problems p2 
+                        where p2.lesson=problems.lesson and 
+                        ( 
+                          p2.title = problems.title
+                            or -- Отдельный кейс для названий с ценой
+                          p2.title like '%⚡%' and ltrim(p2.title,'0123456789⚡ ') = ltrim(problems.title,'0123456789⚡ ')
+                        )
                     )
-                )
-                where 1=1;
-            """)
+                    where 1=1;
+                """)
+            else:
+                conn.execute("""
+                    update problems
+                    set synonyms = cast(id as text)
+                    where 1=1;
+                """)
 
 
 problem = DB_PROBLEM(sql)
