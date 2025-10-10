@@ -105,7 +105,7 @@ LEVEL_URL = {
 
 @unique
 class LEVEL(str, Enum):
-    TESING = 'т'
+    TESTING = 'т'
     NOVICE = 'н'
     PRO = 'п'
     EXPERT = 'э'

@@ -450,7 +450,7 @@ async def level_testing(message: types.Message):
     logger.debug('level_testing')
     student = User.get_by_chat_id(message.chat.id)
     if student:
-        student.set_level(LEVEL.TESING)
+        student.set_level(LEVEL.TESTING)
         message = await bot.send_message(
             chat_id=message.chat.id,
             text=msgs.you_are_in_testing_now
