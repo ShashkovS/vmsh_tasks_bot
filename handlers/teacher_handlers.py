@@ -260,25 +260,31 @@ async def set_student_level(message: types.Message):
             chat_id=message.chat.id,
             text=f"Студент с токеном {token} не найден",
         )
+        return
+    try:
+        new_level_en = LEVEL(new_level)
+    except ValueError:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"Уровень {new_level} не существует.",
+        )
+        return
+    student.set_level(new_level_en)
     if new_level == LEVEL.NOVICE:
-        student.set_level(LEVEL.NOVICE)
         stud_msg = msgs.you_are_in_novice_now
     elif new_level == LEVEL.PRO:
-        student.set_level(LEVEL.PRO)
         stud_msg = msgs.you_are_in_pro_now
     elif new_level == LEVEL.EXPERT:
-        student.set_level(LEVEL.EXPERT)
         stud_msg = msgs.you_are_expert_now
     elif new_level == LEVEL.GR8:
-        student.set_level(LEVEL.GR8)
         stud_msg = msgs.you_are_grade8_now
     else:
-        return
+        stud_msg = None
     await bot.send_message(
         chat_id=message.chat.id,
-        text=f"Студент с токеном {token} переведён",
+        text=f"Студент с токеном {token} переведён в {new_level_en}",
     )
-    if student.chat_id:
+    if student.chat_id and stud_msg:
         try:
             await bot.send_message(chat_id=student.chat_id, text=stud_msg)
         except:
