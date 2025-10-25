@@ -1,7 +1,7 @@
 import re
 from typing import List, Tuple, Union
 
-VALID_ONE_PARM_FUNC = re.compile(r'[ \d+\-*/()a-z^]+')
+VALID_ONE_PARM_FUNC = re.compile(r'[ .\d+\-*/()a-z^]+')
 VALID_VARS = re.compile(r'[a-z]')
 INSERT_LOST_MUL = re.compile(r'(?<=[)n\d])(?=[(n])|(?<=[)n])(?=[(\dn])')
 BAD_EXPONENT = re.compile(r'\*\*\s*(?:\D|\d\d)')
@@ -10,7 +10,7 @@ RUN_ON = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 def run_expr_on(expr: str, vals: list):
     code = compile(expr, "<string>", "eval")
-    result = [eval(code, {"__builtins__": {}}, {'n': v}) for v in vals]
+    result = [round(eval(code, {"__builtins__": {}}, {'n': v}), 9) for v in vals]
     return result
 
 

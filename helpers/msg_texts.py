@@ -59,7 +59,7 @@ class Msgs:
     question_accepted = "Вопрос записан"
     hour_rate_limit_error = '💤⌛ В течение одного часа бот не принимает больше 3 ответов. Отправьте ваш ответ в начале следующего часа.'
     dayly_rate_limit_error = '💤⌛ В течение одного дня бот не принимает больше 6 ответов. Отправьте ваш ответ завтра.'
-    poly_check_error_hint = 'При n={x} получилось {stv}, а должно было получиться {crv}'
+    poly_check_error_hint = 'В точке {x} получилось {stv}, а должно было получиться {crv}'
     error_select_one_of = "❌ Выберите один из вариантов: {variants}"
     results_after_answer_accepted = 'Ответ принят на проверку.'
     student_is_sleeping_state_msg = (

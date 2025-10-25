@@ -322,7 +322,7 @@ def check_test_problem_answer(
             else:
                 _, corr_func_values = checker(correct_answer)
                 answer_is_correct = True
-                for x, (stv, crv) in enumerate(zip(func_values, corr_func_values)):
+                for x, (stv, crv) in enumerate(zip(func_values, corr_func_values), start=1):
                     if abs(float(stv) - float(crv)) > 1e-8:
                         answer_is_correct = False
                         additional_message = msgs.poly_check_error_hint.format_map({'x': x, 'stv': stv, 'crv': crv})
