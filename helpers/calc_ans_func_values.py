@@ -2,7 +2,7 @@ import re
 from typing import List, Tuple, Union
 
 VALID_ONE_PARM_FUNC = re.compile(r'[ \d+\-*/()a-z^]+')
-VALID_VARS = re.compile(r'[nkijm]')
+VALID_VARS = re.compile(r'[a-z]')
 INSERT_LOST_MUL = re.compile(r'(?<=[)n\d])(?=[(n])|(?<=[)n])(?=[(\dn])')
 BAD_EXPONENT = re.compile(r'\*\*\s*(?:\D|\d\d)')
 RUN_ON = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
