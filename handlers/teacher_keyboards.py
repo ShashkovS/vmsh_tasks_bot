@@ -4,6 +4,7 @@ from typing import List, Tuple
 
 from helpers.consts import *
 from helpers.config import logger
+from helpers.msg_texts import msgs
 import db_methods as db
 from helpers.features import VERDICT_MODE, FEATURES
 from models import User, Problem
@@ -13,12 +14,12 @@ def build_teacher_actions(sos_count, prb_count):
     logger.debug('keyboards.build_teacher_actions')
     keyboard = types.InlineKeyboardMarkup()
     get_written_task_button = types.InlineKeyboardButton(
-        text=f"Ответить на вопрос (всего {sos_count})",
+        text=msgs.t_btn_answer_question.format_map({'sos_count': sos_count}),
         callback_data=CALLBACK.GET_SOS_TASK
     )
     keyboard.add(get_written_task_button)
     get_written_task_button = types.InlineKeyboardButton(
-        text=f"Проверять письменные (всего {prb_count})",
+        text=msgs.t_btn_check_written.format_map({'prb_count': prb_count}),
         callback_data=CALLBACK.SELECT_WRITTEN_TASK_TO_CHECK
     )
     keyboard.add(get_written_task_button)
@@ -28,7 +29,7 @@ def build_teacher_actions(sos_count, prb_count):
     # )
     # keyboard.add(get_queue_top_button)
     insert_oral_pluses = types.InlineKeyboardButton(
-        text="Внести плюсы за устную сдачу",
+        text=msgs.t_btn_insert_oral_pluses,
         callback_data=CALLBACK.INS_ORAL_PLUSSES
     )
     keyboard.add(insert_oral_pluses)
@@ -39,7 +40,7 @@ def build_cancel_keyboard():
     logger.debug('build_cancel_keyboard')
     keyboard = types.InlineKeyboardMarkup()
     cancel = types.InlineKeyboardButton(
-        text="Отмена",
+        text=msgs.t_btn_cancel,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
     keyboard.add(cancel)
@@ -66,7 +67,7 @@ def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int, 
         )
         keyboard.add(task_button)
     cancel = types.InlineKeyboardButton(
-        text="Отмена",
+        text=msgs.t_btn_cancel,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
     keyboard.add(cancel)
@@ -85,7 +86,7 @@ def build_teacher_select_written_problem(top: list):
         )
         keyboard_markup.add(task_button)
     cancel = types.InlineKeyboardButton(
-        text="Отмена",
+        text=msgs.t_btn_cancel,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
     keyboard_markup.add(cancel)
@@ -98,7 +99,7 @@ def build_select_student(name_to_find: str):
     name_to_find_lower = name_to_find.lower()
     students = sorted(
         User.all_students(),
-        key=lambda user: -jaro_winkler(name_to_find_lower, f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1/32)
+        key=lambda user: -jaro_winkler(name_to_find_lower, f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1 / 32)
     )
     for student in students[:8]:
         student_button = types.InlineKeyboardButton(
@@ -107,7 +108,7 @@ def build_select_student(name_to_find: str):
         )
         keyboard_markup.add(student_button)
     cancel = types.InlineKeyboardButton(
-        text="Отмена",
+        text=msgs.t_btn_cancel,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
     keyboard_markup.add(cancel)
@@ -120,21 +121,28 @@ def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids
     # TODO сделать нормально
     if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
         keyboard_markup.add(types.InlineKeyboardButton(
-            text=f"👍 Засчитать задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
+            text=msgs.t_btn_accept_task.format_map({
+                'problem_str': f"{problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})"
+            }),
             callback_data=f"{CALLBACK.WRITTEN_TASK_OK}_{student.id}_{problem.id}_{VERDICT.SOLVED}"
         ))
         keyboard_markup.add(types.InlineKeyboardButton(
-            text=f"❌ Отклонить и переслать все сообщения выше студенту {student.surname} {student.name}",
+            text=msgs.t_btn_reject_task.format_map({
+                'student_name': f"{student.surname} {student.name}"
+            }),
             callback_data=f"{CALLBACK.WRITTEN_TASK_BAD}_{student.id}_{problem.id}_{VERDICT.WRONG_ANSWER}"
         ))
     else:
         for verdict in VERDICT_MODE.value:
             keyboard_markup.add(types.InlineKeyboardButton(
-                text=f"{VERDICT_TO_TICK[verdict]} за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
+                text=msgs.t_btn_tick_task.format_map({
+                    'verdict_tick': VERDICT_TO_TICK[verdict],
+                    'problem_str': f"{problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})",
+                }),
                 callback_data=f"{CALLBACK.WRITTEN_TASK_OK}_{student.id}_{problem.id}_{verdict}"
             ))
     keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"Отказаться от проверки и вернуться назад",
+        text=msgs.t_btn_refuse_checking,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"
         # TODO А-а-а! ТРЕШНЯК!!!
     ))
@@ -145,11 +153,11 @@ def build_answer_verdict(student: User, problem: Problem, wtd_ids_to_remove: Lis
     logger.debug('keyboards.build_answer_verdict')
     keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
     keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"Отправить ответ на вопрос",
+        text=msgs.t_btn_send_answer,
         callback_data=f"{CALLBACK.SEND_ANSWER}_{student.id}_{-problem.id}"
     ))
     keyboard_markup.add(types.InlineKeyboardButton(
-        text=f"Не отвечать на вопрос и вернуться назад",
+        text=msgs.t_btn_skip_answer,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"
         # TODO А-а-а! ТРЕШНЯК!!!
     ))
@@ -195,23 +203,24 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
         problem_buttons.append(task_button)
     if online == ONLINE_MODE.SCHOOL:
         for i in range(0, len(problem_buttons), 4):
-            keyboard_markup.row(*problem_buttons[i:i+4])
+            keyboard_markup.row(*problem_buttons[i:i + 4])
     else:
         for task_button in problem_buttons:
             keyboard_markup.add(task_button)
     row_btns = []
     for lvl in LEVEL:
         if student.level != lvl:
-            row_btns.append(types.InlineKeyboardButton(text=f"Уровень: {lvl} «{lvl.slevel}»",
-                                                       callback_data=f"{CALLBACK.CHANGE_LEVEL}_{student.id}_{lvl}"))
+            row_btns.append(types.InlineKeyboardButton(
+                text=msgs.t_btn_level_template.format_map({'lvl': lvl, 'slevel': lvl.slevel}),
+                callback_data=f"{CALLBACK.CHANGE_LEVEL}_{student.id}_{lvl}"))
     keyboard_markup.row(*row_btns)
     ready_button = types.InlineKeyboardButton(
-        text="Готово (завершить сдачу и внести в кондуит)",
+        text=msgs.t_btn_ready_oral,
         callback_data=f"{CALLBACK.FINISH_ORAL_ROUND}_{plus_ids_str}_{minus_ids_str}"
     )
     keyboard_markup.add(ready_button)
     cancel = types.InlineKeyboardButton(
-        text="Отмена (ничего не трогать и выйти)",
+        text=msgs.t_btn_cancel_oral,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
     keyboard_markup.add(cancel)

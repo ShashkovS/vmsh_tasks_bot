@@ -17,12 +17,8 @@ MAT_REGEX = re.compile(
     r"""(?iu)\b(?:(?:[уyu]|[нзnz3][аa]|(?:хитро|не)?[вvwb][зz3]?[ыьъi]|[сsc][ьъ']|(?:и|[рpr][аa4])[зсzs]ъ?|(?:[оo0][тбtb6]|[пp][оo0][дd9])[ьъ']?|(?:.\B)+?[оаеиeo])?-?(?:[еёe][бb6](?!о[рй])|и[пб][ае][тц]).*?|(?:[нn][иеаaie]|(?:[дпdp]|[вv][еe3][рpr][тt])[оo0]|[рpr][аa][зсzc3]|[з3z]?[аa]|с(?:ме)?|[оo0](?:[тt]|дно)?|апч)?-?[хxh][уuy](?:[яйиеёюuie]|ли(?!ган)).*?|(?:[вvw][зы3z]|(?:три|два|четыре)жды|(?:н|[сc][уuy][кk])[аa])?-?[бb6][лl](?:[яy](?!(?:х|ш[кн]|мб)[ауеыио]).*?|[еэe][дтdt][ь']?)|(?:[рp][аa][сзc3z]|[знzn][аa]|[соsc]|[вv][ыi]?|[пp](?:[еe][рpr][еe]|[рrp][оиioеe]|[оo0][дd])|и[зс]ъ?|[аоao][тt])?[пpn][иеёieu][зz3][дd9].*?|(?:[зz3][аa])?[пp][иеieu][дd][аоеaoe]?[рrp](?:ну.*?|[оаoa][мm]|(?:[аa][сcs])?(?:[иiu](?:[лl][иiu])?[нщктлtlsn]ь?)?|(?:[оo](?:ч[еиei])?|[аa][сcs])?[кk](?:[оo]й)?|[юu][гg])[ауеыauyei]?|[мm][аa][нnh][дd](?:[ауеыayueiи](?:[лl](?:[иi][сзc3щ])?[ауеыauyei])?|[оo][йi]|[аоao][вvwb][оo](?:ш|sh)[ь']?(?:[e]?[кk][ауеayue])?|юк(?:ов|[ауи])?)|[мm][уuy][дd6](?:[яyаиоaiuo0].*?|[еe]?[нhn](?:[ьюия'uiya]|ей))|мля(?:[тд]ь)?|лять|(?:[нз]а|по)х|м[ао]л[ао]фь(?:[яию]|[её]й))\b""")
 OK_URL_REGEX = re.compile(r't\.me\/vmsh')
 BOT_URL = re.compile(r'(?:(?<=t\.me/)|(?<=@))\w+bot\b', flags=re.IGNORECASE)
-SOME_TYPICAL_SPAM = re.compile(
-    r'бонанз|играю в этом казино|КТО ХОЧЕТ ЗАРАБОТАТЬ|онлайн казик|\bинтим\b'
-    r'|срочно.*требу.тся.*человек|лучшее казино|официальное казино|(?:доход|оплата).*от.*рублей.*(?:месяц|день)'
-    r'|пишите в лс|казино|в личные сообщения|доходность от|доход от.*день',
-    flags=re.IGNORECASE
-)
+SOME_TYPICAL_SPAM = re.compile(msgs.a_spam_regex, flags=re.IGNORECASE)
+
 
 def check_sos_channel(message: types.Message):
     return message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel
@@ -42,7 +38,7 @@ async def prc_sos_reply(message: types.Message):
         return
     question_record = db.question.get_message_by_sos(message.chat.id, message.reply_to_message.message_id)
     if not question_record:
-        await bot.send_message(chat_id=message.chat.id, text='Отвечайте на пересланные сообщения с вопросом')
+        await bot.send_message(chat_id=message.chat.id, text=msgs.a_reply_only_to_forwarded)
         return
     try:
         await bot.send_message(question_record['chat_id'], text=msgs.here_is_your_answer, reply_to_message_id=question_record['question_msg_id'])
@@ -51,11 +47,11 @@ async def prc_sos_reply(message: types.Message):
         if student:
             new_text = f'✅✅✅✅\n<code>{student.surname}</code> <code>{student.name}</code>\n<code>{student.level}</code> <code>{student.token}</code> {ONLINE_MODE(student.online).__str__()[12:]}'
             await bot.edit_message_text_ig(chat_id=question_record['sos_chat_id'], message_id=question_record['sos_header_msg_id'], text=new_text,
-                                        parse_mode="HTML")
-        await bot.send_message(chat_id=message.chat.id, text='Переслал.')
+                                           parse_mode="HTML")
+        await bot.send_message(chat_id=message.chat.id, text=msgs.a_forwarded_ok)
         db.question.mark_as_answered(message.chat.id, message.reply_to_message.message_id, message.text)
     except Exception as e:
-        await bot.send_message(chat_id=message.chat.id, text='Не получилось послать ответ. Попробуйте указать токен первым словом или ответить вручную.')
+        await bot.send_message(chat_id=message.chat.id, text=msgs.a_forward_failed)
         logger.exception(f'SHIT: {e}')
 
 
@@ -122,15 +118,15 @@ async def group_message_handler(message: types.Message):
             try:
                 await bot.delete_message(message.chat.id, message.message_id)
             except MessageCantBeDeleted:
-                await bot.send_message(config.exceptions_channel, 'Сообщение выше удалить не удалось :(')
+                await bot.send_message(config.exceptions_channel, msgs.a_moderate_could_not_delete)
             except Exception as e:
                 logger.exception(f'SHIT: {e}')
-                await bot.send_message(config.exceptions_channel, 'Сообщение выше удалить не удалось :(')
+                await bot.send_message(config.exceptions_channel, msgs.a_moderate_could_not_delete)
         if mat_detected or from_bad_bot_message:
             # Баним пользователя
             try:
                 await bot.ban_chat_member(message.chat.id, message.from_user.id, revoke_messages=True)
-                await bot.send_message(config.exceptions_channel, f'Пользователь {message.from_user!r} забанен')
+                await bot.send_message(config.exceptions_channel, msgs.a_moderate_banned.format_map({'message': message}))
             except Exception as e:
                 logger.exception(f'SHIT: {e}')
-                await bot.send_message(config.exceptions_channel, 'Юзера выше не удалось забанить :(')
+                await bot.send_message(config.exceptions_channel, msgs.a_moderate_could_not_ban)

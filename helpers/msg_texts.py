@@ -1,6 +1,9 @@
 # from helpers.msg_texts import msgs
 
 class Msgs:
+    # ------------------------------------------------------------------
+    # Common / shared messages (both roles)
+    # ------------------------------------------------------------------
 
     # handlers\common_handlers.py
     reaction_accepted = 'Принято'
@@ -130,28 +133,231 @@ class Msgs:
     topic_hint = "Листок {lesson_num}"
     cancel = "Отмена"
 
+    # ------------------------------------------------------------------
+    # Teacher / admin UI messages (prefix t_ / a_)
+    # These keys can be overridden via _BotUIMsgs sheet.
+    # ------------------------------------------------------------------
+
     # handlers\teacher_handlers.py
-    verdict_plus_no_comments = "проверили и поставили плюсик!"
-    verdict_plus_with_comments = "проверили и поставили плюсик!\nВот комментарии:\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
-    verdict_minus_no_comments = "проверили и не засчитали без комментариев :(\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
-    verdict_minus_with_comments = "проверили и сделали замечания:\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
-    verdict_tick_no_comments = "проверили и поставили {verdict_tick} без комментариев"
-    verdict_tick_with_comments = "проверили и поставили {verdict_tick}\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
-    problem_question_answer = (
+    t_verdict_plus_no_comments = "проверили и поставили плюсик!"
+    t_verdict_plus_with_comments = "проверили и поставили плюсик!\nВот комментарии:\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    t_verdict_minus_no_comments = "проверили и не засчитали без комментариев :(\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    t_verdict_minus_with_comments = "проверили и сделали замечания:\nПересылаю всю переписку.\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    t_verdict_tick_no_comments = "проверили и поставили {verdict_tick} без комментариев"
+    t_verdict_tick_with_comments = "проверили и поставили {verdict_tick}\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    t_problem_question_answer = (
         "Есть ответ на вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}).\n"
         "Пересылаю всю переписку.\n"
         "⬇⬇⬇⬇"
     )
-    oral_accepted_problems = "В результате устного приёма вам поставили плюсики за задачи: {pluses_list}"
-    your_level_changed_to = "Вам изменён уровень на «{level.slevel}»"
+
+    t_oral_accepted_problems = "В результате устного приёма вам поставили плюсики за задачи: {pluses_list}"
+    t_your_level_changed_to = "Вам изменён уровень на «{level.slevel}»"
+    t_all_written_checked = "Ничего себе! Все эти письменные задачи проверены!"
+    t_no_sos_questions = "Ничего себе! Вопросов нет"
+    t_choose_question = "Выберите вопрос"
+    t_choose_student_for_pluses = "Выберите школьника для внесения задач"
+    t_mark_oral_tasks_intro = (
+        "Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)"
+        "\n(у вас сейчас режим «{mode_label}», /online и /school для переключения)"
+    )
+    t_edtplus_format_hint = "🤖 Пришлите запрос на простановку плюсов в формате\n«/edtplus_lesson_token», например «/edtplus_12_aa9bb4»"
+    t_recheck_format_hint = "🤖 Пришлите запрос на перепроверку в формате\n«/recheck token problem», например «/recheck aa9bb4 3н.11а»"
+    t_student_with_token_not_found = "🤖 Студент с токеном {token} не найден"
+    t_problem_not_found_key = "🤖 Задача {lst}{level}.{prob}{item} не найдена"
+    t_problem_not_found_id = "🤖 Задача с id {prob_id} не найдена"
+    t_resend_for_checking = "Переотправили на проверку"
+    t_set_level_usage = "/set_level token н/п/э"
+    t_level_not_exists = "Уровень {new_level} не существует."
+    t_student_level_changed = "Студент с токеном {token} переведён в {new_level_en}"
+    t_select_problem_to_check_counts = "Выберите задачу для проверки ({prb_count}✏️, {sos_count}❓)"
+    t_teacher_set_online_usage = "/set_online token online/school"
+    t_student_online_changed = "Студент с токеном {token} переведён"
+    t_message_deleted = "Сообщение было удалено..."
+    t_task_already_being_checked = "Эту задачу уже кто-то взялся проверять."
+    t_answer_recorded = "Ответ записан"
+    t_queue_empty_retry = "Сейчас очередь пуста. Повторите через пару минут."
+    t_bot_broken_result_not_saved = "Что-то в боте сломалось и результат оценки не засчитан. :( Попробуйте ещё раз."
+    t_rate_oral_submission = "Оцените устную сдачу:"
+    t_find_student_hint = "🤖 Введите часть фамилии"
+    t_no_students_found = "Не нашлось ни одного студента"
+
+    # handlers\teacher_keyboards.py
+    t_btn_answer_question = "Ответить на вопрос (всего {sos_count})"
+    t_btn_check_written = "Проверять письменные (всего {prb_count})"
+    t_btn_insert_oral_pluses = "Внести плюсы за устную сдачу"
+    t_btn_cancel = "Отмена"
+    t_btn_accept_task = "👍 Засчитать задачу {problem_str}"
+    t_btn_reject_task = "❌ Отклонить и переслать все сообщения выше студенту {student_name}"
+    t_btn_tick_task = "{verdict_tick} за задачу {problem_str}"
+    t_btn_refuse_checking = "Отказаться от проверки и вернуться назад"
+    t_btn_send_answer = "Отправить ответ на вопрос"
+    t_btn_skip_answer = "Не отвечать на вопрос и вернуться назад"
+    t_btn_level_template = "Уровень: {lvl} «{slevel}»"
+    t_btn_ready_oral = "Готово (завершить сдачу и внести в кондуит)"
+    t_btn_cancel_oral = "Отмена (ничего не трогать и выйти)"
+    t_select_action = "Выберите действие ({prb_count}✏️, {sos_count}❓)"
+    t_ok_saved = 'Ок, записал'
+    t_question_on_problem = (
+        "Вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
+        "{student.name_for_teacher()}\n"
+        "/recheck_{student.token}_{problem.id}\n"
+        "⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    )
+    t_checking_problem = (
+        "Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
+        "{student.name_for_teacher()}\n"
+        "⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
+    )
+    t_write_answer = (
+        '⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
+        'Напишите ответ (можно приложить картинку)'
+    )
+    t_write_checking_comment = (
+        '⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
+        'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)'
+    )
+    t_forward_discussion_to_student_word = 'Задачу'
+    t_verdict_plus_text = (
+        '👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
+        '\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
+        '\nДля исправления:'
+        ' /recheck_{student.token}_{problem.id}'
+    )
+    t_verdict_some_text = (
+        '👍 Поставили {verdict_text} за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
+        '\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
+        '\nДля исправления:'
+        ' /recheck_{student.token}_{problem.id}'
+    )
+    t_verdict_minus_text = (
+        '❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
+        'школьнику {student.token} {student.surname} {student.name}!'
+        '\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
+        '\nДля исправления:'
+        ' /recheck_{student.token}_{problem.id}'
+    )
+    t_oral_plus_give_surname = "Введите фамилию школьника (можно начало фамилии), чтобы внести плюсы"
+    t_putting_plusses = "Вносим плюсики школьнику:\n{student.name_for_teacher()}"
+    t_online_mode_school = 'В ШКОЛЕ'
+    t_online_mode_online =  'ОНЛАЙН'
+    t_written_res_1 = "Школьник: {student.token} {student.surname} {student.name}\n"
+    t_written_res_2 = "\nПоставлены плюсы 👍 за задачи: {human_readable_pluses_joined}"
+    t_written_res_3 = "\nПоставлены минусы ❌ за задачи: {human_readable_minuses_joined}"
+    t_written_res_4 = '\nДля исправления /edtplus_{lesson}_{student.token}'
+    t_stundent_name_not_found = "Студент с токеном {token} не найден"
+    t_student_level_changed = (
+        "Перевели школьника на уровень «{level.slevel}»."
+        "\nОбратите внимание, плюсы по старому уровню НЕ БЫЛИ ВНЕСЕНЫ. Простите, это сложно исправить."
+    )
+
+    # command hints
+    t_cmd_online = 'Дистанционный приём'
+    t_cmd_in_school = 'Очный приём'
+    t_cmd_find_student = 'Найти студента'
+    t_cmd_set_level = 'Поставить студенту уровень'
+    t_cmd_set_online = 'Поменять студенту режим очно/дистант'
+    t_cmd_level_novice = 'Перейти на уровень «Начинающие»'
+    t_cmd_level_pro = 'Перейти на уровень «Продолжающие»'
+    t_cmd_level_expert = 'Перейти на уровень «Профессионалы»'
+    t_cmd_set_teacher = 'Снова стать учителем'
+    t_cmd_statw = 'Посмотреть статистику'
+    t_cmd_student_results = 'Посмотреть результаты школьника'
+    t_cmd_all_student_results = 'Посмотреть ВСЕ результаты школьника'
+    # check milestones
+    t_check_milestone1 = '🌟 — старт положен: первая проверка! Спасибо ❤️'
+    t_check_milestone10 = '🔟✨ — 10 задач: отличный темп, так держать ❤️'
+    t_check_milestone50 = '🏅🎉 — 50 проверок: мощный вклад в прогресс ребят ❤️'
+    t_check_milestone100 = '💯🏆 — 100 задач: вау, это уже система ❤️'
+    t_check_milestone200 = '2️⃣🎖️✨ — 200: стабильность и качество, спасибо ❤️'
+    t_check_milestone300 = '3️⃣🥉🎆 — 300 задач: выдержка уровня “профи” ❤️'
+    t_check_milestone400 = '4️⃣🥈🌠 — 400: очень сильная дистанция, продолжаем ❤️'
+    t_check_milestone500 = '5️⃣🥇💫 — 500: половина тысячи! впечатляет ❤️'
+    t_check_milestone600 = '6️⃣🏵️🌈 — 600: вот это регулярность, супер ❤️'
+    t_check_milestone700 = '7️⃣🌟🎇 — 700: держите ритм — это реально важно ❤️'
+    t_check_milestone800 = '8️⃣🏆✨ — 800: почти тысяча, отличный марафон ❤️'
+    t_check_milestone900 = '9️⃣💖🎊 — 900: финишная прямая до 1000 ❤️'
+    t_check_milestone1000 = '1️⃣0️⃣0️⃣0️⃣👑🎉 — 1000 задач! легендарная отметка ❤️'
+    t_check_milestone1100 = '1️⃣1️⃣0️⃣0️⃣🌠✨ — 1100: темп не сбавляется, огонь ❤️'
+    t_check_milestone1200 = '1️⃣2️⃣0️⃣0️⃣🏅🌈 — 1200: столько полезной обратной связи ❤️'
+    t_check_milestone1300 = '1️⃣3️⃣0️⃣0️⃣🥉💫 — 1300: уровень “железная дисциплина” ❤️'
+    t_check_milestone1400 = '1️⃣4️⃣0️⃣0️⃣🥈🎆 — 1400: впечатляющая дистанция, спасибо ❤️'
+    t_check_milestone1500 = '1️⃣5️⃣0️⃣0️⃣🥇🎇 — 1500: полторы тысячи — мощно ❤️'
+    t_check_milestone1600 = '1️⃣6️⃣0️⃣0️⃣🏵️✨ — 1600: стабильная работа на результат ❤️'
+    t_check_milestone1700 = '1️⃣7️⃣0️⃣0️⃣🌟🎊 — 1700: вы реально тащите ❤️'
+    t_check_milestone1800 = '1️⃣8️⃣0️⃣0️⃣🏆🌠 — 1800: почти 2000, очень круто ❤️'
+    t_check_milestone1900 = '1️⃣9️⃣0️⃣0️⃣💖✨ — 1900: ещё чуть-чуть до 2000 ❤️'
+    t_check_milestone2000 = '2️⃣0️⃣0️⃣0️⃣👑🎉 — 2000 задач! это уже история ❤️'
+    t_check_milestone2100 = '2️⃣1️⃣0️⃣0️⃣🌠🌈 — 2100: невероятная выносливость ❤️'
+    t_check_milestone2200 = '2️⃣2️⃣0️⃣0️⃣🏅💫 — 2200: спасибо за такой объём и точность ❤️'
+    t_check_milestone2300 = '2️⃣3️⃣0️⃣0️⃣🥉🎆 — 2300: сильнейший вклад в обучение ❤️'
+    t_check_milestone2400 = '2️⃣4️⃣0️⃣0️⃣🥈🎇 — 2400: держите планку — впечатляет ❤️'
+    t_check_milestone2500 = '2️⃣5️⃣0️⃣0️⃣🥇✨ — 2500: 2.5k проверок — браво ❤️'
+
+    # handlers\group_and_channel_handlers.py (admin/teacher-side)
+    a_reply_only_to_forwarded = "Отвечайте на пересланные сообщения с вопросом"
+    a_forwarded_ok = "Переслал."
+    a_forward_failed = "Не получилось послать ответ. Попробуйте указать токен первым словом или ответить вручную."
+
+    # handlers\admin_handlers.py
+    a_all_data_updated = "Все данные обновлены"
+    a_teachers_updated = "Учителя обновлены"
+    a_students_updated = "Студенты обновлены"
+    a_problems_updated = "Задачи обновлены"
+    a_error_list = "Ошибки:"
+    a_ui_messages_updated = 'UI messages updated\nRestart bot to apply them'
+    a_survey_created = 'Опрос с id={survey_id} создан.\n{survey_type=}\n{question=}\n{choices=}'
+    a_broadcast_task_created = "Создано задание рассылки сообщений"
+    a_broadcast_done = "Все сообщения разосланы ({sent} штук). Проблемы возникли с {bad_tokens!r}"
+    a_forward_all_start = "Начинаем пересылать"
+    a_forward_all_errors = "Ошибки: {errors_text}"
+    a_create_survey_usage = "/create_survey r/c\nВопрос\n- Один\n- Два"
+    a_assign_survey_usage = "/assign_survey_to_tokens surv_id\ntok1 tok2 tok3"
+    a_survey_assigned = "Назначен опрос {survey_id} {done} пользователям"
+    a_survey_disabled = "Опрос {survey_id} отключён"
+    a_problem_not_found = "Задача не найдена"
+    a_no_submissions = "Нет ни одной посылки (или что-то пошло не так)"
+    a_bad_level = "Кривой уровень, не парсится"
+    a_done = "Готово"
+    a_set_game_usage = "/set_game_command token number"
+    a_admin_rights_gained = "Admin rights gained!"
+    a_teachers_commands_updated = "Команды учителей обновлены"
+    a_teachers_commands_task_created = "Создано задание обновления статусов"
+    a_recheck_task_created = "Создано задание по перепроверке тестовой задачи"
+    a_recheck_summary = "Задача {problem} перепроверена. {oks} плюсов, {errs} минусов. Исправлено {changes} посылок"
+    a_all_students_awakened = "Все школьники переведены в режим сдачи задач"
+    a_pluses_refreshed = "Все плюсики обновлены: {num_updated} обновлено, {not_updated} не обновлено, {errors_count} ошибок."
+    a_pluses_errors = "Ошибки по: `{errors_joined}`"
+    a_pluses_task_created = "Создано задание по обновлению плюсиков, force={force}"
+    a_awaken_task_created = "Создано задание по переводу в режим сдачи задач"
+    a_all_students_sleeping = "Все школьники переведены в статус SLEEPING"
+    a_sleep_task_created = "Создано задание по переводу в статус SLEEPING"
+    a_teacher_password = "Ваш пароль:\n<code>{user.token}</code>"
+    a_student_not_found = "🤖 Студент {token} не найден"
+    a_game_command_update = "Студент с токеном {token} переведён в команду {command_id}"
+    a_moderate_could_not_delete = 'Сообщение выше удалить не удалось :('
+    a_moderate_could_not_ban = 'Юзера выше не удалось забанить :('
+    a_moderate_banned = 'Пользователь {message.from_user!r} забанен'
+    a_spam_regex = (
+        r'бонанз|играю в этом казино|КТО ХОЧЕТ ЗАРАБОТАТЬ|онлайн казик|\bинтим\b'
+        r'|срочно.*требу.тся.*человек|лучшее казино|официальное казино|(?:доход|оплата).*от.*рублей.*(?:месяц|день)'
+        r'|пишите в лс|казино|в личные сообщения|доходность от|доход от.*день'
+    )
 
     def update_from_dict(self, ui_messages_dict: dict):
         for key, value in ui_messages_dict.items():
             setattr(self, key, value)
 
+
 msgs = Msgs()
 
-# for attr in ['reaction_accepted', 'your_password', 'here_is_your_answer', 'this_message_is_for_bot', 'start_if_reg_needed', 'start_if_reg_anybody', 'this_password_is_blocked', 'welcome_user', 'user_is_not_activated', 'bot_internal_error', 'error_only_compressed_images', 'error_only_images_and_texts', 'you_are_in_online_mode_now', 'you_are_in_offline_mode_now', 'auth_needed', 'online_mode_hint', 'offline_mode_hint', 'problems_keyboard_header', 'solutions_are_not_accepted_now', 'error_file_is_not_accepted', 'error_text_is_not_accepted_now', 'error_file_is_too_large', 'sol_accepted', 'question_accepted', 'hour_rate_limit_error', 'dayly_rate_limit_error', 'poly_check_error_hint', 'error_select_one_of', 'results_after_answer_accepted', 'student_is_sleeping_state_msg', 'you_are_in_novice_now', 'you_are_in_testing_now', 'you_are_in_pro_now', 'you_are_expert_now', 'you_are_grade8_now', 'error_sos_without_auth', 'sos_what_is_your_question', 'sos_which_problem_question', 'sos_other_question', 'sos_problem_selected', 'answer_select_one_of', 'answer_select_day_of_week', 'answer_now_enter_answer', 'answer_follow_recommendations', 'answer_send_text_or_photo', 'zoom_instruction', 'list_of_all_topics', 'select_one_of_answer_selected', 'left_zoom_queue', 'error_nothing_was_sent', 'game_for_chest', 'game_for_problem', 'open_game', 'problem_question', 'other_question', 'to_list_of_topics', 'topic_hint', 'cancel', 'verdict_plus_no_comments', 'verdict_plus_with_comments', 'verdict_minus_no_comments', 'verdict_minus_with_comments', 'verdict_tick_no_comments', 'verdict_tick_with_comments', 'problem_question_answer', 'oral_accepted_problems', 'your_level_changed_to', 'msgs' ]:
-#     msg = getattr(msgs, attr)
-#     msg = msg.replace('"', '""')
-#     print(attr, '"' + msg + '"', sep='\t')
+if __name__ == '__main__':
+    import re
+    1; cur_code = open(__file__, encoding='utf-8').read()
+    1; attrs = re.findall(r'(?<=^    )\w+(?=\s*=)', cur_code, flags=re.MULTILINE)
+    for attr in attrs:
+        msg = getattr(msgs, attr)
+        if type(msg) is not str:
+            continue
+        msg = msg.replace('"', '""')
+        print(attr, '"' + msg + '"', sep='\t')

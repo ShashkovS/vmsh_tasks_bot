@@ -8,6 +8,7 @@ from pprint import pformat
 
 from helpers.consts import *
 from helpers.config import logger, config
+from helpers.msg_texts import msgs
 from models import User, Problem, State
 from models.spreadsheets import FromGoogleSpreadsheet
 import db_methods as db
@@ -26,9 +27,12 @@ async def update_all_internal_data(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     errors = FromGoogleSpreadsheet.update_all()
+    errors_list = ''
+    if errors:
+        errors_list = '\n' + msgs.a_error_list + '\n' + '\n'.join(errors)
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Все данные обновлены" + (('\nОшибки:\n' + '\n'.join(errors)) if errors else ''),
+        text=msgs.a_all_data_updated + errors_list,
     )
 
 
@@ -41,7 +45,7 @@ async def update_teachers(message: types.Message):
     FromGoogleSpreadsheet.update_teachers()
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Учителя обновлены",
+        text=msgs.a_teachers_updated,
     )
 
 
@@ -54,7 +58,7 @@ async def update_students(message: types.Message):
     FromGoogleSpreadsheet.update_students()
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Студенты обновлены",
+        text=msgs.a_students_updated,
     )
 
 
@@ -82,10 +86,9 @@ async def update_ui_messages(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_ui_messages()
-    html = f'''UI messages updated\nRestart bot to apply them'''
     await bot.send_message(
         chat_id=message.chat.id,
-        text=html,
+        text=msgs.a_ui_messages_updated,
         parse_mode=types.ParseMode.HTML,
     )
 
@@ -97,9 +100,12 @@ async def update_problems(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     errors = FromGoogleSpreadsheet.update_problems()
+    errors_list = ''
+    if errors:
+        errors_list = '\n' + msgs.a_error_list + '\n' + '\n'.join(errors)
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Задачи обновлены" + (('\nОшибки:\n' + '\n'.join(errors)) if errors else ''),
+        text=msgs.a_problems_updated + errors_list,
     )
 
 
@@ -156,7 +162,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
         await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=f"Все сообщения разосланы ({sent} штук). Проблемы возникли с {bad_tokens!r}",
+        text=msgs.a_broadcast_done.format_map({'sent': sent, 'bad_tokens': bad_tokens}),
     )
 
 
@@ -181,7 +187,7 @@ async def broadcast(message: types.Message):
     asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, message.reply_to_message, quite))
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Создано задание рассылки сообщений",
+        text=msgs.a_broadcast_task_created,
     )
 
 
@@ -203,7 +209,7 @@ async def forward_all_messages(message: types.Message):
         return
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Начинаем пересылать",
+        text=msgs.a_forward_all_start,
     )
     errors = []
     for id in range(start, end + 1):
@@ -214,7 +220,7 @@ async def forward_all_messages(message: types.Message):
             errors.append((id, e.__class__.__name__))
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Ошибки: " + '\n'.join(str(row) for row in errors),
+        text=msgs.a_forward_all_errors.format_map({'errors_text': '\n'.join(str(row) for row in errors)}),
     )
 
 
@@ -230,14 +236,10 @@ async def create_survey(message: types.Message):
         choices = re.findall(r'^[-*]\s+(.*)', text, flags=re.MULTILINE)
         question = re.fullmatch(r'/create_survey\s+\w *\n([\s\S]*?)(?:^[-*]\s+(?:.*)\n?)+\s*', text, flags=re.MULTILINE).group(1).strip()
     except Exception as e:
-        await bot.send_message(chat_id=message.chat.id, text='/create_survey r/c\nВопрос\n- Один\n- Два')
+        await bot.send_message(chat_id=message.chat.id, text=msgs.a_create_survey_usage)
         return
     survey_id = db.survey.add_survey(survey_type, True, question, choices)
-    text = f'''Опрос с id={survey_id} создан.
-    {survey_type=}
-    {question=}
-    {choices=}
-    '''
+    text = msgs.a_survey_created.format_map({'survey_id': survey_id, 'survey_type': survey_type, 'question': question, 'choices': choices})
     await bot.send_message(chat_id=message.chat.id, text=text)
 
 
@@ -253,7 +255,7 @@ async def disable_survey(message: types.Message):
     except Exception as e:
         return
     db.survey.disable_survey(survey_id)
-    await bot.send_message(chat_id=message.chat.id, text=f'Опрос {survey_id} отключён')
+    await bot.send_message(chat_id=message.chat.id, text=msgs.a_survey_disabled.format_map({'survey_id': survey_id}))
 
 
 @dispatcher.message_handler(commands=['assign_survey_to_tokens'])
@@ -270,7 +272,7 @@ async def assign_survey_to_tokens(message: types.Message):
         assert survey is not None
         tokens = second.split()
     except Exception as e:
-        await bot.send_message(chat_id=message.chat.id, text=f'/assign_survey_to_tokens surv_id\ntok1 tok2 tok3')
+        await bot.send_message(chat_id=message.chat.id, text=msgs.a_assign_survey_usage)
         return
     done = 0
     users = [User.get_by_token(token) for token in tokens]
@@ -283,21 +285,22 @@ async def assign_survey_to_tokens(message: types.Message):
                 logger.exception(e)
             await asyncio.sleep(1 / 20)
             done += 1
-    await bot.send_message(chat_id=message.chat.id, text=f'Назначен опрос {survey_id} {done} пользователям')
+    await bot.send_message(chat_id=message.chat.id, text=msgs.a_survey_assigned.format_map({'survey_id': survey_id, 'done': done}))
 
 
 TEACHER_COMMANDS = [
-    aiogram.types.BotCommand(command='online', description='Дистанционный приём'),
-    aiogram.types.BotCommand(command='in_school', description='Очный приём'),
-    aiogram.types.BotCommand(command='find_student', description='Найти студента'),
-    aiogram.types.BotCommand(command='set_level', description='Поставить студенту уровень'),
-    aiogram.types.BotCommand(command='set_online', description='Поменять студенту режим очно/дистант'),
-    aiogram.types.BotCommand(command='level_novice', description='Перейти на уровень «Начинающие»'),
-    aiogram.types.BotCommand(command='level_pro', description='Перейти на уровень «Продолжающие»'),
-    aiogram.types.BotCommand(command='level_expert', description='Перейти на уровень «Профессионалы»'),
-    aiogram.types.BotCommand(command='set_teacher', description='Снова стать учителем'),
-    aiogram.types.BotCommand(command='statw', description='Посмотреть статистику'),
-    aiogram.types.BotCommand(command='student_results', description='Посмотреть результаты школьника'),
+    aiogram.types.BotCommand(command='online', description=msgs.t_cmd_online),
+    aiogram.types.BotCommand(command='in_school', description=msgs.t_cmd_in_school),
+    aiogram.types.BotCommand(command='find_student', description=msgs.t_cmd_find_student),
+    aiogram.types.BotCommand(command='set_level', description=msgs.t_cmd_set_level),
+    aiogram.types.BotCommand(command='set_online', description=msgs.t_cmd_set_online),
+    aiogram.types.BotCommand(command='level_novice', description=msgs.t_cmd_level_novice),
+    aiogram.types.BotCommand(command='level_pro', description=msgs.t_cmd_level_pro),
+    aiogram.types.BotCommand(command='level_expert', description=msgs.t_cmd_level_expert),
+    aiogram.types.BotCommand(command='set_teacher', description=msgs.t_cmd_set_teacher),
+    aiogram.types.BotCommand(command='statw', description=msgs.t_cmd_statw),
+    aiogram.types.BotCommand(command='student_results', description=msgs.t_cmd_student_results),
+    aiogram.types.BotCommand(command='all_student_results', description=msgs.t_cmd_all_student_results),
 ]
 
 
@@ -309,7 +312,7 @@ async def update_teachers_commands_task(teacher_chat_id):
         await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=f"Команды учителей обновлены",
+        text=msgs.a_teachers_commands_updated,
     )
 
 
@@ -322,7 +325,7 @@ async def update_teachers_commands(message: types.Message):
     asyncio.create_task(update_teachers_commands_task(message.chat.id))
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Создано задание обновления статусов",
+        text=msgs.a_teachers_commands_task_created,
     )
 
 
@@ -347,7 +350,7 @@ async def recheck_problem_task(teacher_chat_id: int, problem: Problem):
     db.result.update_verdicts(for_recheck)
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=f"Задача {problem} перепроверена. {oks} плюсов, {errs} минусов. Исправлено {changes} посылок",
+        text=msgs.a_recheck_summary.format_map({'problem': problem, 'oks': oks, 'errs': errs, 'changes': changes}),
     )
     # Обновляем клавиатуры школьникам
     for student_id in students_to_update_keyboards:
@@ -366,12 +369,12 @@ async def problem_recheck(message: types.Message):
         lst, level, prob, item = match.groups()
         problem = Problem.get_by_key(level, int(lst), int(prob), item)
     if problem is None:
-        await bot.send_message(chat_id=message.chat.id, text=f"Задача не найдена")
+        await bot.send_message(chat_id=message.chat.id, text=msgs.a_problem_not_found)
         return
     asyncio.create_task(recheck_problem_task(message.chat.id, problem))
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Создано задание по перепроверке тестовой задачи",
+        text=msgs.a_recheck_task_created,
     )
 
 
@@ -391,7 +394,7 @@ async def run_set_get_task_info_for_all_students_task(teacher_chat_id):
         await asyncio.sleep(1 / 20)
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=f"Все школьники переведены в режим сдачи задач",
+        text=msgs.a_all_students_awakened,
     )
 
 
@@ -413,11 +416,11 @@ async def update_all_student_keyboards(teacher_chat_id, force=False):
             await asyncio.sleep(1 / 20)
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=f"Все плюсики обновлены: {num_updated} обновлено, {not_updated} не обновлено, {len(errors)} ошибок.",
+        text=msgs.a_pluses_refreshed.format_map({'num_updated': num_updated, 'not_updated': not_updated, 'errors_count': len(errors)}),
     )
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=f"Ошибки по: `{'`, `'.join(errors)}`",
+        text=msgs.a_pluses_errors.format_map({'errors_joined': '`, `'.join(errors)}),
     )
 
 
@@ -436,7 +439,7 @@ async def reset_keyboards(message: types.Message):
     )
     await bot.send_message(
         chat_id=message.chat.id,
-        text=f"Создано задание по обновлению плюсиков запущено, {force=}",
+        text=msgs.a_pluses_task_created.format_map({'force': force}),
     )
 
 
@@ -449,7 +452,7 @@ async def set_get_task_info_for_all_students(message: types.Message):
     asyncio.create_task(run_set_get_task_info_for_all_students_task(message.chat.id))
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Создано задание по переводу в режим сдачи задач",
+        text=msgs.a_awaken_task_created,
     )
 
 
@@ -471,7 +474,7 @@ async def run_set_sleep_state_task(teacher_chat_id):
         await asyncio.sleep(1 / 20)
     await bot.send_message(
         chat_id=teacher_chat_id,
-        text=f"Все школьники переведены в статус SLEEPING",
+        text=msgs.a_all_students_sleeping,
     )
 
 
@@ -484,7 +487,7 @@ async def set_sleep_state_for_all_students(message: types.Message):
     asyncio.create_task(run_set_sleep_state_task(message.chat.id))
     await bot.send_message(
         chat_id=message.chat.id,
-        text="Создано задание по переводу в статус SLEEPING",
+        text=msgs.a_sleep_task_created,
     )
 
 
@@ -516,7 +519,7 @@ async def get_statw_url(message: types.Message):
     )
     await bot.send_message(
         chat_id=message.chat.id, parse_mode="HTML",
-        text=f"Ваш пароль:\n<code>{user.token}</code>",
+        text=msgs.a_teacher_password.format_map({'user': user}),
     )
 
 
@@ -531,7 +534,8 @@ async def student_results(message: types.Message):
         token = match.group(1)
         student = User.get_by_token(token)
     if not student:
-        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент {token} не найден", )
+        await bot.send_message(chat_id=message.chat.id,
+                               text=msgs.a_student_not_found.format_map({'token': token}), )
         return
 
     # r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict
@@ -548,7 +552,7 @@ async def student_results(message: types.Message):
                      ]
             await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
     else:
-        await bot.send_message(chat_id=message.chat.id, text='Нет ни одной посылки (или что-то пошло не так)')
+        await bot.send_message(chat_id=message.chat.id, text=msgs.a_no_submissions)
 
 
 @dispatcher.message_handler(commands=['oral2written', 'written2oral'])
@@ -563,20 +567,20 @@ async def oral2written(message: types.Message):
         try:
             levels = [LEVEL(x) for x in slevels]
         except Exception as e:
-            await bot.send_message(chat_id=message.chat.id, text='Кривой уровень, не парсится')
+            await bot.send_message(chat_id=message.chat.id, text=msgs.a_bad_level)
             return
     if cmd == '/oral2written':
         Problem.oral_to_written(levels)
     elif cmd == '/written2oral':
         Problem.written_to_oral(levels)
-    await bot.send_message(chat_id=message.chat.id, text='Готово')
+    await bot.send_message(chat_id=message.chat.id, text=msgs.a_done)
 
 
 @dispatcher.message_handler(commands=['reset_checked'])
 async def reset_checked(message: types.Message):
     logger.debug('reset_checked')
     db.written_task_queue.reset_beeing_checked()
-    await bot.send_message(chat_id=message.chat.id, text='Готово')
+    await bot.send_message(chat_id=message.chat.id, text=msgs.a_done)
 
 
 @dispatcher.message_handler(commands=['set_game_command', 'sg'])
@@ -595,16 +599,17 @@ async def set_game_command(message: types.Message):
     try:
         command_id = int(command_id)
     except:
-        await bot.send_message(chat_id=message.chat.id, text=f"/set_game_command token number", )
+        await bot.send_message(chat_id=message.chat.id, text=msgs.a_set_game_usage, )
         return
     student = User.get_by_token(token)
     if not student:
-        await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
+        await bot.send_message(chat_id=message.chat.id,
+                               text=msgs.t_student_with_token_not_found.format_map({'token': token}), )
         return
     db.game.set_student_command(student.id, student.level, command_id)
     await bot.send_message(
         chat_id=message.chat.id,
-        text=f"Студент с токеном {token} переведён в команду {command_id}",
+        text=msgs.a_game_command_update.format_map({'token': token, 'command_id': command_id}),
     )
 
 @dispatcher.message_handler(commands=['set_admin'])
@@ -620,5 +625,5 @@ async def set_admin(message: types.Message):
             user.set_user_type(USER_TYPE.TEACHER)
             await bot.send_message(
                 chat_id=message.chat.id,
-                text="Admin rights gained!",
+                text=msgs.a_admin_rights_gained,
             )

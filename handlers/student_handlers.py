@@ -615,6 +615,7 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
             )
         elif problem.ans_type == ANS_TYPE.WEEKDAY:
             # Мерзкий хардкод :(
+            # TODO
             problem.ans_validation = 'Понедельник;Вторник;Среда;Четверг;Пятница;Суббота;Воскресенье'
             await bot.send_message(
                 chat_id=query.message.chat.id,

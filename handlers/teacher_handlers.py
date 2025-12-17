@@ -22,34 +22,34 @@ from handlers.student_handlers import sleep_and_send_problems_keyboard, refresh_
 from handlers.main_handlers import process_regular_message  # TODO Удалить использование этой функции
 
 CHECK_MILESTONES = {
-    1: '🌟 — ура! Первая задача! ❤️',
-    10: '🔟✨ — ура! 10 задач! ❤️',
-    50: '🏅🎉 — ура! 50 задач! ❤️',
-    100: '💯🏆 — ура! 100 задач! ❤️',
-    200: '2️⃣🎖️✨ — ура! 200 задач! ❤️',
-    300: '3️⃣🥉🎆 — ура! 300 задач! ❤️',
-    400: '4️⃣🥈🌠 — ура! 400 задач! ❤️',
-    500: '5️⃣🥇💫 — ура! 500 задач! ❤️',
-    600: '6️⃣🏵️🌈 — ура! 600 задач! ❤️',
-    700: '7️⃣🌟🎇 — ура! 700 задач! ❤️',
-    800: '8️⃣🏆✨ — ура! 800 задач! ❤️',
-    900: '9️⃣💖🎊 — ура! 900 задач! ❤️',
-    1000: '1️⃣0️⃣0️⃣0️⃣👑🎉 — ура! 1000 задач! ❤️',
-    1100: '1️⃣1️⃣0️⃣0️⃣🌠✨ — ура! 1100 задач! ❤️',
-    1200: '1️⃣2️⃣0️⃣0️⃣🏅🌈 — ура! 1200 задач! ❤️',
-    1300: '1️⃣3️⃣0️⃣0️⃣🥉💫 — ура! 1300 задач! ❤️',
-    1400: '1️⃣4️⃣0️⃣0️⃣🥈🎆 — ура! 1400 задач! ❤️',
-    1500: '1️⃣5️⃣0️⃣0️⃣🥇🎇 — ура! 1500 задач! ❤️',
-    1600: '1️⃣6️⃣0️⃣0️⃣🏵️✨ — ура! 1600 задач! ❤️',
-    1700: '1️⃣7️⃣0️⃣0️⃣🌟🎊 — ура! 1700 задач! ❤️',
-    1800: '1️⃣8️⃣0️⃣0️⃣🏆🌠 — ура! 1800 задач! ❤️',
-    1900: '1️⃣9️⃣0️⃣0️⃣💖✨ — ура! 1900 задач! ❤️',
-    2000: '2️⃣0️⃣0️⃣0️⃣👑🎉 — ура! 2000 задач! ❤️',
-    2100: '2️⃣1️⃣0️⃣0️⃣🌠🌈 — ура! 2100 задач! ❤️',
-    2200: '2️⃣2️⃣0️⃣0️⃣🏅💫 — ура! 2200 задач! ❤️',
-    2300: '2️⃣3️⃣0️⃣0️⃣🥉🎆 — ура! 2300 задач! ❤️',
-    2400: '2️⃣4️⃣0️⃣0️⃣🥈🎇 — ура! 2400 задач! ❤️',
-    2500: '2️⃣5️⃣0️⃣0️⃣🥇✨ — ура! 2500 задач! ❤️',
+    1: msgs.t_check_milestone1,
+    10: msgs.t_check_milestone10,
+    50: msgs.t_check_milestone50,
+    100: msgs.t_check_milestone100,
+    200: msgs.t_check_milestone200,
+    300: msgs.t_check_milestone300,
+    400: msgs.t_check_milestone400,
+    500: msgs.t_check_milestone500,
+    600: msgs.t_check_milestone600,
+    700: msgs.t_check_milestone700,
+    800: msgs.t_check_milestone800,
+    900: msgs.t_check_milestone900,
+    1000: msgs.t_check_milestone1000,
+    1100: msgs.t_check_milestone1100,
+    1200: msgs.t_check_milestone1200,
+    1300: msgs.t_check_milestone1300,
+    1400: msgs.t_check_milestone1400,
+    1500: msgs.t_check_milestone1500,
+    1600: msgs.t_check_milestone1600,
+    1700: msgs.t_check_milestone1700,
+    1800: msgs.t_check_milestone1800,
+    1900: msgs.t_check_milestone1900,
+    2000: msgs.t_check_milestone2000,
+    2100: msgs.t_check_milestone2100,
+    2200: msgs.t_check_milestone2200,
+    2300: msgs.t_check_milestone2300,
+    2400: msgs.t_check_milestone2400,
+    2500: msgs.t_check_milestone2500,
 }
 
 
@@ -92,7 +92,7 @@ async def take_random_written_problem_and_start_check(teacher: User, problem: Pr
     else:
         del_problem_lock(teacher.id)
         await bot.send_message(chat_id=teacher.chat_id,
-                               text=f"Ничего себе! Все эти письменные задачи проверены!")
+                               text=msgs.t_all_written_checked)
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
         asyncio.create_task(prc_teacher_select_action(None, teacher))
 
@@ -109,7 +109,7 @@ async def prc_teacher_select_action(message: types.Message, teacher: User, sleep
     if not locked_problem_id or not problem:
         sos_count = db.written_task_queue.get_sos_tasks_count()
         prb_count = db.written_task_queue.get_written_tasks_count()
-        text = f"Выберите действие ({prb_count}✏️, {sos_count}❓)"
+        text = msgs.t_select_action.format(prb_count=prb_count, sos_count=sos_count)
         keyb_msg = await bot.send_message(chat_id=use_chat_id, text=text,
                                           reply_markup=teacher_keyboards.build_teacher_actions(sos_count, prb_count))
         db.last_keyboard.update(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
@@ -136,7 +136,7 @@ async def prc_teacher_is_checking_task_state(message: types.Message, teacher: Us
                                                                         teacher_state['info'])
     # await bot.send_message(chat_id=message.chat.id, text="Ок, записал")
     keyb_msg = await bot.send_message(chat_id=message.chat.id,
-                                      text='Ок, записал',
+                                      text=msgs.t_ok_saved,
                                       reply_markup=reply_markup)
     if prev_keyboard:
         await bot.edit_message_reply_markup_ig(chat_id=prev_keyboard['chat_id'], message_id=prev_keyboard['tg_msg_id'],
@@ -164,8 +164,10 @@ async def prc_teacher_accepted_queue(message: types.message, teacher: User, onli
         online=online,
         lesson_num=lesson_num,
     )
+    mode_label = msgs.t_online_mode_school if teacher.online == ONLINE_MODE.SCHOOL else msgs.t_online_mode_online
+    text = msgs.t_mark_oral_tasks_intro.format(mode_label=mode_label)
     await bot.send_message(chat_id=message.chat.id,
-                           text="Отметьте задачи, за которые нужно поставить плюсики (и нажмите «Готово»)",
+                           text=text,
                            reply_markup=reply_markup)
 
 
@@ -187,12 +189,13 @@ async def edtplus(message: types.Message):
     if not lesson or not lesson.isdecimal():
         await bot.send_message(
             chat_id=message.chat.id,
-            text="🤖 Пришлите запрос на простановку плюсов в формате\n«/edtplus_lesson_token», например «/edtplus_12_aa9bb4»",
+            text=msgs.t_edtplus_format_hint,
         )
         return
     student = User.get_by_token(token)
     if not student:
-        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
+        await bot.send_message(chat_id=message.chat.id,
+                               text=msgs.t_student_with_token_not_found.format_map({'token': token}))
     state = State.get_by_user_id(teacher.id)
     State.set_by_user_id(teacher.id, state['state'], last_student_id=student.id)
     await prc_teacher_accepted_queue(message, teacher, online=ONLINE_MODE.SCHOOL, lesson_num=lesson_num, student=student)
@@ -203,7 +206,7 @@ async def prc_teacher_writes_student_name_state(message: types.message, teacher:
     logger.debug('prc_teacher_writes_student_name_state')
     name_to_find = message.text or ''
     await bot.send_message(chat_id=message.chat.id,
-                           text="Выберите школьника для внесения задач",
+                           text=msgs.t_choose_student_for_pluses,
                            reply_markup=teacher_keyboards.build_select_student(name_to_find))
 
 
@@ -224,18 +227,21 @@ async def recheck(message: types.Message):
     else:
         await bot.send_message(
             chat_id=message.chat.id,
-            text="🤖 Пришлите запрос на перепроверку в формате\n«/recheck token problem», например «/recheck aa9bb4 3н.11а»",
+            text=msgs.t_recheck_format_hint,
         )
         return
     student = User.get_by_token(token)
     if not student:
-        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Студент с токеном {token} не найден")
+        await bot.send_message(chat_id=message.chat.id,
+                               text=msgs.t_student_with_token_not_found.format_map({'token': token}))
     if not problem and prob is not None:
-        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Задача {lst}{level}.{prob}{item} не найдена")
+        await bot.send_message(chat_id=message.chat.id,
+                               text=msgs.t_problem_not_found_key.format_map({'lst': lst, 'level': level, 'prob': prob, 'item': item}))
     if not problem and prob_id is not None:
-        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Задача с id {prob_id} не найдена")
+        await bot.send_message(chat_id=message.chat.id,
+                               text=msgs.t_problem_not_found_id.format_map({'prob_id': prob_id}))
     if student and problem:
-        message = await bot.send_message(chat_id=message.chat.id, text=f"Переотправили на проверку")
+        message = await bot.send_message(chat_id=message.chat.id, text=msgs.t_resend_for_checking)
         await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
@@ -251,14 +257,14 @@ async def set_student_level(message: types.Message):
     except:
         await bot.send_message(
             chat_id=message.chat.id,
-            text=f"/set_level token н/п/э",
+            text=msgs.t_set_level_usage,
         )
         return
     student = User.get_by_token(token)
     if not student:
         await bot.send_message(
             chat_id=message.chat.id,
-            text=f"Студент с токеном {token} не найден",
+            text=msgs.t_student_with_token_not_found.format_map({'token': token}),
         )
         return
     try:
@@ -266,7 +272,7 @@ async def set_student_level(message: types.Message):
     except ValueError:
         await bot.send_message(
             chat_id=message.chat.id,
-            text=f"Уровень {new_level} не существует.",
+            text=msgs.t_level_not_exists.format_map({'new_level': new_level}),
         )
         return
     student.set_level(new_level_en)
@@ -282,7 +288,7 @@ async def set_student_level(message: types.Message):
         stud_msg = None
     await bot.send_message(
         chat_id=message.chat.id,
-        text=f"Студент с токеном {token} переведён в {new_level_en}",
+        text=msgs.t_student_level_changed.format_map({'token': token, 'new_level_en': new_level_en}),
     )
     if student.chat_id and stud_msg:
         try:
@@ -301,12 +307,12 @@ async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: Use
     await bot.answer_callback_query_ig(query.id)
     if not top:
         await bot.send_message(chat_id=teacher.chat_id,
-                               text=f"Ничего себе! Вопросов нет")
+                               text=msgs.t_no_sos_questions)
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
         asyncio.create_task(prc_teacher_select_action(None, teacher))
     else:
         # Даём преподу 10 топовых задач на выбор
-        await bot.send_message(chat_id=teacher.chat_id, text="Выберите вопрос",
+        await bot.send_message(chat_id=teacher.chat_id, text=msgs.t_choose_question,
                                reply_markup=teacher_keyboards.build_teacher_select_written_problem(top))
         # teacher_keyboards.build_teacher_actions
 
@@ -324,7 +330,7 @@ async def prc_SELECT_WRITTEN_TASK_TO_CHECK_callback(query: types.CallbackQuery, 
         problems_and_counts.append((Problem.get_by_id(first_problem_id), row['cnt'], row['days_waits']))
     sos_count = db.written_task_queue.get_sos_tasks_count()
     prb_count = db.written_task_queue.get_written_tasks_count()
-    text = f"Выберите задачу для проверки ({prb_count}✏️, {sos_count}❓)"
+    text = msgs.t_select_problem_to_check_counts.format_map({'prb_count': prb_count, 'sos_count': sos_count})
     await bot.send_message(chat_id=teacher.chat_id, text=text,
                            reply_markup=teacher_keyboards.build_select_problem_to_check(problems_and_counts))
     await bot.answer_callback_query_ig(query.id)
@@ -362,13 +368,10 @@ async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User)
 async def forward_discussion_and_start_checking(chat_id, message_id, student: User, problem: Problem, teacher: User,
                                                 is_sos=False):
     logger.debug('forward_discussion_and_start_checking')
-    text = (f"Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
-            f"{student.name_for_teacher()}\n"
-            f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇") if (not is_sos) else (
-        f"Вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
-        f"{student.name_for_teacher()}\n"
-        f"/recheck_{student.token}_{problem.id}\n"
-        f"⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇")  # обрабатываем SOS
+    if is_sos:
+        text = msgs.t_question_on_problem.format_map({'problem': problem, 'student': student})
+    else:
+        text = msgs.t_checking_problem.format_map({'problem': problem, 'student': student})
     # Если передан message_id, то обновляем сообщение (там была кнопка). Если нет, то отправляем новое.
     if message_id:
         await bot.edit_message_text_ig(chat_id=chat_id, message_id=message_id, text=text, reply_markup=None)
@@ -384,7 +387,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
                 await bot.forward_message(chat_id, row['chat_id'], row['tg_msg_id'])
                 forward_success = True
             except aiogram.utils.exceptions.TelegramAPIError:
-                await bot.send_message(chat_id=chat_id, text='Сообщение было удалено...')
+                await bot.send_message(chat_id=chat_id, text=msgs.t_message_deleted)
         if forward_success:
             pass
         elif row['text']:
@@ -409,14 +412,16 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
                          last_teacher_id=teacher.id,
                          last_student_id=student.id,
                          info=[])  # info — список сообщений, которые нужно удалить #добавил учёт SOS
+    if is_sos:
+        text = msgs.t_write_answer
+        reply_markup = teacher_keyboards.build_answer_verdict(student, problem)
+    else:
+        text = msgs.t_write_checking_comment
+        reply_markup = teacher_keyboards.build_written_task_checking_verdict(student, problem)
     keyb_msg = await bot.send_message(chat_id=chat_id,
-                                      text='⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
-                                           'Напишите комментарий или скриншот 📸 вашей проверки (или просто поставьте плюс)'
-                                      if (not is_sos) else '⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆\n'
-                                                           'Напишите ответ (можно приложить картинку)',
-                                      reply_markup=teacher_keyboards.build_written_task_checking_verdict(student,
-                                                                                                         problem) if (
-                                          not is_sos) else teacher_keyboards.build_answer_verdict(student, problem))
+                                      text=text,
+                                      reply_markup=reply_markup,
+                                      )
     db.last_keyboard.update(teacher.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
@@ -433,7 +438,7 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
     # Блокируем задачу
     is_unlocked = WrittenQueue.mark_being_checked(student.id, problem_id, teacher.id)
     if not is_unlocked:
-        await bot.send_message(chat_id=chat_id, text='Эту задачу уже кто-то взялся проверять.')
+        await bot.send_message(chat_id=chat_id, text=msgs.t_task_already_being_checked)
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
         asyncio.create_task(prc_teacher_select_action(None, teacher))
         return
@@ -462,23 +467,23 @@ async def forward_discussion_to_student(student: User, problem: Problem, verdict
     else:
         # Берём последние 20 сообщений, чтобы не превысить лимит
         messages_to_forward = discussion[-20:]
-    text_problem_part = f"Задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})"
+    text_problem_part = f"{msgs.t_forward_discussion_to_student_word} {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})"
 
     if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
         if solved and not messages_to_forward:
-            text_vedict_part = msgs.verdict_plus_no_comments
+            text_vedict_part = msgs.t_verdict_plus_no_comments
         elif solved and messages_to_forward:
-            text_vedict_part = msgs.verdict_plus_with_comments
+            text_vedict_part = msgs.t_verdict_plus_with_comments
         elif not solved and not last_teacher_messages:
-            text_vedict_part = msgs.verdict_minus_no_comments
+            text_vedict_part = msgs.t_verdict_minus_no_comments
         else:
-            text_vedict_part = msgs.verdict_minus_with_comments
+            text_vedict_part = msgs.t_verdict_minus_with_comments
     else:
         verdict_tick = VERDICT_TO_TICK[verdict]
         if last_teacher_messages:
-            text_vedict_part = msgs.verdict_tick_with_comments.format_map({'verdict_tick': verdict_tick})
+            text_vedict_part = msgs.t_verdict_tick_with_comments.format_map({'verdict_tick': verdict_tick})
         else:
-            text_vedict_part = msgs.verdict_tick_no_comments.format_map({'verdict_tick': verdict_tick})
+            text_vedict_part = msgs.t_verdict_tick_no_comments.format_map({'verdict_tick': verdict_tick})
     await bot.send_message(chat_id=student.chat_id, text=f"{text_problem_part} {text_vedict_part}",
                            disable_notification=True)
     try:
@@ -488,15 +493,6 @@ async def forward_discussion_to_student(student: User, problem: Problem, verdict
                 await bot.copy_message(student.chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
             else:
                 await bot.forward_message(student.chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
-            # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
-            # if row['chat_id'] and row['tg_msg_id']:
-            #     await bot.copy_message(student.chat_id, row['chat_id'], row['tg_msg_id'], disable_notification=True)
-            # elif row['text']:
-            #     await bot.send_message(chat_id=student.chat_id, text=row['text'], disable_notification=True)
-            # elif row['attach_path']:
-            #     # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
-            #     input_file = types.input_file.InputFile(row['attach_path'])
-            #     await bot.send_photo(chat_id=student.chat_id, photo=input_file, disable_notification=True)
         if solved:
             student_reaction_keyboard = None
         else:
@@ -528,18 +524,14 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     if milestone:
         milestone = f'\n=====\n{milestone}\n====='
     if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
-        text = (
-            f'👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
-            f'\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
-            f'\nДля исправления:'
-            f' /recheck_{student.token}_{problem.id}')
+        text = msgs.t_verdict_plus_text.format(
+            problem=problem, student=student, tot_checked=tot_checked, plus=plus, minus=minus, milestone=milestone
+        )
     else:
         verdict_text = VERDICT_TO_TICK[set_verdict]
-        text = (
-            f'👍 Поставили {verdict_text} за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
-            f'\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
-            f'\nДля исправления:'
-            f' /recheck_{student.token}_{problem.id}')
+        text = msgs.t_verdict_some_text.format(
+            problem=problem, student=student, tot_checked=tot_checked, plus=plus, minus=minus, milestone=milestone, verdict_text=verdict_text
+        )
 
     WrittenQueue.delete_from_queue(student.id, problem.id)
     reaction_msg = await bot.send_message(chat_id=query.message.chat.id,
@@ -575,13 +567,10 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
         milestone = f'\n=====\n{milestone}\n====='
     WrittenQueue.delete_from_queue(student.id, problem.id)
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
-    teacher_msg = await bot.send_message(chat_id=query.message.chat.id,
-                                         text=f'❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
-                                              f'школьнику {student.token} {student.surname} {student.name}!'
-                                              f'\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
-                                              f'\nДля исправления:'
-                                              f' /recheck_{student.token}_{problem.id}',
-                                         parse_mode='HTML')
+    text = msgs.t_verdict_minus_text.format(
+        problem=problem, student=student, tot_checked=tot_checked, plus=plus, minus=minus, milestone=milestone
+    )
+    teacher_msg = await bot.send_message(chat_id=query.message.chat.id, text=text, parse_mode='HTML')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
     # Пересылаем переписку школьнику
@@ -602,7 +591,7 @@ async def prc_send_answer_callback(query: types.CallbackQuery, teacher: User):
     # Помечаем решение как неверное и удаляем из очереди
     WrittenQueue.delete_from_queue(student.id, -problem.id)  # возвращаем минус SOS
     await bot.send_message(chat_id=query.message.chat.id,
-                           text='Ответ записан',
+                           text=msgs.t_answer_recorded,
                            parse_mode='HTML')
 
     # Пересылаем переписку школьнику
@@ -645,7 +634,7 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
     if not top:
         # Если в очереди пусто, то шлём сообщение и выходим.
         await bot.send_message(chat_id=teacher.chat_id,
-                               text=f"Сейчас очередь пуста. Повторите через пару минут.")
+                               text=msgs.t_queue_empty_retry)
         await bot.answer_callback_query_ig(query.id)
         await prc_teacher_select_action(query.message, teacher)
         return
@@ -703,7 +692,7 @@ async def prc_ins_oral_plusses(query: types.CallbackQuery, teacher: User):
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
     await bot.send_message(chat_id=teacher.chat_id,
-                           text=f"Введите фамилию школьника (можно начало фамилии), чтобы внести плюсы",
+                           text=msgs.t_oral_plus_give_surname,
                            reply_markup=teacher_keyboards.build_cancel_keyboard())
     await bot.answer_callback_query_ig(query.id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_WRITES_STUDENT_NAME)
@@ -737,20 +726,23 @@ async def prc_student_selected_callback(query: types.CallbackQuery, teacher: Use
     _, student_id = query.data.split('_')
     student_id = int(student_id)
     student = User.get_by_id(student_id)
-    msg_text = f"Вносим плюсики школьнику:\n" + student.name_for_teacher()
+    msg_text = msgs.t_putting_plusses.format(student=student)
     if remove_old_buttons:
         await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                        reply_markup=None, text=msg_text)
     else:  # TODO ФИЧА НЕ РАБОТАЕТ!!
         await bot.send_message(chat_id=query.message.chat.id, reply_markup=None, text=msg_text)
+    mode_label = msgs.t_online_mode_school if teacher.online == ONLINE_MODE.SCHOOL else msgs.t_online_mode_online
+    text = msgs.t_mark_oral_tasks_intro.format(mode_label=mode_label)
+    reply_markup = teacher_keyboards.build_verdict_for_oral_problems(
+        plus_ids=set(),
+        minus_ids=set(),
+        student=student,
+        online=teacher.online,
+    )
     await bot.send_message(chat_id=query.message.chat.id,
-                           text="Отметьте задачи, за которые нужно поставить плюсики"
-                                "\n(и нажмите «Готово»)"
-                                f"\n(у вас сейчас режим «{'В ШКОЛЕ' if teacher.online == ONLINE_MODE.SCHOOL else 'ОНЛАЙН'}», /online и /school для переключения)",
-                           reply_markup=teacher_keyboards.build_verdict_for_oral_problems(plus_ids=set(),
-                                                                                          minus_ids=set(),
-                                                                                          student=student,
-                                                                                          online=teacher.online))
+                           text=text,
+                           reply_markup=reply_markup)
     State.set_by_user_id(teacher.id, STATE.TEACHER_WRITES_STUDENT_NAME, last_student_id=student.id)
     await bot.answer_callback_query_ig(query.id)
 
@@ -800,7 +792,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     student = User.get_by_id(student_id)
     if not student:
         teacher_message = await bot.send_message(chat_id=query.message.chat.id,
-                                                 text=f"Что-то в боте сломалось и результат оценки не засчитан. :( Попробуйте ещё раз.")
+                                                 text=msgs.t_bot_broken_result_not_saved)
         await bot.answer_callback_query_ig(query.id)
         State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
         asyncio.create_task(prc_teacher_select_action(None, teacher))
@@ -833,16 +825,18 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
 
     # Формируем сообщение с итоговым результатом проверки
-    text = f"Школьник: {student.token} {student.surname} {student.name}\n"
+    text = msgs.t_written_res_1(student=student)
     if human_readable_pluses:
-        text += f"\nПоставлены плюсы 👍 за задачи: {', '.join(human_readable_pluses)}"
+        human_readable_pluses_joined = ', '.join(human_readable_pluses)
+        text += msgs.t_written_res_2(human_readable_pluses_joined=human_readable_pluses_joined)
     if human_readable_minuses:
-        text += f"\nПоставлены минусы ❌ за задачи: {', '.join(human_readable_minuses)}"
+        human_readable_minuses_joined = ', '.join(human_readable_minuses)
+        text += msgs.t_written_res_3(human_readable_minuses_joined=human_readable_minuses_joined)
     if any_problem:
         lesson = any_problem.lesson
     else:
         lesson = Problem.last_lesson_num(student.level)
-    text += f'\nДля исправления /edtplus_{lesson}_{student.token}'
+    text += msgs.t_written_res_4(student=student, lesson=lesson)
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text=text,
                                    reply_markup=None)
@@ -850,7 +844,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     if any_problem:
         zoom_reaction_msg = await bot.send_message(
             chat_id=query.message.chat.id,
-            text=f"Оцените устную сдачу:",
+            text=msgs.t_rate_oral_submission,
             reply_markup=teacher_keyboards.build_teacher_reaction_oral(zoom_conversation_id)
         )
         bot.delete_messages_after(zoom_reaction_msg, 15)
@@ -888,7 +882,7 @@ async def find_student(message: types.Message):
     if (match := re.match(r'/\w+\s+(\S+)', message.text or '')):
         search = match.group(1)
     if not search:
-        await bot.send_message(chat_id=message.chat.id, text=f"🤖 Введите часть фамилии", )
+        await bot.send_message(chat_id=message.chat.id, text=msgs.t_find_student_hint, )
         return
     students = sorted(
         User.all_students(),
@@ -901,9 +895,9 @@ async def find_student(message: types.Message):
         lines = [
             f'{student.surname:<20} {student.name:<15} {student.level} {student.token} {"🏫" if student.online == ONLINE_MODE.SCHOOL else "📡"}'
             for student in students[:10]]
-        await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
+        await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '</pre>\n<pre>'.join(lines) + '</pre>')
     else:
-        await bot.send_message(chat_id=message.chat.id, text='Не нашлось ни одного студента')
+        await bot.send_message(chat_id=message.chat.id, text=msgs.t_no_students_found)
 
 
 @dispatcher.message_handler(commands=['set_online', 'so'])
@@ -916,18 +910,18 @@ async def set_online(message: types.Message):
     try:
         cmd, token, new_online = text
     except:
-        await bot.send_message(chat_id=message.chat.id, text=f"/set_online token online/school", )
+        await bot.send_message(chat_id=message.chat.id, text=msgs.t_teacher_set_online_usage, )
         return
     student = User.get_by_token(token)
     if not student:
-        await bot.send_message(chat_id=message.chat.id, text=f"Студент с токеном {token} не найден", )
+        await bot.send_message(chat_id=message.chat.id, text=msgs.t_stundent_name_not_found.format(token=token))
         return
     new_online = ONLINE_MODE_DECODER.get(new_online.strip(), None)
     if new_online:
         student.set_online_mode(new_online)
         await bot.send_message(
             chat_id=message.chat.id,
-            text=f"Студент с токеном {token} переведён",
+            text=msgs.t_student_online_changed.format_map({'token': token}),
         )
 
 
@@ -965,8 +959,7 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
             asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
         await bot.send_message(
             chat_id=query.message.chat.id,
-            text=f"Перевели школьника на уровень «{level.slevel}»."
-                 f"\nОбратите внимание, плюсы по старому уровню НЕ БЫЛИ ВНЕСЕНЫ. Простите, это сложно исправить.",
+            text=msgs.t_student_level_changed(level=level),
         )
         query.data = f'{CALLBACK.STUDENT_SELECTED}_{student_id}'
         await prc_student_selected_callback(query, teacher)
