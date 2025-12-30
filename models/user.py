@@ -63,6 +63,7 @@ class User:
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'
 
+    @property
     def name_for_teacher(self):
         age = ''
         if self.birthday:

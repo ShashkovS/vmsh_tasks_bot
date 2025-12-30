@@ -200,13 +200,13 @@ class Msgs:
     t_ok_saved = 'Ок, записал'
     t_question_on_problem = (
         "Вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
-        "{student.name_for_teacher()}\n"
+        "{student.name_for_teacher}\n"
         "/recheck_{student.token}_{problem.id}\n"
         "⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
     )
     t_checking_problem = (
         "Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
-        "{student.name_for_teacher()}\n"
+        "{student.name_for_teacher}\n"
         "⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
     )
     t_write_answer = (
@@ -238,7 +238,7 @@ class Msgs:
         ' /recheck_{student.token}_{problem.id}'
     )
     t_oral_plus_give_surname = "Введите фамилию школьника (можно начало фамилии), чтобы внести плюсы"
-    t_putting_plusses = "Вносим плюсики школьнику:\n{student.name_for_teacher()}"
+    t_putting_plusses = "Вносим плюсики школьнику:\n{student.name_for_teacher}"
     t_online_mode_school = 'В ШКОЛЕ'
     t_online_mode_online =  'ОНЛАЙН'
     t_written_res_1 = "Школьник: {student.token} {student.surname} {student.name}\n"
