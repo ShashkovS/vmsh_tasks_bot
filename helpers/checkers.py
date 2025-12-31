@@ -263,3 +263,12 @@ ANS_REGEX = {
     ANS_TYPE.SELECT_ONE: None,  # выберите один из следующих вариантов:',
     ANS_TYPE.STRING: None,  # строка
 }
+
+if __name__ == '__main__':
+    print(symb_eq2('a + b^2', 'b * b + a * (3 - 1) - a'))
+    print(symb_eq2('26⋅(26+26+26)−(26+26):26', '2026'))
+    worker.shutdown()
+    worker.shutdown()
+    worker.shutdown()
+    from helpers.checkers import worker
+    worker.shutdown()
