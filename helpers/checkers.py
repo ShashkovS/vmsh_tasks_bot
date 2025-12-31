@@ -176,6 +176,15 @@ def symb_eq(x, y):
         return False
 
 
+def symb_eq2(x, y):
+    try:
+        res: CompareVerdict = worker.strict_compare_v2(x, y, timeout=1.0)
+        return res == CompareVerdict.EQUAL or res == CompareVerdict.MAY_BE
+    except Exception as e:
+        logger.exception(e)
+        return False
+
+
 def time_eq(x, y):
     return to_time(x) == to_time(y)
 
@@ -218,6 +227,7 @@ ANS_CHECKER = {
     ANS_TYPE.MULTISET: frac_multiset_eq,  # мультимножество (например, 1, 1, 2, 5, 7, 2/5, 2/5, -1.2, -1.2)'),
     ANS_TYPE.STRING: str_eq,  # строка
     ANS_TYPE.SYMB_EXPRESSION: symb_eq,  # строка
+    ANS_TYPE.SYMB_EQUIV: symb_eq2,  # строка
 }
 
 
@@ -248,6 +258,7 @@ ANS_REGEX = {
     ANS_TYPE.MULTISET: re.compile(
         r'^(?:[^0-9eE.+/-]*(?:[-+]?(?=\d|\.\d)\d*(?:/\d+|(?:\.\d*)?(?:[eE][-+]?\d+)?|))[^0-9eE.+/-]*)+$'),
     ANS_TYPE.SYMB_EXPRESSION: re.compile('^.*$'),
+    ANS_TYPE.SYMB_EQUIV: re.compile('^.*$'),
     # мультимножество (например, 1, 1, 2, 5, 7, 2/5, 2/5, -1.2, -1.2)'),
     ANS_TYPE.SELECT_ONE: None,  # выберите один из следующих вариантов:',
     ANS_TYPE.STRING: None,  # строка
