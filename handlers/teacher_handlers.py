@@ -599,7 +599,7 @@ async def prc_send_answer_callback(query: types.CallbackQuery, teacher: User):
     try:
         discussion = WrittenQueue.get_discussion(student.id, -problem.id)  # возвращаем минус SOS
         await bot.send_message(chat_id=student_chat_id,
-                               text=msgs.problem_question_answer.format_map({'problem': problem}),
+                               text=msgs.t_problem_question_answer.format_map({'problem': problem}),
                                disable_notification=True)
         for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не превысить лимит
             # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
