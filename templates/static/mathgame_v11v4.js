@@ -887,7 +887,22 @@ function fetchInitialData() {
       .then(resp => {
         try {
           if (resp.id && typeof Sentry !== 'undefined') {
+            Sentry.init({
+              dsn: "https://cc3be8abf24c7da64429b0aa7cfa440c@o489435.ingest.us.sentry.io/4510656495222784",
+              release: "0.11.4",
+              integrations: [Sentry.browserTracingIntegration()],
+              // Set tracesSampleRate to 1.0 to capture 100%
+              // of transactions for performance monitoring.
+              // We recommend adjusting this value in production
+              tracesSampleRate: 1.0,
+              // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
+              tracePropagationTargets: ["localhost", /^https:\/\/vmsh179bothzger\.proj179\.ru\/game/],
+              // Setting this option to true will send default PII data to Sentry.
+              // For example, automatic IP address collection on events
+              sendDefaultPii: true,
+            });
             Sentry.setUser({ id: resp.id });
+            console.log('Sentry set up');
           }
         } catch (e) {}
         refreshData(resp);
