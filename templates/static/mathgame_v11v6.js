@@ -1,9 +1,9 @@
 "use strict";
 
 /*
-sentry-cli releases new -p vmsh179game "0.11.5"
-sentry-cli sourcemaps upload "./static/mathgame_v11v5.min*" --release "0.11.5" --url-prefix "~/static" --project vmsh179game
-sentry-cli releases finalize "0.11.5"
+sentry-cli releases new -p vmsh179game "0.11.6"
+sentry-cli sourcemaps upload "./static/mathgame_v11v6.min*" --release "0.11.6" --url-prefix "~/static" --project vmsh179game
+sentry-cli releases finalize "0.11.6"
  */
 
 const CELL_SIZE_IN_REM = 3;
@@ -20,17 +20,21 @@ const GAME_NUM = 11;
 if (typeof Sentry === 'undefined') {
   window.Sentry = window.Sentry || {};
 }
-window.Sentry.onLoad = function() {
+if (typeof Sentry !== 'undefined' && Sentry.init) {
   Sentry.init({
     dsn: "https://cc3be8abf24c7da64429b0aa7cfa440c@o489435.ingest.us.sentry.io/4510656495222784",
-    release: "0.11.5", // Убедитесь, что версия совпадает с sourcemaps
+    release: "0.11.6",
     integrations: [Sentry.browserTracingIntegration()],
     tracesSampleRate: 1.0,
     tracePropagationTargets: ["localhost", /^https:\/\/vmsh179bothzger\.proj179\.ru\/game/],
     sendDefaultPii: true,
+    debug: true, // <--- ВКЛЮЧИТЕ ЭТО, чтобы видеть логи от самого Sentry
   });
-  console.log('Sentry initialized via onLoad');
-};
+  console.log('Sentry config applied');
+} else {
+  console.log('Sentry not loaded (blocked?)');
+}
+
 
 const mapAsString = `
 x\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx
