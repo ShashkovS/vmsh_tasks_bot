@@ -262,7 +262,7 @@ def get_game_data(student: User) -> dict:
     events.sort(key=itemgetter(0))
     events = [ev[1] for ev in events]
     # Собираем карту  TODO Сделать минимальное кеширование
-    data = {'events': events, 'opened': opened, 'flags': flags, 'myFlag': my_flag, 'chests': chests}
+    data = {'events': events, 'opened': opened, 'flags': flags, 'myFlag': my_flag, 'chests': chests, 'id': student.id}
     en = perf_counter()
     # logger.warning(f'get_game_data {en - st:0.3f} seconds')  # TODO Удалить
     return data

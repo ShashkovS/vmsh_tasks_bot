@@ -885,6 +885,11 @@ function fetchInitialData() {
   if (!(tlCommandId > 0)) {
     postData('/game/me', {})
       .then(resp => {
+        try {
+          if (resp.id && typeof Sentry !== 'undefined') {
+            Sentry.setUser({ id: resp.id });
+          }
+        } catch (e) {}
         refreshData(resp);
         updateMap();
         renderHeader();
