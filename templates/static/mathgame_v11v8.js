@@ -1,9 +1,9 @@
 "use strict";
 
 /*
-sentry-cli releases new -p vmsh179game "0.11.7"
-sentry-cli sourcemaps upload "./static/mathgame_v11v7.min*" --release "0.11.7" --url-prefix "~/static" --project vmsh179game
-sentry-cli releases finalize "0.11.7"
+sentry-cli releases new -p vmsh179game "0.11.8"
+sentry-cli sourcemaps upload "./static/mathgame_v11v8.min*" --release "0.11.8" --url-prefix "~/static" --project vmsh179game
+sentry-cli releases finalize "0.11.8"
  */
 
 const CELL_SIZE_IN_REM = 3;
@@ -16,30 +16,6 @@ const DEBUG = false;
 
 const GAME_NUM = 11;
 
-
-window.Sentry = window.Sentry || {};
-window.Sentry.onLoad = function() {
-  try {
-    console.log('Sentry SDK loaded, initializing...');
-
-    Sentry.init({
-      dsn: "https://cc3be8abf24c7da64429b0aa7cfa440c@o489435.ingest.us.sentry.io/4510656495222784",
-      release: "0.11.7",
-      // В версии 10.x это стандартный метод.
-      // Внутри onLoad он гарантированно будет существовать.
-      integrations: [
-        Sentry.browserTracingIntegration(),
-      ],
-      tracesSampleRate: 1.0,
-      tracePropagationTargets: ["localhost", /^https:\/\/vmsh179bothzger\.proj179\.ru\/game/],
-      sendDefaultPii: true,
-    });
-    console.log('Sentry initialized successfully');
-  } catch (e) {
-    // 3. Если внутри Sentry что-то сломалось — игра НЕ упадет, просто напишем ошибку в консоль
-    console.error('Failed to init Sentry:', e);
-  }
-};
 
 
 const mapAsString = `
