@@ -1,5 +1,11 @@
 "use strict";
 
+/*
+sentry-cli releases new -p vmsh179game "0.11.5"
+sentry-cli sourcemaps upload "./static/mathgame_v11v5.min*" --release "0.11.5" --url-prefix "~/static" --project vmsh179game
+sentry-cli releases finalize "0.11.5"
+ */
+
 const CELL_SIZE_IN_REM = 3;
 const MODAL_WIDTH_IN_CELLS = 5;
 const MODAL_HEIGHT_IN_CELLS = 3;
@@ -9,6 +15,22 @@ const FOR_OPACITY_LEN = 8;
 const DEBUG = false;
 
 const GAME_NUM = 11;
+
+
+if (typeof Sentry === 'undefined') {
+  window.Sentry = window.Sentry || {};
+}
+window.Sentry.onLoad = function() {
+  Sentry.init({
+    dsn: "https://cc3be8abf24c7da64429b0aa7cfa440c@o489435.ingest.us.sentry.io/4510656495222784",
+    release: "0.11.5", // Убедитесь, что версия совпадает с sourcemaps
+    integrations: [Sentry.browserTracingIntegration()],
+    tracesSampleRate: 1.0,
+    tracePropagationTargets: ["localhost", /^https:\/\/vmsh179bothzger\.proj179\.ru\/game/],
+    sendDefaultPii: true,
+  });
+  console.log('Sentry initialized via onLoad');
+};
 
 const mapAsString = `
 x\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx\tx
@@ -885,29 +907,12 @@ function fetchInitialData() {
   if (!(tlCommandId > 0)) {
     postData('/game/me', {})
       .then(resp => {
-        try {
-          if (resp.id && typeof Sentry !== 'undefined') {
-            Sentry.init({
-              dsn: "https://cc3be8abf24c7da64429b0aa7cfa440c@o489435.ingest.us.sentry.io/4510656495222784",
-              release: "0.11.4",
-              integrations: [Sentry.browserTracingIntegration()],
-              // Set tracesSampleRate to 1.0 to capture 100%
-              // of transactions for performance monitoring.
-              // We recommend adjusting this value in production
-              tracesSampleRate: 1.0,
-              // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
-              tracePropagationTargets: ["localhost", /^https:\/\/vmsh179bothzger\.proj179\.ru\/game/],
-              // Setting this option to true will send default PII data to Sentry.
-              // For example, automatic IP address collection on events
-              sendDefaultPii: true,
-            });
-            Sentry.setUser({ id: resp.id });
-            console.log('Sentry set up');
-          }
-        } catch (e) {}
         refreshData(resp);
         updateMap();
         renderHeader();
+        if (resp.id && typeof Sentry !== 'undefined' && Sentry.setUser) {
+          Sentry.setUser({ id: resp.id });
+        }
       });
   } else {
     postData(`/game/timeline/${tlCommandId}`, {})
@@ -1247,15 +1252,56 @@ function init() {
   }
   prepareWebsockets();
   setInterval(() => fetchInitialData(), 60 * 1000);
+  checkFullscreenSupport();
 }
 
 
 function toggleFullscreen() {
-  if (document.fullscreenElement) {
-    document.exitFullscreen();
+  const doc = document;
+  const elem = doc.documentElement;
+  // Проверяем, есть ли сейчас активный полноэкранный элемент (с учетом префиксов для разных браузеров)
+  const isFullscreen = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+  if (isFullscreen) {
+    // --- ВЫХОД ИЗ FULLSCREEN ---
+    if (doc.exitFullscreen) {
+      doc.exitFullscreen();
+    } else if (doc.webkitExitFullscreen) { /* Safari */
+      doc.webkitExitFullscreen();
+    } else if (doc.mozCancelFullScreen) { /* Firefox */
+      doc.mozCancelFullScreen();
+    } else if (doc.msExitFullscreen) { /* IE/Edge */
+      doc.msExitFullscreen();
+    }
   } else {
-    document.documentElement.requestFullscreen();
+    // --- ВХОД В FULLSCREEN ---
+    // Находим правильный метод для текущего браузера
+    const requestMethod = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+    if (requestMethod) {
+      // requestMethod нужно вызывать с привязкой к элементу (elem)
+      const promise = requestMethod.call(elem);
+      // В современных браузерах метод возвращает Promise.
+      // Если пользователь отклонит запрос или браузер запретит — промис упадет.
+      // Ловим ошибку здесь, чтобы она не летела в Sentry как Unhandled Rejection.
+      if (promise && typeof promise.catch === 'function') {
+        promise.catch(err => {
+          console.warn("Fullscreen denied or failed:", err);
+        });
+      }
+    } else {
+      console.log("Fullscreen API is not supported on this device.");
+    }
   }
 }
+
+function checkFullscreenSupport() {
+  const elem = document.documentElement;
+  const supportsFullscreen = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+
+  if (!supportsFullscreen) {
+    const btn = document.getElementById('fullScreenButton');
+    if (btn) btn.style.display = 'none';
+  }
+}
+
 
 window.addEventListener('load', init);
