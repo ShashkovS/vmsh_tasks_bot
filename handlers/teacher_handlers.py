@@ -380,13 +380,13 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
     discussion = WrittenQueue.get_discussion(student.id,
                                              problem.id if (not is_sos) else (-problem.id))  # обрабатываем SOS
     for row in discussion[-20:]:  # Берём последние 20 сообщений, чтобы не привысить лимит
-        # Пока временно делаем только forward'ы. Затем нужно будет изолировать учителя от студента
         forward_success = False
         if row['chat_id'] and row['tg_msg_id']:
             try:
                 await bot.forward_message(chat_id, row['chat_id'], row['tg_msg_id'])
                 forward_success = True
-            except aiogram.utils.exceptions.TelegramAPIError:
+            except aiogram.utils.exceptions.TelegramAPIError as e:
+                logger.error(msgs.msgs.t_message_deleted + '\n%s', e)
                 await bot.send_message(chat_id=chat_id, text=msgs.t_message_deleted)
         if forward_success:
             pass
