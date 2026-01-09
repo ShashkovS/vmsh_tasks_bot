@@ -386,7 +386,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
                 await bot.forward_message(chat_id, row['chat_id'], row['tg_msg_id'])
                 forward_success = True
             except aiogram.utils.exceptions.TelegramAPIError as e:
-                logger.error(msgs.msgs.t_message_deleted + '\n%s', e)
+                logger.error(msgs.t_message_deleted + '\n%s', e)
                 await bot.send_message(chat_id=chat_id, text=msgs.t_message_deleted)
         if forward_success:
             pass
