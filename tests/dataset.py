@@ -14,7 +14,7 @@ class FakeTelegram(aresponses.ResponsesMockServer):
         self._body, self._headers = self.parse_data(message_data)
 
         if isinstance(bot, Bot):
-            Bot.set_current(bot)
+            self._bot = bot
 
     async def __aenter__(self):
         await super().__aenter__()
@@ -29,9 +29,7 @@ class FakeTelegram(aresponses.ResponsesMockServer):
     @staticmethod
     def parse_data(message_data):
         import json
-        from aiogram.utils.payload import _normalize
-
-        _body = '{"ok":true,"result":' + json.dumps(_normalize(message_data)) + '}'
+        _body = '{"ok":true,"result":' + json.dumps(message_data) + '}'
         _headers = {'Server': 'nginx/1.12.2',
                     'Date': 'Tue, 03 Apr 2018 16:59:54 GMT',
                     'Content-Type': 'application/json',

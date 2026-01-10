@@ -79,7 +79,7 @@
    - In prod (gunicorn import), call `setup_tgbot_webhook(app)` before returning the app.
    - Keep the existing `apps.all_apps` wiring and shutdown ordering unchanged.
 
-7) [ ] **Adjust tests for aiogram 3**
+7) [x] **Adjust tests for aiogram 3**
    - `tests/dataset.py`:
      - Replace `Bot.set_current` usage (removed in aiogram 3). Prefer passing the bot explicitly to functions or use context utilities if needed.
      - Replace `aiogram.utils.payload._normalize` (internal in aiogram 2) with a safe serializer; if you only need JSON, use `json.dumps(message_data)`.
