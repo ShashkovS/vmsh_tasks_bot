@@ -90,7 +90,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
 def build_lessons(level):
     logger.debug('keyboards.build_lessons')
     keyboard_markup = InlineKeyboardBuilder()
-    keyboard_markup.max_width = 3
+    keyboard_markup.max_width = 1
     all_lessons = db.lesson.get_all(level)
     # PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL or PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL
     use_lessons = []
@@ -113,7 +113,7 @@ def build_test_answers(problem: Problem):
     logger.debug('keyboards.build_test_answers')
     choices = problem.ans_validation.split(';')
     keyboard_markup = InlineKeyboardBuilder()
-    keyboard_markup.max_width = 3
+    keyboard_markup.max_width = 1
     for choice in choices:
         lesson_button = types.InlineKeyboardButton(
             text=choice,
@@ -152,7 +152,7 @@ def build_exit_waitlist():
 def build_student_in_conference():
     logger.debug('keyboards.build_student_in_conference')
     keyboard_markup = InlineKeyboardBuilder()
-    keyboard_markup.max_width = 3
+    keyboard_markup.max_width = 1
     keyboard_markup.add(types.InlineKeyboardButton(
         text=f"✔ Беседа окончена",
         callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
@@ -167,7 +167,7 @@ def build_student_in_conference():
 def build_student_sos_actions():
     logger.debug('keyboards.build_student_sos_actions')
     keyboard = InlineKeyboardBuilder()
-    keyboard.max_width = 3
+    keyboard.max_width = 1
     button = types.InlineKeyboardButton(
         text=msgs.problem_question,
         callback_data=CALLBACK.PROBLEM_SOS
@@ -187,7 +187,7 @@ def build_student_reaction_on_task_bad_verdict(result_id: int):
     """
     logger.debug('keyboards.build_student_reaction_on_task_bad_verdict')
     keyboard = InlineKeyboardBuilder()
-    keyboard.max_width = 3
+    keyboard.max_width = 1
     for reaction in db.reaction.enum(REACTION.WRITTEN_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
@@ -202,7 +202,7 @@ def build_student_reaction_oral(zoom_conversation_id: int):
     """Создает инлайн клавиатуру для ученика для оценки устной сдачи."""
     logger.debug('keyboards.build_student_reaction_oral')
     keyboard = InlineKeyboardBuilder()
-    keyboard.max_width = 3
+    keyboard.max_width = 1
     for reaction in db.reaction.enum(REACTION.ORAL_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(

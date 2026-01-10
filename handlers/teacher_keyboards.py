@@ -14,7 +14,7 @@ from models import User, Problem
 def build_teacher_actions(sos_count, prb_count):
     logger.debug('keyboards.build_teacher_actions')
     keyboard = InlineKeyboardBuilder()
-    keyboard.max_width = 3
+    keyboard.max_width = 1
     get_written_task_button = types.InlineKeyboardButton(
         text=msgs.t_btn_answer_question.format_map({'sos_count': sos_count}),
         callback_data=CALLBACK.GET_SOS_TASK
@@ -41,7 +41,7 @@ def build_teacher_actions(sos_count, prb_count):
 def build_cancel_keyboard():
     logger.debug('build_cancel_keyboard')
     keyboard = InlineKeyboardBuilder()
-    keyboard.max_width = 3
+    keyboard.max_width = 1
     cancel = types.InlineKeyboardButton(
         text=msgs.t_btn_cancel,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
@@ -55,7 +55,7 @@ def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int, 
     # Сортировка уже в sql-запросе
     # problems_and_counts.sort(key=lambda el: (el[0].lesson, el[0].level, el[0].prob, el[0].item))
     keyboard = InlineKeyboardBuilder()
-    keyboard.max_width = 3
+    keyboard.max_width = 1
     for problem, cnt, days_waits in problems_and_counts:
         if problem.prob_type == PROB_TYPE.TEST:
             tp = '⋯'
@@ -81,7 +81,7 @@ def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int, 
 def build_teacher_select_written_problem(top: list):
     logger.debug('keyboards.build_teacher_select_written_problem')
     keyboard_markup = InlineKeyboardBuilder()
-    keyboard_markup.max_width = 7
+    keyboard_markup.max_width = 1
     for row in top:
         student = User.get_by_id(row['student_id'])
         problem = Problem.get_by_id(abs(row['problem_id']))  # убираем знак, он может быть отрицательным при вопросе
@@ -101,7 +101,7 @@ def build_teacher_select_written_problem(top: list):
 def build_select_student(name_to_find: str):
     logger.debug('keyboards.build_select_student')
     keyboard_markup = InlineKeyboardBuilder()
-    keyboard_markup.max_width = 7
+    keyboard_markup.max_width = 1
     name_to_find_lower = name_to_find.lower()
     students = sorted(
         User.all_students(),
@@ -124,7 +124,7 @@ def build_select_student(name_to_find: str):
 def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids_to_remove: List = None):
     logger.debug('keyboards.build_written_task_checking_verdict')
     keyboard_markup = InlineKeyboardBuilder()
-    keyboard_markup.max_width = 7
+    keyboard_markup.max_width = 1
     # TODO сделать нормально
     if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
         keyboard_markup.add(types.InlineKeyboardButton(
@@ -159,7 +159,7 @@ def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids
 def build_answer_verdict(student: User, problem: Problem, wtd_ids_to_remove: List = None):
     logger.debug('keyboards.build_answer_verdict')
     keyboard_markup = InlineKeyboardBuilder()
-    keyboard_markup.max_width = 7
+    keyboard_markup.max_width = 1
     keyboard_markup.add(types.InlineKeyboardButton(
         text=msgs.t_btn_send_answer,
         callback_data=f"{CALLBACK.SEND_ANSWER}_{student.id}_{-problem.id}"
@@ -241,7 +241,7 @@ def build_teacher_reaction_on_solution(result_id: int):
     """
     logger.debug('keyboards.build_teacher_reaction_on_solution')
     keyboard = InlineKeyboardBuilder()
-    keyboard.max_width = 3
+    keyboard.max_width = 1
     for reaction in db.reaction.enum(REACTION.WRITTEN_TEACHER):
         keyboard.add(
             types.InlineKeyboardButton(
@@ -256,7 +256,7 @@ def build_teacher_reaction_oral(zoom_conversation_id: int):
     """Создает инлайн клавиатуру для учителя для оценки устной сдачи ученика."""
     logger.debug('keyboards.build_teacher_reaction_oral')
     keyboard = InlineKeyboardBuilder()
-    keyboard.max_width = 3
+    keyboard.max_width = 1
     for reaction in db.reaction.enum(REACTION.ORAL_TEACHER):
         keyboard.add(
             types.InlineKeyboardButton(

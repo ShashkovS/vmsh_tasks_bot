@@ -14,7 +14,7 @@ def build_survey(user: User, survey, survey_result):
     #   {'id': 2, 'survey_id': 1, 'text': 'Two'}
     #   ]}
     keyboard_markup = InlineKeyboardBuilder()
-    keyboard_markup.max_width = 3
+    keyboard_markup.max_width = 1
     for choice in survey['choices']:
         if choice['id'] in survey_result:
             tick = '✅'
