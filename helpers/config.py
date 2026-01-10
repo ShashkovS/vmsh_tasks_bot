@@ -116,7 +116,8 @@ def _init_sentry(dsn: str, environment: str):
                 dsn=dsn,
                 integrations=[AioHttpIntegration()],
                 traces_sample_rate=1.0,
-                environment=environment
+                environment=environment,
+                send_default_pii=True,
             )
             logging.info('Sentry started')
 

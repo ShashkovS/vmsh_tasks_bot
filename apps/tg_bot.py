@@ -23,7 +23,7 @@ async def check_webhook():
     logger.debug('check_webhook')
     # Ждём слуайное время от 0 до 2 секунд. Чтобы несколько worker'ов не пытались получить хук одновременно
     # TODO сделать через блокировку в базе
-    await asyncio.sleep(uniform(0, 2))
+    await asyncio.sleep(uniform(0, 5))
     # Set webhook
     webhook = await bot.get_webhook_info()  # Get current webhook status
     if webhook.url != WEBHOOK_URL:  # If URL is bad
