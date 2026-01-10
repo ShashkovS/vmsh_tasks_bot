@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-from aiogram.dispatcher.webhook import web
 import asyncio
+from contextlib import suppress
+
+from aiohttp import web
 
 import apps
 from helpers.config import config, logger
@@ -53,6 +55,8 @@ def prepare_app():
     if __name__ == '__main__':
         url_prefix = f'http://127.0.0.1:{LOCAL_APP_PORT}'
     else:
+        if hasattr(apps, "tg_bot"):
+            apps.tg_bot.setup_tgbot_webhook(app)
         url_prefix = f'https://{config.webhook_host}'
     logger.info('Routes:')
     for route in app.router.routes():
@@ -65,9 +69,29 @@ def prepare_app():
 app = prepare_app()
 if __name__ == "__main__":
     # Start aiohttp server
-    apps.tg_bot.start_bot_in_polling_mode()
-    webapp_task = asyncio.create_task(web.run_app(app, port=LOCAL_APP_PORT))
+    async def dev_main():
+        apps.tg_bot.start_bot_in_polling_mode()
+
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, port=LOCAL_APP_PORT)
+        await site.start()
+        logger.info(f"Веб-сервер запущен на порту {LOCAL_APP_PORT}")
+
+        polling_task = asyncio.create_task(apps.tg_bot.run_tg_bot_in_polling_mode())
+        try:
+            await asyncio.Event().wait()
+        finally:
+            polling_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await polling_task
+            await runner.cleanup()
+
+    try:
+        asyncio.run(dev_main())
+    except KeyboardInterrupt:
+        pass
 else:
     # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
     # Ну всё, можно делать заключительные приготовления
-    apps.tg_bot.start_bot_in_webhook_mode(app)
+    pass

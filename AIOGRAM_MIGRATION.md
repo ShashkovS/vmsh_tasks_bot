@@ -58,7 +58,7 @@
    - Replace `types.ParseMode` with `ParseMode` from `aiogram.enums`.
    - Replace `types.input_file.InputFile` with `FSInputFile`/`BufferedInputFile` (`handlers/teacher_handlers.py`).
 
-5) [ ] **Rewire webhook + polling integration in `apps/tg_bot.py`**
+5) [x] **Rewire webhook + polling integration in `apps/tg_bot.py`**
    - Use `from aiohttp import web` (remove aiogram webhook import).
    - Add aiogram 3 webhook helpers:
      - `from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application`
@@ -73,7 +73,7 @@
        - `await bot.delete_webhook(drop_pending_updates=False)` then `await dp.start_polling(bot)`.
    - Keep DB/spreadsheet init and shutdown logic as-is inside the startup/shutdown hooks.
 
-6) [ ] **Update `main.py` to select webhook vs polling**
+6) [x] **Update `main.py` to select webhook vs polling**
    - Import `web` from `aiohttp`.
    - In dev (`__main__`), run aiohttp app with `AppRunner/TCPSite` and start `run_tg_bot_in_polling_mode()` as a task (match your aiogram 3 example).
    - In prod (gunicorn import), call `setup_tgbot_webhook(app)` before returning the app.

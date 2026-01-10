@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-import logging
-from aiogram.dispatcher.webhook import configure_app, web
-from aiogram.utils.executor import start_polling
 import asyncio
+import logging
 from random import uniform
+
+from aiohttp import web
+from aiogram import Bot
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 from helpers.config import config, logger, DEBUG
 from helpers.bot import bot, dispatcher
@@ -12,7 +14,8 @@ from models.spreadsheets import google_spreadsheet_loader, update_from_google_if
 import handlers
 
 USE_WEBHOOKS = False
-routes = None
+WEBHOOK_URL = None
+WEBHOOK_PATH = None
 
 
 async def check_webhook():
@@ -33,7 +36,7 @@ async def log_bot_name(username):
     logger.info(f'Бот начал свою работу: https://t.me/{username}')
 
 
-async def on_startup(app):
+async def on_startup(bot_instance: Bot):
     logger.warning('bot on_startup')
     logger.debug(f'{handlers}')
 
@@ -47,16 +50,14 @@ async def on_startup(app):
 
     if USE_WEBHOOKS:
         await check_webhook()
-    else:
-        asyncio.create_task(dispatcher.start_polling())
 
-    bot.username = (await bot.me).username
+    bot_instance.username = (await bot_instance.get_me()).username
 
-    await bot.post_logging_message(f'Бот начал свою работу')
-    asyncio.create_task(log_bot_name(bot.username))
+    await bot_instance.post_logging_message(f'Бот начал свою работу')
+    asyncio.create_task(log_bot_name(bot_instance.username))
 
 
-async def on_shutdown(app):
+async def on_shutdown(bot_instance: Bot):
     """
     Graceful shutdown.
     """
@@ -83,10 +84,13 @@ async def on_shutdown(app):
     # Close all connections.
     # Здесь какая-то ерунда, зачем-то выводится вот такое предупреждение:
     # https://github.com/aiogram/aiogram/blob/a852b9559612e3b9d542588a4539e64c50393a9c/aiogram/bot/base.py#L208
-    if bot._session:
-        await bot._session.close()
-    await dispatcher.storage.close()
-    await dispatcher.storage.wait_closed()
+    if bot_instance.session:
+        await bot_instance.session.close()
+    storage = getattr(dispatcher, "storage", None)
+    if storage:
+        await storage.close()
+        if hasattr(storage, "wait_closed"):
+            await storage.wait_closed()
     if __name__ == "__main__":
         db.sql.disconnect()
     logger.warning('bot Bye!')
@@ -98,33 +102,44 @@ def start_bot_in_polling_mode():
     # Включаем все отладочные сообщения
     logger.setLevel(DEBUG)
     logging.getLogger('aiogram').setLevel(DEBUG)
-    from aiogram.contrib.middlewares.logging import LoggingMiddleware
-    dispatcher.middleware.setup(LoggingMiddleware())
+
+
+def _build_webhook_path():
+    parts = [part for part in (config.webhook_path, config.telegram_bot_token) if part]
+    cleaned = [part.strip('/') for part in parts]
+    return "/" + "/".join(cleaned)
+
+
+def setup_tgbot_webhook(app: web.Application):
+    global USE_WEBHOOKS, WEBHOOK_URL, WEBHOOK_PATH
+    USE_WEBHOOKS = True
+    WEBHOOK_PATH = _build_webhook_path()
+    WEBHOOK_URL = f"https://{config.webhook_host}:{config.webhook_port}{WEBHOOK_PATH}"
+
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dispatcher,
+        bot=bot,
+    )
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+    setup_application(app, dispatcher, bot=bot)
+    logger.info(f"Webhook установлен по пути: {WEBHOOK_PATH}")
+
+
+async def run_tg_bot_in_polling_mode():
+    global USE_WEBHOOKS
+    USE_WEBHOOKS = False
+    await bot.delete_webhook(drop_pending_updates=False)
+    await dispatcher.start_polling(bot)
 
 
 def start_bot_in_webhook_mode(app):
     # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
-    global USE_WEBHOOKS, WEBHOOK_URL
-    USE_WEBHOOKS = True
-    path = f'/{config.webhook_path}' if config.webhook_path else ''
-    WEBHOOK_URL = f"https://{config.webhook_host}:{config.webhook_port}{path}/{config.telegram_bot_token}/"
-    configure_app(app.dispatcher, app, path='/{token}/', route_name='telegram_webhook_handler')
-
-    # app will be started by gunicorn, so no need to start_webhook
-    # start_webhook(
-    #     dispatcher=dispatcher,
-    #     webhook_path='/',
-    #     on_startup=on_startup,
-    #     on_shutdown=on_shutdown,
-    #     host=config.webhook_host,
-    #     port=config.webhook_port,
-    # )
+    setup_tgbot_webhook(app)
 
 
 def configue(app):
-    app.dispatcher = dispatcher
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
+    dispatcher.startup.register(on_startup)
+    dispatcher.shutdown.register(on_shutdown)
 
 
 if __name__ == "__main__":
@@ -132,4 +147,4 @@ if __name__ == "__main__":
     configue(app)
     start_bot_in_polling_mode()
     # В режиме отладки запускаем без вебхуков
-    start_polling(dispatcher, on_startup=on_startup, on_shutdown=on_shutdown)
+    asyncio.run(run_tg_bot_in_polling_mode())
