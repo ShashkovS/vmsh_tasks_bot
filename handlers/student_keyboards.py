@@ -1,4 +1,5 @@
 from aiogram import types
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from helpers.consts import *
 from helpers.config import logger, config
@@ -14,7 +15,8 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     being_checked = set(db.written_task_queue.check_student_sent_written(student.id, lesson_num))
     if RESULT_MODE == FEATURES.RESULT_AFTER:
         student_tried = set(db.result.check_student_tried(student.id, lesson_num))
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    keyboard_markup = InlineKeyboardBuilder()
+    keyboard_markup.max_width = 1
     if GAME_MODE == FEATURES.GAME_SHOW:
         to_game_button = types.InlineKeyboardButton(
             text=msgs.open_game,
@@ -82,12 +84,13 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
             url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
         )
         keyboard_markup.add(to_game_button)
-    return keyboard_markup
+    return keyboard_markup.as_markup()
 
 
 def build_lessons(level):
     logger.debug('keyboards.build_lessons')
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    keyboard_markup = InlineKeyboardBuilder()
+    keyboard_markup.max_width = 1
     all_lessons = db.lesson.get_all(level)
     # PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL or PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL
     use_lessons = []
@@ -103,13 +106,14 @@ def build_lessons(level):
             callback_data=f"{CALLBACK.LIST_SELECTED}_{lesson['lesson']}",
         )
         keyboard_markup.add(lesson_button)
-    return keyboard_markup
+    return keyboard_markup.as_markup()
 
 
 def build_test_answers(problem: Problem):
     logger.debug('keyboards.build_test_answers')
     choices = problem.ans_validation.split(';')
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    keyboard_markup = InlineKeyboardBuilder()
+    keyboard_markup.max_width = 1
     for choice in choices:
         lesson_button = types.InlineKeyboardButton(
             text=choice,
@@ -121,33 +125,34 @@ def build_test_answers(problem: Problem):
         callback_data=CALLBACK.CANCEL_TASK_SUBMISSION,
     )
     keyboard_markup.add(cancel_button)
-    return keyboard_markup
+    return keyboard_markup.as_markup()
 
 
 def build_cancel_task_submission():
     logger.debug('keyboards.build_cancel_task_submission')
-    keyboard_markup = types.InlineKeyboardMarkup()
+    keyboard_markup = InlineKeyboardBuilder()
     cancel_button = types.InlineKeyboardButton(
         text=msgs.cancel,
         callback_data=CALLBACK.CANCEL_TASK_SUBMISSION,
     )
     keyboard_markup.add(cancel_button)
-    return keyboard_markup
+    return keyboard_markup.as_markup()
 
 
 def build_exit_waitlist():
     logger.debug('keyboards.build_exit_waitlist')
-    keyboard_markup = types.ReplyKeyboardMarkup(selective=True, resize_keyboard=True)
+    keyboard_markup = ReplyKeyboardBuilder()
     exit_button = types.KeyboardButton(
         text="/exit_waitlist Выйти из очереди"
     )
     keyboard_markup.add(exit_button)
-    return keyboard_markup
+    return keyboard_markup.as_markup(selective=True, resize_keyboard=True)
 
 
 def build_student_in_conference():
     logger.debug('keyboards.build_student_in_conference')
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    keyboard_markup = InlineKeyboardBuilder()
+    keyboard_markup.max_width = 1
     keyboard_markup.add(types.InlineKeyboardButton(
         text=f"✔ Беседа окончена",
         callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
@@ -156,12 +161,13 @@ def build_student_in_conference():
         text=f"❌ Отказаться от устной сдачи",
         callback_data=f"{CALLBACK.GET_OUT_OF_WAITLIST}"
     ))
-    return keyboard_markup
+    return keyboard_markup.as_markup()
 
 
 def build_student_sos_actions():
     logger.debug('keyboards.build_student_sos_actions')
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardBuilder()
+    keyboard.max_width = 1
     button = types.InlineKeyboardButton(
         text=msgs.problem_question,
         callback_data=CALLBACK.PROBLEM_SOS
@@ -172,7 +178,7 @@ def build_student_sos_actions():
         callback_data=CALLBACK.OTHER_SOS
     )
     keyboard.add(button)
-    return keyboard
+    return keyboard.as_markup()
 
 
 def build_student_reaction_on_task_bad_verdict(result_id: int):
@@ -180,7 +186,8 @@ def build_student_reaction_on_task_bad_verdict(result_id: int):
     (В результате нажатия учителем "Отклонить и переслать все сообщения выше студенту ...").
     """
     logger.debug('keyboards.build_student_reaction_on_task_bad_verdict')
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardBuilder()
+    keyboard.max_width = 1
     for reaction in db.reaction.enum(REACTION.WRITTEN_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
@@ -188,13 +195,14 @@ def build_student_reaction_on_task_bad_verdict(result_id: int):
                 callback_data=f'{CALLBACK.REACTION}_{result_id}_None_{reaction["reaction_id"]}_{REACTION.WRITTEN_STUDENT}'
             )
         )
-    return keyboard
+    return keyboard.as_markup()
 
 
 def build_student_reaction_oral(zoom_conversation_id: int):
     """Создает инлайн клавиатуру для ученика для оценки устной сдачи."""
     logger.debug('keyboards.build_student_reaction_oral')
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardBuilder()
+    keyboard.max_width = 1
     for reaction in db.reaction.enum(REACTION.ORAL_STUDENT):
         keyboard.add(
             types.InlineKeyboardButton(
@@ -202,4 +210,4 @@ def build_student_reaction_oral(zoom_conversation_id: int):
                 callback_data=f'{CALLBACK.REACTION}_None_{zoom_conversation_id}_{reaction["reaction_id"]}_{REACTION.ORAL_STUDENT}'
             )
         )
-    return keyboard
+    return keyboard.as_markup()

@@ -1,6 +1,6 @@
 # VMSh Tasks Bot
 
-VMSh Tasks Bot is an asynchronous Telegram assistant used by the Moscow math circle to manage problem assignments, collect solutions, and broadcast live game updates. The project combines an [aiogram](https://docs.aiogram.dev/) bot, aiohttp web applications, a SQLite database, and Google Sheets synchronization routines so tutors can administer tasks from a single workflow.
+VMSh Tasks Bot is an asynchronous Telegram assistant used by the Moscow math circle to manage problem assignments, collect solutions, and broadcast live game updates. The project combines an [aiogram 3](https://docs.aiogram.dev/) bot, aiohttp web applications, a SQLite database, and Google Sheets synchronization routines so tutors can administer tasks from a single workflow.
 
 ## Overview
 - The `main.py` entry point wires every application, exposes the aiohttp server on port 8179 during development, and keeps graceful shutdown routines for background tasks.
@@ -9,7 +9,7 @@ VMSh Tasks Bot is an asynchronous Telegram assistant used by the Moscow math cir
 - Google Sheets remain the single source of truth for problems, students, and teachers; `models/spreadsheets.py` loads sheets into SQLite when the database is empty.
 
 ## Features
-- Telegram command handling, custom keyboards, and rate limiting implemented on top of aiogram.
+- Telegram command handling, custom keyboards, and rate limiting implemented on top of aiogram 3.
 - Teacher-only dashboards for results and statistics delivered through aiohttp routes that authenticate via web tokens stored in SQLite.
 - Cooperative "game" web interface with websocket updates backed by NATS and Telegram notifications when treasure chests are opened.
 - Zoom webhook ingestion that populates the queue table and normalizes participant names to match internal records.
@@ -18,7 +18,7 @@ VMSh Tasks Bot is an asynchronous Telegram assistant used by the Moscow math cir
 A deeper breakdown of components, data flow, and external dependencies is available in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Requirements
-- Python 3.9+ and SQLite 3.35+ (matching the deployment prerequisites used in production).
+- Python 3.13+ and SQLite 3.35+ (matching the deployment prerequisites used in production).
 - Access to Telegram Bot API credentials, Google Sheets service account JSON, and spreadsheets that mirror the schemas consumed by `models/spreadsheets.py`.
 - (Optional) A running NATS server when enabling realtime game dashboards or other cross-process messaging.
 
@@ -49,7 +49,7 @@ pip install -r requirements-test.txt  # optional, only needed for pytest and HTT
 3. When realtime features are required, start a NATS server (for example `nats-server -DV` or `docker run --rm -p 4222:4222 nats:latest`) before launching the bot so websocket broadcasts succeed.
 
 ### Production
-- Enable `PROD=true`, provide the production JSON credentials under `creds_prod/`, and run the project behind gunicorn so that aiohttp handles Telegram webhooks instead of polling.
+- Enable `PROD=true`, provide the production JSON credentials under `creds_prod/`, and run the project behind gunicorn so that aiohttp handles Telegram webhooks instead of polling via `apps.tg_bot.setup_tgbot_webhook`.
 - Deployment automation, nginx examples, and SSL prerequisites are documented (in Russian) under [docs/deploy.md](docs/deploy.md).
 
 ## Testing

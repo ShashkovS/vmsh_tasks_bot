@@ -40,12 +40,14 @@ class UserMethodsTest(TestCase):
         students = list(User.all_students())
         teachers = list(User.all_teachers())
         all_users = list(User.all())
+        expected_students = self._with_enums(test_students)
+        expected_teachers = self._with_enums(test_teachers)
         self.assertEqual(len(students), len(test_students))
         self.assertEqual(len(teachers), len(test_teachers))
         self.assertEqual(len(all_users), len(students) + len(teachers))
-        self.assertListEqual([asdict(user) for user in students], test_students)
-        self.assertListEqual([asdict(user) for user in teachers], test_teachers)
-        self.assertListEqual([asdict(user) for user in all_users], test_students + test_teachers)
+        self.assertListEqual([asdict(user) for user in students], expected_students)
+        self.assertListEqual([asdict(user) for user in teachers], expected_teachers)
+        self.assertListEqual([asdict(user) for user in all_users], expected_students + expected_teachers)
 
     def test_by_getters(self):
         """ Test this methods:
@@ -54,13 +56,25 @@ class UserMethodsTest(TestCase):
         def get_by_id(cls, id: int) -> Optional[User]:
         """
         for dict_user in test_students + test_teachers:
-            dict_user['level'] = LEVEL(dict_user['level'] or 'н')
-            dict_user['online'] = ONLINE_MODE(dict_user['online'])
-            dict_user['type'] = USER_TYPE(dict_user['type'])
-            self.assertDictEqual(dict_user, asdict(User.get_by_id(dict_user['id'])))
-            self.assertDictEqual(dict_user, asdict(User.get_by_token(dict_user['token'])))
-            if dict_user['chat_id']:
-                self.assertDictEqual(dict_user, asdict(User.get_by_chat_id(dict_user['chat_id'])))
+            expected = dict(dict_user)
+            expected['level'] = LEVEL(expected['level'] or 'н')
+            expected['online'] = ONLINE_MODE(expected['online'])
+            expected['type'] = USER_TYPE(expected['type'])
+            self.assertDictEqual(expected, asdict(User.get_by_id(expected['id'])))
+            self.assertDictEqual(expected, asdict(User.get_by_token(expected['token'])))
+            if expected['chat_id']:
+                self.assertDictEqual(expected, asdict(User.get_by_chat_id(expected['chat_id'])))
+
+    @staticmethod
+    def _with_enums(rows):
+        normalized = []
+        for row in rows:
+            item = dict(row)
+            item['type'] = USER_TYPE(item['type'])
+            item['level'] = LEVEL(item['level'] or 'н')
+            item['online'] = ONLINE_MODE(item['online'])
+            normalized.append(item)
+        return normalized
 
     def test_set_level(self):
         for dict_user in test_students + test_teachers:

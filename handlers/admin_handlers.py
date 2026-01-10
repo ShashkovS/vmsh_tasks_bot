@@ -1,7 +1,9 @@
 import logging
 
-import aiogram
 from aiogram import types
+from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramAPIError
+from aiogram.filters import Command
 import asyncio
 import re
 from pprint import pformat
@@ -12,7 +14,7 @@ from helpers.msg_texts import msgs
 from models import User, Problem, State
 from models.spreadsheets import FromGoogleSpreadsheet
 import db_methods as db
-from helpers.bot import bot, dispatcher
+from helpers.bot import bot, router
 from handlers import student_keyboards
 from handlers.student_handlers import (
     check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard,
@@ -20,7 +22,7 @@ from handlers.student_handlers import (
 )
 
 
-@dispatcher.message_handler(commands=['update_all_quaLtzPE', 'update_all'])
+@router.message(Command('update_all_quaLtzPE', 'update_all'))
 async def update_all_internal_data(message: types.Message):
     logger.debug('update_all_internal_data')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -36,7 +38,7 @@ async def update_all_internal_data(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['update_teachers', 'ut'])
+@router.message(Command('update_teachers', 'ut'))
 async def update_teachers(message: types.Message):
     logger.debug('update_teachers')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -49,7 +51,7 @@ async def update_teachers(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['update_students', 'us'])
+@router.message(Command('update_students', 'us'))
 async def update_students(message: types.Message):
     logger.debug('update_students')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -62,7 +64,7 @@ async def update_students(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['update_bot_settings'])
+@router.message(Command('update_bot_settings'))
 async def update_bot_settings(message: types.Message):
     logger.debug('update_bot_settings')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -75,11 +77,11 @@ async def update_bot_settings(message: types.Message):
     await bot.send_message(
         chat_id=message.chat.id,
         text=html,
-        parse_mode=types.ParseMode.HTML,
+        parse_mode=ParseMode.HTML,
     )
 
 
-@dispatcher.message_handler(commands=['update_ui_messages'])
+@router.message(Command('update_ui_messages'))
 async def update_ui_messages(message: types.Message):
     logger.debug('update_ui_messages')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -89,11 +91,11 @@ async def update_ui_messages(message: types.Message):
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_ui_messages_updated,
-        parse_mode=types.ParseMode.HTML,
+        parse_mode=ParseMode.HTML,
     )
 
 
-@dispatcher.message_handler(commands=['update_problems', 'up'])
+@router.message(Command('update_problems', 'up'))
 async def update_problems(message: types.Message):
     logger.debug('update_problems')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -156,7 +158,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
                 True, broad_message.message_id, student.chat_id, student.id, None,
                 broadcast_message, None
             )
-        except aiogram.exceptions.TelegramAPIError as e:
+        except TelegramAPIError as e:
             logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
             bad_tokens.append(token)
         await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
@@ -166,7 +168,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
     )
 
 
-@dispatcher.message_handler(commands=['broadcast_wibkn96x', 'broadcast', 'broadcast_html', 'broadcast_quiet', 'broadcast_html_quiet'])
+@router.message(Command('broadcast_wibkn96x', 'broadcast', 'broadcast_html', 'broadcast_quiet', 'broadcast_html_quiet'))
 async def broadcast(message: types.Message):
     logger.debug('broadcast')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -191,7 +193,7 @@ async def broadcast(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['forward_all'])
+@router.message(Command('forward_all'))
 async def forward_all_messages(message: types.Message):
     logger.debug('forward_all_messages')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -224,7 +226,7 @@ async def forward_all_messages(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['create_survey'])
+@router.message(Command('create_survey'))
 async def create_survey(message: types.Message):
     logger.debug('create_survey')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -243,7 +245,7 @@ async def create_survey(message: types.Message):
     await bot.send_message(chat_id=message.chat.id, text=text)
 
 
-@dispatcher.message_handler(commands=['disable_survey'])
+@router.message(Command('disable_survey'))
 async def disable_survey(message: types.Message):
     logger.debug('disable_survey')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -258,7 +260,7 @@ async def disable_survey(message: types.Message):
     await bot.send_message(chat_id=message.chat.id, text=msgs.a_survey_disabled.format_map({'survey_id': survey_id}))
 
 
-@dispatcher.message_handler(commands=['assign_survey_to_tokens'])
+@router.message(Command('assign_survey_to_tokens'))
 async def assign_survey_to_tokens(message: types.Message):
     logger.debug('assign_survey_to_tokens')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -289,18 +291,18 @@ async def assign_survey_to_tokens(message: types.Message):
 
 
 TEACHER_COMMANDS = [
-    aiogram.types.BotCommand(command='online', description=msgs.t_cmd_online),
-    aiogram.types.BotCommand(command='in_school', description=msgs.t_cmd_in_school),
-    aiogram.types.BotCommand(command='find_student', description=msgs.t_cmd_find_student),
-    aiogram.types.BotCommand(command='set_level', description=msgs.t_cmd_set_level),
-    aiogram.types.BotCommand(command='set_online', description=msgs.t_cmd_set_online),
-    aiogram.types.BotCommand(command='level_novice', description=msgs.t_cmd_level_novice),
-    aiogram.types.BotCommand(command='level_pro', description=msgs.t_cmd_level_pro),
-    aiogram.types.BotCommand(command='level_expert', description=msgs.t_cmd_level_expert),
-    aiogram.types.BotCommand(command='set_teacher', description=msgs.t_cmd_set_teacher),
-    aiogram.types.BotCommand(command='statw', description=msgs.t_cmd_statw),
-    aiogram.types.BotCommand(command='student_results', description=msgs.t_cmd_student_results),
-    aiogram.types.BotCommand(command='all_student_results', description=msgs.t_cmd_all_student_results),
+    types.BotCommand(command='online', description=msgs.t_cmd_online),
+    types.BotCommand(command='in_school', description=msgs.t_cmd_in_school),
+    types.BotCommand(command='find_student', description=msgs.t_cmd_find_student),
+    types.BotCommand(command='set_level', description=msgs.t_cmd_set_level),
+    types.BotCommand(command='set_online', description=msgs.t_cmd_set_online),
+    types.BotCommand(command='level_novice', description=msgs.t_cmd_level_novice),
+    types.BotCommand(command='level_pro', description=msgs.t_cmd_level_pro),
+    types.BotCommand(command='level_expert', description=msgs.t_cmd_level_expert),
+    types.BotCommand(command='set_teacher', description=msgs.t_cmd_set_teacher),
+    types.BotCommand(command='statw', description=msgs.t_cmd_statw),
+    types.BotCommand(command='student_results', description=msgs.t_cmd_student_results),
+    types.BotCommand(command='all_student_results', description=msgs.t_cmd_all_student_results),
 ]
 
 
@@ -308,7 +310,7 @@ async def update_teachers_commands_task(teacher_chat_id):
     for user in User.all_teachers():
         if not user.chat_id:
             continue
-        await bot.set_my_commands(commands=TEACHER_COMMANDS, scope=aiogram.types.BotCommandScope(type='chat', chat_id=user.chat_id))
+        await bot.set_my_commands(commands=TEACHER_COMMANDS, scope=types.BotCommandScope(type='chat', chat_id=user.chat_id))
         await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
     await bot.send_message(
         chat_id=teacher_chat_id,
@@ -316,7 +318,7 @@ async def update_teachers_commands_task(teacher_chat_id):
     )
 
 
-@dispatcher.message_handler(commands=['update_teachers_commands'])
+@router.message(Command('update_teachers_commands'))
 async def update_teachers_commands(message: types.Message):
     logger.debug('update_teachers_commands')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -358,7 +360,7 @@ async def recheck_problem_task(teacher_chat_id: int, problem: Problem):
         await refresh_last_student_keyboard(student)
 
 
-@dispatcher.message_handler(commands=['problem_recheck', 'prc'])
+@router.message(Command('problem_recheck', 'prc'))
 async def problem_recheck(message: types.Message):
     logger.debug('problem_recheck')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -424,7 +426,7 @@ async def update_all_student_keyboards(teacher_chat_id, force=False):
     )
 
 
-@dispatcher.message_handler(commands=['reset_keyboards', 'rk', 'reset_keyboards_force', 'rkf'])
+@router.message(Command('reset_keyboards', 'rk', 'reset_keyboards_force', 'rkf'))
 async def reset_keyboards(message: types.Message):
     logger.debug('reset_keyboards')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -443,7 +445,7 @@ async def reset_keyboards(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['reset_state_jvcykgny', 'reset_state'])
+@router.message(Command('reset_state_jvcykgny', 'reset_state'))
 async def set_get_task_info_for_all_students(message: types.Message):
     logger.debug('set_get_task_info_for_all_students')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -478,7 +480,7 @@ async def run_set_sleep_state_task(teacher_chat_id):
     )
 
 
-@dispatcher.message_handler(commands=['set_sleep_state'])
+@router.message(Command('set_sleep_state'))
 async def set_sleep_state_for_all_students(message: types.Message):
     logger.debug('set_sleep_state_for_all_students')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -491,7 +493,7 @@ async def set_sleep_state_for_all_students(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['stat'])
+@router.message(Command('stat'))
 async def calc_last_lesson_stat(message: types.Message):
     logger.debug('calc_last_lesson_stat')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -506,7 +508,7 @@ async def calc_last_lesson_stat(message: types.Message):
         )
 
 
-@dispatcher.message_handler(commands=['statw'])
+@router.message(Command('statw'))
 async def get_statw_url(message: types.Message):
     logger.debug('statw')
     user = User.get_by_chat_id(message.chat.id)
@@ -523,7 +525,7 @@ async def get_statw_url(message: types.Message):
     )
 
 
-@dispatcher.message_handler(commands=['student_results', 'sr', 'all_student_results', 'asr'])
+@router.message(Command('student_results', 'sr', 'all_student_results', 'asr'))
 async def student_results(message: types.Message):
     logger.debug('student_results')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -555,7 +557,7 @@ async def student_results(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, text=msgs.a_no_submissions)
 
 
-@dispatcher.message_handler(commands=['oral2written', 'written2oral'])
+@router.message(Command('oral2written', 'written2oral'))
 async def oral2written(message: types.Message):
     logger.debug('oral2written')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -576,14 +578,14 @@ async def oral2written(message: types.Message):
     await bot.send_message(chat_id=message.chat.id, text=msgs.a_done)
 
 
-@dispatcher.message_handler(commands=['reset_checked'])
+@router.message(Command('reset_checked'))
 async def reset_checked(message: types.Message):
     logger.debug('reset_checked')
     db.written_task_queue.reset_beeing_checked()
     await bot.send_message(chat_id=message.chat.id, text=msgs.a_done)
 
 
-@dispatcher.message_handler(commands=['set_game_command', 'sg'])
+@router.message(Command('set_game_command', 'sg'))
 async def set_game_command(message: types.Message):
     logger.debug('set_game_command')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -612,7 +614,7 @@ async def set_game_command(message: types.Message):
         text=msgs.a_game_command_update.format_map({'token': token, 'command_id': command_id}),
     )
 
-@dispatcher.message_handler(commands=['set_admin'])
+@router.message(Command('set_admin'))
 async def set_admin(message: types.Message):
     logger.debug('set_admin')
     user = User.get_by_chat_id(message.chat.id)

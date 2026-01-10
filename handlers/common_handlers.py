@@ -1,13 +1,13 @@
-import aiogram
-from aiogram.dispatcher.webhook import types
-from aiogram.utils.exceptions import BadRequest
+from aiogram import types
+from aiogram.filters import Command
+from aiogram.exceptions import TelegramBadRequest
 from contextlib import suppress
 
 from helpers.consts import *
 from helpers.config import logger
 import db_methods as db
 from models import User, Webtoken
-from helpers.bot import reg_callback, dispatcher, bot
+from helpers.bot import reg_callback, router, bot
 from helpers.msg_texts import msgs
 from handlers.common_keyboards import build_survey
 
@@ -32,22 +32,22 @@ async def prc_reaction(query: types.CallbackQuery, student: User):
         original_message = query.message.text.split('\n')[0] if reaction_type_id == REACTION.WRITTEN_TEACHER else query.message.text
         new_text = f"{original_message}\n\n{db.reaction.get_by_id(reaction_id)}"
         if old_text != new_text:
-            with suppress(aiogram.utils.exceptions.MessageNotModified):
+            with suppress(TelegramBadRequest):
                 await query.message.edit_text(new_text, reply_markup=None)
         try:
             await query.answer(msgs.reaction_accepted)
-        except aiogram.utils.exceptions.InvalidQueryID:
+        except TelegramBadRequest:
             pass
     # ученик
     elif reaction_type_id in (REACTION.WRITTEN_STUDENT, REACTION.ORAL_STUDENT):
         original_message = query.message.text.split()[0] if reaction_type_id == REACTION.WRITTEN_STUDENT else query.message.text
         new_text = f"{original_message}\n\n{db.reaction.get_by_id(reaction_id)}"
         if old_text != new_text:
-            with suppress(aiogram.utils.exceptions.MessageNotModified):
+            with suppress(TelegramBadRequest):
                 await query.message.edit_text(new_text, reply_markup=None)
         try:
             await query.answer(msgs.reaction_accepted)
-        except aiogram.utils.exceptions.InvalidQueryID:
+        except TelegramBadRequest:
             pass
 
 
@@ -70,7 +70,7 @@ async def prc_survey(query: types.CallbackQuery, user: User):
                                            reply_markup=build_survey(user, survey, selection_ids))
     await bot.answer_callback_query_ig(query.id)
 
-@dispatcher.message_handler(commands=['password'])
+@router.message(Command('password'))
 async def get_my_password(message: types.Message):
     logger.debug('password')
     user = User.get_by_chat_id(message.chat.id)

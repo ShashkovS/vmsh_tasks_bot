@@ -4,13 +4,14 @@ import os
 import json
 import pathlib
 from dataclasses import dataclass
-from typing import Union, Optional
+from typing import Union, Optional, ContextManager
 
 APP_LOGGER = 'MathBot'
 APP_PATH = pathlib.Path(__file__).parent.parent.resolve()
+sentry_sdk: ContextManager = None
 os.chdir(APP_PATH)
 
-__all__ = ['APP_PATH', 'logger', 'config', 'DEBUG']
+__all__ = ['APP_PATH', 'logger', 'config', 'DEBUG', 'sentry_sdk']
 
 
 def _absolute_path(path: str) -> pathlib.Path:
@@ -108,20 +109,35 @@ def _setup(*, force_production=False):
 
 def _init_sentry(dsn: str, environment: str):
     # Добавляем отправку в sentry, если задан ключи
+    global sentry_sdk
     if dsn:
         try:
             import sentry_sdk
             from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+            from sentry_sdk.integrations.asyncio import AsyncioIntegration
+            from sentry_sdk.integrations.logging import LoggingIntegration
+
+            logging_integration = LoggingIntegration(
+                level=logging.INFO,
+                event_level=logging.ERROR,
+            )
             sentry_sdk.init(
                 dsn=dsn,
-                integrations=[AioHttpIntegration()],
+                integrations=[
+                    AioHttpIntegration(),
+                    AsyncioIntegration(),
+                    logging_integration,
+                ],
                 traces_sample_rate=1.0,
-                environment=environment
+                environment=environment,
+                send_default_pii=True,
             )
             logging.info('Sentry started')
 
-        except:
-            pass
+        except Exception:
+            logging.exception('Sentry init failed')
+    else:
+        sentry_sdk = None
 
 
 logger = _create_logger()

@@ -1,11 +1,11 @@
 import datetime
 import re
 
-import aiogram
 import asyncio
-from aiogram.dispatcher.webhook import types
-from aiogram.dispatcher import filters
-from aiogram.utils.exceptions import BadRequest
+from aiogram import F, types
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
+from aiogram.filters import Command
+from aiogram.types import FSInputFile
 from urllib.parse import urlencode
 from Levenshtein import jaro_winkler
 from random import randrange
@@ -16,7 +16,7 @@ from helpers.msg_texts import msgs
 import db_methods as db
 from helpers.features import VERDICT_MODE, FEATURES, RESULT_MODE
 from models import User, Problem, State, Waitlist, WrittenQueue, Result
-from helpers.bot import bot, reg_callback, dispatcher, reg_state
+from helpers.bot import bot, reg_callback, router, reg_state
 from handlers import teacher_keyboards, student_keyboards
 from handlers.student_handlers import sleep_and_send_problems_keyboard, refresh_last_student_keyboard, WHITEBOARD_LINK
 from handlers.main_handlers import process_regular_message  # TODO Удалить использование этой функции
@@ -171,7 +171,7 @@ async def prc_teacher_accepted_queue(message: types.message, teacher: User, onli
                            reply_markup=reply_markup)
 
 
-@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?edtplus.*']))
+@router.message(F.text.regexp(r'^/?edtplus.*'))
 async def edtplus(message: types.Message):
     logger.debug('edtplus')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -210,7 +210,7 @@ async def prc_teacher_writes_student_name_state(message: types.message, teacher:
                            reply_markup=teacher_keyboards.build_select_student(name_to_find))
 
 
-@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?recheck.*']))
+@router.message(F.text.regexp(r'^/?recheck.*'))
 async def recheck(message: types.Message):
     logger.debug('recheck')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -245,7 +245,7 @@ async def recheck(message: types.Message):
         await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
-@dispatcher.message_handler(commands=['set_level', 'sl'])
+@router.message(Command('set_level', 'sl'))
 async def set_student_level(message: types.Message):
     logger.debug('set_student_level')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -385,7 +385,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
             try:
                 await bot.forward_message(chat_id, row['chat_id'], row['tg_msg_id'])
                 forward_success = True
-            except aiogram.utils.exceptions.TelegramAPIError as e:
+            except TelegramAPIError as e:
                 logger.error(msgs.t_message_deleted + '\n%s', e)
                 await bot.send_message(chat_id=chat_id, text=msgs.t_message_deleted)
         if forward_success:
@@ -397,7 +397,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
             path = row['attach_path'].replace('/web/vmsh179bot/vmsh179bot/', '')
             file, _, ext = path.rpartition('.')
             if ext and ext.lower() in ('jpg', 'png'):
-                input_file = types.input_file.InputFile(path)
+                input_file = FSInputFile(path)
                 await bot.send_photo(chat_id=chat_id, photo=input_file)
             elif ext.lower() == 'txt':
                 text = open(row['attach_path'], 'r', encoding='utf-8').read()
@@ -405,7 +405,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
             else:
                 # Хм... Странный файл
                 try:
-                    await bot.send_document(chat_id=chat_id, document=types.input_file.InputFile(path))
+                    await bot.send_document(chat_id=chat_id, document=FSInputFile(path))
                 except:
                     pass
     State.set_by_user_id(teacher.id, STATE.TEACHER_IS_CHECKING_TASK, problem.id if (not is_sos) else (-problem.id),
@@ -503,7 +503,7 @@ async def forward_discussion_to_student(student: User, problem: Problem, verdict
                                    reply_markup=student_reaction_keyboard,
                                    disable_notification=True)
 
-    except aiogram.utils.exceptions.TelegramAPIError as e:
+    except TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
 
 
@@ -607,18 +607,18 @@ async def prc_send_answer_callback(query: types.CallbackQuery, teacher: User):
                 try:
                     await bot.copy_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
                                            disable_notification=True)
-                except aiogram.utils.exceptions.BadRequest as e:
+                except TelegramBadRequest as e:
                     logger.error(f'Почему-то не отфорвардилось... {student_chat_id}\n{e}')
             elif row['text']:
                 await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
             elif row['attach_path']:
                 # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
-                input_file = types.input_file.InputFile(row['attach_path'])
+                input_file = FSInputFile(row['attach_path'])
                 await bot.send_photo(chat_id=student_chat_id, photo=input_file, disable_notification=True)
         await bot.send_message(chat_id=student_chat_id,
                                text='⬆⬆⬆⬆\n',
                                disable_notification=True)
-    except aiogram.utils.exceptions.TelegramAPIError as e:
+    except TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student_chat_id}\n{e}')
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
@@ -647,7 +647,7 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
     db.delete_url_by_user_id(student.id)
     try:
         await bot.unpin_chat_message(chat_id=student.chat_id)
-    except BadRequest:
+    except TelegramBadRequest:
         pass
 
     params = {
@@ -671,7 +671,7 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
         await bot.send_message(chat_id=student.chat_id, text="Нажмите по окончанию.",
                                reply_markup=student_keyboards.build_student_in_conference(),
                                parse_mode='HTML')
-    except aiogram.utils.exceptions.TelegramAPIError as e:
+    except TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
         # Снимаем со школьника статус сдачи
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
@@ -862,7 +862,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
         if student_state['state'] == STATE.STUDENT_IS_IN_CONFERENCE:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
             await process_regular_message(student_message)
-    except aiogram.utils.exceptions.TelegramAPIError as e:
+    except TelegramAPIError as e:
         logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
     # Ура, сообщение обработано!
     await bot.answer_callback_query_ig(query.id)
@@ -872,7 +872,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     # asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
-@dispatcher.message_handler(commands=['find_student', 'fs'])
+@router.message(Command('find_student', 'fs'))
 async def find_student(message: types.Message):
     logger.debug('find_student')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -900,7 +900,7 @@ async def find_student(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, text=msgs.t_no_students_found)
 
 
-@dispatcher.message_handler(commands=['set_online', 'so'])
+@router.message(Command('set_online', 'so'))
 async def set_online(message: types.Message):
     logger.debug('set_online')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -925,7 +925,7 @@ async def set_online(message: types.Message):
         )
 
 
-@dispatcher.message_handler(commands=['set_teacher', 'st'])
+@router.message(Command('set_teacher', 'st'))
 async def set_teacher(message: types.Message):
     '''
     После тестирования ответов в боте учителю нужно снова вернуться в своё учительское состояние.
@@ -966,7 +966,7 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
     await bot.answer_callback_query_ig(query.id)
 
 
-@dispatcher.message_handler(commands=['zoom_queue', 'z', 'zall'])
+@router.message(Command('zoom_queue', 'z', 'zall'))
 async def zoom_queue(message: types.Message):
     '''
     Вывести очередь школьников

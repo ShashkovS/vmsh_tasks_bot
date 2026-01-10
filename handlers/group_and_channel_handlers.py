@@ -1,11 +1,12 @@
 import asyncio
 import re
-from aiogram.dispatcher.webhook import types
-from aiogram.dispatcher.filters import ChatTypeFilter, RegexpCommandsFilter
-from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToForwardNotFound
+
+from aiogram import F, types
+from aiogram.enums import ChatType
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramNotFound
 
 import db_methods as db
-from helpers.bot import bot, dispatcher
+from helpers.bot import bot, router
 from helpers.config import logger, config
 from helpers.consts import ONLINE_MODE
 from helpers.msg_texts import msgs
@@ -24,10 +25,8 @@ def check_sos_channel(message: types.Message):
     return message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel
 
 
-@dispatcher.channel_post_handler(check_sos_channel, content_types=types.ContentType.ANY)
-@dispatcher.channel_post_handler(check_sos_channel, RegexpCommandsFilter(regexp_commands=['.*']))
-@dispatcher.message_handler(check_sos_channel, content_types=types.ContentType.ANY)
-@dispatcher.message_handler(check_sos_channel, RegexpCommandsFilter(regexp_commands=['.*']))
+@router.channel_post(check_sos_channel)
+@router.message(check_sos_channel)
 async def prc_sos_reply(message: types.Message):
     logger.debug('prc_sos_reply')
     # Ботов нафиг
@@ -55,10 +54,8 @@ async def prc_sos_reply(message: types.Message):
         logger.exception(f'SHIT: {e}')
 
 
-@dispatcher.message_handler(ChatTypeFilter(types.ChatType.SUPERGROUP), content_types=types.ContentType.ANY)
-@dispatcher.message_handler(ChatTypeFilter(types.ChatType.GROUP), content_types=types.ContentType.ANY)
-@dispatcher.message_handler(ChatTypeFilter(types.ChatType.SUPERGROUP), RegexpCommandsFilter(regexp_commands=['.*']))
-@dispatcher.message_handler(ChatTypeFilter(types.ChatType.GROUP), RegexpCommandsFilter(regexp_commands=['.*']))
+@router.message(F.chat.type == ChatType.SUPERGROUP)
+@router.message(F.chat.type == ChatType.GROUP)
 async def group_message_handler(message: types.Message):
     # Если сообщение от админа, то игнорируем его
     if message.from_user.username == 'GroupAnonymousBot':
@@ -112,12 +109,12 @@ async def group_message_handler(message: types.Message):
         if message_is_url_only or mat_detected or bad_urls or from_bad_bot_message or too_short_user_sign:
             try:
                 await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)
-            except MessageToForwardNotFound:
+            except TelegramNotFound:
                 pass
             # Удаляем сообщение
             try:
                 await bot.delete_message(message.chat.id, message.message_id)
-            except MessageCantBeDeleted:
+            except TelegramBadRequest:
                 await bot.send_message(config.exceptions_channel, msgs.a_moderate_could_not_delete)
             except Exception as e:
                 logger.exception(f'SHIT: {e}')
@@ -127,6 +124,8 @@ async def group_message_handler(message: types.Message):
             try:
                 await bot.ban_chat_member(message.chat.id, message.from_user.id, revoke_messages=True)
                 await bot.send_message(config.exceptions_channel, msgs.a_moderate_banned.format_map({'message': message}))
+            except TelegramForbiddenError:
+                await bot.send_message(config.exceptions_channel, msgs.a_moderate_could_not_ban)
             except Exception as e:
                 logger.exception(f'SHIT: {e}')
                 await bot.send_message(config.exceptions_channel, msgs.a_moderate_could_not_ban)

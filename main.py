@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-from aiogram.dispatcher.webhook import web
 import asyncio
+from contextlib import suppress
+
+from aiohttp import web
 
 import apps
 from helpers.config import config, logger
 import db_methods as db
 from helpers.features import set_features
 from helpers.msg_texts import msgs
+from helpers.shutdown import wait_for_valuable_tasks
 
 LOCAL_APP_PORT = 8179
 
@@ -28,11 +31,7 @@ async def on_shutdown(app):
     """
     logger.warning('on_shutdown')
     logger.warning('MainApp Shutting down..')
-    # К этому моменту все задания уже должны быть закончены. Поэтому закрываем прямо всё
-    all_async_tasks_but_current = list(asyncio.all_tasks() - {asyncio.current_task()})
-    logger.warning(f'Tasks to wait: {all_async_tasks_but_current!r}')
-    if all_async_tasks_but_current:
-        await asyncio.wait(all_async_tasks_but_current, timeout=20)
+    await wait_for_valuable_tasks(logger, timeout=20)
     # Останавливаем sympy-воркера (если он был запущен)
     from helpers.checkers import worker
     worker.shutdown()
@@ -53,6 +52,8 @@ def prepare_app():
     if __name__ == '__main__':
         url_prefix = f'http://127.0.0.1:{LOCAL_APP_PORT}'
     else:
+        if hasattr(apps, "tg_bot"):
+            apps.tg_bot.setup_tgbot_webhook(app)
         url_prefix = f'https://{config.webhook_host}'
     logger.info('Routes:')
     for route in app.router.routes():
@@ -65,9 +66,29 @@ def prepare_app():
 app = prepare_app()
 if __name__ == "__main__":
     # Start aiohttp server
-    apps.tg_bot.start_bot_in_polling_mode()
-    webapp_task = asyncio.create_task(web.run_app(app, port=LOCAL_APP_PORT))
+    async def dev_main():
+        apps.tg_bot.start_bot_in_polling_mode()
+
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, host="127.0.0.1", port=LOCAL_APP_PORT)
+        await site.start()
+        logger.info(f"Веб-сервер запущен на порту {LOCAL_APP_PORT}")
+
+        polling_task = asyncio.create_task(apps.tg_bot.run_tg_bot_in_polling_mode())
+        try:
+            await asyncio.Event().wait()
+        finally:
+            polling_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await polling_task
+            await runner.cleanup()
+
+    try:
+        asyncio.run(dev_main())
+    except KeyboardInterrupt:
+        pass
 else:
     # Приложение будет запущено gunicorn'ом, который и будет следить за его жизнеспособностью
     # Ну всё, можно делать заключительные приготовления
-    apps.tg_bot.start_bot_in_webhook_mode(app)
+    pass
