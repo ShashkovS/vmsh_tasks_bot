@@ -1,13 +1,25 @@
 # -*- coding: utf-8 -*-
-import aiogram
 import asyncio
 import typing
 import time
 from typing import List, Union
-from aiogram.utils.exceptions import MessageNotModified, MessageToEditNotFound, ChatNotFound
-from aiogram.dispatcher import Dispatcher
+
+from aiohttp import ClientTimeout
+from aiogram import Bot, Dispatcher, Router
+from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.enums import ParseMode
+from aiogram.exceptions import (
+    ChatNotFound,
+    InvalidQueryID,
+    MessageCantBeDeleted,
+    MessageNotModified,
+    MessageToDeleteNotFound,
+    MessageToEditNotFound,
+    RetryAfter,
+)
 import aiogram.types as types
-from aiogram.types import Message, base
+from aiogram.types import Message
 from helpers.config import config, logger
 from helpers.consts import CALLBACK, STATE
 
@@ -34,8 +46,8 @@ async def rate_lim(chat_id: int):
 
 
 # Добавляем методов, которые игнорируют некоторые ошибки
-class BotIg(aiogram.Bot):
-    username: aiogram.types.User
+class BotIg(Bot):
+    username: types.User
 
     async def edit_message_text_ig(self, *args, **kwargs):
         logger.debug('bot.edit_message_text_ig')
@@ -55,7 +67,7 @@ class BotIg(aiogram.Bot):
         logger.debug('bot.answer_callback_query_ig')
         try:
             await self.answer_callback_query(*args, **kwargs)
-        except aiogram.utils.exceptions.InvalidQueryID:
+        except InvalidQueryID:
             pass
         except Exception as e:
             logger.exception(f'SHIT: {e}')
@@ -64,9 +76,9 @@ class BotIg(aiogram.Bot):
         logger.debug('bot.delete_message_ig')
         try:
             await self.delete_message(*args, **kwargs)
-        except aiogram.utils.exceptions.MessageToDeleteNotFound:
+        except MessageToDeleteNotFound:
             pass
-        except aiogram.utils.exceptions.MessageCantBeDeleted:
+        except MessageCantBeDeleted:
             try:
                 await self.edit_message_reply_markup_ig(*args, reply_markup=None, **kwargs)
             except MessageNotModified as e:
@@ -116,17 +128,17 @@ class BotIg(aiogram.Bot):
 
     async def copy_message(
         self,
-        chat_id: typing.Union[base.Integer, base.String],
-        from_chat_id: typing.Union[base.Integer, base.String],
-        message_id: base.Integer,
-        caption: typing.Optional[base.String] = None,
-        parse_mode: typing.Optional[base.String] = None,
+        chat_id: typing.Union[int, str],
+        from_chat_id: typing.Union[int, str],
+        message_id: int,
+        caption: typing.Optional[str] = None,
+        parse_mode: typing.Optional[str] = None,
         caption_entities: typing.Optional[typing.List[types.MessageEntity]] = None,
-        message_thread_id: typing.Optional[base.Integer] = None,
-        disable_notification: typing.Optional[base.Boolean] = None,
-        protect_content: typing.Optional[base.Boolean] = None,
-        reply_to_message_id: typing.Optional[base.Integer] = None,
-        allow_sending_without_reply: typing.Optional[base.Boolean] = None,
+        message_thread_id: typing.Optional[int] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        allow_sending_without_reply: typing.Optional[bool] = None,
         reply_markup: typing.Union[
             types.InlineKeyboardMarkup, types.ReplyKeyboardMarkup, types.ReplyKeyboardRemove, types.ForceReply, None] = None,
     ) -> types.MessageId:
@@ -146,9 +158,9 @@ class BotIg(aiogram.Bot):
 
     async def delete_message(
         self,
-        chat_id: typing.Union[base.Integer, base.String],
-        message_id: base.Integer
-    ) -> base.Boolean:
+        chat_id: typing.Union[int, str],
+        message_id: int
+    ) -> bool:
         for t in TIMEOUTS:
             try:
                 return await super().delete_message(chat_id, message_id)
@@ -161,11 +173,11 @@ class BotIg(aiogram.Bot):
 
     async def edit_message_reply_markup(
         self,
-        chat_id: typing.Union[base.Integer, base.String, None] = None,
-        message_id: typing.Optional[base.Integer] = None,
-        inline_message_id: typing.Optional[base.String] = None,
+        chat_id: typing.Union[int, str, None] = None,
+        message_id: typing.Optional[int] = None,
+        inline_message_id: typing.Optional[str] = None,
         reply_markup: typing.Union[types.InlineKeyboardMarkup, None] = None
-    ) -> types.Message or base.Boolean:
+    ) -> typing.Union[types.Message, bool]:
         for t in TIMEOUTS:
             try:
                 return await super().edit_message_reply_markup(chat_id, message_id, inline_message_id, reply_markup)
@@ -178,15 +190,15 @@ class BotIg(aiogram.Bot):
 
     async def edit_message_text(
         self,
-        text: base.String,
-        chat_id: typing.Union[base.Integer, base.String, None] = None,
-        message_id: typing.Optional[base.Integer] = None,
-        inline_message_id: typing.Optional[base.String] = None,
-        parse_mode: typing.Optional[base.String] = None,
+        text: str,
+        chat_id: typing.Union[int, str, None] = None,
+        message_id: typing.Optional[int] = None,
+        inline_message_id: typing.Optional[str] = None,
+        parse_mode: typing.Optional[str] = None,
         entities: typing.Optional[typing.List[types.MessageEntity]] = None,
-        disable_web_page_preview: typing.Optional[base.Boolean] = None,
+        disable_web_page_preview: typing.Optional[bool] = None,
         reply_markup: typing.Union[types.InlineKeyboardMarkup, None] = None,
-    ) -> types.Message or base.Boolean:
+    ) -> typing.Union[types.Message, bool]:
         for t in TIMEOUTS:
             try:
                 return await super().edit_message_text(
@@ -202,12 +214,12 @@ class BotIg(aiogram.Bot):
 
     async def forward_message(
         self,
-        chat_id: typing.Union[base.Integer, base.String],
-        from_chat_id: typing.Union[base.Integer, base.String],
-        message_id: base.Integer,
-        message_thread_id: typing.Optional[base.Integer] = None,
-        disable_notification: typing.Optional[base.Boolean] = None,
-        protect_content: typing.Optional[base.Boolean] = None,
+        chat_id: typing.Union[int, str],
+        from_chat_id: typing.Union[int, str],
+        message_id: int,
+        message_thread_id: typing.Optional[int] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
     ) -> types.Message:
         for t in TIMEOUTS:
             try:
@@ -223,16 +235,16 @@ class BotIg(aiogram.Bot):
 
     async def send_message(
         self,
-        chat_id: typing.Union[base.Integer, base.String],
-        text: base.String,
-        parse_mode: typing.Optional[base.String] = None,
+        chat_id: typing.Union[int, str],
+        text: str,
+        parse_mode: typing.Optional[str] = None,
         entities: typing.Optional[typing.List[types.MessageEntity]] = None,
-        disable_web_page_preview: typing.Optional[base.Boolean] = None,
-        message_thread_id: typing.Optional[base.Integer] = None,
-        disable_notification: typing.Optional[base.Boolean] = None,
-        protect_content: typing.Optional[base.Boolean] = None,
-        reply_to_message_id: typing.Optional[base.Integer] = None,
-        allow_sending_without_reply: typing.Optional[base.Boolean] = None,
+        disable_web_page_preview: typing.Optional[bool] = None,
+        message_thread_id: typing.Optional[int] = None,
+        disable_notification: typing.Optional[bool] = None,
+        protect_content: typing.Optional[bool] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        allow_sending_without_reply: typing.Optional[bool] = None,
         reply_markup: typing.Union[
             types.InlineKeyboardMarkup, types.ReplyKeyboardMarkup, types.ReplyKeyboardRemove, types.ForceReply, None] = None,
     ) -> types.Message:
@@ -251,19 +263,19 @@ class BotIg(aiogram.Bot):
                     await asyncio.sleep(t)
                 else:
                     raise asyncio.TimeoutError("The TimeoutError in send_message in a row...")
-            except aiogram.utils.exceptions.RetryAfter as e:
+            except RetryAfter as e:
                 logger.error(':( RetryAfter in send_message...')
                 await asyncio.sleep(2)
                 raise asyncio.TimeoutError("The RetryAfter in send_message in a row...")
 
     async def answer_callback_query(
         self,
-        callback_query_id: base.String,
-        text: typing.Optional[base.String] = None,
-        show_alert: typing.Optional[base.Boolean] = None,
-        url: typing.Optional[base.String] = None,
-        cache_time: typing.Optional[base.Integer] = None
-    ) -> base.Boolean:
+        callback_query_id: str,
+        text: typing.Optional[str] = None,
+        show_alert: typing.Optional[bool] = None,
+        url: typing.Optional[str] = None,
+        cache_time: typing.Optional[int] = None
+    ) -> bool:
         for t in TIMEOUTS:
             try:
                 return await super().answer_callback_query(callback_query_id, text, show_alert, url, cache_time)
@@ -276,9 +288,14 @@ class BotIg(aiogram.Bot):
 
 
 # Запускаем API телеграм-бота
-bot = BotIg(config.telegram_bot_token, timeout=5)
-# Запускаем API телеграм-бота
-dispatcher = Dispatcher(bot)
+bot = BotIg(
+    config.telegram_bot_token,
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    session=AiohttpSession(timeout=ClientTimeout(total=5)),
+)
+router = Router()
+dispatcher = Dispatcher()
+dispatcher.include_router(router)
 
 callbacks_processors = {}
 state_processors = {}

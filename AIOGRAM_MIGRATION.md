@@ -29,7 +29,7 @@
    - Verify `aiohttp` version remains compatible with aiogram 3.
    - If `requirements-test.txt` pins aiogram indirectly, adjust as needed.
 
-2) [ ] **Refactor bot bootstrap in `helpers/bot.py` (core wiring)**
+2) [x] **Refactor bot bootstrap in `helpers/bot.py` (core wiring)**
    - Replace `from aiogram.dispatcher import Dispatcher` with `from aiogram import Bot, Dispatcher, Router`.
    - Instantiate `bot = BotIg(...)` using `DefaultBotProperties(parse_mode=ParseMode.HTML)` and an optional `AiohttpSession(timeout=...)` to keep the old `timeout=5` behavior.
    - Create a `router = Router()` and include it in the dispatcher (`dispatcher.include_router(router)`), or use the `Dispatcher` itself for handler registration if you want one object.
