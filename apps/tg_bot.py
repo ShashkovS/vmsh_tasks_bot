@@ -9,6 +9,7 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 
 from helpers.config import config, logger, DEBUG
 from helpers.bot import bot, dispatcher
+from helpers.shutdown import wait_for_valuable_tasks
 import db_methods as db
 from models.spreadsheets import google_spreadsheet_loader, update_from_google_if_db_is_empty
 import handlers
@@ -69,18 +70,7 @@ async def on_shutdown(bot_instance: Bot):
     google_spreadsheet_loader.close()
     # Пишем, что останавливаемся
     await bot.post_logging_message('Бот остановил свою работу')
-    # Завершаем, если вдруг что-то ещё живо
-    all_async_tasks_but_current = list(asyncio.all_tasks() - {asyncio.current_task()})
-    for i in range(len(all_async_tasks_but_current) - 1, -1, -1):
-        task = all_async_tasks_but_current[i]
-        coro_name = task.get_coro().__qualname__
-        # TODO Это, конечно, отстой... Но хз, как сделать лучше
-        if 'start_polling' in coro_name or 'Client._' in coro_name or 'Subscription._' in coro_name:
-            all_async_tasks_but_current.pop(i)
-        else:
-            logger.warning(f'Pending task: {task.get_coro().__qualname__}')
-    if all_async_tasks_but_current:
-        await asyncio.wait(all_async_tasks_but_current, timeout=20)
+    await wait_for_valuable_tasks(logger, timeout=20)
     # Close all connections.
     # Здесь какая-то ерунда, зачем-то выводится вот такое предупреждение:
     # https://github.com/aiogram/aiogram/blob/a852b9559612e3b9d542588a4539e64c50393a9c/aiogram/bot/base.py#L208

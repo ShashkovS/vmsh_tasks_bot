@@ -9,6 +9,7 @@ from helpers.config import config, logger
 import db_methods as db
 from helpers.features import set_features
 from helpers.msg_texts import msgs
+from helpers.shutdown import wait_for_valuable_tasks
 
 LOCAL_APP_PORT = 8179
 
@@ -30,11 +31,7 @@ async def on_shutdown(app):
     """
     logger.warning('on_shutdown')
     logger.warning('MainApp Shutting down..')
-    # К этому моменту все задания уже должны быть закончены. Поэтому закрываем прямо всё
-    all_async_tasks_but_current = list(asyncio.all_tasks() - {asyncio.current_task()})
-    logger.warning(f'Tasks to wait: {all_async_tasks_but_current!r}')
-    if all_async_tasks_but_current:
-        await asyncio.wait(all_async_tasks_but_current, timeout=20)
+    await wait_for_valuable_tasks(logger, timeout=20)
     # Останавливаем sympy-воркера (если он был запущен)
     from helpers.checkers import worker
     worker.shutdown()
