@@ -6,7 +6,7 @@ This document describes how VMSh Tasks Bot is structured and how the major compo
 ```mermaid
 flowchart TD
     TelegramAPI[Telegram Bot API] -->|updates/webhooks| AiogramDispatcher
-    AiogramDispatcher[aiogram Dispatcher \n (apps/tg_bot.py)] -->|commands| Handlers[handlers/*]
+    AiogramDispatcher[aiogram 3 Dispatcher \n (apps/tg_bot.py)] -->|commands| Handlers[handlers/*]
     Handlers --> SQLite[(SQLite via db_methods)]
     GoogleSheets[Google Sheets] -->|synchronize| Loader[models/spreadsheets.py]
     Loader --> SQLite
@@ -53,7 +53,7 @@ SQLite is accessed through `db_methods/` modules, each wrapping CRUD operations 
 Migrations run automatically when `helpers.config` imports `db_methods`. Contributors creating new tables should add SQL scripts to `migrations/` via `yoyo new` and commit them alongside model changes.
 
 ## External integrations
-- **Telegram**: The bot uses aiogram 2.x to handle updates. In production `apps/tg_bot.start_bot_in_webhook_mode` configures Telegram webhooks via aiohttp routes served by gunicorn, while development uses long polling.
+- **Telegram**: The bot uses aiogram 3 to handle updates. In production `apps/tg_bot.setup_tgbot_webhook` configures Telegram webhooks via aiohttp routes served by gunicorn, while development uses long polling (`run_tg_bot_in_polling_mode`) alongside the aiohttp server.
 - **Google Sheets**: `helpers/loader_from_google_spreadsheets.py` (used by `models/spreadsheets.py`) fetches problems, students, and teachers, then refreshes the database whenever it is empty or when `/ut`-style commands run.
 - **NATS**: `helpers/nats_brocker.NATS` connects to the configured NATS cluster. When available, the game dashboard publishes map updates and player balances to topics derived from `config.config_name`. When NATS is unavailable the class falls back to in-process callbacks so tests can run without the broker.
 - **Zoom**: `apps/zoom_events_parser.py` listens for `/zoomevents` POSTs, validates the Zoom challenge payload, and tracks participants entering or leaving waiting rooms to maintain the oral exam queue.

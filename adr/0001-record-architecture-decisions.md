@@ -7,7 +7,7 @@ Accepted
 The bot needs to coordinate assignments between dozens of students and teachers, expose administrative dashboards, and integrate with Google Sheets (the existing source of truth for tasks). Telegram updates must be processed asynchronously, a lightweight database is required to run on inexpensive servers, and the team already maintains Google spreadsheets with the necessary metadata.
 
 ## Decision
-- Use **aiogram 2.x** for Telegram updates because it provides asyncio-friendly dispatching, middleware, and webhook integration already leveraged by `apps/tg_bot.py` and the `handlers/` modules.
+- Use **aiogram 3** for Telegram updates because it provides asyncio-friendly dispatching, middleware, and webhook integration already leveraged by `apps/tg_bot.py` and the `handlers/` modules.
 - Use **aiohttp** for HTTP services so the Telegram bot, results dashboard, game board, and Zoom webhook can share one event loop inside `main.py` while remaining modular under `apps/`.
 - Store state in **SQLite** managed by yoyo migrations. The schema lives alongside the code (`migrations/`, `db_methods/`, `models/`) and runs without external infrastructure in both development and production.
 - Keep **Google Sheets** as the canonical dataset, synchronizing it into SQLite through `models/spreadsheets.py` and `helpers/loader_from_google_spreadsheets.py` when the database is empty or refreshed manually.

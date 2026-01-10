@@ -85,7 +85,7 @@
      - Replace `aiogram.utils.payload._normalize` (internal in aiogram 2) with a safe serializer; if you only need JSON, use `json.dumps(message_data)`.
    - Keep test fixtures/messages unchanged to avoid behavior drift.
 
-8) [ ] **Update docs to reflect aiogram 3**
+8) [x] **Update docs to reflect aiogram 3**
    - Update `README.md`, `ARCHITECTURE.md`, `adr/0001-record-architecture-decisions.md` to mention aiogram 3 and the new webhook/polling wiring.
 
 9) [ ] **Validation checklist**
