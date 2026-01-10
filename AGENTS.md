@@ -22,8 +22,10 @@
 - No auto‑formatter is configured; run linters/formatting manually if you use them.
 - Keep migration changes minimal and localized; avoid refactors unrelated to the aiogram 3 upgrade.
 - State handling is custom (not aiogram FSM): `helpers/bot.py` registers `reg_state`/`reg_callback` and `models/state.py` persists state; preserve this flow.
+- Prefer `db_methods/*` APIs or `models/*` wrappers for data access; keep schema changes in yoyo migrations and use `db.sql.setup()`/`db.sql.disconnect()` as in `main.py`.
 - Use aiogram 3 routers (`router.message`, `router.callback_query`, etc.) and pass keyword arguments to bot API calls.
 - Inline/reply keyboards should be built via `InlineKeyboardBuilder`/`ReplyKeyboardBuilder` and returned with `.as_markup()`.
+- Sentry is initialized in `helpers/config.py` (DSN from creds); aiogram errors are captured via `helpers/bot.py` error handler and aiohttp errors via `AioHttpIntegration`.
 
 ## Testing Guidelines
 - Frameworks: `pytest` with `aresponses` for HTTP mocks.
@@ -40,3 +42,4 @@
 - Use `creds_test/*_json_ex` as templates; set `PROD=true` only for production runs.
 - Store service account JSON locally as described in `README.md`; do not add to git.
 - Webhook vs polling: prod uses `apps.tg_bot.setup_tgbot_webhook(app)` (gunicorn), dev uses `apps.tg_bot.run_tg_bot_in_polling_mode()` with aiohttp `AppRunner`.
+- Graceful shutdown should use `helpers/shutdown.wait_for_valuable_tasks()` to await project tasks while cancelling non‑critical ones.

@@ -5,7 +5,7 @@ import time
 from typing import List, Union
 
 from aiogram import Bot, Dispatcher, Router
-from aiogram.client.default import DefaultBotProperties
+from aiogram.client.default import Default, DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.exceptions import (
@@ -15,8 +15,8 @@ from aiogram.exceptions import (
     TelegramRetryAfter,
 )
 import aiogram.types as types
-from aiogram.types import Message
-from helpers.config import config, logger
+from aiogram.types import ErrorEvent, Message
+from helpers.config import config, logger, sentry_sdk
 from helpers.consts import CALLBACK, STATE
 
 TIMEOUTS = [0.5, 1, 2, None]
@@ -122,21 +122,51 @@ class BotIg(Bot):
     def remove_markup_after(self, messages: Union[List[Message], Message], timeout: int):
         asyncio.create_task(self.remove_markup_after_task(messages, timeout))
 
+        # self,
+        # chat_id: ChatIdUnion,
+        # from_chat_id: ChatIdUnion,
+        # message_id: int,
+        # message_thread_id: int | None = None,
+        # direct_messages_topic_id: int | None = None,
+        # video_start_timestamp: DateTimeUnion | None = None,
+        # caption: str | None = None,
+        # parse_mode: str | Default | None = Default("parse_mode"),
+        # caption_entities: list[MessageEntity] | None = None,
+        # show_caption_above_media: bool | Default | None = Default("show_caption_above_media"),
+        # disable_notification: bool | None = None,
+        # protect_content: bool | Default | None = Default("protect_content"),
+        # allow_paid_broadcast: bool | None = None,
+        # message_effect_id: str | None = None,
+        # suggested_post_parameters: SuggestedPostParameters | None = None,
+        # reply_parameters: ReplyParameters | None = None,
+        # reply_markup: ReplyMarkupUnion | None = None,
+        # allow_sending_without_reply: bool | None = None,
+        # reply_to_message_id: int | None = None,
+        # request_timeout: int | None = None,
+
     async def copy_message(
         self,
         chat_id: typing.Union[int, str],
         from_chat_id: typing.Union[int, str],
         message_id: int,
-        caption: typing.Optional[str] = None,
-        parse_mode: typing.Optional[str] = None,
-        caption_entities: typing.Optional[typing.List[types.MessageEntity]] = None,
         message_thread_id: typing.Optional[int] = None,
+        direct_messages_topic_id: typing.Optional[int] = None,
+        video_start_timestamp: typing.Optional[typing.Any] = None,
+        caption: typing.Optional[str] = None,
+        parse_mode: typing.Union[str, Default, None] = Default("parse_mode"),
+        caption_entities: typing.Optional[typing.List[types.MessageEntity]] = None,
+        show_caption_above_media: typing.Union[bool, Default, None] = Default("show_caption_above_media"),
         disable_notification: typing.Optional[bool] = None,
-        protect_content: typing.Optional[bool] = None,
-        reply_to_message_id: typing.Optional[int] = None,
-        allow_sending_without_reply: typing.Optional[bool] = None,
+        protect_content: typing.Union[bool, Default, None] = Default("protect_content"),
+        allow_paid_broadcast: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        suggested_post_parameters: typing.Optional[typing.Any] = None,
+        reply_parameters: typing.Optional[typing.Any] = None,
         reply_markup: typing.Union[
             types.InlineKeyboardMarkup, types.ReplyKeyboardMarkup, types.ReplyKeyboardRemove, types.ForceReply, None] = None,
+        allow_sending_without_reply: typing.Optional[bool] = None,
+        reply_to_message_id: typing.Optional[int] = None,
+        request_timeout: typing.Optional[int] = None,
     ) -> types.MessageId:
         for t in TIMEOUTS:
             try:
@@ -144,15 +174,23 @@ class BotIg(Bot):
                     chat_id=chat_id,
                     from_chat_id=from_chat_id,
                     message_id=message_id,
+                    message_thread_id=message_thread_id,
+                    direct_messages_topic_id=direct_messages_topic_id,
+                    video_start_timestamp=video_start_timestamp,
                     caption=caption,
                     parse_mode=parse_mode,
                     caption_entities=caption_entities,
-                    message_thread_id=message_thread_id,
+                    show_caption_above_media=show_caption_above_media,
                     disable_notification=disable_notification,
                     protect_content=protect_content,
-                    reply_to_message_id=reply_to_message_id,
-                    allow_sending_without_reply=allow_sending_without_reply,
+                    allow_paid_broadcast=allow_paid_broadcast,
+                    message_effect_id=message_effect_id,
+                    suggested_post_parameters=suggested_post_parameters,
+                    reply_parameters=reply_parameters,
                     reply_markup=reply_markup,
+                    allow_sending_without_reply=allow_sending_without_reply,
+                    reply_to_message_id=reply_to_message_id,
+                    request_timeout=request_timeout,
                     )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in copy_message...')
@@ -164,11 +202,16 @@ class BotIg(Bot):
     async def delete_message(
         self,
         chat_id: typing.Union[int, str],
-        message_id: int
+        message_id: int,
+        request_timeout: typing.Optional[int] = None,
     ) -> bool:
         for t in TIMEOUTS:
             try:
-                return await super().delete_message(chat_id, message_id)
+                return await super().delete_message(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    request_timeout=request_timeout,
+                )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in delete_message...')
                 if t:
@@ -178,18 +221,22 @@ class BotIg(Bot):
 
     async def edit_message_reply_markup(
         self,
+        business_connection_id: typing.Optional[str] = None,
         chat_id: typing.Union[int, str, None] = None,
         message_id: typing.Optional[int] = None,
         inline_message_id: typing.Optional[str] = None,
-        reply_markup: typing.Union[types.InlineKeyboardMarkup, None] = None
+        reply_markup: typing.Union[types.InlineKeyboardMarkup, None] = None,
+        request_timeout: typing.Optional[int] = None,
     ) -> typing.Union[types.Message, bool]:
         for t in TIMEOUTS:
             try:
                 return await super().edit_message_reply_markup(
+                    business_connection_id=business_connection_id,
                     chat_id=chat_id,
                     message_id=message_id,
                     inline_message_id=inline_message_id,
                     reply_markup=reply_markup,
+                    request_timeout=request_timeout,
                 )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in edit_message_reply_markup...')
@@ -201,25 +248,31 @@ class BotIg(Bot):
     async def edit_message_text(
         self,
         text: str,
+        business_connection_id: typing.Optional[str] = None,
         chat_id: typing.Union[int, str, None] = None,
         message_id: typing.Optional[int] = None,
         inline_message_id: typing.Optional[str] = None,
-        parse_mode: typing.Optional[str] = None,
+        parse_mode: typing.Union[str, Default, None] = Default("parse_mode"),
         entities: typing.Optional[typing.List[types.MessageEntity]] = None,
-        disable_web_page_preview: typing.Optional[bool] = None,
+        link_preview_options: typing.Union[typing.Any, Default, None] = Default("link_preview"),
         reply_markup: typing.Union[types.InlineKeyboardMarkup, None] = None,
+        disable_web_page_preview: typing.Union[bool, Default, None] = Default("link_preview_is_disabled"),
+        request_timeout: typing.Optional[int] = None,
     ) -> typing.Union[types.Message, bool]:
         for t in TIMEOUTS:
             try:
                 return await super().edit_message_text(
                     text=text,
+                    business_connection_id=business_connection_id,
                     chat_id=chat_id,
                     message_id=message_id,
                     inline_message_id=inline_message_id,
                     parse_mode=parse_mode,
                     entities=entities,
-                    disable_web_page_preview=disable_web_page_preview,
+                    link_preview_options=link_preview_options,
                     reply_markup=reply_markup,
+                    disable_web_page_preview=disable_web_page_preview,
+                    request_timeout=request_timeout,
                     )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in edit_message_text...')
@@ -234,8 +287,13 @@ class BotIg(Bot):
         from_chat_id: typing.Union[int, str],
         message_id: int,
         message_thread_id: typing.Optional[int] = None,
+        direct_messages_topic_id: typing.Optional[int] = None,
+        video_start_timestamp: typing.Optional[typing.Any] = None,
         disable_notification: typing.Optional[bool] = None,
-        protect_content: typing.Optional[bool] = None,
+        protect_content: typing.Union[bool, Default, None] = Default("protect_content"),
+        message_effect_id: typing.Optional[str] = None,
+        suggested_post_parameters: typing.Optional[typing.Any] = None,
+        request_timeout: typing.Optional[int] = None,
     ) -> types.Message:
         for t in TIMEOUTS:
             try:
@@ -244,8 +302,13 @@ class BotIg(Bot):
                     from_chat_id=from_chat_id,
                     message_id=message_id,
                     message_thread_id=message_thread_id,
+                    direct_messages_topic_id=direct_messages_topic_id,
+                    video_start_timestamp=video_start_timestamp,
                     disable_notification=disable_notification,
                     protect_content=protect_content,
+                    message_effect_id=message_effect_id,
+                    suggested_post_parameters=suggested_post_parameters,
+                    request_timeout=request_timeout,
                     )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in forward_message...')
@@ -258,16 +321,24 @@ class BotIg(Bot):
         self,
         chat_id: typing.Union[int, str],
         text: str,
-        parse_mode: typing.Optional[str] = None,
-        entities: typing.Optional[typing.List[types.MessageEntity]] = None,
-        disable_web_page_preview: typing.Optional[bool] = None,
+        business_connection_id: typing.Optional[str] = None,
         message_thread_id: typing.Optional[int] = None,
+        direct_messages_topic_id: typing.Optional[int] = None,
+        parse_mode: typing.Union[str, Default, None] = Default("parse_mode"),
+        entities: typing.Optional[typing.List[types.MessageEntity]] = None,
+        link_preview_options: typing.Union[typing.Any, Default, None] = Default("link_preview"),
         disable_notification: typing.Optional[bool] = None,
-        protect_content: typing.Optional[bool] = None,
-        reply_to_message_id: typing.Optional[int] = None,
-        allow_sending_without_reply: typing.Optional[bool] = None,
+        protect_content: typing.Union[bool, Default, None] = Default("protect_content"),
+        allow_paid_broadcast: typing.Optional[bool] = None,
+        message_effect_id: typing.Optional[str] = None,
+        suggested_post_parameters: typing.Optional[typing.Any] = None,
+        reply_parameters: typing.Optional[typing.Any] = None,
         reply_markup: typing.Union[
             types.InlineKeyboardMarkup, types.ReplyKeyboardMarkup, types.ReplyKeyboardRemove, types.ForceReply, None] = None,
+        allow_sending_without_reply: typing.Optional[bool] = None,
+        disable_web_page_preview: typing.Union[bool, Default, None] = Default("link_preview_is_disabled"),
+        reply_to_message_id: typing.Optional[int] = None,
+        request_timeout: typing.Optional[int] = None,
     ) -> types.Message:
         for t in TIMEOUTS:
             try:
@@ -276,15 +347,23 @@ class BotIg(Bot):
                 return await super().send_message(
                     chat_id=chat_id,
                     text=text,
+                    business_connection_id=business_connection_id,
+                    message_thread_id=message_thread_id,
+                    direct_messages_topic_id=direct_messages_topic_id,
                     parse_mode=parse_mode,
                     entities=entities,
-                    disable_web_page_preview=disable_web_page_preview,
-                    message_thread_id=message_thread_id,
+                    link_preview_options=link_preview_options,
                     disable_notification=disable_notification,
                     protect_content=protect_content,
-                    reply_to_message_id=reply_to_message_id,
-                    allow_sending_without_reply=allow_sending_without_reply,
+                    allow_paid_broadcast=allow_paid_broadcast,
+                    message_effect_id=message_effect_id,
+                    suggested_post_parameters=suggested_post_parameters,
+                    reply_parameters=reply_parameters,
                     reply_markup=reply_markup,
+                    allow_sending_without_reply=allow_sending_without_reply,
+                    disable_web_page_preview=disable_web_page_preview,
+                    reply_to_message_id=reply_to_message_id,
+                    request_timeout=request_timeout,
                     )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in send_message...')
@@ -303,7 +382,8 @@ class BotIg(Bot):
         text: typing.Optional[str] = None,
         show_alert: typing.Optional[bool] = None,
         url: typing.Optional[str] = None,
-        cache_time: typing.Optional[int] = None
+        cache_time: typing.Optional[int] = None,
+        request_timeout: typing.Optional[int] = None,
     ) -> bool:
         for t in TIMEOUTS:
             try:
@@ -313,6 +393,7 @@ class BotIg(Bot):
                     show_alert=show_alert,
                     url=url,
                     cache_time=cache_time,
+                    request_timeout=request_timeout,
                 )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in answer_callback_query...')
@@ -331,6 +412,28 @@ bot = BotIg(
 router = Router()
 dispatcher = Dispatcher()
 dispatcher.include_router(router)
+
+
+async def capture_aiogram_error(event: ErrorEvent, bot: Bot) -> None:
+    if sentry_sdk is None:
+        return
+    update = getattr(event, "update", None)
+    with sentry_sdk.push_scope() as scope:
+        if update is not None:
+            scope.set_tag("update_type", getattr(update, "event_type", "unknown"))
+            scope.set_extra("update_id", getattr(update, "update_id", None))
+            user = getattr(update, "event_from_user", None)
+            if user is not None:
+                scope.set_user(
+                    {
+                        "id": user.id,
+                        "username": user.username,
+                    }
+                )
+        sentry_sdk.capture_exception(event.exception)
+
+
+dispatcher.errors.register(capture_aiogram_error)
 
 callbacks_processors = {}
 state_processors = {}
