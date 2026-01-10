@@ -51,7 +51,7 @@
    - Files to touch: every file under `handlers/` (see inventory).
    - Preserve existing handler bodies and state processing logic.
 
-4) [ ] **Update imports in handlers**
+4) [x] **Update imports in handlers**
    - Replace `from aiogram.dispatcher.webhook import types` with `from aiogram import types` (or `from aiogram.types import Message, CallbackQuery, ...`).
    - Replace `aiogram.dispatcher.filters` with `aiogram.filters`.
    - Replace `aiogram.utils.exceptions` with `aiogram.exceptions`.

@@ -1,7 +1,6 @@
-import aiogram
 from aiogram import types
 from aiogram.filters import Command
-from aiogram.utils.exceptions import BadRequest
+from aiogram.exceptions import InvalidQueryID, MessageNotModified
 from contextlib import suppress
 
 from helpers.consts import *
@@ -33,22 +32,22 @@ async def prc_reaction(query: types.CallbackQuery, student: User):
         original_message = query.message.text.split('\n')[0] if reaction_type_id == REACTION.WRITTEN_TEACHER else query.message.text
         new_text = f"{original_message}\n\n{db.reaction.get_by_id(reaction_id)}"
         if old_text != new_text:
-            with suppress(aiogram.utils.exceptions.MessageNotModified):
+            with suppress(MessageNotModified):
                 await query.message.edit_text(new_text, reply_markup=None)
         try:
             await query.answer(msgs.reaction_accepted)
-        except aiogram.utils.exceptions.InvalidQueryID:
+        except InvalidQueryID:
             pass
     # ученик
     elif reaction_type_id in (REACTION.WRITTEN_STUDENT, REACTION.ORAL_STUDENT):
         original_message = query.message.text.split()[0] if reaction_type_id == REACTION.WRITTEN_STUDENT else query.message.text
         new_text = f"{original_message}\n\n{db.reaction.get_by_id(reaction_id)}"
         if old_text != new_text:
-            with suppress(aiogram.utils.exceptions.MessageNotModified):
+            with suppress(MessageNotModified):
                 await query.message.edit_text(new_text, reply_markup=None)
         try:
             await query.answer(msgs.reaction_accepted)
-        except aiogram.utils.exceptions.InvalidQueryID:
+        except InvalidQueryID:
             pass
 
 

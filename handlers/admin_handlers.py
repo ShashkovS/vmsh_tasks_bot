@@ -1,7 +1,8 @@
 import logging
 
-import aiogram
 from aiogram import types
+from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command
 import asyncio
 import re
@@ -76,7 +77,7 @@ async def update_bot_settings(message: types.Message):
     await bot.send_message(
         chat_id=message.chat.id,
         text=html,
-        parse_mode=types.ParseMode.HTML,
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -90,7 +91,7 @@ async def update_ui_messages(message: types.Message):
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_ui_messages_updated,
-        parse_mode=types.ParseMode.HTML,
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -157,7 +158,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
                 True, broad_message.message_id, student.chat_id, student.id, None,
                 broadcast_message, None
             )
-        except aiogram.exceptions.TelegramAPIError as e:
+        except TelegramAPIError as e:
             logger.info(f'Школьник удалил себя или забанил бота {student.chat_id}\n{e}')
             bad_tokens.append(token)
         await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
@@ -290,18 +291,18 @@ async def assign_survey_to_tokens(message: types.Message):
 
 
 TEACHER_COMMANDS = [
-    aiogram.types.BotCommand(command='online', description=msgs.t_cmd_online),
-    aiogram.types.BotCommand(command='in_school', description=msgs.t_cmd_in_school),
-    aiogram.types.BotCommand(command='find_student', description=msgs.t_cmd_find_student),
-    aiogram.types.BotCommand(command='set_level', description=msgs.t_cmd_set_level),
-    aiogram.types.BotCommand(command='set_online', description=msgs.t_cmd_set_online),
-    aiogram.types.BotCommand(command='level_novice', description=msgs.t_cmd_level_novice),
-    aiogram.types.BotCommand(command='level_pro', description=msgs.t_cmd_level_pro),
-    aiogram.types.BotCommand(command='level_expert', description=msgs.t_cmd_level_expert),
-    aiogram.types.BotCommand(command='set_teacher', description=msgs.t_cmd_set_teacher),
-    aiogram.types.BotCommand(command='statw', description=msgs.t_cmd_statw),
-    aiogram.types.BotCommand(command='student_results', description=msgs.t_cmd_student_results),
-    aiogram.types.BotCommand(command='all_student_results', description=msgs.t_cmd_all_student_results),
+    types.BotCommand(command='online', description=msgs.t_cmd_online),
+    types.BotCommand(command='in_school', description=msgs.t_cmd_in_school),
+    types.BotCommand(command='find_student', description=msgs.t_cmd_find_student),
+    types.BotCommand(command='set_level', description=msgs.t_cmd_set_level),
+    types.BotCommand(command='set_online', description=msgs.t_cmd_set_online),
+    types.BotCommand(command='level_novice', description=msgs.t_cmd_level_novice),
+    types.BotCommand(command='level_pro', description=msgs.t_cmd_level_pro),
+    types.BotCommand(command='level_expert', description=msgs.t_cmd_level_expert),
+    types.BotCommand(command='set_teacher', description=msgs.t_cmd_set_teacher),
+    types.BotCommand(command='statw', description=msgs.t_cmd_statw),
+    types.BotCommand(command='student_results', description=msgs.t_cmd_student_results),
+    types.BotCommand(command='all_student_results', description=msgs.t_cmd_all_student_results),
 ]
 
 
@@ -309,7 +310,7 @@ async def update_teachers_commands_task(teacher_chat_id):
     for user in User.all_teachers():
         if not user.chat_id:
             continue
-        await bot.set_my_commands(commands=TEACHER_COMMANDS, scope=aiogram.types.BotCommandScope(type='chat', chat_id=user.chat_id))
+        await bot.set_my_commands(commands=TEACHER_COMMANDS, scope=types.BotCommandScope(type='chat', chat_id=user.chat_id))
         await asyncio.sleep(1 / 20)  # 20 messages per second (Limit: 30 messages per second)
     await bot.send_message(
         chat_id=teacher_chat_id,

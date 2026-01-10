@@ -8,10 +8,17 @@ from ast import literal_eval
 from operator import itemgetter
 from typing import Tuple, Optional
 
-import aiogram.utils.exceptions
 from aiogram import types
 from aiogram.filters import Command
-from aiogram.utils.exceptions import BadRequest, MessageNotModified, MessageToEditNotFound, ChatNotFound
+from aiogram.exceptions import (
+    BadRequest,
+    BotBlocked,
+    ChatNotFound,
+    MessageIsTooLong,
+    MessageNotModified,
+    MessageToEditNotFound,
+    UserDeactivated,
+)
 
 from helpers.consts import *
 from helpers.config import logger, config
@@ -90,7 +97,7 @@ async def post_problem_keyboard(
                 reply_markup=student_keyboards.build_problems(show_lesson, student),
                 disable_notification=disable_notification,
             )
-        except (aiogram.utils.exceptions.BotBlocked, aiogram.utils.exceptions.UserDeactivated):
+        except (BotBlocked, UserDeactivated):
             # Дальше писать смысла нет
             student.set_chat_id(None)
             return
@@ -862,7 +869,7 @@ async def students_my_results(message: types.Message):
                     await bot.send_message(
                         chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines[i:i + 20]) + '</pre>'
                     )
-                except aiogram.utils.exceptions.MessageIsTooLong:
+                except MessageIsTooLong:
                     pass
     else:
         await bot.send_message(chat_id=message.chat.id, text=msgs.error_nothing_was_sent)

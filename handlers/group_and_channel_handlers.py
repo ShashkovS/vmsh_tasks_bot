@@ -3,7 +3,7 @@ import re
 
 from aiogram import types
 from aiogram.filters import ChatTypeFilter
-from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToForwardNotFound
+from aiogram.exceptions import MessageCantBeDeleted, MessageToForwardNotFound
 
 import db_methods as db
 from helpers.bot import bot, router
