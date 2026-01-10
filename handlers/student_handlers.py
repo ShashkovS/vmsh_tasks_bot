@@ -9,7 +9,8 @@ from operator import itemgetter
 from typing import Tuple, Optional
 
 import aiogram.utils.exceptions
-from aiogram.dispatcher.webhook import types
+from aiogram import types
+from aiogram.filters import Command
 from aiogram.utils.exceptions import BadRequest, MessageNotModified, MessageToEditNotFound, ChatNotFound
 
 from helpers.consts import *
@@ -18,7 +19,7 @@ import db_methods as db
 from helpers.features import RESULT_MODE, FEATURES, SAVE_SOL_MODE, RATE_LIMIT_MODE
 from helpers.msg_texts import msgs
 from models import User, Problem, State, Waitlist, WrittenQueue, Result
-from helpers.bot import bot, reg_callback, dispatcher, reg_state
+from helpers.bot import bot, reg_callback, router, reg_state
 from handlers import student_keyboards, common_keyboards
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
 
@@ -415,7 +416,7 @@ async def prc_student_is_in_conference_state(message: types.message, student: Us
     pass
 
 
-@dispatcher.message_handler(commands=['ss', 'set_student'])
+@router.message(Command('ss', 'set_student'))
 async def set_student(message: types.Message):
     logger.debug('set_student')
     student = User.get_by_chat_id(message.chat.id)
@@ -430,7 +431,7 @@ async def set_student(message: types.Message):
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['level_novice'])
+@router.message(Command('level_novice'))
 async def level_novice(message: types.Message):
     logger.debug('level_novice')
     student = User.get_by_chat_id(message.chat.id)
@@ -445,7 +446,7 @@ async def level_novice(message: types.Message):
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['level_testing'])
+@router.message(Command('level_testing'))
 async def level_testing(message: types.Message):
     logger.debug('level_testing')
     student = User.get_by_chat_id(message.chat.id)
@@ -460,7 +461,7 @@ async def level_testing(message: types.Message):
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['level_pro'])
+@router.message(Command('level_pro'))
 async def level_pro(message: types.Message):
     logger.debug('level_pro')
     student = User.get_by_chat_id(message.chat.id)
@@ -475,7 +476,7 @@ async def level_pro(message: types.Message):
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['level_expert'])
+@router.message(Command('level_expert'))
 async def level_expert(message: types.Message):
     logger.debug('level_expert')
     student = User.get_by_chat_id(message.chat.id)
@@ -490,7 +491,7 @@ async def level_expert(message: types.Message):
         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-# @dispatcher.message_handler(commands=['level_gr8'])
+# @router.message(Command('level_gr8'))
 # async def level_expert(message: types.Message):
 #     logger.debug('level_gr8')
 #     student = User.get_by_chat_id(message.chat.id)
@@ -508,7 +509,7 @@ async def level_expert(message: types.Message):
 #         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['sos'])
+@router.message(Command('sos'))
 async def sos(message: types.Message):
     logger.debug('sos')
     user = User.get_by_chat_id(message.chat.id)
@@ -797,7 +798,7 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
     asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
 
 
-@dispatcher.message_handler(commands=['exit_waitlist'])
+@router.message(Command('exit_waitlist'))
 async def exit_waitlist(message: types.Message):
     logger.debug('exit_waitlist')
     user = User.get_by_chat_id(message.chat.id)
@@ -815,7 +816,7 @@ async def exit_waitlist(message: types.Message):
     asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user))
 
 
-# @dispatcher.message_handler(commands=['set_zoom'])
+# @router.message(Command('set_zoom'))
 # async def set_zoom(message: types.Message):
 #     logger.debug('set_zoom')
 #     user = User.get_by_chat_id(message.chat.id)
@@ -841,7 +842,7 @@ async def exit_waitlist(message: types.Message):
 #         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user, sleep=5))
 
 
-@dispatcher.message_handler(commands=['results'])
+@router.message(Command('results'))
 async def students_my_results(message: types.Message):
     logger.debug('students_my_results')
     student = User.get_by_chat_id(message.chat.id)
@@ -867,7 +868,7 @@ async def students_my_results(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, text=msgs.error_nothing_was_sent)
 
 
-@dispatcher.message_handler(commands=['game_info'])
+@router.message(Command('game_info'))
 async def game_info(message: types.Message):
     """Отчёт по плюсам и минусам в игре.
     См. также get_game_data.

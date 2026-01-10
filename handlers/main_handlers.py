@@ -1,13 +1,15 @@
 import asyncio
 import traceback
-from aiogram.dispatcher.webhook import types
+
+from aiogram import types
+from aiogram.filters import Command
 
 from helpers.consts import *
 from helpers.config import logger, config
 from helpers.features import REG_MODE, FEATURES
 from models import User, State
 import db_methods as db
-from helpers.bot import bot, dispatcher, reg_state, callbacks_processors, state_processors
+from helpers.bot import bot, router, reg_state, callbacks_processors, state_processors
 from helpers.msg_texts import msgs
 from handlers.student_handlers import post_problem_keyboard
 
@@ -31,7 +33,7 @@ def assign_default_game_command(user):
     db.game.set_student_command(user.id, LEVEL.NOVICE, command_id)
 
 
-@dispatcher.message_handler(commands=['start'])
+@router.message(Command('start'))
 async def start(message: types.Message):
     logger.debug('start')
     user = User.get_by_chat_id(message.chat.id)
@@ -122,7 +124,7 @@ async def prc_WTF(message: types.Message, user: User):
     await process_regular_message(message)
 
 
-@dispatcher.callback_query_handler()
+@router.callback_query()
 async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
     logger.debug('inline_kb_answer_callback_handler')
     if query.message:
@@ -151,7 +153,7 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
 
 
 # Важно, чтобы эта регистрация была последней
-# @dispatcher.message_handler(content_types=["any"])
+# @router.message()
 async def process_regular_message(message: types.Message):
     logger.debug('process_regular_message')
     # Сначала проверяем, что этот тип сообщений мы вообще поддерживаем
@@ -201,7 +203,7 @@ async def process_regular_message(message: types.Message):
         await bot.post_logging_message(error_text)
 
 
-@dispatcher.message_handler(commands=['online'])
+@router.message(Command('online'))
 async def mode_online(message: types.Message):
     logger.debug('mode_online')
     user = User.get_by_chat_id(message.chat.id)
@@ -212,7 +214,7 @@ async def mode_online(message: types.Message):
         await start(message)
 
 
-@dispatcher.message_handler(commands=['in_school', 'inschool', 'school'])
+@router.message(Command('in_school', 'inschool', 'school'))
 async def mode_school(message: types.Message):
     logger.debug('mode_school')
     user = User.get_by_chat_id(message.chat.id)

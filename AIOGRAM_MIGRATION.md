@@ -38,7 +38,7 @@
      - `aiogram.exceptions` for `BadRequest`, `TelegramAPIError`, `MessageNotModified`, `RetryAfter`, etc.
    - Keep the existing `BotIg` logic and state processors intact; only adjust method signatures/types if aiogram 3 renamed return types (e.g., `MessageId`).
 
-3) [ ] **Switch handlers to aiogram 3 router API**
+3) [x] **Switch handlers to aiogram 3 router API**
    - Replace decorator usage:
      - `@dispatcher.message_handler(...)` -> `@router.message(...)`
      - `@dispatcher.callback_query_handler(...)` -> `@router.callback_query(...)`

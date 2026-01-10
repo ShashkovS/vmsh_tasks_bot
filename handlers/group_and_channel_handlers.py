@@ -1,11 +1,12 @@
 import asyncio
 import re
-from aiogram.dispatcher.webhook import types
-from aiogram.dispatcher.filters import ChatTypeFilter, RegexpCommandsFilter
+
+from aiogram import types
+from aiogram.filters import ChatTypeFilter
 from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToForwardNotFound
 
 import db_methods as db
-from helpers.bot import bot, dispatcher
+from helpers.bot import bot, router
 from helpers.config import logger, config
 from helpers.consts import ONLINE_MODE
 from helpers.msg_texts import msgs
@@ -24,10 +25,8 @@ def check_sos_channel(message: types.Message):
     return message.chat.id == config.sos_channel or '@' + str(message.chat.username) == config.sos_channel
 
 
-@dispatcher.channel_post_handler(check_sos_channel, content_types=types.ContentType.ANY)
-@dispatcher.channel_post_handler(check_sos_channel, RegexpCommandsFilter(regexp_commands=['.*']))
-@dispatcher.message_handler(check_sos_channel, content_types=types.ContentType.ANY)
-@dispatcher.message_handler(check_sos_channel, RegexpCommandsFilter(regexp_commands=['.*']))
+@router.channel_post(check_sos_channel)
+@router.message(check_sos_channel)
 async def prc_sos_reply(message: types.Message):
     logger.debug('prc_sos_reply')
     # Ботов нафиг
@@ -55,10 +54,8 @@ async def prc_sos_reply(message: types.Message):
         logger.exception(f'SHIT: {e}')
 
 
-@dispatcher.message_handler(ChatTypeFilter(types.ChatType.SUPERGROUP), content_types=types.ContentType.ANY)
-@dispatcher.message_handler(ChatTypeFilter(types.ChatType.GROUP), content_types=types.ContentType.ANY)
-@dispatcher.message_handler(ChatTypeFilter(types.ChatType.SUPERGROUP), RegexpCommandsFilter(regexp_commands=['.*']))
-@dispatcher.message_handler(ChatTypeFilter(types.ChatType.GROUP), RegexpCommandsFilter(regexp_commands=['.*']))
+@router.message(ChatTypeFilter(types.ChatType.SUPERGROUP))
+@router.message(ChatTypeFilter(types.ChatType.GROUP))
 async def group_message_handler(message: types.Message):
     # Если сообщение от админа, то игнорируем его
     if message.from_user.username == 'GroupAnonymousBot':

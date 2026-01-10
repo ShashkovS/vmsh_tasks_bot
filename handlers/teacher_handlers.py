@@ -3,8 +3,8 @@ import re
 
 import aiogram
 import asyncio
-from aiogram.dispatcher.webhook import types
-from aiogram.dispatcher import filters
+from aiogram import F, types
+from aiogram.filters import Command
 from aiogram.utils.exceptions import BadRequest
 from urllib.parse import urlencode
 from Levenshtein import jaro_winkler
@@ -16,7 +16,7 @@ from helpers.msg_texts import msgs
 import db_methods as db
 from helpers.features import VERDICT_MODE, FEATURES, RESULT_MODE
 from models import User, Problem, State, Waitlist, WrittenQueue, Result
-from helpers.bot import bot, reg_callback, dispatcher, reg_state
+from helpers.bot import bot, reg_callback, router, reg_state
 from handlers import teacher_keyboards, student_keyboards
 from handlers.student_handlers import sleep_and_send_problems_keyboard, refresh_last_student_keyboard, WHITEBOARD_LINK
 from handlers.main_handlers import process_regular_message  # TODO Удалить использование этой функции
@@ -171,7 +171,7 @@ async def prc_teacher_accepted_queue(message: types.message, teacher: User, onli
                            reply_markup=reply_markup)
 
 
-@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?edtplus.*']))
+@router.message(F.text.regexp(r'^/?edtplus.*'))
 async def edtplus(message: types.Message):
     logger.debug('edtplus')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -210,7 +210,7 @@ async def prc_teacher_writes_student_name_state(message: types.message, teacher:
                            reply_markup=teacher_keyboards.build_select_student(name_to_find))
 
 
-@dispatcher.message_handler(filters.RegexpCommandsFilter(regexp_commands=['^/?recheck.*']))
+@router.message(F.text.regexp(r'^/?recheck.*'))
 async def recheck(message: types.Message):
     logger.debug('recheck')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -245,7 +245,7 @@ async def recheck(message: types.Message):
         await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
-@dispatcher.message_handler(commands=['set_level', 'sl'])
+@router.message(Command('set_level', 'sl'))
 async def set_student_level(message: types.Message):
     logger.debug('set_student_level')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -872,7 +872,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     # asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
-@dispatcher.message_handler(commands=['find_student', 'fs'])
+@router.message(Command('find_student', 'fs'))
 async def find_student(message: types.Message):
     logger.debug('find_student')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -900,7 +900,7 @@ async def find_student(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, text=msgs.t_no_students_found)
 
 
-@dispatcher.message_handler(commands=['set_online', 'so'])
+@router.message(Command('set_online', 'so'))
 async def set_online(message: types.Message):
     logger.debug('set_online')
     teacher = User.get_by_chat_id(message.chat.id)
@@ -925,7 +925,7 @@ async def set_online(message: types.Message):
         )
 
 
-@dispatcher.message_handler(commands=['set_teacher', 'st'])
+@router.message(Command('set_teacher', 'st'))
 async def set_teacher(message: types.Message):
     '''
     После тестирования ответов в боте учителю нужно снова вернуться в своё учительское состояние.
@@ -966,7 +966,7 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
     await bot.answer_callback_query_ig(query.id)
 
 
-@dispatcher.message_handler(commands=['zoom_queue', 'z', 'zall'])
+@router.message(Command('zoom_queue', 'z', 'zall'))
 async def zoom_queue(message: types.Message):
     '''
     Вывести очередь школьников

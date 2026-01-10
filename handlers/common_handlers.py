@@ -1,5 +1,6 @@
 import aiogram
-from aiogram.dispatcher.webhook import types
+from aiogram import types
+from aiogram.filters import Command
 from aiogram.utils.exceptions import BadRequest
 from contextlib import suppress
 
@@ -7,7 +8,7 @@ from helpers.consts import *
 from helpers.config import logger
 import db_methods as db
 from models import User, Webtoken
-from helpers.bot import reg_callback, dispatcher, bot
+from helpers.bot import reg_callback, router, bot
 from helpers.msg_texts import msgs
 from handlers.common_keyboards import build_survey
 
@@ -70,7 +71,7 @@ async def prc_survey(query: types.CallbackQuery, user: User):
                                            reply_markup=build_survey(user, survey, selection_ids))
     await bot.answer_callback_query_ig(query.id)
 
-@dispatcher.message_handler(commands=['password'])
+@router.message(Command('password'))
 async def get_my_password(message: types.Message):
     logger.debug('password')
     user = User.get_by_chat_id(message.chat.id)
