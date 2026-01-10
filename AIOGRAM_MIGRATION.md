@@ -45,7 +45,7 @@
      - `@dispatcher.channel_post_handler(...)` -> `@router.channel_post(...)`
    - Migrate filters and arguments:
      - `commands=['start']` -> `Command('start')`
-     - `ChatTypeFilter(ChatType.PRIVATE)` stays but import from `aiogram.filters`
+     - Replace `ChatTypeFilter(ChatType.PRIVATE)` with `F.chat.type == ChatType.PRIVATE`
      - `RegexpCommandsFilter(...)` -> `F.text.regexp(r"...")` or a custom filter class
      - `content_types=ContentType.ANY` can be removed (default matches all), or use `F.content_type` if needed
    - Files to touch: every file under `handlers/` (see inventory).
@@ -90,9 +90,11 @@
 
 9) [ ] **Validation checklist**
    - Run `pytest -vvs tests/` (or `./run_tests.sh`).
+     - Last run: 17 passed, 2 skipped (`test_config` missing prod config, `test_user_start` socket bind blocked).
    - Run `python main.py` in dev and confirm:
      - aiohttp app starts
      - polling bot responds
+     - Last run: failed to bind `127.0.0.1:8179` with `PermissionError` in this environment; re-run locally to validate polling.
    - In prod-like mode (gunicorn), confirm webhook is set and updates are processed.
 
 ## Notes on minimal change strategy

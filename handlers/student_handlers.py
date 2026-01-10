@@ -10,15 +10,7 @@ from typing import Tuple, Optional
 
 from aiogram import types
 from aiogram.filters import Command
-from aiogram.exceptions import (
-    BadRequest,
-    BotBlocked,
-    ChatNotFound,
-    MessageIsTooLong,
-    MessageNotModified,
-    MessageToEditNotFound,
-    UserDeactivated,
-)
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 
 from helpers.consts import *
 from helpers.config import logger, config
@@ -97,7 +89,7 @@ async def post_problem_keyboard(
                 reply_markup=student_keyboards.build_problems(show_lesson, student),
                 disable_notification=disable_notification,
             )
-        except (BotBlocked, UserDeactivated):
+        except TelegramForbiddenError:
             # Дальше писать смысла нет
             student.set_chat_id(None)
             return
@@ -116,10 +108,14 @@ async def refresh_last_student_keyboard(student: User, force=False) -> bool:
                 reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student)
             )
             return bool(updated)
-        except MessageNotModified as e:
-            return True
-        except MessageToEditNotFound as e:
-            prev_keyboard = None
+        except TelegramBadRequest as e:
+            err = e.message.lower()
+            if "message is not modified" in err:
+                return True
+            if "message to edit not found" in err:
+                prev_keyboard = None
+            else:
+                return False
         except Exception as e:
             return False
     if not prev_keyboard and force and student.chat_id:
@@ -793,7 +789,7 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
     db.delete_url_by_user_id(student.id)
     try:
         await bot.unpin_chat_message(chat_id=query.message.chat.id)
-    except BadRequest:
+    except TelegramBadRequest:
         pass
     State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
     if teacher:
@@ -813,7 +809,7 @@ async def exit_waitlist(message: types.Message):
     db.delete_url_by_user_id(user.id)
     try:
         await bot.unpin_chat_message(chat_id=message.chat.id)
-    except BadRequest:
+    except TelegramBadRequest:
         pass
     await bot.send_message(
         chat_id=message.chat.id,
@@ -869,7 +865,7 @@ async def students_my_results(message: types.Message):
                     await bot.send_message(
                         chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines[i:i + 20]) + '</pre>'
                     )
-                except MessageIsTooLong:
+                except TelegramBadRequest:
                     pass
     else:
         await bot.send_message(chat_id=message.chat.id, text=msgs.error_nothing_was_sent)

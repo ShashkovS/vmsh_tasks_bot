@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
         runner = web.AppRunner(app)
         await runner.setup()
-        site = web.TCPSite(runner, port=LOCAL_APP_PORT)
+        site = web.TCPSite(runner, host="127.0.0.1", port=LOCAL_APP_PORT)
         await site.start()
         logger.info(f"Веб-сервер запущен на порту {LOCAL_APP_PORT}")
 

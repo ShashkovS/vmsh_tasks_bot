@@ -37,7 +37,7 @@ async def log_bot_name(username):
     logger.info(f'Бот начал свою работу: https://t.me/{username}')
 
 
-async def on_startup(bot_instance: Bot):
+async def on_startup(bot: Bot, **_kwargs):
     logger.warning('bot on_startup')
     logger.debug(f'{handlers}')
 
@@ -52,13 +52,13 @@ async def on_startup(bot_instance: Bot):
     if USE_WEBHOOKS:
         await check_webhook()
 
-    bot_instance.username = (await bot_instance.get_me()).username
+    bot.username = (await bot.get_me()).username
 
-    await bot_instance.post_logging_message(f'Бот начал свою работу')
-    asyncio.create_task(log_bot_name(bot_instance.username))
+    await bot.post_logging_message(f'Бот начал свою работу')
+    asyncio.create_task(log_bot_name(bot.username))
 
 
-async def on_shutdown(bot_instance: Bot):
+async def on_shutdown(bot: Bot, **_kwargs):
     """
     Graceful shutdown.
     """
@@ -74,8 +74,8 @@ async def on_shutdown(bot_instance: Bot):
     # Close all connections.
     # Здесь какая-то ерунда, зачем-то выводится вот такое предупреждение:
     # https://github.com/aiogram/aiogram/blob/a852b9559612e3b9d542588a4539e64c50393a9c/aiogram/bot/base.py#L208
-    if bot_instance.session:
-        await bot_instance.session.close()
+    if bot.session:
+        await bot.session.close()
     storage = getattr(dispatcher, "storage", None)
     if storage:
         await storage.close()

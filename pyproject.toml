@@ -31,6 +31,7 @@ dev = [
     "aiohttp-devtools>=1.1.2",
     "aresponses>=3.0.0",
     "coverage>=7.13.1",
+    "importlib>=1.0.4",
     "paramiko>=4.0.0",
     "py7zr>=1.1.0",
     "pytest>=9.0.2",

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
 
-importlib
+import importlib
 import os
+from pathlib import Path
 
-os.chdir('..')
+ROOT = Path(__file__).resolve().parents[1]
+os.chdir(ROOT)
 os.environ['PROD'] = 'no,test'
 from helpers import config
 
@@ -25,6 +27,9 @@ class SecretsModuleAttributesTest(TestCase):
         self.assertIsNotNone(config.config.db_filename)
 
         os.environ['PROD'] = 'true'
+        prod_config = ROOT / 'creds_prod' / 'vmsh_bot_config_prod.json'
+        if not prod_config.exists() or prod_config.stat().st_size == 0:
+            self.skipTest("Production config is missing or empty.")
         importlib.reload(config)
         telegram_bot_token_test = config.config.telegram_bot_token
         db_test = config.config.db_filename

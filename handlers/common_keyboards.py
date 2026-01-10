@@ -1,4 +1,5 @@
 from aiogram import types
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from helpers.consts import *
 from helpers.config import logger
@@ -12,7 +13,8 @@ def build_survey(user: User, survey, survey_result):
     #   {'id': 1, 'survey_id': 1, 'text': 'One'},
     #   {'id': 2, 'survey_id': 1, 'text': 'Two'}
     #   ]}
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    keyboard_markup = InlineKeyboardBuilder()
+    keyboard_markup.max_width = 3
     for choice in survey['choices']:
         if choice['id'] in survey_result:
             tick = '✅'
@@ -24,4 +26,4 @@ def build_survey(user: User, survey, survey_result):
             callback_data=f"{CALLBACK.SURVEY}_{user.id}_{survey['id']}_{survey['survey_type']}_{choice['id']}_{cur_choices}"
         )
         keyboard_markup.add(task_button)
-    return keyboard_markup
+    return keyboard_markup.as_markup()

@@ -3,7 +3,7 @@ import re
 
 import asyncio
 from aiogram import F, types
-from aiogram.exceptions import BadRequest, TelegramAPIError
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.types import FSInputFile
 from urllib.parse import urlencode
@@ -607,7 +607,7 @@ async def prc_send_answer_callback(query: types.CallbackQuery, teacher: User):
                 try:
                     await bot.copy_message(student_chat_id, row['chat_id'], row['tg_msg_id'],
                                            disable_notification=True)
-                except BadRequest as e:
+                except TelegramBadRequest as e:
                     logger.error(f'Почему-то не отфорвардилось... {student_chat_id}\n{e}')
             elif row['text']:
                 await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
@@ -647,7 +647,7 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
     db.delete_url_by_user_id(student.id)
     try:
         await bot.unpin_chat_message(chat_id=student.chat_id)
-    except BadRequest:
+    except TelegramBadRequest:
         pass
 
     params = {

@@ -1,9 +1,9 @@
 import asyncio
 import re
 
-from aiogram import types
-from aiogram.filters import ChatTypeFilter
-from aiogram.exceptions import MessageCantBeDeleted, MessageToForwardNotFound
+from aiogram import F, types
+from aiogram.enums import ChatType
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramNotFound
 
 import db_methods as db
 from helpers.bot import bot, router
@@ -54,8 +54,8 @@ async def prc_sos_reply(message: types.Message):
         logger.exception(f'SHIT: {e}')
 
 
-@router.message(ChatTypeFilter(types.ChatType.SUPERGROUP))
-@router.message(ChatTypeFilter(types.ChatType.GROUP))
+@router.message(F.chat.type == ChatType.SUPERGROUP)
+@router.message(F.chat.type == ChatType.GROUP)
 async def group_message_handler(message: types.Message):
     # Если сообщение от админа, то игнорируем его
     if message.from_user.username == 'GroupAnonymousBot':
@@ -109,12 +109,12 @@ async def group_message_handler(message: types.Message):
         if message_is_url_only or mat_detected or bad_urls or from_bad_bot_message or too_short_user_sign:
             try:
                 await bot.forward_message(config.exceptions_channel, message.chat.id, message.message_id)
-            except MessageToForwardNotFound:
+            except TelegramNotFound:
                 pass
             # Удаляем сообщение
             try:
                 await bot.delete_message(message.chat.id, message.message_id)
-            except MessageCantBeDeleted:
+            except TelegramBadRequest:
                 await bot.send_message(config.exceptions_channel, msgs.a_moderate_could_not_delete)
             except Exception as e:
                 logger.exception(f'SHIT: {e}')
@@ -124,6 +124,8 @@ async def group_message_handler(message: types.Message):
             try:
                 await bot.ban_chat_member(message.chat.id, message.from_user.id, revoke_messages=True)
                 await bot.send_message(config.exceptions_channel, msgs.a_moderate_banned.format_map({'message': message}))
+            except TelegramForbiddenError:
+                await bot.send_message(config.exceptions_channel, msgs.a_moderate_could_not_ban)
             except Exception as e:
                 logger.exception(f'SHIT: {e}')
                 await bot.send_message(config.exceptions_channel, msgs.a_moderate_could_not_ban)

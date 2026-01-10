@@ -1,4 +1,5 @@
 from aiogram import types
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from Levenshtein import jaro_winkler
 from typing import List, Tuple
 
@@ -12,7 +13,8 @@ from models import User, Problem
 
 def build_teacher_actions(sos_count, prb_count):
     logger.debug('keyboards.build_teacher_actions')
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardBuilder()
+    keyboard.max_width = 3
     get_written_task_button = types.InlineKeyboardButton(
         text=msgs.t_btn_answer_question.format_map({'sos_count': sos_count}),
         callback_data=CALLBACK.GET_SOS_TASK
@@ -33,25 +35,27 @@ def build_teacher_actions(sos_count, prb_count):
         callback_data=CALLBACK.INS_ORAL_PLUSSES
     )
     keyboard.add(insert_oral_pluses)
-    return keyboard
+    return keyboard.as_markup()
 
 
 def build_cancel_keyboard():
     logger.debug('build_cancel_keyboard')
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardBuilder()
+    keyboard.max_width = 3
     cancel = types.InlineKeyboardButton(
         text=msgs.t_btn_cancel,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
     keyboard.add(cancel)
-    return keyboard
+    return keyboard.as_markup()
 
 
 def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int, float]]):
     logger.debug('build_select_problem_to_check')
     # Сортировка уже в sql-запросе
     # problems_and_counts.sort(key=lambda el: (el[0].lesson, el[0].level, el[0].prob, el[0].item))
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardBuilder()
+    keyboard.max_width = 3
     for problem, cnt, days_waits in problems_and_counts:
         if problem.prob_type == PROB_TYPE.TEST:
             tp = '⋯'
@@ -71,12 +75,13 @@ def build_select_problem_to_check(problems_and_counts: List[Tuple[Problem, int, 
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
     keyboard.add(cancel)
-    return keyboard
+    return keyboard.as_markup()
 
 
 def build_teacher_select_written_problem(top: list):
     logger.debug('keyboards.build_teacher_select_written_problem')
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
+    keyboard_markup = InlineKeyboardBuilder()
+    keyboard_markup.max_width = 7
     for row in top:
         student = User.get_by_id(row['student_id'])
         problem = Problem.get_by_id(abs(row['problem_id']))  # убираем знак, он может быть отрицательным при вопросе
@@ -90,12 +95,13 @@ def build_teacher_select_written_problem(top: list):
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
     keyboard_markup.add(cancel)
-    return keyboard_markup
+    return keyboard_markup.as_markup()
 
 
 def build_select_student(name_to_find: str):
     logger.debug('keyboards.build_select_student')
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
+    keyboard_markup = InlineKeyboardBuilder()
+    keyboard_markup.max_width = 7
     name_to_find_lower = name_to_find.lower()
     students = sorted(
         User.all_students(),
@@ -112,12 +118,13 @@ def build_select_student(name_to_find: str):
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
     keyboard_markup.add(cancel)
-    return keyboard_markup
+    return keyboard_markup.as_markup()
 
 
 def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids_to_remove: List = None):
     logger.debug('keyboards.build_written_task_checking_verdict')
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
+    keyboard_markup = InlineKeyboardBuilder()
+    keyboard_markup.max_width = 7
     # TODO сделать нормально
     if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
         keyboard_markup.add(types.InlineKeyboardButton(
@@ -146,12 +153,13 @@ def build_written_task_checking_verdict(student: User, problem: Problem, wtd_ids
         callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"
         # TODO А-а-а! ТРЕШНЯК!!!
     ))
-    return keyboard_markup
+    return keyboard_markup.as_markup()
 
 
 def build_answer_verdict(student: User, problem: Problem, wtd_ids_to_remove: List = None):
     logger.debug('keyboards.build_answer_verdict')
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=7)
+    keyboard_markup = InlineKeyboardBuilder()
+    keyboard_markup.max_width = 7
     keyboard_markup.add(types.InlineKeyboardButton(
         text=msgs.t_btn_send_answer,
         callback_data=f"{CALLBACK.SEND_ANSWER}_{student.id}_{-problem.id}"
@@ -161,7 +169,7 @@ def build_answer_verdict(student: User, problem: Problem, wtd_ids_to_remove: Lis
         callback_data=f"{CALLBACK.TEACHER_CANCEL}_del_{'' if not wtd_ids_to_remove else ','.join(map(str, wtd_ids_to_remove))}"
         # TODO А-а-а! ТРЕШНЯК!!!
     ))
-    return keyboard_markup
+    return keyboard_markup.as_markup()
 
 
 def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User, online: ONLINE_MODE, lesson_num=None):
@@ -173,7 +181,7 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
         for (problem_id, verdict) in db.result.check_student_solved(student.id, lesson_num).items()
         if verdict in VERDICTS_SOLVED
     }
-    keyboard_markup = types.InlineKeyboardMarkup(row_width=3)
+    keyboard_markup = InlineKeyboardBuilder()
     plus_ids_str = ','.join(map(str, plus_ids))
     minus_ids_str = ','.join(map(str, minus_ids))
     if online == ONLINE_MODE.SCHOOL:
@@ -203,28 +211,28 @@ def build_verdict_for_oral_problems(plus_ids: set, minus_ids: set, student: User
         problem_buttons.append(task_button)
     if online == ONLINE_MODE.SCHOOL:
         for i in range(0, len(problem_buttons), 4):
-            keyboard_markup.row(*problem_buttons[i:i + 4])
+            keyboard_markup.row(*problem_buttons[i:i + 4], width=4)
     else:
-        for task_button in problem_buttons:
-            keyboard_markup.add(task_button)
+        keyboard_markup.row(*problem_buttons, width=3)
     row_btns = []
     for lvl in LEVEL:
         if student.level != lvl:
             row_btns.append(types.InlineKeyboardButton(
                 text=msgs.t_btn_level_template.format_map({'lvl': lvl, 'slevel': lvl.slevel}),
                 callback_data=f"{CALLBACK.CHANGE_LEVEL}_{student.id}_{lvl}"))
-    keyboard_markup.row(*row_btns)
+    if row_btns:
+        keyboard_markup.row(*row_btns, width=len(row_btns))
     ready_button = types.InlineKeyboardButton(
         text=msgs.t_btn_ready_oral,
         callback_data=f"{CALLBACK.FINISH_ORAL_ROUND}_{plus_ids_str}_{minus_ids_str}"
     )
-    keyboard_markup.add(ready_button)
+    keyboard_markup.row(ready_button, width=1)
     cancel = types.InlineKeyboardButton(
         text=msgs.t_btn_cancel_oral,
         callback_data=f"{CALLBACK.TEACHER_CANCEL}"
     )
-    keyboard_markup.add(cancel)
-    return keyboard_markup
+    keyboard_markup.row(cancel, width=1)
+    return keyboard_markup.as_markup()
 
 
 def build_teacher_reaction_on_solution(result_id: int):
@@ -232,7 +240,8 @@ def build_teacher_reaction_on_solution(result_id: int):
     после принятия/отклонения учителем письменной работы.
     """
     logger.debug('keyboards.build_teacher_reaction_on_solution')
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardBuilder()
+    keyboard.max_width = 3
     for reaction in db.reaction.enum(REACTION.WRITTEN_TEACHER):
         keyboard.add(
             types.InlineKeyboardButton(
@@ -240,13 +249,14 @@ def build_teacher_reaction_on_solution(result_id: int):
                 callback_data=f'{CALLBACK.REACTION}_{result_id}_None_{reaction["reaction_id"]}_{REACTION.WRITTEN_TEACHER}'
             )
         )
-    return keyboard
+    return keyboard.as_markup()
 
 
 def build_teacher_reaction_oral(zoom_conversation_id: int):
     """Создает инлайн клавиатуру для учителя для оценки устной сдачи ученика."""
     logger.debug('keyboards.build_teacher_reaction_oral')
-    keyboard = types.InlineKeyboardMarkup()
+    keyboard = InlineKeyboardBuilder()
+    keyboard.max_width = 3
     for reaction in db.reaction.enum(REACTION.ORAL_TEACHER):
         keyboard.add(
             types.InlineKeyboardButton(
@@ -254,4 +264,4 @@ def build_teacher_reaction_oral(zoom_conversation_id: int):
                 callback_data=f'{CALLBACK.REACTION}_None_{zoom_conversation_id}_{reaction["reaction_id"]}_{REACTION.ORAL_TEACHER}'
             )
         )
-    return keyboard
+    return keyboard.as_markup()

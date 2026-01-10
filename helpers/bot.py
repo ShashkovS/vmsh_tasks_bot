@@ -4,19 +4,15 @@ import typing
 import time
 from typing import List, Union
 
-from aiohttp import ClientTimeout
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.exceptions import (
-    ChatNotFound,
-    InvalidQueryID,
-    MessageCantBeDeleted,
-    MessageNotModified,
-    MessageToDeleteNotFound,
-    MessageToEditNotFound,
-    RetryAfter,
+    TelegramBadRequest,
+    TelegramForbiddenError,
+    TelegramNotFound,
+    TelegramRetryAfter,
 )
 import aiogram.types as types
 from aiogram.types import Message
@@ -53,21 +49,21 @@ class BotIg(Bot):
         logger.debug('bot.edit_message_text_ig')
         try:
             await self.edit_message_text(*args, **kwargs)
-        except MessageNotModified as e:
+        except TelegramBadRequest:
             pass
 
     async def edit_message_reply_markup_ig(self, *args, **kwargs):
         logger.debug('bot.edit_message_reply_markup_ig')
         try:
             await self.edit_message_reply_markup(*args, **kwargs)
-        except (MessageNotModified, MessageToEditNotFound, ChatNotFound) as e:
+        except (TelegramBadRequest, TelegramNotFound) as e:
             pass
 
     async def answer_callback_query_ig(self, *args, **kwargs):
         logger.debug('bot.answer_callback_query_ig')
         try:
             await self.answer_callback_query(*args, **kwargs)
-        except InvalidQueryID:
+        except TelegramBadRequest:
             pass
         except Exception as e:
             logger.exception(f'SHIT: {e}')
@@ -76,12 +72,12 @@ class BotIg(Bot):
         logger.debug('bot.delete_message_ig')
         try:
             await self.delete_message(*args, **kwargs)
-        except MessageToDeleteNotFound:
+        except TelegramNotFound:
             pass
-        except MessageCantBeDeleted:
+        except (TelegramBadRequest, TelegramForbiddenError):
             try:
                 await self.edit_message_reply_markup_ig(*args, reply_markup=None, **kwargs)
-            except MessageNotModified as e:
+            except TelegramBadRequest:
                 pass
         except Exception as e:
             logger.exception(f'SHIT: {e}')
@@ -145,9 +141,18 @@ class BotIg(Bot):
         for t in TIMEOUTS:
             try:
                 return await super().copy_message(
-                    chat_id, from_chat_id, message_id, caption, parse_mode, caption_entities, message_thread_id,
-                    disable_notification, protect_content, reply_to_message_id, allow_sending_without_reply,
-                    reply_markup
+                    chat_id=chat_id,
+                    from_chat_id=from_chat_id,
+                    message_id=message_id,
+                    caption=caption,
+                    parse_mode=parse_mode,
+                    caption_entities=caption_entities,
+                    message_thread_id=message_thread_id,
+                    disable_notification=disable_notification,
+                    protect_content=protect_content,
+                    reply_to_message_id=reply_to_message_id,
+                    allow_sending_without_reply=allow_sending_without_reply,
+                    reply_markup=reply_markup,
                     )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in copy_message...')
@@ -180,7 +185,12 @@ class BotIg(Bot):
     ) -> typing.Union[types.Message, bool]:
         for t in TIMEOUTS:
             try:
-                return await super().edit_message_reply_markup(chat_id, message_id, inline_message_id, reply_markup)
+                return await super().edit_message_reply_markup(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    inline_message_id=inline_message_id,
+                    reply_markup=reply_markup,
+                )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in edit_message_reply_markup...')
                 if t:
@@ -202,8 +212,14 @@ class BotIg(Bot):
         for t in TIMEOUTS:
             try:
                 return await super().edit_message_text(
-                    text, chat_id, message_id, inline_message_id, parse_mode, entities, disable_web_page_preview,
-                    reply_markup
+                    text=text,
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    inline_message_id=inline_message_id,
+                    parse_mode=parse_mode,
+                    entities=entities,
+                    disable_web_page_preview=disable_web_page_preview,
+                    reply_markup=reply_markup,
                     )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in edit_message_text...')
@@ -224,7 +240,12 @@ class BotIg(Bot):
         for t in TIMEOUTS:
             try:
                 return await super().forward_message(
-                    chat_id, from_chat_id, message_id, message_thread_id, disable_notification, protect_content
+                    chat_id=chat_id,
+                    from_chat_id=from_chat_id,
+                    message_id=message_id,
+                    message_thread_id=message_thread_id,
+                    disable_notification=disable_notification,
+                    protect_content=protect_content,
                     )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in forward_message...')
@@ -253,9 +274,17 @@ class BotIg(Bot):
                 await rate_lim(chat_id)
                 # logger.warning(f'{chat_id=} {text=}')
                 return await super().send_message(
-                    chat_id, text, parse_mode, entities, disable_web_page_preview, message_thread_id,
-                    disable_notification, protect_content, reply_to_message_id, allow_sending_without_reply,
-                    reply_markup
+                    chat_id=chat_id,
+                    text=text,
+                    parse_mode=parse_mode,
+                    entities=entities,
+                    disable_web_page_preview=disable_web_page_preview,
+                    message_thread_id=message_thread_id,
+                    disable_notification=disable_notification,
+                    protect_content=protect_content,
+                    reply_to_message_id=reply_to_message_id,
+                    allow_sending_without_reply=allow_sending_without_reply,
+                    reply_markup=reply_markup,
                     )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in send_message...')
@@ -263,7 +292,7 @@ class BotIg(Bot):
                     await asyncio.sleep(t)
                 else:
                     raise asyncio.TimeoutError("The TimeoutError in send_message in a row...")
-            except RetryAfter as e:
+            except TelegramRetryAfter as e:
                 logger.error(':( RetryAfter in send_message...')
                 await asyncio.sleep(2)
                 raise asyncio.TimeoutError("The RetryAfter in send_message in a row...")
@@ -278,7 +307,13 @@ class BotIg(Bot):
     ) -> bool:
         for t in TIMEOUTS:
             try:
-                return await super().answer_callback_query(callback_query_id, text, show_alert, url, cache_time)
+                return await super().answer_callback_query(
+                    callback_query_id=callback_query_id,
+                    text=text,
+                    show_alert=show_alert,
+                    url=url,
+                    cache_time=cache_time,
+                )
             except asyncio.TimeoutError as e:
                 logger.error(':( TimeoutError in answer_callback_query...')
                 if t:
@@ -291,7 +326,7 @@ class BotIg(Bot):
 bot = BotIg(
     config.telegram_bot_token,
     default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-    session=AiohttpSession(timeout=ClientTimeout(total=5)),
+    session=AiohttpSession(timeout=5),
 )
 router = Router()
 dispatcher = Dispatcher()

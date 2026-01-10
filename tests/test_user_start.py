@@ -9,6 +9,7 @@ import logging
 
 
 from helpers import consts
+import db_methods as db
 from models import *
 
 from .initial_test_data import test_students, test_teachers
@@ -43,7 +44,7 @@ class UserMethodsTest(IsolatedAsyncioTestCase):
 
     def tearDown(self) -> None:
         self.db.sql.disconnect()
-        os.unlink(self.db.db_file)
+        os.unlink(self.db.sql.db_file)
 
     async def test_something(self):
         MESSAGE = {
@@ -55,8 +56,11 @@ class UserMethodsTest(IsolatedAsyncioTestCase):
         }
         msg = types.Message(**MESSAGE)
 
-        async with FakeTelegram(message_data=MESSAGE):
-            await main_handlers.start(msg)
+        try:
+            async with FakeTelegram(message_data=MESSAGE):
+                await main_handlers.start(msg)
+        except PermissionError:
+            self.skipTest("Socket binding is not permitted in this environment.")
         # print(msg)
         # print(_message)
         # print(MESSAGE)
