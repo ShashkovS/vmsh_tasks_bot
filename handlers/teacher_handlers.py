@@ -959,7 +959,7 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
             asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
         await bot.send_message(
             chat_id=query.message.chat.id,
-            text=msgs.t_student_level_changed(level=level),
+            text=msgs.t_student_level_changed.format(level=level),
         )
         query.data = f'{CALLBACK.STUDENT_SELECTED}_{student_id}'
         await prc_student_selected_callback(query, teacher)
