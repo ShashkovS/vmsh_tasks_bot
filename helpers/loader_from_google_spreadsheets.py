@@ -129,11 +129,23 @@ class SpreadsheetLoader:
         return bot_settings
 
     def close(self):
-        if self.client and self.client.session:
+        if not self.client:
+            return
+        sessions = [
+            getattr(self.client, "session", None),
+            getattr(getattr(self.client, "http", None), "session", None),
+            getattr(getattr(self.client, "request", None), "session", None),
+        ]
+        seen = set()
+        for session in sessions:
+            if not session or id(session) in seen:
+                continue
+            seen.add(id(session))
             try:
-                self.client.session.close()
-            except:
-                pass
+                session.close()
+            except Exception:
+                logger.warning('Failed to close Google Sheets session', exc_info=True)
+        self.client = None
 
 
 google_spreadsheet_loader = SpreadsheetLoader()
