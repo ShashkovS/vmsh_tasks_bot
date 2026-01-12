@@ -825,18 +825,18 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
 
     # Формируем сообщение с итоговым результатом проверки
-    text = msgs.t_written_res_1(student=student)
+    text = msgs.t_written_res_1.format(student=student)
     if human_readable_pluses:
         human_readable_pluses_joined = ', '.join(human_readable_pluses)
-        text += msgs.t_written_res_2(human_readable_pluses_joined=human_readable_pluses_joined)
+        text += msgs.t_written_res_2.format(human_readable_pluses_joined=human_readable_pluses_joined)
     if human_readable_minuses:
         human_readable_minuses_joined = ', '.join(human_readable_minuses)
-        text += msgs.t_written_res_3(human_readable_minuses_joined=human_readable_minuses_joined)
+        text += msgs.t_written_res_3.format(human_readable_minuses_joined=human_readable_minuses_joined)
     if any_problem:
         lesson = any_problem.lesson
     else:
         lesson = Problem.last_lesson_num(student.level)
-    text += msgs.t_written_res_4(student=student, lesson=lesson)
+    text += msgs.t_written_res_4.format(student=student, lesson=lesson)
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text=text,
                                    reply_markup=None)
