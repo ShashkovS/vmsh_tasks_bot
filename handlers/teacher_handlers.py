@@ -723,7 +723,7 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: User):
 @reg_callback(CALLBACK.STUDENT_SELECTED)
 async def prc_student_selected_callback(query: types.CallbackQuery, teacher: User, *, remove_old_buttons=True):
     logger.debug('prc_student_selected_callback')
-    _, student_id = query.data.split('_')
+    _, student_id, *_ = query.data.split('_')
     student_id = int(student_id)
     student = User.get_by_id(student_id)
     msg_text = msgs.t_putting_plusses.format(student=student)
