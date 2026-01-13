@@ -961,7 +961,8 @@ async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
             chat_id=query.message.chat.id,
             text=msgs.t_student_level_changed.format(level=level),
         )
-        query.data = f'{CALLBACK.STUDENT_SELECTED}_{student_id}'
+        # Does not work in aiogram 3... But looks like isn't really needed
+        # query.data = f'{CALLBACK.STUDENT_SELECTED}_{student_id}'
         await prc_student_selected_callback(query, teacher)
     await bot.answer_callback_query_ig(query.id)
 
