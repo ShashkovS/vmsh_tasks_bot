@@ -391,7 +391,7 @@ async def forward_discussion_and_start_checking(chat_id, message_id, student: Us
         if forward_success:
             pass
         elif row['text']:
-            await bot.send_message(chat_id=chat_id, text=row['text'])
+            await bot.send_message(chat_id=chat_id, text=row['text'], parse_mode=None)
         elif row['attach_path']:
             # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
             path = row['attach_path'].replace('/web/vmsh179bot/vmsh179bot/', '')
@@ -620,7 +620,12 @@ async def prc_send_answer_callback(query: types.CallbackQuery, teacher: User):
                 except TelegramBadRequest as e:
                     logger.error(f'Почему-то не отфорвардилось... {student_chat_id}\n{e}')
             elif row['text']:
-                await bot.send_message(chat_id=student_chat_id, text=row['text'], disable_notification=True)
+                await bot.send_message(
+                    chat_id=student_chat_id,
+                    text=row['text'],
+                    parse_mode=None,
+                    disable_notification=True,
+                )
             elif row['attach_path']:
                 # TODO Pass a file_id as String to send a photo that exists on the Telegram servers (recommended)
                 input_file = FSInputFile(row['attach_path'])
