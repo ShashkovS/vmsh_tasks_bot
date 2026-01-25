@@ -456,6 +456,16 @@ async def forward_discussion_to_student(student: User, problem: Problem, verdict
     """
     # Обновляем студенту клавиатуру со списком задач
     await refresh_last_student_keyboard(student)
+    if student.chat_id is None:
+        logger.info(
+            "Skip forwarding discussion to student without chat_id: "
+            "student_id=%s problem_id=%s verdict=%s result_id=%s",
+            student.id,
+            problem.id,
+            verdict,
+            result_id,
+        )
+        return
     # Получаем id сообщений с перепиской
     discussion = WrittenQueue.get_discussion(student.id, problem.id)
     # Находим последнее сообщение школьника
