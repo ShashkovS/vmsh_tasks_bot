@@ -1139,8 +1139,8 @@ wheels = [
 
 [[package]]
 name = "mathsolvers"
-version = "0.20.19"
-source = { git = "https://github.com/ShashkovS/mathsolvers.git#858dd27348f6a051d60002a680d1f60ab3bba99a" }
+version = "0.20.20"
+source = { git = "https://github.com/ShashkovS/mathsolvers.git#f10a80d547792b1eb940ca717cb462fe4ac7651c" }
 dependencies = [
     { name = "antlr4-python3-runtime" },
     { name = "mpmath" },
