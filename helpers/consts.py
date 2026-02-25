@@ -46,7 +46,7 @@ class CALLBACK(str, Enum):
     ADD_OR_REMOVE_ORAL_PLUS = 'p'
     FINISH_ORAL_ROUND = 'f'
     STUDENT_SELECTED = 's'
-    CHANGE_LEVEL = 'L'
+    CHANGE_GROUP = 'L'
     PROBLEM_SOS = 'A'
     OTHER_SOS = 'C'
     SEND_ANSWER = 'h'
@@ -84,41 +84,6 @@ class USER_TYPE(IntFlag):
     DELETED = -1
     DEACTIVATED_STUDENT = -2
     UNKNOWN = -4
-
-
-LEVEL_DESCRIPTION = {
-    'т': 'Тестирование',
-    'н': 'Начинающие',
-    'п': 'Продолжающие',
-    'э': 'Эксперты',
-    '@': 'Без уровня',
-    'm': 'MathClub',
-}
-LEVEL_URL = {
-    'н': 'https://shashkovs.ru/vmsh/2025/n/',
-    'п': 'https://shashkovs.ru/vmsh/2025/p/',
-    'э': 'https://shashkovs.ru/vmsh/2025/x/',
-    '@': 'https://shashkovs.ru/vmsh/2025/n/',
-    'm': '',
-}
-
-
-@unique
-class LEVEL(str, Enum):
-    TESTING = 'т'
-    NOVICE = 'н'
-    PRO = 'п'
-    EXPERT = 'э'
-    GR8 = 'В'
-    NO_LEVEL = '@'
-    MATH_CLUB = 'm'
-
-    def __init__(self, value):
-        self.slevel = LEVEL_DESCRIPTION.get(self.value, None)
-        self.url = LEVEL_URL.get(self.value, None)
-
-    def __str__(self):
-        return self.value
 
 
 # ВИДЫ ОТВЕТА НА ТЕСТОВЫЕ ЗАДАЧИ
@@ -322,7 +287,7 @@ ONLINE_MODE_DECODER = {
 # Тип изменения в параметрах юзера
 @unique
 class CHANGE(str, Enum):
-    LEVEL = 'L'
+    GROUP = 'G'
     ONLINE = 'O'
 
 
