@@ -2,7 +2,7 @@
 
 This document describes how VMSh Tasks Bot is structured and how the major components collaborate to deliver Telegram automation, teacher dashboards, and realtime game updates.
 
-## High-level view
+## System overview
 ```mermaid
 flowchart TD
     TelegramAPI[Telegram Bot API] -->|updates/webhooks| AiogramDispatcher
