@@ -50,7 +50,7 @@ This folder contains Telegram interaction flows: commands, callbacks, message pr
 - Avoid long blocking operations in handlers; use async tasks where existing pattern already does.
 
 ## Validation Checklist
-- Smoke-test key commands (`/start`, level/mode switches, teacher queue flows).
+- Smoke-test key commands (`/start`, group/mode switches, teacher queue flows).
 - Validate at least one full student cycle:
   - choose problem
   - submit answer/solution
