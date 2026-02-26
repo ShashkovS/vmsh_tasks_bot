@@ -12,6 +12,7 @@ from helpers.bot import bot, dispatcher
 from helpers.shutdown import wait_for_valuable_tasks
 import db_methods as db
 from models.spreadsheets import google_spreadsheet_loader, update_from_google_if_db_is_empty
+from handlers.student_handlers import register_group_switch_commands
 import handlers
 
 USE_WEBHOOKS = False
@@ -48,6 +49,7 @@ async def on_startup(bot: Bot, **_kwargs):
     google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)
     # Подгружаем данные, если база пуста
     update_from_google_if_db_is_empty()
+    register_group_switch_commands()
 
     if USE_WEBHOOKS:
         await check_webhook()
