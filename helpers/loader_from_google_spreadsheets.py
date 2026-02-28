@@ -3,21 +3,38 @@ from helpers.config import logger
 
 _IGNORE_FIRST_HEADER_ROWS_NUM = 2
 _PROBLEMS_HEADERS = [
-    'level', 'lesson', 'prob', 'item',
+    'group_id', 'lesson', 'prob', 'item',
     'title', 'prob_text', 'prob_type', 'ans_type', 'ans_validation', 'validation_error',
     'cor_ans', 'cor_ans_checker', 'wrong_ans', 'congrat',
 ]
-_STUDENTS_HEADERS = ['surname', 'name', 'token', 'level', 'online', 'grade', 'birthday']
-_TEACHERS_HEADERS = ['surname', 'name', 'middlename', 'token', 'online']
+_STUDENTS_HEADERS = ['surname', 'name', 'token', 'online', 'grade', 'birthday', 'group_id', 'allowed_groups']
+_TEACHERS_HEADERS = ['surname', 'name', 'middlename', 'token', 'online', 'group_id', 'allowed_groups']
 _UI_MESSAGES_HEADERS = ['key', 'value']
 _BOT_SETTINGS_HEADERS = ['key', 'value']
+_GROUPS_HEADERS = [
+    'group_id',
+    'short_code',
+    'broadcast_code',
+    'tg_command',
+    'public_name',
+    'conditions_url',
+    'tasks_header_template',
+    'switch_message',
+    'sort_order',
+    'is_active',
+    'is_default',
+    'allow_self_switch',
+    'is_system',
+    'score_weight',
+]
 
 
 def _dict_factory(rows, column_names):
     res_rows = []
     for row in rows:
         d = {}
-        for col, val in zip(column_names, row):
+        for idx, col in enumerate(column_names):
+            val = row[idx] if idx < len(row) else ''
             d[col] = val
         res_rows.append(d)
     return res_rows
@@ -88,15 +105,25 @@ class SpreadsheetLoader:
         )
         return bot_settings[_IGNORE_FIRST_HEADER_ROWS_NUM:]
 
+    def _load_groups(self, sheet):
+        logger.info('Setting reload: fetching groups')
+        worksheet_groups = sheet.worksheet("Группы")
+        groups = _dict_factory(
+            worksheet_groups.get_all_values(),
+            _GROUPS_HEADERS,
+        )
+        return groups[_IGNORE_FIRST_HEADER_ROWS_NUM:]
+
     def get_all_from_spreadsheet(self):
         logger.info('All reload')
         sheet = self._connect_to_google_sheets()
+        groups = self._load_groups(sheet)
         problems = self._load_problems(sheet)
         students = self._load_students(sheet)
         teachers = self._load_teachers(sheet)
         ui_messages = self._load_ui_messages(sheet)
         bot_settings = self._load_bot_settings(sheet)
-        return problems, students, teachers, ui_messages, bot_settings
+        return groups, problems, students, teachers, ui_messages, bot_settings
 
     def get_problems(self):
         logger.info('Problems reload')
@@ -128,6 +155,12 @@ class SpreadsheetLoader:
         bot_settings = self._load_bot_settings(sheet)
         return bot_settings
 
+    def get_groups(self):
+        logger.info('Groups reload')
+        sheet = self._connect_to_google_sheets()
+        groups = self._load_groups(sheet)
+        return groups
+
     def close(self):
         if not self.client:
             return
@@ -155,5 +188,5 @@ if __name__ == '__main__':
     from config import config
 
     google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)
-    problems, students, teachers, ui_messages, bot_settings = google_spreadsheet_loader.get_all_from_spreadsheet()
-    print(len(problems), len(students), len(teachers))
+    groups, problems, students, teachers, ui_messages, bot_settings = google_spreadsheet_loader.get_all_from_spreadsheet()
+    print(len(groups), len(problems), len(students), len(teachers))

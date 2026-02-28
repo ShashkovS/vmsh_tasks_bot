@@ -111,7 +111,7 @@ def create_student_visits_table(cur: sqlite3.Cursor):
     -- Суммарная статистика по каждому занятию
     drop table if exists temp_lesson_scores;
     create table temp_lesson_scores as
-    select p.lesson, p.level, sum(for_weak) sum_for_weak, sum(for_strong) sum_for_strong, count(*) cnt from problems p
+    select p.lesson, p.group_id, sum(for_weak) sum_for_weak, sum(for_strong) sum_for_strong, count(*) cnt from problems p
     join problem_complexity c on p.synonyms=c.synonyms
     group by 1, 2
     ;
@@ -119,7 +119,7 @@ def create_student_visits_table(cur: sqlite3.Cursor):
     -- Суммарные баллы по каждому занятию-уровню
     drop table if exists temp_student_per_lesson_level_score;
     create table temp_student_per_lesson_level_score as
-    select student_id, p.lesson, p.level, sum(s.score) total, sum(s.score*c.for_weak) total_weak, sum(s.score*c.for_strong) total_strong
+    select student_id, p.lesson, p.group_id, sum(s.score) total, sum(s.score*c.for_weak) total_weak, sum(s.score*c.for_strong) total_strong
     from temp_problem_scores s
     join problems p on s.synonyms = p.synonyms
     join problem_complexity c on s.synonyms = c.synonyms
@@ -130,17 +130,17 @@ def create_student_visits_table(cur: sqlite3.Cursor):
     -- Идея с COMPL_ONE_WEIGHT в том, что если все задачи халявные, то большой рейтинг в решении сложных задач получить нельзя
     create table temp_student_per_lesson_level_strength as
     select
-        ss.student_id, ss.lesson, ss.level,
+        ss.student_id, ss.lesson, ss.group_id,
         (ss.total - ss.total_weak) * {SIMPLE_CALC_WEIGHT+SIMPLE_ONE_WEIGHT:0.2f} / ({SIMPLE_CALC_WEIGHT:0.2f} * (ls.cnt - ls.sum_for_weak) + {SIMPLE_ONE_WEIGHT:0.2f} * cnt) as simple_prob_strength,
         ss.total_strong * {COMPL_CALC_WEIGHT+COMPL_ONE_WEIGHT:0.2f} / ({COMPL_CALC_WEIGHT:0.2f} * ls.sum_for_strong + {COMPL_ONE_WEIGHT:0.2f} * cnt) as compl_prob_strength
     from temp_student_per_lesson_level_score ss
-    join temp_lesson_scores ls on ss.lesson=ls.lesson and ss.level=ls.level
+    join temp_lesson_scores ls on ss.lesson=ls.lesson and ss.group_id=ls.group_id
     join student_strength ps on ss.student_id = ps.student_id
     ;
     -- Теперь шаманство. Удаляем те уровни, в которых не сдано ни одной реальной задачи
     delete from temp_student_per_lesson_level_strength
-    where (student_id, lesson, level) not in 
-        (select distinct student_id, lesson, level from results
+    where (student_id, lesson, group_id) not in 
+        (select distinct student_id, lesson, group_id from results
         where verdict > 0)
     ;
 
@@ -148,11 +148,11 @@ def create_student_visits_table(cur: sqlite3.Cursor):
     drop table if exists temp_student_visits;
     create table temp_student_visits as
     with pre as (
-        select student_id, lesson, level, simple_prob_strength, compl_prob_strength,
+        select student_id, lesson, group_id, simple_prob_strength, compl_prob_strength,
                row_number() over (partition by student_id, lesson order by (compl_prob_strength*3 + simple_prob_strength*2) desc) rn_mid
                from temp_student_per_lesson_level_strength
     )
-    select student_id, lesson, level
+    select student_id, lesson, group_id
     from pre
     where rn_mid = 1
     order by student_id, lesson
@@ -178,20 +178,20 @@ def create_real_problem_scores(cur: sqlite3.Cursor):
     drop table if exists temp_real_problem_scores_t;
     -- Добавляем ненулевые результаты
     create table temp_real_problem_scores_t as
-    select v.student_id, v.lesson, v.level, p.id as problem_id, p.synonyms, s.score from temp_student_visits v
-    join problems p on v.lesson = p.lesson and v.level=p.level
+    select v.student_id, v.lesson, v.group_id, p.id as problem_id, p.synonyms, s.score from temp_student_visits v
+    join problems p on v.lesson = p.lesson and v.group_id=p.group_id
     join temp_problem_scores s on v.student_id=s.student_id and p.synonyms=s.synonyms
     where p.prob > 0;
     -- Подливаем нули
     insert into temp_real_problem_scores_t
-    select v.student_id, v.lesson, v.level, p.id as problem_id, p.synonyms, 0.0 score from temp_student_visits v
-    join problems p on v.level = p.level and v.lesson = p.lesson
+    select v.student_id, v.lesson, v.group_id, p.id as problem_id, p.synonyms, 0.0 score from temp_student_visits v
+    join problems p on v.group_id = p.group_id and v.lesson = p.lesson
     where p.prob > 0;
 
     -- Итоговые реальные результаты
     drop table if exists temp_real_problem_scores;
     create table temp_real_problem_scores as
-    select student_id, lesson, level, problem_id, synonyms, max(score) score
+    select student_id, lesson, group_id, problem_id, synonyms, max(score) score
     from temp_real_problem_scores_t
     group by 1, 2, 3, 4
     order by 1, 2, 3, 4
@@ -216,13 +216,13 @@ def create_result_rolling_window_scores(cur: sqlite3.Cursor):
     -- Таблица с плывущим оконным рейтингом 
     drop table if exists temp_result_rolling_window_scores;
     create table temp_result_rolling_window_scores as
-    with best_level as (
-        select distinct s.student_id, s.lesson, s.level from temp_real_problem_scores s
+    with best_group as (
+        select distinct s.student_id, s.lesson, s.group_id from temp_real_problem_scores s
     )
     select
         s.student_id,
         w.lesson,
-        b.level,
+        b.group_id,
         10.0 * ((sum(s.score) - sum(s.score * c.for_weak)) * {SIMPLE_CALC_WEIGHT + SIMPLE_ONE_WEIGHT:0.2f} / ({SIMPLE_CALC_WEIGHT:0.2f} * (sum(c.for_weak > 0) - sum(c.for_weak)) + {SIMPLE_ONE_WEIGHT:0.2f} * sum(c.for_weak > 0))) as simple_prob_strength,
         10.0 * (sum(s.score * c.for_strong) * {COMPL_CALC_WEIGHT + COMPL_ONE_WEIGHT:0.2f}  / ({COMPL_CALC_WEIGHT:0.2f}  * sum(c.for_strong) + {COMPL_ONE_WEIGHT:0.2f}  * sum(c.for_strong > 0))) as compl_prob_strength,
         10.0 * (sum(1 * c.for_strong) * {COMPL_CALC_WEIGHT + COMPL_ONE_WEIGHT:0.2f}  / ({COMPL_CALC_WEIGHT:0.2f}  * sum(c.for_strong) + {COMPL_ONE_WEIGHT:0.2f}  * sum(c.for_strong > 0))) as max_compl_prob_strength,
@@ -234,8 +234,8 @@ def create_result_rolling_window_scores(cur: sqlite3.Cursor):
     from temp_7_window w
     cross join temp_real_problem_scores s on s.lesson between w.st and w.en
     join problem_complexity c on c.synonyms = s.synonyms
-    left join best_level b on b.student_id = s.student_id and b.lesson = w.lesson
-    where b.level is not null
+    left join best_group b on b.student_id = s.student_id and b.lesson = w.lesson
+    where b.group_id is not null
     group by 1, 2
     order by 1, 2
     ;
@@ -405,7 +405,7 @@ def main(cur: sqlite3.Cursor):
     for i in range(3):
         # На выходе таблица temp_student_visits, в которой для каждого студента для каждого занятия
         # выбран наиболее успешный уровень
-        # temp_student_visits (student_id, lesson, level)
+        # temp_student_visits (student_id, lesson, group_id)
         create_student_visits_table(cur)
 
         # Таблица точных результатов:
@@ -413,7 +413,7 @@ def main(cur: sqlite3.Cursor):
         # 0, если был на занятии-уровне, но не решил задачу
         # score, если был на занятии-уровне, и решил задачу
         # В этой таблице уже используются подменные ID для синонимичных задач
-        # temp_real_problem_scores (student_id, lesson_id, level, synonyms, score)
+        # temp_real_problem_scores (student_id, lesson_id, group_id, synonyms, score)
         # Здесь уже для синонимичных задач используется подменный synonyms
         create_real_problem_scores(cur)
 

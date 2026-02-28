@@ -67,26 +67,35 @@ class DB_GAME(DB_ABC):
             order by gp.ts
         """, locals()).fetchall()
 
-    def set_student_command(self, user_id: int, level: str, command_id: int) -> int:
+    def set_student_command(self, user_id: int, command_id: int, group_id: str = None) -> int:
         """Записать или обновить id команды студента"""
+        if group_id is None:
+            user = self.db.conn.execute(
+                "select group_id from users where id = :user_id",
+                locals(),
+            ).fetchone()
+            group_id = user and user['group_id']
         with self.db.conn as conn:
             cur = conn.execute("""
-                INSERT INTO game_students_commands ( student_id,  command_id, level)
-                VALUES                             (:user_id, :command_id, :level) 
+                INSERT INTO game_students_commands ( student_id,  command_id, group_id)
+                VALUES                             (:user_id, :command_id, :group_id) 
                 on conflict (student_id) do update set 
                 command_id = excluded.command_id,
-                level = excluded.level
+                group_id = excluded.group_id
             """, locals())
             return cur.lastrowid
 
     def get_student_command(self, user_id: int) -> Dict:
         """Получить id команды и её уровень для данного студента.
-        Возвращает словарь с ключами {command_id, level}"""
+        Возвращает словарь с ключами {command_id, group_id, group_code}"""
         res = self.db.conn.execute("""
             SELECT
-            command_id, level
-            from game_students_commands WHERE
-            student_id =:user_id
+            gsc.command_id,
+            gsc.group_id,
+            coalesce(g.short_code, gsc.group_id) as group_code
+            from game_students_commands gsc
+            left join groups g on g.group_id = gsc.group_id
+            WHERE gsc.student_id = :user_id
         """, locals()).fetchone()
         return res
 

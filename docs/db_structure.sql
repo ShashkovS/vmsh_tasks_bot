@@ -47,7 +47,7 @@ CREATE TABLE game_students_commands
     id         INTEGER PRIMARY KEY,
     student_id INTEGER NOT NULL UNIQUE,
     command_id INTEGER NOT NULL,
-    level      text    not null,
+    group_id      text    not null,
     FOREIGN KEY (student_id) REFERENCES users (id)
 );
 
@@ -64,9 +64,9 @@ CREATE TABLE last_keyboards
 CREATE TABLE lessons
 (
     id               INTEGER PRIMARY KEY,
-    level            TEXT    NOT NULL,
+    group_id            TEXT    NOT NULL,
     lesson           INTEGER NOT NULL,
-    UNIQUE (lesson, level)
+    UNIQUE (lesson, group_id)
 );
 
 CREATE TABLE media_groups
@@ -101,7 +101,7 @@ for_strong DOUBLE NOT NULL
 CREATE TABLE problems
 (
     id               INTEGER PRIMARY KEY,
-    level            TEXT    NOT NULL,
+    group_id            TEXT    NOT NULL,
     lesson           INTEGER NOT NULL,
     prob             INTEGER NOT NULL,
     item             TEXT    NOT NULL,
@@ -115,7 +115,7 @@ CREATE TABLE problems
     cor_ans_checker  text    null,
     wrong_ans        text    null,
     congrat          text    null, synonyms text default '' not null,
-    UNIQUE (level, lesson, prob, item)
+    UNIQUE (group_id, lesson, prob, item)
 );
 
 CREATE TABLE questions
@@ -168,7 +168,7 @@ CREATE TABLE "results"
     id         INTEGER PRIMARY KEY,
     student_id INTEGER NOT NULL,
     problem_id INTEGER NOT NULL,
-    level      TEXT    NOT NULL,
+    group_id      TEXT    NOT NULL,
     lesson       INTEGER NOT NULL,
     teacher_id INTEGER   NULL,
     ts         timestamp NOT NULL,
@@ -261,7 +261,7 @@ CREATE TABLE users
     id         INTEGER PRIMARY KEY,
     chat_id    INTEGER NULL UNIQUE,
     type       INTEGER NOT NULL,
-    level      TEXT        NULL,
+    group_id      TEXT        NULL,
     name       TEXT    NOT NULL,
     surname    TEXT    NOT NULL,
     middlename TEXT    NULL,
@@ -347,7 +347,7 @@ CREATE TABLE zoom_conversation
     ts         TEXT NOT NULL,
     student_id INTEGER NOT NULL,
     teacher_id INTEGER NOT NULL,
-    level      TEXT NOT NULL,
+    group_id      TEXT NOT NULL,
     lesson     INTEGER NOT NULL,
     check_time_spent_sec INTEGER NULL,
     FOREIGN KEY (student_id) REFERENCES users (id),

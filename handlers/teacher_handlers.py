@@ -70,8 +70,16 @@ def set_problem_lock(teacher_id: int, problem_id: int):
     db.sql.kv[key] = value
 
 
+def _group_from_token(token: str):
+    group = db.group.get_by_id(token)
+    if group:
+        return group
+    groups = db.group.get_by_short_code(token)
+    return groups[0] if groups else None
+
+
 async def take_random_written_problem_and_start_check(teacher: User, problem: Problem):
-    top = WrittenQueue.take_top_synonyms(teacher.id, problem.synonyms)
+    top = WrittenQueue.take_top_synonyms(teacher.id, problem.synonyms, group_ids=teacher.accessible_group_ids())
     # if top:
     # # Даём преподу 10 топовых задач на выбор
     # await bot.answer_callback_query_ig(query.id)
@@ -83,6 +91,8 @@ async def take_random_written_problem_and_start_check(teacher: User, problem: Pr
         taken = top.pop(choice)
         student = User.get_by_id(taken['student_id'])
         problem = Problem.get_by_id(taken['problem_id'])
+        if not problem or not teacher.can_access_group(problem.group_id):
+            continue
         # Блокируем задачу
         is_unlocked = WrittenQueue.mark_being_checked(student.id, problem.id, teacher.id)
         if not is_unlocked:
@@ -106,9 +116,14 @@ async def prc_teacher_select_action(message: types.Message, teacher: User, sleep
     locked_problem_id = get_problem_lock(teacher.id)
     if locked_problem_id:
         problem = Problem.get_by_id(locked_problem_id)
+        if problem and not teacher.can_access_group(problem.group_id):
+            del_problem_lock(teacher.id)
+            problem = None
+            locked_problem_id = None
     if not locked_problem_id or not problem:
-        sos_count = db.written_task_queue.get_sos_tasks_count()
-        prb_count = db.written_task_queue.get_written_tasks_count()
+        group_ids = teacher.accessible_group_ids()
+        sos_count = db.written_task_queue.get_sos_tasks_count(group_ids=group_ids)
+        prb_count = db.written_task_queue.get_written_tasks_count(group_ids=group_ids)
         text = msgs.t_select_action.format(prb_count=prb_count, sos_count=sos_count)
         keyb_msg = await bot.send_message(chat_id=use_chat_id, text=text,
                                           reply_markup=teacher_keyboards.build_teacher_actions(sos_count, prb_count))
@@ -154,6 +169,9 @@ async def prc_teacher_accepted_queue(message: types.message, teacher: User, onli
         student = User.get_by_id(student_id)
     if not student:
         return
+    if not teacher.can_access_group(student.group_id):
+        await bot.send_message(chat_id=teacher.chat_id, text=msgs.no_access_to_group)
+        return
     if online is None:
         online = teacher.online
 
@@ -163,6 +181,7 @@ async def prc_teacher_accepted_queue(message: types.message, teacher: User, onli
         student=student,
         online=online,
         lesson_num=lesson_num,
+        teacher=teacher,
     )
     mode_label = msgs.t_online_mode_school if teacher.online == ONLINE_MODE.SCHOOL else msgs.t_online_mode_online
     text = msgs.t_mark_oral_tasks_intro.format(mode_label=mode_label)
@@ -196,6 +215,10 @@ async def edtplus(message: types.Message):
     if not student:
         await bot.send_message(chat_id=message.chat.id,
                                text=msgs.t_student_with_token_not_found.format_map({'token': token}))
+        return
+    if not teacher.can_access_group(student.group_id):
+        await bot.send_message(chat_id=message.chat.id, text=msgs.no_access_to_group)
+        return
     state = State.get_by_user_id(teacher.id)
     State.set_by_user_id(teacher.id, state['state'], last_student_id=student.id)
     await prc_teacher_accepted_queue(message, teacher, online=ONLINE_MODE.SCHOOL, lesson_num=lesson_num, student=student)
@@ -207,7 +230,9 @@ async def prc_teacher_writes_student_name_state(message: types.message, teacher:
     name_to_find = message.text or ''
     await bot.send_message(chat_id=message.chat.id,
                            text=msgs.t_choose_student_for_pluses,
-                           reply_markup=teacher_keyboards.build_select_student(name_to_find))
+                           reply_markup=teacher_keyboards.build_select_student(
+                               name_to_find, group_ids=teacher.accessible_group_ids()
+                           ))
 
 
 @router.message(F.text.regexp(r'^/?recheck.*'))
@@ -216,14 +241,17 @@ async def recheck(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    prob = prob_id = None
-    if (match := re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+(\d+)([а-яА-Я]\w*)\.(\d+)([а-я]?)\s*',
-                              message.text or '')):
-        token, lst, level, prob, item = match.groups()
-        problem = Problem.get_by_key(level, int(lst), int(prob), item)
+    raw_problem_ref = prob_id = None
+    if (match := re.fullmatch(r'/recheck(?:_xd5fqk)?[\s_]+([a-zA-Z0-9]+)[\s_]+([^\s]+)\s*', message.text or '')):
+        token, raw_problem_ref = match.groups()
+        problem, error_code = Problem.resolve_problem_ref(
+            raw_problem_ref,
+            allowed_group_ids=teacher.accessible_group_ids(),
+        )
     elif (match := re.fullmatch(r'/recheck(?:_xd5fqk)?_([^_]*)_([^_]*)', message.text or '')):
         token, prob_id = match.groups()
         problem = Problem.get_by_id(prob_id)
+        error_code = None
     else:
         await bot.send_message(
             chat_id=message.chat.id,
@@ -234,9 +262,19 @@ async def recheck(message: types.Message):
     if not student:
         await bot.send_message(chat_id=message.chat.id,
                                text=msgs.t_student_with_token_not_found.format_map({'token': token}))
-    if not problem and prob is not None:
+        return
+    if problem and not teacher.can_access_group(problem.group_id):
+        await bot.send_message(chat_id=message.chat.id, text=msgs.no_access_to_group)
+        return
+    if not problem and raw_problem_ref is not None:
+        if error_code == "ambiguous":
+            await bot.send_message(
+                chat_id=message.chat.id,
+                text=msgs.t_problem_ambiguous_ref.format_map({'problem_ref': raw_problem_ref}),
+            )
+            return
         await bot.send_message(chat_id=message.chat.id,
-                               text=msgs.t_problem_not_found_key.format_map({'lst': lst, 'level': level, 'prob': prob, 'item': item}))
+                               text=msgs.t_problem_not_found_ref.format_map({'problem_ref': raw_problem_ref}))
     if not problem and prob_id is not None:
         await bot.send_message(chat_id=message.chat.id,
                                text=msgs.t_problem_not_found_id.format_map({'prob_id': prob_id}))
@@ -245,19 +283,19 @@ async def recheck(message: types.Message):
         await forward_discussion_and_start_checking(message.chat.id, message.message_id, student, problem, teacher)
 
 
-@router.message(Command('set_level', 'sl'))
-async def set_student_level(message: types.Message):
-    logger.debug('set_student_level')
+@router.message(Command('set_group', 'sgp'))
+async def set_student_group(message: types.Message):
+    logger.debug('set_student_group')
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     text = message.text.split()
     try:
-        cmd, token, new_level = text
+        cmd, token, new_group = text
     except:
         await bot.send_message(
             chat_id=message.chat.id,
-            text=msgs.t_set_level_usage,
+            text=msgs.t_set_group_usage,
         )
         return
     student = User.get_by_token(token)
@@ -267,32 +305,38 @@ async def set_student_level(message: types.Message):
             text=msgs.t_student_with_token_not_found.format_map({'token': token}),
         )
         return
-    try:
-        new_level_en = LEVEL(new_level)
-    except ValueError:
+    group = _group_from_token(new_group)
+    if not group:
         await bot.send_message(
             chat_id=message.chat.id,
-            text=msgs.t_level_not_exists.format_map({'new_level': new_level}),
+            text=msgs.t_group_not_exists.format_map({'new_group': new_group}),
         )
         return
-    student.set_level(new_level_en)
-    if new_level == LEVEL.NOVICE:
-        stud_msg = msgs.you_are_in_novice_now
-    elif new_level == LEVEL.PRO:
-        stud_msg = msgs.you_are_in_pro_now
-    elif new_level == LEVEL.EXPERT:
-        stud_msg = msgs.you_are_expert_now
-    elif new_level == LEVEL.GR8:
-        stud_msg = msgs.you_are_grade8_now
-    else:
-        stud_msg = None
+    group_id = group['group_id']
+    if not teacher.can_access_group(group_id):
+        await bot.send_message(chat_id=message.chat.id, text=msgs.no_access_to_group)
+        return
+    if not student.can_access_group(group_id):
+        await bot.send_message(chat_id=message.chat.id, text=msgs.no_access_to_group)
+        return
+    student.set_group_id(group_id)
+    switch_message = None
+    if group:
+        switch_message = group.get('switch_message')
+    if not switch_message:
+        switch_message = msgs.t_your_group_changed_to.format_map({
+            'public_name': (group.get('public_name') if group else group_id),
+        })
     await bot.send_message(
         chat_id=message.chat.id,
-        text=msgs.t_student_level_changed.format_map({'token': token, 'new_level_en': new_level_en}),
+        text=msgs.t_student_group_changed.format_map({
+            'token': token,
+            'public_name': (group.get('public_name') if group else group_id),
+        }),
     )
-    if student.chat_id and stud_msg:
+    if student.chat_id and switch_message:
         try:
-            await bot.send_message(chat_id=student.chat_id, text=stud_msg)
+            await bot.send_message(chat_id=student.chat_id, text=switch_message)
         except:
             pass
 
@@ -303,7 +347,7 @@ async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: Use
     # Так, препод указал, что хочет проверять письменные задачи
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
-    top = WrittenQueue.take_sos_top(teacher.id)
+    top = WrittenQueue.take_sos_top(teacher.id, group_ids=teacher.accessible_group_ids())
     await bot.answer_callback_query_ig(query.id)
     if not top:
         await bot.send_message(chat_id=teacher.chat_id,
@@ -323,13 +367,17 @@ async def prc_SELECT_WRITTEN_TASK_TO_CHECK_callback(query: types.CallbackQuery, 
     # Так, препод указал, что хочет проверять письменные задачи
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
-    rows = db.written_task_queue.get_written_tasks_count_by_synonyms()
+    group_ids = teacher.accessible_group_ids()
+    rows = db.written_task_queue.get_written_tasks_count_by_synonyms(group_ids=group_ids)
     problems_and_counts = []
     for row in rows:
         first_problem_id = row['synonyms'].split(';')[0]
-        problems_and_counts.append((Problem.get_by_id(first_problem_id), row['cnt'], row['days_waits']))
-    sos_count = db.written_task_queue.get_sos_tasks_count()
-    prb_count = db.written_task_queue.get_written_tasks_count()
+        problem = Problem.get_by_id(first_problem_id)
+        if not problem or not teacher.can_access_group(problem.group_id):
+            continue
+        problems_and_counts.append((problem, row['cnt'], row['days_waits']))
+    sos_count = db.written_task_queue.get_sos_tasks_count(group_ids=group_ids)
+    prb_count = db.written_task_queue.get_written_tasks_count(group_ids=group_ids)
     text = msgs.t_select_problem_to_check_counts.format_map({'prb_count': prb_count, 'sos_count': sos_count})
     await bot.send_message(chat_id=teacher.chat_id, text=text,
                            reply_markup=teacher_keyboards.build_select_problem_to_check(problems_and_counts))
@@ -343,6 +391,11 @@ async def prc_CHECK_ONLY_SELECTED_WRITEN_TASK_callback(query: types.CallbackQuer
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
     problem_id = int(query.data[2:])
+    problem = Problem.get_by_id(problem_id)
+    if not problem or not teacher.can_access_group(problem.group_id):
+        await bot.send_message(chat_id=teacher.chat_id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
     set_problem_lock(teacher.id, problem_id)
     State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
     await bot.answer_callback_query_ig(query.id)
@@ -434,6 +487,10 @@ async def prc_written_task_selected_callback(query: types.CallbackQuery, teacher
     _, student_id, problem_id = query.data.split('_')
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(abs(int(problem_id)))  # убираем знак, если вопрос
+    if not problem or not teacher.can_access_group(problem.group_id):
+        await bot.send_message(chat_id=chat_id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
     await bot.answer_callback_query_ig(query.id)
     # Блокируем задачу
     is_unlocked = WrittenQueue.mark_being_checked(student.id, problem_id, teacher.id)
@@ -477,7 +534,7 @@ async def forward_discussion_to_student(student: User, problem: Problem, verdict
     else:
         # Берём последние 20 сообщений, чтобы не превысить лимит
         messages_to_forward = discussion[-20:]
-    text_problem_part = f"{msgs.t_forward_discussion_to_student_word} {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})"
+    text_problem_part = f"{msgs.t_forward_discussion_to_student_word} {problem.lesson}{problem.group_code}.{problem.prob}{problem.item} ({problem.title})"
 
     if VERDICT_MODE == FEATURES.VERDICT_PLUS_MINUS:
         if solved and not messages_to_forward:
@@ -526,6 +583,10 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
     set_verdict = VERDICT(int(set_verdict))
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(int(problem_id))
+    if not problem or not teacher.can_access_group(problem.group_id):
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
     # Помечаем задачу как решённую и удаляем из очереди
     result_id = Result.add(student, problem, teacher, set_verdict, None, RES_TYPE.WRITTEN)
     plus, minus = db.result.check_stat(problem.lesson, teacher.id)
@@ -567,6 +628,10 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
     set_verdict = VERDICT(int(set_verdict))
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(int(problem_id))
+    if not problem or not teacher.can_access_group(problem.group_id):
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
     # Помечаем решение как неверное и удаляем из очереди
     result_id = Result.add(student, problem, teacher, set_verdict, None, RES_TYPE.WRITTEN)
     db.result.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
@@ -598,6 +663,10 @@ async def prc_send_answer_callback(query: types.CallbackQuery, teacher: User):
     _, student_id, problem_id = query.data.split('_')
     student = User.get_by_id(int(student_id))
     problem = Problem.get_by_id(-int(problem_id))  # убираем минус SOS
+    if not problem or not teacher.can_access_group(problem.group_id):
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
     # Помечаем решение как неверное и удаляем из очереди
     WrittenQueue.delete_from_queue(student.id, -problem.id)  # возвращаем минус SOS
     await bot.send_message(chat_id=query.message.chat.id,
@@ -645,8 +714,21 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_get_queue_top_callback')
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
-    top = Waitlist.top(1)
-    if not top:
+    group_ids = teacher.accessible_group_ids()
+    top = Waitlist.top(10, group_ids=group_ids)
+    selected = None
+    for row in top:
+        student = User.get_by_id(row['student_id'])
+        problem = Problem.get_by_id(row['problem_id'])
+        if not student or not problem:
+            continue
+        if not teacher.can_access_group(problem.group_id):
+            continue
+        if student.group_id and not teacher.can_access_group(student.group_id):
+            continue
+        selected = (row, student, problem)
+        break
+    if not selected:
         # Если в очереди пусто, то шлём сообщение и выходим.
         await bot.send_message(chat_id=teacher.chat_id,
                                text=msgs.t_queue_empty_retry)
@@ -654,8 +736,7 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
         await prc_teacher_select_action(query.message, teacher)
         return
 
-    student = User.get_by_id(top[0]['student_id'])
-    problem = Problem.get_by_id(top[0]['problem_id'])
+    row, student, problem = selected
     State.set_by_user_id(teacher.id, STATE.TEACHER_ACCEPTED_QUEUE, oral_problem_id=problem.id,
                          last_student_id=student.id)
     Waitlist.leave(student.id)
@@ -723,6 +804,10 @@ async def prc_set_verdict_callback(query: types.CallbackQuery, teacher: User):
         logger.info("WAT problem_id is None")
         return
     problem = Problem.get_by_id(problem_id)
+    if not problem or not teacher.can_access_group(problem.group_id):
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
     verdict = int(query.data.split('_')[1])
     student_id = state['last_student_id']
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -741,6 +826,10 @@ async def prc_student_selected_callback(query: types.CallbackQuery, teacher: Use
     _, student_id, *_ = query.data.split('_')
     student_id = int(student_id)
     student = User.get_by_id(student_id)
+    if not student or not teacher.can_access_group(student.group_id):
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
     msg_text = msgs.t_putting_plusses.format(student=student)
     if remove_old_buttons:
         await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
@@ -754,6 +843,7 @@ async def prc_student_selected_callback(query: types.CallbackQuery, teacher: Use
         minus_ids=set(),
         student=student,
         online=teacher.online,
+        teacher=teacher,
     )
     await bot.send_message(chat_id=query.message.chat.id,
                            text=text,
@@ -775,6 +865,11 @@ async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teach
         return
     _, problem_id, plus_ids, minus_ids = query.data.split('_')
     problem_id = int(problem_id)
+    problem = Problem.get_by_id(problem_id)
+    if not problem or not teacher.can_access_group(problem.group_id):
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
     plus_ids = set() if not plus_ids else {int(prb_id) for prb_id in plus_ids.split(',')}
     minus_ids = set() if not minus_ids else {int(prb_id) for prb_id in minus_ids.split(',')}
     # TODO
@@ -785,11 +880,12 @@ async def prc_add_or_remove_oral_plus_callback(query: types.CallbackQuery, teach
         minus_ids.discard(problem_id)
     else:
         plus_ids.add(problem_id)
-    lesson_num = Problem.get_by_id(problem_id).lesson
+    lesson_num = problem.lesson
     reply_markup = teacher_keyboards.build_verdict_for_oral_problems(
         plus_ids=plus_ids, minus_ids=minus_ids,
         student=student, online=teacher.online,
         lesson_num=lesson_num,
+        teacher=teacher,
     )
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=reply_markup)
@@ -815,8 +911,8 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
 
     pluses = [Problem.get_by_id(prb_id) for prb_id in plus_ids]
     minuses = [Problem.get_by_id(prb_id) for prb_id in minus_ids]
-    human_readable_pluses = [f'{plus.lesson}{plus.level}.{plus.prob}{plus.item}' for plus in pluses]
-    human_readable_minuses = [f'{plus.lesson}{plus.level}.{plus.prob}{plus.item}' for plus in minuses]
+    human_readable_pluses = [f'{plus.lesson}{plus.group_code}.{plus.prob}{plus.item}' for plus in pluses]
+    human_readable_minuses = [f'{plus.lesson}{plus.group_code}.{plus.prob}{plus.item}' for plus in minuses]
     # Проставляем плюсики
     if teacher.online == ONLINE_MODE.SCHOOL:
         res_type = RES_TYPE.SCHOOL
@@ -825,7 +921,18 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     # Определяем занятие и уровень по задаче, за которую ставим плюс или минус
     any_problem = pluses[0] if pluses else minuses[0] if minuses else None
     if any_problem:
-        zoom_conversation_id = db.zoom_conversation.insert(student_id=student_id, teacher_id=teacher.id, lesson=any_problem.lesson, level=any_problem.level)
+        if not teacher.can_access_group(any_problem.group_id):
+            teacher_message = await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+            await bot.answer_callback_query_ig(query.id)
+            State.set_by_user_id(teacher.id, STATE.TEACHER_SELECT_ACTION)
+            asyncio.create_task(prc_teacher_select_action(None, teacher))
+            return
+        zoom_conversation_id = db.zoom_conversation.insert(
+            student_id=student_id,
+            teacher_id=teacher.id,
+            lesson=any_problem.lesson,
+            group_id=any_problem.group_id,
+        )
     else:
         zoom_conversation_id = None
     # Заливаем плюсы и минусы в базу
@@ -850,7 +957,7 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     if any_problem:
         lesson = any_problem.lesson
     else:
-        lesson = Problem.last_lesson_num(student.level)
+        lesson = Problem.last_lesson_num(student.group_id)
     text += msgs.t_written_res_4.format(student=student, lesson=lesson)
     await bot.edit_message_text_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                    text=text,
@@ -900,7 +1007,7 @@ async def find_student(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, text=msgs.t_find_student_hint, )
         return
     students = sorted(
-        User.all_students(),
+        [user for user in User.all_students() if teacher.can_access_group(user.group_id)],
         key=lambda user: min(
             -jaro_winkler(search.lower(), f'{user.surname} {user.name} {user.token}'.lower(), prefix_weight=1 / 32),
             -jaro_winkler(search, user.token, prefix_weight=1 / 32),
@@ -908,7 +1015,7 @@ async def find_student(message: types.Message):
     )
     if students:
         lines = [
-            f'{student.surname:<20} {student.name:<15} {student.level} {student.token} {"🏫" if student.online == ONLINE_MODE.SCHOOL else "📡"}'
+            f'{student.surname:<20} {student.name:<15} {student.group_code} {student.token} {"🏫" if student.online == ONLINE_MODE.SCHOOL else "📡"}'
             for student in students[:10]]
         await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '</pre>\n<pre>'.join(lines) + '</pre>')
     else:
@@ -953,28 +1060,46 @@ async def set_teacher(message: types.Message):
     asyncio.create_task(prc_teacher_select_action(None, teacher))
 
 
-@reg_callback(CALLBACK.CHANGE_LEVEL)
-async def prc_change_level_callback(query: types.CallbackQuery, teacher: User):
+@reg_callback(CALLBACK.CHANGE_GROUP)
+async def prc_change_group_callback(query: types.CallbackQuery, teacher: User):
     logger.debug('prc_get_written_task_callback')
     # Пока не трогаем старую клаву
     # await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
     #                                        reply_markup=None)
-    _, student_id, lvl = query.data.split('_')
+    _, student_id, group_token = query.data.split('_', 2)
     student = User.get_by_id(int(student_id))
-    level = LEVEL(lvl)
+    group = db.group.get_by_id(group_token)
+    if not group:
+        groups = db.group.get_by_short_code(group_token)
+        group = groups[0] if groups else None
+    if not group:
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
+    group_id = group['group_id']
+    if not teacher.can_access_group(group_id) or (student and not student.can_access_group(group_id)):
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        await bot.answer_callback_query_ig(query.id)
+        return
     if student:
-        student.set_level(level)
+        student.set_group_id(group_id)
         if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         if student.chat_id:
+            switch_message = group.get('switch_message') or msgs.t_your_group_changed_to.format_map(
+                {'public_name': group.get('public_name') or group_id}
+            )
             message = await bot.send_message(
                 chat_id=student.chat_id,
-                text=msgs.your_level_changed_to.format_map({'level': level}),
+                text=switch_message,
             )
             asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
         await bot.send_message(
             chat_id=query.message.chat.id,
-            text=msgs.t_student_level_changed.format(level=level),
+            text=msgs.t_student_group_changed.format_map({
+                'token': student.token,
+                'public_name': group.get('public_name') or group_id,
+            }),
         )
         # Does not work in aiogram 3... But looks like isn't really needed
         # query.data = f'{CALLBACK.STUDENT_SELECTED}_{student_id}'

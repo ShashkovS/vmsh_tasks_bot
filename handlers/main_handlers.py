@@ -7,11 +7,19 @@ from aiogram.filters import Command
 from helpers.consts import *
 from helpers.config import logger, config
 from helpers.features import REG_MODE, FEATURES
-from models import User, State
+from models import User, State, Group
 import db_methods as db
 from helpers.bot import bot, router, reg_state, callbacks_processors, state_processors
 from helpers.msg_texts import msgs
 from handlers.student_handlers import post_problem_keyboard
+
+
+def _get_default_group():
+    group = Group.get_default()
+    if group:
+        return group
+    active_groups = Group.get_active(include_system=True)
+    return active_groups[0] if active_groups else None
 
 
 def assign_default_game_command(user):
@@ -30,7 +38,9 @@ def assign_default_game_command(user):
         cnt = row['cnt']
         if cnt > 450 and command_id <= 1:
             command_id += 1
-    db.game.set_student_command(user.id, LEVEL.NOVICE, command_id)
+    group = user.group or _get_default_group()
+    group_id = user.group_id or (group.group_id if group else None)
+    db.game.set_student_command(user.id, command_id, group_id=group_id)
 
 
 @router.message(Command('start'))
@@ -46,16 +56,19 @@ async def start(message: types.Message):
         )
     elif REG_MODE == FEATURES.REG_ANYBODY:
         if not user:
+            default_group = _get_default_group()
+            group_id = default_group.group_id if default_group else None
             user = User(
-                message.chat.id, USER_TYPE.STUDENT,
-                LEVEL.MATH_CLUB,  # TODO remove this group trash
+                chat_id=message.chat.id,
+                type=USER_TYPE.STUDENT,
                 name=message.chat.first_name or '',
                 surname=message.chat.last_name or '',
                 middlename='',
                 token=str(message.chat.id),
                 online=ONLINE_MODE.ONLINE,
                 grade=12,
-                birthday=None
+                birthday=None,
+                group_id=group_id,
             )
             assign_default_game_command(user)
         db.log.log_signon(

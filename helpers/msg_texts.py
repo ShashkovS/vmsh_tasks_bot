@@ -20,9 +20,8 @@ class Msgs:
         "(см. также https://shashkovs.ru/vmsh/2025/n/about.html#application)"
     )
     start_if_reg_anybody = (
-        "🤖 Привет! Это бот для сдачи задач, вот этих: https://shashkovs.ru/vmsh/2025/n/#09-n.\n"
-        "Если задачи окажутся простоватыми, то можно выполнить команду /level_pro и решать вот эти "
-        "задачи https://shashkovs.ru/vmsh/2025/p/#09-p, они сложнее и их больше."
+        "🤖 Привет! Это бот для сдачи задач.\n"
+        "После входа вы увидите список задач вашей группы."
     )
     this_password_is_blocked = (
         "🔁 Этот пароль был заблокирован.\n"
@@ -40,6 +39,7 @@ class Msgs:
     error_only_images_and_texts = '❗❗❗ Бот принимает только текстовые сообщения и фотографии решений.'
     you_are_in_online_mode_now = "Теперь вы работаете в режиме «Онлайн»"
     you_are_in_offline_mode_now = "Теперь вы работаете в режиме «Очно в школе»"
+    no_access_to_group = "У вас нет доступа к этой группе."
 
     # handlers\student_handlers.py
     auth_needed = 'Необходимо авторизоваться и ввести пароль'
@@ -48,8 +48,8 @@ class Msgs:
     problems_keyboard_header = (
         "❓ <b>Нажимайте на задачу, чтобы сдать её</b>\n"
         "{student.name} {student.surname}\n"
-        "уровень «{student.level.slevel}», режим {mode_hint}\n"
-        "<a href=\"{student.level.url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2025\">канал кружка</a>"
+        "группа «{group.public_name}», режим {mode_hint}\n"
+        "<a href=\"{group.conditions_url}\">условия</a>, <a href=\"https://t.me/vmsh_179_5_7_2025\">канал кружка</a>"
     )
     solutions_are_not_accepted_now = "🤖 Приём задач ботом окончен до начала следующего занятия."
     error_file_is_not_accepted = (
@@ -68,28 +68,6 @@ class Msgs:
     student_is_sleeping_state_msg = (
         "🤖 Приём задач ботом окончен до начала следующего занятия.\n"
         "Заходите в канал @vmsh_179_5_7_2025 кружка за новостями и решениями."
-    )
-    you_are_in_novice_now = (
-        "Вы переведены в группу начинающих. "
-        "Успехов в занятиях! "
-        "Вопросы можно задавать в группе @vmsh_179_5_7_2025_chat."
-    )
-    you_are_club_student_now = "you_are_club_student_now"
-    you_are_in_testing_now = "Вы переведены в тестируемых"
-    you_are_in_pro_now = (
-        "Вы переведены в группу продолжающих. "
-        "Следите за сложностью, если не получается больше половины задач, то лучше перейти в группу «начинающих». "
-        "Это будет комфортнее и полезнее!"
-    )
-    you_are_expert_now = (
-        "Вы переведены в группу экспертов. "
-        "Здесь будут сложные задачи, не переборщите со сложностью :) "
-        "Успехов!"
-    )
-    you_are_grade8_now = (
-        "Вы переведены в группу 8 класса. "
-        "Здесь будут сложные задачи, не переборщите со сложностью :) "
-        "Успехов!"
     )
     error_sos_without_auth = (
         "🤖 Привет! Без пароля мы не знаем, как вас зовут...\n"
@@ -111,7 +89,7 @@ class Msgs:
         "\nИдентификатор конференции: <pre>87196763644</pre>"
         "\nкод доступа: <pre>179179179</pre></b>"
         "\n\nПожалуйста, при входе поставьте подпись:"
-        "\n<b><pre>{student.level} {student.surname} {student.name}</pre></b>"
+        "\n<b><pre>{student.group_code} {student.surname} {student.name}</pre></b>"
         "\n(<a href=\"https://t.me/vmsh_179_5_7_2025/78\">инструкция</a>)"
         "\n\nКак только один из преподавателей освободится, вас пустят в конференцию и переведут в комнату к преподавателю. "
         "После окончания сдачи нужно выйти из конференции. "
@@ -146,13 +124,13 @@ class Msgs:
     t_verdict_tick_no_comments = "проверили и поставили {verdict_tick} без комментариев"
     t_verdict_tick_with_comments = "проверили и поставили {verdict_tick}\n⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
     t_problem_question_answer = (
-        "Есть ответ на вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title}).\n"
+        "Есть ответ на вопрос по задаче {problem.lesson}{problem.group_code}.{problem.prob}{problem.item} ({problem.title}).\n"
         "Пересылаю всю переписку.\n"
         "⬇⬇⬇⬇"
     )
 
     t_oral_accepted_problems = "В результате устного приёма вам поставили плюсики за задачи: {pluses_list}"
-    t_your_level_changed_to = "Вам изменён уровень на «{level.slevel}»"
+    t_your_group_changed_to = "Вам изменена группа на «{public_name}»"
     t_all_written_checked = "Ничего себе! Все эти письменные задачи проверены!"
     t_no_sos_questions = "Ничего себе! Вопросов нет"
     t_choose_question = "Выберите вопрос"
@@ -164,12 +142,13 @@ class Msgs:
     t_edtplus_format_hint = "🤖 Пришлите запрос на простановку плюсов в формате\n«/edtplus_lesson_token», например «/edtplus_12_aa9bb4»"
     t_recheck_format_hint = "🤖 Пришлите запрос на перепроверку в формате\n«/recheck token problem», например «/recheck aa9bb4 3н.11а»"
     t_student_with_token_not_found = "🤖 Студент с токеном {token} не найден"
-    t_problem_not_found_key = "🤖 Задача {lst}{level}.{prob}{item} не найдена"
+    t_problem_not_found_ref = "🤖 Задача {problem_ref} не найдена"
+    t_problem_ambiguous_ref = "🤖 Задача {problem_ref} неоднозначна. Укажите формат group_id:lesson.probitem."
     t_problem_not_found_id = "🤖 Задача с id {prob_id} не найдена"
     t_resend_for_checking = "Переотправили на проверку"
-    t_set_level_usage = "/set_level token н/п/э"
-    t_level_not_exists = "Уровень {new_level} не существует."
-    t_student_level_changed = "Студент с токеном {token} переведён в {new_level_en}"
+    t_set_group_usage = "/set_group token <group_id|short_code>"
+    t_group_not_exists = "Группа {new_group} не существует."
+    t_student_group_changed = "Студент с токеном {token} переведён в группу «{public_name}»"
     t_select_problem_to_check_counts = "Выберите задачу для проверки ({prb_count}✏️, {sos_count}❓)"
     t_teacher_set_online_usage = "/set_online token online/school"
     t_student_online_changed = "Студент с токеном {token} переведён"
@@ -193,19 +172,19 @@ class Msgs:
     t_btn_refuse_checking = "Отказаться от проверки и вернуться назад"
     t_btn_send_answer = "Отправить ответ на вопрос"
     t_btn_skip_answer = "Не отвечать на вопрос и вернуться назад"
-    t_btn_level_template = "Уровень: {lvl} «{slevel}»"
+    t_btn_level_template = "Группа: {short_code} «{public_name}»"
     t_btn_ready_oral = "Готово (завершить сдачу и внести в кондуит)"
     t_btn_cancel_oral = "Отмена (ничего не трогать и выйти)"
     t_select_action = "Выберите действие ({prb_count}✏️, {sos_count}❓)"
     t_ok_saved = 'Ок, записал'
     t_question_on_problem = (
-        "Вопрос по задаче {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
+        "Вопрос по задаче {problem.lesson}{problem.group_code}.{problem.prob}{problem.item} ({problem.title})\n"
         "{student.name_for_teacher}\n"
         "/recheck_{student.token}_{problem.id}\n"
         "⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
     )
     t_checking_problem = (
-        "Проверяем задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} ({problem.title})\n"
+        "Проверяем задачу {problem.lesson}{problem.group_code}.{problem.prob}{problem.item} ({problem.title})\n"
         "{student.name_for_teacher}\n"
         "⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇"
     )
@@ -219,19 +198,19 @@ class Msgs:
     )
     t_forward_discussion_to_student_word = 'Задачу'
     t_verdict_plus_text = (
-        '👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
+        '👍 Отлично, поставили плюсик за задачу {problem.lesson}{problem.group_code}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}!'
         '\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
         '\nДля исправления:'
         ' /recheck_{student.token}_{problem.id}'
     )
     t_verdict_some_text = (
-        '👍 Поставили {verdict_text} за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
+        '👍 Поставили {verdict_text} за задачу {problem.lesson}{problem.group_code}.{problem.prob}{problem.item} школьнику {student.token} {student.surname} {student.name}! '
         '\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
         '\nДля исправления:'
         ' /recheck_{student.token}_{problem.id}'
     )
     t_verdict_minus_text = (
-        '❌ Эх, поставили минусик за задачу {problem.lesson}{problem.level}.{problem.prob}{problem.item} '
+        '❌ Эх, поставили минусик за задачу {problem.lesson}{problem.group_code}.{problem.prob}{problem.item} '
         'школьнику {student.token} {student.surname} {student.name}!'
         '\nВсего проверено задач: {tot_checked} (+{plus}, −{minus}){milestone}'
         '\nДля исправления:'
@@ -246,20 +225,11 @@ class Msgs:
     t_written_res_3 = "\nПоставлены минусы ❌ за задачи: {human_readable_minuses_joined}"
     t_written_res_4 = '\nДля исправления /edtplus_{lesson}_{student.token}'
     t_stundent_name_not_found = "Студент с токеном {token} не найден"
-    t_student_level_changed = (
-        "Перевели школьника на уровень «{level.slevel}»."
-        "\nОбратите внимание, плюсы по старому уровню НЕ БЫЛИ ВНЕСЕНЫ. Простите, это сложно исправить."
-    )
-
-    # command hints
     t_cmd_online = 'Дистанционный приём'
     t_cmd_in_school = 'Очный приём'
     t_cmd_find_student = 'Найти студента'
-    t_cmd_set_level = 'Поставить студенту уровень'
+    t_cmd_set_group = 'Поставить студенту группу'
     t_cmd_set_online = 'Поменять студенту режим очно/дистант'
-    t_cmd_level_novice = 'Перейти на уровень «Начинающие»'
-    t_cmd_level_pro = 'Перейти на уровень «Продолжающие»'
-    t_cmd_level_expert = 'Перейти на уровень «Профессионалы»'
     t_cmd_set_teacher = 'Снова стать учителем'
     t_cmd_statw = 'Посмотреть статистику'
     t_cmd_student_results = 'Посмотреть результаты школьника'
@@ -304,6 +274,7 @@ class Msgs:
     a_teachers_updated = "Учителя обновлены"
     a_students_updated = "Студенты обновлены"
     a_problems_updated = "Задачи обновлены"
+    a_groups_updated = "Группы обновлены"
     a_error_list = "Ошибки:"
     a_ui_messages_updated = 'UI messages updated\nRestart bot to apply them'
     a_survey_created = 'Опрос с id={survey_id} создан.\n{survey_type=}\n{question=}\n{choices=}'
@@ -317,7 +288,7 @@ class Msgs:
     a_survey_disabled = "Опрос {survey_id} отключён"
     a_problem_not_found = "Задача не найдена"
     a_no_submissions = "Нет ни одной посылки (или что-то пошло не так)"
-    a_bad_level = "Кривой уровень, не парсится"
+    a_bad_group = "Кривая группа, не парсится"
     a_done = "Готово"
     a_set_game_usage = "/set_game_command token number"
     a_admin_rights_gained = "Admin rights gained!"

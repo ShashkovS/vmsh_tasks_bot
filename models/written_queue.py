@@ -14,12 +14,12 @@ class WrittenQueue:
         db.written_task_queue.insert(student_id, problem_id, cur_status=WRITTEN_STATUS.NEW, ts=ts)
 
     @staticmethod
-    def take_top_synonyms(teacher_id: int, synonyms: str):
-        return db.written_task_queue.get_written_tasks_to_check(teacher_id, synonyms)
+    def take_top_synonyms(teacher_id: int, synonyms: str, group_ids=None):
+        return db.written_task_queue.get_written_tasks_to_check(teacher_id, synonyms, group_ids=group_ids)
 
     @staticmethod
-    def take_sos_top(teacher_id: int):
-        return db.written_task_queue.get_sos_tasks_to_check(teacher_id)
+    def take_sos_top(teacher_id: int, group_ids=None):
+        return db.written_task_queue.get_sos_tasks_to_check(teacher_id, group_ids=group_ids)
 
     @staticmethod
     def mark_being_checked(student_id: int, problem_id: int, teacher_id: int):

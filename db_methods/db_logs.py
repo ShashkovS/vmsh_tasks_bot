@@ -55,7 +55,7 @@ class DB_FEATURES(DB_ABC):
         """
         cur = self.db.conn.execute("""
             with pre as (
-                select r.lesson, r.level, p.prob, p.item,
+                select r.lesson, r.group_id, p.prob, p.item,
                        p.title, r.student_id,
                        case when max(r.verdict) > 0 then 1 else 0 end verdict
                 from results r
@@ -64,11 +64,12 @@ class DB_FEATURES(DB_ABC):
                 group by 1, 2, 3, 4, 5, 6
             ),
                  res as (
-            select lesson || level || '.' || prob || item as prb, title, sum(verdict) plus,
-                   (select count(distinct student_id) from pre as pre2 where pre.level = pre2.level) tot
+            select pre.lesson || coalesce(g.short_code, pre.group_id) || '.' || pre.prob || pre.item as prb, pre.title, sum(pre.verdict) plus,
+                   (select count(distinct pre2.student_id) from pre as pre2 where pre.group_id = pre2.group_id) tot
             from pre
-            group by lesson, level, prob, item, title
-            order by level, prob, item)
+            left join groups g on g.group_id = pre.group_id
+            group by pre.lesson, pre.group_id, pre.prob, pre.item, pre.title
+            order by pre.group_id, pre.prob, pre.item)
             select prb, plus||'/'||tot as frac, replace(round(plus*100.0/tot,1), '.', ',')||'%' perc, title from res
         """)
         rows = cur.fetchall()

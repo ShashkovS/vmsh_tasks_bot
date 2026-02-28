@@ -1,22 +1,51 @@
 # -*- coding: utf-8 -*-.
+import json
+
 import db_methods as db
+
+STYLE_PALETTE = [
+    '#e2f0d9',
+    '#fff2cc',
+    '#fce4d6',
+    '#d9e1f2',
+    '#f4cccc',
+    '#d0e0e3',
+    '#ead1dc',
+    '#ddebf7',
+    '#fde9d9',
+    '#e6e6e6',
+]
+LINE_PALETTE = [
+    '#2e7d32',
+    '#ef6c00',
+    '#c62828',
+    '#283593',
+    '#6a1b9a',
+    '#00838f',
+    '#ad1457',
+    '#5d4037',
+    '#455a64',
+    '#1b5e20',
+]
 
 
 def calc_violin_plot_data(cursor):
     # cursor.execute('''
     #     -- Число задач студентов по занятиям
-    #     select lesson, s.student_id, s.level, sum(score) sol
+    #     select lesson, s.student_id, s.group_id, sum(score) sol
     #     from temp_real_problem_scores s
     #     group by 1, 2, 3
-    #     order by lesson, level;
+    #     order by lesson, group_id;
     # ''')
     cursor.execute('''
         -- Число задач студентов по занятиям
-        select r.lesson, r.student_id, r.level, count(distinct problem_id) sol from results r
+        select r.lesson, r.student_id, r.group_id, count(distinct problem_id) sol
+        from results r
         join verdicts v on r.verdict = v.id
         where v.val > 0
+          and r.group_id is not null
         group by 1, 2, 3
-        order by lesson, level;
+        order by lesson, r.group_id;
     ''')
     per_lesson = {}
     for row in cursor.fetchall():
@@ -26,7 +55,7 @@ def calc_violin_plot_data(cursor):
         per_lesson[lesson].append(row)
     per_lesson_v2 = {
         lesson: {
-            'levels': [row['level'] for row in rows],
+            'group_ids': [row['group_id'] for row in rows],
             'counts': [row['sol'] for row in rows],
         }
         for lesson, rows in per_lesson.items()
@@ -37,60 +66,83 @@ def calc_violin_plot_data(cursor):
 def calc_stat_table_data(cursor):
     # cursor.execute('''
     #     -- Статистика по задачам
-    #     select p.lesson, p.level, p.lesson || p.level ||'.' || p.prob || p.item p, p.title,
+    #     select p.lesson, p.group_id, p.lesson || p.group_id ||'.' || p.prob || p.item p, p.title,
     #     round(sum(score)) sol,
     #     (select count(distinct student_id) from results r where r.problem_id = p.id) tried,
     #     count(*) cnt
     #     from temp_real_problem_scores s
     #     join problems p on s.problem_id = p.id
     #     group by 1, 2, 3, 4
-    #     order by p.lesson desc, s.level, p.prob, p.item
+    #     order by p.lesson desc, s.group_id, p.prob, p.item
     #     ;
     # ''')
     cursor.execute('''
         -- Статистика по задачам
         with
         sol as (
-            select r2.lesson, r2.level, r2.problem_id, count(distinct student_id) cnt
+            select r2.lesson, r2.group_id, r2.problem_id, count(distinct student_id) cnt
             from results r2
             join verdicts v2 on r2.verdict = v2.id
             where v2.val >= 0.4
+              and r2.group_id is not null
             group by 1, 2, 3
         ),
         try as (
-            select r3.lesson, r3.level, r3.problem_id, count(distinct student_id) cnt
+            select r3.lesson, r3.group_id, r3.problem_id, count(distinct student_id) cnt
             from results r3
+            where r3.group_id is not null
             group by 1, 2, 3
         ),
         tot as (
-            select r1.lesson, r1.level, count(distinct student_id) cnt
+            select r1.lesson, r1.group_id, count(distinct student_id) cnt
             from results r1
+            where r1.group_id is not null
             group by 1, 2
         )
-        select p.lesson, p.level, p.lesson || p.level ||'.' || p.prob || p.item p, p.title,
-             ifnull(sol.cnt, 0) as sol,
-             ifnull(try.cnt, 0) as tried,
-             ifnull(tot.cnt, 0) as cnt
+        select p.lesson,
+               p.group_id,
+               p.lesson || coalesce(g.short_code, p.group_id) || '.' || p.prob || p.item p,
+               p.title,
+               ifnull(sol.cnt, 0) as sol,
+               ifnull(try.cnt, 0) as tried,
+               ifnull(tot.cnt, 0) as cnt
         from problems p
-        left join sol on sol.lesson = p.lesson and sol.level = p.level and sol.problem_id = p.id
-        left join try on try.lesson = p.lesson and try.level = p.level and try.problem_id = p.id
-        left join tot on tot.lesson = p.lesson and tot.level = p.level
-        order by p.lesson desc, p.level, p.prob, p.item
-        ;
+        left join groups g on g.group_id = p.group_id
+        left join sol on sol.lesson = p.lesson and sol.group_id = p.group_id and sol.problem_id = p.id
+        left join try on try.lesson = p.lesson and try.group_id = p.group_id and try.problem_id = p.id
+        left join tot on tot.lesson = p.lesson and tot.group_id = p.group_id
+        where p.group_id is not null
+        order by p.lesson desc, p.group_id, p.prob, p.item;
     ''')
     all_rows = cursor.fetchall()
-    all_levels = set()
-    levels = {row['level'] for row in all_rows}
-    per_lesson_level = {}
+    all_group_ids = set()
+    group_ids = {row['group_id'] for row in all_rows if row['group_id']}
+    per_lesson_group = {}
     for row in all_rows:
         lesson = row['lesson']
-        level = row['level']
-        all_levels.add(level)
-        if lesson not in per_lesson_level:
-            per_lesson_level[lesson] = {level: [] for level in levels}
-        per_lesson_level[lesson][level].append(row)
-    all_levels = sorted(all_levels)
-    return per_lesson_level, all_levels
+        group_id = row['group_id']
+        if group_id:
+            all_group_ids.add(group_id)
+        if lesson not in per_lesson_group:
+            per_lesson_group[lesson] = {group_id: [] for group_id in group_ids}
+        per_lesson_group[lesson][group_id].append(row)
+    all_group_ids = sorted(all_group_ids)
+    return per_lesson_group, all_group_ids
+
+
+def collect_group_meta(group_ids):
+    group_ids = {group_id for group_id in group_ids if group_id}
+    if not group_ids:
+        return []
+    groups = [row for row in db.group.get_all() if row['group_id'] in group_ids]
+    known_ids = {row['group_id'] for row in groups}
+    for group_id in sorted(group_ids - known_ids):
+        groups.append({
+            'group_id': group_id,
+            'short_code': group_id,
+            'public_name': group_id,
+        })
+    return groups
 
 
 html = '''
@@ -107,21 +159,7 @@ html = '''
             integrity="sha512-zInFF17qBFVvvvFpIfeBzo7Tj7+rQxLeTJDmbxjBz5/zIr89YVbTNelNhdTT+/DCrxoVzBeUPVFJsczKbB7sew==" crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
     <style>
-        .n {
-            background-color: rgb(183, 225, 205)
-        }
-
-        .p {
-            background-color: rgb(252, 232, 178)
-        }
-
-        .x {
-            background-color: rgb(244, 199, 195)
-        }
-
-        .y {
-            background-color: rgb(180, 167, 214)
-        }
+        GROUP_STYLES
 
         h3 {
             text-align: center;
@@ -139,15 +177,21 @@ html = '''
     // beginData
 DATA
     // endData
-    const levelDescr = {
-        'н': 'Начинающие',
-        'п': 'Продолжающие',
-        'э': 'Эксперты',
-    }
-    const levelStyle = {
-        'н': 'n',
-        'п': 'p',
-        'э': 'x',
+    const groupMeta = GROUP_META;
+    const groupStyles = GROUP_STYLES_MAP;
+    const groupPlotColors = GROUP_PLOT_COLORS;
+
+    function formatGroupLabel(groupId) {
+        const meta = groupMeta[groupId];
+        if (!meta) {
+            return groupId;
+        }
+        const shortCode = meta.short_code || '';
+        const publicName = meta.public_name || '';
+        if (shortCode && publicName && shortCode !== publicName) {
+            return `${shortCode} - ${publicName}`;
+        }
+        return publicName || shortCode || groupId;
     }
 
     function unpack(rows, key) {
@@ -156,6 +200,10 @@ DATA
         });
     }
 
+    const groupPlotStyles = all_groups.map(groupId => ({
+        target: groupId,
+        value: {line: {color: groupPlotColors[groupId] || '#2e7d32'}}
+    }));
 
     for (let lesson of lessons) {
         const div1 = document.createElement('div');
@@ -166,7 +214,7 @@ DATA
 
         const data1 = [{
             type: 'violin',
-            x: perLes[lesson].levels,
+            x: perLes[lesson].group_ids,
             y: perLes[lesson].counts,
             points: false,
             box: {
@@ -189,13 +237,8 @@ DATA
             hoveron: 'points',
             transforms: [{
                 type: 'groupby',
-                groups: perLes[lesson].levels,
-                styles: [
-                    {target: 'н', value: {line: {color: 'green'}}},
-                    {target: 'п', value: {line: {color: 'orange'}}},
-                    {target: 'э', value: {line: {color: 'red'}}},
-                    {target: 'В', value: {line: {color: 'violet'}}}
-                ]
+                groups: perLes[lesson].group_ids,
+                styles: groupPlotStyles
             }]
         }]
 
@@ -210,8 +253,8 @@ DATA
         Plotly.newPlot(div1.id, data1, layout);
 
         const colorer = chroma.scale(['#F8696B', '#FFEB84', '#63BE7B']).domain([0, 50, 100]).mode('lch');
-        for (const level of all_levels) {
-            const data2 = perProb[lesson][level];
+        for (const groupId of all_groups) {
+            const data2 = perProb[lesson][groupId] || [];
             // Данные
 
             // Создаем таблицу
@@ -235,7 +278,7 @@ DATA
             const tbody = document.createElement('tbody');
             data2.forEach(rowData => {
                 const row = document.createElement('tr');
-                row.className = levelStyle[level];
+                row.className = groupStyles[groupId] || '';
 
                 const taskCell = document.createElement('td');
                 taskCell.innerText = rowData['p'];
@@ -275,7 +318,7 @@ DATA
             div2.id = `tbl${lesson}`;
             div2.style.width = '100%';
             const header = document.createElement('h3');
-            header.innerText = `${levelDescr[level]}, занятие ${lesson}`;
+            header.innerText = `${formatGroupLabel(groupId)}, занятие ${lesson}`;
             div2.appendChild(header);
             div2.appendChild(table);
             document.body.appendChild(div2);
@@ -288,13 +331,41 @@ DATA
 def get_html():
     cursor = db.sql.conn.cursor()
     violin_plots_data = calc_violin_plot_data(cursor)
-    table_data, all_levels = calc_stat_table_data(cursor)
+    table_data, all_group_ids = calc_stat_table_data(cursor)
     cursor.close()
     lessons = sorted(violin_plots_data.keys(), reverse=True)
+    group_ids = set(all_group_ids)
+    for lesson_data in violin_plots_data.values():
+        group_ids.update(lesson_data['group_ids'])
+    groups = collect_group_meta(group_ids)
+    all_groups = [group['group_id'] for group in groups]
+    group_meta = {}
+    group_styles_map = {}
+    group_plot_colors = {}
+    for idx, group in enumerate(groups):
+        group_id = group['group_id']
+        short_code = group.get('short_code') or group_id
+        public_name = group.get('public_name') or group_id
+        group_meta[group_id] = {
+            'short_code': short_code,
+            'public_name': public_name,
+        }
+        group_styles_map[group_id] = f'grp-{idx}'
+        group_plot_colors[group_id] = LINE_PALETTE[idx % len(LINE_PALETTE)]
+    group_style_css = '\n'.join(
+        f'.grp-{idx} {{ background-color: {STYLE_PALETTE[idx % len(STYLE_PALETTE)]}; }}'
+        for idx in range(len(groups))
+    )
     script = f'''
-    const perProb = {table_data!r};
-    const perLes = {violin_plots_data!r};
-    const lessons = {lessons!r};
-    const all_levels = {all_levels!r};
+    const perProb = {json.dumps(table_data)};
+    const perLes = {json.dumps(violin_plots_data)};
+    const lessons = {json.dumps(lessons)};
+    const all_groups = {json.dumps(all_groups)};
     '''
-    return html.replace('DATA', script)
+    return (
+        html.replace('DATA', script)
+        .replace('GROUP_META', json.dumps(group_meta))
+        .replace('GROUP_STYLES_MAP', json.dumps(group_styles_map))
+        .replace('GROUP_PLOT_COLORS', json.dumps(group_plot_colors))
+        .replace('GROUP_STYLES', group_style_css)
+    )

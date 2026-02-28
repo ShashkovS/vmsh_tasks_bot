@@ -16,5 +16,5 @@ class Waitlist:
         db.waitlist.delete(student_id)
 
     @staticmethod
-    def top(n: int = 10) -> list:
-        return db.waitlist.get_top(n)
+    def top(n: int = 10, group_ids=None) -> list:
+        return db.waitlist.get_top(n, group_ids=group_ids)

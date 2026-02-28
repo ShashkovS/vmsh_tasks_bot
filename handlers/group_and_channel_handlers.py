@@ -44,7 +44,7 @@ async def prc_sos_reply(message: types.Message):
         await bot.copy_message(question_record['chat_id'], message.chat.id, message.message_id)
         student = User.get_by_chat_id(question_record['chat_id'])
         if student:
-            new_text = f'✅✅✅✅\n<code>{student.surname}</code> <code>{student.name}</code>\n<code>{student.level}</code> <code>{student.token}</code> {ONLINE_MODE(student.online).__str__()[12:]}'
+            new_text = f'✅✅✅✅\n<code>{student.surname}</code> <code>{student.name}</code>\n<code>{student.group_code}</code> <code>{student.token}</code> {ONLINE_MODE(student.online).__str__()[12:]}'
             await bot.edit_message_text_ig(chat_id=question_record['sos_chat_id'], message_id=question_record['sos_header_msg_id'], text=new_text,
                                            parse_mode="HTML")
         await bot.send_message(chat_id=message.chat.id, text=msgs.a_forwarded_ok)
