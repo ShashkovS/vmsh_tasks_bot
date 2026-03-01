@@ -50,6 +50,9 @@ class Config:
     set_admin_secret: str = ""
     zoom_secret_token: str = ""
     synonyms_mode: str = "synonyms_join"
+    trace_enabled: bool = True
+    trace_log_path: str = "logs/events.jsonl"
+    trace_backup_days: int = 21
 
     def update_from_dict(self, update_dict: dict):
         for key, value in update_dict.items():
@@ -144,6 +147,9 @@ logger = _create_logger()
 DEBUG = logging.DEBUG
 config = _setup()
 _init_sentry(config.sentry_dsn, config.config_name)
+from helpers.trace import init_trace
+
+init_trace(config)
 logger.debug(f'{config=}')
 
 if config.production_mode:

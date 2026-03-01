@@ -11,6 +11,13 @@ from models import User, State, Group
 import db_methods as db
 from helpers.bot import bot, router, reg_state, callbacks_processors, state_processors
 from helpers.msg_texts import msgs
+from helpers.trace import (
+    build_message_ctx,
+    clear_trace_context,
+    emit_trace,
+    get_trace_context,
+    set_trace_context,
+)
 from handlers.student_handlers import post_problem_keyboard
 
 
@@ -47,6 +54,13 @@ def assign_default_game_command(user):
 async def start(message: types.Message):
     logger.debug('start')
     user = User.get_by_chat_id(message.chat.id)
+    emit_trace(
+        "auth.start",
+        chat_id=message.chat.id,
+        user_id=user and user.id,
+        reg_mode=(REG_MODE and REG_MODE.value) if hasattr(REG_MODE, "value") else str(REG_MODE),
+        user_exists=bool(user),
+    )
     if REG_MODE == FEATURES.REG_NEEDED:
         if user:
             State.set_by_user_id(user.id, STATE.GET_USER_INFO)
@@ -88,14 +102,23 @@ async def start(message: types.Message):
 async def prc_get_user_info_state(message: types.Message, user: User):
     logger.debug('prc_get_user_info_state')
     user = User.get_by_token(message.text)
+    emit_trace(
+        "auth.signon_attempt",
+        chat_id=message.chat.id,
+        user_id=user and user.id,
+        has_token=bool(message.text),
+        token_len=len((message.text or "").strip()),
+    )
     db.log.log_signon(
         user and user.id, message.chat.id, message.chat.first_name, message.chat.last_name, message.chat.username,
         message.text
     )
     if user is None:
+        emit_trace("auth.failed", chat_id=message.chat.id, reason="unknown_token")
         await start(message)
         return
     elif user.type == USER_TYPE.DELETED:
+        emit_trace("auth.failed", chat_id=message.chat.id, user_id=user.id, reason="user_deleted")
         await bot.send_message(
             chat_id=message.chat.id,
             text=msgs.this_password_is_blocked,
@@ -108,6 +131,13 @@ async def prc_get_user_info_state(message: types.Message, user: User):
             State.set_by_user_id(user.id, STATE.TEACHER_SELECT_ACTION)
         elif user.type == USER_TYPE.DEACTIVATED_STUDENT:
             State.set_by_user_id(user.id, STATE.USER_IS_NOT_ACTIVATED)
+        emit_trace(
+            "auth.success",
+            chat_id=message.chat.id,
+            user_id=user.id,
+            actor_type=str(user.type),
+            group_id=getattr(user, "group_id", None),
+        )
         await bot.send_message(
             chat_id=message.chat.id,
             text=msgs.welcome_user.format_map({'user': user}),
@@ -157,6 +187,12 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
             return
         callback_type = query.data[0]  # Вот здесь существенно используется, что callback параметризуется одной буквой
         callback_processor = callbacks_processors.get(callback_type, None)
+        emit_trace(
+            "callback.routed",
+            callback_type=callback_type,
+            has_processor=bool(callback_processor),
+            handler_name=getattr(callback_processor, "__name__", None),
+        )
         try:
             await callback_processor(query, user)
         except Exception as e:
@@ -169,6 +205,13 @@ async def inline_kb_answer_callback_handler(query: types.CallbackQuery):
 # @router.message()
 async def process_regular_message(message: types.Message):
     logger.debug('process_regular_message')
+    local_trace_ctx = False
+    if not get_trace_context():
+        user_for_ctx = User.get_by_chat_id(message.chat.id)
+        set_trace_context(**build_message_ctx(message, user_for_ctx))
+        emit_trace("update.message.received", source="tg.message", handler_module=__name__)
+        local_trace_ctx = True
+
     # Сначала проверяем, что этот тип сообщений мы вообще поддерживаем
     alarm = None
     if message.document and message.document.mime_type and message.document.mime_type.startswith('image'):
@@ -214,6 +257,10 @@ async def process_regular_message(message: types.Message):
         error_text = traceback.format_exc()
         logger.exception(f'SUPERSHIT_STATE: {e}')
         await bot.post_logging_message(error_text)
+        emit_trace("update.handler.error", ok=False, error_type=e.__class__.__name__, error_short=str(e)[:240])
+    finally:
+        if local_trace_ctx:
+            clear_trace_context()
 
 
 @router.message(Command('online'))

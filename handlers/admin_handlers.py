@@ -20,6 +20,7 @@ from handlers.student_handlers import (
     check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard,
     prc_student_is_sleeping_state, register_group_switch_commands,
 )
+from helpers.trace import emit_trace
 
 
 def _resolve_group_ids(group_tokens):
@@ -45,6 +46,14 @@ async def update_all_internal_data(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     errors = FromGoogleSpreadsheet.update_all()
+    emit_trace(
+        "admin.data.sync",
+        user_id=teacher.id,
+        teacher_id=teacher.id,
+        chat_id=message.chat.id,
+        entity="all",
+        errors_count=len(errors or []),
+    )
     register_group_switch_commands()
     errors_list = ''
     if errors:
@@ -62,6 +71,7 @@ async def update_teachers(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_teachers()
+    emit_trace("admin.data.sync", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id, entity="teachers")
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_teachers_updated,
@@ -75,6 +85,7 @@ async def update_students(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_students()
+    emit_trace("admin.data.sync", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id, entity="students")
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_students_updated,
@@ -88,6 +99,7 @@ async def update_bot_settings(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_bot_settings()
+    emit_trace("admin.data.sync", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id, entity="bot_settings")
     new_settings = db.settings.get_settings()
     new_settings_s = pformat(new_settings, indent=2)
     html = f'''New settings:\n<pre>{new_settings_s}</pre>\nRestart bot to apply them'''
@@ -105,6 +117,7 @@ async def update_ui_messages(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_ui_messages()
+    emit_trace("admin.data.sync", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id, entity="ui_messages")
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_ui_messages_updated,
@@ -119,6 +132,14 @@ async def update_problems(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     errors = FromGoogleSpreadsheet.update_problems()
+    emit_trace(
+        "admin.data.sync",
+        user_id=teacher.id,
+        teacher_id=teacher.id,
+        chat_id=message.chat.id,
+        entity="problems",
+        errors_count=len(errors or []),
+    )
     errors_list = ''
     if errors:
         errors_list = '\n' + msgs.a_error_list + '\n' + '\n'.join(errors)
@@ -135,6 +156,14 @@ async def update_groups(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     errors = FromGoogleSpreadsheet.update_groups()
+    emit_trace(
+        "admin.data.sync",
+        user_id=teacher.id,
+        teacher_id=teacher.id,
+        chat_id=message.chat.id,
+        entity="groups",
+        errors_count=len(errors or []),
+    )
     register_group_switch_commands()
     errors_list = ''
     if errors:
@@ -223,6 +252,20 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
     await bot.send_message(
         chat_id=teacher_chat_id,
         text=msgs.a_broadcast_done.format_map({'sent': sent, 'bad_tokens': bad_tokens}),
+    )
+    teacher = User.get_by_chat_id(teacher_chat_id)
+    emit_trace(
+        "admin.broadcast.completed",
+        user_id=teacher and teacher.id,
+        teacher_id=teacher and teacher.id,
+        chat_id=teacher_chat_id,
+        sent=sent,
+        bad_count=len(bad_tokens),
+        tokens_count=len(tokens),
+        html_mode=html_mode,
+        quiet=quite,
+        has_reply_to=bool(reply_to_message),
+        message_len=len(broadcast_message or ""),
     )
 
 
@@ -509,6 +552,7 @@ async def set_get_task_info_for_all_students(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
+    emit_trace("admin.state.mass_reset", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id)
     asyncio.create_task(run_set_get_task_info_for_all_students_task(message.chat.id))
     await bot.send_message(
         chat_id=message.chat.id,
@@ -544,6 +588,7 @@ async def set_sleep_state_for_all_students(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
+    emit_trace("admin.sleep_state.set", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id)
     asyncio.create_task(run_set_sleep_state_task(message.chat.id))
     await bot.send_message(
         chat_id=message.chat.id,

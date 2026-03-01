@@ -20,6 +20,7 @@ from helpers.bot import bot, reg_callback, router, reg_state
 from handlers import teacher_keyboards, student_keyboards
 from handlers.student_handlers import sleep_and_send_problems_keyboard, refresh_last_student_keyboard, WHITEBOARD_LINK
 from handlers.main_handlers import process_regular_message  # TODO Удалить использование этой функции
+from helpers.trace import emit_trace
 
 CHECK_MILESTONES = {
     1: msgs.t_check_milestone1,
@@ -348,6 +349,14 @@ async def prc_get_written_task_callback(query: types.CallbackQuery, teacher: Use
     await bot.edit_message_reply_markup_ig(chat_id=query.message.chat.id, message_id=query.message.message_id,
                                            reply_markup=None)
     top = WrittenQueue.take_sos_top(teacher.id, group_ids=teacher.accessible_group_ids())
+    emit_trace(
+        "teacher.written_queue.requested",
+        teacher_id=teacher.id,
+        user_id=teacher.id,
+        chat_id=query.message.chat.id,
+        queue_type="sos",
+        selected_count=len(top),
+    )
     await bot.answer_callback_query_ig(query.id)
     if not top:
         await bot.send_message(chat_id=teacher.chat_id,
@@ -378,6 +387,16 @@ async def prc_SELECT_WRITTEN_TASK_TO_CHECK_callback(query: types.CallbackQuery, 
         problems_and_counts.append((problem, row['cnt'], row['days_waits']))
     sos_count = db.written_task_queue.get_sos_tasks_count(group_ids=group_ids)
     prb_count = db.written_task_queue.get_written_tasks_count(group_ids=group_ids)
+    emit_trace(
+        "teacher.written_queue.requested",
+        teacher_id=teacher.id,
+        user_id=teacher.id,
+        chat_id=query.message.chat.id,
+        queue_type="written",
+        selected_count=len(problems_and_counts),
+        written_count=prb_count,
+        sos_count=sos_count,
+    )
     text = msgs.t_select_problem_to_check_counts.format_map({'prb_count': prb_count, 'sos_count': sos_count})
     await bot.send_message(chat_id=teacher.chat_id, text=text,
                            reply_markup=teacher_keyboards.build_select_problem_to_check(problems_and_counts))
@@ -421,6 +440,19 @@ async def prc_teacher_cancel_callback(query: types.CallbackQuery, teacher: User)
 async def forward_discussion_and_start_checking(chat_id, message_id, student: User, problem: Problem, teacher: User,
                                                 is_sos=False):
     logger.debug('forward_discussion_and_start_checking')
+    emit_trace(
+        "teacher.written_check.started",
+        teacher_id=teacher.id,
+        student_id=student.id,
+        user_id=teacher.id,
+        target_user_id=student.id,
+        pair_id=f"pair:{teacher.id}:{student.id}",
+        chat_id=chat_id,
+        problem_id=problem.id,
+        lesson=problem.lesson,
+        group_id=problem.group_id,
+        is_sos=is_sos,
+    )
     if is_sos:
         text = msgs.t_question_on_problem.format_map({'problem': problem, 'student': student})
     else:
@@ -589,6 +621,19 @@ async def prc_written_task_ok_callback(query: types.CallbackQuery, teacher: User
         return
     # Помечаем задачу как решённую и удаляем из очереди
     result_id = Result.add(student, problem, teacher, set_verdict, None, RES_TYPE.WRITTEN)
+    emit_trace(
+        "teacher.written_verdict.saved",
+        teacher_id=teacher.id,
+        student_id=student.id,
+        user_id=teacher.id,
+        target_user_id=student.id,
+        pair_id=f"pair:{teacher.id}:{student.id}",
+        result_id=result_id,
+        problem_id=problem.id,
+        lesson=problem.lesson,
+        group_id=problem.group_id,
+        verdict=int(set_verdict),
+    )
     plus, minus = db.result.check_stat(problem.lesson, teacher.id)
     tot_checked = plus + minus
     milestone = CHECK_MILESTONES.get(tot_checked, '')
@@ -634,6 +679,19 @@ async def prc_written_task_bad_callback(query: types.CallbackQuery, teacher: Use
         return
     # Помечаем решение как неверное и удаляем из очереди
     result_id = Result.add(student, problem, teacher, set_verdict, None, RES_TYPE.WRITTEN)
+    emit_trace(
+        "teacher.written_verdict.saved",
+        teacher_id=teacher.id,
+        student_id=student.id,
+        user_id=teacher.id,
+        target_user_id=student.id,
+        pair_id=f"pair:{teacher.id}:{student.id}",
+        result_id=result_id,
+        problem_id=problem.id,
+        lesson=problem.lesson,
+        group_id=problem.group_id,
+        verdict=int(set_verdict),
+    )
     db.result.delete_plus(student_id, problem.id, RES_TYPE.WRITTEN, VERDICT.REJECTED_ANSWER)
     plus, minus = db.result.check_stat(problem.lesson, teacher.id)
     tot_checked = plus + minus
@@ -716,6 +774,13 @@ async def prc_get_queue_top_callback(query: types.CallbackQuery, teacher: User):
                                            reply_markup=None)
     group_ids = teacher.accessible_group_ids()
     top = Waitlist.top(10, group_ids=group_ids)
+    emit_trace(
+        "teacher.oral_queue.requested",
+        teacher_id=teacher.id,
+        user_id=teacher.id,
+        chat_id=query.message.chat.id,
+        candidate_count=len(top),
+    )
     selected = None
     for row in top:
         student = User.get_by_id(row['student_id'])
@@ -939,11 +1004,25 @@ async def prc_finish_oral_round_callback(query: types.CallbackQuery, teacher: Us
     for problem in pluses:
         Result.add(student, problem, teacher, VERDICT.SOLVED, None, res_type, zoom_conversation_id=zoom_conversation_id)
         # А ещё нужно удалить эту задачу из очереди на письменную проверку
-        db.written_task_queue.delete(student_id, problem.id)
+        WrittenQueue.delete_from_queue(student_id, problem.id)
     for problem in minuses:
         db.result.delete_plus(student_id, problem.id, RES_TYPE.SCHOOL, VERDICT.REJECTED_ANSWER)
         db.result.delete_plus(student_id, problem.id, RES_TYPE.ZOOM, VERDICT.REJECTED_ANSWER)
         Result.add(student, problem, teacher, VERDICT.WRONG_ANSWER, None, res_type, zoom_conversation_id=zoom_conversation_id)
+    emit_trace(
+        "teacher.oral_round.finished",
+        teacher_id=teacher.id,
+        student_id=student.id,
+        user_id=teacher.id,
+        target_user_id=student.id,
+        pair_id=f"pair:{teacher.id}:{student.id}",
+        plus_count=len(pluses),
+        minus_count=len(minuses),
+        zoom_conversation_id=zoom_conversation_id,
+        res_type=int(res_type),
+        group_id=(any_problem and any_problem.group_id),
+        lesson=(any_problem and any_problem.lesson),
+    )
     await refresh_last_student_keyboard(student)  # Обновляем студенту клавиатуру со списком задач
 
     # Формируем сообщение с итоговым результатом проверки
@@ -1020,6 +1099,14 @@ async def find_student(message: types.Message):
         await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '</pre>\n<pre>'.join(lines) + '</pre>')
     else:
         await bot.send_message(chat_id=message.chat.id, text=msgs.t_no_students_found)
+    emit_trace(
+        "teacher.student_lookup",
+        teacher_id=teacher.id,
+        user_id=teacher.id,
+        chat_id=message.chat.id,
+        query_len=len(search or ""),
+        found_count=len(students),
+    )
 
 
 @router.message(Command('set_online', 'so'))
@@ -1133,6 +1220,15 @@ async def zoom_queue(message: types.Message):
             alert = ''
         show_queue.append(f'{waits_min} мин   {row["zoom_user_name"]}  {alert}')
     in_queue = db.zoom_queue.get_queue_count()
+    emit_trace(
+        "teacher.zoom_queue.viewed",
+        teacher_id=teacher.id,
+        user_id=teacher.id,
+        chat_id=message.chat.id,
+        show_all=show_all,
+        visible_count=len(show_queue),
+        in_queue=in_queue,
+    )
     show_queue.append(f'\nВсего в очереди: {in_queue} человек')
     await bot.send_message(
         chat_id=message.chat.id,

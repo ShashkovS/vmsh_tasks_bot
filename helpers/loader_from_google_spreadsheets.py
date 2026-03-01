@@ -98,9 +98,9 @@ class SpreadsheetLoader:
 
     def _load_bot_settings(self, sheet):
         logger.info('Setting reload: fetching bot settings')
-        worksheet_students = sheet.worksheet("_BotSettings")
+        worksheet_bot_settings = sheet.worksheet("_BotSettings")
         bot_settings = _dict_factory(
-            worksheet_students.get_all_values(),
+            worksheet_bot_settings.get_all_values(),
             _BOT_SETTINGS_HEADERS,
         )
         return bot_settings[_IGNORE_FIRST_HEADER_ROWS_NUM:]

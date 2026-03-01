@@ -23,6 +23,7 @@ from helpers.bot import bot, reg_callback, router, reg_state, group_router
 from handlers import student_keyboards, common_keyboards
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
 from helpers.game_scoring import apply_group_weight, build_group_weight_map
+from helpers.trace import emit_trace
 
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
 WHITEBOARD_LINK = "https://www.shashkovs.ru/jitboard.html?{}"
@@ -228,6 +229,22 @@ async def prc_sending_solution_state(message: types.Message, student: User):
                 next_media_group_message = True
     else:
         problem_id = State.get_by_user_id(student.id)['problem_id']
+    emit_trace(
+        "student.written_solution.submitted",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=message.chat.id,
+        problem_id=problem_id,
+        is_sos=problem_id < 0,
+        has_text=bool(message.text),
+        text_len=len(message.text or ""),
+        photo_count=len(message.photo or []),
+        has_document=bool(message.document),
+        doc_mime=(message.document and message.document.mime_type),
+        doc_size=(message.document and message.document.file_size),
+        media_group_id=message.media_group_id,
+        next_media_group_message=next_media_group_message,
+    )
     file_name = None
     text = message.text
 
@@ -393,6 +410,17 @@ def check_test_problem_answer(
 
 
 async def check_answer_and_react(chat_id: int, problem: Problem, student: User, student_answer: str):
+    emit_trace(
+        "student.test_answer.submitted",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=chat_id,
+        problem_id=problem and problem.id,
+        lesson=problem and problem.lesson,
+        group_id=problem and problem.group_id,
+        answer_len=len(student_answer or ""),
+        has_answer=bool(student_answer),
+    )
     check_verict, additional_message, error_text = check_test_problem_answer(problem, student, student_answer)
     if error_text:
         await bot.post_logging_message(error_text)
@@ -437,6 +465,18 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
 @reg_state(STATE.WAIT_SOS_REQUEST)
 async def prc_wait_sos_request_state(message: types.Message, student: User):
     logger.debug('prc_wait_sos_request_state')
+    state = State.get_by_user_id(student.id)
+    emit_trace(
+        "student.sos.submitted",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=message.chat.id,
+        problem_id=state and state.get('problem_id'),
+        has_text=bool(message.text),
+        text_len=len(message.text or ""),
+        has_photo=bool(message.photo),
+        has_document=bool(message.document),
+    )
     try:
         group_code = _resolve_student_group_code(student)
         text = (f'❓❓❓❓\n'
@@ -517,6 +557,13 @@ async def switch_group_by_command(message: types.Message):
 async def sos(message: types.Message):
     logger.debug('sos')
     user = User.get_by_chat_id(message.chat.id)
+    emit_trace(
+        "student.sos.started",
+        chat_id=message.chat.id,
+        user_id=user and user.id,
+        target_user_id=user and user.id,
+        user_exists=bool(user),
+    )
     if not user:
         token = f'unknown{message.chat.id}'
         if message.chat.username:
@@ -612,6 +659,17 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         return
     problem_id = int(query.data[2:])
     problem = Problem.get_by_id(problem_id)
+    emit_trace(
+        "student.problem.selected",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=query.message.chat.id,
+        problem_id=problem_id,
+        lesson=problem and problem.lesson,
+        group_id=problem and problem.group_id,
+        prob_type=(int(problem.prob_type) if problem else None),
+        ans_type=(int(problem.ans_type) if (problem and problem.ans_type) else None),
+    )
     # Удаляем сообщение с клавиатурой-списком задач
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
     db.last_keyboard.delete(student.id)
@@ -815,6 +873,13 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
         reply_markup=None
     )
     Waitlist.leave(student.id)
+    emit_trace(
+        "student.waitlist.left",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=query.message.chat.id,
+        trigger="callback",
+    )
     db.delete_url_by_user_id(student.id)
     try:
         await bot.unpin_chat_message(chat_id=query.message.chat.id)
@@ -835,6 +900,13 @@ async def exit_waitlist(message: types.Message):
     logger.debug('exit_waitlist')
     user = User.get_by_chat_id(message.chat.id)
     Waitlist.leave(user.id)
+    emit_trace(
+        "student.waitlist.left",
+        user_id=user and user.id,
+        target_user_id=user and user.id,
+        chat_id=message.chat.id,
+        trigger="command",
+    )
     db.delete_url_by_user_id(user.id)
     try:
         await bot.unpin_chat_message(chat_id=message.chat.id)
@@ -878,6 +950,12 @@ async def exit_waitlist(message: types.Message):
 async def students_my_results(message: types.Message):
     logger.debug('students_my_results')
     student = User.get_by_chat_id(message.chat.id)
+    emit_trace(
+        "student.results.requested",
+        user_id=student and student.id,
+        target_user_id=student and student.id,
+        chat_id=message.chat.id,
+    )
     rows = db.result.list_all_student_results(student.id)
     if rows:
         lessons = {row['lesson'] for row in rows}

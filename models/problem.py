@@ -94,17 +94,26 @@ class Problem:
         """Возвращает (problem, error_code).
         error_code in {"invalid", "not_found", "ambiguous"}.
         """
+        # Возможно, это id
+        allowed: Optional[Set[str]] = set(allowed_group_ids) if allowed_group_ids else None
+        if raw.isdecimal():
+            problem = cls.get_by_id(int(raw))
+            if not problem:
+                return None, "not_found"
+            if problem.group_id not in allowed:
+                return None, "not_found"
+            return problem, None
         parsed = cls.parse_problem_ref(raw)
         if not parsed:
             return None, "invalid"
         kind, group_token, lesson, prob, item = parsed
-        allowed: Optional[Set[str]] = set(allowed_group_ids) if allowed_group_ids else None
         if kind == "group_id":
             if allowed is not None and group_token not in allowed:
                 return None, "not_found"
             problem = cls.get_by_key(group_token, lesson, prob, item)
-            return (problem, None) if problem else (None, "not_found")
-
+            if not problem:
+                return None, "not_found"
+            return problem, None
         candidates = db.group.get_by_short_code(group_token)
         if allowed is not None:
             candidates = [group for group in candidates if group["group_id"] in allowed]

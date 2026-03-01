@@ -8,6 +8,7 @@ from typing import Optional, Generator
 from helpers.consts import *
 from helpers.config import logger
 from models.group import Group
+from helpers.trace import emit_trace
 
 import db_methods as db
 
@@ -57,9 +58,19 @@ class User:
         self.chat_id = chat_id
 
     def set_group_id(self, group_id: str):
+        prev_group_id = self.group_id
         db.user.set_group_id(self.id, group_id)
         db.log.log_change(self.id, CHANGE.GROUP, group_id)
         self.group_id = group_id
+        self._cached_group = None
+        emit_trace(
+            "user.group.changed",
+            user_id=self.id,
+            chat_id=self.chat_id,
+            state_from=prev_group_id,
+            state_to=group_id,
+            group_id=group_id,
+        )
 
     def set_allowed_groups(self, allowed_groups: str):
         db.user.set_allowed_groups(self.id, allowed_groups)
@@ -104,9 +115,18 @@ class User:
         self.type = user_type.value
 
     def set_online_mode(self, online: ONLINE_MODE):
+        prev_online = self.online
         db.user.set_online_mode(self.id, online.value)
         db.log.log_change(self.id, CHANGE.ONLINE, online.value)
         self.online = online
+        emit_trace(
+            "user.mode.changed",
+            user_id=self.id,
+            chat_id=self.chat_id,
+            state_from=(prev_online.value if prev_online is not None else None),
+            state_to=online.value,
+            group_id=self.group_id,
+        )
 
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'

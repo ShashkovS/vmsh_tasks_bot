@@ -21,3 +21,5 @@ db/*.pickle
 solutions/
 /db/archive/
 /production.db
+/logs/events.jsonl
+/logs/events.jsonl.*

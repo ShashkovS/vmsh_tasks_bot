@@ -71,7 +71,7 @@ values
 --         0,
 --         1.0
 --     ),
-('novice',
+('н',
  'н',
  'all_novice',
  '/level_novice',
@@ -88,7 +88,7 @@ values
  1,
  0,
  1.0),
-('pro',
+('п',
  'п',
  'all_pro',
  '/level_pro',
@@ -105,7 +105,7 @@ values
  1,
  0,
  1.0),
-('expert',
+('э',
  'э',
  'all_expert',
  '/level_expert',
@@ -175,82 +175,82 @@ values
 
 update users
 set group_id = case level
-                   when 'н' then 'novice'
-                   when 'п' then 'pro'
-                   when 'э' then 'expert'
+                   when 'н' then 'н'
+                   when 'п' then 'п'
+                   when 'э' then 'э'
                    when 'т' then 'testing'
                    when 'm' then 'math_club'
                    when 'В' then 'gr8'
                    when '@' then 'no_level'
-                   else 'novice'
+                   else 'н'
     end;
 
 update problems
 set group_id = case level
-                   when 'н' then 'novice'
-                   when 'п' then 'pro'
-                   when 'э' then 'expert'
+                   when 'н' then 'н'
+                   when 'п' then 'п'
+                   when 'э' then 'э'
                    when 'т' then 'testing'
                    when 'm' then 'math_club'
                    when 'В' then 'gr8'
                    when '@' then 'no_level'
-                   else 'novice'
+                   else 'н'
     end;
 
 update lessons
 set group_id = case level
-                   when 'н' then 'novice'
-                   when 'п' then 'pro'
-                   when 'э' then 'expert'
+                   when 'н' then 'н'
+                   when 'п' then 'п'
+                   when 'э' then 'э'
                    when 'т' then 'testing'
                    when 'm' then 'math_club'
                    when 'В' then 'gr8'
                    when '@' then 'no_level'
-                   else 'novice'
+                   else 'н'
     end;
 
 update results
 set group_id = case level
-                   when 'н' then 'novice'
-                   when 'п' then 'pro'
-                   when 'э' then 'expert'
+                   when 'н' then 'н'
+                   when 'п' then 'п'
+                   when 'э' then 'э'
                    when 'т' then 'testing'
                    when 'm' then 'math_club'
                    when 'В' then 'gr8'
                    when '@' then 'no_level'
-                   else 'novice'
+                   else 'н'
     end;
 
 update zoom_conversation
 set group_id = case level
-                   when 'н' then 'novice'
-                   when 'п' then 'pro'
-                   when 'э' then 'expert'
+                   when 'н' then 'н'
+                   when 'п' then 'п'
+                   when 'э' then 'э'
                    when 'т' then 'testing'
                    when 'm' then 'math_club'
                    when 'В' then 'gr8'
                    when '@' then 'no_level'
-                   else 'novice'
+                   else 'н'
     end;
 
 update game_students_commands
 set group_id = case level
-                   when 'н' then 'novice'
-                   when 'п' then 'pro'
-                   when 'э' then 'expert'
+                   when 'н' then 'н'
+                   when 'п' then 'п'
+                   when 'э' then 'э'
                    when 'т' then 'testing'
                    when 'm' then 'math_club'
                    when 'В' then 'gr8'
                    when '@' then 'no_level'
-                   else 'novice'
+                   else 'н'
     end;
 
 update users
-set allowed_groups = ';novice;pro;expert;'
+set allowed_groups = ';н;п;э;'
 where type = 1;
 
 update users
-set allowed_groups = ';novice;pro;expert;'
+set allowed_groups = ';н;п;э;'
 where type is null
    or type != 1;
 

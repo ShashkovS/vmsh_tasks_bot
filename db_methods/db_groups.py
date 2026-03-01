@@ -5,23 +5,6 @@ from .db_abc import DB_ABC, sql
 
 class DB_GROUP(DB_ABC):
     def insert(self, data: dict) -> str:
-        fields = [
-            'group_id',
-            'short_code',
-            'broadcast_code',
-            'tg_command',
-            'public_name',
-            'conditions_url',
-            'tasks_header_template',
-            'switch_message',
-            'sort_order',
-            'is_active',
-            'is_default',
-            'allow_self_switch',
-            'is_system',
-            'score_weight',
-        ]
-        payload = {field: data.get(field) for field in fields}
         with self.db.conn as conn:
             conn.execute("""
                 insert into groups (
@@ -70,8 +53,8 @@ class DB_GROUP(DB_ABC):
                     allow_self_switch = excluded.allow_self_switch,
                     is_system = excluded.is_system,
                     score_weight = excluded.score_weight
-            """, payload)
-        return payload['group_id']
+            """, data)
+        return data['group_id']
 
     def get_all(self) -> List[dict]:
         return self.db.conn.execute("""
