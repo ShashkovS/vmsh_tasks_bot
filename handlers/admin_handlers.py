@@ -174,7 +174,7 @@ async def update_groups(message: types.Message):
     )
 
 
-async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode: bool = False, reply_to_message: types.Message = None, quite=False):
+async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode: bool = False, reply_to_message: types.Message = None, quiet=False):
     logger.debug('run_broadcast_task')
     teacher = User.get_by_chat_id(teacher_chat_id)
     tokens = set(tokens)
@@ -238,7 +238,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
                     text=broadcast_message,
                     disable_web_page_preview=True,
                     parse_mode=parse_mode,
-                    disable_notification=quite,
+                    disable_notification=quiet,
                 )
             sent += 1
             db.log.insert(
@@ -263,7 +263,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
         bad_count=len(bad_tokens),
         tokens_count=len(tokens),
         html_mode=html_mode,
-        quiet=quite,
+        quiet=quiet,
         has_reply_to=bool(reply_to_message),
         message_len=len(broadcast_message or ""),
     )
@@ -281,13 +281,13 @@ async def broadcast(message: types.Message):
     except:
         return
     html_mode = 'html' in cmd
-    quite = 'quiet' in cmd
+    quiet = 'quiet' in cmd
     if message.reply_to_message:
         broadcast_message = message.reply_to_message.text or ''
     else:
         broadcast_message = '\n'.join(broadcast_message)
     tokens = [tok for tok in re.split(r'[\s,]+', tokens) if tok]
-    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, message.reply_to_message, quite))
+    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, message.reply_to_message, quiet))
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_broadcast_task_created,
@@ -560,7 +560,7 @@ async def set_get_task_info_for_all_students(message: types.Message):
     )
 
 
-async def run_set_sleep_state_task(teacher_chat_id):
+async def run_set_sleep_state_task(teacher_chat_id, quiet=False):
     logger.debug('run_set_sleep_state_task')
     # Всем студентам ставим state STATE.STUDENT_IS_SLEEPING. Прекращаем приём задач
     for student in User.all_students():
@@ -568,7 +568,7 @@ async def run_set_sleep_state_task(teacher_chat_id):
         if not student.chat_id:
             continue
         try:
-            await post_problem_keyboard(student.chat_id, student, blocked=True)
+            await post_problem_keyboard(student.chat_id, student, blocked=True, disable_notification=quiet)
         except:
             pass
         try:
@@ -582,14 +582,15 @@ async def run_set_sleep_state_task(teacher_chat_id):
     )
 
 
-@router.message(Command('set_sleep_state'))
+@router.message(Command('set_sleep_state', 'set_sleep_state_quiet'))
 async def set_sleep_state_for_all_students(message: types.Message):
     logger.debug('set_sleep_state_for_all_students')
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
+    quiet = 'quiet' in message.text
     emit_trace("admin.sleep_state.set", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id)
-    asyncio.create_task(run_set_sleep_state_task(message.chat.id))
+    asyncio.create_task(run_set_sleep_state_task(message.chat.id, quiet))
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_sleep_task_created,
