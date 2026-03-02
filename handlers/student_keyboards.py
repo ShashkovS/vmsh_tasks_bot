@@ -13,9 +13,10 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     logger.debug('keyboards.build_problems')
     group_id = student.group_id
     solved = db.result.check_student_solved(student.id, lesson_num, group_id=group_id)
-    being_checked = set(db.written_task_queue.check_student_sent_written(student.id, lesson_num, group_id=group_id))
+    being_checked = set(db.written_task_queue.check_student_sent_written(student.id, lesson_num))
+    student_tried = set()
     if RESULT_MODE == FEATURES.RESULT_AFTER:
-        student_tried = set(db.result.check_student_tried(student.id, lesson_num, group_id=group_id))
+        student_tried = set(db.result.check_student_tried(student.id, lesson_num))
     keyboard_markup = InlineKeyboardBuilder()
     keyboard_markup.max_width = 1
     if GAME_MODE == FEATURES.GAME_SHOW:

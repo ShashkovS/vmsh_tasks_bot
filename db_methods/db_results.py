@@ -52,10 +52,11 @@ class DB_RESULT(DB_ABC):
         self.db.conn.commit()
 
     def check_student_solved(self, student_id: int, lesson: int, group_id: str = None) -> Dict[int, int]:
-        # todo здесь плохо вычисляется вердикт, так как нужно джойнить с вердиктами
         cur = self.db.conn.execute("""
-            select problem_id, max(verdict) verdict from results
-            where student_id = :student_id and lesson = :lesson and verdict > 0
+            select problem_id, max(verdict) verdict 
+            from results r 
+            join verdicts v on r.verdict = v.id    
+            where student_id = :student_id and lesson = :lesson and v.val > 0
               and (:group_id is null or group_id = :group_id)
             group by problem_id
         """, locals())

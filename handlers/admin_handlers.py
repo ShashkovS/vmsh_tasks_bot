@@ -653,15 +653,15 @@ async def student_results(message: types.Message):
         rows = db.result.list_student_results(
             student.id,
             Problem.last_lesson_num(student.group_id),
-            group_id=student.group_id,
         )
     if rows:
         lessons = {row['lesson'] for row in rows}
         for lesson in sorted(lessons):
-            lines = [f'{row["ts"][5:16]} {row["lesson"]:02}{row["group_code"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
-                     for row in rows
-                     if row['lesson'] == lesson
-                     ]
+            lines = [
+                f'{row["ts"][5:16]} {row["lesson"]:02}{row["group_code"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
+                for row in rows
+                if row['lesson'] == lesson
+            ]
             await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
     else:
         await bot.send_message(chat_id=message.chat.id, text=msgs.a_no_submissions)
@@ -724,6 +724,7 @@ async def set_game_command(message: types.Message):
         chat_id=message.chat.id,
         text=msgs.a_game_command_update.format_map({'token': token, 'command_id': command_id}),
     )
+
 
 @router.message(Command('set_admin'))
 async def set_admin(message: types.Message):

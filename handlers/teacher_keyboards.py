@@ -199,9 +199,7 @@ def build_verdict_for_oral_problems(
         lesson_num = Problem.last_lesson_num(student.group_id)
     solved = {
         problem_id
-        for (problem_id, verdict) in db.result.check_student_solved(
-            student.id, lesson_num, group_id=student.group_id
-        ).items()
+        for (problem_id, verdict) in db.result.check_student_solved(student.id, lesson_num).items()
         if verdict in VERDICTS_SOLVED
     }
     keyboard_markup = InlineKeyboardBuilder()
