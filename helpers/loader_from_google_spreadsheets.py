@@ -7,7 +7,7 @@ _PROBLEMS_HEADERS = [
     'title', 'prob_text', 'prob_type', 'ans_type', 'ans_validation', 'validation_error',
     'cor_ans', 'cor_ans_checker', 'wrong_ans', 'congrat',
 ]
-_STUDENTS_HEADERS = ['surname', 'name', 'token', 'online', 'grade', 'birthday', 'group_id', 'allowed_groups']
+_STUDENTS_HEADERS = ['surname', 'name', 'token', 'group_id', 'online', 'grade', 'birthday', 'allowed_groups']
 _TEACHERS_HEADERS = ['surname', 'name', 'middlename', 'token', 'online', 'group_id', 'allowed_groups']
 _UI_MESSAGES_HEADERS = ['key', 'value']
 _BOT_SETTINGS_HEADERS = ['key', 'value']
