@@ -42,10 +42,11 @@ def calc_violin_plot_data(cursor):
         select r.lesson, r.student_id, r.group_id, count(distinct problem_id) sol
         from results r
         join verdicts v on r.verdict = v.id
+        join groups g on g.group_id = r.group_id
         where v.val > 0
           and r.group_id is not null
-        group by 1, 2, 3
-        order by lesson, r.group_id;
+        group by 1, 2, 3, g.sort_order
+        order by lesson, g.sort_order;
     ''')
     per_lesson = {}
     for row in cursor.fetchall():
@@ -112,7 +113,7 @@ def calc_stat_table_data(cursor):
         left join try on try.lesson = p.lesson and try.group_id = p.group_id and try.problem_id = p.id
         left join tot on tot.lesson = p.lesson and tot.group_id = p.group_id
         where p.group_id is not null
-        order by p.lesson desc, p.group_id, p.prob, p.item;
+        order by p.lesson desc, g.sort_order,  p.group_id, p.prob, p.item;
     ''')
     all_rows = cursor.fetchall()
     all_group_ids = set()
