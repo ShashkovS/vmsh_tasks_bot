@@ -28,7 +28,7 @@ class DB_LESSON(DB_ABC):
             FROM lessons l
             left join groups g on g.group_id = l.group_id
             where (:group_id is null or :group_id = l.group_id)
-            order by l.lesson, l.group_id
+            order by l.lesson, g.sort_order, l.group_id
             ''', locals()).fetchall()
 
     def get_last(self, group_id: str = None) -> int:

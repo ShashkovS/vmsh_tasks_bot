@@ -25,8 +25,8 @@ class DB_REPORTS(DB_ABC):
                    (select count(distinct student_id) from results as rr where rr.problem_id = pre.problem_id) dist_prob
             from pre
             left join groups g on g.group_id = pre.group_id
-            group by pre.lesson, pre.group_id, pre.prob, pre.item, pre.title
-            order by pre.group_id, pre.prob, pre.item)
+            group by pre.lesson, pre.group_id, pre.prob, pre.item, pre.title, g.sort_order
+            order by g.sort_order, pre.group_id, pre.prob, pre.item)
             select prb, plus||'/'||dist_prob||'/'||tot as frac, replace(round(plus*100.0/tot,1), '.', ',')||'%' perc, title from res
         """)
         rows = cur.fetchall()

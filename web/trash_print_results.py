@@ -49,7 +49,7 @@ def get_pupils(cur, group_id):
                   and u.group_id = :group_id
                   and u.surname not like 'surname%'
                   and u.name not like 'surname%'
-                order by u.group_id, u.surname, u.name, u.token
+                order by g.sort_order, u.surname, u.name, u.token
                 ''', locals())
     pupils = [x['user'] for x in cur.fetchall()]
     return pupils
@@ -66,7 +66,7 @@ def get_problems(cur, lesson, group_id):
                          left join groups g on g.group_id = p.group_id
                 where p.lesson = :lesson
                   and p.group_id = :group_id
-                order by p.lesson, p.group_id, p.prob, p.item
+                order by p.lesson, g.sort_order, p.group_id, p.prob, p.item
                 ''', locals())
     problems = cur.fetchall()
     return problems
