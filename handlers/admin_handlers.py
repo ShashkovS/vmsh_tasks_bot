@@ -648,7 +648,7 @@ async def student_results(message: types.Message):
 
     # r.ts, p.group_code, p.lesson, p.prob, p.item, r.answer, r.verdict
     if 'asr' in message.text or 'all_' in message.text:
-        rows = db.result.list_all_student_results(student.id, group_id=student.group_id)
+        rows = db.result.list_all_student_results(student.id)
     else:
         rows = db.result.list_student_results(
             student.id,

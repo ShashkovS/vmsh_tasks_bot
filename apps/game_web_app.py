@@ -219,9 +219,7 @@ def get_game_data(student: User) -> dict:
     st = perf_counter()
     command = db.game.get_student_command(student.id)
     student_command = command['command_id'] if command else -1
-    solved = db.result.get_student_solved(
-        student.id, Problem.last_lesson_num(student.group_id), group_id=student.group_id
-    )  # ts, title
+    solved = db.result.get_student_solved(student.id, Problem.last_lesson_num(student.group_id))  # ts, title, group_id, group_code
     payments = db.game.get_student_payments(student.id, student_command)  # ts, amount
     opened = get_map_opened(student_command)
     flags = get_map_flags(student_command)

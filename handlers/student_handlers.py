@@ -998,8 +998,7 @@ async def game_info(message: types.Message):
     solved = db.result.get_student_solved(
         student.id,
         Problem.last_lesson_num(student.group_id),
-        group_id=student.group_id,
-    )  # ts, title
+    )  # ts, title, group_id, group_code
     payments = db.game.get_student_payments(student.id, student_command)  # ts, amount
     chests_rows = db.game.get_student_chests(student.id, student_command)
     # Собираем из решённых задач и оплат event'ы
