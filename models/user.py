@@ -110,6 +110,14 @@ class User:
             return group.short_code
         return self.group_id or ''
 
+    @property
+    def level(self) -> str:
+        """
+        Backward compatibility alias for legacy templates that still use `{student.level}`.
+        Group-based model is canonical now, so we expose group short code as level label.
+        """
+        return self.group_code
+
     def set_user_type(self, user_type: USER_TYPE):
         db.user.set_type(self.id, user_type.value)
         self.type = user_type.value
