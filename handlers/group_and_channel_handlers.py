@@ -81,7 +81,6 @@ async def group_message_handler(message: types.Message):
     has_buttons = False
     try:
         has_buttons = message.reply_markup and message.reply_markup.inline_keyboard
-        print(f'{has_buttons=}')
     except:
         pass
 
