@@ -46,9 +46,10 @@ class Config:
     game_mode: str = "game_hidden"
     reg_mode: str = "reg_needed"
     rate_limit: str = "rate_limit_3_and_6"
-    apps: str = "tg_bot, game_web_app, results_app, zoom_events_parser"
+    apps: str = "tg_bot, game_web_app, results_app, apis_app, zoom_events_parser"
     set_admin_secret: str = ""
     zoom_secret_token: str = ""
+    conduit_import_api_token: str = ""
     synonyms_mode: str = "synonyms_join"
     trace_enabled: bool = True
     trace_log_path: str = "logs/events.jsonl"

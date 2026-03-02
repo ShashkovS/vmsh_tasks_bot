@@ -7,5 +7,8 @@
   "db_filename": "db/production.db",
   "sos_channel": "@some_bot_sos_channel",
   "exceptions_channel": -1123123123123,
+  "apps_help": "tg_bot, game_web_app, results_app, apis_app, zoom_events_parser",
+  "apps": "tg_bot, game_web_app, results_app, apis_app, zoom_events_parser",
+  "conduit_import_api_token": "",
   "sentry_dsn": ""
 }

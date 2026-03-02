@@ -18,6 +18,11 @@ if 'results_app' in config.apps:
 
     all_apps.append(results_app)
 
+if 'apis_app' in config.apps:
+    import apps.apis_app
+
+    all_apps.append(apis_app)
+
 if 'zoom_events_parser' in config.apps:
     import apps.zoom_events_parser
 
