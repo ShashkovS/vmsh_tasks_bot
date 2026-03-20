@@ -23,6 +23,11 @@ if 'apis_app' in config.apps:
 
     all_apps.append(apis_app)
 
+if 'pwa_app' in config.apps:
+    import apps.pwa_app
+
+    all_apps.append(pwa_app)
+
 if 'zoom_events_parser' in config.apps:
     import apps.zoom_events_parser
 

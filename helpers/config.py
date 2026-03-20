@@ -51,7 +51,7 @@ class Config:
     zoom_secret_token: str = ""
     conduit_import_api_token: str = ""
     synonyms_mode: str = "synonyms_join"
-    trace_enabled: bool = True
+    trace_enabled: bool = False
     trace_log_path: str = "logs/events.jsonl"
     trace_backup_days: int = 21
 
