@@ -92,9 +92,9 @@ class DatabaseMethodsTest(TestCase):
 
     def test_user_set_group_and_allowed_groups(self):
         student = test_students[-1]
-        self.db.user.set_group_id(student['id'], 'pro')
-        self.assertEqual(self.db.user.get_by_id(student['id'])['group_id'], 'pro')
-        allowed_groups = ';novice;pro;'
+        self.db.user.set_group_id(student['id'], 'п')
+        self.assertEqual(self.db.user.get_by_id(student['id'])['group_id'], 'п')
+        allowed_groups = ';н;п;'
         self.db.user.set_allowed_groups(student['id'], allowed_groups)
         self.assertEqual(self.db.user.get_allowed_groups(student['id']), allowed_groups)
 
@@ -195,7 +195,7 @@ class DatabaseMethodsTest(TestCase):
         self.assertTrue(all(row['problem_id'] in group_problem_ids for row in group_results))
 
     def test_group_filters_on_problems_and_lessons(self):
-        group_id = 'novice'
+        group_id = 'н'
         lesson_num = 4
         problems = self.db.problem.get_all_by_lesson(group_id, lesson_num)
         self.assertTrue(problems)
@@ -324,13 +324,13 @@ class DatabaseMethodsTest(TestCase):
         self.assertEqual(problem_id, saved_problem_id)
 
     def test_game_methods(self):
-        self.db.game.set_student_command(3, 179, group_id='novice')
-        self.db.game.set_student_command(3, 178, group_id='novice')
+        self.db.game.set_student_command(3, 179, group_id='н')
+        self.db.game.set_student_command(3, 178, group_id='н')
         self.assertEqual(self.db.game.get_student_command(3)['command_id'], 178)
 
-        self.db.game.set_student_command(1, 179, group_id='novice')
-        self.db.game.set_student_command(2, 179, group_id='novice')
-        self.db.game.set_student_command(3, 178, group_id='novice')
+        self.db.game.set_student_command(1, 179, group_id='н')
+        self.db.game.set_student_command(2, 179, group_id='н')
+        self.db.game.set_student_command(3, 178, group_id='н')
         self.assertEqual(self.db.game.get_student_command(1)['command_id'], 179)
 
         self.assertTrue(self.db.game.add_payment(3, 178, 15, 10, 1))

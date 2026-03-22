@@ -52,6 +52,10 @@ def _resolve_student_group_code(student: User) -> str:
     return student.group_code
 
 
+def _render_group_header_text(header_template: str, *, student: User, mode_hint: str, group_ctx: SimpleNamespace) -> str:
+    return header_template.format_map({'student': student, 'mode_hint': mode_hint, 'group': group_ctx}).replace('""', '"')
+
+
 def register_group_switch_commands():
     groups = db.group.get_all()
     for group in groups:
@@ -123,6 +127,7 @@ async def post_problem_keyboard(
                     group_payload['public_name'] = ''
                 group_ctx = SimpleNamespace(**group_payload)
                 header_template = group.tasks_header_template or msgs.problems_keyboard_header
+                has_custom_header_template = bool(group.tasks_header_template)
             else:
                 group_code = _resolve_student_group_code(student)
                 group_ctx = SimpleNamespace(
@@ -130,7 +135,8 @@ async def post_problem_keyboard(
                     conditions_url='',
                 )
                 header_template = msgs.problems_keyboard_header
-            text = header_template.format_map({'student': student, 'mode_hint': mode_hint, 'group': group_ctx})
+                has_custom_header_template = False
+            text = _render_group_header_text(header_template, student=student, mode_hint=mode_hint, group_ctx=group_ctx)
         else:
             text = msgs.solutions_are_not_accepted_now
     if show_lesson is None:
@@ -139,6 +145,24 @@ async def post_problem_keyboard(
             keyb_msg = await bot.send_message(
                 chat_id=chat_id,
                 text=text,
+                parse_mode='HTML',
+                disable_web_page_preview=True,
+                reply_markup=student_keyboards.build_problems(show_lesson, student),
+                disable_notification=disable_notification,
+            )
+        except TelegramBadRequest as e:
+            if blocked or not has_custom_header_template or 'parse entities' not in str(e).lower():
+                raise
+            logger.warning('Invalid group tasks_header_template for %s, fallback to default header: %s', group_id, e)
+            fallback_text = _render_group_header_text(
+                msgs.problems_keyboard_header,
+                student=student,
+                mode_hint=mode_hint,
+                group_ctx=group_ctx,
+            )
+            keyb_msg = await bot.send_message(
+                chat_id=chat_id,
+                text=fallback_text,
                 parse_mode='HTML',
                 disable_web_page_preview=True,
                 reply_markup=student_keyboards.build_problems(show_lesson, student),

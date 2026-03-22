@@ -75,6 +75,7 @@ class User:
     def set_allowed_groups(self, allowed_groups: str):
         db.user.set_allowed_groups(self.id, allowed_groups)
         self.allowed_groups = allowed_groups
+        self.allowed_groups_set = {item for item in (allowed_groups or '').split(';') if item}
 
     def can_access_group(self, group_id: str) -> bool:
         if not group_id:
@@ -109,14 +110,6 @@ class User:
         if group and group.short_code:
             return group.short_code
         return self.group_id or ''
-
-    @property
-    def level(self) -> str:
-        """
-        Backward compatibility alias for legacy templates that still use `{student.level}`.
-        Group-based model is canonical now, so we expose group short code as level label.
-        """
-        return self.group_code
 
     def set_user_type(self, user_type: USER_TYPE):
         db.user.set_type(self.id, user_type.value)

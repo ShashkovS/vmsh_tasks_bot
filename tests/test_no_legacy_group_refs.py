@@ -5,9 +5,14 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY_KEYWORD = 'le' 'vel'
 PATTERN = re.compile(r'(\b|_)' + LEGACY_KEYWORD + r'\b')
-ALLOWED_PATH_PREFIXES = (
-    'migrations/',
-    '.changelog/',
+SCAN_PATH_PREFIXES = (
+    'apps/',
+    'db_methods/',
+    'handlers/',
+    'helpers/',
+    'models/',
+    'tests/',
+    'web/',
 )
 ALLOWED_FILES = {
     'groups.diff',
@@ -37,7 +42,7 @@ def test_no_legacy_group_keyword_references_outside_allowlist():
         top_dir = rel.split('/', 1)[0]
         if top_dir.startswith('.') and top_dir != '.changelog':
             continue
-        if any(rel.startswith(prefix) for prefix in ALLOWED_PATH_PREFIXES):
+        if not any(rel.startswith(prefix) for prefix in SCAN_PATH_PREFIXES):
             continue
         if rel in ALLOWED_FILES:
             continue

@@ -70,7 +70,7 @@ def test_build_message_ctx_has_no_full_text():
         document=SimpleNamespace(mime_type="image/jpeg", file_size=1024),
         media_group_id="mg-1",
     )
-    user = SimpleNamespace(id=11, type=1, group_id="novice")
+    user = SimpleNamespace(id=11, type=1, group_id="н")
     ctx = build_message_ctx(message, user)
     assert ctx["trace_id"] == "m:77:88"
     assert ctx["flow_id"] == "u:11"
@@ -85,7 +85,7 @@ def test_build_callback_ctx_has_callback_meta_only():
         data="t_123_456",
         message=SimpleNamespace(chat=SimpleNamespace(id=55), message_id=66),
     )
-    user = SimpleNamespace(id=99, type=1, group_id="novice")
+    user = SimpleNamespace(id=99, type=1, group_id="н")
     ctx = build_callback_ctx(query, user)
     assert ctx["trace_id"] == "c:55:66:cbq1"
     assert ctx["flow_id"] == "u:99"

@@ -16,6 +16,16 @@ from .problem import Problem
 
 class FromGoogleSpreadsheet:
     @staticmethod
+    def _normalize_sheet_text(value: str):
+        if value is None:
+            return None
+        text = str(value).strip()
+        if not text:
+            return None
+        # Google Sheets/CSV exports sometimes double-escape quotes as "".
+        return text.replace('""', '"')
+
+    @staticmethod
     def update_all() -> List[str]:
         groups, problems, students, teachers, ui_messages, bot_settings = google_spreadsheet_loader.get_all_from_spreadsheet()
         errors = []
@@ -76,6 +86,23 @@ class FromGoogleSpreadsheet:
             seen.add(part)
             unique_parts.append(part)
         return ';' + ';'.join(unique_parts) + ';'
+
+    @staticmethod
+    def _pick_user_group_id(group_id: str, allowed_groups: str):
+        group_id = (group_id or '').strip() or None
+        if group_id and ';' in group_id:
+            logger.warning('Invalid group_id: %s', group_id)
+            group_id = None
+        if not allowed_groups:
+            return group_id
+        allowed_list = [part for part in allowed_groups.split(';') if part]
+        if not allowed_list:
+            return group_id
+        if group_id in allowed_list:
+            return group_id
+        if group_id and group_id not in allowed_list:
+            logger.warning('group_id %s is not in allowed_groups %s, using first allowed group', group_id, allowed_groups)
+        return allowed_list[0]
 
     @staticmethod
     def _parse_bool(value: str, default: int, field_name: str, errors: List[str]) -> int:
@@ -139,12 +166,12 @@ class FromGoogleSpreadsheet:
         normalized = {
             'group_id': group_id,
             'short_code': short_code,
-            'broadcast_code': (group.get('broadcast_code') or '').strip() or None,
-            'tg_command': (group.get('tg_command') or '').strip() or None,
-            'public_name': public_name,
-            'conditions_url': (group.get('conditions_url') or '').strip() or None,
-            'tasks_header_template': (group.get('tasks_header_template') or '').strip() or None,
-            'switch_message': (group.get('switch_message') or '').strip() or None,
+            'broadcast_code': FromGoogleSpreadsheet._normalize_sheet_text(group.get('broadcast_code')),
+            'tg_command': FromGoogleSpreadsheet._normalize_sheet_text(group.get('tg_command')),
+            'public_name': FromGoogleSpreadsheet._normalize_sheet_text(group.get('public_name')),
+            'conditions_url': FromGoogleSpreadsheet._normalize_sheet_text(group.get('conditions_url')),
+            'tasks_header_template': FromGoogleSpreadsheet._normalize_sheet_text(group.get('tasks_header_template')),
+            'switch_message': FromGoogleSpreadsheet._normalize_sheet_text(group.get('switch_message')),
             'sort_order': FromGoogleSpreadsheet._parse_int(group.get('sort_order'), 0, 'sort_order', errors),
             'is_active': FromGoogleSpreadsheet._parse_bool(group.get('is_active'), 1, 'is_active', errors),
             'is_default': FromGoogleSpreadsheet._parse_bool(group.get('is_default'), 0, 'is_default', errors),
@@ -207,12 +234,8 @@ class FromGoogleSpreadsheet:
                 student['online'] = ONLINE_MODE_DECODER[student['online']]
             except:
                 student['online'] = ONLINE_MODE.ONLINE
-            group_id = (student.get('group_id') or '').strip()
-            if group_id and ';' in group_id:
-                logger.warning('Invalid group_id for student: %s', group_id)
-                group_id = None
-            student['group_id'] = group_id or None
             student['allowed_groups'] = FromGoogleSpreadsheet._normalize_allowed_groups(student.get('allowed_groups'))
+            student['group_id'] = FromGoogleSpreadsheet._pick_user_group_id(student.get('group_id'), student['allowed_groups'])
             user = User(**student)
             State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
 
@@ -227,12 +250,8 @@ class FromGoogleSpreadsheet:
                 teacher['online'] = ONLINE_MODE_DECODER[teacher['online']]
             except:
                 teacher['online'] = ONLINE_MODE.ONLINE
-            group_id = (teacher.get('group_id') or '').strip()
-            if group_id and ';' in group_id:
-                logger.warning('Invalid group_id for teacher: %s', group_id)
-                group_id = None
-            teacher['group_id'] = group_id or None
             teacher['allowed_groups'] = FromGoogleSpreadsheet._normalize_allowed_groups(teacher.get('allowed_groups'))
+            teacher['group_id'] = FromGoogleSpreadsheet._pick_user_group_id(teacher.get('group_id'), teacher['allowed_groups'])
             User(**teacher)
 
     @staticmethod

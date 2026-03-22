@@ -64,7 +64,7 @@ class UserMethodsTest(IsolatedAsyncioTestCase):
             self.skipTest("Socket binding is not permitted in this environment.")
         except ClientDecodeError:
             self.skipTest("Telegram response stub does not match aiogram schema.")
-        user = User.get_by_chat_id(message.chat.id)
+        user = User.get_by_chat_id(msg.chat.id)
         if user:
             self.assertTrue(hasattr(user, 'group_id'))
             self.assertTrue(hasattr(user, 'allowed_groups'))

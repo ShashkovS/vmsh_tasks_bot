@@ -45,9 +45,9 @@ class UserMethodsTest(TestCase):
         self.assertEqual(len(students), len(test_students))
         self.assertEqual(len(teachers), len(test_teachers))
         self.assertEqual(len(all_users), len(students) + len(teachers))
-        self.assertListEqual([asdict(user) for user in students], expected_students)
-        self.assertListEqual([asdict(user) for user in teachers], expected_teachers)
-        self.assertListEqual([asdict(user) for user in all_users], expected_students + expected_teachers)
+        self.assertListEqual([self._public_user_dict(user) for user in students], expected_students)
+        self.assertListEqual([self._public_user_dict(user) for user in teachers], expected_teachers)
+        self.assertListEqual([self._public_user_dict(user) for user in all_users], expected_students + expected_teachers)
 
     def test_by_getters(self):
         """ Test this methods:
@@ -59,10 +59,10 @@ class UserMethodsTest(TestCase):
             expected = dict(dict_user)
             expected['online'] = ONLINE_MODE(expected['online'])
             expected['type'] = USER_TYPE(expected['type'])
-            self.assertDictEqual(expected, asdict(User.get_by_id(expected['id'])))
-            self.assertDictEqual(expected, asdict(User.get_by_token(expected['token'])))
+            self.assertDictEqual(expected, self._public_user_dict(User.get_by_id(expected['id'])))
+            self.assertDictEqual(expected, self._public_user_dict(User.get_by_token(expected['token'])))
             if expected['chat_id']:
-                self.assertDictEqual(expected, asdict(User.get_by_chat_id(expected['chat_id'])))
+                self.assertDictEqual(expected, self._public_user_dict(User.get_by_chat_id(expected['chat_id'])))
 
     @staticmethod
     def _with_enums(rows):
@@ -74,10 +74,17 @@ class UserMethodsTest(TestCase):
             normalized.append(item)
         return normalized
 
+    @staticmethod
+    def _public_user_dict(user):
+        item = asdict(user)
+        item.pop('allowed_groups_set', None)
+        item.pop('_cached_group', None)
+        return item
+
     def test_set_group_id(self):
         for dict_user in test_students + test_teachers:
             user = User.get_by_id(dict_user['id'])
-            new_group_id = 'novice'
+            new_group_id = 'н'
             user.set_group_id(new_group_id)
             user = User.get_by_id(dict_user['id'])
             self.assertEqual(user.group_id, new_group_id)
@@ -95,29 +102,29 @@ class UserMethodsTest(TestCase):
             prev_user_id = dict_user['id']
 
     def test_group_model_and_accessors(self):
-        group = Group.get_by_id('novice')
+        group = Group.get_by_id('н')
         self.assertIsNotNone(group)
-        self.assertEqual(group.group_id, 'novice')
+        self.assertEqual(group.group_id, 'н')
         short_code_groups = Group.get_by_short_code('н')
-        self.assertTrue(any(item.group_id == 'novice' for item in short_code_groups))
+        self.assertTrue(any(item.group_id == 'н' for item in short_code_groups))
         student = User.get_by_id(test_students[0]['id'])
-        self.assertEqual(student.group_id, 'novice')
-        self.assertEqual(student.group.group_id, 'novice')
+        self.assertEqual(student.group_id, 'н')
+        self.assertEqual(student.group.group_id, 'н')
         self.assertEqual(student.allowed_groups_set, set())
-        self.assertTrue(student.can_access_group('novice'))
-        self.assertFalse(student.can_access_group('pro'))
-        student.set_allowed_groups(';novice;pro;')
-        self.assertEqual(student.allowed_groups_set, {'novice', 'pro'})
-        self.assertTrue(student.can_access_group('pro'))
+        self.assertTrue(student.can_access_group('н'))
+        self.assertFalse(student.can_access_group('п'))
+        student.set_allowed_groups(';н;п;')
+        self.assertEqual(student.allowed_groups_set, {'н', 'п'})
+        self.assertTrue(student.can_access_group('п'))
         allowed_student = User.get_by_id(test_students[1]['id'])
-        self.assertEqual(allowed_student.allowed_groups_set, {'pro', 'expert'})
-        self.assertTrue(allowed_student.can_access_group('pro'))
-        self.assertTrue(allowed_student.can_access_group('expert'))
-        self.assertFalse(allowed_student.can_access_group('novice'))
+        self.assertEqual(allowed_student.allowed_groups_set, {'п', 'э'})
+        self.assertTrue(allowed_student.can_access_group('п'))
+        self.assertTrue(allowed_student.can_access_group('э'))
+        self.assertFalse(allowed_student.can_access_group('н'))
 
     def test_problem_ref_resolution(self):
         Problem(
-            group_id='novice',
+            group_id='н',
             lesson=4,
             prob=4,
             item='',
@@ -134,17 +141,17 @@ class UserMethodsTest(TestCase):
         )
 
         # explicit group_id reference
-        problem, err = Problem.resolve_problem_ref('novice:4.4', allowed_group_ids={'novice'})
+        problem, err = Problem.resolve_problem_ref('н:4.4', allowed_group_ids={'н'})
         self.assertIsNone(err)
         self.assertIsNotNone(problem)
-        self.assertEqual(problem.group_id, 'novice')
+        self.assertEqual(problem.group_id, 'н')
 
         # duplicate short_code -> ambiguity
         db.group.insert({
-            'group_id': 'novice_dup',
+            'group_id': 'н_dup',
             'short_code': 'н',
-            'broadcast_code': 'all_novice_dup',
-            'tg_command': '/switch_novice_dup',
+            'broadcast_code': 'all_n_dup',
+            'tg_command': '/switch_n_dup',
             'public_name': 'Novice duplicate',
             'conditions_url': None,
             'tasks_header_template': None,
@@ -157,7 +164,7 @@ class UserMethodsTest(TestCase):
             'score_weight': 1.0,
         })
         Problem(
-            group_id='novice_dup',
+            group_id='н_dup',
             lesson=4,
             prob=4,
             item='',
@@ -172,13 +179,13 @@ class UserMethodsTest(TestCase):
             wrong_ans='',
             congrat='',
         )
-        _, err = Problem.resolve_problem_ref('4н.4', allowed_group_ids={'novice', 'novice_dup'})
+        _, err = Problem.resolve_problem_ref('4н.4', allowed_group_ids={'н', 'н_dup'})
         self.assertEqual(err, 'ambiguous')
 
         # explicit reference always resolves this ambiguity
-        problem, err = Problem.resolve_problem_ref('novice_dup:4.4', allowed_group_ids={'novice', 'novice_dup'})
+        problem, err = Problem.resolve_problem_ref('н_dup:4.4', allowed_group_ids={'н', 'н_dup'})
         self.assertIsNone(err)
-        self.assertEqual(problem.group_id, 'novice_dup')
+        self.assertEqual(problem.group_id, 'н_dup')
 
     def test_webtokens(self):
         student1 = User.get_by_token(test_students[-1]['token'])
