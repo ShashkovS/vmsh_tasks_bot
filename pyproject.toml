@@ -38,6 +38,7 @@ dev = [
     "py7zr>=1.1.0",
     "pytest>=9.0.2",
     "pytest-aiohttp>=1.1.0",
+    "pytest-cov>=7.1.0",
     "ruff>=0.14.11",
     "scp>=0.15.0",
     "setuptools>=80.9.0",

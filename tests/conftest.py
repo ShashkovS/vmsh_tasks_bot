@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 os.chdir(ROOT)
 
 import db_methods as db
-from handlers import admin_handlers, main_handlers, student_handlers, teacher_handlers, student_keyboards
+from handlers import admin_handlers, common_handlers, main_handlers, student_handlers, teacher_handlers, student_keyboards
 from helpers.features import FEATURES
 
 from tests.live_seed import LiveScenarioBuilder, load_live_seed
@@ -44,7 +44,7 @@ def scenario_env(monkeypatch, live_seed_db):
     tracker = TaskTracker(create_task=original_create_task, sleep=original_sleep)
     bot = RecordingBot()
 
-    for module in (main_handlers, student_handlers, teacher_handlers, admin_handlers):
+    for module in (main_handlers, student_handlers, teacher_handlers, admin_handlers, common_handlers):
         monkeypatch.setattr(module, "bot", bot)
 
     monkeypatch.setattr(asyncio, "create_task", tracker.create_task)

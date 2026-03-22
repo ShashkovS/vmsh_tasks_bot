@@ -1,5 +1,5 @@
 from aiohttp import web
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from Levenshtein import distance
 import re
 import hmac
@@ -25,7 +25,7 @@ async def get_tst(request):
 
 def parse_json(data: dict):
     event = data['event']
-    event_ts = datetime.utcfromtimestamp(data['event_ts'] / 1000) + TIMEZONE
+    event_ts = datetime.fromtimestamp(data['event_ts'] / 1000, timezone.utc).replace(tzinfo=None) + TIMEZONE
     payload = data['payload']
     object = payload['object']
     is_circle = object['id'] in ZOOM_IDS

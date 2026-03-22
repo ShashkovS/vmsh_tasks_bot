@@ -5,6 +5,32 @@ from io import BytesIO
 from types import SimpleNamespace
 
 
+class RecordingMessage(SimpleNamespace):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.edit_text_calls = []
+        self.answer_calls = []
+
+    async def edit_text(self, text, **kwargs):
+        self.edit_text_calls.append({"text": text, "kwargs": kwargs})
+        self.text = text
+        return True
+
+    async def answer(self, text=None, **kwargs):
+        self.answer_calls.append({"text": text, "kwargs": kwargs})
+        return True
+
+
+class RecordingCallbackQuery(SimpleNamespace):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.answer_calls = []
+
+    async def answer(self, text=None, **kwargs):
+        self.answer_calls.append({"text": text, "kwargs": kwargs})
+        return True
+
+
 def make_chat(chat_id: int, *, first_name: str = "Test", last_name: str = "User", username: str = "testuser"):
     return SimpleNamespace(
         id=chat_id,
@@ -29,7 +55,7 @@ def make_message(
     username: str = "testuser",
 ):
     chat = make_chat(chat_id, first_name=first_name, last_name=last_name, username=username)
-    return SimpleNamespace(
+    return RecordingMessage(
         message_id=message_id,
         chat=chat,
         text=text,
@@ -57,7 +83,7 @@ def make_callback_query(
     last_name: str = "User",
     username: str = "testuser",
 ):
-    return SimpleNamespace(
+    return RecordingCallbackQuery(
         id=query_id,
         data=data,
         message=make_message(
