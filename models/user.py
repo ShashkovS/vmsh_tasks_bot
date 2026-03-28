@@ -7,6 +7,9 @@ from typing import Optional, Generator
 
 from helpers.consts import *
 from helpers.config import logger
+from models.group import Group
+from helpers.trace import emit_trace
+
 import db_methods as db
 
 
@@ -18,47 +21,113 @@ def _normilize_token(token: str, *, RU_TO_EN=str.maketrans('УКЕНХВАРОС
 class User:
     chat_id: int
     type: USER_TYPE
-    level: LEVEL
     name: str
     surname: str
     middlename: str
     token: str
     online: ONLINE_MODE
     grade: int
-    birthday: Optional[date]
+    birthday: Optional[date|str]
+    group_id: Optional[str] = None
+    allowed_groups: Optional[str] = None
+    allowed_groups_set: set[str] = None
+    _cached_group: Optional[Group] = None
     id: int = None
 
     def __post_init__(self):
-        # Заполняем дефолтные значения
-        if not self.level:
-            self.level = LEVEL.NOVICE
         if not self.online:
             self.online = ONLINE_MODE.ONLINE
+        user_type = USER_TYPE(self.type) if self.type is not None else None
+        if not self.group_id and user_type == USER_TYPE.STUDENT:
+            default_group = db.group.get_default()
+            if default_group:
+                self.group_id = default_group['group_id']
         # Заливаем в базу, если значение не из базы
         if self.id is None:
             self.id = db.user.insert(self.__dict__)
         # Превращаем константы в enum'ы
         self.type = USER_TYPE(self.type)
-        self.level = LEVEL(self.level) if self.level else None
         self.online = ONLINE_MODE(self.online) if self.online else None
+        if self.allowed_groups:
+            self.allowed_groups_set = {item for item in self.allowed_groups.split(';') if item}
+        else:
+            self.allowed_groups_set = set()
 
     def set_chat_id(self, chat_id: int):
         db.user.set_chat_id(self.id, chat_id)
         self.chat_id = chat_id
 
-    def set_level(self, level: LEVEL):
-        db.user.set_level(self.id, level.value)
-        db.log.log_change(self.id, CHANGE.LEVEL, level.value)
-        self.level = level
+    def set_group_id(self, group_id: str):
+        prev_group_id = self.group_id
+        db.user.set_group_id(self.id, group_id)
+        db.log.log_change(self.id, CHANGE.GROUP, group_id)
+        self.group_id = group_id
+        self._cached_group = None
+        emit_trace(
+            "user.group.changed",
+            user_id=self.id,
+            chat_id=self.chat_id,
+            state_from=prev_group_id,
+            state_to=group_id,
+            group_id=group_id,
+        )
+
+    def set_allowed_groups(self, allowed_groups: str):
+        db.user.set_allowed_groups(self.id, allowed_groups)
+        self.allowed_groups = allowed_groups
+        self.allowed_groups_set = {item for item in (allowed_groups or '').split(';') if item}
+
+    def can_access_group(self, group_id: str) -> bool:
+        if not group_id:
+            return False
+        allowed = self.allowed_groups_set
+        if allowed:
+            return group_id in allowed
+        if self.type and self.type & USER_TYPE.TEACHER_OR_ADMIN:
+            return True
+        return self.group_id == group_id
+
+    def accessible_group_ids(self):
+        allowed = self.allowed_groups_set
+        if allowed:
+            return allowed
+        if self.type and self.type & USER_TYPE.TEACHER_OR_ADMIN:
+            return {row['group_id'] for row in db.group.get_active()}
+        return {self.group_id} if self.group_id else set()
+
+    @property
+    def group(self) -> Optional[Group]:
+        if self._cached_group:
+            return self._cached_group
+        if not self.group_id:
+            return None
+        self._cached_group = Group.get_by_id(self.group_id)
+        return self._cached_group
+
+    @property
+    def group_code(self) -> str:
+        group = self.group
+        if group and group.short_code:
+            return group.short_code
+        return self.group_id or ''
 
     def set_user_type(self, user_type: USER_TYPE):
         db.user.set_type(self.id, user_type.value)
         self.type = user_type.value
 
     def set_online_mode(self, online: ONLINE_MODE):
+        prev_online = self.online
         db.user.set_online_mode(self.id, online.value)
         db.log.log_change(self.id, CHANGE.ONLINE, online.value)
         self.online = online
+        emit_trace(
+            "user.mode.changed",
+            user_id=self.id,
+            chat_id=self.chat_id,
+            state_from=(prev_online.value if prev_online is not None else None),
+            state_to=online.value,
+            group_id=self.group_id,
+        )
 
     def __str__(self):
         return f'{self.name} {self.middlename} {self.surname}'
@@ -75,7 +144,9 @@ class User:
             grade = f'класс: {self.grade}'
         else:
             grade = ''
-        return f'{self.name} {self.surname} `{self.token}`\nуровень: {self.level} {grade} {age}'
+        group = self.group
+        group_label = (group and group.public_name) or self.group_id or ''
+        return f'{self.name} {self.surname} `{self.token}`\nгруппа: {group_label} {grade} {age}'
 
     @classmethod
     def all(cls) -> Generator[User, None, None]:

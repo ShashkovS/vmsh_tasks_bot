@@ -2,11 +2,11 @@
 create table _d_students (user_id integer);
 insert into _d_students
 with pre as (
-select student_id, level, count(distinct problem_id) probs
+select student_id, group_id, count(distinct problem_id) probs
 from results where lesson = 23
 group by 1, 2),
    pre2 as (
-       select student_id, level, probs, row_number() over (partition by level order by probs desc) rn
+       select student_id, group_id, probs, row_number() over (partition by group_id order by probs desc) rn
        from pre
    )
 select student_id from pre2 where rn <= 5;
@@ -15,13 +15,13 @@ select student_id from pre2 where rn <= 5;
 create table _d_teachers (user_id integer);
 insert into _d_teachers
 with pre as (
-select r.teacher_id, r.level, count(*) probs
+select r.teacher_id, r.group_id, count(*) probs
 from results r
 where student_id in (select user_id from _d_students)
 and lesson >= 20 and r.teacher_id is not null
 group by 1, 2
     ),
-pre2 as (select *, row_number() over (partition by level order by probs desc) rn
+pre2 as (select *, row_number() over (partition by group_id order by probs desc) rn
          from pre)
 select teacher_id from pre2
 where rn <= 3;
@@ -31,7 +31,7 @@ where rn <= 3;
 
 select * from users where id in (select * from _d_students) or id in (select * from _d_teachers);
 
-insert into main.users (id, chat_id, type, level, name, surname, middlename, token, online, grade, birthday)
+insert into main.users (id, chat_id, type, group_id, name, surname, middlename, token, online, grade, birthday)
 values  (7230, 1896934150, 1, 'н', 'Севастьян А.', 'Игнатов', '', 'se2ra3ry7', 1, null, '2014-10-29'),
         (7281, 6706299281, 1, 'н', 'Мария И.', 'Дубровская', '', 'fu2cy3be2', 1, 4, '2015-03-24'),
         (7282, null, 1, 'н', 'Анна И.', 'Дубровская', '', 'ga9xa9xe3', 1, 4, '2015-03-24'),
@@ -57,7 +57,7 @@ values  (7230, 1896934150, 1, 'н', 'Севастьян А.', 'Игнатов', 
 -- ======================
 
 select * from lessons where lesson >= 20;
-insert into main.lessons (id, level, lesson)
+insert into main.lessons (id, group_id, lesson)
 values  (61, 'н', 20),
         (62, 'п', 20),
         (63, 'э', 20),
@@ -80,7 +80,7 @@ select * from problems where lesson >= 20
 order by random() limit 30
 ;
 
-insert into main.problems (id, level, lesson, prob, item, title, prob_text, prob_type, ans_type, ans_validation, validation_error, cor_ans, cor_ans_checker, wrong_ans, congrat, synonyms)
+insert into main.problems (id, group_id, lesson, prob, item, title, prob_text, prob_type, ans_type, ans_validation, validation_error, cor_ans, cor_ans_checker, wrong_ans, congrat, synonyms)
 values  (1181, 'э', 23, 8, '', 'Таблица и делимость', '', 4, '', '', '', '', '', '', '', '1181'),
         (1108, 'п', 22, 2, '', 'Наименьшее натуральное', '', 1, '2', '', 'Введите ответ — натуральное число', '599999', '', 'Нет, не такое число', 'В точку!', '1108'),
         (1022, 'п', 20, 8, 'б', 'Игра с улиткой 8x9', '', 4, '', '', '', '', '', '', '', '1022'),
@@ -198,7 +198,7 @@ where student_id in (select * from _d_students) and
       (teacher_id in (select * from _d_teachers) or teacher_id is null) and lesson >= 20
 order by random() limit 30;
 
-insert into main.results (id, student_id, problem_id, level, lesson, teacher_id, ts, verdict, answer, res_type, check_time_spent_sec, zoom_conversation_id)
+insert into main.results (id, student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, answer, res_type, check_time_spent_sec, zoom_conversation_id)
 values  (162483, 7656, 1128, 'э', 22, null, '2026-02-03T17:31:20.769859', 18, '1/3', 1, null, null),
         (170911, 7317, 1139, 'н', 23, null, '2026-02-14T12:26:03.167270', 18, '30', 1, null, null),
         (153540, 7435, 1029, 'э', 20, null, '2026-01-24T22:05:32.334878', -1, '181', 1, null, null),

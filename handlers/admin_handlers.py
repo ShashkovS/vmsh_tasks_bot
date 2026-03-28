@@ -18,8 +18,25 @@ from helpers.bot import bot, router
 from handlers import student_keyboards
 from handlers.student_handlers import (
     check_test_problem_answer, ANS_CHECK_VERDICT, post_problem_keyboard, refresh_last_student_keyboard,
-    prc_student_is_sleeping_state,
+    prc_student_is_sleeping_state, register_group_switch_commands,
 )
+from helpers.trace import emit_trace
+
+
+def _resolve_group_ids(group_tokens):
+    group_ids = set()
+    unknown = []
+    for token in group_tokens:
+        group = db.group.get_by_id(token)
+        if group:
+            group_ids.add(group['group_id'])
+            continue
+        groups = db.group.get_by_short_code(token)
+        if groups:
+            group_ids.update({row['group_id'] for row in groups})
+            continue
+        unknown.append(token)
+    return group_ids, unknown
 
 
 @router.message(Command('update_all_quaLtzPE', 'update_all'))
@@ -29,6 +46,15 @@ async def update_all_internal_data(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     errors = FromGoogleSpreadsheet.update_all()
+    emit_trace(
+        "admin.data.sync",
+        user_id=teacher.id,
+        teacher_id=teacher.id,
+        chat_id=message.chat.id,
+        entity="all",
+        errors_count=len(errors or []),
+    )
+    register_group_switch_commands()
     errors_list = ''
     if errors:
         errors_list = '\n' + msgs.a_error_list + '\n' + '\n'.join(errors)
@@ -45,6 +71,7 @@ async def update_teachers(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_teachers()
+    emit_trace("admin.data.sync", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id, entity="teachers")
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_teachers_updated,
@@ -58,6 +85,7 @@ async def update_students(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_students()
+    emit_trace("admin.data.sync", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id, entity="students")
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_students_updated,
@@ -71,6 +99,7 @@ async def update_bot_settings(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_bot_settings()
+    emit_trace("admin.data.sync", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id, entity="bot_settings")
     new_settings = db.settings.get_settings()
     new_settings_s = pformat(new_settings, indent=2)
     html = f'''New settings:\n<pre>{new_settings_s}</pre>\nRestart bot to apply them'''
@@ -88,6 +117,7 @@ async def update_ui_messages(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     FromGoogleSpreadsheet.update_ui_messages()
+    emit_trace("admin.data.sync", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id, entity="ui_messages")
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_ui_messages_updated,
@@ -102,6 +132,14 @@ async def update_problems(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     errors = FromGoogleSpreadsheet.update_problems()
+    emit_trace(
+        "admin.data.sync",
+        user_id=teacher.id,
+        teacher_id=teacher.id,
+        chat_id=message.chat.id,
+        entity="problems",
+        errors_count=len(errors or []),
+    )
     errors_list = ''
     if errors:
         errors_list = '\n' + msgs.a_error_list + '\n' + '\n'.join(errors)
@@ -111,30 +149,79 @@ async def update_problems(message: types.Message):
     )
 
 
-async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode: bool = False, reply_to_message: types.Message = None, quite=False):
+@router.message(Command('update_groups', 'ug'))
+async def update_groups(message: types.Message):
+    logger.debug('update_groups')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    errors = FromGoogleSpreadsheet.update_groups()
+    emit_trace(
+        "admin.data.sync",
+        user_id=teacher.id,
+        teacher_id=teacher.id,
+        chat_id=message.chat.id,
+        entity="groups",
+        errors_count=len(errors or []),
+    )
+    register_group_switch_commands()
+    errors_list = ''
+    if errors:
+        errors_list = '\n' + msgs.a_error_list + '\n' + '\n'.join(errors)
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=msgs.a_groups_updated + errors_list,
+    )
+
+
+async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mode: bool = False, reply_to_message: types.Message = None, quiet=False):
     logger.debug('run_broadcast_task')
+    teacher = User.get_by_chat_id(teacher_chat_id)
     tokens = set(tokens)
     all_students = None
-    if any(tok.startswith('all_') for tok in tokens):
-        all_students = User.all_students()
+    system_group_ids = {row['group_id'] for row in db.group.get_all() if row.get('is_system')}
+    if any(tok.startswith('all_') or tok.startswith('all_group:') for tok in tokens):
+        all_students = list(User.all_students())
+        if teacher:
+            allowed_group_ids = teacher.accessible_group_ids()
+            if allowed_group_ids:
+                all_students = [user for user in all_students if user.group_id in allowed_group_ids]
+        processed = set()
+        for tok in list(tokens):
+            if tok.startswith('all_group:'):
+                group_id = tok.split(':', 1)[1].strip()
+                if not group_id:
+                    processed.add(tok)
+                    continue
+                if teacher and not teacher.can_access_group(group_id):
+                    processed.add(tok)
+                    continue
+                tokens |= {user.token for user in all_students if user.group_id == group_id}
+                processed.add(tok)
+                continue
+            group = db.group.get_by_broadcast_code(tok)
+            if not group:
+                continue
+            if teacher and not teacher.can_access_group(group['group_id']):
+                processed.add(tok)
+                continue
+            tokens |= {user.token for user in all_students if user.group_id == group['group_id']}
+            processed.add(tok)
+        tokens -= processed
     if 'all_students' in tokens:
         tokens |= {user.token for user in all_students}
     elif 'all_teachers' in tokens:
         tokens |= {user.token for user in User.all_teachers()}
-    elif 'all_novice' in tokens:
-        tokens |= {user.token for user in all_students if user.level == LEVEL.NOVICE}
-    elif 'all_pro' in tokens:
-        tokens |= {user.token for user in all_students if user.level == LEVEL.PRO}
-    elif 'all_expert' in tokens:
-        tokens |= {user.token for user in all_students if user.level == LEVEL.EXPERT}
-    elif 'all_gr8' in tokens:
-        tokens |= {user.token for user in all_students if user.level == LEVEL.GR8}
-    elif 'all_prep' in tokens:
-        tokens |= {user.token for user in all_students if user.level == LEVEL.MATH_CLUB}
     elif 'all_online' in tokens:
-        tokens |= {user.token for user in all_students if user.online == ONLINE_MODE.ONLINE and user.level != LEVEL.GR8}  # TODO Trash
+        tokens |= {
+            user.token for user in all_students
+            if user.online == ONLINE_MODE.ONLINE and (not user.group_id or user.group_id not in system_group_ids)
+        }
     elif 'all_school' in tokens:
-        tokens |= {user.token for user in all_students if user.online == ONLINE_MODE.SCHOOL and user.level != LEVEL.GR8}  # TODO Trash
+        tokens |= {
+            user.token for user in all_students
+            if user.online == ONLINE_MODE.SCHOOL and (not user.group_id or user.group_id not in system_group_ids)
+        }
     parse_mode = 'HTML' if html_mode else None
     bad_tokens = []
     sent = 0
@@ -151,7 +238,7 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
                     text=broadcast_message,
                     disable_web_page_preview=True,
                     parse_mode=parse_mode,
-                    disable_notification=quite,
+                    disable_notification=quiet,
                 )
             sent += 1
             db.log.insert(
@@ -165,6 +252,20 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
     await bot.send_message(
         chat_id=teacher_chat_id,
         text=msgs.a_broadcast_done.format_map({'sent': sent, 'bad_tokens': bad_tokens}),
+    )
+    teacher = User.get_by_chat_id(teacher_chat_id)
+    emit_trace(
+        "admin.broadcast.completed",
+        user_id=teacher and teacher.id,
+        teacher_id=teacher and teacher.id,
+        chat_id=teacher_chat_id,
+        sent=sent,
+        bad_count=len(bad_tokens),
+        tokens_count=len(tokens),
+        html_mode=html_mode,
+        quiet=quiet,
+        has_reply_to=bool(reply_to_message),
+        message_len=len(broadcast_message or ""),
     )
 
 
@@ -180,13 +281,13 @@ async def broadcast(message: types.Message):
     except:
         return
     html_mode = 'html' in cmd
-    quite = 'quiet' in cmd
+    quiet = 'quiet' in cmd
     if message.reply_to_message:
         broadcast_message = message.reply_to_message.text or ''
     else:
         broadcast_message = '\n'.join(broadcast_message)
-    tokens = re.split(r'\W+', tokens)
-    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, message.reply_to_message, quite))
+    tokens = [tok for tok in re.split(r'[\s,]+', tokens) if tok]
+    asyncio.create_task(run_broadcast_task(message.chat.id, tokens, broadcast_message, html_mode, message.reply_to_message, quiet))
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_broadcast_task_created,
@@ -294,11 +395,8 @@ TEACHER_COMMANDS = [
     types.BotCommand(command='online', description=msgs.t_cmd_online),
     types.BotCommand(command='in_school', description=msgs.t_cmd_in_school),
     types.BotCommand(command='find_student', description=msgs.t_cmd_find_student),
-    types.BotCommand(command='set_level', description=msgs.t_cmd_set_level),
+    types.BotCommand(command='set_group', description=msgs.t_cmd_set_group),
     types.BotCommand(command='set_online', description=msgs.t_cmd_set_online),
-    types.BotCommand(command='level_novice', description=msgs.t_cmd_level_novice),
-    types.BotCommand(command='level_pro', description=msgs.t_cmd_level_pro),
-    types.BotCommand(command='level_expert', description=msgs.t_cmd_level_expert),
     types.BotCommand(command='set_teacher', description=msgs.t_cmd_set_teacher),
     types.BotCommand(command='statw', description=msgs.t_cmd_statw),
     types.BotCommand(command='student_results', description=msgs.t_cmd_student_results),
@@ -367,9 +465,12 @@ async def problem_recheck(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     problem = None
-    if match := re.fullmatch(r'/\w+?\s+(\d+)([а-яА-Яa-zA-Z]\w*)\.(\d+)([а-я]?)\s*', message.text or ''):
-        lst, level, prob, item = match.groups()
-        problem = Problem.get_by_key(level, int(lst), int(prob), item)
+    if match := re.fullmatch(r'/\w+?\s+([^\s]+)\s*', message.text or ''):
+        raw_problem_ref = match.group(1)
+        problem, _ = Problem.resolve_problem_ref(
+            raw_problem_ref,
+            allowed_group_ids=teacher.accessible_group_ids(),
+        )
     if problem is None:
         await bot.send_message(chat_id=message.chat.id, text=msgs.a_problem_not_found)
         return
@@ -451,6 +552,7 @@ async def set_get_task_info_for_all_students(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
+    emit_trace("admin.state.mass_reset", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id)
     asyncio.create_task(run_set_get_task_info_for_all_students_task(message.chat.id))
     await bot.send_message(
         chat_id=message.chat.id,
@@ -458,7 +560,7 @@ async def set_get_task_info_for_all_students(message: types.Message):
     )
 
 
-async def run_set_sleep_state_task(teacher_chat_id):
+async def run_set_sleep_state_task(teacher_chat_id, quiet=False):
     logger.debug('run_set_sleep_state_task')
     # Всем студентам ставим state STATE.STUDENT_IS_SLEEPING. Прекращаем приём задач
     for student in User.all_students():
@@ -466,7 +568,7 @@ async def run_set_sleep_state_task(teacher_chat_id):
         if not student.chat_id:
             continue
         try:
-            await post_problem_keyboard(student.chat_id, student, blocked=True)
+            await post_problem_keyboard(student.chat_id, student, blocked=True, disable_notification=quiet)
         except:
             pass
         try:
@@ -480,13 +582,15 @@ async def run_set_sleep_state_task(teacher_chat_id):
     )
 
 
-@router.message(Command('set_sleep_state'))
+@router.message(Command('set_sleep_state', 'set_sleep_state_quiet'))
 async def set_sleep_state_for_all_students(message: types.Message):
     logger.debug('set_sleep_state_for_all_students')
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    asyncio.create_task(run_set_sleep_state_task(message.chat.id))
+    quiet = 'quiet' in message.text
+    emit_trace("admin.sleep_state.set", user_id=teacher.id, teacher_id=teacher.id, chat_id=message.chat.id)
+    asyncio.create_task(run_set_sleep_state_task(message.chat.id, quiet))
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_sleep_task_created,
@@ -539,19 +643,26 @@ async def student_results(message: types.Message):
         await bot.send_message(chat_id=message.chat.id,
                                text=msgs.a_student_not_found.format_map({'token': token}), )
         return
+    if not teacher.can_access_group(student.group_id):
+        await bot.send_message(chat_id=message.chat.id, text=msgs.no_access_to_group)
+        return
 
-    # r.ts, p.level, p.lesson, p.prob, p.item, r.answer, r.verdict
+    # r.ts, p.group_code, p.lesson, p.prob, p.item, r.answer, r.verdict
     if 'asr' in message.text or 'all_' in message.text:
         rows = db.result.list_all_student_results(student.id)
     else:
-        rows = db.result.list_student_results(student.id, Problem.last_lesson_num(student.level))
+        rows = db.result.list_student_results(
+            student.id,
+            Problem.last_lesson_num(student.group_id),
+        )
     if rows:
         lessons = {row['lesson'] for row in rows}
         for lesson in sorted(lessons):
-            lines = [f'{row["ts"][5:16]} {row["lesson"]:02}{row["level"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
-                     for row in rows
-                     if row['lesson'] == lesson
-                     ]
+            lines = [
+                f'{row["ts"][5:16]} {row["lesson"]:02}{row["group_code"]}.{row["prob"]:02}{row["item"]:<1} {VERDICT_DECODER[row["verdict"]]} {row["answer"]}'
+                for row in rows
+                if row['lesson'] == lesson
+            ]
             await bot.send_message(chat_id=message.chat.id, parse_mode="HTML", text='<pre>' + '\n'.join(lines) + '</pre>')
     else:
         await bot.send_message(chat_id=message.chat.id, text=msgs.a_no_submissions)
@@ -564,17 +675,18 @@ async def oral2written(message: types.Message):
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
     cmd, *slevels = message.text.split()
-    levels = None
+    group_ids = None
     if slevels:
-        try:
-            levels = [LEVEL(x) for x in slevels]
-        except Exception as e:
-            await bot.send_message(chat_id=message.chat.id, text=msgs.a_bad_level)
+        group_ids, unknown = _resolve_group_ids(slevels)
+        if unknown:
+            await bot.send_message(chat_id=message.chat.id, text=msgs.a_bad_group)
             return
+        if not group_ids:
+            group_ids = None
     if cmd == '/oral2written':
-        Problem.oral_to_written(levels)
+        Problem.oral_to_written(group_ids)
     elif cmd == '/written2oral':
-        Problem.written_to_oral(levels)
+        Problem.written_to_oral(group_ids)
     await bot.send_message(chat_id=message.chat.id, text=msgs.a_done)
 
 
@@ -608,11 +720,12 @@ async def set_game_command(message: types.Message):
         await bot.send_message(chat_id=message.chat.id,
                                text=msgs.t_student_with_token_not_found.format_map({'token': token}), )
         return
-    db.game.set_student_command(student.id, student.level, command_id)
+    db.game.set_student_command(student.id, command_id, group_id=student.group_id)
     await bot.send_message(
         chat_id=message.chat.id,
         text=msgs.a_game_command_update.format_map({'token': token, 'command_id': command_id}),
     )
+
 
 @router.message(Command('set_admin'))
 async def set_admin(message: types.Message):

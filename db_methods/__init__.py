@@ -5,6 +5,7 @@
 
 from .db_abc import sql
 from .db_users import user
+from .db_groups import group
 from .db_problems import problem
 from .db_lessons import lesson
 from .db_states import state

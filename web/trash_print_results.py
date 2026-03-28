@@ -3,33 +3,36 @@ from helpers.consts import VERDICT_VAL_DECODER
 import html
 
 
-def get_lessons_and_levels(cur):
+def get_lessons_and_groups(cur):
     cur.execute('''
-                select lesson, r.level, count(*) cnt
+                select r.lesson, r.group_id, count(*) cnt
                 from results r
                          join users u on r.student_id = u.id
+                         left join groups g on g.group_id = r.group_id
                 where u.type = 1
-                  and u.level = r.level
+                  and r.group_id is not null
+                  and u.group_id = r.group_id
                   and u.surname not like 'surname%'
                   and u.name not like 'surname%'
                 group by 1, 2
-                order by 1 desc, 2;
+                order by 1 desc, g.sort_order, r.group_id;
                 ''')
     return cur.fetchall()
 
 
-def get_results(cur, lesson, level):
+def get_results(cur, lesson, group_id):
     cur.execute(f'''
         select
-        u.token || '	' || u.surname || '	' || u.name || '	' || u.level as user,
-        p.lesson || p.level || '.' || p.prob  || p.item as full_prob,
+        u.token || '	' || u.surname || '	' || u.name || '	' || coalesce(g.short_code, r.group_id) as user,
+        p.lesson || coalesce(g.short_code, p.group_id) || '.' || p.prob  || p.item as full_prob,
         max(v.val) as max_verdict,
         GROUP_CONCAT(r.answer, '  |  ') as all_answers
         from users u 
         join results r on r.student_id = u.id
         join verdicts v on r.verdict = v.id
         join problems p on r.problem_id = p.id
-        where u.type = 1 and u.level = :level and r.level = :level and r.lesson = :lesson
+        left join groups g on g.group_id = r.group_id
+        where u.type = 1 and u.group_id = :group_id and r.group_id = :group_id and r.lesson = :lesson
               and u.surname not like 'surname%' and u.name not like 'surname%' 
         group by 1, 2
     ''', locals())
@@ -37,31 +40,33 @@ def get_results(cur, lesson, level):
     return results
 
 
-def get_pupils(cur, level):
+def get_pupils(cur, group_id):
     cur.execute('''
-                select u.token || '	' || u.surname || '	' || u.name || '	' || u.level as user
+                select u.token || '	' || u.surname || '	' || u.name || '	' || coalesce(g.short_code, u.group_id) as user
                 from users u
+                         left join groups g on g.group_id = u.group_id
                 where u.type = 1 -- and token not like 'pass%'
-                  and u.level = :level
+                  and u.group_id = :group_id
                   and u.surname not like 'surname%'
                   and u.name not like 'surname%'
-                order by u.level, u.surname, u.name, u.token
+                order by g.sort_order, u.surname, u.name, u.token
                 ''', locals())
     pupils = [x['user'] for x in cur.fetchall()]
     return pupils
 
 
-def get_problems(cur, lesson, level):
+def get_problems(cur, lesson, group_id):
     cur.execute('''
                 select p.lesson,
-                       p.level,
+                       p.group_id,
                        p.prob,
                        p.item,
-                       p.lesson || p.level || '.' || p.prob || p.item as full_prob
+                       p.lesson || coalesce(g.short_code, p.group_id) || '.' || p.prob || p.item as full_prob
                 from problems p
+                         left join groups g on g.group_id = p.group_id
                 where p.lesson = :lesson
-                  and p.level = :level
-                order by p.lesson, p.level, p.prob, p.item
+                  and p.group_id = :group_id
+                order by p.lesson, g.sort_order, p.group_id, p.prob, p.item
                 ''', locals())
     problems = cur.fetchall()
     return problems
@@ -71,7 +76,7 @@ def create_conduit_table_verdicts(problems, pupils, results):
     t_rows = 1 + len(pupils)
     t_cols = 3 + len(problems)
     table = [[''] * t_cols for __ in range(t_rows)]
-    table[0][:3] = ['Фамилия', 'Имя', 'уровень']
+    table[0][:3] = ['Фамилия', 'Имя', 'группа']
     for r, pupil in enumerate(pupils, start=1):
         table[r][0:3] = pupil.split('\t')[1:]
     for col, problem in enumerate(problems, start=3):
@@ -91,7 +96,7 @@ def create_conduit_table_answers(problems, pupils, results):
     table_data = [[''] * t_cols for __ in range(t_rows)]
     table_classes = [[''] * t_cols for __ in range(t_rows)]
 
-    table_data[0][:3] = ['Фамилия', 'Имя', 'уровень']
+    table_data[0][:3] = ['Фамилия', 'Имя', 'группа']
     for r, pupil in enumerate(pupils, start=1):
         table_data[r][0:3] = pupil.split('\t')[1:]
     for col, problem in enumerate(problems, start=3):
@@ -178,7 +183,9 @@ def table_to_html(tables_and_classes):
 '''
     html_output = ['<!DOCTYPE html>', '<meta charset="utf-8">', '<head>', styles, '</head>', '<body>']
 
-    for i, (table_data, table_classes, is_answer_table) in enumerate(tables_and_classes):
+    for i, (table_data, table_classes, is_answer_table, title) in enumerate(tables_and_classes):
+        if title:
+            html_output.append(f'<h3>{html.escape(title)}</h3>')
         table_class = "res " + ("answer-table" if is_answer_table else "verdict-table")
 
         html_output.append(f'<table class="{table_class}">')
@@ -216,25 +223,54 @@ def table_to_html(tables_and_classes):
     return html_output
 
 
+def get_group_meta(cur, group_ids):
+    group_ids = [group_id for group_id in group_ids if group_id]
+    if not group_ids:
+        return {}
+    placeholders = ','.join('?' for _ in group_ids)
+    cur.execute(
+        f'''
+            select group_id, short_code, public_name
+            from groups
+            where group_id in ({placeholders})
+            order by sort_order, group_id
+        ''',
+        group_ids
+    )
+    return {row['group_id']: row for row in cur.fetchall()}
+
+
+def format_group_label(meta, group_id):
+    if not meta:
+        return group_id
+    short_code = meta.get('short_code') or ''
+    public_name = meta.get('public_name') or ''
+    if short_code and public_name and short_code != public_name:
+        return f'{short_code} - {public_name}'
+    return public_name or short_code or group_id
+
+
 def get_html():
     cur = db.sql.conn.cursor()
-    lessons_and_levels = get_lessons_and_levels(cur)
+    lessons_and_groups = get_lessons_and_groups(cur)
+    group_meta = get_group_meta(cur, {row['group_id'] for row in lessons_and_groups})
     tables_and_classes = []
 
-    for row in lessons_and_levels:
-        lesson, level = row['lesson'], row['level']
-        pupils = get_pupils(cur, level)
-        problems = get_problems(cur, lesson, level)
+    for row in lessons_and_groups:
+        lesson, group_id = row['lesson'], row['group_id']
+        pupils = get_pupils(cur, group_id)
+        problems = get_problems(cur, lesson, group_id)
 
-        results = get_results(cur, lesson, level)
+        results = get_results(cur, lesson, group_id)
+        title = f'{format_group_label(group_meta.get(group_id), group_id)}, занятие {lesson}'
 
         # Table for verdicts (plusses and minuses)
         table_verdicts = create_conduit_table_verdicts(problems, pupils, results)
-        tables_and_classes.append((table_verdicts, None, False))  # No specific classes for verdict table cells
+        tables_and_classes.append((table_verdicts, None, False, title))
 
         # Table for answers, with highlighting
         table_answers_data, table_answers_classes = create_conduit_table_answers(problems, pupils, results)
-        tables_and_classes.append((table_answers_data, table_answers_classes, True))
+        tables_and_classes.append((table_answers_data, table_answers_classes, True, None))
 
     html_output = table_to_html(tables_and_classes)
     return html_output

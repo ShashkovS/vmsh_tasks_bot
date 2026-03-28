@@ -7,6 +7,7 @@ import traceback
 from ast import literal_eval
 from operator import itemgetter
 from typing import Tuple, Optional
+from types import SimpleNamespace
 
 from aiogram import types
 from aiogram.filters import Command
@@ -18,9 +19,11 @@ import db_methods as db
 from helpers.features import RESULT_MODE, FEATURES, SAVE_SOL_MODE, RATE_LIMIT_MODE
 from helpers.msg_texts import msgs
 from models import User, Problem, State, Waitlist, WrittenQueue, Result
-from helpers.bot import bot, reg_callback, router, reg_state
+from helpers.bot import bot, reg_callback, router, reg_state, group_router
 from handlers import student_keyboards, common_keyboards
 from helpers.checkers import ANS_CHECKER, ANS_REGEX
+from helpers.game_scoring import apply_group_weight, build_group_weight_map
+from helpers.trace import emit_trace
 
 SOLS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../solutions')
 WHITEBOARD_LINK = "https://www.shashkovs.ru/jitboard.html?{}"
@@ -32,6 +35,42 @@ GLOBALS_FOR_TEST_FUNCTION_CREATION = {
 }
 is_py_func = re.compile(r'^\s*def \w+\s*\(')
 MAX_CALLBACK_PAYLOAD_HOOK_LIMIT = 24
+
+_registered_group_commands = set()
+
+
+def _normalize_group_command(raw_cmd: str) -> str:
+    cmd = (raw_cmd or '').strip()
+    if cmd.startswith('/'):
+        cmd = cmd[1:]
+    if '@' in cmd:
+        cmd = cmd.split('@', 1)[0]
+    return cmd.strip()
+
+
+def _resolve_student_group_code(student: User) -> str:
+    return student.group_code
+
+
+def _render_group_header_text(header_template: str, *, student: User, mode_hint: str, group_ctx: SimpleNamespace) -> str:
+    return header_template.format_map({'student': student, 'mode_hint': mode_hint, 'group': group_ctx}).replace('""', '"')
+
+
+def register_group_switch_commands():
+    groups = db.group.get_all()
+    for group in groups:
+        cmd = _normalize_group_command(group.get('tg_command') or '')
+        if not cmd or cmd in _registered_group_commands:
+            continue
+        _registered_group_commands.add(cmd)
+        group_router.message(Command(cmd))(switch_group_by_command)
+
+
+async def _ensure_student_group_access(student: User, group_id: str, chat_id: int) -> bool:
+    if not group_id or not student.can_access_group(group_id):
+        await bot.send_message(chat_id=chat_id, text=msgs.no_access_to_group)
+        return False
+    return True
 
 
 async def post_problem_keyboard(
@@ -54,6 +93,10 @@ async def post_problem_keyboard(
         except:
             pass
 
+    group_id = student.group_id
+    if student.type == USER_TYPE.STUDENT and not student.can_access_group(group_id):
+        await bot.send_message(chat_id=chat_id, text=msgs.no_access_to_group)
+        return
     # Теперь здесь странное. Если студенту назначен опрос, то показываем его
     survey = db.survey.get_active_survey(student.id)
     if survey:
@@ -75,15 +118,51 @@ async def post_problem_keyboard(
                 mode_hint = msgs.offline_mode_hint
             else:
                 mode_hint = '?'
-            text = msgs.problems_keyboard_header.format_map({'student': student, 'mode_hint': mode_hint})
+            group = student.group
+            if group:
+                group_payload = dict(group.__dict__)
+                if not group_payload.get('conditions_url'):
+                    group_payload['conditions_url'] = ''
+                if not group_payload.get('public_name'):
+                    group_payload['public_name'] = ''
+                group_ctx = SimpleNamespace(**group_payload)
+                header_template = group.tasks_header_template or msgs.problems_keyboard_header
+                has_custom_header_template = bool(group.tasks_header_template)
+            else:
+                group_code = _resolve_student_group_code(student)
+                group_ctx = SimpleNamespace(
+                    public_name=group_code,
+                    conditions_url='',
+                )
+                header_template = msgs.problems_keyboard_header
+                has_custom_header_template = False
+            text = _render_group_header_text(header_template, student=student, mode_hint=mode_hint, group_ctx=group_ctx)
         else:
             text = msgs.solutions_are_not_accepted_now
-        if show_lesson is None:
-            show_lesson = Problem.last_lesson_num(student.level)
+    if show_lesson is None:
+        show_lesson = Problem.last_lesson_num(group_id)
         try:
             keyb_msg = await bot.send_message(
                 chat_id=chat_id,
                 text=text,
+                parse_mode='HTML',
+                disable_web_page_preview=True,
+                reply_markup=student_keyboards.build_problems(show_lesson, student),
+                disable_notification=disable_notification,
+            )
+        except TelegramBadRequest as e:
+            if blocked or not has_custom_header_template or 'parse entities' not in str(e).lower():
+                raise
+            logger.warning('Invalid group tasks_header_template for %s, fallback to default header: %s', group_id, e)
+            fallback_text = _render_group_header_text(
+                msgs.problems_keyboard_header,
+                student=student,
+                mode_hint=mode_hint,
+                group_ctx=group_ctx,
+            )
+            keyb_msg = await bot.send_message(
+                chat_id=chat_id,
+                text=fallback_text,
                 parse_mode='HTML',
                 disable_web_page_preview=True,
                 reply_markup=student_keyboards.build_problems(show_lesson, student),
@@ -105,7 +184,9 @@ async def refresh_last_student_keyboard(student: User, force=False) -> bool:
             updated = await bot.edit_message_reply_markup(
                 chat_id=prev_keyboard['chat_id'],
                 message_id=prev_keyboard['tg_msg_id'],
-                reply_markup=student_keyboards.build_problems(Problem.last_lesson_num(student.level), student)
+                reply_markup=student_keyboards.build_problems(
+                    Problem.last_lesson_num(student.group_id), student
+                )
             )
             return bool(updated)
         except TelegramBadRequest as e:
@@ -172,6 +253,22 @@ async def prc_sending_solution_state(message: types.Message, student: User):
                 next_media_group_message = True
     else:
         problem_id = State.get_by_user_id(student.id)['problem_id']
+    emit_trace(
+        "student.written_solution.submitted",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=message.chat.id,
+        problem_id=problem_id,
+        is_sos=problem_id < 0,
+        has_text=bool(message.text),
+        text_len=len(message.text or ""),
+        photo_count=len(message.photo or []),
+        has_document=bool(message.document),
+        doc_mime=(message.document and message.document.mime_type),
+        doc_size=(message.document and message.document.file_size),
+        media_group_id=message.media_group_id,
+        next_media_group_message=next_media_group_message,
+    )
     file_name = None
     text = message.text
 
@@ -206,7 +303,7 @@ async def prc_sending_solution_state(message: types.Message, student: User):
                     SOLS_PATH,
                     f'{student.token} {student.surname} {student.name}',
                     f'{problem.lesson}',
-                    f'{problem.lesson}{problem.level}_{problem.prob}{problem.item}_{cur_ts}.{ext}'
+                    f'{problem.lesson}{problem.group_code}_{problem.prob}{problem.item}_{cur_ts}.{ext}'
                 )
                 os.makedirs(os.path.dirname(file_name), exist_ok=True)
                 db.log.insert(False, message.message_id, message.chat.id, student.id, None, message.text, file_name)
@@ -337,6 +434,17 @@ def check_test_problem_answer(
 
 
 async def check_answer_and_react(chat_id: int, problem: Problem, student: User, student_answer: str):
+    emit_trace(
+        "student.test_answer.submitted",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=chat_id,
+        problem_id=problem and problem.id,
+        lesson=problem and problem.lesson,
+        group_id=problem and problem.group_id,
+        answer_len=len(student_answer or ""),
+        has_answer=bool(student_answer),
+    )
     check_verict, additional_message, error_text = check_test_problem_answer(problem, student, student_answer)
     if error_text:
         await bot.post_logging_message(error_text)
@@ -381,11 +489,24 @@ async def prc_sending_test_answer_state(message: types.Message, student: User, c
 @reg_state(STATE.WAIT_SOS_REQUEST)
 async def prc_wait_sos_request_state(message: types.Message, student: User):
     logger.debug('prc_wait_sos_request_state')
+    state = State.get_by_user_id(student.id)
+    emit_trace(
+        "student.sos.submitted",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=message.chat.id,
+        problem_id=state and state.get('problem_id'),
+        has_text=bool(message.text),
+        text_len=len(message.text or ""),
+        has_photo=bool(message.photo),
+        has_document=bool(message.document),
+    )
     try:
+        group_code = _resolve_student_group_code(student)
         text = (f'❓❓❓❓\n'
                 f'<code>{student.surname}</code> <code>{student.name}</code>\n'
-                f'<code>{student.level}</code> <code>{student.token}</code> {ONLINE_MODE(student.online).__str__()[12:]}\n'
-                f'Команда для правки плюсов: <code>/edtplus_{Problem.last_lesson_num(student.level)}_{student.token}</code>')
+                f'<code>{group_code}</code> <code>{student.token}</code> {ONLINE_MODE(student.online).__str__()[12:]}\n'
+                f'Команда для правки плюсов: <code>/edtplus_{Problem.last_lesson_num(student.group_id)}_{student.token}</code>')
         hdr_msg = await bot.send_message(config.sos_channel, parse_mode="HTML", text=text)
         que_msg = await bot.forward_message(config.sos_channel, message.chat.id, message.message_id)
         db.question.add(
@@ -419,113 +540,68 @@ async def prc_student_is_in_conference_state(message: types.message, student: Us
     pass
 
 
-@router.message(Command('ss', 'set_student'))
-async def set_student(message: types.Message):
-    logger.debug('set_student')
-    student = User.get_by_chat_id(message.chat.id)
-    if student:
-        student.set_level(LEVEL.MATH_CLUB)
-        message = await bot.send_message(
-            chat_id=message.chat.id,
-            text=msgs.you_are_club_student_now,
-        )
-        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
-            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
-
-
-@router.message(Command('level_novice'))
-async def level_novice(message: types.Message):
-    logger.debug('level_novice')
-    student = User.get_by_chat_id(message.chat.id)
-    if student:
-        student.set_level(LEVEL.NOVICE)
-        message = await bot.send_message(
-            chat_id=message.chat.id,
-            text=msgs.you_are_in_novice_now,
-        )
-        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
-            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
-
-
-@router.message(Command('level_testing'))
-async def level_testing(message: types.Message):
-    logger.debug('level_testing')
-    student = User.get_by_chat_id(message.chat.id)
-    if student:
-        student.set_level(LEVEL.TESTING)
-        message = await bot.send_message(
-            chat_id=message.chat.id,
-            text=msgs.you_are_in_testing_now
-        )
-        if State.get_by_user_id(student.id).get('state', None) != STATE.STUDENT_IS_SLEEPING:
-            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
-
-
-@router.message(Command('level_pro'))
-async def level_pro(message: types.Message):
-    logger.debug('level_pro')
-    student = User.get_by_chat_id(message.chat.id)
-    if student:
-        message = await bot.send_message(
-            chat_id=message.chat.id,
-            text=msgs.you_are_in_pro_now,
-        )
-        student.set_level(LEVEL.PRO)
-        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
-            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
-
-
-@router.message(Command('level_expert'))
-async def level_expert(message: types.Message):
-    logger.debug('level_expert')
-    student = User.get_by_chat_id(message.chat.id)
-    if student:
-        message = await bot.send_message(
-            chat_id=message.chat.id,
-            text=msgs.you_are_expert_now,
-        )
-        student.set_level(LEVEL.EXPERT)
-        if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
-            State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-        asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
-
-
-# @router.message(Command('level_gr8'))
-# async def level_expert(message: types.Message):
-#     logger.debug('level_gr8')
-#     student = User.get_by_chat_id(message.chat.id)
-#     if student:
-#         message = await bot.send_message(
-#             chat_id=message.chat.id,
-#             text="Вы переведены в группу восьмого класса. Обратите внимание, что эта группа для «опытных» учеников 8 класса. "
-#                  "Если будет сложновато, рекомендуем группы «Продолжающие» или «Эксперты». "
-#                  "Вот канал вашего класса: @vmsh_179_8_2022. "
-#                  "А вот группа для обсуждений: @vmsh_179_8_2022_chat",
-#         )
-#         student.set_level(LEVEL.GR8)
-#         if State.get_by_user_id(student.id)['state'] != STATE.STUDENT_IS_SLEEPING:
-#             State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
-#         asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, student))
+async def switch_group_by_command(message: types.Message):
+    logger.debug('switch_group_by_command')
+    if not message.text:
+        return
+    cmd = message.text.split()[0]
+    if not cmd.startswith('/'):
+        return
+    if '@' in cmd:
+        cmd = cmd.split('@', 1)[0]
+    group = db.group.get_by_command(cmd)
+    if not group and cmd.startswith('/'):
+        group = db.group.get_by_command(cmd[1:])
+    if not group:
+        return
+    user = User.get_by_chat_id(message.chat.id)
+    if not user:
+        return
+    if not group.get('is_active'):
+        await bot.send_message(chat_id=message.chat.id, text=msgs.no_access_to_group)
+        return
+    if user.type == USER_TYPE.STUDENT and not group.get('allow_self_switch'):
+        await bot.send_message(chat_id=message.chat.id, text=msgs.no_access_to_group)
+        return
+    if not user.can_access_group(group['group_id']):
+        await bot.send_message(chat_id=message.chat.id, text=msgs.no_access_to_group)
+        return
+    user.set_group_id(group['group_id'])
+    switch_message = group.get('switch_message') or f'Вы переведены в группу «{group.get("public_name") or ""}».'
+    message = await bot.send_message(
+        chat_id=message.chat.id,
+        text=switch_message,
+    )
+    if State.get_by_user_id(user.id)['state'] != STATE.STUDENT_IS_SLEEPING:
+        State.set_by_user_id(user.id, STATE.GET_TASK_INFO)
+    asyncio.create_task(sleep_and_send_problems_keyboard(message.chat.id, user))
 
 
 @router.message(Command('sos'))
 async def sos(message: types.Message):
     logger.debug('sos')
     user = User.get_by_chat_id(message.chat.id)
+    emit_trace(
+        "student.sos.started",
+        chat_id=message.chat.id,
+        user_id=user and user.id,
+        target_user_id=user and user.id,
+        user_exists=bool(user),
+    )
     if not user:
         token = f'unknown{message.chat.id}'
         if message.chat.username:
             token += f'@{message.chat.username}'
         new_unknown_user = User(
-            message.chat.id, USER_TYPE.UNKNOWN, LEVEL.NO_LEVEL,
-            message.chat.first_name or '',
-            message.chat.last_name or '',
-            '',
-            token, ONLINE_MODE.ONLINE, 12, None
+            chat_id=message.chat.id,
+            type=USER_TYPE.UNKNOWN,
+            name=message.chat.first_name or '',
+            surname=message.chat.last_name or '',
+            middlename='',
+            token=token,
+            online=ONLINE_MODE.ONLINE,
+            grade=12,
+            birthday=None,
         )
         db.log.log_signon(
             new_unknown_user and new_unknown_user.id, message.chat.id, message.chat.first_name, message.chat.last_name,
@@ -549,11 +625,14 @@ async def sos(message: types.Message):
 @reg_callback(CALLBACK.PROBLEM_SOS)
 async def prc_problem_sos_callback(query: types.CallbackQuery, student: User):
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
+    if not await _ensure_student_group_access(student, student.group_id, query.message.chat.id):
+        await bot.answer_callback_query_ig(query.id)
+        return
     problem_sos_message = await bot.send_message(
         chat_id=query.message.chat.id,
         text=msgs.sos_which_problem_question,
         reply_markup=student_keyboards.build_problems(
-            Problem.last_lesson_num(student.level), student,
+            Problem.last_lesson_num(student.group_id), student,
             is_sos_question=True
         )
     )
@@ -577,6 +656,10 @@ async def prc_problems_other_sos_callback(query: types.CallbackQuery, student: U
 async def prc_problem_sos_problem_selected_callback(query: types.CallbackQuery, student: User):
     problem_id = int(query.data[2:])
     problem = Problem.get_by_id(problem_id)
+    if not problem or not student.can_access_group(problem.group_id):
+        await bot.answer_callback_query_ig(query.id)
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        return
     State.set_by_user_id(student.id, STATE.WAIT_SOS_REQUEST, problem_id=problem_id)
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
     await bot.send_message(
@@ -600,11 +683,28 @@ async def prc_problems_selected_callback(query: types.CallbackQuery, student: Us
         return
     problem_id = int(query.data[2:])
     problem = Problem.get_by_id(problem_id)
+    emit_trace(
+        "student.problem.selected",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=query.message.chat.id,
+        problem_id=problem_id,
+        lesson=problem and problem.lesson,
+        group_id=problem and problem.group_id,
+        prob_type=(int(problem.prob_type) if problem else None),
+        ans_type=(int(problem.ans_type) if (problem and problem.ans_type) else None),
+    )
     # Удаляем сообщение с клавиатурой-списком задач
     await bot.delete_message_ig(chat_id=query.message.chat.id, message_id=query.message.message_id)
     db.last_keyboard.delete(student.id)
     if not problem:
         await bot.answer_callback_query_ig(query.id)
+        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
+        asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
+        return
+    if not student.can_access_group(problem.group_id):
+        await bot.answer_callback_query_ig(query.id)
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
         return
@@ -723,6 +823,9 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_list_selected_callback')
     lesson = int(query.data[2:])
     student = User.get_by_chat_id(query.message.chat.id)
+    if not await _ensure_student_group_access(student, student.group_id, query.message.chat.id):
+        await bot.answer_callback_query_ig(query.id)
+        return
     await post_problem_keyboard(student.chat_id, student, show_lesson=lesson)
     await bot.answer_callback_query_ig(query.id)
 
@@ -730,10 +833,13 @@ async def prc_list_selected_callback(query: types.CallbackQuery, student: User):
 @reg_callback(CALLBACK.SHOW_LIST_OF_LISTS)
 async def prc_show_list_of_lists_callback(query: types.CallbackQuery, student: User):
     logger.debug('prc_show_list_of_lists_callback')
+    if not await _ensure_student_group_access(student, student.group_id, query.message.chat.id):
+        await bot.answer_callback_query_ig(query.id)
+        return
     await bot.edit_message_text_ig(
         chat_id=query.message.chat.id, message_id=query.message.message_id,
         text=msgs.list_of_all_topics,
-        reply_markup=student_keyboards.build_lessons(student.level)
+        reply_markup=student_keyboards.build_lessons(group_id=student.group_id)
     )
     await bot.answer_callback_query_ig(query.id)
 
@@ -756,6 +862,11 @@ async def prc_one_of_test_answer_selected_callback(query: types.CallbackQuery, s
         logger.error('Сломался приём задач :(')
         State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         # Удаляем варианты после изменения state'а. Иначе можно «зависнуть»
+        asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
+        return
+    if not student.can_access_group(problem.group_id):
+        await bot.send_message(chat_id=query.message.chat.id, text=msgs.no_access_to_group)
+        State.set_by_user_id(student.id, STATE.GET_TASK_INFO)
         asyncio.create_task(sleep_and_send_problems_keyboard(query.message.chat.id, student))
         return
 
@@ -786,6 +897,13 @@ async def prc_get_out_of_waitlist_callback(query: types.CallbackQuery, student: 
         reply_markup=None
     )
     Waitlist.leave(student.id)
+    emit_trace(
+        "student.waitlist.left",
+        user_id=student.id,
+        target_user_id=student.id,
+        chat_id=query.message.chat.id,
+        trigger="callback",
+    )
     db.delete_url_by_user_id(student.id)
     try:
         await bot.unpin_chat_message(chat_id=query.message.chat.id)
@@ -806,6 +924,13 @@ async def exit_waitlist(message: types.Message):
     logger.debug('exit_waitlist')
     user = User.get_by_chat_id(message.chat.id)
     Waitlist.leave(user.id)
+    emit_trace(
+        "student.waitlist.left",
+        user_id=user and user.id,
+        target_user_id=user and user.id,
+        chat_id=message.chat.id,
+        trigger="command",
+    )
     db.delete_url_by_user_id(user.id)
     try:
         await bot.unpin_chat_message(chat_id=message.chat.id)
@@ -849,12 +974,18 @@ async def exit_waitlist(message: types.Message):
 async def students_my_results(message: types.Message):
     logger.debug('students_my_results')
     student = User.get_by_chat_id(message.chat.id)
+    emit_trace(
+        "student.results.requested",
+        user_id=student and student.id,
+        target_user_id=student and student.id,
+        chat_id=message.chat.id,
+    )
     rows = db.result.list_all_student_results(student.id)
     if rows:
         lessons = {row['lesson'] for row in rows}
         for lesson in sorted(lessons):
             lines = [f'{row["ts"][5:16]} ' \
-                     f'{row["lesson"]:02}{row["level"]}.{row["prob"]:02}{row["item"]:<1} ' \
+                     f'{row["lesson"]:02}{row["group_code"]}.{row["prob"]:02}{row["item"]:<1} ' \
                      f'{VERDICT_DECODER[row["verdict"]]} ' \
                      f'{row["answer"] if row["answer"] is not None else ""}'
                      for row in rows
@@ -888,7 +1019,10 @@ async def game_info(message: types.Message):
         return
     command = db.game.get_student_command(student.id)
     student_command = command['command_id'] if command else -1
-    solved = db.result.get_student_solved(student.id, Problem.last_lesson_num(student.level))  # ts, title
+    solved = db.result.get_student_solved(
+        student.id,
+        Problem.last_lesson_num(student.group_id),
+    )  # ts, title, group_id, group_code
     payments = db.game.get_student_payments(student.id, student_command)  # ts, amount
     chests_rows = db.game.get_student_chests(student.id, student_command)
     # Собираем из решённых задач и оплат event'ы
@@ -898,6 +1032,8 @@ async def game_info(message: types.Message):
     for chest in chests_rows:
         events.append([chest['ts'], '🗝', chest['bonus'], None])
     used_titles = set()
+    weight_map = build_group_weight_map()
+    command_group_code = command['group_code'] if command else None
     scores_count = {}
     for solv in solved:
         if '⚡' not in solv['title']:
@@ -908,13 +1044,7 @@ async def game_info(message: types.Message):
             continue
         else:
             used_titles.add(clear_title)
-        # Защита от продолжающих, которые решают задачи начинающих. Они получают в 1.5 раза меньше баллов
-        if solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.PRO:
-            score = int(round(score / 1.5))
-        elif solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.EXPERT:
-            score = int(round(score / 2))
-        elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.EXPERT:
-            score = int(round(score / 1.5))
+        score = apply_group_weight(score, solv['group_code'], command_group_code, weight_map=weight_map)
         events.append([solv['ts'], '+', score, clear_title.strip()])
     events.sort(key=itemgetter(0))
     report = []

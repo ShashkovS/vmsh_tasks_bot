@@ -1,10 +1,11 @@
 from aiohttp import web
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from Levenshtein import distance
 import re
 import hmac
 from helpers.consts import *
 from helpers.config import logger, config
+from helpers.trace import clear_trace_context, emit_trace, set_trace_context
 from models import User
 import db_methods as db
 
@@ -24,7 +25,7 @@ async def get_tst(request):
 
 def parse_json(data: dict):
     event = data['event']
-    event_ts = datetime.utcfromtimestamp(data['event_ts'] / 1000) + TIMEZONE
+    event_ts = datetime.fromtimestamp(data['event_ts'] / 1000, timezone.utc).replace(tzinfo=None) + TIMEZONE
     payload = data['payload']
     object = payload['object']
     is_circle = object['id'] in ZOOM_IDS
@@ -90,19 +91,46 @@ async def post_zoomevents(request: web.Request):
         event, event_ts, is_circle, participant, breakout_room_uuid = parse_json(data)
     except Exception as e:
         logger.error(e)
+        emit_trace(
+            "zoom.webhook.received",
+            ok=False,
+            source="zoom.webhook",
+            trace_id="z:parse_error",
+            flow_id="zoom:unknown",
+            error_type=e.__class__.__name__,
+            error_short=str(e)[:240],
+        )
         return web.Response(status=400)
     logger.info(f'zoom {data=}')  # TODO: убрать
     if not is_circle or not participant:
         return web.Response(status=200)
-    process_event(event, event_ts, participant)
-    zoom_user_name = participant['user_name']
-    zoom_user_id = participant.get('user_id', None)
-    user_id = None
-    db.sql.conn.execute('''
-        insert into zoom_events ( event_ts,  event,  zoom_user_name,  zoom_user_id,  breakout_room_uuid,  user_id)
-                         values (:event_ts, :event, :zoom_user_name, :zoom_user_id, :breakout_room_uuid, :user_id)
-    ''', locals())
-    db.sql.conn.commit()
+    zoom_user_name = participant.get('user_name')
+    set_trace_context(
+        trace_id=f"z:{event}:{event_ts.isoformat()}:{zoom_user_name}",
+        flow_id=f"zoom:{zoom_user_name}",
+        source="zoom.webhook",
+        update_type="zoom_webhook",
+        zoom_user_name=zoom_user_name,
+    )
+    try:
+        emit_trace(
+            "zoom.webhook.received",
+            event_name=event,
+            event_ts=event_ts.isoformat(),
+            is_circle=is_circle,
+            has_participant=bool(participant),
+        )
+        process_event(event, event_ts, participant)
+        zoom_user_name = participant['user_name']
+        zoom_user_id = participant.get('user_id', None)
+        user_id = None
+        db.sql.conn.execute('''
+            insert into zoom_events ( event_ts,  event,  zoom_user_name,  zoom_user_id,  breakout_room_uuid,  user_id)
+                             values (:event_ts, :event, :zoom_user_name, :zoom_user_id, :breakout_room_uuid, :user_id)
+        ''', locals())
+        db.sql.conn.commit()
+    finally:
+        clear_trace_context()
     return web.Response(status=200)
 
 

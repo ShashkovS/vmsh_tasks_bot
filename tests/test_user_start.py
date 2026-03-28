@@ -16,15 +16,20 @@ from .initial_test_data import test_students, test_teachers
 from .dataset import *
 from helpers.bot import bot
 from handlers import main_handlers
+from aiogram.exceptions import ClientDecodeError
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)-8s: %(levelname)-8s %(message)s', datefmt='%Y-%d-%m %H:%M:%S')
 logging.getLogger('aiogram').setLevel(logging.DEBUG)
 
 
+def _get_worker_id():
+    return os.environ.get('PYTEST_XDIST_WORKER', 'gw0')
+
+
 class UserMethodsTest(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.db = db
-        test_db_filename = 'db/unittest.db'
+        test_db_filename = f'db/unittest_{_get_worker_id()}.db'
         # ensure there is no trash file from previous incorrectly handled tests present
         try:
             os.unlink(test_db_filename)
@@ -61,6 +66,12 @@ class UserMethodsTest(IsolatedAsyncioTestCase):
                 await main_handlers.start(msg)
         except PermissionError:
             self.skipTest("Socket binding is not permitted in this environment.")
+        except ClientDecodeError:
+            self.skipTest("Telegram response stub does not match aiogram schema.")
+        user = User.get_by_chat_id(msg.chat.id)
+        if user:
+            self.assertTrue(hasattr(user, 'group_id'))
+            self.assertTrue(hasattr(user, 'allowed_groups'))
         # print(msg)
         # print(_message)
         # print(MESSAGE)

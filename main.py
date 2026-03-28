@@ -10,6 +10,7 @@ import db_methods as db
 from helpers.features import set_features
 from helpers.msg_texts import msgs
 from helpers.shutdown import wait_for_valuable_tasks
+from helpers.trace import init_trace
 
 LOCAL_APP_PORT = 8179
 
@@ -20,6 +21,7 @@ async def on_startup(app):
     db.sql.setup(config.db_filename)
     bot_settings = db.settings.get_settings()
     config.update_from_dict(bot_settings)
+    init_trace(config)
     set_features(config)
     ui_messages = db.settings.get_ui_messages()
     msgs.update_from_dict(ui_messages)

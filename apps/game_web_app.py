@@ -19,7 +19,8 @@ from helpers.config import config, logger, DEBUG, APP_PATH
 import db_methods as db
 from models import Webtoken, User, Problem
 from helpers.nats_brocker import vmsh_nats
-from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE, USER_TYPE, LEVEL
+from helpers.consts import NATS_GAME_MAP_UPDATE, NATS_GAME_STUDENT_UPDATE, USER_TYPE
+from helpers.game_scoring import apply_group_weight, build_group_weight_map
 from helpers.bot import bot
 
 __ALL__ = ['routes', 'on_startup', 'on_shutdown']
@@ -218,7 +219,7 @@ def get_game_data(student: User) -> dict:
     st = perf_counter()
     command = db.game.get_student_command(student.id)
     student_command = command['command_id'] if command else -1
-    solved = db.result.get_student_solved(student.id, Problem.last_lesson_num(student.level))  # ts, title
+    solved = db.result.get_student_solved(student.id, Problem.last_lesson_num(student.group_id))  # ts, title, group_id, group_code
     payments = db.game.get_student_payments(student.id, student_command)  # ts, amount
     opened = get_map_opened(student_command)
     flags = get_map_flags(student_command)
@@ -232,6 +233,8 @@ def get_game_data(student: User) -> dict:
         events.append([chest['ts'], chest['bonus']])
     chests = [[r['x'], r['y']] for r in chests_rows]
     used_titles = set()
+    weight_map = build_group_weight_map()
+    command_group_code = command['group_code'] if command else None
     for solv in solved:
         if '⚡' not in solv['title']:
             continue
@@ -241,23 +244,7 @@ def get_game_data(student: User) -> dict:
             continue
         else:
             used_titles.add(clear_title)
-        # # Защита от продолжающих, которые решают задачи начинающих. Они получают в 1.5 раза меньше баллов
-        # if solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.PRO:
-        #     score = int(round(score / 1.5))
-        # elif solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.EXPERT:
-        #     score = int(round(score / 2))
-        # elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.EXPERT:
-        #     score = int(round(score / 1.5))
-        # ТОЛЬКО НА ТЕКУЩУЮ ИГРУ!!! TODO!
-        # Защита от продолжающих, которые решают задачи начинающих. Они получают в 1.5 раза меньше баллов
-        if solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.PRO:
-            score = int(round(score / 1.2))
-        elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.NOVICE:
-            score = int(round(score * 1.2))
-        elif solv['level'] == LEVEL.NOVICE and command['level'] == LEVEL.EXPERT:
-            score = int(round(score / 2))
-        elif solv['level'] == LEVEL.PRO and command['level'] == LEVEL.EXPERT:
-            score = int(round(score / 1.0))
+        score = apply_group_weight(score, solv['group_code'], command_group_code, weight_map=weight_map)
         events.append([solv['ts'], score])
     events.sort(key=itemgetter(0))
     events = [ev[1] for ev in events]

@@ -410,7 +410,9 @@ bot = BotIg(
     session=AiohttpSession(timeout=5),
 )
 router = Router()
+group_router = Router()
 dispatcher = Dispatcher()
+dispatcher.include_router(group_router)
 dispatcher.include_router(router)
 
 

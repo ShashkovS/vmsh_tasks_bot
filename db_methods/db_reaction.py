@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from .db_abc import DB_ABC, sql
+from helpers.trace import emit_trace
 
 
 class DB_REACTION(DB_ABC):
@@ -8,10 +9,19 @@ class DB_REACTION(DB_ABC):
         """Записывает в БД в отношение reaction реакцию ученика/учителя на письменную/устную сдачу."""
         ts = datetime.now().isoformat()
         with self.db.conn as conn:
-            return conn.execute("""
+            inserted_id = conn.execute("""
                 INSERT INTO reactions ( ts,  result_id,  zoom_conversation_id,  reaction_id,  reaction_type_id)
                                VALUES (:ts, :result_id, :zoom_conversation_id, :reaction_id, :reaction_type_id);
             """, locals()).lastrowid
+        emit_trace(
+            "reaction.saved",
+            reaction_row_id=inserted_id,
+            result_id=result_id,
+            zoom_conversation_id=zoom_conversation_id,
+            reaction_id=reaction_id,
+            reaction_type_id=reaction_type_id,
+        )
+        return inserted_id
 
     def get_by_id(self, reaction_id: int) -> str:
         """Возвращает текст реакции (вместе с эмоджи) в зависимости от номера реакции."""

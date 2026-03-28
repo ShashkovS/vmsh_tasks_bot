@@ -11,8 +11,10 @@ import db_methods as db
 
 def build_problems(lesson_num: int, student: User, is_sos_question=False):
     logger.debug('keyboards.build_problems')
-    solved = db.result.check_student_solved(student.id, lesson_num)
+    group_id = student.group_id
+    solved = db.result.check_student_solved(student.id, lesson_num, group_id=group_id)
     being_checked = set(db.written_task_queue.check_student_sent_written(student.id, lesson_num))
+    student_tried = set()
     if RESULT_MODE == FEATURES.RESULT_AFTER:
         student_tried = set(db.result.check_student_tried(student.id, lesson_num))
     keyboard_markup = InlineKeyboardBuilder()
@@ -34,7 +36,9 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
             callback_data=CALLBACK.OTHER_SOS
         )
         keyboard_markup.row(que1, que2)
-    for problem in Problem.get_by_lesson(student.level, lesson_num):
+    if group_id and not student.can_access_group(group_id):
+        return keyboard_markup.as_markup()
+    for problem in Problem.get_by_lesson(group_id, lesson_num):
         synonyms_set = problem.synonyms_set()
         if RESULT_MODE == FEATURES.RESULT_IMMEDIATELY:
             max_verdict = VERDICT.NO_ANSWER if not solved else max(solved.get(prob_id, VERDICT.NO_ANSWER) for prob_id in synonyms_set)
@@ -87,11 +91,11 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
     return keyboard_markup.as_markup()
 
 
-def build_lessons(level):
+def build_lessons(group_id: str = None):
     logger.debug('keyboards.build_lessons')
     keyboard_markup = InlineKeyboardBuilder()
     keyboard_markup.max_width = 1
-    all_lessons = db.lesson.get_all(level)
+    all_lessons = db.lesson.get_all(group_id=group_id)
     # PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL or PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL
     use_lessons = []
     if PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL:

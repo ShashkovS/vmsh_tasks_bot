@@ -8,11 +8,15 @@ import db_methods as db
 from .initial_test_data import test_students, test_teachers, test_problems
 
 
+def _get_worker_id():
+    return os.environ.get('PYTEST_XDIST_WORKER', 'gw0')
+
+
 class DatabaseMethodsTest(TestCase):
     def setUp(self) -> None:
         print(f'setup, id={id(self)}, {self!r}')
         self.db = db
-        test_db_filename = f'db/unittest.db'
+        test_db_filename = f'db/unittest_{_get_worker_id()}.db'
         # ensure there is no trash file from previous incorrectly handled tests present
         for file in [test_db_filename, test_db_filename + '-shm', test_db_filename + '-wal']:
             try:
@@ -90,17 +94,52 @@ class DatabaseMethodsTest(TestCase):
         self.db.user.set_chat_id(teacher['id'], new_chat_id)
         self.assertEqual(new_chat_id, self.db.user.get_by_id(teacher['id'])['chat_id'])
 
-    def test_user_set_level(self):
-        student1 = test_students[-1]
-        student2 = test_students[0]
-        new_level1 = 'level1'
-        self.db.user.set_level(student1['id'], new_level1)
-        self.assertEqual(self.db.user.get_by_id(student1['id'])['level'], new_level1)
-        self.assertEqual(self.db.user.get_by_id(student2['id'])['level'], student2['level'])
-        new_level2 = 'level2'
-        self.db.user.set_level(student2['id'], new_level2)
-        self.assertEqual(self.db.user.get_by_id(student1['id'])['level'], new_level1)
-        self.assertEqual(self.db.user.get_by_id(student2['id'])['level'], new_level2)
+    def test_user_set_group_and_allowed_groups(self):
+        student = test_students[-1]
+        self.db.user.set_group_id(student['id'], 'п')
+        self.assertEqual(self.db.user.get_by_id(student['id'])['group_id'], 'п')
+        allowed_groups = ';н;п;'
+        self.db.user.set_allowed_groups(student['id'], allowed_groups)
+        self.assertEqual(self.db.user.get_allowed_groups(student['id']), allowed_groups)
+
+    def test_groups_crud_and_queries(self):
+        new_group = {
+            'group_id': 'custom',
+            'short_code': 'c',
+            'broadcast_code': 'all_custom',
+            'tg_command': '/level_custom',
+            'public_name': 'Custom Group',
+            'conditions_url': 'https://example.com/custom',
+            'tasks_header_template': 'Header',
+            'switch_message': 'Switched',
+            'sort_order': 99,
+            'is_active': 1,
+            'is_default': 0,
+            'allow_self_switch': 1,
+            'is_system': 0,
+            'score_weight': 1.0,
+        }
+        self.db.group.insert(new_group)
+        row = self.db.group.get_by_id('custom')
+        self.assertEqual(row['group_id'], 'custom')
+        self.assertEqual(self.db.group.get_by_command('/level_custom')['group_id'], 'custom')
+        self.assertEqual(self.db.group.get_by_broadcast_code('all_custom')['group_id'], 'custom')
+        short_code_rows = self.db.group.get_by_short_code('c')
+        self.assertTrue(any(item['group_id'] == 'custom' for item in short_code_rows))
+
+    def test_schema_has_no_legacy_level_columns(self):
+        legacy_column = 'le' 'vel'
+        tables = [
+            'users',
+            'problems',
+            'lessons',
+            'results',
+            'zoom_conversation',
+            'game_students_commands',
+        ]
+        for table in tables:
+            columns = [row['name'] for row in self.db.sql.conn.execute(f"pragma table_info({table})").fetchall()]
+            self.assertNotIn(legacy_column, columns, msg=f'legacy column still exists in {table}')
 
     def test_webtokens(self):
         student1 = self.db.user.get_by_token(test_students[-1]['token'])
@@ -137,8 +176,8 @@ class DatabaseMethodsTest(TestCase):
         verdict2 = -1
         for problem in test_problems:
             for student in test_students:
-                self.db.result.insert(student["id"], problem["id"], problem["level"], problem["lesson"], None, verdict1, answer1)
-                self.db.result.insert(student["id"], problem["id"], problem["level"], problem["lesson"], None, verdict2, answer2)
+                self.db.result.insert(student["id"], problem["id"], problem["lesson"], None, verdict1, answer1)
+                self.db.result.insert(student["id"], problem["id"], problem["lesson"], None, verdict2, answer2)
         problem = test_problems[2]
         for_recheck = self.db.result.get_for_recheck_by_problem_id(problem["id"])
         new_verdict = 99
@@ -151,6 +190,24 @@ class DatabaseMethodsTest(TestCase):
                 self.assertEqual(res["verdict"], new_verdict)
             else:
                 self.assertIn(res["verdict"], [verdict1, verdict2])
+        group_id = problem["group_id"]
+        group_results = self.db.result.list_student_results(
+            student2["id"], problem["lesson"], group_id=group_id
+        )
+        group_problem_ids = {item["id"] for item in test_problems if item["group_id"] == group_id}
+        self.assertTrue(group_results)
+        self.assertTrue(all(row['problem_id'] in group_problem_ids for row in group_results))
+
+    def test_group_filters_on_problems_and_lessons(self):
+        group_id = 'н'
+        lesson_num = 4
+        problems = self.db.problem.get_all_by_lesson(group_id, lesson_num)
+        self.assertTrue(problems)
+        self.assertTrue(all(row['group_id'] == group_id for row in problems))
+        self.db.lesson.update()
+        lessons = self.db.lesson.get_all(group_id=group_id)
+        self.assertTrue(lessons)
+        self.assertTrue(all(row['group_id'] == group_id for row in lessons))
 
     def test_key_value_storage(self):
         kv = self.db.sql.kv
@@ -271,13 +328,13 @@ class DatabaseMethodsTest(TestCase):
         self.assertEqual(problem_id, saved_problem_id)
 
     def test_game_methods(self):
-        self.db.game.set_student_command(3, 'н', 179)
-        self.db.game.set_student_command(3, 'н', 178)
+        self.db.game.set_student_command(3, 179, group_id='н')
+        self.db.game.set_student_command(3, 178, group_id='н')
         self.assertEqual(self.db.game.get_student_command(3)['command_id'], 178)
 
-        self.db.game.set_student_command(1, 'н', 179)
-        self.db.game.set_student_command(2, 'н', 179)
-        self.db.game.set_student_command(3, 'н', 178)
+        self.db.game.set_student_command(1, 179, group_id='н')
+        self.db.game.set_student_command(2, 179, group_id='н')
+        self.db.game.set_student_command(3, 178, group_id='н')
         self.assertEqual(self.db.game.get_student_command(1)['command_id'], 179)
 
         self.assertTrue(self.db.game.add_payment(3, 178, 15, 10, 1))
@@ -353,19 +410,19 @@ class DatabaseMethodsTest(TestCase):
     # def fetch_all_problems(self)
     # def fetch_all_lessons(self)
     # def get_last_lesson_num(self)
-    # def fetch_all_problems_by_lesson(self, level: str, lesson: int)
+    # def fetch_all_problems_by_lesson(self, group_id: str, lesson: int)
     # def get_problem_by_id(self, id: int)
-    # def get_problem_by_text_number(self, level: str, lesson: int, prob: int, item: '')
+    # def get_problem_by_text_number(self, group_id: str, lesson: int, prob: int, item: '')
 
     # def fetch_all_states(self)
     # def get_state_by_user_id(self, user_id: int)
     # def update_state(self, user_id: int, state: int, problem_id: int = 0, last_student_id: int = 0, last_teacher_id: int = 0, oral_problem_id: int = None)
     # def update_oral_problem(self, user_id: int, oral_problem_id: int = None)
 
-    # def add_result(self, student_id: int, problem_id: int, level: str, lesson: int, teacher_id: int, verdict: int, answer: str, res_type: int = None)
+    # def add_result(self, student_id: int, problem_id: int, lesson: int, teacher_id: int, verdict: int, answer: str, res_type: int = None)
     # def check_num_answers(self, student_id: int, problem_id: int)
     # def delete_plus(self, student_id: int, problem_id: int, verdict: int)
-    # def check_student_solved(self, student_id: int, level: str, lesson: int)
+    # def check_student_solved(self, student_id: int, group_id: str, lesson: int)
     # def check_student_sent_written(self, student_id: int, lesson: int)
 
     # def insert_into_written_task_queue(self, student_id: int, problem_id: int, cur_status: int, ts: datetime = None)

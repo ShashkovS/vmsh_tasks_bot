@@ -28,7 +28,8 @@
   "reg_mode": "reg_needed",
   "rate_limit_help": "rate_limit_none | rate_limit_3_and_6",
   "rate_limit": "rate_limit_3_and_6",
-  "apps_help": "tg_bot, game_web_app, results_app, zoom_events_parser",
-  "apps": "tg_bot, game_web_app, results_app, zoom_events_parser",
+  "apps_help": "tg_bot, game_web_app, results_app, apis_app, zoom_events_parser",
+  "apps": "tg_bot, game_web_app, results_app, apis_app, zoom_events_parser",
+  "conduit_import_api_token": "",
   "zdummy": "Тупо последняя строка без запятой"
 }

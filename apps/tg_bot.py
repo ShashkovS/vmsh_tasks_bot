@@ -8,15 +8,32 @@ from aiogram import Bot
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 from helpers.config import config, logger, DEBUG
-from helpers.bot import bot, dispatcher
+from helpers.bot import bot, dispatcher, router, group_router
 from helpers.shutdown import wait_for_valuable_tasks
+from helpers.trace import init_trace
+from helpers.trace_middleware import TraceMessageMiddleware, TraceCallbackMiddleware
 import db_methods as db
 from models.spreadsheets import google_spreadsheet_loader, update_from_google_if_db_is_empty
+from handlers.student_handlers import register_group_switch_commands
 import handlers
 
 USE_WEBHOOKS = False
 WEBHOOK_URL = None
 WEBHOOK_PATH = None
+_TRACE_MIDDLEWARES_READY = False
+
+
+def setup_trace_middlewares():
+    global _TRACE_MIDDLEWARES_READY
+    if _TRACE_MIDDLEWARES_READY:
+        return
+    message_middleware = TraceMessageMiddleware()
+    callback_middleware = TraceCallbackMiddleware()
+    router.message.middleware(message_middleware)
+    router.callback_query.middleware(callback_middleware)
+    group_router.message.middleware(message_middleware)
+    group_router.callback_query.middleware(callback_middleware)
+    _TRACE_MIDDLEWARES_READY = True
 
 
 async def check_webhook():
@@ -43,11 +60,14 @@ async def on_startup(bot: Bot, **_kwargs):
 
     # Настраиваем БД
     db.sql.setup(config.db_filename)
+    init_trace(config)
+    setup_trace_middlewares()
 
     # Настраиваем загрузчик из гугль-таблиц
     google_spreadsheet_loader.setup(config.google_sheets_key, config.google_cred_json)
     # Подгружаем данные, если база пуста
     update_from_google_if_db_is_empty()
+    register_group_switch_commands()
 
     if USE_WEBHOOKS:
         await check_webhook()

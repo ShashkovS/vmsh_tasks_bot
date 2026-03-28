@@ -1,0 +1,214 @@
+{
+  "meta": {
+    "source_db": "db/tlfedu.db",
+    "notes": [
+      "Derived from cleaned local DB snapshot",
+      "Users are sanitized for deterministic in-repo tests",
+      "Weekly richness is provided by per-test overlays"
+    ]
+  },
+  "tables": {
+    "groups": [
+      {
+        "group_id": "i27c",
+        "short_code": "c",
+        "broadcast_code": "all_i27c",
+        "tg_command": "/i27c",
+        "public_name": "CS",
+        "conditions_url": "https://wiki.leaders.tech/island/cs/dp",
+        "tasks_header_template": "❓ <b>Click on a problem to submit it</b>\n{student.name} {student.surname}\nlevel \"{group.public_name}\", mode: {mode_hint}\n<a href=\"{group.conditions_url}\">problem statements</a>.",
+        "switch_message": "In CS now",
+        "sort_order": 30,
+        "is_active": 1,
+        "is_default": 0,
+        "allow_self_switch": 1,
+        "is_system": 0,
+        "score_weight": 1.0
+      },
+      {
+        "group_id": "i27m",
+        "short_code": "m",
+        "broadcast_code": "all_i27m",
+        "tg_command": "/i27m",
+        "public_name": "Math",
+        "conditions_url": "https://wiki.leaders.tech/island/cs/dp",
+        "tasks_header_template": "❓ <b>Click on a problem to submit it</b>\n{student.name} {student.surname}\nlevel \"{group.public_name}\", mode: {mode_hint}\n<a href=\"{group.conditions_url}\">problem statements</a>.",
+        "switch_message": "In Math now",
+        "sort_order": 10,
+        "is_active": 1,
+        "is_default": 1,
+        "allow_self_switch": 1,
+        "is_system": 0,
+        "score_weight": 1.0
+      },
+      {
+        "group_id": "i27p",
+        "short_code": "p",
+        "broadcast_code": "all_i27p",
+        "tg_command": "/i27p",
+        "public_name": "Physics",
+        "conditions_url": "https://wiki.leaders.tech/island/cs/dp",
+        "tasks_header_template": "❓ <b>Click on a problem to submit it</b>\n{student.name} {student.surname}\nlevel \"{group.public_name}\", mode: {mode_hint}\n<a href=\"{group.conditions_url}\">problem statements</a>.",
+        "switch_message": "In Physics now",
+        "sort_order": 20,
+        "is_active": 1,
+        "is_default": 0,
+        "allow_self_switch": 1,
+        "is_system": 0,
+        "score_weight": 1.0
+      }
+    ],
+    "users": [
+      {
+        "id": 1,
+        "chat_id": null,
+        "type": 1,
+        "group_id": "i27m",
+        "name": "Name01",
+        "surname": "TestIsl2701",
+        "middlename": "",
+        "token": "qwerty1",
+        "online": 1,
+        "grade": null,
+        "birthday": null,
+        "allowed_groups": ";i27m;i27p;i27c;"
+      },
+      {
+        "id": 2,
+        "chat_id": null,
+        "type": 1,
+        "group_id": "i27m",
+        "name": "Name02",
+        "surname": "TestIsl2702",
+        "middlename": "",
+        "token": "qwerty2",
+        "online": 1,
+        "grade": null,
+        "birthday": null,
+        "allowed_groups": ";i27m;i27p;i27c;"
+      },
+      {
+        "id": 3,
+        "chat_id": null,
+        "type": 1,
+        "group_id": "i27m",
+        "name": "Name03",
+        "surname": "TestIsl2703",
+        "middlename": "",
+        "token": "qwerty3",
+        "online": 1,
+        "grade": null,
+        "birthday": null,
+        "allowed_groups": ";i27m;i27p;i27c;"
+      },
+      {
+        "id": 10,
+        "chat_id": null,
+        "type": 2,
+        "group_id": "i27c",
+        "name": "Teacher",
+        "surname": "Seed",
+        "middlename": "",
+        "token": "teacher_seed",
+        "online": 1,
+        "grade": null,
+        "birthday": null,
+        "allowed_groups": ";i27m;i27p;i27c;"
+      }
+    ],
+    "problems": [
+      {
+        "id": 1,
+        "group_id": "i27c",
+        "lesson": 1,
+        "prob": 1,
+        "item": "",
+        "title": "Дыра в кирпичной стене",
+        "prob_text": "",
+        "prob_type": 1,
+        "ans_type": 2,
+        "ans_validation": "",
+        "validation_error": "Введите ответ — сколько кирпичей",
+        "cor_ans": "26",
+        "cor_ans_checker": "",
+        "wrong_ans": "Нет, не столько кирпичей",
+        "congrat": "Да, всё верно!",
+        "synonyms": "1"
+      },
+      {
+        "id": 2,
+        "group_id": "i27c",
+        "lesson": 1,
+        "prob": 2,
+        "item": "",
+        "title": "У кого больше?",
+        "prob_text": "",
+        "prob_type": 1,
+        "ans_type": 99,
+        "ans_validation": "",
+        "validation_error": "Введите ответ — первую букву имени, и на сколько больше. Например: И100 или Ж1000.",
+        "cor_ans": "И90",
+        "cor_ans_checker": "",
+        "wrong_ans": "Нет, это неверно",
+        "congrat": "Точно!",
+        "synonyms": "2"
+      },
+      {
+        "id": 3,
+        "group_id": "i27c",
+        "lesson": 1,
+        "prob": 3,
+        "item": "",
+        "title": "БУУ-БА-А",
+        "prob_text": "",
+        "prob_type": 1,
+        "ans_type": 2,
+        "ans_validation": "",
+        "validation_error": "Введите ответ — натуральное число БУА",
+        "cor_ans": "146",
+        "cor_ans_checker": "",
+        "wrong_ans": "Нет, не такое число",
+        "congrat": "В точку!",
+        "synonyms": "3"
+      }
+    ],
+    "states": [
+      {
+        "user_id": 1,
+        "state": 2,
+        "problem_id": 0,
+        "last_student_id": 0,
+        "last_teacher_id": 0,
+        "oral_problem_id": null,
+        "info": null
+      },
+      {
+        "user_id": 2,
+        "state": 2,
+        "problem_id": 0,
+        "last_student_id": 0,
+        "last_teacher_id": 0,
+        "oral_problem_id": null,
+        "info": null
+      },
+      {
+        "user_id": 3,
+        "state": 2,
+        "problem_id": 0,
+        "last_student_id": 0,
+        "last_teacher_id": 0,
+        "oral_problem_id": null,
+        "info": null
+      },
+      {
+        "user_id": 10,
+        "state": 2,
+        "problem_id": 0,
+        "last_student_id": 0,
+        "last_teacher_id": 0,
+        "oral_problem_id": null,
+        "info": null
+      }
+    ]
+  }
+}

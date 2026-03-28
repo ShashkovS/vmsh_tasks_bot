@@ -2,7 +2,7 @@
 
 ## Scope
 This folder is the domain layer between handlers and `db_methods`.  
-Models encapsulate entity behavior and convert low-level DB rows into application-level objects.
+Models encapsulate entity behavior and convert DB rows into application objects.
 
 ## Design Conventions
 - Keep models thin and explicit: domain operations plus small invariants.
@@ -14,7 +14,7 @@ Models encapsulate entity behavior and convert low-level DB rows into applicatio
 ## Critical Behavior to Preserve
 - `User`:
   - token normalization is part of identity lookup;
-  - level/online updates also write to change log.
+  - group/online updates also write to change log.
 - `State`:
   - state payload `info` is JSON-serialized with `orjson`;
   - this is the persistent state machine storage for handlers.
