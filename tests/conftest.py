@@ -27,10 +27,14 @@ async def _noop(*args, **kwargs):
     return None
 
 
+def _get_worker_id():
+    return os.environ.get('PYTEST_XDIST_WORKER', 'gw0')
+
+
 @pytest.fixture()
 def live_seed_db(tmp_path):
     db.sql.disconnect()
-    db_file = tmp_path / "live_seed.db"
+    db_file = tmp_path / f"live_seed_{_get_worker_id()}.db"
     db.sql.setup(str(db_file))
     seed = load_live_seed()
     yield LiveScenarioBuilder(seed=seed)

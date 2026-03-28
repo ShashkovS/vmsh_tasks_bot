@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from copy import deepcopy
 
 import pytest
@@ -22,11 +23,14 @@ async def _fast_sleep(_seconds=0):
 async def _noop(*args, **kwargs):
     return None
 
+def _get_worker_id():
+    return os.environ.get('PYTEST_XDIST_WORKER', 'gw0')
+
 
 @pytest.fixture()
 def isolated_db(tmp_path):
     db.sql.disconnect()
-    db_file = tmp_path / "handler_flows.db"
+    db_file = tmp_path / f"handler_flows_{_get_worker_id()}.db"
     db.sql.setup(str(db_file))
 
     students = deepcopy(test_students)

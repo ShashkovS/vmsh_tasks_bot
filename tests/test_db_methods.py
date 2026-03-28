@@ -8,11 +8,15 @@ import db_methods as db
 from .initial_test_data import test_students, test_teachers, test_problems
 
 
+def _get_worker_id():
+    return os.environ.get('PYTEST_XDIST_WORKER', 'gw0')
+
+
 class DatabaseMethodsTest(TestCase):
     def setUp(self) -> None:
         print(f'setup, id={id(self)}, {self!r}')
         self.db = db
-        test_db_filename = f'db/unittest.db'
+        test_db_filename = f'db/unittest_{_get_worker_id()}.db'
         # ensure there is no trash file from previous incorrectly handled tests present
         for file in [test_db_filename, test_db_filename + '-shm', test_db_filename + '-wal']:
             try:

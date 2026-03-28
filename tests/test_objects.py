@@ -9,10 +9,14 @@ from models import *
 from .initial_test_data import test_students, test_teachers
 
 
+def _get_worker_id():
+    return os.environ.get('PYTEST_XDIST_WORKER', 'gw0')
+
+
 class UserMethodsTest(TestCase):
     def setUp(self) -> None:
         self.db = db
-        test_db_filename = 'db/unittest.db'
+        test_db_filename = f'db/unittest_{_get_worker_id()}.db'
         # ensure there is no trash file from previous incorrectly handled tests present
         try:
             os.unlink(test_db_filename)
