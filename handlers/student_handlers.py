@@ -110,69 +110,69 @@ async def post_problem_keyboard(
             reply_markup=common_keyboards.build_survey(student, survey, survey_result),
         )
         db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
-    else:
-        if not blocked:
-            if student.online == ONLINE_MODE.ONLINE:
-                mode_hint = msgs.online_mode_hint
-            elif student.online == ONLINE_MODE.SCHOOL:
-                mode_hint = msgs.offline_mode_hint
-            else:
-                mode_hint = '?'
-            group = student.group
-            if group:
-                group_payload = dict(group.__dict__)
-                if not group_payload.get('conditions_url'):
-                    group_payload['conditions_url'] = ''
-                if not group_payload.get('public_name'):
-                    group_payload['public_name'] = ''
-                group_ctx = SimpleNamespace(**group_payload)
-                header_template = group.tasks_header_template or msgs.problems_keyboard_header
-                has_custom_header_template = bool(group.tasks_header_template)
-            else:
-                group_code = _resolve_student_group_code(student)
-                group_ctx = SimpleNamespace(
-                    public_name=group_code,
-                    conditions_url='',
-                )
-                header_template = msgs.problems_keyboard_header
-                has_custom_header_template = False
-            text = _render_group_header_text(header_template, student=student, mode_hint=mode_hint, group_ctx=group_ctx)
+        return
+    if not blocked:
+        if student.online == ONLINE_MODE.ONLINE:
+            mode_hint = msgs.online_mode_hint
+        elif student.online == ONLINE_MODE.SCHOOL:
+            mode_hint = msgs.offline_mode_hint
         else:
-            text = msgs.solutions_are_not_accepted_now
+            mode_hint = '?'
+        group = student.group
+        if group:
+            group_payload = dict(group.__dict__)
+            if not group_payload.get('conditions_url'):
+                group_payload['conditions_url'] = ''
+            if not group_payload.get('public_name'):
+                group_payload['public_name'] = ''
+            group_ctx = SimpleNamespace(**group_payload)
+            header_template = group.tasks_header_template or msgs.problems_keyboard_header
+            has_custom_header_template = bool(group.tasks_header_template)
+        else:
+            group_code = _resolve_student_group_code(student)
+            group_ctx = SimpleNamespace(
+                public_name=group_code,
+                conditions_url='',
+            )
+            header_template = msgs.problems_keyboard_header
+            has_custom_header_template = False
+        text = _render_group_header_text(header_template, student=student, mode_hint=mode_hint, group_ctx=group_ctx)
+    else:
+        text = msgs.solutions_are_not_accepted_now
     if show_lesson is None:
         show_lesson = Problem.last_lesson_num(group_id)
-        try:
-            keyb_msg = await bot.send_message(
-                chat_id=chat_id,
-                text=text,
-                parse_mode='HTML',
-                disable_web_page_preview=True,
-                reply_markup=student_keyboards.build_problems(show_lesson, student),
-                disable_notification=disable_notification,
-            )
-        except TelegramBadRequest as e:
-            if blocked or not has_custom_header_template or 'parse entities' not in str(e).lower():
-                raise
-            logger.warning('Invalid group tasks_header_template for %s, fallback to default header: %s', group_id, e)
-            fallback_text = _render_group_header_text(
-                msgs.problems_keyboard_header,
-                student=student,
-                mode_hint=mode_hint,
-                group_ctx=group_ctx,
-            )
-            keyb_msg = await bot.send_message(
-                chat_id=chat_id,
-                text=fallback_text,
-                parse_mode='HTML',
-                disable_web_page_preview=True,
-                reply_markup=student_keyboards.build_problems(show_lesson, student),
-                disable_notification=disable_notification,
-            )
-        except TelegramForbiddenError:
-            # Дальше писать смысла нет
-            student.set_chat_id(None)
-            return
-        db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
+    try:
+        keyb_msg = await bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            parse_mode='HTML',
+            disable_web_page_preview=True,
+            reply_markup=student_keyboards.build_problems(show_lesson, student),
+            disable_notification=disable_notification,
+        )
+    except TelegramBadRequest as e:
+        if blocked or not has_custom_header_template or 'parse entities' not in str(e).lower():
+            raise
+        logger.warning('Invalid group tasks_header_template for %s, fallback to default header: %s', group_id, e)
+        fallback_text = _render_group_header_text(
+            msgs.problems_keyboard_header,
+            student=student,
+            mode_hint=mode_hint,
+            group_ctx=group_ctx,
+        )
+        keyb_msg = await bot.send_message(
+            chat_id=chat_id,
+            text=fallback_text,
+            parse_mode='HTML',
+            disable_web_page_preview=True,
+            reply_markup=student_keyboards.build_problems(show_lesson, student),
+            disable_notification=disable_notification,
+        )
+    except TelegramForbiddenError:
+        # Дальше писать смысла нет
+        student.set_chat_id(None)
+        return
+    db.last_keyboard.update(student.id, keyb_msg.chat.id, keyb_msg.message_id)
 
 
 async def refresh_last_student_keyboard(student: User, force=False) -> bool:
