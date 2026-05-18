@@ -76,7 +76,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
             callback_data=f"{use_callback}_{problem.id}"
         )
         keyboard_markup.add(task_button)
-    if PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL or PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL:
+    if PREV_PROBLEMS_MODE in (FEATURES.PREV_PROBLEMS_PREV, FEATURES.PREV_PROBLEMS_SHOW_ALL):
         to_lessons_button = types.InlineKeyboardButton(
             text=msgs.to_list_of_topics,
             callback_data=f"{CALLBACK.SHOW_LIST_OF_LISTS}"
@@ -96,7 +96,6 @@ def build_lessons(group_id: str = None):
     keyboard_markup = InlineKeyboardBuilder()
     keyboard_markup.max_width = 1
     all_lessons = db.lesson.get_all(group_id=group_id)
-    # PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL or PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL
     use_lessons = []
     if PREV_PROBLEMS_MODE == FEATURES.PREV_PROBLEMS_SHOW_ALL:
         use_lessons = all_lessons

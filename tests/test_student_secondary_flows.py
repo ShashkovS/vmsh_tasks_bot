@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 import db_methods as db
-from handlers import main_handlers, student_handlers
+from handlers import main_handlers, student_handlers, student_keyboards
 from helpers.consts import ANS_TYPE, CALLBACK, PROB_TYPE, RES_TYPE, STATE, VERDICT
 from helpers.features import FEATURES
 from helpers.msg_texts import msgs
@@ -16,6 +16,15 @@ pytestmark = pytest.mark.asyncio
 
 async def _drain(env):
     await env["tasks"].drain()
+
+
+def _callback_data(markup):
+    return [
+        button.callback_data
+        for row in markup.inline_keyboard
+        for button in row
+        if button.callback_data
+    ]
 
 
 async def test_student_results_command_prints_saved_results(scenario_env):
@@ -116,3 +125,62 @@ async def test_sos_entrypoint_for_known_user_shows_question_actions(scenario_env
     await student_handlers.sos(make_message(student.chat_id, text="/sos", message_id=7))
 
     assert any(msg.chat.id == student.chat_id and msgs.sos_what_is_your_question in (msg.text or "") for msg in bot.sent_messages)
+
+
+async def test_prev_problems_prev_mode_adds_lessons_button(scenario_env, monkeypatch):
+    data = scenario_env["data"]
+    student = data.bind_chat(data.get_user("qwerty1"), 85006)
+    student.set_group_id("i27c")
+    data.add_problem(
+        group_id="i27c",
+        lesson=2,
+        prob=1,
+        title="Second lesson problem",
+        prob_type=PROB_TYPE.TEST,
+        ans_type=ANS_TYPE.NATURAL,
+        cor_ans="1",
+    )
+    monkeypatch.setattr(student_keyboards, "PREV_PROBLEMS_MODE", FEATURES.PREV_PROBLEMS_PREV)
+
+    markup = student_keyboards.build_problems(2, student)
+
+    assert str(CALLBACK.SHOW_LIST_OF_LISTS) in _callback_data(markup)
+
+
+async def test_show_all_lessons_selection_posts_selected_lesson_keyboard(scenario_env, monkeypatch):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    student = data.bind_chat(data.get_user("qwerty1"), 85007)
+    student.set_group_id("i27c")
+    lesson_1_problem = Problem.get_by_key("i27c", 1, 1, "")
+    assert lesson_1_problem is not None
+    latest_problem = data.add_problem(
+        group_id="i27c",
+        lesson=2,
+        prob=1,
+        title="Latest lesson problem",
+        prob_type=PROB_TYPE.TEST,
+        ans_type=ANS_TYPE.NATURAL,
+        cor_ans="1",
+    )
+    monkeypatch.setattr(student_keyboards, "PREV_PROBLEMS_MODE", FEATURES.PREV_PROBLEMS_SHOW_ALL)
+
+    await main_handlers.inline_kb_answer_callback_handler(
+        make_callback_query(str(CALLBACK.SHOW_LIST_OF_LISTS), chat_id=student.chat_id, message_id=8)
+    )
+
+    lessons_markup = bot.edited_texts[-1]["kwargs"]["reply_markup"]
+    lesson_callbacks = _callback_data(lessons_markup)
+    assert f"{CALLBACK.LIST_SELECTED}_1" in lesson_callbacks
+    assert f"{CALLBACK.LIST_SELECTED}_2" in lesson_callbacks
+
+    before = len(bot.sent_messages)
+    await main_handlers.inline_kb_answer_callback_handler(
+        make_callback_query(f"{CALLBACK.LIST_SELECTED}_1", chat_id=student.chat_id, message_id=8)
+    )
+
+    assert len(bot.sent_messages) == before + 1
+    selected_lesson_markup = bot.sent_messages[-1].kwargs["reply_markup"]
+    problem_callbacks = _callback_data(selected_lesson_markup)
+    assert f"{CALLBACK.PROBLEM_SELECTED}_{lesson_1_problem.id}" in problem_callbacks
+    assert f"{CALLBACK.PROBLEM_SELECTED}_{latest_problem.id}" not in problem_callbacks
