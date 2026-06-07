@@ -27,6 +27,14 @@ def _callback_data(markup):
     ]
 
 
+def _button_texts(markup):
+    return [
+        button.text
+        for row in markup.inline_keyboard
+        for button in row
+    ]
+
+
 async def test_student_results_command_prints_saved_results(scenario_env):
     data = scenario_env["data"]
     bot = scenario_env["bot"]
@@ -145,6 +153,65 @@ async def test_prev_problems_prev_mode_adds_lessons_button(scenario_env, monkeyp
     markup = student_keyboards.build_problems(2, student)
 
     assert str(CALLBACK.SHOW_LIST_OF_LISTS) in _callback_data(markup)
+
+
+async def test_kvantlandia_button_is_present_in_problem_keyboard(scenario_env):
+    data = scenario_env["data"]
+    student = data.bind_chat(data.get_user("qwerty1"), 85008)
+    student.set_group_id("i27c")
+
+    markup = student_keyboards.build_problems(1, student)
+
+    assert _button_texts(markup).count("Квантландия") == 2
+    assert _callback_data(markup).count(str(CALLBACK.KVANTLANDIA)) == 2
+
+
+async def test_kvantlandia_callback_sends_existing_credentials(scenario_env):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    student = data.bind_chat(data.get_user("qwerty1"), 85009)
+    with db.sql.conn as conn:
+        conn.execute(
+            """
+            insert into kv_logins (user_id, token, kv_login, kv_password)
+            values (:user_id, :token, :kv_login, :kv_password)
+            """,
+            {
+                "user_id": student.id,
+                "token": student.token,
+                "kv_login": "test<&login>",
+                "kv_password": "test>&pass",
+            },
+        )
+
+    await main_handlers.inline_kb_answer_callback_handler(
+        make_callback_query(str(CALLBACK.KVANTLANDIA), chat_id=student.chat_id, message_id=9)
+    )
+
+    message = bot.sent_messages[-1]
+    assert message.chat.id == student.chat_id
+    assert message.kwargs["parse_mode"] == "HTML"
+    assert "Для входа используйте следующие данные:" in message.text
+    assert "логин: <code>test&lt;&amp;login&gt;</code>" in message.text
+    assert "пароль: <code>test&gt;&amp;pass</code>" in message.text
+    assert bot.answered_callbacks[-1]["id"] == "cbq-1"
+
+
+async def test_kvantlandia_callback_sends_registration_instruction_without_credentials(scenario_env):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    student = data.bind_chat(data.get_user("qwerty2"), 85010)
+
+    await main_handlers.inline_kb_answer_callback_handler(
+        make_callback_query(str(CALLBACK.KVANTLANDIA), chat_id=student.chat_id, message_id=10)
+    )
+
+    message = bot.sent_messages[-1]
+    assert message.chat.id == student.chat_id
+    assert message.kwargs["parse_mode"] == "HTML"
+    assert 'нажмите кнопку "Регистрация" и заполните форму.' in message.text
+    assert "Для входа используйте следующие данные:" not in message.text
+    assert bot.answered_callbacks[-1]["id"] == "cbq-1"
 
 
 async def test_show_all_lessons_selection_posts_selected_lesson_keyboard(scenario_env, monkeypatch):

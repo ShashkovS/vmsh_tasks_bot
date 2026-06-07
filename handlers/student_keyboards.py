@@ -9,6 +9,14 @@ from helpers.features import RESULT_MODE, FEATURES, PREV_PROBLEMS_MODE, GAME_MOD
 import db_methods as db
 
 
+# TEMP_KVANTLANDIA
+def _add_kvantlandia_button(keyboard_markup: InlineKeyboardBuilder):
+    keyboard_markup.add(types.InlineKeyboardButton(
+        text="Квантландия",
+        callback_data=CALLBACK.KVANTLANDIA,
+    ))
+
+
 def build_problems(lesson_num: int, student: User, is_sos_question=False):
     logger.debug('keyboards.build_problems')
     group_id = student.group_id
@@ -25,6 +33,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
             url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
         )
         keyboard_markup.add(to_game_button)
+    _add_kvantlandia_button(keyboard_markup)
     # Кнопки с вопросами
     if not is_sos_question:
         que1 = types.InlineKeyboardButton(
@@ -88,6 +97,7 @@ def build_problems(lesson_num: int, student: User, is_sos_question=False):
             url=f'https://{config.webhook_host}/game/webtoken/{Webtoken.webtoken_by_user(student)}'
         )
         keyboard_markup.add(to_game_button)
+    _add_kvantlandia_button(keyboard_markup)
     return keyboard_markup.as_markup()
 
 

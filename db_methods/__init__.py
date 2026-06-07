@@ -25,3 +25,4 @@ from .db_reports import report
 from .db_questions import question
 from .db_survey import survey
 from .db_settings import settings
+from .db_kv_logins import kv_login  # TEMP_KVANTLANDIA

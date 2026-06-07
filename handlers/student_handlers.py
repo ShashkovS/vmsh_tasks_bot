@@ -5,6 +5,7 @@ import io
 import asyncio
 import traceback
 from ast import literal_eval
+from html import escape
 from operator import itemgetter
 from typing import Tuple, Optional
 from types import SimpleNamespace
@@ -841,6 +842,31 @@ async def prc_show_list_of_lists_callback(query: types.CallbackQuery, student: U
         text=msgs.list_of_all_topics,
         reply_markup=student_keyboards.build_lessons(group_id=student.group_id)
     )
+    await bot.answer_callback_query_ig(query.id)
+
+
+# TEMP_KVANTLANDIA
+@reg_callback(CALLBACK.KVANTLANDIA)
+async def prc_kvantlandia_callback(query: types.CallbackQuery, student: User):
+    logger.debug('prc_kvantlandia_callback')
+    kv_login = db.kv_login.get_by_user_id(student.id)
+    if kv_login and kv_login.get('kv_login') and kv_login.get('kv_password'):
+        text = (
+            'Для участия в турнире откройте страницу https://math.kvantland.com/, '
+            'нажмите кнопку "Открыть турнир ... класса" (по вашему выбору).\n'
+            'Для входа используйте следующие данные:\n'
+            f'логин: <code>{escape(kv_login["kv_login"])}</code>\n'
+            f'пароль: <code>{escape(kv_login["kv_password"])}</code>\n'
+            'Желаем успехов!'
+        )
+    else:
+        text = (
+            'Для участия в турнире откройте страницу https://math.kvantland.com/, '
+            'нажмите кнопку "Открыть турнир ... класса" (по вашему выбору), '
+            'нажмите кнопку "Регистрация" и заполните форму.\n'
+            'Желаем успехов!'
+        )
+    await bot.send_message(chat_id=query.message.chat.id, text=text, parse_mode='HTML')
     await bot.answer_callback_query_ig(query.id)
 
 

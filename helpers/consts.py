@@ -52,6 +52,7 @@ class CALLBACK(str, Enum):
     SEND_ANSWER = 'h'
     REACTION = 'r'
     SURVEY = 'S'
+    KVANTLANDIA = 'K'  # TEMP_KVANTLANDIA
 
     def __str__(self):
         return self.value
