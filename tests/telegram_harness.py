@@ -4,6 +4,8 @@ import asyncio
 from io import BytesIO
 from types import SimpleNamespace
 
+from aiogram.exceptions import TelegramForbiddenError
+
 
 class RecordingMessage(SimpleNamespace):
     def __init__(self, **kwargs):
@@ -112,12 +114,16 @@ class RecordingBot:
         self.posted_logs = []
         self.unpinned_chats = []
         self.set_commands_calls = []
+        self.downloaded_file_bytes = b"fake-file"
+        self.fail_send_message_chat_ids = set()
 
     def _next_message_id(self) -> int:
         self._message_id += 1
         return self._message_id
 
     async def send_message(self, chat_id, text, **kwargs):
+        if chat_id in self.fail_send_message_chat_ids:
+            raise TelegramForbiddenError(method=None, message="bot was blocked by the user")
         message = SimpleNamespace(
             chat=SimpleNamespace(id=chat_id),
             message_id=self._next_message_id(),
@@ -204,7 +210,7 @@ class RecordingBot:
         return SimpleNamespace(file_path=f"fake/{file_id}.jpg")
 
     async def download_file(self, file_path):
-        return BytesIO(b"fake-file")
+        return BytesIO(self.downloaded_file_bytes)
 
     def remove_markup_after(self, messages, timeout):
         return None

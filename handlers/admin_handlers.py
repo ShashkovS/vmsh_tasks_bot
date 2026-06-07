@@ -1,4 +1,6 @@
 import logging
+import csv
+import io
 
 from aiogram import types
 from aiogram.enums import ParseMode
@@ -266,6 +268,86 @@ async def run_broadcast_task(teacher_chat_id, tokens, broadcast_message, html_mo
         quiet=quiet,
         has_reply_to=bool(reply_to_message),
         message_len=len(broadcast_message or ""),
+    )
+
+
+def parse_broadcsv_tsv(raw_tsv: str):
+    logger.debug('parse_broadcsv_tsv')
+    rows = []
+    invalid_rows = []
+    for row_num, row in enumerate(csv.reader(io.StringIO(raw_tsv), delimiter='\t'), start=1):
+        if not row or all(not cell.strip() for cell in row):
+            continue
+        if len(row) != 2:
+            invalid_rows.append(row_num)
+            continue
+        token = row[0].strip()
+        text = row[1]
+        if not token or not text:
+            invalid_rows.append(row_num)
+            continue
+        rows.append((token, text))
+    return rows, invalid_rows
+
+
+async def run_broadcsv_task(teacher_chat_id, rows):
+    logger.debug('run_broadcsv_task')
+    sent = skipped = failed = 0
+    failed_tokens = []
+    for token, text in rows:
+        student = User.get_by_token(token)
+        if not student or not student.chat_id:
+            skipped += 1
+            continue
+        try:
+            await bot.send_message(
+                chat_id=student.chat_id,
+                text=text,
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=True,
+            )
+            sent += 1
+        except TelegramAPIError as e:
+            logger.info(f'Не удалось отправить broadcsv сообщение {student.chat_id}\n{e}')
+            failed += 1
+            failed_tokens.append(token)
+        await asyncio.sleep(1 / 20)
+    await bot.send_message(
+        chat_id=teacher_chat_id,
+        text=(
+            f"Индивидуальная рассылка завершена: отправлено {sent}, "
+            f"пропущено {skipped}, ошибок отправки {failed}."
+            f"{' Проблемные токены: ' + ', '.join(failed_tokens) if failed_tokens else ''}"
+        ),
+    )
+
+
+@router.message(Command('broadcsv'))
+async def broadcsv(message: types.Message):
+    logger.debug('broadcsv')
+    teacher = User.get_by_chat_id(message.chat.id)
+    if not teacher or teacher.type != USER_TYPE.TEACHER:
+        return
+    if not message.document:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text='Приложите TSV-файл: первый столбец — токен, второй — сообщение в Telegram Markdown.',
+        )
+        return
+    file_info = await bot.get_file(message.document.file_id)
+    downloaded_file = await bot.download_file(file_info.file_path)
+    raw_tsv = downloaded_file.read().decode('utf-8-sig')
+    rows, invalid_rows = parse_broadcsv_tsv(raw_tsv)
+    if invalid_rows:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f'Не удалось разобрать TSV. Некорректные строки: {invalid_rows!r}',
+        )
+        return
+    asyncio.create_task(run_broadcsv_task(message.chat.id, rows))
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=f'Создано задание индивидуальной рассылки ({len(rows)} строк).',
     )
 
 

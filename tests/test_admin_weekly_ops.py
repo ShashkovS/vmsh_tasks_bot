@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
+from aiogram.enums import ParseMode
 import pytest
 
 import db_methods as db
@@ -15,6 +18,10 @@ pytestmark = pytest.mark.asyncio
 
 async def _drain(env):
     await env["tasks"].drain()
+
+
+def _document(file_id="broadcsv-file"):
+    return SimpleNamespace(file_id=file_id, mime_type="text/tab-separated-values", file_size=1024)
 
 
 async def test_set_sleep_state_and_reset_state_cycle(scenario_env):
@@ -111,6 +118,105 @@ async def test_broadcast_command_dispatches_to_expected_students(scenario_env):
     assert (student_a.chat_id, "Weekly news") in delivered_texts
     assert (student_b.chat_id, "Weekly news") not in delivered_texts
     assert (student_c.chat_id, "Weekly news") not in delivered_texts
+
+
+async def test_broadcsv_sends_individual_markdown_messages(scenario_env):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    teacher = data.bind_chat(data.get_teacher(), 66001)
+    student_a = data.bind_chat(data.get_user("qwerty1"), 66011)
+    student_b = data.bind_chat(data.get_user("qwerty2"), 66012)
+    bot.downloaded_file_bytes = (
+        f"{student_a.token}\tВаш пароль `alpha`\n"
+        f"{student_b.token}\tВаш пароль `beta`\n"
+    ).encode("utf-8")
+
+    await admin_handlers.broadcsv(
+        make_message(teacher.chat_id, text="/broadcsv", document=_document(), message_id=31)
+    )
+    await _drain(scenario_env)
+
+    delivered = {
+        (msg.chat.id, msg.text, msg.kwargs.get("parse_mode"))
+        for msg in bot.sent_messages
+        if msg.chat.id in {student_a.chat_id, student_b.chat_id}
+    }
+    assert (student_a.chat_id, "Ваш пароль `alpha`", ParseMode.MARKDOWN) in delivered
+    assert (student_b.chat_id, "Ваш пароль `beta`", ParseMode.MARKDOWN) in delivered
+
+
+async def test_broadcsv_skips_unknown_or_unbound_tokens(scenario_env):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    teacher = data.bind_chat(data.get_teacher(), 66002)
+    bound_student = data.bind_chat(data.get_user("qwerty1"), 66021)
+    unbound_student = data.get_user("qwerty2")
+    bot.downloaded_file_bytes = (
+        f"{bound_student.token}\tBound message\n"
+        f"{unbound_student.token}\tNo chat message\n"
+        "missing_token\tMissing message\n"
+    ).encode("utf-8")
+
+    await admin_handlers.broadcsv(
+        make_message(teacher.chat_id, text="/broadcsv", document=_document(), message_id=32)
+    )
+    await _drain(scenario_env)
+
+    delivered_texts = {(msg.chat.id, msg.text) for msg in bot.sent_messages if msg.chat.id == bound_student.chat_id}
+    assert (bound_student.chat_id, "Bound message") in delivered_texts
+    assert "отправлено 1, пропущено 2, ошибок отправки 0" in bot.sent_messages[-1].text
+
+
+async def test_broadcsv_continues_after_send_error(scenario_env):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    teacher = data.bind_chat(data.get_teacher(), 66003)
+    blocked_student = data.bind_chat(data.get_user("qwerty1"), 66031)
+    ok_student = data.bind_chat(data.get_user("qwerty2"), 66032)
+    bot.fail_send_message_chat_ids.add(blocked_student.chat_id)
+    bot.downloaded_file_bytes = (
+        f"{blocked_student.token}\tBlocked message\n"
+        f"{ok_student.token}\tStill sent\n"
+    ).encode("utf-8")
+
+    await admin_handlers.broadcsv(
+        make_message(teacher.chat_id, text="/broadcsv", document=_document(), message_id=33)
+    )
+    await _drain(scenario_env)
+
+    assert any(msg.chat.id == ok_student.chat_id and msg.text == "Still sent" for msg in bot.sent_messages)
+    assert "отправлено 1, пропущено 0, ошибок отправки 1" in bot.sent_messages[-1].text
+    assert blocked_student.token in bot.sent_messages[-1].text
+
+
+async def test_broadcsv_rejects_malformed_tsv_without_sending(scenario_env):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    teacher = data.bind_chat(data.get_teacher(), 66004)
+    student = data.bind_chat(data.get_user("qwerty1"), 66041)
+    bot.downloaded_file_bytes = f"{student.token}\tOK\tExtra\n".encode("utf-8")
+
+    await admin_handlers.broadcsv(
+        make_message(teacher.chat_id, text="/broadcsv", document=_document(), message_id=34)
+    )
+    await _drain(scenario_env)
+
+    assert any("Некорректные строки: [1]" in msg.text for msg in bot.sent_messages if msg.chat.id == teacher.chat_id)
+    assert not any(msg.chat.id == student.chat_id for msg in bot.sent_messages)
+
+
+async def test_broadcsv_ignores_non_teacher_caller(scenario_env):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    student = data.bind_chat(data.get_user("qwerty1"), 66051)
+    bot.downloaded_file_bytes = f"{student.token}\tShould not send\n".encode("utf-8")
+
+    await admin_handlers.broadcsv(
+        make_message(student.chat_id, text="/broadcsv", document=_document(), message_id=35)
+    )
+    await _drain(scenario_env)
+
+    assert bot.sent_messages == []
 
 
 async def test_update_groups_can_be_invoked_with_mocked_spreadsheet_backend(scenario_env, monkeypatch):
