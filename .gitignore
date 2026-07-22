@@ -23,3 +23,24 @@ solutions/
 /production.db
 /logs/events.jsonl
 /logs/events.jsonl.*
+
+# vmshpwa frontend and isolated runtimes
+vmshpwa/node_modules/
+vmshpwa/apps/*/node_modules/
+vmshpwa/packages/*/node_modules/
+vmshpwa/apps/*/dist/
+vmshpwa/apps/*/dev-dist/
+vmshpwa/packages/*/dist/
+vmshpwa/storybook-static/
+vmshpwa/coverage/
+vmshpwa/test-results/
+vmshpwa/playwright-report/
+vmshpwa/.vite/
+vmshpwa/**/*.tsbuildinfo
+.pnpm-store/
+.runtime/vmshpwa/
+db/vmshpwa_*.sqlite3
+db/vmshpwa_*.sqlite3-wal
+db/vmshpwa_*.sqlite3-shm
+/_vmsh_examples/
+/_external_pipelines/

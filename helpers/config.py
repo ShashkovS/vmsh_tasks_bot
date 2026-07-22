@@ -25,6 +25,10 @@ def _absolute_path(path: str) -> pathlib.Path:
 
 @dataclass()
 class Config:
+    runtime_profile: str = 'legacy'
+    pwa_instance: str = ''
+    pwa_media_root: str = ''
+    pwa_prototype: bool = False
     config_name: str = ''
     google_sheets_key: str = ''
     google_cred_json: str = ''
@@ -37,13 +41,13 @@ class Config:
     sos_channel: Union[str, int] = ''
     exceptions_channel: Union[str, int] = ''
     sentry_dsn: Optional[str] = ''
-    nats_server = "nats://127.0.0.1:4222"
+    nats_server: Optional[str] = "nats://127.0.0.1:4222"
     logging_level = logging.WARNING
     verdict_mode: str = "verdict_plus_minus_half"
-    result_mode: str = "result_immediately"
+    result_mode: str = "res_immed"
     save_sol_mode: str = "save_sol_in_tg_only"
-    prev_problems_mode: str = "prev_problems_hidden"
-    game_mode: str = "game_hidden"
+    prev_problems_mode: str = "prev_problems_hide"
+    game_mode: str = "game_hide"
     reg_mode: str = "reg_needed"
     rate_limit: str = "rate_limit_3_and_6"
     apps: str = "tg_bot, game_web_app, results_app, apis_app, zoom_events_parser"
@@ -71,6 +75,26 @@ def _create_logger():
 
 
 def _setup(*, force_production=False):
+    runtime_profile = os.environ.get('VMSH_RUNTIME_PROFILE', '').strip()
+    if runtime_profile.startswith('pwa-'):
+        config = Config(
+            runtime_profile=runtime_profile,
+            pwa_instance=os.environ.get('VMSH_INSTANCE', runtime_profile.removeprefix('pwa-')),
+            pwa_prototype=os.environ.get('VMSH_PWA_PROTOTYPE', 'false').lower() == 'true',
+            config_name=os.environ.get('VMSH_NATS_TOPIC_PREFIX', runtime_profile.replace('-', '_')),
+            db_filename=str(_absolute_path(os.environ.get('VMSH_DB_FILENAME', f'db/{runtime_profile}.sqlite3'))),
+            pwa_media_root=str(_absolute_path(os.environ.get('VMSH_MEDIA_ROOT', f'.runtime/vmshpwa/{runtime_profile}'))),
+            apps='pwa_app',
+            google_sheets_key='',
+            google_cred_json='',
+            telegram_bot_token='',
+            nats_server=os.environ.get('VMSH_NATS_SERVER') or None,
+            trace_enabled=False,
+            sentry_dsn='',
+        )
+        logger.info('PWA runtime profile %s uses DB %s', runtime_profile, config.db_filename)
+        return config
+
     config = Config()
     logging.info(f'Current working dir: {os.getcwd()}')
     if force_production or os.environ.get('PROD', None) == 'true':

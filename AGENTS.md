@@ -8,6 +8,7 @@
 - `templates/` and `web/` contain HTML/Jinja assets for dashboards and the game UI.
 - `tests/` contains pytest suites and fixtures.
 - Secrets/config templates are in `creds_test/`, `creds_prod/`, and `.env.example`. Never commit real credentials.
+- `vmshpwa/` is the pnpm workspace for Student PWA, Family PWA, Staff SPA and shared frontend packages. It is an adapter over this backend, not a separate backend project.
 
 ## Build, Test, and Development Commands
 - Install deps (uv): `uv sync` (or `uv add ...` as needed); legacy: `pip install -r requirements.txt`.
@@ -15,6 +16,8 @@
 - Run tests: `pytest -vvs` (or `./run_tests.sh` if still using the legacy requirements).
 - Create migrations: `yoyo new --sql -m "short-description" migrations`.
 - (Optional) Fetch prod DB snapshot: `make dbl` (uses `scp` to `db/`; requires access).
+- Human PWA runtime: `make pwa-dev`; agent runtime: `make pwa-agent-dev`. Agents must only use `pwa-agent-*` for long-running servers.
+- PWA checks: `make pwa-format pwa-lint pwa-typecheck pwa-test pwa-build`; E2E: `make pwa-e2e`.
 
 ## Coding Style & Naming
 - Follow PEP 8/257; 4‑space indentation; prefer explicit names over abbreviations.
@@ -43,3 +46,10 @@
 - Store service account JSON locally as described in `README.md`; do not add to git.
 - Webhook vs polling: prod uses `apps.tg_bot.setup_tgbot_webhook(app)` (gunicorn), dev uses `apps.tg_bot.run_tg_bot_in_polling_mode()` with aiohttp `AppRunner`.
 - Graceful shutdown should use `helpers/shutdown.wait_for_valuable_tasks()` to await project tasks while cancelling non‑critical ones.
+
+## PWA Boundary And Parallel Work
+- Preserve Telegram as a working parallel adapter over the same SQLite/domain logic. Google imports remain legacy-only until replaced by Staff UI.
+- PWA startup and all new PWA tests must work without Telegram/Google credentials and must never start polling.
+- Preserve other agents' and users' changes. Inspect the worktree before edits, keep changes scoped, and do not clean unrelated or untracked files.
+- Agents use the agent ports, database, NATS prefix, media root and fixture credentials defined in the Makefile. Never connect an agent run to human or production state.
+- Do not add production mock-auth backdoors. Test authentication belongs in test wiring only.

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import os
 from contextlib import suppress
 
 from aiohttp import web
@@ -12,11 +13,11 @@ from helpers.msg_texts import msgs
 from helpers.shutdown import wait_for_valuable_tasks
 from helpers.trace import init_trace
 
-LOCAL_APP_PORT = 8179
+LOCAL_APP_PORT = int(os.environ.get("VMSH_API_PORT", "8179"))
 
 
 async def on_startup(app):
-    logger.warning('MainApp Start up!')
+    logger.warning("MainApp Start up!")
     # Настраиваем БД
     db.sql.setup(config.db_filename)
     bot_settings = db.settings.get_settings()
@@ -31,36 +32,38 @@ async def on_shutdown(app):
     """
     Graceful shutdown. This method is recommended by aiohttp docs.
     """
-    logger.warning('on_shutdown')
-    logger.warning('MainApp Shutting down..')
+    logger.warning("on_shutdown")
+    logger.warning("MainApp Shutting down..")
     await wait_for_valuable_tasks(logger, timeout=20)
     # Останавливаем sympy-воркера (если он был запущен)
-    from helpers.checkers import worker
-    worker.shutdown()
+    if config.runtime_profile == "legacy":
+        from helpers.checkers import worker
+
+        worker.shutdown()
     db.sql.disconnect()
-    logger.warning('MainApp Bye!')
+    logger.warning("MainApp Bye!")
 
 
-def prepare_app():
+def prepare_app(enabled_apps=None):
     app = web.Application()
     # Важно, что текущие on_startup и on_shutdown первые. Мы потом развернём список on_shutdown в обратном порядке
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
     # Теперь настраиваем все модули
-    for module in apps.all_apps:
+    for module in enabled_apps or apps.all_apps:
         module.configue(app)
     # Обращаем on_shutdown, чтобы приложения закрывались в правильном порядке
     app.on_shutdown[:] = app.on_shutdown[::-1]
-    if __name__ == '__main__':
-        url_prefix = f'http://127.0.0.1:{LOCAL_APP_PORT}'
+    if __name__ == "__main__":
+        url_prefix = f"http://127.0.0.1:{LOCAL_APP_PORT}"
     else:
         if hasattr(apps, "tg_bot"):
             apps.tg_bot.setup_tgbot_webhook(app)
-        url_prefix = f'https://{config.webhook_host}'
-    logger.info('Routes:')
+        url_prefix = f"https://{config.webhook_host}"
+    logger.info("Routes:")
     for route in app.router.routes():
-        logger.info(f'{route.method}: {url_prefix}{route.resource.canonical}')
-        print(f'{route.method}: {url_prefix}{route.resource.canonical}')
+        logger.info(f"{route.method}: {url_prefix}{route.resource.canonical}")
+        print(f"{route.method}: {url_prefix}{route.resource.canonical}")
 
     return app
 
@@ -69,7 +72,9 @@ app = prepare_app()
 if __name__ == "__main__":
     # Start aiohttp server
     async def dev_main():
-        apps.tg_bot.start_bot_in_polling_mode()
+        telegram_enabled = hasattr(apps, "tg_bot")
+        if telegram_enabled:
+            apps.tg_bot.start_bot_in_polling_mode()
 
         runner = web.AppRunner(app)
         await runner.setup()
@@ -77,13 +82,18 @@ if __name__ == "__main__":
         await site.start()
         logger.info(f"Веб-сервер запущен на порту {LOCAL_APP_PORT}")
 
-        polling_task = asyncio.create_task(apps.tg_bot.run_tg_bot_in_polling_mode())
+        polling_task = (
+            asyncio.create_task(apps.tg_bot.run_tg_bot_in_polling_mode())
+            if telegram_enabled
+            else None
+        )
         try:
             await asyncio.Event().wait()
         finally:
-            polling_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await polling_task
+            if polling_task is not None:
+                polling_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await polling_task
             await runner.cleanup()
 
     try:
