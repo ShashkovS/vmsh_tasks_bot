@@ -1,0 +1,24 @@
+{
+  "name": "@vmsh/staff",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port ${VITE_PORT:-5175} --strictPort",
+    "routes:generate": "tsr generate",
+    "build": "tsr generate && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-router": "^1.0.0",
+    "@vmsh/app-shell": "workspace:*",
+    "@vmsh/content": "workspace:*",
+    "@vmsh/contracts": "workspace:*",
+    "@vmsh/ui": "workspace:*",
+    "lucide-react": "^0.540.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^4.0.0"
+  }
+}

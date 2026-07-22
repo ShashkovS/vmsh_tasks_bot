@@ -1,0 +1,20 @@
+{
+  "name": "@vmsh/app-shell",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-router": "^1.0.0",
+    "@vmsh/ui": "workspace:*",
+    "lucide-react": "^0.540.0",
+    "react": "^19.0.0",
+    "sonner": "^2.0.0"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@vmsh/test-utils",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@vmsh/contracts": "workspace:*",
+    "msw": "^2.0.0",
+    "zod": "^4.0.0"
+  }
+}

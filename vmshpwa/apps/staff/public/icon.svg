@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ВМШ 179 Staff">
+  <rect width="512" height="512" rx="96" fill="#334155"/>
+  <path d="M112 132h288v248H112z" fill="#f7f4ed"/>
+  <path d="M148 178h216M148 228h216M148 278h216M148 328h128" stroke="#334155" stroke-width="19"/>
+  <text x="325" y="350" text-anchor="middle" font-family="system-ui,sans-serif" font-size="62" font-weight="700" fill="#334155">179</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ВМШ 179 Семья">
+  <rect width="512" height="512" rx="96" fill="#3e7869"/>
+  <circle cx="196" cy="214" r="62" fill="#f7f4ed"/>
+  <circle cx="316" cy="214" r="62" fill="#f7f4ed"/>
+  <path d="M112 372c10-78 61-112 144-112s134 34 144 112" fill="#f7f4ed"/>
+  <text x="256" y="419" text-anchor="middle" font-family="system-ui,sans-serif" font-size="58" font-weight="700" fill="#3e7869">179</text>
+</svg>

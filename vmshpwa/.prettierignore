@@ -1,0 +1,6 @@
+dist
+storybook-static
+playwright-report
+test-results
+coverage
+**/routeTree.gen.ts

@@ -1,0 +1,68 @@
+# Design-system status
+
+Этот файл — журнал gates. Визуальная модель обновляет evidence и вопросы, но ставит `accepted` только после явного решения владельца продукта.
+
+| Фаза                     | Статус             | Принято | Evidence/решение                                                             |
+| ------------------------ | ------------------ | ------- | ---------------------------------------------------------------------------- |
+| 1. Art direction         | ready for review   | —       | `Exploration/Art direction` — A/B/C + сравнение, светлая и тёмная.           |
+| 2. Brand and tokens      | blocked by phase 1 | —       | —                                                                            |
+| 3. UI primitives         | blocked by phase 2 | —       | Технические placeholders не считаются принятой фазой.                        |
+| 4. Product components    | blocked by phase 3 | —       | —                                                                            |
+| 5. Pages and flows       | blocked by phase 4 | —       | Существующие prototype pages — content skeletons, не принятый visual design. |
+| 6. Storybook and testing | blocked by phase 5 | —       | Текущая Storybook-конфигурация — инфраструктурный фундамент.                 |
+| 7. Final acceptance      | blocked            | —       | —                                                                            |
+
+Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
+
+## Журнал решений
+
+Добавлять запись в формате:
+
+```text
+YYYY-MM-DD — Phase N — accepted/changes requested
+Decision owner:
+Chosen option and exact combination:
+Rejected traits:
+Evidence stories:
+Known follow-ups:
+```
+
+## Фаза 1 — материалы на рассмотрение (решение владельца не принято)
+
+Stories: `Exploration/Art direction` — «A · Листок», «B · Мастерская», «C · Архив»,
+каждая в светлой и тёмной теме, плюс «Сравнение A / B / C». Глобальные переключатели
+Storybook: тема, плотность (Школьник / Семья / Учитель), анимация.
+
+Содержание всех трёх направлений одинаково и взято из реальных материалов кружка:
+листок 21н (задачи 21н.1, 21н.4, 21н.6, 21н.7, 21н.8), задачи 27х.1 и 27х.3 с формулами
+и таблицей, пост канала за 26 января.
+
+Проверки на момент подготовки: `pwa-format`, `pwa-lint`, `pwa-typecheck`, `pwa-test`,
+`pwa-storybook-test` (15/15, addon-a11y в режиме `error`), `pwa-build`.
+Контраст: `node dev/design-system/exploration/contrast-audit.mjs` — 156 пар × 3 направления
+× 2 темы проходят WCAG 2.2 AA (текст 4.5:1, границы и focus 3:1).
+
+Исправлено по ходу фазы 1 (инфраструктура, не визуальное решение):
+
+- Storybook не рендерил ни одной story: отсутствовал `mockServiceWorker.js` и `staticDirs`;
+- добавлены глобальные переключатели плотности и reduced motion;
+- `dev/**` включён в `tsconfig.json`, иначе ESLint не мог разобрать файлы фазы 1.
+
+Решения, принятые владельцем до реализации:
+
+- шрифты: self-host двух OFL-семейств (UI sans + reading serif), кириллический subset,
+  precache; кандидаты подключены как `@fontsource*` devDependencies и живут только в Storybook;
+- уровни: три именованных семейства + нейтральный fallback, цвет назначается по `groups.sort_order`;
+- статистика сложности задачи показывается школьнику только после завершения проверки
+  всего занятия — по явному разрешению или через неделю после закрытия приёма.
+
+## Открытые вопросы
+
+- Какое art direction будет выбрано после сравнения трёх исполняемых вариантов?
+- Логика цвета уровня различается по направлениям (A — одна чернильная лестница,
+  B — три отдельных приборных оттенка, C — почти нейтральные тона плюс печатная буква
+  н/п/х). Какая из трёх логик принимается?
+- Финальная пара шрифтов фиксируется вместе с направлением; после выбора лишние
+  `@fontsource*` пакеты удаляются.
+- Нужен ли отдельный knob «время появления статистики» в настройках сезона, или
+  недельный grace period достаточно зашить как значение по умолчанию.
