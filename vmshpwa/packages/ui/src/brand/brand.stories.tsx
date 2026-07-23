@@ -75,6 +75,35 @@ function BrandSheet() {
           </span>
         </div>
       </section>
+
+      <section className="space-y-2">
+        <h2 className="text-section font-semibold">Правила использования</h2>
+        <ul className="list-disc space-y-1 pl-5 text-small text-muted-foreground">
+          <li>
+            <b className="text-foreground">Clear space:</b> вокруг знака — свободное поле не меньше
+            высоты цифр «179».
+          </li>
+          <li>
+            <b className="text-foreground">Минимальный размер:</b> знак — от 16&nbsp;px (favicon), в
+            интерфейсе — от 20&nbsp;px; wordmark — от 18&nbsp;px по высоте прописной.
+          </li>
+          <li>
+            <b className="text-foreground">Цвет:</b> только{' '}
+            <code className="font-mono">currentColor</code> / семантические токены (brand,
+            foreground, on-surface). Не перекрашивать в статусные или уровневые цвета.
+          </li>
+          <li>
+            <b className="text-foreground">Нельзя:</b> растягивать и менять пропорции, поворачивать,
+            добавлять тени/обводки/градиенты, ставить на пёстрый фон без достаточного контраста,
+            использовать как интерфейсную иконку (для интерфейса — Lucide).
+          </li>
+          <li>
+            <b className="text-foreground">Forced colors:</b> знак наследует{' '}
+            <code className="font-mono">currentColor</code> и в режиме высокой контрастности
+            принимает системный цвет текста; фокус и границы остаются видимыми.
+          </li>
+        </ul>
+      </section>
     </div>
   )
 }

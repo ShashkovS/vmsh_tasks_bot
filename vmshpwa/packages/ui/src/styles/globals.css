@@ -620,3 +620,17 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Forced colors (Windows high contrast). Strategy: meaning never depends on
+ * colour alone — every status/verdict/level carries a symbol and a label — so
+ * the OS palette override cannot remove meaning. We only guarantee that focus
+ * stays visible with a system colour; brand marks inherit currentColor and
+ * follow the system text colour automatically.
+ */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

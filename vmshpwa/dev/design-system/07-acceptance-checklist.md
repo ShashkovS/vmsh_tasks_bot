@@ -33,7 +33,7 @@
 - [ ] Длинный математический документ, formulas, subparts, tables и TikZ/SVG читаемы.
 - [ ] Figures доступны и масштабируются keyboard/pointer.
 - [ ] Все исторические answer types представлены contract-driven input.
-- [ ] До 10 фото: worker progress, delete/re-upload ordering, preview, retry, offline queue.
+- [ ] До 10 фото: worker progress, up/down reordering, preview, retry, offline queue.
 - [ ] Immutable evidence и annotation overlay разделены.
 - [ ] Feedback/resubmission history не теряется.
 - [ ] Последний verdict, раскрываемая история, correction/recheck и частичные веса представлены корректно.

@@ -12,7 +12,7 @@ Login — отдельный shell без раскрытия защищённо�
 
 ### Login
 
-Логин, текущий Telegram-токен как пароль, password reveal, rate-limit/invalid/blocked/deactivated states, восстановление с понятным переходом в поддерживаемый Telegram-процесс. Не обещать Telegram OAuth. После входа — возврат к безопасному intended route.
+Логин, текущий Telegram-токен как пароль, password reveal, rate-limit/invalid/blocked/deactivated states. Восстановление доступа — обращение на почту `vmsh@179.ru` (логин выдаётся на почту после регистрации на кружок); Telegram-токен остаётся паролем, но Telegram OAuth не обещаем. Онбординга в первой фазе нет. После входа — возврат к безопасному intended route.
 
 ### Сейчас / текущая неделя
 
@@ -22,7 +22,7 @@ Login — отдельный shell без раскрытия защищённо�
 
 Листок целиком с anchors и фильтром, строго в порядке номеров; архив уроков; focused task. Условие не дробится на cards без необходимости. Task detail содержит version/status/deadline, test или written/oral action, hidden-until-available hint/solution и историю. `WRITTEN_BEFORE_ORALLY` выглядит устной задачей и одновременно даёт письменную отправку и данные подключения в разрешённое окно.
 
-Submission flows: test answer с format/error/rate limit; written text/photos/delete-and-reupload ordering/compress/review/offline queue/receipt; oral instructions/current availability. Result/thread показывает зафиксированные после verdict pages, annotations, comments, последний градуированный verdict + раскрываемую историю, разрешённую AI provenance, реакцию ученика, пересдачу и changed-condition notice. Новый feedback остаётся отмеченным до просмотра.
+Submission flows: test answer с format/error/rate limit; written text/photos/up-down reordering/compress/review/offline queue/receipt; oral instructions/current availability и письменная сдача любой устной задачи. Result/thread показывает зафиксированные после verdict pages, annotations, comments, последний градуированный verdict + раскрываемую историю, разрешённую AI provenance, реакцию ученика, пересдачу и changed-condition notice. Новый feedback остаётся отмеченным до просмотра.
 
 ### Новости, прогресс, профиль
 

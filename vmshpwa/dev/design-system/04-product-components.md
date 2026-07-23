@@ -16,7 +16,7 @@ Product components живут вне нейтральных primitives — пр�
 ## Task experience
 
 - ProblemHeader/ProblemStatus: номер, уровень, вид сдачи, deadline, текущий результат и history link.
-- TaskTypeIndicator: registry-driven `TEST`, `WRITTEN`, `ORALLY`; технический `WRITTEN_BEFORE_ORALLY` школьнику всегда представлен как oral, но во время oral window совмещает письменную отправку и Zoom details. Иконка имеет accessible name и объяснение способа сдачи по tap/focus.
+- TaskTypeIndicator: registry-driven `TEST`, `WRITTEN`, `ORALLY`; технический `WRITTEN_BEFORE_ORALLY` школьнику всегда представлен как oral. **Любую устную задачу можно сдать письменно** (интерфейс письменной сдачи), а данные подключения к Zoom доступны по tap; во время oral window доступны оба пути. Иконка имеет accessible name и объяснение способа сдачи по tap/focus.
 - TaskListItem и long worksheet navigation: номер+иконка, status, title, anchor, фильтр статусов, отличие `not-started` от `opened-not-submitted`, progress summary без рейтинга. Полный листок сортируется по номеру; attention order используется только на «Сейчас».
 - HintDisclosure/SolutionDisclosure: недоступное скрыто; одна подсказка; и подсказка, и решение требуют подтверждения осознанного раскрытия; already-viewed state и методическое событие просмотра, корректный deep link.
 - DeadlineNotice: абсолютное время + понятная относительная фраза; closed/queued-before-deadline/conflict cases.
@@ -35,7 +35,7 @@ Composer поддерживает текст и до 10 фотографий:
 
 - выбрать camera/files, доступное объяснение типов и лимита;
 - per-file preprocessing progress worker-а;
-- thumbnail, full preview и удаление; ошибочный порядок исправляется удалением и повторной загрузкой страницы;
+- thumbnail, full preview, удаление и **изменение порядка кнопками вверх/вниз** (без DnD-зависимости, доступно с клавиатуры); удаление и повторная загрузка — запасной путь для типового 1–2 фото;
 - rotate/remove/retry, upload progress, общий payload size;
 - draft autosave, offline queue, duplicate retry/idempotency receipt;
 - final review порядка страниц до отправки;

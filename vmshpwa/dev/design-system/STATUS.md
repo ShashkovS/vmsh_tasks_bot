@@ -5,8 +5,8 @@
 | Фаза                     | Статус             | Принято    | Evidence/решение                                                             |
 | ------------------------ | ------------------ | ---------- | ---------------------------------------------------------------------------- |
 | 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.  |
-| 2. Brand and tokens      | in progress        | —          | Перенос токенов B в `packages/ui`; A/C выброшены.                            |
-| 3. UI primitives         | blocked by phase 2 | —          | Технические placeholders не считаются принятой фазой.                        |
+| 2. Brand and tokens      | accepted           | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                      |
+| 3. UI primitives         | not started        | —          | Разблокирована; следующая фаза.                                              |
 | 4. Product components    | blocked by phase 3 | —          | —                                                                            |
 | 5. Pages and flows       | blocked by phase 4 | —          | Существующие prototype pages — content skeletons, не принятый visual design. |
 | 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                 |
@@ -58,6 +58,24 @@ Known follow-ups:
     провенанс human/AI) зафиксированы в docs/product-ux-decisions-2026-07.md.
 ```
 
+```text
+2026-07-23 — Phase 2 — accepted
+Decision owner: Сергей Шашков (владелец продукта)
+Chosen option and exact combination:
+  Token system primitive→semantic→component; палитра B; цвета уровней
+  категориальные (teal/violet/rose/ochre/neutral); ступени вердикта −…+;
+  provenance human/AI; светлая и тёмная темы; шрифты IBM Plex Sans (UI) +
+  Source Serif 4 (reading); знак «179» + wordmark + product icons + правила
+  использования; density Student/Family/Staff.
+Evidence stories: Foundations/Tokens, Foundations/Brand.
+Checks: contrast 70×2 AA; Storybook 11/11; Vitest 7/7; pytest 11/11; build.
+Known follow-ups:
+  - visual baselines обновляются после первой реальной страницы (плейсхолдер
+    «Сейчас» будет переписан) — сейчас 3 visual-теста ожидаемо расходятся ~3%;
+  - сабсеттинг самих KaTeX-шрифтов (основной вес precache);
+  - «несколько внутренних реакций учителя на одну проверку» — открытый вопрос.
+```
+
 ## Фаза 1 — принято (evidence)
 
 Направление B принято 2026-07-23; варианты A и C выброшены, `Exploration/*` удалён
@@ -99,11 +117,11 @@ Stories (удалены после приёмки): `Exploration/Art direction` 
 - verdict UI строится из registry курса и поддерживает binary/ternary/full scale; тип, lock/review, reactions, hint/solution и future AI states заданы в `docs/product-ux-decisions-2026-07.md`;
 - подробный реестр остальных решений: `docs/accepted-technical-decisions-2026-07.md`.
 
-## Текущий шаг — Phase 2 Brand and tokens
+## Phase 2 — принято (evidence)
 
-Phase 1 принята 2026-07-23 (направление B + заимствования из C, журнал решений выше). Варианты A и C выброшены. `Exploration/Art direction` остаётся как reference на B и удаляется/архивируется по мере переноса B в реальные токены и компоненты.
+Phase 2 принята владельцем 2026-07-23 (токены + бренд, журнал решений выше). Ниже — что вошло в фазу. Phase 1 принята тогда же (направление B + заимствования из C). Варианты A и C выброшены, `Exploration/*` удалён.
 
-Phase 2 переводит B в слои `primitive → semantic → component` в `packages/ui/src/styles`.
+Phase 2 перевела B в слои `primitive → semantic → component` в `packages/ui/src/styles`.
 
 **Сделано (token core, зелёный чекпоинт):**
 
@@ -111,11 +129,12 @@ Phase 2 переводит B в слои `primitive → semantic → component` 
 - семейства: surfaces/text/borders/interactive/focus/selection/link/overlay; status success/warning/danger/info (base/-foreground/-surface/-border); **уровни — категориальные приглушённые hue (teal н / violet п / rose х / ochre 4-й / neutral fallback), не градиент, отдельно от status и verdict**; verdict scale negative→positive + none; provenance human / AI; unread; connection; chart 1–8 + grid/axis/reference; annotation pen/highlight/comment/selection;
 - шрифты B self-hosted (`@fontsource/ibm-plex-sans` + `@fontsource-variable/source-serif-4`) как зависимости `@vmsh/ui`, кириллический subset, в precache;
 - типографика (type scale + tabular numerals + math chain), radius/elevation/z-index/motion/density (Student/Family/Staff через `data-density`), container widths;
-- **brand-assets**: repo-native SVG в `packages/ui/src/brand/marks.tsx` — `Sign179`, `Wordmark`, `IconStudent/Family/Staff`, всё `currentColor` (monochrome/print/обе темы); знак «179» читаем до 16 px; финальные `apps/*/public/icon.svg` (any) + `icon-maskable.svg` (safe area), манифест: раздельные any/maskable + палитра B (`#205f7d` / `#edeff1`) — закрыт давний анти-паттерн одной `any maskable` SVG;
+- **brand-assets**: repo-native SVG в `packages/ui/src/brand/marks.tsx` — `Sign179`, `Wordmark`, `IconStudent/Family/Staff`, всё `currentColor` (monochrome/print/обе темы); знак «179» читаем до 16 px; правила использования (clear space / min size / запрещённые трансформации / forced colors) в `Foundations/Brand`; `apps/*/public/icon.svg` (any) + production PNG `icon-192/512.png` (any) и `icon-maskable-512.png` (maskable, safe area); манифест: раздельные any/maskable + палитра B (`#205f7d` / `#edeff1`) — закрыт давний анти-паттерн одной `any maskable` SVG;
 - `Foundations/Tokens` + `Foundations/Brand` stories; light/dark/Staff-density; матрица независимости уровень × статус × вердикт × автор;
 - цветовые решения (палитра уровней teal/violet/rose, ступени вердикта) **подтверждены владельцем 2026-07-23**;
-- контраст: `node dev/design-system/tokens-contrast-audit.mjs` — **59 пар × 2 темы проходят WCAG 2.2 AA**;
-- гейты: format, lint (js + stylelint), typecheck, Storybook 19/19 (axe error), build — зелёные.
+- контраст: `node dev/design-system/tokens-contrast-audit.mjs` — **70 пар × 2 темы проходят WCAG 2.2 AA**;
+- гейты: format, lint (js + stylelint), typecheck, Storybook 11/11 (axe error), Vitest 7/7, pytest 11/11, build — зелёные;
+- forced-colors: смысл не зависит от цвета (символ+подпись), фокус остаётся видимым системным цветом; `@media (forced-colors: active)` в globals.
 
 **Полировка сделана (2026-07-23):** specimens spacing/motion + density Student↔Staff на одной форме в `Foundations/Tokens`; `Exploration/*` A/C удалён (B перенесён в реальные токены; знак — в `packages/ui/src/brand`); лишние `@fontsource` (inter/literata/golos-text/pt-serif) удалены; production PNG 192/512 any + maskable для manifest сгенерированы; precache подрезан globIgnores (убраны greek/vietnamese/latin-ext/cyrillic-ext слайсы: 2325→2031 KiB). Density теперь применяется на любом контейнере (`[data-density]`), не только на root.
 
@@ -123,12 +142,14 @@ Phase 2 переводит B в слои `primitive → semantic → component` 
 
 **Остаётся фоном:** сабсеттинг самих KaTeX-шрифтов (сейчас основной вес precache).
 
-Token core + brand + полировка готовы и зелёные (Storybook 11/11, contrast 59×2 AA, build). Дальше — первый экран школьника «Сейчас» на этих токенах.
+Token core + brand + полировка готовы и зелёные (Storybook 11/11, contrast 70×2 AA, build).
+
+**Следующее — Phase 3 UI primitives** (Base UI/shadcn на принятых токенах: density-варианты, focus/keyboard, states). Затем Phase 4 product components и только после — страницы, начиная со Student «Сейчас» в `mobile-light` (порядок — в `docs/product-ux-decisions-2026-07.md`). Visual baselines обновляются после первой реальной страницы.
 
 ## Открытые вопросы
 
-- Финальная font pair фиксируется в Phase 2; после выбора лишние `@fontsource*` пакеты удаляются.
 - Какой clock-skew threshold применять к offline submission около deadline.
+- Допускать ли несколько внутренних реакций учителя на одну проверку (сейчас — одна).
 - Подтвердить UX для одинакового idempotency key с различающимися payload.
 - После фиксации math corpus проверить subset/форматы KaTeX fonts и повторно измерить precache.
 - Является ли «вернуть на доработку» отдельным action/state; `REJECTED_ANSWER` зарезервирован для отрицательного результата после перепроверки.
