@@ -16,6 +16,8 @@
 
 Текущие CSS tokens и страницы — технические placeholders. Их разрешено целенаправленно заменить в рамках принятой фазы. Архитектуру workspace, routing, API contracts и production guards менять нельзя без отдельного согласования.
 
+Обязательные продуктовые inputs для всех фаз: `../../docs/accepted-technical-decisions-2026-07.md` и `../../docs/product-ux-decisions-2026-07.md`. Фазовое ТЗ не дублирует все enum values и migration caveats из этих реестров; визуальная модель обязана читать их полностью и не заменять конфигурируемую доменную модель удобным hardcode в story.
+
 ## Последовательность
 
 1. Art direction — 2–3 исполняемых направления.

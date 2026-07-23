@@ -16,13 +16,13 @@ Login — отдельный shell без раскрытия защищённо�
 
 ### Сейчас / текущая неделя
 
-Урок, уровень, online/очный режим, текущая фаза недели, ближайшее событие, компактный progress и продолжение последней задачи. Отдельно: pending submission, новый feedback, hints available, solutions published, no current lesson, offline cached.
+Урок, уровень, online/очный режим, текущая фаза недели, ближайшее событие, компактный progress и продолжение последней задачи. Attention order может поднимать новый feedback и незавершённое действие выше натурального порядка задач. Отдельно: pending submission, новый feedback, group problem-review call с конференцией, hints available, solutions published, no current lesson, offline cached.
 
 ### Задачи
 
-Листок целиком с anchors и фильтром; архив уроков; focused task. Условие не дробится на cards без необходимости. Task detail содержит version/status/deadline, test или written/oral action, hints/solution и историю.
+Листок целиком с anchors и фильтром, строго в порядке номеров; архив уроков; focused task. Условие не дробится на cards без необходимости. Task detail содержит version/status/deadline, test или written/oral action, hidden-until-available hint/solution и историю. `WRITTEN_BEFORE_ORALLY` выглядит устной задачей и одновременно даёт письменную отправку и данные подключения в разрешённое окно.
 
-Submission flows: test answer с format/error/rate limit; written text/photos/delete-and-reupload ordering/compress/review/offline queue/receipt; oral instructions/current availability. Result/thread показывает зафиксированные после verdict pages, annotations, comments, verdict, пересдачу и changed-condition notice.
+Submission flows: test answer с format/error/rate limit; written text/photos/delete-and-reupload ordering/compress/review/offline queue/receipt; oral instructions/current availability. Result/thread показывает зафиксированные после verdict pages, annotations, comments, последний градуированный verdict + раскрываемую историю, разрешённую AI provenance, реакцию ученика, пересдачу и changed-condition notice. Новый feedback остаётся отмеченным до просмотра.
 
 ### Новости, прогресс, профиль
 
@@ -56,11 +56,15 @@ Teacher и admin работают в одном приложении. Navigation
 
 ### Written review
 
-Queue page с grouping/filter/deep link. Detail — три зоны: очередь, evidence/annotation, student context+thread+verdict. Состояния claim, lock lost, another reviewer, long session, cancel without verdict, recheck, next item. Keyboard shortcuts отображаются и не перехватывают ввод текста.
+Queue page с основным grouping по задаче/`synonyms`, list/fast modes, сортировками по задаче, ожиданию, группе и ученику, фильтрами и deep link. Detail — три зоны: очередь, evidence/опциональная annotation, student context+thread+registry-driven verdict. Состояния claim, 30-minute lease, lock lost, another reviewer with name, long session, abandon with draft deletion, recheck, plus-without-comment, non-plus confirmation, next item и return-to-problem-picker. Keyboard shortcuts отображаются, `1` означает `+` и не перехватывает ввод текста. На телефоне зоны превращаются в последовательный flow без потери функций; offline verdict запрещён.
 
 ### Questions и oral
 
-Questions отделяют общий SOS от вопроса к задаче и позволяют ответить без искусственного письменного verdict. Oral admin показывает Zoom/школьный режим, очередь/поиск, один разговор, несколько отметок и атомарное завершение.
+Questions отделяют общий SOS от вопроса к задаче и позволяют ответить без искусственного письменного verdict; migration state объясняет legacy Telegram source без смешения с verdict queue. Oral admin показывает Zoom/школьный режим, очередь/поиск, один разговор, несколько отметок и атомарное завершение.
+
+### AI review surfaces — future states
+
+Staff показывает готовый advisory сразу, но никогда не ждёт AI и не блокирует human review. Stories/pages покрывают AI off, pending, advisory only, full AI reviewer, failed/not-ready и сравнение AI/human verdict для admin analytics. Human teacher остаётся автором собственного результата. Student/Family получают только policy-разрешённую часть и всегда различают AI и человека.
 
 ### Content administration
 

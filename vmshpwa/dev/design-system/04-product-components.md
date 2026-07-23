@@ -9,17 +9,21 @@ Product components живут вне нейтральных primitives — пр�
 - reading serif только в документе, UI controls остаются sans;
 - формула не обрезается: wrap where valid, otherwise локальный horizontal scroll с affordance;
 - номера формул и anchor/deep link;
-- copy текста без потери смысла;
+- обычный текст документа читается и копируется без потери смысла; для формул не добавляются отдельные copy menu, selection helper или другие необязательные интерактивные функции;
 - zoomable figure с keyboard zoom/reset, caption и alt;
 - print preview не подменяет web renderer.
 
 ## Task experience
 
 - ProblemHeader/ProblemStatus: номер, уровень, вид сдачи, deadline, текущий результат и history link.
-- TaskListItem и long worksheet navigation: anchor, фильтр статусов, progress summary без рейтинга.
-- HintDisclosure/SolutionDisclosure: время доступности, подтверждение осознанного раскрытия, already-viewed state, корректный deep link.
+- TaskTypeIndicator: registry-driven `TEST`, `WRITTEN`, `ORALLY`; технический `WRITTEN_BEFORE_ORALLY` школьнику всегда представлен как oral, но во время oral window совмещает письменную отправку и Zoom details. Иконка имеет accessible name и объяснение способа сдачи по tap/focus.
+- TaskListItem и long worksheet navigation: номер+иконка, status, title, anchor, фильтр статусов, отличие `not-started` от `opened-not-submitted`, progress summary без рейтинга. Полный листок сортируется по номеру; attention order используется только на «Сейчас».
+- HintDisclosure/SolutionDisclosure: недоступное скрыто; одна подсказка; и подсказка, и решение требуют подтверждения осознанного раскрытия; already-viewed state и методическое событие просмотра, корректный deep link.
 - DeadlineNotice: абсолютное время + понятная относительная фраза; closed/queued-before-deadline/conflict cases.
-- AttemptTimeline: test attempts, submissions, verdicts, edits и пересдачи без обвинительного языка.
+- VerdictMark/VerdictRegistry: course-configurable binary/ternary/full scale; symbol, owner-approved decoder, numeric weight и отдельный semantic color. Частичный результат называется «Частично»; `REJECTED_ANSWER` имеет admin-detail «Отклонено после перепроверки».
+- AttemptTimeline: последний verdict сразу, раскрываемая история test attempts, submissions, verdict corrections, edits и пересдач без обязательного искусственного номера попытки и обвинительного языка.
+- FeedbackAttention/ReactionPicker: unread feedback заметен без push; Student reactions скрыты от teacher, teacher internal reactions скрыты от Student/Family, admin видит обе стороны согласно permission contract.
+- GroupReviewCallout: спокойная плашка группового разбора с временем, conference ID/code и устойчивым join action.
 
 ## Test answer inputs
 
@@ -38,6 +42,8 @@ Composer поддерживает текст и до 10 фотографий:
 - server receipt с временем клиента и сервера.
 
 Оригинальная полученная фотография после submit неизменяема. Teacher annotation — отдельный overlay с pen/highlight/comment, undo/redo, масштабом и page navigation. FeedbackThread связывает точечные annotations и текстовые сообщения, показывает автора/время/канал и позволяет пересдачу без потери истории.
+
+Human feedback и AI feedback имеют разные author/provenance components, accessible labels и tokens. Даже в режиме AI-verdict школьник не должен принять AI за живого преподавателя; complaint/escalation ведёт к human review.
 
 ## Новости
 
@@ -58,14 +64,26 @@ ConnectionBanner/SyncIndicator/UpdatePrompt/PushPermissionCard:
 
 - DenseDataTable: sticky headers, resize/visibility, sort/filter, row selection, keyboard traversal;
 - MetadataGrid: cell edit, TSV copy/paste, dry-run errors, bulk actions, undo boundary;
-- ReviewQueue: grouping problem family, SLA/time, filters, live invalidation без прыжка текущей строки;
-- ReviewLock: owner/lease, lost lock, safe reacquire;
-- ThreePaneReview: queue / immutable evidence / feedback+verdict, resizable with accessible alternatives;
+- ReviewQueue: основной вход по `synonyms`, счётчик и возраст очереди; list mode и fast one-at-a-time mode; sort по задаче, ожиданию, группе и ученику; полное название и recheck already-reviewed action;
+- ReviewLock: текущая атомарная 30-минутная lease; занятая работа остаётся видна с именем проверяющего и disabled action; lost lock блокирует устаревший verdict и требует refetch;
+- ThreePaneReview: queue / immutable evidence / feedback+verdict, resizable with accessible alternatives. Verdict actions строятся из course registry, идут от лучшего к худшему, доступны кнопками и digits (`1` всегда `+`); shortcuts не работают в editable fields и имеют видимую legend;
+- ReviewCommentGuard: для verdict ниже `+` без комментария спрашивает подтверждение, но не запрещает отправку; `+` без комментария сохраняет и листает дальше; abandon удаляет unsaved comment/annotation, освобождает lock и переходит дальше;
+- ReviewReaction: staff-only internal reaction, недоступная Student/Family API/view-model;
 - LaTeXUpload: file/batch progress, diagnostics, source preview, derived previews;
 - MissingAssetsFlow: exact missing refs, match candidates, upload/reuse, blocking resolution;
 - PublicationControl: per-level task/hint/solution state, scheduled time, diff, publish/rollback confirmation;
 - BroadcastComposer: audience query, count/preview, PWA/Telegram delivery options, quiet/category, dry run;
 - ClassroomPlanner: capacity, auto-assignment explanation, conflict list и лёгкий app-local pointer/native drag-and-drop без новой dependency. Достаточен простой select/move fallback; сложная keyboard DnD-модель не требуется.
+
+Questions/SOS получают отдельный от verdict queue product surface. Его adapter сохраняет совместимость с legacy negative `problem_id` и Telegram handlers до отдельной backend-миграции.
+
+## AI review states — future-ready, не первая версия
+
+Компоненты проектируются на policy registry с режимами `off`, `student-visible negative check`, `teacher-only advisory`, `full AI reviewer`. Обязательные состояния: pending после submission, result absent/late, advisory text, student-visible AI comment, AI verdict, failure и escalation to human.
+
+Teacher advisory — отдельная сворачиваемая панель, видимая сразу, если результат уже готов. Она не предлагает и не применяет verdict, не заполняет human comment и не блокирует проверку. Full AI reviewer визуально остаётся особым AI author. Student/Family видят только разрешённый policy output; human final verdict не маркируется как «с участием AI», поскольку за него отвечает teacher.
+
+AI comment допускает будущий безопасный math/SVG fragment, но story использует только санитизированный fixture. Дизайн не определяет prompts, leak prevention или LLM integration.
 
 ## Progress
 

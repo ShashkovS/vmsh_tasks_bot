@@ -13,7 +13,7 @@ CSS variables живут в `packages/ui/src/styles`, экспортируютс
 - нейтральная OKLCH-шкала с предсказуемой lightness;
 - один спокойный brand hue и при необходимости вторичный;
 - отдельные hue families для success, warning, danger, information;
-- четыре уровня обучения как самостоятельные семьи;
+- три текущих уровня обучения, возможный четвёртый и нейтральный fallback как самостоятельные семьи;
 - alpha/overlay primitives.
 
 Semantic color layer:
@@ -27,11 +27,14 @@ Semantic color layer:
 - `success|warning|danger|info` + `-foreground`, `-surface`, `-border`;
 - `level-a|b|c|d` + readable surface/border/foreground пары;
 - task/review states: not-started, draft, queued, sent, checking, needs-work, accepted, rejected, closed;
+- verdict scale: neutral/no-answer, rejected, partial-low/mid/high и solved; конкретный набор приходит из registry курса, а цвет не заменяет символ и подпись;
+- feedback provenance: human teacher, AI advisory, AI verdict; AI никогда не маскируется под human author;
+- unread feedback и скрытые reaction families без утечки staff-only meaning в Student/Family;
 - connection states: online, reconnecting, offline, syncing, conflict;
 - chart series 1–8, grid, axis, reference line;
 - annotation pen/highlight/comment/selection.
 
-Уровневые цвета не совпадают по семантике с success/error/warning и всегда сопровождаются названием уровня. Все пары проходят contrast audit в реальном размере текста; декоративный большой текст не используется для обхода AA.
+Уровневые цвета не совпадают по семантике с success/error/warning или verdict scale и всегда сопровождаются short code/названием уровня. Неизвестный уровень получает нейтральный fallback. Все пары проходят contrast audit в реальном размере текста; декоративный большой текст не используется для обхода AA.
 
 ## Типографика
 
@@ -74,6 +77,7 @@ Radius: небольшие/умеренные значения для controls/p
 - primitive palette только как internal reference;
 - semantic surfaces/text/borders interactive matrix в light/dark;
 - level × status collision matrix;
+- level × verdict × human/AI provenance collision matrix;
 - typography specimen с русским математическим текстом;
 - spacing/radius/elevation/motion specimens;
 - Student vs Staff density на одинаковой форме;

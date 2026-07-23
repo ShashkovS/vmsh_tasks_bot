@@ -1,6 +1,6 @@
 # Design-system handoff instructions
 
-- Read every numbered specification and `STATUS.md` before work.
+- Read every numbered specification, `STATUS.md`, `../../docs/accepted-technical-decisions-2026-07.md` and `../../docs/product-ux-decisions-2026-07.md` before work.
 - Work on exactly one phase. The next phase remains blocked until the owner explicitly accepts the current gate and that decision is recorded in `STATUS.md`.
 - Art direction alternatives must be executable Storybook compositions using identical content, not static moodboards or generated screenshots.
 - Keep the environment quiet, editorial and educational. Mathematics is the focal content; avoid marketing, gamified ranking and decorative spectacle.

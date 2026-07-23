@@ -14,6 +14,8 @@
 - [ ] Product JSX не содержит raw colors.
 - [ ] Светлая/тёмная palettes и contrast pairs приняты.
 - [ ] Уровень визуально независим от success/warning/error.
+- [ ] Verdict scale визуально независима от уровня; binary/ternary/full registries работают без hardcode.
+- [ ] Human и AI provenance невозможно перепутать визуально или семантически.
 - [ ] Typography, math, spacing, radius, elevation, z-index, motion заданы tokens.
 - [ ] Student touch и Staff compact density проверены.
 - [ ] Reduced motion и forced colors имеют рабочую стратегию.
@@ -34,9 +36,16 @@
 - [ ] До 10 фото: worker progress, delete/re-upload ordering, preview, retry, offline queue.
 - [ ] Immutable evidence и annotation overlay разделены.
 - [ ] Feedback/resubmission history не теряется.
+- [ ] Последний verdict, раскрываемая история, correction/recheck и частичные веса представлены корректно.
+- [ ] Четыре технических task types покрыты; гибрид школьнику выглядит oral и поддерживает written+Zoom window.
+- [ ] Hidden Student/teacher reactions проверены permission fixtures и не утекают другой роли.
+- [ ] Hint и solution скрыты до публикации и требуют осознанного подтверждения.
 - [ ] Telegram-rich news, albums, math и два preview готовы.
 - [ ] Offline/reconnect/update/push states недвусмысленны.
 - [ ] Dense tables, TSV, bulk actions, locks, diagnostics и missing assets готовы.
+- [ ] Review list/fast flows, 30-minute lock, occupied/lost-lock, registry verdict shortcuts, comment guard и abandon готовы.
+- [ ] Questions отделены от verdict flow при сохранении migration state Telegram adapter.
+- [ ] AI future states покрыты без включения реальной AI-интеграции в первую версию.
 - [ ] Classroom planner не тянет DnD dependency; pointer/native перенос имеет простой select/move fallback.
 - [ ] Progress не содержит рейтингов и цвет-only charts.
 
@@ -45,6 +54,7 @@
 - [ ] Все Student routes и нижняя навигация реализованы.
 - [ ] Все Family routes, child context и self-check реализованы.
 - [ ] Все Staff routes и capability states реализованы.
+- [ ] Staff review работоспособен на телефоне, но не обещает offline verdict/outbox.
 - [ ] Login не раскрывает protected content и не создаёт production mock bypass.
 - [ ] Search params shareable и runtime-validated.
 - [ ] Loading/empty/error/offline/locked/permission states есть на ключевых страницах.

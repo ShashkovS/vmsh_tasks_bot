@@ -19,7 +19,7 @@
 - Dialog: подтверждение/форма, initial focus, destructive confirm, async pending, escape/close policy.
 - Drawer: Base UI Drawer для mobile navigation/details и жеста закрытия; обычный modal без swipe остаётся Dialog.
 - Popover, Tooltip, Dropdown Menu: keyboard/pointer parity, collision handling; Tooltip никогда не содержит обязательную информацию.
-- Toast/Sonner: success/error/offline/update; persistent errors имеют действие и не исчезают слишком быстро.
+- Toast на Base UI: success/error/offline/update; persistent errors имеют действие и не исчезают слишком быстро. Sonner не используется.
 
 ### Structure и data
 

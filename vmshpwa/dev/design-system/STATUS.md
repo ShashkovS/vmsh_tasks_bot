@@ -4,7 +4,7 @@
 
 | Фаза                     | Статус             | Принято | Evidence/решение                                                             |
 | ------------------------ | ------------------ | ------- | ---------------------------------------------------------------------------- |
-| 1. Art direction         | ready for review   | —       | `Exploration/Art direction` — A/B/C + сравнение, светлая и тёмная.           |
+| 1. Art direction         | ready for review   | —       | A/B/C; знак B выбран baseline, финальное сравнение языка ещё не принято.     |
 | 2. Brand and tokens      | blocked by phase 1 | —       | —                                                                            |
 | 3. UI primitives         | blocked by phase 2 | —       | Технические placeholders не считаются принятой фазой.                        |
 | 4. Product components    | blocked by phase 3 | —       | —                                                                            |
@@ -60,7 +60,21 @@ Storybook: тема, плотность (Школьник / Семья / Учи�
 - графики используют Visx/D3, Staff grid — TanStack Table/Virtual, новая DnD dependency не добавляется;
 - a11y baseline и axe gate сохраняются для Staff; упрощение DnD не создаёт исключения;
 - Playwright E2E/visual запускаются на production bundles через Vite preview;
+- brand baseline: знак B — скруглённый прямоугольник `179` с антенной, его палитра и простой sans wordmark; антенна сохраняется на 16 px после отдельной проверки читаемости;
+- verdict UI строится из registry курса и поддерживает binary/ternary/full scale; тип, lock/review, reactions, hint/solution и future AI states заданы в `docs/product-ux-decisions-2026-07.md`;
 - подробный реестр остальных решений: `docs/accepted-technical-decisions-2026-07.md`.
+
+## Следующий gate
+
+Следующий шаг — не Phase 2 и не расширение набора компонентов. Сначала Claude должен обновить финальное Phase 1 comparison так, чтобы во всех A/B/C использовался уже выбранный знак B, а различались только typography, surfaces, spacing/density, layout grouping и level-color logic. Затем владелец одним явным решением фиксирует:
+
+1. основное направление A, B или C;
+2. точные заимствования из остальных вариантов;
+3. логику цветов уровней;
+4. UI sans + reading serif;
+5. допустимые radius/elevation/density traits и явно отвергнутые признаки.
+
+Только после записи `Phase 1 — accepted` начинается Phase 2 Brand and tokens. Ответы о знаке, вердиктах и продуктовых потоках являются обязательными inputs, но сами по себе не принимают весь art direction.
 
 ## Открытые вопросы
 
@@ -73,3 +87,5 @@ Storybook: тема, плотность (Школьник / Семья / Учи�
 - Какой clock-skew threshold применять к offline submission около deadline.
 - Подтвердить UX для одинакового idempotency key с различающимися payload.
 - После фиксации math corpus проверить subset/форматы KaTeX fonts и повторно измерить precache.
+- Является ли «вернуть на доработку» отдельным action/state; `REJECTED_ANSWER` зарезервирован для отрицательного результата после перепроверки.
+- Кто видит методическое событие просмотра подсказки и нужно ли хранить отказ конкретного teacher от проверки.

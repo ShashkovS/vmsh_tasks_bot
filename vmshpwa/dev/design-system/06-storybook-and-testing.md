@@ -33,8 +33,13 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - level × status, чтобы level не выглядел verdict;
 - density × primitives/forms/tables;
 - task state × deadline phase;
+- course verdict registry: `+ / −`, `+ / +/2 / −`, full graded scale × Student/Family/Staff;
+- verdict × level × human/AI provenance × unread feedback;
 - submission × network/sync;
-- review × lock/verdict;
+- review × lock/verdict/comment guard/list-fast/mobile;
+- task type × oral window, включая student-представление `WRITTEN_BEFORE_ORALLY`;
+- reactions × role visibility без утечки hidden teacher/student data;
+- AI off/pending/advisory/full reviewer/failure/escalation;
 - content loading/empty/error/partial/missing asset;
 - short/long Russian text, 200% zoom и narrow width.
 
@@ -49,6 +54,10 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - offline enqueue/retry/conflict;
 - hint/solution conscious disclosure;
 - queue claim/lost lock/verdict;
+- verdict keyboard mapping из registry, отсутствие shortcut внутри textarea, non-plus confirmation и abandon cleanup;
+- occupied-by-another-teacher, fast-next и возврат к выбору задачи;
+- conscious hint view event и hidden-before-publication state;
+- role permission для скрытых reactions и AI output;
 - TSV paste diagnostics;
 - classroom keyboard move;
 - update prompt preserving draft.
