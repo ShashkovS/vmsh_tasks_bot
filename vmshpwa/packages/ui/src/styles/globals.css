@@ -69,7 +69,8 @@
   --muted: var(--p-n-50);
   --muted-foreground: var(--p-n-650);
   --foreground-subtle: var(--p-n-600);
-  --placeholder: var(--p-n-500);
+  /* placeholder must clear 4.5:1 on surface (axe treats it as text) */
+  --placeholder: var(--p-n-600);
   --disabled: var(--p-n-400);
 
   /* reading surface — the "paper" of a problem sheet */
@@ -256,7 +257,7 @@
   --muted: var(--p-n-800);
   --muted-foreground: oklch(0.755 0.008 240);
   --foreground-subtle: oklch(0.655 0.008 240);
-  --placeholder: oklch(0.6 0.008 240);
+  --placeholder: oklch(0.655 0.008 240);
   --disabled: oklch(0.45 0.008 240);
 
   --paper: var(--p-n-850);

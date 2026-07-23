@@ -22,6 +22,8 @@ const pairs = [
   ['muted-foreground', 'muted', 'text'],
   ['foreground-subtle', 'background', 'text'],
   ['foreground-subtle', 'surface', 'text'],
+  ['placeholder', 'surface', 'text'],
+  ['placeholder', 'background', 'text'],
   ['primary', 'background', 'text'],
   ['primary', 'surface', 'text'],
   ['primary-foreground', 'primary', 'text'],

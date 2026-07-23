@@ -6,7 +6,7 @@
 | ------------------------ | ------------------ | ---------- | ---------------------------------------------------------------------------- |
 | 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.  |
 | 2. Brand and tokens      | accepted           | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                      |
-| 3. UI primitives         | not started        | —          | Разблокирована; следующая фаза.                                              |
+| 3. UI primitives         | in progress        | —          | Инкремент 1: density-механизм + actions/inputs (ниже).                       |
 | 4. Product components    | blocked by phase 3 | —          | —                                                                            |
 | 5. Pages and flows       | blocked by phase 4 | —          | Существующие prototype pages — content skeletons, не принятый visual design. |
 | 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                 |
@@ -144,7 +144,25 @@ Phase 2 перевела B в слои `primitive → semantic → component` в
 
 Token core + brand + полировка готовы и зелёные (Storybook 11/11, contrast 70×2 AA, build).
 
-**Следующее — Phase 3 UI primitives** (Base UI/shadcn на принятых токенах: density-варианты, focus/keyboard, states). Затем Phase 4 product components и только после — страницы, начиная со Student «Сейчас» в `mobile-light` (порядок — в `docs/product-ux-decisions-2026-07.md`). Visual baselines обновляются после первой реальной страницы.
+## Phase 3 — UI primitives (в работе)
+
+**Инкремент 1 — actions/inputs + density-механизм (зелёный):**
+
+- density стала **token-driven**: `Button`/`Input`/`Textarea`/`Select` берут высоту из `--touch-target` / `--touch-target-primary` — один и тот же компонент touch-размера у школьника (44/48px) и compact у учителя (32px) через `data-density`, без size-prop; `bg-surface`, `placeholder` затемнён до AA;
+- `Badge` получил семантические тона (success/warning/danger/info/neutral) — surface-чипы для статусов; level/verdict строятся поверх в Phase 4;
+- `UI/Controls` stories: Density (школьник↔учитель рядом), States, Badge tones, **FormValidation** с interaction-тестом (ошибка только после submit, `aria-describedby` связь, значение сохраняется, успех);
+- гейты: format, lint (js+css), typecheck, **Storybook 15/15** (axe error), **contrast 72×2 AA** (добавлен placeholder), build — зелёные.
+
+**Инкремент 2 — overlays + selection (зелёный):**
+
+- `UI/Overlays`: Dialog (destructive confirm, focus в диалоге, Escape закрывает и **возвращает фокус** на триггер), DropdownMenu (открытие + клавиатурный выбор), Toast (тост с действием), Popover, Tooltip — с 3 interaction-тестами;
+- `UI/Selection`: `Checkbox` (checked/indeterminate/unchecked/disabled), `Switch`, **новый `RadioGroup`** (SELECT_ONE тестовый ответ) — interaction-тест выбора + density;
+- поймано и обойдено: `MenuLabel` требует обёртки `MenuGroup`; контент оверлея кратко «не виден» во время open-анимации (retry-ассерты `findBy*`); Base UI дублирует заголовок тоста в aria-live (`findAllByText`);
+- гейты: Storybook **22/22** (axe error), lint (js+css), typecheck, build — зелёные.
+
+**Остаётся в Phase 3:** structure/data (Tabs/Accordion с корректными заголовками/Card/Table с sort/overflow/empty/loading/Separator/Skeleton) states + interaction-тесты (accordion, table sort); при необходимости Alert (connection banners) и Progress (загрузка фото).
+
+Затем Phase 4 product components и только после — страницы, начиная со Student «Сейчас» в `mobile-light`. Visual baselines обновляются после первой реальной страницы.
 
 ## Открытые вопросы
 

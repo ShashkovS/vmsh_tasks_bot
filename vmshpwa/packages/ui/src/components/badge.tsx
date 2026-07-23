@@ -16,6 +16,13 @@ const badgeVariants = cva(
         outline: 'border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground',
         ghost: 'hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50',
         link: 'text-primary underline-offset-4 hover:underline',
+        // Semantic surface chips. Meaning is carried by text; colour assists.
+        // Product builds level/verdict chips on top (Phase 4).
+        success: 'border-status-success-border bg-status-success-surface text-status-success',
+        warning: 'border-status-warning-border bg-status-warning-surface text-status-warning',
+        danger: 'border-status-danger-border bg-status-danger-surface text-status-danger',
+        info: 'border-status-info-border bg-status-info-surface text-status-info',
+        neutral: 'border-border bg-surface-subtle text-muted-foreground',
       },
     },
     defaultVariants: {
