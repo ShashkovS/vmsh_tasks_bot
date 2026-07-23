@@ -60,7 +60,7 @@ UI — доступный sans-serif с кириллицей и tabular numerals
 
 ## Motion
 
-Показать только один-два функциональных примера: открытие Sheet/Dialog и изменение sync state. Длительность короткая, easing спокойный, transform не меняет layout. При `prefers-reduced-motion: reduce` переход становится мгновенным или почти мгновенным. Декоративный entrance каскадом запрещён.
+Показать только один-два функциональных примера: открытие Drawer/Dialog и изменение sync state. Длительность короткая, easing спокойный, transform не меняет layout. При `prefers-reduced-motion: reduce` переход становится мгновенным или почти мгновенным. Декоративный entrance каскадом запрещён.
 
 ## Deliverables и gate
 

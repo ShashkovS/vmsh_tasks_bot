@@ -88,18 +88,41 @@ for (const app of apps.slice(0, 2)) {
     await page.goto(`${app.origin}/${app.audience}/`)
     const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href')
     expect(manifestHref).toContain(`/${app.audience}/`)
-    const registration = await page.evaluate(async () => {
-      const deadline = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000))
-      const ready = navigator.serviceWorker?.ready.then(async (item) => ({
-        scope: item.scope,
-        hasWorker: Boolean(item.active || item.installing || item.waiting),
-        updateAccepted: await item.update().then(() => true),
-      }))
-      return Promise.race([ready, deadline])
-    })
-    expect(registration).toMatchObject({ hasWorker: true })
-    expect(registration?.scope).toContain(`/${app.audience}/`)
-    expect(registration?.updateAccepted).toBe(true)
+    await expect
+      .poll(
+        async () => {
+          try {
+            return await page.evaluate(async () => {
+              const ready = navigator.serviceWorker?.ready
+              if (ready === undefined) return null
+              const registration = await Promise.race([
+                ready,
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 2_000)),
+              ])
+              if (!registration) return null
+              await registration.update()
+              return {
+                scope: registration.scope,
+                hasWorker: Boolean(
+                  registration.active || registration.installing || registration.waiting,
+                ),
+                updateAccepted: true,
+              }
+            })
+          } catch {
+            // The first dev-worker activation may replace the browsing context.
+            // Poll again against the newly controlled page instead of treating it
+            // as an application failure.
+            return null
+          }
+        },
+        { timeout: 15_000 },
+      )
+      .toMatchObject({
+        scope: expect.stringContaining(`/${app.audience}/`),
+        hasWorker: true,
+        updateAccepted: true,
+      })
   })
 }
 

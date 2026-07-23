@@ -10,7 +10,7 @@ Staff может создавать local-only публикации и скры�
 
 Нормализованная запись содержит source, Telegram chat/message IDs, revision, publish/edit time, structured rich text, album ordering, media metadata, audience/level tags, visibility и moderation reason. Математические расширения проходят тот же безопасный renderer, что условия задач.
 
-Перед публикацией показываются два preview: PWA card/detail и Telegram. Telegram formatting рассматривается как отдельная производная с собственными ограничениями длины, entities и media caption.
+Перед публикацией показываются два preview: PWA card/detail и Telegram. Для новых структурированных материалов Telegram adapter использует Bot API 10.1+ `sendRichMessage` и отдельный allowlisted Rich Message HTML с `<tg-math>`/`<tg-math-block>`. Это не означает, что тот же markup можно передать в legacy `sendMessage(parse_mode=HTML)`. Renderer проверяет limits по characters, blocks, nesting, media и table columns до отправки.
 
 ## Доставка и идемпотентность
 

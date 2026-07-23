@@ -7,9 +7,18 @@
     "typecheck": "tsc --noEmit"
   },
   "exports": {
-    ".": "./src/index.tsx"
+    ".": "./src/index.tsx",
+    "./styles.css": "./src/content.css"
   },
+  "sideEffects": [
+    "./src/content.css"
+  ],
   "dependencies": {
-    "react": "^19.0.0"
+    "dompurify": "catalog:",
+    "katex": "catalog:",
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@types/katex": "catalog:"
   }
 }

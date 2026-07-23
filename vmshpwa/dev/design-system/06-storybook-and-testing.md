@@ -45,7 +45,7 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - keyboard navigation and focus restoration overlays;
 - field validation and accessible error relation;
 - test answer entry/format failure;
-- photo reorder/remove and final review (worker mocked at boundary);
+- photo remove/re-upload ordering and final review (worker mocked at boundary);
 - offline enqueue/retry/conflict;
 - hint/solution conscious disclosure;
 - queue claim/lost lock/verdict;

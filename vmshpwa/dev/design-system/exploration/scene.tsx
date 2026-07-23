@@ -63,6 +63,7 @@ function useScopedLabel(label: string) {
 function ScrollX({ label, children }: { label: string; children: React.ReactNode }) {
   const scopedLabel = useScopedLabel(label)
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Keyboard users must be able to scroll wide mathematical tables.
     <div aria-label={scopedLabel} className="ad-scroll-x" role="region" tabIndex={0}>
       {children}
     </div>

@@ -76,6 +76,22 @@ def _create_logger():
 
 def _setup(*, force_production=False):
     runtime_profile = os.environ.get('VMSH_RUNTIME_PROFILE', '').strip()
+    if runtime_profile == 'telegram-history-test':
+        # Historical handler scenarios need aiogram to accept a token-shaped
+        # value, but must never load credentials or contact Telegram/Google.
+        return Config(
+            runtime_profile=runtime_profile,
+            config_name='telegram_history_test',
+            db_filename=str(_absolute_path('.runtime/vmshpwa/telegram_history.sqlite3')),
+            pwa_media_root=str(_absolute_path('.runtime/vmshpwa/telegram_history')),
+            apps='',
+            google_sheets_key='',
+            google_cred_json='',
+            telegram_bot_token='123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            nats_server=None,
+            trace_enabled=False,
+            sentry_dsn='',
+        )
     if runtime_profile.startswith('pwa-'):
         config = Config(
             runtime_profile=runtime_profile,

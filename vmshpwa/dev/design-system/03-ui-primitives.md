@@ -17,7 +17,7 @@
 ### Overlays
 
 - Dialog: подтверждение/форма, initial focus, destructive confirm, async pending, escape/close policy.
-- Sheet: mobile task/navigation/details; не заменяет Dialog без причины.
+- Drawer: Base UI Drawer для mobile navigation/details и жеста закрытия; обычный modal без swipe остаётся Dialog.
 - Popover, Tooltip, Dropdown Menu: keyboard/pointer parity, collision handling; Tooltip никогда не содержит обязательную информацию.
 - Toast/Sonner: success/error/offline/update; persistent errors имеют действие и не исчезают слишком быстро.
 

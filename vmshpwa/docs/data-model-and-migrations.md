@@ -11,13 +11,17 @@
 
 ## Идентичность и версии
 
-Используются стабильные IDs, не зависящие от Telegram message ID, spreadsheet row или display number. Внешние IDs хранятся как mapping/provenance. Submission ссылается на problem source revision и lesson publication revision. Attachment после получения неизменяем; teacher annotations — отдельные versioned overlays.
+Используются стабильные IDs, не зависящие от Telegram message ID, spreadsheet row или display number. Внешние IDs хранятся как mapping/provenance. Submission ссылается на problem source revision и lesson publication revision. До итоговой проверки ученик может создавать новую revision набора attachments. При транзакционном сохранении verdict текущая revision и её object keys фиксируются навсегда; teacher annotations — отдельные versioned overlays. Object overwrite по существующему key запрещён.
 
 Synonym-group объединяет разные представления математически той же задачи. Совпадение названия внутри урока создаёт только кандидата. Автоматические результаты и статистика не сливаются до подтверждения.
 
 ## Время и аудит
 
 Все серверные timestamps — UTC. Для offline mutation сохраняются клиентское время, timezone offset, серверное получение, idempotency key и решение deadline policy. Audit event append-only содержит actor, capability, object, before/after или diff, request/correlation ID, channel и время.
+
+Deadline задаётся как момент публикации решений в `Europe/Moscow`, затем хранится в UTC. После закрытия занятия статистика сложности открывается школьнику через фиксированные семь дней, если не открыта человеком раньше.
+
+История смены группы/уровня/режима не схлопывается до текущего значения. Legacy `user_changes_log` с `ts`, `user_id`, `change_type`, `new_value` является источником backfill. Модель уровней не ограничена тремя строками: текущие три получают именованные presentation tokens по `groups.sort_order`, последующие — нейтральный доступный fallback.
 
 ## Review locks
 

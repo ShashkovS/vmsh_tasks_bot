@@ -31,7 +31,7 @@ Composer поддерживает текст и до 10 фотографий:
 
 - выбрать camera/files, доступное объяснение типов и лимита;
 - per-file preprocessing progress worker-а;
-- thumbnail, full preview, reorder buttons и drag-and-drop как дополнительный способ;
+- thumbnail, full preview и удаление; ошибочный порядок исправляется удалением и повторной загрузкой страницы;
 - rotate/remove/retry, upload progress, общий payload size;
 - draft autosave, offline queue, duplicate retry/idempotency receipt;
 - final review порядка страниц до отправки;
@@ -65,7 +65,7 @@ ConnectionBanner/SyncIndicator/UpdatePrompt/PushPermissionCard:
 - MissingAssetsFlow: exact missing refs, match candidates, upload/reuse, blocking resolution;
 - PublicationControl: per-level task/hint/solution state, scheduled time, diff, publish/rollback confirmation;
 - BroadcastComposer: audience query, count/preview, PWA/Telegram delivery options, quiet/category, dry run;
-- ClassroomPlanner: capacity, auto-assignment explanation, conflict list, drag-and-drop plus keyboard move controls.
+- ClassroomPlanner: capacity, auto-assignment explanation, conflict list и лёгкий app-local pointer/native drag-and-drop без новой dependency. Достаточен простой select/move fallback; сложная keyboard DnD-модель не требуется.
 
 ## Progress
 

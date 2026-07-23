@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { queryKeys, realtimeEventSchema, runtimeConfigSchema, sessionPolicy } from './index'
+import {
+  lessonDeadlinePolicy,
+  offlineMutationSchema,
+  queryKeys,
+  realtimeEventSchema,
+  runtimeConfigSchema,
+  sessionPolicy,
+  submissionImagePolicy,
+} from './index'
 
 describe('runtime contracts', () => {
   it('accepts an isolated student runtime', () => {
@@ -28,5 +36,22 @@ describe('runtime contracts', () => {
     expect(queryKeys.task('21n.6a')).toEqual(['tasks', '21n.6a'])
     expect(sessionPolicy.expiresMonth).toBe(8)
     expect(sessionPolicy.expiresDay).toBe(10)
+    expect(sessionPolicy.cookieNames.student.access).not.toBe(
+      sessionPolicy.cookieNames.family.access,
+    )
+  })
+
+  it('validates offline timing and content identity independently', () => {
+    expect(
+      offlineMutationSchema.parse({
+        idempotencyKey: '123e4567-e89b-42d3-a456-426614174000',
+        payloadHash: 'sha256:0123456789abcdef',
+        createdAtClient: '2026-07-26T09:59:00Z',
+        timezoneOffsetMinutes: -180,
+      }).payloadHash,
+    ).toBe('sha256:0123456789abcdef')
+    expect(lessonDeadlinePolicy.authoringTimeZone).toBe('Europe/Moscow')
+    expect(lessonDeadlinePolicy.suspiciousClockSkewMinutes).toBeNull()
+    expect(submissionImagePolicy.maximumLongEdgePixels).toBe(1920)
   })
 })

@@ -15,6 +15,7 @@
     ".storybook/**/*.tsx",
     "dev/**/*.ts",
     "dev/**/*.tsx",
-    "e2e/**/*.ts"
+    "e2e/**/*.ts",
+    "env.d.ts"
   ]
 }

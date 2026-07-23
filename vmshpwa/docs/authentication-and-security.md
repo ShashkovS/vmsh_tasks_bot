@@ -4,28 +4,32 @@
 
 ## Учётные записи и сессии
 
-Школьник входит по логину и текущему Telegram-токену, используемому как пароль. Это переходная совместимость, а не Telegram OAuth. Родитель получает отдельную учётную запись без обязательной связи с Telegram. Teacher/Admin используют Staff identity и RBAC; teacher ограничен разрешёнными группами, admin получает дополнительные capabilities.
+Школьник входит по логину и текущему Telegram-токену, используемому как пароль. Это финальная совместимая модель, а не Telegram OAuth. При пакетном импорте учеников Staff UI создаёт отдельный Family account и явную связь с ребёнком. Teacher/Admin используют Staff identity и RBAC; teacher ограничен разрешёнными группами, admin получает дополнительные capabilities.
 
-Сессия хранится только в opaque HttpOnly cookie:
+Сессия использует две HttpOnly cookie на audience: короткую подписанную `itsdangerous` access cookie и ротируемую refresh cookie. Refresh session и hash raw token хранятся в SQLite, поэтому отдельное устройство можно отозвать без отдельного auth service.
 
-| Audience | Cookie                 | Path       |
-| -------- | ---------------------- | ---------- |
-| Student  | `vmsh_student_session` | `/student` |
-| Family   | `vmsh_family_session`  | `/family`  |
-| Staff    | `vmsh_staff_session`   | `/staff`   |
+| Audience | Access cookie         | Refresh cookie         | Path       |
+| -------- | --------------------- | ---------------------- | ---------- |
+| Student  | `vmsh_student_access` | `vmsh_student_refresh` | `/student` |
+| Family   | `vmsh_family_access`  | `vmsh_family_refresh`  | `/family`  |
+| Staff    | `vmsh_staff_access`   | `vmsh_staff_refresh`   | `/staff`   |
 
-Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Сессия истекает в ближайшее 10 августа. Блокировка пользователя, сброс токена, смена критичных прав и ручной отзыв завершают её раньше.
+Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Refresh session истекает в ближайшее 10 августа, access cookie — существенно раньше. Блокировка пользователя, сброс Telegram-токена, смена критичных прав и ручной отзыв завершают её раньше.
 
 ## Обязательные механизмы
 
-- rate limit по login/IP/device signal с нарастающей задержкой и безопасным сообщением без user enumeration;
+- rate limit nginx как минимум по login/auth и IP с безопасным сообщением без user enumeration;
 - журнал устройств: создание, последнее использование, приблизительное устройство, отзыв одной или всех сессий;
-- CSRF-защита state-changing запросов через проверку Origin и отдельный токен/двойную отправку там, где SameSite недостаточно;
+- CSRF baseline: `SameSite=Lax`, строгая проверка same-origin `Origin`/Fetch Metadata и ожидаемого content type. Отдельный synchronizer token пока не вводится;
 - capability checks в backend на каждом объекте; скрытие кнопки не является авторизацией;
-- audit для входа, неудачных попыток, отзыва, смены ролей, публикации, массовой рассылки и trusted checker edit;
+- audit для входа, неудачных попыток, отзыва, смены ролей, публикации, массовой рассылки и trusted checker edit; отдельный лог самого факта чтения чужой работы не нужен;
 - ограничение типов/размеров uploads, декодирование и re-encoding изображений, quarantine/scan при необходимости;
-- short-lived signed URLs или авторизованная выдача private media;
+- public GET длинных непредсказуемых attachment URLs; upload всегда идёт через авторизованный aiohttp, а URL не должен попадать в public logs;
 - redaction секретов, токенов и содержимого работ из operational logs.
+
+## CSP
+
+CSP обязательна с первого production deployment. Конкретная nginx policy задаётся после фиксации hostnames и включает только собственные scripts/styles/fonts, audience API/WebSocket, Hetzner media origin, Web Push и Sentry ingest. `unsafe-eval` запрещён; inline allowances нельзя добавлять без причины и теста. API также возвращает `nosniff`, безопасный referrer policy и запрет framing.
 
 ## Mock/prototype
 

@@ -38,12 +38,29 @@ async def test_request_id_is_validated_and_error_is_structured(client):
     assert accepted.headers["X-Request-ID"] == "browser.42"
 
     rejected = await client.get(
-        "/missing", headers={"X-Request-ID": "invalid id with spaces"}
+        "/student/api/v1/missing",
+        headers={"X-Request-ID": "invalid id with spaces"},
     )
     payload = await rejected.json()
     assert rejected.status == 404
     assert payload["error"]["code"] == "not_found"
     assert payload["error"]["requestId"] != "invalid id with spaces"
+
+
+@pytest.mark.asyncio
+async def test_pwa_middleware_does_not_rewrite_legacy_routes(client):
+    response = await client.get("/missing", headers={"X-Request-ID": "browser.42"})
+    assert response.status == 404
+    assert response.content_type != "application/json"
+    assert "X-Request-ID" not in response.headers
+
+
+@pytest.mark.asyncio
+async def test_pwa_api_has_baseline_security_headers(client):
+    response = await client.get("/family/api/v1/health")
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["Referrer-Policy"] == "no-referrer"
+    assert "frame-ancestors 'none'" in response.headers["Content-Security-Policy"]
 
 
 @pytest.mark.asyncio

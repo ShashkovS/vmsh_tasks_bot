@@ -32,7 +32,7 @@ NATS ускоряет доставку invalidation между процесса�
 - `packages/offline`: Dexie namespaces, drafts/outbox и чистая sync-логика;
 - `packages/test-utils`: MSW handlers и детерминированные fixtures, только для тестов/Storybook.
 
-Каждое приложение имеет свой route tree. TanStack Router генерирует его из файлов и режет маршруты автоматически. Тяжёлые редакторы, PDF/TikZ preview, статистика и image processing подключаются через dynamic import; обработка фотографий выполняется в Web Worker.
+Каждое приложение имеет свой route tree. TanStack Router генерирует его из файлов и режет маршруты автоматически. Тяжёлые редакторы, PDF/TikZ preview, Visx charts, TanStack Table/Virtual grids и image processing подключаются через dynamic import; обработка фотографий выполняется в Web Worker. React Compiler не используется.
 
 ## Production URL
 
@@ -54,4 +54,6 @@ Reverse proxy обязан отдавать соответствующий `inde
 
 ## Object storage
 
-Доменный код использует интерфейс `put/get/delete`. Dev/test adapter пишет только внутрь выделенного media root и запрещает absolute/path traversal. Production adapter использует S3-compatible bucket и content-addressed keys. Метаданные, связи и audit остаются в SQLite.
+Доменный код использует интерфейс `put/get/delete`. Dev/test adapter пишет только внутрь выделенного media root и запрещает absolute/path traversal. Production adapter использует Hetzner S3-compatible bucket через `aioboto3`. Browser upload всегда проксируется aiohttp; presigned upload не является частью контракта. Метаданные, связи, attachment revisions и audit остаются в SQLite.
+
+Content assets используют content-addressed keys. Фотографии решений используют непредсказуемые immutable revision keys вида `sol_imgs/user_{user_id}/{season_year}/{lesson_id}/{problem_id}_{created_at_utc}_{uuid}.webp` и публичный GET. После verdict object не перезаписывается и не удаляется приложением.

@@ -17,6 +17,7 @@ db_dir:
 	@echo "[db] Ensured ./db exists"
 
 PWA_DIR := vmshpwa
+PWA_UV_ENV := UV_CACHE_DIR=.runtime/uv-cache
 PWA_HUMAN_ENV := VMSH_RUNTIME_PROFILE=pwa-human VMSH_INSTANCE=human VMSH_DB_FILENAME=db/vmshpwa_dev.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/human VMSH_NATS_TOPIC_PREFIX=vmshpwa_human VMSH_PWA_PROTOTYPE=true
 PWA_AGENT_ENV := VMSH_RUNTIME_PROFILE=pwa-agent VMSH_INSTANCE=agent VMSH_DB_FILENAME=db/vmshpwa_agent.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/agent VMSH_NATS_TOPIC_PREFIX=vmshpwa_agent VMSH_PWA_PROTOTYPE=true
 PWA_E2E_ENV := VMSH_RUNTIME_PROFILE=pwa-e2e VMSH_INSTANCE=e2e VMSH_DB_FILENAME=db/vmshpwa_e2e.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/e2e VMSH_NATS_TOPIC_PREFIX=vmshpwa_e2e VMSH_PWA_PROTOTYPE=true
@@ -26,7 +27,7 @@ pwa-dev:
 	$(MAKE) -j5 pwa-api pwa-student pwa-family pwa-staff pwa-storybook
 
 pwa-api:
-	$(PWA_HUMAN_ENV) VMSH_API_PORT=8180 uv run python main.py
+	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) VMSH_API_PORT=8180 uv run python main.py
 
 pwa-student:
 	cd $(PWA_DIR) && CI=true VITE_PORT=5173 VMSH_API_ORIGIN=http://127.0.0.1:8180 pnpm --filter @vmsh/student dev
@@ -45,7 +46,7 @@ pwa-agent-dev:
 	$(MAKE) -j5 pwa-agent-api pwa-agent-student pwa-agent-family pwa-agent-staff pwa-agent-storybook
 
 pwa-agent-api:
-	$(PWA_AGENT_ENV) VMSH_API_PORT=8280 uv run python main.py
+	$(PWA_UV_ENV) $(PWA_AGENT_ENV) VMSH_API_PORT=8280 uv run python main.py
 
 pwa-agent-student:
 	cd $(PWA_DIR) && CI=true VITE_PORT=5273 VMSH_API_ORIGIN=http://127.0.0.1:8280 pnpm --filter @vmsh/student dev
@@ -61,10 +62,10 @@ pwa-agent-storybook:
 
 .PHONY: pwa-seed pwa-agent-seed
 pwa-seed:
-	$(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.seed_runtime
+	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.seed_runtime
 
 pwa-agent-seed:
-	$(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.seed_runtime
+	$(PWA_UV_ENV) $(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.seed_runtime
 
 .PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-visual pwa-visual-update telegram-history-test
 pwa-format:
@@ -78,7 +79,7 @@ pwa-typecheck:
 
 pwa-test:
 	cd $(PWA_DIR) && CI=true pnpm test
-	$(PWA_E2E_ENV) uv run pytest -q -n0 pwa_tests
+	$(PWA_UV_ENV) $(PWA_E2E_ENV) uv run pytest -q -n0 pwa_tests
 
 pwa-storybook-test:
 	cd $(PWA_DIR) && CI=true pnpm storybook:test
@@ -96,4 +97,4 @@ pwa-visual-update:
 	cd $(PWA_DIR) && CI=true pnpm e2e:visual:update
 
 telegram-history-test:
-	uv run pytest -q tests/test_handler_flows.py tests/test_admin_weekly_ops.py
+	$(PWA_UV_ENV) VMSH_RUNTIME_PROFILE=telegram-history-test uv run pytest -q -n0 tests/test_handler_flows.py tests/test_admin_weekly_ops.py

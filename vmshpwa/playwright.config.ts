@@ -8,6 +8,7 @@ const apiOrigin = 'http://127.0.0.1:8380'
 
 const backendEnv = {
   ...process.env,
+  UV_CACHE_DIR: path.resolve(repository, '.runtime/uv-cache'),
   VMSH_RUNTIME_PROFILE: 'pwa-e2e',
   VMSH_INSTANCE: 'e2e',
   VMSH_DB_FILENAME: 'db/vmshpwa_e2e.sqlite3',

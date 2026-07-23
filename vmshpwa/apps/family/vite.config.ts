@@ -24,6 +24,9 @@ export default defineConfig(({ command }) => {
         strategies: 'injectManifest',
         srcDir: 'src',
         filename: 'sw.ts',
+        injectManifest: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
+        },
         registerType: 'prompt',
         injectRegister: 'auto',
         includeAssets: ['icon.svg'],

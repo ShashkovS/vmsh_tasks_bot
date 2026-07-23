@@ -38,7 +38,7 @@ Storybook: тема, плотность (Школьник / Семья / Учи�
 и таблицей, пост канала за 26 января.
 
 Проверки на момент подготовки: `pwa-format`, `pwa-lint`, `pwa-typecheck`, `pwa-test`,
-`pwa-storybook-test` (15/15, addon-a11y в режиме `error`), `pwa-build`.
+`pwa-storybook-test` (16/16, addon-a11y в режиме `error`), `pwa-build`.
 Контраст: `node dev/design-system/exploration/contrast-audit.mjs` — 156 пар × 3 направления
 × 2 темы проходят WCAG 2.2 AA (текст 4.5:1, границы и focus 3:1).
 
@@ -54,7 +54,11 @@ Storybook: тема, плотность (Школьник / Семья / Учи�
   precache; кандидаты подключены как `@fontsource*` devDependencies и живут только в Storybook;
 - уровни: три именованных семейства + нейтральный fallback, цвет назначается по `groups.sort_order`;
 - статистика сложности задачи показывается школьнику только после завершения проверки
-  всего занятия — по явному разрешению или через неделю после закрытия приёма.
+  всего занятия — по явному разрешению или через фиксированные семь дней после закрытия приёма;
+- KaTeX рендерится на клиенте; math fonts входят в PWA precache, TikZ остаётся external SVG;
+- Sonner заменяется Base UI Toast, Sheet — Base UI Drawer;
+- графики используют Visx/D3, Staff grid — TanStack Table/Virtual, новая DnD dependency не добавляется;
+- подробный реестр остальных решений: `docs/accepted-technical-decisions-2026-07.md`.
 
 ## Открытые вопросы
 
@@ -64,5 +68,5 @@ Storybook: тема, плотность (Школьник / Семья / Учи�
   н/п/х). Какая из трёх логик принимается?
 - Финальная пара шрифтов фиксируется вместе с направлением; после выбора лишние
   `@fontsource*` пакеты удаляются.
-- Нужен ли отдельный knob «время появления статистики» в настройках сезона, или
-  недельный grace period достаточно зашить как значение по умолчанию.
+- Какой clock-skew threshold применять к offline submission около deadline.
+- Подтвердить UX для одинакового idempotency key с различающимися payload.

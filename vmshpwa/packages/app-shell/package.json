@@ -10,11 +10,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.0.0",
-    "@tanstack/react-router": "^1.0.0",
+    "@sentry/react": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-router": "catalog:",
     "@vmsh/ui": "workspace:*",
-    "lucide-react": "^0.540.0",
-    "react": "^19.0.0",
-    "sonner": "^2.0.0"
+    "lucide-react": "catalog:",
+    "react": "catalog:"
   }
 }

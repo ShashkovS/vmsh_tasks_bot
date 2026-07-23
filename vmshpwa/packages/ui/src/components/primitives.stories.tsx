@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import {
   Badge,
@@ -9,6 +9,13 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
   Field,
   FieldDescription,
   FieldLabel,
@@ -24,6 +31,7 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  toast,
 } from '@vmsh/ui'
 
 function PrimitiveGallery() {
@@ -79,6 +87,34 @@ function PrimitiveGallery() {
         </CardContent>
       </Card>
       <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>Временная обратная связь и выдвижная панель</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-3">
+          <Button
+            variant="outline"
+            onClick={() =>
+              toast.success('Черновик сохранён', 'Можно продолжить с другого устройства.')
+            }
+          >
+            Показать уведомление
+          </Button>
+          <Drawer side="right">
+            <DrawerTrigger render={<Button variant="outline" />}>Открыть панель</DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Уведомления</DrawerTitle>
+                <DrawerDescription>Выберите, о каких событиях вам сообщать.</DrawerDescription>
+              </DrawerHeader>
+              <div className="p-4 text-sm">Результаты проверки и новые комментарии включены.</div>
+              <DrawerFooter>
+                <Button>Сохранить</Button>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
+        </CardContent>
+      </Card>
+      <Card className="lg:col-span-2">
         <CardContent className="pt-6">
           <Select>
             <SelectTrigger aria-label="Уровень">
@@ -109,5 +145,17 @@ export const Gallery: Story = {
     await expect(canvas.getByLabelText('Ответ')).toHaveValue('179')
     await userEvent.click(canvas.getByLabelText('Push-уведомления'))
     await expect(canvas.getByLabelText('Push-уведомления')).toBeChecked()
+    await userEvent.click(canvas.getByRole('button', { name: 'Показать уведомление' }))
+    await waitFor(async () => {
+      await expect(
+        within(canvasElement.ownerDocument.body).getByText('Черновик сохранён'),
+      ).toBeVisible()
+    })
+    await userEvent.click(canvas.getByRole('button', { name: 'Открыть панель' }))
+    await waitFor(async () => {
+      await expect(
+        within(canvasElement.ownerDocument.body).getByRole('heading', { name: 'Уведомления' }),
+      ).toBeVisible()
+    })
   },
 }

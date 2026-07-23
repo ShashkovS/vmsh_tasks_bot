@@ -2,7 +2,15 @@
 
 ## Единственный источник
 
-Условие, подсказка и решение хранятся как версионируемый LaTeX source. HTML для web, SVG/WebP для рисунков, PNG для Telegram и PDF для печати — воспроизводимые производные конкретной версии source и toolchain. Ручное редактирование производного HTML/PDF запрещено.
+Условие, подсказка и решение хранятся как версионируемый LaTeX source. Безопасный HTML для web, Telegram Rich Message HTML, SVG/WebP для рисунков и PDF для печати — воспроизводимые производные конкретной версии source и toolchain. Ручное редактирование производного HTML/PDF запрещено.
+
+Новый parser/converter использует опыт `_external_pipelines/a16_html_from_tex.py` и `edt_tasks_parser.py`, но не копирует их как непрозрачный скрипт. LaTeX сначала превращается в нормализованное document representation с явными math/asset/list/table nodes, а затем — в channel-specific output.
+
+## Web и Telegram renderers
+
+Web HTML сохраняет исходные LaTeX expressions в безопасных math nodes. KaTeX работает на клиенте с HTML+MathML output; его CSS и fonts собираются Vite и входят в precache Student/Family. Выделение/copy helper и интерактивное меню формул отключены, но assistive semantics не удаляются.
+
+Telegram renderer создаёт HTML для Bot API 10.1+ `sendRichMessage`: inline math становится `<tg-math>`, display math — `<tg-math-block>`, а headings, lists, tables, details, quotations и media проходят строгий Telegram allowlist. Это отдельный dialect и не передаётся в legacy `sendMessage(parse_mode=HTML)`. Pipeline проверяет Telegram limits (characters, blocks, nesting, media и table columns) до публикации.
 
 ## Загрузка урока
 
@@ -18,7 +26,7 @@
 8. approval и атомарная публикация выбранного уровня;
 9. immutable version/audit и возможность rollback.
 
-Два preview обязательны до публикации: student web и Telegram message/media. PDF отдельно проверяется как печатный артефакт. Печать всегда выполняется pipeline-ом PDF.
+Два preview обязательны до публикации: Student web с настоящим client KaTeX и Telegram Rich Message/media. PDF отдельно проверяется как печатный артефакт. Staff может показать preview готового PDF, но печать всегда выполняется PDF pipeline, а не browser print CSS.
 
 ## Задачи и метаданные
 
@@ -32,7 +40,7 @@ Staff metadata grid работает как spreadsheet: keyboard navigation, mu
 
 Библиотека content-addressed: binary hash определяет object key, одинаковые assets переиспользуются. Source хранит логическое имя и связь с hash. Pipeline предлагает match по имени/hash/preview; недостающие assets показывает отдельным blocking списком и никогда не заменяет пустой картинкой.
 
-TikZ компилируется контролируемым toolchain в SVG для web и подходящие print/Telegram производные. Для каждого рисунка сохраняются alt/описание, dimensions и provenance. Zoomable figure открывает изображение без потери доступной подписи.
+TikZ компилируется контролируемым toolchain в отдельный SVG object в S3 и подходящие print/Telegram производные. SVG не инлайнится в HTML. Для каждого рисунка сохраняются alt/описание, dimensions и provenance. Zoomable figure открывает изображение без потери доступной подписи. Реализация наследует проверенные операции `mathimg_service.py`: content hash, `pdflatex`, PDF→SVG и S3 upload.
 
 ## Версии и откат
 

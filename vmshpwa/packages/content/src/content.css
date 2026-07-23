@@ -1,0 +1,25 @@
+@import 'katex/dist/katex.min.css';
+
+.vmsh-math-content .katex,
+.vmsh-math-content .katex * {
+  user-select: none;
+}
+
+.vmsh-math-content .katex-display {
+  max-width: 100%;
+  margin-block: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.125rem;
+}
+
+.vmsh-math-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vmsh-math-content * {
+    scroll-behavior: auto;
+  }
+}

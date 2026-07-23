@@ -10,7 +10,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "dexie": "^4.0.0",
-    "zod": "^4.0.0"
+    "dexie": "catalog:",
+    "zod": "catalog:"
   }
 }

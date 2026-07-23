@@ -16,6 +16,14 @@ AUDIENCES = ("student", "family", "staff")
 NATS_PWA_INVALIDATE = "pwa_invalidate"
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 PWA_STATE = web.AppKey("pwa_state", dict)
+PWA_SECURITY_HEADERS = {
+    "Content-Security-Policy": (
+        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; "
+        "form-action 'none'"
+    ),
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+}
 
 pwa_routes = web.RouteTableDef()
 
@@ -35,8 +43,18 @@ def _request_id(request: web.Request) -> str:
     return request["request_id"]
 
 
+def _is_pwa_transport_path(path: str) -> bool:
+    return any(
+        path == f"/{audience}/ws" or path.startswith(f"/{audience}/api/")
+        for audience in AUDIENCES
+    )
+
+
 @web.middleware
 async def pwa_error_middleware(request: web.Request, handler):
+    if not _is_pwa_transport_path(request.path):
+        return await handler(request)
+
     incoming_request_id = request.headers.get("X-Request-ID", "")
     request_id = (
         incoming_request_id
@@ -69,7 +87,10 @@ async def pwa_error_middleware(request: web.Request, handler):
             },
             status=500,
         )
-    response.headers["X-Request-ID"] = request_id
+    if not response.prepared:
+        response.headers["X-Request-ID"] = request_id
+        for name, value in PWA_SECURITY_HEADERS.items():
+            response.headers.setdefault(name, value)
     return response
 
 

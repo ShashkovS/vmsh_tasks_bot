@@ -22,7 +22,7 @@ Login — отдельный shell без раскрытия защищённо�
 
 Листок целиком с anchors и фильтром; архив уроков; focused task. Условие не дробится на cards без необходимости. Task detail содержит version/status/deadline, test или written/oral action, hints/solution и историю.
 
-Submission flows: test answer с format/error/rate limit; written text/photos/reorder/compress/review/offline queue/receipt; oral instructions/current availability. Result/thread показывает immutable sent pages, annotations, comments, verdict, пересдачу и changed-condition notice.
+Submission flows: test answer с format/error/rate limit; written text/photos/delete-and-reupload ordering/compress/review/offline queue/receipt; oral instructions/current availability. Result/thread показывает зафиксированные после verdict pages, annotations, comments, verdict, пересдачу и changed-condition notice.
 
 ### Новости, прогресс, профиль
 
@@ -73,7 +73,7 @@ News moderation; users/groups/roles; classroom auto-assignment и ручной �
 ## Responsive acceptance viewports
 
 - Student/Family: 320×568 minimum audit, 390×844 primary mobile, 768×1024 tablet, 1280×800 desktop;
-- Staff: 1024×768 minimum supported workspace, 1440×900 primary, 1920×1080 wide. На меньшем экране Staff остаётся работоспособным через последовательный layout/Sheet, но не имитирует mobile Student app.
+- Staff: 1024×768 minimum supported workspace, 1440×900 primary, 1920×1080 wide. На меньшем экране Staff остаётся работоспособным через последовательный layout/Drawer, но не имитирует mobile Student app.
 
 ## Gate
 

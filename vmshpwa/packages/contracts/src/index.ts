@@ -68,6 +68,32 @@ export const loginContractSchema = z.object({
 })
 export type LoginContract = z.infer<typeof loginContractSchema>
 
+export const offlineMutationSchema = z.object({
+  idempotencyKey: z.uuid(),
+  payloadHash: z.string().min(16).max(256),
+  createdAtClient: z.iso.datetime(),
+  timezoneOffsetMinutes: z
+    .number()
+    .int()
+    .min(-14 * 60)
+    .max(14 * 60),
+})
+export type OfflineMutation = z.infer<typeof offlineMutationSchema>
+
+export const submissionImagePolicy = {
+  maximumCount: 10,
+  maximumLongEdgePixels: 1920,
+  storedMediaType: 'image/webp',
+  originalStored: false,
+} as const
+
+export const lessonDeadlinePolicy = {
+  authoringTimeZone: 'Europe/Moscow',
+  boundary: 'solution-publication',
+  statisticsGraceDays: 7,
+  suspiciousClockSkewMinutes: null,
+} as const
+
 export const sessionPolicy = {
   expiresMonth: 8,
   expiresDay: 10,
@@ -75,6 +101,11 @@ export const sessionPolicy = {
     httpOnly: true,
     secure: true,
     sameSite: 'lax' as const,
+  },
+  cookieNames: {
+    student: { access: 'vmsh_student_access', refresh: 'vmsh_student_refresh' },
+    family: { access: 'vmsh_family_access', refresh: 'vmsh_family_refresh' },
+    staff: { access: 'vmsh_staff_access', refresh: 'vmsh_staff_refresh' },
   },
 } as const
 
