@@ -72,17 +72,20 @@ function PrimitiveGallery() {
       </Card>
       <Card className="lg:col-span-2">
         <CardContent className="pt-6">
-          <Tabs defaultValue="task">
+          {/*
+            Tabs фильтруют список — это допустимое использование. Условие задачи
+            НИКОГДА не прячется во вкладку: подсказка и решение раскрываются
+            дополнительно под условием, а не заменяют его.
+          */}
+          <Tabs defaultValue="all">
             <TabsList>
-              <TabsTrigger value="task">Условие</TabsTrigger>
-              <TabsTrigger value="hint">Подсказка</TabsTrigger>
-              <TabsTrigger value="solution">Решение</TabsTrigger>
+              <TabsTrigger value="all">Все</TabsTrigger>
+              <TabsTrigger value="todo">Нерешённые</TabsTrigger>
+              <TabsTrigger value="review">На проверке</TabsTrigger>
             </TabsList>
-            <TabsContent value="task" className="font-reading leading-7">
-              Расставьте восемь ладей так, чтобы каждая била ровно две другие.
-            </TabsContent>
-            <TabsContent value="hint">Попробуйте начать с симметричной расстановки.</TabsContent>
-            <TabsContent value="solution">Решение откроется после окончания приёма.</TabsContent>
+            <TabsContent value="all">Показаны все задачи листка.</TabsContent>
+            <TabsContent value="todo">Показаны только нерешённые задачи.</TabsContent>
+            <TabsContent value="review">Показаны задачи, ожидающие проверки.</TabsContent>
           </Tabs>
         </CardContent>
       </Card>

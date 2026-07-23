@@ -24,9 +24,6 @@ catalogs:
     '@tanstack/react-virtual':
       specifier: ^3.0.0
       version: 3.14.7
-    '@types/katex':
-      specifier: ^0.16.7
-      version: 0.16.8
     '@visx/responsive':
       specifier: ^4.0.0
       version: 4.0.0
@@ -97,9 +94,6 @@ catalogs:
       specifier: ^7.0.0
       version: 7.4.1
     workbox-strategies:
-      specifier: ^7.0.0
-      version: 7.4.1
-    workbox-window:
       specifier: ^7.0.0
       version: 7.4.1
     zod:
@@ -182,24 +176,6 @@ importers:
       '@eslint/js':
         specifier: ^9.0.0
         version: 9.39.5
-      '@fontsource-variable/golos-text':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/inter':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/literata':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/source-serif-4':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource/ibm-plex-sans':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource/pt-serif':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@playwright/test':
         specifier: ^1.55.0
         version: 1.61.1
@@ -618,6 +594,12 @@ importers:
       '@base-ui/react':
         specifier: 'catalog:'
         version: 1.6.0(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@fontsource-variable/source-serif-4':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/ibm-plex-sans':
+        specifier: ^5.3.0
+        version: 5.3.0
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -1944,24 +1926,6 @@ packages:
         integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==,
       }
 
-  '@fontsource-variable/golos-text@5.3.0':
-    resolution:
-      {
-        integrity: sha512-D+Evz5yqXYh6tsalc537FS+cPDWn2FTdO8j/K1ZZuFAvA7ib6WnusTiihciq7mMnm6GBo6XTlh0JXPrhBsam2g==,
-      }
-
-  '@fontsource-variable/inter@5.3.0':
-    resolution:
-      {
-        integrity: sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==,
-      }
-
-  '@fontsource-variable/literata@5.3.0':
-    resolution:
-      {
-        integrity: sha512-1Jw7xvOcoGyB83lxB2nG4bfNbqtX2/TTbdh9sHAOmU064SvmSdulDtA5RBu5JYWf64fdaKX7xU+z3GO1T2bCHA==,
-      }
-
   '@fontsource-variable/source-serif-4@5.3.0':
     resolution:
       {
@@ -1972,12 +1936,6 @@ packages:
     resolution:
       {
         integrity: sha512-CbE4CbbEEZJX860XyUiRpsksXIQR8Rp2XDva2VO53NJox9tVNtusrysd2x5YkUEY3ErQ66W1IiiQL8/wihhw5w==,
-      }
-
-  '@fontsource/pt-serif@5.3.0':
-    resolution:
-      {
-        integrity: sha512-ST+j/byBGZw6H+TQMX78o6Qlngfj2Va/Q9fAJxq54Is1ZQk1/FhBIuqyJcLmnpi0trG8V/hWO9Bx6ZY09A0DBQ==,
       }
 
   '@humanfs/core@0.19.2':
@@ -9274,17 +9232,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@fontsource-variable/golos-text@5.3.0': {}
-
-  '@fontsource-variable/inter@5.3.0': {}
-
-  '@fontsource-variable/literata@5.3.0': {}
-
   '@fontsource-variable/source-serif-4@5.3.0': {}
 
   '@fontsource/ibm-plex-sans@5.3.0': {}
-
-  '@fontsource/pt-serif@5.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

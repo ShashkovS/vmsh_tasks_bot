@@ -2,15 +2,15 @@
 
 Этот файл — журнал gates. Визуальная модель обновляет evidence и вопросы, но ставит `accepted` только после явного решения владельца продукта.
 
-| Фаза                     | Статус             | Принято | Evidence/решение                                                             |
-| ------------------------ | ------------------ | ------- | ---------------------------------------------------------------------------- |
-| 1. Art direction         | ready for review   | —       | A/B/C; знак B выбран baseline, финальное сравнение языка ещё не принято.     |
-| 2. Brand and tokens      | blocked by phase 1 | —       | —                                                                            |
-| 3. UI primitives         | blocked by phase 2 | —       | Технические placeholders не считаются принятой фазой.                        |
-| 4. Product components    | blocked by phase 3 | —       | —                                                                            |
-| 5. Pages and flows       | blocked by phase 4 | —       | Существующие prototype pages — content skeletons, не принятый visual design. |
-| 6. Storybook and testing | blocked by phase 5 | —       | Текущая Storybook-конфигурация — инфраструктурный фундамент.                 |
-| 7. Final acceptance      | blocked            | —       | —                                                                            |
+| Фаза                     | Статус             | Принято    | Evidence/решение                                                             |
+| ------------------------ | ------------------ | ---------- | ---------------------------------------------------------------------------- |
+| 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.  |
+| 2. Brand and tokens      | in progress        | —          | Перенос токенов B в `packages/ui`; A/C выброшены.                            |
+| 3. UI primitives         | blocked by phase 2 | —          | Технические placeholders не считаются принятой фазой.                        |
+| 4. Product components    | blocked by phase 3 | —          | —                                                                            |
+| 5. Pages and flows       | blocked by phase 4 | —          | Существующие prototype pages — content skeletons, не принятый visual design. |
+| 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                 |
+| 7. Final acceptance      | blocked            | —          | —                                                                            |
 
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
@@ -27,11 +27,46 @@ Evidence stories:
 Known follow-ups:
 ```
 
-## Фаза 1 — материалы на рассмотрение (решение владельца не принято)
+```text
+2026-07-23 — Phase 1 — accepted
+Decision owner: Сергей Шашков (владелец продукта)
+Chosen option and exact combination:
+  Направление B «Мастерская» как основа — нейтральный рабочий холст, панели с
+  умеренным radius и мягкой elevation, зебра в Staff-таблицах, брендовый знак B
+  (скруглённый прямоугольник «179» с антенной) + его палитра и простой sans
+  wordmark «ВМШ 179». Шрифты B (IBM Plex Sans UI + Source Serif 4 reading) —
+  стартовая пара, license/subset/budget подтверждаются в Phase 2.
+  Заимствования из C:
+    - индикатор уровня — нейтральный буквенный chip (н/п/х + short_code), без
+      насыщенной per-level заливки; «уровень, а не оценка», без давления;
+    - номер задачи — без рамки/бордера вокруг него.
+  Level-color logic: уровень несёт буква + short_code на нейтральном chip;
+  per-level hue остаётся приглушённым служебным семейством для данных
+  (charts/violin distribution), не как статусная заливка и не как verdict.
+  Иконки продуктов и bottom-nav — Lucide; брендовый знак не используется как
+  интерфейсная иконка.
+Rejected traits:
+  A — бумажная метафора листка и hairline-вместо-панели;
+  C — почти прямые углы 2px и двойные линейки;
+  насыщенные per-level цветные чипы уровня (эффект «ты пока слабый»).
+Evidence stories: Exploration/Art direction (вариант B; A/C выброшены).
+Known follow-ups:
+  - финальная font pair и точные level-color токены фиксируются в Phase 2;
+  - экранные уточнения (тип→иконка, «Зачтено» вместо «Верный ответ», полная
+    шкала вердиктов, одна строка «Подсказка/Решение» скрытая до публикации,
+    короткий уровень + сортировки в очереди учителя, быстрый поток проверки,
+    провенанс human/AI) зафиксированы в docs/product-ux-decisions-2026-07.md.
+```
 
-Stories: `Exploration/Art direction` — «A · Листок», «B · Мастерская», «C · Архив»,
-каждая в светлой и тёмной теме, плюс «Сравнение A / B / C». Глобальные переключатели
-Storybook: тема, плотность (Школьник / Семья / Учитель), анимация.
+## Фаза 1 — принято (evidence)
+
+Направление B принято 2026-07-23; варианты A и C выброшены, `Exploration/*` удалён
+после приёмки (решение и скриншоты зафиксированы в журнале решений выше). Ниже —
+исходное описание evidence на момент сравнения A/B/C.
+
+Stories (удалены после приёмки): `Exploration/Art direction` — «A · Листок»,
+«B · Мастерская», «C · Архив», каждая в светлой и тёмной теме, плюс «Сравнение A / B / C».
+Глобальные переключатели Storybook: тема, плотность (Школьник / Семья / Учитель), анимация.
 
 Содержание всех трёх направлений одинаково и взято из реальных материалов кружка:
 листок 21н (задачи 21н.1, 21н.4, 21н.6, 21н.7, 21н.8), задачи 27х.1 и 27х.3 с формулами
@@ -64,26 +99,35 @@ Storybook: тема, плотность (Школьник / Семья / Учи�
 - verdict UI строится из registry курса и поддерживает binary/ternary/full scale; тип, lock/review, reactions, hint/solution и future AI states заданы в `docs/product-ux-decisions-2026-07.md`;
 - подробный реестр остальных решений: `docs/accepted-technical-decisions-2026-07.md`.
 
-## Следующий gate
+## Текущий шаг — Phase 2 Brand and tokens
 
-Следующий шаг — не Phase 2 и не расширение набора компонентов. Сначала Claude должен обновить финальное Phase 1 comparison так, чтобы во всех A/B/C использовался уже выбранный знак B, а различались только typography, surfaces, spacing/density, layout grouping и level-color logic. Затем владелец одним явным решением фиксирует:
+Phase 1 принята 2026-07-23 (направление B + заимствования из C, журнал решений выше). Варианты A и C выброшены. `Exploration/Art direction` остаётся как reference на B и удаляется/архивируется по мере переноса B в реальные токены и компоненты.
 
-1. основное направление A, B или C;
-2. точные заимствования из остальных вариантов;
-3. логику цветов уровней;
-4. UI sans + reading serif;
-5. допустимые radius/elevation/density traits и явно отвергнутые признаки.
+Phase 2 переводит B в слои `primitive → semantic → component` в `packages/ui/src/styles`.
 
-Только после записи `Phase 1 — accepted` начинается Phase 2 Brand and tokens. Ответы о знаке, вердиктах и продуктовых потоках являются обязательными inputs, но сами по себе не принимают весь art direction.
+**Сделано (token core, зелёный чекпоинт):**
+
+- `globals.css` перестроен: primitive neutral OKLCH-шкала → semantic роли → component токены; светлая и тёмная темы;
+- семейства: surfaces/text/borders/interactive/focus/selection/link/overlay; status success/warning/danger/info (base/-foreground/-surface/-border); **уровни — категориальные приглушённые hue (teal н / violet п / rose х / ochre 4-й / neutral fallback), не градиент, отдельно от status и verdict**; verdict scale negative→positive + none; provenance human / AI; unread; connection; chart 1–8 + grid/axis/reference; annotation pen/highlight/comment/selection;
+- шрифты B self-hosted (`@fontsource/ibm-plex-sans` + `@fontsource-variable/source-serif-4`) как зависимости `@vmsh/ui`, кириллический subset, в precache;
+- типографика (type scale + tabular numerals + math chain), radius/elevation/z-index/motion/density (Student/Family/Staff через `data-density`), container widths;
+- **brand-assets**: repo-native SVG в `packages/ui/src/brand/marks.tsx` — `Sign179`, `Wordmark`, `IconStudent/Family/Staff`, всё `currentColor` (monochrome/print/обе темы); знак «179» читаем до 16 px; финальные `apps/*/public/icon.svg` (any) + `icon-maskable.svg` (safe area), манифест: раздельные any/maskable + палитра B (`#205f7d` / `#edeff1`) — закрыт давний анти-паттерн одной `any maskable` SVG;
+- `Foundations/Tokens` + `Foundations/Brand` stories; light/dark/Staff-density; матрица независимости уровень × статус × вердикт × автор;
+- цветовые решения (палитра уровней teal/violet/rose, ступени вердикта) **подтверждены владельцем 2026-07-23**;
+- контраст: `node dev/design-system/tokens-contrast-audit.mjs` — **59 пар × 2 темы проходят WCAG 2.2 AA**;
+- гейты: format, lint (js + stylelint), typecheck, Storybook 19/19 (axe error), build — зелёные.
+
+**Полировка сделана (2026-07-23):** specimens spacing/motion + density Student↔Staff на одной форме в `Foundations/Tokens`; `Exploration/*` A/C удалён (B перенесён в реальные токены; знак — в `packages/ui/src/brand`); лишние `@fontsource` (inter/literata/golos-text/pt-serif) удалены; production PNG 192/512 any + maskable для manifest сгенерированы; precache подрезан globIgnores (убраны greek/vietnamese/latin-ext/cyrillic-ext слайсы: 2325→2031 KiB). Density теперь применяется на любом контейнере (`[data-density]`), не только на root.
+
+**Правки принципов (owner feedback):** условие всегда перед глазами — подсказка/решение раскрываются дополнительно, не вкладками (поправлен Tabs-пример в primitives); школьник видит слово («Начинающие»), не голый код «н». Записано в `docs/product-ux-decisions-2026-07.md`.
+
+**Остаётся фоном:** сабсеттинг самих KaTeX-шрифтов (сейчас основной вес precache).
+
+Token core + brand + полировка готовы и зелёные (Storybook 11/11, contrast 59×2 AA, build). Дальше — первый экран школьника «Сейчас» на этих токенах.
 
 ## Открытые вопросы
 
-- Какое art direction будет выбрано после сравнения трёх исполняемых вариантов?
-- Логика цвета уровня различается по направлениям (A — одна чернильная лестница,
-  B — три отдельных приборных оттенка, C — почти нейтральные тона плюс печатная буква
-  н/п/х). Какая из трёх логик принимается?
-- Финальная пара шрифтов фиксируется вместе с направлением; после выбора лишние
-  `@fontsource*` пакеты удаляются.
+- Финальная font pair фиксируется в Phase 2; после выбора лишние `@fontsource*` пакеты удаляются.
 - Какой clock-skew threshold применять к offline submission около deadline.
 - Подтвердить UX для одинакового idempotency key с различающимися payload.
 - После фиксации math corpus проверить subset/форматы KaTeX fonts и повторно измерить precache.

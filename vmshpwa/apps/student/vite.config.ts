@@ -26,10 +26,17 @@ export default defineConfig(({ command }) => {
         filename: 'sw.ts',
         injectManifest: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
+          // Precache only the font subsets this Russian app renders (latin + cyrillic).
+          globIgnores: [
+            '**/*greek*.woff2',
+            '**/*vietnamese*.woff2',
+            '**/*latin-ext*.woff2',
+            '**/*cyrillic-ext*.woff2',
+          ],
         },
         registerType: 'prompt',
         injectRegister: 'auto',
-        includeAssets: ['icon.svg'],
+        includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
         manifest: {
           id: '/student/',
           name: 'ВМШ 179 — школьник',
@@ -39,14 +46,17 @@ export default defineConfig(({ command }) => {
           start_url: '/student/',
           scope: '/student/',
           display: 'standalone',
-          background_color: '#f7f4ed',
-          theme_color: '#356a91',
+          background_color: '#edeff1',
+          theme_color: '#205f7d',
           icons: [
+            { src: '/student/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+            { src: '/student/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: '/student/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
             {
-              src: '/student/icon.svg',
-              sizes: 'any',
-              type: 'image/svg+xml',
-              purpose: 'any maskable',
+              src: '/student/icon-maskable-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
             },
           ],
         },
