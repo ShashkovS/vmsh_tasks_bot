@@ -80,7 +80,7 @@ test('websocket reconnect cursor requests an explicit resync', async ({ page }) 
       }),
   )
   expect(event.type).toBe('resync-required')
-  expect(event.reason).toBe('client-cursor-is-ahead')
+  expect(event.reason).toBe('reconnect-full-refetch-required')
 })
 
 for (const app of apps.slice(0, 2)) {

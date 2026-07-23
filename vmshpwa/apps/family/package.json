@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port ${VITE_PORT:-5174} --strictPort",
+    "preview": "vite preview --host 127.0.0.1 --port ${VITE_PORT:-5174} --strictPort",
     "routes:generate": "tsr generate",
     "build": "tsr generate && vite build",
     "typecheck": "tsc --noEmit"

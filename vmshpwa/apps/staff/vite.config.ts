@@ -22,5 +22,11 @@ export default defineConfig(({ command }) => {
         '/staff/ws': { target: apiOrigin, changeOrigin: true, ws: true },
       },
     },
+    preview: {
+      proxy: {
+        '/staff/api': { target: apiOrigin, changeOrigin: true },
+        '/staff/ws': { target: apiOrigin, changeOrigin: true, ws: true },
+      },
+    },
   }
 })

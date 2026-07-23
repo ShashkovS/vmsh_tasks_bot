@@ -177,10 +177,13 @@ async def on_shutdown(app):
     logger.warning('online Bye!')
 
 
-def configue(app):
+def configure(app):
     app.add_routes(routes)
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
+
+
+configue = configure
 
 
 if __name__ == "__main__":
@@ -189,5 +192,5 @@ if __name__ == "__main__":
     logger.setLevel(DEBUG)
     use_cookie = DEBUG_COOKIE
     app = web.Application()
-    configue(app)
+    configure(app)
     web.run_app(app)

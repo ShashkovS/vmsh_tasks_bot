@@ -9,4 +9,5 @@ These rules apply to Student, Family and Staff applications.
 - Student and Family are mobile-first and touch-safe. Staff remains information-dense and keyboard-efficient while adapting at its supported minimum viewport.
 - User-facing copy is Russian and addresses the user as «вы». Avoid sales, urgency and ranking language.
 - Keep screen readers, keyboard order, visible focus, 200% zoom and reduced motion working with every UI change.
+- Staff is not exempt from the baseline a11y gate. Avoiding a complex DnD dependency means providing simpler buttons/select/move controls, not disabling semantic, keyboard, focus or axe checks.
 - Use only semantic tokens and shared primitives. Add app-level tokens only when the concept is truly audience-specific and document them.

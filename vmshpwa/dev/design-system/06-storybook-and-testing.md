@@ -63,11 +63,13 @@ Handlers группируются по contract scenario и возвращают
 
 Addon a11y имеет `test: error`. Перед принятием:
 
+- gate одинаково применяется к Student, Family и Staff; Staff не получает глобальных исключений;
+
 - axe без violations для всех основных stories;
 - весь flow только keyboard;
 - focus виден в обеих темах и не закрыт sticky regions;
 - status announcements не создают spam;
-- dialogs/sheets имеют name и restore focus;
+- dialogs/drawers имеют name и restore focus;
 - charts/math/images имеют textual equivalents;
 - contrast WCAG 2.2 AA, touch target и reflow проверены вручную там, где axe недостаточен.
 

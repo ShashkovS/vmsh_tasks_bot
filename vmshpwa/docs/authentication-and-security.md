@@ -14,7 +14,7 @@
 | Family   | `vmsh_family_access`  | `vmsh_family_refresh`  | `/family`  |
 | Staff    | `vmsh_staff_access`   | `vmsh_staff_refresh`   | `/staff`   |
 
-Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Refresh session истекает в ближайшее 10 августа, access cookie — существенно раньше. Блокировка пользователя, сброс Telegram-токена, смена критичных прав и ручной отзыв завершают её раньше.
+Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Refresh session истекает в ближайшее 10 августа, access cookie — существенно раньше. Конкретный `expiresAt` вычисляет и возвращает сервер; общий TypeScript-контракт не высчитывает границу по зашитым month/day. Блокировка пользователя, сброс Telegram-токена, смена критичных прав и ручной отзыв завершают её раньше.
 
 ## Обязательные механизмы
 

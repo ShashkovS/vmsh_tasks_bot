@@ -55,6 +55,7 @@
 - [ ] Prettier, ESLint, strict TypeScript, Vitest проходят.
 - [ ] Storybook build и addon-vitest browser mode проходят.
 - [ ] Storybook a11y violations имеют `error`, актуальных violations нет.
+- [ ] Staff stories проходят тот же semantic/keyboard/focus/a11y baseline без глобального исключения.
 - [ ] Production build не включает MSW/prototype mode.
 - [ ] Student/Family injectManifest workers и manifests валидны.
 - [ ] Playwright E2E/visual проходят в Chromium, WebKit, Firefox.

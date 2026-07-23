@@ -65,7 +65,7 @@ async def test_pwa_api_has_baseline_security_headers(client):
 
 @pytest.mark.asyncio
 async def test_websocket_handshake_heartbeat_and_invalidation(client):
-    websocket = await client.ws_connect("/student/ws?cursor=0")
+    websocket = await client.ws_connect("/student/ws")
     connected = await websocket.receive_json()
     assert connected["type"] == "connected"
     assert connected["audience"] == "student"
@@ -81,6 +81,40 @@ async def test_websocket_handshake_heartbeat_and_invalidation(client):
     assert invalidation["resources"] == ["lesson:42"]
     assert invalidation["cursor"] >= 1
     await websocket.close()
+
+
+@pytest.mark.asyncio
+async def test_websocket_reconnect_always_requires_authoritative_resync(client):
+    websocket = await client.ws_connect("/student/ws?cursor=0")
+    event = await websocket.receive_json()
+    assert event["type"] == "resync-required"
+    assert event["reason"] == "reconnect-full-refetch-required"
+    await websocket.close()
+
+
+@pytest.mark.asyncio
+async def test_invalidation_can_be_scoped_to_one_audience(client):
+    student = await client.ws_connect("/student/ws")
+    staff = await client.ws_connect("/staff/ws")
+    assert (await student.receive_json())["type"] == "connected"
+    assert (await staff.receive_json())["type"] == "connected"
+
+    await vmsh_nats.publish(
+        "pwa_invalidate",
+        {
+            "resources": ["review-queue"],
+            "reason": "submission-updated",
+            "audience": "staff",
+        },
+    )
+    staff_event = await staff.receive_json()
+    assert staff_event["type"] == "invalidate"
+    assert staff_event["audience"] == "staff"
+
+    await student.send_json({"type": "ping"})
+    assert (await student.receive_json())["type"] == "pong"
+    await student.close()
+    await staff.close()
 
 
 @pytest.mark.asyncio

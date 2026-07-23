@@ -21,7 +21,11 @@ const backendEnv = {
 export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
-  fullyParallel: true,
+  // Keep tests within a project sequential. Firefox serializes service-worker
+  // installation internally, so parallel registrations from isolated contexts
+  // can exceed the activation timeout even though each worker is valid.
+  // Browser projects still run in parallel with one another.
+  fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
@@ -51,33 +55,31 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'pnpm --filter @vmsh/student dev',
+      command: 'pnpm --filter @vmsh/student preview',
       cwd: workspace,
       env: {
         ...process.env,
         VITE_PORT: '5373',
         VMSH_API_ORIGIN: apiOrigin,
-        VMSH_PWA_DEV_SW: '1',
       },
       url: 'http://127.0.0.1:5373/student/',
       reuseExistingServer: false,
       timeout: 120_000,
     },
     {
-      command: 'pnpm --filter @vmsh/family dev',
+      command: 'pnpm --filter @vmsh/family preview',
       cwd: workspace,
       env: {
         ...process.env,
         VITE_PORT: '5374',
         VMSH_API_ORIGIN: apiOrigin,
-        VMSH_PWA_DEV_SW: '1',
       },
       url: 'http://127.0.0.1:5374/family/',
       reuseExistingServer: false,
       timeout: 120_000,
     },
     {
-      command: 'pnpm --filter @vmsh/staff dev',
+      command: 'pnpm --filter @vmsh/staff preview',
       cwd: workspace,
       env: { ...process.env, VITE_PORT: '5375', VMSH_API_ORIGIN: apiOrigin },
       url: 'http://127.0.0.1:5375/staff/',

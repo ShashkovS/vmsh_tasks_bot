@@ -147,14 +147,17 @@ def start_bot_in_webhook_mode(app):
     setup_tgbot_webhook(app)
 
 
-def configue(app):
+def configure(app):
     dispatcher.startup.register(on_startup)
     dispatcher.shutdown.register(on_shutdown)
 
 
+configue = configure
+
+
 if __name__ == "__main__":
     app = web.Application()
-    configue(app)
+    configure(app)
     start_bot_in_polling_mode()
     # В режиме отладки запускаем без вебхуков
     asyncio.run(run_tg_bot_in_polling_mode())

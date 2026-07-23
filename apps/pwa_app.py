@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import json
 import logging
 import re
@@ -129,7 +130,26 @@ async def legacy_health(_request: web.Request):
     return web.json_response({"ok": True})
 
 
-async def _broadcast(app: web.Application, resources: list[str], reason: str):
+async def _send_invalidation(connections: set, websocket, event: dict):
+    if websocket.closed:
+        connections.discard(websocket)
+        return
+    try:
+        await websocket.send_json(event)
+    except Exception:
+        connections.discard(websocket)
+        logger.warning("Failed to send PWA invalidation", exc_info=True)
+
+
+async def _broadcast(
+    app: web.Application,
+    resources: list[str],
+    reason: str,
+    audience: str | None = None,
+):
+    if audience is not None and audience not in AUDIENCES:
+        raise ValueError(f"Unknown PWA audience: {audience}")
+
     state = app[PWA_STATE]
     state["cursor"] += 1
     event = {
@@ -139,24 +159,32 @@ async def _broadcast(app: web.Application, resources: list[str], reason: str):
         "resources": resources,
         "reason": reason,
     }
-    stale = []
-    for connections in state["websockets"].values():
-        for websocket in connections.copy():
-            if websocket.closed:
-                stale.append((connections, websocket))
-            else:
-                await websocket.send_json(event)
-    for connections, websocket in stale:
-        connections.discard(websocket)
+    if audience is not None:
+        event["audience"] = audience
+        connection_sets = (state["websockets"][audience],)
+    else:
+        connection_sets = tuple(state["websockets"].values())
+
+    await asyncio.gather(
+        *(
+            _send_invalidation(connections, websocket, event)
+            for connections in connection_sets
+            for websocket in connections.copy()
+        )
+    )
 
 
 @pwa_routes.get("/{audience:student|family|staff}/ws")
 async def realtime(request: web.Request):
     audience = _audience(request)
-    try:
-        requested_cursor = max(0, int(request.query.get("cursor", "0")))
-    except ValueError as exc:
-        raise web.HTTPBadRequest(text="cursor must be a non-negative integer") from exc
+    cursor_value = request.query.get("cursor")
+    if cursor_value is not None:
+        try:
+            requested_cursor = int(cursor_value)
+        except ValueError as exc:
+            raise web.HTTPBadRequest(text="cursor must be a non-negative integer") from exc
+        if requested_cursor < 0:
+            raise web.HTTPBadRequest(text="cursor must be a non-negative integer")
 
     websocket = web.WebSocketResponse(heartbeat=25, max_msg_size=64 * 1024)
     websocket.headers["X-Request-ID"] = _request_id(request)
@@ -165,13 +193,13 @@ async def realtime(request: web.Request):
     state["websockets"][audience].add(websocket)
 
     current_cursor = state["cursor"]
-    if requested_cursor > current_cursor:
+    if cursor_value is not None:
         await websocket.send_json(
             {
                 "type": "resync-required",
                 "cursor": current_cursor,
                 "serverTime": _now(),
-                "reason": "client-cursor-is-ahead",
+                "reason": "reconnect-full-refetch-required",
             }
         )
     else:
@@ -222,8 +250,17 @@ async def on_startup(app: web.Application):
 
     async def handle_invalidation(payload):
         resources = [str(item) for item in payload.get("resources", []) if item]
+        audience = payload.get("audience")
+        if audience is not None and audience not in AUDIENCES:
+            logger.warning("Ignoring invalid PWA invalidation audience: %r", audience)
+            return
         if resources:
-            await _broadcast(app, resources, str(payload.get("reason") or "nats"))
+            await _broadcast(
+                app,
+                resources,
+                str(payload.get("reason") or "nats"),
+                audience=audience,
+            )
 
     await vmsh_nats.subscribe(NATS_PWA_INVALIDATE, handle_invalidation)
 
@@ -233,7 +270,7 @@ async def on_shutdown(_app: web.Application):
     logger.info("PWA app shutdown")
 
 
-def configue(app: web.Application):
+def configure(app: web.Application):
     app.middlewares.append(pwa_error_middleware)
     app[PWA_STATE] = {
         "cursor": 0,
@@ -244,9 +281,13 @@ def configue(app: web.Application):
     app.on_shutdown.append(on_shutdown)
 
 
+# Compatibility alias for older launchers; new code uses the correctly named API.
+configue = configure
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(DEBUG)
     standalone_app = web.Application()
-    configue(standalone_app)
+    configure(standalone_app)
     web.run_app(standalone_app)

@@ -18,7 +18,7 @@ flowchart LR
   G["Google legacy imports"] -. только legacy .-> T
 ```
 
-NATS ускоряет доставку invalidation между процессами, но не является журналом. После reconnect клиент запрашивает версию и полное актуальное состояние из SQLite.
+NATS ускоряет доставку общих или audience-scoped invalidation между процессами, но не является журналом. После любого reconnect клиент запрашивает версию и полное актуальное состояние из SQLite. Owner-scoped события появятся только вместе с authenticated WebSocket principal; audience scope нельзя выдавать за пользовательскую приватность.
 
 ## Frontend workspace
 
@@ -43,6 +43,8 @@ NATS ускоряет доставку invalidation между процесса�
 | Staff    | `/staff/*`   | `/staff/api/v1/*`   | `/staff/ws`   | `/staff`            |
 
 Reverse proxy обязан отдавать соответствующий `index.html` только для browser-navigation внутри UI base, но никогда не подменять им `/api` или `/ws`.
+
+Каждый aiohttp adapter экспортирует `configure(app)`. Старое ошибочное имя `configue` временно оставлено alias-ом для внешней совместимости и не используется новым launcher-кодом.
 
 ## API conventions
 

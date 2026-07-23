@@ -36,7 +36,7 @@
 
 ## Realtime и offline
 
-- Текущий production baseline — два gunicorn worker. NATS обязателен для live fan-out между ними; SQLite остаётся источником восстановления после reconnect.
+- Текущий production baseline — два gunicorn worker. NATS обязателен для live fan-out между ними; invalidation может быть общим или ограниченным audience. Любой reconnect всегда требует полного refetch из SQLite, cursor разных workers не сравнивается как durable offset. Owner scope требует authenticated WebSocket principal и остаётся частью auth-фазы.
 - Потеря Safari IndexedDB после долгого отсутствия допустима: критических данных только на клиенте нет. Student/Family не более двух раз мягко предлагают установку PWA, без блокирующих экранов.
 - Целевой локальный бюджет — около 10–15 MB. Текст условий занимает малую часть; иллюстрации к недавно открытым материалам кешируются примерно на две недели и очищаются LRU/quota policy.
 - Logout при непустом outbox показывает предупреждение. После явного подтверждения пользователя локальная очередь и drafts этого аккаунта могут быть удалены.
@@ -59,6 +59,7 @@
 - Формам достаточно собственного малого слоя вокруг Base UI Field/Form semantics.
 - Версии общих third-party dependencies задаются pnpm catalog.
 - ESLint получает `eslint-plugin-jsx-a11y`; CSS проверяется Stylelint. React Compiler не используется.
+- Базовый a11y gate действует и для Staff. Отказ от сложной DnD-библиотеки не является исключением для labels, alt, ARIA, keyboard/focus и axe.
 - Frontend Sentry включается только при наличии production DSN, без PII. Release/environment/audience передаются как tags; загрузка source maps настраивается серверными secrets позднее.
 - Числового coverage gate нет. Тесты добавляются по риску и поведению, а не ради процента.
 
@@ -67,7 +68,7 @@
 - GitHub Actions пока нет. Production обновляется серверным webhook: fetch exact revision, backup SQLite, frozen dependency sync, проверки/сборка изменившихся частей, migrations, controlled restart, healthcheck и detached post-deploy backup.
 - Dependency detection учитывает root Python manifests и весь pnpm workspace, включая `vmshpwa/pnpm-lock.yaml`, `pnpm-workspace.yaml` и package manifests.
 - Визуальные baselines пока считаются macOS-local artifacts; Docker normalization откладывается. Baseline меняется только после ручной проверки diff.
-- Основной E2E остаётся на Vite dev servers с настоящим aiohttp для скорости и диагностики. Production build остаётся отдельным обязательным gate; deploy выполняет короткий smoke уже собранных assets и service workers.
+- Основной E2E и visual regression выполняются на production bundles через `vite preview` с настоящим aiohttp. Deploy дополнительно выполняет короткий smoke уже разложенных assets и service workers.
 - PWA JSON error/request-ID middleware ограничивается `/student`, `/family`, `/staff` API/WS путями и не меняет ответы legacy dashboards.
 
 ## Открытые параметры, не блокирующие текущий каркас

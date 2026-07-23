@@ -29,4 +29,4 @@ CI-платформа пока не вводится. Production deployment за
 
 ## Checks
 
-Основной Playwright остаётся на dev servers. Production build проверяется отдельным обязательным gate; после deployment запускается короткий smoke compiled assets. Визуальные snapshots пока воспроизводятся на машине владельца под macOS и не обновляются автоматически на сервере.
+Playwright собирает production bundles и проверяет их через `vite preview`; это единый gate для production splitting, manifests, service workers, функциональных сценариев и визуальных snapshots. После deployment отдельно запускается короткий smoke уже разложенных compiled assets. Визуальные snapshots пока воспроизводятся на машине владельца под macOS и не обновляются автоматически на сервере.

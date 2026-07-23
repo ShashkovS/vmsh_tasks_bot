@@ -16,7 +16,7 @@ Unit и Storybook используют MSW 2. Main E2E никогда не ис�
 
 E2E выполняется в Chromium, WebKit и Firefox. Критические mobile Student flows дополнительно получают device projects при появлении реальных submission endpoints. iOS baseline — 16.4, Android — 10.
 
-Основной E2E пока запускает Vite dev servers: это быстрее и даёт диагностичный HMR/source output. Отдельные `pwa-build` и deploy smoke остаются обязательными, чтобы проверять production chunks, CSP, manifest и service worker. MSW не используется ни в одном из этих E2E режимов.
+Основной E2E сначала собирает все три production bundles, затем запускает `vite preview` и настоящий aiohttp. Поэтому functional, visual, route splitting, manifests и service-worker проверки видят production CSS/chunks, а не dev/HMR-поведение. Deploy smoke остаётся отдельным коротким контролем уже разложенных сервером assets. MSW не используется ни в одном E2E-режиме.
 
 ## Visual regression
 
@@ -25,6 +25,8 @@ E2E выполняется в Chromium, WebKit и Firefox. Критически�
 ## Accessibility
 
 Storybook a11y violations имеют status `error`. Проверяются keyboard order, visible focus, accessible names, dialogs/focus trap, таблицы, zoom/reflow, forced colors where applicable и контраст WCAG 2.2 AA. Цвет никогда не является единственным носителем статуса.
+
+Этот baseline одинаков для Student, Family и Staff. Отказ от сложной accessibility-модели отдельного drag-and-drop не отменяет labels, alt, валидный ARIA, keyboard navigation, focus и axe gate: Staff использует доступные buttons/select/move alternatives.
 
 ## Definition of done компонента
 

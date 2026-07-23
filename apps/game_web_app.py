@@ -365,10 +365,13 @@ async def on_shutdown(app):
     logger.warning('game web app Bye!')
 
 
-def configue(app):
+def configure(app):
     app.add_routes(routes)
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
+
+
+configue = configure
 
 
 # Откладка по конкретному студенту
@@ -384,6 +387,6 @@ if __name__ == "__main__":
     logger.setLevel(DEBUG)
     use_cookie = DEBUG_COOKIE
     app = web.Application()
-    configue(app)
+    configure(app)
     print('Open http://127.0.0.1:8080/game')
     web.run_app(app)

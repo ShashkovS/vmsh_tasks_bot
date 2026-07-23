@@ -32,13 +32,26 @@ describe('runtime contracts', () => {
     ).toThrow()
   })
 
-  it('keeps stable query keys and the academic-year session boundary', () => {
+  it('keeps stable query keys and audience-isolated server-owned sessions', () => {
     expect(queryKeys.task('21n.6a')).toEqual(['tasks', '21n.6a'])
-    expect(sessionPolicy.expiresMonth).toBe(8)
-    expect(sessionPolicy.expiresDay).toBe(10)
+    expect(sessionPolicy.expiryAuthority).toBe('server')
     expect(sessionPolicy.cookieNames.student.access).not.toBe(
       sessionPolicy.cookieNames.family.access,
     )
+  })
+
+  it('accepts an audience-scoped invalidation', () => {
+    const event = realtimeEventSchema.parse({
+      type: 'invalidate',
+      audience: 'staff',
+      cursor: 3,
+      serverTime: '2026-07-22T12:00:00Z',
+      resources: ['review-queue'],
+      reason: 'submission-updated',
+    })
+    expect(event.type).toBe('invalidate')
+    if (event.type !== 'invalidate') throw new Error('Expected invalidation event')
+    expect(event.audience).toBe('staff')
   })
 
   it('validates offline timing and content identity independently', () => {

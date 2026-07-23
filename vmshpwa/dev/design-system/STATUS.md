@@ -58,6 +58,8 @@ Storybook: тема, плотность (Школьник / Семья / Учи�
 - KaTeX рендерится на клиенте; math fonts входят в PWA precache, TikZ остаётся external SVG;
 - Sonner заменяется Base UI Toast, Sheet — Base UI Drawer;
 - графики используют Visx/D3, Staff grid — TanStack Table/Virtual, новая DnD dependency не добавляется;
+- a11y baseline и axe gate сохраняются для Staff; упрощение DnD не создаёт исключения;
+- Playwright E2E/visual запускаются на production bundles через Vite preview;
 - подробный реестр остальных решений: `docs/accepted-technical-decisions-2026-07.md`.
 
 ## Открытые вопросы
@@ -70,3 +72,4 @@ Storybook: тема, плотность (Школьник / Семья / Учи�
   `@fontsource*` пакеты удаляются.
 - Какой clock-skew threshold применять к offline submission около deadline.
 - Подтвердить UX для одинакового idempotency key с различающимися payload.
+- После фиксации math corpus проверить subset/форматы KaTeX fonts и повторно измерить precache.

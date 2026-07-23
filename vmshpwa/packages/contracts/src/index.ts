@@ -54,6 +54,7 @@ export const realtimeEventSchema = z.discriminatedUnion('type', [
   realtimeBaseSchema.extend({ type: z.literal('pong') }),
   realtimeBaseSchema.extend({
     type: z.literal('invalidate'),
+    audience: audienceSchema.optional(),
     resources: z.array(z.string().min(1)).min(1),
     reason: z.string().min(1),
   }),
@@ -95,8 +96,7 @@ export const lessonDeadlinePolicy = {
 } as const
 
 export const sessionPolicy = {
-  expiresMonth: 8,
-  expiresDay: 10,
+  expiryAuthority: 'server' as const,
   cookie: {
     httpOnly: true,
     secure: true,
@@ -108,6 +108,11 @@ export const sessionPolicy = {
     staff: { access: 'vmsh_staff_access', refresh: 'vmsh_staff_refresh' },
   },
 } as const
+
+export const sessionMetadataSchema = z.object({
+  expiresAt: z.iso.datetime(),
+})
+export type SessionMetadata = z.infer<typeof sessionMetadataSchema>
 
 export const queryKeys = {
   runtime: (audience: Audience) => ['runtime', audience] as const,

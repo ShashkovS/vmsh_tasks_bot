@@ -8,7 +8,7 @@
 
 ## Web и Telegram renderers
 
-Web HTML сохраняет исходные LaTeX expressions в безопасных math nodes. KaTeX работает на клиенте с HTML+MathML output; его CSS и fonts собираются Vite и входят в precache Student/Family. Выделение/copy helper и интерактивное меню формул отключены, но assistive semantics не удаляются.
+Web HTML сохраняет исходные LaTeX expressions в безопасных math nodes. KaTeX работает на клиенте с HTML+MathML output; его CSS и fonts собираются Vite и входят в precache Student/Family. Текущий полный набор увеличивает precache примерно до 1.4 MiB; после стабилизации корпуса нужно оставить необходимые web-форматы/subsets с regression-набором реальных формул. Выделение/copy helper и интерактивное меню формул отключены, но assistive semantics не удаляются.
 
 Telegram renderer создаёт HTML для Bot API 10.1+ `sendRichMessage`: inline math становится `<tg-math>`, display math — `<tg-math-block>`, а headings, lists, tables, details, quotations и media проходят строгий Telegram allowlist. Это отдельный dialect и не передаётся в legacy `sendMessage(parse_mode=HTML)`. Pipeline проверяет Telegram limits (characters, blocks, nesting, media и table columns) до публикации.
 

@@ -51,7 +51,7 @@ def prepare_app(enabled_apps=None):
     app.on_shutdown.append(on_shutdown)
     # Теперь настраиваем все модули
     for module in enabled_apps or apps.all_apps:
-        module.configue(app)
+        module.configure(app)
     # Обращаем on_shutdown, чтобы приложения закрывались в правильном порядке
     app.on_shutdown[:] = app.on_shutdown[::-1]
     if __name__ == "__main__":
