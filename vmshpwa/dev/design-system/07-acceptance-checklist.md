@@ -34,11 +34,12 @@
 - [ ] Figures доступны и масштабируются keyboard/pointer.
 - [ ] Все исторические answer types представлены contract-driven input.
 - [ ] До 10 фото: worker progress, up/down reordering, preview, retry, offline queue.
-- [ ] Immutable evidence и annotation overlay разделены.
+- [ ] До первого review lock исходную entry можно изменить/удалить; досланное после lock входит в текущую проверку, а evidence становится immutable только при завершении verdict.
+- [ ] Immutable evidence и annotation overlay разделены; overlay поддерживает карандаш, ластик, поворот, zoom и 4–5 цветов и не редактируется после отправки.
 - [ ] Feedback/resubmission history не теряется.
 - [ ] Последний verdict, раскрываемая история, correction/recheck и частичные веса представлены корректно.
 - [ ] Четыре технических task types покрыты; гибрид школьнику выглядит oral и поддерживает written+Zoom window.
-- [ ] Hidden Student/teacher reactions проверены permission fixtures и не утекают другой роли.
+- [ ] Hidden Student/teacher reactions проверены permission fixtures и не утекают другой роли; на verdict разрешена одна реакция каждого типа с часовым окном изменения/удаления.
 - [ ] Hint и solution скрыты до публикации и требуют осознанного подтверждения.
 - [ ] Telegram-rich news, albums, math и два preview готовы.
 - [ ] Offline/reconnect/update/push states недвусмысленны.
@@ -46,13 +47,13 @@
 - [ ] Review list/fast flows, 30-minute lock, occupied/lost-lock, registry verdict shortcuts, comment guard и abandon готовы.
 - [ ] Questions отделены от verdict flow при сохранении migration state Telegram adapter.
 - [ ] AI future states покрыты без включения реальной AI-интеграции в первую версию.
-- [ ] Classroom planner не тянет DnD dependency; pointer/native перенос имеет простой select/move fallback.
+- [ ] Classroom planner не тянет DnD dependency, сохраняет прошлую аудиторию уровня, равномерно распределяет остальных и имеет простой select/move/recalculate flow.
 - [ ] Progress не содержит рейтингов и цвет-only charts.
 
 ## Pages
 
 - [ ] Все Student routes и нижняя навигация реализованы.
-- [ ] Все Family routes, child context и self-check реализованы.
+- [ ] Все Family routes и child context реализованы: полный student-visible thread/evidence, смена level/mode, самостоятельное раскрытие hint/solution и недельные уведомления; self-check отсутствует.
 - [ ] Все Staff routes и capability states реализованы.
 - [ ] Staff review работоспособен на телефоне, но не обещает offline verdict/outbox.
 - [ ] Login не раскрывает protected content и не создаёт production mock bypass.
@@ -71,6 +72,7 @@
 - [ ] Playwright E2E/visual проходят в Chromium, WebKit, Firefox.
 - [ ] Visual diffs просмотрены, baseline не обновлён вслепую.
 - [ ] Telegram/Google не вызываются новыми unit/E2E.
+- [ ] Первый content gate сравнивает три реальных листка одного уровня в PWA, Telegram и PDF; перед выпуском пройдены реальные Android-устройства, iPhone — по возможности.
 - [ ] Документация и `STATUS.md` соответствуют фактическому решению.
 
 ## Финальная ручная проверка

@@ -33,6 +33,7 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - level × status, чтобы level не выглядел verdict;
 - density × primitives/forms/tables;
 - task state × deadline phase;
+- active/allowed/forbidden group, причём `allowed_groups` покрывает чтение и сдачу;
 - course verdict registry: `+ / −`, `+ / +/2 / −`, full graded scale × Student/Family/Staff;
 - verdict × level × human/AI provenance × unread feedback;
 - submission × network/sync;
@@ -49,15 +50,15 @@ Theme decorator меняет реальный `.dark`, background и color schem
 
 - keyboard navigation and focus restoration overlays;
 - field validation and accessible error relation;
-- test answer entry/format failure;
+- все historical test answer families: format failure не расходует попытку, pending checker отличается от incorrect;
 - photo up/down reordering, remove and final review (worker mocked at boundary);
 - offline enqueue/retry/conflict;
 - hint/solution conscious disclosure;
-- queue claim/lost lock/verdict;
-- verdict keyboard mapping из registry, отсутствие shortcut внутри textarea, non-plus confirmation и abandon cleanup;
+- queue claim/lost lock/verdict и досланный material/thread-version refresh перед complete;
+- verdict keyboard mapping из registry, отсутствие shortcut внутри textarea, non-accepted confirmation и abandon с освобождением lock без потери local draft;
 - occupied-by-another-teacher, fast-next и возврат к выбору задачи;
 - conscious hint view event и hidden-before-publication state;
-- role permission для скрытых reactions и AI output;
+- role permission для скрытых reactions и AI output; одна reaction на verdict и часовое окно replace/delete;
 - TSV paste diagnostics;
 - classroom keyboard move;
 - update prompt preserving draft.
@@ -84,7 +85,7 @@ Addon a11y имеет `test: error`. Перед принятием:
 
 ## Visual regression
 
-Page screenshots в Playwright — Chromium, WebKit, Firefox с фиксированными locale/timezone/reduced-motion. Component visual checks допустимы дополнительно. Baseline обновляется только после просмотра diff; в описании change указываются принятый gate и ожидаемые области изменения.
+Page screenshots в Playwright — Chromium, WebKit, Firefox с фиксированными locale/timezone/reduced-motion и production Vite build/preview, а не HMR/dev CSS. Component visual checks допустимы дополнительно. Baseline обновляется только после просмотра diff; в описании change указываются принятый gate и ожидаемые области изменения. Content gate отдельно сравнивает три листка одного уровня в PWA, Telegram и PDF derivatives.
 
 ## Gate
 

@@ -12,6 +12,8 @@
 
 @source '../../../../apps/**/*.{ts,tsx}';
 @source '../../../app-shell/src/**/*.{ts,tsx}';
+@source '../../../content/src/**/*.{ts,tsx}';
+@source '../../../product/src/**/*.{ts,tsx}';
 @source '../**/*.{ts,tsx}';
 
 @custom-variant dark (&:where(.dark, .dark *));

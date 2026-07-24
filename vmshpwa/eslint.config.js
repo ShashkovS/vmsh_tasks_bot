@@ -51,7 +51,9 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/ui/src/**/*.{ts,tsx}'],
+    // Shared packages are libraries, not app entry points — fast-refresh
+    // component-only export granularity does not apply.
+    files: ['packages/*/src/**/*.{ts,tsx}'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {

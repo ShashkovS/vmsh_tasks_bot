@@ -15,8 +15,9 @@
 - [Стратегия тестирования](testing-strategy.md)
 - [Отказ от Google](google-migration-roadmap.md)
 - [Модель данных и миграционные границы](data-model-and-migrations.md)
-- [Принятые технические решения — 23 июля 2026](accepted-technical-decisions-2026-07.md)
+- [Принятые технические решения — обновлено 24 июля 2026](accepted-technical-decisions-2026-07.md)
 - [Принятые продуктовые UX-решения: проверка, вердикты, реакции и AI](product-ux-decisions-2026-07.md)
 - [Production deployment](deployment.md)
+- [Фазовый план разработки и закрытый опросник](../dev/development-plan/README.md)
 
 Файлы в этой папке фиксируют целевую модель. Реализованный сейчас код — запускаемый каркас и прототип интерфейса; наличие контракта или экрана не означает готовность production-функции.

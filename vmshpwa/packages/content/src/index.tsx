@@ -43,6 +43,17 @@ export function MathHtml({ html, className }: MathHtmlProps) {
       USE_PROFILES: { html: true },
       FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
     })
+
+    // Wide tables get a local horizontal scroll so a formula-heavy row never
+    // clips or forces the whole page to scroll sideways.
+    container.querySelectorAll('table').forEach((table) => {
+      if (table.parentElement?.classList.contains('vmsh-scroll-x')) return
+      const scroller = document.createElement('div')
+      scroller.className = 'vmsh-scroll-x'
+      table.replaceWith(scroller)
+      scroller.append(table)
+    })
+
     renderMathInElement(container, {
       delimiters: mathDelimiters,
       output: 'htmlAndMathml',

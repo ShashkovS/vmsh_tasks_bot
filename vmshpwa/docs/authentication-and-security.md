@@ -4,7 +4,7 @@
 
 ## Учётные записи и сессии
 
-Школьник входит по логину и текущему Telegram-токену, используемому как пароль. Это финальная совместимая модель, а не Telegram OAuth. При пакетном импорте учеников Staff UI создаёт отдельный Family account и явную связь с ребёнком. Teacher/Admin используют Staff identity и RBAC; teacher ограничен разрешёнными группами, admin получает дополнительные capabilities.
+Школьник входит по логину вида `transliterated-surname-birth-day` и текущему Telegram-токену. Импорт проверяет уникальность сгенерированного login и требует admin-разрешения коллизии. Family account хранит минимальное имя без email; связи с детьми many-to-many. Если один человек является parent и teacher, он использует разные logins/audience sessions. Первичная выдача и восстановление Family/Staff доступа выполняются через администраторов по `vmsh@179.ru`.
 
 Сессия использует две HttpOnly cookie на audience: короткую подписанную `itsdangerous` access cookie и ротируемую refresh cookie. Refresh session и hash raw token хранятся в SQLite, поэтому отдельное устройство можно отозвать без отдельного auth service.
 
@@ -14,7 +14,7 @@
 | Family   | `vmsh_family_access`  | `vmsh_family_refresh`  | `/family`  |
 | Staff    | `vmsh_staff_access`   | `vmsh_staff_refresh`   | `/staff`   |
 
-Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Refresh session истекает в ближайшее 10 августа, access cookie — существенно раньше. Конкретный `expiresAt` вычисляет и возвращает сервер; общий TypeScript-контракт не высчитывает границу по зашитым month/day. Блокировка пользователя, сброс Telegram-токена, смена критичных прав и ручной отзыв завершают её раньше.
+Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Student, Family и Staff refresh sessions истекают в ближайшее 10 августа, access cookie — существенно раньше. Конкретный `expiresAt` вычисляет server. Блокировка, сброс Telegram-токена, смена критичных прав и ручной отзыв завершают session раньше.
 
 ## Обязательные механизмы
 
@@ -22,7 +22,7 @@ Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, 
 - журнал устройств: создание, последнее использование, приблизительное устройство, отзыв одной или всех сессий;
 - CSRF baseline: `SameSite=Lax`, строгая проверка same-origin `Origin`/Fetch Metadata и ожидаемого content type. Отдельный synchronizer token пока не вводится;
 - capability checks в backend на каждом объекте; скрытие кнопки не является авторизацией;
-- audit для входа, неудачных попыток, отзыва, смены ролей, публикации, массовой рассылки и trusted checker edit; отдельный лог самого факта чтения чужой работы не нужен;
+- обязательный совместимый login audit (`signons`) и история group/mode (`user_changes_log`); дополнительные domain revisions/provenance не заменяют эти записи; отдельный лог самого факта чтения чужой работы не нужен;
 - ограничение типов/размеров uploads, декодирование и re-encoding изображений, quarantine/scan при необходимости;
 - public GET длинных непредсказуемых attachment URLs; upload всегда идёт через авторизованный aiohttp, а URL не должен попадать в public logs;
 - redaction секретов, токенов и содержимого работ из operational logs.
@@ -37,4 +37,4 @@ Mock auth допустим только в test wiring и никогда не к
 
 ## Доверенный checker
 
-`cor_ans_checker` остаётся редактируемым только для доверенного admin и совместимым с текущим `exec`. UI обязан показывать предупреждение, diff, автора, время, test cases и возможность отката. Это выполнение доверенного кода, а не sandbox для недоверенного ввода; endpoint недоступен teacher и не принимает изменения без повторного подтверждения.
+`cor_ans_checker` остаётся редактируемым только для доверенного admin и совместимым с текущим `exec`. UI обязан показывать предупреждение, diff, автора, время, возможность отката и, когда они добавлены, сохранённые test cases. Наличие test cases желательно, но не блокирует публикацию: ответ для ещё не настроенного checker принимается без автоматического verdict и позже проходит admin-перепроверку. Это выполнение доверенного кода, а не sandbox для недоверенного ввода; endpoint недоступен teacher и не принимает изменения без повторного подтверждения.

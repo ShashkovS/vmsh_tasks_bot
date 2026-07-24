@@ -21,20 +21,20 @@ Telegram renderer создаёт HTML для Bot API 10.1+ `sendRichMessage`: in
 3. поиск команд, задач, подпунктов, ссылок и assets;
 4. diagnostics с точной позицией и severity;
 5. сопоставление недостающих изображений;
-6. generation preview: web, Telegram и print PDF;
+6. generation preview: web и Telegram; PDF derivative проверяется regression-тестом, а print UI относится ко второй версии;
 7. редактирование метаданных;
 8. approval и атомарная публикация выбранного уровня;
 9. immutable version/audit и возможность rollback.
 
-Два preview обязательны до публикации: Student web с настоящим client KaTeX и Telegram Rich Message/media. PDF отдельно проверяется как печатный артефакт. Staff может показать preview готового PDF, но печать всегда выполняется PDF pipeline, а не browser print CSS.
+Два preview обязательны до публикации: Student web с настоящим client KaTeX и Telegram Rich Message/media. Print/admin pipeline сознательно перенесён во вторую версию; до него три листка одного уровня из `_vmsh_examples` всё равно сравниваются в PWA, Telegram и PDF.
 
 ## Задачи и метаданные
 
-Задача получает stable ID, lesson, level, display number, title, kind (test/written/oral), answer input type, deadline rules, hint/solution visibility и checker configuration. Одинаковое нормализованное название внутри урока создаёт кандидата `synonym-group`, но объединение подтверждает человек.
+Обязательного ID в LaTeX нет. Parser получает задачи и решения по порядку и сопоставляет их с legacy `problems`; изменение числа/структуры требует отдельного Staff reconciliation до publication. Внутренний problem record содержит lesson, level, ordinal/item, title, kind, answer input type и checker configuration. Одинаковое название создаёт кандидата synonym-group, который подтверждает admin.
 
-Staff metadata grid работает как spreadsheet: keyboard navigation, multi-select, bulk edit и TSV copy/paste с dry-run diagnostics. Ошибка одной строки не должна незаметно применить остальные.
+LaTeX в Staff не редактируется. Metadata grid содержит название, task type, answer type, validation/wrong/congratulation messages и optional topic tags; поддерживает keyboard navigation и batch table upload. Ошибочные строки импорта пропускаются и попадают в явный report.
 
-Исторические типы тестовых ответов представлены явными схемами UI: свободный текст, число/выражение, один вариант, несколько вариантов и прочие реально встречающиеся checker contracts. `cor_ans_checker` редактируется trusted admin, сохраняет нынешнюю exec-совместимость и имеет tests/diff/audit/rollback.
+Все исторические форматы ответов сохраняются. Invalid-format не расходует attempt, после правильного ответа можно отправлять снова, а все ответы остаются в истории. `cor_ans_checker` редактируется trusted admin; тестовые examples желательны, но не блокируют publication. Пока checker не настроен, ответ получает pending status и позже проходит admin `problem_recheck`.
 
 ## Assets
 
@@ -44,4 +44,4 @@ TikZ компилируется контролируемым toolchain в отд
 
 ## Версии и откат
 
-Публикация и rollback выполняются независимо для каждого уровня и типа материала. Уже отправленная submission всегда ссылается на версию условия, которую видел ученик. Новая версия может потребовать уведомление, отмену автопроверки и явный recheck; эти эффекты показываются до подтверждения.
+Публикация может быть scheduled и выполняется независимо по уровню/типу. Student, который открывал прежнее условие, видит заметный update marker; teacher review показывает последнюю опубликованную версию. Скрытие занятия убирает его из Student UI как неопубликованное. Старый публичный сайт пока обновляется внешними скриптами и не входит в этот pipeline.

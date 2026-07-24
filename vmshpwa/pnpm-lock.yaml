@@ -24,6 +24,9 @@ catalogs:
     '@tanstack/react-virtual':
       specifier: ^3.0.0
       version: 3.14.7
+    '@types/katex':
+      specifier: ^0.16.7
+      version: 0.16.8
     '@visx/responsive':
       specifier: ^4.0.0
       version: 4.0.0
@@ -94,6 +97,9 @@ catalogs:
       specifier: ^7.0.0
       version: 7.4.1
     workbox-strategies:
+      specifier: ^7.0.0
+      version: 7.4.1
+    workbox-window:
       specifier: ^7.0.0
       version: 7.4.1
     zod:
@@ -576,6 +582,21 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+
+  packages/product:
+    dependencies:
+      '@visx/scale':
+        specifier: 'catalog:'
+        version: 4.0.0
+      '@vmsh/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.540.0(react@19.2.8)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
 
   packages/test-utils:
     dependencies:

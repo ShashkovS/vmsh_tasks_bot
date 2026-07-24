@@ -1,4 +1,4 @@
-# Принятые технические решения — 23 июля 2026
+# Принятые технические решения — 24 июля 2026
 
 Этот документ фиксирует ответы владельца продукта на вопросы после первой версии Storybook. Он дополняет тематические документы в этой папке. При расхождении более позднее явное решение владельца имеет приоритет.
 
@@ -20,7 +20,7 @@
 - Браузер загружает файл через авторизованный aiohttp endpoint. Presigned browser upload не применяется: офлайн-очередь может ждать существенно дольше жизни подписи.
 - Производные работы публично читаются по длинным непредсказуемым ключам. URL нельзя считать авторизацией; в operational logs он редактируется как пользовательский контент.
 - Рекомендуемый key: `sol_imgs/user_{user_id}/{season_year}/{lesson_id}/{problem_id}_{created_at_utc}_{uuid}.webp`. Идентификаторы и UUID формирует/проверяет backend, а не браузер.
-- До сохранения результата проверки школьник может заменить фотографии. В транзакции фиксации результата текущая revision вложений становится immutable; последующие комментарии и аннотации хранятся отдельно. Физический overwrite существующего object key запрещён.
+- До первого review lock школьник может изменить или удалить логическую отправку. После начала review исходная entry не меняется, но новый material можно дослать в тот же thread: его version меняется, и teacher обязан включить материал в текущий evidence перед complete. В транзакции результата attachment revision становится immutable; overwrite object key запрещён.
 - Клиент декодирует изображение, уменьшает длинную сторону максимум до 1920 px и сохраняет только WebP. Оригинал не загружается и не хранится. Декодирование/re-encode обычно удаляет EXIF, отдельный EXIF pipeline не требуется.
 - HEIC и другие неподдержанные браузером источники сначала пробуются на клиенте, затем отправляются через aiohttp в серверный image service на основе `mathimg_service.py` с ImageMagick/HEIC support. Результат всё равно WebP до 1920 px; исходник остаётся только во временном файле операции.
 - Фотографии и история хранятся бессрочно до отдельной политики или ручной чистки bucket. Миграции из `VMSH_MEDIA_ROOT` нет: это новый storage namespace без существующих объектов.
@@ -28,9 +28,9 @@
 ## Authentication и security
 
 - Логин школьника + текущий Telegram token как пароль — финальная совместимая модель, а не временная миграция и не Telegram OAuth.
-- Family accounts создаются пакетно в Staff UI одновременно с учениками и связываются на этапе импорта. У родителя отдельные credentials и session.
+- Student login генерируется как транслитерация фамилии + день рождения с обязательным разрешением коллизий. Family accounts содержат минимальное имя без email, создаются пакетно и имеют many-to-many links с детьми. Parent/teacher одного человека используют отдельные logins.
 - Целевая сессия — две audience-scoped HttpOnly cookie: короткая подписанная `itsdangerous` access cookie и ротируемая refresh session в SQLite. Refresh token хранится в cookie только в raw-виде, в БД — HMAC/hash. Отзыв отдельного устройства удаляет DB session.
-- Максимальный срок refresh session — ближайшее 10 августа; access cookie существенно короче. У Student, Family и Staff разные имена и `Path`.
+- Максимальный срок refresh session Student, Family и Staff — ближайшее 10 августа; access cookie существенно короче. У audiences разные имена и `Path`.
 - `Secure`, `HttpOnly`, `SameSite=Lax` обязательны. Отдельный synchronizer CSRF token на первом этапе не вводится; unsafe endpoints дополнительно проверяют same-origin `Origin`/Fetch Metadata и принимают только ожидаемый content type.
 - Rate limiting выполняет nginx. Как минимум отдельная строгая zone нужна для login/auth; лимиты не заменяют backend authorization или idempotency.
 - CSP вводится с первого production deployment. Политика должна явно разрешать собственные scripts/styles/fonts, audience WebSocket/API, Hetzner media origin, Web Push и Sentry ingest; inline/eval не добавляются без документированной причины.
@@ -42,8 +42,8 @@
 - Потеря Safari IndexedDB после долгого отсутствия допустима: критических данных только на клиенте нет. Student/Family не более двух раз мягко предлагают установку PWA, без блокирующих экранов.
 - Целевой локальный бюджет — около 10–15 MB. Текст условий занимает малую часть; иллюстрации к недавно открытым материалам кешируются примерно на две недели и очищаются LRU/quota policy.
 - Logout при непустом outbox показывает предупреждение. После явного подтверждения пользователя локальная очередь и drafts этого аккаунта могут быть удалены.
-- Рабочее безопасное допущение каркаса: повтор одного `idempotencyKey` с тем же payload hash возвращает исходный receipt. Другой payload с тем же ключом не побеждает: backend отвечает conflict, сохраняет исходную операцию и требует нового ключа после явного решения пользователя. Владелец продукта ещё должен подтвердить этот UX.
-- Дедлайн урока — абсолютный timestamp публикации решений, задаваемый в `Europe/Moscow` и хранимый в UTC. Для offline submission сохраняются client/server timestamps; конкретный порог подозрительного расхождения часов ещё не выбран и остаётся policy-параметром.
+- Повтор одного `idempotencyKey` с тем же payload hash возвращает исходный receipt. Другой payload получает conflict и требует нового ключа после явного действия пользователя.
+- Дедлайн урока — timestamp публикации решений в `Europe/Moscow`. Offline submission с client time до deadline принимается и после поздней доставки; skew больше часа маркируется для диагностики.
 
 ## Домен
 
@@ -57,7 +57,7 @@
 - Sliding panels строятся на Base UI Drawer, а не на Dialog, замаскированном под Sheet.
 - Графики: Visx поверх `d3-array`, `d3-scale`, `d3-shape`.
 - Большие Staff grids: TanStack Table + TanStack Virtual.
-- Новую DnD dependency не добавляем. Classroom planner может использовать локальную pointer/native реализацию; порядок фотографий меняется удалением и повторной загрузкой в нужной последовательности.
+- Новую DnD dependency не добавляем. Classroom planner может использовать локальную pointer/native реализацию; порядок фотографий меняется кнопками вверх/вниз.
 - Формам достаточно собственного малого слоя вокруг Base UI Field/Form semantics.
 - Версии общих third-party dependencies задаются pnpm catalog.
 - ESLint получает `eslint-plugin-jsx-a11y`; CSS проверяется Stylelint. React Compiler не используется.
@@ -73,11 +73,18 @@
 - Основной E2E и visual regression выполняются на production bundles через `vite preview` с настоящим aiohttp. Deploy дополнительно выполняет короткий smoke уже разложенных assets и service workers.
 - PWA JSON error/request-ID middleware ограничивается `/student`, `/family`, `/staff` API/WS путями и не меняет ответы legacy dashboards.
 
-## Открытые параметры, не блокирующие текущий каркас
+## Дополнение по первому выпуску
 
-- точный допустимый clock skew для offline deadline review;
-- финальный UX разрешения конфликта одного idempotency key с разными payload;
+- Первый production scope: сезон 2025–2026, занятия 39–41, все три уровня, полный online flow без очного интерфейса.
+- Production host — `vmsh.shashkovs.ru`, желательный staging — `devvmsh.shashkovs.ru`.
+- Короткое maintenance window для migrations допустимо. SQLite backup три раза в день и перед deploy считается достаточным baseline.
+- Полный S3 backup не требуется. Student images не versioned; отправленные teacher artifacts сохраняются immutable/versioned на уровне приложения или отдельной storage policy.
+- Выпуск включается сразу для всех уровней. Критические сценарии вручную проверяются на доступных Android; iPhone — по возможности, автоматический WebKit остаётся обязательным.
+- Есть отдельный Telegram test bot/channel; серьёзные production alerts идут в служебную Telegram-группу.
+
+## Значения, фиксируемые при реализации и развёртывании
+
 - production hostnames для Hetzner bucket, Sentry ingest, API/WS и окончательной CSP;
 - короткий access-cookie TTL;
 - точная команда/systemd units production webhook;
-- выбранное art direction фазы 1.
+- точный suffix/ручной workflow для коллизии сгенерированных student logins.

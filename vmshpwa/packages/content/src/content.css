@@ -18,6 +18,69 @@
   height: auto;
 }
 
+/* Wide artifacts (tables, display math) scroll locally, never the whole page. */
+.vmsh-scroll-x {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.vmsh-math-content table {
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.vmsh-math-content th,
+.vmsh-math-content td {
+  border: 1px solid var(--border);
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.vmsh-math-content thead th {
+  background: var(--surface-subtle);
+  font-weight: 600;
+}
+
+/* Theorem-like callout. */
+.vmsh-math-content .vmsh-note {
+  margin-block: 1rem;
+  border-inline-start: 3px solid var(--border-strong);
+  border-radius: 0.5rem;
+  background: var(--surface-subtle);
+  padding: 0.625rem 0.875rem;
+}
+
+.vmsh-math-content .vmsh-note-title {
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Numbered, deep-linkable display formula. */
+.vmsh-math-content .vmsh-eq {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vmsh-math-content .vmsh-eq > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vmsh-math-content .vmsh-eqno {
+  flex: none;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.vmsh-math-content :target {
+  border-radius: 0.25rem;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .vmsh-math-content * {
     scroll-behavior: auto;
