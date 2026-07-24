@@ -1,0 +1,289 @@
+# Целевая модель данных и границы миграции
+
+Статус: целевая схема после закрытия продуктового опросника 24 июля 2026 года. Имена фиксируются здесь заранее, чтобы backend, contracts и UI говорили на одном языке; миграции всё равно создаются только в своём этапе после сверки с production-копией SQLite.
+
+## Общие правила
+
+- SQLite остаётся authoritative storage. NATS доставляет live invalidation, но не хранит бизнес-историю.
+- Legacy integer IDs сохраняются. Новые объекты, попадающие в URL, получают opaque `public_id TEXT UNIQUE`; конкретный UUID-format является внутренней реализацией и не входит в публичный контракт.
+- Новые timestamps: UTC RFC 3339 с timezone. В поле с бизнес-временем всегда есть suffix `_at`; даты — `_on`.
+- Soft-delete используется только там, где восстановление имеет продуктовый смысл. Reviews, audit, публикации и зафиксированные submission assets не удаляются приложением.
+- JSON допустим для версионированного payload/diagnostics, но не вместо колонок, по которым фильтруют, сортируют или связывают данные.
+- Каждая таблица с mutable state имеет `created_at`, `updated_at` и при конкурентном редактировании `version INTEGER`.
+- Миграции получают следующий свободный номер в момент реализации. Логические filenames ниже не резервируют номер: `migrations/NNNN.pwa_<topic>.sql`.
+
+## Существующие таблицы: сохранить и эволюционировать
+
+| Таблица                                           | Роль сейчас                                                                    | План                                                                                                                                                           |
+| ------------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `users`                                           | Ученик/учитель/admin, Telegram, активная группа, token, online, allowed groups | Сохранить primary domain identity; не переносить массово. Auth account ссылается на `users.id`. Нормализовать `allowed_groups` позже без удаления legacy-поля. |
+| `groups`                                          | Уровни/служебные группы, display/config/score weight                           | Сохранить; связать с сезоном без изменения legacy `group_id`.                                                                                                  |
+| `lessons`                                         | Пара `(group_id, lesson)`                                                      | Сохранить как legacy mapping; новая публикация ссылается на lesson/group.                                                                                      |
+| `problems`                                        | Условие, тип, answer config/checker, synonyms                                  | Сохранить существующий problem row для legacy; новая LaTeX не обязана содержать его ID, а immutable revisions связываются после позиционного сопоставления.       |
+| `results`                                         | История verdict/test/oral/written events                                       | Сохранить authoritative совместимый ledger; новый review ссылается на `results.id`.                                                                            |
+| `written_tasks_discussions`                       | Telegram-тред, text/attach path/message IDs                                    | Двойное чтение/запись во время миграции; backfill в новый thread/entry model.                                                                                  |
+| `written_tasks_queue`                             | Одна активная очередь на student/problem с 30-минутным claim                   | Эволюционировать lease-полями, сохранив текущий Telegram path.                                                                                                 |
+| `questions` и negative problem IDs                | SOS/вопросы                                                                    | Перенести в явные support threads через dual-write, только затем убрать special IDs.                                                                           |
+| `reactions` + enums                               | Реакции на result/zoom                                                         | Расширить actor/visibility, сохранив существующие IDs и Telegram rendering.                                                                                    |
+| `user_changes_log`                                | История group/online changes                                                   | Сохранить; новые изменения режима/уровня обязаны писать совместимое событие.                                                                                   |
+| `zoom_*`                                          | Устные разговоры, события и очередь                                            | Сохранить как legacy oral ledger; новый UI строить через adapter/read model.                                                                                   |
+| `surveys`, `assigns`, `choices`, `survey_results` | Опросы/назначения                                                              | Сохранить только для legacy; UI опросов не входит в первую версию.                                                                                             |
+| `kv`, `webtokens`, `kv_logins`                    | Технические/legacy token данные                                                | Не использовать как неявный новый auth contract; провести security audit и миграцию секретов.                                                                  |
+
+## 1. Сезоны, аккаунты и права
+
+### `seasons`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `code TEXT UNIQUE` (например `2026`), `title TEXT`, `starts_on TEXT`, `ends_on TEXT`, `timezone TEXT DEFAULT 'Europe/Moscow'`, `session_expires_on TEXT`, `status TEXT CHECK(draft|active|archived)`, `created_at TEXT`, `updated_at TEXT`.
+
+### `auth_accounts`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `audience TEXT CHECK(student|family|staff)`, `username TEXT`, `username_normalized TEXT`, `display_name TEXT NULL`, `credential_kind TEXT CHECK(telegram_token|password)`, `credential_hash TEXT NULL`, `linked_user_id INTEGER NULL FK users(id)`, `status TEXT CHECK(active|blocked|disabled|archived)`, `credential_version INTEGER DEFAULT 1`, `last_login_at TEXT NULL`, `created_at TEXT`, `updated_at TEXT`.
+
+Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_user_id, audience)`. Student username импортируется как транслитерация фамилии + день рождения; коллизии блокируют строку импорта до назначения уникального значения. Источник student credential — текущий Telegram token; второй plaintext не создаётся. Family хранит только минимальное display name без email.
+
+### `family_student_links`
+
+`family_account_id INTEGER FK auth_accounts`, `student_user_id INTEGER FK users`, `relationship_label TEXT NULL`, `is_primary INTEGER DEFAULT 0`, `created_at TEXT`, `revoked_at TEXT NULL`, PK `(family_account_id, student_user_id)`.
+
+### `staff_group_permissions`
+
+`staff_user_id INTEGER FK users`, `group_id TEXT FK groups`, `can_review INTEGER`, `can_manage_oral INTEGER`, `can_change_student_group INTEGER`, `can_recheck INTEGER`, `created_at TEXT`, `updated_at TEXT`, PK `(staff_user_id, group_id)`. Общая статистика доступна teacher-role отдельно; content/checker/classroom/broadcast/audit capabilities остаются admin-only.
+
+### `auth_sessions`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `account_id INTEGER FK auth_accounts`, `audience TEXT`, `refresh_secret_hash TEXT`, `credential_version INTEGER`, `created_at TEXT`, `last_seen_at TEXT`, `expires_at TEXT`, `revoked_at TEXT NULL`, `revoke_reason TEXT NULL`, `device_label TEXT NULL`, `user_agent_family TEXT NULL`, `ip_prefix TEXT NULL`.
+
+Indexes: `(account_id, revoked_at, expires_at)`, `(expires_at)`. Короткая signed cookie несёт только opaque session reference/version, не роль как источник истины.
+
+### `auth_events`
+
+`id INTEGER PK`, `account_id INTEGER NULL`, `session_id INTEGER NULL`, `event_type TEXT`, `occurred_at TEXT`, `request_id TEXT`, `ip_prefix TEXT NULL`, `metadata_json TEXT`. Не хранить введённый token/password.
+
+## 2. Контент, revisions и assets
+
+### `content_sources`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id INTEGER FK seasons`, `lesson_number INTEGER`, `group_id TEXT FK groups`, `kind TEXT CHECK(condition|hint|solution|teacher_note)`, `logical_filename TEXT`, `source_encoding TEXT`, `created_at TEXT`, `created_by_user_id INTEGER FK users`, `archived_at TEXT NULL`.
+
+Unique candidate: `(season_id, lesson_number, group_id, kind, logical_filename)`.
+
+### `content_revisions`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `source_id INTEGER FK content_sources`, `revision_number INTEGER`, `source_sha256 TEXT`, `latex_text TEXT`, `parser_version TEXT`, `status TEXT CHECK(uploaded|compiling|ready|invalid|superseded)`, `canonical_json TEXT NULL`, `diagnostics_json TEXT`, `created_by_user_id INTEGER`, `created_at TEXT`, `supersedes_revision_id INTEGER NULL`.
+
+Constraint: `UNIQUE(source_id, revision_number)` and `UNIQUE(source_id, source_sha256)` unless duplicate upload is intentionally logged separately.
+
+### `media_assets`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `sha256 TEXT`, `storage_namespace TEXT CHECK(content|submission|news|annotation|generated)`, `object_key TEXT UNIQUE`, `public_url TEXT`, `media_type TEXT`, `byte_size INTEGER`, `width INTEGER NULL`, `height INTEGER NULL`, `source_filename TEXT NULL`, `conversion_version TEXT NULL`, `created_by_user_id INTEGER NULL`, `created_at TEXT`, `immutable_at TEXT NULL`, `deleted_at TEXT NULL`.
+
+Indexes: `UNIQUE(storage_namespace, sha256, conversion_version)` для переиспользуемых content assets; submission assets могут не дедуплицироваться между учениками из соображений изоляции.
+
+### `content_revision_assets`
+
+`revision_id INTEGER FK content_revisions`, `asset_id INTEGER FK media_assets`, `logical_name TEXT`, `role TEXT CHECK(source|figure|tikz|pdf|preview)`, `ordinal INTEGER`, `alt_text TEXT NULL`, PK `(revision_id, logical_name, role)`.
+
+### `content_derivatives`
+
+`id INTEGER PK`, `revision_id INTEGER FK content_revisions`, `kind TEXT CHECK(web_ast|web_html|telegram_html|pdf|thumbnail)`, `renderer_version TEXT`, `content_text TEXT NULL`, `asset_id INTEGER NULL FK media_assets`, `sha256 TEXT`, `diagnostics_json TEXT`, `created_at TEXT`, `invalidated_at TEXT NULL`.
+
+Unique: `(revision_id, kind, renderer_version)`.
+
+### `content_problem_matches` и `problem_revisions`
+
+Match: `id INTEGER PK`, `content_revision_id INTEGER`, `source_ordinal INTEGER`, `source_item TEXT`, `problem_id INTEGER NULL`, `decision TEXT CHECK(auto_position|manual_match|insert_new|omit)`, `resolved_by_user_id INTEGER NULL`, `resolved_at TEXT NULL`, `diagnostics_json TEXT`; unique `(content_revision_id, source_ordinal, source_item)`.
+
+Revision: `id INTEGER PK`, `problem_id INTEGER FK problems`, `content_revision_id INTEGER FK content_revisions`, `source_ordinal INTEGER`, `source_item TEXT`, `display_number TEXT`, `title TEXT`, `problem_type INTEGER`, `answer_type INTEGER NULL`, `answer_config_json TEXT`, `attempt_policy_json TEXT`, `config_version INTEGER`, `created_at TEXT`, `created_by_user_id INTEGER`.
+
+В исходном LaTeX нет обязательного stable ID. Первичное сопоставление идёт по порядку; любое структурное расхождение должно быть разрешено в `content_problem_matches` до публикации. Legacy `problems` остаётся projection для Telegram. `cor_ans_checker` хранится в versioned answer config либо в legacy row с hash revision; отсутствие готового checker не блокирует публикацию, но переводит новые ответы в pending check.
+
+### `problem_synonym_groups` и `problem_synonym_members`
+
+Group: `id INTEGER PK`, `season_id`, `lesson_number`, `group_key TEXT`, `display_title TEXT`, `created_by_user_id`, `created_at`, `updated_at`.
+
+Member: `synonym_group_id INTEGER`, `problem_id INTEGER`, `created_at TEXT`, PK `(synonym_group_id, problem_id)`.
+
+### `lesson_publications`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id INTEGER`, `lesson_number INTEGER`, `group_id TEXT`, `kind TEXT CHECK(condition|hint|solution)`, `revision_id INTEGER FK content_revisions`, `state TEXT CHECK(scheduled|published|superseded|hidden)`, `scheduled_at TEXT NULL`, `published_at TEXT NULL`, `hidden_at TEXT NULL`, `published_by_user_id INTEGER`, `supersedes_publication_id INTEGER NULL`, `version INTEGER`.
+
+Authoritative deadline для сдачи: `solution` publication `published_at`, а не client-local календарь.
+
+### `hint_reveals` и `solution_reveals`
+
+Одинаковая форма: `id INTEGER PK`, `student_user_id`, `problem_id`, `publication_id`, `revealed_at`, `request_id`; unique `(student_user_id, problem_id, publication_id)`. Событие создаётся после явного подтверждения.
+
+## 3. Сдачи, тред и идемпотентность
+
+### `submission_threads`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `student_user_id INTEGER`, `problem_id INTEGER`, `condition_revision_id INTEGER`, `status TEXT CHECK(open|awaiting_review|needs_work|accepted|closed)`, `latest_result_id INTEGER NULL`, `latest_entry_at TEXT`, `created_at TEXT`, `updated_at TEXT`, `version INTEGER`.
+
+Recommended unique active thread: `(student_user_id, problem_id)`. История пересдач живёт внутри, а не в параллельных attempt threads.
+
+### `submission_entries`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `thread_id INTEGER`, `author_kind TEXT CHECK(student|teacher|admin|ai|system)`, `author_user_id INTEGER NULL`, `channel TEXT CHECK(pwa|telegram|staff|system)`, `channel_group_key TEXT NULL`, `entry_kind TEXT CHECK(text|submission|teacher_comment|ai_comment|system_event)`, `state TEXT CHECK(draft|uploading|submitted|deleted|locked)`, `text TEXT NULL`, `client_created_at TEXT NULL`, `server_received_at TEXT`, `idempotency_key TEXT NULL`, `payload_sha256 TEXT NULL`, `legacy_discussion_id INTEGER NULL`, `version INTEGER`, `locked_at TEXT NULL`, `deleted_at TEXT NULL`.
+
+Indexes: `(thread_id, server_received_at, id)`, unique `(author_user_id, idempotency_key)` when key not null.
+
+### `submission_attachments`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `entry_id INTEGER`, `asset_id INTEGER FK media_assets`, `ordinal INTEGER`, `client_filename TEXT NULL`, `upload_status TEXT CHECK(pending|stored|failed|locked)`, `created_at TEXT`, `locked_at TEXT NULL`, `locked_by_result_id INTEGER NULL`, unique `(entry_id, ordinal)`.
+
+Логическая письменная отправка становится `submitted` только после сохранения всех выбранных attachments. До первого review lock text/entry можно с подтверждением изменить или удалить. После lock исходная entry не меняется, но student может добавить новую entry в тот же thread. Review completion фиксирует все student entries, успевшие стать `submitted`; если thread version изменилась во время проверки, complete получает `409` и reviewer обязан обновить evidence, поэтому досланная фотография не теряется.
+
+### `test_attempts`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `student_user_id INTEGER`, `problem_id INTEGER`, `problem_revision_id INTEGER`, `answer_payload_json TEXT`, `normalized_answer_json TEXT NULL`, `parse_status TEXT CHECK(valid|invalid_format)`, `counts_as_attempt INTEGER`, `check_status TEXT CHECK(pending_configuration|pending|checked|failed)`, `client_created_at TEXT`, `server_received_at TEXT`, `clock_skew_seconds INTEGER NULL`, `clock_suspicious INTEGER DEFAULT 0`, `idempotency_key TEXT`, `payload_sha256 TEXT`, `checker_version TEXT NULL`, `verdict INTEGER NULL`, `result_id INTEGER NULL FK results`, `created_at TEXT`, `checked_at TEXT NULL`.
+
+Unique `(student_user_id, idempotency_key)`. Неразобранный ответ сохраняется, но `counts_as_attempt=0`. Все введённые ответы остаются в истории; после правильного разрешены новые. Ответ без настроенного checker остаётся `pending_configuration` до admin recheck. Расхождение времени больше часа ставит `clock_suspicious=1`, но offline-created-before-deadline ответ не отклоняется автоматически.
+
+### `idempotency_records`
+
+`id INTEGER PK`, `audience TEXT`, `account_id INTEGER`, `operation TEXT`, `idempotency_key TEXT`, `payload_sha256 TEXT`, `state TEXT CHECK(processing|completed|failed)`, `http_status INTEGER NULL`, `response_json TEXT NULL`, `created_at TEXT`, `completed_at TEXT NULL`, `expires_at TEXT NULL`, unique `(audience, account_id, operation, idempotency_key)`.
+
+Повтор с тем же hash возвращает прежний результат; другой hash никогда не перезаписывает запись молча и требует нового ключа после явного подтверждения клиента.
+
+## 4. Проверка и обратная связь
+
+### Эволюция `written_tasks_queue`
+
+Добавить: `claim_token TEXT NULL`, `claimed_at TEXT NULL`, `lease_expires_at TEXT NULL`, `lease_version INTEGER DEFAULT 0`, `updated_at TEXT`. Claim выполняется одним conditional `UPDATE`; heartbeat продлевает только совпадающий token. Telegram adapter использует тот же repository.
+
+### `submission_reviews`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `thread_id INTEGER`, `queue_id INTEGER NULL`, `reviewer_user_id INTEGER`, `evidence_through_entry_id INTEGER`, `expected_thread_version INTEGER`, `verdict INTEGER`, `comment_entry_id INTEGER NULL`, `result_id INTEGER FK results`, `review_duration_sec INTEGER NULL`, `source TEXT CHECK(staff|telegram|ai)`, `created_at TEXT`, `corrected_at TEXT NULL`, `corrected_by_user_id INTEGER NULL`.
+
+Review + актуальный legacy result + queue transition + asset locks записываются в одной SQLite transaction. Admin/teacher correction заменяет текущий verdict по совместимой логике `results`; prior state сохраняется только там, где это уже делает legacy history/provenance, а не через отдельный пользовательский статус спора.
+
+### `review_annotations`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `review_id INTEGER`, `attachment_id INTEGER`, `format_version INTEGER`, `rotation_quarter_turns INTEGER`, `annotation_json TEXT`, `preview_asset_id INTEGER NULL`, `telegram_composite_asset_id INTEGER NULL`, `created_by_user_id INTEGER`, `created_at TEXT`.
+
+Original WebP не меняется. Annotation payload содержит карандаш/ластик, один из 4–5 цветов и координаты в normalized image space; zoom является viewer state. После отправки запись immutable. Для Telegram создаётся объединённый PNG derivative.
+
+### Эволюция `reactions`
+
+Добавить: `actor_user_id INTEGER NULL`, `actor_kind TEXT CHECK(student|teacher)`, `reaction_type_id INTEGER`, `visibility TEXT CHECK(student_family_admin|staff_admin|admin_only)`, `source TEXT CHECK(pwa|telegram|staff)`, `updated_at TEXT NULL`, `editable_until TEXT NULL`, `deleted_at TEXT NULL`, `metadata_json TEXT NULL`. Связь с конкретным verdict сохраняется через `result_id`. Partial unique index на `(result_id, actor_kind, actor_user_id) WHERE deleted_at IS NULL` разрешает одну активную реакцию соответствующего автора на проверку независимо от выбранного reaction type; PUT меняет `reaction_type_id`, DELETE ставит `deleted_at`, обе операции разрешены в течение часа.
+
+### `ai_review_runs` (зарезервировано, не v1)
+
+`id`, `thread_id`, `evidence_through_entry_id`, `model_provider`, `model_name`, `prompt_version`, `input_hash`, `status`, `output_text`, `output_svg`, `diagnostics_json`, `created_at`, `completed_at`. Не создавать до отдельного AI privacy/security решения.
+
+## 5. Вопросы, устные занятия и аудитории
+
+### `support_threads` и `support_entries`
+
+Thread: `id`, `public_id`, `student_user_id`, `problem_id NULL`, `lesson_id NULL`, `kind CHECK(problem_question|sos|general)`, timestamps/version. Это диалоговая лента, а не назначаемая одному teacher заявка со статусом закрытия.
+
+Entry: `id`, `thread_id`, `author_kind`, `author_user_id`, `text`, `asset_id NULL`, `channel`, `client_created_at`, `server_received_at`, `legacy_question_id NULL`, `legacy_problem_id NULL`.
+
+### `oral_windows`
+
+`id`, `public_id`, `season_id`, `lesson_number`, `group_id`, `sequence_number`, `opens_at`, `closes_at`, `join_label`, `join_url_encrypted_or_ref`, `join_code_encrypted_or_ref`, `status`, `created_by_user_id`, timestamps/version. Для одной группы разрешено несколько окон (в текущем процессе три). Join secrets не попадают в list endpoint и логи; provider v1 — Zoom.
+
+### `classroom_rooms`
+
+`id`, `public_id`, `season_id`, `lesson_number`, `name`, `capacity`, `level_constraints_json`, `notes`, `created_at`, `updated_at`.
+
+### `classroom_assignments`
+
+`room_id`, `student_user_id`, `previous_room_id NULL`, `assigned_by_user_id`, `assigned_at`, `source CHECK(previous_room|balanced|manual|import)`, `plan_version`; PK `(room_id, student_user_id)` и unique на student в рамках lesson. Пересчёт создаёт новую версию плана: сначала сохраняется прошлая аудитория того же уровня, затем нагрузка выравнивается.
+
+### `group_banners`
+
+`id`, `public_id`, `group_id`, `audience`, `html_sanitized`, `starts_at`, `ends_at`, `priority`, `dismissible`, `created_by_user_id`, timestamps/version. Разрешённый HTML минимум `i`, `b`, `a`, `code`; sanitizer policy версионируется.
+
+## 6. Новости, push и delivery
+
+### `news_posts`
+
+`id`, `public_id`, `source CHECK(telegram|local)`, `telegram_chat_id NULL`, `telegram_message_id NULL`, `telegram_media_group_id NULL`, `current_revision_id`, `published_at`, `hidden_at NULL`, `created_by_user_id NULL`, timestamps. Unique Telegram source identity.
+
+### `news_revisions`
+
+`id`, `post_id`, `revision_number`, `source_payload_json`, `pwa_html`, `telegram_html`, `plain_text`, `edited_at`, `created_at`, `source_hash`; unique `(post_id, revision_number)`.
+
+### `news_media`
+
+`post_id`, `asset_id`, `ordinal`, `caption`, `media_kind`; PK `(post_id, ordinal)`.
+
+### `news_visibility`
+
+`post_id`, `group_id NULL`, `audience`, `is_hidden`, `starts_at NULL`, `ends_at NULL`, `updated_by_user_id`, `updated_at`; unique `(post_id, group_id, audience)`.
+
+### `notification_preferences`
+
+`account_id`, `category`, `in_app_enabled`, `push_enabled`, `sound_enabled`, `quiet_starts_local`, `quiet_ends_local`, `timezone`, `updated_at`; PK `(account_id, category)`. Oral window defaults off, other supported categories on.
+
+### `push_subscriptions`
+
+`id`, `public_id`, `account_id`, `audience`, `endpoint_hash`, `endpoint_encrypted`, `p256dh_encrypted`, `auth_encrypted`, `device_label`, `created_at`, `last_success_at`, `failure_count`, `disabled_at`; unique `(account_id, endpoint_hash)`.
+
+### `notification_events`
+
+`id`, `public_id`, `account_id`, `category`, `dedupe_key`, `route`, `payload_json`, `occurred_at`, `deliver_after`, `visible_since_at NULL`, `read_at NULL`, `created_at`; unique `(account_id, category, dedupe_key)`. Review events всех задач одного ученика агрегируются за 30 минут; read фиксируется после не менее трёх секунд фактической видимости.
+
+### `notification_deliveries`
+
+`id`, `event_id`, `channel CHECK(in_app|web_push|telegram)`, `destination_ref`, `state CHECK(pending|sending|sent|failed|suppressed)`, `attempt_count`, `next_attempt_at`, `last_error_code`, `sent_at`, timestamps.
+
+### `delivery_outbox`
+
+`id`, `topic`, `aggregate_type`, `aggregate_id`, `event_type`, `payload_json`, `created_at`, `claimed_at`, `claim_token`, `attempt_count`, `next_attempt_at`, `completed_at`. Нужен для durable side effects; NATS invalidation после commit может строиться из этого outbox.
+
+### `broadcasts`, `broadcast_targets`, `broadcast_deliveries`
+
+Broadcast: `id`, `public_id`, `title`, `pwa_html`, `telegram_html`, `category`, `state`, `scheduled_at`, `created_by_user_id`, timestamps/version.
+
+Target: `broadcast_id`, `target_kind CHECK(group|user|audience)`, `target_id`, PK composite.
+
+Delivery: `broadcast_id`, `account_id NULL`, `user_id NULL`, `channel`, `state`, `attempt_count`, `sent_at`, `error_code`, unique logical destination.
+
+## 7. Прогресс и достижения
+
+Отдельной таблицы Family self-check нет: действие исключено из первой версии и не влияет на прогресс.
+
+### `achievement_definitions`
+
+`id`, `code UNIQUE`, `audience`, `title`, `description`, `rule_version`, `rule_json`, `is_active`, `created_at`, `updated_at`.
+
+### `user_achievements`
+
+`id`, `definition_id`, `user_id`, `earned_at`, `evidence_json`, `notified_at NULL`, unique `(definition_id, user_id, rule_version/evidence scope — уточнить схемой)`.
+
+Counts, lesson curves, violin and activity calendar сначала вычисляются из `results`, `submission_entries`, `user_changes_log` и read-only SQL. Accepted count использует `VERDICT_TO_NUM >= 0.9`; denominator считает problem items. Violin показывает число решённых items, cohort для прошлого урока выбирается по лучшему уровню и публикуется только при `n >= 30`. Activity calendar схлопывает все отправки одного item за день в одно событие. Materialized stats table добавляется только после измерения.
+
+## 8. Аудит
+
+### `audit_events`
+
+`id`, `public_id`, `actor_user_id NULL`, `actor_account_id NULL`, `audience`, `action`, `object_type`, `object_id`, `request_id`, `before_json NULL`, `after_json NULL`, `occurred_at`, `ip_prefix NULL`.
+
+Обязательный минимум: login в совместимости с `signons`, group/mode change в совместимости с `user_changes_log`. Content revisions, imports, review corrections и delivery сохраняют собственную provenance/history. Чтение чужой работы отдельно не аудитируется.
+
+## Миграционная последовательность
+
+| Этап | Логическая миграция                              | Backfill/совместимость                                               |
+| ---: | ------------------------------------------------ | -------------------------------------------------------------------- |
+|    0 | `pwa_schema_metadata` при необходимости          | Только schema snapshot/characterization, бизнес-данные не менять     |
+|    1 | `pwa_auth_accounts_sessions`                     | Создать accounts для seed; production backfill dry-run по users      |
+|    2 | `pwa_content_revisions_assets_publications`      | Связать legacy problems/lessons, не заменять их text сразу           |
+|    4 | `pwa_test_attempts_idempotency`                  | Новые attempts dual-write в results                                  |
+|    5 | `pwa_submission_threads_entries_assets`          | Lazy backfill discussions по открываемому thread + batch tool        |
+|    6 | `pwa_reviews_annotations_queue_leases_reactions` | Reviews dual-write results; Telegram queue сохраняется               |
+|    7 | `pwa_support_oral_classrooms_banners`            | Questions/zoom читаются через adapter; negative IDs пока сохраняются |
+|    8 | `pwa_news_notifications_delivery`                | Telegram posts импортируются идемпотентно                            |
+|    9 | `pwa_family_achievements`                        | Family links batch import; stats/achievements derived                |
+|   10 | `pwa_normalized_groups_imports`                  | Google replacement только после parity report                        |
+
+## Проверки целостности, обязательные после каждой миграции
+
+- `PRAGMA foreign_key_check` и `PRAGMA integrity_check`.
+- Нет orphan ссылок между новыми таблицами и `users/problems/results`.
+- Количество legacy rows до/после совпадает, если migration только добавочная.
+- Dual-write test доказывает один logical event без дублей при retry.
+- Backfill повторяется без изменения результата.
+- Публичный API не раскрывает sequential internal IDs там, где это создаёт enumeration risk.
