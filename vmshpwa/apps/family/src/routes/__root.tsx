@@ -1,4 +1,4 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { House, Newspaper, UserRound, UsersRound } from 'lucide-react'
 
 import { AppShell } from '@vmsh/app-shell'
@@ -11,14 +11,22 @@ const navigation = [
 ]
 
 export const Route = createRootRoute({
-  component: () => (
-    <AppShell product="family" title="Семья" navigation={navigation} mobileNavigation>
-      <Outlet />
-    </AppShell>
-  ),
+  component: FamilyRootLayout,
   notFoundComponent: () => (
     <div className="p-8">
       <h1 className="text-xl font-semibold">Страница не найдена</h1>
     </div>
   ),
 })
+
+/* Login owns the separate shell required by design-system Phase 5. */
+function FamilyRootLayout() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  if (pathname.endsWith('/login')) return <Outlet />
+
+  return (
+    <AppShell product="family" title="Семья" navigation={navigation} mobileNavigation>
+      <Outlet />
+    </AppShell>
+  )
+}

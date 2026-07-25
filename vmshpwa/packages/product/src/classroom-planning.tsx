@@ -28,6 +28,8 @@ import {
   cn,
 } from '@vmsh/ui'
 
+// Product rules and page/state coverage:
+// dev/design-system/04-product-components.md and 05-pages-and-flows.md.
 const selectClass =
   'min-h-(--touch-target) rounded-md border border-input bg-surface px-2 text-small text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40'
 

@@ -1,4 +1,4 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import {
   BarChart3,
   BookOpenCheck,
@@ -48,14 +48,22 @@ const navigation = [
 ]
 
 export const Route = createRootRoute({
-  component: () => (
-    <AppShell product="staff" title="Учитель и администратор" navigation={navigation}>
-      <Outlet />
-    </AppShell>
-  ),
+  component: StaffRootLayout,
   notFoundComponent: () => (
     <div className="p-8">
       <h1 className="text-xl font-semibold">Страница не найдена</h1>
     </div>
   ),
 })
+
+/* Login owns the separate shell required by design-system Phase 5. */
+function StaffRootLayout() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  if (pathname.endsWith('/login')) return <Outlet />
+
+  return (
+    <AppShell product="staff" title="Учитель и администратор" navigation={navigation}>
+      <Outlet />
+    </AppShell>
+  )
+}

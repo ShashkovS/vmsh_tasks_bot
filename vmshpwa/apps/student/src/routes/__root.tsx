@@ -1,4 +1,4 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { BookOpenText, House, Newspaper, TrendingUp, UserRound } from 'lucide-react'
 
 import { AppShell } from '@vmsh/app-shell'
@@ -16,11 +16,7 @@ const navigation = [
 ]
 
 export const Route = createRootRoute({
-  component: () => (
-    <AppShell product="student" title="Школьник" navigation={navigation} mobileNavigation>
-      <Outlet />
-    </AppShell>
-  ),
+  component: StudentRootLayout,
   notFoundComponent: () => (
     <div className="p-8">
       <h1 className="text-xl font-semibold">Страница не найдена</h1>
@@ -28,3 +24,15 @@ export const Route = createRootRoute({
     </div>
   ),
 })
+
+/* Login owns the separate, distraction-free shell required by Phase 5. */
+function StudentRootLayout() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  if (pathname.endsWith('/login')) return <Outlet />
+
+  return (
+    <AppShell product="student" title="Школьник" navigation={navigation} mobileNavigation>
+      <Outlet />
+    </AppShell>
+  )
+}

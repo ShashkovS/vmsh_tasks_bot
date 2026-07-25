@@ -89,6 +89,17 @@ News moderation; users/groups/roles; statistics with accessible tables; searchab
 - Student/Family: 320×568 minimum audit, 390×844 primary mobile, 768×1024 tablet, 1280×800 desktop;
 - Staff: 1024×768 minimum supported workspace, 1440×900 primary, 1920×1080 wide. На меньшем экране Staff остаётся работоспособным через последовательный layout/Drawer, но не имитирует mobile Student app.
 
+## Реализация и проверяемые точки
+
+- Общий адаптивный shell и page-state contract: [`AppShell`](../../packages/app-shell/src/app-shell.tsx) и [`PageLayout`/`PageStatePanel`](../../packages/app-shell/src/page-layout.tsx). Login исключается из защищённого shell в [`student routes`](../../apps/student/src/routes/__root.tsx), [`family routes`](../../apps/family/src/routes/__root.tsx) и [`staff routes`](../../apps/staff/src/routes/__root.tsx).
+- Student compositions: [`apps/student/src/pages.tsx`](../../apps/student/src/pages.tsx); детерминированные page stories и interaction checks: [`Pages/Student`](../../apps/student/src/pages.stories.tsx). Реальный detail route выводит test/written/oral fixture по `taskId`; production-данные позже заменят это правило без изменения page contract.
+- Family compositions: [`apps/family/src/pages.tsx`](../../apps/family/src/pages.tsx); proof: [`Pages/Family`](../../apps/family/src/pages.stories.tsx). Story `Read only task` отдельно доказывает отсутствие textbox/self-check.
+- Staff dashboard, review, publication/import, classrooms и permission state: [`apps/staff/src/pages.tsx`](../../apps/staff/src/pages.tsx); proof: [`Pages/Staff`](../../apps/staff/src/pages.stories.tsx).
+- Shareable classroom URL contract `lesson/tab/roomStatus` с Zod runtime validation и синхронизацией вкладки: [`routes/classrooms.tsx`](../../apps/staff/src/routes/classrooms.tsx). Task-list search contract: [`routes/tasks.index.tsx`](../../apps/student/src/routes/tasks.index.tsx).
+- `/staff/classrooms` использует принятый product component без DnD: [`ClassroomStudentPlanner`](../../packages/product/src/classroom-planning.tsx); плотная и local-draft фикстуры находятся в [`Product/Classrooms`](../../packages/product/src/classroom-planning.stories.tsx).
+
+Текущий page corpus использует фиксированные prototype data и callbacks: он проверяет IA, состояния и взаимодействия, но не является production auth/API implementation и не добавляет mock backdoor.
+
 ## Gate
 
 Принимаются flow coherence, URL/history, responsive layouts, reading comfort, density, states и role permissions. Не принимать красивые happy-path pages без error/offline/empty/locked variants.

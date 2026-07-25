@@ -1,273 +1,795 @@
-import { Camera, MessageCircleQuestion, Send } from 'lucide-react'
+import {
+  Bell,
+  CalendarClock,
+  CircleHelp,
+  Eye,
+  EyeOff,
+  Laptop,
+  Mail,
+  MapPin,
+  MessageCircleQuestion,
+  Send,
+  ShieldCheck,
+  Smartphone,
+  Video,
+} from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 
 import { MathDocument } from '@vmsh/content'
-import { PrototypePage, type PrototypeCard } from '@vmsh/app-shell'
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@vmsh/ui'
+import { PageLayout, PageSection, PageStatePanel, type PageDisplayState } from '@vmsh/app-shell'
+import {
+  AttemptTimeline,
+  ClassroomAssignmentStatus,
+  ConnectionBanner,
+  DeadlineNotice,
+  FeedbackAttention,
+  FeedbackThread,
+  HintDisclosure,
+  ProblemHeader,
+  PushPermissionCard,
+  ReactionPicker,
+  SolutionDisclosure,
+  StrengthTrend,
+  StudentProgress,
+  SubmissionComposer,
+  TaskListItem,
+  TelegramRichPost,
+  TestAnswer,
+  VerdictPanel,
+  findVerdict,
+  fullVerdictScale,
+  reactionsForScope,
+  type TaskListItemView,
+  type TaskType,
+  type TelegramPostView,
+  type ThreadMessageView,
+  type TimelineEntry,
+} from '@vmsh/product'
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Separator,
+  Switch,
+} from '@vmsh/ui'
 
-const lessonCards: PrototypeCard[] = [
+/*
+ * Student page compositions implement dev/design-system/05-pages-and-flows.md
+ * (“Student PWA”) and docs/product-ux-decisions-2026-07.md. Route files own
+ * navigation; apps/student/src/pages.stories.tsx proves page states and flows.
+ */
+
+const beginnerLevel = { code: 'н', name: 'Начинающие', colorIndex: 1 as const }
+const acceptedVerdict = findVerdict(fullVerdictScale, 'plus')!
+const partialVerdict = findVerdict(fullVerdictScale, 'plus-minus')!
+
+const currentTasks: TaskListItemView[] = [
   {
-    title: '1. Разнообразные вагоны',
-    description: 'Тестовая задача',
-    meta: 'решено',
-    status: 'success',
-    action: 'Открыть',
+    id: '41n-1',
+    number: '41н.1',
+    title: 'Разнообразные вагоны',
+    type: 'test',
+    status: { kind: 'accepted', label: 'Зачтено', tone: 'success' },
+    verdict: acceptedVerdict,
   },
   {
-    title: '6а. Расставьте 8 ладей',
-    description: 'Письменное решение',
-    meta: 'на проверке',
-    status: 'info',
-    action: 'Продолжить',
+    id: '41n-6',
+    number: '41н.6',
+    title: 'Расстановка ладей',
+    type: 'written',
+    status: { kind: 'needs-work', label: 'Нужно дополнить', tone: 'warning' },
+    verdict: partialVerdict,
+    hasNewFeedback: true,
   },
   {
-    title: '8. Пример на вычитание',
-    description: 'Устная задача',
-    meta: 'не открывалась',
-    action: 'Открыть',
+    id: '41n-8',
+    number: '41н.8',
+    title: 'Четыре разреза',
+    type: 'oral',
+    status: { kind: 'not-started', label: 'Не начато', tone: 'neutral' },
+  },
+  {
+    id: '41n-9',
+    number: '41н.9',
+    title: 'Клетчатый прямоугольник',
+    type: 'written',
+    status: { kind: 'queued', label: 'В очереди', tone: 'info' },
   },
 ]
 
-export function StudentTodayPage() {
+function StatefulPage({
+  state,
+  title,
+  children,
+}: {
+  state: PageDisplayState
+  title: string
+  children: ReactNode
+}) {
+  if (state === 'ready') return children
   return (
-    <PrototypePage
-      eyebrow="Урок 21 · начинающие"
-      title="Текущая неделя"
-      description="Условия уже опубликованы. Письменные ответы принимаются до воскресенья, 13:00 по вашему местному времени."
-      actions={<Button>Продолжить задачу</Button>}
-      cards={lessonCards}
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle>Что дальше</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 text-sm sm:grid-cols-3">
-          <p>
-            <strong>Суббота, 12:00</strong>
-            <br />
-            <span className="text-muted-foreground">откроются подсказки</span>
-          </p>
-          <p>
-            <strong>Воскресенье, 13:00</strong>
-            <br />
-            <span className="text-muted-foreground">закроется приём</span>
-          </p>
-          <p>
-            <strong>Воскресенье, 15:00</strong>
-            <br />
-            <span className="text-muted-foreground">откроются решения</span>
-          </p>
-        </CardContent>
-      </Card>
-    </PrototypePage>
+    <PageLayout title={title}>
+      <PageStatePanel
+        actionLabel={state === 'error' ? 'Повторить' : undefined}
+        onAction={state === 'error' ? () => undefined : undefined}
+        state={state}
+      />
+    </PageLayout>
   )
 }
 
-export function StudentTasksPage() {
+export function StudentTodayPage({ state = 'ready' }: { state?: PageDisplayState }) {
   return (
-    <PrototypePage
-      eyebrow="Архив и текущий урок"
-      title="Задачи"
-      description="Переключайтесь между длинным листом и отдельными задачами."
-      cards={lessonCards}
-    />
-  )
-}
+    <StatefulPage state={state} title="Сейчас">
+      <PageLayout
+        actions={
+          <Button size="sm" variant="outline">
+            <MapPin aria-hidden="true" />
+            Очно в школе
+          </Button>
+        }
+        description="Условия опубликованы. До публикации решений осталось два дня."
+        eyebrow="Занятие 41 · 26 января"
+        title="Сейчас"
+      >
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Badge variant="outline">Начинающие</Badge>
+            <ConnectionBanner state="online" />
+          </div>
 
-export function StudentTaskPage({ taskId }: { taskId: string }) {
-  return (
-    <PrototypePage
-      eyebrow={`Задача ${taskId}`}
-      title="Расставьте 8 ладей"
-      description="Письменная задача · ответ можно исправлять после комментария учителя."
-    >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <Card>
-          <CardContent className="pt-6">
-            <MathDocument>
-              <p>
-                Расставьте на шахматной доске 8 ладей так, чтобы каждая ладья била ровно две другие.
-                Объясните, почему ваша расстановка подходит.
-              </p>
-              <div
-                className="my-6 grid aspect-square max-w-sm grid-cols-8 border"
-                aria-label="Схема шахматной доски"
-              >
-                {Array.from({ length: 64 }, (_, index) => (
-                  <span
-                    className={(Math.floor(index / 8) + index) % 2 ? 'bg-muted' : 'bg-card'}
-                    key={index}
-                  />
-                ))}
+          <Alert tone="info">
+            <CalendarClock aria-hidden="true" />
+            <AlertContent>
+              <AlertTitle>Разбор задач сегодня в 17:00</AlertTitle>
+              <AlertDescription>
+                Ссылка и код конференции появятся после открытия объявления.
+              </AlertDescription>
+              <Button className="mt-2" size="xs" variant="outline">
+                Открыть объявление
+              </Button>
+            </AlertContent>
+          </Alert>
+
+          <ClassroomAssignmentStatus
+            audience="student"
+            classroomName="201"
+            publishedAt="25 января, 18:40"
+            status="assigned"
+          />
+
+          <Card>
+            <CardContent className="grid gap-4 pt-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div>
+                <p className="text-caption text-muted-foreground">Текущая фаза</p>
+                <p className="mt-1 font-medium text-foreground">Решаем задачи</p>
+                <DeadlineNotice
+                  absoluteLabel="воскресенья, 13:00 МСК"
+                  closesAt="2026-02-01T13:00:00+03:00"
+                  relativeLabel="через 2 дня"
+                />
               </div>
-            </MathDocument>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Ваше решение</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Textarea placeholder="Напишите пояснение…" rows={7} />
-            <Button variant="outline">
-              <Camera /> Добавить фото
+              <div className="text-left sm:text-right">
+                <p className="font-num text-title font-semibold">3 из 12</p>
+                <p className="text-caption text-muted-foreground">задачи зачтено</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <PageSection
+            action={
+              <Button size="xs" variant="ghost">
+                Открыть весь листок
+              </Button>
+            }
+            description="Сначала показано то, где появилось новое или остался черновик."
+            title="Продолжить"
+          >
+            <div className="space-y-2">
+              {currentTasks.slice(0, 3).map((task) => (
+                <TaskListItem key={task.id} task={task} />
+              ))}
+            </div>
+          </PageSection>
+        </div>
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+export function StudentTasksPage({ state = 'ready' }: { state?: PageDisplayState }) {
+  return (
+    <StatefulPage state={state} title="Задачи">
+      <PageLayout
+        description="Текущий листок и архив занятий. Внутри листка задачи всегда идут по номеру."
+        eyebrow="Все доступные группы"
+        title="Задачи"
+      >
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1 text-label font-medium">
+              Занятие
+              <select className="min-h-(--touch-target) w-full rounded-md border border-input bg-surface px-3 text-small">
+                <option>41 · 26 января</option>
+                <option>40 · 19 января</option>
+                <option>39 · 12 января</option>
+              </select>
+            </label>
+            <label className="space-y-1 text-label font-medium">
+              Уровень
+              <select className="min-h-(--touch-target) w-full rounded-md border border-input bg-surface px-3 text-small">
+                <option>Начинающие · ваш уровень</option>
+                <option>Продолжающие · доступен</option>
+              </select>
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2" aria-label="Фильтр задач">
+            <Button size="sm">Все</Button>
+            <Button size="sm" variant="outline">
+              Не начаты
             </Button>
+            <Button size="sm" variant="outline">
+              Ждут вас
+            </Button>
+            <Button size="sm" variant="outline">
+              Зачтены
+            </Button>
+          </div>
+          <PageSection description="12 задач · 3 зачтено · 2 на проверке" title="Занятие 41">
+            <div className="space-y-2">
+              {currentTasks.map((task) => (
+                <TaskListItem key={task.id} task={task} />
+              ))}
+            </div>
+          </PageSection>
+        </div>
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+export function StudentTaskPage({
+  taskId,
+  kind,
+  state = 'ready',
+}: {
+  taskId: string
+  kind?: TaskType
+  state?: PageDisplayState
+}) {
+  const [answer, setAnswer] = useState('')
+  const [showFormatError, setShowFormatError] = useState(false)
+  const [solutionText, setSolutionText] = useState('')
+  const taskKind: TaskType =
+    kind ?? (taskId.endsWith('1') ? 'test' : taskId.endsWith('8') ? 'oral' : 'written')
+
+  return (
+    <StatefulPage state={state} title={`Задача ${taskId}`}>
+      <PageLayout width="reading" title="Расстановка ладей" eyebrow="Занятие 41">
+        <article className="space-y-5">
+          <ProblemHeader
+            deadline={
+              <DeadlineNotice
+                absoluteLabel="воскресенья, 13:00 МСК"
+                closesAt="2026-02-01T13:00:00+03:00"
+                relativeLabel="через 2 дня"
+              />
+            }
+            level={beginnerLevel}
+            number={taskKind === 'test' ? '41н.1' : taskKind === 'oral' ? '41н.8' : '41н.6'}
+            onShowHistory={() => undefined}
+            title={
+              taskKind === 'test'
+                ? 'Разнообразные вагоны'
+                : taskKind === 'oral'
+                  ? 'Четыре разреза'
+                  : 'Расстановка ладей'
+            }
+            type={taskKind}
+          />
+
+          <MathDocument>
+            <p>
+              На доске <span data-math-inline="true">n × n</span> расставляют ладьи так, чтобы
+              никакие две не били друг друга. Найдите число способов расставить ровно{' '}
+              <span data-math-inline="true">k</span> ладей и объясните ответ.
+            </p>
+            <ol>
+              <li>Разберите случай k = 1.</li>
+              <li>Разберите случай k = n.</li>
+              <li>Объясните общий ответ.</li>
+            </ol>
+          </MathDocument>
+
+          <div className="space-y-2">
+            <HintDisclosure meta="открыта 31 января">
+              Сначала выберите строки и столбцы, в которых будут стоять ладьи.
+            </HintDisclosure>
+            <SolutionDisclosure lockedNote="откроется 1 февраля, 13:00">
+              Решение появится после дедлайна.
+            </SolutionDisclosure>
+          </div>
+
+          <Separator />
+
+          {taskKind === 'test' ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Ваш ответ</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <TestAnswer
+                  label="Число способов"
+                  onChange={setAnswer}
+                  showFormatError={showFormatError}
+                  spec={{ type: 'natural' }}
+                />
+                <Button
+                  disabled={!answer.trim()}
+                  onClick={() => setShowFormatError(true)}
+                  className="w-full sm:w-auto"
+                >
+                  Проверить
+                </Button>
+                <p className="text-caption text-muted-foreground">Осталось 4 попытки.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {taskKind === 'oral' ? (
+                <Alert tone="info">
+                  <Video aria-hidden="true" />
+                  <AlertContent>
+                    <AlertTitle>Устный приём открыт до 19:30</AlertTitle>
+                    <AlertDescription>
+                      Данные конференции показываются только после вашего действия. Позиции в
+                      очереди нет.
+                    </AlertDescription>
+                    <Button className="mt-2" size="sm" variant="outline">
+                      Показать данные для входа
+                    </Button>
+                  </AlertContent>
+                </Alert>
+              ) : null}
+              <SubmissionComposer
+                attachments={[]}
+                draftSavedAt="12:08"
+                onAddPhotos={() => undefined}
+                onSubmit={() => undefined}
+                onTextChange={setSolutionText}
+                taskType={taskKind}
+                text={solutionText}
+              />
+            </div>
+          )}
+
+          <Button variant="ghost">
+            <CircleHelp aria-hidden="true" />
+            Задать вопрос по задаче
+          </Button>
+        </article>
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+const threadMessages: ThreadMessageView[] = [
+  {
+    id: 'student-1',
+    author: { kind: 'student', name: 'Вы' },
+    at: '25 января, 21:04',
+    channel: 'pwa',
+    own: true,
+    body: 'Я сначала разобрал случай k = n. На второй странице — общий случай.',
+  },
+  {
+    id: 'teacher-1',
+    author: { kind: 'teacher', name: 'И. Соколов' },
+    at: '26 января, 12:30',
+    channel: 'pwa',
+    body: 'Идея верная. Не хватает отдельного объяснения для k = 1.',
+  },
+]
+
+const resultTimeline: TimelineEntry[] = [
+  { id: 'v1', at: '26 января, 12:30', label: 'Проверено', verdict: partialVerdict },
+  { id: 's1', at: '25 января, 21:04', label: 'Решение отправлено' },
+]
+
+export function StudentSubmissionPage({
+  submissionId,
+  state = 'ready',
+}: {
+  submissionId: string
+  state?: PageDisplayState
+}) {
+  const [reaction, setReaction] = useState<number | null>(null)
+  const [reply, setReply] = useState('')
+
+  return (
+    <StatefulPage state={state} title="Результат и обсуждение">
+      <PageLayout
+        description={`Запись ${submissionId} · последнее обновление 26 января, 12:30`}
+        eyebrow="41н.6 · Расстановка ладей"
+        title="Нужно дополнить решение"
+        width="reading"
+      >
+        <div className="space-y-5">
+          <div className="flex justify-end">
+            <FeedbackAttention label="Новая проверка" />
+          </div>
+          <VerdictPanel
+            at="26 января, 12:30"
+            author="И. Соколов"
+            comment="Идея верная. Не хватает разбора случая k = 1 — дополните и присылайте."
+            verdict={partialVerdict}
+          />
+          <PageSection title="Обсуждение">
+            <FeedbackThread messages={threadMessages} />
+          </PageSection>
+          <Card>
+            <CardContent className="space-y-3 pt-5">
+              <SubmissionComposer
+                attachments={[]}
+                draftSavedAt="12:42"
+                onAddPhotos={() => undefined}
+                onSubmit={() => undefined}
+                onTextChange={setReply}
+                taskType="written"
+                text={reply}
+              />
+              <p className="text-caption text-muted-foreground">
+                Ответ и пересдача — продолжение этого же обсуждения.
+              </p>
+            </CardContent>
+          </Card>
+          <ReactionPicker
+            legend="Ваша реакция на проверку"
+            onSelect={setReaction}
+            options={reactionsForScope('student-written')}
+            value={reaction}
+          />
+          <PageSection title="История">
+            <AttemptTimeline entries={resultTimeline} />
+          </PageSection>
+        </div>
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+const lessonPost: TelegramPostView = {
+  id: 'post-41',
+  attribution: { channel: 'ВМШ 179' },
+  at: '26 января, 16:30',
+  state: 'published',
+  blocks: [
+    { kind: 'heading', level: 2, text: 'Задачи 41-го занятия' },
+    {
+      kind: 'text',
+      text: 'Опубликованы условия для всех уровней. Письменные решения принимаются до воскресенья, 13:00 МСК.',
+    },
+    {
+      kind: 'list',
+      items: [
+        { text: 'Начните с тестовых задач.' },
+        { text: 'После самостоятельной попытки можно открыть подсказку.' },
+      ],
+    },
+  ],
+}
+
+export function StudentNewsPage({ state = 'ready' }: { state?: PageDisplayState }) {
+  return (
+    <StatefulPage state={state} title="Новости">
+      <PageLayout
+        description="Публикации Telegram-канала и объявления кружка, сохранённые для чтения без сети."
+        title="Новости"
+      >
+        <div className="space-y-3">
+          <TelegramRichPost post={lessonPost} variant="card" />
+          <TelegramRichPost
+            post={{
+              ...lessonPost,
+              id: 'post-hints',
+              at: '31 января, 12:00',
+              blocks: [
+                { kind: 'heading', level: 3, text: 'Подсказки открыты' },
+                {
+                  kind: 'text',
+                  text: 'Если задача не поддаётся, попробуйте воспользоваться подсказкой.',
+                },
+              ],
+            }}
+            variant="card"
+          />
+        </div>
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+export function StudentNewsDetailPage({
+  postId,
+  state = 'ready',
+}: {
+  postId: string
+  state?: PageDisplayState
+}) {
+  return (
+    <StatefulPage state={state} title="Публикация">
+      <PageLayout description={`Публикация ${postId}`} title="Задачи 41-го занятия" width="reading">
+        <TelegramRichPost post={lessonPost} />
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+const strengthLessons = [
+  { lesson: '37', simple: 6.8, complex: 3.1, difficulty: 7.4, solved: '5/12', group: 'н' },
+  { lesson: '38', simple: 7.5, complex: 3.8, difficulty: 7.1, solved: '7/13', group: 'н' },
+  { lesson: '39', simple: 7.1, complex: 4.6, difficulty: 7.8, solved: '6/12', group: 'н' },
+  { lesson: '40', simple: 8.0, complex: 5.1, difficulty: 7.2, solved: '8/14', group: 'н' },
+  { lesson: '41', simple: 8.4, complex: 5.4, difficulty: 7.6, solved: '3/12', group: 'н' },
+]
+
+export function StudentProgressPage({ state = 'ready' }: { state?: PageDisplayState }) {
+  return (
+    <StatefulPage state={state} title="Прогресс">
+      <PageLayout
+        description="Ваша личная динамика. Здесь нет рейтинга и сравнения с другими школьниками."
+        title="Прогресс"
+      >
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="pt-5">
+              <StudentProgress
+                achievements={[
+                  'Первое письменное решение зачтено',
+                  'Работа в три разных дня недели',
+                ]}
+                attemptedCount={12}
+                solvedCount={3}
+                streakDays={4}
+              />
+            </CardContent>
+          </Card>
+          <PageSection
+            description="0 — пока трудно, 10 — получается почти любая задача."
+            title="Как меняется работа"
+          >
+            <StrengthTrend
+              caption="Простые и сложные задачи по последним занятиям."
+              points={strengthLessons}
+            />
+          </PageSection>
+          <PageSection title="Активность по дням">
+            <div
+              className="grid grid-cols-7 gap-1"
+              aria-label="Число отправок за последние четыре недели"
+            >
+              {Array.from({ length: 28 }, (_, index) => {
+                const count = [0, 1, 2, 1, 0, 3, 1][index % 7]!
+                return (
+                  <span
+                    aria-label={`${count} отправок`}
+                    className={`aspect-square rounded-sm border border-border ${count === 0 ? 'bg-surface-sunken' : count > 2 ? 'bg-chart-2' : 'bg-chart-2/30'}`}
+                    key={index}
+                    role="img"
+                    title={`${count} отправок`}
+                  />
+                )
+              })}
+            </div>
+          </PageSection>
+        </div>
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+export function StudentProfilePage({ state = 'ready' }: { state?: PageDisplayState }) {
+  return (
+    <StatefulPage state={state} title="Профиль">
+      <PageLayout description="Начинающие · очный режим" title="Василий Петров">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Учёба</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-small">
+              <p>
+                <strong>Активная группа:</strong> Начинающие
+              </p>
+              <p>
+                <strong>Доступны:</strong> Начинающие, Продолжающие
+              </p>
+              <Button size="sm" variant="outline">
+                Изменить уровень
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Режим участия</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-small">
+              <p>
+                <strong>Сейчас:</strong> очно в школе
+              </p>
+              <p className="text-muted-foreground">
+                Если вы не придёте, переключитесь в online: для вас резервируют место и печатают
+                листок.
+              </p>
+              <Button size="sm" variant="outline">
+                Переключить режим
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Устройства</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-small">
+              <p className="flex items-center gap-2">
+                <Smartphone aria-hidden="true" className="size-4" /> iPhone · это устройство
+              </p>
+              <p className="flex items-center gap-2">
+                <Laptop aria-hidden="true" className="size-4" /> Safari на macOS · 2 дня назад
+              </p>
+              <Button size="sm" variant="outline">
+                Управлять сессиями
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Помощь</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-small">
+              <Button size="sm" variant="outline">
+                <MessageCircleQuestion aria-hidden="true" /> Задать общий вопрос
+              </Button>
+              <a
+                className="inline-flex items-center gap-2 text-link underline-offset-2 hover:underline"
+                href="mailto:vmsh@179.ru"
+              >
+                <Mail aria-hidden="true" className="size-4" /> vmsh@179.ru
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+const notificationCategories = [
+  ['Новый урок', 'Условия нового занятия'],
+  ['Подсказки и решения', 'Когда материалы становятся доступны'],
+  ['Проверка завершена', 'Уведомления объединяются в течение 30 минут'],
+  ['Комментарии', 'Новая запись в обсуждении'],
+  ['Дедлайн', 'Напоминание до публикации решений'],
+] as const
+
+export function StudentNotificationsPage({ state = 'ready' }: { state?: PageDisplayState }) {
+  return (
+    <StatefulPage state={state} title="Уведомления">
+      <PageLayout
+        description="Push можно включать и отключать по категориям."
+        eyebrow="Профиль"
+        title="Уведомления"
+      >
+        <div className="space-y-5">
+          <PushPermissionCard
+            categories={notificationCategories
+              .slice(0, 3)
+              .map(([label, description], index) => ({ id: String(index), label, description }))}
+          />
+          <Card>
+            <CardContent className="divide-y divide-border pt-1">
+              {notificationCategories.map(([label, description], index) => (
+                <div className="flex items-center justify-between gap-4 py-3" key={label}>
+                  <div>
+                    <p className="text-small font-medium">{label}</p>
+                    <p className="text-caption text-muted-foreground">{description}</p>
+                  </div>
+                  <Switch aria-label={label} defaultChecked={index !== 4} />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          <Alert tone="neutral">
+            <Bell aria-hidden="true" />
+            <AlertContent>
+              <AlertTitle>Звук только с 9:00 до 21:00</AlertTitle>
+              <AlertDescription>
+                Ночью новые события видны в приложении, но не будят вас.
+              </AlertDescription>
+            </AlertContent>
+          </Alert>
+        </div>
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+export type StudentLoginState = 'idle' | 'invalid' | 'rate-limited' | 'blocked'
+
+export function StudentLoginPage({ loginState = 'idle' }: { loginState?: StudentLoginState }) {
+  const [showPassword, setShowPassword] = useState(false)
+  const errorCopy = {
+    invalid: 'Логин или токен не подошли. Проверьте раскладку и попробуйте ещё раз.',
+    'rate-limited': 'Слишком много попыток. Попробуйте через 15 минут.',
+    blocked: 'Доступ к аккаунту приостановлен. Напишите администраторам.',
+  } as const
+
+  return (
+    <main className="grid min-h-svh place-items-center bg-background p-4">
+      <PageLayout
+        description="Используйте логин из письма после регистрации и текущий токен Telegram-бота как пароль."
+        eyebrow="ВМШ 179"
+        title="Личный кабинет школьника"
+        width="reading"
+      >
+        <Card className="mx-auto max-w-md">
+          <CardContent className="space-y-4 pt-5">
+            {loginState !== 'idle' ? (
+              <Alert role="alert" tone="danger">
+                <ShieldCheck aria-hidden="true" />
+                <AlertContent>
+                  <AlertTitle>Не удалось войти</AlertTitle>
+                  <AlertDescription>{errorCopy[loginState]}</AlertDescription>
+                </AlertContent>
+              </Alert>
+            ) : null}
+            <div className="space-y-1.5">
+              <Label htmlFor="student-login">Логин</Label>
+              <Input autoComplete="username" id="student-login" placeholder="petrov-14" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="student-password">Токен Telegram-бота</Label>
+              <div className="relative">
+                <Input
+                  autoComplete="current-password"
+                  className="pr-11"
+                  id="student-password"
+                  type={showPassword ? 'text' : 'password'}
+                />
+                <Button
+                  aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                  className="absolute top-1/2 right-1 -translate-y-1/2"
+                  onClick={() => setShowPassword((value) => !value)}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                </Button>
+              </div>
+            </div>
             <Button className="w-full">
-              <Send /> Сдать решение
+              <Send aria-hidden="true" /> Войти
             </Button>
-            <p className="text-xs text-muted-foreground">
-              Без сети ответ будет поставлен в очередь и отправлен при подключении.
+            <p className="text-center text-caption text-muted-foreground">
+              Не помните доступ? Напишите на{' '}
+              <a className="text-link underline" href="mailto:vmsh@179.ru">
+                vmsh@179.ru
+              </a>
+              .
             </p>
           </CardContent>
         </Card>
-      </div>
-    </PrototypePage>
-  )
-}
-
-export function StudentSubmissionPage({ submissionId }: { submissionId: string }) {
-  return (
-    <PrototypePage
-      eyebrow={`Сдача ${submissionId}`}
-      title="Обсуждение решения"
-      description="Учитель отметил фрагмент на второй фотографии и ждёт исправление."
-      cards={[
-        {
-          title: 'Комментарий учителя',
-          description: 'Здесь нужно объяснить, почему ладьи в соседних строках не бьют друг друга.',
-          meta: '10 минут назад',
-          status: 'warning',
-          action: 'Ответить',
-        },
-      ]}
-    />
-  )
-}
-
-export function StudentNewsPage() {
-  return (
-    <PrototypePage
-      eyebrow="Telegram-канал и локальные объявления"
-      title="Новости"
-      description="Публикации сохранены в приложении и доступны после синхронизации."
-      cards={[
-        {
-          title: 'Условия 21-го занятия',
-          description: 'Задачи трёх уровней опубликованы. Удачной работы!',
-          meta: 'понедельник, 16:30',
-          status: 'info',
-          action: 'Читать',
-        },
-        {
-          title: 'Подсказки откроются в субботу',
-          description: 'Сначала попробуйте ещё один подход самостоятельно.',
-          meta: 'вчера',
-          action: 'Читать',
-        },
-      ]}
-    />
-  )
-}
-
-export function StudentNewsDetailPage({ postId }: { postId: string }) {
-  return (
-    <PrototypePage
-      eyebrow={`Публикация ${postId}`}
-      title="Условия 21-го занятия"
-      description="Зеркальная копия публикации Telegram с локально сохранёнными медиа."
-    >
-      <Card>
-        <CardContent className="space-y-3 pt-6 font-reading leading-7">
-          <p>Новый листок уже доступен. Начните с тестовых задач, затем переходите к письменным.</p>
-          <p>Если возник вопрос, задайте его прямо из карточки задачи.</p>
-        </CardContent>
-      </Card>
-    </PrototypePage>
-  )
-}
-
-export function StudentProgressPage() {
-  return (
-    <PrototypePage
-      eyebrow="Без сравнения с другими"
-      title="Ваш прогресс"
-      description="Личная динамика, завершённость и первые спокойные достижения."
-      cards={[
-        { title: '17 задач', description: 'Решено за последние четыре занятия', status: 'success' },
-        {
-          title: 'Первый письменный плюс',
-          description: 'Достижение получено на 20-м занятии',
-          status: 'info',
-        },
-        {
-          title: 'Серия: 3 недели',
-          description: 'Вы сдавали хотя бы одну задачу каждую неделю',
-          status: 'warning',
-        },
-      ]}
-    />
-  )
-}
-
-export function StudentProfilePage() {
-  return (
-    <PrototypePage
-      eyebrow="Профиль"
-      title="Василий Петров"
-      description="Начинающие · очное участие"
-      cards={[
-        {
-          title: 'Режим участия',
-          description: 'Очно. Это значение также могут изменить опекун, учитель или администратор.',
-          action: 'Изменить',
-        },
-        {
-          title: 'Устройства',
-          description: 'iPhone · текущая сессия действует до 10 августа',
-          action: 'Управлять',
-        },
-        {
-          title: 'Помощь',
-          description: 'Общий вопрос учителям без привязки к задаче',
-          action: 'Задать вопрос',
-        },
-      ]}
-    />
-  )
-}
-
-export function StudentNotificationsPage() {
-  return (
-    <PrototypePage
-      eyebrow="Профиль"
-      title="Уведомления"
-      description="Настройте системные push-уведомления по категориям."
-      cards={[
-        { title: 'Результаты проверки', description: 'Включено', status: 'success' },
-        { title: 'Ответы учителей', description: 'Включено', status: 'success' },
-        { title: 'Новости и подсказки', description: 'Выключено' },
-        { title: 'Очные приглашения', description: 'Включено', status: 'success' },
-      ]}
-    />
-  )
-}
-
-export function StudentLoginPage() {
-  return (
-    <PrototypePage
-      eyebrow="Вход"
-      title="Личный кабинет школьника"
-      description="Введите логин и ваш текущий токен Telegram-бота."
-    >
-      <Card className="max-w-md">
-        <CardContent className="space-y-4 pt-6">
-          <Input autoComplete="username" placeholder="Логин" />
-          <Input autoComplete="current-password" placeholder="Пароль" type="password" />
-          <Button className="w-full">Войти</Button>
-          <Button className="w-full" variant="ghost">
-            <MessageCircleQuestion /> Не получается войти
-          </Button>
-        </CardContent>
-      </Card>
-    </PrototypePage>
+      </PageLayout>
+    </main>
   )
 }

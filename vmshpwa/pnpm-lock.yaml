@@ -353,6 +353,9 @@ importers:
       '@vmsh/offline':
         specifier: workspace:*
         version: link:../../packages/offline
+      '@vmsh/product':
+        specifier: workspace:*
+        version: link:../../packages/product
       '@vmsh/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -431,6 +434,9 @@ importers:
       '@vmsh/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@vmsh/product':
+        specifier: workspace:*
+        version: link:../../packages/product
       '@vmsh/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -485,6 +491,9 @@ importers:
       '@vmsh/offline':
         specifier: workspace:*
         version: link:../../packages/offline
+      '@vmsh/product':
+        specifier: workspace:*
+        version: link:../../packages/product
       '@vmsh/ui':
         specifier: workspace:*
         version: link:../../packages/ui

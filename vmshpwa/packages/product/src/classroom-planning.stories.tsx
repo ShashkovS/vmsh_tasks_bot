@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@vmsh/ui'
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from '@vmsh/ui'
 
 import {
   ClassroomAssignmentStatus,
@@ -482,6 +482,142 @@ export const PlanEmptyGroup: Story = {
       version={13}
     />
   ),
+}
+
+const draftStorageKey = 'vmsh-story-classroom-plan-draft'
+
+function PersistentDraftPlan({ onFixed }: { onFixed: () => void }) {
+  const stored = window.localStorage.getItem(draftStorageKey)
+  const [students, setStudents] = useState<ClassroomPlanStudent[]>(() =>
+    stored ? (JSON.parse(stored) as ClassroomPlanStudent[]) : assignedStudents,
+  )
+
+  const move = (studentId: string, classroomId: string) => {
+    setStudents((current) => {
+      const next = current.map((student) =>
+        student.id === studentId ? { ...student, classroomId, source: 'manual' as const } : student,
+      )
+      window.localStorage.setItem(draftStorageKey, JSON.stringify(next))
+      return next
+    })
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-small text-muted-foreground" role="status">
+        {stored ? 'Локальный черновик восстановлен' : 'Локальных изменений нет'}
+      </p>
+      <ClassroomStudentPlanner
+        groups={groups}
+        lessonLabel="Занятие 41 · 26 января"
+        onConfirm={() => {
+          window.localStorage.removeItem(draftStorageKey)
+          onFixed()
+        }}
+        onMove={move}
+        rooms={planRooms}
+        state="draft"
+        students={students}
+        version={12}
+      />
+    </div>
+  )
+}
+
+function DraftPersistenceHarness() {
+  const [generation, setGeneration] = useState(0)
+  const [fixed, setFixed] = useState(false)
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          onClick={() => {
+            window.localStorage.removeItem(draftStorageKey)
+            setFixed(false)
+            setGeneration((value) => value + 1)
+          }}
+          size="sm"
+          variant="outline"
+        >
+          Сбросить фикстуру
+        </Button>
+        <Button onClick={() => setGeneration((value) => value + 1)} size="sm" variant="outline">
+          Симулировать перезагрузку
+        </Button>
+      </div>
+      {fixed ? (
+        <p className="text-small text-status-success" role="status">
+          План зафиксирован, локальный черновик очищен
+        </p>
+      ) : (
+        <PersistentDraftPlan key={generation} onFixed={() => setFixed(true)} />
+      )}
+    </div>
+  )
+}
+
+export const PlanLocalDraftRestored: Story = {
+  name: 'Школьники · local draft переживает reload',
+  render: () => <DraftPersistenceHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Сбросить фикстуру' }))
+    await userEvent.selectOptions(canvas.getByLabelText('Аудитория для Анна Белова'), '202')
+    await userEvent.click(canvas.getByRole('button', { name: 'Симулировать перезагрузку' }))
+    await expect(canvas.getByText('Локальный черновик восстановлен')).toBeInTheDocument()
+    await expect(canvas.getByLabelText('Аудитория для Анна Белова')).toHaveValue('202')
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить план' }))
+    await expect(
+      canvas.getByText('План зафиксирован, локальный черновик очищен'),
+    ).toBeInTheDocument()
+  },
+}
+
+const denseRooms: ClassroomPlanRoom[] = Array.from({ length: 15 }, (_, index) => {
+  const groupId = index < 6 ? 'beginner' : index < 11 ? 'continuing' : 'expert'
+  return { id: `dense-room-${index + 1}`, name: `${201 + index}`, groupId }
+})
+
+const denseStudents: ClassroomPlanStudent[] = Array.from({ length: 200 }, (_, index) => {
+  const groupId = index < 84 ? 'beginner' : index < 152 ? 'continuing' : 'expert'
+  const rooms = denseRooms.filter((room) => room.groupId === groupId)
+  return {
+    id: `dense-student-${index + 1}`,
+    name: `Ученик ${String(index + 1).padStart(3, '0')} Фамилия`,
+    groupId,
+    classroomId: rooms[index % rooms.length]!.id,
+    status: 'assigned',
+    source: index % 3 === 0 ? 'previous-room' : 'least-loaded',
+    age: index % 17 === 0 ? null : 11.5 + (index % 45) / 10,
+    schoolClass: index % 19 === 0 ? null : 5 + (index % 6),
+    strength: index % 13 === 0 ? null : 3 + (index % 70) / 10,
+  }
+})
+
+export const PlanDenseTwoHundredStudents: Story = {
+  name: 'Школьники · 15 аудиторий и 200 строк',
+  render: () => (
+    <ClassroomStudentPlanner
+      groups={groups.map((group) => ({
+        ...group,
+        inPersonCount: denseStudents.filter((student) => student.groupId === group.id).length,
+        assignedCount: denseStudents.filter((student) => student.groupId === group.id).length,
+      }))}
+      lessonLabel="Занятие 41 · плотная фикстура"
+      onMove={() => undefined}
+      onShowHistory={() => undefined}
+      rooms={denseRooms}
+      state="draft"
+      students={denseStudents}
+      version={14}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByLabelText(/^Аудитория для Ученик/)).toHaveLength(200)
+    await userEvent.type(canvas.getByLabelText('Быстрый поиск школьника'), 'Ученик 179')
+    await expect(canvas.getByRole('button', { name: /^Ученик 179 Фамилия$/ })).toBeInTheDocument()
+  },
 }
 
 export const PublicAssignmentStates: Story = {
