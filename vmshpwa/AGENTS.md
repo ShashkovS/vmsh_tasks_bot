@@ -28,3 +28,9 @@ This workspace contains frontend adapters and test tooling. The existing Python 
 - Do not update visual snapshots before inspecting the rendered diff in every affected theme/browser.
 - MSW is limited to unit/Storybook. E2E uses real aiohttp. Production must fail closed if prototype/MSW is enabled.
 - Do not introduce a production bypass for login or authorization to make prototypes/tests convenient.
+
+## Traceability And Progress
+
+- Non-trivial frontend code comments point to the authoritative design/development decision and name the related component, route, contract, or test; do not duplicate whole requirements in source comments.
+- Documentation links back to concrete implementing files and public component names.
+- Update `dev/design-system/STATUS.md`, `dev/development-plan/STATUS.md`, and the affected phase file when an increment starts, changes, passes verification, or leaves follow-up work.

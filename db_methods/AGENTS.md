@@ -40,3 +40,8 @@ Each module exposes focused read/write APIs for one domain area (`users`, `resul
 - Writes: verify rowcount/returned id behavior for conflict paths.
 - Concurrency-sensitive updates (queue/status locks): validate optimistic conditions still hold.
 - Run affected tests (`pytest -vvs`) and add coverage for new DB branches.
+
+## Traceability And Progress
+
+- Storage changes cite the authoritative data-model/migration decision and related model/API/test; documentation links to exact query modules and migrations.
+- Update affected phase plans, proof sections, and status files with schema progress, rehearsal evidence, and known compatibility gaps.

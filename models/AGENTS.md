@@ -43,3 +43,8 @@ Models encapsulate entity behavior and convert DB rows into application objects.
 - Verify object creation from DB rows still works for nullable/legacy values.
 - Verify side effects (logs, queue updates, NATS publish) fire exactly once per action.
 - Add tests around new model behavior and serialization boundaries.
+
+## Traceability And Progress
+
+- Domain changes cite the governing decision/data-model section and related migration/API/test; documentation links to exact model methods or files.
+- Keep phase plans, proof sections, and status files current as implementation or compatibility boundaries change.

@@ -7,3 +7,9 @@
 - Seed deterministic data and isolate browser contexts. Never depend on test order or a developer's existing local storage.
 - Visual baseline updates require inspection of diffs. A failed screenshot is evidence to review, not permission to overwrite.
 - Prefer stable roles/names/test IDs over CSS selectors; assert the user-visible result and backend receipt, not implementation timing.
+
+## Traceability And Progress
+
+- E2E and visual specs cite the acceptance requirement, route, and contract they prove; keep comments concise and actionable.
+- Testing documentation links to exact spec files and named scenarios.
+- Add executed commands, browser coverage, artifacts, exceptions, and remaining gaps to the affected phase proof and status files.

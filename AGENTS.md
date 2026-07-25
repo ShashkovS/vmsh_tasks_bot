@@ -53,3 +53,9 @@
 - Preserve other agents' and users' changes. Inspect the worktree before edits, keep changes scoped, and do not clean unrelated or untracked files.
 - Agents use the agent ports, database, NATS prefix, media root and fixture credentials defined in the Makefile. Never connect an agent run to human or production state.
 - Do not add production mock-auth backdoors. Test authentication belongs in test wiring only.
+
+## Traceability And Progress
+
+- Add concise cross-references in non-trivial code to the authoritative requirement/decision docs; name the concrete document and related component/file instead of copying the requirement into a comment.
+- In documentation, link requirements and decisions back to the implementing files, components, routes, migrations, or tests.
+- Keep planning files and the relevant `STATUS.md` current as each material increment starts, changes scope, passes a gate, or leaves a known follow-up. Do not report progress only in chat.

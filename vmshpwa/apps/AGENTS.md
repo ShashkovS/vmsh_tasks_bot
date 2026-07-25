@@ -11,3 +11,9 @@ These rules apply to Student, Family and Staff applications.
 - Keep screen readers, keyboard order, visible focus, 200% zoom and reduced motion working with every UI change.
 - Staff is not exempt from the baseline a11y gate. Avoiding a complex DnD dependency means providing simpler buttons/select/move controls, not disabling semantic, keyboard, focus or axe checks.
 - Use only semantic tokens and shared primitives. Add app-level tokens only when the concept is truly audience-specific and document them.
+
+## Traceability And Progress
+
+- Page and route compositions include a short source comment naming the relevant section of `dev/design-system/05-pages-and-flows.md` and any product decision they implement.
+- Page documentation names the implementing route/page files and shared components.
+- Record page-state and flow progress in the design-system and development-plan status files; chat updates are not a substitute.
