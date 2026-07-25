@@ -33,7 +33,7 @@
 - [ ] Длинный математический документ, formulas, subparts, tables и TikZ/SVG читаемы.
 - [ ] Figures доступны и масштабируются keyboard/pointer.
 - [ ] Все исторические answer types представлены contract-driven input.
-- [ ] Форматная подсветка совпадает с `strip()+fullmatch` legacy; tuple не показывает «Отправится», list preview появляется только после parsing, `SELECT_ONE` отправляет видимый текст.
+- [ ] Форматная подсветка совпадает с `strip()+fullmatch` legacy, но не ругается на partial input до blur/submit; tuple не показывает «Отправится», list preview появляется только после parsing, weekday использует семь кнопок, `SELECT_ONE` отправляет видимый текст. Реализация: [`TestAnswer`](../../packages/product/src/test-answer.tsx), [`Product/Test answer`](../../packages/product/src/test-answer.stories.tsx).
 - [ ] До 10 фото: worker progress, up/down reordering, preview, retry, offline queue.
 - [ ] Отдельная «квитанция» сдачи отсутствует; успешная фиксация показана обычным thread/sync status.
 - [ ] До первого review lock исходную entry можно изменить/удалить; досланное после lock входит в текущую проверку, а evidence становится immutable только при завершении verdict.

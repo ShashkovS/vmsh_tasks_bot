@@ -1,9 +1,7 @@
 /*
- * Test-answer specification. The application maps a task's `ANS_TYPE`
- * (helpers/consts.py) + course data into an AnswerSpec; the input renders the
- * matching affordance and always shows a plain-Russian format hint with an
- * example — the student reads what to enter, never a bare code. Correctness is
- * decided by the server; the client only helps with format.
+ * Requirements: dev/design-system/04-product-components.md (test inputs) and
+ * dev/development-plan/08-phase-4-test-submissions.md. Legacy compatibility is
+ * anchored in helpers/consts.py; TestAnswer is the rendering consumer.
  */
 export type AnswerType =
   | 'digit'
@@ -31,7 +29,7 @@ export type AnswerType =
   | 'string'
 
 /** Input archetype — many answer types share one affordance. */
-export type AnswerInputKind = 'scalar' | 'tuple' | 'list' | 'choice'
+export type AnswerInputKind = 'scalar' | 'tuple' | 'list' | 'choice' | 'weekday'
 
 export interface AnswerOption {
   value: string
@@ -64,10 +62,14 @@ const listTypes = new Set<AnswerType>(['int-seq', 'int-set', 'frac-seq', 'multis
 
 export function answerInputKind(type: AnswerType): AnswerInputKind {
   if (type === 'select-one') return 'choice'
+  if (type === 'weekday') return 'weekday'
   if (tupleArity[type] !== undefined) return 'tuple'
   if (listTypes.has(type)) return 'list'
   return 'scalar'
 }
+
+/** Visible payloads accepted by the legacy weekday checker. */
+export const weekdayOptions = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'] as const
 
 export function resolveArity(spec: AnswerSpec): number {
   return spec.arity ?? tupleArity[spec.type] ?? 2
@@ -112,7 +114,7 @@ const defaults: Record<AnswerType, { hint: string; example: string }> = {
   },
   time: { hint: 'Введите время', example: '12:08' },
   date: { hint: 'Введите дату', example: '31.12' },
-  weekday: { hint: 'Введите день недели', example: 'суббота' },
+  weekday: { hint: 'Выберите день недели', example: '' },
   'symb-expression': { hint: 'Введите символьное выражение', example: 'a + b^2' },
   'symb-equiv': { hint: 'Введите тождественно равное выражение', example: 'b*b + a' },
   'select-one': { hint: 'Выберите один вариант', example: '' },

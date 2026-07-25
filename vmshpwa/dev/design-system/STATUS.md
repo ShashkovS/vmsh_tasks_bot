@@ -2,15 +2,15 @@
 
 Этот файл — журнал gates. Визуальная модель обновляет evidence и вопросы, но ставит `accepted` только после явного решения владельца продукта.
 
-| Фаза                     | Статус             | Принято    | Evidence/решение                                                                         |
-| ------------------------ | ------------------ | ---------- | ---------------------------------------------------------------------------------------- |
-| 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.              |
-| 2. Brand and tokens      | accepted           | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                  |
-| 3. UI primitives         | accepted           | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                    |
-| 4. Product components    | changes requested  | —          | База работает; classroom density/data/search/draft states требуют следующего инкремента. |
-| 5. Pages and flows       | blocked by phase 4 | —          | Существующие prototype pages — content skeletons, не принятый visual design.             |
-| 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                             |
-| 7. Final acceptance      | blocked            | —          | —                                                                                        |
+| Фаза                     | Статус             | Принято    | Evidence/решение                                                                       |
+| ------------------------ | ------------------ | ---------- | -------------------------------------------------------------------------------------- |
+| 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.            |
+| 2. Brand and tokens      | accepted           | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                |
+| 3. UI primitives         | accepted           | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                  |
+| 4. Product components    | accepted           | 2026-07-25 | Владелец: «в остальном вроде ок», направил к фазам 5–7; partial validation исправлена. |
+| 5. Pages and flows       | in progress        | —          | Реальные page compositions заменяют prototype skeletons; первый срез — Student/Staff.  |
+| 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                           |
+| 7. Final acceptance      | blocked            | —          | —                                                                                      |
 
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
@@ -25,6 +25,25 @@ Chosen option and exact combination:
 Rejected traits:
 Evidence stories:
 Known follow-ups:
+```
+
+```text
+2026-07-25 — Phase 4 — accepted
+Decision owner: Сергей Шашков (владелец продукта)
+Chosen option and exact combination:
+  Владелец принял компонентный корпус формулировкой «в остальном вроде ок» и
+  явно поручил продолжить фазы 5–7. Последняя правка gate: TestAnswer не
+  показывает format error во время partial input; ошибка появляется после
+  ухода из целого control или submit. Weekday — семь кнопок пн–вс.
+Evidence stories:
+  Product/Test answer — Gallery, Tuple, Partial compound format, Weekday;
+  остальные Product/* stories из инкрементов Phase 4.
+Checks:
+  lint/typecheck; Vitest 21/21; PWA pytest 11/11; Storybook browser tests 85/85
+  с addon-a11y error. Gallery вручную проверена в agent Storybook на 6106.
+Known follow-ups:
+  Classroom dense/local-draft matrices и финальные cross-theme/viewports входят
+  в Phase 6; это coverage follow-up, а не блокер принятого визуального языка.
 ```
 
 ```text

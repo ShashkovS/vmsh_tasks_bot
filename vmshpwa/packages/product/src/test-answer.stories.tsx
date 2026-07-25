@@ -5,6 +5,9 @@ import { expect, userEvent, within } from 'storybook/test'
 import type { AnswerSpec } from './answer-spec'
 import { TestAnswer } from './test-answer'
 
+// Proof for dev/design-system/06-storybook-and-testing.md: partial input stays
+// calm; format feedback appears only after the student leaves the whole control.
+
 const meta = { title: 'Product/Test answer', parameters: { layout: 'padded' } } satisfies Meta
 export default meta
 type Story = StoryObj<typeof meta>
@@ -35,6 +38,8 @@ export const Scalar: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/Введите одну цифру/)).toBeInTheDocument()
     await userEvent.type(canvas.getByLabelText('Ответ'), '17')
+    await expect(canvas.queryByRole('alert')).not.toBeInTheDocument()
+    await userEvent.tab()
     await expect(canvas.getByRole('alert')).toHaveTextContent('ровно одну цифру')
     await expect(canvas.getByLabelText('Ответ')).toHaveAttribute('aria-invalid', 'true')
   },
@@ -46,9 +51,37 @@ export const Tuple: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.type(canvas.getByLabelText('Число 1'), '1')
+    await expect(canvas.queryByRole('alert')).not.toBeInTheDocument()
     await userEvent.type(canvas.getByLabelText('Число 2'), '7жф')
+    await expect(canvas.queryByRole('alert')).not.toBeInTheDocument()
     await userEvent.type(canvas.getByLabelText('Число 3'), '9, 10')
+    await expect(canvas.queryByRole('alert')).not.toBeInTheDocument()
+    await userEvent.tab()
     await expect(canvas.getByRole('alert')).toHaveTextContent('три целых числа')
+  },
+}
+
+export const PartialCompoundFormat: Story = {
+  name: 'Составной формат · без преждевременной ошибки',
+  render: () => <Harness label="Смешанная дробь" spec={{ type: 'mixed-fraction' }} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.type(canvas.getByLabelText('Смешанная дробь'), '1 2/')
+    await expect(canvas.queryByRole('alert')).not.toBeInTheDocument()
+    await userEvent.tab()
+    await expect(canvas.getByRole('alert')).toHaveTextContent('смешанную дробь')
+  },
+}
+
+export const Weekday: Story = {
+  name: 'День недели · семь кнопок',
+  render: () => <Harness spec={{ type: 'weekday' }} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const saturday = canvas.getByRole('button', { name: 'сб' })
+    await userEvent.click(saturday)
+    await expect(saturday).toHaveAttribute('aria-pressed', 'true')
+    await expect(canvas.getByTestId('answer')).toHaveTextContent('сб')
   },
 }
 

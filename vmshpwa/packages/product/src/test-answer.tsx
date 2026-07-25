@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 
-import { Input, Label, RadioGroup, RadioGroupItem, cn } from '@vmsh/ui'
+import { Button, Input, Label, RadioGroup, RadioGroupItem, cn } from '@vmsh/ui'
 
 import {
   answerInputKind,
@@ -8,16 +8,16 @@ import {
   defaultAnswerHint,
   parseListAnswer,
   resolveArity,
+  weekdayOptions,
   type AnswerSpec,
 } from './answer-spec'
 import { parseLegacyAnswerItems, validateAnswerFormat } from './answer-validation'
 
 /*
- * Test-answer input. One component covers every ANS_TYPE by collapsing them to
- * four affordances (scalar / fixed tuple / comma list / single choice). It is
- * uncontrolled inside and reports the normalized answer string through
- * `onChange`; the page decides what to do with it. A plain-Russian format hint
- * with an example is always shown.
+ * Requirements: dev/design-system/04-product-components.md (test inputs) and
+ * docs/product-ux-decisions-2026-07.md. Validation mirrors answer-validation.ts
+ * but becomes visible only after leaving the whole control or a submit request;
+ * partially typed tuples/fractions must not be treated as failed answers.
  */
 export interface TestAnswerProps {
   spec: AnswerSpec
@@ -28,6 +28,8 @@ export interface TestAnswerProps {
   name?: string | undefined
   disabled?: boolean | undefined
   invalid?: boolean | undefined
+  /** Ask the control to reveal a client-side format error, normally after submit. */
+  showFormatError?: boolean | undefined
   className?: string | undefined
 }
 
@@ -39,6 +41,7 @@ export function TestAnswer({
   name,
   disabled,
   invalid,
+  showFormatError = false,
   className,
 }: TestAnswerProps) {
   const kind = answerInputKind(spec.type)
@@ -53,6 +56,7 @@ export function TestAnswer({
   const errorId = useId()
 
   const [text, setText] = useState(defaultValue)
+  const [touched, setTouched] = useState(false)
   const [parts, setParts] = useState<string[]>(() => {
     const seed = parseListAnswer(defaultValue)
     return Array.from({ length: arity }, (_, index) => seed[index] ?? '')
@@ -71,7 +75,9 @@ export function TestAnswer({
 
   const currentValue = kind === 'tuple' ? parts.map((part) => part.trim()).join(', ') : text
   const hasInput = kind === 'tuple' ? parts.some((part) => part.trim() !== '') : text.trim() !== ''
-  const formatInvalid = invalid ?? (hasInput && !validateAnswerFormat(spec, currentValue))
+  const formatInvalid =
+    invalid ??
+    ((touched || showFormatError) && hasInput && !validateAnswerFormat(spec, currentValue))
   const parsedItems =
     kind === 'list' && !formatInvalid ? parseLegacyAnswerItems(spec.type, text) : []
   const describedBy = formatInvalid ? `${hintId} ${errorId}` : hintId
@@ -91,6 +97,7 @@ export function TestAnswer({
           id={fieldId}
           inputMode={answerInputMode(spec.type)}
           name={name}
+          onBlur={() => setTouched(true)}
           onChange={(event) => emitText(event.target.value)}
           placeholder={example || undefined}
           value={text}
@@ -107,6 +114,7 @@ export function TestAnswer({
             id={fieldId}
             inputMode="text"
             name={name}
+            onBlur={() => setTouched(true)}
             onChange={(event) => emitText(event.target.value)}
             placeholder={example || undefined}
             value={text}
@@ -132,6 +140,9 @@ export function TestAnswer({
           aria-describedby={describedBy}
           aria-labelledby={labelId}
           className="flex flex-wrap gap-2"
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setTouched(true)
+          }}
           role="group"
         >
           {parts.map((part, index) => (
@@ -145,6 +156,29 @@ export function TestAnswer({
               onChange={(event) => emitPart(index, event.target.value)}
               value={part}
             />
+          ))}
+        </div>
+      ) : null}
+
+      {kind === 'weekday' ? (
+        <div
+          aria-describedby={describedBy}
+          aria-labelledby={labelId}
+          className="grid grid-cols-7 gap-1"
+          role="group"
+        >
+          {weekdayOptions.map((weekday) => (
+            <Button
+              aria-pressed={text === weekday}
+              className="min-w-0 px-1 font-normal lowercase"
+              disabled={disabled}
+              key={weekday}
+              onClick={() => emitText(weekday)}
+              type="button"
+              variant={text === weekday ? 'default' : 'outline'}
+            >
+              {weekday}
+            </Button>
           ))}
         </div>
       ) : null}

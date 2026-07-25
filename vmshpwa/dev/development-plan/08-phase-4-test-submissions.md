@@ -2,7 +2,7 @@
 
 ## Результат
 
-Школьник вводит ответ любого исторического `ANS_TYPE`, заранее видит подсказку формата, отправляет онлайн или через offline outbox и получает inline verdict либо ясный статус «принято, ожидает настройки проверки». Все введённые ответы сохраняются; повтор запроса не создаёт дубль.
+Школьник вводит ответ любого исторического `ANS_TYPE`, заранее видит подсказку формата, но не получает преждевременную ошибку во время набора составного ответа. Ошибка формата появляется после выхода из control или попытки отправки. День недели выбирается кнопками `пн–вс`. Ответ отправляется online или через offline outbox и получает inline verdict либо ясный статус «принято, ожидает настройки проверки». Все введённые ответы сохраняются; повтор запроса не создаёт дубль.
 
 ## Поддерживаемая матрица
 
@@ -55,6 +55,7 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 ## Критерии приёмки
 
 - Ни один legacy `ANS_TYPE` не падает в generic text без согласованного решения.
+- [`TestAnswer`](../../packages/product/src/test-answer.tsx) сохраняет спокойное partial-состояние tuple/fraction/date/time, а [`Product/Test answer`](../../packages/product/src/test-answer.stories.tsx) доказывает blur/submit validation и weekday buttons.
 - Test attempt и `results` появляются ровно один раз при сетевом retry.
 - UI и Telegram используют одну domain normalization/verdict policy.
 - Client не может увеличить attempts; offline-created-before-deadline receipt сохраняется и при поздней доставке, а clock anomaly попадает в диагностику.

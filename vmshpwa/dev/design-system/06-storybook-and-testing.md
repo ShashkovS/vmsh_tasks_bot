@@ -55,7 +55,8 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - keyboard navigation and focus restoration overlays;
 - field validation and accessible error relation;
 - все historical test answer families: format failure не расходует попытку, pending checker отличается от incorrect;
-- scalar/fixed tuple/list/select fixtures повторяют `helpers/checkers.py`: заметный `fullmatch` error, отсутствие блока «Отправится», parsed preview только для валидного list и точный русский payload `SELECT_ONE`;
+- scalar/fixed tuple/list/select fixtures повторяют `helpers/checkers.py`: partial input не показывает ошибку до blur/submit, затем появляется заметный `fullmatch` error; отсутствует блок «Отправится», parsed preview есть только для валидного list, `SELECT_ONE` передаёт точный русский payload;
+- weekday fixture в [`Product/Test answer`](../../packages/product/src/test-answer.stories.tsx) показывает семь кнопок `пн–вс` в одну строку и проверяет выбранный видимый payload;
 - photo up/down reordering, remove and final review (worker mocked at boundary);
 - offline enqueue/retry/conflict;
 - hint/solution conscious disclosure;
