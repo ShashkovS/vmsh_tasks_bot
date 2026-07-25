@@ -24,20 +24,28 @@ import type { LevelView } from './types'
 /* ── Publication control ────────────────────────────────────────────────── */
 
 export type PublishState = 'published' | 'scheduled' | 'draft' | 'none'
+export type PublicationArtifact = 'task' | 'hint' | 'solution'
 
 export interface PublicationLevelRow {
   level: LevelView
   task: PublishState
   hint: PublishState
   solution: PublishState
-  scheduledAt?: string
+  scheduledAt?: Partial<Record<PublicationArtifact, string>>
 }
 
 export interface PublicationControlProps {
   rows: PublicationLevelRow[]
-  onPublish?: (levelCode: string) => void
-  onRollback?: (levelCode: string) => void
+  onPublish?: (levelCode: string, artifact: PublicationArtifact) => void
+  onSchedule?: (levelCode: string, artifact: PublicationArtifact, at: string) => void
+  onRollback?: (levelCode: string, artifact: PublicationArtifact) => void
   className?: string
+}
+
+const artifactLabels: Record<PublicationArtifact, string> = {
+  task: 'условие',
+  hint: 'подсказку',
+  solution: 'решение',
 }
 
 function StateChip({ state }: { state: PublishState }) {
@@ -56,13 +64,126 @@ function StateChip({ state }: { state: PublishState }) {
 export function PublicationControl({
   rows,
   onPublish,
+  onSchedule,
   onRollback,
   className,
 }: PublicationControlProps) {
   const [confirming, setConfirming] = useState<{
     code: string
+    artifact: PublicationArtifact
     kind: 'publish' | 'rollback'
   } | null>(null)
+  const [scheduling, setScheduling] = useState<{
+    code: string
+    artifact: PublicationArtifact
+    at: string
+  } | null>(null)
+
+  const renderArtifact = (row: PublicationLevelRow, artifact: PublicationArtifact) => {
+    const state = row[artifact]
+    const label = artifactLabels[artifact]
+    const isConfirming = confirming?.code === row.level.code && confirming.artifact === artifact
+    const isScheduling = scheduling?.code === row.level.code && scheduling.artifact === artifact
+
+    return (
+      <div className="min-w-44 space-y-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <StateChip state={state} />
+          {row.scheduledAt?.[artifact] ? (
+            <span className="font-num text-caption text-muted-foreground">
+              {row.scheduledAt[artifact]}
+            </span>
+          ) : null}
+        </div>
+
+        {isScheduling ? (
+          <div className="space-y-1.5">
+            <input
+              aria-label={`Когда опубликовать ${label}, ${row.level.name}`}
+              className="h-8 w-full rounded-md border border-input bg-surface px-2 font-num text-caption text-foreground"
+              onChange={(event) => setScheduling({ ...scheduling, at: event.target.value })}
+              type="datetime-local"
+              value={scheduling.at}
+            />
+            <span className="inline-flex gap-1">
+              <Button
+                disabled={!scheduling.at}
+                onClick={() => {
+                  onSchedule?.(row.level.code, artifact, scheduling.at)
+                  setScheduling(null)
+                }}
+                size="xs"
+              >
+                Запланировать
+              </Button>
+              <Button onClick={() => setScheduling(null)} size="xs" variant="ghost">
+                Отмена
+              </Button>
+            </span>
+          </div>
+        ) : isConfirming ? (
+          <div className="space-y-1 text-caption text-foreground">
+            <p>
+              {confirming.kind === 'publish' ? 'Опубликовать' : 'Откатить'} {label}?
+            </p>
+            <span className="inline-flex gap-1">
+              <Button
+                onClick={() => {
+                  if (confirming.kind === 'publish') onPublish?.(row.level.code, artifact)
+                  else onRollback?.(row.level.code, artifact)
+                  setConfirming(null)
+                }}
+                size="xs"
+              >
+                Подтвердить
+              </Button>
+              <Button onClick={() => setConfirming(null)} size="xs" variant="ghost">
+                Отмена
+              </Button>
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {state === 'published' || state === 'scheduled' ? (
+              <Button
+                aria-label={`${state === 'scheduled' ? 'Отменить расписание' : 'Откатить'}: ${label}, ${row.level.name}`}
+                onClick={() => setConfirming({ code: row.level.code, artifact, kind: 'rollback' })}
+                size="xs"
+                variant="ghost"
+              >
+                {state === 'scheduled' ? 'Отменить' : 'Откатить'}
+              </Button>
+            ) : (
+              <Button
+                aria-label={`Опубликовать сейчас: ${label}, ${row.level.name}`}
+                onClick={() => setConfirming({ code: row.level.code, artifact, kind: 'publish' })}
+                size="xs"
+                variant="outline"
+              >
+                Сейчас
+              </Button>
+            )}
+            {state !== 'published' ? (
+              <Button
+                aria-label={`Опубликовать по расписанию: ${label}, ${row.level.name}`}
+                onClick={() =>
+                  setScheduling({
+                    code: row.level.code,
+                    artifact,
+                    at: '',
+                  })
+                }
+                size="xs"
+                variant="ghost"
+              >
+                По расписанию
+              </Button>
+            ) : null}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div
@@ -76,66 +197,18 @@ export function PublicationControl({
             <TableHead>Условие</TableHead>
             <TableHead>Подсказка</TableHead>
             <TableHead>Решение</TableHead>
-            <TableHead>Когда</TableHead>
-            <TableHead className="text-right">Действие</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((row) => {
-            const published = row.task === 'published'
-            const isConfirming = confirming?.code === row.level.code
             return (
               <TableRow key={row.level.code}>
                 <TableCell>
                   <LevelChip level={row.level} />
                 </TableCell>
-                <TableCell>
-                  <StateChip state={row.task} />
-                </TableCell>
-                <TableCell>
-                  <StateChip state={row.hint} />
-                </TableCell>
-                <TableCell>
-                  <StateChip state={row.solution} />
-                </TableCell>
-                <TableCell className="font-num text-muted-foreground">
-                  {row.scheduledAt ?? '—'}
-                </TableCell>
-                <TableCell className="text-right">
-                  {isConfirming ? (
-                    <span className="inline-flex gap-1">
-                      <Button
-                        onClick={() => {
-                          if (confirming.kind === 'publish') onPublish?.(row.level.code)
-                          else onRollback?.(row.level.code)
-                          setConfirming(null)
-                        }}
-                        size="xs"
-                      >
-                        Подтвердить
-                      </Button>
-                      <Button onClick={() => setConfirming(null)} size="xs" variant="ghost">
-                        Отмена
-                      </Button>
-                    </span>
-                  ) : published ? (
-                    <Button
-                      onClick={() => setConfirming({ code: row.level.code, kind: 'rollback' })}
-                      size="xs"
-                      variant="ghost"
-                    >
-                      Откатить
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => setConfirming({ code: row.level.code, kind: 'publish' })}
-                      size="xs"
-                      variant="outline"
-                    >
-                      Опубликовать
-                    </Button>
-                  )}
-                </TableCell>
+                <TableCell>{renderArtifact(row, 'task')}</TableCell>
+                <TableCell>{renderArtifact(row, 'hint')}</TableCell>
+                <TableCell>{renderArtifact(row, 'solution')}</TableCell>
               </TableRow>
             )
           })}

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
-import { BroadcastComposer, SosQueue, type SosItem } from './staff-outreach'
+import { SosQueue, type SosItem } from './staff-outreach'
 import {
   LatexUpload,
   MissingAssetsFlow,
@@ -25,7 +25,7 @@ const pubRows: PublicationLevelRow[] = [
     task: 'published',
     hint: 'published',
     solution: 'scheduled',
-    scheduledAt: '1 фев, 13:00',
+    scheduledAt: { solution: '1 фев, 13:00' },
   },
 ]
 
@@ -37,8 +37,11 @@ export const Publication: Story = {
       return (
         <div className="space-y-2">
           <PublicationControl
-            onPublish={(code) => setReadout(`Опубликован уровень ${code}`)}
-            onRollback={(code) => setReadout(`Откачен уровень ${code}`)}
+            onPublish={(code, artifact) => setReadout(`Опубликовано: ${code}/${artifact}`)}
+            onRollback={(code, artifact) => setReadout(`Откачено: ${code}/${artifact}`)}
+            onSchedule={(code, artifact, at) =>
+              setReadout(`Запланировано: ${code}/${artifact} ${at}`)
+            }
             rows={pubRows}
           />
           <p className="text-small text-muted-foreground" data-testid="readout" role="status">
@@ -51,44 +54,25 @@ export const Publication: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Опубликовать' }))
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Опубликовать сейчас: условие, Начинающие' }),
+    )
     await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
-    await expect(canvas.getByTestId('readout')).toHaveTextContent('Опубликован уровень н')
+    await expect(canvas.getByTestId('readout')).toHaveTextContent('Опубликовано: н/task')
   },
 }
 
 export const Broadcast: Story = {
-  name: 'Рассылка',
-  render: () => {
-    function Harness() {
-      const [readout, setReadout] = useState('—')
-      return (
-        <div className="space-y-2">
-          <BroadcastComposer
-            audiencePresets={[
-              { id: 'beginners', label: 'Начинающие', count: 42 },
-              { id: 'all', label: 'Все ученики', count: 150 },
-            ]}
-            onDryRun={() => setReadout('Пробный прогон запущен')}
-            onSend={() => setReadout('Отправлено')}
-          />
-          <p className="text-small text-muted-foreground" data-testid="readout" role="status">
-            {readout}
-          </p>
-        </div>
-      )
-    }
-    return <Harness />
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.type(canvas.getByLabelText('Сообщение'), 'Занятие в субботу!')
-    await userEvent.click(canvas.getByRole('button', { name: 'Пробный прогон' }))
-    await expect(canvas.getByTestId('readout')).toHaveTextContent('Пробный прогон запущен')
-    await userEvent.click(canvas.getByRole('button', { name: 'Отправить…' }))
-    await userEvent.click(canvas.getByRole('button', { name: 'Отправить' }))
-    await expect(canvas.getByTestId('readout')).toHaveTextContent('Отправлено')
-  },
+  name: 'Рассылка · граница второй фазы',
+  render: () => (
+    <section className="max-w-lg space-y-2 rounded-md border border-dashed border-border bg-surface-subtle p-4">
+      <h2 className="text-subtitle font-semibold text-foreground">Рассылки — во второй фазе</h2>
+      <p className="text-small text-muted-foreground">
+        Здесь появится полноценный Markdown-редактор, выбор аудитории, предпросмотр PWA и Telegram,
+        расписание и пробный прогон. Прототип первой фазы не имитирует отправку.
+      </p>
+    </section>
+  ),
 }
 
 const sosItems: SosItem[] = [

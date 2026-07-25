@@ -3,33 +3,34 @@ import type { ReactNode } from 'react'
 import { cn } from '@vmsh/ui'
 
 /*
- * Three-pane review workspace: queue / immutable evidence / feedback + verdict.
- * On narrow screens the panes stack in the same reading order — the accessible,
- * non-resizable fallback to the desktop resizable layout.
+ * Review workspace: queue plus one chronological work column. The immutable
+ * evidence is followed by the existing discussion and only then by the
+ * teacher's reply + verdict, so checking reads like one continuous thread.
  */
 export interface ThreePaneReviewProps {
   queue: ReactNode
   evidence: ReactNode
+  discussion?: ReactNode
   feedback: ReactNode
   className?: string
 }
 
-export function ThreePaneReview({ queue, evidence, feedback, className }: ThreePaneReviewProps) {
+export function ThreePaneReview({
+  queue,
+  evidence,
+  discussion,
+  feedback,
+  className,
+}: ThreePaneReviewProps) {
   return (
-    <div
-      className={cn(
-        'grid gap-4 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)_minmax(0,22rem)]',
-        className,
-      )}
-    >
+    <div className={cn('grid gap-4 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]', className)}>
       <section aria-label="Очередь" className="min-w-0">
         {queue}
       </section>
-      <section aria-label="Работа ученика" className="min-w-0">
-        {evidence}
-      </section>
-      <section aria-label="Проверка" className="min-w-0">
-        {feedback}
+      <section aria-label="Работа и обсуждение" className="min-w-0 space-y-3">
+        <div>{evidence}</div>
+        {discussion ? <div>{discussion}</div> : null}
+        <div className="rounded-md border border-border bg-surface p-3">{feedback}</div>
       </section>
     </div>
   )

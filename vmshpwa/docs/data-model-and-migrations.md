@@ -6,7 +6,7 @@
 - Teaching: season, lesson, level, group, attendance mode, global classroom catalog, effective layout version and lesson assignment plan.
 - Content: позиционное сопоставление source elements с legacy problem, synonym group, source revision, asset, scheduled publication by level, hint and solution.
 - Work: attempt, answer, written submission, immutable attachment, annotation layer, feedback thread, verdict, oral conversation/result.
-- Communication: news source/revision, local publication, notification preference/delivery и broadcast. Surveys остаются legacy вне первой версии.
+- Communication: news source/revision, local publication и notification preference/delivery. Broadcast model и Markdown content появляются во второй фазе; surveys остаются legacy.
 - Operations: outbox receipt/idempotency, review lock, audit event, runtime/version marker.
 
 ## Идентичность и версии

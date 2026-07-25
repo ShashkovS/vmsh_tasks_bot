@@ -10,6 +10,7 @@ import {
   resolveArity,
   type AnswerSpec,
 } from './answer-spec'
+import { parseLegacyAnswerItems, validateAnswerFormat } from './answer-validation'
 
 /*
  * Test-answer input. One component covers every ANS_TYPE by collapsing them to
@@ -49,6 +50,7 @@ export function TestAnswer({
   const fieldId = useId()
   const labelId = useId()
   const hintId = useId()
+  const errorId = useId()
 
   const [text, setText] = useState(defaultValue)
   const [parts, setParts] = useState<string[]>(() => {
@@ -67,7 +69,12 @@ export function TestAnswer({
     onChange?.(next.map((part) => part.trim()).join(', '))
   }
 
-  const describedBy = hintId
+  const currentValue = kind === 'tuple' ? parts.map((part) => part.trim()).join(', ') : text
+  const hasInput = kind === 'tuple' ? parts.some((part) => part.trim() !== '') : text.trim() !== ''
+  const formatInvalid = invalid ?? (hasInput && !validateAnswerFormat(spec, currentValue))
+  const parsedItems =
+    kind === 'list' && !formatInvalid ? parseLegacyAnswerItems(spec.type, text) : []
+  const describedBy = formatInvalid ? `${hintId} ${errorId}` : hintId
 
   return (
     <div className={cn('space-y-1.5', className)}>
@@ -78,7 +85,7 @@ export function TestAnswer({
       {kind === 'scalar' ? (
         <Input
           aria-describedby={describedBy}
-          aria-invalid={invalid || undefined}
+          aria-invalid={formatInvalid || undefined}
           aria-labelledby={labelId}
           disabled={disabled}
           id={fieldId}
@@ -94,7 +101,7 @@ export function TestAnswer({
         <div className="space-y-1.5">
           <Input
             aria-describedby={describedBy}
-            aria-invalid={invalid || undefined}
+            aria-invalid={formatInvalid || undefined}
             aria-labelledby={labelId}
             disabled={disabled}
             id={fieldId}
@@ -104,9 +111,10 @@ export function TestAnswer({
             placeholder={example || undefined}
             value={text}
           />
-          {parseListAnswer(text).length > 0 ? (
-            <div aria-hidden="true" className="flex flex-wrap gap-1">
-              {parseListAnswer(text).map((item, index) => (
+          {parsedItems.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1" role="status">
+              <span className="text-caption text-muted-foreground">Распознано:</span>
+              {parsedItems.map((item, index) => (
                 <span
                   className="rounded bg-surface-subtle px-1.5 py-0.5 font-num text-caption text-muted-foreground"
                   key={`${index}-${item}`}
@@ -129,6 +137,7 @@ export function TestAnswer({
           {parts.map((part, index) => (
             <Input
               aria-label={`Число ${index + 1}`}
+              aria-invalid={formatInvalid || undefined}
               className="w-16 text-center"
               disabled={disabled}
               inputMode="numeric"
@@ -150,7 +159,7 @@ export function TestAnswer({
         >
           {(spec.options ?? []).map((option) => (
             <div className="flex items-center gap-2" key={option.value}>
-              <RadioGroupItem id={`${fieldId}-${option.value}`} value={option.value} />
+              <RadioGroupItem id={`${fieldId}-${option.value}`} value={option.label} />
               <Label className="font-normal" htmlFor={`${fieldId}-${option.value}`}>
                 {option.label}
               </Label>
@@ -163,6 +172,12 @@ export function TestAnswer({
         {hint}
         {example ? <span> · например {example}</span> : null}
       </p>
+      {formatInvalid ? (
+        <p className="text-caption font-medium text-status-danger" id={errorId} role="alert">
+          {spec.validationError ??
+            `Ответ не соответствует формату: ${hint.toLocaleLowerCase('ru')}.`}
+        </p>
+      ) : null}
     </div>
   )
 }

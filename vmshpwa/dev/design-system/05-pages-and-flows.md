@@ -58,7 +58,7 @@ Teacher и admin работают в одном приложении. Navigation
 
 ### Written review
 
-Queue page с основным grouping по задаче/`synonyms`, list/fast modes, сортировками по задаче, ожиданию, группе и ученику, фильтрами и deep link. Detail — три зоны: очередь, evidence/опциональная annotation, student context+thread+registry-driven verdict. Состояния claim, 30-minute lease, lock lost, another reviewer with name, long session, abandon с сохранением local unsent draft, recheck, accepted-without-comment, non-accepted confirmation, next item и return-to-problem-picker. Keyboard shortcuts отображаются, `1` означает `+` и не перехватывает ввод текста. На телефоне основная зона объединяет работу и verdict, очередь открывается отдельно; offline verdict запрещён.
+Queue page с основным grouping по задаче/`synonyms`, list/fast modes, сортировками по задаче, ожиданию, группе и ученику, фильтрами и deep link. Detail имеет компактную очередь и одну основную хронологическую колонку: immutable evidence/annotation, затем весь student/teacher thread, затем composer нового teacher reply и registry-driven verdict. Типично до ответа уже есть 1–2 student messages, но длинная переписка не ломает layout. Состояния claim, 30-minute lease, lock lost, another reviewer with name, long session, abandon с сохранением local unsent draft, recheck, accepted-without-comment, non-accepted confirmation, next item и return-to-problem-picker. Keyboard shortcuts отображаются, `1` означает `+` и не перехватывает ввод текста. На телефоне основная зона сохраняет тот же порядок, очередь открывается отдельно; offline verdict запрещён.
 
 ### Questions и oral
 
@@ -70,19 +70,19 @@ Staff показывает готовый advisory сразу, но никогд
 
 ### Content administration
 
-Lesson list/detail, upload по уровням, positional problem reconciliation, source diagnostics, missing-assets matching, web/Telegram/PDF derivative previews и scheduled publication/hide. LaTeX в браузере не редактируется. Metadata grid с TSV. Problem settings включая answer type, synonym candidate и trusted `cor_ans_checker` diff/optional examples/audit; неготовый checker оставляет ответы pending до recheck.
+Lesson list/detail, upload по уровням, positional problem reconciliation, source diagnostics, missing-assets matching, web/Telegram/PDF derivative previews и отдельная scheduled publication/hide для условия, подсказки и решения каждого уровня. LaTeX в браузере не редактируется. Metadata grid с TSV и dropdown-ячейками task type/answer type. Problem settings включая answer type, synonym candidate и trusted `cor_ans_checker` diff/optional examples/audit; неготовый checker оставляет ответы pending до recheck.
 
 ### Operations
 
-News moderation; users/groups/roles; PWA broadcast composer с агрегированной delivery statistics; statistics with accessible tables; searchable audit with request ID и before/after. Print, быстрый очный ввод результатов и Staff→Telegram publication в v1 не входят.
+News moderation; users/groups/roles; statistics with accessible tables; searchable audit with request ID и before/after. Полный broadcast composer с Markdown editor, print, быстрый очный ввод результатов и Staff→Telegram publication относятся ко второй фазе.
 
 `/staff/classrooms` называется «Аудитории», доступен только admin и сохраняет URL-state `lesson`, `tab`, `roomStatus`:
 
 1. «Каталог»: add/rename/search, active/hidden filter, archive и quick restore; duplicate conflict не очищает ввод и показывает существующую аудиторию.
-2. «По группам»: effective inherited layout, явное materialize-on-edit, строки комнат с group select/unassigned, фактические counts комнат по каждой группе и confirm с optimistic conflict.
-3. «Школьники»: preview по группам и комнатам, фактические counts без limits, reassigning/unassigned, manual select/move, recalculate, stale state, blocking no-room/mismatch incident и confirm.
+2. «По группам»: effective inherited layout, явное materialize-on-edit, строки комнат с group select/unassigned, level-color marker + мягкая border tint, фактические counts комнат и `очно/распределено` по каждой группе, confirm с optimistic conflict.
+3. «Школьники»: compact flex-wrap room cards, отдельная reassigning/unassigned-секция, строки имя/возраст/класс/сила + compact room select, room count/average age/average grade/average strength, fuzzy search с подсветкой/jump, single и checkbox bulk move, classroom history, recalculate, stale state, blocking no-room/mismatch incident и confirm.
 
-Типичный fixture показывает 6/5/2 фактически используемых комнат, но не изображает эти значения как вместимость или целевое ограничение. Неиспользованные active rooms допустимы. Archive используемой комнаты немедленно переводит затронутых текущих школьников в reassigning; restore не возвращает назначения. Mobile Staff использует последовательный layout без потери трёх шагов и без drag interaction.
+Школьники внутри каждой комнаты всегда отсортированы по фамилии и имени. Выбор комнаты другой группы требует confirmation одновременной смены группы. Изменения не пишутся на сервер по одному: local draft переживает reload и очищается после explicit batch-save/confirm либо явного discard. Типичный fixture показывает 6/5/2 фактически используемых комнат, но не изображает эти значения как вместимость или целевое ограничение. Неиспользованные active rooms допустимы. Archive используемой комнаты немедленно переводит затронутых текущих школьников в reassigning; restore не возвращает назначения. Mobile Staff использует последовательный layout без потери трёх шагов.
 
 ## Responsive acceptance viewports
 

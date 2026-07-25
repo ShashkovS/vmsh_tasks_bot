@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
+import { FeedbackThread } from './feedback-thread'
 import { ReviewFeedbackForm } from './review-feedback-form'
 import { ReviewLock } from './review-lock'
 import { ReviewQueue, type ReviewQueueItem, type ReviewSort } from './review-queue'
@@ -134,14 +135,14 @@ export const FeedbackPlus: Story = {
 }
 
 export const FeedbackGuard: Story = {
-  name: 'Вердикт ниже «+» без комментария — подтверждение',
+  name: 'Незачёт без комментария — подтверждение',
   render: () => <FormHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    // Цифра 2 — вердикт ниже «+».
-    await userEvent.keyboard('2')
+    // Цифра 3 — вердикт ниже «Зачтено» (вес 0.7); «+.» (0.95) уже зачтено и не переспрашивает.
+    await userEvent.keyboard('3')
     await userEvent.click(canvas.getByRole('button', { name: 'Отправить вердикт' }))
-    await expect(canvas.getByText(/ниже «\+» без комментария/)).toBeInTheDocument()
+    await expect(canvas.getByText(/Незачёт без комментария/)).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'Отправить всё равно' }))
     await expect(canvas.getByTestId('readout')).toHaveTextContent('Отправлено:')
   },
@@ -162,6 +163,29 @@ function WorkspaceHarness() {
   const [sort, setSort] = useState<ReviewSort>('waiting')
   return (
     <ThreePaneReview
+      discussion={
+        <section className="space-y-2" aria-label="Обсуждение работы">
+          <h3 className="text-label font-medium text-foreground">Обсуждение</h3>
+          <FeedbackThread
+            messages={[
+              {
+                id: 'student-1',
+                author: { kind: 'student', name: 'Аня' },
+                at: '12:08',
+                channel: 'pwa',
+                body: 'Я сначала рассмотрела случай k = n.',
+              },
+              {
+                id: 'student-2',
+                author: { kind: 'student', name: 'Аня' },
+                at: '12:11',
+                channel: 'pwa',
+                body: 'И ещё дослала пояснение для k = 1.',
+              },
+            ]}
+          />
+        </section>
+      }
       evidence={
         <div className="space-y-2 rounded-md border border-paper-edge bg-paper p-4 font-reading text-small text-foreground">
           <p className="text-caption text-muted-foreground">Полученная работа · изменить нельзя</p>
@@ -185,7 +209,7 @@ function WorkspaceHarness() {
 }
 
 export const Workspace: Story = {
-  name: 'Рабочее место проверки (3 панели)',
+  name: 'Рабочее место: работа → обсуждение → ответ',
   parameters: { layout: 'fullscreen' },
   render: () => (
     <div className="p-4">

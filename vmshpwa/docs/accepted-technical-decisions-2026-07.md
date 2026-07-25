@@ -39,9 +39,10 @@
 ## Realtime и offline
 
 - Текущий production baseline — два gunicorn worker. NATS обязателен для live fan-out между ними; invalidation может быть общим или ограниченным audience. Любой reconnect всегда требует полного refetch из SQLite, cursor разных workers не сравнивается как durable offset. Owner scope требует authenticated WebSocket principal и остаётся частью auth-фазы.
-- Потеря Safari IndexedDB после долгого отсутствия допустима: критических данных только на клиенте нет. Student/Family не более двух раз мягко предлагают установку PWA, без блокирующих экранов.
+- Принудительная очистка Web Storage/IndexedDB самим браузером после долгого отсутствия остаётся неизбежным платформенным риском; UI не обещает защиту от удаления данных браузером или устройства. При обычном reload, закрытии вкладки и PWA update drafts обязаны восстанавливаться. Student/Family не более двух раз мягко предлагают установку PWA, без блокирующих экранов.
 - Целевой локальный бюджет — около 10–15 MB. Текст условий занимает малую часть; иллюстрации к недавно открытым материалам кешируются примерно на две недели и очищаются LRU/quota policy.
 - Logout при непустом outbox показывает предупреждение. После явного подтверждения пользователя локальная очередь и drafts этого аккаунта могут быть удалены.
+- Незавершённая значимая работа Student/Staff переживает reload и update. Небольшие сериализуемые drafts и UI-state хранятся в `localStorage`, фотографии/blobs и durable outbox — в audience/account-scoped Dexie. Draft удаляется только после серверного receipt или явного discard; токены и cookies в эти хранилища не копируются.
 - Повтор одного `idempotencyKey` с тем же payload hash возвращает исходный receipt. Другой payload получает conflict и требует нового ключа после явного действия пользователя.
 - Дедлайн урока — timestamp публикации решений в `Europe/Moscow`. Offline submission с client time до deadline принимается и после поздней доставки; skew больше часа маркируется для диагностики.
 
@@ -57,11 +58,11 @@
 - Sliding panels строятся на Base UI Drawer, а не на Dialog, замаскированном под Sheet.
 - Графики: Visx поверх `d3-array`, `d3-scale`, `d3-shape`.
 - Большие Staff grids: TanStack Table + TanStack Virtual.
-- Новую DnD dependency не добавляем. Classroom planner вообще не использует drag-and-drop: аудитория выбирается явным select/move, а порядок фотографий меняется кнопками вверх/вниз.
+- Новую DnD dependency не добавляем. В classroom planner аудитория выбирается компактным select; массовое перемещение использует выбор строк и один общий select. Порядок фотографий меняется кнопками вверх/вниз.
 - Формам достаточно собственного малого слоя вокруг Base UI Field/Form semantics.
 - Версии общих third-party dependencies задаются pnpm catalog.
 - ESLint получает `eslint-plugin-jsx-a11y`; CSS проверяется Stylelint. React Compiler не используется.
-- Базовый a11y gate действует и для Staff. Отказ от сложной DnD-библиотеки не является исключением для labels, alt, ARIA, keyboard/focus и axe.
+- Базовый a11y gate действует и для Staff: обязательны labels, alt, корректный ARIA, контраст и axe. Для потенциальных специализированных Staff gestures не требуется отдельный полноценный keyboard-аналог, но текущий classroom flow целиком работает через обычные select/checkbox controls.
 - Frontend Sentry включается только при наличии production DSN, без PII. Release/environment/audience передаются как tags; загрузка source maps настраивается серверными secrets позднее.
 - Числового coverage gate нет. Тесты добавляются по риску и поведению, а не ради процента.
 
@@ -91,6 +92,18 @@
 - Скрытие используемой комнаты переводит текущие назначения в `reassigning`; восстановление не возвращает их автоматически. Прошлые подтверждённые планы неизменны.
 - Student и Family получают read contract `not_applicable | reassigning | assigned`; owner-scoped event — `classroom.assignment.changed`. Classroom push получает только Student.
 - Начальное заполнение — одноразовый dry-run/import Excel-export с `IDd`, `Уровень`, `Аудитория`; это не постоянный Google/Excel adapter.
+- Classroom planner показывает цвет группы, `очно/распределено`, компактные flex-wrap-комнаты, отдельную область неназначенных и всегда сортирует школьников по фамилии/имени. В строке доступны nullable возраст на сегодня, класс и автоматически вычисленная сила 0–10; у комнаты — count и средние возраст/класс/сила без неизвестных значений. Все три средних округляются до одного знака.
+- Поиск по имени нормализует регистр, `ё/е`, пробелы и порядок слов, допускает небольшие опечатки, подсвечивает результат и позволяет перейти к нему. История подтверждённых аудиторий школьника доступна из его строки.
+- Назначение в комнату другой группы возможно только вместе с явно подтверждённой сменой группы. Classroom draft накапливается локально и восстанавливается после reload до явного сохранения/подтверждения.
+
+## UI-контракты, уточнённые 25 июля
+
+- Все 23 текущих `ANS_TYPE` из `helpers/consts.py` имеют явное представление. Клиентская format validation зеркалит `strip()+fullmatch` из `helpers/checkers.py`, включая problem `ans_validation`; correctness решает server. Fixed tuple не показывает «Отправится», list preview строится после parsing, `SELECT_ONE` передаёт видимый label.
+- Review detail — компактная queue и одна хронологическая колонка `evidence → существующий thread → новый teacher reply/verdict`. Teacher verdict/reaction controls маленькие, но exact wording всегда виден.
+- В metadata grid есть отдельные task type и answer type. Обе ячейки могут быть dropdown, не ломая прямоугольную TSV copy/paste. Condition, hint и solution каждого уровня имеют отдельные publish/schedule/rollback операции.
+- Telegram Rich Message поддерживает headings, paragraphs, emphasis/mark/sub/sup/spoiler, links, lists, quotes, code, details, tables, media и math. Новые условия публикуются текстом, а не screenshot; fixture corpus — `_external_pipelines/ChatExport_2026-07-25`.
+- Выбранные submission photos сразу показывают thumbnail. Отдельная пользовательская квитанция/reference number не нужна; idempotency receipt остаётся техническим API-понятием.
+- Полный broadcast workflow откладывается во вторую фазу и проектируется вместе с Markdown editor, previews, расписанием и delivery state. Story первой фазы не имитирует отправку.
 
 ## Значения, фиксируемые при реализации и развёртывании
 

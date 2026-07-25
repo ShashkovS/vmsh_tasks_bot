@@ -115,6 +115,7 @@ export const TeacherReaction: Story = {
   render: () => (
     <div className="max-w-xl">
       <ReactionPicker
+        compact
         legend="Внутренняя пометка (не видна ученику)"
         onSelect={() => undefined}
         options={reactionsForScope('teacher-written')}

@@ -131,17 +131,20 @@ Family endpoints никогда не принимают произвольный
 - `POST /staff/api/v1/classroom-layouts/materialize` — создаёт draft для выбранного lesson из effective base
 - `PUT /staff/api/v1/classroom-layouts/{layoutPublicId}/rooms` — заменяет draft mappings `classroomPublicId + groupId`
 - `POST /staff/api/v1/classroom-layouts/{layoutPublicId}/confirm`
-- `GET /staff/api/v1/classroom-assignment-plans?lesson=` — confirmed/draft/stale plan и preview incidents
+- `GET /staff/api/v1/classroom-assignment-plans?lesson=` — confirmed/draft/stale plan, preview incidents, group `inPersonCount/assignedCount/color`, room aggregates и компактные student rows
 - `POST /staff/api/v1/classroom-assignment-plans/recalculate`
-- `PATCH /staff/api/v1/classroom-assignment-plans/{planPublicId}/students/{studentPublicId}` — явный select/move
+- `PATCH /staff/api/v1/classroom-assignment-plans/{planPublicId}/assignments` — явный batch-save локально накопленных select/move; принимает одну или несколько строк и confirmation для cross-group changes
+- `GET /staff/api/v1/classroom-assignment-plans/{planPublicId}/students/{studentPublicId}/history` — подтверждённые прошлые аудитории школьника
 - `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/confirm`; print/export endpoints относятся ко второй версии
 - `/staff/api/v1/news/import-status`, `/news/posts`, `/news/posts/{id}/visibility`
-- `/staff/api/v1/broadcasts`, `/broadcasts/{id}/preview`, `/broadcasts/{id}/send`; Staff→Telegram publication относится ко второй версии
+- будущие `/staff/api/v1/broadcasts`, `/broadcasts/{id}/preview`, `/broadcasts/{id}/send` относятся ко второй фазе вместе с Markdown editor и не входят в initial v1 contract; Staff→Telegram publication также относится ко второй версии
 - `/staff/api/v1/users`, `/groups`, `/permissions`, `/imports`, `/statistics`, `/audit`
 
 Teacher получает `403` на content/checker, broadcasts, Staff classroom catalog/layout/plan routes и audit. Он может менять уровень доступного ученика, исправлять/перепроверять работу и читать общую статистику кружка. Остальные capabilities проверяются по role/group permissions, а не предполагаются по видимости navigation.
 
 Все classroom mutations используют `If-Match`/`version`; stale version возвращает `409 VERSION_CONFLICT`. Нормализация имени выполняется сервером, duplicate возвращает `409 CLASSROOM_NAME_CONFLICT` вместе с существующим `publicId`. Layout confirm возвращает `409 CLASSROOM_LAYOUT_STALE`, если base больше не effective. Assignment confirm возвращает `409 CLASSROOM_ASSIGNMENTS_STALE` для устаревшего layout и `422` с отдельными кодами `CLASSROOM_STUDENT_UNASSIGNED`, `CLASSROOM_GROUP_MISMATCH` или `CLASSROOM_MIXED_GROUPS` для нарушенного плана.
+
+Assignment batch не вызывается на каждую смену select. Клиент передаёт полный набор локальных изменений, base plan version и для каждого cross-group move явное `confirmGroupChange=true`; server применяет group history и assignments атомарно. Read payload содержит nullable `ageYears`, `grade`, `strength`, но не `birthday`; room summary содержит `studentCount`, nullable `averageAgeYears`, `averageGrade`, `averageStrength`. Каждый average исключает соответствующие `NULL` и округляется до одного знака. Fuzzy name search выполняется на клиенте по уже загруженным нескольким сотням строк и не требует отдельного endpoint.
 
 Student/Family read model одинаков по смыслу и содержит только `lessonPublicId`, `status: not_applicable | reassigning | assigned`, nullable `classroomName` и nullable `publishedAt`; internal IDs, layout draft и другие школьники не попадают в payload. `not_applicable` означает online/отсутствие необходимости в очной комнате; очный школьник без действующего опубликованного назначения получает `reassigning`. Скрытие используемой комнаты немедленно меняет `assigned` на `reassigning`.
 
@@ -178,6 +181,7 @@ NATS subject: `<runtimePrefix>.pwa.<audience>.<event>`. Payload обязан и�
 - `progressKeys.summary(student)`, `progressKeys.lesson(student, lesson)`
 - `adminKeys.contentRevision(id)`, `adminKeys.publications(lesson, group)`
 - `classroomKeys.catalog(filters)`, `classroomKeys.layout(lesson)`, `classroomKeys.plan(lesson)`, `classroomKeys.assignment(audience, student, lesson)`
+- `classroomKeys.studentHistory(plan, student)`
 
 Raw query-key arrays в product code запрещаются после появления factory.
 

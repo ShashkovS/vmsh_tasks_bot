@@ -43,7 +43,9 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - AI off/pending/advisory/full reviewer/failure/escalation;
 - content loading/empty/error/partial/missing asset;
 - classroom catalog active/hidden/duplicate × layout inherited/materialized × plan draft/stale/confirmed;
-- classroom assignment assigned/reassigning/unassigned × Student/Family/Staff visibility, включая empty group и no-room blocking incident;
+- classroom assignment assigned/reassigning/unassigned × Student/Family/Staff visibility, включая empty group, no-room blocking incident, missing age/grade/strength, room average age/grade/strength и classroom history;
+- classroom density 6/5/2 и 15-room/~200-student × group colors/`очно–распределено` × compact flex wrap;
+- classroom draft clean/dirty/restored/conflict/saved × single/bulk/cross-group move;
 - short/long Russian text, 200% zoom и narrow width.
 
 ## Interaction tests
@@ -53,6 +55,7 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - keyboard navigation and focus restoration overlays;
 - field validation and accessible error relation;
 - все historical test answer families: format failure не расходует попытку, pending checker отличается от incorrect;
+- scalar/fixed tuple/list/select fixtures повторяют `helpers/checkers.py`: заметный `fullmatch` error, отсутствие блока «Отправится», parsed preview только для валидного list и точный русский payload `SELECT_ONE`;
 - photo up/down reordering, remove and final review (worker mocked at boundary);
 - offline enqueue/retry/conflict;
 - hint/solution conscious disclosure;
@@ -62,7 +65,11 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - conscious hint view event и hidden-before-publication state;
 - role permission для скрытых reactions и AI output; одна reaction на verdict и часовое окно replace/delete;
 - TSV paste diagnostics;
-- classroom catalog duplicate/archive/restore, materialize layout, keyboard select/move, recalculate и confirm;
+- dropdown-ячейки task type/answer type принимают keyboard selection и прямоугольную TSV-вставку;
+- publication interaction независимо публикует/планирует/откатывает condition, hint и solution;
+- classroom catalog duplicate/archive/restore, materialize layout, single/bulk select, cross-group confirmation, recalculate и confirm;
+- classroom fuzzy search с `ё/е`, переставленными словами и опечаткой; jump/focus найденной строки; history disclosure;
+- classroom local draft восстанавливается после remount/reload simulation, очищается после receipt и сохраняется при version conflict;
 - archive assigned room → Student/Family reassigning, затем новая confirmed room; Family notification control отсутствует;
 - update prompt preserving draft.
 
@@ -76,10 +83,10 @@ Handlers группируются по contract scenario и возвращают
 
 Addon a11y имеет `test: error`. Перед принятием:
 
-- gate одинаково применяется к Student, Family и Staff; Staff не получает глобальных исключений;
+- axe gate одинаково применяется к Student, Family и Staff; для Staff обязательны label, alt, корректный ARIA и контраст. Полноценный keyboard-аналог специализированного gesture/DnD не является отдельным требованием, если такой control когда-либо появится;
 
 - axe без violations для всех основных stories;
-- весь flow только keyboard;
+- Student/Family flow проходит только keyboard; Staff keyboard-проверка покрывает обычные inputs/selects/dialogs и текущий classroom flow;
 - focus виден в обеих темах и не закрыт sticky regions;
 - status announcements не создают spam;
 - dialogs/drawers имеют name и restore focus;
@@ -90,7 +97,7 @@ Addon a11y имеет `test: error`. Перед принятием:
 
 Page screenshots в Playwright — Chromium, WebKit, Firefox с фиксированными locale/timezone/reduced-motion и production Vite build/preview, а не HMR/dev CSS. Component visual checks допустимы дополнительно. Baseline обновляется только после просмотра diff; в описании change указываются принятый gate и ожидаемые области изменения. Content gate отдельно сравнивает три листка одного уровня в PWA, Telegram и PDF derivatives.
 
-Classroom visual set фиксирует catalog active/hidden/duplicate, inherited/materialized layout, фактические 6/5/2 rooms, stale plan, reassigning, empty group, no-room incident, preview/confirm и mobile Staff. Ни одна story не показывает capacity, weight или drag affordance.
+Classroom visual set фиксирует catalog active/hidden/duplicate, inherited/materialized layout, group markers/tints, `очно/распределено`, фактические 6/5/2 и плотный 15-room/~200-student вариант, stale plan, отдельные reassigning/unassigned, missing profile data, room averages возраста/класса/силы, fuzzy result, history, bulk selection, local draft states, preview/confirm и mobile Staff. Story `mobile-staff-layout` обязана показывать все три student fields и все три room averages, а не только имена/count. Ни одна story не показывает capacity, weight или drag affordance.
 
 ## Gate
 

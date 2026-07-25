@@ -75,18 +75,71 @@ export const DataTable: Story = {
 const metadataColumns = [
   { id: 'number', header: 'Номер' },
   { id: 'name', header: 'Название' },
-  { id: 'ansType', header: 'Тип ответа' },
+  {
+    id: 'taskType',
+    header: 'Тип задачи',
+    editor: 'select' as const,
+    options: [
+      { value: 'Тест', label: 'Тестовая' },
+      { value: 'Письменно', label: 'Письменная' },
+      { value: 'Устно', label: 'Устная' },
+    ],
+  },
+  {
+    id: 'ansType',
+    header: 'Тип ответа',
+    editor: 'select' as const,
+    options: [
+      'Цифра',
+      'Натуральное',
+      'Целое',
+      'Отношение',
+      'Действительное',
+      'Дробь',
+      'СмешДробь',
+      'ПоследЦелых',
+      'МножЦелых',
+      'ДваЦелых',
+      'ТриЦелых',
+      'ЧетыреЦелых',
+      'Многочлен',
+      'ЧислоТочность',
+      'Время',
+      'Дата',
+      'ДеньНедели',
+      'ПоследДробей',
+      'МультиМнож',
+      'Символьное',
+      'Эквивалентно',
+      'Выбор',
+      'Строка',
+    ].map((value) => ({ value, label: value })),
+  },
 ]
 
 const metadataRows: MetadataRow[] = [
-  { number: '21н.1', name: 'Разнообразные вагоны', ansType: 'natural' },
-  { number: '21н.6', name: 'Расстановка ладей', ansType: 'natural' },
+  {
+    number: '21н.1',
+    name: 'Разнообразные вагоны',
+    taskType: 'Тест',
+    ansType: 'Натуральное',
+  },
+  {
+    number: '21н.6',
+    name: 'Расстановка ладей',
+    taskType: 'Письменно',
+    ansType: '',
+  },
 ]
 
 function validateMetadata(rows: MetadataRow[]): MetadataError[] {
   const errors: MetadataError[] = []
   rows.forEach((row, index) => {
     if (!row.name?.trim()) errors.push({ row: index, col: 'name', message: 'Заполните название' })
+    if (!row.taskType?.trim())
+      errors.push({ row: index, col: 'taskType', message: 'Выберите тип задачи' })
+    if (row.taskType === 'Тест' && !row.ansType?.trim())
+      errors.push({ row: index, col: 'ansType', message: 'Для тестовой задачи нужен тип ответа' })
   })
   return errors
 }
@@ -97,7 +150,7 @@ export const Metadata: Story = {
     function Harness() {
       const [saved, setSaved] = useState(false)
       return (
-        <div className="max-w-2xl space-y-2">
+        <div className="max-w-5xl space-y-2">
           <MetadataGrid
             columns={metadataColumns}
             initialRows={metadataRows}

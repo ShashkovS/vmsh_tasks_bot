@@ -33,7 +33,9 @@
 - [ ] Длинный математический документ, formulas, subparts, tables и TikZ/SVG читаемы.
 - [ ] Figures доступны и масштабируются keyboard/pointer.
 - [ ] Все исторические answer types представлены contract-driven input.
+- [ ] Форматная подсветка совпадает с `strip()+fullmatch` legacy; tuple не показывает «Отправится», list preview появляется только после parsing, `SELECT_ONE` отправляет видимый текст.
 - [ ] До 10 фото: worker progress, up/down reordering, preview, retry, offline queue.
+- [ ] Отдельная «квитанция» сдачи отсутствует; успешная фиксация показана обычным thread/sync status.
 - [ ] До первого review lock исходную entry можно изменить/удалить; досланное после lock входит в текущую проверку, а evidence становится immutable только при завершении verdict.
 - [ ] Immutable evidence и annotation overlay разделены; overlay поддерживает карандаш, ластик, поворот, zoom и 4–5 цветов и не редактируется после отправки.
 - [ ] Feedback/resubmission history не теряется.
@@ -42,17 +44,24 @@
 - [ ] Hidden Student/teacher reactions проверены permission fixtures и не утекают другой роли; на verdict разрешена одна реакция каждого типа с часовым окном изменения/удаления.
 - [ ] Hint и solution скрыты до публикации и требуют осознанного подтверждения.
 - [ ] Telegram-rich news, albums, math и два preview готовы.
+- [ ] Полное условие задачи показано текстом Telegram Rich Message с headings/lists/math, а не скриншотом.
 - [ ] Offline/reconnect/update/push states недвусмысленны.
+- [ ] Каждый значимый Student/Staff composer/editor восстанавливает compatible local draft после reload/update, изолирует аккаунты и очищается только после receipt/confirm или explicit discard.
 - [ ] Dense tables, TSV, bulk actions, locks, diagnostics и missing assets готовы.
+- [ ] Metadata grid имеет task type и copy/paste-compatible dropdown answer type; condition/hint/solution публикуются и планируются независимо.
 - [ ] Review list/fast flows, 30-minute lock, occupied/lost-lock, registry verdict shortcuts, comment guard и abandon готовы.
+- [ ] Review workspace показывает evidence, существующую переписку и новый teacher reply в одном хронологическом порядке; teacher reactions сохраняют компактный видимый текст.
 - [ ] Questions отделены от verdict flow при сохранении migration state Telegram adapter.
 - [ ] AI future states покрыты без включения реальной AI-интеграции в первую версию.
 - [ ] Classroom catalog поддерживает trim/NFKC/casefold duplicate, rename, active/hidden, archive/restore и optimistic conflict без hard delete.
-- [ ] Classroom layout показывает inherited/materialized state, назначает комнате максимум одну группу и не вводит capacity/weights.
-- [ ] Classroom student plan сохраняет прежнюю допустимую комнату, затем выбирает least-loaded с natural-name tie-break; select/move/recalculate/confirm работают без drag interaction.
+- [ ] Classroom layout показывает inherited/materialized state, назначает комнате максимум одну группу, использует group marker/tint, выводит `очно/распределено` и не вводит capacity/weights.
+- [ ] Classroom student plan сохраняет прежнюю допустимую комнату, затем выбирает least-loaded с natural-name tie-break; single/bulk select, cross-group confirmation, recalculate/confirm работают без drag interaction.
+- [ ] Compact flex-wrap planner остаётся обозримым при 6–15 комнатах и примерно 200 школьниках; сортировка всегда по фамилии/имени, неназначенные вынесены отдельно.
+- [ ] Age/grade/strength nullable states, room count и отдельные averages возраста/класса/силы, fuzzy search+jump и confirmed classroom history представлены и не раскрывают дату рождения.
+- [ ] Local classroom draft переживает reload/update, не теряется при conflict и удаляется только после receipt/confirm либо explicit discard.
 - [ ] Stale, reassigning, empty group, no-room incident, фактические 6/5/2 комнаты и historical immutability представлены отдельными stories.
 - [ ] Student/Family показывают `not_applicable|reassigning|assigned`; Student notification states есть, Family classroom push отсутствует.
-- [ ] Progress не содержит рейтингов и цвет-only charts.
+- [ ] Progress не содержит рейтингов, цвет-only charts или маркера/словесного сравнения конкретного школьника с группой.
 
 ## Pages
 

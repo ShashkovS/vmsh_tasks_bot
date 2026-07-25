@@ -12,7 +12,7 @@ Staff может создавать local-only публикации и скры�
 
 Нормализованная запись содержит source, Telegram chat/message IDs, revision, publish/edit time, structured rich text, album ordering, media metadata, audience/level tags, visibility и moderation reason. Математические расширения проходят тот же безопасный renderer, что условия задач.
 
-Перед публикацией показываются два preview: PWA card/detail и Telegram. Для новых структурированных материалов Telegram adapter использует Bot API 10.1+ `sendRichMessage` и отдельный allowlisted Rich Message HTML с `<tg-math>`/`<tg-math-block>`. Это не означает, что тот же markup можно передать в legacy `sendMessage(parse_mode=HTML)`. Renderer проверяет limits по characters, blocks, nesting, media и table columns до отправки.
+Перед публикацией показываются два preview: PWA card/detail и Telegram. Для новых структурированных материалов Telegram adapter использует Bot API 10.1+ `sendRichMessage` и отдельный allowlisted Rich Message HTML с headings, paragraphs, emphasis/mark/sub/sup/spoiler, links, lists, quotes, code, details, tables, media и `<tg-math>`/`<tg-math-block>`. Новые условия задач отправляются полноценным текстом, не скриншотом; SVG/рисунки остаются media. Это не означает, что тот же markup можно передать в legacy `sendMessage(parse_mode=HTML)`. Renderer проверяет limits по characters, blocks, nesting, media и table columns до отправки. Исторические fixtures берутся из `_external_pipelines/ChatExport_2026-07-25`.
 
 ## Доставка и идемпотентность
 
@@ -22,8 +22,8 @@ Channel update имеет устойчивый source key; повторная д
 
 ## Модерация
 
-Staff-фильтры: source, visible/hidden, tags, level, дата, missing media и divergence. Любое скрытие, восстановление, local post, override или broadcast фиксируется в audit. Удаление Telegram-поста автоматически скрывает его в PWA; отдельного ручного решения администратора не требуется.
+Staff-фильтры: source, visible/hidden, tags, level, дата, missing media и divergence. Любое скрытие, восстановление, local post или override фиксируется в audit. Удаление Telegram-поста автоматически скрывает его в PWA; отдельного ручного решения администратора не требуется.
 
 ## Рассылки
 
-Административные рассылки и баннеры поддерживают расписание. Баннер имеет время начала и окончания; обычная публикация остаётся доступной без автоматического срока удаления. Delivery dashboard хранит агрегаты «запланировано / отправлено / ошибка», а не отдельный журнал доставки по каждому адресату. Существующая специальная административная группа остаётся допустимой целью рассылки; исторических рассылок такого типа пока нет, поэтому первый acceptance corpus создаётся как новый fixture.
+Баннер имеет время начала и окончания; обычная публикация остаётся доступной без автоматического срока удаления. Полноценные административные рассылки, Markdown editor, расписание и delivery dashboard относятся ко второй фазе. Существующая специальная административная группа остаётся будущей допустимой целью; исторических рассылок такого типа пока нет.

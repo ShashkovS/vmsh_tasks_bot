@@ -1,6 +1,6 @@
 # Целевая модель данных и границы миграции
 
-Статус: целевая схема после закрытия продуктового опросника 24 июля 2026 года. Имена фиксируются здесь заранее, чтобы backend, contracts и UI говорили на одном языке; миграции всё равно создаются только в своём этапе после сверки с production-копией SQLite.
+Статус: целевая схема после закрытия продуктового опросника и classroom-уточнений 25 июля 2026 года. Имена фиксируются здесь заранее, чтобы backend, contracts и UI говорили на одном языке; миграции всё равно создаются только в своём этапе после сверки с production-копией SQLite.
 
 ## Общие правила
 
@@ -14,21 +14,22 @@
 
 ## Существующие таблицы: сохранить и эволюционировать
 
-| Таблица                                           | Роль сейчас                                                                    | План                                                                                                                                                           |
-| ------------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `users`                                           | Ученик/учитель/admin, Telegram, активная группа, token, online, allowed groups | Сохранить primary domain identity; не переносить массово. Auth account ссылается на `users.id`. Нормализовать `allowed_groups` позже без удаления legacy-поля. |
-| `groups`                                          | Уровни/служебные группы, display/config/score weight                           | Сохранить; связать с сезоном без изменения legacy `group_id`.                                                                                                  |
-| `lessons`                                         | Пара `(group_id, lesson)`                                                      | Сохранить как legacy mapping; новая публикация ссылается на lesson/group.                                                                                      |
-| `problems`                                        | Условие, тип, answer config/checker, synonyms                                  | Сохранить существующий problem row для legacy; новая LaTeX не обязана содержать его ID, а immutable revisions связываются после позиционного сопоставления.       |
-| `results`                                         | История verdict/test/oral/written events                                       | Сохранить authoritative совместимый ledger; новый review ссылается на `results.id`.                                                                            |
-| `written_tasks_discussions`                       | Telegram-тред, text/attach path/message IDs                                    | Двойное чтение/запись во время миграции; backfill в новый thread/entry model.                                                                                  |
-| `written_tasks_queue`                             | Одна активная очередь на student/problem с 30-минутным claim                   | Эволюционировать lease-полями, сохранив текущий Telegram path.                                                                                                 |
-| `questions` и negative problem IDs                | SOS/вопросы                                                                    | Перенести в явные support threads через dual-write, только затем убрать special IDs.                                                                           |
-| `reactions` + enums                               | Реакции на result/zoom                                                         | Расширить actor/visibility, сохранив существующие IDs и Telegram rendering.                                                                                    |
-| `user_changes_log`                                | История group/online changes                                                   | Сохранить; новые изменения режима/уровня обязаны писать совместимое событие.                                                                                   |
-| `zoom_*`                                          | Устные разговоры, события и очередь                                            | Сохранить как legacy oral ledger; новый UI строить через adapter/read model.                                                                                   |
-| `surveys`, `assigns`, `choices`, `survey_results` | Опросы/назначения                                                              | Сохранить только для legacy; UI опросов не входит в первую версию.                                                                                             |
-| `kv`, `webtokens`, `kv_logins`                    | Технические/legacy token данные                                                | Не использовать как неявный новый auth contract; провести security audit и миграцию секретов.                                                                  |
+| Таблица                                           | Роль сейчас                                                                                     | План                                                                                                                                                                                                                                 |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `users`                                           | Ученик/учитель/admin, Telegram, активная группа, token, online, grade, birthday, allowed groups | Сохранить primary domain identity; не переносить массово. Auth account ссылается на `users.id`. `grade`/`birthday` остаются nullable источником classroom read model. Нормализовать `allowed_groups` позже без удаления legacy-поля. |
+| `student_strength`                                | Автоматические показатели `simple_prob`, `compl_prob`                                           | Сохранить и обновлять совместимым job из `a53_calc_rating_new.py`. Classroom adapter публикует nullable показатель 0–10; ручного редактирования не добавлять.                                                                        |
+| `groups`                                          | Уровни/служебные группы, display/config/score weight                                            | Сохранить; связать с сезоном без изменения legacy `group_id`.                                                                                                                                                                        |
+| `lessons`                                         | Пара `(group_id, lesson)`                                                                       | Сохранить как legacy mapping; новая публикация ссылается на lesson/group.                                                                                                                                                            |
+| `problems`                                        | Условие, тип, answer config/checker, synonyms                                                   | Сохранить существующий problem row для legacy; новая LaTeX не обязана содержать его ID, а immutable revisions связываются после позиционного сопоставления.                                                                          |
+| `results`                                         | История verdict/test/oral/written events                                                        | Сохранить authoritative совместимый ledger; новый review ссылается на `results.id`.                                                                                                                                                  |
+| `written_tasks_discussions`                       | Telegram-тред, text/attach path/message IDs                                                     | Двойное чтение/запись во время миграции; backfill в новый thread/entry model.                                                                                                                                                        |
+| `written_tasks_queue`                             | Одна активная очередь на student/problem с 30-минутным claim                                    | Эволюционировать lease-полями, сохранив текущий Telegram path.                                                                                                                                                                       |
+| `questions` и negative problem IDs                | SOS/вопросы                                                                                     | Перенести в явные support threads через dual-write, только затем убрать special IDs.                                                                                                                                                 |
+| `reactions` + enums                               | Реакции на result/zoom                                                                          | Расширить actor/visibility, сохранив существующие IDs и Telegram rendering.                                                                                                                                                          |
+| `user_changes_log`                                | История group/online changes                                                                    | Сохранить; новые изменения режима/уровня обязаны писать совместимое событие.                                                                                                                                                         |
+| `zoom_*`                                          | Устные разговоры, события и очередь                                                             | Сохранить как legacy oral ledger; новый UI строить через adapter/read model.                                                                                                                                                         |
+| `surveys`, `assigns`, `choices`, `survey_results` | Опросы/назначения                                                                               | Сохранить только для legacy; UI опросов не входит в первую версию.                                                                                                                                                                   |
+| `kv`, `webtokens`, `kv_logins`                    | Технические/legacy token данные                                                                 | Не использовать как неявный новый auth contract; провести security audit и миграцию секретов.                                                                                                                                        |
 
 ## 1. Сезоны, аккаунты и права
 
@@ -214,6 +215,12 @@ Confirmed plan становится `stale`, если изменился effecti
 
 Детерминированный recalculation сначала находит последнюю историческую комнату школьника для текущей группы и сохраняет её как `previous_classroom_id`, если комната active и всё ещё связана с этой группой; это работает и при возвращении на прежний уровень. Затем остальные по одному назначаются в наименее заполненную комнату группы. Server natural sort сравнивает числовые фрагменты `normalized_name` как числа, остальные — как casefolded Unicode text, затем использует `classroom.id`; frontend не переопределяет tie-break. Смена группы/режима запускает те же правила для текущего школьника; без допустимой комнаты создаётся `reassigning` и blocking incident. Скрытие комнаты не меняет прошлые plans, а restore не возвращает назначения автоматически.
 
+Classroom plan read model не дублирует профиль школьника в assignment row. Он join-ит `users` и `student_strength` и отдаёт: `display_name`, nullable `age_years`, nullable `grade`, nullable `strength`, текущие `group_id`/`classroom_id`, status/source и краткую confirmed classroom history. `age_years` вычисляется на текущую дату как `(today - birthday) / 365.25`, округляется до одного знака; невалидная/отсутствующая дата даёт `NULL`. UI strength — автоматически рассчитанное число 0–10 из совместимого с `a53_calc_rating_new.py` read adapter; точные внутренние simple/complex components не редактируются через Staff.
+
+Group summary считает всех активных школьников выбранной группы, для которых на выбранное занятие действует очный режим, и отдельно число уже распределённых. Room summary считает назначенных очных школьников, средние возраст, класс и силу; каждый aggregate исключает собственные `NULL` и округляется до одного знака. Полнота age/grade/strength отдельным полем UI не показывается. История аудиторий выводится из immutable confirmed `classroom_assignment_plans` + `classroom_assignments`; отдельная таблица истории не нужна.
+
+Select комнаты другой группы создаёт в локальном draft связанную пару `group change + assignment`. Batch-save применяет её одной backend transaction, пишет совместимое событие в `user_changes_log` и новую assignment row; без явного confirmation flag запрос отклоняется. До batch-save изменения существуют только в account/lesson/base-version-scoped browser draft и не меняют authoritative SQLite.
+
 ### `group_banners`
 
 `id`, `public_id`, `group_id`, `audience`, `html_sanitized`, `starts_at`, `ends_at`, `priority`, `dismissible`, `created_by_user_id`, timestamps/version. Разрешённый HTML минимум `i`, `b`, `a`, `code`; sanitizer policy версионируется.
@@ -256,7 +263,9 @@ Confirmed plan становится `stale`, если изменился effecti
 
 `id`, `topic`, `aggregate_type`, `aggregate_id`, `event_type`, `payload_json`, `created_at`, `claimed_at`, `claim_token`, `attempt_count`, `next_attempt_at`, `completed_at`. Нужен для durable side effects; NATS invalidation после commit может строиться из этого outbox.
 
-### `broadcasts`, `broadcast_targets`, `broadcast_deliveries`
+### Вторая фаза: `broadcasts`, `broadcast_targets`, `broadcast_deliveries`
+
+Эти таблицы не создаются в initial v1 migrations. Они проектируются вместе с финальным Markdown content contract, previews и delivery workflow второй фазы.
 
 Broadcast: `id`, `public_id`, `title`, `pwa_html`, `telegram_html`, `category`, `state`, `scheduled_at`, `created_by_user_id`, timestamps/version.
 
@@ -288,18 +297,18 @@ Counts, lesson curves, violin and activity calendar сначала вычисл�
 
 ## Миграционная последовательность
 
-| Этап | Логическая миграция                              | Backfill/совместимость                                               |
-| ---: | ------------------------------------------------ | -------------------------------------------------------------------- |
-|    0 | `pwa_schema_metadata` при необходимости          | Только schema snapshot/characterization, бизнес-данные не менять     |
-|    1 | `pwa_auth_accounts_sessions`                     | Создать accounts для seed; production backfill dry-run по users      |
-|    2 | `pwa_content_revisions_assets_publications`      | Связать legacy problems/lessons, не заменять их text сразу           |
-|    4 | `pwa_test_attempts_idempotency`                  | Новые attempts dual-write в results                                  |
-|    5 | `pwa_submission_threads_entries_assets`          | Lazy backfill discussions по открываемому thread + batch tool        |
-|    6 | `pwa_reviews_annotations_queue_leases_reactions` | Reviews dual-write results; Telegram queue сохраняется               |
+| Этап | Логическая миграция                              | Backfill/совместимость                                                                                                     |
+| ---: | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+|    0 | `pwa_schema_metadata` при необходимости          | Только schema snapshot/characterization, бизнес-данные не менять                                                           |
+|    1 | `pwa_auth_accounts_sessions`                     | Создать accounts для seed; production backfill dry-run по users                                                            |
+|    2 | `pwa_content_revisions_assets_publications`      | Связать legacy problems/lessons, не заменять их text сразу                                                                 |
+|    4 | `pwa_test_attempts_idempotency`                  | Новые attempts dual-write в results                                                                                        |
+|    5 | `pwa_submission_threads_entries_assets`          | Lazy backfill discussions по открываемому thread + batch tool                                                              |
+|    6 | `pwa_reviews_annotations_queue_leases_reactions` | Reviews dual-write results; Telegram queue сохраняется                                                                     |
 |    7 | `pwa_support_oral_classroom_plans_banners`       | Questions/zoom читаются через adapter; одноразовый classroom Excel import проходит dry-run, старые plans не переписываются |
-|    8 | `pwa_news_notifications_delivery`                | Telegram posts импортируются идемпотентно                            |
-|    9 | `pwa_family_achievements`                        | Family links batch import; stats/achievements derived                |
-|   10 | `pwa_normalized_groups_imports`                  | Google replacement только после parity report                        |
+|    8 | `pwa_news_notifications_delivery`                | Telegram posts импортируются идемпотентно                                                                                  |
+|    9 | `pwa_family_achievements`                        | Family links batch import; stats/achievements derived                                                                      |
+|   10 | `pwa_normalized_groups_imports`                  | Google replacement только после parity report                                                                              |
 
 ## Проверки целостности, обязательные после каждой миграции
 

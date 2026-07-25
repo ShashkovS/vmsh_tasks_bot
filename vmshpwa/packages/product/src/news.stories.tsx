@@ -1,12 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
-import type {
-  TelegramEntity,
-  TelegramEntityType,
-  TelegramMedia,
-  TelegramPostView,
-} from './telegram-post'
+import type { TelegramEntity, TelegramEntityType, TelegramPostView } from './telegram-post'
 import { TelegramRichPost } from './telegram-rich-post'
 
 const meta = { title: 'Product/News', parameters: { layout: 'padded' } } satisfies Meta
@@ -20,29 +15,57 @@ function ent(text: string, sub: string, type: TelegramEntityType, href?: string)
     : { type, offset, length: sub.length, href }
 }
 
-const body = 'В субботу пробное занятие. Регистрация на сайте кружка. Ответ к задаче 6: 89.'
+const body = 'Условия 38-го занятия для начинающих. Приём решений открыт до воскресенья, 13:00.'
 const entities: TelegramEntity[] = [
-  ent(body, 'пробное занятие', 'bold'),
-  ent(body, 'на сайте кружка', 'link', 'https://example.org'),
-  ent(body, '89', 'spoiler'),
-]
-
-const media: TelegramMedia[] = [
-  { kind: 'photo', alt: 'Фото занятия' },
-  { kind: 'photo', alt: 'Доска с задачей' },
-  { kind: 'video', durationLabel: '1:20', alt: 'Разбор задачи' },
-  { kind: 'document', name: 'Листок 21н.pdf', sizeLabel: '240 КБ' },
+  ent(body, 'Условия 38-го занятия', 'bold'),
+  ent(body, 'до воскресенья, 13:00', 'underline'),
 ]
 
 const post: TelegramPostView = {
   id: 'p1',
   attribution: { channel: 'ВМШ 179' },
   blocks: [
+    { kind: 'heading', level: 2, text: 'Задачи 38-го занятия' },
     { kind: 'text', text: body, entities },
-    { kind: 'quote', text: '«Математика — гимнастика ума».' },
-    { kind: 'math', html: 'n^2 + 179 = k^2' },
+    { kind: 'heading', level: 3, text: '38н.6. Расстановка ладей' },
+    {
+      kind: 'text',
+      text: 'На доске n × n расставляют ладьи так, чтобы никакие две не били друг друга. Найдите число способов расставить ровно k ладей.',
+    },
+    { kind: 'math', html: '\\binom{n}{k}^2 \\cdot k!' },
+    {
+      kind: 'list',
+      ordered: true,
+      items: [
+        { text: 'Разберите случай k = 1.' },
+        { text: 'Разберите случай k = n.' },
+        { text: 'Объясните общий ответ.' },
+      ],
+    },
+    {
+      kind: 'details',
+      summary: 'Подсказка',
+      blocks: [
+        {
+          kind: 'text',
+          text: 'Сначала выберите строки и столбцы, затем сопоставьте их.',
+        },
+      ],
+    },
+    { kind: 'divider' },
+    {
+      kind: 'text',
+      text: '#условия #начинающие #38занятие',
+      entities: [
+        ent(
+          '#условия #начинающие #38занятие',
+          '#38занятие',
+          'link',
+          'https://t.me/vmsh_179_5_7_2025',
+        ),
+      ],
+    },
   ],
-  media,
   at: '24 января, 18:00',
 }
 
@@ -51,7 +74,7 @@ const renderMath = (html: string) => (
 )
 
 export const Post: Story = {
-  name: 'Пост с разметкой и медиа',
+  name: 'Полное условие текстом в Telegram Rich Message',
   render: () => (
     <div className="max-w-md">
       <TelegramRichPost post={post} renderMath={renderMath} />
@@ -60,15 +83,11 @@ export const Post: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await expect(canvas.getByText('пробное занятие').tagName).toBe('STRONG')
-    await expect(canvas.getByRole('link', { name: 'на сайте кружка' })).toBeInTheDocument()
-
-    // Спойлер раскрывается по клику.
-    const spoiler = canvas.getByRole('button', { name: 'Показать скрытый текст' })
-    await userEvent.click(spoiler)
-    await expect(
-      canvas.queryByRole('button', { name: 'Показать скрытый текст' }),
-    ).not.toBeInTheDocument()
+    await expect(canvas.getByText('Задачи 38-го занятия').tagName).toBe('H2')
+    await expect(canvas.getByText('38н.6. Расстановка ладей').tagName).toBe('H3')
+    await expect(canvas.getByText(/никакие две не били/)).toBeInTheDocument()
+    await userEvent.click(canvas.getByText('Подсказка'))
+    await expect(canvas.getByText(/выберите строки и столбцы/)).toBeInTheDocument()
   },
 }
 

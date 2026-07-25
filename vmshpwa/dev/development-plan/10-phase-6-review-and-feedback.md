@@ -22,11 +22,13 @@ Migration: `pwa_reviews_annotations_queue_leases_reactions_support`.
 - После complete/release/abandon пользователь возвращается к problem chooser.
 - «Отказ от проверки» — вторичная операция: server lease освобождается, причина не сохраняется. Local draft удаляется только после явного подтверждения; при случайном disconnect тексты/annotation draft восстанавливаются из локального storage.
 
-## Three-zone Staff
+## Staff review workspace
 
-Desktop: queue/context, immutable work viewer, verdict/actions. Mobile: основная зона work+verdict, queue в отдельном drawer.
+Desktop: компактная queue/context слева и одна основная хронологическая колонка справа: immutable work viewer/annotation, затем вся существующая student/teacher переписка, затем новый teacher reply и verdict/actions. Mobile сохраняет тот же порядок, queue открывается отдельно. Comment composer не располагается рядом с работой как независимая третья панель.
 
-Fast flow: tap verdict → optional одна реакция из текущего DB registry → save and send. Для verdict кроме «Зачтено» сохранение без comment требует confirmation. Реакцию можно изменить/удалить в течение часа; suspicion не меняет verdict.
+Fast flow: tap verdict → optional одна реакция из текущего DB registry → save and send. Verdict controls и teacher reaction chips компактны, но точные текстовые подписи всегда видны; emoji-only вариант не используется. Для verdict кроме «Зачтено» сохранение без comment требует confirmation. Реакцию можно изменить/удалить в течение часа; suspicion не меняет verdict.
+
+Comment, текущий verdict choice, reaction choice и сериализуемый annotation state сохраняются в account/review/evidence-version-scoped `localStorage` после каждого осмысленного изменения. Reload восстанавливает их, lost lease/version conflict не очищает, successful complete очищает. Большие временные бинарные derivatives при необходимости используют Dexie, не `localStorage`.
 
 Annotation format — normalized coordinates + versioned strokes/marks; preview layer never modifies original WebP. Student видит annotation, zoom сохраняет alignment.
 
@@ -55,6 +57,7 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 - Transaction fault injection after each write boundary; no half verdict/locked images/queue loss.
 - Visibility matrix API + UI; direct URL and WS owner scoping.
 - Annotation pencil/eraser/rotation/4–5 colors, geometry/zoom/sanitization, immutable-after-send and Telegram composite PNG.
+- Review draft reload/account isolation/evidence-version conflict/lost lease/success cleanup; unsent question/comment draft не пропадает при route change.
 - Legacy queue/discussion/result/reaction and Telegram historical tests.
 - Storybook priority: teacher queue + quick review mobile/desktop, long thread, latest verdict, annotations, all reaction visibilities.
 - Playwright two staff browser contexts racing; Student context receives refetch and thread; forbidden Teacher admin view.
@@ -67,6 +70,7 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 - Latest verdict понятен сразу, история не теряется.
 - Admin видит student disagreement и teacher suspicion без отдельных статусов; они не влияют на score автоматически.
 - Questions больше не требуют special ID в новом frontend, Telegram не сломан.
+- Reload не теряет незавершённый comment/annotation/question; чужой staff account draft не видит.
 
 ## Пруфы завершения этапа
 
@@ -75,6 +79,7 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 - [ ] Demo quick review + annotation + Student thread + admin reactions: `<routes/evidence>`.
 - [ ] Visibility matrix API/E2E: `<path/result>`.
 - [ ] Annotation format/version/zoom tests: `<result>`.
+- [ ] Review/question draft persistence, isolation and conflict tests: `<result>`.
 - [ ] Storybook priority stories/interactions/a11y/visual approval: `<ids/paths>`.
 - [ ] Playwright multi-context 3 browsers: `<result>`.
 - [ ] Telegram queue/discussion/results/questions historical tests: `<result>`.

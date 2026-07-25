@@ -14,21 +14,29 @@ function Harness({ spec, label }: { spec: AnswerSpec; label?: string }) {
   return (
     <div className="max-w-sm space-y-3">
       <TestAnswer label={label} onChange={setValue} spec={spec} />
-      <p className="text-small text-muted-foreground" role="status">
-        Отправится: <span data-testid="answer">{value || '—'}</span>
-      </p>
+      <output className="sr-only" data-testid="answer">
+        {value || '—'}
+      </output>
     </div>
   )
 }
 
 export const Scalar: Story = {
-  name: 'Скаляр (натуральное число)',
-  render: () => <Harness spec={{ type: 'natural' }} />,
+  name: 'Скаляр · ошибка формата',
+  render: () => (
+    <Harness
+      spec={{
+        type: 'digit',
+        validationError: 'Введите ровно одну цифру — например, 0 или 7.',
+      }}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/Введите натуральное число/)).toBeInTheDocument()
-    await userEvent.type(canvas.getByLabelText('Ответ'), '179')
-    await expect(canvas.getByTestId('answer')).toHaveTextContent('179')
+    await expect(canvas.getByText(/Введите одну цифру/)).toBeInTheDocument()
+    await userEvent.type(canvas.getByLabelText('Ответ'), '17')
+    await expect(canvas.getByRole('alert')).toHaveTextContent('ровно одну цифру')
+    await expect(canvas.getByLabelText('Ответ')).toHaveAttribute('aria-invalid', 'true')
   },
 }
 
@@ -38,9 +46,9 @@ export const Tuple: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.type(canvas.getByLabelText('Число 1'), '1')
-    await userEvent.type(canvas.getByLabelText('Число 2'), '7')
-    await userEvent.type(canvas.getByLabelText('Число 3'), '9')
-    await expect(canvas.getByTestId('answer')).toHaveTextContent('1, 7, 9')
+    await userEvent.type(canvas.getByLabelText('Число 2'), '7жф')
+    await userEvent.type(canvas.getByLabelText('Число 3'), '9, 10')
+    await expect(canvas.getByRole('alert')).toHaveTextContent('три целых числа')
   },
 }
 
@@ -50,7 +58,8 @@ export const List: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.type(canvas.getByLabelText('Ответ'), '1, 7, 9')
-    // Живой предпросмотр разобранных элементов.
+    // Предпросмотр появляется только после того же разбора, что использует legacy.
+    await expect(canvas.getByText('Распознано:')).toBeInTheDocument()
     await expect(canvas.getByText('7')).toBeInTheDocument()
     await expect(canvas.getByTestId('answer')).toHaveTextContent('1, 7, 9')
   },
@@ -73,19 +82,43 @@ export const Choice: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('radio', { name: 'Нечётное' }))
-    await expect(canvas.getByTestId('answer')).toHaveTextContent('odd')
+    await expect(canvas.getByTestId('answer')).toHaveTextContent('Нечётное')
   },
 }
 
 const gallery: { label: string; spec: AnswerSpec }[] = [
+  { label: 'Цифра', spec: { type: 'digit' } },
   { label: 'Натуральное', spec: { type: 'natural' } },
   { label: 'Целое', spec: { type: 'integer' } },
+  { label: 'Отношение', spec: { type: 'ratio' } },
   { label: 'Дробь', spec: { type: 'fraction' } },
+  { label: 'Смешанная дробь', spec: { type: 'mixed-fraction' } },
   { label: 'Десятичная дробь', spec: { type: 'float' } },
+  { label: 'Число с точностью', spec: { type: 'float-eps' } },
+  { label: 'Многочлен', spec: { type: 'polynomial' } },
   { label: 'Время', spec: { type: 'time' } },
+  { label: 'Дата', spec: { type: 'date' } },
+  { label: 'День недели', spec: { type: 'weekday' } },
+  { label: 'Два целых', spec: { type: 'int-2' } },
   { label: 'Три целых', spec: { type: 'int-3' } },
+  { label: 'Четыре целых', spec: { type: 'int-4' } },
   { label: 'Последовательность целых', spec: { type: 'int-seq' } },
+  { label: 'Множество целых', spec: { type: 'int-set' } },
+  { label: 'Последовательность дробей', spec: { type: 'frac-seq' } },
   { label: 'Мультимножество', spec: { type: 'multiset' } },
+  { label: 'Символьное выражение', spec: { type: 'symb-expression' } },
+  { label: 'Эквивалентное выражение', spec: { type: 'symb-equiv' } },
+  {
+    label: 'Выбор одного',
+    spec: {
+      type: 'select-one',
+      options: [
+        { value: 'yes', label: 'Да' },
+        { value: 'no', label: 'Нет' },
+      ],
+    },
+  },
+  { label: 'Строка', spec: { type: 'string', example: 'Ответ словами' } },
 ]
 
 export const Gallery: Story = {

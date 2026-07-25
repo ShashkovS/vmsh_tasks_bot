@@ -21,9 +21,9 @@ type Story = StoryObj<typeof meta>
 
 const levels: LevelView[] = [
   { code: 'н', name: 'Начинающие', colorIndex: 1 },
-  { code: 'п', name: 'Продолжающие', colorIndex: 2 },
-  { code: 'х', name: 'Эксперты', colorIndex: 3 },
-  { code: 'т', name: 'Тестирование', colorIndex: 0 },
+  { code: 'п2', name: 'Продолжающие', colorIndex: 2 },
+  { code: 'dp2', name: 'Эксперты', colorIndex: 3 },
+  { code: 'i9a', name: 'Тестирование', colorIndex: 0 },
 ]
 
 export const Levels: Story = {

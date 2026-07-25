@@ -10,7 +10,9 @@ Admin из Staff импортирует Excel, создаёт/правит по�
 - Groups/season: active/default/system flags, display/order, score weight, self-switch policy, fourth/future levels.
 - Teacher permissions by group/capability.
 - Batch Excel import: обязательны surname, name, unique token/password, birthday, grade. Valid rows применяются, invalid rows пропускаются и попадают в итоговый report; повторный import связывается по token.
-- Task metadata TSV grid and version conflicts, включая answer config/checker trusted-admin surface.
+- Task metadata TSV grid and version conflicts, включая отдельный task type (`test|written|oral`), answer type и checker trusted-admin surface. Task/answer type редактируются dropdown-ячейками, но прямоугольная TSV copy/paste работает так же, как в Google Sheets. Legacy `Письменно<-Устно` при migration явно отображается в canonical oral с доступной письменной сдачей.
+- Publication UI не имеет общего action «опубликовать уровень»: condition, hint и solution публикуются, планируются и откатываются независимо по каждому уровню.
+- Несохранённые правки users/task metadata/import mapping сохраняются в account/entity/base-version-scoped `localStorage`; reload и server conflict не теряют их. После successful apply/receipt draft очищается.
 - Импорт очных/устных результатов из `a19`, печатные spreadsheet flows и email откладываются на последующие версии.
 - Surveys не переносятся. Email workflow относится ко второй/третьей версии. Export пользователей в первой версии не нужен.
 - Staff statistics/audit of writes and imports. Teacher continues to have no broadcasts/classrooms/audit.
@@ -59,6 +61,7 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 - Differential reports vs current Google/external pipeline on the protected production-size copy.
 - 1500 students metadata/users grid virtualization and search performance.
 - Storybook dense Staff pages desktop + mobile essential review; import diagnostics/conflicts/forbidden.
+- Admin draft persistence: reload, account isolation, optimistic conflict, explicit discard и cleanup after apply.
 - Playwright upload → preview → apply → use changed student/group in Student; Google/Telegram network blocked.
 
 ## Критерии приёмки
@@ -68,6 +71,7 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 - Dry-run diff объясняет каждое создаваемое/изменяемое/пропущенное значение.
 - Валидные строки импортируются, невалидные пропускаются и перечисляются в отчёте; пропущенная строка не оставляет частично записанных данных.
 - Permission changes вступают в силу и отзывают доступ/session according policy.
+- Reload/обновление SPA не теряет несохранённые правки grid/import; новый server version не перезаписывается молча.
 - Cutover обратим и имеет parity report; при rollover автоматически переносятся только teachers, остальные данные импортируются заново.
 
 ## Пруфы завершения этапа
@@ -77,6 +81,7 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 - [ ] Protected production-copy parallel-run/parity reports: `<paths/results>`.
 - [ ] Demo users/groups/family/permissions/import/dry-run/apply: `<routes/evidence>`.
 - [ ] Import security/idempotency/transaction tests: `<result>`.
+- [ ] Admin local draft reload/isolation/conflict/cleanup tests: `<result>`.
 - [ ] 1500-row performance + SQL plans: `<path/result>`.
 - [ ] Storybook dense admin states/a11y/visual approval: `<ids/paths>`.
 - [ ] Playwright 3 browsers, Google/Telegram network blocked: `<result>`.

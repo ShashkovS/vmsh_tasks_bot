@@ -22,6 +22,7 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Checkbox,
   Input,
   Label,
   cn,
@@ -34,6 +35,27 @@ export interface ClassroomGroupOption {
   id: string
   name: string
   shortCode: string
+  colorIndex?: 0 | 1 | 2 | 3 | 4
+  /** Active students whose mode is in-person for the selected lesson. */
+  inPersonCount?: number
+  /** Students already assigned in the current plan preview. */
+  assignedCount?: number
+}
+
+const groupToneByIndex: Record<NonNullable<ClassroomGroupOption['colorIndex']>, string> = {
+  0: 'border-level-0-border bg-level-0/5',
+  1: 'border-level-1-border bg-level-1/5',
+  2: 'border-level-2-border bg-level-2/5',
+  3: 'border-level-3-border bg-level-3/5',
+  4: 'border-level-4-border bg-level-4/5',
+}
+
+const groupMarkerByIndex: Record<NonNullable<ClassroomGroupOption['colorIndex']>, string> = {
+  0: 'bg-level-0',
+  1: 'bg-level-1',
+  2: 'bg-level-2',
+  3: 'bg-level-3',
+  4: 'bg-level-4',
 }
 
 /* ── Catalog ────────────────────────────────────────────────────────────── */
@@ -424,10 +446,32 @@ export function ClassroomGroupLayout({
         {groups.map((group) => {
           const count = rooms.filter((room) => room.groupId === group.id).length
           return (
-            <div className="rounded-md border border-border bg-surface-subtle p-3" key={group.id}>
+            <div
+              className={cn(
+                'relative overflow-hidden rounded-md border bg-surface-subtle p-3',
+                group.colorIndex === undefined
+                  ? 'border-border'
+                  : groupToneByIndex[group.colorIndex],
+              )}
+              key={group.id}
+            >
+              {group.colorIndex !== undefined ? (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'absolute inset-y-0 left-0 w-1',
+                    groupMarkerByIndex[group.colorIndex],
+                  )}
+                />
+              ) : null}
               <p className="text-caption text-muted-foreground">{group.name}</p>
               <p className="font-num text-title font-semibold text-foreground">{count}</p>
               <p className="text-caption text-muted-foreground">аудиторий</p>
+              {group.inPersonCount !== undefined ? (
+                <p className="mt-1 font-num text-caption text-foreground">
+                  {group.inPersonCount} очно · {group.assignedCount ?? 0} распределено
+                </p>
+              ) : null}
             </div>
           )
         })}
@@ -513,6 +557,10 @@ export interface ClassroomPlanStudent {
   classroomId: string | null
   status: ClassroomStudentStatus
   source: ClassroomAssignmentSource
+  age?: number | null
+  schoolClass?: number | null
+  strength?: number | null
+  history?: { lessonLabel: string; classroomName: string; groupName: string }[]
 }
 
 export interface ClassroomPlanIncident {
@@ -534,6 +582,8 @@ export interface ClassroomStudentPlannerProps {
   publishedAt?: string
   pending?: boolean
   onMove?: (studentId: string, classroomId: string) => void
+  onRequestGroupChange?: (studentId: string, groupId: string, classroomId: string) => void
+  onShowHistory?: (studentId: string) => void
   onRecalculate?: () => void
   onConfirm?: () => void
   className?: string
@@ -548,33 +598,102 @@ const sourceLabels: Record<ClassroomAssignmentSource, string> = {
   import: 'импорт',
 }
 
+function oneDecimal(value: number): string {
+  return value.toFixed(1)
+}
+
+function average(values: Array<number | null | undefined>): string {
+  const known = values.filter((value): value is number => typeof value === 'number')
+  if (known.length === 0) return '—'
+  return oneDecimal(known.reduce((sum, value) => sum + value, 0) / known.length)
+}
+
+function normalizedStudentName(value: string): string {
+  return value
+    .normalize('NFKC')
+    .toLocaleLowerCase('ru')
+    .replaceAll('ё', 'е')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function editDistance(left: string, right: string): number {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index)
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    const current = [leftIndex]
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      current[rightIndex] = Math.min(
+        current[rightIndex - 1]! + 1,
+        previous[rightIndex]! + 1,
+        previous[rightIndex - 1]! + (left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1),
+      )
+    }
+    previous.splice(0, previous.length, ...current)
+  }
+  return previous[right.length]!
+}
+
+function studentMatchesQuery(student: ClassroomPlanStudent, rawQuery: string): boolean {
+  const query = normalizedStudentName(rawQuery)
+  if (!query) return false
+  const name = normalizedStudentName(student.name)
+  if (name.includes(query)) return true
+  const candidates = [name, ...name.split(' ')]
+  const tolerance = query.length >= 7 ? 2 : query.length >= 4 ? 1 : 0
+  return candidates.some((candidate) => editDistance(candidate, query) <= tolerance)
+}
+
+function StudentFacts({ student }: { student: ClassroomPlanStudent }) {
+  return (
+    <span className="inline-flex flex-wrap gap-x-2 font-num text-caption text-muted-foreground">
+      <span>возраст {student.age == null ? '—' : oneDecimal(student.age)}</span>
+      <span>класс {student.schoolClass ?? '—'}</span>
+      <span>сила {student.strength == null ? '—' : oneDecimal(student.strength)}</span>
+    </span>
+  )
+}
+
 function StudentMoveSelect({
   student,
   rooms,
+  groups,
   pending,
   onMove,
+  onRequestGroupChange,
 }: {
   student: ClassroomPlanStudent
   rooms: ClassroomPlanRoom[]
+  groups: ClassroomGroupOption[]
   pending?: boolean | undefined
   onMove?: ((studentId: string, classroomId: string) => void) | undefined
+  onRequestGroupChange?:
+    ((studentId: string, groupId: string, classroomId: string) => void) | undefined
 }) {
-  const eligibleRooms = rooms.filter((room) => room.groupId === student.groupId)
   return (
     <select
       aria-label={`Аудитория для ${student.name}`}
-      className={cn(selectClass, 'w-full min-w-36')}
-      disabled={pending || eligibleRooms.length === 0}
+      className={cn(selectClass, 'h-8 min-h-0 w-full min-w-28')}
+      disabled={pending || rooms.length === 0}
       onChange={(event) => {
-        if (event.target.value) onMove?.(student.id, event.target.value)
+        const room = rooms.find((candidate) => candidate.id === event.target.value)
+        if (!room) return
+        if (room.groupId === student.groupId) onMove?.(student.id, room.id)
+        else onRequestGroupChange?.(student.id, room.groupId, room.id)
       }}
       value={student.classroomId ?? ''}
     >
       <option value="">Не назначена</option>
-      {eligibleRooms.map((room) => (
-        <option key={room.id} value={room.id}>
-          {room.name}
-        </option>
+      {groups.map((group) => (
+        <optgroup key={group.id} label={group.name}>
+          {rooms
+            .filter((room) => room.groupId === group.id)
+            .map((room) => (
+              <option key={room.id} value={room.id}>
+                {room.name}
+                {group.id === student.groupId ? '' : ' · сменить группу'}
+              </option>
+            ))}
+        </optgroup>
       ))}
     </select>
   )
@@ -592,13 +711,88 @@ export function ClassroomStudentPlanner({
   publishedAt,
   pending,
   onMove,
+  onRequestGroupChange,
+  onShowHistory,
   onRecalculate,
   onConfirm,
   className,
 }: ClassroomStudentPlannerProps) {
+  const searchId = useId()
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set())
   const unresolved = students.filter((student) => student.status !== 'assigned')
   const blocking = incidents.some((incident) => incident.blocking) || unresolved.length > 0
   const assignedCount = students.length - unresolved.length
+  const sortedStudents = [...students].sort((left, right) =>
+    left.name.localeCompare(right.name, 'ru', { sensitivity: 'base' }),
+  )
+  const matches = query.trim()
+    ? sortedStudents.filter((student) => studentMatchesQuery(student, query))
+    : []
+  const selectedStudents = sortedStudents.filter((student) => selected.has(student.id))
+  const bulkGroupId = selectedStudents[0]?.groupId
+  const oneBulkGroup =
+    selectedStudents.length > 0 &&
+    selectedStudents.every((student) => student.groupId === bulkGroupId)
+  const bulkRooms = oneBulkGroup ? rooms.filter((room) => room.groupId === bulkGroupId) : []
+
+  const toggleStudent = (studentId: string, checked: boolean) => {
+    setSelected((current) => {
+      const next = new Set(current)
+      if (checked) next.add(studentId)
+      else next.delete(studentId)
+      return next
+    })
+  }
+
+  const renderStudent = (student: ClassroomPlanStudent, unresolvedRow = false) => {
+    const highlighted = matches.some((match) => match.id === student.id)
+    return (
+      <li
+        className={cn(
+          'grid gap-1 rounded-sm px-1 py-1 text-small sm:grid-cols-[auto_minmax(0,1fr)_minmax(8rem,11rem)_auto] sm:items-center',
+          highlighted && 'bg-status-info-surface ring-1 ring-status-info-border',
+        )}
+        id={`classroom-student-${student.id}`}
+        key={student.id}
+      >
+        <Checkbox
+          aria-label={`Выбрать ${student.name}`}
+          checked={selected.has(student.id)}
+          onCheckedChange={(value) => toggleStudent(student.id, Boolean(value))}
+        />
+        <div className="min-w-0">
+          <p className="truncate font-medium text-foreground">{student.name}</p>
+          <StudentFacts student={student} />
+          <p className="truncate text-caption text-muted-foreground">
+            {unresolvedRow
+              ? student.status === 'reassigning'
+                ? 'Прежнее назначение сброшено'
+                : 'Ещё не назначена'
+              : sourceLabels[student.source]}
+          </p>
+        </div>
+        <StudentMoveSelect
+          groups={groups}
+          onMove={onMove}
+          onRequestGroupChange={onRequestGroupChange}
+          pending={pending}
+          rooms={rooms}
+          student={student}
+        />
+        <Button
+          aria-label={`История аудиторий: ${student.name}`}
+          disabled={!onShowHistory}
+          onClick={() => onShowHistory?.(student.id)}
+          size="icon-xs"
+          title="История аудиторий"
+          variant="ghost"
+        >
+          <History aria-hidden="true" />
+        </Button>
+      </li>
+    )
+  }
 
   return (
     <section className={cn('space-y-4', className)} data-density="staff">
@@ -655,17 +849,117 @@ export function ClassroomStudentPlanner({
         </Alert>
       ))}
 
+      <div className="space-y-2 rounded-md border border-border bg-surface p-3">
+        <Label htmlFor={searchId}>Быстрый поиск школьника</Label>
+        <div className="relative max-w-lg">
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            className="h-8 pl-8"
+            id={searchId}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Фамилия, имя или примерное написание"
+            value={query}
+          />
+        </div>
+        {query.trim() ? (
+          <div className="flex flex-wrap items-center gap-1" role="status">
+            <span className="text-caption text-muted-foreground">Найдено: {matches.length}</span>
+            {matches.slice(0, 8).map((student) => (
+              <Button
+                key={student.id}
+                onClick={() =>
+                  document
+                    .getElementById(`classroom-student-${student.id}`)
+                    ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+                }
+                size="xs"
+                variant="ghost"
+              >
+                {student.name}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {selected.size > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-raised p-2">
+          <span className="text-small font-medium text-foreground">Выбрано: {selected.size}</span>
+          <select
+            aria-label="Перенести выбранных в аудиторию"
+            className={cn(selectClass, 'h-8 min-h-0')}
+            disabled={!oneBulkGroup || bulkRooms.length === 0}
+            onChange={(event) => {
+              if (!event.target.value) return
+              selectedStudents.forEach((student) => onMove?.(student.id, event.target.value))
+              setSelected(new Set())
+            }}
+            value=""
+          >
+            <option value="">Перенести выбранных…</option>
+            {bulkRooms.map((room) => (
+              <option key={room.id} value={room.id}>
+                {room.name}
+              </option>
+            ))}
+          </select>
+          {!oneBulkGroup ? (
+            <span className="text-caption text-muted-foreground">
+              Для массового переноса выберите школьников одной группы.
+            </span>
+          ) : null}
+          <Button onClick={() => setSelected(new Set())} size="xs" variant="ghost">
+            Снять выбор
+          </Button>
+        </div>
+      ) : null}
+
+      {unresolved.length > 0 ? (
+        <section className="space-y-2 rounded-md border border-status-danger-border bg-status-danger-surface p-3">
+          <div>
+            <h3 className="text-label font-semibold text-foreground">
+              Не распределены / переназначаются
+            </h3>
+            <p className="text-caption text-muted-foreground">
+              {unresolved.length} школьников требуют назначения до подтверждения плана.
+            </p>
+          </div>
+          <ul className="divide-y divide-status-danger-border">
+            {unresolved
+              .slice()
+              .sort((left, right) => left.name.localeCompare(right.name, 'ru'))
+              .map((student) => renderStudent(student, true))}
+          </ul>
+        </section>
+      ) : null}
+
       <div className="space-y-4">
         {groups.map((group) => {
           const groupRooms = rooms.filter((room) => room.groupId === group.id)
           const groupStudents = students.filter((student) => student.groupId === group.id)
-          const unresolvedGroup = groupStudents.filter((student) => student.status !== 'assigned')
           return (
             <section
               aria-labelledby={`classroom-group-${group.id}`}
-              className="space-y-3 rounded-md border border-border bg-surface-subtle p-3"
+              className={cn(
+                'relative space-y-3 overflow-hidden rounded-md border bg-surface-subtle p-3',
+                group.colorIndex === undefined
+                  ? 'border-border'
+                  : groupToneByIndex[group.colorIndex],
+              )}
               key={group.id}
             >
+              {group.colorIndex !== undefined ? (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'absolute inset-y-0 left-0 w-1',
+                    groupMarkerByIndex[group.colorIndex],
+                  )}
+                />
+              ) : null}
               <header className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
                   <h3
@@ -675,51 +969,44 @@ export function ClassroomStudentPlanner({
                     {group.name}
                   </h3>
                   <p className="text-caption text-muted-foreground">
-                    {groupRooms.length} аудиторий · {groupStudents.length} школьников
+                    {groupRooms.length} аудиторий · {group.inPersonCount ?? groupStudents.length}{' '}
+                    очно ·{' '}
+                    {group.assignedCount ??
+                      groupStudents.length -
+                        unresolved.filter((student) => student.groupId === group.id).length}{' '}
+                    распределено
                   </p>
                 </div>
                 {groupStudents.length === 0 ? <Badge variant="neutral">Группа пуста</Badge> : null}
               </header>
 
               {groupRooms.length > 0 ? (
-                <div className="grid gap-2 lg:grid-cols-2 2xl:grid-cols-3">
+                <div className="flex flex-wrap items-start gap-2">
                   {groupRooms.map((room) => {
-                    const roomStudents = groupStudents.filter(
-                      (student) => student.classroomId === room.id && student.status === 'assigned',
-                    )
+                    const roomStudents = groupStudents
+                      .filter(
+                        (student) =>
+                          student.classroomId === room.id && student.status === 'assigned',
+                      )
+                      .sort((left, right) => left.name.localeCompare(right.name, 'ru'))
                     return (
                       <section
                         aria-label={`Аудитория ${room.name}`}
-                        className="rounded-md border border-border bg-surface p-3"
+                        className="min-w-72 flex-[1_1_22rem] rounded-md border border-border bg-surface p-2"
                         key={room.id}
                       >
-                        <div className="mb-2 flex items-baseline justify-between gap-2">
-                          <h4 className="font-medium text-foreground">{room.name}</h4>
+                        <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-2">
+                          <h4 className="font-semibold text-foreground">{room.name}</h4>
                           <span className="font-num text-caption text-muted-foreground">
-                            {roomStudents.length} школьников
+                            {roomStudents.length} уч. · возраст{' '}
+                            {average(roomStudents.map((student) => student.age))} · класс{' '}
+                            {average(roomStudents.map((student) => student.schoolClass))} · сила{' '}
+                            {average(roomStudents.map((student) => student.strength))}
                           </span>
                         </div>
                         {roomStudents.length > 0 ? (
-                          <ul className="space-y-2">
-                            {roomStudents.map((student) => (
-                              <li
-                                className="grid gap-1 text-small sm:grid-cols-[minmax(0,1fr)_minmax(9rem,12rem)] sm:items-center"
-                                key={student.id}
-                              >
-                                <div className="min-w-0">
-                                  <p className="truncate text-foreground">{student.name}</p>
-                                  <p className="text-caption text-muted-foreground">
-                                    {sourceLabels[student.source]}
-                                  </p>
-                                </div>
-                                <StudentMoveSelect
-                                  onMove={onMove}
-                                  pending={pending}
-                                  rooms={rooms}
-                                  student={student}
-                                />
-                              </li>
-                            ))}
+                          <ul className="divide-y divide-border">
+                            {roomStudents.map((student) => renderStudent(student))}
                           </ul>
                         ) : (
                           <p className="text-caption text-muted-foreground">Пока никого нет</p>
@@ -741,37 +1028,6 @@ export function ClassroomStudentPlanner({
                   </AlertContent>
                 </Alert>
               )}
-
-              {unresolvedGroup.length > 0 ? (
-                <div className="space-y-2 rounded-md border border-status-danger-border bg-status-danger-surface p-3">
-                  <p className="text-label font-medium text-foreground">
-                    Аудитория переназначается
-                  </p>
-                  <ul className="space-y-2">
-                    {unresolvedGroup.map((student) => (
-                      <li
-                        className="grid gap-1 text-small sm:grid-cols-[minmax(0,1fr)_minmax(9rem,12rem)] sm:items-center"
-                        key={student.id}
-                      >
-                        <div>
-                          <p className="text-foreground">{student.name}</p>
-                          <p className="text-caption text-muted-foreground">
-                            {student.status === 'reassigning'
-                              ? 'Прежнее назначение сброшено'
-                              : 'Ещё не назначена'}
-                          </p>
-                        </div>
-                        <StudentMoveSelect
-                          onMove={onMove}
-                          pending={pending}
-                          rooms={rooms}
-                          student={student}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
             </section>
           )
         })}

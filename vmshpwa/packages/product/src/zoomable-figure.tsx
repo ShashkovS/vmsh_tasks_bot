@@ -5,8 +5,10 @@ import { Button, cn } from '@vmsh/ui'
 
 /*
  * A figure (TikZ/SVG output) that can be enlarged. Zoom in / out / reset are
- * keyboard-operable buttons; the enlarged content scrolls locally. The region
- * carries a text alternative (alt); the caption is separate, visible prose.
+ * keyboard-operable buttons; the whole canvas (frame + content) scales up and
+ * takes real layout space, spilling to a local horizontal scroll only when it
+ * outgrows the column. The region carries a text alternative (alt); the caption
+ * is separate, visible prose.
  */
 const MIN = 1
 const MAX = 3
@@ -25,14 +27,12 @@ export function ZoomableFigure({ children, alt, caption, className }: ZoomableFi
 
   return (
     <figure className={cn('space-y-1.5', className)}>
-      <div
-        aria-label={alt}
-        className="max-h-96 overflow-auto rounded-md border border-paper-edge bg-paper p-2"
-        role="img"
-      >
+      <div className="max-w-full overflow-x-auto">
         <div
-          className="origin-top-left transition-transform duration-(--duration-normal) ease-(--ease-standard)"
-          style={{ transform: `scale(${zoom})`, width: zoom > 1 ? `${zoom * 100}%` : undefined }}
+          aria-label={alt}
+          className="w-fit rounded-md border border-paper-edge bg-paper p-2"
+          role="img"
+          style={{ zoom }}
         >
           {children}
         </div>

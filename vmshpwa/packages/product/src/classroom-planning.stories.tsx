@@ -29,9 +29,30 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const groups: ClassroomGroupOption[] = [
-  { id: 'beginner', name: 'Начинающие', shortCode: 'н' },
-  { id: 'continuing', name: 'Продолжающие', shortCode: 'п' },
-  { id: 'expert', name: 'Углублённые', shortCode: 'х' },
+  {
+    id: 'beginner',
+    name: 'Начинающие',
+    shortCode: 'н',
+    colorIndex: 1,
+    inPersonCount: 84,
+    assignedCount: 79,
+  },
+  {
+    id: 'continuing',
+    name: 'Продолжающие',
+    shortCode: 'п',
+    colorIndex: 2,
+    inPersonCount: 68,
+    assignedCount: 67,
+  },
+  {
+    id: 'expert',
+    name: 'Эксперты',
+    shortCode: 'х',
+    colorIndex: 3,
+    inPersonCount: 27,
+    assignedCount: 27,
+  },
 ]
 
 const catalogRooms: ClassroomCatalogRoom[] = [
@@ -42,7 +63,7 @@ const catalogRooms: ClassroomCatalogRoom[] = [
     name: 'Актовый зал',
     status: 'active',
     version: 4,
-    usageLabel: 'Углублённые · с занятия 37',
+    usageLabel: 'Эксперты · с занятия 37',
   },
   {
     id: 'old-305',
@@ -260,6 +281,13 @@ const assignedStudents: ClassroomPlanStudent[] = [
     classroomId: '201',
     status: 'assigned',
     source: 'previous-room',
+    age: 13.3,
+    schoolClass: 7,
+    strength: 6.8,
+    history: [
+      { lessonLabel: 'Занятие 40', classroomName: '201', groupName: 'Начинающие' },
+      { lessonLabel: 'Занятие 39', classroomName: '203', groupName: 'Начинающие' },
+    ],
   },
   {
     id: 's2',
@@ -268,6 +296,10 @@ const assignedStudents: ClassroomPlanStudent[] = [
     classroomId: '202',
     status: 'assigned',
     source: 'least-loaded',
+    age: 12.7,
+    schoolClass: 6,
+    strength: 5.2,
+    history: [{ lessonLabel: 'Занятие 40', classroomName: '202', groupName: 'Начинающие' }],
   },
   {
     id: 's3',
@@ -276,6 +308,10 @@ const assignedStudents: ClassroomPlanStudent[] = [
     classroomId: '301',
     status: 'assigned',
     source: 'group-change',
+    age: 14.1,
+    schoolClass: 8,
+    strength: null,
+    history: [{ lessonLabel: 'Занятие 40', classroomName: '204', groupName: 'Начинающие' }],
   },
   {
     id: 's4',
@@ -284,6 +320,10 @@ const assignedStudents: ClassroomPlanStudent[] = [
     classroomId: 'hall',
     status: 'assigned',
     source: 'manual',
+    age: null,
+    schoolClass: null,
+    strength: 8.4,
+    history: [],
   },
 ]
 
@@ -291,6 +331,11 @@ function PlanHarness() {
   const [students, setStudents] = useState(assignedStudents)
   const [state, setState] = useState<ClassroomPlanState>('draft')
   const [readout, setReadout] = useState('План не подтверждён')
+  const [groupChange, setGroupChange] = useState<{
+    studentId: string
+    groupId: string
+    classroomId: string
+  } | null>(null)
 
   return (
     <div className="space-y-2">
@@ -315,12 +360,45 @@ function PlanHarness() {
             ),
           )
         }
+        onRequestGroupChange={(studentId, groupId, classroomId) =>
+          setGroupChange({ studentId, groupId, classroomId })
+        }
+        onShowHistory={(studentId) => setReadout(`Открыта история ${studentId}`)}
         onRecalculate={() => setReadout('Предпросмотр пересчитан')}
         rooms={planRooms}
         state={state}
         students={students}
         version={12}
       />
+      {groupChange ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-status-warning-border bg-status-warning-surface p-3 text-small">
+          <p className="text-foreground">Сменить группу школьника вместе с аудиторией?</p>
+          <button
+            className="rounded-md bg-primary px-2 py-1 text-primary-foreground"
+            onClick={() => {
+              setStudents((current) =>
+                current.map((student) =>
+                  student.id === groupChange.studentId
+                    ? {
+                        ...student,
+                        groupId: groupChange.groupId,
+                        classroomId: groupChange.classroomId,
+                        source: 'group-change' as const,
+                      }
+                    : student,
+                ),
+              )
+              setGroupChange(null)
+            }}
+            type="button"
+          >
+            Сменить группу и аудиторию
+          </button>
+          <button onClick={() => setGroupChange(null)} type="button">
+            Отмена
+          </button>
+        </div>
+      ) : null}
       <p className="text-caption text-muted-foreground" data-testid="plan-readout" role="status">
         {readout}
       </p>
@@ -381,6 +459,10 @@ export const PlanReassigningAndNoRoom: Story = {
           classroomId: null,
           status: 'reassigning',
           source: 'mode-change',
+          age: 13.9,
+          schoolClass: 8,
+          strength: 8.4,
+          history: [{ lessonLabel: 'Занятие 40', classroomName: '401', groupName: 'Эксперты' }],
         },
       ]}
       version={13}
@@ -482,6 +564,14 @@ export const MobileStaffLayout: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('tab', { name: 'Школьники' }))
     await expect(canvas.getByText('Школьники по аудиториям')).toBeInTheDocument()
+    await expect(canvas.getAllByText(/возраст 13\.3/).length).toBeGreaterThan(0)
+    await expect(canvas.getAllByText(/класс 7/).length).toBeGreaterThan(0)
+    await expect(canvas.getAllByText(/сила 6\.8/).length).toBeGreaterThan(0)
+    await expect(
+      canvas.getByText(/1 уч\. · возраст 13\.3 · класс 7\.0 · сила 6\.8/),
+    ).toBeInTheDocument()
+    await userEvent.type(canvas.getByLabelText('Быстрый поиск школьника'), 'Белофа')
+    await expect(canvas.getByRole('button', { name: /^Анна Белова$/ })).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'Подтвердить план' })).toBeEnabled()
   },
 }

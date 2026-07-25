@@ -2,15 +2,15 @@
 
 Этот файл — журнал gates. Визуальная модель обновляет evidence и вопросы, но ставит `accepted` только после явного решения владельца продукта.
 
-| Фаза                     | Статус             | Принято    | Evidence/решение                                                                      |
-| ------------------------ | ------------------ | ---------- | ------------------------------------------------------------------------------------- |
-| 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.           |
-| 2. Brand and tokens      | accepted           | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                               |
-| 3. UI primitives         | accepted           | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                 |
-| 4. Product components    | ready for review   | —          | Новый контур аудиторий реализован и проверен; требуется визуальная приёмка владельца. |
-| 5. Pages and flows       | blocked by phase 4 | —          | Существующие prototype pages — content skeletons, не принятый visual design.          |
-| 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                          |
-| 7. Final acceptance      | blocked            | —          | —                                                                                     |
+| Фаза                     | Статус             | Принято    | Evidence/решение                                                                         |
+| ------------------------ | ------------------ | ---------- | ---------------------------------------------------------------------------------------- |
+| 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.              |
+| 2. Brand and tokens      | accepted           | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                  |
+| 3. UI primitives         | accepted           | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                    |
+| 4. Product components    | changes requested  | —          | База работает; classroom density/data/search/draft states требуют следующего инкремента. |
+| 5. Pages and flows       | blocked by phase 4 | —          | Существующие prototype pages — content skeletons, не принятый visual design.             |
+| 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                             |
+| 7. Final acceptance      | blocked            | —          | —                                                                                        |
 
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
@@ -134,6 +134,29 @@ Known follow-ups:
   `/staff/classrooms` относится к Phase 5; snapshots не обновлялись.
 ```
 
+```text
+2026-07-25 — Phase 4 — changes requested
+Decision owner: Сергей Шашков (владелец продукта)
+Chosen option and exact combination:
+  Classroom assignments используют только компактные select, включая bulk mode;
+  комнаты складываются flex-wrap и выдерживают 6–15 комнат/~200 школьников.
+  Нужны group marker/tint и «очно/распределено», отдельные неназначенные,
+  возраст на сегодня, класс, auto-strength 0–10, room averages возраста/класса/силы, fuzzy search+jump,
+  classroom history и confirmation при выборе комнаты другой группы.
+  Все значимые Student/Staff drafts переживают reload: serializable state в
+  localStorage, blobs/outbox в Dexie, очистка только после receipt/confirm/discard.
+  Статистика никогда не отмечает школьника на распределении и не сравнивает с группой.
+Rejected traits:
+  DnD для 15 комнат; большие student cards; autosave каждого select на server;
+  self marker/«выше среднего» в violin.
+Evidence stories:
+  Существующие Product/Classrooms остаются baseline, но не закрывают новый gate.
+  Требуются density, missing data, fuzzy/history, bulk/cross-group и draft stories.
+Known follow-ups:
+  После реализации повторить Storybook interaction/a11y/visual checks. Phase 4
+  возвращается в ready for review только после закрытия всех перечисленных states.
+```
+
 ## Фаза 1 — принято (evidence)
 
 Направление B принято 2026-07-23; варианты A и C выброшены, `Exploration/*` удалён
@@ -169,7 +192,7 @@ Stories (удалены после приёмки): `Exploration/Art direction` 
 - KaTeX рендерится на клиенте; math fonts входят в PWA precache, TikZ остаётся external SVG;
 - Sonner заменяется Base UI Toast, Sheet — Base UI Drawer;
 - графики используют Visx/D3, Staff grid — TanStack Table/Virtual, новая DnD dependency не добавляется;
-- a11y baseline и axe gate сохраняются для Staff; упрощение DnD не создаёт исключения;
+- Staff сохраняет базовые label/alt/ARIA/contrast и axe gate; полноценный keyboard-аналог специализированного DnD не обязателен;
 - Playwright E2E/visual запускаются на production bundles через Vite preview;
 - brand baseline: знак B — скруглённый прямоугольник `179` с антенной, его палитра и простой sans wordmark; антенна сохраняется на 16 px после отдельной проверки читаемости;
 - verdict UI строится из registry курса и поддерживает binary/ternary/full scale; тип, lock/review, reactions, hint/solution и future AI states заданы в `docs/product-ux-decisions-2026-07.md`;
@@ -251,28 +274,30 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - `Product/Reading` stories (заголовок, рисунок, disclosure, «чтение задачи целиком») на фикстуре 21н «Расстановка ладей» + interaction-тесты: условие видно до любых раскрытий, подтверждение появляется раньше текста, заблокированное решение не раскрывается, zoom меняет масштаб;
 - гейты: Storybook **34/34** (axe error), lint (js+css), typecheck, build — зелёные.
 
-**Инкремент 3 — ввод тестовых ответов (зелёный):**
+**Инкремент 3 — ввод тестовых ответов (переработан 25 июля, требует повторного gate):**
 
-- `answer-spec.ts` — view-model `AnswerSpec` поверх всех ~24 `ANS_TYPE` (helpers/consts.py): тип сворачивается к одному из четырёх архетипов (`answerInputKind`: scalar / tuple / list / choice), плюс `answerInputMode` (numeric/decimal/text — правильная экранная клавиатура) и `defaultAnswerHint` — понятная русская подсказка + пример на каждый тип;
-- `TestAnswer` — один компонент на все типы: скаляр (Input с нужным inputMode), кортеж фиксированной длины (int-2/3/4 — отдельные поля, у каждого accessible name), список через запятую (int-seq/int-set/frac-seq/multiset — Input + живой предпросмотр разобранных элементов; семантика порядка/повторов — в подсказке), выбор одного варианта (RadioGroup). Компонент неконтролируемый внутри, отдаёт нормализованную строку ответа через `onChange` — правильность решает сервер. **Формат всегда объяснён словами + пример** (школьник видит внятный текст, не код);
-- `Product/Test answer` stories (скаляр/кортеж/список/выбор + галерея типов) + interaction-тесты: ввод скаляра, сборка кортежа «1, 7, 9», предпросмотр списка, выбор варианта;
+- `answer-spec.ts` описывает все 23 текущих `ANS_TYPE`; `answer-validation.ts` зеркалит `strip()+fullmatch` из `helpers/checkers.py`, включая per-problem `ans_validation`, но оставляет server авторитетом;
+- `TestAnswer` показывает заметную format error, не выводит «Отправится» для tuple, показывает «Распознано» для list только после legacy-compatible parsing и передаёт видимый русский label `SELECT_ONE`;
+- `Product/Test answer` содержит scalar invalid, tuple invalid, list parsing, exact-label choice и галерею всех 23 типов; добавлены unit fixtures legacy boundaries;
 - гейты: Storybook **39/39** (axe error), lint (js+css), typecheck, build — зелёные.
 
-**Инкремент 4 — письменная сдача (зелёный):** `AttachmentView` + `AttachmentItem`/`AttachmentList` (превью, состояния processing/uploading/ready/failed/queued, переупорядочивание кнопками вверх/вниз с клавиатуры, поворот, удаление, повтор); `SubmissionComposer` (текст + до 10 фото, объяснение camera/files и лимита, общий размер, автосохранение черновика, офлайн-очередь, закрытый приём, «устную можно письменно»); `SubmissionReceipt` (время клиента+сервера, идемпотентность). `Product/Submission` stories + interaction-тесты (ввод, переупорядочивание страниц, повтор загрузки).
+**Инкремент 4 — письменная сдача (переработан 25 июля, требует повторного gate):** `AttachmentView` + `AttachmentItem`/`AttachmentList` показывают реальные thumbnails во всех processing/upload/error states, переупорядочивание вверх/вниз, поворот, удаление и retry. `SubmissionComposer` сохраняет text/photo/offline states. Отдельные `SubmissionReceipt`, reference number и story-квитанция удалены: успешная сдача должна становиться обычной записью треда.
 
 **Инкремент 5 — результат, тред, аннотации (зелёный):** `VerdictPanel` (вердикт + комментарий; human/AI по-разному, ИИ не спутать с преподавателем); `AttemptTimeline` (последний вердикт сразу, история раскрывается, без «номера попытки» и обвинительного тона); `FeedbackThread`/`ThreadMessage`/`FeedbackAttention` (автор/время/канал; асимметричная видимость как permission state; индикатор непрочитанного); `reaction`-registry + `ReactionPicker`/`ReactionChip` (легаси-реакции 0/100/200/300 с видимостью: ученик скрыт от учителя/виден admin, внутренняя учителя скрыта от ученика); `AnnotationOverlay` (перо/выделение/нумерованные комментарии над неизменяемой работой). `Product/Feedback` stories + interaction-тесты (выбор реакции, раскрытие истории, комментарий-аннотация).
 
-**Инкремент 6 — Telegram-rich новости (зелёный):** `TelegramPostView` + `TelegramRichPost` — entities (bold/italic/underline/strike/code/link/spoiler со снятием размытия), цитаты, math через hook `renderMath`, альбом, плейсхолдеры видео/документа, forwarded/source attribution; варианты card/detail и превью surface pwa/telegram; редакционные состояния (изменено в источнике / локальная правка / удалено / ошибка доставки / скрыто). `Product/News` stories + interaction-тест (раскрытие спойлера).
+**Инкремент 6 — Telegram-rich новости (переработан 25 июля, требует повторного gate):** structured model дополнен headings, mark/sub/sup, lists, code, details, tables и divider. Основная `Product/News--post` показывает полное условие текстом с math/list/details без screenshot; corpus привязан к `_external_pipelines/ChatExport_2026-07-25`. Card/detail, PWA/Telegram previews и editorial states сохранены.
 
 **Инкремент 7 — connectivity (зелёный):** `ConnectionBanner` (online ненавязчив; offline/reconnecting объясняют влияние на действие; conflict — не исчезающий toast, требует решения); `SyncIndicator` (счётчик очереди → outbox, тихо когда нечего слать); `UpdatePrompt` (не рушит черновик); `PushPermissionCard` (объясняет категории до системного запроса, уважает отказ). `Product/Connectivity` stories + interaction-тесты.
 
-**Инкремент 8 — рабочее место Staff (зелёный):** `ReviewQueue` (плотная, сортировка задача/ожидание/группа/ученик, list/fast, счётчик+возраст, занятая работа с именем и disabled, перепроверка); `ReviewLock` (аренда held/busy/lost); `VerdictActions` (из registry лучший→худший, кнопки + цифры, `1`=«+», легенда, не срабатывает в поле); `ReviewFeedbackForm` c `ReviewCommentGuard` (вердикт ниже «+» без комментария — подтверждение, не блок) и внутренней `ReactionPicker`; `ThreePaneReview`; `DenseDataTable` (sticky, сортировка, выбор, keyboard); `MetadataGrid` (правка ячеек, вставка TSV, dry-run, undo); админ-поверхности `PublicationControl`, `LatexUpload`, `MissingAssetsFlow`, `BroadcastComposer`, `SosQueue` (отдельно от очереди вердиктов). `Product/Review`, `Product/Staff data`, `Product/Staff admin` stories + interaction-тесты (сортировка, «+» цифрой, guard, публикация, рассылка, SOS, выбор/сортировка таблицы, dry-run метаданных).
+**Инкремент 8 — рабочее место Staff (переработан 25 июля, требует повторного gate):** queue сохранена, а detail теперь одна колонка `evidence → thread → teacher reply/verdict`; teacher verdict/reaction controls компактны, но сохраняют точный текст. `MetadataGrid` получил dropdown-ячейки task type/answer type с TSV paste. `PublicationControl` независимо публикует/планирует/откатывает condition/hint/solution. Полный `BroadcastComposer` убран из первой фазы story и обозначен как phase-two Markdown workflow. Остальные lock/data/upload/SOS surfaces сохранены.
 
-**Инкремент 9 — прогресс (зелёный):** зависимость `@visx/scale` (из каталога); `DistributionViolin` (гауссова KDE, медиана, маркер своего результата словами «выше среднего»), `TrendWithBand` (линия + доверительная полоса) — обе shape-first, не по цвету, с табличным эквивалентом в `<details>`; `StudentProgress` — словами («3 задачи зачтено»), спокойный streak относительно своей истории, без leaderboard/percentile/красных провалов, распределение по группе спрятано за раскрытием (не навязывается), пустое состояние. `Product/Progress` stories + interaction-тесты.
+**Инкремент 9 — прогресс (зелёный, требования уточнены):** зависимость `@visx/scale` (из каталога); `DistributionViolin` показывает только распределение группы и медиану — без маркера школьника и без словесного сравнения его с группой. `TrendWithBand` (линия + доверительная полоса) и график личной динамики shape-first, не только по цвету, с табличным эквивалентом в `<details>`; `StudentProgress` — словами («3 задачи зачтено»), спокойный streak относительно своей истории, без leaderboard/percentile/красных провалов. `Product/Progress` stories + interaction-тесты.
 
-**Инкремент 10 — аудитории (зелёный):** прежний монолитный `ClassroomPlanner` удалён. `ClassroomCatalog` покрывает создание, поиск, active/hidden, rename/restore и Unicode/case duplicate без потери ввода; `ClassroomGroupLayout` — inherited/materialized/confirmed/superseded, actual counts, unused rooms и optimistic conflict; `ClassroomStudentPlanner` — preview/recalculate/confirm, move через select, stale/reassigning, empty group и blocking no-room incident; `ClassroomAssignmentStatus` — публичные `assigned/reassigning/not_applicable` для Student и Family с push affordance только у Student. `Product/Classrooms` содержит 12 stories, включая mobile Staff и фактическую матрицу 6/5/2 без capacity/DnD.
+**Инкремент 10 — аудитории (доработан 25 июля, требует повторного gate):** layout теперь имеет group marker/tint и `очно/распределено`; planner использует flex-wrap room cards, отдельную секцию неназначенных, компактные строки с возрастом/классом/силой, room averages, fuzzy search+jump, checkbox bulk move, history action и callback подтверждения cross-group move. `mobile-staff-layout` содержит все student/room metrics. До принятия ещё нужны реальная local-draft story и отдельный dense fixture около 200 школьников; capacity/DnD отсутствуют.
 
-**Итог Phase 4:** гейты зелёные — Vitest **7/7**, Storybook **83/83** (axe error), lint, package typecheck и production Storybook build. Фаза снова готова к визуальной приёмке владельцем; это не означает `accepted`. После принятия начинается Phase 5 — страницы, начиная со Student «Сейчас» mobile-light. Visual baselines обновляются после первой реальной страницы.
+**Итог прежнего инкремента Phase 4:** Vitest **7/7**, Storybook **83/83** (axe error), lint, package typecheck и production Storybook build были зелёными для старого набора. Решения 25 июля расширили gate, поэтому фаза имеет статус `changes requested`, а эти результаты не являются доказательством новых classroom/draft states. После доработки проверки запускаются заново; только затем возможна визуальная приёмка и Phase 5.
+
+**Повторный технический gate 25 июля:** `pwa-lint`, `pwa-typecheck` и `pwa-build` зелёные; Vitest — **21/21**, Python PWA tests — **11/11**, Storybook browser tests — **83/83** с `addon-a11y` в режиме error. Вручную проверены переработанные stories проверки, публикации, metadata grid, письменной сдачи, обозначений уровней, тестовых ответов, новостей, прогресса, масштабируемого рисунка и аудиторий. Phase 4 остаётся в `changes requested`: для classroom planner всё ещё нужны отдельная story восстановления local draft, плотная фикстура примерно на 200 школьников и визуальная приёмка владельцем.
 
 ## Решения итогового продуктового опросника — 24 июля 2026
 
@@ -282,6 +307,8 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - Отдельного dispute/«вернуть на доработку» workflow в v1 нет: состояние интерфейса выводится из актуального registry verdict. `REJECTED_ANSWER` остаётся отрицательным результатом после перепроверки.
 - Hint reveal хранится как служебное методическое событие и в v1 не показывается отдельной строкой ролям.
 - Причина abandon не хранится; unsent teacher comment/annotation draft сохраняется локально.
+- Значимая незавершённая работа Student/Staff сохраняется локально до server receipt/confirm или explicit discard: serializable drafts в `localStorage`, blobs/outbox в Dexie. Classroom edits не autosave-ятся на сервер по одному.
+- Staff сохраняет базовые a11y label/alt/ARIA/contrast/axe; отдельный keyboard-аналог специализированного DnD не обязателен. Текущий classroom flow использует select, не DnD.
 - Family self-check удалён из требований. Family видит полный student-visible thread/evidence, меняет level/mode и получает недельный итог без сравнения с группой.
 - Полный набор решений и границ находится в `../development-plan/01-decisions-and-boundaries.md`; компонентные и page-требования синхронизированы в `04-product-components.md`, `05-pages-and-flows.md` и `07-acceptance-checklist.md`.
 

@@ -40,8 +40,9 @@ export function ReviewFeedbackForm({
 
   const submit = () => {
     if (!verdict) return
-    const belowPlus = verdict.weight < 1
-    if (belowPlus && comment.trim() === '' && !confirming) {
+    // «Зачтено» — вес ≥ 0.9. Незачёт без комментария просим подтвердить.
+    const notPassed = verdict.weight < 0.9
+    if (notPassed && comment.trim() === '' && !confirming) {
       setConfirming(true)
       return
     }
@@ -51,7 +52,7 @@ export function ReviewFeedbackForm({
 
   return (
     <form
-      className={cn('space-y-4', className)}
+      className={cn('space-y-3', className)}
       onSubmit={(event) => {
         event.preventDefault()
         submit()
@@ -62,7 +63,7 @@ export function ReviewFeedbackForm({
           Комментарий
         </label>
         <Textarea
-          className="min-h-24"
+          className="min-h-16 text-small"
           disabled={disabled}
           id={commentId}
           onChange={(event) => {
@@ -85,6 +86,7 @@ export function ReviewFeedbackForm({
       />
 
       <ReactionPicker
+        compact
         legend="Внутренняя пометка (не видна ученику)"
         onSelect={setReactionId}
         options={reactionsForScope('teacher-written')}
@@ -96,7 +98,7 @@ export function ReviewFeedbackForm({
           className="space-y-2 rounded-md border border-status-warning-border bg-status-warning-surface p-3 text-small"
           role="group"
         >
-          <p className="text-foreground">Вердикт ниже «+» без комментария. Отправить всё равно?</p>
+          <p className="text-foreground">Незачёт без комментария. Отправить всё равно?</p>
           <div className="flex gap-2">
             <Button onClick={submit} size="sm">
               Отправить всё равно

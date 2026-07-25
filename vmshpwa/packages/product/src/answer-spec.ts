@@ -48,6 +48,10 @@ export interface AnswerSpec {
   arity?: number
   /** Options for `select-one`. */
   options?: AnswerOption[]
+  /** Optional per-problem regex from `ans_validation`, without fullmatch anchors. */
+  validationPattern?: string
+  /** Existing per-problem validation message shown when the format is invalid. */
+  validationError?: string
 }
 
 const tupleArity: Partial<Record<AnswerType, number>> = {

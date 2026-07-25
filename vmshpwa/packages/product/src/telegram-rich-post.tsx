@@ -61,6 +61,16 @@ function RichText({ text, entities }: { text: string; entities?: TelegramEntity[
                 {segment.text}
               </button>
             )
+          case 'mark':
+            return (
+              <mark className="bg-status-warning-surface text-foreground" key={index}>
+                {segment.text}
+              </mark>
+            )
+          case 'sub':
+            return <sub key={index}>{segment.text}</sub>
+          case 'sup':
+            return <sup key={index}>{segment.text}</sup>
         }
       })}
     </>
@@ -79,6 +89,93 @@ function Block({
       <div className="my-1">{renderMath ? renderMath(block.html) : <code>{block.html}</code>}</div>
     )
   }
+  if (block.kind === 'heading') {
+    const sizes = {
+      1: 'text-title',
+      2: 'text-subtitle',
+      3: 'text-label',
+      4: 'text-label',
+      5: 'text-small',
+      6: 'text-small',
+    } as const
+    const Heading = `h${block.level}` as 'h1'
+    return (
+      <Heading className={cn('font-semibold text-foreground', sizes[block.level])}>
+        <RichText entities={block.entities} text={block.text} />
+      </Heading>
+    )
+  }
+  if (block.kind === 'list') {
+    const List = block.ordered ? 'ol' : 'ul'
+    return (
+      <List
+        className={cn('space-y-1 pl-5', block.ordered ? 'list-decimal' : 'list-disc')}
+        start={block.ordered ? block.start : undefined}
+      >
+        {block.items.map((item, index) => (
+          <li key={index}>
+            <RichText entities={item.entities} text={item.text} />
+          </li>
+        ))}
+      </List>
+    )
+  }
+  if (block.kind === 'code') {
+    return (
+      <pre className="overflow-x-auto rounded-md bg-surface-sunken p-3 font-mono text-caption">
+        <code data-language={block.language}>{block.code}</code>
+      </pre>
+    )
+  }
+  if (block.kind === 'divider') return <hr className="border-border" />
+  if (block.kind === 'table') {
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-caption">
+          {block.caption ? (
+            <caption className="pb-1 text-left text-muted-foreground">{block.caption}</caption>
+          ) : null}
+          {block.headers ? (
+            <thead>
+              <tr>
+                {block.headers.map((header) => (
+                  <th
+                    className="border border-border bg-surface-subtle px-2 py-1 text-left"
+                    key={header}
+                  >
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+          ) : null}
+          <tbody>
+            {block.rows.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((cell, cellIndex) => (
+                  <td className="border border-border px-2 py-1" key={cellIndex}>
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+  if (block.kind === 'details') {
+    return (
+      <details className="rounded-md border border-border bg-surface-subtle p-2" open={block.open}>
+        <summary className="cursor-pointer font-medium">{block.summary}</summary>
+        <div className="mt-2 space-y-2">
+          {block.blocks.map((nested, index) => (
+            <Block block={nested} key={index} renderMath={renderMath} />
+          ))}
+        </div>
+      </details>
+    )
+  }
   if (block.kind === 'quote') {
     return (
       <blockquote className="border-l-2 border-border-strong pl-3 text-muted-foreground italic">
@@ -87,7 +184,7 @@ function Block({
     )
   }
   return (
-    <p>
+    <p className="whitespace-pre-wrap">
       <RichText entities={block.entities} text={block.text} />
     </p>
   )

@@ -14,7 +14,7 @@
 4. task status/deadline + primary/secondary/destructive actions;
 5. письменную сдачу с двумя фотографиями и offline queued state;
 6. новостную карточку из Telegram с album preview;
-7. staff table/queue и трёхзонную проверку;
+7. staff table/queue и проверку с хронологической колонкой «работа → обсуждение → ответ»;
 8. error, warning, success, level color и focus — одновременно, чтобы проверить независимость значений.
 
 Контент, размеры viewport и порядок блоков между направлениями одинаковы. Не прятать слабые места за разными mock-данными.

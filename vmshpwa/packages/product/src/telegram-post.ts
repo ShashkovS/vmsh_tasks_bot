@@ -5,7 +5,7 @@
  * override, hidden/source-deleted and a delivery error.
  */
 export type TelegramEntityType =
-  'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'link' | 'spoiler'
+  'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'link' | 'spoiler' | 'mark' | 'sub' | 'sup'
 
 export interface TelegramEntity {
   type: TelegramEntityType
@@ -32,7 +32,54 @@ export interface TelegramMathBlock {
   html: string
 }
 
-export type TelegramBlock = TelegramTextBlock | TelegramQuoteBlock | TelegramMathBlock
+export interface TelegramHeadingBlock {
+  kind: 'heading'
+  level: 1 | 2 | 3 | 4 | 5 | 6
+  text: string
+  entities?: TelegramEntity[]
+}
+
+export interface TelegramListBlock {
+  kind: 'list'
+  ordered?: boolean
+  start?: number
+  items: { text: string; entities?: TelegramEntity[] }[]
+}
+
+export interface TelegramCodeBlock {
+  kind: 'code'
+  code: string
+  language?: string
+}
+
+export interface TelegramTableBlock {
+  kind: 'table'
+  caption?: string
+  headers?: string[]
+  rows: string[][]
+}
+
+export interface TelegramDetailsBlock {
+  kind: 'details'
+  summary: string
+  open?: boolean
+  blocks: TelegramBlock[]
+}
+
+export interface TelegramDividerBlock {
+  kind: 'divider'
+}
+
+export type TelegramBlock =
+  | TelegramTextBlock
+  | TelegramQuoteBlock
+  | TelegramMathBlock
+  | TelegramHeadingBlock
+  | TelegramListBlock
+  | TelegramCodeBlock
+  | TelegramTableBlock
+  | TelegramDetailsBlock
+  | TelegramDividerBlock
 
 export interface TelegramPhoto {
   kind: 'photo'

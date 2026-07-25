@@ -23,7 +23,7 @@ export interface StudentProgressProps {
   attemptedCount?: number
   streakDays?: number
   achievements?: string[]
-  distribution?: { values: number[]; self?: number }
+  distribution?: { values: number[] }
   empty?: boolean
   className?: string
 }
@@ -89,8 +89,7 @@ export function StudentProgress({
           </summary>
           <div className="mt-2">
             <DistributionViolin
-              caption="Твой результат отмечен пунктиром."
-              self={distribution.self}
+              caption="Сколько задач решают в группе. Тебя тут не отмечаем — это про группу целиком."
               values={distribution.values}
             />
           </div>

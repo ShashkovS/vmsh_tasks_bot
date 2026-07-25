@@ -34,7 +34,9 @@ Migration: `pwa_submission_threads_entries_assets`.
 - Focused written task and composer in `student/src/features/submissions/written`; text-only разрешён, raw LaTeX сохраняется, но v1 не рендерится.
 - Thread timeline initially shows student entries; phase 6 adds review events.
 - Отдельные Student actions «дописать ответ» и «пересдать решение» ведут к одной backend operation без fake attempt numbering.
-- Offline quota estimate and recovery: keep local preview until server acknowledgement; warnings when browser storage is low.
+- Offline quota estimate and recovery: keep local preview until server acknowledgement; warnings when browser storage is low. Каждое выбранное фото сразу получает настоящую thumbnail, включая processing/upload/error states.
+- Composer metadata/text/order сохраняются в account/thread/revision-scoped `localStorage`, подготовленные фотографии и outbox — в Dexie. Reload/update восстанавливает одну согласованную композицию; receipt очищает оба слоя только после успешной фиксации.
+- Пользовательский интерфейс не создаёт отдельную «квитанцию», reference number или доказательный экран: успешная запись становится обычным entry/status в треде. Технический idempotency key остаётся внутри протокола.
 - Logout with pending queue warns and lists count; confirmed logout may clear it.
 
 ## Tests
@@ -44,6 +46,7 @@ Migration: `pwa_submission_threads_entries_assets`.
 - Storage adapter parity, interrupted upload, S3 transient retry, hash collision, temp cleanup.
 - Authorization: other student/family cannot enumerate attachment; public URL accessibility follows explicit privacy decision.
 - Offline outbox crash matrix and idempotency/payload conflict.
+- Reload/remount, account isolation, partial-photo recovery, PWA update и cleanup-after-receipt для связки localStorage + Dexie.
 - Concurrent edit vs review completion: новая фотография до commit обязана войти в текущую проверку; thread-version conflict заставляет teacher refetch.
 - Storybook photo-state matrix and 1/2/10-page mobile cases.
 - Playwright real aiohttp/filesystem storage: camera-file input → worker → offline/reconnect → stored → reload; no MSW.
@@ -55,6 +58,7 @@ Migration: `pwa_submission_threads_entries_assets`.
 - Retry creates one logical entry/asset set; Telegram media group и PWA entry сводятся в один thread/provenance.
 - 1–2 photos require few clear actions; 10 photos remain manageable.
 - Locked material cannot be mutated through UI or direct API.
+- Незавершённый текст, порядок и выбранные страницы переживают reload; conflict/ошибка не очищают draft.
 - Telegram discussions remain readable and new PWA thread does not corrupt queue behavior.
 
 ## Пруфы завершения этапа
@@ -64,6 +68,7 @@ Migration: `pwa_submission_threads_entries_assets`.
 - [ ] Media corpus results (dimensions, WebP, EXIF, HEIC fallback, corrupt/huge): `<path>`.
 - [ ] Filesystem/S3 adapter and cleanup tests: `<result>`.
 - [ ] Idempotency/crash/concurrency/lock tests: `<result>`.
+- [ ] Cross-storage draft recovery/isolation/receipt cleanup: `<result>`.
 - [ ] Storybook photo state matrix/interactions/a11y/visuals: `<ids/paths>`.
 - [ ] Playwright 3 browsers and capability skips: `<result>`.
 - [ ] Telegram legacy discussion/queue tests: `<result>`.

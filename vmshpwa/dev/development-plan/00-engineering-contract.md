@@ -48,8 +48,9 @@
 - Python unit/domain tests проверяют правила и переходы состояний.
 - Python API tests проверяют авторизацию, валидацию, error envelope, request ID и транзакции.
 - TypeScript unit tests покрывают contracts, query keys, offline/outbox и чистые преобразования.
+- Любой экран с значимой незавершённой работой имеет тест восстановления после reload/remount, изоляции аккаунтов, server-version conflict и очистки только после receipt/confirm/explicit discard. Serializable state проверяется в `localStorage`, blobs/outbox — в Dexie.
 - Storybook содержит все значимые состояния изменённых общих и продуктовых компонентов; interactions проходят в browser mode.
-- A11y addon остаётся `error` для Student, Family и Staff. Исключения возможны только локально, с причиной и issue.
+- A11y addon остаётся `error` для Student, Family и Staff. Для Staff обязательны label/alt/ARIA/contrast; отдельный полноценный keyboard-аналог специализированного DnD не является общим gate. Исключения axe возможны только локально, с причиной и issue.
 - Playwright использует production build/preview, настоящий aiohttp и отдельную seeded SQLite; MSW запрещён.
 - E2E проходит в Chromium, WebKit и Firefox; PWA/SW-специфичное проверяется там, где браузер поддерживает механизм.
 - Исторические Telegram tests запускаются отдельно, если менялась общая доменная логика.

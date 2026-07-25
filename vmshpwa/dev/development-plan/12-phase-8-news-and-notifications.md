@@ -1,14 +1,14 @@
-# Этап 8. Telegram-news, realtime, Web Push, баннеры и рассылки
+# Этап 8. Telegram-news, realtime, Web Push и баннеры
 
 ## Результат
 
-Посты Telegram-канала с 1 апреля 2026 года, включая edits/deletes, идемпотентно зеркалируются в Student/Family PWA. Admin может скрыть пост только в PWA и создать scheduled local publication/banner. Staff→Telegram publishing откладывается во вторую версию.
+Посты Telegram-канала с 1 апреля 2026 года, включая edits/deletes, идемпотентно зеркалируются в Student/Family PWA. Admin может скрыть пост только в PWA и создать scheduled local publication/banner. Полный broadcast composer и Staff→Telegram publishing откладываются во вторую версию.
 
 ## Модель данных
 
 Migration: `pwa_news_notifications_delivery`.
 
-Таблицы: `news_posts`, `news_revisions`, `news_media`, `news_visibility`, `notification_preferences`, `push_subscriptions`, `notification_events`, `notification_deliveries`, `delivery_outbox`, `broadcasts`, `broadcast_targets`, `broadcast_deliveries`, `group_banners`.
+Таблицы: `news_posts`, `news_revisions`, `news_media`, `news_visibility`, `notification_preferences`, `push_subscriptions`, `notification_events`, `notification_deliveries`, `delivery_outbox`, `group_banners`. `broadcasts`, targets/deliveries и Markdown-editor schema добавляются во второй фазе, а не заранее пустыми таблицами.
 
 Telegram update identity: chat/message/media-group IDs + source hash. Edit creates new revision; source delete убирает пост из обычной PWA-ленты, manual hide не меняет Telegram.
 
@@ -16,14 +16,15 @@ Telegram update identity: chat/message/media-group IDs + source hash. Edit creat
 
 - Telegram adapter backfills from `2026-04-01` and consumes new/edited/deleted channel posts without becoming required app startup adapter.
 - Media copies to S3/file storage; local DB keeps source payload and revision.
-- Telegram-rich source is sanitized into PWA representation with math extensions; unsupported entity produces diagnostic/fallback, not raw unsafe HTML.
+- Telegram-rich source is sanitized into PWA representation with headings, paragraphs, emphasis/mark/sub/sup/spoiler, links, lists, quotes, code, details, tables, divider, media and math extensions; unsupported entity produces diagnostic/fallback, not raw unsafe HTML.
+- Новые условия задач публикуются в Telegram полноценным текстом Rich Message. Скриншот условия не является основным представлением; отдельные SVG/рисунки остаются media. Исторические fixtures берутся из `_external_pipelines/ChatExport_2026-07-25`.
 - Album order/caption and post edits preserved.
 - Local post v1 остаётся в PWA. Telegram preview/publish используется во второй версии для автоматической публикации условий.
 - Баннер имеет display window и исчезает после него; публикация в нормальном случае остаётся навсегда. Dismissal баннера хранится только локально на устройстве.
 
 ## Notification semantics
 
-Categories at minimum: `lesson_published`, `hint_published`, `solution_published`, `review_completed`, `thread_updated`, `oral_window`, `classroom_assignment`, `deadline`, `news`, `broadcast`.
+Categories at minimum: `lesson_published`, `hint_published`, `solution_published`, `review_completed`, `thread_updated`, `oral_window`, `classroom_assignment`, `deadline`, `news`. Категория `broadcast` появляется вместе с полной функцией во второй фазе.
 
 - Defaults all on except `oral_window`; exact split in-app/push follows preference contract.
 - 21:00–09:00 в timezone пользователя подавляет только sound. Event remains visible/delivered.
@@ -58,7 +59,7 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - Classroom delivery routing: owner Student получает event/push, связанный Family socket обновляет state без push, посторонние principals не видят payload.
 - Service-worker push/update routing tests on supported browser; contract tests elsewhere.
 - Storybook news cards/albums/two previews/banner/push prompts/connection states.
-- Playwright production build: backfill/edit/delete fixture → PWA; offline news; scheduled banner with local dismiss; WS/read-after-3s; family weekly digest; teacher forbidden broadcasts.
+- Playwright production build: backfill/edit/delete fixture → PWA; offline news; scheduled banner with local dismiss; WS/read-after-3s; family weekly digest; teacher forbidden admin routes.
 
 ## Критерии приёмки
 
@@ -66,14 +67,14 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - Private review event cannot be observed by other student, family or unrelated staff socket.
 - Reconnect yields correct state even when worker cursor is lower.
 - Quiet hours do not hide/belay in-app information, only suppress sound behavior.
-- PWA broadcast shows aggregate delivery state and can be retried without duplicate sends. Sending Staff-created publications to Telegram remains phase two.
+- Storybook первой фазы честно показывает deferred scope рассылок и не имитирует отправку. Markdown editor, aggregated delivery/retry и Staff→Telegram остаются phase two.
 - Telegram adapter outage does not stop PWA API.
 
 ## Пруфы завершения этапа
 
 - [ ] Revision/migration: `<sha/paths/results>`.
 - [ ] Telegram fixture ingest/edit/album/idempotency report: `<path/result>`.
-- [ ] Demo Telegram mirror, PWA-local publication/hide/banner/broadcast + PWA offline: `<routes/evidence>`.
+- [ ] Demo Telegram mirror, полное текстовое условие, PWA-local publication/hide/banner + PWA offline: `<routes/evidence>`.
 - [ ] WS audience/owner/two-worker/reconnect leakage tests: `<result>`.
 - [ ] Push/outbox/batching/quiet-hours failure matrix: `<path/result>`.
 - [ ] Storybook stories/interactions/a11y/visual approval: `<ids/paths>`.

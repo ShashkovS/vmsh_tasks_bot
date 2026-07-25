@@ -59,7 +59,6 @@ function buildViolinPath(
 
 export interface DistributionViolinProps {
   values: number[]
-  self?: number | undefined
   domain?: [number, number] | undefined
   width?: number | undefined
   height?: number | undefined
@@ -67,9 +66,12 @@ export interface DistributionViolinProps {
   className?: string | undefined
 }
 
+/*
+ * The group distribution never plots the individual student — we do not show a
+ * pupil positioned against others anywhere.
+ */
 export function DistributionViolin({
   values,
-  self,
   domain,
   width = 220,
   height = 200,
@@ -94,20 +96,8 @@ export function DistributionViolin({
   const median = quantileSorted(sorted, 0.5)
   const q1 = quantileSorted(sorted, 0.25)
   const q3 = quantileSorted(sorted, 0.75)
-  const selfPos =
-    self === undefined
-      ? null
-      : self > q3
-        ? 'выше большинства'
-        : self >= median
-          ? 'выше среднего'
-          : self >= q1
-            ? 'около среднего'
-            : 'ниже среднего'
 
-  const label = `Распределение по группе. Медиана ${median.toFixed(1)}, разброс от ${q1.toFixed(1)} до ${q3.toFixed(1)}${
-    self !== undefined ? `. Твой результат ${self} — ${selfPos}` : ''
-  }.`
+  const label = `Распределение по группе. Медиана ${median.toFixed(1)}, разброс от ${q1.toFixed(1)} до ${q3.toFixed(1)}.`
 
   return (
     <figure className={cn('space-y-1', className)}>
@@ -130,20 +120,6 @@ export function DistributionViolin({
           y1={yScale(median)}
           y2={yScale(median)}
         />
-        {self !== undefined ? (
-          <g>
-            <line
-              className="stroke-foreground"
-              strokeDasharray="3 2"
-              strokeWidth={1.5}
-              x1={pad}
-              x2={width - pad}
-              y1={yScale(self)}
-              y2={yScale(self)}
-            />
-            <circle className="fill-foreground" cx={cx} cy={yScale(self)} r={3} />
-          </g>
-        ) : null}
       </svg>
       {caption ? (
         <figcaption className="text-caption text-muted-foreground">{caption}</figcaption>
@@ -162,14 +138,6 @@ export function DistributionViolin({
                 {q1.toFixed(1)}–{q3.toFixed(1)}
               </td>
             </tr>
-            {self !== undefined ? (
-              <tr>
-                <td className="pr-3">Твой результат</td>
-                <td className="font-num">
-                  {self} ({selfPos})
-                </td>
-              </tr>
-            ) : null}
           </tbody>
         </table>
       </details>
@@ -288,6 +256,215 @@ export function TrendWithBand({
             ))}
           </tbody>
         </table>
+      </details>
+    </figure>
+  )
+}
+
+/* ── Strength trend (personal, over lessons — never a comparison) ────────── */
+
+function buildSeriesPath(values: (number | undefined)[], xScale: Scale, yScale: Scale): string {
+  let d = ''
+  let started = false
+  values.forEach((value, index) => {
+    if (value === undefined) return
+    d += `${started ? ' L' : 'M'} ${xScale(index).toFixed(1)} ${yScale(value).toFixed(1)}`
+    started = true
+  })
+  return d
+}
+
+export interface StrengthLessonPoint {
+  lesson: string
+  /** How well simple / hard tasks go, 0–10. */
+  simple: number
+  complex: number
+  /** Rolling-average companions drawn as a translucent halo (default: the value). */
+  simpleSmooth?: number
+  complexSmooth?: number
+  /** Lesson difficulty (dotted star line). */
+  difficulty?: number
+  /** Solved «6/12» shown under the axis. */
+  solved?: string
+  group?: string
+}
+
+export interface StrengthTrendProps {
+  points: StrengthLessonPoint[]
+  width?: number
+  height?: number
+  caption?: string
+  className?: string
+}
+
+export function StrengthTrend({
+  points,
+  width = 560,
+  height = 240,
+  caption,
+  className,
+}: StrengthTrendProps) {
+  const padX = 16
+  const padTop = 12
+  const padBottom = 42
+  const xScale = scaleLinear({
+    domain: [0, Math.max(points.length - 1, 1)],
+    range: [padX, width - padX],
+  })
+  const yScale = scaleLinear({ domain: [0, 10], range: [height - padBottom, padTop] })
+
+  const simple = points.map((p) => p.simple)
+  const complex = points.map((p) => p.complex)
+  const simpleSmooth = points.map((p) => p.simpleSmooth ?? p.simple)
+  const complexSmooth = points.map((p) => p.complexSmooth ?? p.complex)
+  const difficulty = points.map((p) => p.difficulty)
+  const gridY = [0, 2, 4, 6, 8, 10]
+
+  return (
+    <figure className={cn('space-y-1', className)}>
+      <div className="max-w-full overflow-x-auto">
+        <svg
+          aria-label="Как получается решать простые и сложные задачи по занятиям, шкала от 0 до 10; выше — легче даётся."
+          className="h-auto w-full min-w-[420px]"
+          role="img"
+          viewBox={`0 0 ${width} ${height}`}
+        >
+          {gridY.map((tick) => (
+            <g key={tick}>
+              <line
+                className="stroke-border/60"
+                x1={padX}
+                x2={width - padX}
+                y1={yScale(tick)}
+                y2={yScale(tick)}
+              />
+              <text className="fill-muted-foreground text-[9px]" x={2} y={yScale(tick) + 3}>
+                {tick}
+              </text>
+            </g>
+          ))}
+
+          <path
+            className="fill-none stroke-chart-1/20"
+            d={buildSeriesPath(simpleSmooth, xScale, yScale)}
+            strokeLinecap="round"
+            strokeWidth={8}
+          />
+          <path
+            className="fill-none stroke-chart-2/20"
+            d={buildSeriesPath(complexSmooth, xScale, yScale)}
+            strokeLinecap="round"
+            strokeWidth={8}
+          />
+          <path
+            className="fill-none stroke-chart-3"
+            d={buildSeriesPath(difficulty, xScale, yScale)}
+            strokeDasharray="1 4"
+            strokeWidth={1}
+          />
+          <path
+            className="fill-none stroke-chart-1"
+            d={buildSeriesPath(simple, xScale, yScale)}
+            strokeWidth={2}
+          />
+          <path
+            className="fill-none stroke-chart-2"
+            d={buildSeriesPath(complex, xScale, yScale)}
+            strokeWidth={2}
+          />
+
+          {points.map((p, index) => (
+            <g key={p.lesson}>
+              <circle className="fill-chart-1" cx={xScale(index)} cy={yScale(p.simple)} r={2.5} />
+              <circle className="fill-chart-2" cx={xScale(index)} cy={yScale(p.complex)} r={2.5} />
+              {p.difficulty !== undefined ? (
+                <text
+                  className="fill-chart-3 text-[10px]"
+                  textAnchor="middle"
+                  x={xScale(index)}
+                  y={yScale(p.difficulty) + 3}
+                >
+                  ★
+                </text>
+              ) : null}
+              <text
+                className="fill-muted-foreground text-[9px]"
+                textAnchor="middle"
+                x={xScale(index)}
+                y={height - padBottom + 13}
+              >
+                {p.lesson}
+              </text>
+              {p.solved ? (
+                <text
+                  className="fill-muted-foreground text-[8px]"
+                  textAnchor="middle"
+                  x={xScale(index)}
+                  y={height - padBottom + 24}
+                >
+                  {p.solved}
+                </text>
+              ) : null}
+              {p.group ? (
+                <text
+                  className="fill-muted-foreground text-[8px]"
+                  textAnchor="middle"
+                  x={xScale(index)}
+                  y={height - padBottom + 33}
+                >
+                  {p.group}
+                </text>
+              ) : null}
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-caption text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <span aria-hidden="true" className="h-0.5 w-4 rounded bg-chart-1" />
+          Простые задачи
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span aria-hidden="true" className="h-0.5 w-4 rounded bg-chart-2" />
+          Сложные задачи
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span aria-hidden="true" className="text-chart-3">
+            ★
+          </span>
+          Сложность занятия
+        </span>
+      </div>
+
+      {caption ? (
+        <figcaption className="text-caption text-muted-foreground">{caption}</figcaption>
+      ) : null}
+
+      <details className="text-caption text-muted-foreground">
+        <summary className="cursor-pointer">Показать числами</summary>
+        <div className="mt-1 max-w-full overflow-x-auto">
+          <table>
+            <thead>
+              <tr>
+                <th className="pr-3 text-left font-medium">Занятие</th>
+                <th className="pr-3 text-left font-medium">Простые</th>
+                <th className="pr-3 text-left font-medium">Сложные</th>
+                <th className="text-left font-medium">Решено</th>
+              </tr>
+            </thead>
+            <tbody>
+              {points.map((p) => (
+                <tr key={p.lesson}>
+                  <td className="pr-3">{p.lesson}</td>
+                  <td className="pr-3 font-num">{p.simple.toFixed(1)}</td>
+                  <td className="pr-3 font-num">{p.complex.toFixed(1)}</td>
+                  <td className="font-num">{p.solved ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </details>
     </figure>
   )

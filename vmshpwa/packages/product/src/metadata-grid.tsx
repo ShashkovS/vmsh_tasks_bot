@@ -10,6 +10,8 @@ import { Button, Input, cn } from '@vmsh/ui'
 export interface MetadataColumn {
   id: string
   header: string
+  editor?: 'text' | 'select'
+  options?: { value: string; label: string }[]
 }
 
 export interface MetadataError {
@@ -47,11 +49,7 @@ export function MetadataGrid({
     )
   }
 
-  const handlePaste = (
-    event: ClipboardEvent<HTMLInputElement>,
-    rowIndex: number,
-    colIndex: number,
-  ) => {
+  const handlePaste = (event: ClipboardEvent<HTMLElement>, rowIndex: number, colIndex: number) => {
     const text = event.clipboardData.getData('text')
     if (!text.includes('\t') && !text.includes('\n')) return
     event.preventDefault()
@@ -66,7 +64,14 @@ export function MetadataGrid({
         line.forEach((value, dc) => {
           const targetRow = next[rowIndex + dr]
           const targetCol = columns[colIndex + dc]
-          if (targetRow && targetCol) targetRow[targetCol.id] = value
+          if (targetRow && targetCol) {
+            const match = targetCol.options?.find(
+              (option) =>
+                option.value.toLocaleLowerCase('ru') === value.trim().toLocaleLowerCase('ru') ||
+                option.label.toLocaleLowerCase('ru') === value.trim().toLocaleLowerCase('ru'),
+            )
+            targetRow[targetCol.id] = match?.value ?? value
+          }
         })
       })
       return next
@@ -107,14 +112,32 @@ export function MetadataGrid({
                   const error = errorAt(rowIndex, column.id)
                   return (
                     <td className="p-1" key={column.id}>
-                      <Input
-                        aria-invalid={error ? true : undefined}
-                        aria-label={`${column.header}, строка ${rowIndex + 1}`}
-                        className="h-8"
-                        onChange={(event) => setCell(rowIndex, column.id, event.target.value)}
-                        onPaste={(event) => handlePaste(event, rowIndex, colIndex)}
-                        value={row[column.id] ?? ''}
-                      />
+                      {column.editor === 'select' ? (
+                        <select
+                          aria-invalid={error ? true : undefined}
+                          aria-label={`${column.header}, строка ${rowIndex + 1}`}
+                          className="h-8 min-w-36 rounded-md border border-input bg-surface px-2 text-small text-foreground aria-invalid:border-status-danger"
+                          onChange={(event) => setCell(rowIndex, column.id, event.target.value)}
+                          onPaste={(event) => handlePaste(event, rowIndex, colIndex)}
+                          value={row[column.id] ?? ''}
+                        >
+                          <option value="">—</option>
+                          {(column.options ?? []).map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          aria-invalid={error ? true : undefined}
+                          aria-label={`${column.header}, строка ${rowIndex + 1}`}
+                          className="h-8"
+                          onChange={(event) => setCell(rowIndex, column.id, event.target.value)}
+                          onPaste={(event) => handlePaste(event, rowIndex, colIndex)}
+                          value={row[column.id] ?? ''}
+                        />
+                      )}
                     </td>
                   )
                 })}

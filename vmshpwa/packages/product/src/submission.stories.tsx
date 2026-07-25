@@ -4,16 +4,40 @@ import { expect, userEvent, within } from 'storybook/test'
 
 import type { AttachmentView } from './attachment'
 import { SubmissionComposer } from './submission-composer'
-import { SubmissionReceipt } from './submission-receipt'
 
 const meta = { title: 'Product/Submission', parameters: { layout: 'padded' } } satisfies Meta
 export default meta
 type Story = StoryObj<typeof meta>
 
+function pagePreview(page: number, accent: string) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 320"><rect width="240" height="320" fill="#f7f4eb"/><path d="M24 56h192M24 92h160M24 128h192M24 164h145M24 235h192M24 271h130" stroke="#8f8b82" stroke-width="5" stroke-linecap="round"/><path d="M45 205c28-38 52-38 72 0s45 38 78-4" fill="none" stroke="${accent}" stroke-width="7"/><text x="205" y="300" text-anchor="end" font-family="sans-serif" font-size="24" fill="#3b3935">${page}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
 const seed: AttachmentView[] = [
-  { id: 'p1', name: '1.jpg', sizeLabel: '1,2 МБ', status: 'ready' },
-  { id: 'p2', name: '2.jpg', sizeLabel: '1,1 МБ', status: 'uploading', progress: 60 },
-  { id: 'p3', name: '3.jpg', sizeLabel: '1,1 МБ', status: 'failed', error: 'Не удалось загрузить' },
+  {
+    id: 'p1',
+    name: '1.jpg',
+    sizeLabel: '1,2 МБ',
+    status: 'ready',
+    previewUrl: pagePreview(1, '#1b7f75'),
+  },
+  {
+    id: 'p2',
+    name: '2.jpg',
+    sizeLabel: '1,1 МБ',
+    status: 'uploading',
+    progress: 60,
+    previewUrl: pagePreview(2, '#6d5aa7'),
+  },
+  {
+    id: 'p3',
+    name: '3.jpg',
+    sizeLabel: '1,1 МБ',
+    status: 'failed',
+    error: 'Не удалось загрузить',
+    previewUrl: pagePreview(3, '#a84f65'),
+  },
 ]
 
 function ComposerHarness({ offline = false }: { offline?: boolean }) {
@@ -114,24 +138,19 @@ export const Closed: Story = {
   render: () => (
     <div className="max-w-md">
       <SubmissionComposer
-        attachments={[{ id: 'p1', name: '1.jpg', sizeLabel: '1,2 МБ', status: 'ready' }]}
+        attachments={[
+          {
+            id: 'p1',
+            name: '1.jpg',
+            sizeLabel: '1,2 МБ',
+            status: 'ready',
+            previewUrl: pagePreview(1, '#1b7f75'),
+          },
+        ]}
         closed
         onTextChange={() => undefined}
         taskType="written"
         text="Ответ отправлен ранее."
-      />
-    </div>
-  ),
-}
-
-export const Receipt: Story = {
-  name: 'Квитанция о приёме',
-  render: () => (
-    <div className="max-w-md">
-      <SubmissionReceipt
-        clientTime="26 января, 12:08"
-        reference="SUB-21н6-4f2a"
-        serverTime="26 января, 12:08"
       />
     </div>
   ),

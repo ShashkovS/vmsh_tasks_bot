@@ -22,12 +22,12 @@ Product components живут вне нейтральных primitives — пр�
 - DeadlineNotice: абсолютное время + понятная относительная фраза; closed/queued-before-deadline/conflict cases.
 - VerdictMark/VerdictRegistry: course-configurable binary/ternary/full scale; symbol, owner-approved decoder, numeric weight и отдельный semantic color. Частичный результат называется «Частично»; `REJECTED_ANSWER` имеет admin-detail «Отклонено после перепроверки».
 - AttemptTimeline: последний verdict сразу, раскрываемая история test attempts, submissions, verdict corrections, edits и пересдач без обязательного искусственного номера попытки и обвинительного языка.
-- FeedbackAttention/ReactionPicker: unread feedback заметен без push; Student reactions скрыты от teacher, teacher internal reactions скрыты от Student/Family, admin видит обе стороны согласно permission contract. На один verdict доступна одна реакция каждого разрешённого actor type; её можно заменить или удалить в течение часа.
+- FeedbackAttention/ReactionPicker: unread feedback заметен без push; Student reactions скрыты от teacher, teacher internal reactions скрыты от Student/Family, admin видит обе стороны согласно permission contract. На один verdict доступна одна реакция каждого разрешённого actor type; её можно заменить или удалить в течение часа. В быстром teacher-flow emoji не заменяет формулировку: точный текст реакции остаётся видимым в маленьком компактном chip.
 - GroupReviewCallout: спокойная плашка группового разбора с временем, conference ID/code и устойчивым join action.
 
 ## Test answer inputs
 
-Компонент выбирается по contract, а не эвристике JSX. Покрыть все исторические `ANS_TYPE` и их format fixtures, без generic fallback для известного типа. Показать expected format до ошибки. Invalid-format ответ сохраняется, но не расходует попытку. Состояния: untouched, invalid format, checking, pending checker configuration, correct, incorrect, rate-limited, closed, corrected checker/re-evaluated.
+Компонент выбирается по contract, а не эвристике JSX. Покрыть все 23 значения текущего `helpers.consts.ANS_TYPE` и их format fixtures, без generic fallback для известного типа. Клиент зеркалит только форматную часть `helpers/checkers.py`: `student_answer.strip()` и `fullmatch` по явному `ans_validation` либо текущему `ANS_REGEX`; server остаётся авторитетом. Показать expected format до ошибки и заметно подсветить invalid field. Для fixed tuple не показывать лишнее «Отправится»; для sequence/set допустим только блок «Распознано» после успешного реального parsing. `SELECT_ONE` отправляет ровно показанный русский текст option, без скрытого `odd`/внутреннего значения. Invalid-format ответ сохраняется, но не расходует попытку. Состояния: untouched, invalid format, checking, pending checker configuration, correct, incorrect, rate-limited, closed, corrected checker/re-evaluated.
 
 ## Письменная сдача
 
@@ -37,9 +37,9 @@ Composer поддерживает текст и до 10 фотографий:
 - per-file preprocessing progress worker-а;
 - thumbnail, full preview, удаление и **изменение порядка кнопками вверх/вниз** (без DnD-зависимости, доступно с клавиатуры); удаление и повторная загрузка — запасной путь для типового 1–2 фото;
 - rotate/remove/retry, upload progress, общий payload size;
-- draft autosave, offline queue, duplicate retry/idempotency receipt;
+- draft autosave, offline queue и duplicate/idempotency handling;
 - final review порядка страниц до отправки;
-- server receipt с временем клиента и сервера.
+- после успешной отправки — короткий обычный status в треде; отдельной «квитанции», reference number и доказательного экрана нет.
 
 До первого review lock ученик может изменить или удалить исходную отправку с подтверждением. После начала проверки он добавляет новый материал отдельной записью; reviewer обязан увидеть его до завершения verdict. В момент завершения проверки evidence фиксируется навсегда. Teacher annotation — отдельный неизменяемый после отправки overlay: карандаш, ластик, поворот, масштабирование, 4–5 основных цветов и page navigation. FeedbackThread показывает автора/время/канал и позволяет дослать ответ или пересдать без потери истории.
 
@@ -47,7 +47,7 @@ Human feedback и AI feedback имеют разные author/provenance componen
 
 ## Новости
 
-TelegramRichPost отображает entities, links, quotes, albums, video/document placeholders, forwarded/source attribution и math extension. Нужны card/list, detail и два editor preview: PWA и Telegram. Различать source revision, local editorial override, hidden/source-deleted и delivery error.
+TelegramRichPost отображает полный allowlisted Telegram Rich Message: headings, paragraphs, emphasis/mark/sub/sup/spoiler, links, lists, quotes, code, details, tables, divider, albums, media placeholders, source attribution и math extension. Новые условия задач публикуются в Telegram полноценным текстом, а не скриншотом; рисунки остаются отдельными media/SVG. Нужны card/list, detail и два editor preview: PWA и Telegram. Различать source revision, local editorial override, hidden/source-deleted и delivery error. Исторический corpus для stories — `_external_pipelines/ChatExport_2026-07-25`.
 
 ## Connectivity
 
@@ -60,22 +60,27 @@ ConnectionBanner/SyncIndicator/UpdatePrompt/PushPermissionCard:
 - update prompt не уничтожает draft;
 - push permission объясняет категории до browser prompt и уважает отказ.
 
+DraftPersistence — не отдельная декоративная карточка, а общий поведенческий контракт Student/Staff composers и editors. Компонент показывает `сохранено локально`, восстановление после reload, конфликт base version, успешную серверную фиксацию и явный discard. Текст/UI-state сохраняются в `localStorage`, blobs/outbox — в Dexie; update prompt, route change и accidental reload не очищают draft.
+
 ## Staff data work
 
 - DenseDataTable: sticky headers, resize/visibility, sort/filter, row selection, keyboard traversal;
-- MetadataGrid: cell edit, TSV copy/paste, dry-run errors, bulk actions, undo boundary;
+- MetadataGrid: cell edit, TSV copy/paste, dry-run errors, bulk actions, undo boundary; отдельные колонки task type (`test|written|oral`) и answer type, обе с dropdown editor, который принимает табличную вставку как обычная spreadsheet-ячейка;
 - ReviewQueue: основной вход по `synonyms`, счётчик и возраст очереди; list mode и fast one-at-a-time mode; sort по задаче, ожиданию, группе и ученику; полное название и recheck already-reviewed action;
 - ReviewLock: текущая атомарная 30-минутная lease; занятая работа остаётся видна с именем проверяющего и disabled action; lost lock блокирует устаревший verdict и требует refetch;
-- ThreePaneReview: queue / immutable evidence / feedback+verdict, resizable with accessible alternatives. Verdict actions строятся из course registry, идут от лучшего к худшему, доступны кнопками и digits (`1` всегда `+`); shortcuts не работают в editable fields и имеют видимую legend;
+- ReviewWorkspace: компактная queue и единая хронологическая основная колонка `immutable evidence → существующее обсуждение → новый teacher reply + verdict`. Это не три независимые панели: комментарий преподавателя добавляется в конец реальной переписки. Verdict actions строятся из course registry, идут от лучшего к худшему, доступны маленькими подписанными кнопками и digits (`1` всегда `+`); shortcuts не работают в editable fields и имеют видимую legend;
 - ReviewCommentGuard: для любого verdict кроме «Зачтено» без комментария спрашивает подтверждение, но не запрещает отправку; «Зачтено» без комментария сохраняет и листает дальше; abandon освобождает lock и переходит дальше без обязательной причины, а локальный unsent draft не теряется;
 - ReviewReaction: одна staff-only internal reaction на verdict, недоступная Student/Family API/view-model, с заменой/удалением в течение часа;
 - LaTeXUpload: file/batch progress, diagnostics, source preview, derived previews;
 - MissingAssetsFlow: exact missing refs, match candidates, upload/reuse, blocking resolution;
-- PublicationControl: per-level task/hint/solution state, scheduled time, diff, publish/rollback confirmation;
-- BroadcastComposer v1: audience query, count/preview, PWA delivery, quiet/category, dry run и только агрегированная delivery statistics. Staff→Telegram publication относится ко второй версии;
+- PublicationControl: три независимые per-level операции — условие, подсказка и решение. Для каждой явно видны state, «сейчас», собственное расписание и rollback/cancel confirmation; общий неоднозначный action на весь уровень запрещён;
+- Полный BroadcastComposer не входит в эту фазу. Во второй фазе он получает нормальный Markdown editor, audience/count, PWA/Telegram previews, расписание, dry run и агрегированную delivery statistics. Story первой фазы показывает границу scope и не имитирует реальную отправку;
 - ClassroomCatalog: add/rename/search, active/hidden filter, archive/quick restore, optimistic conflict и duplicate state после trim + Unicode NFKC + casefold. Display-name сохраняет внутренние пробелы; hard delete отсутствует.
-- ClassroomGroupLayout: effective/inherited source, materialize-on-first-edit, room rows с group select/unassigned и фактический count комнат по группе. Одна комната относится максимум к одной группе, одна группа получает любое число комнат; capacity/weights отсутствуют.
-- ClassroomStudentPlanner: preview по группам/комнатам с фактическими counts, `assigned|reassigning|unassigned`, previous-room/least-loaded source, manual select/move, stale warning, blocking incidents, recalculate и confirm. В v1 нет drag interaction, print/export и Staff→Telegram action.
+- ClassroomGroupLayout: effective/inherited source, materialize-on-first-edit, room rows с group select/unassigned и фактический count комнат по группе. Group summary использует semantic level marker + мягкую border tint и показывает `очно N · распределено M`. Одна комната относится максимум к одной группе, одна группа получает любое число комнат; capacity/weights отсутствуют.
+- ClassroomStudentPlanner: compact flex-wrap room cards для 6–15 комнат и примерно 200 строк, отдельная заметная секция `reassigning|unassigned`, always-on фамильно-именная сортировка, stale warning, blocking incidents, recalculate и confirm. Room header показывает assigned count, средний возраст, средний класс и среднюю силу с одним десятичным знаком.
+- ClassroomStudentRow: имя, nullable возраст на сегодня (`13.3`), nullable класс, nullable auto-strength 0–10, компактный room select и history affordance. Missing value — `—`; дата рождения не показывается. Cross-group room открывает confirmation смены группы.
+- ClassroomStudentSearch: нормализует case/`ё–е`/пробелы/порядок имени и допускает небольшое edit distance; совпадение подсвечивается на месте, результат содержит jump action.
+- ClassroomBulkMove: режим checkbox-selection, sticky bar с count и одним room select; применяет несколько локальных правок разом. DnD не используется. До explicit batch-save/confirm все изменения восстанавливаются из local draft; print/export и Staff→Telegram action в v1 отсутствуют.
 - ClassroomAssignmentStatus: Student/Family варианты `not_applicable|reassigning|assigned`, имя комнаты и время публикации. Только Student-вариант содержит notification affordance; Family не обещает classroom push.
 
 Questions/SOS получают отдельный от verdict queue product surface. Это приватный диалог по задаче или общий диалог занятия: teacher/admin видят входящие, student — только свои; закрепления за одним teacher и отдельного close/reopen статуса нет. Adapter сохраняет совместимость с legacy negative `problem_id` и Telegram handlers до отдельной backend-миграции.

@@ -49,15 +49,15 @@ export function VerdictActions({
   }, [ordered, onPick, disabled])
 
   return (
-    <div className={cn('space-y-2', className)}>
-      <div className="flex flex-wrap gap-2" role="group">
+    <div className={cn('space-y-1.5', className)}>
+      <div className="flex flex-wrap gap-1" role="group">
         {ordered.map((verdict, index) => {
           const selected = verdict.value === selectedValue
           return (
             <button
               aria-pressed={selected}
               className={cn(
-                'inline-flex min-h-(--touch-target) items-center gap-2 rounded-md border px-3 text-small transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+                'inline-flex min-h-8 items-center gap-1 rounded-md border px-2 py-1 text-caption transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
                 selected
                   ? 'border-primary bg-primary/10 font-medium text-foreground'
                   : 'border-border bg-surface text-foreground hover:bg-surface-subtle',
@@ -70,7 +70,11 @@ export function VerdictActions({
               <kbd className="rounded border border-border bg-surface-subtle px-1 font-num text-caption text-muted-foreground">
                 {index + 1}
               </kbd>
-              <VerdictMark showLabel verdict={verdict} />
+              <VerdictMark
+                className="border-0 bg-transparent p-0 text-caption"
+                showLabel
+                verdict={verdict}
+              />
             </button>
           )
         })}

@@ -4,9 +4,9 @@ import type { LevelView } from './types'
 
 /*
  * Level indicator. The student always sees the WORD («Начинающие»); the letter
- * is a compact marker beside it. `compact` shows the letter alone (dense Staff
- * queue) with the full name as the accessible name — never a bare code to a
- * student. Level colour is categorical, never a grade.
+ * is a compact marker beside it. Codes may contain one to three characters
+ * (`н`, `dp2`, `i9a`); the marker grows horizontally and never clips or shifts
+ * its baseline. `compact` shows the code alone in dense Staff views.
  */
 const markerByIndex: Record<LevelView['colorIndex'], string> = {
   0: 'border-level-0-border text-level-0',
@@ -27,7 +27,7 @@ export function LevelChip({ level, compact = false, className }: LevelChipProps)
     <span
       aria-hidden="true"
       className={cn(
-        'grid size-4 shrink-0 place-items-center rounded-sm border text-caption font-semibold',
+        'inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-sm border px-0.5 font-num text-[10px] font-semibold leading-none',
         markerByIndex[level.colorIndex],
       )}
     >
@@ -39,7 +39,7 @@ export function LevelChip({ level, compact = false, className }: LevelChipProps)
     return (
       <span
         aria-label={level.name}
-        className={cn('inline-flex', className)}
+        className={cn('inline-flex items-center', className)}
         role="img"
         title={level.name}
       >

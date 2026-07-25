@@ -8,13 +8,11 @@
 
 В первом релизе реализуются все значения из `helpers/consts.py`, а не только простые:
 
-- `DIGIT`, `NATURAL`, `INTEGER`, `REAL`;
-- `NATURAL_LIST`, `NATURAL_SET`, `INTEGER_LIST`, `INTEGER_SET`, `INTEGER_MULTISET`;
-- `NATURAL_RATIONAL`, `INTEGER_RATIONAL`, `TWO_RATIONALS`;
-- `RATIONAL_SET`, `RATIONAL_MULTISET`;
-- `POLYNOMIAL`;
-- `SYMB_ONE`, `SYMB_LIST`, `SYMB_SET`, `SYMB_MULTISET`;
-- `TIME`, `DATE`, `SELECT_ONE`, `STRING`.
+- `DIGIT`, `NATURAL`, `INTEGER`, `RATIO`, `FLOAT`, `FLOAT_EPS`, `FRACTION`, `MIXED_FRACTION`;
+- `INT_SEQ`, `INT_SET`, `INT_2`, `INT_3`, `INT_4`;
+- `POLYNOMIAL`, `TIME`, `DATE`, `WEEKDAY`;
+- `FRAC_SEQ`, `MULTISET`;
+- `SYMB_EXPRESSION`, `SYMB_EQUIV`, `SELECT_ONE`, `STRING`.
 
 Названия enum и numeric compatibility сохраняются. Для каждого типа нужны input representation, help text, normalization, valid/invalid boundary fixtures, accessibility label и rendering принятого ответа.
 
@@ -34,10 +32,12 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 ## Frontend/offline
 
 - Type-specific input выбирается по contract, но использует общий Field/Form минимум.
-- Format help сохраняет все исторические форматы и всегда виден до ошибки. Совместимые улучшения можно добавлять, не ломая старый ввод.
+- Format help сохраняет все исторические форматы и всегда виден до ошибки. Клиентская подсветка зеркалит только `student_answer.strip()` + `fullmatch` по problem `ans_validation` либо текущему `helpers/checkers.py:ANS_REGEX`; server остаётся авторитетом. Совместимые улучшения можно добавлять, не ломая старый ввод.
+- Fixed `INT_2/3/4` использует отдельные компактные поля без блока «Отправится». `INT_SEQ/INT_SET/FRAC_SEQ/MULTISET` показывает «Распознано» только после успешного parsing теми же token rules. `SELECT_ONE` передаёт ровно видимый label, например `Нечётное`, без скрытого `odd`.
 - Submit state: ready → queued offline/uploading → checking → accepted/wrong/domain error/rate limited.
 - Fast result меняет inline status, не только toast. Повторная попытка сохраняет историю.
 - Outbox хранит normalized versioned payload + original display value, problem revision, client time и idempotency key.
+- Введённый, но ещё не отправленный ответ записывается в account/problem/revision-scoped `localStorage` после каждого осмысленного изменения и восстанавливается после reload/update. Server receipt очищает draft; conflict или failed submit не очищают.
 - Если deadline наступил offline, item остаётся виден; server решает timely/late, UI объясняет результат и не удаляет доказательство.
 
 ## Tests
@@ -47,6 +47,7 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 - Attempt policy: first/wrong/correct/limit/unlimited/deadline/race two devices.
 - Idempotency crash windows: before transaction, after result before response, replay different payload.
 - Dexie queue ordering/retry/logout warning/schema upgrade.
+- Local answer draft reload/account isolation/revision conflict/receipt cleanup.
 - Storybook states каждого answer family, help/errors/attempt counter/offline/late.
 - E2E: минимум один сценарий каждой input family, full matrix остаётся unit/contract; online + offline replay + duplicate retry.
 - Compatibility tests `cor_ans_checker`: current trusted-admin `exec` behavior, exception/output normalization and safe failure to `pending_configuration`; a new sandbox is not a v1 prerequisite.
@@ -58,6 +59,7 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 - UI и Telegram используют одну domain normalization/verdict policy.
 - Client не может увеличить attempts; offline-created-before-deadline receipt сохраняется и при поздней доставке, а clock anomaly попадает в диагностику.
 - История ответов читабельна и не раскрывает `cor_ans`/checker.
+- Reload до отправки не теряет введённый ответ; другой аккаунт его не видит.
 
 ## Пруфы завершения этапа
 
@@ -65,6 +67,7 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 - [ ] ANS_TYPE support matrix and shared fixtures: `<path>`; all cases `<result>`.
 - [ ] Legacy differential report: `<path>`.
 - [ ] Idempotency/crash/race tests: `<result>`.
+- [ ] Local draft reload/isolation/conflict/cleanup tests: `<result>`.
 - [ ] `cor_ans_checker` trust/compatibility decision and tests: `<path/result>`.
 - [ ] Storybook stories/interactions/a11y/visual approval: `<ids/paths>`.
 - [ ] Playwright online/offline/retry 3 browsers: `<result>`.
