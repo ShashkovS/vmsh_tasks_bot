@@ -69,6 +69,7 @@ Home read model содержит phase of week, active lesson, attention items, 
 
 - `POST /student/api/v1/questions`, `GET /student/api/v1/questions`, `GET/POST /student/api/v1/questions/{id}/entries`
 - `GET /student/api/v1/oral/windows/current`, `POST /student/api/v1/oral/windows/{id}/join-details`
+- `GET /student/api/v1/classroom-assignment?lesson=`
 - `GET /student/api/v1/news`, `GET /student/api/v1/news/{postPublicId}`
 - `GET /student/api/v1/progress/summary`, `/progress/lessons`, `/progress/activity`, `/progress/achievements`
 - `GET/PUT /student/api/v1/notifications/preferences`, `POST/DELETE /student/api/v1/push-subscriptions`
@@ -83,6 +84,7 @@ Home read model содержит phase of week, active lesson, attention items, 
 - `GET /family/api/v1/children/{studentPublicId}/progress/*`
 - `PUT /family/api/v1/children/{studentPublicId}/group`
 - `PUT /family/api/v1/children/{studentPublicId}/attendance-mode`
+- `GET /family/api/v1/children/{studentPublicId}/classroom-assignment?lesson=`
 - news и notification routes с family base.
 
 Family endpoints никогда не принимают произвольный `student_id`: server сначала проверяет `family_student_links`. Отдельного self-check endpoint нет. Family видит student-visible thread, AI feedback и реакции ребёнка, но не внутреннюю teacher reaction и не групповое сравнение.
@@ -119,15 +121,29 @@ Family endpoints никогда не принимают произвольный
 - `GET /staff/api/v1/publications?lesson=&group=`
 - `POST /staff/api/v1/problems/{problemId}/recheck-test-attempts`
 
-### Oral/classrooms, news, admin
+### Oral, classroom planning, news, admin
 
 - `/staff/api/v1/oral/windows`, `/oral/conversations`, `/oral/results`
-- `/staff/api/v1/classrooms`, `/classrooms/{id}/assignments`, `/classrooms/auto-assign`; print endpoints относятся ко второй версии
+- `GET /staff/api/v1/classrooms?search=&status=active|archived|all`
+- `POST /staff/api/v1/classrooms`, `PATCH /staff/api/v1/classrooms/{classroomPublicId}`
+- `POST /staff/api/v1/classrooms/{classroomPublicId}/archive`, `POST /staff/api/v1/classrooms/{classroomPublicId}/restore`
+- `GET /staff/api/v1/classroom-layouts/effective?lesson=` — effective confirmed layout, optional materialized draft и source/base version
+- `POST /staff/api/v1/classroom-layouts/materialize` — создаёт draft для выбранного lesson из effective base
+- `PUT /staff/api/v1/classroom-layouts/{layoutPublicId}/rooms` — заменяет draft mappings `classroomPublicId + groupId`
+- `POST /staff/api/v1/classroom-layouts/{layoutPublicId}/confirm`
+- `GET /staff/api/v1/classroom-assignment-plans?lesson=` — confirmed/draft/stale plan и preview incidents
+- `POST /staff/api/v1/classroom-assignment-plans/recalculate`
+- `PATCH /staff/api/v1/classroom-assignment-plans/{planPublicId}/students/{studentPublicId}` — явный select/move
+- `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/confirm`; print/export endpoints относятся ко второй версии
 - `/staff/api/v1/news/import-status`, `/news/posts`, `/news/posts/{id}/visibility`
 - `/staff/api/v1/broadcasts`, `/broadcasts/{id}/preview`, `/broadcasts/{id}/send`; Staff→Telegram publication относится ко второй версии
 - `/staff/api/v1/users`, `/groups`, `/permissions`, `/imports`, `/statistics`, `/audit`
 
-Teacher получает `403` на content/checker, broadcasts, classrooms и audit. Он может менять уровень доступного ученика, исправлять/перепроверять работу и читать общую статистику кружка. Остальные capabilities проверяются по role/group permissions, а не предполагаются по видимости navigation.
+Teacher получает `403` на content/checker, broadcasts, Staff classroom catalog/layout/plan routes и audit. Он может менять уровень доступного ученика, исправлять/перепроверять работу и читать общую статистику кружка. Остальные capabilities проверяются по role/group permissions, а не предполагаются по видимости navigation.
+
+Все classroom mutations используют `If-Match`/`version`; stale version возвращает `409 VERSION_CONFLICT`. Нормализация имени выполняется сервером, duplicate возвращает `409 CLASSROOM_NAME_CONFLICT` вместе с существующим `publicId`. Layout confirm возвращает `409 CLASSROOM_LAYOUT_STALE`, если base больше не effective. Assignment confirm возвращает `409 CLASSROOM_ASSIGNMENTS_STALE` для устаревшего layout и `422` с отдельными кодами `CLASSROOM_STUDENT_UNASSIGNED`, `CLASSROOM_GROUP_MISMATCH` или `CLASSROOM_MIXED_GROUPS` для нарушенного плана.
+
+Student/Family read model одинаков по смыслу и содержит только `lessonPublicId`, `status: not_applicable | reassigning | assigned`, nullable `classroomName` и nullable `publishedAt`; internal IDs, layout draft и другие школьники не попадают в payload. `not_applicable` означает online/отсутствие необходимости в очной комнате; очный школьник без действующего опубликованного назначения получает `reassigning`. Скрытие используемой комнаты немедленно меняет `assigned` на `reassigning`.
 
 ## WebSocket protocol
 
@@ -146,6 +162,7 @@ Server events:
 - `lease-changed`: staff group/queue key, не чужая работа целиком.
 - `server-update`: новая frontend release/service-worker hint.
 - `resync-required`: protocol/schema mismatch или обнаруженный gap.
+- `classroom.assignment.changed`: owner-scoped invalidation с `audience`, `ownerAccountId`, `lessonPublicId`, новым публичным `status` и query keys. Для школьника выпускается Student event, для каждого связанного Family account — отдельная Family invalidation; Student может создать push/in-app, Family только обновляет API/WS state.
 
 NATS subject: `<runtimePrefix>.pwa.<audience>.<event>`. Payload обязан иметь `audience`; owner-targeted event фильтруется по authenticated principal до отправки socket. Broad lesson publication публикуется в три явных audience subjects.
 
@@ -160,6 +177,7 @@ NATS subject: `<runtimePrefix>.pwa.<audience>.<event>`. Payload обязан и�
 - `newsKeys.list(audience, group)`, `notificationKeys.preferences()`
 - `progressKeys.summary(student)`, `progressKeys.lesson(student, lesson)`
 - `adminKeys.contentRevision(id)`, `adminKeys.publications(lesson, group)`
+- `classroomKeys.catalog(filters)`, `classroomKeys.layout(lesson)`, `classroomKeys.plan(lesson)`, `classroomKeys.assignment(audience, student, lesson)`
 
 Raw query-key arrays в product code запрещаются после появления factory.
 
@@ -174,6 +192,7 @@ apps/pwa_api/
   student_routes.py
   family_routes.py
   staff_routes.py
+  classroom_routes.py
   realtime.py
   serialization.py
   dependencies.py        # repositories/storage/NATS adapters
@@ -182,6 +201,7 @@ models/pwa/
   content.py
   submissions.py
   reviews.py
+  classrooms.py
   notifications.py
   progress.py
 db_methods/pwa/
@@ -189,6 +209,7 @@ db_methods/pwa/
   content.py
   submissions.py
   reviews.py
+  classrooms.py
   notifications.py
   progress.py
 helpers/pwa/
@@ -197,6 +218,8 @@ helpers/pwa/
   storage.py
   media_conversion.py
   content_compiler.py
+  classroom_assignment.py
+  classroom_import.py
   delivery_worker.py
 pwa_tests/
   fixtures/
@@ -215,7 +238,7 @@ pwa_tests/
 ```text
 vmshpwa/packages/contracts/src/
   common.ts auth.ts content.ts tasks.ts submissions.ts reviews.ts
-  news.ts notifications.ts progress.ts staff.ts query-keys.ts
+  classrooms.ts news.ts notifications.ts progress.ts staff.ts query-keys.ts
 vmshpwa/packages/content/src/
   math-document.tsx katex.ts telegram-preview.tsx figure-viewer.tsx
 vmshpwa/packages/offline/src/
@@ -233,7 +256,7 @@ vmshpwa/packages/test-utils/src/
 vmshpwa/e2e/
   auth.spec.ts content-publication.spec.ts student-reading.spec.ts
   test-submission.spec.ts written-submission.spec.ts review.spec.ts
-  oral.spec.ts news-push.spec.ts family-progress.spec.ts permissions.spec.ts
+  oral.spec.ts classrooms.spec.ts news-push.spec.ts family-progress.spec.ts permissions.spec.ts
 ```
 
 `packages/ui` остаётся domain-free. Product components с `Problem`, `Submission`, `Review` размещаются в feature или новом согласованном package, но не протаскивают app/domain imports в UI foundation.

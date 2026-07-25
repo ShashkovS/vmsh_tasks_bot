@@ -184,13 +184,35 @@ Entry: `id`, `thread_id`, `author_kind`, `author_user_id`, `text`, `asset_id NUL
 
 `id`, `public_id`, `season_id`, `lesson_number`, `group_id`, `sequence_number`, `opens_at`, `closes_at`, `join_label`, `join_url_encrypted_or_ref`, `join_code_encrypted_or_ref`, `status`, `created_by_user_id`, timestamps/version. Для одной группы разрешено несколько окон (в текущем процессе три). Join secrets не попадают в list endpoint и логи; provider v1 — Zoom.
 
-### `classroom_rooms`
+### `classrooms`
 
-`id`, `public_id`, `season_id`, `lesson_number`, `name`, `capacity`, `level_constraints_json`, `notes`, `created_at`, `updated_at`.
+Глобальный каталог, не привязанный к занятию: `id INTEGER PK`, `public_id TEXT UNIQUE`, `name TEXT`, `normalized_name TEXT UNIQUE`, `status TEXT CHECK(active|archived)`, `created_by_user_id`, `updated_by_user_id`, `archived_by_user_id NULL`, `restored_by_user_id NULL`, `created_at`, `updated_at`, `archived_at NULL`, `restored_at NULL`, `version INTEGER`.
+
+`name` сохраняет внутренние пробелы, но до записи обрезается по краям и не может стать пустым. `normalized_name` вычисляет один общий domain helper: `NFKC(trim(name)).casefold()`. Уникальный индекс на `normalized_name` ловит в том числе кириллические дубликаты `Актовый зал`/`актовый зал`. SQLite collation не является источником истины для Unicode casefold. Hard delete отсутствует; rename/archive/restore записывают audit `before/after`.
+
+### `classroom_layout_versions`
+
+Версия схемы «аудитория → группа»: `id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id`, `effective_from_lesson`, `base_version_id NULL`, `state TEXT CHECK(draft|confirmed|superseded)`, `created_by_user_id`, `confirmed_by_user_id NULL`, `created_at`, `updated_at`, `confirmed_at NULL`, `superseded_at NULL`, `version INTEGER`.
+
+Для `(season_id, effective_from_lesson)` существует не более одного активного draft. Effective layout — последняя финализированная версия (`confirmed` либо историческая `superseded`) с `effective_from_lesson <= requested lesson`, которую не перекрывает более поздняя версия, уже действующая для того же requested lesson. Запрос просмотра не копирует строки. Первая мутация материализует draft со ссылкой `base_version_id` и копией связей. Финализированные версии не редактируются; новая confirmed-версия переводит прежнюю в `superseded` только как признак замены для следующих занятий, но прежняя остаётся источником истории до своей границы.
+
+### `classroom_layout_rooms`
+
+`layout_version_id`, `classroom_id`, `group_id`, `created_at`, `updated_at`; PK `(layout_version_id, classroom_id)`, FK на layout/classroom/group и индекс `(layout_version_id, group_id)`. Одна аудитория встречается в версии один раз, одна группа может иметь любое число аудиторий. Неиспользованная активная аудитория просто отсутствует в таблице. Полей вместимости, веса и level constraints нет.
+
+### `classroom_assignment_plans`
+
+Версия распределения для занятия: `id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id`, `lesson_number`, `layout_version_id`, `base_plan_id NULL`, `state TEXT CHECK(draft|confirmed|stale|superseded)`, `stale_reason TEXT NULL`, `created_by_user_id`, `confirmed_by_user_id NULL`, `created_at`, `updated_at`, `confirmed_at NULL`, `superseded_at NULL`, `version INTEGER`.
+
+Confirmed plan становится `stale`, если изменился effective layout или скрыта используемая аудитория. Транзакция скрытия материализует/обновляет replacement draft и создаёт затронутым школьникам строки `reassigning`; прежний confirmed plan не мутирует, но больше не считается действующим для текущего показа. Новый calculation всегда создаёт preview/draft; подтверждение новой версии supersede-ит старую, не перезаписывая её.
 
 ### `classroom_assignments`
 
-`room_id`, `student_user_id`, `previous_room_id NULL`, `assigned_by_user_id`, `assigned_at`, `source CHECK(previous_room|balanced|manual|import)`, `plan_version`; PK `(room_id, student_user_id)` и unique на student в рамках lesson. Пересчёт создаёт новую версию плана: сначала сохраняется прошлая аудитория того же уровня, затем нагрузка выравнивается.
+`plan_id`, `student_user_id`, `group_id` (snapshot), `classroom_id NULL`, `status TEXT CHECK(assigned|reassigning)`, `source TEXT CHECK(previous-room|least-loaded|manual|group-change|mode-change|import)`, `previous_classroom_id NULL`, `assigned_by_user_id NULL`, `created_at`, `updated_at`; PK `(plan_id, student_user_id)`, индекс `(plan_id, classroom_id)`.
+
+`classroom_id` обязателен для `assigned` и отсутствует для `reassigning`. Domain validation запрещает назначить школьника в комнату другой группы или смешать группы в одной комнате. В confirmed plan каждый очный школьник имеет `assigned`; online student в плане отсутствует и получает публичный статус `not_applicable`. Очный школьник без действующего опубликованного назначения получает `reassigning`, а не `not_applicable`. Неиспользованные active rooms допустимы.
+
+Детерминированный recalculation сначала находит последнюю историческую комнату школьника для текущей группы и сохраняет её как `previous_classroom_id`, если комната active и всё ещё связана с этой группой; это работает и при возвращении на прежний уровень. Затем остальные по одному назначаются в наименее заполненную комнату группы. Server natural sort сравнивает числовые фрагменты `normalized_name` как числа, остальные — как casefolded Unicode text, затем использует `classroom.id`; frontend не переопределяет tie-break. Смена группы/режима запускает те же правила для текущего школьника; без допустимой комнаты создаётся `reassigning` и blocking incident. Скрытие комнаты не меняет прошлые plans, а restore не возвращает назначения автоматически.
 
 ### `group_banners`
 
@@ -274,7 +296,7 @@ Counts, lesson curves, violin and activity calendar сначала вычисл�
 |    4 | `pwa_test_attempts_idempotency`                  | Новые attempts dual-write в results                                  |
 |    5 | `pwa_submission_threads_entries_assets`          | Lazy backfill discussions по открываемому thread + batch tool        |
 |    6 | `pwa_reviews_annotations_queue_leases_reactions` | Reviews dual-write results; Telegram queue сохраняется               |
-|    7 | `pwa_support_oral_classrooms_banners`            | Questions/zoom читаются через adapter; negative IDs пока сохраняются |
+|    7 | `pwa_support_oral_classroom_plans_banners`       | Questions/zoom читаются через adapter; одноразовый classroom Excel import проходит dry-run, старые plans не переписываются |
 |    8 | `pwa_news_notifications_delivery`                | Telegram posts импортируются идемпотентно                            |
 |    9 | `pwa_family_achievements`                        | Family links batch import; stats/achievements derived                |
 |   10 | `pwa_normalized_groups_imports`                  | Google replacement только после parity report                        |

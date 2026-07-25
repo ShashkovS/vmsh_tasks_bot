@@ -23,7 +23,7 @@ Telegram update identity: chat/message/media-group IDs + source hash. Edit creat
 
 ## Notification semantics
 
-Categories at minimum: `lesson_published`, `hint_published`, `solution_published`, `review_completed`, `thread_updated`, `oral_window`, `deadline`, `news`, `broadcast`.
+Categories at minimum: `lesson_published`, `hint_published`, `solution_published`, `review_completed`, `thread_updated`, `oral_window`, `classroom_assignment`, `deadline`, `news`, `broadcast`.
 
 - Defaults all on except `oral_window`; exact split in-app/push follows preference contract.
 - 21:00–09:00 в timezone пользователя подавляет только sound. Event remains visible/delivered.
@@ -31,6 +31,7 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - Foreground can suppress duplicate native push display while still marking in-app event.
 - Review event становится read после минимум трёх секунд видимости. Badge «Задачи» считает обновлённые/проверенные задачи, которые student ещё не видел.
 - Family по умолчанию получает один weekly digest после окончания всей проверки, без потока individual review pushes.
+- `classroom_assignment.changed` продолжает vertical slice этапа 7: Student получает push/in-app при назначении, сбросе и новой комнате; Family только refetch-ит API/WS state и не получает delivery этой категории.
 - Delivery is DB-durable with retry/backoff/dead-letter/admin diagnostics. NATS only invalidates read models.
 
 ## WebSocket scoping
@@ -54,6 +55,7 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - Sanitizer/CSP/entity/math/oversize/unsupported media tests.
 - Delivery outbox crash/lease/retry/dedup/batching/quiet hours tests with frozen clocks.
 - Three-audience WS plus private owner leakage tests across two workers/NATS.
+- Classroom delivery routing: owner Student получает event/push, связанный Family socket обновляет state без push, посторонние principals не видят payload.
 - Service-worker push/update routing tests on supported browser; contract tests elsewhere.
 - Storybook news cards/albums/two previews/banner/push prompts/connection states.
 - Playwright production build: backfill/edit/delete fixture → PWA; offline news; scheduled banner with local dismiss; WS/read-after-3s; family weekly digest; teacher forbidden broadcasts.

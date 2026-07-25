@@ -20,6 +20,7 @@ Migration: `pwa_family_achievements`.
 - Family child ID всегда проверяется через link.
 - Family видит фотографии, thread, comments, annotations, history verdicts, student-visible AI и реакцию ребёнка; скрытая teacher reaction исключается server serializer.
 - Family может менять active group и attendance mode ребёнка, но не отправляет решение от его имени.
+- Минимальный read-only экран актуальной аудитории и `not_applicable|reassigning|assigned`, созданный в этапе 7, сохраняется при сборке полного Family home. Classroom push не добавляется.
 - Child switcher не смешивает TanStack Query/Dexie cache между детьми.
 
 ## Progress UX
