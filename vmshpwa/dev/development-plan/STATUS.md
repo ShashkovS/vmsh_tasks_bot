@@ -4,15 +4,15 @@
 
 ## Состояние документов
 
-| Документ/этап       | Статус                    | Решение/блокер                                                     |
-| ------------------- | ------------------------- | ------------------------------------------------------------------ |
-| Инженерный контракт | draft for approval        | Формат proof описан; фактически заполняется при реализации         |
-| Решения и границы   | accepted input            | Полный опросник и classroom-уточнения закрыты 25 июля              |
-| Модель данных       | accepted planning input   | Classroom profile/rating/history/draft projection синхронизирована |
-| API/events/files    | accepted planning input   | Batch move, cross-group confirm и classroom history зафиксированы  |
-| Этап 0              | ready                     | Блокирующих продуктовых вопросов нет                               |
-| Этапы 1–11          | planned                   | Scope и переносы между первой/второй версией уточнены              |
-| Design system       | external work in progress | Фактический статус ведётся в соседнем `../design-system/STATUS.md` |
+| Документ/этап       | Статус                      | Решение/блокер                                                                                 |
+| ------------------- | --------------------------- | ---------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                     |
+| Решения и границы   | accepted input              | Полный опросник и classroom-уточнения закрыты 25 июля                                          |
+| Модель данных       | accepted planning input     | Classroom profile/rating/history/draft projection синхронизирована                             |
+| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                              |
+| Этап 0              | ready                       | Блокирующих продуктовых вопросов нет                                                           |
+| Этапы 1–11          | planned                     | Scope и переносы между первой/второй версией уточнены                                          |
+| Design system       | phases 5–7 ready for review | Page corpus, 119/119 Storybook и 36/36 production E2E/visual; остался ручной owner gate        |
 
 ## Журнал решений
 

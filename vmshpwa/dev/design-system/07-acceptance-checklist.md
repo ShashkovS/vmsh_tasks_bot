@@ -1,5 +1,11 @@
 # Итоговый acceptance checklist
 
+## Состояние автоматической приёмки 25 июля 2026
+
+Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](05-pages-and-flows.md) и [`06-storybook-and-testing.md`](06-storybook-and-testing.md). Точные page entry points: [`Student`](../../apps/student/src/pages.tsx), [`Family`](../../apps/family/src/pages.tsx), [`Staff`](../../apps/staff/src/pages.tsx); Storybook proof: [`Student stories`](../../apps/student/src/pages.stories.tsx), [`Family stories`](../../apps/family/src/pages.stories.tsx), [`Staff stories`](../../apps/staff/src/pages.stories.tsx), [`classroom matrices`](../../packages/product/src/classroom-planning.stories.tsx).
+
+Автоматический Storybook gate: **119/119**, axe работает в режиме error. Ручной просмотр ключевых page stories выполнен на изолированном agent runtime; дефект ориентации Tabs исправлен. Полный gate 25 июля: format, lint, strict TypeScript и production build — green; Vitest **21/21**; Python PWA tests **11/11**; Playwright production-preview E2E/visual **36/36** в Chromium, WebKit и Firefox. После просмотра ожидаемых изменений обновлены и повторно проверены версионируемые baseline из [`e2e/__screenshots__`](../../e2e/__screenshots__). Чекбоксы не считаются принятыми самим автором реализации: финальная визуальная и продуктовая приёмка остаётся за владельцем.
+
 ## Brand и art direction
 
 - [ ] Направление явно принято и записано в `STATUS.md`.

@@ -2,15 +2,15 @@
 
 Этот файл — журнал gates. Визуальная модель обновляет evidence и вопросы, но ставит `accepted` только после явного решения владельца продукта.
 
-| Фаза                     | Статус             | Принято    | Evidence/решение                                                                       |
-| ------------------------ | ------------------ | ---------- | -------------------------------------------------------------------------------------- |
-| 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.            |
-| 2. Brand and tokens      | accepted           | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                |
-| 3. UI primitives         | accepted           | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                  |
-| 4. Product components    | accepted           | 2026-07-25 | Владелец: «в остальном вроде ок», направил к фазам 5–7; partial validation исправлена. |
-| 5. Pages and flows       | in progress        | —          | Реальные page compositions заменяют prototype skeletons; первый срез — Student/Staff.  |
-| 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                           |
-| 7. Final acceptance      | blocked            | —          | —                                                                                      |
+| Фаза                     | Статус           | Принято    | Evidence/решение                                                                       |
+| ------------------------ | ---------------- | ---------- | -------------------------------------------------------------------------------------- |
+| 1. Art direction         | accepted         | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.            |
+| 2. Brand and tokens      | accepted         | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                |
+| 3. UI primitives         | accepted         | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                  |
+| 4. Product components    | accepted         | 2026-07-25 | Владелец: «в остальном вроде ок», направил к фазам 5–7; partial validation исправлена. |
+| 5. Pages and flows       | ready for review | —          | Student/Family/Staff page corpus, shells и состояния реализованы; нужен owner gate.    |
+| 6. Storybook and testing | ready for review | —          | 119/119 browser stories с axe error; page/classroom matrices добавлены.                |
+| 7. Final acceptance      | ready for review | —          | Автоматические gates и production E2E/visual зелёные; нужен ручной owner gate.         |
 
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
@@ -44,6 +44,57 @@ Checks:
 Known follow-ups:
   Classroom dense/local-draft matrices и финальные cross-theme/viewports входят
   в Phase 6; это coverage follow-up, а не блокер принятого визуального языка.
+```
+
+```text
+2026-07-25 — Phase 5 — ready for review
+Decision owner: ожидается Сергей Шашков
+Implemented:
+  Реальные compositions для Student, Family и Staff; отдельные login shells;
+  общий responsive AppShell/PageLayout; основные ready и non-happy states;
+  Student test/written/oral/result/news/progress/profile; Family read-only child
+  context без self-check; Staff dashboard/review/content/classrooms/forbidden.
+Exact evidence:
+  apps/{student,family,staff}/src/pages.tsx и pages.stories.tsx;
+  packages/app-shell/src/{app-shell,page-layout}.tsx;
+  apps/staff/src/routes/classrooms.tsx.
+Known follow-ups:
+  fixtures/callbacks заменяются настоящими query/API по development-plan phases;
+  владелец визуально принимает mobile-light first flow до статуса accepted.
+```
+
+```text
+2026-07-25 — Phase 6 — ready for review
+Decision owner: ожидается Сергей Шашков
+Implemented:
+  Pages/Student, Pages/Family, Pages/Staff; loading/empty/error/offline matrices;
+  classroom 15-room/200-student и local-draft reload/clear stories;
+  login reveal, Family read-only, test validation, Staff verdict/classroom tests.
+Checks:
+  Storybook browser mode 24 files / 119 stories, addon-a11y test:error — green.
+  Вручную просмотрены Student Today, Staff review workspace и Staff classrooms
+  на agent Storybook :6106. Найден и исправлен horizontal Tabs selector.
+Known follow-ups:
+  owner visual approval относится к Phase 7; fixtures/callbacks остаются
+  прототипами до вертикальных срезов development plan.
+```
+
+```text
+2026-07-25 — Phase 7 — ready for review
+Decision owner: ожидается Сергей Шашков
+Automated proof:
+  format, ESLint, strict TypeScript и production Vite/PWA build — green;
+  Vitest 21/21; Python PWA tests 11/11;
+  Storybook browser mode 24 files / 119 stories, addon-a11y test:error — green;
+  Playwright production preview 36/36 в Chromium, WebKit и Firefox, включая
+  shell/base path, audience isolation, theme, WebSocket resync, PWA update и
+  Student/Staff visual baselines.
+Visual proof:
+  ожидаемые Phase-5 page changes просмотрены до update; baseline хранится в
+  e2e/__screenshots__ и успешно прошёл повторный запуск без update-флага.
+Remaining owner gate:
+  принять mobile-light страницы Phase 5, Storybook corpus Phase 6 и итоговую
+  ручную проверку ключевого Student/Staff flow из 07-acceptance-checklist.md.
 ```
 
 ```text
@@ -314,9 +365,7 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 
 **Инкремент 10 — аудитории (доработан 25 июля, требует повторного gate):** layout теперь имеет group marker/tint и `очно/распределено`; planner использует flex-wrap room cards, отдельную секцию неназначенных, компактные строки с возрастом/классом/силой, room averages, fuzzy search+jump, checkbox bulk move, history action и callback подтверждения cross-group move. `mobile-staff-layout` содержит все student/room metrics. До принятия ещё нужны реальная local-draft story и отдельный dense fixture около 200 школьников; capacity/DnD отсутствуют.
 
-**Итог прежнего инкремента Phase 4:** Vitest **7/7**, Storybook **83/83** (axe error), lint, package typecheck и production Storybook build были зелёными для старого набора. Решения 25 июля расширили gate, поэтому фаза имеет статус `changes requested`, а эти результаты не являются доказательством новых classroom/draft states. После доработки проверки запускаются заново; только затем возможна визуальная приёмка и Phase 5.
-
-**Повторный технический gate 25 июля:** `pwa-lint`, `pwa-typecheck` и `pwa-build` зелёные; Vitest — **21/21**, Python PWA tests — **11/11**, Storybook browser tests — **83/83** с `addon-a11y` в режиме error. Вручную проверены переработанные stories проверки, публикации, metadata grid, письменной сдачи, обозначений уровней, тестовых ответов, новостей, прогресса, масштабируемого рисунка и аудиторий. Phase 4 остаётся в `changes requested`: для classroom planner всё ещё нужны отдельная story восстановления local draft, плотная фикстура примерно на 200 школьников и визуальная приёмка владельцем.
+**Исторический gate Phase 4:** результаты 83/83 относились к корпусу до финальных classroom/draft требований. Недостающие local-draft и 15-room/200-student stories добавлены в Phase 6; актуальный browser gate — **119/119** с addon-a11y в режиме error. Phase 4 принят владельцем, дальнейшие решения фиксируются как Phase 5/6 review, а не возвращают принятую фазу в `changes requested`.
 
 ## Решения итогового продуктового опросника — 24 июля 2026
 
