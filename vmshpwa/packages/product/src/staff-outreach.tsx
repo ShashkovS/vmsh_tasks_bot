@@ -1,7 +1,7 @@
-import { CircleHelp, TriangleAlert } from 'lucide-react'
+import { CircleHelp } from 'lucide-react'
 import { useId, useState } from 'react'
 
-import { Alert, AlertContent, AlertTitle, Button, Checkbox, Label, Textarea, cn } from '@vmsh/ui'
+import { Button, Checkbox, Label, Textarea, cn } from '@vmsh/ui'
 
 const selectClass =
   'min-h-(--touch-target) w-full rounded-md border border-input bg-surface px-3 text-small text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40'
@@ -174,136 +174,6 @@ export function BroadcastComposer({
           </Button>
         </div>
       )}
-    </div>
-  )
-}
-
-/* ── Classroom planner ──────────────────────────────────────────────────── */
-
-export interface PlannerRoom {
-  id: string
-  name: string
-  capacity: number
-  assigned: string[]
-}
-
-export interface ClassroomPlannerProps {
-  rooms: PlannerRoom[]
-  unassigned: string[]
-  conflicts?: string[]
-  onMove?: (student: string, toRoomId: string) => void
-  className?: string
-}
-
-function MoveControl({
-  student,
-  rooms,
-  onMove,
-}: {
-  student: string
-  rooms: PlannerRoom[]
-  onMove?: ((student: string, toRoomId: string) => void) | undefined
-}) {
-  return (
-    <select
-      aria-label={`Переместить: ${student}`}
-      className="rounded border border-input bg-surface px-1 py-0.5 text-caption text-foreground"
-      onChange={(event) => {
-        if (event.target.value) onMove?.(student, event.target.value)
-      }}
-      value=""
-    >
-      <option value="">В кабинет…</option>
-      {rooms.map((room) => (
-        <option key={room.id} value={room.id}>
-          {room.name}
-        </option>
-      ))}
-    </select>
-  )
-}
-
-export function ClassroomPlanner({
-  rooms,
-  unassigned,
-  conflicts = [],
-  onMove,
-  className,
-}: ClassroomPlannerProps) {
-  return (
-    <div className={cn('space-y-3', className)}>
-      <p className="text-small text-muted-foreground">
-        Авто-распределение расставляет учеников по вместимости и уровню; спорные случаи — ниже.
-        Перемещайте вручную через «В кабинет…».
-      </p>
-
-      {conflicts.length > 0 ? (
-        <Alert tone="warning">
-          <TriangleAlert aria-hidden="true" />
-          <AlertContent>
-            <AlertTitle>Конфликты распределения</AlertTitle>
-            <ul className="mt-0.5 list-disc pl-4 text-small text-muted-foreground">
-              {conflicts.map((conflict, index) => (
-                <li key={index}>{conflict}</li>
-              ))}
-            </ul>
-          </AlertContent>
-        </Alert>
-      ) : null}
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {rooms.map((room) => {
-          const over = room.assigned.length > room.capacity
-          return (
-            <section
-              aria-label={room.name}
-              className="space-y-2 rounded-md border border-border bg-surface p-3"
-              key={room.id}
-            >
-              <div className="flex items-baseline justify-between">
-                <h3 className="text-label font-medium text-foreground">{room.name}</h3>
-                <span
-                  className={cn(
-                    'font-num text-caption',
-                    over ? 'text-status-danger' : 'text-muted-foreground',
-                  )}
-                >
-                  {room.assigned.length}/{room.capacity}
-                </span>
-              </div>
-              <ul className="space-y-1">
-                {room.assigned.map((student) => (
-                  <li className="flex items-center justify-between gap-2 text-small" key={student}>
-                    <span className="text-foreground">{student}</span>
-                    <MoveControl
-                      onMove={onMove}
-                      rooms={rooms.filter((other) => other.id !== room.id)}
-                      student={student}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )
-        })}
-      </div>
-
-      {unassigned.length > 0 ? (
-        <section
-          aria-label="Без кабинета"
-          className="space-y-2 rounded-md border border-dashed border-border p-3"
-        >
-          <h3 className="text-label font-medium text-foreground">Без кабинета</h3>
-          <ul className="space-y-1">
-            {unassigned.map((student) => (
-              <li className="flex items-center justify-between gap-2 text-small" key={student}>
-                <span className="text-foreground">{student}</span>
-                <MoveControl onMove={onMove} rooms={rooms} student={student} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </div>
   )
 }

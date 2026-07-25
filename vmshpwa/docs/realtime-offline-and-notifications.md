@@ -10,6 +10,8 @@ NATS переносит invalidation между процессами. Отсут
 
 Audience scope не является user scope. До появления authenticated WebSocket principal запрещено публиковать через student/family-wide invalidation приватный submission ID или другой идентификатор, видимый только одному аккаунту. Owner-scoped fan-out добавляется вместе с реальными сессиями: соединение связывается с account/user ID, а backend проверяет право до отправки. Независимо от события API повторно проверяет authorization.
 
+Назначение аудитории использует owner-scoped `classroom.assignment.changed`. Student получает push/in-app при первом назначении, немедленном сбросе скрытой комнаты и новой аудитории. Каждый связанный Family account получает собственную owner-scoped invalidation и читает то же актуальное состояние `not_applicable | reassigning | assigned`, но отдельный classroom push не получает. Событие несёт только публичный статус и invalidation keys; authoritative имя комнаты и `publishedAt` читаются из SQLite.
+
 ## Background
 
 Web Push используется только вне foreground и делится на категории: учебный цикл, результат проверки, новый комментарий, новости, организационные сообщения. Пользователь отдельно разрешает категории; отказ браузера не блокирует кабинет. Notification click ведёт на устойчивый deep link внутри audience scope.

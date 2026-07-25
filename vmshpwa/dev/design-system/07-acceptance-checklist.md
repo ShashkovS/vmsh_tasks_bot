@@ -47,7 +47,11 @@
 - [ ] Review list/fast flows, 30-minute lock, occupied/lost-lock, registry verdict shortcuts, comment guard и abandon готовы.
 - [ ] Questions отделены от verdict flow при сохранении migration state Telegram adapter.
 - [ ] AI future states покрыты без включения реальной AI-интеграции в первую версию.
-- [ ] Classroom planner не тянет DnD dependency, сохраняет прошлую аудиторию уровня, равномерно распределяет остальных и имеет простой select/move/recalculate flow.
+- [ ] Classroom catalog поддерживает trim/NFKC/casefold duplicate, rename, active/hidden, archive/restore и optimistic conflict без hard delete.
+- [ ] Classroom layout показывает inherited/materialized state, назначает комнате максимум одну группу и не вводит capacity/weights.
+- [ ] Classroom student plan сохраняет прежнюю допустимую комнату, затем выбирает least-loaded с natural-name tie-break; select/move/recalculate/confirm работают без drag interaction.
+- [ ] Stale, reassigning, empty group, no-room incident, фактические 6/5/2 комнаты и historical immutability представлены отдельными stories.
+- [ ] Student/Family показывают `not_applicable|reassigning|assigned`; Student notification states есть, Family classroom push отсутствует.
 - [ ] Progress не содержит рейтингов и цвет-only charts.
 
 ## Pages
@@ -55,6 +59,7 @@
 - [ ] Все Student routes и нижняя навигация реализованы.
 - [ ] Все Family routes и child context реализованы: полный student-visible thread/evidence, смена level/mode, самостоятельное раскрытие hint/solution и недельные уведомления; self-check отсутствует.
 - [ ] Все Staff routes и capability states реализованы.
+- [ ] `/staff/classrooms` имеет вкладки «Каталог», «По группам», «Школьники», URL-state `lesson/tab/roomStatus`; Teacher получает forbidden.
 - [ ] Staff review работоспособен на телефоне, но не обещает offline verdict/outbox.
 - [ ] Login не раскрывает protected content и не создаёт production mock bypass.
 - [ ] Search params shareable и runtime-validated.
@@ -73,6 +78,7 @@
 - [ ] Visual diffs просмотрены, baseline не обновлён вслепую.
 - [ ] Telegram/Google не вызываются новыми unit/E2E.
 - [ ] Первый content gate сравнивает три реальных листка одного уровня в PWA, Telegram и PDF; перед выпуском пройдены реальные Android-устройства, iPhone — по возможности.
+- [ ] Classroom E2E в трёх браузерах проверяет Unicode duplicate, layout/plan confirm, Student/Family state, archive→reassigning и reassignment на настоящем aiohttp/SQLite.
 - [ ] Документация и `STATUS.md` соответствуют фактическому решению.
 
 ## Финальная ручная проверка

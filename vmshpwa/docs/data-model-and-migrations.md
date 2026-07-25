@@ -3,7 +3,7 @@
 ## Контексты
 
 - Identity: user, student profile, family account/link, staff role, group permission, device session.
-- Teaching: season, lesson, level, group, attendance mode, classroom and assignment.
+- Teaching: season, lesson, level, group, attendance mode, global classroom catalog, effective layout version and lesson assignment plan.
 - Content: позиционное сопоставление source elements с legacy problem, synonym group, source revision, asset, scheduled publication by level, hint and solution.
 - Work: attempt, answer, written submission, immutable attachment, annotation layer, feedback thread, verdict, oral conversation/result.
 - Communication: news source/revision, local publication, notification preference/delivery и broadcast. Surveys остаются legacy вне первой версии.
@@ -26,6 +26,16 @@ Deadline задаётся как момент публикации решени�
 ## Review locks
 
 Lock имеет owner и lease expiry, продлевается heartbeat и может быть безопасно освобождён/перехвачен после expiry. Verdict записывается транзакционно с комментариями и release lock. Live invalidation не заменяет SQLite constraint.
+
+## Аудитории
+
+`classrooms` — постоянный каталог. Display-name сохраняет внутренние пробелы, но уникальность защищает отдельное значение `NFKC(trim(name)).casefold()`. Hard delete отсутствует; rename/archive/restore аудитируются.
+
+`classroom_layout_versions` и `classroom_layout_rooms` задают наследуемую схему «аудитория → группа». Новое занятие читает последнюю confirmed-версию, а первая правка materialize-ит draft с `base_version_id`. Одна аудитория встречается в версии один раз, одна группа может использовать любое число комнат. Вместимость и веса отсутствуют.
+
+`classroom_assignment_plans` и `classroom_assignments` сохраняют отдельную версию распределения для занятия со snapshot группы школьника. Алгоритм сохраняет прежнюю допустимую комнату, иначе выбирает наименее заполненную с natural-name tie-break. Confirmed membership/history не перезаписывается; глобальный rename меняет отображаемое имя, а старое остаётся в audit. Layout change делает plan `stale`; скрытие используемой комнаты немедленно даёт текущим затронутым школьникам `reassigning`, restore не возвращает назначение. `not_applicable` зарезервирован для школьника, которому не нужна очная комната.
+
+One-time import текущего Excel-export использует `IDd`, `Уровень`, `Аудитория`, требует dry-run/hash/audit и не создаёт постоянный spreadsheet adapter.
 
 ## Граница текущего этапа
 

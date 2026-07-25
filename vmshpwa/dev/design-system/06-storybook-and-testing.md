@@ -42,6 +42,8 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - reactions × role visibility без утечки hidden teacher/student data;
 - AI off/pending/advisory/full reviewer/failure/escalation;
 - content loading/empty/error/partial/missing asset;
+- classroom catalog active/hidden/duplicate × layout inherited/materialized × plan draft/stale/confirmed;
+- classroom assignment assigned/reassigning/unassigned × Student/Family/Staff visibility, включая empty group и no-room blocking incident;
 - short/long Russian text, 200% zoom и narrow width.
 
 ## Interaction tests
@@ -60,7 +62,8 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - conscious hint view event и hidden-before-publication state;
 - role permission для скрытых reactions и AI output; одна reaction на verdict и часовое окно replace/delete;
 - TSV paste diagnostics;
-- classroom keyboard move;
+- classroom catalog duplicate/archive/restore, materialize layout, keyboard select/move, recalculate и confirm;
+- archive assigned room → Student/Family reassigning, затем новая confirmed room; Family notification control отсутствует;
 - update prompt preserving draft.
 
 Тест проверяет пользовательский результат, не внутренний class name. React Testing Library вне Storybook оставлять для редких unit-level integrations.
@@ -86,6 +89,8 @@ Addon a11y имеет `test: error`. Перед принятием:
 ## Visual regression
 
 Page screenshots в Playwright — Chromium, WebKit, Firefox с фиксированными locale/timezone/reduced-motion и production Vite build/preview, а не HMR/dev CSS. Component visual checks допустимы дополнительно. Baseline обновляется только после просмотра diff; в описании change указываются принятый gate и ожидаемые области изменения. Content gate отдельно сравнивает три листка одного уровня в PWA, Telegram и PDF derivatives.
+
+Classroom visual set фиксирует catalog active/hidden/duplicate, inherited/materialized layout, фактические 6/5/2 rooms, stale plan, reassigning, empty group, no-room incident, preview/confirm и mobile Staff. Ни одна story не показывает capacity, weight или drag affordance.
 
 ## Gate
 

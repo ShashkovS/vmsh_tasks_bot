@@ -18,7 +18,7 @@ Login — отдельный shell без раскрытия защищённо�
 
 ### Сейчас / текущая неделя
 
-Урок, уровень, online/очный режим, текущая фаза недели, ближайшее событие, компактный progress и продолжение последней задачи. Активная группа одна, но группы из `allowed_groups` дают полный доступ к чтению, сдаче и проверке. Attention order может поднимать новый feedback и незавершённое действие выше натурального порядка задач. Отдельно: pending submission, новый feedback, group problem-review call с конференцией, hints available, solutions published, no current lesson, offline cached.
+Урок, уровень, online/очный режим, текущая фаза недели, ближайшее событие, компактный progress и продолжение последней задачи. Для очного режима здесь же видна подтверждённая аудитория, состояние «Аудитория переназначается» или отсутствие применимости. Активная группа одна, но группы из `allowed_groups` дают полный доступ к чтению, сдаче и проверке. Attention order может поднимать новый feedback и незавершённое действие выше натурального порядка задач. Отдельно: pending submission, новый feedback, group problem-review call с конференцией, hints available, solutions published, no current lesson, offline cached.
 
 ### Задачи
 
@@ -74,7 +74,15 @@ Lesson list/detail, upload по уровням, positional problem reconciliatio
 
 ### Operations
 
-News moderation; users/groups/roles; classroom auto-assignment и ручной план; PWA broadcast composer с агрегированной delivery statistics; statistics with accessible tables; searchable audit with request ID and before/after. Print, быстрый очный ввод результатов и Staff→Telegram publication в v1 не входят.
+News moderation; users/groups/roles; PWA broadcast composer с агрегированной delivery statistics; statistics with accessible tables; searchable audit with request ID и before/after. Print, быстрый очный ввод результатов и Staff→Telegram publication в v1 не входят.
+
+`/staff/classrooms` называется «Аудитории», доступен только admin и сохраняет URL-state `lesson`, `tab`, `roomStatus`:
+
+1. «Каталог»: add/rename/search, active/hidden filter, archive и quick restore; duplicate conflict не очищает ввод и показывает существующую аудиторию.
+2. «По группам»: effective inherited layout, явное materialize-on-edit, строки комнат с group select/unassigned, фактические counts комнат по каждой группе и confirm с optimistic conflict.
+3. «Школьники»: preview по группам и комнатам, фактические counts без limits, reassigning/unassigned, manual select/move, recalculate, stale state, blocking no-room/mismatch incident и confirm.
+
+Типичный fixture показывает 6/5/2 фактически используемых комнат, но не изображает эти значения как вместимость или целевое ограничение. Неиспользованные active rooms допустимы. Archive используемой комнаты немедленно переводит затронутых текущих школьников в reassigning; restore не возвращает назначения. Mobile Staff использует последовательный layout без потери трёх шагов и без drag interaction.
 
 ## Responsive acceptance viewports
 

@@ -2,15 +2,15 @@
 
 Этот файл — журнал gates. Визуальная модель обновляет evidence и вопросы, но ставит `accepted` только после явного решения владельца продукта.
 
-| Фаза                     | Статус             | Принято    | Evidence/решение                                                                 |
-| ------------------------ | ------------------ | ---------- | -------------------------------------------------------------------------------- |
-| 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.      |
-| 2. Brand and tokens      | accepted           | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                          |
-| 3. UI primitives         | accepted           | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.            |
-| 4. Product components    | ready for review   | —          | Инкременты 1–9 готовы (`@vmsh/product`), гейты зелёные. Ждёт приёмки владельцем. |
-| 5. Pages and flows       | blocked by phase 4 | —          | Существующие prototype pages — content skeletons, не принятый visual design.     |
-| 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                     |
-| 7. Final acceptance      | blocked            | —          | —                                                                                |
+| Фаза                     | Статус             | Принято    | Evidence/решение                                                                      |
+| ------------------------ | ------------------ | ---------- | ------------------------------------------------------------------------------------- |
+| 1. Art direction         | accepted           | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.           |
+| 2. Brand and tokens      | accepted           | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                               |
+| 3. UI primitives         | accepted           | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                 |
+| 4. Product components    | ready for review   | —          | Новый контур аудиторий реализован и проверен; требуется визуальная приёмка владельца. |
+| 5. Pages and flows       | blocked by phase 4 | —          | Существующие prototype pages — content skeletons, не принятый visual design.          |
+| 6. Storybook and testing | blocked by phase 5 | —          | Текущая Storybook-конфигурация — инфраструктурный фундамент.                          |
+| 7. Final acceptance      | blocked            | —          | —                                                                                     |
 
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
@@ -87,6 +87,51 @@ Chosen option and exact combination:
 Evidence stories: UI/Controls, UI/Overlays, UI/Selection, UI/Structure, Foundations/*.
 Checks: Storybook 26/26; contrast 72×2 AA; lint/typecheck/build.
 Known follow-ups: —
+```
+
+```text
+2026-07-24 — Phase 4 — changes requested
+Decision owner: Сергей Шашков (владелец продукта)
+Chosen option and exact combination:
+  Аудитории разделяются на глобальный каталог, наследуемую версию схемы
+  «аудитория → группа» и версионируемый план школьников для занятия.
+  `/staff/classrooms` получает три вкладки: «Каталог», «По группам»,
+  «Школьники». У комнат нет capacity/weights и drag interaction; используются
+  select/move, preview, recalculate и confirm. Student и Family видят
+  assigned/reassigning/not-applicable, но classroom push получает только Student.
+Rejected traits:
+  Старый единый ClassroomPlanner с capacity, per-lesson room records и простой
+  перестройкой без inherited/materialized/stale version states.
+Evidence stories:
+  Требуются новые Product/Staff admin classroom catalog/layout/plan stories и
+  Student/Family assignment-state stories; существующая story не является proof.
+Known follow-ups:
+  После реализации повторно пройти interaction/a11y/visual gate Phase 4 и только
+  затем вернуть фазу в ready for review. Остальные зелёные инкременты не отклонены.
+```
+
+```text
+2026-07-24 — Phase 4 — ready for review
+Decision owner: ожидается решение Сергея Шашкова (владельца продукта)
+Chosen option and exact combination:
+  Замена старого ClassroomPlanner завершена. Реализованы отдельные компоненты
+  ClassroomCatalog, ClassroomGroupLayout, ClassroomStudentPlanner и
+  ClassroomAssignmentStatus. Они покрывают каталог active/hidden/duplicate,
+  inherited/materialized/conflict layout, preview/stale/reassigning/empty/no-room
+  assignment plan, фактические 6/5/2 аудитории, подтверждение и публичные
+  Student/Family states. DnD и capacity отсутствуют.
+Evidence stories:
+  Product/Classrooms — 12 stories: catalog active/hidden/duplicate; inherited
+  6/5/2, materialized confirm, optimistic conflict; plan preview/confirm, stale,
+  reassigning/no-room, empty group; Student/Family state matrix; mobile Staff.
+Checks:
+  Prettier, ESLint и package typecheck — green; Vitest 7/7; Storybook browser
+  tests 83/83 с addon-a11y error; production Storybook build — green. В браузере проверены
+  desktop light layout, desktop dark blocking incident, mobile Staff, duplicate
+  handling и Student/Family states; console errors отсутствуют.
+Known follow-ups:
+  Только визуальное решение владельца по gate Phase 4. Page-level интеграция
+  `/staff/classrooms` относится к Phase 5; snapshots не обновлялись.
 ```
 
 ## Фаза 1 — принято (evidence)
@@ -221,11 +266,13 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 
 **Инкремент 7 — connectivity (зелёный):** `ConnectionBanner` (online ненавязчив; offline/reconnecting объясняют влияние на действие; conflict — не исчезающий toast, требует решения); `SyncIndicator` (счётчик очереди → outbox, тихо когда нечего слать); `UpdatePrompt` (не рушит черновик); `PushPermissionCard` (объясняет категории до системного запроса, уважает отказ). `Product/Connectivity` stories + interaction-тесты.
 
-**Инкремент 8 — рабочее место Staff (зелёный):** `ReviewQueue` (плотная, сортировка задача/ожидание/группа/ученик, list/fast, счётчик+возраст, занятая работа с именем и disabled, перепроверка); `ReviewLock` (аренда held/busy/lost); `VerdictActions` (из registry лучший→худший, кнопки + цифры, `1`=«+», легенда, не срабатывает в поле); `ReviewFeedbackForm` c `ReviewCommentGuard` (вердикт ниже «+» без комментария — подтверждение, не блок) и внутренней `ReactionPicker`; `ThreePaneReview`; `DenseDataTable` (sticky, сортировка, выбор, keyboard); `MetadataGrid` (правка ячеек, вставка TSV, dry-run, undo); админ-поверхности `PublicationControl`, `LatexUpload`, `MissingAssetsFlow`, `BroadcastComposer`, `ClassroomPlanner` (select/move без DnD-зависимости), `SosQueue` (отдельно от очереди вердиктов). `Product/Review`, `Product/Staff data`, `Product/Staff admin` stories + interaction-тесты (сортировка, «+» цифрой, guard, публикация, рассылка, SOS, выбор/сортировка таблицы, dry-run метаданных).
+**Инкремент 8 — рабочее место Staff (зелёный):** `ReviewQueue` (плотная, сортировка задача/ожидание/группа/ученик, list/fast, счётчик+возраст, занятая работа с именем и disabled, перепроверка); `ReviewLock` (аренда held/busy/lost); `VerdictActions` (из registry лучший→худший, кнопки + цифры, `1`=«+», легенда, не срабатывает в поле); `ReviewFeedbackForm` c `ReviewCommentGuard` (вердикт ниже «+» без комментария — подтверждение, не блок) и внутренней `ReactionPicker`; `ThreePaneReview`; `DenseDataTable` (sticky, сортировка, выбор, keyboard); `MetadataGrid` (правка ячеек, вставка TSV, dry-run, undo); админ-поверхности `PublicationControl`, `LatexUpload`, `MissingAssetsFlow`, `BroadcastComposer`, `SosQueue` (отдельно от очереди вердиктов). `Product/Review`, `Product/Staff data`, `Product/Staff admin` stories + interaction-тесты (сортировка, «+» цифрой, guard, публикация, рассылка, SOS, выбор/сортировка таблицы, dry-run метаданных).
 
 **Инкремент 9 — прогресс (зелёный):** зависимость `@visx/scale` (из каталога); `DistributionViolin` (гауссова KDE, медиана, маркер своего результата словами «выше среднего»), `TrendWithBand` (линия + доверительная полоса) — обе shape-first, не по цвету, с табличным эквивалентом в `<details>`; `StudentProgress` — словами («3 задачи зачтено»), спокойный streak относительно своей истории, без leaderboard/percentile/красных провалов, распределение по группе спрятано за раскрытием (не навязывается), пустое состояние. `Product/Progress` stories + interaction-тесты.
 
-**Итог Phase 4:** гейты зелёные — Storybook **72/72** (axe error), lint (js+css), typecheck, build. Ждёт приёмки владельцем математического чтения, submission, review workspace, news и dense grid (см. gate в `04-product-components.md`). Затем Phase 5 — страницы, начиная со Student «Сейчас» mobile-light. Visual baselines обновляются после первой реальной страницы.
+**Инкремент 10 — аудитории (зелёный):** прежний монолитный `ClassroomPlanner` удалён. `ClassroomCatalog` покрывает создание, поиск, active/hidden, rename/restore и Unicode/case duplicate без потери ввода; `ClassroomGroupLayout` — inherited/materialized/confirmed/superseded, actual counts, unused rooms и optimistic conflict; `ClassroomStudentPlanner` — preview/recalculate/confirm, move через select, stale/reassigning, empty group и blocking no-room incident; `ClassroomAssignmentStatus` — публичные `assigned/reassigning/not_applicable` для Student и Family с push affordance только у Student. `Product/Classrooms` содержит 12 stories, включая mobile Staff и фактическую матрицу 6/5/2 без capacity/DnD.
+
+**Итог Phase 4:** гейты зелёные — Vitest **7/7**, Storybook **83/83** (axe error), lint, package typecheck и production Storybook build. Фаза снова готова к визуальной приёмке владельцем; это не означает `accepted`. После принятия начинается Phase 5 — страницы, начиная со Student «Сейчас» mobile-light. Visual baselines обновляются после первой реальной страницы.
 
 ## Решения итогового продуктового опросника — 24 июля 2026
 

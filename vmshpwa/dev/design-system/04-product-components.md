@@ -73,7 +73,10 @@ ConnectionBanner/SyncIndicator/UpdatePrompt/PushPermissionCard:
 - MissingAssetsFlow: exact missing refs, match candidates, upload/reuse, blocking resolution;
 - PublicationControl: per-level task/hint/solution state, scheduled time, diff, publish/rollback confirmation;
 - BroadcastComposer v1: audience query, count/preview, PWA delivery, quiet/category, dry run и только агрегированная delivery statistics. Staff→Telegram publication относится ко второй версии;
-- ClassroomPlanner: capacity, сохранение прошлой аудитории ученика того же уровня, равномерное распределение остальных, conflict list, select/move и полная перестройка с подтверждением. DnD dependency и print actions в v1 не нужны.
+- ClassroomCatalog: add/rename/search, active/hidden filter, archive/quick restore, optimistic conflict и duplicate state после trim + Unicode NFKC + casefold. Display-name сохраняет внутренние пробелы; hard delete отсутствует.
+- ClassroomGroupLayout: effective/inherited source, materialize-on-first-edit, room rows с group select/unassigned и фактический count комнат по группе. Одна комната относится максимум к одной группе, одна группа получает любое число комнат; capacity/weights отсутствуют.
+- ClassroomStudentPlanner: preview по группам/комнатам с фактическими counts, `assigned|reassigning|unassigned`, previous-room/least-loaded source, manual select/move, stale warning, blocking incidents, recalculate и confirm. В v1 нет drag interaction, print/export и Staff→Telegram action.
+- ClassroomAssignmentStatus: Student/Family варианты `not_applicable|reassigning|assigned`, имя комнаты и время публикации. Только Student-вариант содержит notification affordance; Family не обещает classroom push.
 
 Questions/SOS получают отдельный от verdict queue product surface. Это приватный диалог по задаче или общий диалог занятия: teacher/admin видят входящие, student — только свои; закрепления за одним teacher и отдельного close/reopen статуса нет. Adapter сохраняет совместимость с legacy negative `problem_id` и Telegram handlers до отдельной backend-миграции.
 

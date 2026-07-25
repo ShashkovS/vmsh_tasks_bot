@@ -57,7 +57,7 @@
 - Sliding panels строятся на Base UI Drawer, а не на Dialog, замаскированном под Sheet.
 - Графики: Visx поверх `d3-array`, `d3-scale`, `d3-shape`.
 - Большие Staff grids: TanStack Table + TanStack Virtual.
-- Новую DnD dependency не добавляем. Classroom planner может использовать локальную pointer/native реализацию; порядок фотографий меняется кнопками вверх/вниз.
+- Новую DnD dependency не добавляем. Classroom planner вообще не использует drag-and-drop: аудитория выбирается явным select/move, а порядок фотографий меняется кнопками вверх/вниз.
 - Формам достаточно собственного малого слоя вокруг Base UI Field/Form semantics.
 - Версии общих third-party dependencies задаются pnpm catalog.
 - ESLint получает `eslint-plugin-jsx-a11y`; CSS проверяется Stylelint. React Compiler не используется.
@@ -75,12 +75,22 @@
 
 ## Дополнение по первому выпуску
 
-- Первый production scope: сезон 2025–2026, занятия 39–41, все три уровня, полный online flow без очного интерфейса.
+- Первый production scope: сезон 2025–2026, занятия 39–41, все три уровня, полный online flow и admin-only планирование аудиторий. Интерфейс очного преподавателя для выставления результатов и печатный раздел остаются вне выпуска.
 - Production host — `vmsh.shashkovs.ru`, желательный staging — `devvmsh.shashkovs.ru`.
 - Короткое maintenance window для migrations допустимо. SQLite backup три раза в день и перед deploy считается достаточным baseline.
 - Полный S3 backup не требуется. Student images не versioned; отправленные teacher artifacts сохраняются immutable/versioned на уровне приложения или отдельной storage policy.
 - Выпуск включается сразу для всех уровней. Критические сценарии вручную проверяются на доступных Android; iPhone — по возможности, автоматический WebKit остаётся обязательным.
 - Есть отдельный Telegram test bot/channel; серьёзные production alerts идут в служебную Telegram-группу.
+
+## Аудитории и распределение очных школьников
+
+- Модель разделяет глобальный каталог `classrooms`, наследуемые версии схемы «аудитория → группа» и отдельные версии плана школьников для занятия. У комнат нет capacity или weight.
+- Нормализованное имя вычисляется как trim → Unicode NFKC → casefold и защищается уникальным индексом; исходное display-name сохраняет внутренние пробелы. Hard delete отсутствует, rename/archive/restore аудитируются.
+- Первая правка унаследованной схемы материализует draft. Изменение схемы помечает связанный план `stale`; подтверждение требует нового preview/recalculation.
+- Автораспределение детерминировано: прежняя допустимая комната, иначе наименее заполненная комната группы, затем естественная сортировка имени и стабильный ID как последний tie-breaker.
+- Скрытие используемой комнаты переводит текущие назначения в `reassigning`; восстановление не возвращает их автоматически. Прошлые подтверждённые планы неизменны.
+- Student и Family получают read contract `not_applicable | reassigning | assigned`; owner-scoped event — `classroom.assignment.changed`. Classroom push получает только Student.
+- Начальное заполнение — одноразовый dry-run/import Excel-export с `IDd`, `Уровень`, `Аудитория`; это не постоянный Google/Excel adapter.
 
 ## Значения, фиксируемые при реализации и развёртывании
 

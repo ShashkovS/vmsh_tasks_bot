@@ -28,7 +28,7 @@ E2E выполняется в Chromium, WebKit и Firefox. Критически�
 
 Storybook a11y violations имеют status `error`. Проверяются keyboard order, visible focus, accessible names, dialogs/focus trap, таблицы, zoom/reflow, forced colors where applicable и контраст WCAG 2.2 AA. Цвет никогда не является единственным носителем статуса.
 
-Этот baseline одинаков для Student, Family и Staff. Отказ от сложной accessibility-модели отдельного drag-and-drop не отменяет labels, alt, валидный ARIA, keyboard navigation, focus и axe gate: Staff использует доступные buttons/select/move alternatives.
+Этот baseline одинаков для Student, Family и Staff. Classroom planner использует доступные select/move controls; labels, валидный ARIA, keyboard navigation, focus и axe gate обязательны и без сложного gesture interaction.
 
 ## Definition of done компонента
 
@@ -50,3 +50,6 @@ Storybook a11y violations имеют status `error`. Проверяются keyb
 - Производительность и корректность импортов проверяются на production-size копии до применения миграции в production; фиксированный календарный график таких репетиций не нужен.
 - Исторические Telegram-сценарии могут дополнительно прогоняться через отдельного тестового бота и тестовый канал. Это изолированный integration profile, не unit/E2E dependency.
 - Первый content acceptance corpus включает уроки 39, 40 и 41 сезона 2025–2026 для всех трёх уровней; три наиболее показательных листка одного уровня проходят ручное сравнение PWA/Telegram/PDF.
+- Classroom unit/domain suite проверяет trim/NFKC/casefold, кириллические дубликаты, archive/restore, inherited layout, optimistic conflicts и свойства алгоритма: комнаты не смешивают группы, прежняя допустимая комната сохраняется, остальные распределяются по наименьшей фактической загрузке.
+- Classroom API suite проверяет Teacher `403`, stale `409`, запрет неполного/mismatched plan и неизменность прошлых plans. Storybook покрывает catalog/layout/plan states, 6/5/2 фактических rooms, stale/reassigning/no-room и mobile Staff.
+- Classroom Playwright E2E в трёх браузерах создаёт `201` и ` Актовый зал `, отклоняет `АКТОВЫЙ ЗАЛ`, подтверждает layout/plan, сверяет Student/Family, скрывает комнату, видит `reassigning`, пересчитывает и подтверждает новую версию. E2E использует production preview, настоящий aiohttp и seeded SQLite без MSW.

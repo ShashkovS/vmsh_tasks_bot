@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
-import { BroadcastComposer, ClassroomPlanner, SosQueue, type SosItem } from './staff-outreach'
+import { BroadcastComposer, SosQueue, type SosItem } from './staff-outreach'
 import {
   LatexUpload,
   MissingAssetsFlow,
@@ -174,20 +174,5 @@ export const MissingAssets: Story = {
         onUpload={() => undefined}
       />
     </div>
-  ),
-}
-
-export const Planner: Story = {
-  name: 'Распределение по кабинетам',
-  render: () => (
-    <ClassroomPlanner
-      conflicts={['Вика записана в две группы одновременно.']}
-      onMove={() => undefined}
-      rooms={[
-        { id: 'r1', name: 'Кабинет 305', capacity: 3, assigned: ['Аня', 'Боря'] },
-        { id: 'r2', name: 'Кабинет 307', capacity: 2, assigned: ['Вика', 'Гена', 'Дима'] },
-      ]}
-      unassigned={['Егор']}
-    />
   ),
 }
