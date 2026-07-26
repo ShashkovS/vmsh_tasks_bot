@@ -1,6 +1,6 @@
 # Статус плана разработки
 
-Последнее обновление: 2026-07-25.
+Последнее обновление: 2026-07-26.
 
 ## Состояние документов
 
@@ -46,6 +46,9 @@
 | 2026-07-25 | PLAN-026 | Внешнее ревью открыло четыре новые продуктовые развилки без блокировки этапа 0                           | Production cutover соответствующих фаз ждёт ответов `SCHEDULE-01`, `AUTH-01`, `CLASSROOM-01`, `RETENTION-01`                                      |
 | 2026-07-25 | PLAN-027 | У каждого этапа есть явный design implementation map                                                     | Phase-файл ведёт к компонентам, story source и URL; изменение accepted UI обновляет код, story, карту и status вместе                             |
 | 2026-07-26 | PLAN-028 | Internal teacher reactions получают компактный Mod+Alt shortcut                                          | `⌘/Ctrl + Alt + 1…4` работает при фокусе в комментарии; простой Mod+digit оставлен браузеру, `AltGraph` игнорируется                              |
+| 2026-07-26 | PLAN-029 | Внешние converter binaries задаются общим backend config и разрешаются через service `PATH`              | Defaults: `pdf2svg`, `cwebp`, `pdflatex`, `magick`; absolute override/`None` явны, readiness/deploy проверяют capabilities до первого задания     |
+| 2026-07-26 | PLAN-030 | S3 adapter использует общий profile-aware backend config для Beget                                      | Local/manual integration читает allowlisted `s3_*` из test config, production — из prod; agent/E2E остаются filesystem, secrets всегда redacted  |
+| 2026-07-26 | PLAN-031 | Telegram channel destination хранится отдельно для каждой группы в SQLite                               | `@vmsh179devbot` + private test channel используются opt-in; Bot API canonical ID/rights проверяются, token остаётся config-only, unit/E2E offline |
 
 ## Фактические proof этапов
 

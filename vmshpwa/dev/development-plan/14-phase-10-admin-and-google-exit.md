@@ -9,7 +9,7 @@ Admin из Staff импортирует Excel, создаёт/правит по�
 ## Объём Staff
 
 - Users: search/filter, create/edit любого поля кроме `id`, block/archive, group, allowed groups, online mode, family account/link, credential/token reset workflow. Hard delete отсутствует.
-- Groups/season: active/default/system flags, display/order, score weight, self-switch policy, fourth/future levels.
+- Groups/season: active/default/system flags, display/order, score weight, self-switch policy, fourth/future levels; per-group Telegram channel ID/title/enabled/verified state. Bot token не находится в group row или browser payload; verification выполняет backend.
 - Teacher permissions by group/capability.
 - Batch Excel import: обязательны surname, name, unique token/password, birthday, grade. Valid rows применяются, invalid rows пропускаются и попадают в итоговый report; повторный import связывается по token.
 - Task metadata TSV grid and version conflicts, включая отдельный task type (`test|written|oral`), answer type и checker trusted-admin surface. Task/answer type редактируются dropdown-ячейками, но прямоугольная TSV copy/paste работает так же, как в Google Sheets. Legacy `Письменно<-Устно` при migration явно отображается в canonical oral с доступной письменной сдачей.
@@ -60,6 +60,7 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 - Import parser/normalization per row, duplicate natural keys, partial invalid, encoding and TSV copy/paste as data.
 - Valid-row apply is repeatable/idempotent; invalid rows do not block valid ones and получают понятный report.
 - Permissions matrix all routes/mutations; audit before/after without secrets.
+- Telegram destination: canonical Bot API ID round-trip, >32-bit/negative IDs, duplicate channel rejection, missing admin/post permission, optimistic conflict и audit старого/нового destination без token.
 - Differential reports vs current Google/external pipeline on the protected production-size copy.
 - 1500 students metadata/users grid virtualization and search performance.
 - Storybook dense Staff pages desktop + mobile essential review; import diagnostics/conflicts/forbidden.
@@ -73,6 +74,7 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 - Dry-run diff объясняет каждое создаваемое/изменяемое/пропущенное значение.
 - Валидные строки импортируются, невалидные пропускаются и перечисляются в отчёте; пропущенная строка не оставляет частично записанных данных.
 - Permission changes вступают в силу и отзывают доступ/session according policy.
+- Каждая Telegram-enabled группа имеет ровно один verified channel destination; публикация никогда не использует глобальный fallback, а изменение channel не переписывает chat/message IDs исторических публикаций.
 - Reload/обновление SPA не теряет несохранённые правки grid/import; новый server version не перезаписывается молча.
 - Cutover обратим и имеет parity report; при rollover автоматически переносятся только teachers, остальные данные импортируются заново.
 

@@ -28,6 +28,8 @@ Legacy aiohttp остаётся на 8179. Новые команды его не
 
 Frontend runtime получает адрес API через `VMSH_API_ORIGIN`; это не встраивается в production bundle. PWA IndexedDB называется по audience и instance, service worker ограничен audience scope. Test credentials и browser context создаются независимо для каждого запуска.
 
+Обычные agent/E2E profiles используют filesystem media adapter и не читают `creds_test`/`creds_prod`. Ручной local S3 integration profile может allowlist-ом прочитать `s3_url`, `s3_bucket_name`, `s3_access_key`, `s3_secret_key` из `creds_test/vmsh_bot_config_test.json` и работает только в выделенном test bucket/prefix. Production читает те же поля из production config; смешение test/prod key или prefix является startup error.
+
 ## Запреты
 
 Agent никогда не запускает human-цели, Telegram polling, Google loaders и не использует реальные credentials. E2E не применяет MSW и поднимает настоящий aiohttp с seeded SQLite. Production build аварийно завершается, если включён `VITE_ENABLE_MSW=true` или `VITE_PROTOTYPE=true`.

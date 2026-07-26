@@ -139,6 +139,7 @@ Family endpoints никогда не принимают произвольный
 - `GET /staff/api/v1/classroom-assignment-plans/{planPublicId}/students/{studentPublicId}/history` — подтверждённые прошлые аудитории школьника
 - `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/confirm`; полноценные print/export endpoints относятся ко второй версии, а узкий v1 compatibility export для действующих `a02`/`a11`–`a14` зависит от ответа `CLASSROOM-01`
 - `/staff/api/v1/news/import-status`, `/news/posts`, `/news/posts/{id}/visibility`
+- будущий admin `GET/PUT /staff/api/v1/groups/{groupId}/telegram-destination` управляет DB-настройкой и verification state; JSON передаёт `telegramChatId` decimal string, backend сохраняет canonical Bot API integer. До появления UI настройка применяется versioned admin command/migration, не frontend config
 - будущие `/staff/api/v1/broadcasts`, `/broadcasts/{id}/preview`, `/broadcasts/{id}/send` относятся ко второй фазе вместе с Markdown editor и не входят в initial v1 contract; Staff→Telegram publication также относится ко второй версии
 - `/staff/api/v1/users`, `/groups`, `/permissions`, `/imports`, `/statistics`, `/audit`
 

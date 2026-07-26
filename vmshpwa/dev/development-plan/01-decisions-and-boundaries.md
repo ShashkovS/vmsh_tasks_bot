@@ -187,7 +187,7 @@
 - Серьёзные сбои сообщаются в специальную служебную Telegram-группу.
 - Новые возможности включаются сразу для всех трёх уровней, не поэтапно по группам.
 - Migration/performance tests можно выполнять на согласованной копии production SQLite вместе с WAL/SHM, не обезличивая её за пределами локального защищённого окружения.
-- Есть отдельный test bot и test channel. Physical-device gate обязателен на доступных Android-устройствах; iPhone проверяется по возможности, WebKit E2E остаётся автоматическим gate.
+- Для opt-in Telegram integration есть test bot `@vmsh179devbot`; token читается только из test credential config. Приватный канал отображается как `vmsh179devbot channel`, UI ID `3913815635`, бот добавлен admin. Live profile может публиковать туда любые synthetic/test payloads в пределах Telegram limits; unit/E2E от канала не зависят. Canonical Bot API `chat.id` сначала проверяется probe и затем хранится как настройка test group в SQLite без ручного добавления `-100`/смены знака.
 - Для content visual regression обязательно сравниваются PWA, Telegram и PDF для трёх листков одного уровня из `_vmsh_examples`.
 
 ## AI второй версии

@@ -18,6 +18,9 @@
 8. Провести auth preflight без выгрузки секретов: количество `NULL`/невалидных birthday, пустых фамилий, коллизий будущих логинов, token-length buckets и chat-id/других явно guessable token shapes. Отчёт содержит только агрегаты и synthetic examples.
 9. Зафиксировать измеримый workload profile по traces/production counts: одновременные Student/Staff sessions, submits/minute в пике, photo count/bytes, write latency, queue/outbox depth и допустимый `SQLITE_BUSY`/error budget. Число `200 учеников` само по себе не является load-test specification.
 10. Для каждого реально запускаемого `_external_pipelines` записать owner, команду/расписание, upstream, side effects, rollback и состояние `legacy bridge | v1 cutover | later internalization`.
+11. Зафиксировать внешний converter contract: четыре настраиваемых executable (`pdf2svg`, `cwebp`, `pdflatex`, `magick` по умолчанию из service `PATH`), capability probe, безопасный argv-вызов, timeout и поведение при `None`/missing binary.
+12. Зафиксировать storage profile contract: filesystem/mock для hermetic unit/agent/E2E; opt-in Beget S3 integration берёт allowlisted `s3_*` поля из test secret file, production — из production secret file, без побочной загрузки Telegram/Google credentials.
+13. Зафиксировать live Telegram integration profile: `@vmsh179devbot`, token только из test config, private test channel `vmsh179devbot channel` с UI ID `3913815635`; Bot API probe получает canonical chat ID/admin capability, после чего local test-group row в SQLite становится единственным destination source.
 
 ## Файлы реализации
 
@@ -26,6 +29,7 @@
 - `pwa_tests/fixtures/seed.py`, `pwa_tests/fixtures/schema_snapshot.sql`;
 - `adr/NNNN-pwa-sqlite-concurrency-and-migrations.md`;
 - `pwa_tests/reports/auth-preflight.example.json`, `pwa_tests/reports/workload-profile.md`;
+- `helpers/pwa/toolchain.py` и поля toolchain в общем backend config;
 - `pwa_tests/domain/test_legacy_answer_types.py`;
 - `pwa_tests/domain/test_legacy_review_queue.py`;
 - `pwa_tests/domain/test_legacy_results_and_reactions.py`;
@@ -54,6 +58,9 @@ Seed `baseline-v1` и первый release fixture:
 
 - Python: schema snapshot, seed repeatability, legacy characterization, app factory imports без Telegram/Google.
 - Python/integration: два connection/process writers, `SQLITE_BUSY` retry exhaustion, crash внутри transaction и schema-version mismatch без auto-apply.
+- Python/toolchain: default-name lookup через контролируемый `PATH`, absolute override, `None`, missing/non-executable file, fake version/error/timeout executables; реальные binary smoke отмечаются как environment capability test.
+- Python/storage config: полный/частичный/отсутствующий набор `s3_*`, test/prod source selection, secret redaction и доказательство, что filesystem agent/E2E profile не читает credential files.
+- Python/Telegram: RecordingBot для hermetic suite; opt-in live probe проверяет `getMe/getChat/getChatMember`, сохраняет canonical group destination и может отправить synthetic boundary payloads в test channel без real student data.
 - TS: runtime config parsing, production prohibition MSW/prototype, query-key baseline, Dexie namespace isolation.
 - Storybook: shells и глобальные states, уже существующие в дизайн-фазе.
 - E2E production preview: base path/history fallback, health/runtime, WS reconnect/refetch signal, theme, audience isolation, SW installation/update smoke.
@@ -76,6 +83,9 @@ Seed `baseline-v1` и первый release fixture:
 - Все последующие фазы имеют один воспроизводимый seed entrypoint.
 - Принят DB concurrency ADR; обычный app startup не применяет migrations, а намеренно устаревшая schema останавливает startup до обслуживания.
 - Auth preflight перечисляет все неактивируемые Student rows, workload profile задаёт численные входы для этапа 11, а external-process register не содержит строки без владельца/срока следующего решения.
+- Toolchain config не содержит локальных абсолютных путей по умолчанию; preflight до запуска pipeline сообщает все отсутствующие обязательные capabilities и версии найденных converters.
+- S3 adapter fail-fast отклоняет неполную конфигурацию, а filesystem agent/E2E проходит без `creds_test`, `creds_prod` и network access.
+- Live Telegram test не запускается обычным unit/E2E, не использует production token/channel и перед отправкой подтверждает, что bot username/channel mapping совпали с test profile.
 
 ## Пруфы завершения этапа
 
@@ -88,6 +98,9 @@ Seed `baseline-v1` и первый release fixture:
 - [ ] DB concurrency/migration ADR и two-writer fault tests: `<path/result>`.
 - [ ] Auth preflight aggregates и unresolved policy rows: `<path/result>`.
 - [ ] Approved workload profile и external-process decommission register: `<paths>`.
+- [ ] Converter config/probe contract и local capability report; server повторяет gate в этапе 11: `<paths/results>`.
+- [ ] Storage profile/config/redaction tests; opt-in test-bucket smoke либо documented skip: `<paths/results>`.
+- [ ] RecordingBot suite и opt-in `@vmsh179devbot`/test-channel capability+limits report с message IDs, без token: `<paths/results>`.
 - [ ] Visual baseline environment and screenshots: `<paths>`.
 - [ ] Docs updated: `<paths>`.
 - [ ] Known limitations/issues: `<links or none>`.

@@ -58,6 +58,11 @@ class Config:
     trace_enabled: bool = False
     trace_log_path: str = "logs/events.jsonl"
     trace_backup_days: int = 21
+    # s3 bucket
+    s3_url: Optional[str] = "https://s3.ru1.storage.beget.cloud"
+    s3_bucket_name: Optional[str] = None
+    s3_access_key: Optional[str] = None
+    s3_secret_key: Optional[str] = None
 
     def update_from_dict(self, update_dict: dict):
         for key, value in update_dict.items():
@@ -191,7 +196,7 @@ _init_sentry(config.sentry_dsn, config.config_name)
 from helpers.trace import init_trace
 
 init_trace(config)
-logger.debug(f'{config=}')
+# logger.debug(f'{config=}')
 
 if config.production_mode:
     logger.info(('*' * 50 + '\n') * 5)

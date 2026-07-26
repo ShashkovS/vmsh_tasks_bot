@@ -23,6 +23,20 @@
 - Multi-write use case (`review complete`, claim, idempotent submit, classroom batch) задаётся общей domain service + unit of work. `models/pwa` и `db_methods/pwa` — namespace новой реализации, а не второй набор правил только для web; затронутый Telegram handler вызывает тот же service/repository.
 - Yoyo migrations выполняет отдельный deploy/test command под lock. Runtime startup не применяет схему конкурентно: он проверяет ожидаемую schema version и отказывается стартовать с понятной диагностикой. Legacy auto-migration из `DB_CONNECTION.setup()` должен быть отделён от обычного connect до production-фаз.
 
+## Внешний toolchain конвертеров
+
+- Backend config содержит `pdf2svg_path`, `cwebp_path`, `pdflatex_path` и `magick_path` типа `Optional[str]` со значениями по умолчанию соответственно `pdf2svg`, `cwebp`, `pdflatex`, `magick`. Это имена executable, разрешаемые через `PATH` профиля, под которым запущен процесс; локальные `/opt/homebrew/...` и пользовательские wrapper paths не зашиваются в репозиторий.
+- Абсолютный путь разрешён как deployment override. `None` явно отключает capability; если она нужна включённому content/media workflow, readiness/deploy preflight завершается ошибкой до первого пользовательского задания.
+- Значение является одним executable path/name, а не shell fragment. Вызов использует argument array без shell, отдельный temporary workspace, timeout/resource bounds и ограниченный захват stderr. Пользовательские filenames/LaTeX не интерполируются в командную строку.
+- Toolchain probe фиксирует найденный executable и нормализованную version/capability information без раскрытия лишнего server path в публичном API. Compiler/toolchain version сохраняется в provenance производной, чтобы результат можно было воспроизвести после обновления бинарника.
+
+## Конфигурация object storage
+
+- Общий backend config содержит `s3_url`, `s3_bucket_name`, `s3_access_key`, `s3_secret_key`. Текущий default endpoint — `https://s3.ru1.storage.beget.cloud`; bucket и credential values не имеют небезопасных defaults и не коммитятся.
+- Human local/manual S3 integration читает только эти allowlisted значения из `creds_test/vmsh_bot_config_test.json`; production — из `creds_prod/vmsh_bot_config_prod.json`. Загрузка S3 overlay не должна попутно делать Telegram/Google обязательными для PWA runtime.
+- Unit, agent и обычный E2E используют filesystem/mock adapter и не требуют S3 secrets или внешней сети. Отдельный opt-in S3 integration smoke использует test bucket/disposable prefix и никогда не production credentials.
+- При выбранном S3 adapter неполная четверка настроек является config error до первого upload. Secrets редактируются в `repr`, логах, Sentry, health/proof и subprocess environment dumps; readiness сообщает только endpoint host, bucket identity в безопасной форме и capability result.
+
 ## Definition of Ready этапа
 
 До реализации этапа должны быть выполнены все пункты:
@@ -34,6 +48,7 @@
 5. Определены fixtures: happy path, empty, loading, error, forbidden, offline, reconnect и конфликт.
 6. Назван минимальный вертикальный сценарий, который будет продемонстрирован владельцу продукта.
 7. Для этапа с записью в SQLite ADR concurrency уже принят, а transaction boundaries и ожидаемая реакция на `SQLITE_BUSY` перечислены в API/domain tests.
+8. Для этапа, использующего внешний converter, перечислены необходимые capabilities, config fields, timeout/error policy и proof успешного toolchain probe в целевом runtime.
 
 ## Definition of Done этапа
 

@@ -25,7 +25,8 @@ Migration: `pwa_submission_threads_entries_assets`.
 ## Server/storage pipeline
 
 - Streaming multipart limits per file/request; MIME sniffing, decompression-bomb and pixel bounds.
-- File adapter in agent/test; `aioboto3` adapter in production.
+- File adapter in unit/agent/E2E; `aioboto3` adapter для opt-in local integration и production. S3 config использует `s3_url` (default Beget endpoint), `s3_bucket_name`, `s3_access_key`, `s3_secret_key`: local/manual integration получает их из `creds_test/vmsh_bot_config_test.json`, production — из соответствующего `creds_prod` config. PWA loader извлекает только storage allowlist и не делает Telegram/Google credentials обязательными.
+- Server fallback использует общий converter config: `magick_path='magick'` для decode/orientation/HEIC и `cwebp_path='cwebp'` для WebP, с разрешением через service `PATH`, optional absolute override и fail-fast capability probe. Pipeline не вызывает shell и не принимает произвольные flags из upload metadata.
 - Write sequence: validate → temporary object → conversion/verify hash → final key → SQLite transaction → cleanup. Compensation job finds stale temporary objects.
 - Public GET URL is long/unguessable; upload and list still require auth.
 - Submission entry становится видима атомарно только после всех выбранных файлов; failed attachment повторяется отдельно, не создавая частичную работу.
@@ -45,7 +46,9 @@ Migration: `pwa_submission_threads_entries_assets`.
 
 - Worker dimensions/rotation/WebP/metadata tests with JPEG, PNG, WebP, HEIC fixture where supported, corrupt and huge input.
 - Server fallback contract against `mathimg_service.py` capabilities, without importing external module at runtime.
+- Converter failure matrix: missing/disabled `magick` or `cwebp`, timeout, corrupt output, non-zero exit и cleanup временного source/output.
 - Storage adapter parity, interrupted upload, S3 transient retry, hash collision, temp cleanup.
+- Config/source/redaction tests: incomplete S3 tuple fail-fast, test/prod file selection, secrets absent from `repr`/logs/Sentry/health; opt-in test bucket smoke работает только в disposable prefix.
 - Authorization: other student/family cannot enumerate attachment; public URL accessibility follows explicit privacy decision.
 - Offline outbox crash matrix and idempotency/payload conflict.
 - Reload/remount, account isolation, partial-photo recovery, PWA update и cleanup-after-receipt для связки localStorage + Dexie.
@@ -57,6 +60,8 @@ Migration: `pwa_submission_threads_entries_assets`.
 
 - Final stored object is valid WebP ≤1920 side and contains no retained EXIF GPS.
 - Original and server temporary are absent after success/cleanup.
+- В runtime с включённым server fallback обе обязательные image capabilities проходят readiness probe до приёма HEIC/unsupported upload.
+- При выбранном S3 adapter readiness до первого upload подтверждает endpoint/bucket/capabilities без выдачи access/secret key; automated agent/E2E остаётся hermetic на filesystem.
 - Retry creates one logical entry/asset set; Telegram media group и PWA entry сводятся в один thread/provenance.
 - 1–2 photos require few clear actions; 10 photos remain manageable.
 - Locked material cannot be mutated through UI or direct API.

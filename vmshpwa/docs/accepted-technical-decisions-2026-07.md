@@ -13,10 +13,11 @@
 - Telegram-производная предназначена для `sendRichMessage` Bot API 10.1+ и использует разрешённый Rich Message HTML, включая `<tg-math>` и `<tg-math-block>`. Это не legacy `sendMessage(parse_mode=HTML)`. Ограничения клиента/версии и fallback должны проверяться интеграционными тестами Telegram adapter.
 - TikZ остаётся отдельным SVG-object в S3; HTML хранит ссылку и метаданные, а не inline SVG.
 - Планируется preview уже сгенерированного PDF. Он не является вторым print renderer и не допускает ручного редактирования производной.
+- `pdflatex`, `pdf2svg`, `cwebp` и `magick` задаются optional полями общего backend config; defaults совпадают с именами команд и разрешаются через `PATH` service profile. Абсолютные paths допустимы как deployment override, `None` отключает capability. Missing required tool обнаруживается readiness/deploy preflight, а subprocess запускается argv-массивом без shell.
 
 ## Object storage и фотографии решений
 
-- Production storage — Hetzner S3-compatible через `aioboto3`; dev/test остаются на filesystem adapter.
+- Production storage — Beget S3-compatible через `aioboto3`, с default endpoint `https://s3.ru1.storage.beget.cloud`. Bucket/access/secret обязательны при выборе S3 adapter. Human local/manual integration читает четыре `s3_*` поля из `creds_test/vmsh_bot_config_test.json`, production — из `creds_prod/vmsh_bot_config_prod.json`; unit/agent/E2E остаются на filesystem/mock и не требуют secrets/network.
 - Браузер загружает файл через авторизованный aiohttp endpoint. Presigned browser upload не применяется: офлайн-очередь может ждать существенно дольше жизни подписи.
 - Производные работы публично читаются по длинным непредсказуемым ключам. URL нельзя считать авторизацией; в operational logs он редактируется как пользовательский контент.
 - Рекомендуемый key: `sol_imgs/user_{user_id}/{season_year}/{lesson_id}/{problem_id}_{created_at_utc}_{uuid}.webp`. Идентификаторы и UUID формирует/проверяет backend, а не браузер.
@@ -33,7 +34,7 @@
 - Максимальный срок refresh session Student, Family и Staff — ближайшее 10 августа; access cookie существенно короче. У audiences разные имена и `Path`.
 - `Secure`, `HttpOnly`, `SameSite=Lax` обязательны. Отдельный synchronizer CSRF token на первом этапе не вводится; unsafe endpoints дополнительно проверяют same-origin `Origin`/Fetch Metadata и принимают только ожидаемый content type.
 - IP-level rate limiting выполняет nginx. Как минимум отдельная строгая zone нужна для login/auth; backend дополнительно ограничивает попытки по normalized login/account, чтобы распределённые IP не обходили защиту. Лимиты не заменяют authorization или idempotency.
-- CSP вводится с первого production deployment. Политика должна явно разрешать собственные scripts/styles/fonts, audience WebSocket/API, Hetzner media origin, Web Push и Sentry ingest; inline/eval не добавляются без документированной причины.
+- CSP вводится с первого production deployment. Политика должна явно разрешать собственные scripts/styles/fonts, audience WebSocket/API, настроенный Beget media origin, Web Push и Sentry ingest; inline/eval не добавляются без документированной причины.
 - Аудит чтения чужих работ не нужен. Сохраняются все комментарии учителей, результаты проверки и изменения самой работы. Audit административных изменений, сессий и публикации остаётся.
 
 ## Realtime и offline
@@ -81,7 +82,7 @@
 - Короткое maintenance window для migrations допустимо. SQLite backup три раза в день и перед deploy считается достаточным baseline.
 - Полный S3 backup не требуется. Student images не versioned; отправленные teacher artifacts сохраняются immutable/versioned на уровне приложения или отдельной storage policy.
 - Выпуск включается сразу для всех уровней. Критические сценарии вручную проверяются на доступных Android; iPhone — по возможности, автоматический WebKit остаётся обязательным.
-- Есть отдельный Telegram test bot/channel; серьёзные production alerts идут в служебную Telegram-группу.
+- Для live integration используется test bot `@vmsh179devbot`, token которого хранится только в test config. Приватный `vmsh179devbot channel` показывает ID `3913815635`, bot добавлен admin; туда разрешено отправлять synthetic/test content в пределах Telegram limits. Перед первым send Bot API probe фиксирует canonical `chat.id` в настройке test group SQLite, не добавляя `-100`/знак эвристически. Unit/E2E используют RecordingBot и не зависят от live Telegram. Production channel задаётся отдельно для каждой группы в DB; серьёзные production alerts идут в служебную Telegram-группу.
 
 ## Аудитории и распределение очных школьников
 
@@ -107,7 +108,7 @@
 
 ## Значения, фиксируемые при реализации и развёртывании
 
-- production hostnames для Hetzner bucket, Sentry ingest, API/WS и окончательной CSP;
+- production bucket/media hostname для Beget, Sentry ingest, API/WS и окончательной CSP;
 - короткий access-cookie TTL;
 - точная команда/systemd units production webhook;
 - точный suffix/ручной workflow для коллизии сгенерированных student logins.

@@ -16,10 +16,16 @@ Production host: `vmsh.shashkovs.ru`. Желаемый staging host: `devvmsh.sh
 6. Для frontend-изменений выполнить format-check, lint, typecheck, unit/Storybook tests и production build. Не собирать с `VITE_ENABLE_MSW` или `VITE_PROTOTYPE`.
 7. Применить yoyo migrations до переключения backend revision. Каждая migration имеет backup/rollback procedure.
 8. Атомарно переключить static assets, перезапустить gunicorn и связанные workers только при соответствующих изменениях.
-9. Проверить три audience health/runtime URL, static history fallback, WebSocket upgrade, CSP/security headers и service-worker files.
-10. Запустить detached post-deploy backup и отправить оператору итог с revision и статусами.
+9. Под service profile выполнить toolchain preflight для включённых capabilities: config defaults `pdflatex`, `pdf2svg`, `cwebp`, `magick` должны разрешиться через его `PATH` либо через явный absolute override; сохранить redacted version report.
+10. Проверить production `s3_url`, bucket и наличие access/secret key из `creds_prod/vmsh_bot_config_prod.json`, затем выполнить redacted Beget S3 capability probe; значения ключей и signed URLs не печатать.
+11. Проверить три audience health/runtime URL, static history fallback, WebSocket upgrade, CSP/security headers и service-worker files.
+12. Запустить detached post-deploy backup и отправить оператору итог с revision и статусами.
 
 Yoyo apply выполняется только этим отдельным шагом под deploy lock. Обычный startup/connect не пытается применить migrations из каждого gunicorn/Telegram процесса: он сверяет ожидаемую schema version и останавливается до обслуживания при mismatch.
+
+Toolchain config хранит executable name/path, а не shell command. Локальные Homebrew/user-bin paths не переносятся в production config автоматически. Production unit обязан иметь корректный `PATH` именно у пользователя сервиса; интерактивный login shell владельца не является доказательством. Если capability сознательно отключена значением `None`, соответствующий workflow не включается. Missing/non-executable required tool останавливает deploy/readiness до переключения revision.
+
+S3 secret source выбирается профилем: ручная local/test integration использует test credential file, production — production credential file. Fast unit/agent/E2E не обращаются к внешнему bucket. Loader для PWA извлекает только allowlisted `s3_url`, `s3_bucket_name`, `s3_access_key`, `s3_secret_key` и не должен из-за этого инициализировать Telegram/Google. Любой deploy/health report редактирует access/secret key и полный signed URL.
 
 Не следует применять `git reset --hard` или `git clean` в общей рабочей копии разработчика. Такие команды допустимы только внутри специально созданного deployment checkout, который не содержит пользовательских данных и незакоммиченной работы.
 

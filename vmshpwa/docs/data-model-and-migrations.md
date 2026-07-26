@@ -23,6 +23,8 @@ Lesson window хранит отдельный `submission_closes_at` в `Europe/
 
 История смены группы/уровня/режима не схлопывается до текущего значения. Legacy `user_changes_log` с `ts`, `user_id`, `change_type`, `new_value` является источником backfill. Модель уровней не ограничена тремя строками: текущие три получают именованные presentation tokens по `groups.sort_order`, последующие — нейтральный доступный fallback.
 
+Telegram destination является настройкой группы в SQLite, а не глобальным config: `groups.telegram_channel_id`, cached title, enabled и verified timestamp. ID сохраняется как возвращённый Bot API 64-bit integer без ручного преобразования UI-значения; partial unique index защищает от случайного назначения одного production channel двум группам. Bot token остаётся credential config. Telegram-derived news дополнительно snapshot-ит `group_id` и фактические chat/message IDs, чтобы смена destination не переписывала историю.
+
 ## Review locks
 
 Lock имеет owner и lease expiry, продлевается heartbeat и может быть безопасно освобождён/перехвачен после expiry. Verdict записывается транзакционно с комментариями и release lock. Live invalidation не заменяет SQLite constraint.

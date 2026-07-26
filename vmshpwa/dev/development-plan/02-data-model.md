@@ -18,7 +18,7 @@
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `users`                                           | Ученик/учитель/admin, Telegram, активная группа, token, online, grade, birthday, allowed groups | Сохранить primary domain identity; не переносить массово. Auth account ссылается на `users.id`. `grade`/`birthday` остаются nullable источником classroom read model. Нормализовать `allowed_groups` позже без удаления legacy-поля. |
 | `student_strength`                                | Автоматические показатели `simple_prob`, `compl_prob`                                           | Сохранить и обновлять совместимым job из `a53_calc_rating_new.py`. Classroom adapter публикует nullable показатель 0–10; ручного редактирования не добавлять.                                                                        |
-| `groups`                                          | Уровни/служебные группы, display/config/score weight                                            | Сохранить; связать с сезоном без изменения legacy `group_id`.                                                                                                                                                                        |
+| `groups`                                          | Уровни/служебные группы, display/config/score weight                                            | Сохранить; связать с сезоном без изменения legacy `group_id`; добавить per-group Telegram destination, не глобальную channel-константу.                                                                                             |
 | `lessons`                                         | Пара `(group_id, lesson)`                                                                       | Сохранить как legacy mapping; новая публикация ссылается на lesson/group.                                                                                                                                                            |
 | `problems`                                        | Условие, тип, answer config/checker, synonyms                                                   | Сохранить существующий problem row для legacy; новая LaTeX не обязана содержать его ID, а immutable revisions связываются после позиционного сопоставления.                                                                          |
 | `results`                                         | История verdict/test/oral/written events                                                        | Сохранить authoritative совместимый ledger; новый review ссылается на `results.id`.                                                                                                                                                  |
@@ -50,6 +50,12 @@ Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_use
 ### `staff_group_permissions`
 
 `staff_user_id INTEGER FK users`, `group_id TEXT FK groups`, `can_review INTEGER`, `can_manage_oral INTEGER`, `can_change_student_group INTEGER`, `can_recheck INTEGER`, `created_at TEXT`, `updated_at TEXT`, PK `(staff_user_id, group_id)`. Общая статистика доступна teacher-role отдельно; content/checker/classroom/broadcast/audit capabilities остаются admin-only.
+
+### Telegram destination группы
+
+Существующая `groups` расширяется полями `telegram_channel_id INTEGER NULL`, `telegram_channel_title TEXT NULL`, `telegram_channel_enabled INTEGER NOT NULL DEFAULT 0`, `telegram_channel_verified_at TEXT NULL`; partial unique index на `telegram_channel_id WHERE telegram_channel_id IS NOT NULL` не позволяет двум production-группам случайно публиковать в один канал. Bot token остаётся в runtime credential config и никогда не хранится в SQLite.
+
+`telegram_channel_id` — canonical `chat.id`, возвращённый Bot API, сохранённый без преобразования. SQLite/Python используют 64-bit integer; поле не смешивается с `users.chat_id`. Перед `enabled=1` probe проверяет `getMe`, `getChat` и admin/post capability бота, сохраняет возвращённые ID/title и время проверки. Число, показанное внешним UI, является bootstrap input: префикс `-100` или знак нельзя добавлять эвристически. Publication/delivery record сохраняет фактически использованный chat/message ID, поэтому последующая смена настройки группы не переписывает историю.
 
 ### `auth_sessions`
 
@@ -237,7 +243,7 @@ Select комнаты другой группы создаёт в локальн
 
 ### `news_posts`
 
-`id`, `public_id`, `source CHECK(telegram|local)`, `telegram_chat_id NULL`, `telegram_message_id NULL`, `telegram_media_group_id NULL`, `current_revision_id`, `published_at`, `hidden_at NULL`, `created_by_user_id NULL`, timestamps. Unique Telegram source identity.
+`id`, `public_id`, `source CHECK(telegram|local)`, `group_id TEXT NULL FK groups`, `telegram_chat_id NULL`, `telegram_message_id NULL`, `telegram_media_group_id NULL`, `current_revision_id`, `published_at`, `hidden_at NULL`, `created_by_user_id NULL`, timestamps. Unique Telegram source identity. Для Telegram source `group_id` определяется по verified `groups.telegram_channel_id`; unmapped channel update не угадывает группу и попадает в diagnostics/quarantine.
 
 ### `news_revisions`
 
@@ -317,7 +323,7 @@ Job публикует полный successful run атомарно и обно�
 | ---: | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
 |    0 | `pwa_schema_metadata` при необходимости          | Только schema snapshot/characterization, бизнес-данные не менять                                                           |
 |    1 | `pwa_auth_accounts_sessions`                     | Создать accounts для seed; production backfill dry-run по users                                                            |
-|    2 | `pwa_content_revisions_assets_publications`      | Связать legacy problems/lessons; backfill revision/publication/window для занятий 1–38 текущего сезона с provenance report |
+|    2 | `pwa_content_revisions_assets_publications`      | Связать legacy problems/lessons; добавить group Telegram destination; backfill revision/publication/window для занятий 1–38 текущего сезона с provenance report |
 |    4 | `pwa_test_attempts_idempotency`                  | Новые attempts dual-write в results                                                                                        |
 |    5 | `pwa_submission_threads_entries_assets`          | Lazy backfill discussions по открываемому thread + batch tool                                                              |
 |    6 | `pwa_reviews_annotations_queue_leases_reactions` | Reviews dual-write results; исправить affinity `written_tasks_queue.teacher_id`; reaction actor/dedup dry-run; Telegram queue сохраняется |

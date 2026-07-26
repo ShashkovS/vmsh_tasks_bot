@@ -12,11 +12,12 @@ Migration: `pwa_news_notifications_delivery`.
 
 Таблицы: `news_posts`, `news_revisions`, `news_media`, `news_visibility`, `notification_preferences`, `push_subscriptions`, `notification_events`, `notification_deliveries`, `delivery_outbox`, `group_banners`. `broadcasts`, targets/deliveries и Markdown-editor schema добавляются во второй фазе, а не заранее пустыми таблицами.
 
-Telegram update identity: chat/message/media-group IDs + source hash. Edit creates new revision; source delete убирает пост из обычной PWA-ленты, manual hide не меняет Telegram.
+Telegram update identity: chat/message/media-group IDs + source hash. Source chat сопоставляется с группой через verified `groups.telegram_channel_id`; `news_posts.group_id` фиксирует это сопоставление. Edit creates new revision; source delete убирает пост из обычной PWA-ленты, manual hide не меняет Telegram.
 
 ## News ingest/rendering
 
 - Telegram adapter backfills from `2026-04-01` and consumes new/edited/deleted channel posts without becoming required app startup adapter.
+- У каждой учебной группы свой DB-configured Telegram channel. Unmapped/disabled channel update не присваивается группе по title/username, а останавливается в diagnostics до явной настройки.
 - Media copies to S3/file storage; local DB keeps source payload and revision.
 - Telegram-rich source is sanitized into PWA representation with headings, paragraphs, emphasis/mark/sub/sup/spoiler, links, lists, quotes, code, details, tables, divider, media and math extensions; unsupported entity produces diagnostic/fallback, not raw unsafe HTML.
 - Новые условия задач публикуются в Telegram полноценным текстом Rich Message. Скриншот условия не является основным представлением; отдельные SVG/рисунки остаются media. Исторические fixtures берутся из `_external_pipelines/ChatExport_2026-07-25`.
@@ -55,6 +56,7 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 ## Tests
 
 - Telegram new/edit/album/duplicate/reordered/retry fixtures, no live Bot API in unit/E2E.
+- Channel routing fixtures: две группы/два channel ID, unmapped/disabled/changed destination, запрет дубля channel ID и неизменность исторического `news_posts.telegram_chat_id` после перенастройки группы.
 - Sanitizer/CSP/entity/math/oversize/unsupported media tests.
 - Delivery outbox crash/lease/retry/dedup/batching/quiet hours tests with frozen clocks.
 - Read acknowledgement: background tab/быстрый scroll не засчитываются, два устройства сходятся к одному `readAt`, duplicate ack безопасен, Telegram sent не снимает PWA badge.
