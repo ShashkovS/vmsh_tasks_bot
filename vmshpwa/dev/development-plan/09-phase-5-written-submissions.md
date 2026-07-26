@@ -4,6 +4,8 @@
 
 Школьник создаёт одну логическую отправку из текста и до 10 фотографий, видит сжатие/порядок/загрузку, может уйти offline и позже безопасно дослать. Работа появляется у teacher только целиком. До первого review lock её можно изменить/удалить с подтверждением; после начала проверки можно добавлять новый материал в тред, но не переписывать исходную entry. После review evidence immutable.
 
+Дизайн-контракт этапа: [composer, attachments, sync/offline states, written-task page и Storybook stories](18-design-implementation-map.md#phase-5-design).
+
 ## Модель данных
 
 Migration: `pwa_submission_threads_entries_assets`.

@@ -29,29 +29,26 @@ const pubRows: PublicationLevelRow[] = [
   },
 ]
 
+function PublicationHarness() {
+  const [readout, setReadout] = useState('—')
+  return (
+    <div className="space-y-2">
+      <PublicationControl
+        onPublish={(code, artifact) => setReadout(`Опубликовано: ${code}/${artifact}`)}
+        onRollback={(code, artifact) => setReadout(`Откачено: ${code}/${artifact}`)}
+        onSchedule={(code, artifact, at) => setReadout(`Запланировано: ${code}/${artifact} ${at}`)}
+        rows={pubRows}
+      />
+      <p className="text-small text-muted-foreground" data-testid="readout" role="status">
+        {readout}
+      </p>
+    </div>
+  )
+}
+
 export const Publication: Story = {
   name: 'Публикация по уровням',
-  render: () => {
-    function Harness() {
-      const [readout, setReadout] = useState('—')
-      return (
-        <div className="space-y-2">
-          <PublicationControl
-            onPublish={(code, artifact) => setReadout(`Опубликовано: ${code}/${artifact}`)}
-            onRollback={(code, artifact) => setReadout(`Откачено: ${code}/${artifact}`)}
-            onSchedule={(code, artifact, at) =>
-              setReadout(`Запланировано: ${code}/${artifact} ${at}`)
-            }
-            rows={pubRows}
-          />
-          <p className="text-small text-muted-foreground" data-testid="readout" role="status">
-            {readout}
-          </p>
-        </div>
-      )
-    }
-    return <Harness />
-  },
+  render: () => <PublicationHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(
@@ -59,6 +56,29 @@ export const Publication: Story = {
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
     await expect(canvas.getByTestId('readout')).toHaveTextContent('Опубликовано: н/task')
+  },
+}
+
+export const PublicationScheduling: Story = {
+  name: 'Публикация — редактор расписания',
+  render: () => <PublicationHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(
+      canvas.getByRole('button', {
+        name: 'Опубликовать по расписанию: подсказку, Начинающие',
+      }),
+    )
+
+    const dateInput = canvas.getByLabelText('Когда опубликовать подсказку, Начинающие')
+    const cell = dateInput.closest('td')
+    const nextCell = cell?.nextElementSibling
+    await expect(dateInput).toBeVisible()
+    await expect(cell).not.toBeNull()
+    await expect(nextCell).not.toBeNull()
+    const inputRect = dateInput.getBoundingClientRect()
+    await expect(inputRect.width).toBeLessThanOrEqual(192)
+    await expect(inputRect.right).toBeLessThanOrEqual(nextCell!.getBoundingClientRect().left)
   },
 }
 

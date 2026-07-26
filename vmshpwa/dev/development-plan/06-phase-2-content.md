@@ -4,13 +4,17 @@
 
 Admin загружает условие/подсказку/решение одного уровня или пакет урока, разрешает позиционные расхождения задач, получает diagnostics и missing-assets flow, проверяет PWA/Telegram preview и публикует либо планирует конкретную revision по уровню. Print-раздел откладывается во вторую версию.
 
+Дизайн-контракт этапа: [математический документ, publication controls, diagnostics, metadata grid и Storybook stories](18-design-implementation-map.md#phase-2-design).
+
 ## Модель данных
 
 Логическая migration: `pwa_content_revisions_assets_publications`.
 
-Таблицы: `content_sources`, `content_revisions`, `media_assets`, `content_revision_assets`, `content_derivatives`, `content_problem_matches`, `problem_revisions`, `problem_synonym_groups`, `problem_synonym_members`, `lesson_publications`, `hint_reveals`, `solution_reveals`.
+Таблицы: `content_sources`, `content_revisions`, `media_assets`, `content_revision_assets`, `content_derivatives`, `content_problem_matches`, `problem_revisions`, `problem_synonym_groups`, `problem_synonym_members`, `lesson_publications`, `lesson_windows`, `hint_reveals`, `solution_reveals`.
 
 Legacy `lessons/problems` сохраняются. Compiler создаёт versioned representation и только после явной публикации обновляет совместимую projection/adapter, если это требуется Telegram.
+
+Production migration не начинает историю с занятия 39. Для существующих занятий 1–38 текущего сезона отдельный dry-run/backfill создаёт минимальные source/revision/problem-match/publication/window records из legacy `lessons`/`problems`, файлового корпуса и утверждённого schedule mapping. Report показывает занятия/уровни без source, несовпадающее число задач и неизвестные фактические timestamps. Неизвестное время сохраняется как nullable/provenance, а не подменяется точным вымышленным значением.
 
 ## Compiler pipeline
 
@@ -33,7 +37,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - LaTeX в браузере не редактируется. Metadata grid содержит название, task/answer type, validation/wrong/congratulation messages и optional topic tags; поддерживает keyboard edits, TSV paste preview, cell errors и optimistic version conflict.
 - Synonym suggestion from equal titles with explicit accept/reject.
 - Side-by-side PWA and Telegram preview. Уже сгенерированный PDF derivative можно открыть для regression/контроля, но команд печати и отдельного print workflow в v1 нет.
-- Publish/schedule/hide confirmation per level/kind. Hidden lesson исчезает из Student как неопубликованный; просмотревший старую revision получает индикатор обновления после новой публикации.
+- Publish/schedule/hide confirmation per level/kind. Отдельная версионируемая lesson-window form задаёт `opensAt`, `submissionClosesAt` и hint/solution schedule; изменение cutoff требует отдельного confirmation/audit по `SCHEDULE-01`, а schedule решения и фактический publish не переопределяют его молча. Hidden lesson исчезает из Student как неопубликованный; просмотревший старую revision получает индикатор обновления после новой публикации.
 
 ## Client renderer
 
@@ -51,6 +55,8 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - Telegram-rich sanitizer/limit fixtures; Bot API sending is not used in unit/E2E.
 - PDF smoke plus visual pages for representative geometry/table examples.
 - API publish/rollback concurrency, unauthorized Teacher, partial level failure and immutable revision.
+- Lesson-window API: stale `If-Match`, independent solution-schedule/cutoff edits, confirmation/audit и DST/UTC fixtures.
+- Historical season backfill: занятия 1–38 доступны в Student/Family history, повторный run идемпотентен, неизвестное время имеет provenance и не применяется как retroactive deadline.
 - Storybook document/figure/upload/grid/problem-matching/diagnostic/preview/update-marker states and a11y.
 - Playwright: upload example → fix missing asset → preview → publish n level → Student API sees it → rollback.
 
@@ -61,6 +67,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - Повторный asset переиспользуется; отсутствующий явно запрашивается.
 - Telegram preview и real renderer исходят из одной revision.
 - Уровни публикуются и откатываются независимо; solution может отсутствовать.
+- Submission cutoff существует до фактической публикации solution, выводится абсолютным временем и меняется только отдельной версионируемой операцией по правилу `SCHEDULE-01`.
 - Source, compiler version и все derivatives воспроизводимы по revision ID.
 
 ## Пруфы завершения этапа
@@ -68,6 +75,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - [ ] Revision/migration/upgrade/rollback: `<sha/paths/results>`.
 - [ ] Golden corpus report: `<path>`; CP1251/TikZ/table/assets cases `<result>`.
 - [ ] External pipeline parity + intentional diffs: `<path>`.
+- [ ] Lessons 1–38 publication/window backfill dry-run/apply/repeat report: `<path/result>`.
 - [ ] Demo upload/diagnostics/preview/publish/rollback: `<fixture/routes/video or screenshots>`.
 - [ ] Storage filesystem/S3 contract tests: `<result>`.
 - [ ] Contract fixtures and API tests: `<paths/result>`.

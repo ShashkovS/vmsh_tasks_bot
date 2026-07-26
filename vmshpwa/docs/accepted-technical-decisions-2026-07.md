@@ -32,7 +32,7 @@
 - Целевая сессия — две audience-scoped HttpOnly cookie: короткая подписанная `itsdangerous` access cookie и ротируемая refresh session в SQLite. Refresh token хранится в cookie только в raw-виде, в БД — HMAC/hash. Отзыв отдельного устройства удаляет DB session.
 - Максимальный срок refresh session Student, Family и Staff — ближайшее 10 августа; access cookie существенно короче. У audiences разные имена и `Path`.
 - `Secure`, `HttpOnly`, `SameSite=Lax` обязательны. Отдельный synchronizer CSRF token на первом этапе не вводится; unsafe endpoints дополнительно проверяют same-origin `Origin`/Fetch Metadata и принимают только ожидаемый content type.
-- Rate limiting выполняет nginx. Как минимум отдельная строгая zone нужна для login/auth; лимиты не заменяют backend authorization или idempotency.
+- IP-level rate limiting выполняет nginx. Как минимум отдельная строгая zone нужна для login/auth; backend дополнительно ограничивает попытки по normalized login/account, чтобы распределённые IP не обходили защиту. Лимиты не заменяют authorization или idempotency.
 - CSP вводится с первого production deployment. Политика должна явно разрешать собственные scripts/styles/fonts, audience WebSocket/API, Hetzner media origin, Web Push и Sentry ingest; inline/eval не добавляются без документированной причины.
 - Аудит чтения чужих работ не нужен. Сохраняются все комментарии учителей, результаты проверки и изменения самой работы. Audit административных изменений, сессий и публикации остаётся.
 
@@ -44,7 +44,7 @@
 - Logout при непустом outbox показывает предупреждение. После явного подтверждения пользователя локальная очередь и drafts этого аккаунта могут быть удалены.
 - Незавершённая значимая работа Student/Staff переживает reload и update. Небольшие сериализуемые drafts и UI-state хранятся в `localStorage`, фотографии/blobs и durable outbox — в audience/account-scoped Dexie. Draft удаляется только после серверного receipt или явного discard; токены и cookies в эти хранилища не копируются.
 - Повтор одного `idempotencyKey` с тем же payload hash возвращает исходный receipt. Другой payload получает conflict и требует нового ключа после явного действия пользователя.
-- Дедлайн урока — timestamp публикации решений в `Europe/Moscow`. Offline submission с client time до deadline принимается и после поздней доставки; skew больше часа маркируется для диагностики.
+- Операционные документы различают воскресный cutoff сдачи и более позднюю публикацию решений. Поэтому deadline хранится отдельным `submission_closes_at` в `Europe/Moscow`/UTC, а schedule и фактический timestamp solution publication не вычисляют его задним числом. Offline submission с client time до cutoff принимается и после поздней доставки; skew больше часа маркируется для диагностики. Политика явного/автоматического переноса cutoff при изменении solution schedule открыта как `SCHEDULE-01` в фазовом плане.
 
 ## Домен
 
@@ -99,7 +99,7 @@
 ## UI-контракты, уточнённые 25 июля
 
 - Все 23 текущих `ANS_TYPE` из `helpers/consts.py` имеют явное представление. Клиентская format validation зеркалит `strip()+fullmatch` из `helpers/checkers.py`, включая problem `ans_validation`; correctness решает server. Fixed tuple не показывает «Отправится», list preview строится после parsing, `SELECT_ONE` передаёт видимый label.
-- Review detail — компактная queue и одна хронологическая колонка `evidence → существующий thread → новый teacher reply/verdict`. Teacher verdict/reaction controls маленькие, но exact wording всегда виден.
+- Review detail — компактная queue и одна хронологическая колонка `evidence → существующий thread → новый teacher reply/verdict`. Teacher verdict/reaction controls маленькие, но exact wording всегда виден; internal reaction выбирается также через `⌘/Ctrl + Alt + 1…4`, включая момент, когда фокус остаётся в комментарии.
 - В metadata grid есть отдельные task type и answer type. Обе ячейки могут быть dropdown, не ломая прямоугольную TSV copy/paste. Condition, hint и solution каждого уровня имеют отдельные publish/schedule/rollback операции.
 - Telegram Rich Message поддерживает headings, paragraphs, emphasis/mark/sub/sup/spoiler, links, lists, quotes, code, details, tables, media и math. Новые условия публикуются текстом, а не screenshot; fixture corpus — `_external_pipelines/ChatExport_2026-07-25`.
 - Выбранные submission photos сразу показывают thumbnail. Отдельная пользовательская квитанция/reference number не нужна; idempotency receipt остаётся техническим API-понятием.

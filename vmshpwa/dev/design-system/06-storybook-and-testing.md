@@ -1,5 +1,7 @@
 # Фаза 6. Storybook и тестирование
 
+Индекс `этап разработки → компонент → story source → Storybook URL` находится в [`development-plan/18-design-implementation-map.md`](../development-plan/18-design-implementation-map.md); переименование story обновляет оба документа в одном изменении.
+
 ## Информационная архитектура Storybook
 
 Рекомендуемый порядок:
@@ -62,12 +64,13 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - hint/solution conscious disclosure;
 - queue claim/lost lock/verdict и досланный material/thread-version refresh перед complete;
 - verdict keyboard mapping из registry, отсутствие shortcut внутри textarea, non-accepted confirmation и abandon с освобождением lock без потери local draft;
+- compact internal teacher reactions: `⌘/Ctrl + Alt + 1…4` работают при фокусе в комментарии, меняют единственную выбранную реакцию, повторный chord снимает её, `AltGraph` не перехватывается;
 - occupied-by-another-teacher, fast-next и возврат к выбору задачи;
 - conscious hint view event и hidden-before-publication state;
 - role permission для скрытых reactions и AI output; одна reaction на verdict и часовое окно replace/delete;
 - TSV paste diagnostics;
 - dropdown-ячейки task type/answer type принимают keyboard selection и прямоугольную TSV-вставку;
-- publication interaction независимо публикует/планирует/откатывает condition, hint и solution;
+- publication interaction независимо публикует/планирует/откатывает condition, hint и solution; отдельная scheduling story оставляет `datetime-local` открытым и проверяет, что его ширина не превышает `12rem`, а правая граница не заходит в следующую ячейку;
 - classroom catalog duplicate/archive/restore, materialize layout, single/bulk select, cross-group confirmation, recalculate и confirm;
 - classroom fuzzy search с `ё/е`, переставленными словами и опечаткой; jump/focus найденной строки; history disclosure;
 - classroom local draft восстанавливается после remount/reload simulation, очищается после receipt и сохраняется при version conflict;
@@ -105,7 +108,7 @@ Classroom visual set фиксирует catalog active/hidden/duplicate, inherit
 - Page stories: [`Pages/Student`](../../apps/student/src/pages.stories.tsx), [`Pages/Family`](../../apps/family/src/pages.stories.tsx), [`Pages/Staff`](../../apps/staff/src/pages.stories.tsx). Они покрывают основные ready flows, loading/empty/error/offline, login/reveal, validation, read-only Family, Staff verdict и classroom tab interaction.
 - Component corpus: [`packages/product/src`](../../packages/product/src) и [`packages/ui/src`](../../packages/ui/src). Classroom stories `Plan local draft restored` и `Plan dense two hundred students` являются точными proof для reload и 15-room/200-row требований.
 - Глобальные light/dark, density и reduced-motion controls, MSW strict handling и `a11y: error`: [`.storybook/preview.tsx`](../../.storybook/preview.tsx). Story discovery: [`.storybook/main.ts`](../../.storybook/main.ts).
-- 25 июля browser-mode gate после page integration: **24 files / 119 stories passed**, включая addon-a11y error mode. Ручной осмотр выполнен на agent Storybook `6106` для `Pages/Student--Today`, `Pages/Staff--Review workspace` и `Pages/Staff--Classrooms`; он обнаружил и закрыл ошибку horizontal Tabs в [`tabs.tsx`](../../packages/ui/src/components/tabs.tsx).
+- 26 июля browser-mode gate после compact internal-reaction и bounded publication-scheduler increments: **24 files / 121 stories passed**, включая addon-a11y error mode. Ручной осмотр выполнен на agent Storybook `6106` для `Pages/Student--Today`, `Pages/Staff--Review workspace`, `Pages/Staff--Classrooms`, `Product/Review--Feedback guard`, `Product/Review--Feedback reaction shortcuts` и `Product/Staff admin--Publication scheduling`; он обнаружил и закрыл ошибку horizontal Tabs в [`tabs.tsx`](../../packages/ui/src/components/tabs.tsx), подтвердил 24px compact reactions и отсутствие overlap у scheduler на desktop/narrow Staff viewport.
 - Production page screenshot baseline хранится в [`e2e/__screenshots__`](../../e2e/__screenshots__) и проверяется на production Vite preview, а не на dev server. 25 июля после ручного просмотра ожидаемых изменений baseline был обновлён; повторный обычный запуск дал **36/36** E2E/visual checks в Chromium, WebKit и Firefox. Browser-mode Storybook не подменяет этот gate.
 
 ## Gate

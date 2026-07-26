@@ -4,12 +4,15 @@
 
 Teacher выбирает problem/synonym group, атомарно получает одну работу, видит актуальные фото/контекст, ставит verdict, optional comment, immutable annotation и не более одной internal reaction. Если student дослал материал, complete требует refetch. Student видит заметный verdict в общем Telegram/PWA треде; admin может перепроверить без отдельного dispute workflow.
 
+Дизайн-контракт этапа: [review queue/workspace, verdict controls, feedback thread, annotations/reactions и Storybook stories](18-design-implementation-map.md#phase-6-design).
+
 ## Модель данных
 
 Migration: `pwa_reviews_annotations_queue_leases_reactions_support`.
 
-- Эволюция `written_tasks_queue`: `claim_token`, `claimed_at`, `lease_expires_at`, `lease_version`, `updated_at`.
+- Эволюция `written_tasks_queue`: rebuild исправляет ошибочную affinity legacy `teacher_id TIMESTAMP` на `INTEGER` FK и добавляет `claim_token`, `claimed_at`, `lease_expires_at`, `lease_version`, `updated_at`; preflight проверяет значения, которые нельзя привести к существующему `users.id`.
 - `submission_reviews`, immutable `review_annotations`; расширение `reactions` с one-per-review и часовым окном изменения.
+- Reaction backfill выводит actor из reaction type и связанного result/Zoom conversation, сохраняет старые дубли как history и активирует только последнюю однозначную строку. Неоднозначные legacy rows попадают в manual report до создания partial unique index.
 - `support_threads`, `support_entries` с dual-write/mapping к `questions` и negative problem IDs.
 - Review transaction создаёт `results`, review/comment/annotations, фиксирует evidence attachments, снимает queue item и пишет audit/outbox.
 
@@ -35,11 +38,12 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 ## Thread and visibility
 
 - One chronological thread, latest verdict visually prominent and summarized at top.
-- Review completion сверяет thread version. Всё submitted до commit включается в evidence; более поздний entry относится к следующей проверке.
+- Review completion сверяет thread version. Всё, что стало `submitted` до успешного commit этой проверки, обязано войти в её evidence; изменение thread во время работы даёт `409 THREAD_CHANGED` и требует refetch. Только entry, созданная уже после commit, относится к следующей проверке. Начало claim само по себе не отсекает досланный материал.
 - Student: verdict/comment/annotation + own reaction; no internal teacher reaction.
 - Teacher: verdict/comment/annotation/internal reactions; no student reaction.
 - Admin: all listed elements, complaints/disagreements filters.
 - Teacher comment без verdict не поддерживается в task thread. Исправление собственного verdict разрешено; admin recheck заменяет текущий результат по legacy `results` semantics.
+- Внутренняя teacher reaction компактна, сохраняет точную подпись и выбирается кликом либо `⌘/Ctrl + Alt + 1…4`; chord работает при фокусе в комментарии и не конфликтует с цифровыми verdict shortcuts.
 
 ## Questions/SOS
 
@@ -59,7 +63,9 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 - Annotation pencil/eraser/rotation/4–5 colors, geometry/zoom/sanitization, immutable-after-send and Telegram composite PNG.
 - Review draft reload/account isolation/evidence-version conflict/lost lease/success cleanup; unsent question/comment draft не пропадает при route change.
 - Legacy queue/discussion/result/reaction and Telegram historical tests.
+- Reaction migration fixtures: student/teacher written and oral actor inference, duplicate history, missing actor quarantine; queue rebuild проверяет integer FK и не теряет rows.
 - Storybook priority: teacher queue + quick review mobile/desktop, long thread, latest verdict, annotations, all reaction visibilities.
+- Storybook interaction: internal reaction выбирается/заменяется Mod+Alt chord при фокусе в textarea; повторный chord снимает выбор, `AltGraph` не перехватывается.
 - Playwright two staff browser contexts racing; Student context receives refetch and thread; forbidden Teacher admin view.
 
 ## Критерии приёмки

@@ -20,6 +20,8 @@ flowchart LR
 
 NATS ускоряет доставку общих или audience-scoped invalidation между процессами, но не является журналом. После любого reconnect клиент запрашивает версию и полное актуальное состояние из SQLite. Owner-scoped события появятся только вместе с authenticated WebSocket principal; audience scope нельзя выдавать за пользовательскую приватность.
 
+SQLite concurrency до первой бизнес-миграции фиксируется отдельным ADR. Один connection не обслуживает конкурентные coroutine; блокирующие DB/CPU operations вынесены с event loop, `busy_timeout`/bounded retry наблюдаемы, а внутри write transaction нет `await` или network I/O. Новые `models/pwa`/`db_methods/pwa` — namespace реализации, но не отдельная предметная модель: затронутые PWA и Telegram write paths вызывают общую domain service/unit of work.
+
 ## Frontend workspace
 
 - `apps/student`: mobile-first installable PWA, base/scope `/student/`;

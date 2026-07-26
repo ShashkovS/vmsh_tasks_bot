@@ -4,6 +4,8 @@
 
 Авторизованный школьник открывает «Сейчас», видит фазу недели, свой текущий урок, требующие внимания задачи, новости/баннеры и корректные unread states. Он читает длинный лист, работает с любой задачей из `allowed_groups`, видит обновлённое условие и повторно открывает кеш без сети.
 
+Дизайн-контракт этапа: [Student «Сейчас», список и чтение задач, disclosure/offline states и Storybook stories](18-design-implementation-map.md#phase-3-design).
+
 ## Backend/read models
 
 - `GET home`, lesson list/detail, problem detail, available groups, active banners.
@@ -11,7 +13,7 @@
 - Natural task order сохраняет порядок листка; attention order отделён от canonical list.
 - Hint/solution endpoint проверяет publication, просит confirmation в UI и пишет reveal event.
 - Group/mode changes доступны Student и Family, немедленно меняют текущие задачи, пишут `user_changes_log` и invalidation; история старых групп остаётся.
-- Ответ содержит `contentRevision`, `entityVersion`, `cachePolicy`, server time и solution deadline.
+- Ответ содержит `contentRevision`, `entityVersion`, `cachePolicy`, server time, отдельный `submissionClosesAt` и nullable schedule/fact публикации solution. UI показывает абсолютный cutoff как самостоятельное значение и не выводит его из `publishedAt`.
 
 ## Frontend
 
@@ -43,7 +45,7 @@ Features: `student/src/features/home`, `tasks`; shared `packages/content` render
 
 ## Tests
 
-- Home priority/domain tests across week phases, group/mode and result states.
+- Home priority/domain tests across week phases, group/mode and result states, включая раздельные cutoff/solution times и перенос одного без неявного изменения другого.
 - Contract fixtures for empty/full/long/forbidden/stale home and task.
 - Dexie upgrade/cache eviction/user separation/offline fallback tests.
 - Renderer stress: long list, many formulas main thread performance budget, missing SVG.

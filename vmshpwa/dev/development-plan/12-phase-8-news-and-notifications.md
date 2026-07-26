@@ -4,6 +4,8 @@
 
 Посты Telegram-канала с 1 апреля 2026 года, включая edits/deletes, идемпотентно зеркалируются в Student/Family PWA. Admin может скрыть пост только в PWA и создать scheduled local publication/banner. Полный broadcast composer и Staff→Telegram publishing откладываются во вторую версию.
 
+Дизайн-контракт этапа: [Telegram-rich news, connectivity/update/push states, audience news pages и Storybook stories](18-design-implementation-map.md#phase-8-design).
+
 ## Модель данных
 
 Migration: `pwa_news_notifications_delivery`.
@@ -30,7 +32,7 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - 21:00–09:00 в timezone пользователя подавляет только sound. Event remains visible/delivered.
 - Все review-completed events ученика агрегируются в одну пачку за 30 минут.
 - Foreground can suppress duplicate native push display while still marking in-app event.
-- Review event становится read после минимум трёх секунд видимости. Badge «Задачи» считает обновлённые/проверенные задачи, которые student ещё не видел.
+- Review event становится read после минимум трёх непрерывных секунд видимости: client запускает monotonic timer только для реально видимого события и затем отправляет идемпотентный acknowledgement, а server ставит собственный `readAt`. Read-state account-scoped, поэтому второе устройство получает invalidation/refetch и снимает badge. Telegram delivery не считается read без надёжного receipt. Badge «Задачи» считает обновлённые/проверенные задачи, которые student ещё не видел.
 - Family по умолчанию получает один weekly digest после окончания всей проверки, без потока individual review pushes.
 - `classroom_assignment.changed` продолжает vertical slice этапа 7: Student получает push/in-app при назначении, сбросе и новой комнате; Family только refetch-ит API/WS state и не получает delivery этой категории.
 - Delivery is DB-durable with retry/backoff/dead-letter/admin diagnostics. NATS only invalidates read models.
@@ -55,6 +57,7 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - Telegram new/edit/album/duplicate/reordered/retry fixtures, no live Bot API in unit/E2E.
 - Sanitizer/CSP/entity/math/oversize/unsupported media tests.
 - Delivery outbox crash/lease/retry/dedup/batching/quiet hours tests with frozen clocks.
+- Read acknowledgement: background tab/быстрый scroll не засчитываются, два устройства сходятся к одному `readAt`, duplicate ack безопасен, Telegram sent не снимает PWA badge.
 - Three-audience WS plus private owner leakage tests across two workers/NATS.
 - Classroom delivery routing: owner Student получает event/push, связанный Family socket обновляет state без push, посторонние principals не видят payload.
 - Service-worker push/update routing tests on supported browser; contract tests elsewhere.

@@ -6,7 +6,7 @@
 
 - Base paths: `/student/api/v1`, `/family/api/v1`, `/staff/api/v1`.
 - Успех возвращает предметный JSON. Ошибка — единый envelope: `error.code`, `error.message`, `error.details`, `requestId`.
-- `401` означает отсутствующую/истёкшую сессию; `403` — authenticated principal без права; `409` — version/idempotency/lease conflict; `422` — schema/domain validation; `429` выставляет nginx с `Retry-After`.
+- `401` означает отсутствующую/истёкшую сессию; `403` — authenticated principal без права; `409` — version/idempotency/lease conflict; `422` — schema/domain validation. `429` с `Retry-After` может выставить nginx для IP-level защиты либо auth service для account/login-level throttling; эти уровни дополняют друг друга.
 - Mutation, которую browser/outbox может повторить, требует `Idempotency-Key`. Изменение mutable admin resource требует `If-Match`/`version`.
 - Client timestamp не заменяет server timestamp. API принимает `clientCreatedAt`, сервер добавляет `receivedAt` и оценку clock skew.
 - List endpoints используют cursor pagination; offset допустим только для маленьких справочников.
@@ -24,7 +24,7 @@
 - `DELETE /{audience}/api/v1/auth/sessions/{sessionPublicId}`
 - `POST /{audience}/api/v1/auth/logout-all`
 
-Student login payload: `username`, `telegramToken`, optional `deviceLabel`. Username создаётся import-ом из транслитерации фамилии и дня рождения, а коллизия разрешается до активации account. Family/staff payload names используют `password`. Ответ не возвращает token/session secret, только principal и policy dates. Все audience sessions имеют абсолютную границу ближайшего 10 августа.
+Student login payload: `username`, `telegramToken`, optional `deviceLabel`. Username создаётся import-ом версионированным transliteration helper из фамилии и дня рождения, а коллизия/неполные legacy-данные разрешаются до активации account. Family/staff payload names используют `password`. Ответ не возвращает token/session secret, только principal и policy dates. Все audience sessions имеют абсолютную границу ближайшего 10 августа. Неуспешная попытка учитывается одновременно в IP- и normalized-login buckets, не раскрывая существование account.
 
 ## Student API
 
@@ -41,7 +41,7 @@ Student login payload: `username`, `telegramToken`, optional `deviceLabel`. User
 - `PUT /student/api/v1/profile/attendance-mode`
 - `GET /student/api/v1/banners/active`
 
-Home read model содержит phase of week, active lesson, attention items, unread counts, oral-window summary и banners, но не join secret.
+Home read model содержит phase of week, active lesson, `submissionClosesAt`, отдельный nullable `solutionScheduledAt`/фактический publication state, attention items, unread counts, oral-window summary и banners, но не join secret.
 
 Любая группа из `allowed_groups` даёт полный набор problem actions, а не read-only режим. Смена active group немедленно инвалидирует home/tasks, но не скрывает историю старой группы.
 
@@ -73,6 +73,7 @@ Home read model содержит phase of week, active lesson, attention items, 
 - `GET /student/api/v1/news`, `GET /student/api/v1/news/{postPublicId}`
 - `GET /student/api/v1/progress/summary`, `/progress/lessons`, `/progress/activity`, `/progress/achievements`
 - `GET/PUT /student/api/v1/notifications/preferences`, `POST/DELETE /student/api/v1/push-subscriptions`
+- `POST /student/api/v1/notification-events/{eventPublicId}/read` и аналогичный Family route — идемпотентный account-scoped acknowledgement после client visibility timer; client timestamp не становится `readAt`.
 
 ## Family API — этап 9, кроме auth
 
@@ -117,6 +118,7 @@ Family endpoints никогда не принимают произвольный
 - `GET /staff/api/v1/content/revisions/{id}/previews/{web|telegram|print}`
 - `GET/POST /staff/api/v1/content/revisions/{id}/assets`
 - `PUT /staff/api/v1/lessons/{lessonId}/metadata-grid`
+- `GET/PUT /staff/api/v1/lessons/{lessonId}/window` — отдельная версионируемая операция для `opensAt`, `submissionClosesAt`, hint/solution schedule; изменение cutoff требует confirmation/audit по `SCHEDULE-01`
 - `POST /staff/api/v1/publications`, `POST /staff/api/v1/publications/{id}/rollback`
 - `GET /staff/api/v1/publications?lesson=&group=`
 - `POST /staff/api/v1/problems/{problemId}/recheck-test-attempts`
@@ -135,7 +137,7 @@ Family endpoints никогда не принимают произвольный
 - `POST /staff/api/v1/classroom-assignment-plans/recalculate`
 - `PATCH /staff/api/v1/classroom-assignment-plans/{planPublicId}/assignments` — явный batch-save локально накопленных select/move; принимает одну или несколько строк и confirmation для cross-group changes
 - `GET /staff/api/v1/classroom-assignment-plans/{planPublicId}/students/{studentPublicId}/history` — подтверждённые прошлые аудитории школьника
-- `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/confirm`; print/export endpoints относятся ко второй версии
+- `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/confirm`; полноценные print/export endpoints относятся ко второй версии, а узкий v1 compatibility export для действующих `a02`/`a11`–`a14` зависит от ответа `CLASSROOM-01`
 - `/staff/api/v1/news/import-status`, `/news/posts`, `/news/posts/{id}/visibility`
 - будущие `/staff/api/v1/broadcasts`, `/broadcasts/{id}/preview`, `/broadcasts/{id}/send` относятся ко второй фазе вместе с Markdown editor и не входят в initial v1 contract; Staff→Telegram publication также относится ко второй версии
 - `/staff/api/v1/users`, `/groups`, `/permissions`, `/imports`, `/statistics`, `/audit`
@@ -208,6 +210,7 @@ models/pwa/
   classrooms.py
   notifications.py
   progress.py
+  unit_of_work.py        # transaction boundary shared by PWA and touched Telegram paths
 db_methods/pwa/
   auth.py
   content.py
@@ -216,6 +219,7 @@ db_methods/pwa/
   classrooms.py
   notifications.py
   progress.py
+  connection.py          # lifecycle/busy policy from DB concurrency ADR
 helpers/pwa/
   permissions.py
   idempotency.py
@@ -225,6 +229,7 @@ helpers/pwa/
   classroom_assignment.py
   classroom_import.py
   delivery_worker.py
+  analytics_worker.py
 pwa_tests/
   fixtures/
   contracts/
@@ -233,7 +238,7 @@ pwa_tests/
   integration/
 ```
 
-Названия каталогов окончательно проверить против Python import conventions до фазы 1. Domain rule не должен зависеть от aiohttp request или React contract fixture.
+Названия каталогов окончательно проверить против Python import conventions до фазы 1. Domain rule не должен зависеть от aiohttp request или React contract fixture. Суффикс `pwa` обозначает место новой реализации, но не отдельную бизнес-модель: Telegram adapter для затронутого write path вызывает те же domain services/unit of work, а не копирует invariant в handler.
 
 ## Планируемая карта frontend-файлов
 

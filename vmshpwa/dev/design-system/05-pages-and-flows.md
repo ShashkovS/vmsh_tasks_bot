@@ -1,5 +1,7 @@
 # Фаза 5. Страницы и потоки
 
+Связь принятых page compositions с вертикальными backend/frontend-этапами, конкретными компонентами и открываемыми story IDs ведётся в [`development-plan/18-design-implementation-map.md`](../development-plan/18-design-implementation-map.md).
+
 ## Общие требования
 
 Каждая страница имеет canonical route, page title, loading/empty/error/offline варианты, keyboard-first порядок и реалистичные русские данные. Search/filter/sort/tab, которые пользователь ожидает переслать ссылкой или восстановить после reload, живут в TanStack Router search params с Zod validation.

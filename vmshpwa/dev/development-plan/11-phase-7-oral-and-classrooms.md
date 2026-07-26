@@ -4,6 +4,8 @@
 
 Онлайн-школьник видит несколько устных окон, раскрывает Zoom details по tap и при желании отправляет устную задачу в обычную письменную очередь. Staff администрирует устные результаты. Admin ведёт постоянный каталог аудиторий, подтверждает наследуемую схему «аудитория → группа», получает preview распределения очных школьников и публикует корректный версионируемый план. Student и Family видят актуальное назначение; classroom push получает только Student.
 
+Дизайн-контракт этапа: [oral/written submission, полный classroom planner, public assignment states и Storybook stories](18-design-implementation-map.md#phase-7-design).
+
 Печатные комплекты и быстрый очный ввод результатов преподавателем относятся ко второй версии. Административное планирование аудиторий входит в v1.
 
 ## Граница v1
@@ -12,8 +14,8 @@
 - Очный школьник не сдаёт через Student PWA; web-интерфейс учителя в аудитории отложен.
 - Teacher не имеет classroom routes; server возвращает `403` и Staff показывает forbidden state.
 - Oral task и written-before-oral используют существующие numeric problem types без изменения Telegram semantics.
-- Telegram-рассылка аудиторий остаётся в legacy-процессе. Staff v1 не публикует её в Telegram.
-- Classroom planner не печатает, не экспортирует постоянные spreadsheets и не задаёт вместимость/веса. Назначения выполняются компактными select; drag-and-drop для этого экрана не используется.
+- Telegram-рассылка аудиторий остаётся в legacy-процессе. Staff v1 не публикует её в Telegram, но до cutover должен быть выбран источник данных bridge по `CLASSROOM-01`.
+- Classroom planner не получает полноценный print UI, постоянный spreadsheet workflow, вместимость или веса. Если принят рекомендуемый вариант `CLASSROOM-01`, он отдаёт узкий versioned/hash-stamped compatibility export подтверждённого плана для `a02`/`a11`–`a14`; это не пользовательский export-конструктор. Назначения выполняются компактными select; drag-and-drop для этого экрана не используется.
 
 ## Миграции и модель данных
 
@@ -23,11 +25,11 @@
 - `classrooms` — глобальный каталог с Unicode-normalized unique name, archive/restore, audit и optimistic `version`.
 - `classroom_layout_versions` + `classroom_layout_rooms` — draft/confirmed/superseded схемы, действующие начиная с выбранного занятия. Аудитория относится максимум к одной группе; группа может иметь любое число аудиторий.
 - `classroom_assignment_plans` + `classroom_assignments` — draft/confirmed/stale/superseded планы и snapshot группы ученика. `assigned` требует комнату, `reassigning` её не содержит.
-- `users.grade`, `users.birthday` и существующая `student_strength` используются как nullable read sources. Расчёт силы остаётся совместимым с `_external_pipelines/a53_calc_rating_new.py`, выполняется отдельным job раз в несколько часов и не получает ручного Staff editor.
+- `users.grade`, `users.birthday` и существующая `student_strength` используются как nullable read sources. Расчёт силы остаётся совместимым с `_external_pipelines/a53_calc_rating_new.py`, выполняется versioned analytics job раз в несколько часов, публикует только полный successful run и не получает ручного Staff editor. Этап 7 может читать latest projection; исторические lesson metrics и графики подключаются в этапе 9.
 - `group_banners` может создаваться здесь или в этапе 8, но oral-window card остаётся отдельным типом UI.
 - `user_changes_log` продолжает фиксировать online/in-person и group changes; audit сохраняет catalog/layout/plan mutations и одноразовый import.
 
-Первый production backfill — отдельная одноразовая команда этапа. Она читает текущий Excel-export с колонками `IDd`, `Уровень`, `Аудитория`, сначала формирует dry-run report, затем при явном подтверждении создаёт catalog, effective layout и initial plan. Dry-run показывает неизвестные `IDd`, неизвестные группы, пустые/дублирующиеся после NFKC+casefold комнаты, смешение групп и школьников без назначения. `_external_pipelines` не импортируется в runtime, а исходный файл не становится постоянным source of truth.
+Первый production backfill — отдельная одноразовая команда этапа. Она читает текущий Excel-export с колонками `IDd`, `Уровень`, `Аудитория`, сначала формирует dry-run report, затем при явном подтверждении создаёт catalog, effective layout и initial plan. Dry-run показывает неизвестные `IDd`, неизвестные группы, пустые/дублирующиеся после NFKC+casefold комнаты, смешение групп и школьников без назначения. `_external_pipelines` не импортируется в runtime, а исходный файл не становится постоянным source of truth. После apply authoritative source — confirmed Staff plan; legacy print/Telegram scripts получают только утверждённый bridge snapshot либо требуют явно принятого двойного ввода, но не продолжают незаметно читать прежнюю Excel-версию.
 
 ## Domain rules
 
@@ -131,6 +133,7 @@ vmshpwa/e2e/classrooms.spec.ts
 - Join secret исключён из caches, Sentry, WS и list payload.
 - Mapping oral results к `results`, duplicate import и legacy Zoom history сохраняются.
 - One-time Excel dry-run/import проверяется на anonymized fixtures с `IDd`, `Уровень`, `Аудитория` и сравнительным report по `a11`.
+- При варианте compatibility export проверяется round-trip: confirmed plan → export → неизменённые `a02`/`a11`–`a14` fixtures, hash/version watermark и отказ использовать stale snapshot.
 
 ### Storybook
 
@@ -163,7 +166,7 @@ vmshpwa/e2e/classrooms.spec.ts
 - Ни reload, ни PWA update не теряют локальный classroom draft; server conflict не перезаписывает его молча.
 - Layout edit/archive никогда не переписывает прошлое и переводит текущие затронутые назначения в stale/reassigning.
 - Student и Family видят один и тот же опубликованный room state; push/in-app по аудиториям получает только Student.
-- В первой версии нет capacity, weights, classroom drag-and-drop, print/export UI или Staff→Telegram action.
+- В первой версии нет capacity, weights, classroom drag-and-drop, полноценного print/export UI или Staff→Telegram action. Узкий compatibility export, если выбран в `CLASSROOM-01`, является миграционным bridge, а не возвращением spreadsheet source of truth.
 
 Этап 7 завершает classroom domain event, recipient policy и foreground in-app state. Durable Web Push transport и общая notification delivery matrix проходят общий инфраструктурный gate этапа 8; это не меняет правило получателя и не разрешает Family classroom push.
 

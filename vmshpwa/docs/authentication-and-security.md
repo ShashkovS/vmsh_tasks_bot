@@ -4,7 +4,7 @@
 
 ## Учётные записи и сессии
 
-Школьник входит по логину вида `transliterated-surname-birth-day` и текущему Telegram-токену. Импорт проверяет уникальность сгенерированного login и требует admin-разрешения коллизии. Family account хранит минимальное имя без email; связи с детьми many-to-many. Если один человек является parent и teacher, он использует разные logins/audience sessions. Первичная выдача и восстановление Family/Staff доступа выполняются через администраторов по `vmsh@179.ru`.
+Школьник входит по логину вида `transliterated-surname-birth-day` и текущему Telegram-токену. Версионированный import проверяет уникальность сгенерированного login и требует admin-разрешения коллизии. `NULL`/невалидная дата рождения, пустая фамилия и явно guessable legacy token попадают в preflight и не превращаются в активный web account молча; исключительная policy фиксируется как `AUTH-01` в фазовом плане. Family account хранит минимальное имя без email; связи с детьми many-to-many. Если один человек является parent и teacher, он использует разные logins/audience sessions. Первичная выдача и восстановление Family/Staff доступа выполняются через администраторов по `vmsh@179.ru`.
 
 Сессия использует две HttpOnly cookie на audience: короткую подписанную `itsdangerous` access cookie и ротируемую refresh cookie. Refresh session и hash raw token хранятся в SQLite, поэтому отдельное устройство можно отозвать без отдельного auth service.
 
@@ -18,7 +18,7 @@ Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, 
 
 ## Обязательные механизмы
 
-- rate limit nginx как минимум по login/auth и IP с безопасным сообщением без user enumeration;
+- rate limit nginx по IP плюс backend throttling по normalized login/account с безопасным сообщением и timing без user enumeration;
 - журнал устройств: создание, последнее использование, приблизительное устройство, отзыв одной или всех сессий;
 - CSRF baseline: `SameSite=Lax`, строгая проверка same-origin `Origin`/Fetch Metadata и ожидаемого content type. Отдельный synchronizer token пока не вводится;
 - capability checks в backend на каждом объекте; скрытие кнопки не является авторизацией;

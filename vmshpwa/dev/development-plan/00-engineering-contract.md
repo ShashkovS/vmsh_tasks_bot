@@ -15,6 +15,14 @@
 - Производные HTML, Telegram-rich HTML, SVG/WebP и PDF не становятся ручным источником истины: источником остаётся LaTeX.
 - `_vmsh_examples` и `_external_pipelines` не редактируются в рамках PWA-фичи.
 
+## SQLite, транзакции и общая доменная логика
+
+- До первой бизнес-миграции принимается ADR `DB concurrency and migrations`. Он фиксирует lifecycle соединений, async boundary, `busy_timeout`, ограниченный retry/backoff для `SQLITE_BUSY`, режим начала write transaction и наблюдаемость ожиданий.
+- Один `sqlite3.Connection` нельзя одновременно использовать из нескольких coroutine/request. Внутри одной транзакции нет `await`, сетевого вызова, конвертации media или другой работы, способной отдать управление; подготовка выполняется до transaction, durable side effects — через outbox после commit.
+- Блокирующий SQLite и CPU-heavy conversion не выполняются на aiohttp event loop. Конкретная реализация может использовать request/unit-of-work connection либо worker-owned serial executor, но обязана сохранять одну connection/transaction boundary и доказать поведение с двумя gunicorn workers и Telegram writer.
+- Multi-write use case (`review complete`, claim, idempotent submit, classroom batch) задаётся общей domain service + unit of work. `models/pwa` и `db_methods/pwa` — namespace новой реализации, а не второй набор правил только для web; затронутый Telegram handler вызывает тот же service/repository.
+- Yoyo migrations выполняет отдельный deploy/test command под lock. Runtime startup не применяет схему конкурентно: он проверяет ожидаемую schema version и отказывается стартовать с понятной диагностикой. Legacy auto-migration из `DB_CONNECTION.setup()` должен быть отделён от обычного connect до production-фаз.
+
 ## Definition of Ready этапа
 
 До реализации этапа должны быть выполнены все пункты:
@@ -22,9 +30,10 @@
 1. Решения из `01-decisions-and-boundaries.md` и статуса закрытого опросника `17-open-questions.md` учтены в scope этапа; новая реальная развилка явно зафиксирована до реализации.
 2. API-схемы, error codes, query keys и WS invalidation keys добавлены в план или зафиксированы ADR.
 3. Названы миграции, таблицы, индексы, backfill и rollback-путь.
-4. Для UI есть принятые Storybook-компоненты либо явно согласованная временная заглушка.
+4. Для UI phase-файл связан с точным разделом [design implementation map](18-design-implementation-map.md): названы компоненты, story sources и открываемые Storybook IDs; вместо отсутствующего дизайна допускается только явно согласованная временная заглушка.
 5. Определены fixtures: happy path, empty, loading, error, forbidden, offline, reconnect и конфликт.
 6. Назван минимальный вертикальный сценарий, который будет продемонстрирован владельцу продукта.
+7. Для этапа с записью в SQLite ADR concurrency уже принят, а transaction boundaries и ожидаемая реакция на `SQLITE_BUSY` перечислены в API/domain tests.
 
 ## Definition of Done этапа
 
@@ -49,7 +58,7 @@
 - Python API tests проверяют авторизацию, валидацию, error envelope, request ID и транзакции.
 - TypeScript unit tests покрывают contracts, query keys, offline/outbox и чистые преобразования.
 - Любой экран с значимой незавершённой работой имеет тест восстановления после reload/remount, изоляции аккаунтов, server-version conflict и очистки только после receipt/confirm/explicit discard. Serializable state проверяется в `localStorage`, blobs/outbox — в Dexie.
-- Storybook содержит все значимые состояния изменённых общих и продуктовых компонентов; interactions проходят в browser mode.
+- Storybook содержит все значимые состояния изменённых общих и продуктовых компонентов; interactions проходят в browser mode, а переименованные/добавленные stories одновременно отражаются в [карте этапов](18-design-implementation-map.md).
 - A11y addon остаётся `error` для Student, Family и Staff. Для Staff обязательны label/alt/ARIA/contrast; отдельный полноценный keyboard-аналог специализированного DnD не является общим gate. Исключения axe возможны только локально, с причиной и issue.
 - Playwright использует production build/preview, настоящий aiohttp и отдельную seeded SQLite; MSW запрещён.
 - E2E проходит в Chromium, WebKit и Firefox; PWA/SW-специфичное проверяется там, где браузер поддерживает механизм.
@@ -72,7 +81,7 @@
 2. Команда seed и идентификатор fixture-набора.
 3. URL/маршрут демонстрации и ожидаемый результат.
 4. Результаты каждого test gate с датой и окружением.
-5. Storybook story IDs и принятые screenshots/visual diffs.
+5. Storybook story IDs и принятые screenshots/visual diffs со ссылкой на соответствующий раздел [design implementation map](18-design-implementation-map.md).
 6. Contract fixture и пример запроса/ответа без секретов.
 7. Migration/backfill report и проверка rollback.
 8. Sentry/лог/метрика или объяснение, почему на этапе не применимо.

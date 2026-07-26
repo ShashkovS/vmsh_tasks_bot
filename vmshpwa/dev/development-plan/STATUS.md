@@ -4,15 +4,15 @@
 
 ## Состояние документов
 
-| Документ/этап       | Статус                      | Решение/блокер                                                                                 |
-| ------------------- | --------------------------- | ---------------------------------------------------------------------------------------------- |
-| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                     |
-| Решения и границы   | accepted input              | Полный опросник и classroom-уточнения закрыты 25 июля                                          |
-| Модель данных       | accepted planning input     | Classroom profile/rating/history/draft projection синхронизирована                             |
-| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                              |
-| Этап 0              | ready                       | Блокирующих продуктовых вопросов нет                                                           |
-| Этапы 1–11          | planned                     | Scope и переносы между первой/второй версией уточнены                                          |
-| Design system       | phases 5–7 ready for review | Page corpus, 119/119 Storybook и 36/36 production E2E/visual; остался ручной owner gate        |
+| Документ/этап       | Статус                      | Решение/блокер                                                                                     |
+| ------------------- | --------------------------- | -------------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                         |
+| Решения и границы   | reviewed input              | Исходный опросник закрыт; 4 новые развилки ревью зафиксированы в `17-open-questions.md`            |
+| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                         |
+| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                  |
+| Этап 0              | ready                       | Вопросы ревью не блокируют baseline/preflight; добавлены DB/auth/load/external gates               |
+| Этапы 1–11          | planned with gates          | `SCHEDULE-01`, `AUTH-01`, `CLASSROOM-01`, `RETENTION-01` блокируют только названные cutover        |
+| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate |
 
 ## Журнал решений
 
@@ -38,6 +38,14 @@
 | 2026-07-25 | PLAN-018 | Condition, hint и solution публикуются независимо; metadata имеет task/answer dropdown                   | У каждого artifact своё «сейчас»/расписание/rollback; TSV paste сохраняется                                                                       |
 | 2026-07-25 | PLAN-019 | Условия идут полноценным Telegram Rich Message, а broadcast editor переносится во вторую фазу            | Stories используют text/math/lists и export corpus; v1 не имитирует рассылку, отдельная submission-квитанция отсутствует                          |
 | 2026-07-25 | PLAN-020 | Client format validation не мешает незавершённому вводу                                                  | `TestAnswer` раскрывает ошибку после blur/submit; fixed tuple остаётся спокойным между слотами; weekday использует кнопки `пн–вс`                 |
+| 2026-07-25 | PLAN-021 | Authoritative schema — применённые migrations + проверенный inventory, не старый snapshot в одиночку     | Этап 0 проверяет/перегенерирует `docs/db_structure.sql`; runtime schema drift обнаруживается до business migration                                |
+| 2026-07-25 | PLAN-022 | SQLite concurrency и migration lifecycle становятся обязательным ADR до первой бизнес-миграции           | Нет общего concurrent connection/`await` в transaction; yoyo запускается отдельным deploy command, startup только проверяет version               |
+| 2026-07-25 | PLAN-023 | Submission cutoff и solution publication моделируются раздельно                                          | `lesson_windows.submission_closes_at` существует заранее; policy переноса расписания вынесена в `SCHEDULE-01`                                     |
+| 2026-07-25 | PLAN-024 | Legacy analytics переносится versioned full-run snapshots, история текущего сезона backfill-ится         | `a53`/`a54` получают numerical parity; занятия 1–38 не исчезают из history/progress из-за отсутствия новых publication rows                       |
+| 2026-07-25 | PLAN-025 | Каждый внешний процесс имеет legacy bridge и конечного внутреннего владельца                             | `a00_dates`, `a03`, print/analytics/old-site chains добавлены в register; «не v1» больше не означает бессрочно внешний процесс                    |
+| 2026-07-25 | PLAN-026 | Внешнее ревью открыло четыре новые продуктовые развилки без блокировки этапа 0                           | Production cutover соответствующих фаз ждёт ответов `SCHEDULE-01`, `AUTH-01`, `CLASSROOM-01`, `RETENTION-01`                                      |
+| 2026-07-25 | PLAN-027 | У каждого этапа есть явный design implementation map                                                     | Phase-файл ведёт к компонентам, story source и URL; изменение accepted UI обновляет код, story, карту и status вместе                             |
+| 2026-07-26 | PLAN-028 | Internal teacher reactions получают компактный Mod+Alt shortcut                                          | `⌘/Ctrl + Alt + 1…4` работает при фокусе в комментарии; простой Mod+digit оставлен браузеру, `AltGraph` игнорируется                              |
 
 ## Фактические proof этапов
 

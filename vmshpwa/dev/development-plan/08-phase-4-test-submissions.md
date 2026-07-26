@@ -4,6 +4,8 @@
 
 Школьник вводит ответ любого исторического `ANS_TYPE`, заранее видит подсказку формата, но не получает преждевременную ошибку во время набора составного ответа. Ошибка формата появляется после выхода из control или попытки отправки. День недели выбирается кнопками `пн–вс`. Ответ отправляется online или через offline outbox и получает inline verdict либо ясный статус «принято, ожидает настройки проверки». Все введённые ответы сохраняются; повтор запроса не создаёт дубль.
 
+Дизайн-контракт этапа: [`TestAnswer`, полная матрица исторических форматов и page-level Storybook stories](18-design-implementation-map.md#phase-4-design).
+
 ## Поддерживаемая матрица
 
 В первом релизе реализуются все значения из `helpers/consts.py`, а не только простые:
@@ -20,8 +22,8 @@
 
 Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `idempotency_records`; dual-write в `results`.
 
-- Server authoritative проверяет publication deadline, attempts policy, active student/problem revision и answer schema. Invalid-format сохраняется, но попытку не расходует; отправка после правильного ответа разрешена.
-- Offline `clientCreatedAt` до публикации решений считается своевременным даже при поздней доставке. Clock skew больше часа маркируется для диагностики.
+- Server authoritative проверяет `lesson_windows.submission_closes_at`, attempts policy, active student/problem revision и answer schema. Фактическая публикация solution не подменяет cutoff. Invalid-format сохраняется, но попытку не расходует; отправка после правильного ответа разрешена.
+- Offline `clientCreatedAt` до `submission_closes_at` считается своевременным даже при поздней доставке. Clock skew больше часа маркируется для диагностики.
 - Same idempotency key + same payload возвращает записанный response. Same key + different payload → `409 IDEMPOTENCY_PAYLOAD_MISMATCH`.
 - Checker version/hash сохраняется с attempt. Если checker ещё не настроен, attempt получает `pending_configuration`; admin запускает совместимую `problem_recheck` после настройки.
 - Trusted `cor_ans_checker` исполняется только в выбранном контролируемом path; UI не создаёт новый arbitrary execution surface для teacher.

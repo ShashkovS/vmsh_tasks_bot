@@ -19,7 +19,7 @@ Synonym-group объединяет разные представления ма�
 
 Все серверные timestamps — UTC. Для offline mutation сохраняются клиентское время, timezone offset, серверное получение, idempotency key и решение deadline policy. Audit event append-only содержит actor, capability, object, before/after или diff, request/correlation ID, channel и время.
 
-Deadline задаётся как момент публикации решений в `Europe/Moscow`, затем хранится в UTC. Offline answer с client time до deadline принимается и при поздней доставке; skew больше часа маркируется. После закрытия занятия статистика сложности открывается через семь дней и только для выборки не меньше 30.
+Lesson window хранит отдельный `submission_closes_at` в `Europe/Moscow`, затем в UTC. Ожидаемая и фактическая публикация решения — отдельные timestamps и не меняют cutoff молча. Offline answer с client time до cutoff принимается и при поздней доставке; skew больше часа маркируется. После закрытия занятия статистика сложности открывается через семь дней и только для выборки не меньше 30.
 
 История смены группы/уровня/режима не схлопывается до текущего значения. Legacy `user_changes_log` с `ts`, `user_id`, `change_type`, `new_value` является источником backfill. Модель уровней не ограничена тремя строками: текущие три получают именованные presentation tokens по `groups.sort_order`, последующие — нейтральный доступный fallback.
 
@@ -39,6 +39,6 @@ One-time import текущего Excel-export использует `IDd`, `Ур�
 
 ## Граница текущего этапа
 
-Каркас не проводит широкую нормализацию legacy-схемы и не переносит доменную логику из `db_methods`/`models`. Новые таблицы добавляются только yoyo migration, малыми обратимыми шагами. Adapter/translation layer допустим, дублирующая production-база или второй backend — нет.
+Каркас не проводит широкую нормализацию legacy-схемы и не переносит доменную логику из `db_methods`/`models`. Новые таблицы добавляются только yoyo migration, малыми обратимыми шагами. Adapter/translation layer допустим, дублирующая production-база или второй backend — нет. До первой бизнес-миграции отдельный ADR фиксирует connection ownership, async boundary, `busy_timeout`/bounded retry и deploy-only migration command; обычный runtime startup только проверяет schema version.
 
 Любая будущая миграция должна определить backfill, совместимость Telegram reads/writes, rollback, indexes, data validation и тест на snapshot исторической базы. Удаление legacy column возможно только после полного цикла, когда ни bot, ни Staff, ни jobs его не используют.

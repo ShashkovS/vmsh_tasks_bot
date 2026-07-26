@@ -7,6 +7,8 @@ import { ReactionPicker } from './reaction-picker'
 import { VerdictActions } from './review-verdict-actions'
 import type { VerdictView } from './types'
 
+const teacherWrittenReactions = reactionsForScope('teacher-written')
+
 /*
  * Feedback + verdict pane. Embeds the comment guard: a verdict below «+» with an
  * empty comment asks for confirmation (but never blocks); «+» without a comment
@@ -87,9 +89,10 @@ export function ReviewFeedbackForm({
 
       <ReactionPicker
         compact
+        hotkeys
         legend="Внутренняя пометка (не видна ученику)"
         onSelect={setReactionId}
-        options={reactionsForScope('teacher-written')}
+        options={teacherWrittenReactions}
         value={reactionId}
       />
 

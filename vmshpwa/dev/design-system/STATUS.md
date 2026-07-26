@@ -9,7 +9,7 @@
 | 3. UI primitives         | accepted         | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                  |
 | 4. Product components    | accepted         | 2026-07-25 | Владелец: «в остальном вроде ок», направил к фазам 5–7; partial validation исправлена. |
 | 5. Pages and flows       | ready for review | —          | Student/Family/Staff page corpus, shells и состояния реализованы; нужен owner gate.    |
-| 6. Storybook and testing | ready for review | —          | 119/119 browser stories с axe error; page/classroom matrices добавлены.                |
+| 6. Storybook and testing | ready for review | —          | 121/121 browser stories с axe error; page/classroom/review/admin matrices добавлены.   |
 | 7. Final acceptance      | ready for review | —          | Автоматические gates и production E2E/visual зелёные; нужен ручной owner gate.         |
 
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
@@ -64,16 +64,23 @@ Known follow-ups:
 ```
 
 ```text
-2026-07-25 — Phase 6 — ready for review
+2026-07-26 — Phase 6 — ready for review
 Decision owner: ожидается Сергей Шашков
 Implemented:
   Pages/Student, Pages/Family, Pages/Staff; loading/empty/error/offline matrices;
   classroom 15-room/200-student и local-draft reload/clear stories;
-  login reveal, Family read-only, test validation, Staff verdict/classroom tests.
+  login reveal, Family read-only, test validation, Staff verdict/classroom tests;
+  компактная внутренняя teacher reaction с полным текстом и сочетаниями
+  Mod+Alt+1–4, которые работают при фокусе в комментарии и не ловят AltGraph;
+  bounded publication scheduler: 12rem datetime-local и actions на новой строке.
 Checks:
-  Storybook browser mode 24 files / 119 stories, addon-a11y test:error — green.
+  Storybook browser mode 24 files / 121 stories, addon-a11y test:error — green.
   Вручную просмотрены Student Today, Staff review workspace и Staff classrooms
   на agent Storybook :6106. Найден и исправлен horizontal Tabs selector.
+  `Product/Review--Feedback guard` и `Feedback reaction shortcuts` проверены
+  в desktop viewport; shortcut переключает reaction 1→4 из textarea.
+  `Product/Staff admin--Publication scheduling` проверена при 900px и 600px:
+  input 192px, соседняя колонка начинается после его правой границы.
 Known follow-ups:
   owner visual approval относится к Phase 7; fixtures/callbacks остаются
   прототипами до вертикальных срезов development plan.
@@ -85,7 +92,7 @@ Decision owner: ожидается Сергей Шашков
 Automated proof:
   format, ESLint, strict TypeScript и production Vite/PWA build — green;
   Vitest 21/21; Python PWA tests 11/11;
-  Storybook browser mode 24 files / 119 stories, addon-a11y test:error — green;
+  Storybook browser mode 24 files / 121 stories, addon-a11y test:error — green;
   Playwright production preview 36/36 в Chromium, WebKit и Firefox, включая
   shell/base path, audience isolation, theme, WebSocket resync, PWA update и
   Student/Staff visual baselines.
@@ -359,13 +366,13 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 
 **Инкремент 7 — connectivity (зелёный):** `ConnectionBanner` (online ненавязчив; offline/reconnecting объясняют влияние на действие; conflict — не исчезающий toast, требует решения); `SyncIndicator` (счётчик очереди → outbox, тихо когда нечего слать); `UpdatePrompt` (не рушит черновик); `PushPermissionCard` (объясняет категории до системного запроса, уважает отказ). `Product/Connectivity` stories + interaction-тесты.
 
-**Инкремент 8 — рабочее место Staff (переработан 25 июля, требует повторного gate):** queue сохранена, а detail теперь одна колонка `evidence → thread → teacher reply/verdict`; teacher verdict/reaction controls компактны, но сохраняют точный текст. `MetadataGrid` получил dropdown-ячейки task type/answer type с TSV paste. `PublicationControl` независимо публикует/планирует/откатывает condition/hint/solution. Полный `BroadcastComposer` убран из первой фазы story и обозначен как phase-two Markdown workflow. Остальные lock/data/upload/SOS surfaces сохранены.
+**Инкремент 8 — рабочее место Staff (переработан 26 июля, требует повторного gate):** queue сохранена, а detail теперь одна колонка `evidence → thread → teacher reply/verdict`; teacher verdict/reaction controls компактны, но сохраняют точный текст. `MetadataGrid` получил dropdown-ячейки task type/answer type с TSV paste. `PublicationControl` независимо публикует/планирует/откатывает condition/hint/solution; открытый datetime editor ограничен 12rem, а действия вынесены на следующую строку без overlap соседних колонок. Полный `BroadcastComposer` убран из первой фазы story и обозначен как phase-two Markdown workflow. Остальные lock/data/upload/SOS surfaces сохранены.
 
 **Инкремент 9 — прогресс (зелёный, требования уточнены):** зависимость `@visx/scale` (из каталога); `DistributionViolin` показывает только распределение группы и медиану — без маркера школьника и без словесного сравнения его с группой. `TrendWithBand` (линия + доверительная полоса) и график личной динамики shape-first, не только по цвету, с табличным эквивалентом в `<details>`; `StudentProgress` — словами («3 задачи зачтено»), спокойный streak относительно своей истории, без leaderboard/percentile/красных провалов. `Product/Progress` stories + interaction-тесты.
 
 **Инкремент 10 — аудитории (доработан 25 июля, требует повторного gate):** layout теперь имеет group marker/tint и `очно/распределено`; planner использует flex-wrap room cards, отдельную секцию неназначенных, компактные строки с возрастом/классом/силой, room averages, fuzzy search+jump, checkbox bulk move, history action и callback подтверждения cross-group move. `mobile-staff-layout` содержит все student/room metrics. До принятия ещё нужны реальная local-draft story и отдельный dense fixture около 200 школьников; capacity/DnD отсутствуют.
 
-**Исторический gate Phase 4:** результаты 83/83 относились к корпусу до финальных classroom/draft требований. Недостающие local-draft и 15-room/200-student stories добавлены в Phase 6; актуальный browser gate — **119/119** с addon-a11y в режиме error. Phase 4 принят владельцем, дальнейшие решения фиксируются как Phase 5/6 review, а не возвращают принятую фазу в `changes requested`.
+**Исторический gate Phase 4:** результаты 83/83 относились к корпусу до финальных classroom/draft требований. Недостающие local-draft, 15-room/200-student и bounded publication-scheduler stories добавлены в Phase 6; актуальный browser gate — **121/121** с addon-a11y в режиме error. Phase 4 принят владельцем, дальнейшие решения фиксируются как Phase 5/6 review, а не возвращают принятую фазу в `changes requested`.
 
 ## Решения итогового продуктового опросника — 24 июля 2026
 

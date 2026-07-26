@@ -21,7 +21,10 @@ import {
 import { LevelChip } from './level-chip'
 import type { LevelView } from './types'
 
-/* ── Publication control ────────────────────────────────────────────────── */
+/* ── Publication control ──────────────────────────────────────────────────
+ * The fixed artifact column and block datetime editor implement the bounded
+ * scheduling layout specified in dev/design-system/04-product-components.md.
+ */
 
 export type PublishState = 'published' | 'scheduled' | 'draft' | 'none'
 export type PublicationArtifact = 'task' | 'hint' | 'solution'
@@ -86,7 +89,7 @@ export function PublicationControl({
     const isScheduling = scheduling?.code === row.level.code && scheduling.artifact === artifact
 
     return (
-      <div className="min-w-44 space-y-1.5">
+      <div className="w-48 min-w-48 max-w-48 space-y-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <StateChip state={state} />
           {row.scheduledAt?.[artifact] ? (
@@ -97,15 +100,15 @@ export function PublicationControl({
         </div>
 
         {isScheduling ? (
-          <div className="space-y-1.5">
+          <div className="min-w-0 space-y-1.5">
             <input
               aria-label={`Когда опубликовать ${label}, ${row.level.name}`}
-              className="h-8 w-full rounded-md border border-input bg-surface px-2 font-num text-caption text-foreground"
+              className="block h-8 w-full min-w-0 max-w-full rounded-md border border-input bg-surface px-2 font-num text-caption text-foreground"
               onChange={(event) => setScheduling({ ...scheduling, at: event.target.value })}
               type="datetime-local"
               value={scheduling.at}
             />
-            <span className="inline-flex gap-1">
+            <div className="flex flex-wrap gap-1">
               <Button
                 disabled={!scheduling.at}
                 onClick={() => {
@@ -119,7 +122,7 @@ export function PublicationControl({
               <Button onClick={() => setScheduling(null)} size="xs" variant="ghost">
                 Отмена
               </Button>
-            </span>
+            </div>
           </div>
         ) : isConfirming ? (
           <div className="space-y-1 text-caption text-foreground">

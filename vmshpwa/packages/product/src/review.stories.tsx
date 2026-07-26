@@ -148,6 +148,26 @@ export const FeedbackGuard: Story = {
   },
 }
 
+export const FeedbackReactionShortcuts: Story = {
+  name: 'Внутренняя пометка — компактно и с hotkeys',
+  render: () => <FormHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const comment = canvas.getByRole('textbox', { name: 'Комментарий' })
+    const superReaction = canvas.getByRole('button', { name: /Суперское решение/ })
+    const aiReaction = canvas.getByRole('button', { name: /от нейросети/ })
+
+    // Mod+Alt works while the teacher keeps the cursor in the comment field.
+    await userEvent.click(comment)
+    await userEvent.keyboard('{Control>}{Alt>}1{/Alt}{/Control}')
+    await expect(superReaction).toHaveAttribute('aria-pressed', 'true')
+
+    await userEvent.keyboard('{Control>}{Alt>}4{/Alt}{/Control}')
+    await expect(superReaction).toHaveAttribute('aria-pressed', 'false')
+    await expect(aiReaction).toHaveAttribute('aria-pressed', 'true')
+  },
+}
+
 export const Lock: Story = {
   name: 'Состояния аренды',
   render: () => (

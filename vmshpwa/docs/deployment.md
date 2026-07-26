@@ -19,6 +19,8 @@ Production host: `vmsh.shashkovs.ru`. Желаемый staging host: `devvmsh.sh
 9. Проверить три audience health/runtime URL, static history fallback, WebSocket upgrade, CSP/security headers и service-worker files.
 10. Запустить detached post-deploy backup и отправить оператору итог с revision и статусами.
 
+Yoyo apply выполняется только этим отдельным шагом под deploy lock. Обычный startup/connect не пытается применить migrations из каждого gunicorn/Telegram процесса: он сверяет ожидаемую schema version и останавливается до обслуживания при mismatch.
+
 Не следует применять `git reset --hard` или `git clean` в общей рабочей копии разработчика. Такие команды допустимы только внутри специально созданного deployment checkout, который не содержит пользовательских данных и незакоммиченной работы.
 
 ## Change detection

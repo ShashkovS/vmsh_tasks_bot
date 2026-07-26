@@ -4,6 +4,8 @@
 
 Admin из Staff импортирует Excel, создаёт/правит пользователей и task settings, показывает отчёт об ошибочных строках и полностью заменяет workflow листов «Задачи»/«Старые». Остальные Google/external scripts продолжают работать до отдельного полного cutover своего процесса.
 
+Дизайн-контракт этапа: [dense tables, metadata/publication controls, Staff admin pages и Storybook stories](18-design-implementation-map.md#phase-10-design).
+
 ## Объём Staff
 
 - Users: search/filter, create/edit любого поля кроме `id`, block/archive, group, allowed groups, online mode, family account/link, credential/token reset workflow. Hard delete отсутствует.
@@ -43,7 +45,7 @@ Never delete `allowed_groups`, legacy settings or Google path in the same deploy
 7. Cutover flag and rollback command.
 8. Date after which credential/import is removed from startup/deploy.
 
-Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacement matrix подробно покрывает листы «Задачи»/«Старые» и вызывающие их скрипты; `a01`, `a11`, `a18`, `a19`, `a23`, `a52–a54` остаются в общей инвентаризации без обещания перенести их в v1.
+Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacement matrix подробно покрывает листы «Задачи»/«Старые» и вызывающие их скрипты. `a00_dates`, `a01`, `a02`, `a03`, `a11`, `a18`, `a19`, `a23`, `a52–a54` могут остаться legacy bridge после v1, но для каждого уже названы конечный внутренний owner, вход/выход, parity gate и следующий этап решения; «не в v1» не означает «навсегда внешний».
 
 ## Security
 

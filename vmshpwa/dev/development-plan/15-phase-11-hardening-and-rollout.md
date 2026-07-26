@@ -4,10 +4,13 @@
 
 Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` под своими base paths рядом с работающим Telegram-ботом; желательный staging — `devvmsh.shashkovs.ru`. После acceptance возможности включаются сразу для всех трёх уровней, без продуктового rollout по отдельным группам.
 
+Дизайн-контракт этапа: [all-audience failure/update states, production E2E/visual baselines и Storybook release stories](18-design-implementation-map.md#phase-11-design).
+
 ## Production topology
 
 - Nginx routes `/student`, `/family`, `/staff`, matching API and WS paths.
 - aiohttp/gunicorn: минимум два workers; shared SQLite/domain/storage, NATS fan-out.
+- Каждый worker владеет соединениями/serialized executor согласно принятому DB concurrency ADR; общий module-level `sqlite3.Connection` не обслуживает конкурентные coroutine. `busy_timeout`, bounded retry и transaction wait попадают в metrics.
 - Telegram webhook/polling adapter запускается отдельно от PWA app factory, но использует общую domain DB.
 - Hetzner S3-compatible bucket, CORS только для public reads if needed; browser writes only through aiohttp.
 - Static assets content-hashed; HTML no-cache/revalidate; SW update strategy explicitly tested.
@@ -23,6 +26,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 - Python `uv sync --no-dev` only when lock/project changes;
 - pre-deploy SQLite backup completes before migration/restart;
 - migrations under explicit lock with version report;
+- runtime `DB_CONNECTION.setup()`/эквивалент не вызывает yoyo apply: migration command завершён до старта workers, а schema mismatch делает health/startup красным;
 - health checks API + static manifest + WS handshake;
 - atomic static release symlink/directory and previous-release rollback;
 - post-deploy backup detached only after health success;
@@ -43,7 +47,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 - SQLite backup три раза в день и перед каждым deploy считается достаточным baseline; restore rehearsal использует согласованную копию трёх файлов SQLite/WAL/SHM в изолированном runtime.
 - Полный отдельный backup S3 не требуется. Student images не versioned; teacher-authored отправленные artifacts защищаются application immutability или отдельной policy.
 - Document what «manual bucket cleanup» may safely delete; preferably manifest-driven orphan report before any deletion.
-- Retention remains indefinite until separate policy, but backup size/growth monitored.
+- Retention remains indefinite only as explicitly accepted interim risk. До production acceptance назначаются owner и review date по `RETENTION-01`; до этой даты доступны growth/orphan reports, а удаление остаётся manual и manifest-driven.
 
 ## Rollout strategy
 
@@ -60,7 +64,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 - Full Make quality gates + historical Telegram tests.
 - Production-build E2E 3 browsers on seeded SQLite.
 - Real staging Hetzner S3 smoke with disposable namespace.
-- Two-worker/NATS/WS/SQLite load and failure tests.
+- Two-worker/NATS/WS/SQLite load and failure tests выполняются против численного workload profile этапа 0: concurrency, submit/photo sizes, write latency, queue/outbox depth и допустимые busy/error thresholds. Неопределённый «load test прошёл» gate не принимается.
 - Security review: auth, IDOR, CSRF/origin, CSP, upload, checker execution, public media URLs, push payload.
 - Restore rehearsal with objective RPO/RTO.
 - Полный physical-device smoke на доступных Android; iPhone — по возможности. Chromium/WebKit/Firefox E2E остаются обязательными.
@@ -70,6 +74,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 
 - Production deploy/rollback не требует Telegram/Google credentials for PWA build.
 - Telegram operation continues during PWA rollout and shared writes reconcile.
+- Одновременные PWA/Telegram writers не смешивают транзакции, не блокируют event loop и при исчерпании bounded `SQLITE_BUSY` retry возвращают наблюдаемую повторяемую ошибку без half-write.
 - Failed deployment leaves previous static/API release usable.
 - Backup restored to isolated runtime passes integrity and selected end-to-end scenarios.
 - Security headers/CSP do not break KaTeX, SVG, WebSocket, Sentry or PWA updates.

@@ -4,7 +4,7 @@
 
 Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](05-pages-and-flows.md) и [`06-storybook-and-testing.md`](06-storybook-and-testing.md). Точные page entry points: [`Student`](../../apps/student/src/pages.tsx), [`Family`](../../apps/family/src/pages.tsx), [`Staff`](../../apps/staff/src/pages.tsx); Storybook proof: [`Student stories`](../../apps/student/src/pages.stories.tsx), [`Family stories`](../../apps/family/src/pages.stories.tsx), [`Staff stories`](../../apps/staff/src/pages.stories.tsx), [`classroom matrices`](../../packages/product/src/classroom-planning.stories.tsx).
 
-Автоматический Storybook gate: **119/119**, axe работает в режиме error. Ручной просмотр ключевых page stories выполнен на изолированном agent runtime; дефект ориентации Tabs исправлен. Полный gate 25 июля: format, lint, strict TypeScript и production build — green; Vitest **21/21**; Python PWA tests **11/11**; Playwright production-preview E2E/visual **36/36** в Chromium, WebKit и Firefox. После просмотра ожидаемых изменений обновлены и повторно проверены версионируемые baseline из [`e2e/__screenshots__`](../../e2e/__screenshots__). Чекбоксы не считаются принятыми самим автором реализации: финальная визуальная и продуктовая приёмка остаётся за владельцем.
+Автоматический Storybook gate: **121/121**, axe работает в режиме error. Ручной просмотр ключевых page stories, компактного review flow и открытого publication scheduler выполнен на изолированном agent runtime; дефект ориентации Tabs исправлен, внутренние реакции проверены сочетаниями `⌘/Ctrl + Alt + 1–4`, а поле даты — на широком и узком Staff viewport без overlap. Полный gate 25 июля: format, lint, strict TypeScript и production build — green; Vitest **21/21**; Python PWA tests **11/11**; Playwright production-preview E2E/visual **36/36** в Chromium, WebKit и Firefox. После просмотра ожидаемых изменений обновлены и повторно проверены версионируемые baseline из [`e2e/__screenshots__`](../../e2e/__screenshots__). Чекбоксы не считаются принятыми самим автором реализации: финальная визуальная и продуктовая приёмка остаётся за владельцем.
 
 ## Brand и art direction
 
@@ -55,7 +55,8 @@ Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](0
 - [ ] Каждый значимый Student/Staff composer/editor восстанавливает compatible local draft после reload/update, изолирует аккаунты и очищается только после receipt/confirm или explicit discard.
 - [ ] Dense tables, TSV, bulk actions, locks, diagnostics и missing assets готовы.
 - [ ] Metadata grid имеет task type и copy/paste-compatible dropdown answer type; condition/hint/solution публикуются и планируются независимо.
-- [ ] Review list/fast flows, 30-minute lock, occupied/lost-lock, registry verdict shortcuts, comment guard и abandon готовы.
+- [ ] Открытый `datetime-local` публикации остаётся внутри компактной artifact-колонки; кнопки расписания находятся отдельной строкой, соседние condition/hint/solution controls не перекрываются на desktop и narrow Staff viewport.
+- [ ] Review list/fast flows, 30-minute lock, occupied/lost-lock, registry verdict shortcuts, compact internal-reaction Mod+Alt shortcuts, comment guard и abandon готовы.
 - [ ] Review workspace показывает evidence, существующую переписку и новый teacher reply в одном хронологическом порядке; teacher reactions сохраняют компактный видимый текст.
 - [ ] Questions отделены от verdict flow при сохранении migration state Telegram adapter.
 - [ ] AI future states покрыты без включения реальной AI-интеграции в первую версию.

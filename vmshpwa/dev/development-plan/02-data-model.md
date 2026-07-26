@@ -41,7 +41,7 @@
 
 `id INTEGER PK`, `public_id TEXT UNIQUE`, `audience TEXT CHECK(student|family|staff)`, `username TEXT`, `username_normalized TEXT`, `display_name TEXT NULL`, `credential_kind TEXT CHECK(telegram_token|password)`, `credential_hash TEXT NULL`, `linked_user_id INTEGER NULL FK users(id)`, `status TEXT CHECK(active|blocked|disabled|archived)`, `credential_version INTEGER DEFAULT 1`, `last_login_at TEXT NULL`, `created_at TEXT`, `updated_at TEXT`.
 
-Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_user_id, audience)`. Student username импортируется как транслитерация фамилии + день рождения; коллизии блокируют строку импорта до назначения уникального значения. Источник student credential — текущий Telegram token; второй plaintext не создаётся. Family хранит только минимальное display name без email.
+Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_user_id, audience)`. Student username импортируется версионированным helper как транслитерация фамилии + день рождения; коллизия, `NULL`/невалидная дата, пустая фамилия или credential, не прошедший security policy, блокируют активацию строки и попадают в report. Источник student credential — текущий Telegram token; второй plaintext не создаётся. Family хранит только минимальное display name без email.
 
 ### `family_student_links`
 
@@ -109,7 +109,13 @@ Member: `synonym_group_id INTEGER`, `problem_id INTEGER`, `created_at TEXT`, PK 
 
 `id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id INTEGER`, `lesson_number INTEGER`, `group_id TEXT`, `kind TEXT CHECK(condition|hint|solution)`, `revision_id INTEGER FK content_revisions`, `state TEXT CHECK(scheduled|published|superseded|hidden)`, `scheduled_at TEXT NULL`, `published_at TEXT NULL`, `hidden_at TEXT NULL`, `published_by_user_id INTEGER`, `supersedes_publication_id INTEGER NULL`, `version INTEGER`.
 
-Authoritative deadline для сдачи: `solution` publication `published_at`, а не client-local календарь.
+### `lesson_windows`
+
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id INTEGER`, `lesson_number INTEGER`, `group_id TEXT`, `opens_at TEXT NULL`, `submission_closes_at TEXT`, `hint_scheduled_at TEXT NULL`, `solution_scheduled_at TEXT NULL`, `timezone TEXT`, `source TEXT CHECK(native|legacy_schedule|manual_backfill)`, `created_by_user_id INTEGER NULL`, `created_at TEXT`, `updated_at TEXT`, `version INTEGER`; unique `(season_id, lesson_number, group_id)`.
+
+Authoritative дедлайн сдачи — отдельный `submission_closes_at`, преобразованный в UTC из бизнес-зоны сезона. `solution_scheduled_at` управляет ожидаемой публикацией, а `lesson_publications.published_at` фиксирует фактическое событие. Эти timestamps могут совпасть, но один не выводится из другого. Клиент получает оба значения и никогда не вычисляет cutoff из локального календаря. Открытый вопрос `SCHEDULE-01` определяет, должна ли правка расписания решения когда-либо автоматически предлагать перенос cutoff.
+
+Для первого запуска content migration создаёт revision/publication/window records и для уже прошедших занятий текущего сезона. Источник и точность исторического времени фиксируются в backfill report; неизвестный фактический timestamp не подменяется выдуманной точностью и не используется для ретроактивного отклонения legacy results.
 
 ### `hint_reveals` и `solution_reveals`
 
@@ -168,6 +174,8 @@ Original WebP не меняется. Annotation payload содержит кар�
 ### Эволюция `reactions`
 
 Добавить: `actor_user_id INTEGER NULL`, `actor_kind TEXT CHECK(student|teacher)`, `reaction_type_id INTEGER`, `visibility TEXT CHECK(student_family_admin|staff_admin|admin_only)`, `source TEXT CHECK(pwa|telegram|staff)`, `updated_at TEXT NULL`, `editable_until TEXT NULL`, `deleted_at TEXT NULL`, `metadata_json TEXT NULL`. Связь с конкретным verdict сохраняется через `result_id`. Partial unique index на `(result_id, actor_kind, actor_user_id) WHERE deleted_at IS NULL` разрешает одну активную реакцию соответствующего автора на проверку независимо от выбранного reaction type; PUT меняет `reaction_type_id`, DELETE ставит `deleted_at`, обе операции разрешены в течение часа.
+
+Legacy backfill определяет `actor_kind` по `reaction_type_id`, а actor — через связанный `results.student_id`/`results.teacher_id` либо `zoom_conversation.student_id`/`teacher_id`. Перед partial unique index dry-run группирует дубли; самой поздней однозначной строке присваивается active-state, прежние сохраняются как migrated history/deleted. Строки без однозначно выводимого actor не угадываются: они попадают в quarantine/report и не участвуют в unique index до ручного решения.
 
 ### `ai_review_runs` (зарезервировано, не v1)
 
@@ -253,7 +261,7 @@ Select комнаты другой группы создаёт в локальн
 
 ### `notification_events`
 
-`id`, `public_id`, `account_id`, `category`, `dedupe_key`, `route`, `payload_json`, `occurred_at`, `deliver_after`, `visible_since_at NULL`, `read_at NULL`, `created_at`; unique `(account_id, category, dedupe_key)`. Review events всех задач одного ученика агрегируются за 30 минут; read фиксируется после не менее трёх секунд фактической видимости.
+`id`, `public_id`, `account_id`, `category`, `dedupe_key`, `route`, `payload_json`, `occurred_at`, `deliver_after`, `read_at NULL`, `read_by_session_id NULL`, `created_at`; unique `(account_id, category, dedupe_key)`. Review events всех задач одного ученика агрегируются за 30 минут. Клиент измеряет непрерывные три секунды фактической видимости монотонным timer и отправляет идемпотентный read acknowledgement; server выставляет собственный `read_at`. Состояние общее для account и поэтому сходится между устройствами. Telegram `sent` не равен `read`.
 
 ### `notification_deliveries`
 
@@ -285,7 +293,15 @@ Delivery: `broadcast_id`, `account_id NULL`, `user_id NULL`, `channel`, `state`,
 
 `id`, `definition_id`, `user_id`, `earned_at`, `evidence_json`, `notified_at NULL`, unique `(definition_id, user_id, rule_version/evidence scope — уточнить схемой)`.
 
-Counts, lesson curves, violin and activity calendar сначала вычисляются из `results`, `submission_entries`, `user_changes_log` и read-only SQL. Accepted count использует `VERDICT_TO_NUM >= 0.9`; denominator считает problem items. Violin показывает число решённых items, cohort для прошлого урока выбирается по лучшему уровню и публикуется только при `n >= 30`. Activity calendar схлопывает все отправки одного item за день в одно событие. Materialized stats table добавляется только после измерения.
+Accepted counts и activity calendar сначала вычисляются из `results`, `submission_entries`, `user_changes_log` и read-only SQL. Accepted count использует `VERDICT_TO_NUM >= 0.9`; denominator считает problem items. Activity calendar схлопывает все отправки одного item за день в одно событие.
+
+Кривые силы, сложность занятия, выбранный лучший уровень и violin зависят от алгоритма `_external_pipelines/a53_calc_rating_new.py`, а не только от ledger rows. Для них планируются измеренные persistent read models:
+
+- `analytics_runs(id, public_id, algorithm, algorithm_version, input_through_result_id, state, started_at, completed_at, diagnostics_json)`;
+- `student_lesson_metrics(run_id, student_user_id, lesson_number, group_id, simple_strength, complex_strength, max_complex_strength, solved_items, total_items)` с unique `(run_id, student_user_id, lesson_number)` и индексом для latest-by-student;
+- при необходимости measured `lesson_problem_statistics`, если прямой read для violin/Staff table не укладывается в budget.
+
+Job публикует полный successful run атомарно и обновляет совместимую latest projection `student_strength`; незавершённый run не виден API. Violin показывает число решённых items, cohort для прошлого урока выбирается по сохранённому лучшему уровню и публикуется только при `n >= 30`. Названия `temp_*` из внешнего скрипта не становятся production schema.
 
 ## 8. Аудит
 
@@ -301,13 +317,13 @@ Counts, lesson curves, violin and activity calendar сначала вычисл�
 | ---: | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
 |    0 | `pwa_schema_metadata` при необходимости          | Только schema snapshot/characterization, бизнес-данные не менять                                                           |
 |    1 | `pwa_auth_accounts_sessions`                     | Создать accounts для seed; production backfill dry-run по users                                                            |
-|    2 | `pwa_content_revisions_assets_publications`      | Связать legacy problems/lessons, не заменять их text сразу                                                                 |
+|    2 | `pwa_content_revisions_assets_publications`      | Связать legacy problems/lessons; backfill revision/publication/window для занятий 1–38 текущего сезона с provenance report |
 |    4 | `pwa_test_attempts_idempotency`                  | Новые attempts dual-write в results                                                                                        |
 |    5 | `pwa_submission_threads_entries_assets`          | Lazy backfill discussions по открываемому thread + batch tool                                                              |
-|    6 | `pwa_reviews_annotations_queue_leases_reactions` | Reviews dual-write results; Telegram queue сохраняется                                                                     |
+|    6 | `pwa_reviews_annotations_queue_leases_reactions` | Reviews dual-write results; исправить affinity `written_tasks_queue.teacher_id`; reaction actor/dedup dry-run; Telegram queue сохраняется |
 |    7 | `pwa_support_oral_classroom_plans_banners`       | Questions/zoom читаются через adapter; одноразовый classroom Excel import проходит dry-run, старые plans не переписываются |
 |    8 | `pwa_news_notifications_delivery`                | Telegram posts импортируются идемпотентно                                                                                  |
-|    9 | `pwa_family_achievements`                        | Family links batch import; stats/achievements derived                                                                      |
+|    9 | `pwa_family_achievements_analytics`              | Family links batch import; historical analytics snapshots/achievements backfill по versioned `a53` parity                  |
 |   10 | `pwa_normalized_groups_imports`                  | Google replacement только после parity report                                                                              |
 
 ## Проверки целостности, обязательные после каждой миграции
