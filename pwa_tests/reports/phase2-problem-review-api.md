@@ -18,8 +18,9 @@ canonical LaTeX-задач с legacy `problems` и последующего meta
   duplicate, cross-lesson и неверный positional match отклоняются; вся запись
   выполняется одной `BEGIN IMMEDIATE` транзакцией.
 - `GET/PUT /staff/api/v1/group-lessons/{groupLessonId}/metadata-grid` читает и
-  подтверждает все non-omitted задачи exact revision. Path, revision и
-  authoritative permission scope сверяются в SQLite.
+  подтверждает все non-omitted задачи exact revision условия. Path, revision и
+  authoritative permission scope сверяются в SQLite; для hint/solution
+  endpoint возвращает `422 metadata_requires_condition`.
 - Review использует отдельный hash-derived ETag. Compile ETag не может случайно
   авторизовать grid mutation; stale write получает `409`, точный повтор уже
   подтверждённого полного batch не создаёт дублей.
@@ -28,8 +29,10 @@ canonical LaTeX-задач с legacy `problems` и последующего meta
   result/submission не переписывается.
 - Поддержаны все 23 исторических answer type. Test-задача требует answer type;
   письменная/устная задача не может сохранить скрытые test answer fields.
-- Publish/schedule/rollback остаются fail-closed: успешный compile без полного
-  matching и reviewed metadata возвращает `422 problem_review_incomplete`.
+- Publish/schedule/rollback остаются fail-closed: любая material revision
+  требует собственного полного matching. Condition без reviewed metadata
+  возвращает `422 problem_review_incomplete`; hint/solution не заставляют
+  повторно подтверждать metadata задачи.
 - Endpoint доступен admin с `content.manage`; Teacher получает `403`.
 
 ## Проверки
@@ -46,7 +49,7 @@ uv run pytest -q \
   pwa_tests/domain/test_content.py \
   pwa_tests/integration/test_content_repository.py \
   pwa_tests/integration/test_content_http_api.py
-110 passed
+111 passed
 
 git diff --check -- <Phase 2E backend paths>
 PASS
@@ -59,7 +62,8 @@ credentials не используются.
 Покрыты happy path, полный batch, atomic rollback, `insert_new`, manual и
 positional match, exact retry, stale conflict, wrong group-lesson scope,
 Teacher `403`, невалидная комбинация task/answer fields, сохранность legacy
-projection и разблокировка publication gate только после обоих review шагов.
+projection, condition gate после обоих review шагов и hint gate после
+structural matching без дублирования metadata.
 
 ## Оставшаяся работа этого gate
 

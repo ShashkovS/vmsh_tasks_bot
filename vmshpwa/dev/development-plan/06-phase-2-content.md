@@ -66,12 +66,19 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   hash-derived review ETag, который нельзя перепутать с compile ETag. Полные
   batch вставляются одной `BEGIN IMMEDIATE` транзакцией; точный повтор уже
   сохранённого batch идемпотентен.
-- **METADATA-01.** Metadata-grid подтверждает все non-omitted match одной
-  транзакцией. Каждая строка создаёт immutable `problem_revisions`, а legacy
+- **METADATA-01.** Metadata-grid относится к revision **условия** и подтверждает
+  все её non-omitted match одной транзакцией. Каждая строка создаёт immutable
+  `problem_revisions`, а legacy
   `problems` обновляется только как текущая Telegram-compatible projection.
   Все 23 исторических `ANS_TYPE` поддерживаются; test требует answer type,
   non-test не сохраняет скрытую test-конфигурацию. Пустой checker допустим и
   означает будущий `pending_configuration`, а не ложную успешную проверку.
+- **METADATA-02.** Каждая revision условия, подсказки или решения проходит
+  собственное structural matching: файлы и публикации независимы и parser не
+  вправе молча считать их задачи совпавшими. При этом task/answer metadata
+  принадлежит задаче занятия и не дублируется для подсказки или решения.
+  Поэтому condition publication требует matching + metadata review, а
+  hint/solution publication — matching соответствующей revision.
 - До появления `problems.public_id` в Phase 3 Staff-only reconciliation wire
   использует legacy integer `problemId` только как candidate/mutation token.
   Он не попадает в Student/Family URL или payload; Phase 3 заменяет эту
@@ -84,7 +91,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - Diagnostics grouped by errors/warnings with source location and recovery action.
 - Missing asset: search content-addressed library, upload replacement, reuse exact hash, rerun compile.
 - LaTeX в браузере не редактируется. Metadata grid содержит название, task/answer type, validation/wrong/congratulation messages и optional topic tags; поддерживает keyboard edits, TSV paste preview, cell errors и optimistic version conflict.
-- Structural output `a03_tempate_for_bot.py` не считается готовой metadata: до publication admin явно просматривает `title`, `prob_type`, `ans_type`, `ans_validation`, `validation_error`, `cor_ans`, `cor_ans_checker`, `wrong_ans` и `congrat`. Заглушка или непроверенное parser default блокирует publish с полевым diagnostic.
+- Structural output `a03_tempate_for_bot.py` не считается готовой metadata: до публикации **условия** admin явно просматривает `title`, `prob_type`, `ans_type`, `ans_validation`, `validation_error`, `cor_ans`, `cor_ans_checker`, `wrong_ans` и `congrat`. Заглушка или непроверенное parser default блокирует publish с полевым diagnostic. Подсказка и решение проходят собственное structural matching, но переиспользуют уже подтверждённую task metadata занятия.
 - Title остаётся коротким UI-именем, но должен узнаваемо отличать задачу. Равное название разных групп одного `course_lesson` только предлагает synonym candidate; автоматический merge не выполняется, а другой course/lesson не рассматривается.
 - Synonym suggestion from equal titles with explicit accept/reject.
 - Side-by-side PWA and Telegram preview. Уже сгенерированный PDF derivative можно открыть для regression/контроля, но команд печати и отдельного print workflow в v1 нет.
@@ -193,9 +200,9 @@ Production owner-reviewed backfill apply, problem-matching/metadata flow,
       session/capability/scope checks и owner-scoped invalidation;
 - [x] compile lease/retry, atomic derivatives, independent publication slots,
       scheduler, cancel/hide и rollback только на выбранную `ready` revision;
-- [x] publish/schedule/rollback fail-closed до resolved problem matches и
-      reviewed problem metadata; solution publish/schedule требует отдельного
-      `submission_closes_at`;
+- [x] publish/schedule/rollback fail-closed до resolved problem matches;
+      condition дополнительно требует reviewed problem metadata, а solution —
+      отдельного `submission_closes_at`;
 - [x] server-authoritative IANA wall-time conversion, immutable audit migration
       `0043` и bounded history;
 - [x] Staff resume/preview/confirmation flow, side-by-side desktop preview,
@@ -235,9 +242,9 @@ Staff-openable generated PDF, bulk upload, production-build content E2E и
 - [x] отдельный review ETag, stale conflict и идемпотентный exact retry;
 - [x] полная metadata-grid mutation, immutable problem revision и обновление
       legacy projection;
-- [x] admin-only aiohttp endpoints, Teacher `403`, publication fail-closed до
-      обоих review шагов;
-- [x] 110 domain/repository/real-aiohttp tests и Ruff PASS.
+- [x] admin-only aiohttp endpoints, Teacher `403`; condition publication
+      fail-closed до обоих review шагов, hint/solution — до matching;
+- [x] 111 domain/repository/real-aiohttp tests и Ruff PASS.
 
 Frontend contracts, Staff workflow, Storybook interaction/visual gate и
 production-build content E2E остаются продолжением Phase 2E; backend proof:

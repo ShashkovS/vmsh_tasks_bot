@@ -1146,13 +1146,24 @@ async def _require_publication_readiness(
     readiness = await repository.get_revision_publication_readiness(
         revision_id=context.revision.id
     )
-    if readiness.is_ready:
+    metadata_required = context.source.kind is ContentKind.CONDITION
+    if (
+        readiness.is_ready
+        if metadata_required
+        else readiness.is_structurally_ready
+    ):
         return
     raise PwaApiError(
         status=422,
-        code="problem_review_incomplete",
+        code=(
+            "problem_review_incomplete"
+            if metadata_required
+            else "problem_matching_incomplete"
+        ),
         message=(
             "Сначала сопоставьте все задачи и подтвердите их метаданные."
+            if metadata_required
+            else "Сначала сопоставьте все задачи материала."
         ),
         details={
             "expectedProblems": readiness.expected_problem_count,
@@ -1878,6 +1889,12 @@ async def _authorized_metadata_grid(
             status=422,
             code="revision_scope_mismatch",
             message="Revision относится к другому групповому занятию",
+        )
+    if context.source.kind is not ContentKind.CONDITION:
+        raise PwaApiError(
+            status=422,
+            code="metadata_requires_condition",
+            message="Метаданные задач редактируются для файла условий",
         )
     return repository, context, actor_user_id
 

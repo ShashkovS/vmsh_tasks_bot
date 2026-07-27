@@ -200,10 +200,11 @@
   PASS. Proof:
   [`phase2-content-assets-http.md`](../../../pwa_tests/reports/phase2-content-assets-http.md).
 - Phase 2E backend добавляет полный immutable positional matching, отдельный
-  review ETag, atomic metadata-grid confirmation и legacy `problems`
-  projection. Teacher получает `403`, stale write — `409`, а publication gate
-  открывается только после обоих review шагов. Domain/repository/real-aiohttp
-  suite — **110 PASS**, Ruff — PASS. Proof:
+  review ETag, atomic condition metadata-grid confirmation и legacy `problems`
+  projection. Teacher получает `403`, stale write — `409`; condition требует
+  matching + metadata, а independently compiled hint/solution — собственного
+  matching без дублирования task metadata. Domain/repository/real-aiohttp
+  suite — **111 PASS**, Ruff — PASS. Proof:
   [`phase2-problem-review-api.md`](../../../pwa_tests/reports/phase2-problem-review-api.md).
 - Phase 2 всё ещё открыт для matching/metadata Staff UI и Storybook,
   Staff-openable generated

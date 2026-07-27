@@ -323,10 +323,16 @@ class RevisionPublicationReadiness:
     structure_matches: bool
 
     @property
-    def is_ready(self) -> bool:
+    def is_structurally_ready(self) -> bool:
         return (
             self.resolved_match_count == self.expected_problem_count
             and self.structure_matches
+        )
+
+    @property
+    def is_ready(self) -> bool:
+        return (
+            self.is_structurally_ready
             and self.reviewed_problem_count + self.omitted_problem_count
             == self.expected_problem_count
         )

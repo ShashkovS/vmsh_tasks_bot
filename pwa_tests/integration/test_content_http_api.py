@@ -1379,6 +1379,71 @@ async def test_solution_publication_fails_closed_without_submission_cutoff(
     assert published.status == 201, await published.text()
 
 
+async def test_hint_requires_matching_but_not_duplicate_metadata_review(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    revision, _ = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="hint",
+        filename="hint-only/hint.tex",
+        source="\\задача Посмотрите на чётность. \\кзадача",
+        review=False,
+    )
+    blocked = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="hint",
+        revision_id=revision["revisionId"],
+    )
+    assert blocked.status == 422
+    assert (await blocked.json())["error"]["code"] == "problem_matching_incomplete"
+
+    match_url = (
+        f"/staff/api/v1/content/revisions/{revision['revisionId']}/problem-matches"
+    )
+    initial_response = await fixture.client.get(
+        match_url,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    initial = await initial_response.json()
+    matched = await fixture.client.put(
+        match_url,
+        json={
+            "matches": [
+                {
+                    "sourceOrdinal": initial["items"][0]["sourceOrdinal"],
+                    "sourceItem": initial["items"][0]["sourceItem"],
+                    "decision": "insert_new",
+                    "problemId": None,
+                }
+            ]
+        },
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial_response.headers["ETag"]),
+    )
+    assert matched.status == 200, await matched.text()
+
+    metadata = await fixture.client.get(
+        f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/metadata-grid",
+        params={"revisionId": revision["revisionId"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert metadata.status == 422
+    assert (await metadata.json())["error"]["code"] == "metadata_requires_condition"
+
+    published = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="hint",
+        revision_id=revision["revisionId"],
+    )
+    assert published.status == 201, await published.text()
+
+
 async def test_lesson_window_cutoff_has_separate_confirmation_audit_and_etag(
     content_http: ContentHttpFixture,
 ):
