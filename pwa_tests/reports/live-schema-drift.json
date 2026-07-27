@@ -1,0 +1,654 @@
+{
+  "actual_pragma_structure_sha256": "0fee119b4a0c95dac79a43907f9c17046b2876144ecf44f553224d4664df9046",
+  "actual_product_sha256": "f87af9f4843dcffe35651780b8b77ab9d1137d54b588423af4a01aa138c981e8",
+  "ddl_text_differences": [
+    {
+      "name": "game_map_chests",
+      "type": "table"
+    },
+    {
+      "name": "game_map_flags",
+      "type": "table"
+    },
+    {
+      "name": "game_map_opened_cells",
+      "type": "table"
+    },
+    {
+      "name": "game_payments",
+      "type": "table"
+    },
+    {
+      "name": "kv",
+      "type": "table"
+    },
+    {
+      "name": "last_keyboards",
+      "type": "table"
+    },
+    {
+      "name": "media_groups",
+      "type": "table"
+    },
+    {
+      "name": "messages_log",
+      "type": "table"
+    },
+    {
+      "name": "problem_complexity",
+      "type": "table"
+    },
+    {
+      "name": "reaction_enum",
+      "type": "table"
+    },
+    {
+      "name": "reaction_type_enum",
+      "type": "table"
+    },
+    {
+      "name": "reactions",
+      "type": "table"
+    },
+    {
+      "name": "signons",
+      "type": "table"
+    },
+    {
+      "name": "states",
+      "type": "table"
+    },
+    {
+      "name": "student_strength",
+      "type": "table"
+    },
+    {
+      "name": "waitlist",
+      "type": "table"
+    },
+    {
+      "name": "webtokens",
+      "type": "table"
+    },
+    {
+      "name": "written_tasks_discussions",
+      "type": "table"
+    },
+    {
+      "name": "written_tasks_queue",
+      "type": "table"
+    },
+    {
+      "name": "zoom_events",
+      "type": "table"
+    },
+    {
+      "name": "zoom_queue",
+      "type": "table"
+    },
+    {
+      "name": "waitlist_by_student",
+      "type": "index"
+    },
+    {
+      "name": "written_tasks_discussions_by_task",
+      "type": "index"
+    },
+    {
+      "name": "written_tasks_queue_by_tst",
+      "type": "index"
+    },
+    {
+      "name": "zoom_queue_by_ts",
+      "type": "index"
+    }
+  ],
+  "expected_pragma_structure_sha256": "e096897c26d5d679718d97106e034e52ee9650bf0dc6686e10fcf36a10d876ba",
+  "expected_product_sha256": "5ba3e4323ba8b0808516bb3986a0460e3d2f0a87d33d351bc9c4161c93d5b594",
+  "format": "vmsh.sqlite-schema-drift/v1",
+  "known_out_of_scope_data_risks": [
+    {
+      "code": "MIGRATION_0038_LEGACY_KV_LOGIN_ROWS",
+      "migration_id": "0038.kv_logins",
+      "summary": "The migration contains legacy kv_login rows; this schema-only command deliberately does not inspect or export their values"
+    }
+  ],
+  "known_schema_defects": [
+    {
+      "code": "LIVE_REACTION_ENUM_TYPE_FK_MISSING",
+      "object": "reaction_enum",
+      "summary": "reaction_type_id has no foreign key to reaction_type_enum"
+    },
+    {
+      "code": "LIVE_REACTIONS_ZOOM_FK_TARGET_INVALID",
+      "object": "reactions",
+      "summary": "zoom_conversation_id targets the absent zoom_conversation.zoom_conversation_id column"
+    }
+  ],
+  "legacy_derived_objects": [
+    {
+      "definition_sha256": "58a287e57c940610b73def77f30e1ae083e0a7fd021de620b5b8107d8ffdf530",
+      "name": "temp_7_window",
+      "structure_sha256": "cb732b99efd18354cc1bb4b89f518203f652c634a03e660cf99368c93d51fbf0",
+      "table_name": "temp_7_window",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "6a68dd3766f20e7165a1830ef0bff281f0fa5e7a2bd823eb51a1d69913f4d3d2",
+      "name": "temp_7_window_3",
+      "structure_sha256": "cb1f154fa29990c3fdb97d2910f3112560660c5cf380455221039b08becd1b5f",
+      "table_name": "temp_7_window_3",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "0399d7ca9a17144fa72408e8e304aacfa5a75d30fddcbb780c307116c2124d42",
+      "name": "temp_from_excel",
+      "structure_sha256": "5858112b76ee8e802f733ad65fe128a46ef862d8f6518373708a7a3f19d1b789",
+      "table_name": "temp_from_excel",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "986aad639f0a0e754f42bf89a564e12f0c4fa5ba28d7943f204413017fd6b20f",
+      "name": "temp_lesson_scores",
+      "structure_sha256": "355e80c5203e5541892dfd863c38f748667c5e118da9b5c11a7d66168672d483",
+      "table_name": "temp_lesson_scores",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "a49906d0207adccb016bc00b9134aafcea5f55b70b1c8d81a427c5c5b00134af",
+      "name": "temp_problem_scores",
+      "structure_sha256": "bbaab51586b5414296ca3a6d32a017d2e0da95415ed94de5cd6ccb7127397412",
+      "table_name": "temp_problem_scores",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "e77206ddcb0d17109ecbf794b4b9776add5499bbc254afd4c858db85a912ee40",
+      "name": "temp_real_problem_scores",
+      "structure_sha256": "e0c3a895f578c3c48ffc30bea56c04ffd0e5e8d62456f4833f25dae156287dfd",
+      "table_name": "temp_real_problem_scores",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "b51f4afc7893a082d1e46decb5095a79602dbac52728b3ea19a93cda0bda4ef3",
+      "name": "temp_result_rolling_window_scores",
+      "structure_sha256": "a95e489687394bdac7bdd6db9f7b9e6d60d658dfb9941db54b72ece93f457100",
+      "table_name": "temp_result_rolling_window_scores",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "05bf39870dde49928032aa9948b8e9b9153d6df6cb088fbd1cdb2ed127a7b79f",
+      "name": "temp_result_rolling_window_scores_3",
+      "structure_sha256": "9426885badf254e4eb32462d34182422d13155b1618bce2d671bf4689d98281d",
+      "table_name": "temp_result_rolling_window_scores_3",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "c6d3d1045c8b7cc6110af38f47a93246c2bfbad0b8e1fc339cdf65d46c7dafb8",
+      "name": "temp_student_visits",
+      "structure_sha256": "7e609ece8a755e9288bb4a1f9076acaa4009386e8180703ed7aff30f7ef469c2",
+      "table_name": "temp_student_visits",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "9ed19b68c77834073db35c84393414494c078794505757269eb8e71af5e72215",
+      "name": "temp_students_ids",
+      "structure_sha256": "dae4a19f8de381c62d8e70a0376a24c502008cc51f6ca57eace700126f045261",
+      "table_name": "temp_students_ids",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "d838538289bf593ec374cd673b57eae5f95c0043d0d91ac85075e0f9af8128b0",
+      "name": "temp_user_decoder",
+      "structure_sha256": "a4c096e3d324544fe4356527573e0ad8f65cfaf1b06b46c29fd37320d62992e5",
+      "table_name": "temp_user_decoder",
+      "type": "table"
+    },
+    {
+      "definition_sha256": "81e19096c84c352aedf29af11297afd24ecc6763f569262c717bcd8b7d63c3ea",
+      "name": "temp_zoom_teacher_work",
+      "structure_sha256": "f1ab1de30ffb2ab1404f577d27dd38dfd6410ee9aeea153ebd156c001de6278d",
+      "table_name": "temp_zoom_teacher_work",
+      "type": "view"
+    }
+  ],
+  "migration": {
+    "infrastructure": {
+      "object_count": 4,
+      "objects": [
+        {
+          "definition_sha256": "daad107a759d89145763ffbebd60d6e303bc403cce27b5cb4c7f74177fb76c00",
+          "name": "_yoyo_log",
+          "structure_sha256": "8d78cfb40317c0c40a732cabf0445da186e2acf99c200859a5d66815ec33af7e",
+          "table_name": "_yoyo_log",
+          "type": "table"
+        },
+        {
+          "definition_sha256": "1c2adb1507626fe81af452f2fcd56960cb2877b05eeb05adec5903255a5e17f0",
+          "name": "_yoyo_migration",
+          "structure_sha256": "abffa9591c6b5483f6a871291c3570024462ac555ae3af94cb4599358fc17b23",
+          "table_name": "_yoyo_migration",
+          "type": "table"
+        },
+        {
+          "definition_sha256": "80b0c0aded16ebb4031c5af828845c919b676016f5b8af534ff7c53b71356eda",
+          "name": "_yoyo_version",
+          "structure_sha256": "ce6c4063aa127eab4b13a730edd7e9efd939f249155ff23cdf9eae9f0b56e97c",
+          "table_name": "_yoyo_version",
+          "type": "table"
+        },
+        {
+          "definition_sha256": "9a52ee4a445becbae7dab682df771afb24778f6e872a704ddd6b9211e3cb664b",
+          "name": "yoyo_lock",
+          "structure_sha256": "e34a65e42403de14da53dcabfa00f0b924994fad6ad9b81c15a64c2eef2624d7",
+          "table_name": "yoyo_lock",
+          "type": "table"
+        }
+      ],
+      "sha256": "9d5f0fd33d7ccfd7253ad2bcbee6294307bc625c646839e5d4fb5edc1a8e6ec5"
+    },
+    "legacy_history": {
+      "count": 24,
+      "sha256": "bdc3316f062496dcd3c7905e73ba3de80e43cd789019fae5afd27d9d4144f254"
+    },
+    "merged_boundary": "0030",
+    "repository_head": [
+      {
+        "id": "0030.initial_merged",
+        "sha256": "59e38f885f3a30189ca48bff81d569984db1dd6bf8445dbbb3272ac8317bcc84"
+      },
+      {
+        "id": "0031.check_stat",
+        "sha256": "c8deb86239cd0157f0d8d198adb73c3f2916e0110e84e10394ed2f7012b435c3"
+      },
+      {
+        "id": "0032.sos_questions",
+        "sha256": "1c952f3e1a83715344c913f69835f9ebb275b748a8c74afbe512a2d95e18a434"
+      },
+      {
+        "id": "0033.verdicts",
+        "sha256": "a5525f13b07ca69a7a170656e4e0c6826cb5050bd9680663f0da3c766d53ba67"
+      },
+      {
+        "id": "0034.surveys",
+        "sha256": "53aa2d8eb672e86ef0dd218957afeeda403526a3b6881a941266a6733a448ef8"
+      },
+      {
+        "id": "0035.new_reation",
+        "sha256": "456b35cf93ae142c560f086a611311a82da86c771fbdaaff78f24f36d8e8532c"
+      },
+      {
+        "id": "0036.settings_and_texts_from_sheet",
+        "sha256": "ab2695131d5768aacf1f115f5206b6298747ca09b3a89f86286690d783365bff"
+      },
+      {
+        "id": "0037.groups",
+        "sha256": "2f97de4673f45d76639a614c907aa270304739ee2aeed3df8722e5c23a972bbc"
+      },
+      {
+        "id": "0038.kv_logins",
+        "sha256": "7f2e56e8509eee557f071f98ad494337793170bd96f033d17b96de49cbd8eba0"
+      }
+    ]
+  },
+  "missing_product_objects": [],
+  "pragma_structure_differences": [
+    {
+      "actual": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction_type_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "b3454f284a7278445e20c9315a15ca229ed1496f67302919293d2511568ea6f0",
+        "foreign_keys": [],
+        "indexes": [],
+        "name": "reaction_enum",
+        "table_name": "reaction_enum",
+        "type": "table"
+      },
+      "expected": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction_type_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "179e78e08ac310a58ae68489a728596aec1a6593e9a9a19f745ee16484527634",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "reaction_type_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_type_id"
+            ],
+            "target_table": "reaction_type_enum"
+          }
+        ],
+        "indexes": [],
+        "name": "reaction_enum",
+        "table_name": "reaction_enum",
+        "type": "table"
+      },
+      "name": "reaction_enum",
+      "type": "table"
+    },
+    {
+      "actual": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ts",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "result_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "zoom_conversation_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction_type_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "7a312b45170c89c9087e0a83885c29f8143256623c170272e1c40396242ca074",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "reaction_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_id"
+            ],
+            "target_table": "reaction_enum"
+          },
+          {
+            "from_columns": [
+              "reaction_type_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_type_id"
+            ],
+            "target_table": "reaction_type_enum"
+          },
+          {
+            "from_columns": [
+              "result_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "results"
+          },
+          {
+            "from_columns": [
+              "zoom_conversation_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "zoom_conversation_id"
+            ],
+            "target_table": "zoom_conversation"
+          }
+        ],
+        "indexes": [],
+        "name": "reactions",
+        "table_name": "reactions",
+        "type": "table"
+      },
+      "expected": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "ts",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "result_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "zoom_conversation_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "reaction_type_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "efc68c34aef91c99509eda1fb7cffcbb8c8cee18086605e344112b0ee5984ebf",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "reaction_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_id"
+            ],
+            "target_table": "reaction_enum"
+          },
+          {
+            "from_columns": [
+              "reaction_type_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_type_id"
+            ],
+            "target_table": "reaction_type_enum"
+          },
+          {
+            "from_columns": [
+              "result_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "results"
+          },
+          {
+            "from_columns": [
+              "zoom_conversation_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "zoom_conversation"
+          }
+        ],
+        "indexes": [],
+        "name": "reactions",
+        "table_name": "reactions",
+        "type": "table"
+      },
+      "name": "reactions",
+      "type": "table"
+    }
+  ],
+  "unexpected_product_objects": []
+}

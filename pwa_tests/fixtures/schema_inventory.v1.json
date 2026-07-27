@@ -1,0 +1,4221 @@
+{
+  "format": "vmsh.sqlite-schema-inventory/v1",
+  "legacy_derived": {
+    "object_count": 0,
+    "objects": [],
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "migration": {
+    "infrastructure": {
+      "object_count": 4,
+      "objects": [
+        {
+          "definition_sha256": "2c7cc1cb678bdaa962fca3bd992101d97bc0507f01b60f34e6a05b3941c5c352",
+          "name": "_yoyo_log",
+          "structure_sha256": "60f51dc662ba6e3d0fdcfe14b6b66d380f127ba55831947ed4bdb5c10a89d39e",
+          "table_name": "_yoyo_log",
+          "type": "table"
+        },
+        {
+          "definition_sha256": "8a142fc5e3a5ee7850a4ce209a3c3b73259703a5ea6babbb5e1957bfd7d95f34",
+          "name": "_yoyo_migration",
+          "structure_sha256": "a8bbbebe93a94d7057787a084412b9b7a73cbe6aebddcd27a503715720eae413",
+          "table_name": "_yoyo_migration",
+          "type": "table"
+        },
+        {
+          "definition_sha256": "56c92df046f75927f0391e841d8d3fef5b5ca2a4c7e8de459647954f20ff9d8f",
+          "name": "_yoyo_version",
+          "structure_sha256": "2d805770e1eb0af7f0e23c8372cc3b456b2425d4acc4315f2ac420d87832a328",
+          "table_name": "_yoyo_version",
+          "type": "table"
+        },
+        {
+          "definition_sha256": "25eb72a6cbcdd101b1dceb32fcd921d7f6698254a67c5ba4673c85d3af30527e",
+          "name": "yoyo_lock",
+          "structure_sha256": "5b88bf94802960391f33ea99b3240671d3c623a90a505ba5678154370cc6405d",
+          "table_name": "yoyo_lock",
+          "type": "table"
+        }
+      ],
+      "sha256": "6165b3b3c42a015f881cd8743790f27102fd22d28f92e7d03bb06b091053a852"
+    },
+    "legacy_history": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "merged_boundary": "0030",
+    "repository_head": [
+      {
+        "id": "0030.initial_merged",
+        "sha256": "59e38f885f3a30189ca48bff81d569984db1dd6bf8445dbbb3272ac8317bcc84"
+      },
+      {
+        "id": "0031.check_stat",
+        "sha256": "c8deb86239cd0157f0d8d198adb73c3f2916e0110e84e10394ed2f7012b435c3"
+      },
+      {
+        "id": "0032.sos_questions",
+        "sha256": "1c952f3e1a83715344c913f69835f9ebb275b748a8c74afbe512a2d95e18a434"
+      },
+      {
+        "id": "0033.verdicts",
+        "sha256": "a5525f13b07ca69a7a170656e4e0c6826cb5050bd9680663f0da3c766d53ba67"
+      },
+      {
+        "id": "0034.surveys",
+        "sha256": "53aa2d8eb672e86ef0dd218957afeeda403526a3b6881a941266a6733a448ef8"
+      },
+      {
+        "id": "0035.new_reation",
+        "sha256": "456b35cf93ae142c560f086a611311a82da86c771fbdaaff78f24f36d8e8532c"
+      },
+      {
+        "id": "0036.settings_and_texts_from_sheet",
+        "sha256": "ab2695131d5768aacf1f115f5206b6298747ca09b3a89f86286690d783365bff"
+      },
+      {
+        "id": "0037.groups",
+        "sha256": "2f97de4673f45d76639a614c907aa270304739ee2aeed3df8722e5c23a972bbc"
+      },
+      {
+        "id": "0038.kv_logins",
+        "sha256": "7f2e56e8509eee557f071f98ad494337793170bd96f033d17b96de49cbd8eba0"
+      }
+    ]
+  },
+  "product": {
+    "object_count": 47,
+    "objects": [
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "command_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "x",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "y",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "bonus",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "command_id",
+                "seqno": 1
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "x",
+                "seqno": 2
+              },
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "y",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "sqlite_autoindex_game_map_chests_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "game_map_chests",
+        "object_sha256": "adc2cf401f96c8ae2001debfe8a5d2ba58aa61445d63a262323627c92d5809b2",
+        "sql": "CREATE TABLE game_map_chests\n(\n    id         INTEGER primary key,\n    ts         timestamp not null,\n    student_id INTEGER   not null references users,\n    command_id INTEGER   not null,\n    x          INTEGER   not null,\n    y          INTEGER   not null,\n    bonus      INTEGER   not null,\n    unique (student_id, command_id, x, y)\n);",
+        "table_name": "game_map_chests",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "command_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "x",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "y",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "command_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_game_map_flags_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "game_map_flags",
+        "object_sha256": "8ed06d8ce4109ccaa711387bec0e5bdabd85d85c38ca4d9f4be07f595ba06afb",
+        "sql": "CREATE TABLE game_map_flags\n(\n    id         INTEGER primary key,\n    student_id INTEGER not null references users,\n    command_id INTEGER not null,\n    x          INTEGER not null,\n    y          INTEGER not null,\n    unique (student_id, command_id)\n);",
+        "table_name": "game_map_flags",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "command_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "x",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "y",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "command_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "x",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "y",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_game_map_opened_cells_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "game_map_opened_cells",
+        "object_sha256": "f387f4533dfb41cee5f3a4699902763b28dec580ca9cb05147dd50374ee627d8",
+        "sql": "CREATE TABLE game_map_opened_cells\n(\n    id         INTEGER primary key,\n    command_id INTEGER not null,\n    x          INTEGER not null,\n    y          INTEGER not null,\n    unique (command_id, x, y)\n);",
+        "table_name": "game_map_opened_cells",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "amount",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "cell_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "cell_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "game_map_opened_cells"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "game_payments",
+        "object_sha256": "71be42d63f3a5e385efcb55625329f5fd8bbcda0023d080e1f324f4760b4d4b6",
+        "sql": "CREATE TABLE game_payments\n(\n    id         INTEGER primary key,\n    ts         timestamp not null,\n    student_id INTEGER   not null references users,\n    amount     INTEGER   not null,\n    cell_id    INTEGER   not null references game_map_opened_cells\n);",
+        "table_name": "game_payments",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "command_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_game_students_commands_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "game_students_commands",
+        "object_sha256": "2f78d5447b8766fa6d998a159e664c874c6e7e4c7fd146015b2b49587a5b950f",
+        "sql": "CREATE TABLE \"game_students_commands\"\n(\n    id         INTEGER\n        primary key,\n    student_id INTEGER not null\n        unique\n        references users,\n    command_id INTEGER not null,\n    group_id   text\n        references groups\n);",
+        "table_name": "game_students_commands",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "short_code",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "broadcast_code",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "tg_command",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "conditions_url",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "tasks_header_template",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "switch_message",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "sort_order",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "is_active",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "is_default",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "allow_self_switch",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "is_system",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "REAL",
+            "default_sql": "1.0",
+            "hidden": 0,
+            "name": "score_weight",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_groups_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "broadcast_code",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_groups_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "tg_command",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_groups_3",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "groups",
+        "object_sha256": "96da10f7806ca33c6d0f7ddce8e4b508d902ce950d4fe2ba7fc94da8349893fb",
+        "sql": "CREATE TABLE groups\n(\n    group_id              text primary key,\n    short_code            text    not null,\n    broadcast_code        text unique,\n    tg_command            text unique,\n    public_name           text    not null,\n    conditions_url        text,\n    tasks_header_template text,\n    switch_message        text,\n    sort_order            integer,\n    is_active             integer not null default 1,\n    is_default            integer not null default 0,\n    allow_self_switch     integer not null default 0,\n    is_system             integer not null default 0,\n    score_weight          real    not null default 1.0\n);",
+        "table_name": "groups",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "key",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "value",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "key",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_kv_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "kv",
+        "object_sha256": "7832da36416c771a2116d7fd18ca326147fd164313e2908cb969ead7ebddeb5e",
+        "sql": "CREATE TABLE kv\n(\n    key   text unique,\n    value text\n);",
+        "table_name": "kv",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "token",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "kv_login",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "kv_password",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "user_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_kv_logins_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "kv_logins",
+        "object_sha256": "dafbe7fe0fe2f780a8ef1b0dfb779369461bacfa7c47cc0077748d47e171a698",
+        "sql": "CREATE TABLE kv_logins\n(\n    id          integer not null            primary key,\n    user_id     integer not null\n        constraint kv_logins_pk_2\n            unique\n        constraint kv_logins_users_id_fk\n            references users,\n    token       text    not null,\n    kv_login    text,\n    kv_password text\n);",
+        "table_name": "kv_logins",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "chat_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "tg_msg_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "last_keyboards",
+        "object_sha256": "d28d20aaaa7491fdd8b7d3ff5b3b42c193e3fa81ffea087aa4005c6a8570250d",
+        "sql": "CREATE TABLE last_keyboards\n(\n    user_id   INTEGER not null primary key references users,\n    chat_id   INTEGER not null,\n    tg_msg_id INTEGER not null\n);",
+        "table_name": "last_keyboards",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_lessons_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "lessons",
+        "object_sha256": "f2fa62ad5df32f061cff16ad9ff8b985650699bfbf5bb65311383b51e372b3bb",
+        "sql": "CREATE TABLE \"lessons\"\n(\n    id       INTEGER\n        primary key,\n    group_id text\n        references groups,\n    lesson   INTEGER not null,\n    unique (lesson, group_id)\n);",
+        "table_name": "lessons",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "media_group_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "media_group_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_media_groups_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "media_groups",
+        "object_sha256": "5ef2603967770172141a1fb7d3cdc9ff77f972b83c66e86ff51232c98975d10d",
+        "sql": "CREATE TABLE media_groups\n(\n    media_group_id INTEGER   not null primary key unique,\n    problem_id     INTEGER   not null references problems,\n    ts             timestamp not null\n);",
+        "table_name": "media_groups",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "BOOLEAN",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "from_bot",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "tg_msg_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "chat_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "msg_text",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "attach_path",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_messages_log_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "messages_log",
+        "object_sha256": "e0c090b5ce21de0ce5ae1ea5089b5b54034b949502b1506f18d03d938db71b6c",
+        "sql": "CREATE TABLE messages_log\n(\n    id          INTEGER primary key unique,\n    from_bot    boolean   not null,\n    tg_msg_id   INTEGER   not null,\n    chat_id     INTEGER   not null,\n    student_id  INTEGER references users,\n    teacher_id  INTEGER references users,\n    ts          timestamp not null,\n    msg_text    TEXT,\n    attach_path TEXT\n);",
+        "table_name": "messages_log",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "synonyms",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "DOUBLE",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "for_weak",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "DOUBLE",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "for_strong",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "synonyms",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_problem_complexity_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "problem_complexity",
+        "object_sha256": "8c0aaf9c2d175ed2f21d1665dff1a67c0045a2419896bc20b213f3ef3382bf90",
+        "sql": "CREATE TABLE problem_complexity\n(\n    synonyms   TEXT   not null primary key,\n    for_weak   DOUBLE not null,\n    for_strong DOUBLE not null\n);",
+        "table_name": "problem_complexity",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "prob",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "item",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "title",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "prob_text",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "prob_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ans_type",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ans_validation",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "validation_error",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "cor_ans",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "cor_ans_checker",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "wrong_ans",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "congrat",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": "''",
+            "hidden": 0,
+            "name": "synonyms",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "synonyms",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "problems_by_synonyms",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "prob",
+                "seqno": 2
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "item",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "sqlite_autoindex_problems_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "problems",
+        "object_sha256": "08b924dee759e275f8a223eac905bdc4a3c1969b78a0e11de187686cbbcf49c2",
+        "sql": "CREATE TABLE \"problems\"\n(\n    id               INTEGER\n        primary key,\n    group_id         text\n        references groups,\n    lesson           INTEGER         not null,\n    prob             INTEGER         not null,\n    item             TEXT            not null,\n    title            text            not null,\n    prob_text        text            not null,\n    prob_type        integer         not null,\n    ans_type         integer,\n    ans_validation   text,\n    validation_error text,\n    cor_ans          text,\n    cor_ans_checker  text,\n    wrong_ans        text,\n    congrat          text,\n    synonyms         text default '' not null,\n    unique (group_id, lesson, prob, item)\n);",
+        "table_name": "problems",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "BOOLEAN",
+            "default_sql": "false",
+            "hidden": 0,
+            "name": "answered",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "chat_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "question_msg_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "question_text",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "sos_chat_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "sos_header_msg_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "sos_forwarded_msg_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "answer_text",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "sos_chat_id",
+                "seqno": 0
+              },
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "sos_forwarded_msg_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_questions_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "questions",
+        "object_sha256": "3e076f951e06f35e4bff3169edcb12de79c2e70a5d32fa8537d271d449886d9e",
+        "sql": "CREATE TABLE questions\n(\n    id                   INTEGER primary key,\n    ts                   TIMESTAMP not null,\n    answered             BOOLEAN   not null default false,\n\n    user_id              INTEGER references users,\n    chat_id              INTEGER   not null,\n    question_msg_id      INTEGER   not null,\n    question_text        TEXT      null,\n\n    sos_chat_id          INTEGER   not null,\n    sos_header_msg_id    INTEGER   not null,\n    sos_forwarded_msg_id INTEGER   not null,\n    answer_text          TEXT      null,\n    unique (sos_chat_id, sos_forwarded_msg_id)\n);",
+        "table_name": "questions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reaction_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reaction",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reaction_type_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "reaction_type_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_type_id"
+            ],
+            "target_table": "reaction_type_enum"
+          }
+        ],
+        "indexes": [],
+        "name": "reaction_enum",
+        "object_sha256": "179e78e08ac310a58ae68489a728596aec1a6593e9a9a19f745ee16484527634",
+        "sql": "CREATE TABLE reaction_enum\n(\n    reaction_id      INTEGER primary key,\n    reaction         TEXT    not null,\n    reaction_type_id INTEGER not null references reaction_type_enum\n);",
+        "table_name": "reaction_enum",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reaction_type_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reaction_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "reaction_type",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_reaction_type_enum_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "reaction_type_enum",
+        "object_sha256": "93ad4fd3e946a924828dbe4ad70f260d8bdf5c9c9e59ea33fb09f44a975a08e1",
+        "sql": "CREATE TABLE reaction_type_enum\n(\n    reaction_type_id INTEGER primary key,\n    reaction_type    TEXT not null unique\n);",
+        "table_name": "reaction_type_enum",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "result_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "zoom_conversation_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reaction_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reaction_type_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "reaction_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_id"
+            ],
+            "target_table": "reaction_enum"
+          },
+          {
+            "from_columns": [
+              "reaction_type_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_type_id"
+            ],
+            "target_table": "reaction_type_enum"
+          },
+          {
+            "from_columns": [
+              "result_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "results"
+          },
+          {
+            "from_columns": [
+              "zoom_conversation_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "zoom_conversation"
+          }
+        ],
+        "indexes": [],
+        "name": "reactions",
+        "object_sha256": "efc68c34aef91c99509eda1fb7cffcbb8c8cee18086605e344112b0ee5984ebf",
+        "sql": "CREATE TABLE reactions\n(\n    id                   INTEGER primary key,\n    ts                   TEXT,\n    result_id            INT references results,\n    zoom_conversation_id INT references zoom_conversation,\n    reaction_id          INT not null references reaction_enum,\n    reaction_type_id     INT not null references reaction_type_enum\n);",
+        "table_name": "reactions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "verdict",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "answer",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "res_type",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INT",
+            "default_sql": "null",
+            "hidden": 0,
+            "name": "check_time_spent_sec",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "zoom_conversation_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "zoom_conversation_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "zoom_conversation"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "results_by_student_problem",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "teacher_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "results_teacher_id_lesson_index",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          }
+        ],
+        "name": "results",
+        "object_sha256": "643919d4c6f267ea1a298b0e763a777eef759ac445c9d00b7e5c077f1bf986f3",
+        "sql": "CREATE TABLE \"results\"\n(\n    id                   INTEGER\n        primary key,\n    student_id           INTEGER   not null\n        references users,\n    problem_id           INTEGER   not null\n        references problems,\n    group_id             text\n        references groups,\n    lesson               INTEGER   not null,\n    teacher_id           INTEGER\n        references users,\n    ts                   timestamp not null,\n    verdict              integer   not null,\n    answer               TEXT,\n    res_type             integer,\n    check_time_spent_sec int default null,\n    zoom_conversation_id INT\n        references zoom_conversation\n);",
+        "table_name": "results",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "chat_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "first_name",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "last_name",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "username",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "token",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "signons",
+        "object_sha256": "9aa7f5a203f06860a2b14a6b3c55c1ecc8150efbfc515111e6cd4cb05ad0e2c9",
+        "sql": "CREATE TABLE signons\n(\n    ts         timestamp not null,\n    user_id    INTEGER references users,\n    chat_id    INTEGER   not null,\n    first_name TEXT,\n    last_name  TEXT,\n    username   TEXT,\n    token      text\n);",
+        "table_name": "signons",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "last_student_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "last_teacher_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "oral_problem_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "BLOB",
+            "default_sql": "null",
+            "hidden": 0,
+            "name": "info",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "last_student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "last_teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "oral_problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "user_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_states_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "states",
+        "object_sha256": "b9f5cbb59af384c78962a4c2125d22a00ae91fd0538ba72aa47ee89f3a06f75e",
+        "sql": "CREATE TABLE states\n(\n    user_id         INTEGER primary key unique references users,\n    state           INTEGER,\n    problem_id      INTEGER references problems,\n    last_student_id INTEGER references users,\n    last_teacher_id INTEGER references users,\n    oral_problem_id INTEGER references users,\n    info            blob default null\n);",
+        "table_name": "states",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "DOUBLE",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "simple_prob",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "DOUBLE",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "compl_prob",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [],
+        "name": "student_strength",
+        "object_sha256": "a4ce4870d3eb66d9934afbf194f58aadea358a08d92364eff2a5a482f8dba974",
+        "sql": "CREATE TABLE student_strength\n(\n    student_id  integer not null primary key,\n    simple_prob DOUBLE  not null,\n    compl_prob  DOUBLE  not null\n);",
+        "table_name": "student_strength",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "survey_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "survey_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "surveys"
+          },
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "user_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_survey_assigns_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "survey_assigns",
+        "object_sha256": "0fab9f07d545e2f25eec3e684c1ce93c803faa0fb41925760e2b76bb7305d3ac",
+        "sql": "CREATE TABLE survey_assigns\n(\n    id        INTEGER primary key,\n    user_id   INTEGER not null references users,\n    survey_id INTEGER not null references surveys,\n    unique (user_id)\n);",
+        "table_name": "survey_assigns",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "survey_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "text",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "survey_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "surveys"
+          }
+        ],
+        "indexes": [],
+        "name": "survey_choices",
+        "object_sha256": "bf0a9713953f322388368daaf7f17c54038308d3087be1c214ccc6d7e632d202",
+        "sql": "CREATE TABLE survey_choices\n(\n    id        INTEGER primary key,\n    survey_id INTEGER not null references surveys,\n    text      TEXT    not null\n);",
+        "table_name": "survey_choices",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "survey_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "selection_ids",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "survey_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "surveys"
+          },
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "survey_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "user_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_survey_results_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "survey_results",
+        "object_sha256": "d689fd86fbfad076d718891263856c613c41dc99b54914d438142c434b0a90c8",
+        "sql": "CREATE TABLE survey_results\n(\n    id            INTEGER primary key,\n    survey_id     INTEGER   not null references surveys,\n    user_id       INTEGER   not null references users,\n    selection_ids TEXT      not null,\n    ts            timestamp not null,\n    unique (survey_id, user_id)\n);",
+        "table_name": "survey_results",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "CHAR(1)",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "survey_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "BOOL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "is_active",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "question",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [],
+        "name": "surveys",
+        "object_sha256": "f7c5874d779aaf3bcd3a9acfd330077c80a45faaf8569d4d715bebc9f487c376",
+        "sql": "CREATE TABLE surveys\n(\n    id          INTEGER primary key,\n    survey_type CHAR(1)   not null,\n    is_active   BOOL      not null,\n    question    TEXT      not null,\n    ts          timestamp not null\n);",
+        "table_name": "surveys",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "change_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "new_value",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "user_changes_log",
+        "object_sha256": "21596c5782299a32bb75240e9a85c976318e34f7ea1c107a11aeedf8d7b9fac3",
+        "sql": "CREATE TABLE user_changes_log\n(\n    ts          timestamp not null,\n    user_id     INTEGER   not null references users,\n    change_type text      not null,\n    new_value   text      not null\n);",
+        "table_name": "user_changes_log",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "chat_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "surname",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "middlename",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "token",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "online",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "grade",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "birthday",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "allowed_groups",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "chat_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_users_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "token",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_users_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "users",
+        "object_sha256": "b4e509bf6d252067f01764e4c9687429da9c4e782a71cbd1203ef22020ff94d5",
+        "sql": "CREATE TABLE \"users\"\n(\n    id             INTEGER\n        primary key,\n    chat_id        INTEGER\n        unique,\n    type           INTEGER not null,\n    group_id       text\n        references groups,\n    name           TEXT    not null,\n    surname        TEXT    not null,\n    middlename     TEXT,\n    token          TEXT\n        unique,\n    online         INTEGER,\n    grade          int,\n    birthday       int,\n    allowed_groups text\n);",
+        "table_name": "users",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "tick",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "val",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [],
+        "name": "verdicts",
+        "object_sha256": "2fd62a8f7cbc8099088be9501a0e2df3df04c3e4fa46e9d554e145f68e3e898c",
+        "sql": "CREATE TABLE verdicts\n(\n    id   INTEGER primary key,\n    tick TEXT not null,\n    val  REAL not null\n);",
+        "table_name": "verdicts",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entered",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_waitlist_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_waitlist_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "waitlist_by_student",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "waitlist",
+        "object_sha256": "b5c416b00d5e8b639434e6e30d264202c2d09add5f70674b2173cc6f3713a9ab",
+        "sql": "CREATE TABLE waitlist\n(\n    id         INTEGER primary key unique,\n    student_id INTEGER   not null unique references users,\n    entered    timestamp not null,\n    problem_id INTEGER   not null references problems\n);",
+        "table_name": "waitlist",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "webtoken",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "user_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_webtokens_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "webtoken",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_webtokens_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "webtokens",
+        "object_sha256": "08ecf5b7d6f1132d5cc229e6870f81f25b696d63c2717a9ad3421e0edec7d979",
+        "sql": "CREATE TABLE webtokens\n(\n    user_id  INTEGER primary key unique references users,\n    webtoken TEXT not null unique\n);",
+        "table_name": "webtokens",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "text",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "attach_path",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "chat_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "tg_msg_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_written_tasks_discussions_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ts",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "written_tasks_discussions_by_task",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "written_tasks_discussions",
+        "object_sha256": "2ad1e4dd5e9bcbf759ffe85685fe85225508ecaff766748f7ac5256b145a090c",
+        "sql": "CREATE TABLE written_tasks_discussions\n(\n    id          INTEGER primary key unique,\n    ts          timestamp not null,\n    student_id  INTEGER   not null references users,\n    problem_id  INTEGER   not null references problems,\n    teacher_id  INTEGER references users,\n    text        TEXT,\n    attach_path TEXT,\n    chat_id     INTEGER,\n    tg_msg_id   INTEGER\n);",
+        "table_name": "written_tasks_discussions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "cur_status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "teacher_ts",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_written_tasks_queue_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_written_tasks_queue_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "ts",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "written_tasks_queue_by_tst",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "written_tasks_queue",
+        "object_sha256": "675764d6f7e92ac4bb5838400a038fa16a6d152debab7b749b284b71ae3ebe0c",
+        "sql": "CREATE TABLE written_tasks_queue\n(\n    id         INTEGER primary key unique,\n    ts         timestamp not null,\n    student_id INTEGER   not null references users,\n    problem_id INTEGER   not null references problems,\n    cur_status INTEGER   not null,\n    teacher_ts TIMESTAMP,\n    teacher_id TIMESTAMP references users,\n    unique (student_id, problem_id)\n);",
+        "table_name": "written_tasks_queue",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "value",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "change_ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "key",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_z_settings_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "z_settings",
+        "object_sha256": "afc43908180f2d62d649626d71391331e40915e8b5c89cedd31832f5e47e0542",
+        "sql": "CREATE TABLE z_settings\n(\n    id        INTEGER primary key,\n    key       text      not null unique,\n    value     text      not null,\n    change_ts timestamp not null\n);",
+        "table_name": "z_settings",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "value",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "change_ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "key",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_z_ui_messages_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "z_ui_messages",
+        "object_sha256": "e9c0484e9c87fb07a68d3fceab449ac2932c80cb3f18b08a33ed131e2c3e0c21",
+        "sql": "CREATE TABLE z_ui_messages\n(\n    id        INTEGER primary key,\n    key       text      not null unique,\n    value     text      not null,\n    change_ts timestamp not null\n);",
+        "table_name": "z_ui_messages",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "teacher_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "lesson",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "check_time_spent_sec",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "student_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "teacher_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "zoom_conversation",
+        "object_sha256": "e612e3688f8f5b8078a5018b18c337f166465f5127a44529a44d7e97cc5beb92",
+        "sql": "CREATE TABLE \"zoom_conversation\"\n(\n    id                   INTEGER\n        primary key,\n    ts                   TEXT    not null,\n    student_id           INTEGER not null\n        references users,\n    teacher_id           INTEGER not null\n        references users,\n    group_id             text\n        references groups,\n    lesson               INTEGER not null,\n    check_time_spent_sec INTEGER\n);",
+        "table_name": "zoom_conversation",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "event_ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "event",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "zoom_user_name",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "zoom_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "breakout_room_uuid",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [],
+        "name": "zoom_events",
+        "object_sha256": "0416a4873624b38425dc685d0dd05e6d7ba0619049171b40e44588f8944e6273",
+        "sql": "CREATE TABLE zoom_events\n(\n    id                 INTEGER primary key,\n    event_ts           TIMESTAMP not null,\n    event              TEXT      not null,\n    zoom_user_name     TEXT,\n    zoom_user_id       INTEGER,\n    breakout_room_uuid TEXT,\n    user_id            INTEGER references users\n);",
+        "table_name": "zoom_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "zoom_user_name",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TIMESTAMP",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "enter_ts",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "zoom_user_name",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_zoom_queue_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "enter_ts",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "zoom_queue_by_ts",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "zoom_queue",
+        "object_sha256": "9cf54e253c45ba257fe65c37e73976aec0bf4d81ef56659e45b8dfc6b31ec25c",
+        "sql": "CREATE TABLE zoom_queue\n(\n    zoom_user_name TEXT      not null primary key unique,\n    enter_ts       timestamp not null,\n    status         INTEGER   not null\n);",
+        "table_name": "zoom_queue",
+        "type": "table"
+      },
+      {
+        "name": "problems_by_synonyms",
+        "object_sha256": "d245a446fd401ab017afda21ee18b68f99eb6367800613e1b901b4bc3ca6bfe3",
+        "sql": "CREATE INDEX problems_by_synonyms\n    on problems (synonyms);",
+        "table_name": "problems",
+        "type": "index"
+      },
+      {
+        "name": "results_by_student_problem",
+        "object_sha256": "362c3ddad4e8595680d39d8eb4b1d3e3310ec27a47bf3992028f538f99200924",
+        "sql": "CREATE INDEX results_by_student_problem\n    on results (student_id, problem_id);",
+        "table_name": "results",
+        "type": "index"
+      },
+      {
+        "name": "results_teacher_id_lesson_index",
+        "object_sha256": "afda6c8f333a608b8e3f018198f1d1ee776ef5706fb6c76cfc921d1490d01a09",
+        "sql": "CREATE INDEX results_teacher_id_lesson_index\n    on results (teacher_id, lesson)\n    where res_type = 2;",
+        "table_name": "results",
+        "type": "index"
+      },
+      {
+        "name": "waitlist_by_student",
+        "object_sha256": "76283c0c7cd21191167a7cd7c4f44c87769d4b7e9a3781a15740a358a1ad2549",
+        "sql": "CREATE INDEX waitlist_by_student\n    on waitlist (student_id);",
+        "table_name": "waitlist",
+        "type": "index"
+      },
+      {
+        "name": "written_tasks_discussions_by_task",
+        "object_sha256": "3188365dea1de4944de23ea037e4845161ff6f66e3a621d12b14a913526221d6",
+        "sql": "CREATE INDEX written_tasks_discussions_by_task\n    on written_tasks_discussions (student_id, problem_id, ts);",
+        "table_name": "written_tasks_discussions",
+        "type": "index"
+      },
+      {
+        "name": "written_tasks_queue_by_tst",
+        "object_sha256": "b1af0437904580d45d086519c87acf2cba2a495e7181f5979c73a5991851fb97",
+        "sql": "CREATE INDEX written_tasks_queue_by_tst\n    on written_tasks_queue (ts desc);",
+        "table_name": "written_tasks_queue",
+        "type": "index"
+      },
+      {
+        "name": "zoom_queue_by_ts",
+        "object_sha256": "b1224dc97407d8fac7e041777ed03c5b4b268eb25869ba509e7ac6e87785141d",
+        "sql": "CREATE INDEX zoom_queue_by_ts\n    on zoom_queue (enter_ts);",
+        "table_name": "zoom_queue",
+        "type": "index"
+      },
+      {
+        "name": "reaction_enum_view",
+        "object_sha256": "96a5dfdd0b39495bbf83a3681c38ece482cc1ecd19e9e2304fd8e96cc8d0495b",
+        "sql": "CREATE VIEW reaction_enum_view AS\nSELECT *\nFROM reaction_enum\n         JOIN reaction_type_enum USING (reaction_type_id);",
+        "table_name": "reaction_enum_view",
+        "type": "view"
+      },
+      {
+        "name": "reaction_view",
+        "object_sha256": "3e6893a833eed61f9a5ccb7a6f016e3ec19585dc04d24ea16ed5a6051fe264ec",
+        "sql": "CREATE VIEW reaction_view AS\nSELECT rct.ts,\n       reaction_type,\n       problem_id,\n       result_id,\n       stud.name || ' ' || stud.surname || ' ' || stud.middlename    AS student_name,\n       reaction_enum.reaction,\n       teach.name || ' ' || teach.surname || ' ' || teach.middlename AS teacher_name,\n       coalesce(r.lesson, zc.lesson)                                 as lesson,\n       coalesce(r.group_id, zc.group_id)                             as group_id,\n       verdict,\n       coalesce(r.check_time_spent_sec, zc.check_time_spent_sec)     as check_time_spent_sec\nFROM reactions rct\n         JOIN reaction_enum USING (reaction_id)\n         JOIN reaction_type_enum USING (reaction_type_id)\n         LEFT JOIN results r ON rct.result_id = r.id\n         LEFT JOIN zoom_conversation zc on rct.zoom_conversation_id = zc.id\n         LEFT JOIN users AS stud ON (stud.id = coalesce(r.student_id, zc.student_id))\n         LEFT JOIN users AS teach ON (teach.id = coalesce(r.teacher_id, zc.teacher_id));",
+        "table_name": "reaction_view",
+        "type": "view"
+      }
+    ],
+    "pragma_structure_sha256": "e096897c26d5d679718d97106e034e52ee9650bf0dc6686e10fcf36a10d876ba",
+    "sha256": "5ba3e4323ba8b0808516bb3986a0460e3d2f0a87d33d351bc9c4161c93d5b594"
+  },
+  "source_kind": "repository-migration-head"
+}

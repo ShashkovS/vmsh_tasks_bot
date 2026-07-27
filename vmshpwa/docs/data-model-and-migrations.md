@@ -47,6 +47,14 @@ One-time import текущего Excel-export использует `IDd`, `Ур�
 
 Любая будущая миграция должна определить backfill, совместимость Telegram reads/writes, rollback, indexes, data validation и тест на snapshot исторической базы. Удаление legacy column возможно только после полного цикла, когда ни bot, ни Staff, ни jobs его не используют.
 
+## Канонический baseline схемы
+
+Точное состояние до первой бизнес-миграции воспроизводится из repository migrations и проверяется `db_methods/pwa/schema_inventory.py`. `pwa_tests/fixtures/schema_inventory.v1.json` содержит schema-only DDL, `table_xinfo`, foreign keys и index metadata; `schema_snapshot.sql` и `docs/db_structure.sql` генерируются из него и не используются для bootstrap. Значения product rows согласованной live-БД, включая исторические `kv_logins`, не выбираются и не попадают в artifacts. Live DDL и выражения `DEFAULT` читаются только в памяти для сравнения и сериализуются как безопасная структура/fingerprints; fresh snapshot содержит migration-authored DDL, но не DML-строки миграций.
+
+`make pwa-schema-check` строит временную базу до migration head и сверяет committed artifacts; отдельный unit-test доказывает воспроизводимость на двух независимо созданных базах. `make pwa-schema-live-check` открывает согласованный `db/vmsh.db` через SQLite `mode=ro`, включает `query_only`, держит одну read transaction и сверяет обезличенный drift report; исходный файл не меняется. Пишущие `*-update` цели атомарно заменяют только пять заранее заданных repository-artifacts — inventory, два SQL snapshot и два live-report — и отвергают произвольный output path.
+
+Baseline зафиксировал 38 product tables, 7 explicit indexes и 2 views. В согласованной live-БД дополнительно находятся 12 явно перечисленных derived `temp_*` objects и два структурных дефекта: отсутствующий FK `reaction_enum → reaction_type_enum` и неверная FK-цель `reactions.zoom_conversation_id`. Они не нормализуются как «эквивалентный SQL»: до новых reaction writes требуется отдельная forward migration. Всего есть 25 DDL-text differences: два совпадают с указанными PRAGMA-дефектами, остальные 23 являются только текстовыми. Отчёт также фиксирует структуру yoyo и каждого allowlisted derived object. Live SQL и выражения `DEFAULT` никогда не сериализуются: сохраняются безопасные структурные сведения и SHA-256 fingerprints.
+
 ## Многокурсовое расширение
 
 Целевые таблицы `courses`, расширенная `groups`, `course_enrollments`, `course_group_access`, `course_enrollment_events`, `staff_scopes`, `course_lessons`, `group_lessons`, schedule rules/overrides, synonym groups/members, `telegram_bindings` и `in_person_events` описаны в [courses-groups-and-lessons.md](courses-groups-and-lessons.md). Этот документ не означает, что миграции уже созданы.

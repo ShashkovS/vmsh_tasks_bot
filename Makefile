@@ -95,6 +95,19 @@ pwa-golden-check:
 pwa-golden-update:
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.golden_corpus write
 
+.PHONY: pwa-schema-check pwa-schema-update pwa-schema-live-check pwa-schema-live-update
+pwa-schema-check:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.schema_inventory check
+
+pwa-schema-update:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.schema_inventory generate --write
+
+pwa-schema-live-check:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.schema_inventory check-live --database db/vmsh.db
+
+pwa-schema-live-update:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.schema_inventory report-live --database db/vmsh.db --write
+
 .PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-visual pwa-visual-update telegram-history-test
 pwa-format:
 	cd $(PWA_DIR) && CI=true pnpm format
