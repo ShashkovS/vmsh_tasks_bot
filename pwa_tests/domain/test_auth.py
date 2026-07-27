@@ -111,6 +111,8 @@ def test_refresh_cookie_round_trip_and_hmac_is_peppered():
     parsed = parse_refresh_cookie(pair.cookie_value)
 
     assert parsed == pair
+    assert len(pair.public_id) == 32
+    assert set(pair.public_id) <= set("0123456789abcdef")
     assert hash_refresh_secret(pair.raw_refresh_secret, b"p" * 32) != hash_refresh_secret(
         pair.raw_refresh_secret, b"q" * 32
     )

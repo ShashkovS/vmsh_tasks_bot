@@ -204,7 +204,9 @@ class CredentialHasher:
 
 def create_session_token_pair() -> SessionTokenPair:
     return SessionTokenPair(
-        public_id=secrets.token_urlsafe(18),
+        # Public IDs follow the lowercase canonical contract consumed by Zod;
+        # the refresh secret remains independent high-entropy URL-safe data.
+        public_id=secrets.token_hex(16),
         raw_refresh_secret=secrets.token_urlsafe(32),
     )
 
@@ -290,4 +292,3 @@ class AccessTokenCodec:
         if not isinstance(payload["sv"], int) or payload["sv"] <= 0:
             return None
         return payload
-
