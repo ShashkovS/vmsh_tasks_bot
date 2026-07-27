@@ -29,7 +29,7 @@ Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, 
 
 ## CSP
 
-CSP обязательна с первого production deployment. Конкретная nginx policy задаётся после фиксации hostnames и включает только собственные scripts/styles/fonts, audience API/WebSocket, настроенный Beget media origin, Web Push и Sentry ingest. `unsafe-eval` запрещён; inline allowances нельзя добавлять без причины и теста. API также возвращает `nosniff`, безопасный referrer policy и запрет framing.
+CSP обязательна с первого production deployment. Конкретная nginx policy задаётся после фиксации hostnames и включает только собственные scripts/styles/fonts, audience API/WebSocket, настроенный production media origin (целевой Hetzner), Web Push и Sentry ingest. `unsafe-eval` запрещён; inline allowances нельзя добавлять без причины и теста. API также возвращает `nosniff`, безопасный referrer policy и запрет framing.
 
 ## Mock/prototype
 

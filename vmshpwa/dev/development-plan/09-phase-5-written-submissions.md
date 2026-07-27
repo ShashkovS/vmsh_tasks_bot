@@ -25,7 +25,7 @@ Migration: `pwa_submission_threads_entries_assets`.
 ## Server/storage pipeline
 
 - Streaming multipart limits per file/request; MIME sniffing, decompression-bomb and pixel bounds.
-- File adapter in unit/agent/E2E; `aioboto3` adapter для opt-in local integration и production. S3 config использует `s3_url` (default Beget endpoint), `s3_bucket_name`, `s3_access_key`, `s3_secret_key`: local/manual integration получает их из `creds_test/vmsh_bot_config_test.json`, production — из соответствующего `creds_prod` config. PWA loader извлекает только storage allowlist и не делает Telegram/Google credentials обязательными.
+- File adapter in unit/agent/E2E; `aioboto3` adapter для opt-in local integration и production. Выделенный test bucket сейчас Beget, production target — Hetzner; `s3_url`, `s3_region`, `s3_bucket_name`, `s3_access_key`, `s3_secret_key` берутся только из соответствующего test/production credential file без provider default в PWA config. Live test дополнительно сверяет pinned endpoint/bucket fingerprint. PWA loader извлекает только storage allowlist и не делает Telegram/Google credentials обязательными.
 - Server fallback использует общий converter config: `magick_path='magick'` для decode/orientation/HEIC и `cwebp_path='cwebp'` для WebP, с разрешением через service `PATH`, optional absolute override и fail-fast capability probe. Pipeline не вызывает shell и не принимает произвольные flags из upload metadata.
 - Write sequence: validate → temporary object → conversion/verify hash → final key → SQLite transaction → cleanup. Compensation job finds stale temporary objects.
 - Public GET URL is long/unguessable; upload and list still require auth.

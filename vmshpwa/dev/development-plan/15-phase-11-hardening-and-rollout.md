@@ -12,7 +12,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 - aiohttp/gunicorn: минимум два workers; shared SQLite/domain/storage, NATS fan-out.
 - Каждый worker владеет соединениями/serialized executor согласно принятому DB concurrency ADR; общий module-level `sqlite3.Connection` не обслуживает конкурентные coroutine. `busy_timeout`, bounded retry и transaction wait попадают в metrics.
 - Telegram webhook/polling adapter запускается отдельно от PWA app factory, но использует общую domain DB.
-- Beget S3-compatible bucket через configured `s3_url`; bucket/access/secret приходят из production credential file. CORS только для необходимых public reads; browser writes only through aiohttp и не получает S3 credentials.
+- Hetzner S3-compatible bucket через configured `s3_url`/region; bucket/access/secret приходят из production credential file. CORS только для необходимых public reads; browser writes only through aiohttp и не получает S3 credentials.
 - Converter binaries (`pdflatex`, `pdf2svg`, `cwebp`, `magick` по умолчанию) разрешаются через `PATH` реального service profile либо explicit config override; интерактивный shell и hardcoded developer paths не считаются production configuration.
 - Static assets content-hashed; HTML no-cache/revalidate; SW update strategy explicitly tested.
 - CSP, HSTS, MIME sniffing protection, frame/permissions/referrer policies.
@@ -66,7 +66,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 
 - Full Make quality gates + historical Telegram tests.
 - Production-build E2E 3 browsers on seeded SQLite.
-- Real staging/local Beget S3 smoke with test credentials and disposable prefix: put/get/head/delete, retry и cleanup; production key никогда не используется в test runtime.
+- Real local Beget test-bucket smoke и staging Hetzner smoke с pinned target identity/disposable prefix: put/get/public-get/delete, retry и cleanup; production key никогда не используется в test runtime.
 - Real staging toolchain smoke: LaTeX/TikZ → PDF → SVG и HEIC/raster → WebP с redacted executable/version report, timeout и cleanup assertions.
 - Two-worker/NATS/WS/SQLite load and failure tests выполняются против численного workload profile этапа 0: concurrency, submit/photo sizes, write latency, queue/outbox depth и допустимые busy/error thresholds. Неопределённый «load test прошёл» gate не принимается.
 - Security review: auth, IDOR, CSRF/origin, CSP, upload, checker execution, public media URLs, push payload.

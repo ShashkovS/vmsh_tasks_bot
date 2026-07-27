@@ -18,7 +18,7 @@ Production host: `vmsh.shashkovs.ru`. Желаемый staging host: `devvmsh.sh
 8. Получить exclusive database lifecycle lock и применить yoyo migrations до переключения backend revision. Каждая migration имеет backup/rollback procedure; занятый lock прерывает deploy до любого DDL.
 9. Атомарно переключить static assets и запустить gunicorn/связанные workers только при соответствующих изменениях.
 10. Под service profile выполнить toolchain preflight для включённых capabilities: config defaults `pdflatex`, `pdf2svg`, `cwebp`, `magick` должны разрешиться через его `PATH` либо через явный absolute override; сохранить redacted version report.
-11. Проверить production `s3_url`, bucket и наличие access/secret key из `creds_prod/vmsh_bot_config_prod.json`, затем выполнить redacted Beget S3 capability probe; значения ключей и signed URLs не печатать.
+11. Проверить production Hetzner `s3_url`, region, bucket и наличие access/secret key из `creds_prod/vmsh_bot_config_prod.json`, затем выполнить redacted S3 capability probe; значения ключей и object URLs не печатать.
 12. Проверить три audience health/runtime URL, static history fallback, WebSocket upgrade, CSP/security headers и service-worker files.
 13. Запустить detached post-deploy backup и отправить оператору итог с revision и статусами.
 

@@ -32,8 +32,8 @@
 
 ## Конфигурация object storage
 
-- Общий backend config содержит `s3_url`, `s3_bucket_name`, `s3_access_key`, `s3_secret_key`. Текущий default endpoint — `https://s3.ru1.storage.beget.cloud`; bucket и credential values не имеют небезопасных defaults и не коммитятся.
-- Human local/manual S3 integration читает только эти allowlisted значения из `creds_test/vmsh_bot_config_test.json`; production — из `creds_prod/vmsh_bot_config_prod.json`. Загрузка S3 overlay не должна попутно делать Telegram/Google обязательными для PWA runtime.
+- Общий backend config содержит `s3_url`, `s3_region`, `s3_bucket_name`, `s3_access_key`, `s3_secret_key`. PWA production target — явно настроенный Hetzner без provider default; legacy `helpers.config` пока сохраняет Beget default только для совместимости старых путей. Bucket и credential values не имеют небезопасных defaults и не коммитятся.
+- Human local/manual S3 integration читает только эти allowlisted значения из `creds_test/vmsh_bot_config_test.json` и дополнительно сверяет pinned test-bucket identity; production — из `creds_prod/vmsh_bot_config_prod.json`. Загрузка S3 overlay не должна попутно делать Telegram/Google обязательными для PWA runtime.
 - Unit, agent и обычный E2E используют filesystem/mock adapter и не требуют S3 secrets или внешней сети. Отдельный opt-in S3 integration smoke использует test bucket/disposable prefix и никогда не production credentials.
 - При выбранном S3 adapter неполная четверка настроек является config error до первого upload. Secrets редактируются в `repr`, логах, Sentry, health/proof и subprocess environment dumps; readiness сообщает только endpoint host, bucket identity в безопасной форме и capability result.
 

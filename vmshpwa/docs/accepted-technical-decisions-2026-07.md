@@ -17,7 +17,7 @@
 
 ## Object storage и фотографии решений
 
-- Production storage — Beget S3-compatible через `aioboto3`, с default endpoint `https://s3.ru1.storage.beget.cloud`. Bucket/access/secret обязательны при выборе S3 adapter. Human local/manual integration читает четыре `s3_*` поля из `creds_test/vmsh_bot_config_test.json`, production — из `creds_prod/vmsh_bot_config_prod.json`; unit/agent/E2E остаются на filesystem/mock и не требуют secrets/network.
+- Production storage target — Hetzner S3-compatible через `aioboto3`; endpoint, region, bucket/access/secret задаются явно в production credential file. Выделенный opt-in test bucket пока находится в Beget и закреплён endpoint + SHA-256 bucket identity. Unit/agent/E2E остаются на filesystem/mock и не требуют secrets/network; legacy default Beget в `helpers.config` не является PWA production default.
 - Браузер загружает файл через авторизованный aiohttp endpoint. Presigned browser upload не применяется: офлайн-очередь может ждать существенно дольше жизни подписи.
 - Производные работы публично читаются по длинным непредсказуемым ключам. URL нельзя считать авторизацией; в operational logs он редактируется как пользовательский контент.
 - Рекомендуемый key: `sol_imgs/user_{user_id}/{season_year}/{lesson_id}/{problem_id}_{created_at_utc}_{uuid}.webp`. Идентификаторы и UUID формирует/проверяет backend, а не браузер.
@@ -34,7 +34,7 @@
 - Максимальный срок refresh session Student, Family и Staff — ближайшее 10 августа; access cookie существенно короче. У audiences разные имена и `Path`.
 - `Secure`, `HttpOnly`, `SameSite=Lax` обязательны. Отдельный synchronizer CSRF token на первом этапе не вводится; unsafe endpoints дополнительно проверяют same-origin `Origin`/Fetch Metadata и принимают только ожидаемый content type.
 - IP-level rate limiting выполняет nginx. Как минимум отдельная строгая zone нужна для login/auth; backend дополнительно ограничивает попытки по normalized login/account, чтобы распределённые IP не обходили защиту. Лимиты не заменяют authorization или idempotency.
-- CSP вводится с первого production deployment. Политика должна явно разрешать собственные scripts/styles/fonts, audience WebSocket/API, настроенный Beget media origin, Web Push и Sentry ingest; inline/eval не добавляются без документированной причины.
+- CSP вводится с первого production deployment. Политика должна явно разрешать собственные scripts/styles/fonts, audience WebSocket/API, фактически настроенный production media origin (целевой Hetzner), Web Push и Sentry ingest; inline/eval не добавляются без документированной причины.
 - Аудит чтения чужих работ не нужен. Сохраняются все комментарии учителей, результаты проверки и изменения самой работы. Audit административных изменений, сессий и публикации остаётся.
 
 ## Realtime и offline
@@ -109,7 +109,7 @@
 
 ## Значения, фиксируемые при реализации и развёртывании
 
-- production bucket/media hostname для Beget, Sentry ingest, API/WS и окончательной CSP;
+- production Hetzner bucket/media hostname, Sentry ingest, API/WS и окончательной CSP;
 - короткий access-cookie TTL;
 - точная команда/systemd units production webhook;
 - точный suffix/ручной workflow для коллизии сгенерированных student logins.
