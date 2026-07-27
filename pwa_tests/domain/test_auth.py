@@ -21,7 +21,7 @@ from models.pwa.auth import (
 def _principal(audience: AuthAudience = AuthAudience.STUDENT) -> AuthPrincipal:
     return AuthPrincipal(
         account_public_id="account_public_test",
-        session_public_id="session_public_test",
+        session_public_id="0123456789abcdef0123456789abcdef",
         audience=audience,
         linked_user_id=101,
         role="student",
@@ -113,15 +113,28 @@ def test_refresh_cookie_round_trip_and_hmac_is_peppered():
     assert parsed == pair
     assert len(pair.public_id) == 32
     assert set(pair.public_id) <= set("0123456789abcdef")
-    assert hash_refresh_secret(pair.raw_refresh_secret, b"p" * 32) != hash_refresh_secret(
-        pair.raw_refresh_secret, b"q" * 32
-    )
+    assert hash_refresh_secret(
+        pair.raw_refresh_secret, b"p" * 32
+    ) != hash_refresh_secret(pair.raw_refresh_secret, b"q" * 32)
     assert pair.raw_refresh_secret not in hash_refresh_secret(
         pair.raw_refresh_secret, b"p" * 32
     )
 
 
-@pytest.mark.parametrize("value", [None, "", "one-part", ".secret", "id.", "a.b.c"])
+@pytest.mark.parametrize(
+    "value",
+    [
+        None,
+        "",
+        "one-part",
+        ".secret",
+        "id.",
+        "a.b.c",
+        "0123456789ABCDEF0123456789ABCDEF.secret",
+        "0123456789abcdef0123456789abcde.secret",
+        "session_public_test.secret",
+    ],
+)
 def test_refresh_cookie_rejects_malformed_values(value):
     assert parse_refresh_cookie(value) is None
 
@@ -137,7 +150,7 @@ def test_access_cookie_is_audience_scoped_and_payload_is_strict():
 
     assert codec.loads(token, AuthAudience.STUDENT) == {
         "v": 1,
-        "sid": "session_public_test",
+        "sid": "0123456789abcdef0123456789abcdef",
         "aid": "account_public_test",
         "aud": "student",
         "cv": 3,
@@ -152,12 +165,50 @@ def test_access_cookie_supports_old_key_verification_and_new_key_signing():
     rotated_codec = AccessTokenCodec(["o" * 32, "n" * 32])
     new_only_codec = AccessTokenCodec(["n" * 32])
 
-    assert rotated_codec.loads(
-        old_codec.dumps(_principal()), AuthAudience.STUDENT
-    ) is not None
-    assert new_only_codec.loads(
-        rotated_codec.dumps(_principal()), AuthAudience.STUDENT
-    ) is not None
+    assert (
+        rotated_codec.loads(old_codec.dumps(_principal()), AuthAudience.STUDENT)
+        is not None
+    )
+    assert (
+        new_only_codec.loads(rotated_codec.dumps(_principal()), AuthAudience.STUDENT)
+        is not None
+    )
+
+
+def test_access_cookie_rejects_noncanonical_session_reference_before_signing():
+    codec = AccessTokenCodec(["k" * 32])
+    principal = _principal()
+    invalid = AuthPrincipal(
+        account_public_id=principal.account_public_id,
+        session_public_id="session_public_test",
+        audience=principal.audience,
+        linked_user_id=principal.linked_user_id,
+        role=principal.role,
+        capabilities=principal.capabilities,
+        credential_version=principal.credential_version,
+        session_version=principal.session_version,
+    )
+
+    with pytest.raises(ValueError, match="lowercase hexadecimal"):
+        codec.dumps(invalid)
+
+
+def test_access_cookie_rejects_a_valid_signature_with_noncanonical_session_id():
+    codec = AccessTokenCodec(["k" * 32])
+    # This represents a token emitted by an older or faulty deployment.  A
+    # correct signature must not relax the canonical storage lookup boundary.
+    token = codec._serializer(AuthAudience.STUDENT).dumps(
+        {
+            "v": 1,
+            "sid": "session_public_test",
+            "aid": "account_public_test",
+            "aud": "student",
+            "cv": 3,
+            "sv": 2,
+        }
+    )
+
+    assert codec.loads(token, AuthAudience.STUDENT) is None
 
 
 def test_access_cookie_rejects_short_keys_and_non_positive_ttl():

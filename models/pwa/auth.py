@@ -79,6 +79,10 @@ _RUSSIAN_TRANSLITERATION = {
     "я": "ya",
 }
 _LOGIN_SEPARATOR = re.compile(r"[^a-z0-9]+")
+# Session references cross cookie, signed-token and SQLite boundaries.  Keep one
+# canonical representation so malformed aliases never reach a repository
+# lookup; see Phase 1 in ``05-phase-1-auth.md`` and its Zod public-ID contract.
+_SESSION_PUBLIC_ID = re.compile(r"[0-9a-f]{32}\Z")
 
 
 class AuthAudience(StrEnum):
@@ -131,12 +135,16 @@ def normalize_telegram_token(value: str) -> str:
 
 def _transliterate_surname(value: str) -> str:
     normalized = unicodedata.normalize("NFKC", value).strip().casefold()
-    transliterated = "".join(_RUSSIAN_TRANSLITERATION.get(char, char) for char in normalized)
+    transliterated = "".join(
+        _RUSSIAN_TRANSLITERATION.get(char, char) for char in normalized
+    )
     # Strip remaining accents after Cyrillic transliteration, then keep only a
     # small stable alphabet suitable for login forms and support dictation.
-    ascii_text = unicodedata.normalize("NFKD", transliterated).encode(
-        "ascii", "ignore"
-    ).decode("ascii")
+    ascii_text = (
+        unicodedata.normalize("NFKD", transliterated)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
     return _LOGIN_SEPARATOR.sub("-", ascii_text).strip("-")
 
 
@@ -187,12 +195,14 @@ class CredentialHasher:
             raise ValueError("Credential must not be empty")
         return self._hasher.hash(credential)
 
-    def verify(self, encoded_hash: str | None, credential: str) -> CredentialVerification:
+    def verify(
+        self, encoded_hash: str | None, credential: str
+    ) -> CredentialVerification:
         if not encoded_hash or not credential:
             return CredentialVerification(valid=False)
         try:
             valid = self._hasher.verify(encoded_hash, credential)
-        except (InvalidHashError, VerificationError, VerifyMismatchError):
+        except InvalidHashError, VerificationError, VerifyMismatchError:
             return CredentialVerification(valid=False)
         replacement = (
             self._hasher.hash(credential)
@@ -215,7 +225,7 @@ def parse_refresh_cookie(value: str | None) -> SessionTokenPair | None:
     if not value or value.count(".") != 1:
         return None
     public_id, raw_refresh_secret = value.split(".", 1)
-    if not public_id or not raw_refresh_secret:
+    if not _SESSION_PUBLIC_ID.fullmatch(public_id) or not raw_refresh_secret:
         return None
     return SessionTokenPair(public_id, raw_refresh_secret)
 
@@ -252,6 +262,10 @@ class AccessTokenCodec:
         )
 
     def dumps(self, principal: AuthPrincipal) -> str:
+        if not _SESSION_PUBLIC_ID.fullmatch(principal.session_public_id):
+            raise ValueError(
+                "Session public ID must be 32 lowercase hexadecimal characters"
+            )
         payload = {
             "v": ACCESS_TOKEN_VERSION,
             "sid": principal.session_public_id,
@@ -281,9 +295,14 @@ class AccessTokenCodec:
             "sv",
         }:
             return None
-        if payload["v"] != ACCESS_TOKEN_VERSION or payload["aud"] != expected_audience.value:
+        if (
+            payload["v"] != ACCESS_TOKEN_VERSION
+            or payload["aud"] != expected_audience.value
+        ):
             return None
-        if not isinstance(payload["sid"], str) or not payload["sid"]:
+        if not isinstance(payload["sid"], str) or not _SESSION_PUBLIC_ID.fullmatch(
+            payload["sid"]
+        ):
             return None
         if not isinstance(payload["aid"], str) or not payload["aid"]:
             return None

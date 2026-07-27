@@ -62,6 +62,7 @@
 | 2026-07-27 | PLAN-040 | Legacy rules защищаются executable characterization, corpus — schema-light manifest                      | 23 answer types, verdict/reaction/queue/synonym semantics зафиксированы; 54 source files покрыты hash/encoding/structure без дублирования содержания          |
 | 2026-07-27 | PLAN-041 | Schema baseline — migration-derived inventory, а live drift остаётся явным                               | Head содержит 93 product objects; live lag 0039/0040 и 12 derived objects фиксируются без записи; product rows не выбираются, DDL/defaults только fingerprint |
 | 2026-07-27 | PLAN-053 | Browser user identity отделена от account identity и legacy integer FK                                   | `users.public_id` nullable только до controlled activation; `userId`/`studentId` никогда не подменяются `accountId`, отсутствие значения закрывает web-доступ |
+| 2026-07-27 | PLAN-054 | Session reference каноничен на всех cookie/token/storage границах                                        | Только 32 lowercase hex принимаются parser, signed access codec и repository; корректная подпись не легализует иной alias                                     |
 | 2026-07-27 | PLAN-042 | `baseline-v1` строится вне target и устанавливается только после полной проверки                         | Exact profile/path allowlist, scoped FK gates, purge+VACUUM credentials, shared-runtime/exclusive-maintenance lock и durable atomic replace                   |
 | 2026-07-27 | PLAN-043 | Auth/workload preflight читает реальные источники fail-closed и публикует только безопасные агрегаты     | Same-fd bytes/hash и alias rejection защищают inputs; auth query использует deserialize snapshot; explicit check ловит missing/stale report-pair              |
 | 2026-07-27 | PLAN-044 | Live S3 разрешён только после pinned test-target check; SDK boundary всегда редактирует provider errors  | Beget test identity закреплена SHA-256, full provider key проверяется после prefix, optional checksums=`when_required`; Hetzner остаётся production target    |
@@ -121,6 +122,10 @@
   fixtures и principal-scoped query keys. Student body не принимает `audience`,
   а срок fixture `2026-08-09T21:00:00Z` явно доказывает московскую границу.
   Focused Vitest: 15 PASS; contracts typecheck, ESLint и Prettier PASS.
+- Cookie/token boundary принимает только тот же 32-символьный lowercase hex
+  session reference, который создаёт генератор и принимает repository. Даже
+  корректно подписанный payload с неканоническим `sid` отклоняется до SQLite;
+  focused model suite — 29 PASS.
 - Миграции `0039`/`0040` добавляют auth/session/throttle и первый
   course/enrollment/access/scope слой без изменения legacy IDs и имеют точный
   rollback. Fresh inventory содержит 93 product objects; read-only live report
