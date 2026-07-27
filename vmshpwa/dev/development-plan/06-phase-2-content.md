@@ -260,9 +260,24 @@ Contract/client increment Phase 2E также реализован 28 июля 2
       стабильные TanStack Query keys/hooks;
 - [x] два strict TypeScript package check, ESLint и 24 unit tests PASS.
 
-Production Staff UI, Storybook interaction/visual gate и production-build
-content E2E остаются открыты. Contract proof:
+На contract/client checkpoint production Staff UI, Storybook interaction/
+visual gate и production-build content E2E ещё оставались открыты. Contract proof:
 [`phase2-problem-review-frontend.md`](../../../pwa_tests/reports/phase2-problem-review-frontend.md).
+
+Production Staff UI increment Phase 2E реализован 28 июля 2026:
+
+- [x] controlled `ProblemMatching` и real-client adapter с full-batch
+      positional/manual/new/omit flow;
+- [x] condition-only metadata grid со всеми task/answer/config fields;
+- [x] publication gate следует фактически подтверждённому matching/metadata;
+- [x] matching и metadata drafts переживают remount/reload в Staff-namespaced
+      `localStorage`, а `409` не уничтожает локальную работу;
+- [x] strict TypeScript/ESLint, 24 contract/client unit tests, 14 targeted
+      Storybook browser tests и Staff production build PASS.
+
+Production-build content E2E и owner visual approval остаются открыты. UI
+proof и точные story IDs:
+[`phase2-problem-review-ui.md`](../../../pwa_tests/reports/phase2-problem-review-ui.md).
 
 - [x] Revision/migration/upgrade/rollback для Phase 2A:
       [`0041`](../../../migrations/0041.pwa_content_lessons.sql), 48 focused PASS,

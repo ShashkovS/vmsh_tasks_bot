@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, FileCode2, RefreshCw, Send, Upload } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { PageLayout, PageStatePanel, useAuthentication } from '@vmsh/app-shell'
 import {
@@ -45,6 +45,7 @@ import {
 } from '@vmsh/ui'
 
 import { RevisionAssetsRecovery } from './revision-assets-recovery'
+import { ProblemReviewWorkflow } from './problem-review-workflow'
 
 const materialOrder: ContentMaterialKind[] = ['condition', 'hint', 'solution']
 const materialLabels: Record<ContentMaterialKind, string> = {
@@ -79,6 +80,7 @@ interface MaterialWorkflowState {
   previewRevisionId: string | undefined
   previewLoading: boolean
   selectedRevisionId: string | undefined
+  reviewReadyRevisionId: string | undefined
   rollbackRevisionId: string | undefined
   currentPublication: VersionedPublicationView | undefined
   scheduledPublication: VersionedPublicationView | undefined
@@ -124,6 +126,7 @@ function initialMaterialState(history?: StaffContentMaterialHistory): MaterialWo
     previewRevisionId: undefined,
     previewLoading: false,
     selectedRevisionId,
+    reviewReadyRevisionId: undefined,
     rollbackRevisionId,
     currentPublication: history?.currentPublished
       ? publicationView(history.currentPublished)
@@ -214,7 +217,9 @@ function MaterialWorkflowCard({
   const rollbackRevision = readyRevisions.find(
     (revision) => revision.data.revisionId === state.rollbackRevisionId,
   )
-  const readyForPublication = selectedRevision !== undefined
+  const readyForPublication =
+    selectedRevision !== undefined &&
+    state.reviewReadyRevisionId === selectedRevision.data.revisionId
   const recoverableRevisions = state.revisions.filter((revision) =>
     isRecoverableRevision(revision.data),
   )
@@ -226,6 +231,19 @@ function MaterialWorkflowCard({
 
   const patchState = (patch: Partial<MaterialWorkflowState>) =>
     setState((current) => ({ ...current, ...patch }))
+
+  const handleReviewReady = useCallback((revisionId: string, ready: boolean) => {
+    setState((current) => {
+      const nextRevisionId = ready ? revisionId : undefined
+      if (
+        current.selectedRevisionId !== revisionId ||
+        current.reviewReadyRevisionId === nextRevisionId
+      ) {
+        return current
+      }
+      return { ...current, reviewReadyRevisionId: nextRevisionId }
+    })
+  }, [])
 
   useEffect(() => {
     const serverRevisions = revisionsFromHistory(history)
@@ -256,6 +274,10 @@ function MaterialWorkflowCard({
         ...current,
         revisions,
         selectedRevisionId,
+        reviewReadyRevisionId:
+          selectedRevisionId === current.selectedRevisionId
+            ? current.reviewReadyRevisionId
+            : undefined,
         rollbackRevisionId,
         currentPublication: history.currentPublished
           ? publicationView(history.currentPublished)
@@ -297,6 +319,7 @@ function MaterialWorkflowCard({
         inspected,
       ].sort((left, right) => left.data.revisionNumber - right.data.revisionNumber),
       selectedRevisionId: inspected.data.revisionId,
+      reviewReadyRevisionId: undefined,
       webDocument: webPreview.document,
       telegramHtml: telegramPreview.html,
       previewRevisionId: inspected.data.revisionId,
@@ -614,6 +637,7 @@ function MaterialWorkflowCard({
               onValueChange={(value) =>
                 patchState({
                   selectedRevisionId: value as string,
+                  reviewReadyRevisionId: undefined,
                   webDocument: undefined,
                   telegramHtml: undefined,
                   previewRevisionId: undefined,
@@ -668,6 +692,17 @@ function MaterialWorkflowCard({
             key={visibleRevision.revisionId}
             onCompile={compileStoredRevision}
             revisionId={visibleRevision.revisionId}
+          />
+        ) : null}
+
+        {selectedRevision && selectedRevision.data.missingAssets.length === 0 ? (
+          <ProblemReviewWorkflow
+            client={client}
+            groupLessonId={groupLessonId}
+            key={`${kind}:${selectedRevision.data.revisionId}`}
+            kind={kind}
+            onReadyChange={handleReviewReady}
+            revisionId={selectedRevision.data.revisionId}
           />
         ) : null}
 

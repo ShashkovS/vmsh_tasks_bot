@@ -4,6 +4,7 @@ import { expect, userEvent, within } from 'storybook/test'
 
 import { DenseDataTable, type DenseColumn } from './dense-data-table'
 import { MetadataGrid, type MetadataError, type MetadataRow } from './metadata-grid'
+import { ProblemMatching, type ProblemMatchingSelection } from './problem-matching'
 
 const meta = { title: 'Product/Staff data', parameters: { layout: 'padded' } } satisfies Meta
 export default meta
@@ -176,5 +177,85 @@ export const Metadata: Story = {
     // Правка убирает ошибку.
     await userEvent.type(nameCell, 'Вагоны')
     await expect(canvas.queryByRole('alert')).not.toBeInTheDocument()
+  },
+}
+
+export const ProblemMatchingBatch: Story = {
+  name: 'Сопоставление: позиция, новая задача и пропуск',
+  render: () => {
+    function Harness() {
+      const [selections, setSelections] = useState<
+        Record<string, ProblemMatchingSelection | undefined>
+      >({})
+      const [saved, setSaved] = useState(false)
+      return (
+        <div className="max-w-5xl space-y-2">
+          <ProblemMatching
+            candidates={[
+              {
+                id: '-41',
+                number: 1,
+                item: '',
+                title: 'Сколько орехов',
+                typeLabel: 'тестовая',
+              },
+              {
+                id: '-42',
+                number: 2,
+                item: 'а',
+                title: 'Расстановка ладей',
+                typeLabel: 'письменная',
+              },
+            ]}
+            id="storybook-problem-matching"
+            items={[
+              {
+                key: 'problem-1',
+                displayNumber: '1',
+                sourceTitle: 'Орехи',
+                suggestedCandidateId: '-41',
+              },
+              {
+                key: 'problem-2',
+                displayNumber: '2а',
+                sourceTitle: 'Шахматная доска',
+                suggestedCandidateId: null,
+              },
+              {
+                key: 'problem-3',
+                displayNumber: '3',
+                sourceTitle: null,
+                suggestedCandidateId: null,
+              },
+            ]}
+            onCommit={() => setSaved(true)}
+            onSelectionChange={(itemKey, selection) =>
+              setSelections((current) => ({ ...current, [itemKey]: selection }))
+            }
+            selections={selections}
+          />
+          <p
+            className="text-small text-muted-foreground"
+            data-testid="matching-readout"
+            role="status"
+          >
+            {saved ? 'Batch сохранён' : 'Batch не сохранён'}
+          </p>
+        </div>
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.selectOptions(
+      canvas.getByLabelText('Сопоставление задачи 1'),
+      'auto_position:-41',
+    )
+    await userEvent.selectOptions(canvas.getByLabelText('Сопоставление задачи 2а'), 'insert_new')
+    await userEvent.selectOptions(canvas.getByLabelText('Сопоставление задачи 3'), 'omit')
+    await expect(canvas.getByText('3 из 3')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить сопоставление' }))
+    await expect(canvas.getByTestId('matching-readout')).toHaveTextContent('Batch сохранён')
   },
 }

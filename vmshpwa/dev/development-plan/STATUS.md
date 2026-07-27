@@ -211,7 +211,12 @@
   exact `If-Match`, body/header ETag consistency и query hooks. Два package
   typecheck, ESLint и **24 unit tests** — PASS. Proof:
   [`phase2-problem-review-frontend.md`](../../../pwa_tests/reports/phase2-problem-review-frontend.md).
-- Phase 2 всё ещё открыт для matching/metadata Staff UI и Storybook,
+- Phase 2E Staff UI добавляет real-client matching/condition metadata workflow,
+  fail-closed publication gate и revision-scoped recovery обоих черновиков из
+  `localStorage`. Targeted Storybook — **14 PASS**, Staff production build —
+  PASS; snapshots не обновлялись. Proof:
+  [`phase2-problem-review-ui.md`](../../../pwa_tests/reports/phase2-problem-review-ui.md).
+- Phase 2 всё ещё открыт для owner visual approval matching/metadata stories,
   Staff-openable generated
   PDF, bulk upload, production-build content E2E и owner visual approval.
   Snapshots не обновлялись. Ранее закрытые HTTP/frontend proof:

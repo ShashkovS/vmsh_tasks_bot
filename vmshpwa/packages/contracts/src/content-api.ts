@@ -784,9 +784,30 @@ export const problemMetadataMutationRowSchema = z
 export type ProblemMetadataMutationRow = z.infer<typeof problemMetadataMutationRowSchema>
 
 export const problemMetadataGridRowSchema = z
-  .object({ ...problemMetadataMutationShape, reviewed: z.boolean() })
+  .object({
+    ...problemMetadataMutationShape,
+    title: z.string().max(500),
+    answerValidation: z.string().max(4_000).nullable(),
+    validationError: z.string().max(4_000).nullable(),
+    correctAnswer: z.string().max(4_000).nullable(),
+    correctAnswerChecker: z.string().max(65_536).nullable(),
+    wrongAnswer: z.string().max(4_000).nullable(),
+    congratulation: z.string().max(4_000).nullable(),
+    reviewed: z.boolean(),
+  })
   .strict()
-  .superRefine(validateProblemMetadata)
+  .superRefine((row, context) => {
+    if (row.reviewed) {
+      if (!row.title.trim()) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Reviewed problems require a title',
+          path: ['title'],
+        })
+      }
+      validateProblemMetadata(row, context)
+    }
+  })
 export type ProblemMetadataGridRow = z.infer<typeof problemMetadataGridRowSchema>
 
 export const problemMetadataGridSchema = z

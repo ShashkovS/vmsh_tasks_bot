@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
 import fixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
@@ -12,8 +13,10 @@ import {
   webContentDocumentSchema,
   type StaffContentHistory,
 } from '@vmsh/contracts'
+import { Button } from '@vmsh/ui'
 
 import { StaffContentWorkspace } from './content-page'
+import { ProblemReviewWorkflow } from './problem-review-workflow'
 import { RevisionAssetsRecovery } from './revision-assets-recovery'
 
 const revisionId = fixture.document.revisionId
@@ -100,6 +103,41 @@ function storyClient(overrides: Partial<ContentApiClient> = {}): ContentApiClien
     },
     uploadRevisionAsset() {
       return Promise.reject(new Error('В этом Storybook-сценарии нет недостающих ресурсов'))
+    },
+    problemMatches(targetRevisionId) {
+      const etag = contentEtagSchema.parse(`"review-${targetRevisionId}:v1"`)
+      return Promise.resolve({
+        data: {
+          revisionId: targetRevisionId,
+          groupLessonId,
+          version: 1,
+          etag,
+          items: [],
+          candidates: [],
+          requestId: 'storybook-problem-matches',
+        },
+        etag,
+      })
+    },
+    resolveProblemMatches() {
+      return Promise.reject(new Error('В базовом сценарии задачи уже сопоставлены'))
+    },
+    metadataGrid(_targetGroupLessonId, targetRevisionId) {
+      const etag = contentEtagSchema.parse(`"review-${targetRevisionId}:v1"`)
+      return Promise.resolve({
+        data: {
+          revisionId: targetRevisionId,
+          groupLessonId,
+          version: 1,
+          etag,
+          rows: [],
+          requestId: 'storybook-metadata-grid',
+        },
+        etag,
+      })
+    },
+    saveMetadataGrid() {
+      return Promise.reject(new Error('В базовом сценарии метаданные уже подтверждены'))
     },
     preview(_revisionId, kind) {
       return Promise.resolve(
@@ -387,7 +425,7 @@ export const UploadPreviewPublish: Story = {
     await expect(canvas.getByRole('heading', { name: 'PWA' })).toBeVisible()
     await expect(canvas.getByRole('heading', { name: 'Telegram Rich HTML' })).toBeVisible()
     await expect(canvas.getByText(/<tg-math>n\^2<\/tg-math>/)).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Опубликовать сейчас' }))
+    await userEvent.click(await canvas.findByRole('button', { name: 'Опубликовать сейчас' }))
     await expect(canvas.getByText(/Опубликовать условие revision 1 сейчас/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
     await expect(canvas.getByText('Опубликовано')).toBeVisible()
@@ -689,5 +727,352 @@ export const OptimisticConflictRefetch: Story = {
     await expect(
       await canvas.findByText('Публичная revision: revision-after-conflict'),
     ).toBeVisible()
+  },
+}
+
+export const MatchThenReviewMetadata: Story = {
+  name: 'Problem matching → condition metadata → ready',
+  render: () => {
+    let matched = false
+    let metadataSaved = false
+    const unresolvedEtag = contentEtagSchema.parse('"review-story-problem:v1"')
+    const matchedEtag = contentEtagSchema.parse('"review-story-problem:v2"')
+    const metadataEtag = contentEtagSchema.parse('"review-story-problem:v3"')
+    const candidate = {
+      problemId: -41,
+      problemNumber: 1,
+      item: '',
+      title: '',
+      problemType: 2,
+      answerType: null,
+      answerValidation: null,
+      validationError: null,
+      correctAnswer: null,
+      correctAnswerChecker: null,
+      wrongAnswer: null,
+      congratulation: null,
+    } as const
+    const reviewItem = {
+      sourceOrdinal: 1,
+      sourceItem: '1',
+      displayNumber: '1',
+      sourceTitle: 'Орехи и клетки',
+      suggestedProblemId: null,
+    } as const
+    const problemMatches = () =>
+      Promise.resolve({
+        data: {
+          revisionId,
+          groupLessonId,
+          version: matched ? 2 : 1,
+          etag: matched ? matchedEtag : unresolvedEtag,
+          items: [
+            {
+              ...reviewItem,
+              match: matched ? { decision: 'insert_new' as const, problemId: -41 } : null,
+            },
+          ],
+          candidates: matched ? [candidate] : [],
+          requestId: 'storybook-problem-review',
+        },
+        etag: matched ? matchedEtag : unresolvedEtag,
+      })
+    const metadataGrid = () => {
+      const etag = metadataSaved ? metadataEtag : matchedEtag
+      return Promise.resolve({
+        data: {
+          revisionId,
+          groupLessonId,
+          version: metadataSaved ? 3 : 2,
+          etag,
+          rows: [
+            {
+              problemId: -41,
+              sourceOrdinal: 1,
+              sourceItem: '1',
+              displayNumber: '1',
+              title: metadataSaved ? 'Орехи и клетки' : '',
+              problemType: 2,
+              answerType: null,
+              answerValidation: null,
+              validationError: null,
+              correctAnswer: null,
+              correctAnswerChecker: null,
+              wrongAnswer: null,
+              congratulation: null,
+              reviewed: metadataSaved,
+            },
+          ],
+          requestId: 'storybook-metadata-review',
+        },
+        etag,
+      })
+    }
+    const client = storyClient({
+      problemMatches,
+      resolveProblemMatches() {
+        matched = true
+        return problemMatches()
+      },
+      metadataGrid,
+      saveMetadataGrid() {
+        metadataSaved = true
+        return metadataGrid()
+      },
+    })
+    return (
+      <div className="max-w-6xl p-4">
+        <ProblemReviewWorkflow
+          client={client}
+          groupLessonId={groupLessonId}
+          kind="condition"
+          onReadyChange={() => undefined}
+          revisionId={revisionId}
+        />
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.selectOptions(
+      await canvas.findByLabelText('Сопоставление задачи 1'),
+      'insert_new',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить сопоставление' }))
+    const title = await canvas.findByLabelText('Название, строка 1')
+    await userEvent.type(title, 'Орехи и клетки')
+    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить' }))
+    await expect(await canvas.findByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
+  },
+}
+
+export const HintNeedsOnlyStructuralMatching: Story = {
+  name: 'Hint matching → no duplicate metadata',
+  render: () => {
+    const etag = contentEtagSchema.parse('"review-story-hint:v2"')
+    return (
+      <div className="max-w-4xl p-4">
+        <ProblemReviewWorkflow
+          client={storyClient({
+            problemMatches() {
+              return Promise.resolve({
+                data: {
+                  revisionId,
+                  groupLessonId,
+                  version: 2,
+                  etag,
+                  items: [
+                    {
+                      sourceOrdinal: 1,
+                      sourceItem: '1',
+                      displayNumber: '1',
+                      sourceTitle: 'Посмотрите на чётность',
+                      suggestedProblemId: -41,
+                      match: { decision: 'auto_position', problemId: -41 },
+                    },
+                  ],
+                  candidates: [
+                    {
+                      problemId: -41,
+                      problemNumber: 1,
+                      item: '',
+                      title: 'Орехи и клетки',
+                      problemType: 2,
+                      answerType: null,
+                      answerValidation: null,
+                      validationError: null,
+                      correctAnswer: null,
+                      correctAnswerChecker: null,
+                      wrongAnswer: null,
+                      congratulation: null,
+                    },
+                  ],
+                  requestId: 'storybook-hint-review',
+                },
+                etag,
+              })
+            },
+            metadataGrid() {
+              return Promise.reject(new Error('Hint must not request metadata'))
+            },
+          })}
+          groupLessonId={groupLessonId}
+          kind="hint"
+          onReadyChange={() => undefined}
+          revisionId={revisionId}
+        />
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      await canvas.findByText('Сопоставление задач подтверждено; метаданные берутся из условия.'),
+    ).toBeVisible()
+  },
+}
+
+export const MatchingDraftSurvivesReload: Story = {
+  name: 'Matching draft survives reload',
+  render: () => {
+    function Harness() {
+      const [generation, setGeneration] = useState(0)
+      const draftRevisionId = 'revision-matching-draft-recovery'
+      const etag = contentEtagSchema.parse('"review-matching-draft-recovery:v1"')
+      const client = storyClient({
+        problemMatches() {
+          return Promise.resolve({
+            data: {
+              revisionId: draftRevisionId,
+              groupLessonId,
+              version: 1,
+              etag,
+              items: [
+                {
+                  sourceOrdinal: 1,
+                  sourceItem: '1',
+                  displayNumber: '1',
+                  sourceTitle: 'Черновик сопоставления',
+                  suggestedProblemId: null,
+                  match: null,
+                },
+              ],
+              candidates: [],
+              requestId: 'storybook-matching-draft',
+            },
+            etag,
+          })
+        },
+      })
+      return (
+        <div className="max-w-4xl space-y-3 p-4">
+          <Button onClick={() => setGeneration((value) => value + 1)} size="sm" variant="outline">
+            Перезагрузить интерфейс
+          </Button>
+          <ProblemReviewWorkflow
+            client={client}
+            groupLessonId={groupLessonId}
+            key={generation}
+            kind="hint"
+            onReadyChange={() => undefined}
+            revisionId={draftRevisionId}
+          />
+        </div>
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const selector = await canvas.findByLabelText('Сопоставление задачи 1')
+    await userEvent.selectOptions(selector, 'insert_new')
+    await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))
+    await expect(await canvas.findByLabelText('Сопоставление задачи 1')).toHaveValue('insert_new')
+  },
+}
+
+export const MetadataDraftSurvivesReload: Story = {
+  name: 'Metadata draft survives reload',
+  render: () => {
+    function Harness() {
+      const [generation, setGeneration] = useState(0)
+      const draftRevisionId = 'revision-metadata-draft-recovery'
+      const etag = contentEtagSchema.parse('"review-metadata-draft-recovery:v2"')
+      const client = storyClient({
+        problemMatches() {
+          return Promise.resolve({
+            data: {
+              revisionId: draftRevisionId,
+              groupLessonId,
+              version: 2,
+              etag,
+              items: [
+                {
+                  sourceOrdinal: 1,
+                  sourceItem: '1',
+                  displayNumber: '1',
+                  sourceTitle: 'Черновик метаданных',
+                  suggestedProblemId: -51,
+                  match: { decision: 'auto_position', problemId: -51 },
+                },
+              ],
+              candidates: [
+                {
+                  problemId: -51,
+                  problemNumber: 1,
+                  item: '',
+                  title: '',
+                  problemType: 2,
+                  answerType: null,
+                  answerValidation: null,
+                  validationError: null,
+                  correctAnswer: null,
+                  correctAnswerChecker: null,
+                  wrongAnswer: null,
+                  congratulation: null,
+                },
+              ],
+              requestId: 'storybook-metadata-draft-match',
+            },
+            etag,
+          })
+        },
+        metadataGrid() {
+          return Promise.resolve({
+            data: {
+              revisionId: draftRevisionId,
+              groupLessonId,
+              version: 2,
+              etag,
+              rows: [
+                {
+                  problemId: -51,
+                  sourceOrdinal: 1,
+                  sourceItem: '1',
+                  displayNumber: '1',
+                  title: '',
+                  problemType: 2,
+                  answerType: null,
+                  answerValidation: null,
+                  validationError: null,
+                  correctAnswer: null,
+                  correctAnswerChecker: null,
+                  wrongAnswer: null,
+                  congratulation: null,
+                  reviewed: false,
+                },
+              ],
+              requestId: 'storybook-metadata-draft-grid',
+            },
+            etag,
+          })
+        },
+      })
+      return (
+        <div className="max-w-6xl space-y-3 p-4">
+          <Button onClick={() => setGeneration((value) => value + 1)} size="sm" variant="outline">
+            Перезагрузить интерфейс
+          </Button>
+          <ProblemReviewWorkflow
+            client={client}
+            groupLessonId={groupLessonId}
+            key={generation}
+            kind="condition"
+            onReadyChange={() => undefined}
+            revisionId={draftRevisionId}
+          />
+        </div>
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const title = await canvas.findByLabelText('Название, строка 1')
+    await userEvent.type(title, 'Сохранённый локально заголовок')
+    await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue(
+      'Сохранённый локально заголовок',
+    )
   },
 }

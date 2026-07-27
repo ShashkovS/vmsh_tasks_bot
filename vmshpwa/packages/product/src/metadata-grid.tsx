@@ -25,28 +25,37 @@ export type MetadataRow = Record<string, string>
 export interface MetadataGridProps {
   columns: MetadataColumn[]
   initialRows: MetadataRow[]
+  initialDraftRows?: MetadataRow[]
   validate?: (rows: MetadataRow[]) => MetadataError[]
-  onCommit?: (rows: MetadataRow[]) => void
+  onRowsChange?: (rows: MetadataRow[]) => void
+  onDiscard?: () => void
+  onCommit?: (rows: MetadataRow[]) => void | Promise<void>
   className?: string
 }
 
 export function MetadataGrid({
   columns,
   initialRows,
+  initialDraftRows,
   validate,
+  onRowsChange,
+  onDiscard,
   onCommit,
   className,
 }: MetadataGridProps) {
-  const [rows, setRows] = useState<MetadataRow[]>(initialRows)
+  const [rows, setRows] = useState<MetadataRow[]>(initialDraftRows ?? initialRows)
   const [baseline, setBaseline] = useState<MetadataRow[]>(initialRows)
   const [errors, setErrors] = useState<MetadataError[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string>()
   const dirty = rows !== baseline
 
   const setCell = (rowIndex: number, colId: string, value: string) => {
     setErrors([])
-    setRows((prev) =>
-      prev.map((row, index) => (index === rowIndex ? { ...row, [colId]: value } : row)),
-    )
+    setSaveError(undefined)
+    const next = rows.map((row, index) => (index === rowIndex ? { ...row, [colId]: value } : row))
+    setRows(next)
+    onRowsChange?.(next)
   }
 
   const handlePaste = (event: ClipboardEvent<HTMLElement>, rowIndex: number, colIndex: number) => {
@@ -58,35 +67,48 @@ export function MetadataGrid({
       .replace(/\r/g, '')
       .split('\n')
       .map((line) => line.split('\t'))
-    setRows((prev) => {
-      const next = prev.map((row) => ({ ...row }))
-      grid.forEach((line, dr) => {
-        line.forEach((value, dc) => {
-          const targetRow = next[rowIndex + dr]
-          const targetCol = columns[colIndex + dc]
-          if (targetRow && targetCol) {
-            const match = targetCol.options?.find(
-              (option) =>
-                option.value.toLocaleLowerCase('ru') === value.trim().toLocaleLowerCase('ru') ||
-                option.label.toLocaleLowerCase('ru') === value.trim().toLocaleLowerCase('ru'),
-            )
-            targetRow[targetCol.id] = match?.value ?? value
-          }
-        })
+    const next = rows.map((row) => ({ ...row }))
+    grid.forEach((line, dr) => {
+      line.forEach((value, dc) => {
+        const targetRow = next[rowIndex + dr]
+        const targetCol = columns[colIndex + dc]
+        if (targetRow && targetCol) {
+          const match = targetCol.options?.find(
+            (option) =>
+              option.value.toLocaleLowerCase('ru') === value.trim().toLocaleLowerCase('ru') ||
+              option.label.toLocaleLowerCase('ru') === value.trim().toLocaleLowerCase('ru'),
+          )
+          targetRow[targetCol.id] = match?.value ?? value
+        }
       })
-      return next
     })
+    setRows(next)
+    onRowsChange?.(next)
   }
 
   const runDryRun = () => setErrors(validate ? validate(rows) : [])
   const undo = () => {
     setRows(baseline)
     setErrors([])
+    setSaveError(undefined)
+    onRowsChange?.(baseline)
+    onDiscard?.()
   }
-  const save = () => {
-    onCommit?.(rows)
-    setBaseline(rows)
-    setErrors([])
+  const save = async () => {
+    const nextErrors = validate ? validate(rows) : []
+    setErrors(nextErrors)
+    if (nextErrors.length > 0) return
+    setSaving(true)
+    setSaveError(undefined)
+    try {
+      await onCommit?.(rows)
+      setBaseline(rows)
+      setErrors([])
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Не удалось сохранить изменения')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const errorAt = (rowIndex: number, colId: string) =>
@@ -151,11 +173,15 @@ export function MetadataGrid({
         <Button onClick={runDryRun} size="sm" variant="outline">
           Проверить (dry-run)
         </Button>
-        <Button disabled={!dirty} onClick={undo} size="sm" variant="ghost">
+        <Button disabled={!dirty || saving} onClick={undo} size="sm" variant="ghost">
           Отменить правки
         </Button>
-        <Button disabled={!dirty || errors.length > 0} onClick={save} size="sm">
-          Сохранить
+        <Button
+          disabled={!dirty || errors.length > 0 || saving}
+          onClick={() => void save()}
+          size="sm"
+        >
+          {saving ? 'Сохраняем…' : 'Сохранить'}
         </Button>
         <span className="text-caption text-muted-foreground">
           Можно вставить прямоугольный фрагмент из таблицы (TSV).
@@ -171,6 +197,11 @@ export function MetadataGrid({
             </li>
           ))}
         </ul>
+      ) : null}
+      {saveError ? (
+        <p className="text-small text-status-danger" role="alert">
+          {saveError}
+        </p>
       ) : null}
     </div>
   )

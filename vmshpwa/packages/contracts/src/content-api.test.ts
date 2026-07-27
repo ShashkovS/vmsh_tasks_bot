@@ -478,10 +478,10 @@ describe('Phase-2 content HTTP contracts', () => {
           title: 'Сколько орехов',
           problemType: 1,
           answerType: 2,
-          answerValidation: '',
+          answerValidation: null,
           validationError: 'Введите число орехов, например 7',
           correctAnswer: '7',
-          correctAnswerChecker: '',
+          correctAnswerChecker: null,
           wrongAnswer: 'Нет, не столько орехов',
           congratulation: 'Да, всё верно!',
           reviewed: false,
@@ -490,8 +490,20 @@ describe('Phase-2 content HTTP contracts', () => {
       requestId: 'metadata-contract-test',
     })
 
-    expect(grid.rows[0]?.answerValidation).toBeNull()
-    expect(grid.rows[0]?.correctAnswerChecker).toBeNull()
+    const { reviewed, ...draftRow } = grid.rows[0]!
+    expect(reviewed).toBe(false)
+    const normalized = problemMetadataMutationRequestSchema.parse({
+      revisionId: document.revisionId,
+      rows: [
+        {
+          ...draftRow,
+          answerValidation: '',
+          correctAnswerChecker: '',
+        },
+      ],
+    })
+    expect(normalized.rows[0]?.answerValidation).toBeNull()
+    expect(normalized.rows[0]?.correctAnswerChecker).toBeNull()
     expect(() =>
       problemMetadataMutationRequestSchema.parse({
         revisionId: document.revisionId,
