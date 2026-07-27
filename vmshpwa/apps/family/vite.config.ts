@@ -66,14 +66,14 @@ export default defineConfig(({ command, mode }) => {
     ],
     server: {
       proxy: {
-        '/family/api': { target: apiOrigin, changeOrigin: true },
-        '/family/ws': { target: apiOrigin, changeOrigin: true, ws: true },
+        '/family/api': { target: apiOrigin, changeOrigin: false },
+        '/family/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
     },
     preview: {
       proxy: {
-        '/family/api': { target: apiOrigin, changeOrigin: true },
-        '/family/ws': { target: apiOrigin, changeOrigin: true, ws: true },
+        '/family/api': { target: apiOrigin, changeOrigin: false },
+        '/family/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
     },
   }

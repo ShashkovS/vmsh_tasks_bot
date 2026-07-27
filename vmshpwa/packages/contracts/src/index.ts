@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { audienceSchema, type Audience } from './auth'
 
 export * from './auth'
+export * from './content'
+export * from './content-api'
 export * from './courses'
 
 export const runtimeContractVersionSchema = z.literal(1)

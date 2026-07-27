@@ -16,11 +16,16 @@
       "userId": "user-staff-fixture",
       "role": "teacher",
       "capabilities": [
-        "review",
-        "manage_oral",
-        "change_student_group",
-        "recheck",
-        "view_statistics"
+        "account.sessions.manage",
+        "course.read",
+        "group.read",
+        "oral.manage",
+        "review.read",
+        "review.write",
+        "self.read",
+        "statistics.read",
+        "student.active-group.write",
+        "student.read"
       ],
       "scopes": [
         {
@@ -42,7 +47,7 @@
       ]
     },
     "currentSession": {
-      "sessionId": "session-staff-current",
+      "sessionId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "audience": "staff",
       "isCurrent": true,
       "deviceLabel": "Synthetic staff browser",
@@ -61,7 +66,7 @@
     "audience": "staff",
     "sessions": [
       {
-        "sessionId": "session-staff-current",
+        "sessionId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "audience": "staff",
         "isCurrent": true,
         "deviceLabel": "Synthetic staff browser",
@@ -71,7 +76,7 @@
         "expiresAt": "2026-08-09T21:00:00Z"
       },
       {
-        "sessionId": "session-staff-secondary",
+        "sessionId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "audience": "staff",
         "isCurrent": false,
         "deviceLabel": "Synthetic review workstation",

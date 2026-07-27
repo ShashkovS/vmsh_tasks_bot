@@ -5,6 +5,8 @@ import { createRoot } from 'react-dom/client'
 import {
   AppProviders,
   AppStartupScreen,
+  AuthenticationProvider,
+  RealtimeProvider,
   RuntimeBootstrap,
   initFrontendObservability,
 } from '@vmsh/app-shell'
@@ -60,7 +62,11 @@ function familyApplication(runtime: RuntimeConfig) {
         }
         runtime={{ audience: 'family', instance: runtime.instance }}
       >
-        <RouterProvider router={router} />
+        <AuthenticationProvider audience="family" runtime={runtime}>
+          <RealtimeProvider audience="family" runtime={runtime}>
+            <RouterProvider router={router} />
+          </RealtimeProvider>
+        </AuthenticationProvider>
       </OfflineDatabaseProvider>
     </AppProviders>
   )

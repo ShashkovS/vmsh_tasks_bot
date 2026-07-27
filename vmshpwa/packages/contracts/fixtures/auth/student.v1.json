@@ -16,7 +16,7 @@
       "userId": "user-student-fixture"
     },
     "currentSession": {
-      "sessionId": "session-student-current",
+      "sessionId": "00000000000000000000000000000001",
       "audience": "student",
       "isCurrent": true,
       "deviceLabel": "Synthetic student browser",
@@ -35,7 +35,7 @@
     "audience": "student",
     "sessions": [
       {
-        "sessionId": "session-student-current",
+        "sessionId": "00000000000000000000000000000001",
         "audience": "student",
         "isCurrent": true,
         "deviceLabel": "Synthetic student browser",
@@ -45,7 +45,7 @@
         "expiresAt": "2026-08-09T21:00:00Z"
       },
       {
-        "sessionId": "session-student-other",
+        "sessionId": "00000000000000000000000000000002",
         "audience": "student",
         "isCurrent": false,
         "deviceLabel": null,

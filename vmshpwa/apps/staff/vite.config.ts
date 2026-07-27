@@ -15,14 +15,14 @@ export default defineConfig(({ command, mode }) => {
     plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss()],
     server: {
       proxy: {
-        '/staff/api': { target: apiOrigin, changeOrigin: true },
-        '/staff/ws': { target: apiOrigin, changeOrigin: true, ws: true },
+        '/staff/api': { target: apiOrigin, changeOrigin: false },
+        '/staff/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
     },
     preview: {
       proxy: {
-        '/staff/api': { target: apiOrigin, changeOrigin: true },
-        '/staff/ws': { target: apiOrigin, changeOrigin: true, ws: true },
+        '/staff/api': { target: apiOrigin, changeOrigin: false },
+        '/staff/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
     },
   }

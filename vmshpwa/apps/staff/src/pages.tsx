@@ -1,7 +1,8 @@
-import { Camera, FileUp, LockKeyhole, Send, Upload } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { Camera, Eye, EyeOff, FileUp, LockKeyhole, Send, Upload } from 'lucide-react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 
 import { PageLayout, PageSection, PageStatePanel, type PageDisplayState } from '@vmsh/app-shell'
+import type { StaffLoginRequest } from '@vmsh/contracts'
 import {
   ClassroomCatalog,
   ClassroomGroupLayout,
@@ -42,6 +43,7 @@ import {
   CardHeader,
   CardTitle,
   Input,
+  Label,
   Tabs,
   TabsContent,
   TabsList,
@@ -766,7 +768,39 @@ export function StaffGenericPage({
   )
 }
 
-export function StaffLoginPage({ invalid = false }: { invalid?: boolean }) {
+export type StaffLoginState =
+  'idle' | 'pending' | 'invalid' | 'rate-limited' | 'account-unavailable' | 'network' | 'error'
+
+export function StaffLoginPage({
+  invalid = false,
+  loginState,
+  onSubmit,
+}: {
+  invalid?: boolean
+  loginState?: StaffLoginState
+  onSubmit?: (request: StaffLoginRequest) => void | Promise<void>
+}) {
+  const [showPassword, setShowPassword] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const effectiveState = loginState ?? (invalid ? 'invalid' : 'idle')
+  const pending = effectiveState === 'pending'
+  const errorCopy = {
+    invalid: 'Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз.',
+    'rate-limited': 'Слишком много попыток. Подождите немного и попробуйте ещё раз.',
+    'account-unavailable':
+      'Вход для этой учётной записи сейчас недоступен. Напишите администраторам.',
+    network: 'Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз.',
+    error: 'Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам.',
+  } as const
+  const errorState = effectiveState === 'idle' || pending ? null : effectiveState
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (pending || !username.trim() || !password) return
+    await onSubmit?.({ username, password })
+  }
+
   return (
     <main className="grid min-h-svh place-items-center bg-background p-4">
       <PageLayout
@@ -776,18 +810,73 @@ export function StaffLoginPage({ invalid = false }: { invalid?: boolean }) {
         width="reading"
       >
         <Card className="mx-auto max-w-md">
-          <CardContent className="space-y-4 pt-5">
-            {invalid ? (
-              <Alert role="alert" tone="danger">
-                <AlertContent>
-                  <AlertTitle>Не удалось войти</AlertTitle>
-                  <AlertDescription>Проверьте логин и пароль.</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
-            <Input aria-label="Логин" autoComplete="username" />
-            <Input aria-label="Пароль" autoComplete="current-password" type="password" />
-            <Button className="w-full">Войти</Button>
+          <CardContent className="pt-5">
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              {errorState ? (
+                <Alert role="alert" tone="danger">
+                  <AlertContent>
+                    <AlertTitle>Не удалось войти</AlertTitle>
+                    <AlertDescription>{errorCopy[errorState]}</AlertDescription>
+                  </AlertContent>
+                </Alert>
+              ) : null}
+              <div className="space-y-1.5">
+                <Label htmlFor="staff-login">Логин</Label>
+                <Input
+                  autoComplete="username"
+                  disabled={pending}
+                  id="staff-login"
+                  maxLength={128}
+                  name="username"
+                  onChange={(event) => setUsername(event.target.value)}
+                  required
+                  value={username}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="staff-password">Пароль</Label>
+                <div className="relative">
+                  <Input
+                    autoComplete="current-password"
+                    className="pr-11"
+                    disabled={pending}
+                    id="staff-password"
+                    maxLength={512}
+                    name="password"
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                  />
+                  <Button
+                    aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                    className="absolute top-1/2 right-1 -translate-y-1/2"
+                    disabled={pending}
+                    onClick={() => setShowPassword((value) => !value)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                  </Button>
+                </div>
+              </div>
+              <Button
+                aria-busy={pending}
+                className="w-full"
+                disabled={pending || !username.trim() || !password}
+                type="submit"
+              >
+                {pending ? 'Входим…' : 'Войти'}
+              </Button>
+              <p className="text-center text-caption text-muted-foreground">
+                Не помните доступ? Напишите на{' '}
+                <a className="text-link underline" href="mailto:vmsh@179.ru">
+                  vmsh@179.ru
+                </a>
+                .
+              </p>
+            </form>
           </CardContent>
         </Card>
       </PageLayout>

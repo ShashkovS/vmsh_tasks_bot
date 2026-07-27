@@ -4,18 +4,23 @@ import {
   CircleHelp,
   Eye,
   EyeOff,
-  Laptop,
   Mail,
   MessageCircleQuestion,
   Send,
   ShieldCheck,
-  Smartphone,
   Video,
 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 
 import { MathDocument } from '@vmsh/content'
-import { PageLayout, PageSection, PageStatePanel, type PageDisplayState } from '@vmsh/app-shell'
+import {
+  AccountSessionManager,
+  PageLayout,
+  PageSection,
+  PageStatePanel,
+  type PageDisplayState,
+} from '@vmsh/app-shell'
+import type { StudentLoginRequest } from '@vmsh/contracts'
 import {
   AttemptTimeline,
   ClassroomAssignmentStatus,
@@ -711,7 +716,13 @@ export function StudentProgressPage({ state = 'ready' }: { state?: PageDisplaySt
   )
 }
 
-export function StudentProfilePage({ state = 'ready' }: { state?: PageDisplayState }) {
+export function StudentProfilePage({
+  state = 'ready',
+  sessionManagement,
+}: {
+  state?: PageDisplayState
+  sessionManagement?: ReactNode
+}) {
   return (
     <StatefulPage state={state} title="Профиль">
       <PageLayout description="Начинающие · очный режим" title="Василий Петров">
@@ -749,22 +760,7 @@ export function StudentProfilePage({ state = 'ready' }: { state?: PageDisplaySta
               </Button>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Устройства</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-small">
-              <p className="flex items-center gap-2">
-                <Smartphone aria-hidden="true" className="size-4" /> iPhone · это устройство
-              </p>
-              <p className="flex items-center gap-2">
-                <Laptop aria-hidden="true" className="size-4" /> Safari на macOS · 2 дня назад
-              </p>
-              <Button size="sm" variant="outline">
-                Управлять сессиями
-              </Button>
-            </CardContent>
-          </Card>
+          {sessionManagement ?? <AccountSessionManager />}
           <Card>
             <CardHeader>
               <CardTitle>Помощь</CardTitle>
@@ -853,15 +849,43 @@ export function StudentNotificationsPage({ state = 'ready' }: { state?: PageDisp
   )
 }
 
-export type StudentLoginState = 'idle' | 'invalid' | 'rate-limited' | 'blocked'
+export type StudentLoginState =
+  | 'idle'
+  | 'pending'
+  | 'invalid'
+  | 'rate-limited'
+  | 'account-unavailable'
+  | 'blocked'
+  | 'network'
+  | 'error'
 
-export function StudentLoginPage({ loginState = 'idle' }: { loginState?: StudentLoginState }) {
+export function StudentLoginPage({
+  loginState = 'idle',
+  onSubmit,
+}: {
+  loginState?: StudentLoginState
+  onSubmit?: (request: StudentLoginRequest) => void | Promise<void>
+}) {
   const [showPassword, setShowPassword] = useState(false)
+  const [username, setUsername] = useState('')
+  const [telegramToken, setTelegramToken] = useState('')
   const errorCopy = {
     invalid: 'Логин или токен не подошли. Проверьте раскладку и попробуйте ещё раз.',
-    'rate-limited': 'Слишком много попыток. Попробуйте через 15 минут.',
+    'rate-limited': 'Слишком много попыток. Подождите немного и попробуйте ещё раз.',
+    'account-unavailable':
+      'Вход для этой учётной записи сейчас недоступен. Напишите администраторам.',
     blocked: 'Доступ к аккаунту приостановлен. Напишите администраторам.',
+    network: 'Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз.',
+    error: 'Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам.',
   } as const
+  const pending = loginState === 'pending'
+  const errorState = loginState === 'idle' || pending ? null : loginState
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (pending || !username.trim() || !telegramToken) return
+    await onSubmit?.({ username, telegramToken })
+  }
 
   return (
     <main className="grid min-h-svh place-items-center bg-background p-4">
@@ -872,51 +896,75 @@ export function StudentLoginPage({ loginState = 'idle' }: { loginState?: Student
         width="reading"
       >
         <Card className="mx-auto max-w-md">
-          <CardContent className="space-y-4 pt-5">
-            {loginState !== 'idle' ? (
-              <Alert role="alert" tone="danger">
-                <ShieldCheck aria-hidden="true" />
-                <AlertContent>
-                  <AlertTitle>Не удалось войти</AlertTitle>
-                  <AlertDescription>{errorCopy[loginState]}</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
-            <div className="space-y-1.5">
-              <Label htmlFor="student-login">Логин</Label>
-              <Input autoComplete="username" id="student-login" placeholder="petrov-14" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="student-password">Токен Telegram-бота</Label>
-              <div className="relative">
+          <CardContent className="pt-5">
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              {errorState ? (
+                <Alert role="alert" tone="danger">
+                  <ShieldCheck aria-hidden="true" />
+                  <AlertContent>
+                    <AlertTitle>Не удалось войти</AlertTitle>
+                    <AlertDescription>{errorCopy[errorState]}</AlertDescription>
+                  </AlertContent>
+                </Alert>
+              ) : null}
+              <div className="space-y-1.5">
+                <Label htmlFor="student-login">Логин</Label>
                 <Input
-                  autoComplete="current-password"
-                  className="pr-11"
-                  id="student-password"
-                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="username"
+                  disabled={pending}
+                  id="student-login"
+                  maxLength={128}
+                  name="username"
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="petrov-14"
+                  required
+                  value={username}
                 />
-                <Button
-                  aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
-                  className="absolute top-1/2 right-1 -translate-y-1/2"
-                  onClick={() => setShowPassword((value) => !value)}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-                </Button>
               </div>
-            </div>
-            <Button className="w-full">
-              <Send aria-hidden="true" /> Войти
-            </Button>
-            <p className="text-center text-caption text-muted-foreground">
-              Не помните доступ? Напишите на{' '}
-              <a className="text-link underline" href="mailto:vmsh@179.ru">
-                vmsh@179.ru
-              </a>
-              .
-            </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="student-password">Токен Telegram-бота</Label>
+                <div className="relative">
+                  <Input
+                    autoComplete="current-password"
+                    className="pr-11"
+                    disabled={pending}
+                    id="student-password"
+                    maxLength={512}
+                    name="telegramToken"
+                    onChange={(event) => setTelegramToken(event.target.value)}
+                    required
+                    type={showPassword ? 'text' : 'password'}
+                    value={telegramToken}
+                  />
+                  <Button
+                    aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                    className="absolute top-1/2 right-1 -translate-y-1/2"
+                    disabled={pending}
+                    onClick={() => setShowPassword((value) => !value)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                  </Button>
+                </div>
+              </div>
+              <Button
+                aria-busy={pending}
+                className="w-full"
+                disabled={pending || !username.trim() || !telegramToken}
+                type="submit"
+              >
+                <Send aria-hidden="true" /> {pending ? 'Входим…' : 'Войти'}
+              </Button>
+              <p className="text-center text-caption text-muted-foreground">
+                Не помните доступ? Напишите на{' '}
+                <a className="text-link underline" href="mailto:vmsh@179.ru">
+                  vmsh@179.ru
+                </a>
+                .
+              </p>
+            </form>
           </CardContent>
         </Card>
       </PageLayout>

@@ -66,14 +66,14 @@ export default defineConfig(({ command, mode }) => {
     ],
     server: {
       proxy: {
-        '/student/api': { target: apiOrigin, changeOrigin: true },
-        '/student/ws': { target: apiOrigin, changeOrigin: true, ws: true },
+        '/student/api': { target: apiOrigin, changeOrigin: false },
+        '/student/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
     },
     preview: {
       proxy: {
-        '/student/api': { target: apiOrigin, changeOrigin: true },
-        '/student/ws': { target: apiOrigin, changeOrigin: true, ws: true },
+        '/student/api': { target: apiOrigin, changeOrigin: false },
+        '/student/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
     },
   }

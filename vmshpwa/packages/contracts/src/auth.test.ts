@@ -9,6 +9,7 @@ import studentFixture from '../fixtures/auth/student.v1.json'
 import {
   AUTH_ERROR_CODES,
   PRE_AUTH_ERROR_CODES,
+  STAFF_CAPABILITY_VALUES,
   authContextSchema,
   authContractFixtureSchema,
   authErrorCodeSchema,
@@ -17,6 +18,8 @@ import {
   authSessionsResponseSchema,
   familyLoginRequestSchema,
   principalSchema,
+  sessionPublicIdSchema,
+  staffCapabilitySchema,
   staffLoginRequestSchema,
   studentLoginRequestSchema,
   type AuthInvalidFixtureTarget,
@@ -31,8 +34,51 @@ const invalidTargetSchemas: Record<AuthInvalidFixtureTarget, ZodType> = {
   principal: principalSchema,
   auth_context: authContextSchema,
   sessions_response: authSessionsResponseSchema,
+  session_public_id: sessionPublicIdSchema,
   auth_error_code: authErrorCodeSchema,
 }
+
+const backendCapabilityRegistry = [
+  'account.sessions.manage',
+  'self.read',
+  'course.read',
+  'group.read',
+  'own-work.read',
+  'submission.manage',
+  'thread.manage',
+  'progress.read',
+  'news.read',
+  'notification.manage',
+  'family-child.read',
+  'student.read',
+  'review.read',
+  'review.write',
+  'oral.manage',
+  'student.active-group.write',
+  'statistics.read',
+  'course.manage',
+  'group.manage',
+  'content.manage',
+  'checker.manage',
+  'broadcast.manage',
+  'classroom.manage',
+  'audit.read',
+  'staff.manage',
+  'telegram-binding.manage',
+] as const
+
+const backendTeacherCapabilities = [
+  'account.sessions.manage',
+  'course.read',
+  'group.read',
+  'oral.manage',
+  'review.read',
+  'review.write',
+  'self.read',
+  'statistics.read',
+  'student.active-group.write',
+  'student.read',
+] as const
 
 describe('Phase-1 authentication contracts', () => {
   it('keeps all audience fixtures in parity with the versioned contract', () => {
@@ -81,7 +127,7 @@ describe('Phase-1 authentication contracts', () => {
     expect(staffContext.principal.audience).toBe('staff')
     if (staffContext.principal.audience !== 'staff') throw new Error('Expected staff principal')
     expect(staffContext.principal.role).toBe('teacher')
-    expect(staffContext.principal.capabilities).toContain('review')
+    expect(staffContext.principal.capabilities).toEqual(backendTeacherCapabilities)
     expect(staffContext.principal.scopes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ courseId: 'course-fixture-alpha', groupId: null }),
@@ -91,6 +137,24 @@ describe('Phase-1 authentication contracts', () => {
         }),
       ]),
     )
+  })
+
+  it('matches the complete backend Capability wire registry exactly', () => {
+    expect(STAFF_CAPABILITY_VALUES).toEqual(backendCapabilityRegistry)
+    for (const capability of backendCapabilityRegistry) {
+      expect(staffCapabilitySchema.parse(capability)).toBe(capability)
+    }
+    expect(staffCapabilitySchema.safeParse('review').success).toBe(false)
+    expect(staffCapabilitySchema.safeParse('manage_oral').success).toBe(false)
+  })
+
+  it('accepts only canonical 32-character lowercase hexadecimal session IDs', () => {
+    expect(sessionPublicIdSchema.parse('0123456789abcdef0123456789abcdef')).toBe(
+      '0123456789abcdef0123456789abcdef',
+    )
+    expect(sessionPublicIdSchema.safeParse('session-student-current').success).toBe(false)
+    expect(sessionPublicIdSchema.safeParse('0123456789ABCDEF0123456789ABCDEF').success).toBe(false)
+    expect(sessionPublicIdSchema.safeParse('0123456789abcdef0123456789abcde').success).toBe(false)
   })
 
   it('rejects every versioned invalid fixture case', () => {

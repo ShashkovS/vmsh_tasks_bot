@@ -14,6 +14,8 @@
     "./src/content.css"
   ],
   "dependencies": {
+    "@tanstack/react-query": "catalog:",
+    "@vmsh/contracts": "workspace:*",
     "dompurify": "catalog:",
     "katex": "catalog:",
     "react": "catalog:"

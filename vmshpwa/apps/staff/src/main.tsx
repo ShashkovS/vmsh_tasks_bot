@@ -2,7 +2,13 @@ import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
-import { AppProviders, RuntimeBootstrap, initFrontendObservability } from '@vmsh/app-shell'
+import {
+  AppProviders,
+  AuthenticationProvider,
+  RealtimeProvider,
+  RuntimeBootstrap,
+  initFrontendObservability,
+} from '@vmsh/app-shell'
 import { createBrowserStorageNamespace } from '@vmsh/contracts'
 import '@vmsh/ui/styles.css'
 
@@ -37,7 +43,11 @@ createRoot(rootElement).render(
     <RuntimeBootstrap audience="staff">
       {(runtime) => (
         <AppProviders storageNamespace={createBrowserStorageNamespace(runtime)}>
-          <RouterProvider router={router} />
+          <AuthenticationProvider audience="staff" runtime={runtime}>
+            <RealtimeProvider audience="staff" runtime={runtime}>
+              <RouterProvider router={router} />
+            </RealtimeProvider>
+          </AuthenticationProvider>
         </AppProviders>
       )}
     </RuntimeBootstrap>

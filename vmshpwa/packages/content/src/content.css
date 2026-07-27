@@ -13,6 +13,36 @@
   padding-block: 0.125rem;
 }
 
+.vmsh-math-expression-display {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.125rem;
+}
+
+.vmsh-formula-fallback,
+.vmsh-content-fallback,
+.vmsh-content-formula-warning {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: 1.45;
+  padding: 0.625rem 0.75rem;
+}
+
+.vmsh-content-formula-warning {
+  margin-block-end: 0.75rem;
+}
+
+.vmsh-formula-fallback code {
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
+
 .vmsh-math-content img {
   max-width: 100%;
   height: auto;
@@ -23,6 +53,12 @@
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
+}
+
+.vmsh-scroll-x:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .vmsh-math-content table {
@@ -81,8 +117,171 @@
   outline-offset: 2px;
 }
 
+.vmsh-problem {
+  margin-block: 2rem;
+}
+
+.vmsh-problem > h2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.625rem;
+  margin-block-end: 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.vmsh-problem > h2 > span {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.vmsh-subpart {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.25rem 0.625rem;
+  margin-block: 0.75rem;
+}
+
+.vmsh-subpart > .vmsh-subpart-label {
+  grid-row: 1 / span 20;
+  font: inherit;
+  font-weight: 650;
+}
+
+.vmsh-subpart > :not(.vmsh-subpart-label) {
+  grid-column: 2;
+}
+
+.vmsh-callout {
+  margin-block: 1rem;
+  border-inline-start: 3px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  padding: 0.625rem 0.875rem;
+}
+
+.vmsh-callout > :last-child {
+  margin-block-end: 0;
+}
+
+.vmsh-asset-figure {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 1.25rem;
+}
+
+.vmsh-figure-viewport {
+  position: relative;
+  display: grid;
+  min-height: 8rem;
+  max-height: min(70svh, 44rem);
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  outline: none;
+  touch-action: none;
+}
+
+.vmsh-figure-viewport:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vmsh-figure-canvas {
+  display: inline-flex;
+  width: max-content;
+  max-width: calc(100% - 0.5rem);
+  transform-origin: 0 0;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: var(--elevation-1);
+  padding: 0.5rem;
+  will-change: transform;
+}
+
+.vmsh-figure-canvas img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.vmsh-figure-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-sans);
+}
+
+.vmsh-figure-controls button {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  padding-inline: 0.625rem;
+}
+
+.vmsh-figure-controls button:hover:not(:disabled) {
+  background: var(--surface-subtle);
+}
+
+.vmsh-figure-controls button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.vmsh-figure-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.vmsh-figure-controls output {
+  min-width: 3.5rem;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.vmsh-asset-figure figcaption {
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-small);
+  line-height: 1.45;
+}
+
+.vmsh-figure-missing {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 8rem;
+  place-content: center;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  color: var(--muted-foreground);
+  font-family: var(--font-sans);
+  padding: 1rem;
+  text-align: center;
+}
+
+.vmsh-figure-missing strong {
+  color: var(--foreground);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .vmsh-math-content * {
     scroll-behavior: auto;
+  }
+
+  .vmsh-figure-canvas {
+    will-change: auto;
   }
 }

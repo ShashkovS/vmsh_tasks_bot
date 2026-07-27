@@ -48,20 +48,14 @@ function initialTheme(storageNamespace: StorageNamespace): Theme {
 export function AppProviders({
   children,
   storageNamespace = STORYBOOK_STORAGE_NAMESPACE,
+  queryClient: providedQueryClient,
 }: {
   children: ReactNode
   storageNamespace?: StorageNamespace
+  queryClient?: QueryClient
 }) {
-  const queryClient = useMemo(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false },
-          mutations: { retry: 0 },
-        },
-      }),
-    [],
-  )
+  const defaultQueryClient = useMemo(() => createAppQueryClient(), [])
+  const queryClient = providedQueryClient ?? defaultQueryClient
 
   return (
     <StorageNamespaceContext value={storageNamespace}>
@@ -73,6 +67,15 @@ export function AppProviders({
       </QueryClientProvider>
     </StorageNamespaceContext>
   )
+}
+
+export function createAppQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false },
+      mutations: { retry: 0 },
+    },
+  })
 }
 
 export function ThemeToggle() {

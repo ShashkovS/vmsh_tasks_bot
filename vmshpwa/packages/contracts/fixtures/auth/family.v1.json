@@ -29,7 +29,7 @@
       ]
     },
     "currentSession": {
-      "sessionId": "session-family-current",
+      "sessionId": "11111111111111111111111111111111",
       "audience": "family",
       "isCurrent": true,
       "deviceLabel": "Synthetic family browser",
@@ -48,7 +48,7 @@
     "audience": "family",
     "sessions": [
       {
-        "sessionId": "session-family-current",
+        "sessionId": "11111111111111111111111111111111",
         "audience": "family",
         "isCurrent": true,
         "deviceLabel": "Synthetic family browser",

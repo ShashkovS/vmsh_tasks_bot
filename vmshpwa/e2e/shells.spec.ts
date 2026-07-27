@@ -1,3 +1,4 @@
+import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas'
 import { expect, test } from './fixtures'
 
 test.beforeEach(async ({ page }) => {
@@ -7,24 +8,32 @@ test.beforeEach(async ({ page }) => {
 const apps = [
   {
     audience: 'student',
+    persona: AUTH_PERSONAS.student,
     title: 'ВМШ 179',
     detail: '/student/tasks/geometry-7',
   },
   {
     audience: 'family',
+    persona: AUTH_PERSONAS.family,
     title: 'ВМШ 179',
     detail: '/family/children/masha',
   },
   {
     audience: 'staff',
+    persona: AUTH_PERSONAS.teacher,
     title: 'ВМШ 179',
     detail: '/staff/review/submission-17',
   },
-] as const
+] satisfies Array<{
+  audience: 'student' | 'family' | 'staff'
+  persona: AuthPersona
+  title: string
+  detail: string
+}>
 
 for (const app of apps) {
   test(`${app.audience}: shell, base path and history fallback`, async ({ page }) => {
-    await page.goto(`/${app.audience}/`)
+    await loginThroughUi(page, app.persona)
     await expect(page.getByRole('link', { name: app.title }).first()).toBeVisible()
     await expect(page.locator('[data-product]')).toHaveAttribute('data-product', app.audience)
 
@@ -35,7 +44,7 @@ for (const app of apps) {
 }
 
 test('theme choice survives navigation within its application', async ({ page }) => {
-  await page.goto('/student/')
+  await loginThroughUi(page, AUTH_PERSONAS.student)
   await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
   await expect(page.locator('html')).toHaveClass(/dark/)
   await page.reload()
@@ -44,7 +53,7 @@ test('theme choice survives navigation within its application', async ({ page })
 
 test('@visual student current week', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/student/')
+  await loginThroughUi(page, AUTH_PERSONAS.student)
   await expect(page.getByRole('link', { name: 'ВМШ 179' }).first()).toBeVisible()
   await page.evaluate(() => document.fonts.ready)
   const updateState = page.getByTestId('pwa-update-state')
@@ -56,7 +65,7 @@ test('@visual student current week', async ({ page }) => {
 
 test('@visual staff weekly dashboard', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.goto('/staff/')
+  await loginThroughUi(page, AUTH_PERSONAS.teacher)
   await expect(page.getByRole('link', { name: 'ВМШ 179' }).first()).toBeVisible()
   await page.evaluate(() => document.fonts.ready)
   await expect(page).toHaveScreenshot('staff-weekly-dashboard.png', { fullPage: true })

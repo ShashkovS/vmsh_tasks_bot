@@ -1,3 +1,4 @@
+import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test, type Page } from './fixtures'
 
 type Audience = 'student' | 'family' | 'staff'
@@ -6,6 +7,99 @@ type PwaAudience = Exclude<Audience, 'staff'>
 const gatewayOrigin = 'http://127.0.0.1:5380'
 const audiences: Audience[] = ['student', 'family', 'staff']
 const pwaAudiences: PwaAudience[] = ['student', 'family']
+const websocketPersona = {
+  student: AUTH_PERSONAS.student,
+  family: AUTH_PERSONAS.family,
+  staff: AUTH_PERSONAS.teacher,
+} as const
+
+interface RealtimeProbeRecord {
+  url: string
+  receivedTypes: string[]
+  closeCode: number | null
+}
+
+async function installProductRealtimeProbe(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const NativeWebSocket = window.WebSocket
+    const sockets: WebSocket[] = []
+    const records: Array<{
+      url: string
+      receivedTypes: string[]
+      closeCode: number | null
+    }> = []
+
+    function TrackedWebSocket(url: string | URL, protocols?: string | string[]): WebSocket {
+      const socket =
+        protocols === undefined ? new NativeWebSocket(url) : new NativeWebSocket(url, protocols)
+      const record = {
+        url: String(url),
+        receivedTypes: [] as string[],
+        closeCode: null as number | null,
+      }
+      sockets.push(socket)
+      records.push(record)
+      socket.addEventListener('message', (event) => {
+        if (typeof event.data !== 'string') return
+        try {
+          const payload = JSON.parse(event.data) as { type?: unknown }
+          if (typeof payload.type === 'string') record.receivedTypes.push(payload.type)
+        } catch {
+          record.receivedTypes.push('invalid-json')
+        }
+      })
+      socket.addEventListener('close', (event) => {
+        record.closeCode = event.code
+      })
+      return socket
+    }
+
+    Object.defineProperties(TrackedWebSocket, {
+      CONNECTING: { value: NativeWebSocket.CONNECTING },
+      OPEN: { value: NativeWebSocket.OPEN },
+      CLOSING: { value: NativeWebSocket.CLOSING },
+      CLOSED: { value: NativeWebSocket.CLOSED },
+      prototype: { value: NativeWebSocket.prototype },
+    })
+    Object.defineProperty(window, 'WebSocket', {
+      configurable: true,
+      value: TrackedWebSocket,
+      writable: true,
+    })
+    Object.defineProperty(window, '__vmshRealtimeProbe', {
+      configurable: true,
+      value: {
+        closeLatest: () => sockets.at(-1)?.close(4001, 'E2E reconnect proof'),
+        snapshot: () =>
+          records.map((record) => ({ ...record, receivedTypes: [...record.receivedTypes] })),
+      },
+    })
+  })
+}
+
+async function productRealtimeSnapshot(page: Page): Promise<RealtimeProbeRecord[]> {
+  return page.evaluate(() => {
+    const probe = (
+      window as typeof window & {
+        __vmshRealtimeProbe?: { snapshot(): RealtimeProbeRecord[] }
+      }
+    ).__vmshRealtimeProbe
+    if (!probe) throw new Error('Product realtime probe was not installed')
+    return probe.snapshot()
+  })
+}
+
+async function closeLatestProductRealtimeSocket(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const probe = (
+      window as typeof window & {
+        __vmshRealtimeProbe?: { closeLatest(): void }
+      }
+    ).__vmshRealtimeProbe
+    if (!probe) throw new Error('Product realtime probe was not installed')
+    probe.closeLatest()
+  })
+}
 
 const manifests = {
   student: {
@@ -521,12 +615,15 @@ for (const audience of pwaAudiences) {
         }, `${gatewayOrigin}/${audience}/`),
       )
       .toBe('installed')
-    // vite-plugin-pwa/Workbox owns the reload after SKIP_WAITING. Arm the
-    // observer before the click: an additional explicit reload races that
-    // navigation in Firefox and hides whether the real update UX works.
+    // The product reloads exactly once after the replacement worker really
+    // becomes this document's controller. Arm the observer before the click:
+    // a test-side reload would hide whether the real update UX works.
+    // Authentication may already have replaced the route with its audience-
+    // local login URL while RuntimeBootstrap shows the incompatible-runtime
+    // fallback. A reload must preserve that exact current URL, not force root.
+    const currentUrl = page.url()
     const updateNavigation = page.waitForEvent('framenavigated', {
-      predicate: (frame) =>
-        frame === page.mainFrame() && frame.url() === `${gatewayOrigin}/${audience}/`,
+      predicate: (frame) => frame === page.mainFrame() && frame.url() === currentUrl,
       timeout: 30_000,
     })
     await Promise.all([updateNavigation, page.getByRole('button', { name: 'Обновить' }).click()])
@@ -577,10 +674,64 @@ for (const audience of pwaAudiences) {
 }
 
 for (const audience of audiences) {
+  test(`${audience}: product realtime reconnects with cursor and refetches HTTP authority`, async ({
+    page,
+  }) => {
+    // This observes the socket created by RealtimeProvider in the production
+    // bundle. Unit tests own timing edge cases; here real aiohttp proves the
+    // browser composition and mandatory reconnect refetch from Phase 1.
+    await installProductRealtimeProbe(page)
+    let authMeRequests = 0
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (request.method() === 'GET' && url.pathname === `/${audience}/api/v1/auth/me`) {
+        authMeRequests += 1
+      }
+    })
+    await loginThroughUi(page, websocketPersona[audience])
+    await expect
+      .poll(() => productRealtimeSnapshot(page))
+      .toEqual([
+        {
+          url: `${gatewayOrigin.replace('http:', 'ws:')}/${audience}/ws`,
+          receivedTypes: ['connected'],
+          closeCode: null,
+        },
+      ])
+    const authorityBaseline = authMeRequests
+
+    await closeLatestProductRealtimeSocket(page)
+    await expect
+      .poll(() => productRealtimeSnapshot(page))
+      .toEqual([
+        {
+          url: `${gatewayOrigin.replace('http:', 'ws:')}/${audience}/ws`,
+          receivedTypes: ['connected'],
+          // Browser engines are allowed to report a clean 1000 close when a
+          // local test abort races their network teardown. The proof here is
+          // that the original product socket actually closed, not which
+          // private code the harness managed to put on the wire.
+          closeCode: expect.any(Number),
+        },
+        {
+          url: expect.stringMatching(
+            new RegExp(`^ws://127\\.0\\.0\\.1:5380/${audience}/ws\\?cursor=\\d+$`),
+          ),
+          receivedTypes: ['resync-required'],
+          closeCode: null,
+        },
+      ])
+    await expect.poll(() => authMeRequests).toBeGreaterThan(authorityBaseline)
+    await expect(page.locator(`[data-product="${audience}"]`)).toBeVisible()
+  })
+
   test(`${audience}: WebSocket first connect, heartbeat and reconnect require refetch`, async ({
     page,
   }) => {
-    await page.goto(`/${audience}/`)
+    // Phase 1 made every audience WebSocket private. Keep this runtime proof on
+    // the real login/session boundary instead of preserving the old anonymous
+    // Phase-0 handshake. See development-plan/05-phase-1-auth.md.
+    await loginThroughUi(page, websocketPersona[audience])
     const firstConnection = await page.evaluate(
       ({ audience }) =>
         new Promise<Array<Record<string, unknown>>>((resolve, reject) => {
@@ -641,53 +792,118 @@ for (const audience of audiences) {
   })
 }
 
+test('student: current-session revoke closes product realtime and returns to login', async ({
+  page,
+}) => {
+  await installProductRealtimeProbe(page)
+  await loginThroughUi(page, AUTH_PERSONAS.student)
+  await expect.poll(() => productRealtimeSnapshot(page)).toHaveLength(1)
+  await expect
+    .poll(async () => (await productRealtimeSnapshot(page))[0]?.receivedTypes)
+    .toEqual(['connected'])
+
+  const revokeStatus = await page.evaluate(async () => {
+    const me = await fetch('/student/api/v1/auth/me', { credentials: 'include' })
+    const context = (await me.json()) as { currentSession: { sessionId: string } }
+    const response = await fetch(
+      `/student/api/v1/auth/sessions/${encodeURIComponent(context.currentSession.sessionId)}`,
+      { credentials: 'include', method: 'DELETE' },
+    )
+    return response.status
+  })
+  expect(revokeStatus).toBe(204)
+  await expect(page).toHaveURL((url) => url.pathname === '/student/login')
+  await expect
+    .poll(async () => (await productRealtimeSnapshot(page)).map((record) => record.closeCode))
+    // Playwright's pass-through WebSocketRoute currently normalizes the
+    // server's 1008 to 1000 in all three engines. Unit and aiohttp integration
+    // tests own the exact wire code; this browser proof owns close + HTTP
+    // authority logout + absence of reconnect.
+    .toEqual([expect.any(Number)])
+  // An authority-sensitive close invokes one HTTP check and is never
+  // interpreted as an endless transport reconnect after revocation.
+  await page.waitForTimeout(1_000)
+  expect(await productRealtimeSnapshot(page)).toHaveLength(1)
+})
+
 test('localStorage theme state stays audience-scoped on the shared origin', async ({ page }) => {
-  await page.goto('/student/')
+  const storageSnapshot = () =>
+    page.evaluate(() => {
+      const themePrefix = 'vmsh-179:v1:'
+      const themeSuffix = ':e2e:theme'
+      const authMarkerPrefix = 'vmshpwa:auth-refresh-complete:v1:'
+      const entries = Object.entries(localStorage).sort(([left], [right]) =>
+        left.localeCompare(right),
+      )
+      return {
+        themes: Object.fromEntries(
+          entries.filter(([key]) => key.startsWith(themePrefix) && key.endsWith(themeSuffix)),
+        ),
+        authMarkers: Object.fromEntries(
+          entries.filter(([key]) => key.startsWith(authMarkerPrefix)),
+        ),
+        otherKeys: entries
+          .map(([key]) => key)
+          .filter(
+            (key) =>
+              !(key.startsWith(themePrefix) && key.endsWith(themeSuffix)) &&
+              !key.startsWith(authMarkerPrefix),
+          ),
+      }
+    })
+
+  await loginThroughUi(page, AUTH_PERSONAS.student)
   const studentTheme = page.getByRole('button', { name: 'Переключить на тёмную тему' })
   await expect(studentTheme).toBeVisible()
   await studentTheme.click()
   await expect(page.locator('html')).toHaveClass(/dark/)
 
-  await page.goto('/family/')
+  await loginThroughUi(page, AUTH_PERSONAS.family)
   await expect(page.getByRole('button', { name: 'Переключить на тёмную тему' })).toBeVisible()
   await expect(page.locator('html')).not.toHaveClass(/dark/)
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem('vmsh-179:v1:family:e2e:theme')))
     .toBe('light')
-  expect(
-    await page.evaluate(() => ({
-      student: localStorage.getItem('vmsh-179:v1:student:e2e:theme'),
-      family: localStorage.getItem('vmsh-179:v1:family:e2e:theme'),
-      keys: Object.keys(localStorage).sort(),
-    })),
-  ).toEqual({
-    student: 'dark',
-    family: 'light',
-    keys: ['vmsh-179:v1:family:e2e:theme', 'vmsh-179:v1:student:e2e:theme'],
+  const initialStorage = await storageSnapshot()
+  expect(initialStorage.themes).toEqual({
+    'vmsh-179:v1:family:e2e:theme': 'light',
+    'vmsh-179:v1:student:e2e:theme': 'dark',
   })
+  expect(Object.keys(initialStorage.authMarkers).sort()).toEqual([
+    'vmshpwa:auth-refresh-complete:v1:family',
+    'vmshpwa:auth-refresh-complete:v1:student',
+  ])
+  expect(Object.values(initialStorage.authMarkers)).toEqual([
+    expect.stringMatching(/^\d{13}$/),
+    expect.stringMatching(/^\d{13}$/),
+  ])
+  expect(initialStorage.otherKeys).toEqual([])
 
   await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
   await page.goto('/student/')
   await expect(page.locator('html')).toHaveClass(/dark/)
-  expect(
-    await page.evaluate(() => ({
-      student: localStorage.getItem('vmsh-179:v1:student:e2e:theme'),
-      family: localStorage.getItem('vmsh-179:v1:family:e2e:theme'),
-      keys: Object.keys(localStorage).sort(),
-    })),
-  ).toEqual({
-    student: 'dark',
-    family: 'dark',
-    keys: ['vmsh-179:v1:family:e2e:theme', 'vmsh-179:v1:student:e2e:theme'],
+  const finalStorage = await storageSnapshot()
+  expect(finalStorage.themes).toEqual({
+    'vmsh-179:v1:family:e2e:theme': 'dark',
+    'vmsh-179:v1:student:e2e:theme': 'dark',
   })
+  expect(Object.keys(finalStorage.authMarkers).sort()).toEqual([
+    'vmshpwa:auth-refresh-complete:v1:family',
+    'vmshpwa:auth-refresh-complete:v1:student',
+  ])
+  expect(Object.values(finalStorage.authMarkers)).toEqual([
+    expect.stringMatching(/^\d{13}$/),
+    expect.stringMatching(/^\d{13}$/),
+  ])
+  expect(finalStorage.otherKeys).toEqual([])
 })
 
 test('runtime-created IndexedDB names encode audience and instance', async ({ page }) => {
-  await page.goto('/student/')
+  await loginThroughUi(page, AUTH_PERSONAS.student)
   await expect(page.getByRole('link', { name: 'ВМШ 179' }).first()).toBeVisible()
-  await page.goto('/family/')
+  await loginThroughUi(page, AUTH_PERSONAS.family)
   await expect(page.getByRole('link', { name: 'ВМШ 179' }).first()).toBeVisible()
-  await page.goto('/staff/')
+  await loginThroughUi(page, AUTH_PERSONAS.teacher)
   await expect(page.getByRole('link', { name: 'ВМШ 179' }).first()).toBeVisible()
   const supportsEnumeration = await page.evaluate(() => typeof indexedDB.databases === 'function')
   test.skip(!supportsEnumeration, 'This browser cannot enumerate IndexedDB databases')

@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { StaffLessonDetailPage } from '../pages'
+import { StaffLessonContentPage } from '../content-page'
 
 export const Route = createFileRoute('/lessons/$lessonId')({
   component: StaffLessonDetailRoute,
 })
 
 function StaffLessonDetailRoute() {
-  return <StaffLessonDetailPage lessonId={Route.useParams().lessonId} />
+  return <StaffLessonContentPage lessonId={Route.useParams().lessonId} />
 }

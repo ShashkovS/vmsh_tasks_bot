@@ -1,8 +1,15 @@
-import { Bell, Eye, EyeOff, Laptop, Mail, Smartphone, Users } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { Bell, Eye, EyeOff, Mail, Users } from 'lucide-react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 
-import { PageLayout, PageSection, PageStatePanel, type PageDisplayState } from '@vmsh/app-shell'
+import {
+  AccountSessionManager,
+  PageLayout,
+  PageSection,
+  PageStatePanel,
+  type PageDisplayState,
+} from '@vmsh/app-shell'
 import { MathDocument } from '@vmsh/content'
+import type { FamilyLoginRequest } from '@vmsh/contracts'
 import {
   ClassroomAssignmentStatus,
   CourseCard,
@@ -416,7 +423,13 @@ export function FamilyNewsDetailPage({
   )
 }
 
-export function FamilyProfilePage({ state = 'ready' }: { state?: PageDisplayState }) {
+export function FamilyProfilePage({
+  state = 'ready',
+  sessionManagement,
+}: {
+  state?: PageDisplayState
+  sessionManagement?: ReactNode
+}) {
   return (
     <StatefulPage state={state} title="Профиль">
       <PageLayout
@@ -432,19 +445,7 @@ export function FamilyProfilePage({ state = 'ready' }: { state?: PageDisplayStat
               <p className="text-small">2 связанных профиля</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Устройства</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-small">
-              <p className="flex gap-2">
-                <Smartphone className="size-4" /> iPhone · это устройство
-              </p>
-              <p className="flex gap-2">
-                <Laptop className="size-4" /> Safari · вчера
-              </p>
-            </CardContent>
-          </Card>
+          {sessionManagement ?? <AccountSessionManager />}
           <Card>
             <CardHeader>
               <CardTitle>Помощь</CardTitle>
@@ -487,8 +488,39 @@ export function FamilyNotificationsPage({ state = 'ready' }: { state?: PageDispl
   )
 }
 
-export function FamilyLoginPage({ invalid = false }: { invalid?: boolean }) {
+export type FamilyLoginState =
+  'idle' | 'pending' | 'invalid' | 'rate-limited' | 'account-unavailable' | 'network' | 'error'
+
+export function FamilyLoginPage({
+  invalid = false,
+  loginState,
+  onSubmit,
+}: {
+  invalid?: boolean
+  loginState?: FamilyLoginState
+  onSubmit?: (request: FamilyLoginRequest) => void | Promise<void>
+}) {
   const [showPassword, setShowPassword] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const effectiveState = loginState ?? (invalid ? 'invalid' : 'idle')
+  const pending = effectiveState === 'pending'
+  const errorCopy = {
+    invalid: 'Логин или пароль не подошли. Проверьте раскладку и попробуйте ещё раз.',
+    'rate-limited': 'Слишком много попыток. Подождите немного и попробуйте ещё раз.',
+    'account-unavailable':
+      'Вход для этой учётной записи сейчас недоступен. Напишите администраторам.',
+    network: 'Не удалось связаться с сервером. Проверьте интернет и попробуйте ещё раз.',
+    error: 'Не удалось безопасно завершить вход. Повторите попытку или напишите администраторам.',
+  } as const
+  const errorState = effectiveState === 'idle' || pending ? null : effectiveState
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (pending || !username.trim() || !password) return
+    await onSubmit?.({ username, password })
+  }
+
   return (
     <main className="grid min-h-svh place-items-center bg-background p-4">
       <PageLayout
@@ -498,49 +530,72 @@ export function FamilyLoginPage({ invalid = false }: { invalid?: boolean }) {
         width="reading"
       >
         <Card className="mx-auto max-w-md">
-          <CardContent className="space-y-4 pt-5">
-            {invalid ? (
-              <Alert role="alert" tone="danger">
-                <AlertContent>
-                  <AlertTitle>Не удалось войти</AlertTitle>
-                  <AlertDescription>Проверьте логин и пароль.</AlertDescription>
-                </AlertContent>
-              </Alert>
-            ) : null}
-            <div className="space-y-1.5">
-              <Label htmlFor="family-login">Логин</Label>
-              <Input autoComplete="username" id="family-login" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="family-password">Пароль</Label>
-              <div className="relative">
+          <CardContent className="pt-5">
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              {errorState ? (
+                <Alert role="alert" tone="danger">
+                  <AlertContent>
+                    <AlertTitle>Не удалось войти</AlertTitle>
+                    <AlertDescription>{errorCopy[errorState]}</AlertDescription>
+                  </AlertContent>
+                </Alert>
+              ) : null}
+              <div className="space-y-1.5">
+                <Label htmlFor="family-login">Логин</Label>
                 <Input
-                  autoComplete="current-password"
-                  className="pr-11"
-                  id="family-password"
-                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="username"
+                  disabled={pending}
+                  id="family-login"
+                  maxLength={128}
+                  name="username"
+                  onChange={(event) => setUsername(event.target.value)}
+                  required
+                  value={username}
                 />
-                <Button
-                  aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
-                  className="absolute top-1/2 right-1 -translate-y-1/2"
-                  onClick={() => setShowPassword((value) => !value)}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  {showPassword ? <EyeOff /> : <Eye />}
-                </Button>
               </div>
-            </div>
-            <Button className="w-full">
-              <Users /> Войти
-            </Button>
-            <p className="text-center text-caption text-muted-foreground">
-              <Bell className="mr-1 inline size-3" /> Помощь:{' '}
-              <a className="text-link underline" href="mailto:vmsh@179.ru">
-                vmsh@179.ru
-              </a>
-            </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="family-password">Пароль</Label>
+                <div className="relative">
+                  <Input
+                    autoComplete="current-password"
+                    className="pr-11"
+                    disabled={pending}
+                    id="family-password"
+                    maxLength={512}
+                    name="password"
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                  />
+                  <Button
+                    aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                    className="absolute top-1/2 right-1 -translate-y-1/2"
+                    disabled={pending}
+                    onClick={() => setShowPassword((value) => !value)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    {showPassword ? <EyeOff /> : <Eye />}
+                  </Button>
+                </div>
+              </div>
+              <Button
+                aria-busy={pending}
+                className="w-full"
+                disabled={pending || !username.trim() || !password}
+                type="submit"
+              >
+                <Users aria-hidden="true" /> {pending ? 'Входим…' : 'Войти'}
+              </Button>
+              <p className="text-center text-caption text-muted-foreground">
+                <Bell className="mr-1 inline size-3" /> Помощь:{' '}
+                <a className="text-link underline" href="mailto:vmsh@179.ru">
+                  vmsh@179.ru
+                </a>
+              </p>
+            </form>
           </CardContent>
         </Card>
       </PageLayout>

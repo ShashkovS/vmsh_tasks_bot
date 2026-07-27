@@ -20,6 +20,12 @@ export const publicIdSchema = z
   )
 export type PublicId = z.infer<typeof publicIdSchema>
 
+export const sessionPublicIdSchema = z
+  .string()
+  .regex(/^[0-9a-f]{32}$/, 'Session public ID must be exactly 32 lowercase hex digits')
+  .brand<'SessionPublicId'>()
+export type SessionPublicId = z.infer<typeof sessionPublicIdSchema>
+
 export const canonicalTokenSchema = z
   .string()
   .min(1)
@@ -66,9 +72,38 @@ export type FamilyLinkedChildSummary = z.infer<typeof familyLinkedChildSummarySc
 export const staffRoleSchema = z.enum(['teacher', 'admin'])
 export type StaffRole = z.infer<typeof staffRoleSchema>
 
-// Capability names are stable canonical tokens while the set remains additive.
-// Backend authorization still checks every object against the current DB scope.
-export const staffCapabilitySchema = canonicalTokenSchema.brand<'StaffCapability'>()
+// Exact wire registry from `helpers/pwa/permissions.py::Capability`. Object
+// scope remains a separate backend check; unknown tokens fail closed here.
+export const STAFF_CAPABILITY_VALUES = [
+  'account.sessions.manage',
+  'self.read',
+  'course.read',
+  'group.read',
+  'own-work.read',
+  'submission.manage',
+  'thread.manage',
+  'progress.read',
+  'news.read',
+  'notification.manage',
+  'family-child.read',
+  'student.read',
+  'review.read',
+  'review.write',
+  'oral.manage',
+  'student.active-group.write',
+  'statistics.read',
+  'course.manage',
+  'group.manage',
+  'content.manage',
+  'checker.manage',
+  'broadcast.manage',
+  'classroom.manage',
+  'audit.read',
+  'staff.manage',
+  'telegram-binding.manage',
+] as const
+
+export const staffCapabilitySchema = z.enum(STAFF_CAPABILITY_VALUES)
 export type StaffCapability = z.infer<typeof staffCapabilitySchema>
 
 export const staffScopeSchema = z
@@ -129,7 +164,7 @@ export type Principal = z.infer<typeof principalSchema>
 
 export const authSessionSummarySchema = z
   .object({
-    sessionId: publicIdSchema,
+    sessionId: sessionPublicIdSchema,
     audience: audienceSchema,
     isCurrent: z.boolean(),
     deviceLabel: z.string().trim().min(1).max(120).nullable(),
@@ -308,6 +343,7 @@ export const authInvalidFixtureTargetSchema = z.enum([
   'principal',
   'auth_context',
   'sessions_response',
+  'session_public_id',
   'auth_error_code',
 ])
 export type AuthInvalidFixtureTarget = z.infer<typeof authInvalidFixtureTargetSchema>

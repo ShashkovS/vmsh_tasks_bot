@@ -59,7 +59,7 @@
           "userId": "user-student-fixture"
         },
         "currentSession": {
-          "sessionId": "session-family-fixture",
+          "sessionId": "11111111111111111111111111111111",
           "audience": "family",
           "isCurrent": true,
           "deviceLabel": null,
@@ -82,7 +82,7 @@
         "audience": "student",
         "sessions": [
           {
-            "sessionId": "session-student-other",
+            "sessionId": "00000000000000000000000000000002",
             "audience": "student",
             "isCurrent": false,
             "deviceLabel": null,
@@ -93,6 +93,16 @@
           }
         ]
       }
+    },
+    {
+      "name": "session_id_not_canonical_hex",
+      "target": "session_public_id",
+      "payload": "session-student-current"
+    },
+    {
+      "name": "session_id_uppercase_hex",
+      "target": "session_public_id",
+      "payload": "0123456789ABCDEF0123456789ABCDEF"
     },
     {
       "name": "enumerating_blocked_code",

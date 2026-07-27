@@ -1,7 +1,13 @@
 import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import { House, Newspaper, UserRound, UsersRound } from 'lucide-react'
+import { useCallback } from 'react'
 
-import { AppShell } from '@vmsh/app-shell'
+import {
+  AppShell,
+  AuthenticationRedirectBoundary,
+  createRouterAuthReturnTo,
+  isAuthenticationLoginPath,
+} from '@vmsh/app-shell'
 
 const navigation = [
   { label: 'Сейчас', to: '/', icon: <House className="size-5" aria-hidden="true" /> },
@@ -21,12 +27,33 @@ export const Route = createRootRoute({
 
 /* Login owns the separate shell required by design-system Phase 5. */
 function FamilyRootLayout() {
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
-  if (pathname.endsWith('/login')) return <Outlet />
+  const location = useRouterState({ select: (state) => state.location })
+  const pathname = location.pathname
+  if (isAuthenticationLoginPath('family', pathname)) return <Outlet />
+
+  return <FamilyProtectedShell location={location} />
+}
+
+function FamilyProtectedShell({
+  location,
+}: {
+  location: { pathname: string; searchStr: string; hash: string }
+}) {
+  const navigate = Route.useNavigate()
+  const returnTo = createRouterAuthReturnTo('family', {
+    pathname: location.pathname,
+    search: location.searchStr,
+    hash: location.hash ? `#${location.hash}` : '',
+  })
+  const redirectToLogin = useCallback(() => {
+    void navigate({ to: '/login', search: { returnTo }, replace: true })
+  }, [navigate, returnTo])
 
   return (
-    <AppShell product="family" title="Семья" navigation={navigation} mobileNavigation>
-      <Outlet />
-    </AppShell>
+    <AuthenticationRedirectBoundary onAuthenticationRequired={redirectToLogin}>
+      <AppShell product="family" title="Семья" navigation={navigation} mobileNavigation>
+        <Outlet />
+      </AppShell>
+    </AuthenticationRedirectBoundary>
   )
 }

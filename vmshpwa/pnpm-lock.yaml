@@ -569,6 +569,12 @@ importers:
 
   packages/content:
     dependencies:
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.4(react@19.2.8)
+      '@vmsh/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       dompurify:
         specifier: 'catalog:'
         version: 3.4.12
