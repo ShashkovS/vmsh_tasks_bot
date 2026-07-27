@@ -1,10 +1,18 @@
 # Аутентификация и безопасность
 
-Документ описывает целевую модель; production login endpoints в каркасе отсутствуют.
+Документ описывает целевую модель. Phase 1 начат с чистых правил identity,
+Argon2id и signed/opaque token primitives; production login endpoints пока не
+считаются готовыми. Подробное решение и актуальные первичные источники:
+[`ADR 0003`](../../adr/0003-pwa-authentication-cryptography-and-sessions.md).
 
 ## Учётные записи и сессии
 
-Школьник входит по логину вида `transliterated-surname-birth-day` и текущему Telegram-токену. Версионированный import проверяет уникальность сгенерированного login и требует admin-разрешения коллизии. `NULL`/невалидная дата рождения, пустая фамилия и явно guessable legacy token попадают в preflight и не превращаются в активный web account молча; исключительная policy фиксируется как `AUTH-01` в фазовом плане. Family account хранит минимальное имя без email; связи с детьми many-to-many. Если один человек является parent и teacher, он использует разные logins/audience sessions. Первичная выдача и восстановление Family/Staff доступа выполняются через администраторов по `vmsh@179.ru`.
+Школьник входит по логину вида `transliterated-surname-DD` и текущему Telegram-токену. Алгоритм v1 использует замороженную локальную транслитерацию и двузначный день месяца; коллизия блокирует import до явного сохранённого admin override, а не получает нестабильный suffix из row ID. Версионированный import проверяет уникальность сгенерированного login. `NULL`/невалидная дата рождения, пустая фамилия и явно guessable legacy token попадают в preflight и не превращаются в активный web account молча; исключительная policy фиксируется как `AUTH-01` в фазовом плане. Family account хранит минимальное имя без email; связи с детьми many-to-many. Если один человек является parent и teacher, он использует разные logins/audience sessions. Первичная выдача и восстановление Family/Staff доступа выполняются через администраторов по `vmsh@179.ru`.
+
+Все credential hashes — Argon2id. Production использует актуальные defaults
+`argon2-cffi`; после успешного входа устаревшие параметры автоматически
+перехешируются. Student token проходит ту же trim/homoglyph normalization, что
+и исторический Telegram-бот, но не копируется в ещё одно plaintext-поле.
 
 Сессия использует две HttpOnly cookie на audience: короткую подписанную `itsdangerous` access cookie и ротируемую refresh cookie. Refresh session и hash raw token хранятся в SQLite, поэтому отдельное устройство можно отозвать без отдельного auth service.
 
@@ -14,7 +22,7 @@
 | Family   | `vmsh_family_access`  | `vmsh_family_refresh`  | `/family`  |
 | Staff    | `vmsh_staff_access`   | `vmsh_staff_refresh`   | `/staff`   |
 
-Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Student, Family и Staff refresh sessions истекают в ближайшее 10 августа, access cookie — существенно раньше. Конкретный `expiresAt` вычисляет server. Блокировка, сброс Telegram-токена, смена критичных прав и ручной отзыв завершают session раньше.
+Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Student, Family и Staff refresh sessions истекают в ближайшее 10 августа 00:00 по Москве, access cookie живёт 15 минут. Конкретный `expiresAt` вычисляет server. Блокировка, сброс Telegram-токена, смена критичных прав и ручной отзыв мягко отзывают session раньше; строка и secret-free audit остаются для списка устройств и расследования.
 
 ## Обязательные механизмы
 
@@ -22,7 +30,7 @@ Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, 
 - журнал устройств: создание, последнее использование, приблизительное устройство, отзыв одной или всех сессий;
 - CSRF baseline: `SameSite=Lax`, строгая проверка same-origin `Origin`/Fetch Metadata и ожидаемого content type. Отдельный synchronizer token пока не вводится;
 - capability checks в backend на каждом объекте; скрытие кнопки не является авторизацией;
-- обязательный совместимый login audit (`signons`) и история group/mode (`user_changes_log`); дополнительные domain revisions/provenance не заменяют эти записи; отдельный лог самого факта чтения чужой работы не нужен;
+- обязательный secret-free login audit в `auth_events` и история group/mode (`user_changes_log`); legacy `signons.token` для PWA не используется, потому что пишет credential в журнал; отдельный лог самого факта чтения чужой работы не нужен;
 - ограничение типов/размеров uploads, декодирование и re-encoding изображений, quarantine/scan при необходимости;
 - public GET длинных непредсказуемых attachment URLs; upload всегда идёт через авторизованный aiohttp, а URL не должен попадать в public logs;
 - redaction секретов, токенов и содержимого работ из operational logs.

@@ -11,7 +11,8 @@
 | Модель данных       | revised planning input                | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                            |
 | API/events/files    | accepted planning input               | Batch move, cross-group confirm и classroom history зафиксированы                                                                     |
 | Этап 0              | in progress                           | Runtime/schema/seed/auth/storage и one-origin functional E2E 72/72 готовы; visual owner gate, telemetry gaps и live Telegram остаются |
-| Этапы 1–11          | planned with gates                    | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                         |
+| Этап 1              | in progress                           | Pure auth rules/Argon2id/ADR готовы; schema, repository, HTTP, frontend и E2E выполняются отдельными коммитами                        |
+| Этапы 2–11          | planned with gates                    | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                         |
 | Design system       | phases 5–7 ready for review           | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                    |
 | Multi-course model  | verified prototype; owner visual gate | Phase 1–11, UI, stories и tests обновлены; backend/migrations не реализованы                                                          |
 
@@ -70,6 +71,7 @@
 | 2026-07-27 | PLAN-049 | Runtime wire contract версионируется отдельно от browser storage                                         | Неизвестная версия fail-closed; additive v1 fields допустимы при rolling deploy; namespace version меняется только с миграцией локальных данных               |
 | 2026-07-27 | PLAN-050 | PWA update recovery не зависит от runtime и IndexedDB gates, а E2E suite сериализован                    | Worker может обновить сломанный startup; единый flock охватывает production build, seed, shared ports и Playwright                                            |
 | 2026-07-27 | PLAN-051 | Phase-0 one-origin gateway ещё не является trusted-proxy/auth моделью                                    | Phase 1 задаёт public origin и доверенные proxy hops; spoofed `Forwarded`/`X-Forwarded-*` входят в обязательные negative tests                                |
+| 2026-07-27 | PLAN-052 | Phase-1 auth использует Argon2id, audience-salted signed access и soft-revoked rotating refresh sessions | Current defaults rehash после login; HMAC refresh/throttle keys живут только в SQLite; точная модель и источники закреплены в ADR 0003                      |
 
 ## Текущий инкремент этапа 0
 

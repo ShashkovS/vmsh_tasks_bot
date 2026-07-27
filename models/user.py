@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from typing import Optional, Generator
 
-from helpers.consts import *
+from helpers.consts import CHANGE, ONLINE_MODE, USER_TYPE
+from models.pwa.auth import normalize_telegram_token
 from helpers.config import logger
 from models.group import Group
 from helpers.trace import emit_trace
@@ -13,8 +14,10 @@ from helpers.trace import emit_trace
 import db_methods as db
 
 
-def _normilize_token(token: str, *, RU_TO_EN=str.maketrans('УКЕНХВАРОСМТукехарос', 'YKEHXBAPOCMTykexapoc')) -> str:
-    return token.strip().translate(RU_TO_EN).lower()
+def _normilize_token(token: str) -> str:
+    """Compatibility alias for the historical misspelled helper name."""
+
+    return normalize_telegram_token(token)
 
 
 @dataclass
@@ -138,7 +141,7 @@ class User:
         if self.birthday:
             try:
                 age = f"возраст: {((datetime.now().date() - date.fromisoformat(self.birthday)).days / 365.25):0.1f}"
-            except Exception as e:
+            except Exception:
                 logger.exception(f'Дата рождения не парсится: {self.birthday}')
         if self.grade:
             grade = f'класс: {self.grade}'

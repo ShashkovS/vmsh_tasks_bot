@@ -8,9 +8,15 @@ Student входит сгенерированным логином и текущ
 
 ## Модель данных и миграция
 
-Логическая migration: `migrations/NNNN.pwa_auth_accounts_sessions.sql`.
+Миграции этапа: `migrations/0039.pwa_auth_accounts_sessions.sql` и
+`migrations/0040.pwa_courses_access.sql`, обе с точным rollback. Решение по
+криптографии, ротации и отзыву: [`ADR 0003`](../../../adr/0003-pwa-authentication-cryptography-and-sessions.md).
 
-Создать `seasons` (если решение принято), `auth_accounts`, `family_student_links`, `staff_group_permissions`, `auth_sessions`, `auth_events`. Production backfill сначала dry-run:
+Создать `auth_accounts`, `family_student_links`, `auth_sessions`, `auth_events`,
+shared-worker `auth_throttle_buckets`, а затем `seasons`, `courses`,
+course enrollment/access/events и единственный новый permission source
+`staff_scopes`. Параллельную `staff_group_permissions` не создавать. Production
+backfill сначала dry-run:
 
 - student username строится версионированным transliteration helper как фамилия + день рождения; import preview блокирует коллизии, `NULL`/невалидную дату, пустую фамилию и позволяет исправить source либо назначить явно сохранённый уникальный вариант;
 - student/staff account связывается с `users.id`;
@@ -24,7 +30,7 @@ Student входит сгенерированным логином и текущ
 - App factory получает auth/session dependencies без Telegram/Google imports.
 - Middleware разрешает только login/health/static как public routes.
 - Principal содержит `accountId`, `audience`, optional `userId`, role/capabilities, allowed groups и session version.
-- Signed short cookie + server session/refresh record либо выбранная альтернатива.
+- Signed 15-minute access cookie + opaque single-use refresh secret; SQLite хранит только HMAC refresh secret, session/version/revocation и secret-free audit.
 - Cookie: отдельное имя, `Path=/student|family|staff`, `HttpOnly`, `Secure` production, `SameSite`, общий для всех audiences срок до ближайшего 10 августа и ранний revoke.
 - Origin/Referer check на unsafe methods, CSP для HTML/static, nginx rate-limit
   contract для login. Public origin и доверенные reverse-proxy hops задаются
@@ -32,7 +38,7 @@ Student входит сгенерированным логином и текущ
   `Forwarded`/`X-Forwarded-*` headers. Phase-0 E2E gateway отправляет upstream
   `Host` API 8380 при browser `Origin` 5380 и не считается auth/CSRF моделью.
 - Помимо IP-level nginx limit, backend ведёт normalized-login/account-level throttling с bounded backoff/temporary lock, чтобы распределённые попытки не обходили защиту. Ответ и timing не подтверждают существование username.
-- Device list, revoke one, logout all, credential version invalidation.
+- Device list, soft revoke one, logout all, credential version invalidation; refresh rotation использует optimistic session version, replay отзывает lineage.
 - API не отличает неверный login от неверного token сообщением.
 
 Пути: `apps/pwa_api/auth_routes.py`, `apps/pwa_api/middleware.py`, `models/pwa/auth.py`, `db_methods/pwa/auth.py`, `helpers/pwa/permissions.py`.
