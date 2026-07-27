@@ -1,0 +1,3352 @@
+{
+  "schemaVersion": 1,
+  "registerId": "vmsh-phase0-external-processes",
+  "asOf": "2026-07-27",
+  "language": "ru",
+  "scope": {
+    "description": "Наблюдаемый внешний и ручной контур ВМШ до его поэтапного переноса в Staff/PWA.",
+    "privacyRule": "Реестр хранит только классы данных и систем. Имена, идентификаторы, токены, адреса бакетов, chat_id и содержимое журналов запрещены.",
+    "operationalRule": "Активный процесс не отключается, пока целевой этап не доказал parity, recovery и явно подтверждённый cutover.",
+    "evidencePaths": [
+      "docs/weekly_livecycle",
+      "vmshpwa/dev/development-plan/16-external-artifacts.md",
+      "_external_pipelines",
+      "logs"
+    ]
+  },
+  "classifications": [
+    "active_external",
+    "active_automated",
+    "manual_digital",
+    "manual_physical",
+    "legacy_reference"
+  ],
+  "externalSystems": [
+    {
+      "id": "dropbox",
+      "title": "Общая Dropbox-папка",
+      "credentialClass": "Доступ участников математической и организационной команд; значения не фиксируются",
+      "dataClasses": [
+        "LaTeX",
+        "PDF",
+        "сканы",
+        "инструкции",
+        "рабочие скрипты"
+      ]
+    },
+    {
+      "id": "telegram-bot",
+      "title": "Рабочий Telegram-бот",
+      "credentialClass": "Bot API token из production-конфигурации; в тестах запрещён",
+      "dataClasses": [
+        "личные сообщения",
+        "сдачи",
+        "результаты",
+        "команды администратора"
+      ]
+    },
+    {
+      "id": "telegram-spaces",
+      "title": "Каналы и группы Telegram",
+      "credentialClass": "Личные аккаунты редакторов и права бота; значения не фиксируются",
+      "dataClasses": [
+        "новости",
+        "условия",
+        "подсказки",
+        "решения",
+        "обсуждения"
+      ]
+    },
+    {
+      "id": "google-sheets",
+      "title": "Google Sheets legacy",
+      "credentialClass": "Service account или пользовательский доступ legacy; новый PWA-контур не загружает",
+      "dataClasses": [
+        "пользователи",
+        "задачи",
+        "настройки",
+        "результаты"
+      ]
+    },
+    {
+      "id": "local-spreadsheets",
+      "title": "Локальные Excel-кондуиты и выгрузки",
+      "credentialClass": "Доступ к рабочей файловой системе/Dropbox; значения не фиксируются",
+      "dataClasses": [
+        "списки школьников",
+        "режим",
+        "аудитории",
+        "посещаемость",
+        "результаты"
+      ]
+    },
+    {
+      "id": "esz",
+      "title": "Сервис заявок esz",
+      "credentialClass": "Доступ оператора; значения не фиксируются",
+      "dataClasses": [
+        "регистрационные заявки"
+      ]
+    },
+    {
+      "id": "email",
+      "title": "Почта и внешний рассыльщик",
+      "credentialClass": "Почтовые credentials и список адресатов; значения не фиксируются",
+      "dataClasses": [
+        "вопросы",
+        "доступы",
+        "результаты",
+        "решения"
+      ]
+    },
+    {
+      "id": "legacy-site",
+      "title": "Публичный сайт условий",
+      "credentialClass": "FTP credentials legacy; значения не фиксируются",
+      "dataClasses": [
+        "HTML",
+        "PDF",
+        "SVG/WebP",
+        "статистика"
+      ]
+    },
+    {
+      "id": "production-host",
+      "title": "Production-хост бота и резервный хост",
+      "credentialClass": "SSH/SCP keys и service access; значения не фиксируются",
+      "dataClasses": [
+        "SQLite dump",
+        "архив",
+        "резервные копии"
+      ]
+    },
+    {
+      "id": "production-sqlite",
+      "title": "Общая production SQLite",
+      "credentialClass": "Файловый доступ процесса бота; в characterization только согласованная read-only копия",
+      "dataClasses": [
+        "пользователи",
+        "задачи",
+        "сдачи",
+        "проверки",
+        "аналитика"
+      ]
+    },
+    {
+      "id": "zoom",
+      "title": "Zoom",
+      "credentialClass": "Meeting/webhook credentials; значения не фиксируются",
+      "dataClasses": [
+        "ссылка и код встречи",
+        "очередь",
+        "события присутствия"
+      ]
+    },
+    {
+      "id": "youtube",
+      "title": "YouTube-канал разборов",
+      "credentialClass": "Аккаунт редактора; значения не фиксируются",
+      "dataClasses": [
+        "записи разборов"
+      ]
+    },
+    {
+      "id": "school-facilities",
+      "title": "Школьные аудитории, принтер и сканер",
+      "credentialClass": "Физический доступ организаторов",
+      "dataClasses": [
+        "бумажные условия",
+        "списки",
+        "кондуиты",
+        "сканы"
+      ]
+    },
+    {
+      "id": "local-toolchain",
+      "title": "Локальный Python/LaTeX/Image/PDF toolchain",
+      "credentialClass": "Нет сетевого секрета; зависит от локальной установки и Dropbox helpers",
+      "dataClasses": [
+        "временные TeX/PDF/SVG/WebP",
+        "clipboard TSV",
+        "локальные отчёты"
+      ]
+    },
+    {
+      "id": "s3-compatible",
+      "title": "S3-compatible media storage",
+      "credentialClass": "S3 keys из environment/config; production values не фиксируются",
+      "dataClasses": [
+        "SVG",
+        "WebP",
+        "медиа задач и сдач"
+      ]
+    },
+    {
+      "id": "event-logs",
+      "title": "Локальный корпус JSONL-событий",
+      "credentialClass": "Нет; файлы содержат реальные идентификаторы и не публикуются в отчёте",
+      "dataClasses": [
+        "типы событий",
+        "временные метки",
+        "технические идентификаторы"
+      ]
+    }
+  ],
+  "processes": [
+    {
+      "id": "support-email",
+      "title": "Ответы на вопросы по почте",
+      "classification": "manual_digital",
+      "owner": "Администратор/организатор",
+      "trigger": "Поступил вопрос",
+      "schedule": "Всё время",
+      "inputs": [
+        "Входящее письмо и контекст ученика"
+      ],
+      "outputs": [
+        "Ответ отправителю"
+      ],
+      "sideEffects": [
+        "Внешняя переписка остаётся в почтовой системе"
+      ],
+      "externalSystems": [
+        "email"
+      ],
+      "credentialClasses": [
+        "Доступ к рабочему почтовому ящику"
+      ],
+      "rerunPolicy": "Повторный ответ допустим только как новое сообщение с уточнением",
+      "failureDetection": "Неотправленное письмо или повторное обращение",
+      "recovery": "Найти тред, проверить адресата и отправить уточнение вручную",
+      "sourcePaths": [
+        "docs/weekly_livecycle/05_actor_journeys.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "post-v1-support",
+        "decision": "Сохранить почту параллельным каналом; внутренний inbox решать отдельно",
+        "cutoverGate": "Назначен владелец и доказано отсутствие потерянных обращений"
+      },
+      "invocation": "Вручную открыть рабочий mailbox и ответить в существующем почтовом треде.",
+      "upstreamProcessIds": [],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "support-sos",
+      "title": "Ответы в SOS-контуре",
+      "classification": "manual_digital",
+      "owner": "Преподаватель/организатор",
+      "trigger": "Школьник задаёт общий или задачный вопрос",
+      "schedule": "Всё время активной недели",
+      "inputs": [
+        "SOS-сообщение",
+        "контекст задачи"
+      ],
+      "outputs": [
+        "Ответ школьнику"
+      ],
+      "sideEffects": [
+        "Сообщение в специальном Telegram-контуре"
+      ],
+      "externalSystems": [
+        "telegram-bot",
+        "telegram-spaces"
+      ],
+      "credentialClasses": [
+        "Telegram user/bot access"
+      ],
+      "rerunPolicy": "Ответы дополняют историю; повтор не должен молча заменять прежний",
+      "failureDetection": "Непросмотренный вопрос или ошибка отправки",
+      "recovery": "Повторно открыть вопрос и ответить с явным уточнением",
+      "sourcePaths": [
+        "docs/weekly_livecycle/05_actor_journeys.md",
+        "logs"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "phase-6",
+        "decision": "Перенести вопросы и треды в Staff/PWA, оставив Telegram adapter",
+        "cutoverGate": "Вопрос виден, назначается, получает ответ и не теряется при reconnect"
+      },
+      "invocation": "Вручную открыть специальный SOS-чат/интерфейс Telegram-бота и отправить ответ.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "support-community-chat",
+      "title": "Ответы в группе школьников и родителей",
+      "classification": "manual_digital",
+      "owner": "Организаторы",
+      "trigger": "Сообщение в общей группе",
+      "schedule": "Всё время",
+      "inputs": [
+        "Сообщение участника"
+      ],
+      "outputs": [
+        "Публичный ответ или модерация"
+      ],
+      "sideEffects": [
+        "Общая Telegram-переписка"
+      ],
+      "externalSystems": [
+        "telegram-spaces"
+      ],
+      "credentialClasses": [
+        "Права участника/модератора"
+      ],
+      "rerunPolicy": "Исправление публикуется отдельным сообщением либо edit с осознанной историей",
+      "failureDetection": "Неотвеченное обращение замечает организатор",
+      "recovery": "Ответить вручную и при необходимости дать ссылку на канонический материал",
+      "sourcePaths": [
+        "docs/weekly_livecycle/05_actor_journeys.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "retain-parallel",
+        "decision": "Не заменять живое сообщество PWA",
+        "cutoverGate": "Не требуется для v1"
+      },
+      "invocation": "Вручную открыть общую Telegram-группу школьников и родителей и ответить либо выполнить осознанную модерацию.",
+      "upstreamProcessIds": [],
+      "transitionState": "legacy_bridge"
+    },
+    {
+      "id": "newcomer-applications",
+      "title": "Сбор и объединение новых заявок",
+      "classification": "manual_digital",
+      "owner": "Администратор регистрации",
+      "trigger": "Появились новые заявки",
+      "schedule": "Несколько раз в неделю в период набора",
+      "inputs": [
+        "Выгрузка esz",
+        "Отдельная таблица заявок без московской прописки"
+      ],
+      "outputs": [
+        "Объединённый Excel-список кандидатов"
+      ],
+      "sideEffects": [
+        "Локальный/Dropbox файл с регистрационными данными"
+      ],
+      "externalSystems": [
+        "esz",
+        "local-spreadsheets",
+        "dropbox"
+      ],
+      "credentialClasses": [
+        "Доступ к esz и рабочей папке"
+      ],
+      "rerunPolicy": "Повторять можно после дедупликации по исходным идентификаторам заявки",
+      "failureDetection": "Сверка количества строк и обязательных полей",
+      "recovery": "Отбросить непринятую выгрузку и повторить merge из исходников",
+      "sourcePaths": [
+        "docs/user_stories/admin_cycle_and_data.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "phase-10",
+        "decision": "Сделать Staff import с preview/deduplication",
+        "cutoverGate": "Dry-run и повторный import не создают дубликаты"
+      },
+      "invocation": "Вручную выгрузить заявки из esz, сохранить Excel и объединить его с отдельной таблицей заявок.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "newcomer-account-provision",
+      "title": "Создание legacy-аккаунта школьника",
+      "classification": "manual_digital",
+      "owner": "Администратор регистрации",
+      "trigger": "Объединённый список заявок готов",
+      "schedule": "Пакетно после каждой выгрузки",
+      "inputs": [
+        "Проверенная заявка",
+        "Выбранная legacy-группа/уровень"
+      ],
+      "outputs": [
+        "Логин школьника",
+        "Telegram-токен-пароль школьника",
+        "строка legacy-листа «Школьники»"
+      ],
+      "sideEffects": [
+        "Новая или изменённая строка школьника в legacy Google sheet; SQLite меняется только последующим bot import"
+      ],
+      "externalSystems": [
+        "google-sheets",
+        "telegram-bot",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Legacy Google access",
+        "Администратор бота"
+      ],
+      "rerunPolicy": "Не генерировать новый token без ручной сверки существующего пользователя и осознанной ротации",
+      "failureDetection": "Ручная сверка обязательных полей и уникальности логина до bot import",
+      "recovery": "Исправить строку legacy-листа до импорта; если token уже разослан или импортирован, явно ротировать и повторить последующие шаги",
+      "sourcePaths": [
+        "docs/user_stories/student_access_and_setup.md",
+        "vmshpwa/dev/development-plan/05-phase-1-auth.md"
+      ],
+      "artifactIds": [
+        "legacy-workbook"
+      ],
+      "target": {
+        "phase": "phase-1/phase-10",
+        "decision": "Staff batch provision создаёт Student и связанный Family account без Google-ввода",
+        "cutoverGate": "Транзакционный batch, family link, audit и безопасная повторяемость"
+      },
+      "invocation": "Вручную создать логин и Telegram-токен школьника и внести строку в legacy-лист «Школьники»; точный внешний helper в snapshot отсутствует.",
+      "upstreamProcessIds": [
+        "newcomer-applications"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "newcomer-bot-import",
+      "title": "Загрузка новых пользователей в бота",
+      "classification": "active_external",
+      "owner": "Администратор бота",
+      "trigger": "Legacy user sheet обновлён",
+      "schedule": "После каждого provisioning batch",
+      "inputs": [
+        "Строки пользователей из legacy Google sheet"
+      ],
+      "outputs": [
+        "Пользователи и настройки в общей SQLite"
+      ],
+      "sideEffects": [
+        "Изменение production SQLite через Telegram-команду"
+      ],
+      "externalSystems": [
+        "google-sheets",
+        "telegram-bot",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Администратор бота",
+        "Legacy Google service account"
+      ],
+      "rerunPolicy": "Повторять legacy-команду только после ручной сверки уже загруженных и новых строк",
+      "failureDetection": "Ответ Telegram-команды, количество обработанных строк и выборочная проверка аккаунтов",
+      "recovery": "Исправить legacy-лист и повторить команду; ошибочно изменённые данные исправить следующей командой либо восстановлением общей DB по операционному runbook",
+      "sourcePaths": [
+        "docs/user_stories/admin_cycle_and_data.md"
+      ],
+      "artifactIds": [
+        "legacy-workbook"
+      ],
+      "target": {
+        "phase": "phase-10",
+        "decision": "Прямой Staff batch API поверх общей доменной логики",
+        "cutoverGate": "Google не нужен для нового batch, Telegram login продолжает работать"
+      },
+      "invocation": "Запустить существующую Telegram admin-команду загрузки школьников из Google; точное имя команды не зафиксировано в переданном snapshot.",
+      "upstreamProcessIds": [
+        "newcomer-account-provision"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "newcomer-credentials-mailing",
+      "title": "Рассылка логинов, паролей и инструкции",
+      "classification": "active_external",
+      "owner": "Администратор регистрации",
+      "trigger": "Provisioning batch проверен",
+      "schedule": "После каждого batch",
+      "inputs": [
+        "Адреса из заявок",
+        "созданные логины и временная инструкция"
+      ],
+      "outputs": [
+        "Персональные письма"
+      ],
+      "sideEffects": [
+        "Внешняя email-рассылка с данными доступа"
+      ],
+      "externalSystems": [
+        "email",
+        "local-spreadsheets"
+      ],
+      "credentialClasses": [
+        "Почтовый sender",
+        "Доступ к registration workbook"
+      ],
+      "rerunPolicy": "Повтор только по явно выбранным недоставленным получателям",
+      "failureDetection": "Sender report и delivery failures",
+      "recovery": "Повторить выбранные письма; при раскрытии пароля сначала ротировать token",
+      "sourcePaths": [
+        "docs/user_stories/student_access_and_setup.md"
+      ],
+      "artifactIds": [
+        "legacy-mailing-editor",
+        "legacy-mailing-core",
+        "legacy-email-templates"
+      ],
+      "target": {
+        "phase": "post-v1-email",
+        "decision": "Сохранить внешний sender до отдельного Staff mailing cutover",
+        "cutoverGate": "Preview, recipient snapshot, retry и delivery audit"
+      },
+      "invocation": "Запустить внешний почтовый рассыльщик на подготовленном batch; его точный файл и команда отсутствуют в snapshot.",
+      "upstreamProcessIds": [
+        "newcomer-account-provision"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "attendance-reminder",
+      "title": "Напоминание актуализировать режим очно/онлайн",
+      "classification": "active_external",
+      "owner": "Администратор",
+      "trigger": "Приближается очное событие",
+      "schedule": "За 1–2 дня до очного занятия",
+      "inputs": [
+        "Список участников выбранных групп",
+        "текст напоминания"
+      ],
+      "outputs": [
+        "Личные сообщения школьникам"
+      ],
+      "sideEffects": [
+        "Telegram broadcast; последующие изменения режима в SQLite"
+      ],
+      "externalSystems": [
+        "telegram-bot",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Администратор бота"
+      ],
+      "rerunPolicy": "Массовый повтор выполняется только осознанным повторным запуском администратором после ручной сверки списка",
+      "failureDetection": "Ответ bot-команды и список недоставленных сообщений, если его возвращает текущий broadcast",
+      "recovery": "Повторить legacy-команду только для согласованного набора либо связаться с недоставленными адресатами вручную",
+      "sourcePaths": [
+        "docs/weekly_livecycle/02_monday.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "phase-7/phase-8",
+        "decision": "Staff broadcast по in-person event с PWA/Telegram channel selection",
+        "cutoverGate": "Recipient snapshot и retries без дублей"
+      },
+      "invocation": "Запустить существующую Telegram admin-команду личного broadcast по актуальному списку; точное имя команды отсутствует в snapshot.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "teacher-availability",
+      "title": "Сбор участия и рассылка преподавателям",
+      "classification": "manual_digital",
+      "owner": "Организатор преподавателей",
+      "trigger": "Приближается очное/Zoom-занятие",
+      "schedule": "За 1–2 дня",
+      "inputs": [
+        "Опрос в чате",
+        "актуальный список преподавателей"
+      ],
+      "outputs": [
+        "Сводка участия",
+        "личная/групповая рассылка"
+      ],
+      "sideEffects": [
+        "Опрос и сообщения в Telegram"
+      ],
+      "externalSystems": [
+        "telegram-spaces",
+        "telegram-bot"
+      ],
+      "credentialClasses": [
+        "Организатор чата",
+        "Администратор бота"
+      ],
+      "rerunPolicy": "Новый опрос или напоминание публикуется явно, без скрытой перезаписи ответов",
+      "failureDetection": "Организатор сверяет число ответов с ожидаемым составом",
+      "recovery": "Связаться с отсутствующими вручную и обновить сводку",
+      "sourcePaths": [
+        "docs/weekly_livecycle/05_actor_journeys.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "post-v1-staffing",
+        "decision": "Не входит в первый Staff cutover",
+        "cutoverGate": "Отдельное решение по staffing workflow"
+      },
+      "invocation": "Вручную создать опрос в teacher chat, затем запустить существующую bot-команду рассылки преподавателям.",
+      "upstreamProcessIds": [],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "content-authoring",
+      "title": "Подготовка и согласование математических материалов",
+      "classification": "manual_digital",
+      "owner": "Ответственные за математическую часть",
+      "trigger": "Заранее до публикации занятия",
+      "schedule": "По готовности, желательно до дня занятия",
+      "inputs": [
+        "Замыслы задач",
+        "общие LaTeX templates и assets"
+      ],
+      "outputs": [
+        "Условия",
+        "решения",
+        "правки после обсуждения преподавателями"
+      ],
+      "sideEffects": [
+        "Изменения файлов в общей Dropbox-папке",
+        "публикации в teacher channel"
+      ],
+      "externalSystems": [
+        "dropbox",
+        "telegram-spaces"
+      ],
+      "credentialClasses": [
+        "Dropbox и teacher-channel access"
+      ],
+      "rerunPolicy": "Текущие рабочие TeX/assets правятся в общей папке; перед публикацией изменения повторно согласуются, а история зависит от Dropbox и сообщений teacher channel",
+      "failureDetection": "Ручное математическое и визуальное ревью плюс явная отмашка о готовности вариантов",
+      "recovery": "Восстановить предыдущую рабочую версию средствами Dropbox либо исправить файлы и заново получить отмашку",
+      "sourcePaths": [
+        "vmshpwa/docs/latex-content-pipeline.md",
+        "_vmsh_examples"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "phase-2",
+        "decision": "Dropbox остаётся authoring source, Staff принимает versioned upload/revision",
+        "cutoverGate": "Диагностика, preview, rollback и производные PWA/Telegram/PDF"
+      },
+      "invocation": "Редактировать TeX/PDF/assets в общей Dropbox-папке и вручную публиковать материалы для математического ревью в teacher channel.",
+      "upstreamProcessIds": [],
+      "transitionState": "legacy_bridge"
+    },
+    {
+      "id": "lesson-calendar-config",
+      "title": "Актуализация номера занятия и календаря",
+      "classification": "active_external",
+      "owner": "Технический администратор",
+      "trigger": "Перед подготовкой нового занятия",
+      "schedule": "В день занятия до остальных скриптов",
+      "inputs": [
+        "Номер занятия",
+        "даты очного, Zoom и дедлайна"
+      ],
+      "outputs": [
+        "Глобальные cur_les, prev_les, LES_DATE и DATES для цепочки скриптов"
+      ],
+      "sideEffects": [
+        "Ручное изменение Python-файла, влияющее на многие downstream outputs"
+      ],
+      "externalSystems": [
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Нет"
+      ],
+      "rerunPolicy": "Безопасно перечитать; менять во время частично выполненной цепочки нельзя",
+      "failureDetection": "Ручная сверка значений в a00_dates.py и дат/номера занятия в первых downstream-артефактах",
+      "recovery": "Вернуть прежнее значение, очистить неподтверждённые производные и пересобрать",
+      "sourcePaths": [
+        "_external_pipelines/a00_dates.py"
+      ],
+      "artifactIds": [
+        "a00-dates"
+      ],
+      "target": {
+        "phase": "phase-2/phase-7/phase-10",
+        "decision": "Course/group schedule и materialized group_lesson windows",
+        "cutoverGate": "Preview показывает все изменяемые окна; существующие занятия не сдвигаются молча"
+      },
+      "invocation": "До остальных скриптов вручную отредактировать рабочую копию a00_dates.py и проверить cur_les/даты.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "production-db-mirror",
+      "title": "Получение согласованной локальной копии production SQLite",
+      "classification": "active_external",
+      "owner": "Технический администратор",
+      "trigger": "Нужны свежие режимы, результаты или статистика",
+      "schedule": "В день занятия и после проверки",
+      "inputs": [
+        "Production SQLite на сервере"
+      ],
+      "outputs": [
+        "Локально восстановленная SQLite без messages_log",
+        "обновлённые аналитические таблицы"
+      ],
+      "sideEffects": [
+        "Remote dump/archive/temp cleanup",
+        "неатомарная замена локальной DB через .temp и запись новой DB по рабочему пути",
+        "запись analytics в локальную DB"
+      ],
+      "externalSystems": [
+        "production-host",
+        "production-sqlite",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "SSH private key",
+        "Файловый доступ к локальной копии"
+      ],
+      "rerunPolicy": "Повтор допустим; локальные несохранённые изменения будут потеряны",
+      "failureDetection": "Скрипт обязан завершиться строкой Done!, а не промежуточным сообщением",
+      "recovery": "До финального Done! не открывать новую DB; при ошибке удалить или изолировать частичный рабочий файл, вручную вернуть .temp и только затем повторить download/restore",
+      "sourcePaths": [
+        "_external_pipelines/a00_update_db.py"
+      ],
+      "artifactIds": [
+        "a00-update-db",
+        "a52-teacher-stats",
+        "a53-rating",
+        "a54-report"
+      ],
+      "target": {
+        "phase": "phase-11",
+        "decision": "Заменить ad-hoc mirror на documented snapshot/restore/analytics commands",
+        "cutoverGate": "Atomic snapshot, verified restore, no production writes and auditable analytics run"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a00_update_db.py`; interpreter, helpers и credentials находятся вне snapshot.",
+      "upstreamProcessIds": [],
+      "transitionState": "legacy_bridge"
+    },
+    {
+      "id": "analytics-refresh",
+      "title": "Пересчёт времени проверки, силы, сложности и отчёта",
+      "classification": "active_automated",
+      "owner": "Технический администратор",
+      "trigger": "Импорт свежей DB автоматически импортирует три модуля; отдельно — после результатов",
+      "schedule": "Несколько раз в неделю; target strength — раз в несколько часов",
+      "inputs": [
+        "Локальная копия SQLite с users/problems/results"
+      ],
+      "outputs": [
+        "check_time_spent_sec",
+        "problem_complexity",
+        "student_strength",
+        "temp analytics tables",
+        "HTML report"
+      ],
+      "sideEffects": [
+        "ALTER/UPDATE локальной SQLite",
+        "пересоздание temp tables",
+        "запись отчёта"
+      ],
+      "externalSystems": [
+        "production-sqlite",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Локальный файловый доступ"
+      ],
+      "rerunPolicy": "Алгоритмы задуманы как полный пересчёт, но запускать только на копии и проверять завершённость run",
+      "failureDetection": "Exit/trace, наличие всех expected tables и согласованные row counts",
+      "recovery": "Отбросить локальную копию и пересобрать из исходного snapshot; не публиковать частичный run",
+      "sourcePaths": [
+        "_external_pipelines/a52_teacher_stats.py",
+        "_external_pipelines/a53_calc_rating_new.py",
+        "_external_pipelines/a54_upd_report.py"
+      ],
+      "artifactIds": [
+        "a52-teacher-stats",
+        "a53-rating",
+        "a54-report"
+      ],
+      "target": {
+        "phase": "phase-9",
+        "decision": "Versioned analytics run публикует только полный successful snapshot",
+        "cutoverGate": "Numerical parity, immutable run metadata и безопасный scheduled rerun"
+      },
+      "invocation": "Транзитивно запускается импортами a52_teacher_stats.py, a53_calc_rating_new.py и a54_upd_report.py из a00_update_db.py; отдельная production-команда не зафиксирована.",
+      "upstreamProcessIds": [
+        "production-db-mirror"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "classroom-conduit-sync",
+      "title": "Подготовка Excel-кондуита из бота",
+      "classification": "active_external",
+      "owner": "Администратор очного занятия",
+      "trigger": "Свежая локальная DB получена и прошлый кондуит скопирован",
+      "schedule": "В день очного занятия",
+      "inputs": [
+        "users/results/strength из согласованной локальной SQLite",
+        "рабочий Excel-кондуит из runtime-настройки `XLS_CONDUIT_NAME`, обычно скопированный с прошлого занятия"
+      ],
+      "outputs": [
+        "TSV для листа «ИзБота» в clipboard",
+        "TSV для листа «Посещаемость» в clipboard"
+      ],
+      "sideEffects": [
+        "Оператор вручную вставляет персональные данные в два листа отдельного Excel-кондуита"
+      ],
+      "externalSystems": [
+        "production-sqlite",
+        "local-spreadsheets",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Локальный доступ к DB и кондуиту"
+      ],
+      "rerunPolicy": "Повтор безопасен до ручных правок, после них требует новой копии/сверки диапазона",
+      "failureDetection": "Сообщение о clipboard для каждого листа и визуальная сверка строк",
+      "recovery": "Отменить paste/вернуться к сохранённой копии кондуита и повторить обе вставки",
+      "sourcePaths": [
+        "_external_pipelines/a01_school_to_conduit.py"
+      ],
+      "artifactIds": [
+        "a01-school-conduit"
+      ],
+      "target": {
+        "phase": "phase-7/phase-9/phase-10",
+        "decision": "Staff read models и versioned classroom plan устраняют clipboard sync",
+        "cutoverGate": "Counts/history/strength parity и сохранённый import report"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a01_school_to_conduit.py` и вручную вставить два clipboard-вывода в workbook, заданный `XLS_CONDUIT_NAME`.",
+      "upstreamProcessIds": [
+        "lesson-calendar-config",
+        "production-db-mirror"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "classroom-plan-excel",
+      "title": "Ручное распределение очных школьников по аудиториям",
+      "classification": "manual_digital",
+      "owner": "Администратор очного занятия",
+      "trigger": "Кондуит обновлён; список аудиторий согласован",
+      "schedule": "В день занятия до рассылки",
+      "inputs": [
+        "Рабочий Excel-кондуит, путь которого задаёт отсутствующий в snapshot `XLS_CONDUIT_NAME`",
+        "режим очно/онлайн",
+        "группа",
+        "прошлая аудитория",
+        "согласованный список доступных комнат"
+      ],
+      "outputs": [
+        "Сохранённые назначения на листе «Итог» отдельного кондуита"
+      ],
+      "sideEffects": [
+        "Изменение Excel-кондуита, который питает рассылку и печать"
+      ],
+      "externalSystems": [
+        "local-spreadsheets",
+        "dropbox"
+      ],
+      "credentialClasses": [
+        "Доступ к кондуиту"
+      ],
+      "rerunPolicy": "Правки накапливаются в файле; перед рассылкой и печатью обязательно сохранить и сверить",
+      "failureDetection": "Сортировка/фильтры, отсутствие аудитории у очного, отсутствие смешанных групп",
+      "recovery": "Вернуться к сохранённой версии, наследовать прежние допустимые комнаты и перераспределить остаток",
+      "sourcePaths": [
+        "_external_pipelines/a01_school_to_conduit.py",
+        "_external_pipelines/a02_welcome_aud.py",
+        "_external_pipelines/a11_spis_from_xls.py",
+        "vmshpwa/dev/development-plan/11-phase-7-oral-and-classrooms.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "phase-7",
+        "decision": "Versioned in_person_event layout/assignment plan в Staff",
+        "cutoverGate": "Preview, local draft recovery, invariants и explicit confirmation"
+      },
+      "invocation": "Вручную открыть workbook по runtime-настройке `XLS_CONDUIT_NAME`, отредактировать листы «Аудитории» и «Итог» и сохранить файл.",
+      "upstreamProcessIds": [
+        "classroom-conduit-sync"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "classroom-delivery",
+      "title": "Персональная рассылка аудиторий",
+      "classification": "active_external",
+      "owner": "Администратор очного занятия",
+      "trigger": "План сохранён и проверен",
+      "schedule": "В день занятия; повтор только после явного решения",
+      "inputs": [
+        "IDd, группа и аудитория из отдельного workbook по `XLS_CONDUIT_NAME`",
+        "текст приглашения"
+      ],
+      "outputs": [
+        "Напечатанные скриптом команды `/broadcast_html` по аудиториям",
+        "личные Telegram-сообщения после ручного выполнения команд"
+      ],
+      "sideEffects": [
+        "Telegram bot отправляет персональные назначения"
+      ],
+      "externalSystems": [
+        "local-spreadsheets",
+        "telegram-bot"
+      ],
+      "credentialClasses": [
+        "Администратор бота",
+        "Доступ к кондуиту"
+      ],
+      "rerunPolicy": "Скрипт можно повторно сгенерировать после сохранения workbook; повторная отправка выполняется только новым явным действием администратора",
+      "failureDetection": "Ручная сверка напечатанных recipient tokens/текста перед отправкой и ответ существующей bot-команды",
+      "recovery": "Исправить workbook, заново сгенерировать команды и вручную отправить correction только согласованным адресатам",
+      "sourcePaths": [
+        "_external_pipelines/a02_welcome_aud.py",
+        "vmshpwa/dev/development-plan/11-phase-7-oral-and-classrooms.md"
+      ],
+      "artifactIds": [
+        "a02-welcome-aud"
+      ],
+      "target": {
+        "phase": "phase-7",
+        "decision": "Staff action «Разослать аудитории» с выбором PWA/личный Telegram",
+        "cutoverGate": "Immutable recipient snapshot, preview, retries и отсутствие auto-resend"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a02_welcome_aud.py`, просмотреть напечатанные `/broadcast_html` команды и вручную выполнить их в боте.",
+      "upstreamProcessIds": [
+        "classroom-plan-excel"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "classroom-print-lists",
+      "title": "Сборка списков по аудиториям, дверям и этажам",
+      "classification": "active_external",
+      "owner": "Администратор печати",
+      "trigger": "Распределение окончательно уточнено перед печатью",
+      "schedule": "Строго непосредственно перед печатью",
+      "inputs": [
+        "Рабочий Excel-кондуит по `XLS_CONDUIT_NAME` после последнего refresh/ручной корректировки",
+        "LaTeX templates",
+        "текущий номер занятия"
+      ],
+      "outputs": [
+        "Поаудиторные, дверные и общие PDF-списки",
+        "stats counts"
+      ],
+      "sideEffects": [
+        "Удаление старых generated files",
+        "генерация TeX/PDF и копирование в print folder"
+      ],
+      "externalSystems": [
+        "local-spreadsheets",
+        "dropbox",
+        "local-toolchain",
+        "school-facilities"
+      ],
+      "credentialClasses": [
+        "Файловый доступ"
+      ],
+      "rerunPolicy": "Повторять можно после удаления/архивации прошлого generated set; timestamp различает комплекты",
+      "failureDetection": "Фраза «Всё готово!», PDF open/visual check и совпадение counts с последним plan",
+      "recovery": "Не печатать частичный комплект; пересобрать из той же сохранённой версии плана",
+      "sourcePaths": [
+        "_external_pipelines/a11_spis_from_xls.py"
+      ],
+      "artifactIds": [
+        "a11-classroom-lists"
+      ],
+      "target": {
+        "phase": "post-v1-print",
+        "decision": "Отдельный Staff print-раздел после v1",
+        "cutoverGate": "PDF parity, plan version watermark и печать из confirmed snapshot"
+      },
+      "invocation": "Непосредственно перед печатью из рабочей Dropbox-папки запустить `python a11_spis_from_xls.py` на workbook из `XLS_CONDUIT_NAME`.",
+      "upstreamProcessIds": [
+        "classroom-plan-excel"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "task-template-generation",
+      "title": "Генерация TSV-заготовки задач из LaTeX",
+      "classification": "active_external",
+      "owner": "Технический администратор контента",
+      "trigger": "Условия готовы в TeX",
+      "schedule": "В день занятия до task import",
+      "inputs": [
+        "TeX-файлы всех групп/уровней",
+        "cur_les"
+      ],
+      "outputs": [
+        "TSV rows с порядком, типами и placeholder metadata в stdout/clipboard"
+      ],
+      "sideEffects": [
+        "Clipboard заменяется; оператор вставляет строки в конец листа Задачи"
+      ],
+      "externalSystems": [
+        "dropbox",
+        "local-toolchain",
+        "google-sheets"
+      ],
+      "credentialClasses": [
+        "Доступ к TeX и legacy sheet"
+      ],
+      "rerunPolicy": "Повтор безопасен до paste; после paste сначала удалить/сверить прежний диапазон",
+      "failureDetection": "Лог распознанной структуры и визуальная сверка числа/порядка задач",
+      "recovery": "Отменить paste, исправить TeX parser input и сгенерировать заново",
+      "sourcePaths": [
+        "_external_pipelines/a03_tempate_for_bot.py",
+        "_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx"
+      ],
+      "artifactIds": [
+        "a03-task-template",
+        "legacy-workbook"
+      ],
+      "target": {
+        "phase": "phase-2/phase-10",
+        "decision": "Content compiler создаёт revision и metadata-grid draft",
+        "cutoverGate": "Structural and TSV parity на golden corpus"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить фактический snapshot-файл `python a03_tempate_for_bot.py`, затем вставить clipboard TSV в конец листа «Задачи».",
+      "upstreamProcessIds": [
+        "lesson-calendar-config",
+        "content-authoring"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "task-metadata-import",
+      "title": "Ручная настройка и импорт задач в бота",
+      "classification": "manual_digital",
+      "owner": "Администратор контента",
+      "trigger": "TSV-заготовка вставлена",
+      "schedule": "До открытия занятия",
+      "inputs": [
+        "Названия",
+        "prob_type",
+        "ans_type",
+        "validation",
+        "correct answers/checker",
+        "wrong/congrat messages"
+      ],
+      "outputs": [
+        "Заполненные строки листа Задачи",
+        "обновлённые problems в SQLite"
+      ],
+      "sideEffects": [
+        "Google sheet edit",
+        "Telegram admin import command изменяет production SQLite"
+      ],
+      "externalSystems": [
+        "google-sheets",
+        "telegram-bot",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Legacy Google editor",
+        "Администратор бота"
+      ],
+      "rerunPolicy": "Исправить строки legacy-листа и снова запустить admin-команду, предварительно вручную сверив затрагиваемое занятие",
+      "failureDetection": "Ответ import-команды, количество задач и выборочная ручная проверка типов/ответов",
+      "recovery": "Вернуть значения через историю Google Sheet либо исправить строки и повторить import; уже затронутые результаты разбирать отдельно",
+      "sourcePaths": [
+        "_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx",
+        "vmshpwa/dev/development-plan/08-phase-4-test-submissions.md"
+      ],
+      "artifactIds": [
+        "legacy-workbook"
+      ],
+      "target": {
+        "phase": "phase-2/phase-4/phase-10",
+        "decision": "Staff metadata grid, versioned trusted checker и publication gate",
+        "cutoverGate": "Все historical ANS_TYPE, TSV paste, validation/error fixtures и rollback"
+      },
+      "invocation": "Вручную заполнить строки листа «Задачи», затем запустить существующую Telegram admin-команду импорта задач; точное имя команды отсутствует в snapshot.",
+      "upstreamProcessIds": [
+        "task-template-generation"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "print-content-derivatives",
+      "title": "Сборка условий, решений, teacher edition и кондуитов",
+      "classification": "active_external",
+      "owner": "Администратор печати/контента",
+      "trigger": "Условия и решения готовы",
+      "schedule": "В день занятия до печати",
+      "inputs": [
+        "TeX/PDF всех уровней",
+        "templates",
+        "cur_les"
+      ],
+      "outputs": [
+        "Печатные PDF условий, решений, teacher edition и кондуитов"
+      ],
+      "sideEffects": [
+        "Создание/перезапись generated TeX/PDF и очистка временных файлов"
+      ],
+      "externalSystems": [
+        "dropbox",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Файловый доступ"
+      ],
+      "rerunPolicy": "Повторять из той же сохранённой рабочей копии TeX; скрипт может перезаписать generated set",
+      "failureDetection": "Compile error/exit и ручный visual review каждого вида PDF",
+      "recovery": "Не печатать неполный set; восстановить/исправить source или template и пересобрать",
+      "sourcePaths": [
+        "_external_pipelines/a12_dum_tex_files.py"
+      ],
+      "artifactIds": [
+        "a12-print-derivatives"
+      ],
+      "target": {
+        "phase": "phase-2/post-v1-print",
+        "decision": "Phase 2 владеет canonical PDF derivatives; classroom packaging позже",
+        "cutoverGate": "Golden PDF structure and visual approval"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a12_dum_tex_files.py`.",
+      "upstreamProcessIds": [
+        "lesson-calendar-config",
+        "content-authoring"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "previous-results-print",
+      "title": "PDF результатов предыдущего занятия по аудиториям",
+      "classification": "active_external",
+      "owner": "Администратор печати",
+      "trigger": "Свежая DB и classroom mapping готовы",
+      "schedule": "Перед очным занятием",
+      "inputs": [
+        "Локальная SQLite",
+        "token-to-room mapping",
+        "задачи/результаты прошлого урока"
+      ],
+      "outputs": [
+        "TeX/PDF прошлых результатов по аудиториям"
+      ],
+      "sideEffects": [
+        "Generated file в dummy/print chain"
+      ],
+      "externalSystems": [
+        "production-sqlite",
+        "local-spreadsheets",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Локальный файловый доступ"
+      ],
+      "rerunPolicy": "Повторять после ручной фиксации той же локальной DB и версии кондуита; иначе результат считается новой сборкой",
+      "failureDetection": "Compile success, page/room counts и visual check",
+      "recovery": "Не включать дефектный PDF в print pack; пересобрать из согласованного snapshot",
+      "sourcePaths": [
+        "_external_pipelines/a13_print_per_aud_conds_tex.py"
+      ],
+      "artifactIds": [
+        "a13-previous-results"
+      ],
+      "target": {
+        "phase": "post-v1-print",
+        "decision": "Будущий Staff classroom print command",
+        "cutoverGate": "Snapshot/version parity и visual proof"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a13_print_per_aud_conds_tex.py`.",
+      "upstreamProcessIds": [
+        "production-db-mirror",
+        "classroom-plan-excel"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "print-pack-assembly",
+      "title": "Сборка тиражей по аудиториям",
+      "classification": "active_external",
+      "owner": "Администратор печати",
+      "trigger": "Списки и все content PDFs готовы",
+      "schedule": "Непосредственно перед печатью",
+      "inputs": [
+        "Confirmed room counts",
+        "условия",
+        "teacher edition",
+        "кондуиты",
+        "предыдущие решения/результаты"
+      ],
+      "outputs": [
+        "Односторонние/двусторонние PDF-паки и level-specific copy sets"
+      ],
+      "sideEffects": [
+        "Удаление старых print PDFs и создание новых тиражей"
+      ],
+      "externalSystems": [
+        "dropbox",
+        "local-toolchain",
+        "school-facilities"
+      ],
+      "credentialClasses": [
+        "Файловый доступ"
+      ],
+      "rerunPolicy": "Повтор только после fresh-count check; новый timestamped pack заменяет прошлый operationally",
+      "failureDetection": "Fresh stats guard, page-count constraints и visual/physical sample",
+      "recovery": "Остановить печать, удалить только неверный generated pack и пересобрать",
+      "sourcePaths": [
+        "_external_pipelines/a14_zall_auds_pdf.py"
+      ],
+      "artifactIds": [
+        "a14-print-pack"
+      ],
+      "target": {
+        "phase": "post-v1-print",
+        "decision": "Staff print orchestration from confirmed plan",
+        "cutoverGate": "Counts cannot diverge from plan; printable artifacts are versioned"
+      },
+      "invocation": "После ручной актуализации counts из рабочей Dropbox-папки запустить `python a14_zall_auds_pdf.py`.",
+      "upstreamProcessIds": [
+        "classroom-print-lists",
+        "print-content-derivatives",
+        "previous-results-print"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "web-content-render",
+      "title": "Конвертация TeX в HTML и web assets",
+      "classification": "active_external",
+      "owner": "Технический администратор контента",
+      "trigger": "Финальная TeX revision готова",
+      "schedule": "До публикации занятия",
+      "inputs": [
+        "Windows-1251 TeX",
+        "PDF/TikZ/raster assets",
+        "HTML templates"
+      ],
+      "outputs": [
+        "Lesson HTML",
+        "PDF copy",
+        "SVG/WebP с content-derived names",
+        "локальный preview"
+      ],
+      "sideEffects": [
+        "Компиляция TeX/TikZ",
+        "конвертация и запись в website tree"
+      ],
+      "externalSystems": [
+        "dropbox",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Файловый доступ"
+      ],
+      "rerunPolicy": "Повторять из той же сохранённой рабочей копии TeX/assets; перед FTP снова просматривать полный результат",
+      "failureDetection": "Missing asset diagnostics, compile errors и ручный просмотр полного листка",
+      "recovery": "Не публиковать; восстановить предыдущий website tree или исправить source/assets и пересобрать",
+      "sourcePaths": [
+        "_external_pipelines/a16_html_from_tex.py",
+        "_vmsh_examples"
+      ],
+      "artifactIds": [
+        "a16-html"
+      ],
+      "target": {
+        "phase": "phase-2",
+        "decision": "Canonical AST → PWA HTML, Telegram rich и PDF derivatives",
+        "cutoverGate": "Golden corpus parity, deterministic assets и diagnostics"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a16_html_from_tex.py` и вручную просмотреть локальный результат.",
+      "upstreamProcessIds": [
+        "lesson-calendar-config",
+        "content-authoring"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "topic-html-render",
+      "title": "Добавление тем задач в HTML",
+      "classification": "active_external",
+      "owner": "Технический администратор контента",
+      "trigger": "Lesson HTML и topic metadata готовы",
+      "schedule": "До/после основной web-сборки по необходимости",
+      "inputs": [
+        "Lesson HTML",
+        "topic JSON/metadata"
+      ],
+      "outputs": [
+        "HTML с topic annotations"
+      ],
+      "sideEffects": [
+        "Перезапись выбранных HTML-файлов"
+      ],
+      "externalSystems": [
+        "dropbox",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Файловый доступ"
+      ],
+      "rerunPolicy": "Повторять на копии исходного HTML и вручную сравнивать результат",
+      "failureDetection": "Сообщения скрипта о несовпавших problem IDs и ручной просмотр изменённого HTML",
+      "recovery": "Вернуть исходный HTML и исправить mapping",
+      "sourcePaths": [
+        "_external_pipelines/a16_topics_to_html.py",
+        "_vmsh_examples"
+      ],
+      "artifactIds": [
+        "a16-topics"
+      ],
+      "target": {
+        "phase": "phase-2/phase-10",
+        "decision": "Topics становятся versioned problem metadata",
+        "cutoverGate": "Stable problem mapping and reversible revision"
+      },
+      "invocation": "Запустить `python a16_topics_to_html.py` с выбранными input/output аргументами либо текущими defaults snapshot.",
+      "upstreamProcessIds": [
+        "web-content-render",
+        "task-metadata-import"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "legacy-site-publish",
+      "title": "FTP-публикация сайта условий",
+      "classification": "active_external",
+      "owner": "Технический администратор",
+      "trigger": "Локальный preview принят",
+      "schedule": "До времени открытия занятия",
+      "inputs": [
+        "Generated HTML/PDF/assets и notification files"
+      ],
+      "outputs": [
+        "Обновлённое дерево публичного сайта"
+      ],
+      "sideEffects": [
+        "FTP upload/replace production files"
+      ],
+      "externalSystems": [
+        "legacy-site",
+        "dropbox"
+      ],
+      "credentialClasses": [
+        "FTP credentials из legacy config"
+      ],
+      "rerunPolicy": "Повтор допустим после ручной сверки локального дерева; FTP снова заменит production files",
+      "failureDetection": "FTP errors плюс ручная проверка публичной страницы",
+      "recovery": "Повторно загрузить предыдущий accepted artifact set",
+      "sourcePaths": [
+        "_external_pipelines/a17_upload_to_website.py"
+      ],
+      "artifactIds": [
+        "a17-site-upload"
+      ],
+      "target": {
+        "phase": "post-v1-old-site",
+        "decision": "Сохранить legacy bridge в v1; затем internal publisher или вывод сайта",
+        "cutoverGate": "Atomic/reversible publish и явное решение владельца"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a17_upload_to_website.py`, затем вручную открыть публичную страницу.",
+      "upstreamProcessIds": [
+        "web-content-render"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "lesson-publish-open",
+      "title": "Публикация условий и перевод бота в режим сдачи",
+      "classification": "manual_digital",
+      "owner": "Администратор занятия",
+      "trigger": "Условия, metadata, сайт и преподаватели готовы",
+      "schedule": "Исторически около 16:00 в день занятия",
+      "inputs": [
+        "Пост с условиями",
+        "ссылки на опубликованные листки",
+        "актуальный lesson state"
+      ],
+      "outputs": [
+        "Channel post",
+        "личная рассылка ссылок",
+        "открытый intake",
+        "автоматически открывшийся сайт"
+      ],
+      "sideEffects": [
+        "Несколько независимых публикаций и глобальная смена состояния бота"
+      ],
+      "externalSystems": [
+        "telegram-spaces",
+        "telegram-bot",
+        "legacy-site",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Channel editor",
+        "Администратор бота"
+      ],
+      "rerunPolicy": "Каждый текущий channel/bot/site effect повторяется отдельным явным ручным действием; массовую рассылку не повторяют автоматически",
+      "failureDetection": "Проверка поста, delivery report, состояния intake и публичной страницы",
+      "recovery": "Откатить конкретную публикацию/состояние независимо; не связывать deadline с solution schedule",
+      "sourcePaths": [
+        "docs/weekly_livecycle/02_monday.md",
+        "vmshpwa/dev/development-plan/06-phase-2-content.md"
+      ],
+      "artifactIds": [
+        "telegram-news-corpus"
+      ],
+      "target": {
+        "phase": "phase-2/phase-8",
+        "decision": "Независимые group_lesson condition/hint/solution schedules и Telegram targets",
+        "cutoverGate": "Per-group preview, schedule, publish/rollback и delivery audit"
+      },
+      "invocation": "Отдельно вручную опубликовать пост в Telegram-канале, выполнить bot-команду рассылки ссылок и bot-команду открытия приёма; сайт открывается своим legacy schedule.",
+      "upstreamProcessIds": [
+        "task-metadata-import",
+        "legacy-site-publish"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "teacher-room-assignment",
+      "title": "Распределение очных преподавателей по аудиториям",
+      "classification": "manual_digital",
+      "owner": "Организатор преподавателей",
+      "trigger": "Известны комнаты, группы и пришедшие преподаватели",
+      "schedule": "До очного занятия",
+      "inputs": [
+        "Classroom plan",
+        "состав преподавателей"
+      ],
+      "outputs": [
+        "Назначения преподавателей и сообщение в teacher chat"
+      ],
+      "sideEffects": [
+        "Ручная Telegram-рассылка"
+      ],
+      "externalSystems": [
+        "telegram-spaces",
+        "school-facilities"
+      ],
+      "credentialClasses": [
+        "Teacher-chat access"
+      ],
+      "rerunPolicy": "Изменения публикуются явным новым сообщением",
+      "failureDetection": "Подтверждение старших по аудиториям",
+      "recovery": "Назначить замену и явно сообщить обновление",
+      "sourcePaths": [
+        "docs/weekly_livecycle/02_monday.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "post-v1-staffing",
+        "decision": "Отдельный staffing workflow после classroom v1",
+        "cutoverGate": "Отдельное продуктовое решение"
+      },
+      "invocation": "Вручную сопоставить пришедших преподавателей с аудиториями и отправить список в teacher chat.",
+      "upstreamProcessIds": [
+        "teacher-availability",
+        "classroom-plan-excel"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "physical-preparation",
+      "title": "Физическая подготовка очного занятия",
+      "classification": "manual_physical",
+      "owner": "Очные организаторы",
+      "trigger": "Печатные комплекты и confirmed classroom plan готовы",
+      "schedule": "Перед началом очного занятия",
+      "inputs": [
+        "Распределения",
+        "поаудиторные списки",
+        "условия",
+        "решения",
+        "кондуиты",
+        "папки"
+      ],
+      "outputs": [
+        "Развешенные списки",
+        "подготовленные комнаты и папки",
+        "проведённый briefing"
+      ],
+      "sideEffects": [
+        "Печать, перенос и раскладка бумажных материалов"
+      ],
+      "externalSystems": [
+        "school-facilities"
+      ],
+      "credentialClasses": [
+        "Физический доступ"
+      ],
+      "rerunPolicy": "Отдельные физические действия повторяются вручную; печатают только из последней сохранённой версии workbook и generated PDF",
+      "failureDetection": "Ответственный вручную сверяет комплектность, списки и помещения",
+      "recovery": "Допечатать/переразложить из того же последнего проверенного generated set до старта",
+      "sourcePaths": [
+        "docs/weekly_livecycle/02_monday.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "retain-physical",
+        "decision": "PWA создаёт точные print artifacts, но физические действия остаются",
+        "cutoverGate": "Не применимо"
+      },
+      "invocation": "Вручную распечатать, развесить и разложить материалы, подготовить помещения и провести briefing преподавателей.",
+      "upstreamProcessIds": [
+        "classroom-print-lists",
+        "print-pack-assembly",
+        "teacher-room-assignment"
+      ],
+      "transitionState": "legacy_bridge"
+    },
+    {
+      "id": "physical-session",
+      "title": "Проведение и приём участников очного занятия",
+      "classification": "manual_physical",
+      "owner": "Преподаватели и организаторы",
+      "trigger": "Наступило время очного события",
+      "schedule": "В день очного занятия",
+      "inputs": [
+        "Подготовленные аудитории и материалы",
+        "участники"
+      ],
+      "outputs": [
+        "Проведённое занятие",
+        "заполненные кондуиты"
+      ],
+      "sideEffects": [
+        "Очная образовательная работа"
+      ],
+      "externalSystems": [
+        "school-facilities"
+      ],
+      "credentialClasses": [
+        "Физический доступ"
+      ],
+      "rerunPolicy": "Не повторяемый цифровой процесс",
+      "failureDetection": "Организаторы контролируют ход занятия",
+      "recovery": "Решается людьми на месте; цифровая система показывает актуальный план",
+      "sourcePaths": [
+        "docs/weekly_livecycle/02_monday.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "retain-physical",
+        "decision": "Не автоматизировать педагогическую работу",
+        "cutoverGate": "Не применимо"
+      },
+      "invocation": "Вручную провести очное занятие и заполнить бумажные кондуиты.",
+      "upstreamProcessIds": [
+        "physical-preparation"
+      ],
+      "transitionState": "legacy_bridge"
+    },
+    {
+      "id": "zoom-oral-window",
+      "title": "Дистанционное окно устной сдачи",
+      "classification": "manual_digital",
+      "owner": "Модератор и преподаватели устной сдачи",
+      "trigger": "Открывается назначенное Zoom-окно",
+      "schedule": "В день Zoom-занятия; исторически несколько окон в неделю",
+      "inputs": [
+        "Настройки встречи",
+        "список преподавателей",
+        "инструкция",
+        "bot mode"
+      ],
+      "outputs": [
+        "Открытый/закрытый режим",
+        "channel post",
+        "личные приглашения",
+        "проведённые oral rounds"
+      ],
+      "sideEffects": [
+        "Telegram публикации/рассылки",
+        "Zoom events",
+        "oral results в SQLite"
+      ],
+      "externalSystems": [
+        "zoom",
+        "telegram-bot",
+        "telegram-spaces",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Zoom host/webhook",
+        "Администратор бота",
+        "Channel editor"
+      ],
+      "rerunPolicy": "Открытие/закрытие и массовая рассылка повторяются только после ручной проверки фактического состояния",
+      "failureDetection": "Модератор вручную сверяет режим бота, очередь, присутствие преподавателей и запланированное закрытие",
+      "recovery": "Исправить фактическое состояние отдельной bot-командой и при необходимости отправить correction",
+      "sourcePaths": [
+        "docs/weekly_livecycle/02_monday.md",
+        "docs/weekly_livecycle/03_tuesday_wednesday.md",
+        "logs"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "phase-7",
+        "decision": "Staff oral administration плюс configurable group windows",
+        "cutoverGate": "Window state, reconnect/refetch, marks and audit tested"
+      },
+      "invocation": "Вручную выполнить bot-команды открытия/закрытия дистанционного приёма, Telegram-публикацию/рассылку и провести Zoom-сессию.",
+      "upstreamProcessIds": [
+        "teacher-availability",
+        "lesson-publish-open"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "physical-close-scan",
+      "title": "Завершение очного занятия и сканирование кондуитов",
+      "classification": "manual_physical",
+      "owner": "Очные организаторы",
+      "trigger": "Очное занятие завершено",
+      "schedule": "Сразу после занятия",
+      "inputs": [
+        "Заполненные бумажные кондуиты"
+      ],
+      "outputs": [
+        "Проверенный комплект",
+        "скан",
+        "убранные аудитории"
+      ],
+      "sideEffects": [
+        "Сортировка бумажных документов и создание скана"
+      ],
+      "externalSystems": [
+        "school-facilities",
+        "email",
+        "dropbox"
+      ],
+      "credentialClasses": [
+        "Физический доступ",
+        "Доступ к скану/почте/Dropbox"
+      ],
+      "rerunPolicy": "Повторное сканирование возможно до распознавания; оригиналы сохраняются до проверки импорта",
+      "failureDetection": "Ручная проверка комплектности и читаемости страниц",
+      "recovery": "Пересканировать недостающие/нечитаемые листы",
+      "sourcePaths": [
+        "docs/weekly_livecycle/02_monday.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "retain-physical",
+        "decision": "Сканирование остаётся физическим до отдельного результата-import проекта",
+        "cutoverGate": "Не применимо для v1"
+      },
+      "invocation": "Вручную собрать, отсортировать, проверить и отсканировать бумажные кондуиты, затем сохранить скан в Dropbox.",
+      "upstreamProcessIds": [
+        "physical-session"
+      ],
+      "transitionState": "legacy_bridge"
+    },
+    {
+      "id": "conduit-recognition",
+      "title": "Распознавание сканов кондуитов",
+      "classification": "active_external",
+      "owner": "Технический администратор результатов",
+      "trigger": "Скан сохранён в Dropbox",
+      "schedule": "После очного занятия",
+      "inputs": [
+        "PDF-скан кондуитов",
+        "рабочий Excel-кондуит из `XLS_CONDUIT_NAME`",
+        "classroom/student ordering",
+        "problem columns",
+        "внешний модуль `plus_reader.plus_reader`, отсутствующий в snapshot"
+      ],
+      "outputs": [
+        "Распознанная Excel-таблица результатов и diagnostics"
+      ],
+      "sideEffects": [
+        "Создание debug/output файлов"
+      ],
+      "externalSystems": [
+        "dropbox",
+        "local-spreadsheets",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Файловый доступ"
+      ],
+      "rerunPolicy": "Повторять можно на неизменном scan hash; результаты сравнивать, не сливать молча",
+      "failureDetection": "Выборочная ручная проверка и контроль структуры/размеров",
+      "recovery": "Пересканировать либо вручную исправить отдельную копию результата и снова выборочно проверить",
+      "sourcePaths": [
+        "_external_pipelines/a18_conduit_recognition.py"
+      ],
+      "artifactIds": [
+        "a18-conduit-ocr"
+      ],
+      "target": {
+        "phase": "post-v1-results-import",
+        "decision": "Будущий Staff import diagnostics",
+        "cutoverGate": "Measured OCR quality, review UI and immutable source scan"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a18_conduit_recognition.py`; команда требует отсутствующий в snapshot модуль `plus_reader.plus_reader`.",
+      "upstreamProcessIds": [
+        "physical-close-scan"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "school-results-import",
+      "title": "Импорт очных результатов в бота",
+      "classification": "active_external",
+      "owner": "Администратор результатов",
+      "trigger": "Распознанный Excel выборочно проверен и локальная DB обновлена",
+      "schedule": "После очного занятия",
+      "inputs": [
+        "Проверенный Excel-кондуит",
+        "текущая DB/problem mapping"
+      ],
+      "outputs": [
+        "Oral/school marks в общей системе"
+      ],
+      "sideEffects": [
+        "API/команды изменяют результаты в production SQLite"
+      ],
+      "externalSystems": [
+        "local-spreadsheets",
+        "telegram-bot",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Bot/API access",
+        "Доступ к Excel"
+      ],
+      "rerunPolicy": "Snapshot-скрипт сразу отправляет payload с `dry_run=false`; повтор разрешён только после ручной сверки ответа API и уже записанных результатов",
+      "failureDetection": "Напечатанные row count, HTTP status/body и выборочная сверка результатов в боте",
+      "recovery": "Остановиться после ошибки; определить уже применённые строки по данным общей системы и внести явные исправления либо восстановить DB по операционному runbook",
+      "sourcePaths": [
+        "_external_pipelines/a19_from_excel_into_bot_via_api.py"
+      ],
+      "artifactIds": [
+        "a19-results-import"
+      ],
+      "target": {
+        "phase": "post-v1-results-import",
+        "decision": "Staff bulk import с dry-run и audit",
+        "cutoverGate": "Transactional/idempotent import and rollback report"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a19_from_excel_into_bot_via_api.py` после выборочной проверки распознанного workbook.",
+      "upstreamProcessIds": [
+        "conduit-recognition",
+        "production-db-mirror"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "bot-results-refresh",
+      "title": "Обновление таблиц результатов в ботах школьников",
+      "classification": "active_external",
+      "owner": "Администратор бота",
+      "trigger": "Очные результаты импортированы",
+      "schedule": "После каждого import batch",
+      "inputs": [
+        "Актуальные results"
+      ],
+      "outputs": [
+        "Обновлённые bot messages/keyboards"
+      ],
+      "sideEffects": [
+        "Массовое редактирование/рассылка Telegram сообщений"
+      ],
+      "externalSystems": [
+        "telegram-bot",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Администратор бота"
+      ],
+      "rerunPolicy": "Повтор должен обновлять тот же projection, а не создавать дубликаты",
+      "failureDetection": "Командный отчёт и выборочная проверка пользовательского диалога",
+      "recovery": "Повторить refresh для failed recipients после исправления data",
+      "sourcePaths": [
+        "docs/weekly_livecycle/05_actor_journeys.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "phase-3/phase-8",
+        "decision": "Student read model + invalidation; Telegram adapter обновляет параллельное представление",
+        "cutoverGate": "Audience/owner-scoped invalidation and retry-safe Telegram refresh"
+      },
+      "invocation": "Запустить существующую Telegram admin-команду обновления представлений результатов; точное имя команды отсутствует в snapshot.",
+      "upstreamProcessIds": [
+        "school-results-import"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "quantik-post",
+      "title": "Публикация статьи по теме занятия",
+      "classification": "manual_digital",
+      "owner": "Редактор канала",
+      "trigger": "Выбрана подходящая статья",
+      "schedule": "В середине недели",
+      "inputs": [
+        "Ссылка и редакционный текст"
+      ],
+      "outputs": [
+        "Channel post"
+      ],
+      "sideEffects": [
+        "Публикация в Telegram"
+      ],
+      "externalSystems": [
+        "telegram-spaces"
+      ],
+      "credentialClasses": [
+        "Channel editor"
+      ],
+      "rerunPolicy": "Не дублировать; исправлять edit/new correction осознанно",
+      "failureDetection": "Ручная проверка поста и ссылки",
+      "recovery": "Исправить/скрыть пост через news moderation",
+      "sourcePaths": [
+        "vmshpwa/docs/telegram-news-mirroring.md"
+      ],
+      "artifactIds": [
+        "telegram-news-corpus"
+      ],
+      "target": {
+        "phase": "phase-8",
+        "decision": "Telegram остаётся источником новостей, PWA mirror получает post revisions",
+        "cutoverGate": "Create/edit/delete/media mirror tested"
+      },
+      "invocation": "Вручную выбрать материал и опубликовать его в ученическом Telegram-канале.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "hints-publish",
+      "title": "Добавление и публикация подсказок",
+      "classification": "active_external",
+      "owner": "Автор материалов и редактор канала",
+      "trigger": "Наступило расписание подсказок",
+      "schedule": "Исторически в субботу",
+      "inputs": [
+        "Подсказки, добавленные в solution TeX",
+        "текущий lesson/group"
+      ],
+      "outputs": [
+        "Извлечённый текст подсказок",
+        "channel post",
+        "личное напоминание"
+      ],
+      "sideEffects": [
+        "Правка TeX, генерация текста, Telegram публикация/рассылка"
+      ],
+      "externalSystems": [
+        "dropbox",
+        "local-toolchain",
+        "telegram-spaces",
+        "telegram-bot"
+      ],
+      "credentialClasses": [
+        "Файловый доступ",
+        "Channel editor",
+        "Администратор бота"
+      ],
+      "rerunPolicy": "Извлечение повторяется после сохранения TeX; Telegram-пост и личный reminder повторяются только отдельными ручными действиями",
+      "failureDetection": "Ручная сверка извлечённого текста, опубликованного поста и ответа bot-команды",
+      "recovery": "Исправить TeX/скрипт, заново извлечь текст и вручную исправить либо заменить соответствующий пост/рассылку",
+      "sourcePaths": [
+        "_external_pipelines/a20_подсказки.py",
+        "docs/weekly_livecycle/04_thursday_to_sunday.md"
+      ],
+      "artifactIds": [
+        "a20-hints"
+      ],
+      "target": {
+        "phase": "phase-2/phase-8",
+        "decision": "Independent group_lesson hint revision/schedule",
+        "cutoverGate": "Per-group preview, schedule, publish and rollback"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a20_подсказки.py`, затем вручную опубликовать результат и выполнить bot-рассылку.",
+      "upstreamProcessIds": [
+        "content-authoring"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "cutoff-and-solutions",
+      "title": "Закрытие приёма и публикация решений",
+      "classification": "manual_digital",
+      "owner": "Администратор занятия и редактор канала",
+      "trigger": "Наступили независимо настроенные deadline и solution publication time",
+      "schedule": "Историческая последовательность: закрыть приём, затем опубликовать решения; времена менялись между сезонами",
+      "inputs": [
+        "Deadline action",
+        "solution revision",
+        "Telegram post"
+      ],
+      "outputs": [
+        "Закрытый intake",
+        "опубликованные решения"
+      ],
+      "sideEffects": [
+        "Изменение lesson state и channel posts"
+      ],
+      "externalSystems": [
+        "telegram-bot",
+        "telegram-spaces",
+        "legacy-site",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Администратор бота",
+        "Channel editor"
+      ],
+      "rerunPolicy": "Deadline и решение — два независимых explicit actions; перенос решения не меняет deadline",
+      "failureDetection": "Проверка server state, доступности решения и аудитории публикации",
+      "recovery": "Откатить/перепланировать только затронутый объект; изменение deadline требует отдельного подтверждения",
+      "sourcePaths": [
+        "docs/weekly_livecycle/04_thursday_to_sunday.md",
+        "vmshpwa/dev/development-plan/06-phase-2-content.md"
+      ],
+      "artifactIds": [
+        "telegram-news-corpus"
+      ],
+      "target": {
+        "phase": "phase-2",
+        "decision": "Независимые materialized windows и publication records per group",
+        "cutoverGate": "Schedule/rollback E2E proves no implicit deadline movement"
+      },
+      "invocation": "Отдельными ручными bot/Telegram-действиями закрыть приём и опубликовать решения в назначенные моменты.",
+      "upstreamProcessIds": [
+        "lesson-publish-open"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "post-review-mailing",
+      "title": "Формирование и рассылка результатов и решений по email",
+      "classification": "active_external",
+      "owner": "Администратор результатов",
+      "trigger": "Проверка письменных завершена и локальная DB обновлена",
+      "schedule": "После окончания проверки занятия",
+      "inputs": [
+        "Results/strength из локальной DB",
+        "PDF решений",
+        "отсутствующий workbook Кондуиты/Заявки и пароли 2025-2026.xlsx с ФИО, password и email",
+        "mail templates"
+      ],
+      "outputs": [
+        "Mailing workbook/templates",
+        "персональные графики",
+        "отправленные письма"
+      ],
+      "sideEffects": [
+        "Generated папка рассыльщика и внешняя email-рассылка"
+      ],
+      "externalSystems": [
+        "production-sqlite",
+        "local-spreadsheets",
+        "email",
+        "dropbox",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Email sender",
+        "Доступ к registration workbook и DB snapshot"
+      ],
+      "rerunPolicy": "Генерацию можно повторить на той же локальной DB; фактическую отправку повторяют вручную только после сверки уже обработанных адресатов",
+      "failureDetection": "Ручная сверка generated файлов/количества адресатов и отчёт внешнего sender, если он его предоставляет",
+      "recovery": "Исправить данные или шаблон, пересобрать output и вручную исключить уже успешно обработанных адресатов",
+      "sourcePaths": [
+        "_external_pipelines/a21_create_plots.py",
+        "_external_pipelines/a22_create_mails.py"
+      ],
+      "artifactIds": [
+        "a21-personal-plots",
+        "a22-mails",
+        "legacy-mailing-core",
+        "legacy-mailing-editor"
+      ],
+      "target": {
+        "phase": "post-v1-email",
+        "decision": "Family/PWA history снижает необходимость писем; полноценный Staff mailing позже",
+        "cutoverGate": "Recipient snapshot, preview, retry and audit parity"
+      },
+      "invocation": "Из рабочей Dropbox-папки последовательно запустить `python a21_create_plots.py` и `python a22_create_mails.py`, затем передать результат внешнему mail sender.",
+      "upstreamProcessIds": [
+        "production-db-mirror",
+        "analytics-refresh"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "legacy-site-statistics",
+      "title": "Публикация статистических меток на старом сайте",
+      "classification": "active_external",
+      "owner": "Технический администратор статистики",
+      "trigger": "Полный analytics run готов",
+      "schedule": "После завершения письменной проверки",
+      "inputs": [
+        "Local analytics tables",
+        "существующий HTML сайта"
+      ],
+      "outputs": [
+        "HTML со solved/total/complexity markers"
+      ],
+      "sideEffects": [
+        "FTP read-modify-write нескольких lesson files"
+      ],
+      "externalSystems": [
+        "production-sqlite",
+        "legacy-site"
+      ],
+      "credentialClasses": [
+        "FTP credentials",
+        "Локальный DB access"
+      ],
+      "rerunPolicy": "Marker generation удаляет прежние markers; повтор только с полным snapshot",
+      "failureDetection": "FTP/report output и ручная проверка нескольких уроков",
+      "recovery": "Повторно загрузить предыдущий accepted HTML set",
+      "sourcePaths": [
+        "_external_pipelines/a23_mark_compl_in_html.py"
+      ],
+      "artifactIds": [
+        "a23-site-stats"
+      ],
+      "target": {
+        "phase": "phase-9/post-v1-old-site",
+        "decision": "PWA read model replaces stats; old site bridge cut over separately",
+        "cutoverGate": "Numerical parity and reversible legacy publish"
+      },
+      "invocation": "Из рабочей Dropbox-папки запустить `python a23_mark_compl_in_html.py` и вручную проверить изменённую публичную страницу.",
+      "upstreamProcessIds": [
+        "analytics-refresh"
+      ],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "statistics-publications",
+      "title": "Статистика в ученическом и преподавательском каналах",
+      "classification": "manual_digital",
+      "owner": "Администратор статистики",
+      "trigger": "Analytics run завершён",
+      "schedule": "После проверки занятия",
+      "inputs": [
+        "Violin/problem report",
+        "ручные SQL-сводки для преподавателей"
+      ],
+      "outputs": [
+        "Пост ученикам",
+        "пост преподавателям"
+      ],
+      "sideEffects": [
+        "Публикации в Telegram channels"
+      ],
+      "externalSystems": [
+        "production-sqlite",
+        "telegram-spaces",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "DB snapshot access",
+        "Channel editor"
+      ],
+      "rerunPolicy": "Новый Telegram-пост публикуется вручную после сверки; исправление — отдельный edit или correction",
+      "failureDetection": "Ручная сверка ключевых чисел с локальным analytics output и просмотр Telegram-поста",
+      "recovery": "Скрыть/исправить пост и пересоздать из полного analytics run",
+      "sourcePaths": [
+        "_external_pipelines/a21_create_zall_plots.py",
+        "_external_pipelines/a54_upd_report.py",
+        "docs/weekly_livecycle/04_thursday_to_sunday.md"
+      ],
+      "artifactIds": [
+        "a21-group-plots",
+        "a54-report"
+      ],
+      "target": {
+        "phase": "phase-9/phase-8",
+        "decision": "Course-scoped charts/read models и optional Telegram publication",
+        "cutoverGate": "Numerical parity; Student/Family never mark or rank the child against group"
+      },
+      "invocation": "Собрать данные через `python a21_create_zall_plots.py` и/или `python a54_upd_report.py`, затем вручную опубликовать отдельные Telegram-посты.",
+      "upstreamProcessIds": [
+        "analytics-refresh"
+      ],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "online-review-session",
+      "title": "Онлайн-разбор задач и публикация записи",
+      "classification": "manual_digital",
+      "owner": "Ведущий разбора и редактор",
+      "trigger": "Наступает запланированный разбор",
+      "schedule": "По отдельному расписанию; напоминания за 10 минут",
+      "inputs": [
+        "Актуальное расписание",
+        "meeting link",
+        "задачи",
+        "запись"
+      ],
+      "outputs": [
+        "Channel reminder",
+        "личная рассылка",
+        "проведённый/записанный разбор",
+        "YouTube video",
+        "пост со ссылкой"
+      ],
+      "sideEffects": [
+        "Telegram публикации/рассылки и YouTube upload"
+      ],
+      "externalSystems": [
+        "telegram-spaces",
+        "telegram-bot",
+        "zoom",
+        "youtube"
+      ],
+      "credentialClasses": [
+        "Channel/bot/Zoom/YouTube access"
+      ],
+      "rerunPolicy": "Напоминания только explicit; upload можно повторить, но каноническая ссылка одна",
+      "failureDetection": "Ведущий подтверждает встречу/запись; ссылки проверяются вручную",
+      "recovery": "Опубликовать исправленную ссылку или перенести разбор отдельным announcement",
+      "sourcePaths": [
+        "docs/weekly_livecycle/04_thursday_to_sunday.md"
+      ],
+      "artifactIds": [
+        "telegram-news-corpus"
+      ],
+      "target": {
+        "phase": "phase-8/post-v1-video",
+        "decision": "Banners/broadcasts and news mirror cover announcements; video hosting stays external",
+        "cutoverGate": "Configurable banner schedule and safe rich-link publication"
+      },
+      "invocation": "Вручную актуализировать анонс, выполнить два напоминания, провести/записать Zoom-разбор, загрузить запись в YouTube и опубликовать ссылку.",
+      "upstreamProcessIds": [
+        "lesson-publish-open"
+      ],
+      "transitionState": "legacy_bridge"
+    },
+    {
+      "id": "production-backups",
+      "title": "Резервное копирование production SQLite",
+      "classification": "active_automated",
+      "owner": "Технические администраторы",
+      "trigger": "Серверный schedule и deploy hooks",
+      "schedule": "Несколько раз в день; отдельный pre/post deploy backup",
+      "inputs": [
+        "Production SQLite и связанные runtime data"
+      ],
+      "outputs": [
+        "Копии на сервере другого провайдера",
+        "backup status"
+      ],
+      "sideEffects": [
+        "Создание/retention удалённых backup artifacts"
+      ],
+      "externalSystems": [
+        "production-host",
+        "production-sqlite"
+      ],
+      "credentialClasses": [
+        "Service/SSH access к двум провайдерам"
+      ],
+      "rerunPolicy": "Повтор создаёт новый identifiable backup; retention не удаляет единственную проверенную копию",
+      "failureDetection": "Job status, размер/hash и периодический restore rehearsal",
+      "recovery": "Остановить writes по runbook, восстановить проверенный backup и replay допустимых событий",
+      "sourcePaths": [
+        "vmshpwa/dev/development-plan/15-phase-11-hardening-and-rollout.md"
+      ],
+      "artifactIds": [],
+      "target": {
+        "phase": "phase-11",
+        "decision": "Сохранить backup как operations-owned process и документировать restore",
+        "cutoverGate": "Production-size anonymized restore rehearsal with measured RPO/RTO"
+      },
+      "invocation": "Запускается внешним server schedule и pre/post-deploy hooks; точная команда и unit отсутствуют в репозитории.",
+      "upstreamProcessIds": [],
+      "transitionState": "legacy_bridge"
+    },
+    {
+      "id": "reference-media-pipeline",
+      "title": "Референсный TikZ/SVG/WebP/S3 pipeline",
+      "classification": "legacy_reference",
+      "owner": "Команда PWA как источник характеристик; не runtime import",
+      "trigger": "Только characterization/design нового compiler и server fallback",
+      "schedule": "Не является текущим VMШ weekly command",
+      "inputs": [
+        "TeX/TikZ",
+        "raster/PDF/HEIC bytes"
+      ],
+      "outputs": [
+        "SVG/WebP",
+        "content-derived keys",
+        "S3 objects"
+      ],
+      "sideEffects": [
+        "В оригинальном проекте — subprocess/temp/S3 writes"
+      ],
+      "externalSystems": [
+        "local-toolchain",
+        "s3-compatible"
+      ],
+      "credentialClasses": [
+        "Только test S3 для integration; production values запрещены"
+      ],
+      "rerunPolicy": "Новый код тестируется по content hash и isolated prefix",
+      "failureDetection": "Diagnostics, hashes, dimensions, SVG parse и public GET в test bucket",
+      "recovery": "Удалить test prefix; production adapter не вызывается в unit/E2E",
+      "sourcePaths": [
+        "_external_pipelines/edt_tasks_parser.py",
+        "_external_pipelines/mathimg_endpoints.py",
+        "_external_pipelines/mathimg_service.py"
+      ],
+      "artifactIds": [
+        "ref-edt-parser",
+        "ref-mathimg-endpoints",
+        "ref-mathimg-service"
+      ],
+      "target": {
+        "phase": "phase-2/phase-5",
+        "decision": "Перенести идеи в существующий aiohttp backend, не импортировать snapshot",
+        "cutoverGate": "TikZ/SVG, HEIC/WebP and S3 contract integration tests"
+      },
+      "invocation": "Только читать edt_tasks_parser.py, mathimg_endpoints.py и mathimg_service.py как characterization; не запускать их как VMШ runtime.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "reference-written-review",
+      "title": "Референсный интерфейс письменной проверки",
+      "classification": "legacy_reference",
+      "owner": "Команда design/backend как источник идей",
+      "trigger": "Проектирование Phase 6",
+      "schedule": "Не является текущим VMШ weekly command",
+      "inputs": [
+        "Прототип другого проекта"
+      ],
+      "outputs": [
+        "Идеи workspace, комментариев, reassignment и image annotation"
+      ],
+      "sideEffects": [
+        "Нет в VMШ; исходник не импортируется runtime"
+      ],
+      "externalSystems": [
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Нет"
+      ],
+      "rerunPolicy": "Не применимо",
+      "failureDetection": "Design review",
+      "recovery": "Не применимо",
+      "sourcePaths": [
+        "_external_pipelines/viewwrittensols.html",
+        "_external_pipelines/viewwrittensols.js",
+        "_external_pipelines/_viewwrittensols_helpers.js",
+        "_external_pipelines/_viewmailings_helpers.js"
+      ],
+      "artifactIds": [
+        "ref-written-html",
+        "ref-written-js",
+        "ref-written-helpers",
+        "legacy-mailing-view"
+      ],
+      "target": {
+        "phase": "phase-6",
+        "decision": "Реализовать заново по VMШ contracts и design system",
+        "cutoverGate": "Combined thread/review/annotation interaction and E2E tests"
+      },
+      "invocation": "Только изучать viewwrittensols.html, viewwrittensols.js, _viewwrittensols_helpers.js и _viewmailings_helpers.js как идеи; runtime import запрещён.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "reference-auth",
+      "title": "Референсный signed-cookie/refresh flow",
+      "classification": "legacy_reference",
+      "owner": "Backend команда как источник паттернов",
+      "trigger": "Проектирование Phase 1",
+      "schedule": "Не является текущим VMШ runtime",
+      "inputs": [
+        "Пример aiohttp routes и token helpers другого проекта"
+      ],
+      "outputs": [
+        "Паттерны short-lived signed cookie и server-side refresh session"
+      ],
+      "sideEffects": [
+        "Нет; прямой импорт запрещён"
+      ],
+      "externalSystems": [
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Нет"
+      ],
+      "rerunPolicy": "Не применимо",
+      "failureDetection": "Security review и auth tests",
+      "recovery": "Не применимо",
+      "sourcePaths": [
+        "_external_pipelines/routes.py",
+        "_external_pipelines/tokens.py"
+      ],
+      "artifactIds": [
+        "ref-auth-routes",
+        "ref-auth-tokens"
+      ],
+      "target": {
+        "phase": "phase-1",
+        "decision": "Адаптировать паттерн под audience-scoped cookies и срок до 10 августа",
+        "cutoverGate": "Session rotation/revoke/audience isolation and CSRF-origin tests"
+      },
+      "invocation": "Только изучать routes.py и tokens.py как reference; runtime import запрещён.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "reference-mailing-ui",
+      "title": "Референсные редакторы рассылок и шаблонов",
+      "classification": "legacy_reference",
+      "owner": "Design/Admin команда как источник идей",
+      "trigger": "Проектирование полноценной Staff-рассылки",
+      "schedule": "После первой версии",
+      "inputs": [
+        "JS helpers/editor другого проекта"
+      ],
+      "outputs": [
+        "Идеи rich editor, Telegram preview, recipient/delivery UI"
+      ],
+      "sideEffects": [
+        "Нет в VMШ; runtime import запрещён"
+      ],
+      "externalSystems": [
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Нет"
+      ],
+      "rerunPolicy": "Не применимо",
+      "failureDetection": "Design/security review",
+      "recovery": "Не применимо",
+      "sourcePaths": [
+        "_external_pipelines/_crtmailings_helpers.js",
+        "_external_pipelines/_mailing_editor_helpers.js",
+        "_external_pipelines/_viewmailings_helpers.js",
+        "_external_pipelines/edtemailtemplates.js"
+      ],
+      "artifactIds": [
+        "legacy-mailing-core",
+        "legacy-mailing-editor",
+        "legacy-mailing-view",
+        "legacy-email-templates"
+      ],
+      "target": {
+        "phase": "post-v1-email",
+        "decision": "Полноценный Markdown/rich mailing editor — отдельная фаза",
+        "cutoverGate": "Sanitization, previews, immutable recipient snapshot and retries"
+      },
+      "invocation": "Только изучать JavaScript-файлы mailing UI как reference; runtime import запрещён.",
+      "upstreamProcessIds": [],
+      "transitionState": "later_internalization"
+    },
+    {
+      "id": "news-characterization",
+      "title": "Корпус реальных Telegram-публикаций",
+      "classification": "legacy_reference",
+      "owner": "Команда Phase 8 как characterization input",
+      "trigger": "Проектирование/тестирование news mirror и rich renderer",
+      "schedule": "Snapshot, не runtime dependency",
+      "inputs": [
+        "Экспорт канала с media/entity metadata"
+      ],
+      "outputs": [
+        "Обезличенные structural fixtures и Storybook/E2E cases"
+      ],
+      "sideEffects": [
+        "Нет; исходный экспорт не копируется в публичные отчёты"
+      ],
+      "externalSystems": [
+        "telegram-spaces",
+        "local-toolchain"
+      ],
+      "credentialClasses": [
+        "Нет для snapshot"
+      ],
+      "rerunPolicy": "Новый экспорт добавляется отдельной dated revision",
+      "failureDetection": "Fixture validator и renderer coverage",
+      "recovery": "Удалить derived fixture с PII и пересоздать только structural data",
+      "sourcePaths": [
+        "_external_pipelines/ChatExport_2026-07-25/result.json",
+        "_external_pipelines/ChatExport_2026-07-25"
+      ],
+      "artifactIds": [
+        "telegram-news-corpus"
+      ],
+      "target": {
+        "phase": "phase-8",
+        "decision": "Telegram source posts mirror into typed revisions/media",
+        "cutoverGate": "Create/edit/delete/albums/rich text/math fixtures pass without Telegram in unit/E2E"
+      },
+      "invocation": "Офлайн читать закрытый result.json только тестовым extractor/validator; не публиковать и не подключать его к runtime.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    },
+    {
+      "id": "legacy-workbook-config",
+      "title": "Legacy workbook задач и настроек бота",
+      "classification": "active_external",
+      "owner": "Администратор контента",
+      "trigger": "Еженедельная настройка задач или массовое обновление",
+      "schedule": "Перед каждым занятием и по необходимости",
+      "inputs": [
+        "Сгенерированная task structure",
+        "ручные titles/answers/checkers/messages"
+      ],
+      "outputs": [
+        "Листы Задачи/Старые и другие legacy settings"
+      ],
+      "sideEffects": [
+        "Google/Excel data становится upstream для bot imports"
+      ],
+      "externalSystems": [
+        "google-sheets",
+        "local-spreadsheets",
+        "telegram-bot"
+      ],
+      "credentialClasses": [
+        "Legacy Google editor"
+      ],
+      "rerunPolicy": "Использовать историю Google Sheet/локальную копию перед изменением; import запускается отдельной командой",
+      "failureDetection": "Ручная validation строк, counts и ответ соответствующей bot import-команды",
+      "recovery": "Вернуть значения через историю листа либо исправить их и повторить конкретный import",
+      "sourcePaths": [
+        "_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx",
+        "vmshpwa/docs/google-migration-roadmap.md"
+      ],
+      "artifactIds": [
+        "legacy-workbook"
+      ],
+      "target": {
+        "phase": "phase-10",
+        "decision": "Первый cutover листов Задачи/Старые в Staff; остальные loaders остаются legacy",
+        "cutoverGate": "Characterization, Staff validation/audit, migration rehearsal and rollback"
+      },
+      "invocation": "Вручную редактировать соответствующие Google Sheets; переданный xlsx используется только как dated characterization snapshot.",
+      "upstreamProcessIds": [],
+      "transitionState": "v1_cutover"
+    }
+  ],
+  "runbooks": [
+    {
+      "id": "weekly-operations-historical",
+      "title": "Полный наблюдаемый недельный цикл конца прошлого сезона",
+      "status": "historical_baseline_not_global_schedule",
+      "sourcePaths": [
+        "docs/weekly_livecycle",
+        "logs"
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "window": "всё время",
+          "processId": "support-email",
+          "instruction": "Ответить на вопросы в рабочей почте."
+        },
+        {
+          "order": 2,
+          "window": "всё время",
+          "processId": "support-sos",
+          "instruction": "Ответить на SOS-вопросы в специальном Telegram-контуре."
+        },
+        {
+          "order": 3,
+          "window": "всё время",
+          "processId": "support-community-chat",
+          "instruction": "Ответить в группе школьников и родителей."
+        },
+        {
+          "order": 4,
+          "window": "новички, несколько раз в неделю",
+          "processId": "newcomer-applications",
+          "instruction": "Выгрузить свежие заявки из esz и сохранить Excel."
+        },
+        {
+          "order": 5,
+          "window": "новички, несколько раз в неделю",
+          "processId": "newcomer-applications",
+          "instruction": "Добавить заявки из отдельной таблицы детей без московской прописки."
+        },
+        {
+          "order": 6,
+          "window": "новички, несколько раз в неделю",
+          "processId": "newcomer-account-provision",
+          "instruction": "Создать пароли/аккаунты и добавить строки в legacy user sheet."
+        },
+        {
+          "order": 7,
+          "window": "новички, несколько раз в неделю",
+          "processId": "newcomer-bot-import",
+          "instruction": "Загрузить новых школьников в бота отдельной admin-командой."
+        },
+        {
+          "order": 8,
+          "window": "новички, несколько раз в неделю",
+          "processId": "newcomer-credentials-mailing",
+          "instruction": "Актуализировать письмо и разослать логины, пароли и инструкции."
+        },
+        {
+          "order": 9,
+          "window": "за 1–2 дня до очного",
+          "processId": "attendance-reminder",
+          "instruction": "Напомнить школьникам актуализировать режим школа/дистант."
+        },
+        {
+          "order": 10,
+          "window": "за 1–2 дня до очного",
+          "processId": "teacher-availability",
+          "instruction": "Создать опрос преподавателей, затем разослать приглашение через бота."
+        },
+        {
+          "order": 11,
+          "window": "заранее",
+          "processId": "content-authoring",
+          "instruction": "Подготовить, сверстать и решить задачи; обсудить их с преподавателями и внести правки."
+        },
+        {
+          "order": 12,
+          "window": "день занятия, до удалённой публикации",
+          "processId": "lesson-calendar-config",
+          "instruction": "Обновить номер занятия и даты до запуска остальных скриптов."
+        },
+        {
+          "order": 13,
+          "window": "день занятия, до удалённой публикации",
+          "processId": "production-db-mirror",
+          "instruction": "Получить свежую локальную DB и убедиться, что запуск закончился Done!."
+        },
+        {
+          "order": 14,
+          "window": "день занятия, до удалённой публикации",
+          "processId": "classroom-conduit-sync",
+          "instruction": "Вставить ИзБота и Посещаемость в копию кондуита текущего занятия."
+        },
+        {
+          "order": 15,
+          "window": "день занятия, до удалённой публикации",
+          "processId": "classroom-plan-excel",
+          "instruction": "Согласовать комнаты, скорректировать группы/аудитории и сохранить кондуит."
+        },
+        {
+          "order": 16,
+          "window": "день занятия, до удалённой публикации",
+          "processId": "classroom-delivery",
+          "instruction": "Сгенерировать команды и явно разослать персональные аудитории через бота."
+        },
+        {
+          "order": 17,
+          "window": "день занятия, после рассылки аудиторий",
+          "processId": "content-authoring",
+          "instruction": "Получить явную отмашку ответственного, что варианты задач готовы к внесению в бот и печатный pipeline."
+        },
+        {
+          "order": 18,
+          "window": "день занятия, после готовности условий",
+          "processId": "task-template-generation",
+          "instruction": "Запустить фактический snapshot-файл a03_tempate_for_bot.py и получить объединённую TSV-заготовку всех групп/уровней."
+        },
+        {
+          "order": 19,
+          "window": "день занятия, после готовности условий",
+          "processId": "task-metadata-import",
+          "instruction": "Придумать уникальные/синонимичные названия, заполнить ответы, validation и messages; импортировать задачи в бота."
+        },
+        {
+          "order": 20,
+          "window": "через несколько часов после рассылки, если статусы изменились",
+          "processId": "production-db-mirror",
+          "instruction": "Повторно получить свежую локальную DB и продолжать только после финального Done!."
+        },
+        {
+          "order": 21,
+          "window": "перед печатью, если статусы изменились",
+          "processId": "classroom-conduit-sync",
+          "instruction": "Повторно получить clipboard-данные и вручную слить изменившиеся строки с кондуитом, не затирая назначения аудиторий."
+        },
+        {
+          "order": 22,
+          "window": "непосредственно перед печатью",
+          "processId": "classroom-plan-excel",
+          "instruction": "Чуть скорректировать изменившиеся назначения, сохранить workbook и получить явное подтверждение ответственного, что версия готова к печати."
+        },
+        {
+          "order": 23,
+          "window": "непосредственно перед печатью",
+          "processId": "classroom-print-lists",
+          "instruction": "Запустить a11_spis_from_xls.py только после readiness sign-off, чтобы бумага и workbook не разошлись."
+        },
+        {
+          "order": 24,
+          "window": "день занятия, до печати",
+          "processId": "print-content-derivatives",
+          "instruction": "Собрать условия, решения, teacher editions и кондуиты."
+        },
+        {
+          "order": 25,
+          "window": "день занятия, до печати",
+          "processId": "previous-results-print",
+          "instruction": "Собрать PDF результатов предыдущего занятия по аудиториям."
+        },
+        {
+          "order": 26,
+          "window": "день занятия, до печати",
+          "processId": "print-pack-assembly",
+          "instruction": "Сверить актуальные counts и собрать поаудиторные тиражи."
+        },
+        {
+          "order": 27,
+          "window": "день занятия, до публикации",
+          "processId": "web-content-render",
+          "instruction": "Конвертировать TeX в HTML/SVG/WebP/PDF web tree."
+        },
+        {
+          "order": 28,
+          "window": "день занятия, до публикации",
+          "processId": "topic-html-render",
+          "instruction": "Добавить topic metadata, если она подготовлена."
+        },
+        {
+          "order": 29,
+          "window": "день занятия, до публикации",
+          "processId": "legacy-site-publish",
+          "instruction": "Загрузить web tree по FTP и вручную проверить реальную страницу."
+        },
+        {
+          "order": 30,
+          "window": "день занятия, до очного",
+          "processId": "teacher-room-assignment",
+          "instruction": "Распределить очных преподавателей и сообщить им аудитории."
+        },
+        {
+          "order": 31,
+          "window": "исторически 16:00",
+          "processId": "lesson-publish-open",
+          "instruction": "Опубликовать условия в канале, разослать ссылки и открыть режим сдачи; проверить автоматическое открытие сайта."
+        },
+        {
+          "order": 32,
+          "window": "перед очным занятием",
+          "processId": "physical-preparation",
+          "instruction": "Распечатать и развесить распределения/списки, подготовить комнаты, условия и папки, провести briefing и встретить участников."
+        },
+        {
+          "order": 33,
+          "window": "во время очного занятия",
+          "processId": "physical-session",
+          "instruction": "Провести занятие и заполнить кондуиты."
+        },
+        {
+          "order": 34,
+          "window": "день Zoom-занятия",
+          "processId": "zoom-oral-window",
+          "instruction": "Открыть remote mode, опубликовать инструкцию, разослать приглашения, проверить преподавателей и запланировать закрытие."
+        },
+        {
+          "order": 35,
+          "window": "после очного занятия",
+          "processId": "physical-close-scan",
+          "instruction": "Убрать аудитории, собрать/отсортировать/проверить кондуиты, отсканировать их и сохранить скан."
+        },
+        {
+          "order": 36,
+          "window": "после очного занятия удалённо",
+          "processId": "conduit-recognition",
+          "instruction": "Распознать скан, вставить результат в Excel-кондуит и выборочно проверить."
+        },
+        {
+          "order": 37,
+          "window": "после распознавания",
+          "processId": "production-db-mirror",
+          "instruction": "Ещё раз получить свежую локальную базу перед импортом результатов."
+        },
+        {
+          "order": 38,
+          "window": "после распознавания",
+          "processId": "school-results-import",
+          "instruction": "Загрузить проверенные очные результаты в бота."
+        },
+        {
+          "order": 39,
+          "window": "после импорта",
+          "processId": "bot-results-refresh",
+          "instruction": "Обновить представление результатов у школьников."
+        },
+        {
+          "order": 40,
+          "window": "середина недели",
+          "processId": "quantik-post",
+          "instruction": "Опубликовать подходящую статью по теме занятия."
+        },
+        {
+          "order": 41,
+          "window": "исторически суббота",
+          "processId": "hints-publish",
+          "instruction": "Добавить подсказки в TeX, извлечь/опубликовать их и разослать напоминание о дедлайне."
+        },
+        {
+          "order": 42,
+          "window": "по расписанию группы",
+          "processId": "cutoff-and-solutions",
+          "instruction": "Отдельно закрыть приём, затем отдельно опубликовать решения."
+        },
+        {
+          "order": 43,
+          "window": "после окончания проверки письменных",
+          "processId": "production-db-mirror",
+          "instruction": "Обновить локальную DB и полный analytics run."
+        },
+        {
+          "order": 44,
+          "window": "после окончания проверки письменных",
+          "processId": "post-review-mailing",
+          "instruction": "Создать и отправить письма с результатами/решениями."
+        },
+        {
+          "order": 45,
+          "window": "после окончания проверки письменных",
+          "processId": "legacy-site-statistics",
+          "instruction": "Обновить статистические markers старого сайта."
+        },
+        {
+          "order": 46,
+          "window": "после окончания проверки письменных",
+          "processId": "statistics-publications",
+          "instruction": "Опубликовать отдельные статистические сводки ученикам и преподавателям."
+        },
+        {
+          "order": 47,
+          "window": "по расписанию онлайн-разборов",
+          "processId": "online-review-session",
+          "instruction": "Актуализировать анонсы, напомнить за 10 минут, провести/записать разбор, загрузить запись и опубликовать ссылку."
+        },
+        {
+          "order": 48,
+          "window": "несколько раз в день",
+          "processId": "production-backups",
+          "instruction": "Автоматически создавать и контролировать резервные копии общей DB."
+        }
+      ]
+    },
+    {
+      "id": "classroom-assignment-legacy-detail",
+      "title": "Точная последовательность legacy-аудиторий",
+      "status": "active_until_phase7_cutover",
+      "sourcePaths": [
+        "_external_pipelines/a00_dates.py",
+        "_external_pipelines/a00_update_db.py",
+        "_external_pipelines/a01_school_to_conduit.py",
+        "_external_pipelines/a02_welcome_aud.py",
+        "_external_pipelines/a11_spis_from_xls.py"
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "window": "до начала",
+          "processId": "lesson-calendar-config",
+          "instruction": "Актуализировать даты в a00_dates.py."
+        },
+        {
+          "order": 2,
+          "window": "до sync",
+          "processId": "classroom-conduit-sync",
+          "instruction": "Скопировать кондуит занятия N−1 в N, если это ещё не сделано."
+        },
+        {
+          "order": 3,
+          "window": "до sync",
+          "processId": "production-db-mirror",
+          "instruction": "Запустить a00_update_db.py и принять результат только при финальном Done!."
+        },
+        {
+          "order": 4,
+          "window": "после DB",
+          "processId": "classroom-conduit-sync",
+          "instruction": "Открыть кондуит текущего занятия."
+        },
+        {
+          "order": 5,
+          "window": "после DB",
+          "processId": "classroom-conduit-sync",
+          "instruction": "Запустить a01_school_to_conduit.py: вставить clipboard в ИзБота!A2, вернуться в скрипт, нажать Enter и вставить следующий clipboard в Посещаемость."
+        },
+        {
+          "order": 6,
+          "window": "планирование",
+          "processId": "classroom-plan-excel",
+          "instruction": "Актуализировать аудитории на листе Аудитории."
+        },
+        {
+          "order": 7,
+          "window": "планирование",
+          "processId": "classroom-plan-excel",
+          "instruction": "На листе Итог отсортировать: Скрыть по убыванию, затем Ауд, Уровень, Фамилия, Имя."
+        },
+        {
+          "order": 8,
+          "window": "планирование",
+          "processId": "classroom-plan-excel",
+          "instruction": "Очистить аудиторию у всех строк, где Скрыть = 1."
+        },
+        {
+          "order": 9,
+          "window": "планирование",
+          "processId": "classroom-plan-excel",
+          "instruction": "Вернуть допустимую прежнюю аудиторию пропускавшим или недавно сменившим уровень."
+        },
+        {
+          "order": 10,
+          "window": "планирование",
+          "processId": "classroom-plan-excel",
+          "instruction": "Остальных распределить по наименее заполненным подходящим аудиториям."
+        },
+        {
+          "order": 11,
+          "window": "gate",
+          "processId": "classroom-plan-excel",
+          "instruction": "Сохранить Excel и проверить инварианты до внешних side effects."
+        },
+        {
+          "order": 12,
+          "window": "delivery",
+          "processId": "classroom-delivery",
+          "instruction": "Запустить a02_welcome_aud.py, просмотреть команды и выполнить личную рассылку через бота."
+        },
+        {
+          "order": 13,
+          "window": "через несколько часов после рассылки, если данные изменились",
+          "processId": "production-db-mirror",
+          "instruction": "Повторно запустить a00_update_db.py и принимать refresh только после финального Done!."
+        },
+        {
+          "order": 14,
+          "window": "перед печатью, если данные изменились",
+          "processId": "classroom-conduit-sync",
+          "instruction": "Повторно запустить a01_school_to_conduit.py и вручную слить изменившиеся строки ИзБота/Посещаемости, не затирая аудитории."
+        },
+        {
+          "order": 15,
+          "window": "readiness gate перед печатью",
+          "processId": "classroom-plan-excel",
+          "instruction": "Скорректировать изменения, сохранить workbook и получить явное подтверждение ответственного: очные распределены, комнаты не смешивают группы, эта версия готова к печати."
+        },
+        {
+          "order": 16,
+          "window": "непосредственно перед печатью",
+          "processId": "classroom-print-lists",
+          "instruction": "Запустить a11_spis_from_xls.py только на версии, прошедшей readiness sign-off."
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "a00-dates",
+      "path": "_external_pipelines/a00_dates.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "lesson-calendar-config"
+      ],
+      "targetPhase": "phase-2/phase-7/phase-10"
+    },
+    {
+      "id": "a00-update-db",
+      "path": "_external_pipelines/a00_update_db.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "production-db-mirror"
+      ],
+      "targetPhase": "phase-11"
+    },
+    {
+      "id": "a01-school-conduit",
+      "path": "_external_pipelines/a01_school_to_conduit.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "classroom-conduit-sync"
+      ],
+      "targetPhase": "phase-7/phase-9/phase-10"
+    },
+    {
+      "id": "a02-welcome-aud",
+      "path": "_external_pipelines/a02_welcome_aud.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "classroom-delivery"
+      ],
+      "targetPhase": "phase-7"
+    },
+    {
+      "id": "a03-task-template",
+      "path": "_external_pipelines/a03_tempate_for_bot.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "task-template-generation"
+      ],
+      "targetPhase": "phase-2/phase-10"
+    },
+    {
+      "id": "a11-classroom-lists",
+      "path": "_external_pipelines/a11_spis_from_xls.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "classroom-print-lists"
+      ],
+      "targetPhase": "post-v1-print"
+    },
+    {
+      "id": "a12-print-derivatives",
+      "path": "_external_pipelines/a12_dum_tex_files.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "print-content-derivatives"
+      ],
+      "targetPhase": "phase-2/post-v1-print"
+    },
+    {
+      "id": "a13-previous-results",
+      "path": "_external_pipelines/a13_print_per_aud_conds_tex.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "previous-results-print"
+      ],
+      "targetPhase": "post-v1-print"
+    },
+    {
+      "id": "a14-print-pack",
+      "path": "_external_pipelines/a14_zall_auds_pdf.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "print-pack-assembly"
+      ],
+      "targetPhase": "post-v1-print"
+    },
+    {
+      "id": "a16-html",
+      "path": "_external_pipelines/a16_html_from_tex.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "web-content-render"
+      ],
+      "targetPhase": "phase-2"
+    },
+    {
+      "id": "a16-topics",
+      "path": "_external_pipelines/a16_topics_to_html.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "topic-html-render"
+      ],
+      "targetPhase": "phase-2/phase-10"
+    },
+    {
+      "id": "a17-site-upload",
+      "path": "_external_pipelines/a17_upload_to_website.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "legacy-site-publish"
+      ],
+      "targetPhase": "post-v1-old-site"
+    },
+    {
+      "id": "a18-conduit-ocr",
+      "path": "_external_pipelines/a18_conduit_recognition.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "conduit-recognition"
+      ],
+      "targetPhase": "post-v1-results-import"
+    },
+    {
+      "id": "a19-results-import",
+      "path": "_external_pipelines/a19_from_excel_into_bot_via_api.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "school-results-import"
+      ],
+      "targetPhase": "post-v1-results-import"
+    },
+    {
+      "id": "a20-hints",
+      "path": "_external_pipelines/a20_подсказки.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "hints-publish"
+      ],
+      "targetPhase": "phase-2"
+    },
+    {
+      "id": "a21-personal-plots",
+      "path": "_external_pipelines/a21_create_plots.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "post-review-mailing"
+      ],
+      "targetPhase": "phase-9/post-v1-email"
+    },
+    {
+      "id": "a21-group-plots",
+      "path": "_external_pipelines/a21_create_zall_plots.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "statistics-publications"
+      ],
+      "targetPhase": "phase-9"
+    },
+    {
+      "id": "a22-mails",
+      "path": "_external_pipelines/a22_create_mails.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "post-review-mailing"
+      ],
+      "targetPhase": "post-v1-email"
+    },
+    {
+      "id": "a23-site-stats",
+      "path": "_external_pipelines/a23_mark_compl_in_html.py",
+      "kind": "python_script",
+      "classification": "active_external",
+      "processIds": [
+        "legacy-site-statistics"
+      ],
+      "targetPhase": "phase-9/post-v1-old-site"
+    },
+    {
+      "id": "a52-teacher-stats",
+      "path": "_external_pipelines/a52_teacher_stats.py",
+      "kind": "python_script",
+      "classification": "active_automated",
+      "processIds": [
+        "analytics-refresh",
+        "production-db-mirror"
+      ],
+      "targetPhase": "phase-6/phase-9"
+    },
+    {
+      "id": "a53-rating",
+      "path": "_external_pipelines/a53_calc_rating_new.py",
+      "kind": "python_script",
+      "classification": "active_automated",
+      "processIds": [
+        "analytics-refresh",
+        "production-db-mirror"
+      ],
+      "targetPhase": "phase-7/phase-9"
+    },
+    {
+      "id": "a54-report",
+      "path": "_external_pipelines/a54_upd_report.py",
+      "kind": "python_script",
+      "classification": "active_automated",
+      "processIds": [
+        "analytics-refresh",
+        "production-db-mirror",
+        "statistics-publications"
+      ],
+      "targetPhase": "phase-9"
+    },
+    {
+      "id": "ref-edt-parser",
+      "path": "_external_pipelines/edt_tasks_parser.py",
+      "kind": "python_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "reference-media-pipeline"
+      ],
+      "targetPhase": "phase-2"
+    },
+    {
+      "id": "ref-mathimg-endpoints",
+      "path": "_external_pipelines/mathimg_endpoints.py",
+      "kind": "python_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "reference-media-pipeline"
+      ],
+      "targetPhase": "phase-2/phase-5"
+    },
+    {
+      "id": "ref-mathimg-service",
+      "path": "_external_pipelines/mathimg_service.py",
+      "kind": "python_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "reference-media-pipeline"
+      ],
+      "targetPhase": "phase-2/phase-5"
+    },
+    {
+      "id": "ref-auth-routes",
+      "path": "_external_pipelines/routes.py",
+      "kind": "python_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "reference-auth"
+      ],
+      "targetPhase": "phase-1"
+    },
+    {
+      "id": "ref-auth-tokens",
+      "path": "_external_pipelines/tokens.py",
+      "kind": "python_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "reference-auth"
+      ],
+      "targetPhase": "phase-1"
+    },
+    {
+      "id": "legacy-mailing-core",
+      "path": "_external_pipelines/_crtmailings_helpers.js",
+      "kind": "javascript_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "newcomer-credentials-mailing",
+        "post-review-mailing",
+        "reference-mailing-ui"
+      ],
+      "targetPhase": "post-v1-email"
+    },
+    {
+      "id": "legacy-mailing-editor",
+      "path": "_external_pipelines/_mailing_editor_helpers.js",
+      "kind": "javascript_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "newcomer-credentials-mailing",
+        "post-review-mailing",
+        "reference-mailing-ui"
+      ],
+      "targetPhase": "post-v1-email"
+    },
+    {
+      "id": "legacy-mailing-view",
+      "path": "_external_pipelines/_viewmailings_helpers.js",
+      "kind": "javascript_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "reference-mailing-ui",
+        "reference-written-review"
+      ],
+      "targetPhase": "phase-6/post-v1-email"
+    },
+    {
+      "id": "legacy-email-templates",
+      "path": "_external_pipelines/edtemailtemplates.js",
+      "kind": "javascript_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "newcomer-credentials-mailing",
+        "reference-mailing-ui"
+      ],
+      "targetPhase": "post-v1-email"
+    },
+    {
+      "id": "ref-written-html",
+      "path": "_external_pipelines/viewwrittensols.html",
+      "kind": "html_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "reference-written-review"
+      ],
+      "targetPhase": "phase-6"
+    },
+    {
+      "id": "ref-written-js",
+      "path": "_external_pipelines/viewwrittensols.js",
+      "kind": "javascript_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "reference-written-review"
+      ],
+      "targetPhase": "phase-6"
+    },
+    {
+      "id": "ref-written-helpers",
+      "path": "_external_pipelines/_viewwrittensols_helpers.js",
+      "kind": "javascript_reference",
+      "classification": "legacy_reference",
+      "processIds": [
+        "reference-written-review"
+      ],
+      "targetPhase": "phase-6"
+    },
+    {
+      "id": "telegram-news-corpus",
+      "path": "_external_pipelines/ChatExport_2026-07-25/result.json",
+      "kind": "private_fixture_source",
+      "classification": "legacy_reference",
+      "processIds": [
+        "lesson-publish-open",
+        "quantik-post",
+        "cutoff-and-solutions",
+        "online-review-session",
+        "news-characterization"
+      ],
+      "targetPhase": "phase-8"
+    },
+    {
+      "id": "legacy-workbook",
+      "path": "_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx",
+      "kind": "private_fixture_source",
+      "classification": "active_external",
+      "processIds": [
+        "newcomer-account-provision",
+        "newcomer-bot-import",
+        "task-template-generation",
+        "task-metadata-import",
+        "legacy-workbook-config"
+      ],
+      "targetPhase": "phase-10"
+    }
+  ],
+  "knownGaps": [
+    {
+      "id": "external-helper-snapshot",
+      "description": "Снимок `_external_pipelines` не содержит импортируемые `z_CONSTS`, `z_helpers`, `z_cpdf`, `plus_reader.plus_reader`, tex_templates, canonical Dropbox roots, runtime workbook из `XLS_CONDUIT_NAME`, credentials workbook почтового pipeline и внешний mail sender; active scripts нельзя считать воспроизводимыми из репозитория.",
+      "impact": "Phase-specific characterization должна работать на явно подготовленных fixtures, не притворяться полным operational replay.",
+      "questionRef": "20-implementation-questions.md#где-находятся-отсутствующие-зависимости"
+    },
+    {
+      "id": "sanitized-characterization-bundle-missing",
+      "description": "Обезличенный комплект внешних helpers, templates, workbook fixtures, включая замену PII/password/email из registration workbook, и sender substitutes пока не передан.",
+      "impact": "Phase-specific parity может характеризовать код и предоставленные corpus-файлы, но полный historical replay остаётся недоказанным.",
+      "questionRef": "20-implementation-questions.md#можно-ли-подготовить-обезличенный-комплект"
+    },
+    {
+      "id": "historical-filename-drift",
+      "description": "Рассказ оператора упоминает исторические имена a15/a21/a22, а предоставленный snapshot содержит соответствующие функции под a13/a22/a23; назначение подтверждено по коду, но canonical live filenames ещё нужно сверить.",
+      "impact": "Runbook использует функции и фактические пути snapshot, а не полагается только на номер префикса.",
+      "questionRef": "20-implementation-questions.md#какие-скрипты-используются-сейчас"
+    },
+    {
+      "id": "schedule-history-differs",
+      "description": "Исторические документы содержат разные времена cutoff/solution, а последняя операционная инструкция описывает другую последовательность.",
+      "impact": "Ни одно историческое время не становится глобальной константой: course/group schedule импортируется и подтверждается как данные.",
+      "questionRef": null
+    },
+    {
+      "id": "backup-implementation-private",
+      "description": "Известны частота и межпровайдерная копия, но команда, retention и последний проверенный restore не представлены в репозитории.",
+      "impact": "Phase 11 не может закрыть recovery gate без отдельного безопасного runbook/rehearsal.",
+      "questionRef": "20-implementation-questions.md#как-сейчас-устроены-резервные-копии"
+    }
+  ],
+  "transitionStates": [
+    "legacy_bridge",
+    "v1_cutover",
+    "later_internalization"
+  ],
+  "knownExternalDependencies": [
+    {
+      "id": "legacy-python-support-modules",
+      "locator": "z_CONSTS.py, z_helpers.py и z_cpdf.py в рабочей Dropbox-папке",
+      "status": "absent_from_snapshot",
+      "requiredByProcessIds": [
+        "lesson-calendar-config",
+        "production-db-mirror",
+        "classroom-conduit-sync",
+        "classroom-plan-excel",
+        "classroom-delivery",
+        "classroom-print-lists",
+        "task-template-generation",
+        "print-content-derivatives",
+        "previous-results-print",
+        "print-pack-assembly",
+        "web-content-render",
+        "legacy-site-publish",
+        "conduit-recognition",
+        "school-results-import",
+        "hints-publish",
+        "post-review-mailing",
+        "legacy-site-statistics"
+      ],
+      "evidencePaths": [
+        "_external_pipelines/a00_update_db.py",
+        "_external_pipelines/a01_school_to_conduit.py",
+        "_external_pipelines/a14_zall_auds_pdf.py"
+      ],
+      "questionRef": "20-implementation-questions.md#где-находятся-отсутствующие-зависимости"
+    },
+    {
+      "id": "canonical-conduit-workbook",
+      "locator": "runtime symbol z_helpers.XLS_CONDUIT_NAME",
+      "status": "path_absent_from_snapshot",
+      "requiredByProcessIds": [
+        "classroom-conduit-sync",
+        "classroom-plan-excel",
+        "classroom-delivery",
+        "classroom-print-lists",
+        "previous-results-print",
+        "conduit-recognition",
+        "school-results-import"
+      ],
+      "evidencePaths": [
+        "_external_pipelines/a01_school_to_conduit.py",
+        "_external_pipelines/a02_welcome_aud.py",
+        "_external_pipelines/a11_spis_from_xls.py"
+      ],
+      "questionRef": "20-implementation-questions.md#где-находятся-отсутствующие-зависимости"
+    },
+    {
+      "id": "plus-reader",
+      "locator": "Python module plus_reader.plus_reader",
+      "status": "absent_from_snapshot",
+      "requiredByProcessIds": [
+        "conduit-recognition"
+      ],
+      "evidencePaths": [
+        "_external_pipelines/a18_conduit_recognition.py"
+      ],
+      "questionRef": "20-implementation-questions.md#где-находятся-отсутствующие-зависимости"
+    },
+    {
+      "id": "tex-template-tree",
+      "locator": "рабочая папка tex_templates и связанные Dropbox templates",
+      "status": "absent_from_snapshot",
+      "requiredByProcessIds": [
+        "content-authoring",
+        "print-content-derivatives",
+        "classroom-print-lists",
+        "previous-results-print",
+        "print-pack-assembly",
+        "web-content-render"
+      ],
+      "evidencePaths": [
+        "_external_pipelines/a11_spis_from_xls.py",
+        "_external_pipelines/a12_dum_tex_files.py"
+      ],
+      "questionRef": "20-implementation-questions.md#где-находятся-отсутствующие-зависимости"
+    },
+    {
+      "id": "external-mail-sender",
+      "locator": "фактически используемый скрипт/сервис почтовой рассылки",
+      "status": "absent_from_snapshot",
+      "requiredByProcessIds": [
+        "newcomer-credentials-mailing",
+        "post-review-mailing"
+      ],
+      "evidencePaths": [
+        "_external_pipelines/a22_create_mails.py"
+      ],
+      "questionRef": "20-implementation-questions.md#какие-скрипты-используются-сейчас"
+    },
+    {
+      "id": "registration-credentials-workbook",
+      "locator": "Кондуиты/Заявки и пароли 2025-2026.xlsx в рабочем Dropbox tree",
+      "status": "sensitive_path_absent_from_snapshot",
+      "requiredByProcessIds": [
+        "post-review-mailing"
+      ],
+      "evidencePaths": [
+        "_external_pipelines/a22_create_mails.py"
+      ],
+      "questionRef": "20-implementation-questions.md#можно-ли-подготовить-обезличенный-комплект"
+    }
+  ]
+}

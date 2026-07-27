@@ -4,6 +4,8 @@
 
 `_vmsh_examples` и `_external_pipelines` — входы для анализа и тестов, но не место разработки PWA. Их нельзя молча править, импортировать как production-package или объявлять устаревшими без сравнительного отчёта. Все реально используемые еженедельные скрипты остаются рабочими до полного переноса соответствующего процесса в Staff/PWA.
 
+Текущий production-контур по-прежнему состоит из общей Dropbox-папки с TeX/PDF/скриптами, ручных Telegram-каналов и групп, отдельного Telegram-бота с общей SQLite, автоматически обновляемого по FTP старого сайта и межпровайдерных backups. Описание нового Staff/PWA-владельца ниже является target, а не свидетельством, что versioning, preview, audit либо cutover уже существуют.
+
 ## `_vmsh_examples`: golden corpus
 
 Сейчас каталог содержит примеры условий/решений нескольких уроков и уровней, а также JSON-темы. Встречаются:
@@ -31,7 +33,7 @@ Golden snapshots должны быть структурными и неболь�
 | Артефакт                                           | Историческая ответственность                                                                | Новый владелец                                                                    | Этап и proof                                        |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------- |
 | `a00_dates.py`                                     | Ручной номер текущего занятия и календарь school/Zoom/written дат                           | season/lesson windows в Staff + scheduler                                         | Этапы 2/7/10: schedule parity                       |
-| `a00_update_db.py`                                 | Получение/копирование production DB                                                         | deployment/backup runbook, не UI                                                  | Этап 11: dry-run backup/restore                     |
+| `a00_update_db.py`                                 | Получение/копирование production DB; текущий restore имеет неатомарное окно между `.temp` и завершением `executescript` | deployment/backup runbook, не UI; не считать текущий swap безопасным              | Этап 11: verified restore и atomic publish          |
 | `a01_school_to_conduit.py`                         | Выгрузка текущего mode/group/strength и посещаемости из SQLite в ведомость через clipboard  | Staff statistics/classroom legacy bridge до отдельного print/export cutover       | Этапы 7/9/10 и последующий print/export cutover     |
 | `a02_welcome_aud.py`                               | Генерация Telegram-команд персональной рассылки аудиторий по `IDd`                          | v1 Staff classroom delivery batch: preview + explicit PWA/personal Telegram send  | Этап 7: recipient/message parity и cutover          |
 | `a03_tempate_for_bot.py`                           | Разбор LaTeX-структуры задач и подготовка TSV-строк листа «Задачи»                          | content compiler + task metadata grid                                             | Этапы 2/10: structural/TSV parity                   |
@@ -42,11 +44,11 @@ Golden snapshots должны быть структурными и неболь�
 | `a16_html_from_tex.py`                             | LaTeX → исторический HTML                                                                   | новый parser/compiler                                                             | Этап 2: characterization + visual comparison        |
 | `a16_topics_to_html.py`                            | Темы задач → HTML                                                                           | metadata/topics renderer                                                          | Этап 2/10                                           |
 | `a17_upload_to_website.py`                         | FTP-публикация старого публичного сайта                                                     | legacy bridge в v1; будущий internal publisher старого сайта либо отдельный отказ | После первой версии; не объявлять cutover в этапе 2 |
-| `a18_conduit_recognition.py`                       | OCR/слияние ведомостей                                                                      | будущие Staff import diagnostics                                                  | После первой версии                                 |
+| `a18_conduit_recognition.py`                       | OCR/слияние ведомостей; требует отсутствующий в snapshot `plus_reader.plus_reader`          | будущие Staff import diagnostics                                                  | После первой версии                                 |
 | `a19_from_excel_into_bot_via_api.py`               | Импорт oral/school marks                                                                    | будущий Staff bulk result import                                                  | После первой версии                                 |
 | `a20_подсказки.py`                                 | Извлечение подсказок                                                                        | content compiler                                                                  | Этап 2                                              |
 | `a21_create_plots.py`, `a21_create_zall_plots.py`  | Личные/групповые rolling-strength PNG из `temp_student_visits` и `temp_result_*`            | versioned analytics snapshots + visx                                              | Этап 9: numerical/visual parity                     |
-| `a22*`                                             | Email-операции                                                                              | отдельная admin-задача                                                            | Вторая–третья версия                                |
+| `a22_create_mails.py`                              | Подготовка email-артефактов; требует отсутствующий PII/credential workbook `Заявки и пароли 2025-2026.xlsx`, внешний sender также отсутствует | только обезличенный replay; отдельная admin-задача                                 | Вторая–третья версия                                |
 | `a23_mark_compl_in_html.py`                        | Встраивание solved/total difficulty markers в HTML старого сайта через FTP                  | statistics read model + будущий publisher старого сайта; в v1 legacy bridge       | Этап 9 parity; cutover вместе со старым сайтом      |
 | `a52_teacher_stats.py`                             | Ретрооценка времени проверки и запись `results.check_time_spent_sec`                        | review event timing + versioned analytics repair command                          | Этапы 6/10: parity без ad-hoc ALTER                 |
 | `a53_calc_rating_new.py`                           | Problem complexity, latest student strength, best level и rolling lesson metrics            | аналитический job с versioned full-run snapshots; latest projection для classroom | Этапы 7/9/10                                        |
@@ -55,12 +57,19 @@ Golden snapshots должны быть структурными и неболь�
 | `mathimg_endpoints.py`                             | HTTP image conversion                                                                       | server fallback adapter                                                           | Этапы 2/5                                           |
 | `mathimg_service.py`                               | Hash, SVG/WebP, ImageMagick/HEIC, S3                                                        | media conversion service внутри существующего backend                             | Этапы 2/5                                           |
 | `routes.py`, `tokens.py`                           | Signed-cookie + refresh patterns                                                            | reference для auth, без прямого копирования секретов                              | Этап 1                                              |
+| `viewwrittensols.html`, `viewwrittensols.js`, `_viewwrittensols_helpers.js`, `_viewmailings_helpers.js` | Idea-only фрагменты письменной проверки/просмотра из другого проекта; не VMШ runtime | новый Phase 6 review/thread UI по собственным контрактам | Этап 6 |
 | `ВМШ 2025-26, информация для бота ВМШ — prod.xlsx` | Legacy Google export; лист `Задачи` с `prob_type`, `ans_type`, validation/checker/messages  | characterization для metadata grid и первого Google cutover                       | Этапы 4/10                                          |
 | `ChatExport_2026-07-25/result.json`                | Экспорт канала за несколько месяцев: длинные text posts, entities, links и historical media | news fixture corpus; будущие условия расширяются до полного Rich Message text     | Этапы 2/8                                           |
 
 Таблица описывает не только scope v1, но и конечного владельца процесса. Допустимы три состояния: `legacy bridge` (скрипт всё ещё выполняет production side effect), `parallel parity` и `internal owner/cutover`. Формулировка «после первой версии» не закрывает строку: у неё остаются named owner, вход/выход, критерий parity и дата следующего решения.
 
 Этап 0 дополняет таблицу operational register без секретов: кто и как запускает процесс, откуда берётся `cur_les`, какие файлы/листы/таблицы он читает, куда пишет, можно ли повторить запуск и как восстановиться после частичного результата. Это особенно важно для цепочек `a00_dates → a01/a02/a11–a14`, `a53 → a21/a23/a54` и `a12/a16 → a17`: отдельные файлы не являются независимыми workflow.
+
+Такой реестр зафиксирован в [реестре внешних процессов и недельных операций](21-external-process-register.md). Его машиночитаемая версия — [`external-process-register.v1.json`](../../../pwa_tests/fixtures/external-process-register.v1.json), а полноту путей, полей и связей проверяет [`test_external_process_register.py`](../../../pwa_tests/test_external_process_register.py). Времена в нём являются историческим baseline, а не новой глобальной настройкой: целевое расписание остаётся независимым для каждого курса и группы.
+
+Реестр отдельно хранит фактический способ запуска, upstream-processes и состояние перехода. Если команда или зависимость отсутствует в snapshot, это остаётся известным gap. В частности, scripts аудиторий читают отдельный рабочий кондуит через `z_helpers.XLS_CONDUIT_NAME`: переданный workbook `ВМШ 2025-26, информация для бота ВМШ — prod.xlsx` содержит листы конфигурации бота и не подменяет листы `Аудитории`/`Итог`.
+
+Закрытые `logs/events.jsonl` и dated rotations за две настоящих рабочие недели используются как characterization source для последовательностей, частоты и типов событий. Ни payload, ни идентификаторы из них в fixtures этого реестра не копируются.
 
 ## Правило characterization
 
@@ -79,9 +88,9 @@ Golden snapshots должны быть структурными и неболь�
 
 ## Одноразовый перенос аудиторий
 
-Для первого запуска этап 7 получает отдельный import tool, но не постоянный Excel/Google workflow. Исторические `a11_spis_from_xls.py` и `a02_welcome_aud.py` используются как characterization и, до переноса печати/Telegram delivery, как legacy consumers. После Staff apply они не должны продолжать читать независимо изменяемую старую Excel-копию.
+Для первого запуска этап 7 получает отдельный import tool, но не постоянный Excel/Google workflow. Исторические `a11_spis_from_xls.py` и `a02_welcome_aud.py` используются как characterization и, до переноса печати/Telegram delivery, как legacy consumers отдельного workbook, путь к которому текущий `z_helpers` передаёт через `XLS_CONDUIT_NAME`. После Staff apply они не должны продолжать читать независимо изменяемую старую копию.
 
-Минимальный вход: колонки `IDd`, `Уровень`, `Аудитория` текущего Excel-export. До любой записи dry-run обязан показать:
+Минимальный вход: колонки `IDd`, `Уровень`, `Аудитория` одноразового export именно из этого кондуита, а не из workbook листов `Задачи`/`Старые`. До любой записи dry-run обязан показать:
 
 - число строк и уникальных школьников;
 - неизвестные/дублирующиеся `IDd`;

@@ -55,6 +55,16 @@ Auth preflight отклоняет sidecars и symlink/hard-link aliases, зат�
 
 Workload profile использует только raw `logs/events.jsonl` и 18 rotations `events.jsonl.YYYY-MM-DD`; PII-bearing filtered derivative `logs/selected.jsonl` исключён, чтобы не дублировать и не смещать выборку. Все source fd удерживаются открытыми; bytes читаются и хешируются через эти же descriptors, после parsing повторяются `fstat`/hash/path checks. Состав rotations проверяется повторно, symlink/hard-link/duplicate-inode aliases отклоняются, JSON records deduplicate-ятся по canonical representation, а event/source/actor labels проходят explicit allowlists. Текущий отчёт покрывает 176713 observed records и 37408 traces в окне 2–20 марта; completeness metadata отсутствует. Peak minute proxies — 38 ingress updates, 13 submission events, 11 review completions и 12 distinct flows. Concurrent sessions, request/write latency, photo bytes, outbox depth и `SQLITE_BUSY` budget остаются неизвестными и всё ещё блокируют окончательный performance input этапа 11.
 
+Decommission baseline реализован как связанная пара
+[`21-external-process-register.md`](21-external-process-register.md) и
+[`external-process-register.v1.json`](../../../pwa_tests/fixtures/external-process-register.v1.json).
+Она различает наблюдаемое legacy-поведение и будущий target, описывает 48
+операционных/reference процессов, 36 repository artifacts, два точных runbook и
+шесть отсутствующих внешних зависимостей. Структуру, уникальность, двусторонние
+ссылки, реальные question anchors, существование путей и отсутствие скопированных
+секретов/JSONL payload проверяет
+[`test_external_process_register.py`](../../../pwa_tests/test_external_process_register.py).
+
 Каждый JSON/Markdown-файл заменяется отдельно через same-directory temporary file, file `fsync`, `os.replace` и directory `fsync`. Пара файлов не объявляется транзакцией: прерванная запись обнаруживается последующим `*-check`.
 
 Не коммитить production DB snapshot, credential-bearing rows из migration fixtures и реальные персональные данные.
@@ -118,7 +128,8 @@ Seed `baseline-v1` и первый release fixture:
 - [ ] Legacy characterization report: `<path>`.
 - [ ] DB concurrency/migration ADR и two-writer fault tests: `<path/result>`.
 - [x] Auth preflight aggregates и unresolved policy: `pwa_tests/reports/auth-preflight.{json,md}`; 1617 Student, 36 measured lower-bound blockers, 1581 provisionally eligible, final eligibility unknown.
-- [ ] Workload profile: `pwa_tests/reports/workload-profile.{json,md}`; 176713 observed events/37408 traces и minute proxies зафиксированы, но concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget и approval всё ещё отсутствуют. External-process decommission register: `<path>`.
+- [ ] Workload profile: `pwa_tests/reports/workload-profile.{json,md}`; 176713 observed events/37408 traces и minute proxies зафиксированы, но concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget и approval всё ещё отсутствуют.
+- [x] External-process decommission register: `vmshpwa/dev/development-plan/21-external-process-register.md` + `pwa_tests/fixtures/external-process-register.v1.json`; 48 процессов, 36 artifacts, два runbook, шесть известных внешних dependencies; 7 focused tests PASS.
 - [ ] Converter config/probe contract и local capability report; server повторяет gate в этапе 11: `<paths/results>`.
 - [x] Storage profile/config/redaction: `helpers/{object_storage,pwa/storage_config}.py`, `vmshpwa/docs/object-storage.md`; 86 focused tests PASS, pinned Beget test-bucket live runs `codex-phase0-20260727-f6c821d9` и collision-safe replay `codex-phase0-20260727-collision-safe` прошли put/private-read/public-GET/delete-ack. Production target Hetzner остаётся Phase-11 readiness gate.
 - [ ] RecordingBot suite и opt-in `@vmsh179devbot`/test-channel capability report с message IDs, без token: hermetic suite и двухшаговый harness готовы (`helpers/pwa/telegram_test_{harness,binding}.py`, `vmshpwa/scripts/telegram_test_capability.py`), но live bind/smoke ждёт canonical signed `chat.id` из раздела «Где взять канонический ID тестового канала?» в `20-implementation-questions.md`. Rich/limits proof выполняется с renderer в Phase 2.
