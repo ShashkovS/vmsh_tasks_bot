@@ -18,9 +18,9 @@ db_dir:
 
 PWA_DIR := vmshpwa
 PWA_UV_ENV := UV_CACHE_DIR=.runtime/uv-cache
-PWA_HUMAN_ENV := VMSH_RUNTIME_PROFILE=pwa-human VMSH_INSTANCE=human VMSH_DB_FILENAME=db/vmshpwa_dev.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/human VMSH_NATS_TOPIC_PREFIX=vmshpwa_human VMSH_PWA_PROTOTYPE=true
-PWA_AGENT_ENV := VMSH_RUNTIME_PROFILE=pwa-agent VMSH_INSTANCE=agent VMSH_DB_FILENAME=db/vmshpwa_agent.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/agent VMSH_NATS_TOPIC_PREFIX=vmshpwa_agent VMSH_PWA_PROTOTYPE=true
-PWA_E2E_ENV := VMSH_RUNTIME_PROFILE=pwa-e2e VMSH_INSTANCE=e2e VMSH_DB_FILENAME=db/vmshpwa_e2e.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/e2e VMSH_NATS_TOPIC_PREFIX=vmshpwa_e2e VMSH_PWA_PROTOTYPE=true
+PWA_HUMAN_ENV := VMSH_RUNTIME_PROFILE=pwa-human VMSH_INSTANCE=human VMSH_DB_FILENAME=db/vmshpwa_dev.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/human VMSH_NATS_SERVER=nats://127.0.0.1:4222 VMSH_NATS_TOPIC_PREFIX=vmshpwa_human VMSH_PWA_PROTOTYPE=true
+PWA_AGENT_ENV := VMSH_RUNTIME_PROFILE=pwa-agent VMSH_INSTANCE=agent VMSH_DB_FILENAME=db/vmshpwa_agent.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/agent VMSH_NATS_SERVER=nats://127.0.0.1:4222 VMSH_NATS_TOPIC_PREFIX=vmshpwa_agent VMSH_PWA_PROTOTYPE=true
+PWA_E2E_ENV := VMSH_RUNTIME_PROFILE=pwa-e2e VMSH_INSTANCE=e2e VMSH_DB_FILENAME=db/vmshpwa_e2e.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/e2e VMSH_NATS_SERVER= VMSH_NATS_TOPIC_PREFIX=vmshpwa_e2e VMSH_PWA_PROTOTYPE=true
 
 .PHONY: pwa-dev pwa-api pwa-student pwa-family pwa-staff pwa-storybook
 pwa-dev:
@@ -60,7 +60,16 @@ pwa-agent-staff:
 pwa-agent-storybook:
 	cd $(PWA_DIR) && CI=true STORYBOOK_PORT=6106 pnpm storybook
 
-.PHONY: pwa-seed pwa-agent-seed
+.PHONY: pwa-migrate pwa-agent-migrate pwa-e2e-migrate pwa-seed pwa-agent-seed
+pwa-migrate:
+	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.migrate_runtime
+
+pwa-agent-migrate:
+	$(PWA_UV_ENV) $(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.migrate_runtime
+
+pwa-e2e-migrate:
+	$(PWA_UV_ENV) $(PWA_E2E_ENV) uv run python -m vmshpwa.scripts.migrate_runtime
+
 pwa-seed:
 	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.seed_runtime
 

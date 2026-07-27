@@ -3,7 +3,7 @@ import logging
 import os
 import json
 import pathlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Union, Optional, ContextManager
 
 APP_LOGGER = 'MathBot'
@@ -23,6 +23,19 @@ def _absolute_path(path: str) -> pathlib.Path:
         return APP_PATH / path
 
 
+DATABASE_MUTABLE_CONFIG_FIELDS = frozenset(
+    {
+        "game_mode",
+        "prev_problems_mode",
+        "rate_limit",
+        "reg_mode",
+        "result_mode",
+        "save_sol_mode",
+        "verdict_mode",
+    }
+)
+
+
 @dataclass()
 class Config:
     runtime_profile: str = 'legacy'
@@ -31,8 +44,8 @@ class Config:
     pwa_prototype: bool = False
     config_name: str = ''
     google_sheets_key: str = ''
-    google_cred_json: str = ''
-    telegram_bot_token: str = ''
+    google_cred_json: str = field(default='', repr=False)
+    telegram_bot_token: str = field(default='', repr=False)
     webhook_host: str = ''
     webhook_path: str = ''
     webhook_port: int = -1
@@ -40,7 +53,7 @@ class Config:
     db_filename: str = ''
     sos_channel: Union[str, int] = ''
     exceptions_channel: Union[str, int] = ''
-    sentry_dsn: Optional[str] = ''
+    sentry_dsn: Optional[str] = field(default='', repr=False)
     nats_server: Optional[str] = "nats://127.0.0.1:4222"
     logging_level = logging.WARNING
     verdict_mode: str = "verdict_plus_minus_half"
@@ -51,9 +64,9 @@ class Config:
     reg_mode: str = "reg_needed"
     rate_limit: str = "rate_limit_3_and_6"
     apps: str = "tg_bot, game_web_app, results_app, apis_app, zoom_events_parser"
-    set_admin_secret: str = ""
-    zoom_secret_token: str = ""
-    conduit_import_api_token: str = ""
+    set_admin_secret: str = field(default="", repr=False)
+    zoom_secret_token: str = field(default="", repr=False)
+    conduit_import_api_token: str = field(default="", repr=False)
     synonyms_mode: str = "synonyms_join"
     trace_enabled: bool = False
     trace_log_path: str = "logs/events.jsonl"
@@ -61,11 +74,13 @@ class Config:
     # s3 bucket
     s3_url: Optional[str] = "https://s3.ru1.storage.beget.cloud"
     s3_bucket_name: Optional[str] = None
-    s3_access_key: Optional[str] = None
-    s3_secret_key: Optional[str] = None
+    s3_access_key: Optional[str] = field(default=None, repr=False)
+    s3_secret_key: Optional[str] = field(default=None, repr=False)
 
-    def update_from_dict(self, update_dict: dict):
+    def update_from_dict(self, update_dict: dict, *, allowed_fields=None):
         for key, value in update_dict.items():
+            if allowed_fields is not None and key not in allowed_fields:
+                raise ValueError(f'Runtime database cannot override config field {key!r}')
             setattr(self, key, value)
 
 def _create_logger():
@@ -193,7 +208,7 @@ logger = _create_logger()
 DEBUG = logging.DEBUG
 config = _setup()
 _init_sentry(config.sentry_dsn, config.config_name)
-from helpers.trace import init_trace
+from helpers.trace import init_trace  # noqa: E402
 
 init_trace(config)
 # logger.debug(f'{config=}')
@@ -216,7 +231,7 @@ if __name__ == '__main__':
         logger.error('error message')
         try:
             a = [1][2]
-        except:
+        except Exception:
             logger.exception('exception message')
         # Наконец-то валимся
         division_by_zero = 1 / 0

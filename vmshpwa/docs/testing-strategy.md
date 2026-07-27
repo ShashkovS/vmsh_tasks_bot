@@ -18,6 +18,8 @@ E2E выполняется в Chromium, WebKit и Firefox. Критически�
 
 Основной E2E сначала собирает все три production bundles, затем запускает `vite preview` и настоящий aiohttp. Поэтому functional, visual, route splitting, manifests и service-worker проверки видят production CSS/chunks, а не dev/HMR-поведение. Deploy smoke остаётся отдельным коротким контролем уже разложенных сервером assets. MSW не используется ни в одном E2E-режиме.
 
+Перед стартом настоящего aiohttp Playwright вызывает изолированный seed/migration entrypoint. Сам server startup схему не меняет. Python PWA suite создаёт мигрированную временную SQLite отдельно в каждом pytest worker; тесты migration lifecycle дополнительно проверяют пустую/устаревшую/будущую схему, hash drift, WAL, конкурирующих writers и rollback после исключения.
+
 ## Visual regression
 
 Снимки страниц хранятся по browser project, делаются при фиксированном viewport, locale, timezone и reduced motion. Сейчас reference environment — macOS машины владельца; Docker normalization откладывается. `pwa-visual-update` не является способом «починить» тест: перед обновлением человек или агент обязан открыть diff, проверить обе темы и убедиться, что изменение ожидаемо. Raw snapshots не меняются вместе с не относящимся к UI refactor.

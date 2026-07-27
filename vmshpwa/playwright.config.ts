@@ -13,6 +13,7 @@ const backendEnv = {
   VMSH_INSTANCE: 'e2e',
   VMSH_DB_FILENAME: 'db/vmshpwa_e2e.sqlite3',
   VMSH_MEDIA_ROOT: '.runtime/vmshpwa/e2e',
+  VMSH_NATS_SERVER: '',
   VMSH_NATS_TOPIC_PREFIX: 'vmshpwa_e2e',
   VMSH_PWA_PROTOTYPE: 'true',
   VMSH_API_PORT: '8380',
@@ -47,7 +48,9 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'uv run python main.py',
+      // A clean checkout has no runtime DB. Seed is the explicit maintenance
+      // boundary; aiohttp startup itself only verifies schema (ADR 0002).
+      command: 'uv run python -m vmshpwa.scripts.seed_runtime && uv run python main.py',
       cwd: repository,
       env: backendEnv,
       url: `${apiOrigin}/student/api/v1/health`,

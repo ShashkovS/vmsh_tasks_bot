@@ -2,11 +2,14 @@
 import asyncio
 import os
 from contextlib import suppress
+from dataclasses import dataclass
+from typing import Iterable, Protocol
 
 from aiohttp import web
 
 import apps
-from helpers.config import config, logger
+from db_methods.pwa import PwaConnectionFactory
+from helpers.config import DATABASE_MUTABLE_CONFIG_FIELDS, Config, config, logger
 import db_methods as db
 from helpers.features import set_features
 from helpers.msg_texts import msgs
@@ -14,16 +17,48 @@ from helpers.shutdown import wait_for_valuable_tasks
 from helpers.trace import init_trace
 
 LOCAL_APP_PORT = int(os.environ.get("VMSH_API_PORT", "8179"))
+RUNTIME_CONFIG = web.AppKey("runtime_config", Config)
+ENABLED_ADAPTERS = web.AppKey("enabled_adapters", tuple)
+
+
+class AppAdapter(Protocol):
+    """Structural boundary implemented by both Python modules and test adapters."""
+
+    def configure(self, app: web.Application) -> None: ...
+
+
+@dataclass(slots=True)
+class PwaDatabaseState:
+    """Mutable startup result without mutating a frozen aiohttp app mapping."""
+
+    factory: PwaConnectionFactory | None = None
+
+
+PWA_DATABASE = web.AppKey("pwa_database", PwaDatabaseState)
 
 
 async def on_startup(app):
     logger.warning("MainApp Start up!")
-    # Настраиваем БД
-    db.sql.setup(config.db_filename)
+    runtime_config = app[RUNTIME_CONFIG]
+    if runtime_config.runtime_profile.startswith("pwa-"):
+        # The PWA contour is deploy-before-start: checking and opening a
+        # connection happen off the event loop, but no migration is applied.
+        # See adr/0002-pwa-sqlite-concurrency-and-migrations.md.
+        app[PWA_DATABASE].factory = await asyncio.to_thread(
+            PwaConnectionFactory, runtime_config.db_filename
+        )
+        return
+
+    # Legacy startup keeps its historical auto-migration path until the
+    # Telegram cutover has its own rehearsal and rollback proof.
+    db.sql.setup(runtime_config.db_filename)
     bot_settings = db.settings.get_settings()
-    config.update_from_dict(bot_settings)
-    init_trace(config)
-    set_features(config)
+    runtime_config.update_from_dict(
+        bot_settings,
+        allowed_fields=DATABASE_MUTABLE_CONFIG_FIELDS,
+    )
+    init_trace(runtime_config)
+    set_features(runtime_config)
     ui_messages = db.settings.get_ui_messages()
     msgs.update_from_dict(ui_messages)
 
@@ -36,7 +71,8 @@ async def on_shutdown(app):
     logger.warning("MainApp Shutting down..")
     await wait_for_valuable_tasks(logger, timeout=20)
     # Останавливаем sympy-воркера (если он был запущен)
-    if config.runtime_profile == "legacy":
+    runtime_config = app[RUNTIME_CONFIG]
+    if runtime_config.runtime_profile == "legacy":
         from helpers.checkers import worker
 
         worker.shutdown()
@@ -44,22 +80,33 @@ async def on_shutdown(app):
     logger.warning("MainApp Bye!")
 
 
-def prepare_app(enabled_apps=None):
+def create_app(
+    enabled_apps: Iterable[AppAdapter] | None = None,
+    *,
+    runtime_config: Config | None = None,
+):
+    """Compose aiohttp from an explicit adapter list and runtime config."""
+
+    selected_adapters = tuple(apps.all_apps if enabled_apps is None else enabled_apps)
+    selected_config = runtime_config or config
     app = web.Application()
+    app[RUNTIME_CONFIG] = selected_config
+    app[ENABLED_ADAPTERS] = selected_adapters
+    app[PWA_DATABASE] = PwaDatabaseState()
     # Важно, что текущие on_startup и on_shutdown первые. Мы потом развернём список on_shutdown в обратном порядке
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
     # Теперь настраиваем все модули
-    for module in enabled_apps or apps.all_apps:
+    for module in selected_adapters:
         module.configure(app)
     # Обращаем on_shutdown, чтобы приложения закрывались в правильном порядке
     app.on_shutdown[:] = app.on_shutdown[::-1]
     if __name__ == "__main__":
         url_prefix = f"http://127.0.0.1:{LOCAL_APP_PORT}"
     else:
-        if hasattr(apps, "tg_bot"):
+        if hasattr(apps, "tg_bot") and apps.tg_bot in selected_adapters:
             apps.tg_bot.setup_tgbot_webhook(app)
-        url_prefix = f"https://{config.webhook_host}"
+        url_prefix = f"https://{selected_config.webhook_host}"
     logger.info("Routes:")
     for route in app.router.routes():
         logger.info(f"{route.method}: {url_prefix}{route.resource.canonical}")
@@ -68,7 +115,8 @@ def prepare_app(enabled_apps=None):
     return app
 
 
-app = prepare_app()
+prepare_app = create_app
+app = create_app()
 if __name__ == "__main__":
     # Start aiohttp server
     async def dev_main():
