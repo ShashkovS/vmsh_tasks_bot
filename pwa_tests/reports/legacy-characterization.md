@@ -74,6 +74,26 @@ characterization до Staff metadata cutover.
 submissions и verdict раздельно, а логическое объединение ограничивает одним
 `course_lesson`; она реализуется и тестируется в последующих фазах.
 
+## История группы/режима и Telegram provenance
+
+Исполняемый proof:
+[`test_legacy_user_changes_and_telegram_linkage.py`](../domain/test_legacy_user_changes_and_telegram_linkage.py).
+
+- `User.set_group_id` добавляет в `user_changes_log` строку `G` с исходным
+  `group_id`, а `User.set_online_mode` — строку `O` со строковым десятичным
+  значением `ONLINE_MODE` (`1` или `2`). Текущее значение пользователя и audit
+  действительно сохраняются в SQLite.
+- Legacy mutators пишут audit при каждом вызове, даже если значение уже было
+  текущим. Поэтому будущий backfill не должен считать каждую строку настоящим
+  переходом без сравнения с предыдущим состоянием.
+- Telegram-origin сообщения письменной ветки сохраняют точные
+  `written_tasks_discussions.chat_id` и `tg_msg_id`; `teacher_id` отличает
+  комментарий преподавателя от сообщения школьника. Оба Telegram-поля nullable,
+  поэтому тот же legacy storage API уже принимает сообщение без Telegram-origin.
+- `results` не содержит `chat_id`, `tg_msg_id` или FK на discussion. Результат и
+  сообщения исторически соединяются только общими `student_id + problem_id`;
+  добавление результата не удаляет и не переписывает сообщения.
+
 ## Golden corpus
 
 Файлы [`_vmsh_examples`](../../_vmsh_examples) представлены в

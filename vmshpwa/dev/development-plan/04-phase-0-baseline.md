@@ -125,7 +125,7 @@ Seed `baseline-v1` и первый release fixture:
 - [ ] Isolation report: `<path>` с портами, DB, media, NATS, IndexedDB и scopes.
 - [ ] Tests: Python `<result>`; TS `<result>`; Storybook `<result>`; E2E 3 browsers `<result>`.
 - [ ] Golden corpus manifest: `<path>`; source hashes/encoding verified `<result>`.
-- [ ] Legacy characterization report: `<path>`.
+- [x] Legacy characterization report: `pwa_tests/reports/legacy-characterization.md`; 63 domain tests фиксируют 23 answer types, verdict/reaction/queue/synonym rules, `G`/`O` audit rows и nullable Telegram provenance без network/credentials.
 - [ ] DB concurrency/migration ADR и two-writer fault tests: `<path/result>`.
 - [x] Auth preflight aggregates и unresolved policy: `pwa_tests/reports/auth-preflight.{json,md}`; 1617 Student, 36 measured lower-bound blockers, 1581 provisionally eligible, final eligibility unknown.
 - [ ] Workload profile: `pwa_tests/reports/workload-profile.{json,md}`; 176713 observed events/37408 traces и minute proxies зафиксированы, но concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget и approval всё ещё отсутствуют.
