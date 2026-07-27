@@ -37,6 +37,8 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - Diagnostics grouped by errors/warnings with source location and recovery action.
 - Missing asset: search content-addressed library, upload replacement, reuse exact hash, rerun compile.
 - LaTeX в браузере не редактируется. Metadata grid содержит название, task/answer type, validation/wrong/congratulation messages и optional topic tags; поддерживает keyboard edits, TSV paste preview, cell errors и optimistic version conflict.
+- Structural output `a03_tempate_for_bot.py` не считается готовой metadata: до publication admin явно просматривает `title`, `prob_type`, `ans_type`, `ans_validation`, `validation_error`, `cor_ans`, `cor_ans_checker`, `wrong_ans` и `congrat`. Заглушка или непроверенное parser default блокирует publish с полевым diagnostic.
+- Title остаётся коротким UI-именем, но должен узнаваемо отличать задачу. Равное название разных групп одного `course_lesson` только предлагает synonym candidate; автоматический merge не выполняется, а другой course/lesson не рассматривается.
 - Synonym suggestion from equal titles with explicit accept/reject.
 - Side-by-side PWA and Telegram preview. Уже сгенерированный PDF derivative можно открыть для regression/контроля, но команд печати и отдельного print workflow в v1 нет.
 - Publish/schedule/hide confirmation per level/kind. Отдельная версионируемая lesson-window form задаёт `opensAt`, `submissionClosesAt` и hint/solution schedule; изменение cutoff требует отдельного confirmation/audit по `SCHEDULE-01`, а schedule решения и фактический publish не переопределяют его молча. Hidden lesson исчезает из Student как неопубликованный; просмотревший старую revision получает индикатор обновления после новой публикации.
@@ -81,6 +83,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - [ ] Revision/migration/upgrade/rollback: `<sha/paths/results>`.
 - [ ] Golden corpus report: `<path>`; CP1251/TikZ/table/assets cases `<result>`.
 - [ ] External pipeline parity + intentional diffs: `<path>`.
+- [ ] TeX → structural task skeleton → reviewed metadata report: placeholders rejected, every field has provenance/revision, compact titles reviewed and equal-title candidates require explicit admin decision `<path/result>`.
 - [ ] Lessons 1–38 publication/window backfill dry-run/apply/repeat report: `<path/result>`.
 - [ ] Demo upload/diagnostics/preview/publish/rollback: `<fixture/routes/video or screenshots>`.
 - [ ] Storage filesystem/S3 contract tests: `<result>`.

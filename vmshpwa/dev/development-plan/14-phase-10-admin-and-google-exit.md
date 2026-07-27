@@ -13,6 +13,8 @@ Admin из Staff импортирует Excel, создаёт/правит по�
 - Teacher permissions by group/capability.
 - Batch Excel import: обязательны surname, name, unique token/password, birthday, grade. Valid rows применяются, invalid rows пропускаются и попадают в итоговый report; повторный import связывается по token.
 - Task metadata TSV grid and version conflicts, включая отдельный task type (`test|written|oral`), answer type и checker trusted-admin surface. Task/answer type редактируются dropdown-ячейками, но прямоугольная TSV copy/paste работает так же, как в Google Sheets. Legacy `Письменно<-Устно` при migration явно отображается в canonical oral с доступной письменной сдачей.
+- Grid/import сохраняет точную семантику `title`, `prob_type`, `ans_type`, `ans_validation`, `validation_error`, `cor_ans`, `cor_ans_checker`, `wrong_ans`, `congrat`. `cor_ans` может содержать много `;`-separated допустимых ответов; `SELECT_ONE.ans_validation` — список видимых labels, а для остальных типов непустое поле — regex override. Import preview различает пустое значение, inherited/default и явно заданный текст.
+- Title должен оставаться коротким для Student/Telegram UI, но отличать задачу. Equal-title rows в одном `course_lesson` показываются как synonym candidates с impact preview; import не склеивает их автоматически и никогда не связывает разные курсы/занятия.
 - Publication UI не имеет общего action «опубликовать уровень»: condition, hint и solution публикуются, планируются и откатываются независимо по каждому уровню.
 - Несохранённые правки users/task metadata/import mapping сохраняются в account/entity/base-version-scoped `localStorage`; reload и server conflict не теряют их. После successful apply/receipt draft очищается.
 - Импорт очных/устных результатов из `a19`, печатные spreadsheet flows и email откладываются на последующие версии.
@@ -58,6 +60,7 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 ## Tests
 
 - Import parser/normalization per row, duplicate natural keys, partial invalid, encoding and TSV copy/paste as data.
+- Metadata characterization: короткие/equal titles, blank/custom validation, visible `SELECT_ONE` labels, multi-answer `cor_ans`, contextual messages, checker revisions и exact dry-run diff против legacy workbook.
 - Valid-row apply is repeatable/idempotent; invalid rows do not block valid ones and получают понятный report.
 - Permissions matrix all routes/mutations; audit before/after without secrets.
 - Telegram destination: canonical Bot API ID round-trip, >32-bit/negative IDs, duplicate channel rejection, missing admin/post permission, optimistic conflict и audit старого/нового destination без token.
@@ -83,6 +86,7 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.
 - [ ] Google replacement matrix with every current loader: `<path>`.
 - [ ] Protected production-copy parallel-run/parity reports: `<paths/results>`.
+- [ ] Task metadata field-by-field migration/parity report, including explicit synonym candidates and no physical rewrite of attempts/results: `<path/result>`.
 - [ ] Demo users/groups/family/permissions/import/dry-run/apply: `<routes/evidence>`.
 - [ ] Import security/idempotency/transaction tests: `<result>`.
 - [ ] Admin local draft reload/isolation/conflict/cleanup tests: `<result>`.

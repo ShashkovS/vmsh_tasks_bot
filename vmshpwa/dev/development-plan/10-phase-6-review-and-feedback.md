@@ -55,6 +55,18 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 
 Только visual/contracts: «ИИ, не преподаватель», text + optional sanitized SVG, useful/rubbish reaction, copy suggestion. Реальный provider, automatic verdict и production AI call не входят в этап.
 
+## Idea-only reference из другого проекта
+
+`_external_pipelines/viewwrittensols.html`, `viewwrittensols.js` и `_viewmailings_helpers.js` не являются legacy runtime ВМШ и не импортируются в Staff. Их можно использовать только как каталог идей для прототипа:
+
+- выбор нескольких наборов, поиск по ученику/задаче, checked-фильтр, sorting и компактная сводка загруженного;
+- deep-link на конкретную работу, переход к следующему фото и предзагрузка соседнего изображения;
+- canvas-инструменты select/pan/pen/rectangle/arrow/text, цвета, zoom, rotate/reset, delete, undo/redo, фоновое сохранение и копирование ссылки;
+- комментарий к фото, verdict controls, пометка подозрения и исправление ошибочной привязки фото к задаче;
+- изолированный preview внешнего mailing HTML и сериализуемые filters как идея для будущего preview, но не как готовый sanitizer.
+
+Все product semantics — chronological thread, synonym provenance, claim/lease, visibility, evidence boundary, immutable original, annotation format, verdict/reaction policy и draft recovery — берутся только из контрактов ВМШ. Принятая идея перереализуется на React/Base UI и покрывается собственными unit/interaction/E2E; внешние endpoints, state shape, score scale, raw colors, DOM и зависимости не копируются.
+
 ## Tests
 
 - Multi-worker/process concurrency on shared SQLite + NATS: exactly one claim, lost lease, heartbeat, completion race.
@@ -83,6 +95,7 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 - [ ] Revision/migration/dual-write/backfill: `<sha/paths/results>`.
 - [ ] Queue concurrency/lease/fault-injection report: `<path/result>`.
 - [ ] Demo quick review + annotation + Student thread + admin reactions: `<routes/evidence>`.
+- [ ] Idea-only reference review: таблица «принято / перереализовано / сознательно отклонено» для `viewwrittensols*`/`_viewmailings_helpers.js`, без runtime import `<path/result>`.
 - [ ] Visibility matrix API/E2E: `<path/result>`.
 - [ ] Annotation format/version/zoom tests: `<result>`.
 - [ ] Review/question draft persistence, isolation and conflict tests: `<result>`.

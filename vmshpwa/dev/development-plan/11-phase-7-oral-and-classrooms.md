@@ -17,6 +17,14 @@
 - `CLASSROOM-01` закрыт: после confirm admin отдельно запускает «Разослать аудитории», проверяет recipient preview и выбирает PWA и/или Telegram. Telegram идёт каждому школьнику в личный диалог существующего бота по server-side mapping; это замена узкого сценария `a02`, а не публикация в group channel и не общий broadcast composer.
 - Classroom planner не получает полноценный print UI, постоянный spreadsheet workflow, вместимость или веса. Печать `a11`–`a14` остаётся отдельным legacy workflow до Staff-раздела второй версии; v1 compatibility export не обещается. Назначения выполняются компактными select; drag-and-drop для этого экрана не используется.
 
+## Граница с legacy-печатью и риск расхождения
+
+Текущий операционный процесс сознательно разделяет раннюю персональную рассылку и финальную печать. Между ними ученики меняют режим, поэтому оператор повторно обновляет SQLite, аккуратно сливает `ИзБота`/посещаемость с ручными назначениями, подкручивает план и запускает `a11_spis_from_xls.py` только после final readiness sign-off непосредственно перед печатью.
+
+Это создаёт две разные версии: «что уже разослано» и «что идёт на бумагу». Целевой plan обязан явно хранить confirmed plan version, delivery batch version/time и признак изменившихся, но ещё не разосланных назначений. Он не может скрывать это расхождение авторассылкой: после любой перестановки новая PWA/Telegram delivery выполняется только явным admin-действием.
+
+Пока Staff print-раздел не реализован, Phase 7 не может объявить production cutover аудиторий лишь по факту работы web-плана. Cutover proof должен также доказать воспроизводимую version-bound передачу именно confirmed Staff snapshot в текущий legacy print workflow либо оставить Excel операционным source of truth до второй версии. Формат этого временного handoff не объявляется постоянным spreadsheet workflow и не расширяет v1 UI.
+
 ## Миграции и модель данных
 
 Логическая migration: `pwa_support_oral_classroom_plans_banners`.
@@ -193,6 +201,7 @@ vmshpwa/e2e/classrooms.spec.ts
 - [ ] Storybook catalog/layout/plan/Student/Family stories, interaction+a11y и просмотренный visual diff: `<story-ids/paths/approver/date>`.
 - [ ] Playwright classroom E2E в трёх браузерах на production preview: `<result/artifacts>`.
 - [ ] Зафиксированная граница отложенной печати `a11`–`a14` и characterization персональных recipient semantics `a02`: `<paths>`.
+- [ ] Rehearsal «ранняя рассылка → смена режимов → новая confirmed version → final print»: version/hash/counts каждого snapshot, видимые неразосланные изменения и доказанный temporary print handoff либо явно отложенный production cutover `<path/result/decision>`.
 - [ ] Telegram/Zoom historical tests: `<result>`.
 - [ ] Обновлённые contracts, API/domain docs, runbook, known limitations и запись в `STATUS.md`: `<paths/issues/name/date>`.
 

@@ -23,6 +23,8 @@
 Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `idempotency_records`; dual-write в `results`.
 
 - Server authoritative проверяет `lesson_windows.submission_closes_at`, attempts policy, active student/problem revision и answer schema. Фактическая публикация solution не подменяет cutoff. Invalid-format сохраняется, но попытку не расходует; отправка после правильного ответа разрешена.
+- Metadata semantics повторяют legacy без неявных преобразований: custom `ans_validation` делает `fullmatch` на `student_answer.strip()`, пустое поле берёт default из `ANS_TYPE`, `SELECT_ONE` использует видимые `;`-separated labels, а не hidden values. `cor_ans` поддерживает несколько вариантов через `;`.
+- `validation_error` отвечает за понятный формат и контекст задачи; `wrong_ans` — за валидный, но неверный ответ; `congrat` — за верный. Первый текст по возможности называет искомую величину/порядок и даёт пример, чтобы отличить ошибку формата от промаха по задаче.
 - Offline `clientCreatedAt` до `submission_closes_at` считается своевременным даже при поздней доставке. Clock skew больше часа маркируется для диагностики.
 - Same idempotency key + same payload возвращает записанный response. Same key + different payload → `409 IDEMPOTENCY_PAYLOAD_MISMATCH`.
 - Checker version/hash сохраняется с attempt. Если checker ещё не настроен, attempt получает `pending_configuration`; admin запускает совместимую `problem_recheck` после настройки.
@@ -69,6 +71,7 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 - [ ] Revision/migration/dual-write integrity: `<sha/paths/results>`.
 - [ ] ANS_TYPE support matrix and shared fixtures: `<path>`; all cases `<result>`.
 - [ ] Legacy differential report: `<path>`.
+- [ ] Metadata differential matrix: blank/custom validation, `SELECT_ONE` labels, multi-answer `cor_ans`, contextual validation/wrong/congrat messages and no secret answer/checker in Student/Family payload `<path/result>`.
 - [ ] Idempotency/crash/race tests: `<result>`.
 - [ ] Local draft reload/isolation/conflict/cleanup tests: `<result>`.
 - [ ] `cor_ans_checker` trust/compatibility decision and tests: `<path/result>`.

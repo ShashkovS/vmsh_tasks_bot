@@ -18,6 +18,27 @@ flowchart LR
   G["Google legacy imports"] -. только legacy .-> T
 ```
 
+## Наблюдаемый внешний контур до cutover
+
+Целевая схема выше ещё не описывает всю текущую эксплуатацию. На baseline 27 июля 2026 года она связывает несколько внешних систем и ручных шагов:
+
+```mermaid
+flowchart LR
+  D["Общая Dropbox-папка<br/>TeX, PDF, сканы, инструкции, scripts"] --> P["Около двух десятков<br/>Python-скриптов"]
+  P --> X["Google Sheets и<br/>Excel-кондуиты"]
+  P --> F["FTP → старый<br/>shashkovs.ru/vmsh"]
+  P --> B["Telegram-бот<br/>admin-команды"]
+  O["Организаторы"] --> X
+  O --> C["Ученические и teacher<br/>Telegram-каналы/группы"]
+  O --> P
+  B --> Q["Общая production SQLite"]
+  Q --> R["Бекапы на сервере<br/>другого провайдера"]
+```
+
+Dropbox остаётся authoring-средой, Telegram — параллельным каналом, а старый сайт и печатные скрипты — legacy bridges до отдельного подтверждённого cutover. Ни один из этих внешних путей не становится неявной runtime-зависимостью PWA API. Точная последовательность и владельцы операций зафиксированы в [реестре внешних процессов](../dev/development-plan/21-external-process-register.md).
+
+Многокурсовая target-модель не копирует историческую глобальную неделю: расписания, publications, Telegram bindings и `group_lesson` независимы для каждого курса/группы, а `in_person_event` только объединяет выбранные групповые занятия.
+
 NATS ускоряет доставку общих или audience-scoped invalidation между процессами, но не является журналом. После любого reconnect клиент запрашивает версию и полное актуальное состояние из SQLite. Owner-scoped события появятся только вместе с authenticated WebSocket principal; audience scope нельзя выдавать за пользовательскую приватность.
 
 SQLite concurrency до первой бизнес-миграции фиксируется отдельным ADR. Один connection не обслуживает конкурентные coroutine; блокирующие DB/CPU operations вынесены с event loop, `busy_timeout`/bounded retry наблюдаемы, а внутри write transaction нет `await` или network I/O. Новые `models/pwa`/`db_methods/pwa` — namespace реализации, но не отдельная предметная модель: затронутые PWA и Telegram write paths вызывают общую domain service/unit of work.

@@ -71,6 +71,24 @@ Golden snapshots должны быть структурными и неболь�
 
 Закрытые `logs/events.jsonl` и dated rotations за две настоящих рабочие недели используются как characterization source для последовательностей, частоты и типов событий. Ни payload, ни идентификаторы из них в fixtures этого реестра не копируются.
 
+При ручном анализе логов допустимы только privacy-safe выводы: имена event-типов, counts, порядок внутри обезличенного flow и aggregate timing. Строки JSONL, `trace_id`/`flow_id`, Telegram/user/chat IDs, тексты, ответы и пути вложений не вставляются в docs, issue, Storybook, snapshots и committed test fixtures. Синтетический fixture строится по выведенному shape, а не псевдонимизацией реальной строки.
+
+## Что именно характеризуется в task metadata
+
+- `a03_tempate_for_bot.py` даёт структуру level/lesson/problem/item и initial task kind, но не заменяет ручное ревью metadata.
+- `title` должен быть коротким для кнопок, но достаточно точно идентифицировать задачу. Исторически равные title в одном занятии склеивали результаты; target сужает это до admin-confirmed synonym candidate внутри одного `course_lesson` и не сливает concrete rows.
+- Пустой `ans_validation` означает default regex типа; custom value — `fullmatch` по `student_answer.strip()`. Для `SELECT_ONE` поле хранит `;`-separated visible labels.
+- `validation_error` называет искомую величину/порядок и по возможности даёт пример. `wrong_ans` отвечает за валидный неверный ответ, `congrat` — за верный; оба могут быть context-specific.
+- `cor_ans` поддерживает один или много `;`-separated правильных ответов. `cor_ans_checker` — редкий trusted-admin checker; его compatibility характеризуется на синтетическом corpus, а код/ответы не попадают в Student/Family contracts.
+
+Полный целевой контракт полей описан в [LaTeX/content pipeline](../../docs/latex-content-pipeline.md#семантика-legacy-метаданных-которую-нельзя-потерять).
+
+## Границы idea-only review prototype
+
+`viewwrittensols.html`/`.js` и вспомогательные view-files показывают идеи multi-exam filters, deep-link, image preloading/navigation, canvas-аннотаций, zoom/rotate/undo/redo/autosave, comment/verdict controls, suspicion mark и correction ошибочной task binding. `_viewmailings_helpers.js` даёт идею сериализуемых filters и изолированного preview.
+
+Это не acceptance-by-copy. Phase 6 отдельно решает, какие идеи принять, и перереализует их на своих contracts. Не копируются endpoints, API state, score scale, HTML/sanitization assumptions, raw colors, localStorage keys и зависимости. Набор для проверки ВМШ должен доказать thread/evidence/lease/visibility/synonym семантику независимо от этих файлов.
+
 ## Правило characterization
 
 Перед заменой скрипта:

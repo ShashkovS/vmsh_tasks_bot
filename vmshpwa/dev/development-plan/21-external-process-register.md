@@ -229,6 +229,13 @@ import. Текущий путь полагается на историю Google 
 grid, всех исторических answer families, preview diff, versioned trusted checker
 и rollback.
 
+Ручное ревью имеет предметную семантику, а не только проверку «не пусто»:
+
+- `title` достаточно точно идентифицирует задачу, но остаётся коротким для кнопки; равное имя было historical synonym signal, но в target лишь создаёт admin-confirmed candidate в одном `course_lesson`;
+- custom `ans_validation` заменяет default regex типа и делает `fullmatch` по trimmed answer; для `SELECT_ONE` это `;`-separated visible labels;
+- `validation_error` называет искомую величину/порядок и по возможности даёт пример; `wrong_ans` и `congrat` отвечают за неверный и верный ответ после валидации;
+- `cor_ans` может перечислять много верных ответов через `;`; optional `cor_ans_checker` остаётся trusted-admin code с version/diff/audit и compatibility tests.
+
 ### `print-content-derivatives` — teacher/print документы
 
 [`a12-print-derivatives`](#карта-файлов) создаёт TeX/PDF и чистит временные
@@ -331,6 +338,8 @@ Phase 7/9/10 заменяет clipboard typed read models.
 явный readiness sign-off. В v1 скрипт остаётся active; Staff print — отдельная
 следующая версия.
 
+Ранняя рассылка и final print могут законно опираться на разные версии плана. Поэтому cutover не доказан, пока либо печать не строится из конкретной confirmed Staff version, либо Excel не остаётся явно операционным source of truth. Staff показывает delivery version и неразосланные изменения; он не притворяется, что Telegram, Excel и бумага всегда совпадают.
+
 ### `teacher-room-assignment`
 
 Организатор вручную сопоставляет преподавателей с комнатами и сообщает результат
@@ -417,7 +426,10 @@ Production DB несколько раз в день копируется к др
 - `reference-written-review`: [`ref-written-html`](#карта-файлов),
   [`ref-written-js`](#карта-файлов), [`ref-written-helpers`](#карта-файлов) и
   [`legacy-mailing-view`](#карта-файлов) — только идеи проверки/просмотра из
-  другого проекта для Phase 6; ни один файл не является VMШ runtime-кодом.
+  другого проекта для Phase 6: filters/search, deep-link, image navigation/preload,
+  canvas annotation/zoom/rotate/undo/redo/autosave, comment/verdict controls,
+  suspicion/task-reassignment controls и isolated mailing preview; ни один файл не
+  является VMШ runtime-кодом, sanitizer или API contract.
 - `reference-auth`: [`ref-auth-routes`](#карта-файлов) и
   [`ref-auth-tokens`](#карта-файлов) — паттерн cookies/refresh для Phase 1.
 - `reference-mailing-ui`: [`legacy-mailing-core`](#карта-файлов),
