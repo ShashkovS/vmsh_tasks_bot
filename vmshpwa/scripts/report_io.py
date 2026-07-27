@@ -18,9 +18,11 @@ class AtomicReportWriteError(RuntimeError):
     """Raised when a generated report could not be durably replaced."""
 
 
-def atomic_write_text(path: Path, content: str) -> None:
+def atomic_write_text(path: Path, content: str, *, mode: int = 0o644) -> None:
     """Atomically replace one UTF-8 text file and fsync file plus directory."""
 
+    if mode not in {0o600, 0o644}:
+        raise ValueError("report mode must be 0o600 or 0o644")
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary_path: Path | None = None
@@ -34,7 +36,7 @@ def atomic_write_text(path: Path, content: str) -> None:
             delete=False,
         ) as temporary:
             temporary_path = Path(temporary.name)
-            os.fchmod(temporary.fileno(), 0o644)
+            os.fchmod(temporary.fileno(), mode)
             temporary.write(content)
             temporary.flush()
             os.fsync(temporary.fileno())

@@ -188,7 +188,7 @@
 - Серьёзные сбои сообщаются в специальную служебную Telegram-группу.
 - Новые возможности включаются сразу для всех трёх уровней, не поэтапно по группам.
 - Migration/performance tests можно выполнять на согласованной копии production SQLite вместе с WAL/SHM, не обезличивая её за пределами локального защищённого окружения.
-- Для opt-in Telegram integration есть test bot `@vmsh179devbot`; token читается только из test credential config. Приватный канал отображается как `vmsh179devbot channel`, UI ID `3913815635`, бот добавлен admin. Live profile может публиковать туда любые synthetic/test payloads в пределах Telegram limits; unit/E2E от канала не зависят. Canonical Bot API `chat.id` сначала проверяется probe и затем хранится как настройка test group в SQLite без ручного добавления `-100`/смены знака.
+- Для opt-in Telegram integration есть test bot `@vmsh179devbot`; token читается только из test credential config. Приватный канал отображается как `vmsh179devbot channel`, UI ID `3913815635`, бот добавлен admin. Live profile может публиковать туда synthetic/test payloads в пределах Telegram limits; unit/E2E от канала не зависят. Read-only bind получает canonical Bot API `chat.id`, проверяет private channel и сохраняет immutable identity в owner-only local SQLite; write-smoke принимает destination только оттуда. Ручного добавления `-100`/смены знака нет. Phase 2 переносит принятый binding contract в целевую course/group таблицу.
 - Для content visual regression обязательно сравниваются PWA, Telegram и PDF для трёх листков одного уровня из `_vmsh_examples`.
 
 ## AI второй версии

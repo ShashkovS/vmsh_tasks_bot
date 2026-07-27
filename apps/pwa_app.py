@@ -1,22 +1,27 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import json
-import logging
 import re
 import uuid
 from datetime import UTC, datetime
 
-from aiohttp import WSMsgType, web
+from aiohttp import WSCloseCode, WSMsgType, web
 
-from helpers.config import DEBUG, config, logger
-from helpers.nats_brocker import vmsh_nats
+from helpers.config import logger
+from helpers.nats_brocker import InProcessBroker, JsonBroker, NatsBroker
 
 __all__ = ["pwa_routes"]
 
 AUDIENCES = ("student", "family", "staff")
 NATS_PWA_INVALIDATE = "pwa_invalidate"
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+INVALIDATION_RESOURCE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9:._/-]{0,255}$")
+INVALIDATION_REASON_PATTERN = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
+MAX_INVALIDATION_RESOURCES = 128
+WEBSOCKET_SEND_TIMEOUT_SECONDS = 2
+WEBSOCKET_CLOSE_TIMEOUT_SECONDS = 5
 PWA_STATE = web.AppKey("pwa_state", dict)
+PWA_BROKER = web.AppKey("pwa_broker", JsonBroker)
 PWA_SECURITY_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; "
@@ -42,6 +47,15 @@ def _audience(request: web.Request) -> str:
 
 def _request_id(request: web.Request) -> str:
     return request["request_id"]
+
+
+def _runtime_config(app: web.Application):
+    # Importing the AppKey lazily avoids a module-import cycle while still making
+    # app-factory runtime_config authoritative over import-time legacy config.
+    # See vmshpwa/docs/phase-0-live-integration-harness.md.
+    from main import RUNTIME_CONFIG
+
+    return app[RUNTIME_CONFIG]
 
 
 def _is_pwa_transport_path(path: str) -> bool:
@@ -106,20 +120,22 @@ async def health(request: web.Request):
 async def runtime(request: web.Request):
     audience = _audience(request)
     app_base = f"/{audience}"
+    runtime_config = _runtime_config(request.app)
+    broker = request.app[PWA_BROKER]
     return web.json_response(
         {
             "audience": audience,
             "appBase": app_base,
             "apiBase": f"{app_base}/api/v1",
             "websocketPath": f"{app_base}/ws",
-            "instance": config.pwa_instance or config.config_name,
+            "instance": runtime_config.pwa_instance or runtime_config.config_name,
             "serverTime": _now(),
             "requestId": _request_id(request),
             "features": {
-                "telegram": bool(config.telegram_bot_token),
-                "google": bool(config.google_cred_json),
-                "nats": vmsh_nats.nats_is_working,
-                "prototype": config.pwa_prototype,
+                "telegram": bool(runtime_config.telegram_bot_token),
+                "google": bool(runtime_config.google_cred_json),
+                "nats": broker.nats_is_working,
+                "prototype": runtime_config.pwa_prototype,
             },
         }
     )
@@ -130,15 +146,46 @@ async def legacy_health(_request: web.Request):
     return web.json_response({"ok": True})
 
 
+async def _close_websocket(
+    websocket,
+    *,
+    code: WSCloseCode,
+    message: bytes,
+    context: str,
+) -> bool:
+    if websocket.closed:
+        return True
+    try:
+        async with asyncio.timeout(WEBSOCKET_CLOSE_TIMEOUT_SECONDS):
+            await websocket.close(code=code, message=message)
+    except Exception:
+        logger.warning(
+            "Failed to close PWA websocket during %s", context, exc_info=True
+        )
+        return False
+    return bool(websocket.closed)
+
+
 async def _send_invalidation(connections: set, websocket, event: dict):
     if websocket.closed:
         connections.discard(websocket)
         return
     try:
-        await websocket.send_json(event)
+        async with asyncio.timeout(WEBSOCKET_SEND_TIMEOUT_SECONDS):
+            await websocket.send_json(event)
     except Exception:
-        connections.discard(websocket)
         logger.warning("Failed to send PWA invalidation", exc_info=True)
+        # Close before dropping tracking. If close also fails, shutdown retains a
+        # bounded second chance instead of leaking an untracked handler/transport.
+        # See vmshpwa/docs/phase-0-live-integration-harness.md.
+        closed = await _close_websocket(
+            websocket,
+            code=WSCloseCode.GOING_AWAY,
+            message=b"Invalidation delivery failed",
+            context="failed invalidation delivery",
+        )
+        if closed:
+            connections.discard(websocket)
 
 
 async def _broadcast(
@@ -151,26 +198,25 @@ async def _broadcast(
         raise ValueError(f"Unknown PWA audience: {audience}")
 
     state = app[PWA_STATE]
-    state["cursor"] += 1
-    event = {
-        "type": "invalidate",
-        "cursor": state["cursor"],
-        "serverTime": _now(),
-        "resources": resources,
-        "reason": reason,
-    }
-    if audience is not None:
-        event["audience"] = audience
-        connection_sets = (state["websockets"][audience],)
-    else:
-        connection_sets = tuple(state["websockets"].values())
-
-    await asyncio.gather(
-        *(
+    target_audiences = (audience,) if audience is not None else AUDIENCES
+    deliveries = []
+    for target_audience in target_audiences:
+        state["cursors"][target_audience] += 1
+        event = {
+            "type": "invalidate",
+            "cursor": state["cursors"][target_audience],
+            "serverTime": _now(),
+            "resources": resources,
+            "reason": reason,
+            "audience": target_audience,
+        }
+        connections = state["websockets"][target_audience]
+        deliveries.extend(
             _send_invalidation(connections, websocket, event)
-            for connections in connection_sets
             for websocket in connections.copy()
         )
+    await asyncio.gather(
+        *deliveries,
     )
 
 
@@ -182,7 +228,9 @@ async def realtime(request: web.Request):
         try:
             requested_cursor = int(cursor_value)
         except ValueError as exc:
-            raise web.HTTPBadRequest(text="cursor must be a non-negative integer") from exc
+            raise web.HTTPBadRequest(
+                text="cursor must be a non-negative integer"
+            ) from exc
         if requested_cursor < 0:
             raise web.HTTPBadRequest(text="cursor must be a non-negative integer")
 
@@ -192,7 +240,7 @@ async def realtime(request: web.Request):
     state = request.app[PWA_STATE]
     state["websockets"][audience].add(websocket)
 
-    current_cursor = state["cursor"]
+    current_cursor = state["cursors"][audience]
     if cursor_value is not None:
         await websocket.send_json(
             {
@@ -227,11 +275,11 @@ async def realtime(request: web.Request):
                         }
                     )
                     continue
-                if payload.get("type") == "ping":
+                if isinstance(payload, dict) and payload.get("type") == "ping":
                     await websocket.send_json(
                         {
                             "type": "pong",
-                            "cursor": state["cursor"],
+                            "cursor": state["cursors"][audience],
                             "serverTime": _now(),
                         }
                     )
@@ -243,37 +291,95 @@ async def realtime(request: web.Request):
 
 
 async def on_startup(app: web.Application):
+    runtime_config = _runtime_config(app)
+    broker = app[PWA_BROKER]
     logger.info(
-        "PWA app startup: instance=%s", config.pwa_instance or config.config_name
+        "PWA app startup: instance=%s",
+        runtime_config.pwa_instance or runtime_config.config_name,
     )
-    await vmsh_nats.setup(config.nats_server)
 
     async def handle_invalidation(payload):
-        resources = [str(item) for item in payload.get("resources", []) if item]
+        if not isinstance(payload, dict):
+            logger.warning("Ignoring non-object PWA invalidation")
+            return
+        raw_resources = payload.get("resources")
+        if (
+            not isinstance(raw_resources, list)
+            or not 1 <= len(raw_resources) <= MAX_INVALIDATION_RESOURCES
+            or not all(
+                isinstance(item, str) and INVALIDATION_RESOURCE_PATTERN.fullmatch(item)
+                for item in raw_resources
+            )
+        ):
+            logger.warning("Ignoring invalid PWA invalidation resources")
+            return
+        resources = list(dict.fromkeys(raw_resources))
         audience = payload.get("audience")
         if audience is not None and audience not in AUDIENCES:
-            logger.warning("Ignoring invalid PWA invalidation audience: %r", audience)
+            logger.warning("Ignoring invalid PWA invalidation audience")
             return
-        if resources:
-            await _broadcast(
-                app,
-                resources,
-                str(payload.get("reason") or "nats"),
-                audience=audience,
+        reason = payload.get("reason", "nats")
+        if not isinstance(reason, str) or not INVALIDATION_REASON_PATTERN.fullmatch(
+            reason
+        ):
+            logger.warning("Ignoring invalid PWA invalidation reason")
+            return
+        await _broadcast(app, resources, reason, audience=audience)
+
+    try:
+        await broker.setup(runtime_config.nats_server)
+        await broker.subscribe(NATS_PWA_INVALIDATE, handle_invalidation)
+        await broker.ready()
+    except BaseException as startup_error:
+        # aiohttp does not promise to run an adapter's shutdown hook after that
+        # adapter's startup callback fails. Setup itself may allocate a client
+        # before raising, so the whole adapter startup belongs inside this guard.
+        try:
+            await broker.disconnect()
+        except BaseException as cleanup_error:
+            raise BaseExceptionGroup(
+                "PWA broker startup and cleanup both failed",
+                [startup_error, cleanup_error],
+            ) from None
+        raise
+
+
+async def on_shutdown(app: web.Application):
+    state = app[PWA_STATE]
+
+    sockets = {
+        websocket
+        for connections in state["websockets"].values()
+        for websocket in connections.copy()
+    }
+    await asyncio.gather(
+        *(
+            _close_websocket(
+                websocket,
+                code=WSCloseCode.GOING_AWAY,
+                message=b"Server shutdown",
+                context="shutdown",
             )
-
-    await vmsh_nats.subscribe(NATS_PWA_INVALIDATE, handle_invalidation)
-
-
-async def on_shutdown(_app: web.Application):
-    await vmsh_nats.disconnect()
+            for websocket in sockets
+        )
+    )
+    for connections in state["websockets"].values():
+        connections.clear()
+    await app[PWA_BROKER].disconnect()
     logger.info("PWA app shutdown")
 
 
-def configure(app: web.Application):
+def configure(app: web.Application, *, broker: JsonBroker | None = None):
+    runtime_config = _runtime_config(app)
+    if broker is None:
+        if runtime_config.nats_server:
+            broker = NatsBroker(runtime_config.config_name)
+        else:
+            broker = InProcessBroker(runtime_config.config_name)
     app.middlewares.append(pwa_error_middleware)
+    app[PWA_BROKER] = broker
     app[PWA_STATE] = {
-        "cursor": 0,
+        "cursors": {audience: 0 for audience in AUDIENCES},
         "websockets": {audience: set() for audience in AUDIENCES},
     }
     app.add_routes(pwa_routes)
@@ -286,8 +392,6 @@ configue = configure
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    logger.setLevel(DEBUG)
-    standalone_app = web.Application()
-    configure(standalone_app)
-    web.run_app(standalone_app)
+    raise SystemExit(
+        "Use the explicit PWA runtime entry point; this module is an adapter"
+    )

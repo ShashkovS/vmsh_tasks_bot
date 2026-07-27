@@ -20,7 +20,7 @@
 10. Для каждого реально запускаемого `_external_pipelines` записать owner, команду/расписание, upstream, side effects, rollback и состояние `legacy bridge | v1 cutover | later internalization`.
 11. Зафиксировать внешний converter contract: четыре настраиваемых executable (`pdf2svg`, `cwebp`, `pdflatex`, `magick` по умолчанию из service `PATH`), capability probe, безопасный argv-вызов, timeout и поведение при `None`/missing binary.
 12. Зафиксировать storage profile contract: filesystem/mock для hermetic unit/agent/E2E; opt-in Beget test integration берёт allowlisted `s3_*` поля из test secret file и сверяет pinned bucket identity, production target Hetzner читает отдельный production secret file, без побочной загрузки Telegram/Google credentials.
-13. Зафиксировать live Telegram integration profile: `@vmsh179devbot`, token только из test config, private test channel `vmsh179devbot channel` с UI ID `3913815635`; Bot API probe получает canonical chat ID/admin capability, после чего verified test `telegram_binding` в SQLite становится единственным channel destination source.
+13. Зафиксировать live Telegram integration profile: `@vmsh179devbot`, token только из test config, private test channel `vmsh179devbot channel` с UI ID `3913815635`; read-only Bot API bind получает canonical chat ID/admin capability и неизменно сохраняет identity в owner-only local SQLite, после чего write-smoke использует только её. Целевая course/group `telegram_bindings` остаётся migration Phase 2.
 
 ## Подтверждённые локальные входы — 27 июля 2026
 
@@ -121,7 +121,7 @@ Seed `baseline-v1` и первый release fixture:
 - [ ] Workload profile: `pwa_tests/reports/workload-profile.{json,md}`; 176713 observed events/37408 traces и minute proxies зафиксированы, но concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget и approval всё ещё отсутствуют. External-process decommission register: `<path>`.
 - [ ] Converter config/probe contract и local capability report; server повторяет gate в этапе 11: `<paths/results>`.
 - [x] Storage profile/config/redaction: `helpers/{object_storage,pwa/storage_config}.py`, `vmshpwa/docs/object-storage.md`; 86 focused tests PASS, pinned Beget test-bucket live runs `codex-phase0-20260727-f6c821d9` и collision-safe replay `codex-phase0-20260727-collision-safe` прошли put/private-read/public-GET/delete-ack. Production target Hetzner остаётся Phase-11 readiness gate.
-- [ ] RecordingBot suite и opt-in `@vmsh179devbot`/test-channel capability+limits report с message IDs, без token: `<paths/results>`.
+- [ ] RecordingBot suite и opt-in `@vmsh179devbot`/test-channel capability report с message IDs, без token: hermetic suite и двухшаговый harness готовы (`helpers/pwa/telegram_test_{harness,binding}.py`, `vmshpwa/scripts/telegram_test_capability.py`), но live bind/smoke ждёт canonical signed `chat.id` из раздела «Где взять канонический ID тестового канала?» в `20-implementation-questions.md`. Rich/limits proof выполняется с renderer в Phase 2.
 - [ ] Visual baseline environment and screenshots: `<paths>`.
 - [ ] Docs updated: `<paths>`.
 - [ ] Known limitations/issues: `<links or none>`.

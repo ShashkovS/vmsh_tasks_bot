@@ -2,15 +2,28 @@ import json
 
 import pytest
 
+from apps import pwa_app
 from helpers.config import config
-from helpers.nats_brocker import vmsh_nats
+from helpers.nats_brocker import InProcessBroker
 from helpers.object_storage import LocalObjectStorage
-from main import prepare_app
+from main import create_app
+
+
+class HermeticPwaAdapter:
+    """Inject one broker owned exclusively by this aiohttp test application."""
+
+    def __init__(self, broker):
+        self.broker = broker
+
+    def configure(self, app):
+        pwa_app.configure(app, broker=self.broker)
 
 
 @pytest.fixture()
 async def client(aiohttp_client):
-    return await aiohttp_client(prepare_app())
+    broker = InProcessBroker("vmshpwa_e2e_pytest")
+    app = create_app([HermeticPwaAdapter(broker)], runtime_config=config)
+    return await aiohttp_client(app)
 
 
 @pytest.mark.asyncio
@@ -73,7 +86,7 @@ async def test_websocket_handshake_heartbeat_and_invalidation(client):
     await websocket.send_json({"type": "ping"})
     assert (await websocket.receive_json())["type"] == "pong"
 
-    await vmsh_nats.publish(
+    await client.app[pwa_app.PWA_BROKER].publish(
         "pwa_invalidate", {"resources": ["lesson:42"], "reason": "test"}
     )
     invalidation = await websocket.receive_json()
@@ -99,7 +112,7 @@ async def test_invalidation_can_be_scoped_to_one_audience(client):
     assert (await student.receive_json())["type"] == "connected"
     assert (await staff.receive_json())["type"] == "connected"
 
-    await vmsh_nats.publish(
+    await client.app[pwa_app.PWA_BROKER].publish(
         "pwa_invalidate",
         {
             "resources": ["review-queue"],
@@ -110,11 +123,46 @@ async def test_invalidation_can_be_scoped_to_one_audience(client):
     staff_event = await staff.receive_json()
     assert staff_event["type"] == "invalidate"
     assert staff_event["audience"] == "staff"
+    assert staff_event["cursor"] == 1
 
     await student.send_json({"type": "ping"})
-    assert (await student.receive_json())["type"] == "pong"
+    student_pong = await student.receive_json()
+    assert student_pong["type"] == "pong"
+    assert student_pong["cursor"] == 0
+
+    await client.app[pwa_app.PWA_BROKER].publish(
+        "pwa_invalidate",
+        {"resources": ["lesson:42"], "reason": "lesson-published"},
+    )
+    assert (await student.receive_json())["cursor"] == 1
+    assert (await staff.receive_json())["cursor"] == 2
     await student.close()
     await staff.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"resources": []},
+        {"resources": ["x"] * 129},
+        {"resources": ["line\nbreak"]},
+        {"resources": ["valid"], "reason": "INVALID REASON"},
+        {"resources": ["valid"], "audience": "student\nforged-log"},
+    ],
+)
+async def test_invalid_invalidation_payload_is_ignored_without_cursor_change(
+    client, payload
+):
+    websocket = await client.ws_connect("/student/ws")
+    assert (await websocket.receive_json())["cursor"] == 0
+
+    await client.app[pwa_app.PWA_BROKER].publish("pwa_invalidate", payload)
+    await websocket.send_json({"type": "ping"})
+    pong = await websocket.receive_json()
+    assert pong["type"] == "pong"
+    assert pong["cursor"] == 0
+    await websocket.close()
 
 
 @pytest.mark.asyncio

@@ -129,6 +129,20 @@ pwa-s3-live-smoke:
 	@test -n "$(PWA_S3_RUN_ID)" || (echo "Set a unique lowercase PWA_S3_RUN_ID"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.storage_smoke --run-id "$(PWA_S3_RUN_ID)"
 
+.PHONY: pwa-nats-local-smoke pwa-telegram-bind-test-channel pwa-telegram-live-smoke
+pwa-nats-local-smoke:
+	$(PWA_UV_ENV) VMSH_RUN_LOCAL_NATS_SMOKE=1 uv run pytest -q -n0 pwa_tests/integration/test_nats_live.py
+
+pwa-telegram-bind-test-channel:
+	@test "$(VMSH_RUN_TELEGRAM_LIVE_SMOKE)" = "1" || (echo "Set VMSH_RUN_TELEGRAM_LIVE_SMOKE=1"; exit 2)
+	@test -n "$(VMSH_TELEGRAM_TEST_CHANNEL_ID)" || (echo "Set the canonical negative VMSH_TELEGRAM_TEST_CHANNEL_ID"; exit 2)
+	$(PWA_UV_ENV) VMSH_RUN_TELEGRAM_LIVE_SMOKE=1 VMSH_TELEGRAM_TEST_CHANNEL_ID="$(VMSH_TELEGRAM_TEST_CHANNEL_ID)" uv run python -m vmshpwa.scripts.telegram_test_capability --live --bind-channel --confirm vmsh179devbot-channel-synthetic
+
+pwa-telegram-live-smoke:
+	@test "$(VMSH_RUN_TELEGRAM_LIVE_SMOKE)" = "1" || (echo "Set VMSH_RUN_TELEGRAM_LIVE_SMOKE=1"; exit 2)
+	@test -z "$(VMSH_TELEGRAM_TEST_CHANNEL_ID)" || (echo "Unset VMSH_TELEGRAM_TEST_CHANNEL_ID; smoke uses the verified local binding"; exit 2)
+	$(PWA_UV_ENV) VMSH_RUN_TELEGRAM_LIVE_SMOKE=1 uv run python -m vmshpwa.scripts.telegram_test_capability --live --run-smoke --confirm vmsh179devbot-channel-synthetic
+
 .PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-visual pwa-visual-update telegram-history-test
 pwa-format:
 	cd $(PWA_DIR) && CI=true pnpm format

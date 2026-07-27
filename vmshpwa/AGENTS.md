@@ -9,7 +9,7 @@ This workspace contains frontend adapters and test tooling. The existing Python 
 - Node 26, pnpm 11.15.1 and the committed lockfile are required.
 - Agents may start only `make pwa-agent-*` servers. Human targets and ports are reserved for the user.
 - Tests use `make pwa-test`, `pwa-storybook-test`, `pwa-e2e` and the isolated e2e profile.
-- Never start Telegram polling, load Google credentials, use production credentials, or point tests at human/production SQLite, NATS topics, media, IndexedDB or browser storage.
+- Never start Telegram polling, load Google credentials, use production credentials, or point tests at human/production SQLite, NATS topics, media, IndexedDB or browser storage. Owner-authorized live integration is limited to the guarded Make targets and dedicated test-only S3/Telegram resources documented in `docs/phase-0-live-integration-harness.md`; it is never part of unit/E2E.
 - Preserve uncommitted and parallel work. Never mass-rewrite files outside the task or discard changes you did not create.
 
 ## Architecture
