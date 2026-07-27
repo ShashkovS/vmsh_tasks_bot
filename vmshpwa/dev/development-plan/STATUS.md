@@ -4,18 +4,18 @@
 
 ## Состояние документов
 
-| Документ/этап       | Статус                      | Решение/блокер                                                                                                                                                                                |
-| ------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                                                                                                                    |
-| Решения и границы   | accepted planning input     | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                                                |
-| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                                                    |
-| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                                             |
-| Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps                                   |
-| Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import                         |
-| Этап 2              | Phase 2A/2B/2C implemented  | Schema/compiler, authenticated HTTP и audience frontend зафиксированы в `1aad776`/`866e3fe`; открыты HTTP assets, matching/metadata, stored PDF, bulk upload, content E2E и owner visual gate |
-| Этапы 3–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                                                 |
-| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                                            |
-| Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                                        |
+| Документ/этап       | Статус                      | Решение/блокер                                                                                                                                                        |
+| ------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                                                                                            |
+| Решения и границы   | accepted planning input     | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
+| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
+| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
+| Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
+| Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
+| Этап 2              | Phase 2A–2D implemented     | Asset recovery и durable media зафиксированы в `43b0323`/`08a8d0b`/`d39141d`; открыты matching/metadata, PDF preview, bulk upload, content E2E и owner visual gate    |
+| Этапы 3–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
+| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
+| Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
 
 ## Журнал решений
 
@@ -192,10 +192,16 @@
   Storybook browser — **167 PASS**, schema inventory — **192 product objects**;
   production-build `make pwa-e2e-auth` после deep-link default fix — **60/60
   PASS** в Chromium, WebKit и Firefox. Это auth regression, не content E2E.
-- Phase 2 всё ещё открыт для HTTP asset upload/resolution и missing-assets
-  recovery, matching/metadata UI/API, stored/openable generated PDF, bulk
-  upload, production-build content E2E и owner visual approval. Snapshots не
-  обновлялись. Proof:
+- Phase 2D (`43b0323`, `08a8d0b`, `d39141d`) добавляет authenticated asset
+  inventory/upload, content-addressed WebP/SVG/TikZ storage, immutable local
+  media URL, Staff recovery states, PWA cache/proxy и provider-first PDF
+  persistence. Regression: 302 Python asset, 10 PDF persistence, 21 frontend
+  unit и 17 Storybook browser tests; Ruff/ESLint/typecheck/production builds
+  PASS. Proof:
+  [`phase2-content-assets-http.md`](../../../pwa_tests/reports/phase2-content-assets-http.md).
+- Phase 2 всё ещё открыт для matching/metadata UI/API, Staff-openable generated
+  PDF, bulk upload, production-build content E2E и owner visual approval.
+  Snapshots не обновлялись. Ранее закрытые HTTP/frontend proof:
   [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md),
   [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
 
@@ -514,17 +520,17 @@
 Таблица различает промежуточный проверенный инкремент и окончательное принятие
 этапа. Наличие revision/proof не закрывает оставшиеся criteria из phase-файла.
 
-| Этап | Revision             | Proof                                                  | Принято                            |
-| ---: | -------------------- | ------------------------------------------------------ | ---------------------------------- |
-|    0 | —                    | —                                                      | —                                  |
-|    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)    | частично; production gates открыты |
-|    2 | `1aad776`, `866e3fe` | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа) | Phase 2C принят; этап открыт       |
-|    3 | —                    | —                                                      | —                                  |
-|    4 | —                    | —                                                      | —                                  |
-|    5 | —                    | —                                                      | —                                  |
-|    6 | —                    | —                                                      | —                                  |
-|    7 | —                    | —                                                      | —                                  |
-|    8 | —                    | —                                                      | —                                  |
-|    9 | —                    | —                                                      | —                                  |
-|   10 | —                    | —                                                      | —                                  |
-|   11 | —                    | —                                                      | —                                  |
+| Этап | Revision                        | Proof                                                  | Принято                            |
+| ---: | ------------------------------- | ------------------------------------------------------ | ---------------------------------- |
+|    0 | —                               | —                                                      | —                                  |
+|    1 | `1aad776`, `866e3fe`            | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)    | частично; production gates открыты |
+|    2 | `43b0323`, `08a8d0b`, `d39141d` | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа) | Phase 2D принят; этап открыт       |
+|    3 | —                               | —                                                      | —                                  |
+|    4 | —                               | —                                                      | —                                  |
+|    5 | —                               | —                                                      | —                                  |
+|    6 | —                               | —                                                      | —                                  |
+|    7 | —                               | —                                                      | —                                  |
+|    8 | —                               | —                                                      | —                                  |
+|    9 | —                               | —                                                      | —                                  |
+|   10 | —                               | —                                                      | —                                  |
+|   11 | —                               | —                                                      | —                                  |

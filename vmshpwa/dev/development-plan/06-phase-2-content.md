@@ -151,8 +151,8 @@ Browser renderer increment реализован, но сам этап 2 не з�
 Этот gate сам по себе не означает публикацию контента. Позднейшие изолированные
 proof закрыли live S3 content-asset roundtrip, live Telegram Rich lifecycle,
 safe historical backfill tooling и authenticated HTTP/frontend orchestration.
-Production owner-reviewed backfill apply, HTTP asset recovery,
-problem-matching/metadata flow, stored PDF и browser E2E пока остаются открыты.
+Production owner-reviewed backfill apply, problem-matching/metadata flow,
+открытие сохранённого PDF через Staff и browser E2E пока остаются открыты.
 
 Промежуточный gate **Phase 2C — authenticated HTTP и audience frontend**
 зафиксирован 28 июля 2026 в revisions [`1aad776`](../../../pwa_tests/reports/phase2-content-api.md)
@@ -176,9 +176,24 @@ problem-matching/metadata flow, stored PDF и browser E2E пока остают�
       production-build auth regression — 60/60 PASS в трёх браузерах (это не
       content E2E).
 
-Этот gate не закрывает Phase 2 целиком. Открыты именно HTTP asset
-upload/resolution и missing-assets recovery, problem matching/metadata UI+API,
-stored/openable generated PDF, bulk upload, production-build content E2E и
+Следующий промежуточный gate **Phase 2D — asset recovery и durable media**
+зафиксирован 28 июля 2026 в revisions `43b0323`, `08a8d0b` и `d39141d`:
+
+- [x] versioned/idempotent Staff asset inventory/upload, строгий `If-Match`,
+      raster→WebP, sanitized SVG, server-side TikZ→SVG и typed descriptors;
+- [x] immutable filesystem media route, прямые public S3 URL, nginx/E2E/Vite
+      proxy и двухнедельная Student/Family Workbox policy;
+- [x] Staff missing-assets recovery с сохранением выбранного файла при сбое,
+      `409` refresh, recompile и interaction stories;
+- [x] provider-first PDF persistence с hash/provenance, exact retry и
+      concurrent conflict checks; Staff preview/download ещё не подключён;
+- [x] 302 Python asset regression, 10 PDF persistence, 21 frontend unit и 17
+      Storybook browser tests, Ruff/ESLint/strict TypeScript и production build
+      трёх apps — PASS.
+
+Полный [proof Phase 2D](../../../pwa_tests/reports/phase2-content-assets-http.md)
+не закрывает Phase 2 целиком. Открыты problem matching/metadata UI+API,
+Staff-openable generated PDF, bulk upload, production-build content E2E и
 ручное visual approval владельца. Snapshots не обновлялись.
 
 - [x] Revision/migration/upgrade/rollback для Phase 2A:
@@ -200,6 +215,10 @@ stored/openable generated PDF, bulk upload, production-build content E2E и
       raster/WebP live roundtrip с private read, public GET и cleanup:
       [`phase2-content-assets-live.md`](../../../pwa_tests/reports/phase2-content-assets-live.md),
       13 hermetic PASS + 1 real converter PASS + 2/2 live objects PASS/deleted.
+- [x] Authenticated revision asset API, Staff recovery UI, immutable local
+      route, PWA cache/proxy и durable PDF storage boundary:
+      [`phase2-content-assets-http.md`](../../../pwa_tests/reports/phase2-content-assets-http.md),
+      revisions `43b0323`, `08a8d0b`, `d39141d`.
 - [x] Contract fixtures and authenticated API tests:
       [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md) и
       [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
@@ -211,7 +230,8 @@ stored/openable generated PDF, bulk upload, production-build content E2E и
       mobile 390 px reflow и ручной desktop/mobile light осмотр прошли. Owner visual
       approval и snapshots остаются в предыдущем незакрытом пункте:
       [`phase2-real-content-corpus.md`](../../../pwa_tests/reports/phase2-real-content-corpus.md).
-- [ ] PDF and Telegram preview evidence: `<paths>`.
+- [ ] Staff-openable persisted PDF and combined PDF/Telegram preview evidence:
+      `<paths>` (storage boundary реализован в `d39141d`).
 - [x] RecordingBot fixtures и разрешённый live test-channel Rich Message на
       границе 32 768 symbols: send/edit/delete PASS,
       [`phase2-derivative-adapters.md`](../../../pwa_tests/reports/phase2-derivative-adapters.md).
