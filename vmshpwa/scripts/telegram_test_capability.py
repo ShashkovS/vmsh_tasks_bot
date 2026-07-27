@@ -27,6 +27,7 @@ from helpers.pwa.telegram_test_harness import (
     TelegramLifecycleError,
     VerifiedTelegramBinding,
     run_synthetic_message_lifecycle,
+    run_synthetic_rich_message_lifecycle,
     verify_test_channel_binding,
 )
 from helpers.pwa.telegram_test_binding import (
@@ -42,6 +43,7 @@ REPORT_ROOT = ROOT / ".runtime" / "vmshpwa" / "telegram-smoke"
 BINDING_DATABASE_PATH = REPORT_ROOT / "bindings.sqlite3"
 LIVE_ENVIRONMENT_FLAG = "VMSH_RUN_TELEGRAM_LIVE_SMOKE"
 CHANNEL_ID_ENVIRONMENT_KEY = "VMSH_TELEGRAM_TEST_CHANNEL_ID"
+EXPECTED_TEST_CHANNEL_CHAT_ID = -1003913815635
 CONFIRMATION = "vmsh179devbot-channel-synthetic"
 _TOKEN_SHAPE = re.compile(r"^[1-9][0-9]{4,15}:[A-Za-z0-9_-]{20,128}$")
 _MAX_TEST_CONFIG_BYTES = 256 * 1024
@@ -71,6 +73,11 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="send/edit/delete using only the persisted destination",
     )
+    action.add_argument(
+        "--run-rich-smoke",
+        action="store_true",
+        help="send/edit/delete one compiler-produced Bot API 10.2 Rich Message",
+    )
     parser.add_argument(
         "--confirm",
         default="",
@@ -85,6 +92,7 @@ def validate_live_opt_in(
     confirmation: str,
     bind_channel: bool,
     run_smoke: bool,
+    run_rich_smoke: bool = False,
 ) -> None:
     """Fail closed before credential loading or Bot API construction."""
 
@@ -101,11 +109,9 @@ def validate_live_opt_in(
             "Live test capability is disabled in production mode"
         )
 
-    if bind_channel == run_smoke:
-        raise LiveTelegramGuardError(
-            "Select exactly one of --bind-channel or --run-smoke"
-        )
-    if run_smoke and CHANNEL_ID_ENVIRONMENT_KEY in os.environ:
+    if sum((bind_channel, run_smoke, run_rich_smoke)) != 1:
+        raise LiveTelegramGuardError("Select exactly one live capability action")
+    if (run_smoke or run_rich_smoke) and CHANNEL_ID_ENVIRONMENT_KEY in os.environ:
         raise LiveTelegramGuardError(
             "The write-enabled smoke refuses an environment destination"
         )
@@ -121,13 +127,22 @@ def requested_chat_id_from_environment() -> int:
         raise LiveTelegramGuardError(
             f"{CHANNEL_ID_ENVIRONMENT_KEY} must contain the canonical Bot API chat ID"
         ) from error
-    # Telegram Bot API channel IDs are signed 64-bit values. Requiring a negative
-    # canonical ID rejects the positive UI fragment without inventing a -100 form.
-    if chat_id >= 0 or chat_id < -(2**63):
+    # The owner supplied this canonical Bot API ID. Never derive a ``-100`` form
+    # from UI text and never accept another same-title channel as a fallback.
+    if chat_id != EXPECTED_TEST_CHANNEL_CHAT_ID:
         raise LiveTelegramGuardError(
-            f"{CHANNEL_ID_ENVIRONMENT_KEY} is not a canonical signed channel ID"
+            f"{CHANNEL_ID_ENVIRONMENT_KEY} is not the dedicated canonical signed channel ID"
         )
     return chat_id
+
+
+def load_pinned_test_binding() -> VerifiedTelegramBinding:
+    binding = load_verified_binding(BINDING_DATABASE_PATH)
+    if binding.chat_id != EXPECTED_TEST_CHANNEL_CHAT_ID:
+        raise TelegramTestBindingError(
+            "Trusted Telegram binding is not the owner-approved test channel"
+        )
+    return binding
 
 
 def load_allowlisted_test_bot_token() -> str:
@@ -301,6 +316,36 @@ async def _execute_smoke(
         await bot.session.close()
 
 
+async def _execute_rich_smoke(
+    token: str,
+    trusted_binding: VerifiedTelegramBinding,
+    run_id: str,
+):
+    # aiogram 3.25 predates generated Bot API 10.2 Rich methods. The local raw
+    # method adapter still uses aiogram's bounded session and is imported only
+    # after the same identity/destination/credential guards as the plain smoke.
+    from aiogram import Bot
+
+    from helpers.pwa.telegram_rich_aiogram import AiogramTelegramRichTransport
+
+    bot = Bot(token=token)
+    try:
+        observed_binding = await verify_test_channel_binding(
+            bot, trusted_binding.chat_id
+        )
+        if observed_binding != trusted_binding:
+            raise TelegramCapabilityError(
+                "Telegram test identity differs from the trusted local binding"
+            )
+        return await run_synthetic_rich_message_lifecycle(
+            AiogramTelegramRichTransport(bot),
+            trusted_binding,
+            run_id=run_id,
+        )
+    finally:
+        await bot.session.close()
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     run_id = f"tg-{uuid.uuid4().hex[:20]}"
@@ -310,9 +355,12 @@ def main(argv: list[str] | None = None) -> int:
             confirmation=args.confirm,
             bind_channel=args.bind_channel,
             run_smoke=args.run_smoke,
+            run_rich_smoke=args.run_rich_smoke,
         )
         trusted_binding = (
-            load_verified_binding(BINDING_DATABASE_PATH) if args.run_smoke else None
+            load_pinned_test_binding()
+            if args.run_smoke or args.run_rich_smoke
+            else None
         )
         requested_chat_id = (
             requested_chat_id_from_environment() if args.bind_channel else None
@@ -336,7 +384,12 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if trusted_binding is None:
             raise TelegramTestBindingError("Trusted Telegram binding is unavailable")
-        lifecycle = asyncio.run(_execute_smoke(token, trusted_binding, run_id))
+        if args.run_rich_smoke:
+            lifecycle = asyncio.run(_execute_rich_smoke(token, trusted_binding, run_id))
+            action = "rich-smoke"
+        else:
+            lifecycle = asyncio.run(_execute_smoke(token, trusted_binding, run_id))
+            action = "smoke"
     except (LiveTelegramGuardError, TelegramTestBindingError) as error:
         # Guard failures happen before network access and intentionally create no
         # report containing operator environment details.
@@ -346,7 +399,7 @@ def main(argv: list[str] | None = None) -> int:
         report = _safe_report(
             run_id=run_id,
             status="failed",
-            action="smoke",
+            action="rich-smoke" if args.run_rich_smoke else "smoke",
             error_code=f"lifecycle_{error.result.failure_stage or 'unknown'}",
             lifecycle=error.result,
         )
@@ -359,7 +412,13 @@ def main(argv: list[str] | None = None) -> int:
         report = _safe_report(
             run_id=run_id,
             status="failed",
-            action="bind" if args.bind_channel else "smoke",
+            action=(
+                "bind"
+                if args.bind_channel
+                else "rich-smoke"
+                if args.run_rich_smoke
+                else "smoke"
+            ),
             error_code="capability_verification_failed",
         )
         path = _write_report(run_id, report)
@@ -373,7 +432,13 @@ def main(argv: list[str] | None = None) -> int:
         report = _safe_report(
             run_id=run_id,
             status="failed",
-            action="bind" if args.bind_channel else "smoke",
+            action=(
+                "bind"
+                if args.bind_channel
+                else "rich-smoke"
+                if args.run_rich_smoke
+                else "smoke"
+            ),
             error_code=f"unexpected_{type(error).__name__}",
         )
         path = _write_report(run_id, report)
@@ -383,7 +448,7 @@ def main(argv: list[str] | None = None) -> int:
     report = _safe_report(
         run_id=run_id,
         status="passed",
-        action="smoke",
+        action=action,
         lifecycle=lifecycle,
     )
     path = _write_report(run_id, report)

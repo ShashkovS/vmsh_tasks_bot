@@ -8,10 +8,22 @@ Unit/E2E inject ``RecordingBot``; the strictly opt-in command in
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import re
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any, Protocol
+
+from helpers.pwa.content.compiler import compile_latex
+from helpers.pwa.content.model import CompileResult, ContentRole
+from helpers.pwa.content.telegram import TelegramRichLimits
+from helpers.pwa.content.telegram_publisher import (
+    TelegramRichDestination,
+    TelegramRichPublisher,
+    TelegramRichReceipt,
+    TelegramRichTransport,
+    validated_compiler_telegram,
+)
 
 EXPECTED_TEST_BOT_USERNAME = "vmsh179devbot"
 EXPECTED_TEST_CHANNEL_TITLE = "vmsh179devbot channel"
@@ -28,7 +40,10 @@ class TelegramCapabilityError(RuntimeError):
 class TelegramLifecycleError(RuntimeError):
     """A synthetic send/edit/delete lifecycle did not cleanly complete."""
 
-    def __init__(self, result: "TelegramLifecycleResult"):
+    def __init__(
+        self,
+        result: "TelegramLifecycleResult | TelegramRichLifecycleResult",
+    ):
         super().__init__(
             "Synthetic Telegram lifecycle failed; inspect safe result flags"
         )
@@ -66,6 +81,23 @@ class TelegramLifecycleResult:
     run_id: str
     binding: VerifiedTelegramBinding
     message_id: int | None
+    sent: bool
+    edited: bool
+    cleanup_attempted: bool
+    deleted: bool
+    failure_stage: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class TelegramRichLifecycleResult:
+    """Safe Rich lifecycle evidence: identifiers, hashes and flags only."""
+
+    run_id: str
+    binding: VerifiedTelegramBinding
+    message_id: int | None
+    initial_derivative_sha256: str
+    edited_derivative_sha256: str
+    utf8_characters: int
     sent: bool
     edited: bool
     cleanup_attempted: bool
@@ -232,6 +264,127 @@ async def run_synthetic_message_lifecycle(
     return result
 
 
+def compile_synthetic_rich_boundary(
+    *,
+    run_id: str,
+    state: str,
+) -> CompileResult:
+    """Build compiler-owned Rich HTML at the exact 10.2 character boundary."""
+
+    if not _RUN_MARKER.fullmatch(run_id):
+        raise ValueError("run_id must be a 6-64 character lowercase synthetic marker")
+    if state not in {"initial", "edited"}:
+        raise ValueError("state must be initial or edited")
+
+    def compile_with_fill(fill_count: int) -> CompileResult:
+        source = (
+            r"\begin{document}"
+            r"\задача "
+            r"\textbf{VMSH PWA synthetic Rich Message}. "
+            f"Run {run_id}; state {state}. "
+            r"Formula $x^2+y^2=179$."
+            r"\begin{enumerate}"
+            r"\item First synthetic item."
+            r"\item Second synthetic item."
+            r"\end{enumerate}"
+            r"\begin{tabular}{|c|c|}"
+            r"\hline $x$ & $y$ \\"
+            r"\hline 1 & 179 \\"
+            r"\hline\end{tabular}" + ("я" * fill_count) + r"\кзадача\end{document}"
+        ).encode("utf-8")
+        return compile_latex(
+            source,
+            source_name=f"synthetic/rich-boundary-{state}.tex",
+            role=ContentRole.CONDITION,
+        )
+
+    seed = compile_with_fill(1)
+    seed_derivative = validated_compiler_telegram(seed)
+    maximum = TelegramRichLimits().max_utf8_characters
+    fill_count = 1 + maximum - seed_derivative.metrics.utf8_characters
+    if fill_count < 1:
+        raise RuntimeError("Synthetic Rich boundary template exceeds Bot API limits")
+    result = compile_with_fill(fill_count)
+    derivative = validated_compiler_telegram(result)
+    if derivative.metrics.utf8_characters != maximum:
+        raise RuntimeError("Synthetic Rich fixture did not reach the exact boundary")
+    return result
+
+
+async def run_synthetic_rich_message_lifecycle(
+    transport: TelegramRichTransport,
+    binding: VerifiedTelegramBinding,
+    *,
+    run_id: str,
+) -> TelegramRichLifecycleResult:
+    """Send/edit/delete exactly one compiler-produced boundary Rich Message."""
+
+    initial = compile_synthetic_rich_boundary(run_id=run_id, state="initial")
+    edited_result = compile_synthetic_rich_boundary(run_id=run_id, state="edited")
+    initial_derivative = validated_compiler_telegram(initial)
+    edited_derivative = validated_compiler_telegram(edited_result)
+    publisher = TelegramRichPublisher(transport)
+    destination = TelegramRichDestination(chat_id=binding.chat_id)
+
+    receipt: TelegramRichReceipt | None = None
+    sent = False
+    edited = False
+    cleanup_attempted = False
+    deleted = False
+    failure_stage: str | None = None
+    primary_error: Exception | None = None
+    cleanup_error: Exception | None = None
+    cancellation: asyncio.CancelledError | None = None
+
+    try:
+        receipt = await publisher.send(destination, initial)
+        sent = True
+        receipt = await publisher.edit(receipt, edited_result)
+        edited = True
+    except asyncio.CancelledError as error:
+        cancellation = error
+        failure_stage = "edit" if sent else "send"
+    except Exception as error:
+        primary_error = error
+        failure_stage = "edit" if sent else "send"
+    finally:
+        if receipt is not None:
+            cleanup_attempted = True
+            try:
+                await publisher.delete(receipt)
+                deleted = True
+            except asyncio.CancelledError as error:
+                cancellation = error
+                if failure_stage is None:
+                    failure_stage = "delete"
+            except Exception as error:
+                cleanup_error = error
+                if failure_stage is None:
+                    failure_stage = "delete"
+
+    result = TelegramRichLifecycleResult(
+        run_id=run_id,
+        binding=binding,
+        message_id=receipt.message_id if receipt is not None else None,
+        initial_derivative_sha256=initial_derivative.sha256,
+        edited_derivative_sha256=edited_derivative.sha256,
+        utf8_characters=initial_derivative.metrics.utf8_characters,
+        sent=sent,
+        edited=edited,
+        cleanup_attempted=cleanup_attempted,
+        deleted=deleted,
+        failure_stage=failure_stage,
+    )
+    if cancellation is not None:
+        if cleanup_error is not None:
+            cancellation.add_note("Synthetic Telegram Rich cleanup also failed")
+        raise cancellation
+    if primary_error is not None or cleanup_error is not None:
+        cause = primary_error if primary_error is not None else cleanup_error
+        raise TelegramLifecycleError(result) from cause
+    return result
+
+
 class RecordingBot:
     """Network-free bot implementing probe plus send/edit/delete behavior."""
 
@@ -260,6 +413,7 @@ class RecordingBot:
         self.fail_stage = fail_stage
         self.operations: list[dict[str, Any]] = []
         self.messages: dict[int, str] = {}
+        self.rich_messages: dict[int, str] = {}
         self._next_message_id = 1000
 
     async def get_me(self):
@@ -317,6 +471,59 @@ class RecordingBot:
         self.messages[message_id] = text
         return True
 
+    async def send_rich_message(
+        self,
+        *,
+        chat_id: int,
+        rich_message,
+        message_thread_id: int | None,
+    ):
+        html = rich_message.get("html")
+        if not isinstance(html, str):
+            raise TypeError("Synthetic Rich transport requires HTML")
+        html_sha256 = hashlib.sha256(html.encode("utf-8")).hexdigest()
+        self.operations.append(
+            {
+                "kind": "send_rich",
+                "chat_id": chat_id,
+                "message_thread_id": message_thread_id,
+                "html_sha256": html_sha256,
+            }
+        )
+        if self.fail_stage in {"send", "send_rich"}:
+            raise RuntimeError("synthetic Rich send failure")
+        if chat_id != self.chat_id:
+            raise LookupError("Unknown synthetic Rich chat")
+        self._next_message_id += 1
+        self.rich_messages[self._next_message_id] = html_sha256
+        return SimpleNamespace(message_id=self._next_message_id)
+
+    async def edit_rich_message(
+        self,
+        *,
+        chat_id: int,
+        message_id: int,
+        rich_message,
+    ):
+        html = rich_message.get("html")
+        if not isinstance(html, str):
+            raise TypeError("Synthetic Rich transport requires HTML")
+        html_sha256 = hashlib.sha256(html.encode("utf-8")).hexdigest()
+        self.operations.append(
+            {
+                "kind": "edit_rich",
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "html_sha256": html_sha256,
+            }
+        )
+        if self.fail_stage in {"edit", "edit_rich"}:
+            raise RuntimeError("synthetic Rich edit failure")
+        if chat_id != self.chat_id or message_id not in self.rich_messages:
+            raise LookupError("Unknown synthetic Rich message")
+        self.rich_messages[message_id] = html_sha256
+        return SimpleNamespace(message_id=message_id)
+
     async def delete_message(self, chat_id: int, message_id: int, **kwargs):
         self.operations.append(
             {
@@ -328,7 +535,10 @@ class RecordingBot:
         )
         if self.fail_stage == "delete":
             raise RuntimeError("synthetic delete failure")
-        if chat_id != self.chat_id or message_id not in self.messages:
+        if chat_id != self.chat_id or (
+            message_id not in self.messages and message_id not in self.rich_messages
+        ):
             raise LookupError("Unknown synthetic message")
-        del self.messages[message_id]
+        self.messages.pop(message_id, None)
+        self.rich_messages.pop(message_id, None)
         return True

@@ -403,7 +403,7 @@ def test_command_uses_persisted_binding_as_only_smoke_destination(
     binding_path = tmp_path / "binding.sqlite3"
     report_root = tmp_path / "reports"
     binding = VerifiedTelegramBinding(
-        chat_id=SYNTHETIC_TEST_CHAT_ID,
+        chat_id=command.EXPECTED_TEST_CHANNEL_CHAT_ID,
         chat_title="vmsh179devbot channel",
         bot_id=179000001,
         bot_username="vmsh179devbot",
@@ -411,12 +411,12 @@ def test_command_uses_persisted_binding_as_only_smoke_destination(
     observed = {}
 
     async def fake_bind(_token, chat_id):
-        assert chat_id == SYNTHETIC_TEST_CHAT_ID
+        assert chat_id == command.EXPECTED_TEST_CHANNEL_CHAT_ID
         return binding
 
     async def fake_smoke(_token, trusted_binding, run_id):
         observed["binding"] = trusted_binding
-        bot = RecordingBot()
+        bot = RecordingBot(chat_id=trusted_binding.chat_id)
         return await run_synthetic_message_lifecycle(
             bot, trusted_binding, run_id=run_id
         )
@@ -427,7 +427,10 @@ def test_command_uses_persisted_binding_as_only_smoke_destination(
     monkeypatch.setattr(command, "_execute_bind", fake_bind)
     monkeypatch.setattr(command, "_execute_smoke", fake_smoke)
     monkeypatch.setenv(command.LIVE_ENVIRONMENT_FLAG, "1")
-    monkeypatch.setenv(command.CHANNEL_ID_ENVIRONMENT_KEY, str(SYNTHETIC_TEST_CHAT_ID))
+    monkeypatch.setenv(
+        command.CHANNEL_ID_ENVIRONMENT_KEY,
+        str(command.EXPECTED_TEST_CHANNEL_CHAT_ID),
+    )
     monkeypatch.delenv("PROD", raising=False)
 
     assert (

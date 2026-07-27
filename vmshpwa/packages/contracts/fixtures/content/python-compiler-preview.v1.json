@@ -1,0 +1,114 @@
+{
+  "fixtureVersion": 1,
+  "document": {
+    "contractVersion": 1,
+    "introduction": [
+      {
+        "children": [
+          { "type": "text", "value": "\nВведение с " },
+          { "latex": "n", "type": "math" },
+          { "type": "text", "value": ".\n" }
+        ],
+        "type": "paragraph"
+      }
+    ],
+    "materialKind": "condition",
+    "problems": [
+      {
+        "blocks": [
+          {
+            "children": [
+              { "type": "text", "value": "\nТекст " },
+              {
+                "children": [
+                  { "type": "text", "value": "жирный и " },
+                  {
+                    "children": [{ "type": "text", "value": "выделенный" }],
+                    "type": "emphasis"
+                  }
+                ],
+                "type": "strong"
+              },
+              { "type": "text", "value": "; " },
+              {
+                "children": [{ "type": "text", "value": "ссылка" }],
+                "href": "https://example.test/material",
+                "type": "link"
+              },
+              { "type": "text", "value": ".\n" }
+            ],
+            "type": "paragraph"
+          },
+          { "latex": "x^2+y^2=z^2", "type": "formula" },
+          {
+            "blocks": [
+              {
+                "children": [{ "type": "text", "value": " Подпункт.\n" }],
+                "type": "paragraph"
+              },
+              {
+                "items": [
+                  [
+                    {
+                      "children": [{ "type": "text", "value": " Первый." }],
+                      "type": "paragraph"
+                    }
+                  ],
+                  [
+                    {
+                      "children": [{ "type": "text", "value": " Второй." }],
+                      "type": "paragraph"
+                    }
+                  ]
+                ],
+                "ordered": false,
+                "type": "list"
+              },
+              {
+                "rows": [
+                  [
+                    {
+                      "children": [{ "type": "text", "value": "a" }],
+                      "type": "data"
+                    },
+                    {
+                      "children": [{ "type": "text", "value": "b" }],
+                      "type": "data"
+                    }
+                  ],
+                  [
+                    {
+                      "children": [{ "type": "text", "value": "c" }],
+                      "type": "data"
+                    },
+                    {
+                      "children": [{ "type": "text", "value": "d" }],
+                      "type": "data"
+                    }
+                  ]
+                ],
+                "type": "table"
+              },
+              {
+                "alt": "missing",
+                "asset": {
+                  "logicalName": "figures/missing.svg",
+                  "status": "missing"
+                },
+                "type": "figure"
+              }
+            ],
+            "label": "a",
+            "type": "subpart"
+          }
+        ],
+        "ordinal": 1,
+        "sourceItem": "demo.1",
+        "title": "Синтетическая задача"
+      }
+    ],
+    "revisionId": null,
+    "sourceSha256": "475a111705d566c0b359d271a806237178502956997ae1bc81bb60b6247f3ffc",
+    "title": null
+  }
+}
