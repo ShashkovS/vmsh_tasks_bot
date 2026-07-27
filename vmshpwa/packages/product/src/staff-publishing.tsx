@@ -19,7 +19,7 @@ import {
 } from '@vmsh/ui'
 
 import { LevelChip } from './level-chip'
-import type { LevelView } from './types'
+import type { GroupView } from './types'
 
 /* ── Publication control ──────────────────────────────────────────────────
  * The fixed artifact column and block datetime editor implement the bounded
@@ -30,7 +30,7 @@ export type PublishState = 'published' | 'scheduled' | 'draft' | 'none'
 export type PublicationArtifact = 'task' | 'hint' | 'solution'
 
 export interface PublicationLevelRow {
-  level: LevelView
+  level: GroupView
   task: PublishState
   hint: PublishState
   solution: PublishState

@@ -76,3 +76,9 @@ Student входит сгенерированным логином и текущ
 - [ ] Telegram historical auth tests: `<result or N/A reason>`.
 - [ ] Docs/runbook updated: `<paths>`.
 - [ ] Known limitations/issues and acceptance: `<links/name/date>`.
+
+## Многокурсовый инкремент Phase 1
+
+Создать course enrollment/access/event и Staff scope migrations/contracts. Student session получает доступ к нескольким курсам, но active group и mode меняются только внутри одного enrollment. Teacher scope допускает весь курс либо отдельные группы; прямой запрос вне scope возвращает `403`.
+
+Дополнительный proof: backfill «Математика 5–7», один active + несколько allowed groups, per-course mode history, revoked-access history visibility, course/group permission matrix и Storybook `Product/Courses--student-multiple-courses`, `--active-and-allowed-groups`, `Pages/Staff--teacher-forbidden`.

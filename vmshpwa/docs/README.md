@@ -15,6 +15,7 @@
 - [Стратегия тестирования](testing-strategy.md)
 - [Отказ от Google](google-migration-roadmap.md)
 - [Модель данных и миграционные границы](data-model-and-migrations.md)
+- [Курсы, независимые группы, занятия и синонимы задач](courses-groups-and-lessons.md)
 - [Принятые технические решения — обновлено 24 июля 2026](accepted-technical-decisions-2026-07.md)
 - [Принятые продуктовые UX-решения: проверка, вердикты, реакции и AI](product-ux-decisions-2026-07.md)
 - [Production deployment](deployment.md)

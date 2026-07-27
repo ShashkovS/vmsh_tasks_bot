@@ -21,6 +21,16 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const CurrentLesson: Story = { render: () => <FamilyHomePage /> }
+export const ActivityByCourse: Story = {
+  name: 'Активность · несколько курсов',
+  render: () => <FamilyHomePage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Математика 5–7')).toBeInTheDocument()
+    await expect(canvas.getByText('Физика: эксперимент')).toBeInTheDocument()
+    await expect(canvas.queryByText(/место|процентиль|лучше группы/i)).not.toBeInTheDocument()
+  },
+}
 export const ChildSwitcher: Story = { render: () => <FamilyChildrenPage /> }
 export const ChildActivity: Story = { render: () => <FamilyChildPage childId="vasily" /> }
 export const ReadOnlyTask: Story = {

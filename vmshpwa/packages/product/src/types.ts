@@ -4,14 +4,52 @@
  * contracts live in @vmsh/contracts once the API is wired.
  */
 
-export interface LevelView {
-  /** `groups.short_code` — «н», «п», «х», «т» и будущие значения. */
+export interface CourseView {
+  id: string
   code: string
-  /** Полное название: школьник видит слово, не код. */
+  name: string
+  subjectCode: string
+  /** Semantic course accent; never carries status or verdict meaning. */
+  accentIndex: 0 | 1 | 2 | 3 | 4
+}
+
+export interface GroupView {
+  id: string
+  courseId: string
+  /** `groups.short_code` — «н», «п», «х», `dp2`, `i9a` и будущие значения. */
+  code: string
+  /** Полное название: школьник видит слово в контексте курса, не один код. */
   name: string
   /** 1–4 — категориальный цвет по `sort_order`; 0 — нейтральный/системный. */
   colorIndex: 0 | 1 | 2 | 3 | 4
 }
+
+export interface CourseEnrollmentView {
+  course: CourseView
+  activeGroupId: string
+  allowedGroups: GroupView[]
+  attendanceMode: 'online' | 'in-person'
+}
+
+export interface CourseLessonView {
+  id: string
+  courseId: string
+  lessonNumber: number
+  title?: string
+}
+
+export interface GroupLessonView {
+  id: string
+  courseLessonId: string
+  groupId: string
+  lessonNumber: number
+}
+
+/**
+ * Transitional name for legacy adapters only. New product components use
+ * GroupView and always carry the course context explicitly.
+ */
+export type LevelView = GroupView
 
 export type VerdictTone =
   'none' | 'negative' | 'partial-low' | 'partial-mid' | 'partial-high' | 'positive'

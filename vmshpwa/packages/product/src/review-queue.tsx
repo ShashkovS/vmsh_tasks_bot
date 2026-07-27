@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUpDown } from 'lucide-react'
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, cn } from '@vmsh/ui'
 
 import { LevelChip } from './level-chip'
-import type { LevelView } from './types'
+import type { GroupView } from './types'
 
 /*
  * Review queue — the main entrance to checking, by task. Shows the pending
@@ -15,7 +15,7 @@ export interface ReviewQueueItem {
   id: string
   taskNumber: string
   taskTitle: string
-  level: LevelView
+  level: GroupView
   studentName: string
   groupName: string
   waitingLabel: string

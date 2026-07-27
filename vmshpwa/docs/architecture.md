@@ -65,3 +65,9 @@ Reverse proxy обязан отдавать соответствующий `inde
 Общий Python config содержит `s3_url` (default `https://s3.ru1.storage.beget.cloud`), nullable `s3_bucket_name`, `s3_access_key`, `s3_secret_key`. Для ручной local/test S3-интеграции эти четыре allowlisted поля читаются из `creds_test/vmsh_bot_config_test.json`, для production — из `creds_prod/vmsh_bot_config_prod.json`. Agent и обычный E2E не читают эти файлы и используют filesystem. Выбор S3 adapter при неполном наборе настроек завершается config error; access/secret key не входят в config representation, logs, Sentry, health или client contracts.
 
 Content assets используют content-addressed keys. Фотографии решений используют непредсказуемые immutable revision keys вида `sol_imgs/user_{user_id}/{season_year}/{lesson_id}/{problem_id}_{created_at_utc}_{uuid}.webp` и публичный GET. После verdict object не перезаписывается и не удаляется приложением.
+
+## Многокурсовая предметная граница
+
+Один aiohttp backend обслуживает иерархию `season → course → group → course/group lesson`; отдельного backend на курс нет. API, query keys, WebSocket invalidations и browser URL state несут `courseId`/`groupId`, когда ресурс не глобален. Staff permission scope проверяется сервером на уровне course/group и возвращает `403`.
+
+Синонимы задач реализуются read-model projection поверх неизменяемых concrete `problem_id` и submission/result IDs. Очное расписание моделируется отдельным `in_person_event`, а не глобальным номером занятия. Полная схема владения и контракты: [Курсы, группы и занятия](courses-groups-and-lessons.md).

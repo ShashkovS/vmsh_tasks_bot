@@ -5,6 +5,7 @@ import { PageLayout, PageSection, PageStatePanel, type PageDisplayState } from '
 import { MathDocument } from '@vmsh/content'
 import {
   ClassroomAssignmentStatus,
+  CourseCard,
   DeadlineNotice,
   FeedbackThread,
   ProblemHeader,
@@ -18,6 +19,9 @@ import {
   type TaskListItemView,
   type TelegramPostView,
   type ThreadMessageView,
+  type CourseEnrollmentView,
+  type CourseView,
+  type GroupView,
 } from '@vmsh/product'
 import {
   Alert,
@@ -40,7 +44,48 @@ import {
  * docs/product-ux-decisions-2026-07.md. The family account observes the same
  * published child-visible state; it never submits or self-checks a task.
  */
-const level = { code: 'н', name: 'Начинающие', colorIndex: 1 as const }
+const level = {
+  id: 'math-beginner',
+  courseId: 'math-5-7',
+  code: 'н',
+  name: 'Начинающие',
+  colorIndex: 1 as const,
+}
+const mathCourse: CourseView = {
+  id: 'math-5-7',
+  code: 'MATH-5-7',
+  name: 'Математика 5–7',
+  subjectCode: 'Математика',
+  accentIndex: 1,
+}
+const physicsCourse: CourseView = {
+  id: 'physics-experiment',
+  code: 'PHYS-EXP',
+  name: 'Физика: эксперимент',
+  subjectCode: 'Физика',
+  accentIndex: 4,
+}
+const physicsGroup: GroupView = {
+  id: 'physics-intro',
+  courseId: physicsCourse.id,
+  code: 'вв',
+  name: 'Вводная',
+  colorIndex: 4,
+}
+const familyEnrollments: CourseEnrollmentView[] = [
+  {
+    course: mathCourse,
+    activeGroupId: level.id,
+    allowedGroups: [level],
+    attendanceMode: 'in-person',
+  },
+  {
+    course: physicsCourse,
+    activeGroupId: physicsGroup.id,
+    allowedGroups: [physicsGroup],
+    attendanceMode: 'online',
+  },
+]
 const accepted = findVerdict(fullVerdictScale, 'plus')!
 const partial = findVerdict(fullVerdictScale, 'plus-minus')!
 
@@ -109,11 +154,33 @@ export function FamilyHomePage({ state = 'ready' }: { state?: PageDisplayState }
     <StatefulPage state={state} title="Сейчас">
       <PageLayout
         actions={<ChildSwitcher />}
-        description="Постоянный режим: очно. Последняя активность — сегодня в 12:08."
-        eyebrow="Василий · начинающие"
-        title="Текущее занятие"
+        description="Режим, занятие и прогресс показаны отдельно для каждого курса."
+        eyebrow="Василий · последняя активность сегодня в 12:08"
+        title="Текущие занятия"
       >
         <div className="space-y-5">
+          <PageSection
+            description="Семья видит опубликованное состояние всех курсов ребёнка."
+            title="Курсы"
+          >
+            <div className="grid gap-3 lg:grid-cols-2">
+              <CourseCard
+                classroomName="201"
+                enrollment={familyEnrollments[0]!}
+                lessonDate="26 января"
+                lessonNumber={41}
+                phase="Решает задачи · до воскресенья, 13:00 МСК"
+                progressLabel="3 из 12 задач зачтено"
+              />
+              <CourseCard
+                enrollment={familyEnrollments[1]!}
+                lessonDate="29 января"
+                lessonNumber={9}
+                phase="Условие опубликовано"
+                progressLabel="1 из 4 задач зачтена"
+              />
+            </div>
+          </PageSection>
           <ClassroomAssignmentStatus
             audience="family"
             classroomName="201"

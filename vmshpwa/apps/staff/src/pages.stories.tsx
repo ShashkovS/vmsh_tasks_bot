@@ -6,6 +6,7 @@ import {
   ReviewQueuePage,
   ReviewWorkspacePage,
   StaffClassroomsPage,
+  StaffCoursesPage,
   StaffGenericPage,
   StaffHomePage,
   StaffLessonDetailPage,
@@ -33,6 +34,16 @@ export const ReviewWorkspace: Story = {
   },
 }
 export const LessonsAndPublication: Story = { render: () => <StaffLessonsPage /> }
+export const CourseAndGroupAdministration: Story = {
+  name: 'Курсы, группы и независимые настройки',
+  render: () => <StaffCoursesPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByText('Курсы и группы')).toHaveLength(2)
+    await expect(canvas.getByText(/снимок шаблона v4/)).toBeInTheDocument()
+    await expect(canvas.getByText('@vmsh_math_5_7')).toBeInTheDocument()
+  },
+}
 export const LessonImport: Story = { render: () => <StaffLessonDetailPage lessonId="41" /> }
 export const Classrooms: Story = {
   render: () => <StaffClassroomsPage />,
@@ -41,6 +52,18 @@ export const Classrooms: Story = {
     await userEvent.click(canvas.getByRole('tab', { name: 'Школьники' }))
     await expect(canvas.getByText('Григорий Яшин')).toBeInTheDocument()
     await expect(canvas.getByText('сила 8.1')).toBeInTheDocument()
+  },
+}
+export const MultiCourseClassroomEvent: Story = {
+  name: 'Очное событие · несколько курсов',
+  render: () => <StaffClassroomsPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Очное воскресенье')).toBeInTheDocument()
+    await userEvent.click(
+      canvas.getByRole('checkbox', { name: 'Включить Физика: эксперимент, Вводная' }),
+    )
+    await expect(canvas.getByRole('status')).toHaveTextContent('13 аудиторий и 173 назначения')
   },
 }
 export const BroadcastPhaseTwo: Story = { render: () => <BroadcastComposerPage /> }

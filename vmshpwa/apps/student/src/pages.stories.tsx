@@ -25,7 +25,27 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Today: Story = { render: () => <StudentTodayPage /> }
+export const TodayMultipleCourses: Story = {
+  name: 'Сейчас · несколько курсов',
+  render: () => <StudentTodayPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Математика 5–7')).toBeInTheDocument()
+    await expect(canvas.getByText('Физика: эксперимент')).toBeInTheDocument()
+    await expect(canvas.getAllByText(/занятие/i).length).toBeGreaterThan(1)
+  },
+}
 export const Tasks: Story = { render: () => <StudentTasksPage /> }
+export const TasksCourseAndGroup: Story = {
+  name: 'Задачи · курс и группа',
+  render: () => <StudentTasksPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.selectOptions(canvas.getByLabelText('Курс'), 'physics-experiment')
+    await expect(canvas.getByText(/Группа курса «Физика: эксперимент»/)).toBeInTheDocument()
+    await expect(canvas.getByText('Вводная')).toBeInTheDocument()
+  },
+}
 export const TestTask: Story = {
   render: () => <StudentTaskPage kind="test" taskId="41n-1" />,
   play: async ({ canvasElement }) => {
@@ -46,6 +66,17 @@ export const ResultAndThread: Story = {
 }
 export const News: Story = { render: () => <StudentNewsPage /> }
 export const Progress: Story = { render: () => <StudentProgressPage /> }
+export const ProgressByCourse: Story = {
+  name: 'Прогресс · курсы раздельно',
+  render: () => <StudentProgressPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/задачи зачтено/)).toHaveTextContent('3 задачи зачтено')
+    await userEvent.selectOptions(canvas.getByLabelText('Курс'), 'physics-experiment')
+    await expect(canvas.getByText(/задача зачтена/)).toHaveTextContent('1 задача зачтена')
+    await expect(canvas.queryByText(/медиана|место|процентиль/i)).not.toBeInTheDocument()
+  },
+}
 export const Profile: Story = { render: () => <StudentProfilePage /> }
 export const Notifications: Story = { render: () => <StudentNotificationsPage /> }
 

@@ -75,3 +75,9 @@ Migration: `pwa_family_achievements`.
 - [ ] Playwright 3 browsers: `<result>`.
 - [ ] Achievement definitions/rule version proof: `<path/result>`.
 - [ ] Docs/data definitions/known limitations/acceptance: `<paths/issues/name/date>`.
+
+## Многокурсовый инкремент Phase 9
+
+Family activity и Student strength/progress/streak/achievements считаются раздельно по курсам. Для каждого lesson synonym-group учитывается один раз внутри каждого group sheet; best group выбирается по weighted score и stable sort order. Student/Family не получают distribution/self marker/percentile.
+
+Дополнительный proof: a53 parity per course, best-group tie, no cross-course aggregation, privacy assertions и stories `Product/Progress--courses-separated`, `Pages/Student--progress-by-course`, `Pages/Family--activity-by-course`.

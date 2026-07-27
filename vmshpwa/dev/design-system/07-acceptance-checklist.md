@@ -69,13 +69,20 @@ Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](0
 - [ ] Stale, reassigning, empty group, no-room incident, фактические 6/5/2 комнаты и historical immutability представлены отдельными stories.
 - [ ] Student/Family показывают `not_applicable|reassigning|assigned`; Student notification states есть, Family classroom push отсутствует.
 - [ ] Progress не содержит рейтингов, цвет-only charts или маркера/словесного сравнения конкретного школьника с группой.
+- [ ] Course — явный крупный контекст; group остаётся мягким marker, интерфейс не превращён в набор цветных pills.
+- [ ] Student «Сейчас», Tasks, Progress и notifications поддерживают несколько независимых курсов.
+- [ ] Synonym merge/split preview не обещает физический перенос; timeline единая без branch filter и всегда показывает provenance.
+- [ ] Combined review показывает все посылки и concrete задачу, куда будет записан verdict.
+- [ ] Staff catalog/schedules/Telegram различают course defaults, group overrides и materialized lesson snapshot.
+- [ ] In-person event объединяет group lessons разных курсов/номеров и показывает полностью inherited plan.
 
 ## Pages
 
 - [ ] Все Student routes и нижняя навигация реализованы.
 - [ ] Все Family routes и child context реализованы: полный student-visible thread/evidence, смена level/mode, самостоятельное раскрытие hint/solution и недельные уведомления; self-check отсутствует.
 - [ ] Все Staff routes и capability states реализованы.
-- [ ] `/staff/classrooms` имеет вкладки «Каталог», «По группам», «Школьники», URL-state `lesson/tab/roomStatus`; Teacher получает forbidden.
+- [ ] `/staff/classrooms` имеет выбор `in_person_event`, вкладки «Каталог», «По группам», «Школьники», URL-state `event/course/group/tab/roomStatus`; Teacher получает forbidden.
+- [ ] `/staff/courses` имеет catalog, schedule и Telegram contexts; route вне Staff scope возвращает forbidden.
 - [ ] Staff review работоспособен на телефоне, но не обещает offline verdict/outbox.
 - [ ] Login не раскрывает protected content и не создаёт production mock bypass.
 - [ ] Search params shareable и runtime-validated.

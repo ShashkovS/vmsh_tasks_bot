@@ -6,7 +6,7 @@ import { DeadlineNotice } from './deadline-notice'
 import { LevelChip } from './level-chip'
 import { TaskListItem } from './task-list-item'
 import { taskTypeName, TaskTypeIcon } from './task-type'
-import type { LevelView, TaskListItemView, TaskType } from './types'
+import type { GroupView, TaskListItemView, TaskType } from './types'
 import { VerdictMark } from './verdict-mark'
 import {
   binaryVerdictScale,
@@ -19,11 +19,11 @@ const meta = { title: 'Product/Task', parameters: { layout: 'padded' } } satisfi
 export default meta
 type Story = StoryObj<typeof meta>
 
-const levels: LevelView[] = [
-  { code: 'н', name: 'Начинающие', colorIndex: 1 },
-  { code: 'п2', name: 'Продолжающие', colorIndex: 2 },
-  { code: 'dp2', name: 'Эксперты', colorIndex: 3 },
-  { code: 'i9a', name: 'Тестирование', colorIndex: 0 },
+const levels: GroupView[] = [
+  { id: 'math-beginner', courseId: 'math-5-7', code: 'н', name: 'Начинающие', colorIndex: 1 },
+  { id: 'math-continuing', courseId: 'math-5-7', code: 'п2', name: 'Продолжающие', colorIndex: 2 },
+  { id: 'math-expert', courseId: 'math-5-7', code: 'dp2', name: 'Эксперты', colorIndex: 3 },
+  { id: 'math-testing', courseId: 'math-5-7', code: 'i9a', name: 'Тестирование', colorIndex: 0 },
 ]
 
 export const Levels: Story = {

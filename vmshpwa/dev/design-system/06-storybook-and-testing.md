@@ -114,3 +114,18 @@ Classroom visual set фиксирует catalog active/hidden/duplicate, inherit
 ## Gate
 
 Storybook build и addon-vitest проходят, нет a11y errors, все обязательные states доступны, initial page baselines проверены. В `STATUS.md` записываются browser/tool versions и consciously accepted exceptions с владельцем/сроком; бессрочных молчаливых исключений нет.
+
+## Multi-course story matrix
+
+Обязательный корпус:
+
+- `Product/Courses--student-multiple-courses`, `--active-and-allowed-groups`;
+- `Product/Staff-admin--course-and-group-catalog`, `--independent-schedules`, `--telegram-bindings`;
+- `Product/Staff-data--synonym-merge-and-split`;
+- `Product/Feedback--synonym-merged-timeline`;
+- `Product/Review--synonym-combined-case`;
+- `Product/Classrooms--multi-course-inherited-event`;
+- `Product/Progress--courses-separated`;
+- соответствующие `Pages/Student`, `Pages/Family`, `Pages/Staff` из [карты](../development-plan/18-design-implementation-map.md).
+
+Interaction assertions проверяют переключение course/group, snapshot/inheritance labels, merge/split identity notice, chronology provenance, combined review target, classroom inherited counts и отсутствие group comparison в Student/Family. Unit projection suite лежит в `packages/product/src/multi-course-projection.test.ts`. Visual snapshots не обновляются до ручного owner review нового mobile-light/desktop инкремента.

@@ -56,7 +56,7 @@
 - Если допустимых комнат нет, школьник остаётся `reassigning`, Staff получает blocking incident.
 - Manual select/move меняет только draft и фиксирует `source=manual`; explicit full recalculation не перезаписывает confirmed history.
 - UI не отправляет mutation после каждого select. Изменения накапливаются в account/lesson/base-version-scoped local draft, переживают reload и отправляются одним batch-save/confirm.
-- Выбор комнаты другой группы требует отдельного подтверждения смены группы. Backend применяет group change, запись `user_changes_log` и assignment атомарно; отмена локального draft ничего не меняет на сервере.
+- Выбор комнаты другой группы того же курса требует отдельного подтверждения смены active group. Backend применяет `course_enrollment_events`, legacy mirror в `user_changes_log` на период миграции и assignment атомарно; отмена локального draft ничего не меняет на сервере. Комнаты групп другого курса не являются вариантами этой строки.
 - Школьники внутри комнаты всегда сортируются по фамилии и имени. Confirmed plans служат неизменяемой историей аудиторий, доступной из строки школьника.
 - Возраст вычисляется на сегодня с точностью до десятой года; класс и сила nullable. Room averages возраста, класса и силы независимо исключают отсутствующие значения и округляются до одного знака. Сила лежит в диапазоне 0–10 и вычисляется автоматически.
 - Поиск нормализует case, `ё/е`, пробелы и порядок слов, затем использует ограниченное редакционное расстояние по уже загруженным строкам. Совпадение подсвечивается, к нему можно перейти.
@@ -104,7 +104,7 @@ vmshpwa/e2e/classrooms.spec.ts
 - «По группам»: effective/inherited source, materialize state, строки аудиторий с group select/unassigned, summary фактического числа комнат и пары `очно/распределено` по группе. Цвет — узкий маркер плюс мягкая тонировка границы, не единственный носитель смысла.
 - «Школьники»: компактные flex-wrap-карточки комнат, отдельная секция reassigning/unassigned, фамильно-именная сортировка, manual select, поиск с подсветкой/переходом, recalculate, stale warning и confirm.
 - Строка школьника: имя, nullable возраст `13.3`, nullable класс, nullable сила 0–10, compact room select и доступ к истории. Заголовок комнаты: assigned count, средний возраст, средний класс и средняя сила; рекомендуемый компактный формат `15 чел. · возраст 13.3 · класс 7.2 · сила 6.8`.
-- Массовый сценарий: режим выбора строк с checkbox, sticky action bar, один select аудитории и подтверждение для cross-group move. Типовой одиночный сценарий не требует входить в bulk mode.
+- Массовый сценарий: режим выбора строк с checkbox, sticky action bar, один select аудитории и подтверждение для перехода в другую группу того же курса. Типовой одиночный сценарий не требует входить в bulk mode.
 - Любое изменение plan UI сразу сохраняется в local browser draft. Reload восстанавливает его; успешный batch-save/confirm очищает, conflict предлагает сравнить/пересчитать, explicit discard требует подтверждения.
 - Student/Family view: `not_applicable | reassigning | assigned`, имя комнаты и время публикации. Draft layout/plan и другие школьники не видны.
 - Staff mobile layout остаётся последовательным и не теряет catalog/layout/plan actions.
@@ -128,7 +128,7 @@ vmshpwa/e2e/classrooms.spec.ts
 - Teacher получает `403` на каждый classroom mutation/read route.
 - Stale catalog/layout/plan version получает `409`; повтор confirm идемпотентен либо возвращает актуальный receipt.
 - Confirm incomplete/mixed/mismatched plan запрещён; unused room допустима.
-- Batch move применяет все строки атомарно; cross-group move без confirmation отклоняется и не меняет ни группу, ни аудиторию. История возвращает только confirmed plans.
+- Batch move применяет все строки атомарно; переход в другую группу того же курса без confirmation отклоняется и не меняет ни группу, ни аудиторию, а переход между курсами невалиден. История возвращает только confirmed plans.
 - Прошлые confirmed layouts/plans не меняют membership/assignment после archive/recalculation текущего урока. Глобальный rename исправляет отображаемое имя и в истории, а прежнее имя остаётся в audit.
 - Join secret исключён из caches, Sentry, WS и list payload.
 - Mapping oral results к `results`, duplicate import и legacy Zoom history сохраняются.
@@ -186,3 +186,9 @@ vmshpwa/e2e/classrooms.spec.ts
 - [ ] Parity evidence против `a11` fixtures и зафиксированная граница отложенной печати: `<paths>`.
 - [ ] Telegram/Zoom historical tests: `<result>`.
 - [ ] Обновлённые contracts, API/domain docs, runbook, known limitations и запись в `STATUS.md`: `<paths/issues/name/date>`.
+
+## Многокурсовый инкремент Phase 7
+
+Classroom layout/assignment plan принадлежит `in_person_event`, которое выбирает concrete group lessons разных курсов и номеров. Новый draft полностью наследует последние confirmed комнаты и student assignments каждой выбранной группы; admin корректирует только изменения. Инвариант «одна аудитория — одна группа» сохраняется.
+
+Дополнительный proof: composition/inheritance API, неучаствующие группы не копируются, номера занятий могут различаться, course collisions дают warning, story `Product/Classrooms--multi-course-inherited-event` и `Pages/Staff--multi-course-classroom-event`.

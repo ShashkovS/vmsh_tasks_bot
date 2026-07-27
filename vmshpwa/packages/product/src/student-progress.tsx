@@ -2,13 +2,11 @@ import { Flame, Sparkles } from 'lucide-react'
 
 import { cn } from '@vmsh/ui'
 
-import { DistributionViolin } from './progress-charts'
-
 /*
  * Personal progress, words first («3 задачи зачтено»). Calm early achievements
  * and a streak measured only against one's own history — no leaderboard, no
- * percentile, no red «failures». The group distribution is available but never
- * pushed: it hides behind a disclosure.
+ * percentile, no red «failures». Student and Family never receive a group
+ * distribution in this component; aggregate charts belong to Staff contexts.
  */
 function plural(n: number, one: string, few: string, many: string): string {
   const mod10 = n % 10
@@ -23,7 +21,6 @@ export interface StudentProgressProps {
   attemptedCount?: number
   streakDays?: number
   achievements?: string[]
-  distribution?: { values: number[] }
   empty?: boolean
   className?: string
 }
@@ -33,7 +30,6 @@ export function StudentProgress({
   attemptedCount,
   streakDays,
   achievements = [],
-  distribution,
   empty,
   className,
 }: StudentProgressProps) {
@@ -45,7 +41,7 @@ export function StudentProgress({
           className,
         )}
       >
-        Пока пусто. Как начнёшь решать задачи, здесь появится твой прогресс — без рейтингов и
+        Пока пусто. Когда вы начнёте решать задачи, здесь появится ваш прогресс — без рейтингов и
         сравнений.
       </div>
     )
@@ -59,14 +55,14 @@ export function StudentProgress({
       </p>
       {attemptedCount ? (
         <p className="text-small text-muted-foreground">
-          из <span className="font-num">{attemptedCount}</span>, над которыми ты работал
+          из <span className="font-num">{attemptedCount}</span>, над которыми вы работали
         </p>
       ) : null}
 
       {streakDays && streakDays > 1 ? (
         <p className="inline-flex items-center gap-1.5 text-small text-foreground">
           <Flame aria-hidden="true" className="size-4 text-status-warning" />
-          {streakDays} {plural(streakDays, 'день', 'дня', 'дней')} подряд с решениями — твой личный
+          {streakDays} {plural(streakDays, 'день', 'дня', 'дней')} подряд с решениями — ваш личный
           рекорд
         </p>
       ) : null}
@@ -80,20 +76,6 @@ export function StudentProgress({
             </li>
           ))}
         </ul>
-      ) : null}
-
-      {distribution ? (
-        <details className="rounded-md border border-border p-3">
-          <summary className="cursor-pointer text-small text-muted-foreground">
-            Посмотреть, как решала вся группа
-          </summary>
-          <div className="mt-2">
-            <DistributionViolin
-              caption="Сколько задач решают в группе. Тебя тут не отмечаем — это про группу целиком."
-              values={distribution.values}
-            />
-          </div>
-        </details>
       ) : null}
     </div>
   )

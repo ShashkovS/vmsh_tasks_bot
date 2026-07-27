@@ -7,15 +7,27 @@ import { ReviewFeedbackForm } from './review-feedback-form'
 import { ReviewLock } from './review-lock'
 import { ReviewQueue, type ReviewQueueItem, type ReviewSort } from './review-queue'
 import { ThreePaneReview } from './three-pane-review'
-import type { LevelView } from './types'
+import type { GroupView } from './types'
 import { fullVerdictScale } from './verdict-registry'
 
 const meta = { title: 'Product/Review', parameters: { layout: 'padded' } } satisfies Meta
 export default meta
 type Story = StoryObj<typeof meta>
 
-const beginner: LevelView = { code: 'н', name: 'Начинающие', colorIndex: 1 }
-const continuing: LevelView = { code: 'п', name: 'Продолжающие', colorIndex: 2 }
+const beginner: GroupView = {
+  id: 'math-beginner',
+  courseId: 'math-5-7',
+  code: 'н',
+  name: 'Начинающие',
+  colorIndex: 1,
+}
+const continuing: GroupView = {
+  id: 'math-continuing',
+  courseId: 'math-5-7',
+  code: 'п',
+  name: 'Продолжающие',
+  colorIndex: 2,
+}
 
 const items: ReviewQueueItem[] = [
   {

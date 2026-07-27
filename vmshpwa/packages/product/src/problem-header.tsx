@@ -5,7 +5,7 @@ import { cn } from '@vmsh/ui'
 
 import { LevelChip } from './level-chip'
 import { TaskTypeIcon, taskTypeName } from './task-type'
-import type { LevelView, TaskType, VerdictView } from './types'
+import type { GroupView, TaskType, VerdictView } from './types'
 import { VerdictMark } from './verdict-mark'
 
 /*
@@ -19,7 +19,7 @@ export interface ProblemHeaderProps {
   number: string
   title: string
   type: TaskType
-  level?: LevelView
+  level?: GroupView
   verdict?: VerdictView
   /** A <DeadlineNotice> (or similar), rendered under the meta row. */
   deadline?: ReactNode

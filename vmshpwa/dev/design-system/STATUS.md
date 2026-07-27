@@ -2,17 +2,62 @@
 
 Этот файл — журнал gates. Визуальная модель обновляет evidence и вопросы, но ставит `accepted` только после явного решения владельца продукта.
 
-| Фаза                     | Статус           | Принято    | Evidence/решение                                                                       |
-| ------------------------ | ---------------- | ---------- | -------------------------------------------------------------------------------------- |
-| 1. Art direction         | accepted         | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.            |
-| 2. Brand and tokens      | accepted         | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                |
-| 3. UI primitives         | accepted         | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                  |
-| 4. Product components    | accepted         | 2026-07-25 | Владелец: «в остальном вроде ок», направил к фазам 5–7; partial validation исправлена. |
-| 5. Pages and flows       | ready for review | —          | Student/Family/Staff page corpus, shells и состояния реализованы; нужен owner gate.    |
-| 6. Storybook and testing | ready for review | —          | 121/121 browser stories с axe error; page/classroom/review/admin matrices добавлены.   |
-| 7. Final acceptance      | ready for review | —          | Автоматические gates и production E2E/visual зелёные; нужен ручной owner gate.         |
+| Фаза                       | Статус           | Принято    | Evidence/решение                                                                       |
+| -------------------------- | ---------------- | ---------- | -------------------------------------------------------------------------------------- |
+| 1. Art direction           | accepted         | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.            |
+| 2. Brand and tokens        | accepted         | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                |
+| 3. UI primitives           | accepted         | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                  |
+| 4. Product components      | accepted         | 2026-07-25 | Владелец: «в остальном вроде ок», направил к фазам 5–7; partial validation исправлена. |
+| 4M. Multi-course extension | ready for review | —          | Компоненты, страницы и проверки готовы; новые visual baselines ждут решения владельца. |
+| 5. Pages and flows         | ready for review | —          | Student/Family/Staff page corpus, shells и состояния реализованы; нужен owner gate.    |
+| 6. Storybook and testing   | ready for review | —          | 31 файл / 137 browser tests с axe error; page/classroom/review/admin matrices готовы.  |
+| 7. Final acceptance        | ready for review | —          | Functional gates зелёные; multi-course Student visual diff ждёт решения владельца.     |
 
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
+
+```text
+2026-07-26 — Phase 4M — ready for review
+Decision owner: ожидается Сергей Шашков
+Implemented:
+  CourseCard/CourseContext/CourseGroupSwitcher; course/group Staff catalog,
+  independent schedule and Telegram inheritance; synonym merge/split, merged
+  chronology and combined review; multi-course in-person event; course-scoped
+  progress; corresponding Student/Family/Staff page compositions.
+Evidence stories:
+  Product/Courses--student-multiple-courses;
+  Product/Courses--active-and-allowed-groups;
+  Product/Staff-admin--course-and-group-catalog;
+  Product/Staff-admin--independent-schedules;
+  Product/Staff-admin--telegram-bindings;
+  Product/Staff-data--synonym-merge-and-split;
+  Product/Feedback--synonym-merged-timeline;
+  Product/Review--synonym-combined-case;
+  Product/Classrooms--multi-course-inherited-event;
+  Product/Progress--courses-separated;
+  Pages/Student, Pages/Family and Pages/Staff multi-course stories from the
+  development-plan design map.
+Checks:
+  make pwa-lint, pwa-typecheck, pwa-test, pwa-storybook-test и pwa-build — green;
+  ESLint + Stylelint и strict TypeScript — green; Vitest 29/29; Python PWA 11/11;
+  Storybook browser mode 31 file / 137 tests с addon-a11y error — green;
+  production Storybook build и production builds Student/Family/Staff — green;
+  Student/Family injectManifest: 103/102 precache entries;
+  Markdown local links: 48 files — green; git diff --check — green.
+Manual visual review:
+  На agent Storybook :6106 просмотрены mobile-light Student/Family и desktop
+  course catalog, independent schedules, Telegram bindings, synonym timeline,
+  combined review, course progress и multi-course classroom event/page.
+  Исправлены глобальный attendance control, который противоречил per-course
+  mode, provenance combined review, русские подписи и interaction fixture.
+Production visual regression:
+  Staff weekly dashboard совпадает с baseline в Chromium/WebKit/Firefox;
+  Student current week ожидаемо отличается во всех трёх браузерах: высота
+  1188→1615 px и около 4% пикселей из-за новых course cards. Snapshots не
+  обновлены и ждут визуального решения владельца.
+Known follow-ups:
+  Backend endpoints and migrations are explicitly not implemented. Owner must
+  принять новые Storybook-сценарии и Student visual diff до обновления baseline.
+```
 
 ## Журнал решений
 

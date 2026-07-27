@@ -1,6 +1,6 @@
 import { cn } from '@vmsh/ui'
 
-import type { LevelView } from './types'
+import type { GroupView } from './types'
 
 /*
  * Level indicator. The student always sees the WORD («Начинающие»); the letter
@@ -8,7 +8,7 @@ import type { LevelView } from './types'
  * (`н`, `dp2`, `i9a`); the marker grows horizontally and never clips or shifts
  * its baseline. `compact` shows the code alone in dense Staff views.
  */
-const markerByIndex: Record<LevelView['colorIndex'], string> = {
+const markerByIndex: Record<GroupView['colorIndex'], string> = {
   0: 'border-level-0-border text-level-0',
   1: 'border-level-1-border text-level-1',
   2: 'border-level-2-border text-level-2',
@@ -17,7 +17,7 @@ const markerByIndex: Record<LevelView['colorIndex'], string> = {
 }
 
 export interface LevelChipProps {
-  level: LevelView
+  level: GroupView
   compact?: boolean
   className?: string
 }

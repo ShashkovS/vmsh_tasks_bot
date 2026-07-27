@@ -9,14 +9,26 @@ import {
   PublicationControl,
   type PublicationLevelRow,
 } from './staff-publishing'
-import type { LevelView } from './types'
+import type { GroupView } from './types'
 
 const meta = { title: 'Product/Staff admin', parameters: { layout: 'padded' } } satisfies Meta
 export default meta
 type Story = StoryObj<typeof meta>
 
-const beginner: LevelView = { code: 'н', name: 'Начинающие', colorIndex: 1 }
-const continuing: LevelView = { code: 'п', name: 'Продолжающие', colorIndex: 2 }
+const beginner: GroupView = {
+  id: 'math-beginner',
+  courseId: 'math-5-7',
+  code: 'н',
+  name: 'Начинающие',
+  colorIndex: 1,
+}
+const continuing: GroupView = {
+  id: 'math-continuing',
+  courseId: 'math-5-7',
+  code: 'п',
+  name: 'Продолжающие',
+  colorIndex: 2,
+}
 
 const pubRows: PublicationLevelRow[] = [
   { level: beginner, task: 'draft', hint: 'draft', solution: 'none' },

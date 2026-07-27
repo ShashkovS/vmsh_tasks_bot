@@ -44,3 +44,9 @@ One-time import текущего Excel-export использует `IDd`, `Ур�
 Каркас не проводит широкую нормализацию legacy-схемы и не переносит доменную логику из `db_methods`/`models`. Новые таблицы добавляются только yoyo migration, малыми обратимыми шагами. Adapter/translation layer допустим, дублирующая production-база или второй backend — нет. До первой бизнес-миграции отдельный ADR фиксирует connection ownership, async boundary, `busy_timeout`/bounded retry и deploy-only migration command; обычный runtime startup только проверяет schema version.
 
 Любая будущая миграция должна определить backfill, совместимость Telegram reads/writes, rollback, indexes, data validation и тест на snapshot исторической базы. Удаление legacy column возможно только после полного цикла, когда ни bot, ни Staff, ни jobs его не используют.
+
+## Многокурсовое расширение
+
+Целевые таблицы `courses`, расширенная `groups`, `course_enrollments`, `course_group_access`, `course_enrollment_events`, `staff_scopes`, `course_lessons`, `group_lessons`, schedule rules/overrides, synonym groups/members, `telegram_bindings` и `in_person_events` описаны в [courses-groups-and-lessons.md](courses-groups-and-lessons.md). Этот документ не означает, что миграции уже созданы.
+
+Миграция сохраняет legacy `group_id`, `problem_id`, submission/result IDs и Telegram paths. Текущие группы сезона backfill-ятся в курс «Математика 5–7». Merge/split синонимов никогда не переносит исторические строки между задачами. Обязательный production-size rehearsal и сравнение read models входят в Phase 11.

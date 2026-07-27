@@ -112,3 +112,7 @@
 - короткий access-cookie TTL;
 - точная команда/systemd units production webhook;
 - точный suffix/ручной workflow для коллизии сгенерированных student logins.
+
+## Решение 26 июля: независимые курсы и группы
+
+Принята иерархия `season → course → group → lesson`, per-course enrollment/attendance/progress/notifications, независимые group schedules/content/Telegram bindings, логические синонимы без переноса concrete data и `in_person_event` для групп разных курсов. Текущие группы backfill-ятся в «Математика 5–7» с сохранением legacy IDs. Authoritative спецификация: [courses-groups-and-lessons.md](courses-groups-and-lessons.md).

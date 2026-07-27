@@ -20,7 +20,7 @@ Login — отдельный shell без раскрытия защищённо�
 
 ### Сейчас / текущая неделя
 
-Урок, уровень, online/очный режим, текущая фаза недели, ближайшее событие, компактный progress и продолжение последней задачи. Для очного режима здесь же видна подтверждённая аудитория, состояние «Аудитория переназначается» или отсутствие применимости. Активная группа одна, но группы из `allowed_groups` дают полный доступ к чтению, сдаче и проверке. Attention order может поднимать новый feedback и незавершённое действие выше натурального порядка задач. Отдельно: pending submission, новый feedback, group problem-review call с конференцией, hints available, solutions published, no current lesson, offline cached.
+Каждый курс имеет отдельную карточку: group lesson, online/очный режим этого enrollment, текущая фаза, ближайшее событие, компактный progress и продолжение последней задачи. Для очного режима здесь же видна подтверждённая аудитория, состояние «Аудитория переназначается» или отсутствие применимости. Активная группа одна внутри курса, но allowed groups этого enrollment дают полный доступ к чтению, сдаче и проверке. Attention order может поднимать новый feedback и незавершённое действие выше натурального порядка задач. Отдельно: pending submission, новый feedback, group problem-review call с конференцией, hints available, solutions published, no current lesson, offline cached.
 
 ### Задачи
 
@@ -40,7 +40,7 @@ News list/detail с Telegram-rich content и albums. Progress: собствен�
 
 ### Сейчас и ребёнок
 
-Online/очный режим ребёнка и назначенная аудитория видны постоянно. Главная показывает текущий урок, phase/deadline, значимые изменения и активность без сравнений с другими. Detail ребёнка включает фотографии, полный student-visible thread, comments, annotations, verdict history, текущие задачи и прошлую статистику с ясным источником. Родитель может менять уровень/режим и независимо раскрывать опубликованные hint/solution.
+Online/очный режим ребёнка и назначенная аудитория видны отдельно для каждого курса. Главная показывает course lessons, phase/deadline, значимые изменения и активность без сравнений с другими. Detail ребёнка включает фотографии, полный student-visible synonym thread с provenance, comments, annotations, verdict history, текущие задачи и прошлую course-scoped статистику. Родитель может менять active group/mode конкретного курса и независимо раскрывать опубликованные hint/solution.
 
 ### Опубликованные решения
 
@@ -56,7 +56,7 @@ Teacher и admin работают в одном приложении. Navigation
 
 ### Weekly dashboard
 
-Текущая фаза, публикации по уровням, submission/review/question/oral counts, delivery/incidents, быстрые безопасные действия. Teacher видит операционные очереди разрешённых групп, но отдельный statistics route может показывать данные всего кружка; admin получает полный административный scope.
+Текущая фаза по курсам и группам, независимые публикации group lessons, submission/review/question/oral counts, delivery/incidents, быстрые безопасные действия. Teacher видит только course/group scopes; admin получает полный административный scope. Aggregate Staff statistics допустимы по capability, но Student/Family comparisons запрещены.
 
 ### Written review
 
@@ -72,19 +72,19 @@ Staff показывает готовый advisory сразу, но никогд
 
 ### Content administration
 
-Lesson list/detail, upload по уровням, positional problem reconciliation, source diagnostics, missing-assets matching, web/Telegram/PDF derivative previews и отдельная scheduled publication/hide для условия, подсказки и решения каждого уровня. LaTeX в браузере не редактируется. Metadata grid с TSV и dropdown-ячейками task type/answer type. Problem settings включая answer type, synonym candidate и trusted `cor_ans_checker` diff/optional examples/audit; неготовый checker оставляет ответы pending до recheck.
+Course/group catalog, lesson list/detail, upload по group lesson, positional problem reconciliation, source diagnostics, missing-assets matching, web/Telegram/PDF derivative previews и отдельная scheduled publication/hide для условия, подсказки и решения каждой группы. LaTeX в браузере не редактируется. Metadata grid с TSV и dropdown-ячейками task type/answer type. Problem settings включают answer type, synonym candidate/merge/split impact и trusted `cor_ans_checker` diff/optional examples/audit; неготовый checker оставляет ответы pending до recheck.
 
 ### Operations
 
 News moderation; users/groups/roles; statistics with accessible tables; searchable audit with request ID и before/after. Полный broadcast composer с Markdown editor, print, быстрый очный ввод результатов и Staff→Telegram publication относятся ко второй фазе.
 
-`/staff/classrooms` называется «Аудитории», доступен только admin и сохраняет URL-state `lesson`, `tab`, `roomStatus`:
+`/staff/classrooms` называется «Аудитории», доступен только admin и сохраняет URL-state `event`, optional `course/group`, `tab`, `roomStatus`:
 
 1. «Каталог»: add/rename/search, active/hidden filter, archive и quick restore; duplicate conflict не очищает ввод и показывает существующую аудиторию.
 2. «По группам»: effective inherited layout, явное materialize-on-edit, строки комнат с group select/unassigned, level-color marker + мягкая border tint, фактические counts комнат и `очно/распределено` по каждой группе, confirm с optimistic conflict.
 3. «Школьники»: compact flex-wrap room cards, отдельная reassigning/unassigned-секция, строки имя/возраст/класс/сила + compact room select, room count/average age/average grade/average strength, fuzzy search с подсветкой/jump, single и checkbox bulk move, classroom history, recalculate, stale state, blocking no-room/mismatch incident и confirm.
 
-Школьники внутри каждой комнаты всегда отсортированы по фамилии и имени. Выбор комнаты другой группы требует confirmation одновременной смены группы. Изменения не пишутся на сервер по одному: local draft переживает reload и очищается после explicit batch-save/confirm либо явного discard. Типичный fixture показывает 6/5/2 фактически используемых комнат, но не изображает эти значения как вместимость или целевое ограничение. Неиспользованные active rooms допустимы. Archive используемой комнаты немедленно переводит затронутых текущих школьников в reassigning; restore не возвращает назначения. Mobile Staff использует последовательный layout без потери трёх шагов.
+Школьники внутри каждой комнаты всегда отсортированы по фамилии и имени. Выбор комнаты другой группы того же курса требует confirmation одновременной смены active group; комнаты другого курса не предлагаются для этой строки. Изменения не пишутся на сервер по одному: local draft переживает reload и очищается после explicit batch-save/confirm либо явного discard. Типичный fixture показывает 6/5/2 фактически используемых комнат, но не изображает эти значения как вместимость или целевое ограничение. Неиспользованные active rooms допустимы. Archive используемой комнаты немедленно переводит затронутых текущих школьников в reassigning; restore не возвращает назначения. Mobile Staff использует последовательный layout без потери трёх шагов.
 
 ## Responsive acceptance viewports
 
@@ -97,8 +97,19 @@ News moderation; users/groups/roles; statistics with accessible tables; searchab
 - Student compositions: [`apps/student/src/pages.tsx`](../../apps/student/src/pages.tsx); детерминированные page stories и interaction checks: [`Pages/Student`](../../apps/student/src/pages.stories.tsx). Реальный detail route выводит test/written/oral fixture по `taskId`; production-данные позже заменят это правило без изменения page contract.
 - Family compositions: [`apps/family/src/pages.tsx`](../../apps/family/src/pages.tsx); proof: [`Pages/Family`](../../apps/family/src/pages.stories.tsx). Story `Read only task` отдельно доказывает отсутствие textbox/self-check.
 - Staff dashboard, review, publication/import, classrooms и permission state: [`apps/staff/src/pages.tsx`](../../apps/staff/src/pages.tsx); proof: [`Pages/Staff`](../../apps/staff/src/pages.stories.tsx).
-- Shareable classroom URL contract `lesson/tab/roomStatus` с Zod runtime validation и синхронизацией вкладки: [`routes/classrooms.tsx`](../../apps/staff/src/routes/classrooms.tsx). Task-list search contract: [`routes/tasks.index.tsx`](../../apps/student/src/routes/tasks.index.tsx).
+- Shareable classroom URL contract `event/course/group/tab/roomStatus` с Zod runtime validation и синхронизацией вкладки: [`routes/classrooms.tsx`](../../apps/staff/src/routes/classrooms.tsx). Task-list search contract `course/group/lesson/view/topic`: [`routes/tasks.index.tsx`](../../apps/student/src/routes/tasks.index.tsx).
 - `/staff/classrooms` использует принятый product component без DnD: [`ClassroomStudentPlanner`](../../packages/product/src/classroom-planning.tsx); плотная и local-draft фикстуры находятся в [`Product/Classrooms`](../../packages/product/src/classroom-planning.stories.tsx).
+
+## Multi-course page flows
+
+- Student «Сейчас» показывает отдельную `CourseCard` на каждый enrollment; Tasks хранит course/group/lesson; Progress и course notification overrides никогда не смешивают курсы.
+- Family current activity разделяется по курсам ребёнка и остаётся read-only. Ни один курс не показывает position/percentile/group comparison.
+- Staff получает `/courses` с каталогом курсов/групп, независимыми schedule snapshots и Telegram bindings. Lesson/content views всегда имеют явный course/group context.
+- Synonym detail показывает одну chronology без tabs/filter; provenance встроен в каждый message/evidence. Combined review остаётся одним кейсом.
+- Classroom flow начинается с `in_person_event`: admin выбирает group lessons разных курсов и номеров, видит inherited plan, затем использует существующие catalog/layout/students steps.
+- URL params course/group/lesson/event/tab runtime-validated. Они восстанавливают контекст, но не заменяют backend permission checks.
+
+Proof pages: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`, `--progress-by-course`; `Pages/Family--activity-by-course`; `Pages/Staff--course-and-group-administration`, `--multi-course-classroom-event`.
 
 Текущий page corpus использует фиксированные prototype data и callbacks: он проверяет IA, состояния и взаимодействия, но не является production auth/API implementation и не добавляет mock backdoor.
 

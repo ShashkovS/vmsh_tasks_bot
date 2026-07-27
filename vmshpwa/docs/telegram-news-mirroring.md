@@ -29,3 +29,7 @@ Staff-фильтры: source, visible/hidden, tags, level, дата, missing med
 ## Рассылки
 
 Баннер имеет время начала и окончания; обычная публикация остаётся доступной без автоматического срока удаления. Полноценные административные рассылки, Markdown editor, расписание и delivery dashboard относятся ко второй фазе. Существующая специальная административная группа остаётся будущей допустимой целью; исторических рассылок такого типа пока нет.
+
+## Course/group bindings
+
+Целевая конфигурация хранится в `telegram_bindings` с owner `course|group` и purpose `news_source|materials_target`. Course и group news sources складываются; group materials targets заменяют course defaults, иначе наследуют их. Каждый `group_lesson` публикует собственные материалы и расписание. Telegram остаётся параллельным adapter, а unit/E2E работают без сети. Полный контракт: [courses-groups-and-lessons.md](courses-groups-and-lessons.md).

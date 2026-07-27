@@ -75,12 +75,12 @@ DraftPersistence — не отдельная декоративная карто
 - ReviewReaction: одна staff-only internal reaction на verdict, недоступная Student/Family API/view-model, с заменой/удалением в течение часа; compact controls имеют видимую Mod+Alt shortcut legend;
 - LaTeXUpload: file/batch progress, diagnostics, source preview, derived previews;
 - MissingAssetsFlow: exact missing refs, match candidates, upload/reuse, blocking resolution;
-- PublicationControl: три независимые per-level операции — условие, подсказка и решение. Для каждой явно видны state, «сейчас», собственное расписание и rollback/cancel confirmation; общий неоднозначный action на весь уровень запрещён. Артефактная колонка имеет стабильную компактную ширину `12rem`: native `datetime-local` ограничен шириной колонки, рендерится отдельным block, а `Запланировать / Отмена` идут следующей строкой. На узком Staff viewport горизонтально прокручивается таблица целиком — поле даты не растягивает колонку, не перекрывает соседние действия и не обрезается собственной ячейкой;
+- PublicationControl: три независимые per-group-lesson операции — условие, подсказка и решение. Для каждой явно видны state, «сейчас», собственное расписание и rollback/cancel confirmation; общий неоднозначный action на всю группу запрещён. Артефактная колонка имеет стабильную компактную ширину `12rem`: native `datetime-local` ограничен шириной колонки, рендерится отдельным block, а `Запланировать / Отмена` идут следующей строкой. На узком Staff viewport горизонтально прокручивается таблица целиком — поле даты не растягивает колонку, не перекрывает соседние действия и не обрезается собственной ячейкой;
 - Полный BroadcastComposer не входит в эту фазу. Во второй фазе он получает нормальный Markdown editor, audience/count, PWA/Telegram previews, расписание, dry run и агрегированную delivery statistics. Story первой фазы показывает границу scope и не имитирует реальную отправку;
 - ClassroomCatalog: add/rename/search, active/hidden filter, archive/quick restore, optimistic conflict и duplicate state после trim + Unicode NFKC + casefold. Display-name сохраняет внутренние пробелы; hard delete отсутствует.
 - ClassroomGroupLayout: effective/inherited source, materialize-on-first-edit, room rows с group select/unassigned и фактический count комнат по группе. Group summary использует semantic level marker + мягкую border tint и показывает `очно N · распределено M`. Одна комната относится максимум к одной группе, одна группа получает любое число комнат; capacity/weights отсутствуют.
 - ClassroomStudentPlanner: compact flex-wrap room cards для 6–15 комнат и примерно 200 строк, отдельная заметная секция `reassigning|unassigned`, always-on фамильно-именная сортировка, stale warning, blocking incidents, recalculate и confirm. Room header показывает assigned count, средний возраст, средний класс и среднюю силу с одним десятичным знаком.
-- ClassroomStudentRow: имя, nullable возраст на сегодня (`13.3`), nullable класс, nullable auto-strength 0–10, компактный room select и history affordance. Missing value — `—`; дата рождения не показывается. Cross-group room открывает confirmation смены группы.
+- ClassroomStudentRow: имя, nullable возраст на сегодня (`13.3`), nullable класс, nullable auto-strength 0–10, компактный room select и history affordance. Missing value — `—`; дата рождения не показывается. Комната другой группы того же курса открывает confirmation смены группы; комнаты другого курса не входят в варианты строки.
 - ClassroomStudentSearch: нормализует case/`ё–е`/пробелы/порядок имени и допускает небольшое edit distance; совпадение подсвечивается на месте, результат содержит jump action.
 - ClassroomBulkMove: режим checkbox-selection, sticky bar с count и одним room select; применяет несколько локальных правок разом. DnD не используется. До explicit batch-save/confirm все изменения восстанавливаются из local draft; print/export и Staff→Telegram action в v1 отсутствуют.
 - ClassroomAssignmentStatus: Student/Family варианты `not_applicable|reassigning|assigned`, имя комнаты и время публикации. Только Student-вариант содержит notification affordance; Family не обещает classroom push.
@@ -106,6 +106,18 @@ StudentProgress показывает личную динамику, спокой
 - Staff: fixed application header/side navigation, wide workspace, compact toolbars;
 - Split/master-detail сохраняет выбранную строку в URL;
 - loading skeleton повторяет стабильную геометрию, empty state сообщает причину и действие, error сохраняет контекст.
+
+## Multi-course extension
+
+- `CourseCard` — крупный структурный блок курса на «Сейчас»: subject, собственные lesson/phase/progress, attendance и active group. Course accent остаётся спокойной рамкой, а не цветной pill.
+- `CourseContext` и `CourseGroupSwitcher` разделяют выбор курса и active/allowed groups. Смена group/mode относится только к enrollment выбранного курса.
+- `CourseNotificationSettings` показывает optional course override отдельно от global default.
+- `CourseGroupCatalog`, `IndependentScheduleMatrix`, `TelegramBindingsEditor` покрывают Staff CRUD/archive, course defaults, group overrides/materialized snapshot и inheritance course/group Telegram targets.
+- `SynonymMergeSplitPreview` показывает impact без физического переноса IDs. `SynonymMergedTimeline` даёт одну chronology без branch filter, но с provenance course/group/task. `SynonymReviewCase` объединяет все evidence и явно показывает concrete target verdict.
+- `InPersonEventComposer` выбирает group lessons разных курсов/номеров и показывает полностью наследуемые rooms/assignments до перехода к planner.
+- Product prototypes используют `CourseView`/`GroupView`; `LevelView` допустим только как legacy adapter на data boundary.
+
+Authoritative behavior: [`docs/courses-groups-and-lessons.md`](../../docs/courses-groups-and-lessons.md). Source/story mapping: [`development-plan/18-design-implementation-map.md`](../development-plan/18-design-implementation-map.md).
 
 ## Gate
 

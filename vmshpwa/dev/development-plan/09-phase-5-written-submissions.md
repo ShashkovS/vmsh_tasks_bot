@@ -80,3 +80,9 @@ Migration: `pwa_submission_threads_entries_assets`.
 - [ ] Playwright 3 browsers and capability skips: `<result>`.
 - [ ] Telegram legacy discussion/queue tests: `<result>`.
 - [ ] Docs/storage retention/privacy/known limitations/acceptance: `<paths/issues/name/date>`.
+
+## Многокурсовый инкремент Phase 5
+
+Text/photos/outbox/message сохраняют concrete `problem_id`. Logical synonym projection строит одну chronology без веточных вкладок и показывает provenance course/group/task на каждом блоке. Merge/split не копирует media objects и не меняет receipt IDs.
+
+Дополнительный proof: merged online/offline chronology, stable concrete IDs/media keys, split recovery и `Product/Feedback--synonym-merged-timeline`.

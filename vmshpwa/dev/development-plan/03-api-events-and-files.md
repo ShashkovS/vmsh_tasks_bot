@@ -30,20 +30,21 @@ Student login payload: `username`, `telegramToken`, optional `deviceLabel`. User
 
 ### Чтение — этап 3
 
-- `GET /student/api/v1/home`
-- `GET /student/api/v1/lessons?group=&cursor=`
-- `GET /student/api/v1/lessons/{lessonPublicId}`
+- `GET /student/api/v1/courses`
+- `GET /student/api/v1/courses/{courseId}/enrollment`
+- `PATCH /student/api/v1/courses/{courseId}/enrollment/active-group`
+- `PATCH /student/api/v1/courses/{courseId}/enrollment/attendance`
+- `GET /student/api/v1/courses/{courseId}/home`
+- `GET /student/api/v1/courses/{courseId}/lessons?group=&cursor=`
+- `GET /student/api/v1/courses/{courseId}/lessons/{lessonPublicId}`
 - `GET /student/api/v1/problems/{problemPublicId}`
 - `POST /student/api/v1/problems/{problemPublicId}/hint-reveal`
 - `POST /student/api/v1/problems/{problemPublicId}/solution-reveal`
-- `GET /student/api/v1/groups/available`
-- `PUT /student/api/v1/profile/group` с confirmation token/version
-- `PUT /student/api/v1/profile/attendance-mode`
 - `GET /student/api/v1/banners/active`
 
 Home read model содержит phase of week, active lesson, `submissionClosesAt`, отдельный nullable `solutionScheduledAt`/фактический publication state, attention items, unread counts, oral-window summary и banners, но не join secret.
 
-Любая группа из `allowed_groups` даёт полный набор problem actions, а не read-only режим. Смена active group немедленно инвалидирует home/tasks, но не скрывает историю старой группы.
+Любая группа с действующим `course_group_access` даёт полный набор problem actions, а не read-only режим. Смена active group инвалидирует home/tasks только соответствующего курса и не скрывает собственную историю старой группы.
 
 ### Test — этап 4
 
@@ -69,23 +70,26 @@ Home read model содержит phase of week, active lesson, `submissionCloses
 
 - `POST /student/api/v1/questions`, `GET /student/api/v1/questions`, `GET/POST /student/api/v1/questions/{id}/entries`
 - `GET /student/api/v1/oral/windows/current`, `POST /student/api/v1/oral/windows/{id}/join-details`
-- `GET /student/api/v1/classroom-assignment?lesson=`
+- `GET /student/api/v1/in-person-events/{eventPublicId}/classroom-assignment`
 - `GET /student/api/v1/news`, `GET /student/api/v1/news/{postPublicId}`
-- `GET /student/api/v1/progress/summary`, `/progress/lessons`, `/progress/activity`, `/progress/achievements`
+- `GET /student/api/v1/courses/{courseId}/progress/summary`, `/lessons`, `/activity`, `/achievements`
 - `GET/PUT /student/api/v1/notifications/preferences`, `POST/DELETE /student/api/v1/push-subscriptions`
+- `GET/PUT /student/api/v1/courses/{courseId}/notifications/preferences` — course override поверх общих категорий
 - `POST /student/api/v1/notification-events/{eventPublicId}/read` и аналогичный Family route — идемпотентный account-scoped acknowledgement после client visibility timer; client timestamp не становится `readAt`.
 
 ## Family API — этап 9, кроме auth
 
 - `GET /family/api/v1/children`
-- `GET /family/api/v1/children/{studentPublicId}/home`
-- `GET /family/api/v1/children/{studentPublicId}/lessons`
+- `GET /family/api/v1/children/{studentPublicId}/courses`
+- `GET /family/api/v1/children/{studentPublicId}/courses/{courseId}/enrollment`
+- `GET /family/api/v1/children/{studentPublicId}/courses/{courseId}/home`
+- `GET /family/api/v1/children/{studentPublicId}/courses/{courseId}/lessons`
 - `GET /family/api/v1/children/{studentPublicId}/problems/{problemPublicId}`
-- `GET /family/api/v1/children/{studentPublicId}/activity`
-- `GET /family/api/v1/children/{studentPublicId}/progress/*`
-- `PUT /family/api/v1/children/{studentPublicId}/group`
-- `PUT /family/api/v1/children/{studentPublicId}/attendance-mode`
-- `GET /family/api/v1/children/{studentPublicId}/classroom-assignment?lesson=`
+- `GET /family/api/v1/children/{studentPublicId}/courses/{courseId}/activity`
+- `GET /family/api/v1/children/{studentPublicId}/courses/{courseId}/progress/*`
+- `PATCH /family/api/v1/children/{studentPublicId}/courses/{courseId}/enrollment/active-group`
+- `PATCH /family/api/v1/children/{studentPublicId}/courses/{courseId}/enrollment/attendance`
+- `GET /family/api/v1/children/{studentPublicId}/in-person-events/{eventPublicId}/classroom-assignment`
 - news и notification routes с family base.
 
 Family endpoints никогда не принимают произвольный `student_id`: server сначала проверяет `family_student_links`. Отдельного self-check endpoint нет. Family видит student-visible thread, AI feedback и реакции ребёнка, но не внутреннюю teacher reaction и не групповое сравнение.
@@ -117,39 +121,45 @@ Family endpoints никогда не принимают произвольный
 - `GET/PUT /staff/api/v1/content/revisions/{id}/problem-matches` — разрешение позиционных расхождений задач
 - `GET /staff/api/v1/content/revisions/{id}/previews/{web|telegram|print}`
 - `GET/POST /staff/api/v1/content/revisions/{id}/assets`
-- `PUT /staff/api/v1/lessons/{lessonId}/metadata-grid`
-- `GET/PUT /staff/api/v1/lessons/{lessonId}/window` — отдельная версионируемая операция для `opensAt`, `submissionClosesAt`, hint/solution schedule; изменение cutoff требует confirmation/audit по `SCHEDULE-01`
+- `PUT /staff/api/v1/group-lessons/{groupLessonId}/metadata-grid`
+- `GET/PUT /staff/api/v1/group-lessons/{groupLessonId}/window` — отдельная версионируемая операция для `opensAt`, `submissionClosesAt`, hint/solution schedule; изменение cutoff требует confirmation/audit по `SCHEDULE-01`
 - `POST /staff/api/v1/publications`, `POST /staff/api/v1/publications/{id}/rollback`
-- `GET /staff/api/v1/publications?lesson=&group=`
+- `GET /staff/api/v1/publications?groupLesson=`
 - `POST /staff/api/v1/problems/{problemId}/recheck-test-attempts`
 
 ### Oral, classroom planning, news, admin
 
 - `/staff/api/v1/oral/windows`, `/oral/conversations`, `/oral/results`
+- `GET/POST /staff/api/v1/courses`, `GET/PATCH /staff/api/v1/courses/{coursePublicId}`, `POST /staff/api/v1/courses/{coursePublicId}/archive`
+- `GET/POST /staff/api/v1/courses/{coursePublicId}/groups`, `PATCH /staff/api/v1/groups/{groupPublicId}`, `POST /staff/api/v1/groups/{groupPublicId}/archive`
+- `GET/PUT /staff/api/v1/courses/{coursePublicId}/schedule-rules`, `GET/PUT /staff/api/v1/groups/{groupPublicId}/schedule-overrides`
+- `POST /staff/api/v1/group-lessons/{groupLessonPublicId}/schedule-preview`, `POST /staff/api/v1/group-lessons/{groupLessonPublicId}/schedule-confirm`
+- `GET/POST /staff/api/v1/telegram-bindings`, `PATCH /staff/api/v1/telegram-bindings/{bindingPublicId}`, `GET /staff/api/v1/groups/{groupPublicId}/telegram-bindings/effective`
+- `GET /staff/api/v1/course-lessons/{courseLessonPublicId}/synonym-candidates`, `POST /staff/api/v1/problem-synonyms/impact-preview`, `POST /staff/api/v1/problem-synonyms/merge`, `POST /staff/api/v1/problem-synonyms/{synonymPublicId}/split`
+- `GET/POST /staff/api/v1/in-person-events`, `GET/PATCH /staff/api/v1/in-person-events/{eventPublicId}`
 - `GET /staff/api/v1/classrooms?search=&status=active|archived|all`
 - `POST /staff/api/v1/classrooms`, `PATCH /staff/api/v1/classrooms/{classroomPublicId}`
 - `POST /staff/api/v1/classrooms/{classroomPublicId}/archive`, `POST /staff/api/v1/classrooms/{classroomPublicId}/restore`
-- `GET /staff/api/v1/classroom-layouts/effective?lesson=` — effective confirmed layout, optional materialized draft и source/base version
-- `POST /staff/api/v1/classroom-layouts/materialize` — создаёт draft для выбранного lesson из effective base
+- `GET /staff/api/v1/classroom-layouts/effective?event=` — effective confirmed layout участвующих групп, optional materialized draft и source/base version
+- `POST /staff/api/v1/classroom-layouts/materialize` — создаёт draft для выбранного `in_person_event` из последних подтверждённых конфигураций участвующих групп
 - `PUT /staff/api/v1/classroom-layouts/{layoutPublicId}/rooms` — заменяет draft mappings `classroomPublicId + groupId`
 - `POST /staff/api/v1/classroom-layouts/{layoutPublicId}/confirm`
-- `GET /staff/api/v1/classroom-assignment-plans?lesson=` — confirmed/draft/stale plan, preview incidents, group `inPersonCount/assignedCount/color`, room aggregates и компактные student rows
+- `GET /staff/api/v1/classroom-assignment-plans?event=` — confirmed/draft/stale plan, preview incidents, course/group `inPersonCount/assignedCount/color`, room aggregates и компактные student rows
 - `POST /staff/api/v1/classroom-assignment-plans/recalculate`
 - `PATCH /staff/api/v1/classroom-assignment-plans/{planPublicId}/assignments` — явный batch-save локально накопленных select/move; принимает одну или несколько строк и confirmation для cross-group changes
 - `GET /staff/api/v1/classroom-assignment-plans/{planPublicId}/students/{studentPublicId}/history` — подтверждённые прошлые аудитории школьника
 - `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/confirm`; полноценные print/export endpoints относятся ко второй версии, а узкий v1 compatibility export для действующих `a02`/`a11`–`a14` зависит от ответа `CLASSROOM-01`
 - `/staff/api/v1/news/import-status`, `/news/posts`, `/news/posts/{id}/visibility`
-- будущий admin `GET/PUT /staff/api/v1/groups/{groupId}/telegram-destination` управляет DB-настройкой и verification state; JSON передаёт `telegramChatId` decimal string, backend сохраняет canonical Bot API integer. До появления UI настройка применяется versioned admin command/migration, не frontend config
 - будущие `/staff/api/v1/broadcasts`, `/broadcasts/{id}/preview`, `/broadcasts/{id}/send` относятся ко второй фазе вместе с Markdown editor и не входят в initial v1 contract; Staff→Telegram publication также относится ко второй версии
 - `/staff/api/v1/users`, `/groups`, `/permissions`, `/imports`, `/statistics`, `/audit`
 
-Teacher получает `403` на content/checker, broadcasts, Staff classroom catalog/layout/plan routes и audit. Он может менять уровень доступного ученика, исправлять/перепроверять работу и читать общую статистику кружка. Остальные capabilities проверяются по role/group permissions, а не предполагаются по видимости navigation.
+Teacher получает `403` на content/checker, broadcasts, Staff classroom catalog/layout/plan routes и audit. Он может менять активную группу доступного ученика внутри разрешённого курса, исправлять/перепроверять работу и читать разрешённую статистику. Остальные capabilities проверяются по course/group scopes, а не предполагаются по видимости navigation.
 
 Все classroom mutations используют `If-Match`/`version`; stale version возвращает `409 VERSION_CONFLICT`. Нормализация имени выполняется сервером, duplicate возвращает `409 CLASSROOM_NAME_CONFLICT` вместе с существующим `publicId`. Layout confirm возвращает `409 CLASSROOM_LAYOUT_STALE`, если base больше не effective. Assignment confirm возвращает `409 CLASSROOM_ASSIGNMENTS_STALE` для устаревшего layout и `422` с отдельными кодами `CLASSROOM_STUDENT_UNASSIGNED`, `CLASSROOM_GROUP_MISMATCH` или `CLASSROOM_MIXED_GROUPS` для нарушенного плана.
 
-Assignment batch не вызывается на каждую смену select. Клиент передаёт полный набор локальных изменений, base plan version и для каждого cross-group move явное `confirmGroupChange=true`; server применяет group history и assignments атомарно. Read payload содержит nullable `ageYears`, `grade`, `strength`, но не `birthday`; room summary содержит `studentCount`, nullable `averageAgeYears`, `averageGrade`, `averageStrength`. Каждый average исключает соответствующие `NULL` и округляется до одного знака. Fuzzy name search выполняется на клиенте по уже загруженным нескольким сотням строк и не требует отдельного endpoint.
+Assignment batch не вызывается на каждую смену select. Клиент передаёт полный набор локальных изменений, base plan version и для каждого перехода в другую группу того же курса явное `confirmGroupChange=true`; server применяет group history и assignments атомарно. Аудитория группы другого курса не является допустимым вариантом этой строки. Read payload содержит nullable `ageYears`, `grade`, `strength`, но не `birthday`; room summary содержит `studentCount`, nullable `averageAgeYears`, `averageGrade`, `averageStrength`. Каждый average исключает соответствующие `NULL` и округляется до одного знака. Fuzzy name search выполняется на клиенте по уже загруженным нескольким сотням строк и не требует отдельного endpoint.
 
-Student/Family read model одинаков по смыслу и содержит только `lessonPublicId`, `status: not_applicable | reassigning | assigned`, nullable `classroomName` и nullable `publishedAt`; internal IDs, layout draft и другие школьники не попадают в payload. `not_applicable` означает online/отсутствие необходимости в очной комнате; очный школьник без действующего опубликованного назначения получает `reassigning`. Скрытие используемой комнаты немедленно меняет `assigned` на `reassigning`.
+Student/Family read model одинаков по смыслу и содержит только `eventPublicId`, исходные `courseId/groupId/groupLessonId`, `status: not_applicable | reassigning | assigned`, nullable `classroomName` и nullable `publishedAt`; internal IDs, layout draft и другие школьники не попадают в payload. `not_applicable` означает online/отсутствие необходимости в очной комнате; очный школьник без действующего опубликованного назначения получает `reassigning`. Скрытие используемой комнаты немедленно меняет `assigned` на `reassigning`.
 
 ## WebSocket protocol
 
@@ -163,12 +173,12 @@ Client всегда invalidates/refetches authoritative bootstrap queries пос
 
 Server events:
 
-- `invalidation`: `audience`, optional `ownerAccountId`, `keys[]`, `reason`, `entityVersion`, `requestId`.
+- `invalidation`: `audience`, optional `ownerAccountId`, `courseId`, `groupId`, `studentUserId`, `keys[]`, `reason`, `entityVersion`, `requestId`.
 - `notification`: продукт разрешает полные сведения о проверке, но payload всё равно адресуется конкретному account и не содержит credentials/media write URLs.
 - `lease-changed`: staff group/queue key, не чужая работа целиком.
 - `server-update`: новая frontend release/service-worker hint.
 - `resync-required`: protocol/schema mismatch или обнаруженный gap.
-- `classroom.assignment.changed`: owner-scoped invalidation с `audience`, `ownerAccountId`, `lessonPublicId`, новым публичным `status` и query keys. Для школьника выпускается Student event, для каждого связанного Family account — отдельная Family invalidation; Student может создать push/in-app, Family только обновляет API/WS state.
+- `classroom.assignment.changed`: owner-scoped invalidation с `audience`, `ownerAccountId`, `studentUserId`, `eventPublicId`, исходными `courseId/groupId`, новым публичным `status` и query keys. Для школьника выпускается Student event, для каждого связанного Family account — отдельная Family invalidation; Student может создать push/in-app, Family только обновляет API/WS state.
 
 NATS subject: `<runtimePrefix>.pwa.<audience>.<event>`. Payload обязан иметь `audience`; owner-targeted event фильтруется по authenticated principal до отправки socket. Broad lesson publication публикуется в три явных audience subjects.
 
@@ -176,14 +186,15 @@ NATS subject: `<runtimePrefix>.pwa.<audience>.<event>`. Payload обязан и�
 
 Планируемые typed factories в `packages/contracts`:
 
-- `homeKeys.audience(audience, principal)`
-- `lessonKeys.list(group, filters)`, `lessonKeys.detail(id, revision)`
+- `courseKeys.list(audience, principal)`, `enrollmentKeys.detail(course, principal)`
+- `homeKeys.course(audience, principal, course)`
+- `lessonKeys.list(course, group, filters)`, `lessonKeys.detail(course, group, id, revision)`
 - `problemKeys.detail(id, revision)`
 - `threadKeys.byProblem(id)`, `reviewKeys.queue(filters)`, `reviewKeys.item(id)`
-- `newsKeys.list(audience, group)`, `notificationKeys.preferences()`
-- `progressKeys.summary(student)`, `progressKeys.lesson(student, lesson)`
+- `newsKeys.list(audience, course, group)`, `notificationKeys.preferences(course?)`
+- `progressKeys.summary(student, course)`, `progressKeys.lesson(student, course, lesson)`
 - `adminKeys.contentRevision(id)`, `adminKeys.publications(lesson, group)`
-- `classroomKeys.catalog(filters)`, `classroomKeys.layout(lesson)`, `classroomKeys.plan(lesson)`, `classroomKeys.assignment(audience, student, lesson)`
+- `classroomKeys.catalog(filters)`, `classroomKeys.layout(event)`, `classroomKeys.plan(event)`, `classroomKeys.assignment(audience, student, event)`
 - `classroomKeys.studentHistory(plan, student)`
 
 Raw query-key arrays в product code запрещаются после появления factory.
@@ -247,8 +258,8 @@ pwa_tests/
 
 ```text
 vmshpwa/packages/contracts/src/
-  common.ts auth.ts content.ts tasks.ts submissions.ts reviews.ts
-  classrooms.ts news.ts notifications.ts progress.ts staff.ts query-keys.ts
+  common.ts auth.ts courses.ts content.ts tasks.ts submissions.ts reviews.ts
+  synonyms.ts in-person-events.ts classrooms.ts news.ts notifications.ts progress.ts staff.ts query-keys.ts
 vmshpwa/packages/content/src/
   math-document.tsx katex.ts telegram-preview.tsx figure-viewer.tsx
 vmshpwa/packages/offline/src/
@@ -256,11 +267,11 @@ vmshpwa/packages/offline/src/
 vmshpwa/packages/app-shell/src/
   auth-boundary.tsx websocket-provider.tsx offline-status.tsx update-flow.tsx
 vmshpwa/apps/student/src/features/
-  home/ tasks/ submissions/ news/ progress/ profile/
+  courses/ home/ tasks/ submissions/ news/ progress/ profile/
 vmshpwa/apps/family/src/features/
-  children/ lessons/ news/ progress/ profile/
+  children/ courses/ lessons/ news/ progress/ profile/
 vmshpwa/apps/staff/src/features/
-  dashboard/ content/ review/ oral/ classrooms/ news/ users/ statistics/ audit/
+  dashboard/ courses/ content/ synonyms/ review/ oral/ in-person-events/ classrooms/ news/ users/ statistics/ audit/
 vmshpwa/packages/test-utils/src/
   fixtures/ msw/ storybook/ builders/
 vmshpwa/e2e/
@@ -281,3 +292,11 @@ Canonical JSON fixtures размещаются в `vmshpwa/packages/contracts/fi
 - explicit version в fixture metadata.
 
 Из fixtures исключаются реальные фамилии, chat IDs, tokens, cookie и production URLs.
+
+## Multi-course API и события
+
+Student/Family получают course list, enrollment, active-group switch, attendance, course lessons и course progress. Staff получает CRUD/archive courses/groups, scopes, schedule inheritance/override/materialization, Telegram binding management, synonym candidate/merge/split/impact preview и in-person event composition/inherited plan.
+
+URL state использует validated `course`, `group`, `lesson`/`event`, `tab`. Query keys и draft keys включают course/group context. Owner-scoped invalidations допускают `audience`, `courseId`, `groupId`, `studentUserId`; отсутствие scope означает общий ресурс. События: `course.enrollment.changed`, `course.group-access.changed`, `group-lesson.publication.changed`, `problem-synonyms.changed`, `review.case.changed`, `course.progress.invalidated`, `notification.preference.changed`, `in-person-event.changed`, `classroom.assignment.changed`.
+
+Concrete endpoints and payload invariants: [`docs/courses-groups-and-lessons.md`](../../docs/courses-groups-and-lessons.md). Planned frontend files: `packages/product/src/{course-context,course-admin,synonym-context,in-person-event}.tsx`; route compositions — `apps/{student,family,staff}/src/pages.tsx`; contracts migrate to `packages/contracts` only in their vertical phase.

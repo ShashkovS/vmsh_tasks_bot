@@ -18,7 +18,7 @@
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `users`                                           | Ученик/учитель/admin, Telegram, активная группа, token, online, grade, birthday, allowed groups | Сохранить primary domain identity; не переносить массово. Auth account ссылается на `users.id`. `grade`/`birthday` остаются nullable источником classroom read model. Нормализовать `allowed_groups` позже без удаления legacy-поля. |
 | `student_strength`                                | Автоматические показатели `simple_prob`, `compl_prob`                                           | Сохранить и обновлять совместимым job из `a53_calc_rating_new.py`. Classroom adapter публикует nullable показатель 0–10; ручного редактирования не добавлять.                                                                        |
-| `groups`                                          | Уровни/служебные группы, display/config/score weight                                            | Сохранить; связать с сезоном без изменения legacy `group_id`; добавить per-group Telegram destination, не глобальную channel-константу.                                                                                             |
+| `groups`                                          | Уровни/служебные группы, display/config/score weight                                            | Сохранить; связать с сезоном без изменения legacy `group_id`; добавить per-group Telegram destination, не глобальную channel-константу.                                                                                              |
 | `lessons`                                         | Пара `(group_id, lesson)`                                                                       | Сохранить как legacy mapping; новая публикация ссылается на lesson/group.                                                                                                                                                            |
 | `problems`                                        | Условие, тип, answer config/checker, synonyms                                                   | Сохранить существующий problem row для legacy; новая LaTeX не обязана содержать его ID, а immutable revisions связываются после позиционного сопоставления.                                                                          |
 | `results`                                         | История verdict/test/oral/written events                                                        | Сохранить authoritative совместимый ledger; новый review ссылается на `results.id`.                                                                                                                                                  |
@@ -319,18 +319,18 @@ Job публикует полный successful run атомарно и обно�
 
 ## Миграционная последовательность
 
-| Этап | Логическая миграция                              | Backfill/совместимость                                                                                                     |
-| ---: | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-|    0 | `pwa_schema_metadata` при необходимости          | Только schema snapshot/characterization, бизнес-данные не менять                                                           |
-|    1 | `pwa_auth_accounts_sessions`                     | Создать accounts для seed; production backfill dry-run по users                                                            |
+| Этап | Логическая миграция                              | Backfill/совместимость                                                                                                                                          |
+| ---: | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|    0 | `pwa_schema_metadata` при необходимости          | Только schema snapshot/characterization, бизнес-данные не менять                                                                                                |
+|    1 | `pwa_auth_accounts_sessions`                     | Создать accounts для seed; production backfill dry-run по users                                                                                                 |
 |    2 | `pwa_content_revisions_assets_publications`      | Связать legacy problems/lessons; добавить group Telegram destination; backfill revision/publication/window для занятий 1–38 текущего сезона с provenance report |
-|    4 | `pwa_test_attempts_idempotency`                  | Новые attempts dual-write в results                                                                                        |
-|    5 | `pwa_submission_threads_entries_assets`          | Lazy backfill discussions по открываемому thread + batch tool                                                              |
-|    6 | `pwa_reviews_annotations_queue_leases_reactions` | Reviews dual-write results; исправить affinity `written_tasks_queue.teacher_id`; reaction actor/dedup dry-run; Telegram queue сохраняется |
-|    7 | `pwa_support_oral_classroom_plans_banners`       | Questions/zoom читаются через adapter; одноразовый classroom Excel import проходит dry-run, старые plans не переписываются |
-|    8 | `pwa_news_notifications_delivery`                | Telegram posts импортируются идемпотентно                                                                                  |
-|    9 | `pwa_family_achievements_analytics`              | Family links batch import; historical analytics snapshots/achievements backfill по versioned `a53` parity                  |
-|   10 | `pwa_normalized_groups_imports`                  | Google replacement только после parity report                                                                              |
+|    4 | `pwa_test_attempts_idempotency`                  | Новые attempts dual-write в results                                                                                                                             |
+|    5 | `pwa_submission_threads_entries_assets`          | Lazy backfill discussions по открываемому thread + batch tool                                                                                                   |
+|    6 | `pwa_reviews_annotations_queue_leases_reactions` | Reviews dual-write results; исправить affinity `written_tasks_queue.teacher_id`; reaction actor/dedup dry-run; Telegram queue сохраняется                       |
+|    7 | `pwa_support_oral_classroom_plans_banners`       | Questions/zoom читаются через adapter; одноразовый classroom Excel import проходит dry-run, старые plans не переписываются                                      |
+|    8 | `pwa_news_notifications_delivery`                | Telegram posts импортируются идемпотентно                                                                                                                       |
+|    9 | `pwa_family_achievements_analytics`              | Family links batch import; historical analytics snapshots/achievements backfill по versioned `a53` parity                                                       |
+|   10 | `pwa_normalized_groups_imports`                  | Google replacement только после parity report                                                                                                                   |
 
 ## Проверки целостности, обязательные после каждой миграции
 
@@ -340,3 +340,9 @@ Job публикует полный successful run атомарно и обно�
 - Dual-write test доказывает один logical event без дублей при retry.
 - Backfill повторяется без изменения результата.
 - Публичный API не раскрывает sequential internal IDs там, где это создаёт enumeration risk.
+
+## Multi-course schema increment
+
+Добавляются `courses`, `course_enrollments`, `course_group_access`, `course_enrollment_events`, `staff_scopes`, `course_lessons`, `group_lessons`, `course_schedule_rules`, `group_schedule_overrides`, `problem_synonym_groups`, `problem_synonym_members`, `telegram_bindings`, `in_person_events`, `in_person_event_group_lessons`. Existing `groups` получает `public_id`, `course_id`, `status`, `color_key`, audit timestamps и optimistic `version`; legacy `group_id` сохраняется.
+
+Точные поля, unique/invariant rules и миграционная граница зафиксированы в [`docs/courses-groups-and-lessons.md`](../../docs/courses-groups-and-lessons.md). Phase 11 backfill создаёт курс «Математика 5–7» и не переписывает problem/submission/result/Telegram IDs. Synonym membership versioned; физическое перемещение истории запрещено.

@@ -195,6 +195,33 @@ Storybook:
 - [`Product/Connectivity — Connection`](http://localhost:6006/?path=/story/product-connectivity--connection), [`Update`](http://localhost:6006/?path=/story/product-connectivity--update), [`Push`](http://localhost:6006/?path=/story/product-connectivity--push) — [source](../../packages/product/src/connectivity.stories.tsx);
 - [`Pages/Student — Page states`](http://localhost:6006/?path=/story/pages-student--page-states), [`Pages/Family — Page states`](http://localhost:6006/?path=/story/pages-family--page-states), [`Pages/Staff — Page states`](http://localhost:6006/?path=/story/pages-staff--page-states).
 
+## Многокурсовый инкремент
+
+### Course context и страницы
+
+- [`Product/Courses — Student multiple courses`](http://localhost:6006/?path=/story/product-courses--student-multiple-courses), [`Active and allowed groups`](http://localhost:6006/?path=/story/product-courses--active-and-allowed-groups) — [CourseCard/CourseContext/CourseGroupSwitcher](../../packages/product/src/course-context.tsx), [stories](../../packages/product/src/courses.stories.tsx);
+- [`Pages/Student — Сейчас · несколько курсов`](http://localhost:6006/?path=/story/pages-student--today-multiple-courses), [`Задачи · курс и группа`](http://localhost:6006/?path=/story/pages-student--tasks-course-and-group), [`Прогресс · курсы раздельно`](http://localhost:6006/?path=/story/pages-student--progress-by-course) — [student pages](../../apps/student/src/pages.tsx);
+- [`Pages/Family — Активность · несколько курсов`](http://localhost:6006/?path=/story/pages-family--activity-by-course) — [family pages](../../apps/family/src/pages.tsx).
+
+### Staff settings
+
+- [`Product/Staff admin — Course and group catalog`](http://localhost:6006/?path=/story/product-staff-admin--course-and-group-catalog), [`Independent schedules`](http://localhost:6006/?path=/story/product-staff-admin--independent-schedules), [`Telegram bindings`](http://localhost:6006/?path=/story/product-staff-admin--telegram-bindings) — [course admin](../../packages/product/src/course-admin.tsx), [stories](../../packages/product/src/multi-course-admin.stories.tsx);
+- [`Pages/Staff — Курсы, группы и независимые настройки`](http://localhost:6006/?path=/story/pages-staff--course-and-group-administration) — [StaffCoursesPage](../../apps/staff/src/pages.tsx), route [`/courses`](../../apps/staff/src/routes/courses.tsx).
+
+### Синонимы и проверка
+
+- [`Product/Staff data — Synonym merge and split`](http://localhost:6006/?path=/story/product-staff-data--synonym-merge-and-split) — [preview](../../packages/product/src/synonym-context.tsx), [story](../../packages/product/src/synonym-data.stories.tsx);
+- [`Product/Feedback — Synonym merged timeline`](http://localhost:6006/?path=/story/product-feedback--synonym-merged-timeline) — [timeline/story](../../packages/product/src/synonym-feedback.stories.tsx);
+- [`Product/Review — Synonym combined case`](http://localhost:6006/?path=/story/product-review--synonym-combined-case) — [combined review story](../../packages/product/src/synonym-review.stories.tsx).
+
+### Очные события и progress
+
+- [`Product/Classrooms — Multi-course inherited event`](http://localhost:6006/?path=/story/product-classrooms--multi-course-inherited-event) — [composer](../../packages/product/src/in-person-event.tsx), [story](../../packages/product/src/classroom-event.stories.tsx);
+- [`Pages/Staff — Очное событие · несколько курсов`](http://localhost:6006/?path=/story/pages-staff--multi-course-classroom-event) — [StaffClassroomsPage](../../apps/staff/src/pages.tsx);
+- [`Product/Progress — Courses separated`](http://localhost:6006/?path=/story/product-progress--courses-separated) — [story](../../packages/product/src/course-progress.stories.tsx), pure projection tests [multi-course-projection.test.ts](../../packages/product/src/multi-course-projection.test.ts).
+
+Эти stories являются prototype proof только для интерфейса и детерминированной projection logic. Backend endpoints, migrations и production wiring закрываются соответствующими Phase 1–11.
+
 ## Правило использования карты в этапах
 
 Перед началом frontend-части этапа разработчик:

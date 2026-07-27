@@ -2,6 +2,7 @@ import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
 import {
   BarChart3,
   BookOpenCheck,
+  Boxes,
   Building2,
   ClipboardCheck,
   FileText,
@@ -30,6 +31,7 @@ const navigation = [
   },
   { label: 'Устные', to: '/oral', icon: <Mic2 className="size-4" aria-hidden="true" /> },
   { label: 'Уроки', to: '/lessons', icon: <BookOpenCheck className="size-4" aria-hidden="true" /> },
+  { label: 'Курсы', to: '/courses', icon: <Boxes className="size-4" aria-hidden="true" /> },
   { label: 'Задачи', to: '/problems', icon: <FileText className="size-4" aria-hidden="true" /> },
   { label: 'Новости', to: '/news', icon: <Newspaper className="size-4" aria-hidden="true" /> },
   { label: 'Участники', to: '/users', icon: <Users className="size-4" aria-hidden="true" /> },

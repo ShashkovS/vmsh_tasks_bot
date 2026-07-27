@@ -76,3 +76,9 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 - [ ] Playwright online/offline/retry 3 browsers: `<result>`.
 - [ ] Telegram historical test submissions: `<result>`.
 - [ ] Docs/known limitations/acceptance: `<paths/issues/name/date>`.
+
+## Многокурсовый инкремент Phase 4
+
+Тестовые попытки/checker/rate limit остаются per concrete problem. Confirmed synonym-group одного course lesson вычисляет общий status и засчитывает результат в каждый доступный group sheet; merge/split не меняет attempt/result IDs.
+
+Дополнительный proof: candidate/merge/split impact fixtures для разных task/answer types, identity assertions до/после, split recomputation и `Product/Staff-data--synonym-merge-and-split`.

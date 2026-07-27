@@ -86,3 +86,9 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - [ ] Playwright production preview 3 browsers/capability skips: `<result>`.
 - [ ] Telegram historical adapter tests: `<result>`.
 - [ ] Docs/delivery runbook/known limitations/acceptance: `<paths/issues/name/date>`.
+
+## Многокурсовый инкремент Phase 8
+
+`telegram_bindings` поддерживает course/group owners: news sources складываются, group materials targets заменяют course defaults либо наследуют их. Notification categories получают optional course override. WS/NATS invalidations сужаются audience/course/group/student полями; reconnect всегда делает authoritative refetch.
+
+Дополнительный proof: inheritance matrix, private-event leakage tests, course preference isolation и `Product/Staff-admin--telegram-bindings`.

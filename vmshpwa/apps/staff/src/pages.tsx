@@ -6,18 +6,26 @@ import {
   ClassroomCatalog,
   ClassroomGroupLayout,
   ClassroomStudentPlanner,
+  CourseGroupCatalog,
   FeedbackThread,
+  InPersonEventComposer,
+  IndependentScheduleMatrix,
   MetadataGrid,
   PublicationControl,
   ReviewFeedbackForm,
   ReviewQueue,
   ThreePaneReview,
+  TelegramBindingsEditor,
   fullVerdictScale,
   type ClassroomCatalogRoom,
   type ClassroomGroupOption,
   type ClassroomLayoutRoom,
   type ClassroomPlanRoom,
   type ClassroomPlanStudent,
+  type CourseView,
+  type InPersonGroupLessonView,
+  type IndependentScheduleRow,
+  type ManagedCourse,
   type ReviewQueueItem,
   type ReviewSort,
   type ThreadMessageView,
@@ -45,8 +53,48 @@ import {
  * Product mechanics remain in @vmsh/product; this app owns permissions,
  * route-level composition and compact teacher/admin density.
  */
-const beginner = { code: 'н', name: 'Начинающие', colorIndex: 1 as const }
-const continuing = { code: 'п', name: 'Продолжающие', colorIndex: 2 as const }
+const beginner = {
+  id: 'math-beginner',
+  courseId: 'math-5-7',
+  code: 'н',
+  name: 'Начинающие',
+  colorIndex: 1 as const,
+}
+const continuing = {
+  id: 'math-continuing',
+  courseId: 'math-5-7',
+  code: 'п',
+  name: 'Продолжающие',
+  colorIndex: 2 as const,
+}
+const expert = {
+  id: 'math-expert',
+  courseId: 'math-5-7',
+  code: 'э',
+  name: 'Эксперты',
+  colorIndex: 3 as const,
+}
+const physicsIntro = {
+  id: 'physics-intro',
+  courseId: 'physics-experiment',
+  code: 'вв',
+  name: 'Вводная',
+  colorIndex: 4 as const,
+}
+const mathCourse: CourseView = {
+  id: 'math-5-7',
+  code: 'MATH-5-7',
+  name: 'Математика 5–7',
+  subjectCode: 'Математика',
+  accentIndex: 1,
+}
+const physicsCourse: CourseView = {
+  id: 'physics-experiment',
+  code: 'PHYS-EXP',
+  name: 'Физика: эксперимент',
+  subjectCode: 'Физика',
+  accentIndex: 4,
+}
 
 function StatefulPage({
   state,
@@ -93,6 +141,105 @@ export function StaffHomePage({ state = 'ready' }: { state?: PageDisplayState })
               </CardContent>
             </Card>
           ))}
+        </div>
+      </PageLayout>
+    </StatefulPage>
+  )
+}
+
+const managedCourses: ManagedCourse[] = [
+  {
+    course: mathCourse,
+    status: 'active',
+    groups: [beginner, continuing, expert].map((group, index) => ({
+      ...group,
+      status: 'active' as const,
+      activeStudents: [142, 118, 39][index]!,
+      scheduleLabel: index === 1 ? 'своё расписание' : 'шаблон курса',
+    })),
+  },
+  {
+    course: physicsCourse,
+    status: 'active',
+    groups: [
+      {
+        ...physicsIntro,
+        status: 'active' as const,
+        activeStudents: 32,
+        scheduleLabel: 'своё расписание',
+      },
+    ],
+  },
+]
+
+const independentSchedules: IndependentScheduleRow[] = [
+  {
+    group: beginner,
+    source: 'course',
+    conditionAt: 'пн 16:30',
+    hintAt: 'сб 12:00',
+    closesAt: 'вс 13:00',
+    solutionAt: 'вс 14:00',
+    snapshotLabel: 'снимок шаблона v4',
+  },
+  {
+    group: continuing,
+    source: 'group',
+    conditionAt: 'вт 17:00',
+    hintAt: 'сб 15:00',
+    closesAt: 'вс 15:00',
+    solutionAt: 'вс 16:00',
+    snapshotLabel: 'расписание группы v2',
+  },
+  {
+    group: expert,
+    source: 'lesson',
+    conditionAt: 'пн 18:10',
+    hintAt: '—',
+    closesAt: 'пн 17:00',
+    solutionAt: 'пн 18:00',
+    snapshotLabel: 'занятие изменено отдельно',
+  },
+]
+
+export function StaffCoursesPage({ state = 'ready' }: { state?: PageDisplayState }) {
+  return (
+    <StatefulPage state={state} title="Курсы и группы">
+      <PageLayout
+        description="Курс задаёт общий контекст, а группы имеют собственные расписания, публикации и Telegram-привязки."
+        eyebrow="Сезон 2025–2026"
+        title="Курсы и группы"
+        width="wide"
+      >
+        <div className="space-y-6">
+          <CourseGroupCatalog courses={managedCourses} />
+          <IndependentScheduleMatrix
+            course={mathCourse}
+            lessonNumber={41}
+            rows={independentSchedules}
+          />
+          <TelegramBindingsEditor
+            bindings={[
+              {
+                id: 'math-news',
+                owner: 'course',
+                ownerLabel: mathCourse.name,
+                purpose: 'news-source',
+                chatLabel: '@vmsh_math_5_7',
+                status: 'active',
+              },
+              {
+                id: 'beginner-materials',
+                owner: 'group',
+                ownerLabel: beginner.name,
+                purpose: 'materials-target',
+                chatLabel: '-100179000201',
+                topicLabel: 'материалы начинающих',
+                status: 'active',
+              },
+            ]}
+            course={mathCourse}
+          />
         </div>
       </PageLayout>
     </StatefulPage>
@@ -454,6 +601,39 @@ const planStudents: ClassroomPlanStudent[] = [
   },
 ]
 
+const initialInPersonGroupLessons: InPersonGroupLessonView[] = [
+  {
+    id: 'math-beginner-41',
+    course: mathCourse,
+    group: beginner,
+    lessonNumber: 41,
+    inPersonCount: 84,
+    assignedCount: 82,
+    inheritedRooms: ['201', '202', '203', '204', '205', '206'],
+    selected: true,
+  },
+  {
+    id: 'math-continuing-41',
+    course: mathCourse,
+    group: continuing,
+    lessonNumber: 41,
+    inPersonCount: 68,
+    assignedCount: 68,
+    inheritedRooms: ['301', '302', '303', '304', '305'],
+    selected: true,
+  },
+  {
+    id: 'physics-intro-9',
+    course: physicsCourse,
+    group: physicsIntro,
+    lessonNumber: 9,
+    inPersonCount: 24,
+    assignedCount: 23,
+    inheritedRooms: ['401', '402'],
+    selected: false,
+  },
+]
+
 export type ClassroomPageTab = 'catalog' | 'groups' | 'students'
 
 export function StaffClassroomsPage({
@@ -466,6 +646,7 @@ export function StaffClassroomsPage({
   onTabChange?: (tab: ClassroomPageTab) => void
 }) {
   const [localTab, setLocalTab] = useState<ClassroomPageTab>('catalog')
+  const [eventGroupLessons, setEventGroupLessons] = useState(initialInPersonGroupLessons)
   const tab = controlledTab ?? localTab
   const setTab = (value: string) => {
     const next = value as ClassroomPageTab
@@ -475,60 +656,74 @@ export function StaffClassroomsPage({
   return (
     <StatefulPage state={state} title="Аудитории">
       <PageLayout
-        description="Каталог, схема по группам и версионируемый план школьников для занятия 41."
+        description="Каталог, схема по группам и версионируемый план для выбранного очного события."
         title="Аудитории"
         width="wide"
       >
-        <Tabs onValueChange={setTab} value={tab}>
-          <TabsList>
-            <TabsTrigger value="catalog">Каталог</TabsTrigger>
-            <TabsTrigger value="groups">По группам</TabsTrigger>
-            <TabsTrigger value="students">Школьники</TabsTrigger>
-          </TabsList>
-          <TabsContent value="catalog">
-            <ClassroomCatalog
-              newRoomName=""
-              onCreate={() => undefined}
-              onNewRoomNameChange={() => undefined}
-              onQueryChange={() => undefined}
-              onStatusFilterChange={() => undefined}
-              query=""
-              rooms={catalogRooms}
-              statusFilter="active"
-            />
-          </TabsContent>
-          <TabsContent value="groups">
-            <ClassroomGroupLayout
-              groups={classroomGroups}
-              lessonLabel="Занятие 41 · 26 января"
-              rooms={layoutRooms}
-              sourceLabel="наследуется с занятия 40"
-              state="inherited"
-              version={7}
-            />
-          </TabsContent>
-          <TabsContent value="students">
-            <ClassroomStudentPlanner
-              groups={classroomGroups}
-              incidents={[
-                {
-                  id: 'no-room',
-                  title: 'У группы экспертов нет свободной аудитории',
-                  description: 'Григорий Яшин остаётся в разделе переназначения.',
-                  blocking: true,
-                },
-              ]}
-              lessonLabel="Занятие 41 · 26 января"
-              onMove={() => undefined}
-              onRequestGroupChange={() => undefined}
-              onShowHistory={() => undefined}
-              rooms={planRooms}
-              state="draft"
-              students={planStudents}
-              version={13}
-            />
-          </TabsContent>
-        </Tabs>
+        <div className="space-y-6">
+          <InPersonEventComposer
+            groupLessons={eventGroupLessons}
+            onToggle={(groupLessonId, selected) =>
+              setEventGroupLessons((current) =>
+                current.map((groupLesson) =>
+                  groupLesson.id === groupLessonId ? { ...groupLesson, selected } : groupLesson,
+                ),
+              )
+            }
+            startsAt="1 февраля, 10:00–13:00"
+            title="Очное воскресенье"
+          />
+          <Tabs onValueChange={setTab} value={tab}>
+            <TabsList>
+              <TabsTrigger value="catalog">Каталог</TabsTrigger>
+              <TabsTrigger value="groups">По группам</TabsTrigger>
+              <TabsTrigger value="students">Школьники</TabsTrigger>
+            </TabsList>
+            <TabsContent value="catalog">
+              <ClassroomCatalog
+                newRoomName=""
+                onCreate={() => undefined}
+                onNewRoomNameChange={() => undefined}
+                onQueryChange={() => undefined}
+                onStatusFilterChange={() => undefined}
+                query=""
+                rooms={catalogRooms}
+                statusFilter="active"
+              />
+            </TabsContent>
+            <TabsContent value="groups">
+              <ClassroomGroupLayout
+                groups={classroomGroups}
+                lessonLabel="Очное событие 1 февраля · Математика, занятие 41"
+                rooms={layoutRooms}
+                sourceLabel="наследуется с прошлого события этих групп"
+                state="inherited"
+                version={7}
+              />
+            </TabsContent>
+            <TabsContent value="students">
+              <ClassroomStudentPlanner
+                groups={classroomGroups}
+                incidents={[
+                  {
+                    id: 'no-room',
+                    title: 'У группы экспертов нет свободной аудитории',
+                    description: 'Григорий Яшин остаётся в разделе переназначения.',
+                    blocking: true,
+                  },
+                ]}
+                lessonLabel="Очное событие 1 февраля · черновик наследованного плана"
+                onMove={() => undefined}
+                onRequestGroupChange={() => undefined}
+                onShowHistory={() => undefined}
+                rooms={planRooms}
+                state="draft"
+                students={planStudents}
+                version={13}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
       </PageLayout>
     </StatefulPage>
   )

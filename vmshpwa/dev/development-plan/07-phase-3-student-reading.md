@@ -72,3 +72,9 @@ Features: `student/src/features/home`, `tasks`; shared `packages/content` render
 - [ ] Playwright online/offline/deep-link 3 browsers: `<result>`.
 - [ ] Performance evidence long math document/KaTeX: `<path/result>`.
 - [ ] Docs/cache policy/known limitations/acceptance: `<paths/issues/name/date>`.
+
+## Многокурсовый инкремент Phase 3
+
+«Сейчас» показывает карточку каждого course enrollment. Tasks и focused task используют validated `course/group/lesson`; query/cache/draft keys не смешивают курсы. Отозванный group access скрывает новые материалы, но сохраняет собственную старую историю.
+
+Дополнительный proof: `Pages/Student--today-multiple-courses`, `--tasks-course-and-group`, offline cache isolation и deep links двух курсов; `Pages/Family--activity-by-course` read-only parity.

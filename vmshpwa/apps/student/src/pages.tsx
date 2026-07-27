@@ -6,7 +6,6 @@ import {
   EyeOff,
   Laptop,
   Mail,
-  MapPin,
   MessageCircleQuestion,
   Send,
   ShieldCheck,
@@ -21,6 +20,10 @@ import {
   AttemptTimeline,
   ClassroomAssignmentStatus,
   ConnectionBanner,
+  CourseCard,
+  CourseContext,
+  CourseGroupSwitcher,
+  CourseNotificationSettings,
   DeadlineNotice,
   FeedbackAttention,
   FeedbackThread,
@@ -44,13 +47,15 @@ import {
   type TelegramPostView,
   type ThreadMessageView,
   type TimelineEntry,
+  type CourseEnrollmentView,
+  type CourseView,
+  type GroupView,
 } from '@vmsh/product'
 import {
   Alert,
   AlertContent,
   AlertDescription,
   AlertTitle,
-  Badge,
   Button,
   Card,
   CardContent,
@@ -68,7 +73,55 @@ import {
  * navigation; apps/student/src/pages.stories.tsx proves page states and flows.
  */
 
-const beginnerLevel = { code: 'н', name: 'Начинающие', colorIndex: 1 as const }
+const beginnerLevel = {
+  id: 'math-beginner',
+  courseId: 'math-5-7',
+  code: 'н',
+  name: 'Начинающие',
+  colorIndex: 1 as const,
+}
+const continuingLevel: GroupView = {
+  id: 'math-continuing',
+  courseId: 'math-5-7',
+  code: 'п',
+  name: 'Продолжающие',
+  colorIndex: 2,
+}
+const physicsIntro: GroupView = {
+  id: 'physics-intro',
+  courseId: 'physics-experiment',
+  code: 'вв',
+  name: 'Вводная',
+  colorIndex: 4,
+}
+const mathCourse: CourseView = {
+  id: 'math-5-7',
+  code: 'MATH-5-7',
+  name: 'Математика 5–7',
+  subjectCode: 'Математика',
+  accentIndex: 1,
+}
+const physicsCourse: CourseView = {
+  id: 'physics-experiment',
+  code: 'PHYS-EXP',
+  name: 'Физика: эксперимент',
+  subjectCode: 'Физика',
+  accentIndex: 4,
+}
+const studentEnrollments: CourseEnrollmentView[] = [
+  {
+    course: mathCourse,
+    activeGroupId: beginnerLevel.id,
+    allowedGroups: [beginnerLevel, continuingLevel],
+    attendanceMode: 'in-person',
+  },
+  {
+    course: physicsCourse,
+    activeGroupId: physicsIntro.id,
+    allowedGroups: [physicsIntro],
+    attendanceMode: 'online',
+  },
+]
 const acceptedVerdict = findVerdict(fullVerdictScale, 'plus')!
 const partialVerdict = findVerdict(fullVerdictScale, 'plus-minus')!
 
@@ -131,21 +184,37 @@ export function StudentTodayPage({ state = 'ready' }: { state?: PageDisplayState
   return (
     <StatefulPage state={state} title="Сейчас">
       <PageLayout
-        actions={
-          <Button size="sm" variant="outline">
-            <MapPin aria-hidden="true" />
-            Очно в школе
-          </Button>
-        }
-        description="Условия опубликованы. До публикации решений осталось два дня."
-        eyebrow="Занятие 41 · 26 января"
+        description="У каждого курса своё занятие, расписание и режим участия."
+        eyebrow="Ваши курсы"
         title="Сейчас"
       >
         <div className="space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <Badge variant="outline">Начинающие</Badge>
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <ConnectionBanner state="online" />
           </div>
+
+          <PageSection
+            description="Курс — основной контекст; группа и режим меняются независимо в каждом курсе."
+            title="Сейчас по курсам"
+          >
+            <div className="grid gap-3 lg:grid-cols-2">
+              <CourseCard
+                classroomName="201"
+                enrollment={studentEnrollments[0]!}
+                lessonDate="26 января"
+                lessonNumber={41}
+                phase="Решаем задачи · до воскресенья, 13:00 МСК"
+                progressLabel="3 из 12 задач зачтено"
+              />
+              <CourseCard
+                enrollment={studentEnrollments[1]!}
+                lessonDate="29 января"
+                lessonNumber={9}
+                phase="Условие опубликовано · сдача до 5 февраля"
+                progressLabel="1 из 4 задач зачтена"
+              />
+            </div>
+          </PageSection>
 
           <Alert tone="info">
             <CalendarClock aria-hidden="true" />
@@ -207,15 +276,26 @@ export function StudentTodayPage({ state = 'ready' }: { state?: PageDisplayState
 }
 
 export function StudentTasksPage({ state = 'ready' }: { state?: PageDisplayState }) {
+  const [courseId, setCourseId] = useState(mathCourse.id)
+  const enrollment =
+    studentEnrollments.find((candidate) => candidate.course.id === courseId) ??
+    studentEnrollments[0]!
+  const [mathGroupId, setMathGroupId] = useState(beginnerLevel.id)
+  const groupId = courseId === mathCourse.id ? mathGroupId : enrollment.activeGroupId
   return (
     <StatefulPage state={state} title="Задачи">
       <PageLayout
         description="Текущий листок и архив занятий. Внутри листка задачи всегда идут по номеру."
-        eyebrow="Все доступные группы"
+        eyebrow="Курс и доступные группы"
         title="Задачи"
       >
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-2">
+            <CourseContext
+              activeCourseId={courseId}
+              courses={studentEnrollments.map(({ course }) => course)}
+              onCourseChange={setCourseId}
+            />
             <label className="space-y-1 text-label font-medium">
               Занятие
               <select className="min-h-(--touch-target) w-full rounded-md border border-input bg-surface px-3 text-small">
@@ -224,14 +304,13 @@ export function StudentTasksPage({ state = 'ready' }: { state?: PageDisplayState
                 <option>39 · 12 января</option>
               </select>
             </label>
-            <label className="space-y-1 text-label font-medium">
-              Уровень
-              <select className="min-h-(--touch-target) w-full rounded-md border border-input bg-surface px-3 text-small">
-                <option>Начинающие · ваш уровень</option>
-                <option>Продолжающие · доступен</option>
-              </select>
-            </label>
           </div>
+          <CourseGroupSwitcher
+            activeGroupId={groupId}
+            course={enrollment.course}
+            groups={enrollment.allowedGroups}
+            {...(courseId === mathCourse.id ? { onChange: setMathGroupId } : {})}
+          />
           <div className="flex flex-wrap gap-2" aria-label="Фильтр задач">
             <Button size="sm">Все</Button>
             <Button size="sm" variant="outline">
@@ -543,6 +622,9 @@ const strengthLessons = [
 ]
 
 export function StudentProgressPage({ state = 'ready' }: { state?: PageDisplayState }) {
+  const [courseId, setCourseId] = useState(mathCourse.id)
+  const course = courseId === mathCourse.id ? mathCourse : physicsCourse
+  const isMath = courseId === mathCourse.id
   return (
     <StatefulPage state={state} title="Прогресс">
       <PageLayout
@@ -550,16 +632,22 @@ export function StudentProgressPage({ state = 'ready' }: { state?: PageDisplaySt
         title="Прогресс"
       >
         <div className="space-y-6">
+          <CourseContext
+            activeCourseId={courseId}
+            courses={[mathCourse, physicsCourse]}
+            onCourseChange={setCourseId}
+          />
           <Card>
             <CardContent className="pt-5">
               <StudentProgress
-                achievements={[
-                  'Первое письменное решение зачтено',
-                  'Работа в три разных дня недели',
-                ]}
-                attemptedCount={12}
-                solvedCount={3}
-                streakDays={4}
+                achievements={
+                  isMath
+                    ? ['Первое письменное решение зачтено', 'Работа в три разных дня недели']
+                    : ['Первый физический эксперимент описан']
+                }
+                attemptedCount={isMath ? 12 : 4}
+                solvedCount={isMath ? 3 : 1}
+                {...(isMath ? { streakDays: 4 } : {})}
               />
             </CardContent>
           </Card>
@@ -568,8 +656,34 @@ export function StudentProgressPage({ state = 'ready' }: { state?: PageDisplaySt
             title="Как меняется работа"
           >
             <StrengthTrend
-              caption="Простые и сложные задачи по последним занятиям."
-              points={strengthLessons}
+              caption={`Личная динамика только по курсу «${course.name}».`}
+              points={
+                isMath
+                  ? strengthLessons
+                  : [
+                      {
+                        lesson: '7',
+                        simple: 5.8,
+                        complex: 2.7,
+                        solved: '2/4',
+                        group: 'вв',
+                      },
+                      {
+                        lesson: '8',
+                        simple: 6.4,
+                        complex: 3.5,
+                        solved: '3/4',
+                        group: 'вв',
+                      },
+                      {
+                        lesson: '9',
+                        simple: 6.9,
+                        complex: 3.9,
+                        solved: '1/3',
+                        group: 'вв',
+                      },
+                    ]
+              }
             />
           </PageSection>
           <PageSection title="Активность по дням">
@@ -682,6 +796,10 @@ const notificationCategories = [
 ] as const
 
 export function StudentNotificationsPage({ state = 'ready' }: { state?: PageDisplayState }) {
+  const [coursePreferences, setCoursePreferences] = useState([
+    { course: mathCourse, category: 'Проверка завершена', enabled: true, inherited: true },
+    { course: physicsCourse, category: 'Новый урок', enabled: false, inherited: false },
+  ])
   return (
     <StatefulPage state={state} title="Уведомления">
       <PageLayout
@@ -708,6 +826,18 @@ export function StudentNotificationsPage({ state = 'ready' }: { state?: PageDisp
               ))}
             </CardContent>
           </Card>
+          <CourseNotificationSettings
+            onToggle={(courseId, category, enabled) =>
+              setCoursePreferences((current) =>
+                current.map((preference) =>
+                  preference.course.id === courseId && preference.category === category
+                    ? { ...preference, enabled, inherited: false }
+                    : preference,
+                ),
+              )
+            }
+            preferences={coursePreferences}
+          />
           <Alert tone="neutral">
             <Bell aria-hidden="true" />
             <AlertContent>

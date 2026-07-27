@@ -101,3 +101,9 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 - [ ] All-groups launch/reconciliation/rollback report: `<path>`.
 - [ ] Final docs/runbooks/data policy/known limitations: `<paths>`.
 - [ ] Product and operational acceptance: `<names/date>`.
+
+## Многокурсовый инкремент Phase 11
+
+Production-size rehearsal создаёт курс «Математика 5–7», backfill-ит enrollments/access/course/group lessons и сравнивает legacy/new read models, statistics, Telegram paths и classroom inheritance. Cutover сохраняет legacy IDs и допускает rollback без физического разъединения submission history.
+
+Дополнительный proof: migration parity/repeat/rollback report, synonym identity reconciliation, multi-course load/permission test, historical Telegram regression и явно подписанное решение о включении новых reads/writes.

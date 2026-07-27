@@ -90,3 +90,9 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 - [ ] Playwright multi-context 3 browsers: `<result>`.
 - [ ] Telegram queue/discussion/results/questions historical tests: `<result>`.
 - [ ] Docs/review runbook/known limitations/acceptance: `<paths/issues/name/date>`.
+
+## Многокурсовый инкремент Phase 6
+
+Queue объединяет ожидающие submission одного student/synonym-group в один logical case. Review lock/snapshot перечисляет все submission IDs; teacher видит provenance всех материалов. Verdict и ответ записываются в problem последней включённой посылки. После split остальные ветки восстанавливают собственные статусы.
+
+Дополнительный proof: concurrency объединённого case, immutable snapshot, target-last assertion, split status и stories `Product/Review--synonym-combined-case`, `Product/Feedback--synonym-merged-timeline`.

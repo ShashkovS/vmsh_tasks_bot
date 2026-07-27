@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditRouteImport } from './routes/audit'
 import { Route as BroadcastsRouteImport } from './routes/broadcasts'
 import { Route as ClassroomsRouteImport } from './routes/classrooms'
+import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as LessonsRouteImport } from './routes/lessons'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NewsRouteImport } from './routes/news'
@@ -46,6 +47,11 @@ const BroadcastsRoute = BroadcastsRouteImport.update({
 const ClassroomsRoute = ClassroomsRouteImport.update({
   id: '/classrooms',
   path: '/classrooms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoursesRoute = CoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LessonsRoute = LessonsRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/audit': typeof AuditRoute
   '/broadcasts': typeof BroadcastsRoute
   '/classrooms': typeof ClassroomsRoute
+  '/courses': typeof CoursesRoute
   '/lessons': typeof LessonsRouteWithChildren
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AuditRoute
   '/broadcasts': typeof BroadcastsRoute
   '/classrooms': typeof ClassroomsRoute
+  '/courses': typeof CoursesRoute
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/oral': typeof OralRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/audit': typeof AuditRoute
   '/broadcasts': typeof BroadcastsRoute
   '/classrooms': typeof ClassroomsRoute
+  '/courses': typeof CoursesRoute
   '/lessons': typeof LessonsRouteWithChildren
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/broadcasts'
     | '/classrooms'
+    | '/courses'
     | '/lessons'
     | '/login'
     | '/news'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/broadcasts'
     | '/classrooms'
+    | '/courses'
     | '/login'
     | '/news'
     | '/oral'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/broadcasts'
     | '/classrooms'
+    | '/courses'
     | '/lessons'
     | '/login'
     | '/news'
@@ -244,6 +256,7 @@ export interface RootRouteChildren {
   AuditRoute: typeof AuditRoute
   BroadcastsRoute: typeof BroadcastsRoute
   ClassroomsRoute: typeof ClassroomsRoute
+  CoursesRoute: typeof CoursesRoute
   LessonsRoute: typeof LessonsRouteWithChildren
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRoute
@@ -283,6 +296,13 @@ declare module '@tanstack/react-router' {
       path: '/classrooms'
       fullPath: '/classrooms'
       preLoaderRoute: typeof ClassroomsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/courses': {
+      id: '/courses'
+      path: '/courses'
+      fullPath: '/courses'
+      preLoaderRoute: typeof CoursesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lessons': {
@@ -429,6 +449,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuditRoute: AuditRoute,
   BroadcastsRoute: BroadcastsRoute,
   ClassroomsRoute: ClassroomsRoute,
+  CoursesRoute: CoursesRoute,
   LessonsRoute: LessonsRouteWithChildren,
   LoginRoute: LoginRoute,
   NewsRoute: NewsRoute,

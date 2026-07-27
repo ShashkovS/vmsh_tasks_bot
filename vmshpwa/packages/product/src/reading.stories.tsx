@@ -5,14 +5,20 @@ import { expect, userEvent, within } from 'storybook/test'
 import { ConsciousDisclosure, HintDisclosure, SolutionDisclosure } from './conscious-disclosure'
 import { DeadlineNotice } from './deadline-notice'
 import { ProblemHeader } from './problem-header'
-import type { LevelView } from './types'
+import type { GroupView } from './types'
 import { ZoomableFigure } from './zoomable-figure'
 
 const meta = { title: 'Product/Reading', parameters: { layout: 'padded' } } satisfies Meta
 export default meta
 type Story = StoryObj<typeof meta>
 
-const beginner: LevelView = { code: 'н', name: 'Начинающие', colorIndex: 1 }
+const beginner: GroupView = {
+  id: 'math-beginner',
+  courseId: 'math-5-7',
+  code: 'н',
+  name: 'Начинающие',
+  colorIndex: 1,
+}
 
 /* A small chessboard figure (n = 4) with two non-attacking rooks. */
 function RooksBoard() {

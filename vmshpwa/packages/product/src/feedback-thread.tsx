@@ -16,6 +16,8 @@ export interface ThreadMessageView {
   author: { kind: ThreadAuthorKind; name?: string }
   at: string
   channel?: 'pwa' | 'telegram'
+  /** Concrete source retained when synonymous task branches are shown together. */
+  origin?: { courseName: string; groupName: string; taskNumber: string }
   body: ReactNode
   /** True for the viewer's own message (aligned to the trailing edge). */
   own?: boolean
@@ -62,6 +64,11 @@ export function ThreadMessage({ message }: { message: ThreadMessageView }) {
           <time className="font-num text-caption text-muted-foreground">{message.at}</time>
           {message.channel ? <ChannelBadge channel={message.channel} /> : null}
         </div>
+        {message.origin ? (
+          <p className="text-caption text-muted-foreground">
+            {message.origin.courseName} · {message.origin.groupName} · {message.origin.taskNumber}
+          </p>
+        ) : null}
         <div className="text-small leading-relaxed text-foreground">{message.body}</div>
       </div>
     </li>

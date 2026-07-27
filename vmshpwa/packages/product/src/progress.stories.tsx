@@ -110,7 +110,7 @@ const trend: TrendPoint[] = [
 ]
 
 export const Charts: Story = {
-  name: 'Графики: группа и личная динамика',
+  name: 'Staff-агрегат и отдельная личная динамика',
   render: () => (
     <div className="space-y-8">
       <DistributionViolin
@@ -153,7 +153,6 @@ export const Personal: Story = {
       <StudentProgress
         achievements={['Первая задача сдана', 'Неделя без пропусков']}
         attemptedCount={5}
-        distribution={{ values: groupScores }}
         solvedCount={3}
         streakDays={4}
       />
@@ -163,9 +162,8 @@ export const Personal: Story = {
     const canvas = within(canvasElement)
     // Слова, не рейтинг.
     await expect(canvas.getByText(/задачи зачтено/)).toBeInTheDocument()
-    // Распределение по группе спрятано за закрытым раскрытием, не навязывается.
-    const summary = canvas.getByText('Посмотреть, как решала вся группа')
-    await expect(summary.closest('details')).not.toHaveAttribute('open')
+    // Личный компонент принципиально не получает распределение группы.
+    await expect(canvas.queryByText(/группа|медиана|процентиль/i)).not.toBeInTheDocument()
   },
 }
 

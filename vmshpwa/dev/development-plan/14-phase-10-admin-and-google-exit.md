@@ -90,3 +90,9 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 - [ ] Storybook dense admin states/a11y/visual approval: `<ids/paths>`.
 - [ ] Playwright 3 browsers, Google/Telegram network blocked: `<result>`.
 - [ ] Cutover/rollback/security credential runbook and acceptance: `<paths/issues/name/date>`.
+
+## Многокурсовый инкремент Phase 10
+
+Staff получает полный каталог CRUD/archive курсов и групп, enrollment/access/scopes, schedule overrides, Telegram bindings и synonym impact preview. Google replacement imports становятся course-aware и не используют один глобальный level context.
+
+Дополнительный proof: optimistic conflicts, duplicate codes only within course, teacher `403`, import dry-run/rollback и stories `Product/Staff-admin--course-and-group-catalog`, `--independent-schedules`, `--telegram-bindings`.
