@@ -20,7 +20,8 @@ E2E выполняется в Chromium, WebKit и Firefox. Критически�
 [`scripts/e2e_runner.py`](../scripts/e2e_runner.py): один `flock` охватывает
 production build и Playwright и не даёт двум suite одновременно менять общие
 `dist`, порты и seeded SQLite. `make pwa-e2e-runtime` запускает только
-runtime/isolation spec, `make pwa-e2e-functional` — весь non-visual набор,
+runtime/isolation spec, `make pwa-e2e-auth` и `make pwa-e2e-realtime` —
+focused auth/realtime gates, `make pwa-e2e-functional` — весь non-visual набор,
 `make pwa-e2e` — полный suite. Runner сначала собирает все три production
 bundles с очищенным browser-build environment: все унаследованные `VITE_*`
 удаляются, а полный текущий набор разрешённых ключей получает только
@@ -80,6 +81,102 @@ Update scenario также создаёт устаревший audience-owned pr
 
 Перед стартом настоящего aiohttp Playwright вызывает изолированный seed/migration entrypoint. Сам server startup схему не меняет. Python PWA suite создаёт мигрированную временную SQLite отдельно в каждом pytest worker; тесты migration lifecycle дополнительно проверяют пустую/устаревшую/будущую схему, hash drift, WAL, конкурирующих writers и rollback после исключения.
 
+## Phase 1: browser-auth proof
+
+Команда `make pwa-e2e-auth` запускает только
+[`e2e/authentication.spec.ts`](../e2e/authentication.spec.ts), но сохраняет весь
+production-like контур выше: сначала production build трёх приложений, затем
+one-origin gateway, настоящий aiohttp и отдельная seeded SQLite. Общие
+synthetic credentials читаются из
+[`auth-credentials-v1.json`](../../pwa_tests/fixtures/auth-credentials-v1.json)
+только seed/test helpers; product entry и production bundle этот fixture не
+импортируют.
+
+Матрица обязательна в Chromium, WebKit и Firefox и проверяет:
+
+- private deep-link → правильный audience login → исходные path/query/hash;
+- Student, Family, Teacher и Admin login, authoritative `/auth/me` и reload;
+- одинаковую безопасную ошибку неверных credentials без account enumeration;
+- logout, точные cookie names/Path и одновременные независимые audience-сессии;
+- anonymous/cross-audience `401`, точные browser Host/Origin и отклонение
+  spoofed forwarding headers;
+- смену access и refresh cookie при ротации без смены logical session ID;
+- автоматический single-flight refresh и восстановление private shell после
+  удаления только access-cookie;
+- две вкладки одного audience после удаления access-cookie координируются через
+  browser lock и вместе расходуют refresh cookie ровно один раз;
+- отзыв одной device session при сохранении второй активной сессии.
+
+Зафиксированный прогон 27 июля 2026 года: **60/60 PASS**. Focused frontend
+auth/session suite после expiry/cross-tab hardening дал **31/31 PASS**. Повторный
+полный gate текущего worktree: frontend unit **19 файлов / 162 PASS**, Python
+PWA — **808 PASS / 1 intentional skip**, Storybook browser mode — **33 файла /
+152 PASS**; lint/typecheck/production build зелёные.
+MSW, Telegram и Google в этом контуре не используются.
+
+Teacher→admin browser **API** `403` добавляется только с первым настоящим
+capability-protected admin product endpoint (Phase 2/7/8/10). До этого UI
+forbidden и permission/API matrix являются честным текущим proof; тестовый
+production endpoint или mock-auth backdoor ради Playwright запрещены.
+
+### Phase 1: product realtime client proof
+
+`make pwa-e2e-realtime` собирает production bundles всех трёх приложений и
+запускает focused часть
+[`e2e/runtime-isolation.spec.ts`](../e2e/runtime-isolation.spec.ts) с настоящими
+aiohttp, seeded SQLite и one-origin gateway. Тест наблюдает именно WebSocket,
+созданный production `RealtimeProvider`, а не создаёт отдельный ручной клиент.
+В Chromium, WebKit и Firefox проверяются exact audience path без credential,
+первый `connected`, принудительный transport close, reconnect URL только с
+cursor, `resync-required`, обязательный HTTP authority refetch и сохранение
+private shell. Отдельный сценарий отзывает current session настоящим API,
+доказывает закрытие сокета, переход на login и отсутствие reconnect loop.
+
+Playwright `WebSocketRoute` нормализует server policy close `1008` в `1000` во
+всех трёх движках. Поэтому точный wire code остаётся обязательным Python
+aiohttp/unit proof, а browser test проверяет наблюдаемый close, HTTP authority
+logout и отсутствие нового socket. Frontend state-machine unit suite отдельно
+проверяет exact `1008`, fail-closed protocol, CONNECTING/handshake/pong timeouts,
+offline/hidden, bounded backoff, invalidation coalescing, cursor-only URL,
+StrictMode cleanup и tri-state authority: реальный `401` терминален, а
+transient unavailable повторяется и восстанавливает reconnect. Зафиксированный
+результат 27 июля 2026 года: Vitest **2
+файла / 17 PASS**, Playwright **12/12 PASS**; snapshots не изменялись.
+
+Полный `make pwa-e2e-runtime` того же worktree дал **65 PASS, 6 FAIL, 1
+flaky**. Realtime, current-session revoke, audience-scoped theme storage и
+IndexedDB isolation прошли во всех трёх движках. Все шесть failures относятся
+к прежнему Student/Family PWA-update тесту: после применения byte-different
+worker не наблюдается ожидаемый `framenavigated` в Chromium, WebKit и Firefox.
+WebKit scope probe один раз прошёл только при retry. Этот результат остаётся
+отдельным открытым service-worker gate; ради realtime-инкремента старые
+проверки не ослаблялись и snapshots не обновлялись.
+
+## Phase 2: authenticated content checkpoint
+
+Revisions `1aad776`/`866e3fe` прошли общий gate 28 июля 2026 года:
+
+- `make pwa-lint`, `make pwa-typecheck`, `make pwa-build` — PASS;
+- `make pwa-test` — **218 TypeScript + 1028 Python PASS**, 3 skip, 1 warning;
+- `make pwa-storybook-test` — **167 PASS** с addon-a11y `error`;
+- `make pwa-schema-check` — **192 product objects PASS**;
+- `make pwa-e2e-auth` — **60/60 PASS** в Chromium, WebKit и Firefox после
+  production build.
+
+Content backend tests используют реальный aiohttp application и отдельную
+migrated SQLite: compile lease/retry, publication concurrency, readiness +
+solution-cutoff gates, `0043` lesson-window audit, server-side bounded history
+и server-authoritative timezone/DST conversion. Frontend unit/Storybook
+проверяют reload resume, rollback только к `ready`, confirmations,
+business-timezone schedule, два preview и audience update marker.
+
+Зелёный auth Playwright не является content E2E. До принятия Phase 2 нужны
+production-build upload→resolve assets→match metadata→publish→Student/Family
+read/rollback в трёх браузерах, stored PDF/bulk upload coverage и ручное visual
+approval. Snapshots не обновлялись. Proof:
+[`phase2-content-api.md`](../../pwa_tests/reports/phase2-content-api.md) и
+[`phase2-content-frontend.md`](../../pwa_tests/reports/phase2-content-frontend.md).
+
 ## Runtime contract и browser isolation
 
 Versioned fixtures в
@@ -107,6 +204,10 @@ Unit/DOM tests дополнительно доказывают:
   unexpected close дают retryable error, а teardown закрывает точную базу;
 - `PwaUpdateController` остаётся снаружи runtime/Dexie gates, поэтому waiting
   worker можно применить даже на startup error screen.
+- owner-confirmed cold offline reading и предупреждение при logout проверяются
+  вместе с implementation-default защитой общего устройства: только собственный
+  `offline-unverified` cache до `sessionExpiresAt`, cleanup после подтверждения и
+  запрет выдавать queued mutation за отправленную до auth refresh;
 
 Storybook фиксирует startup состояния отдельными story IDs:
 
@@ -251,10 +352,10 @@ Axe baseline действует для Student, Family и Staff. Для Staff о
 
 ## Проверки миграции и интеграций
 
-- Migration rehearsal выполняется на копии production SQLite вместе с её `-wal` и `-shm`, если они существуют. Копия никогда не подключается к human/production runtime.
+- Migration rehearsal выполняется на копии production SQLite вместе с её `-wal` и `-shm`, если они существуют. Исходный `db/vmsh.db` всегда открывается только для получения согласованной копии и никогда не анонимизируется/мигрируется на месте, даже если его можно восстановить из backup. В изолированной временной копии Faker заменяет все имена и фамилии до передачи тестам; отчёт не содержит исходных значений. Копия никогда не подключается к human/production runtime.
 - Производительность и корректность импортов проверяются на production-size копии до применения миграции в production; фиксированный календарный график таких репетиций не нужен.
 - Исторические Telegram-сценарии могут дополнительно прогоняться через отдельного тестового бота и тестовый канал. Это изолированный integration profile, не unit/E2E dependency.
-- Live profile использует `@vmsh179devbot`; token берётся из `creds_test/vmsh_bot_config_test.json` и не выводится в command/report. Приватный канал отображается как `vmsh179devbot channel`, UI ID `3913815635`, bot имеет admin rights. Read-only bind сначала сверяет `getMe`, `getChat`, `getChatMember` и отсутствие public username, затем неизменно сохраняет identity в owner-only local SQLite `verified_telegram_test_binding`. Write-enabled smoke не принимает destination из environment, повторно проверяет identity и читает `chat.id` только из этой SQLite. UI ID не преобразуется в `-100…` вручную. Целевая course/group `telegram_bindings` появляется с Phase 2 migration, а не подменяется test-only таблицей.
+- Live profile использует `@vmsh179devbot`; token берётся из `creds_test/vmsh_bot_config_test.json` и не выводится в command/report. Владелец подтвердил canonical Bot API `chat.id = -1003913815635` приватного `vmsh179devbot channel`; это pinned test-only значение, а не вычисление из Telegram UI ID. Bot имеет admin rights. Read-only bind сначала сверяет `getMe`, `getChat`, `getChatMember` и отсутствие public username, затем неизменно сохраняет identity в owner-only local SQLite `verified_telegram_test_binding`. Write-enabled smoke не принимает destination из environment, повторно проверяет pinned identity и читает `chat.id` только из этой SQLite. Целевая course/group `telegram_bindings` появляется с Phase 2 migration, а не подменяется test-only таблицей.
 - Владелец разрешил opt-in smoke только в выделенных test resources: disposable S3 prefix `integration/<run-id>/` можно upload/read/public-GET/delete, а test bot может send/edit/delete synthetic messages в приватном test channel. Production bucket, credentials, recipients и учебные каналы запрещены. Classroom delivery hermetic suite использует RecordingBot и проверяет personal recipient resolution без реальных учеников; live smoke отправляет только synthetic test recipient payload.
 - В test channel можно публиковать любые synthetic payloads в пределах Telegram limits: Phase 0 проверяет простой identity/send/edit/delete lifecycle; Phase 2 добавляет граничные Rich Message, formatting, math, tables, media и album cases уже для целевого renderer. Real student data/production media не используются. Owner-only runtime report хранит case/request marker, canonical chat ID, returned message IDs и delete/cleanup result при наличии, но не token.
 - Live suite запускается явно и последовательно, чтобы тесты не боролись за edit/delete одних сообщений. Обычный `make telegram-history-test`, unit и E2E продолжают использовать RecordingBot без сети.
@@ -263,6 +364,21 @@ Axe baseline действует для Student, Family и Staff. Для Staff о
 - Classroom API suite проверяет Teacher `403`, stale `409`, запрет неполного/mismatched plan, атомарный batch move, обязательное подтверждение cross-group change, confirmed history и неизменность прошлых plans. Storybook покрывает catalog/layout/plan states, group markers и `очно/распределено`, 6/5/2 и плотный 15-room/~200-student fixtures, stale/reassigning/no-room, profile missing data, room averages возраста/класса/силы, search/history, bulk mode, local draft restore/conflict и mobile Staff. Отдельная проверка `mobile-staff-layout` требует эти поля в student rows и room headers.
 - Classroom Playwright E2E в трёх браузерах создаёт `201` и `Актовый зал`, отклоняет `АКТОВЫЙ ЗАЛ`, подтверждает layout/plan, сверяет Student/Family, скрывает комнату, видит `reassigning`, пересчитывает и подтверждает новую версию. Дополнительно E2E восстанавливает несохранённые select после reload, выполняет bulk и подтверждённый cross-group move, находит фамилию с опечаткой и открывает историю. E2E использует production preview, настоящий aiohttp и seeded SQLite без MSW.
 - Draft-persistence suite для Student/Staff проверяет reload/remount, PWA update prompt, account isolation, base-version conflict, explicit discard и очистку только после server receipt. Текст/UI-state проверяются через `localStorage`, blobs/outbox — через Dexie.
+- Written-submission suite проверяет owner-confirmed teacher flow и
+  implementation-default admin/post-review/preview: один текст, одна фотография
+  и batch материалов получают audited target projection; исходные bytes/IDs,
+  review evidence и verdict остаются неизменными, а actor вне scope получает
+  отказ.
+- Review suite обязательно проверяет owner-confirmed annotation core
+  `pencil|eraser|text|arrow|rectangle`, rotation, normalized geometry и
+  отсутствие zoom/pan в payload. Если реализация экспонирует optional highlight
+  или palette, их schema/renderer также получают fixtures, но точное число
+  цветов не является product gate. Combined synonym target выбирается по server receive
+  time и детерминированному internal-ID tie-break, никогда по client time.
+- Delivery suite сверяет owner-confirmed channel counters/partial lists и
+  implementation-default explicit retry: новые attempts появляются только у
+  failed recipient/channel pairs, а успешные PWA/Telegram доставки не
+  повторяются.
 - Student/Family progress tests запрещают self marker, percentile и словесное сравнение ребёнка с группой во всех chart/story fixtures.
 - Multi-course unit/contract suite проверяет один active group и несколько allowed groups на enrollment; независимые schedule snapshots; course/group Telegram inheritance; merge/split без изменения concrete IDs; chronology provenance; combined review target и split status; synonym counting per group sheet; best-group tie-break; course-scoped progress/strength/notifications; inheritance classroom assignments для выбранных групп события.
 - Storybook proof включает `Product/Courses`, Staff catalog/schedules/Telegram, synonym merge/timeline/review, multi-course classroom event, classroom delivery preview/changed-after-send, course-separated progress и соответствующие `Pages/Student`, `Pages/Family`, `Pages/Staff`. Visual snapshots не обновляются до owner review.

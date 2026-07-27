@@ -1,6 +1,6 @@
 # Phase 2: frontend content/API proof
 
-Дата проверки: 27 июля 2026 года.
+Дата проверки: 28 июля 2026 года.
 
 Это proof ограниченного frontend vertical slice этапа 2, а не
 отметка о завершении всей фазы. Авторитетные требования:
@@ -15,6 +15,9 @@
   preview, history трёх независимых material slots, publication actions и
   Student/Family published document. Contract включает `sourceId`,
   recoverable compile lease/attempt и не пропускает unknown wire fields.
+  Scheduled mutation использует `scheduledLocalTime` + `businessTimezone`, а
+  history возвращает абсолютный `scheduledAt` и authoritative IANA timezone;
+  timezone браузера не является частью wire.
 - Telegram Rich HTML ограничен 32 768 Unicode code points, а не
   UTF-16 code units: граница из 32 768 astral emoji принимается,
   32 769 отклоняется.
@@ -29,6 +32,11 @@
   workflow: upload → compile с revision ETag → diagnostics → PWA/Telegram
   preview → publish/schedule/cancel/hide/rollback. После optimistic
   conflict выполняется authoritative history refetch.
+  Загруженную revision можно продолжить без повторной загрузки, а истёкший
+  compile claim — безопасно повторить. Rollback selector показывает только
+  предыдущие `ready` revisions; publish/schedule/rollback/hide требуют явного
+  confirmation. PWA и Telegram previews стоят рядом на desktop и складываются
+  на узком экране.
 - Student и Family routes
   ([Student](../../vmshpwa/apps/student/src/routes/tasks.$taskId.tsx),
   [Family](../../vmshpwa/apps/family/src/routes/tasks.$taskId.tsx)) читают
@@ -36,6 +44,9 @@
   `SemanticMathDocument`. Family child ID всегда задаётся явно;
   loading, unpublished/empty, forbidden, offline и unexpected error имеют
   отдельные fail-closed states.
+- При смене published revision Student/Family показывают спокойный update
+  marker и продолжают рендерить только новый typed document; внутренние
+  compiler/publication данные в audience payload не добавлены.
 - Content client не включает prototype/MSW и не добавляет auth
   backdoor. Неудачный refresh передаётся в общий
   `AuthenticationController`, чтобы завершить локальную session.
@@ -49,9 +60,17 @@
   immediate publication и появление hide action;
 - `pages-staff-content-publication--optimistic-conflict-refetch` — stale
   publication получает `409`, после чего экран показывает
-  актуальную server revision.
+  актуальную server revision;
+- `pages-staff-content-publication--resume-interrupted-revision` — reload
+  восстанавливает upload/compile workflow;
+- `pages-staff-content-publication--rollback-ready-history` — rollback выбирает
+  предыдущую готовую revision и требует confirmation;
+- `pages-staff-content-publication--schedule-in-business-timezone` — local wall
+  time отправляется с timezone занятия без browser `Date.parse()`;
+- `product-content-realtime-replacement-marker--calm-realtime-replacement` —
+  audience update marker.
 
-Оба interaction tests проходят в browser mode с Storybook a11y
+Interaction tests проходят в browser mode с Storybook a11y
 `test: error`. Клиент в story детерминированный и внедрённый;
 MSW и production API не подменяются.
 
@@ -74,9 +93,8 @@ packages/content/src/content-client.test.ts
 13 passed
 
 Storybook browser mode + addon-a11y:
-Upload → diagnostics → two previews → publish
-Optimistic conflict → authoritative refetch
-2 passed, 161 unrelated stories skipped by the focused filter
+upload/resume/two previews/publication/rollback/timezone/conflict/update marker
+PASS
 
 production builds:
 @vmsh/student build (injectManifest, 92 precache entries)
@@ -88,6 +106,18 @@ git diff --check -- <frontend increment paths>
 PASS
 ```
 
+Полный repository checkpoint после объединения backend/frontend review fixes:
+
+```text
+make pwa-lint             PASS
+make pwa-typecheck        PASS
+make pwa-test             218 TypeScript + 1028 Python PASS; 3 skip; 1 warning
+make pwa-storybook-test   167 PASS
+make pwa-build            PASS
+make pwa-schema-check     192 product objects PASS
+make pwa-e2e-auth         60/60 PASS (Chromium, WebKit, Firefox)
+```
+
 ## Оставшиеся gates
 
 - Current task URL пока принимает явный public `groupLesson` и
@@ -97,9 +127,10 @@ PASS
   честно блокируют publication и показывают имена. Live
   S3/TikZ/WebP proof хранится отдельно в
   [`phase2-content-assets-live.md`](phase2-content-assets-live.md).
-- Bulk lesson upload, metadata grid/problem matching, lesson-window editor,
-  PDF control и historical lessons 1–38 backfill не входят в этот
-  frontend increment.
-- Full production-build Playwright цепочка с настоящим aiohttp и
-  SQLite, а также visual approval ещё не выполнены. Snapshots не
-  обновлялись.
+- HTTP asset resolution/matching, bulk lesson upload, metadata grid/problem
+  matching mutation и stored/openable generated PDF не входят в этот frontend
+  increment. Safe historical lessons 1–38 backfill tool доказан отдельно;
+  owner-reviewed production rehearsal/apply ещё не выполнен.
+- Auth production-build Playwright остаётся зелёным 60/60, но отдельная content
+  цепочка upload→publish→audience read с настоящим aiohttp/SQLite ещё не
+  выполнена. Visual approval тоже открыт; snapshots не обновлялись.

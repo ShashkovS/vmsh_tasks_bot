@@ -1,6 +1,10 @@
 # Курсы, независимые группы, занятия и синонимы задач
 
-Статус: принятое целевое решение от 26 июля 2026 года. Документ задаёт продуктовую и техническую модель; backend-таблицы и миграции ещё не реализованы. Прототипы интерфейса живут в `packages/product` и Storybook.
+Статус: принятое целевое решение от 26 июля 2026 года. Первый course/access и
+lesson/content persistence + authenticated content vertical уже реализованы
+additive migrations `0039`–`0043` и revisions `1aad776`/`866e3fe`; Telegram
+bindings, очные события и production backfill остаются целевой моделью
+последующих этапов. Прототипы интерфейса живут в `packages/product` и Storybook.
 
 ## Иерархия и границы владения
 
@@ -70,14 +74,37 @@ ownership-key `course_id`, `group_id`, `valid_from`, `valid_to`, `granted_by`,
 
 `group_lessons`:
 
-- `id`, `public_id`, `course_lesson_id`, `group_id`;
-- `condition_source_revision_id`, `hint_source_revision_id`, `solution_source_revision_id`;
-- материализованные `condition_publish_at`, `hint_publish_at`, `submission_closes_at`, `solution_publish_at`;
-- фактические publication timestamps и состояния каждого материала;
-- audit timestamps, `version`;
+- `id`, `public_id`, `course_lesson_id`, технический `course_id`, `group_id`;
+- нейтральная `cycle_anchor_date` и `business_timezone` для вычисления schedule;
+- `status`, audit timestamps и optimistic `version`;
 - unique `(course_lesson_id, group_id)`.
 
-`course_schedule_rules` задаёт versioned шаблон курса. `group_schedule_overrides` для конкретной группы и правила имеет режим `inherit | override | disabled`. Создание `group_lesson` материализует рассчитанные окна. Изменение шаблона не двигает существующие занятия: Staff сначала получает impact preview, затем отдельно подтверждает новые окна.
+Sources/revisions, exact windows и publications вынесены соответственно в
+`content_sources`, `lesson_windows` и `lesson_publications`, поэтому condition,
+hint и solution не становятся mutable columns занятия.
+
+`course_schedule_rules` задаёт отдельную versioned rule для каждого поля
+`opens_at`, `hint_scheduled_at`, `submission_closes_at` и
+`solution_scheduled_at`: integer day offset, local wall time и IANA timezone.
+`group_schedule_overrides` для конкретной группы и поля имеет режим `inherit |
+override | disabled`, обязательную ссылку на базовую course rule и explicit
+value только для `override`; cutoff отключить нельзя. Если базовая rule была
+заменена после создания draft override, confirm завершается version conflict и
+требует нового impact preview. Materialization создаёт
+точные UTC timestamps в `lesson_windows` и immutable per-field provenance в
+`lesson_window_schedule_sources`. Изменение шаблона не двигает существующие
+занятия: Staff сначала получает impact preview, затем выполняет отдельное
+подтверждённое действие.
+
+Phase-2A/2C schema/domain/repository/HTTP boundary реализован в
+[`0041.pwa_content_lessons.sql`](../../migrations/0041.pwa_content_lessons.sql),
+[`0042.pwa_content_concurrency.sql`](../../migrations/0042.pwa_content_concurrency.sql),
+[`0043.pwa_lesson_window_audit.sql`](../../migrations/0043.pwa_lesson_window_audit.sql),
+[`models/pwa/content.py`](../../models/pwa/content.py) и
+[`db_methods/pwa/content.py`](../../db_methods/pwa/content.py); compiler, HTTP/UI
+и audience frontend связаны в revisions `1aad776`/`866e3fe`. Historical
+backfill, HTTP asset resolution, matching/metadata mutation, stored PDF, bulk
+upload и production content E2E ещё не входят в этот статус.
 
 Условие, подсказка и решение публикуются, планируются, откатываются и диагностируются независимо для каждого `group_lesson`.
 

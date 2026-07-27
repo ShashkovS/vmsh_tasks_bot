@@ -1,20 +1,21 @@
 # Статус плана разработки
 
-Последнее обновление: 2026-07-27.
+Последнее обновление: 2026-07-28.
 
 ## Состояние документов
 
-| Документ/этап       | Статус                      | Решение/блокер                                                                                                                        |
-| ------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                                                            |
-| Решения и границы   | accepted planning input     | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                        |
-| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                            |
-| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                     |
-| Этап 0              | in progress                 | Runtime/schema/seed/auth/storage и one-origin functional E2E 72/72 готовы; visual owner gate, telemetry gaps и live Telegram остаются |
-| Этап 1              | in progress                 | Auth rules/config/Zod contracts и schema+seed готовы; repository, HTTP, frontend и E2E выполняются отдельными коммитами               |
-| Этапы 2–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                         |
-| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                    |
-| Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                |
+| Документ/этап       | Статус                      | Решение/блокер                                                                                                                                                                                |
+| ------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                                                                                                                    |
+| Решения и границы   | accepted planning input     | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                                                |
+| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                                                    |
+| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                                             |
+| Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps                                   |
+| Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import                         |
+| Этап 2              | Phase 2A/2B/2C implemented  | Schema/compiler, authenticated HTTP и audience frontend зафиксированы в `1aad776`/`866e3fe`; открыты HTTP assets, matching/metadata, stored PDF, bulk upload, content E2E и owner visual gate |
+| Этапы 3–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                                                 |
+| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                                            |
+| Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                                        |
 
 ## Журнал решений
 
@@ -60,9 +61,26 @@
 | 2026-07-27 | PLAN-038 | PWA maintenance-команды выбирают состояние только через явный проверенный профиль                        | Guard выполняется до импорта legacy config; неизвестные CLI-аргументы отклоняются, поэтому опечатка не может выбрать fallback DB или credential loader        |
 | 2026-07-27 | PLAN-039 | Converter readiness подтверждается разрешением executable и поведенческим smoke                          | Fixed argv без shell, bounded output/timeout/process-group cleanup; synthetic TikZ→SVG и raster→WebP проверяют результат, HEIC capability отражается отдельно |
 | 2026-07-27 | PLAN-040 | Legacy rules защищаются executable characterization, corpus — schema-light manifest                      | 23 answer types, verdict/reaction/queue/synonym semantics зафиксированы; 54 source files покрыты hash/encoding/structure без дублирования содержания          |
-| 2026-07-27 | PLAN-041 | Schema baseline — migration-derived inventory, а live drift остаётся явным                               | Head содержит 93 product objects; live lag 0039/0040 и 12 derived objects фиксируются без записи; product rows не выбираются, DDL/defaults только fingerprint |
+| 2026-07-27 | PLAN-041 | Schema baseline — migration-derived inventory, а live drift остаётся явным                               | Head содержит 94 product objects; live lag 0039/0040 и 12 derived objects фиксируются без записи; product rows не выбираются, DDL/defaults только fingerprint |
 | 2026-07-27 | PLAN-053 | Browser user identity отделена от account identity и legacy integer FK                                   | `users.public_id` nullable только до controlled activation; `userId`/`studentId` никогда не подменяются `accountId`, отсутствие значения закрывает web-доступ |
 | 2026-07-27 | PLAN-054 | Session reference каноничен на всех cookie/token/storage границах                                        | Только 32 lowercase hex принимаются parser, signed access codec и repository; корректная подпись не легализует иной alias                                     |
+| 2026-07-27 | PLAN-055 | Unsafe browser request защищён до появления cookie                                                       | Login тоже требует same-origin evidence; safe set ровно GET/HEAD/OPTIONS, TRACE fail-closed                                                                   |
+| 2026-07-27 | PLAN-056 | Teacher authorizes только authoritative resource scope                                                   | Bare capability/collection и сочетание произвольного student ID с разрешённым request group fail-closed; collection фильтруется в SQLite                      |
+| 2026-07-27 | PLAN-057 | Forwarded chain — явная deploy-конвенция, а не доверие к произвольному header                            | Trusted proxy заменяет client headers; точные hops и first-element external host/proto доказываются production-like nginx test                                |
+| 2026-07-27 | PLAN-058 | Telegram UI scheduled queue является внешним mutable state до публикации                                 | Перед передачей destination Staff scheduler нужен inventory и explicit retain/cancel+recreate/cancel с доказательством no-gap/no-duplicate                    |
+| 2026-07-27 | PLAN-059 | Legacy `cor_ans_checker` сначала характеризуется по фактической execution boundary                       | `is_py_func`/restricted globals/`run_py_func_checker` получают synthetic allow/deny/error/cache corpus; это trusted-admin compatibility, не sandbox           |
+| 2026-07-27 | PLAN-060 | Cookie-authenticated WebSocket GET всегда проверяет browser Origin                                       | Handshake — исключение из safe-method policy; revoke/logout закрывает session sockets, long-lived connection перепроверяет server state                       |
+| 2026-07-27 | PLAN-061 | Ошибочно приложенный материал исправляется append-only проекцией                                         | Owner: teacher + target history; default: scoped admin/post-review/preview; bytes, IDs, evidence и verdict не переписываются                                  |
+| 2026-07-27 | PLAN-062 | Combined synonym review выбирает target только по серверному порядку                                     | Последняя `server_received_at`; internal submission ID — детерминированный tie-break, client time не влияет                                                   |
+| 2026-07-27 | PLAN-063 | Annotation хранит нормализованные marks, но не состояние просмотрщика                                    | Owner core: pencil/eraser/text/arrow/rectangle/rotation; optional implementation: highlight/palette; zoom/pan локальны                                        |
+| 2026-07-27 | PLAN-064 | Ранее подтверждённый аккаунт может читать свой кеш в offline-unverified                                  | Owner: offline reading/logout warning; default: session expiry, auth-before-sync и account cleanup общего устройства                                          |
+| 2026-07-27 | PLAN-065 | Delivery observability различает channel success и частичный охват                                       | Owner: counters/partial lists; default: explicit retry только failed recipient/channel pairs без дублей success                                               |
+| 2026-07-27 | PLAN-066 | Исторические credential/PII artifacts не становятся новыми fixtures или auth source                      | Migration `0038` и private logs остаются в истории по принятому owner risk; новый pipeline их не копирует и не выводит                                        |
+| 2026-07-27 | PLAN-067 | Legacy state backfill не выдумывает события и связи review                                               | Повторные одинаковые `G`/`O` схлопываются; discussion импортируется одним thread без искусственного message→verdict round                                     |
+| 2026-07-27 | PLAN-068 | Live Telegram smoke закреплён за owner-provided test-only destination                                    | Canonical `chat.id=-1003913815635` всё равно перепроверяется Bot API; token/production destinations не попадают в код или отчёт                               |
+| 2026-07-27 | PLAN-069 | Production-size rehearsal начинается только с безопасной копии                                           | Source `db/vmsh.db` не мутируется; в isolated copy Faker заменяет имена/фамилии, а backup signal не заменяет полный restore rehearsal                         |
+| 2026-07-27 | PLAN-070 | Production PWA mode задаётся `pwa-production` либо точным `PROD=true` marker                             | Prototype запрещён; explicit HTTPS origins и `Secure` cookies обязательны, legacy Telegram/Google loader не вызывается                                        |
+| 2026-07-27 | PLAN-071 | Trusted proxy поддерживает explicit TCP CIDR либо exact filesystem Unix socket                           | AF_UNIX/local сам по себе не trusted; `sockname`, exact hops и origin обязательны, nginx заменяет headers; live nginx proof не подменяется structural tests   |
 | 2026-07-27 | PLAN-042 | `baseline-v1` строится вне target и устанавливается только после полной проверки                         | Exact profile/path allowlist, scoped FK gates, purge+VACUUM credentials, shared-runtime/exclusive-maintenance lock и durable atomic replace                   |
 | 2026-07-27 | PLAN-043 | Auth/workload preflight читает реальные источники fail-closed и публикует только безопасные агрегаты     | Same-fd bytes/hash и alias rejection защищают inputs; auth query использует deserialize snapshot; explicit check ловит missing/stale report-pair              |
 | 2026-07-27 | PLAN-044 | Live S3 разрешён только после pinned test-target check; SDK boundary всегда редактирует provider errors  | Beget test identity закреплена SHA-256, full provider key проверяется после prefix, optional checksums=`when_required`; Hetzner остаётся production target    |
@@ -74,6 +92,10 @@
 | 2026-07-27 | PLAN-050 | PWA update recovery не зависит от runtime и IndexedDB gates, а E2E suite сериализован                    | Worker может обновить сломанный startup; единый flock охватывает production build, seed, shared ports и Playwright                                            |
 | 2026-07-27 | PLAN-051 | Phase-0 one-origin gateway ещё не является trusted-proxy/auth моделью                                    | Phase 1 задаёт public origin и доверенные proxy hops; spoofed `Forwarded`/`X-Forwarded-*` входят в обязательные negative tests                                |
 | 2026-07-27 | PLAN-052 | Phase-1 auth использует Argon2id, audience-salted signed access и soft-revoked rotating refresh sessions | Current defaults rehash после login; HMAC refresh/throttle keys живут только в SQLite; точная модель и источники закреплены в ADR 0003                        |
+| 2026-07-27 | PLAN-072 | WebSocket становится routable только после authoritative pending-handshake                               | Session tombstone закрывает close-before-register; initial cursor frame атомарен с audience fan-out, invalidation не опережает handshake                      |
+| 2026-07-27 | PLAN-073 | Stored Argon2id ограничен fail-closed resource envelope                                                  | Malformed и чрезмерно дорогой encoding выбирают startup dummy; unknown/invalid paths делают один instrumented Argon verify без wall-clock oracle              |
+| 2026-07-27 | PLAN-074 | Telegram renderer закреплён на проверенном Bot API 10.2 Rich HTML dialect                                | До send проверяются 32 768 UTF-8 characters, 500 blocks, nesting 16, 50 media и 20 columns; dialect/limits входят в provenance и live corpus                  |
+| 2026-07-28 | PLAN-075 | Publication wall time разрешает только backend в timezone группового занятия                             | Browser передаёт `scheduledLocalTime` + IANA `businessTimezone`; `zoneinfo` переводит в UTC и отклоняет DST gap/fold, `Date.parse()` не используется          |
 
 ## Текущий инкремент этапа 0
 
@@ -81,12 +103,17 @@
 - Fault/API tests: `pwa_tests/integration/test_migration_lifecycle.py`, `pwa_tests/integration/test_sqlite_concurrency.py`, `pwa_tests/test_app_factory.py`, `pwa_tests/test_config_safety.py`, `pwa_tests/test_maintenance_commands.py`.
 - Проверено 27 июля 2026: 15 целевых migration/concurrency/factory/config tests и 7/7 maintenance guard tests; полный `pwa_tests` — 33/33 PASS на Python 3.14.3.
 - Toolchain increment: `helpers/pwa/toolchain.py`, `vmshpwa/scripts/toolchain_{preflight,smoke}.py`, unit/integration tests и `pwa_tests/reports/toolchain-local.md`; локальный preflight и оба converter chains PASS, HEIC advertised.
-- Characterization increment: 63/63 domain tests PASS; `vmshpwa/scripts/golden_corpus.py check` подтвердил 54/54 source files. Дополнительно исполняемо зафиксированы `G`/`O` строки `user_changes_log`, повторные no-op commands, nullable `written_tasks_discussions.chat_id/tg_msg_id` и отсутствие достоверной связи legacy message→review round. Открытые правила backfill вынесены в вопросы 12–13. Подробности: `pwa_tests/reports/legacy-characterization.md`.
-- Schema/seed increment: migration head содержит 93 product objects с fresh hash `0743b360…`; live read-only report явно фиксирует lag 0039/0040, 46 отсутствующих объектов, 12 fingerprinted derived objects и 2 известных FK-дефекта без изменения `db/vmsh.db`. Актуальный объединённый migration/schema/seed suite — 129 PASS. Sentinel-тесты доказывают, что live SQL/default literals не попадают в отчёт. Подробности: `pwa_tests/reports/live-schema-drift.md`.
+- Characterization increment: 63/63 domain tests PASS; `vmshpwa/scripts/golden_corpus.py check` подтвердил 54/54 source files. Дополнительно исполняемо зафиксированы `G`/`O` строки `user_changes_log`, повторные no-op commands, nullable `written_tasks_discussions.chat_id/tg_msg_id` и отсутствие достоверной связи legacy message→review round. Владелец закрыл правила backfill: no-op `G`/`O` схлопываются, а historical discussion остаётся единым thread без выдуманной связи с review round. Подробности: `pwa_tests/reports/legacy-characterization.md`.
+- Schema/seed inventory: после additive migrations `0041`–`0043` head содержит
+  192 product objects с hash `0a7593ea…`; generated inventory/snapshots и
+  `make pwa-schema-check` согласованы. Последний live read-only report был снят
+  до `0041`, поэтому остаётся историческим Phase-0 evidence и не выдаётся за
+  текущую production readiness; `db/vmsh.db` при этом инкременте не открывалась
+  на запись.
 - Seed/lifecycle-lock increment: два последовательных актуальных agent seed запуска дают digest `782b4051…`; synthetic Family/auth/course/access/scopes и отдельные browser user IDs материализованы, но sessions/audit/throttle/consumed-refresh/history намеренно пусты. Пять Argon2id hashes проверяются только против test-harness credentials; production/path guards и очистка migration-carried credentials сохранены. Exhaustive answer examples совпадают с legacy regex; scoped FK gate, SQLite recovery и lifecycle locking остаются покрыты. Подробности: `pwa_tests/reports/baseline-v1.md` и ADR 0002.
 - Auth/workload increment: 25/25 focused tests PASS; `make pwa-auth-preflight-check` подтвердил aggregate lower bound 36/1617 Student rows без source values; `make pwa-workload-profile-check` подтвердил 19 raw files, 176713 canonical events и 37408 traces, same-fd source checks и 0 unreviewed labels. Unknown user types, deserialize failure, source-change, symlink/hard-link/duplicate-inode и missing/stale report pairs закрыты. Отчёты: `pwa_tests/reports/{auth-preflight,workload-profile}.{json,md}`.
 - Storage increment: 86 focused tests PASS; filesystem atomicity/no-follow, fail-closed S3 config, secret-file race protection, redacted errors, collision-safe live probes, Beget/Hetzner URL rules, pinned live identity и checksum compatibility закрыты. Live Beget test-bucket runs `codex-phase0-20260727-f6c821d9` и `codex-phase0-20260727-collision-safe` прошли put/private-read/public-GET/delete acknowledgement. Отчёт: `pwa_tests/reports/object-storage-phase0.md`.
-- Realtime/Telegram harness increment: 74 focused tests PASS. NATS local fan-out/isolation smoke PASS; reconnect/cleanup/readiness, partial-startup cleanup, per-audience cursor, bounded fan-out с close-before-untrack, WebSocket shutdown, strict JSON/event boundary и RecordingBot/two-step binding покрыты. Актуальные полные `make pwa-test` totals приведены в runtime/browser increment ниже. Live Telegram bind/smoke ждёт canonical signed channel ID; Rich Message proof относится к Phase 2. Отчёты: `pwa_tests/reports/phase0-{nats-local,live-integration-template}.md`.
+- Realtime/Telegram harness increment: 74 focused tests PASS. NATS local fan-out/isolation smoke PASS; reconnect/cleanup/readiness, partial-startup cleanup, per-audience cursor, bounded fan-out с close-before-untrack, WebSocket shutdown, strict JSON/event boundary и RecordingBot/two-step binding покрыты. Актуальные полные `make pwa-test` totals приведены в runtime/browser increment ниже. 27 июля guarded live bind подтвердил test-only bot/private channel identity и права, а synthetic lifecycle успешно выполнил send/edit/delete с cleanup без остаточного сообщения. Rich Message proof относится к Phase 2. Отчёты: `pwa_tests/reports/phase0-{nats-local,live-integration-2026-07-27}.md`.
 - External-process register increment: 48 current/reference процессов, 36 repository artifacts, два runbook и шесть отсутствующих dependencies описаны без PII; неатомарное окно restore старой DB и обязательный credentials workbook почтового pipeline зафиксированы явно; current/target и `legacy_bridge|v1_cutover|later_internalization` разведены. 7 focused structural/link/privacy/semantic tests PASS. Документы: `21-external-process-register.md`, `16-external-artifacts.md`; fixture: `pwa_tests/fixtures/external-process-register.v1.json`.
 - Runtime/browser isolation increment: explicit v1 Python↔Zod wire/error
   fixtures с rolling-deploy policy, bounded pre-router bootstrap, safe
@@ -105,7 +132,72 @@
   update: Staff 3 PASS; Student current-week 3 ожидаемых stale diff 390×1188 →
   390×1615. Owner approval остаётся обязательным. Отчёт:
   `pwa_tests/reports/runtime-isolation-phase0.md`.
-- Этап 0 не закрыт: workload пока не измеряет concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget; live Telegram bind/smoke и visual owner approval ещё впереди. Trusted-proxy/public-origin и spoofed-forwarded matrix явно переданы в Phase 1 и не считаются доказанными текущим gateway.
+- Этап 0 не закрыт: workload пока не измеряет concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget; впереди visual owner approval. Live Telegram bind и synthetic send/edit/delete smoke пройдены 27 июля. Trusted-proxy/public-origin и spoofed-forwarded matrix явно переданы в Phase 1 и не считаются доказанными текущим gateway.
+
+## Текущий инкремент этапа 2
+
+- Phase 2A реализует только schema/domain/repository boundary: additive
+  [`0041`](../../../migrations/0041.pwa_content_lessons.sql), последующие
+  concurrency/audit migrations
+  [`0042`](../../../migrations/0042.pwa_content_concurrency.sql) и
+  [`0043`](../../../migrations/0043.pwa_lesson_window_audit.sql), pure rules
+  [`models/pwa/content.py`](../../../models/pwa/content.py) и
+  connection-per-operation repository
+  [`db_methods/pwa/content.py`](../../../db_methods/pwa/content.py).
+- Зафиксированы independent course/group lessons, four-field versioned schedule
+  с immutable materialization provenance, append-only revision/problem/synonym
+  history, content-addressed assets и atomic publication
+  schedule/replace/rollback/reveal invariants.
+- Проверено 27 июля 2026: 48 focused domain/repository/migration PASS; 69 PASS
+  вместе с полным schema-inventory suite; `make pwa-schema-check`, Ruff check и
+  format-check PASS. Exact up/down/up не меняет legacy rows, а
+  `db/vmsh.db` не мигрировалась.
+- Proof: [`phase2-content-schema.md`](../../../pwa_tests/reports/phase2-content-schema.md).
+  Последующие gate закрыли HTTP/UI и safe historical backfill tooling;
+  production backfill apply и перечисленные ниже product gates остаются
+  открыты, Phase 2 целиком не принят.
+- Phase 2B добавляет side-effect-free compiler в
+  [`helpers/pwa/content`](../../../helpers/pwa/content): bounded UTF-8/CP1251
+  scanner, typed AST, positional diagnostics, role-isolated web/Telegram
+  renderers, `WebContentDocument v1` и fixed-toolchain asset converters.
+- Golden characterization: 30/30 TeX sources, 334 problem nodes, 0 errors и
+  одно ожидаемое legacy-layout warning; report:
+  [`phase2-content-compiler.md`](../../../pwa_tests/reports/phase2-content-compiler.md).
+  Shared Python/Zod fixture:
+  [`python-compiler-preview.v1.json`](../../packages/contracts/fixtures/content/python-compiler-preview.v1.json).
+- Pure compiler/Telegram/characterization tests — 69 PASS; asset
+  boundary tests — 15 PASS; converter→shared ObjectStorage→repository service —
+  5 PASS; WebContentDocument contract — 18 PASS; real local TikZ→SVG and
+  raster→WebP smoke with the configured executable paths — 1 PASS.
+  Support/limitations:
+  [`content-compiler-support-matrix.md`](../../docs/content-compiler-support-matrix.md).
+- Phase 2C зафиксирован revisions `1aad776` и `866e3fe`: authenticated
+  aiohttp content runtime, compile retry/lease, concurrency-safe publication,
+  scheduler, readiness/cutoff gates, bounded history и три audience frontend.
+  Staff умеет продолжить загруженную revision после reload, явно выбрать
+  предыдущую `ready` revision для rollback, подтвердить опасное действие и
+  одновременно сравнить PWA/Telegram preview; Student/Family получают update
+  marker при смене revision.
+- Schedule wire server-authoritative: UI передаёт `scheduledLocalTime` и
+  authoritative IANA `businessTimezone`, а Python `zoneinfo` преобразует wall
+  time в UTC и отклоняет DST gap/fold. `lesson_window_changes` из `0043`
+  неизменно хранит actor/request/before/after; solution schedule/publish не
+  допускается без отдельно заданного cutoff.
+- Чистый compiler принимает для web asset только строгий descriptor (public
+  ID, SHA-256, безопасный URL, media type, dimensions); hash и URL не могут
+  разойтись как независимые источники истины.
+- Полный checkpoint 28 июля: `make pwa-lint`, `make pwa-typecheck`,
+  `make pwa-storybook-test`, `make pwa-build`, `make pwa-schema-check` — PASS;
+  frontend unit — **218 PASS**, Python PWA — **1028 PASS / 3 skip / 1 warning**,
+  Storybook browser — **167 PASS**, schema inventory — **192 product objects**;
+  production-build `make pwa-e2e-auth` после deep-link default fix — **60/60
+  PASS** в Chromium, WebKit и Firefox. Это auth regression, не content E2E.
+- Phase 2 всё ещё открыт для HTTP asset upload/resolution и missing-assets
+  recovery, matching/metadata UI/API, stored/openable generated PDF, bulk
+  upload, production-build content E2E и owner visual approval. Snapshots не
+  обновлялись. Proof:
+  [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md),
+  [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
 
 ## Текущий инкремент этапа 1
 
@@ -126,9 +218,17 @@
   session reference, который создаёт генератор и принимает repository. Даже
   корректно подписанный payload с неканоническим `sid` отклоняется до SQLite;
   focused model suite — 29 PASS.
+- Чистые permission и request-security policies добавлены в
+  `helpers/pwa/{permissions,request_security}.py`: роли и scopes fail-closed,
+  Student/Family ownership не смешивается с request scope, Staff collection
+  требует scope-filtered repository query, а unsafe login проходит тот же
+  Origin/Referer/Fetch Metadata gate. Cookie-bearing WebSocket GET отдельно
+  требует allowlisted Origin. Focused suite на этом срезе — 156 PASS; actual
+  aiohttp TCP/Unix и nginx structural boundary закрыты более поздним proxy
+  increment ниже, server syntax/live burst остаются deploy proof.
 - Миграции `0039`/`0040` добавляют auth/session/throttle и первый
   course/enrollment/access/scope слой без изменения legacy IDs и имеют точный
-  rollback. Fresh inventory содержит 93 product objects; read-only live report
+  rollback. Fresh inventory содержит 94 product objects; read-only live report
   честно фиксирует, что `db/vmsh.db` пока отстаёт на две миграции. Phase-1
   актуальный объединённый migration/schema/seed suite — 129 PASS, полный
   Python PWA suite до opaque user-ID increment — 520 PASS / 1 intentional
@@ -138,10 +238,262 @@
   enrollments/access/scopes и ни одной предварительно созданной browser session.
   Два agent seed запуска дали одинаковый digest `782b4051…`; актуальный
   seed+migration/schema suite — 129 PASS.
-- Следующий gate: auth repository и HTTP middleware/routes, затем frontend и
-  browser E2E. Production Student activation всё ещё запрещена до
-  решения credential-exposure вопроса в
-  [`20-implementation-questions.md`](20-implementation-questions.md).
+- Auth repository реализует connection-per-operation login/session/refresh,
+  soft revoke, credential invalidation, shared-worker throttle и
+  course/family/staff authority reads. Независимое ревью закрыло exact legacy
+  types, identity TOCTOU, Student token↔hash atomicity, canonical public IDs,
+  session metadata bounds и collision rollback. Полный Python PWA suite после
+  исправлений — 669 PASS / 1 intentional skip; focused auth/schema/seed —
+  160 PASS, Ruff/schema/live-drift checks — PASS.
+- HTTP auth increment реализует семь audience routes, default-private
+  middleware, exact Origin/target boundary, audience cookie paths и
+  authoritative SQLite revalidation. Real aiohttp/migrated-SQLite tests
+  покрывают Student/Family/Staff login, capabilities, refresh replay, logout,
+  logout-all и revoke-device; corrupt-principal cleanup покрыт service tests.
+  Focused auth/repository/HTTP/transport gate — 245 PASS; полный `pwa_tests` —
+  714 PASS / 1 intentional skip. Logout гарантированно отзывает живую
+  access-сессию даже без refresh-cookie, а public allowlist сопоставляет точные
+  method/resource пары. Production marker tests доказывают, что
+  `pwa-production` и `PROD=true` включают HTTPS/`Secure`, а prototype
+  fail-closed запрещён.
+- Authenticated realtime increment связывает каждый WebSocket с проверенными
+  audience/account/session до upgrade, сериализует все операции над transport,
+  закрывает session/account sockets local-first и через строгий versioned NATS
+  control event, а при сбое fan-out fail-closed перепроверяет server state в
+  SQLite. Owner-scoped invalidation доставляется только вкладкам нужного
+  account и не раскрывает account ID в browser payload или логах. Logout,
+  refresh-only logout, revoke-device и logout-all закрывают только доказанные
+  targets; wrong/foreign/replayed refresh secret не образует close-oracle.
+  Полный `.venv/bin/pytest -q pwa_tests` — 759 PASS / 1 intentional skip;
+  missing/wrong Origin, cross-audience cookie, expired/out-of-band-revoked
+  session, multiple tabs/devices, cross-worker close, publish failure fallback,
+  send/close race и owner isolation покрыты регрессиями.
+- Phase-1 race/resource hardening делает post-upgrade socket pending и
+  non-routable до повторной SQLite-проверки и первого cursor frame. Session
+  tombstone закрывает auth→register revoke race, а audience broadcast lock —
+  initial-frame/invalidation ordering. Stored Argon2id дополнительно проходит
+  generous bounded resource policy; malformed/out-of-policy active row и
+  unknown login выполняют один и тот же dummy verify. Barrier/work-count tests
+  не используют wall-clock. Focused suites — 31 PASS и 45 PASS; полный
+  `.venv/bin/pytest -q -n0 pwa_tests` — **808 PASS / 1 intentional skip**.
+  Proof: [`phase1-auth-race-hardening.md`](../../../pwa_tests/reports/phase1-auth-race-hardening.md).
+- Frontend auth wiring подключает server-authoritative `/auth/me` во всех трёх
+  приложениях после validated runtime (и после IndexedDB gate в Student/Family),
+  не монтирует private shell до подтверждённой сессии и сохраняет безопасный
+  app-relative `returnTo` с query/hash. Controlled формы используют ровно
+  `telegramToken` для Student и `password` для Family/Staff; состояния invalid,
+  rate-limited, account-unavailable и network покрыты без account enumeration.
+  Явные Staff capability gates закрывают classrooms, broadcasts и audit.
+  Route generation, typecheck, ESLint/stylelint и production build трёх apps —
+  PASS; Vitest unit — 16 файлов / 138 PASS, Storybook browser mode — 32 файла /
+  140 PASS. Реальный browser E2E входа/refresh/logout с aiohttp остаётся gate.
+- Domain-neutral session/device UI добавлен в `packages/app-shell` и подключён
+  к Student/Family profile: настоящий `GET /auth/sessions`, current marker,
+  revoke одной чужой сессии, current logout и logout-all с подтверждением.
+  Empty/corrupt/cross-audience ответы и ошибка offline-work inspection работают
+  fail-closed; opaque session IDs не становятся видимыми device labels.
+  `SessionOfflineWorkGuard` доказывает предупреждение для непустой очереди и
+  порядок server logout → cleanup даже при размонтировании shell, но реальный
+  Dexie adapter честно отложен. Staff route не придуман. Focused unit — 18
+  PASS; session Storybook interaction + addon-a11y — 9 PASS; snapshots не
+  обновлялись и visual owner gate остаётся открытым.
+- Frontend auth hardening сериализует single-use refresh между вкладками через
+  audience-scoped Web Locks. Каждый получивший lock сначала повторяет `/auth/me`;
+  поэтому второй contender не расходует уже ротированный secret. Без Web Locks
+  bounded BroadcastChannel/storage wake-up приводит только к fail-closed
+  `/auth/me`, а не к небезопасной localStorage-lease. `sessionExpiresAt`
+  enforced как абсолютная server-owned граница таймером и browser-resume
+  checks; prior-verified `offline-unverified` UI размонтируется по expiry.
+  Focused auth/session Vitest — 31/31 PASS, app-shell typecheck и scoped ESLint
+  — PASS. Повторный полный gate: frontend unit 19 файлов / 162 PASS, Python PWA
+  808 PASS / 1 intentional skip, Storybook browser mode 33 файла / 152 PASS;
+  full lint/typecheck — PASS.
+- Canonical auth preflight теперь исполняет frozen Student username algorithm
+  v1 на read-only snapshot `db/vmsh.db`: 1617 Student rows, 10 field/token
+  blockers, 29 collision groups / 58 affected rows и 1549 eligible до явных
+  overrides/launch-cohort exclusions. Отчёты не содержат IDs, login candidates
+  или credentials; focused privacy/source-safety suite — 10 PASS. Apply и
+  collision overrides ещё не выполнены.
+- Controlled Student import tooling готово для **отдельной migrated copy**:
+  owner-only inventory, deterministic preview без Argon2 и all-at-once apply с
+  повторной проверкой под `BEGIN IMMEDIATE`. Explicit cohort/exclusions и
+  overrides обязательны; target разрешён только под `.runtime/auth-import/`, а
+  authoritative/human/agent DB, symlink/hardlink, небезопасные
+  permissions и несовпавший confirmation path отклоняются. Повторный apply
+  идемпотентен, а aggregate proof не содержит IDs/login candidates/credentials.
+  Quiescent snapshot sidecars также fail-closed. Focused suite — 16 PASS,
+  включая concurrent source change; synthetic 1617-row
+  preview — менее `1 s`, без Argon2; локальная оценка default Argon2 для 1549
+  pending rows — около `0.8 min` до write transaction и ещё `0.8 min` для
+  post-commit verification. Runbook:
+  [`phase-1-student-auth-import.md`](../../docs/phase-1-student-auth-import.md),
+  proof: [`phase1-auth-import-tooling.md`](../../../pwa_tests/reports/phase1-auth-import-tooling.md).
+  Настоящие overrides/exclusions и production apply не выполнялись; course
+  enrollment/access/event backfill явно отложен и не фабрикует `G`/`O` events.
+- Production proxy boundary реализован: one-host nginx template, exact
+  forwarding replacement, per-IP login `429`/`Retry-After`, fail-closed CSP,
+  loopback TCP/exact Unix transport и wrong-path/host/proto/chain/WS Origin
+  regression. Production hostname не зашит: checker требует exact approved
+  lowercase `VMSH_PWA_PUBLIC_HOST` и сверяет оба `server_name`, redirect и CSP.
+  Pure + actual aiohttp + structural suite — 106 PASS; локальный
+  syntax helper вернул explicit `UNAVAILABLE`/exit 2 из-за отсутствующего nginx;
+  полный Python PWA suite — 793 PASS / 1 intentional skip.
+- Следующий gate: server `nginx -t` и live rate-limit smoke, утверждённые
+  owner decisions + rehearsal/apply controlled import
+  и реальный browser E2E login/refresh/logout/revoke. Владелец принял
+  риск старых credential-like literals в migration history; они не копируются
+  в fixtures/reports и не становятся источником нового web-входа. Controlled
+  production activation всё равно требует preflight, актуальных
+  Telegram-токенов и явного отчёта. Историческая credential-развилка закрыта,
+  но настоящий inventory теперь требует owner-only decision-файл для 10
+  blockers и 58 строк login-collision; это открытый вопрос 16 в
+  [`20-implementation-questions.md`](20-implementation-questions.md), а не
+  повод угадывать исключения или логины.
+
+## Phase 1 browser-auth increment — 27 июля 2026
+
+- Production entry всех трёх приложений использует server-authoritative auth;
+  private routes сохраняют безопасный intended route с query/hash, а Teacher и
+  Admin получают разные Staff route gates.
+- Единый test-only fixture
+  `pwa_tests/fixtures/auth-credentials-v1.json` согласован с seed; product bundle
+  его не импортирует. Playwright использует настоящий aiohttp и отдельную SQLite
+  через one-origin gateway, без MSW, Telegram, Google и mock-auth backdoor.
+- `make pwa-e2e-auth` — **60/60 PASS** в Chromium, WebKit и Firefox: четыре
+  роли, reload/logout, cookie Path и audience isolation, simultaneous sessions,
+  invalid credentials, deep-link return, `401`, Host/Origin/forwarding,
+  explicit refresh rotation, single-flight automatic recovery при отсутствующей
+  access-cookie, two-tab recovery с ровно одним refresh request и revoke
+  отдельного устройства.
+- Этот production-build gate повторно подтверждён 28 июля после исправления
+  default deep-link; отдельный Phase-2 content Playwright flow всё ещё открыт.
+- Browser proof нашёл и закрыл Family `500` на ISO `users.birthday`:
+  `FamilyChildRecord.birthday` читает nullable строку; repository regression
+  закрепляет реальный формат legacy данных.
+- Актуальные соседние gates: Vitest **16 файлов / 139 PASS**; Python PWA
+  **780 PASS / 1 intentional skip**; Storybook browser mode **32 файла / 143
+  PASS** с addon-a11y error; lint, typecheck и production build — PASS.
+- Более ранние строки этого журнала, где browser auth E2E назван будущим gate,
+  этим блоком заменены. Не закрыты controlled production import, server
+  `nginx -t`/live rate smoke и browser Teacher→admin API `403`: последний ждёт
+  первого настоящего capability-protected admin endpoint Phase 2/7/8/10.
+  Искусственный production endpoint ради теста не добавляется; UI forbidden и
+  permission/API matrix уже покрыты.
+
+## Phase 1 frontend realtime increment — 27 июля 2026
+
+- Общий [`RealtimeProvider`](../../packages/app-shell/src/realtime.tsx)
+  подключён в production entry Student, Family и Staff только внутри
+  authenticated context. Same-origin URL содержит максимум memory cursor;
+  credential/account/session IDs не попадают в URL или Web Storage.
+- Клиент fail-closed валидирует frame, требует `connected` на первом handshake
+  и `resync-required` после любого reconnect, выполняет полный active Query
+  refetch до ready, коалесцирует invalidations и ограничивает
+  handshake/heartbeat/backoff. Offline/hidden и StrictMode cleanup не оставляют
+  reconnect storm или дублирующий transport.
+- `1008` и нормализованный transport-слоем `1000` запускают HTTP authority
+  check. Revoke current session переводит private route на login и не открывает
+  новый socket; подтверждённая session продолжает обычный cursor/refetch path,
+  transient network/5xx повторяет authority check с bounded backoff и не
+  оставляет клиент навсегда заблокированным.
+- Focused Vitest: **2 файла / 17 PASS**. `make pwa-e2e-realtime`: **12/12 PASS**
+  в Chromium, WebKit и Firefox после production build трёх приложений.
+  Visual snapshots не обновлялись; provider не меняет визуальное состояние.
+- Повторный полный `make pwa-e2e-runtime` сначала подтвердил realtime revoke /
+  reconnect, theme-storage и IndexedDB isolation, но обнаружил шесть падений
+  Student/Family PWA-update. Разбор trace показал, что новый worker уже
+  становился controller и приложение делало reload, а тест ошибочно требовал
+  навигацию на корневой URL: к этому моменту auth boundary мог сохранить
+  `/student/login?returnTo=…` или `/family/login?returnTo=…`. Product-кнопка
+  теперь адресует фактический `registration.waiting` напрямую, а E2E доказывает
+  reload с сохранением текущего audience-local URL. Точный повторный сценарий
+  `a byte-different built worker reaches prompt and controls the page` —
+  **6/6 PASS** в Chromium, WebKit и Firefox. Полный runtime suite после этой
+  локальной правки ещё должен быть повторён; snapshots не обновлялись.
+- Реализующие/проверяющие файлы:
+  [`realtime-client.test.ts`](../../packages/app-shell/src/realtime-client.test.ts),
+  [`realtime-provider.test.tsx`](../../packages/app-shell/src/realtime-provider.test.tsx),
+  [`runtime-isolation.spec.ts`](../../e2e/runtime-isolation.spec.ts),
+  [`e2e_runner.py`](../../scripts/e2e_runner.py). Target зафиксирован как
+  `make pwa-e2e-realtime`.
+
+## Phase 2 browser content renderer increment — 27 июля 2026
+
+- Production browser wire отделён от внутреннего compiler AST и legacy
+  `web_html`: [`WebContentDocument v1`](../../packages/contracts/src/content.ts)
+  имеет tagged camelCase blocks, один material kind, обязательный persisted
+  `revisionId` и отдельную nullable preview schema. Generic preflight до
+  recursive Zod parsing ограничивает depth/nodes/text; shared Python preview
+  fixture доказывает отсутствие sibling answer/hint/solution branches.
+- [`SemanticMathDocument`](../../packages/content/src/math-document.tsx)
+  рендерит paragraphs/headings/lists/subparts/callouts/tables/formulas и только
+  внешние SVG/raster figures. Compatibility `MathHtml` fail-closed отклоняет
+  script/event/style/inline SVG/forms/unsafe URL целиком и монтирует очищенный
+  `DocumentFragment`, не raw HTML string.
+- KaTeX работает на клиенте с `trust:false`, bounded `maxSize`/`maxExpand` и
+  детерминированным локальным fallback. [`ZoomableAssetFigure`](../../packages/content/src/zoomable-asset-figure.tsx)
+  применяет один transform к холсту и изображению, поддерживает keyboard,
+  buttons, pinch/pan и missing/load-error state.
+- Focused Zod/sanitizer/renderer unit: **3 files / 33 PASS**; TypeScript,
+  scoped ESLint/stylelint и `git diff --check` — PASS. Focused Storybook
+  browser mode: **9/9 PASS** в Chromium с addon-a11y `error`. Story IDs и
+  остающиеся integration/visual gates: [`phase2-web-renderer.md`](../../../pwa_tests/reports/phase2-web-renderer.md).
+- Этап 2 целиком не закрыт: API/page wiring, storage/asset resolution,
+  publication flow, corpus/PDF/Telegram/S3 gates и visual owner approval ещё
+  впереди. Snapshots не обновлялись.
+
+## Phase 2 live derivatives и authenticated content vertical — 28 июля 2026
+
+- Локальный полный TeX дал воспроизводимую PDF-производную: real
+  `pdflatex` smoke — **1 PASS**. Test bot в подтверждённом приватном test
+  channel выполнил compiler-owned Rich Message на границе 32 768 symbols:
+  send/edit/delete/cleanup — **PASS**, публикация удалена. Proof:
+  [`phase2-derivative-adapters.md`](../../../pwa_tests/reports/phase2-derivative-adapters.md).
+- Фиксированные synthetic TikZ и raster прошли реальный
+  SVG/WebP → test S3 `PutObject` → private read → public GET → delete под
+  `integration/phase2-assets-20260727-a1/`: **2/2 PASS**, оба объекта удалены.
+  Hermetic service/guard suite — **13 PASS**. Proof:
+  [`phase2-content-assets-live.md`](../../../pwa_tests/reports/phase2-content-assets-live.md).
+- Повторное review после `0042`/`0043` приняло backend boundary в `1aad776`:
+  source/compile leases и publication slots сериализованы, rollback отменяет
+  ровно ожидаемый schedule, due scheduler/hide/invalidation и terminal audit
+  проверены. Publish/schedule/rollback дополнительно требуют resolved problem
+  matches + reviewed metadata; solution требует отдельный lesson cutoff.
+  Staff history ограничена сервером и содержит authoritative timezone.
+- Frontend vertical в `866e3fe` использует тот же wire: после reload продолжает
+  `uploaded`/expired-compiling revision, для rollback предлагает предыдущую
+  `ready`, не переводит `datetime-local` через timezone браузера, подтверждает
+  publish/schedule/rollback/hide и показывает два preview рядом на desktop.
+  Student/Family читают только published typed document и отмечают новую
+  revision без показа внутренних compiler/publication данных.
+- Полный общий gate: lint/typecheck/build/schema PASS, 218 TypeScript unit,
+  1028 Python PASS (3 skip, 1 warning), 167 Storybook browser PASS и 192
+  product schema objects. Подробные команды и остающиеся границы:
+  [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md) и
+  [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
+- Это промежуточный engineering gate, не завершение Phase 2: HTTP asset
+  resolution, matching/metadata mutation UI+API, stored PDF, bulk upload,
+  production content E2E и owner visual approval ещё не закрыты. Visual
+  snapshots не обновлялись.
+
+## Phase 2 real-content Storybook gate — 27 июля 2026
+
+- Условия начинающих занятий 39–41 теперь имеют воспроизводимые committed
+  fixtures: exact source/PDF SHA-256, typed PWA document и Telegram Rich
+  derivative из одного compiler run. Stale fixture обнаруживает отдельный
+  `check`-режим; Python corpus/renderer suite — **37 PASS**, TypeScript contract
+  — **21 PASS**.
+- Story
+  `Product/Mathematical document/Real corpus--Lessons 39–41 · PWA, Telegram and PDF`
+  прошла **1/1** в browser mode с addon-a11y `error`. Desktop и mobile 390 px
+  light просмотрены вручную; mobile horizontal overflow отсутствует.
+- Visual gate нашёл и закрыл не фиктивную ошибку: print-header newlines больше
+  не становятся высоким пустым `<p><br/>…</p>` в Telegram derivative. PDF tab
+  показывает проверяемый repository reference artifact, а не browser print.
+- Proof:
+  [`phase2-real-content-corpus.md`](../../../pwa_tests/reports/phase2-real-content-corpus.md).
+  Snapshots не обновлялись, owner visual approval и generated-PDF parity всё
+  ещё не закрыты.
 
 ## Историческая проверка многокурсового прототипа
 
@@ -159,19 +511,20 @@
 
 ## Фактические proof этапов
 
-Пока отсутствуют: это план, а не отчёт о реализации. При завершении этапа сюда добавляется одна строка со ссылкой на заполненный proof-раздел соответствующего phase-файла.
+Таблица различает промежуточный проверенный инкремент и окончательное принятие
+этапа. Наличие revision/proof не закрывает оставшиеся criteria из phase-файла.
 
-| Этап | Revision | Proof | Принято |
-| ---: | -------- | ----- | ------- |
-|    0 | —        | —     | —       |
-|    1 | —        | —     | —       |
-|    2 | —        | —     | —       |
-|    3 | —        | —     | —       |
-|    4 | —        | —     | —       |
-|    5 | —        | —     | —       |
-|    6 | —        | —     | —       |
-|    7 | —        | —     | —       |
-|    8 | —        | —     | —       |
-|    9 | —        | —     | —       |
-|   10 | —        | —     | —       |
-|   11 | —        | —     | —       |
+| Этап | Revision             | Proof                                                  | Принято                            |
+| ---: | -------------------- | ------------------------------------------------------ | ---------------------------------- |
+|    0 | —                    | —                                                      | —                                  |
+|    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)    | частично; production gates открыты |
+|    2 | `1aad776`, `866e3fe` | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа) | Phase 2C принят; этап открыт       |
+|    3 | —                    | —                                                      | —                                  |
+|    4 | —                    | —                                                      | —                                  |
+|    5 | —                    | —                                                      | —                                  |
+|    6 | —                    | —                                                      | —                                  |
+|    7 | —                    | —                                                      | —                                  |
+|    8 | —                    | —                                                      | —                                  |
+|    9 | —                    | —                                                      | —                                  |
+|   10 | —                    | —                                                      | —                                  |
+|   11 | —                    | —                                                      | —                                  |

@@ -75,9 +75,14 @@ No visual snapshot was created or updated.
 
 ## Оставшиеся gates
 
-- aiohttp response schema and persisted revision/asset resolver wiring;
-- Student/Staff page integration and replacement of the older product prototype figure adapter;
-- real content corpus, PDF and Telegram-rich derivative comparison;
-- storage/S3 delivery and CSP/Trusted Types browser E2E;
+- aiohttp persisted typed response и Student/Family/Staff page integration
+  закрыты последующим checkpoint `1aad776`/`866e3fe`; см.
+  [`phase2-content-api.md`](phase2-content-api.md) и
+  [`phase2-content-frontend.md`](phase2-content-frontend.md);
+- real content corpus и reference-PDF/Telegram-rich Storybook comparison закрыты
+  автоматическим gate, но generated/stored PDF и owner visual approval ещё
+  открыты; см. [`phase2-real-content-corpus.md`](phase2-real-content-corpus.md);
+- live storage/S3 delivery доказана отдельно, но HTTP asset upload/resolution и
+  CSP/Trusted Types production content E2E ещё открыты;
 - Student/Family KaTeX precache measurement and later font subsetting;
 - manual mobile-light/desktop/dark visual approval before snapshot update.

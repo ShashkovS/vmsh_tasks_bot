@@ -5,6 +5,8 @@
 Это proof ограниченного HTTP vertical slice этапа 2, а не отметка о завершении
 всей фазы. Авторитетные требования: `vmshpwa/dev/development-plan/06-phase-2-content.md`
 и раздел Content в `vmshpwa/dev/development-plan/03-api-events-and-files.md`.
+Проверенная backend revision этого среза — `1aad776`; связанный frontend
+checkpoint — `866e3fe`.
 
 ## Реализованная граница
 
@@ -25,6 +27,9 @@
   `telegram_html`, после чего переводит revision в `ready`. Fault-test доказывает,
   что конфликт второго derivative откатывает уже вставленный первый derivative
   и не делает revision готовой.
+- Pure compiler принимает только валидированные typed asset descriptors
+  (public ID, SHA-256, safe URL, media type, dimensions); conflicting URL и
+  missing TikZ SVG остаются diagnostics, а не silently broken figure.
 - Staff preview отдаёт только typed web document либо Telegram-rich HTML
   конкретной revision. Diagnostics и missing asset references доступны отдельно.
 - Condition, hint и solution имеют независимые published/scheduled slots.
@@ -141,6 +146,18 @@ migration lifecycle: 5 passed
 0043 lesson-window audit: exact up/down/up PASS
 ```
 
+Полный объединённый checkpoint этого worktree:
+
+```text
+make pwa-lint             PASS
+make pwa-typecheck        PASS
+make pwa-test             218 TypeScript + 1028 Python PASS; 3 skip; 1 warning
+make pwa-storybook-test   167 PASS
+make pwa-build            PASS
+make pwa-schema-check     192 product objects PASS
+make pwa-e2e-auth         60/60 PASS (Chromium, WebKit, Firefox)
+```
+
 Новые aiohttp tests используют настоящий `web.Application`, auth middleware и
 отдельную migrated/seeded SQLite. MSW, Telegram, Google, S3 и production
 credentials не используются.
@@ -163,5 +180,8 @@ credentials не используются.
 - Source file HTTP limit зафиксирован в `512 KiB`; pure compiler имеет отдельные
   более широкие structural limits. Повышение request limit требует отдельного
   corpus/DoS review.
-- Frontend route integration, production-build E2E и visual approval выполняются
-  отдельным инкрементом. Telegram/Google adapters не запускаются этим API.
+- Frontend route integration уже зафиксирован в
+  [`phase2-content-frontend.md`](phase2-content-frontend.md). Production-build
+  content E2E и visual approval выполняются отдельным инкрементом; зелёный
+  auth E2E 60/60 не подменяет отсутствующий content flow. Telegram/Google
+  adapters не запускаются этим API.

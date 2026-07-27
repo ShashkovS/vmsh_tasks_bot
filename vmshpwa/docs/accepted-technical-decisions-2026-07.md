@@ -1,6 +1,6 @@
-# Принятые технические решения — 24 июля 2026
+# Принятые технические решения — 27 июля 2026
 
-Этот документ фиксирует ответы владельца продукта на вопросы после первой версии Storybook. Он дополняет тематические документы в этой папке. При расхождении более позднее явное решение владельца имеет приоритет.
+Этот документ фиксирует ответы владельца продукта на вопросы после первой версии Storybook и технические уточнения, возникшие при реализации. Он дополняет тематические документы в этой папке. При расхождении более позднее явное решение владельца имеет приоритет.
 
 Второй блок ответов о типах задач, конфигурируемых вердиктах, очереди проверки, скрытых реакциях, подсказках и целевой AI-модели вынесен в [продуктовые UX-решения](product-ux-decisions-2026-07.md). Вместе эти два реестра покрывают весь questionnaire владельца; фазовые design-system файлы содержат производные acceptance requirements.
 
@@ -10,8 +10,12 @@
 - Новый конвертер строится на опыте `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `mathimg_endpoints.py` и `mathimg_service.py`, но становится тестируемым pipeline с нормализованным промежуточным представлением.
 - Web-производная содержит безопасный HTML и исходные LaTeX-выражения. Формулы рендерятся KaTeX на клиенте; CSS и шрифты KaTeX входят в bundle и precache Student/Family PWA.
 - У формул нет меню, copy helper, выделения и прочих необязательных интерактивных функций. Семантический MathML KaTeX для assistive technology сохраняется. Печать не снимается с web DOM и использует PDF pipeline.
-- Telegram-производная предназначена для `sendRichMessage` Bot API 10.1+ и использует разрешённый Rich Message HTML, включая `<tg-math>` и `<tg-math-block>`. Это не legacy `sendMessage(parse_mode=HTML)`. Ограничения клиента/версии и fallback должны проверяться интеграционными тестами Telegram adapter.
+- Telegram-производная предназначена для `sendRichMessage` Bot API 10.2+ и использует разрешённый Rich Message HTML, включая `<tg-math>` и `<tg-math-block>`. Это не legacy `sendMessage(parse_mode=HTML)`. Renderer хранит версию dialect и проверяет limits 10.2 (32 768 UTF-8 characters, 500 blocks, nesting 16, 50 media, 20 table columns); ограничения клиента/версии и fallback проверяются интеграционными тестами Telegram adapter.
 - TikZ остаётся отдельным SVG-object в S3; HTML хранит ссылку и метаданные, а не inline SVG.
+- Web compiler принимает asset только как единый строгий descriptor (public ID,
+  SHA-256, безопасный URL, media type и dimensions), поэтому hash и URL не
+  расходятся как независимые источники истины. Отсутствующий TikZ SVG остаётся
+  blocking diagnostic.
 - Планируется preview уже сгенерированного PDF. Он не является вторым print renderer и не допускает ручного редактирования производной.
 - `pdflatex`, `pdf2svg`, `cwebp` и `magick` задаются optional полями общего backend config; defaults совпадают с именами команд и разрешаются через `PATH` service profile. Абсолютные paths допустимы как deployment override, `None` отключает capability. Missing required tool обнаруживается readiness/deploy preflight, а subprocess запускается argv-массивом без shell.
 
@@ -43,9 +47,19 @@
 - Принудительная очистка Web Storage/IndexedDB самим браузером после долгого отсутствия остаётся неизбежным платформенным риском; UI не обещает защиту от удаления данных браузером или устройства. При обычном reload, закрытии вкладки и PWA update drafts обязаны восстанавливаться. Student/Family не более двух раз мягко предлагают установку PWA, без блокирующих экранов.
 - Целевой локальный бюджет — около 10–15 MB. Текст условий занимает малую часть; иллюстрации к недавно открытым материалам кешируются примерно на две недели и очищаются LRU/quota policy.
 - Logout при непустом outbox показывает предупреждение. После явного подтверждения пользователя локальная очередь и drafts этого аккаунта могут быть удалены.
+- Владелец подтвердил cold offline reading/drafts после прежнего online-входа
+  без повторного credential и допустимость logout с непустым outbox после
+  предупреждения. Безопасный implementation default делает cache account-scoped,
+  называет состояние `offline-unverified`, ограничивает его локально известным
+  `sessionExpiresAt` и после подтверждённого logout/account switch очищает cache,
+  drafts и outbox, чтобы их не увидел следующий пользователь общего устройства.
 - Незавершённая значимая работа Student/Staff переживает reload и update. Небольшие сериализуемые drafts и UI-state хранятся в `localStorage`, фотографии/blobs и durable outbox — в audience/account-scoped Dexie. Draft удаляется только после серверного receipt или явного discard; токены и cookies в эти хранилища не копируются.
 - Повтор одного `idempotencyKey` с тем же payload hash возвращает исходный receipt. Другой payload получает conflict и требует нового ключа после явного действия пользователя.
-- Операционные документы различают воскресный cutoff сдачи и более позднюю публикацию решений. Поэтому deadline хранится отдельным `submission_closes_at` в `Europe/Moscow`/UTC, а schedule и фактический timestamp solution publication не вычисляют его задним числом. Offline submission с client time до cutoff принимается и после поздней доставки; skew больше часа маркируется для диагностики. Политика явного/автоматического переноса cutoff при изменении solution schedule открыта как `SCHEDULE-01` в фазовом плане.
+- Операционные документы различают воскресный cutoff сдачи и более позднюю публикацию решений. Поэтому deadline хранится отдельным `submission_closes_at` в `Europe/Moscow`/UTC, а schedule и фактический timestamp solution publication не вычисляют его задним числом. Offline submission с client time до cutoff принимается и после поздней доставки; skew больше часа маркируется для диагностики. `SCHEDULE-01` закрыт: перенос публикации решения не двигает cutoff; дедлайн меняется только отдельным подтверждённым и аудитируемым действием.
+- Publication form передаёт локальную минуту и IANA timezone группового занятия;
+  server `zoneinfo` переводит её в UTC и отклоняет DST gap/fold. Timezone
+  браузера и `Date.parse()` не определяют учебное расписание. Изменение cutoff
+  и обычного расписания имеют разные optimistic operations и append-only audit.
 
 ## Домен
 
@@ -82,11 +96,13 @@
 ## Дополнение по первому выпуску
 
 - Первый production scope: сезон 2025–2026, занятия 39–41, все три уровня, полный online flow и admin-only планирование аудиторий. Интерфейс очного преподавателя для выставления результатов и печатный раздел остаются вне выпуска.
-- Production host — `vmsh.shashkovs.ru`, желательный staging — `devvmsh.shashkovs.ru`.
+- Production hostname пока не выбран. Production и optional staging получают
+  разные явно утверждённые lowercase FQDN; nginx template требует обязательный
+  `@@PUBLIC_HOST@@` и не выводит hostname из legacy-сайта.
 - Короткое maintenance window для migrations допустимо. SQLite backup три раза в день и перед deploy считается достаточным baseline.
 - Полный S3 backup не требуется. Student images не versioned; отправленные teacher artifacts сохраняются immutable/versioned на уровне приложения или отдельной storage policy.
 - Выпуск включается сразу для всех уровней. Критические сценарии вручную проверяются на доступных Android; iPhone — по возможности, автоматический WebKit остаётся обязательным.
-- Для live integration используется test bot `@vmsh179devbot`, token которого хранится только в test config. Приватный `vmsh179devbot channel` показывает ID `3913815635`, bot добавлен admin; туда разрешено отправлять synthetic/test content в пределах Telegram limits. До первого send отдельный read-only Bot API probe фиксирует canonical identity в owner-only local SQLite; write-smoke берёт destination только оттуда и повторяет проверку. UI ID не получает `-100`/знак эвристически. Unit/E2E используют RecordingBot и не зависят от live Telegram. Production channel задаётся отдельно для каждой группы в DB; серьёзные production alerts идут в служебную Telegram-группу.
+- Для live integration используется test bot `@vmsh179devbot`, token которого хранится только в test config. Владелец предоставил canonical test-only Bot API `chat.id = -1003913815635` приватного `vmsh179devbot channel`; это pinned identity, а не правило преобразования произвольного UI ID. Bot добавлен admin; туда разрешено отправлять, редактировать и удалять synthetic/test content в пределах Telegram limits. До первого send отдельный read-only Bot API probe перепроверяет canonical identity/capabilities и фиксирует её в owner-only local SQLite; write-smoke берёт destination только оттуда. Unit/E2E используют RecordingBot и не зависят от live Telegram. Production channel задаётся отдельно для каждой группы в DB; серьёзные production alerts идут в служебную Telegram-группу.
 
 ## Аудитории и распределение очных школьников
 
