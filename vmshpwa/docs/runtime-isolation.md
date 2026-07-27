@@ -31,6 +31,8 @@ Frontend runtime получает адрес API через `VMSH_API_ORIGIN`; �
 
 Обычный aiohttp startup миграции не применяет. Он только сверяет IDs/hash всех migrations и persistent WAL mode; при пустой, устаревшей или более новой схеме процесс завершается с указанием сначала выполнить maintenance-команду. Playwright перед своим production-preview сервером запускает изолированный seed, а Python API tests получают отдельную временную SQLite на каждый pytest worker и не читают постоянную E2E-БД.
 
+Maintenance-entrypoints работают fail-closed: до импорта общего legacy config они требуют явный `VMSH_RUNTIME_PROFILE=pwa-*`, а после импорта проверяют непустые instance и DB path. Произвольного `--database` у команд нет; неизвестный аргумент является ошибкой, а не молча игнорируемой подсказкой. Так опечатка не может незаметно переключить команду на legacy test DB и запустить загрузку Telegram/Google-настроек. Выбор файла всегда делается целиком проверенным Make-профилем.
+
 Обычные agent/E2E profiles используют filesystem media adapter и не читают `creds_test`/`creds_prod`. Ручной local S3 integration profile может allowlist-ом прочитать `s3_url`, `s3_bucket_name`, `s3_access_key`, `s3_secret_key` из `creds_test/vmsh_bot_config_test.json` и работает только в выделенном test bucket/prefix. Production читает те же поля из production config; смешение test/prod key или prefix является startup error.
 
 ## Запреты

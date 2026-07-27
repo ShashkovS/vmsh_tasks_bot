@@ -56,12 +56,13 @@
 | 2026-07-27 | PLAN-035 | Print остаётся отдельным разделом v2, media retention — бессрочная admin-managed policy                  | V1 не обещает `a11`–`a14` compatibility export; очистка только manual manifest-driven с preview/audit                                                         |
 | 2026-07-27 | PLAN-036 | Opt-in test S3/Telegram side effects явно разрешены владельцем                                           | Disposable test-prefix objects и synthetic test-channel messages можно create/read/edit/delete; production resources запрещены                                |
 | 2026-07-27 | PLAN-037 | PWA runtime использует connection-per-operation и никогда не мигрирует SQLite при startup                | Отдельная maintenance-команда применяет yoyo под lock и включает WAL; startup fail-closed проверяет migration IDs/hash/WAL, legacy auto-migrate пока сохранён |
+| 2026-07-27 | PLAN-038 | PWA maintenance-команды выбирают состояние только через явный проверенный профиль                        | Guard выполняется до импорта legacy config; неизвестные CLI-аргументы отклоняются, поэтому опечатка не может выбрать fallback DB или credential loader         |
 
 ## Текущий инкремент этапа 0
 
-- Реализация: `db_methods/pwa/migrations.py`, `db_methods/pwa/connection.py`, `main.py`, `vmshpwa/scripts/migrate_runtime.py`, обновлённый `seed_runtime.py`.
-- Fault/API tests: `pwa_tests/integration/test_migration_lifecycle.py`, `pwa_tests/integration/test_sqlite_concurrency.py`, `pwa_tests/test_app_factory.py`, `pwa_tests/test_config_safety.py`.
-- Проверено 27 июля 2026: 15 целевых migration/concurrency/factory/config tests и полный `pwa_tests` — 26/26 PASS на Python 3.14.3.
+- Реализация: `db_methods/pwa/migrations.py`, `db_methods/pwa/connection.py`, `main.py`, `vmshpwa/scripts/{runtime_guard,migrate_runtime,seed_runtime}.py`.
+- Fault/API tests: `pwa_tests/integration/test_migration_lifecycle.py`, `pwa_tests/integration/test_sqlite_concurrency.py`, `pwa_tests/test_app_factory.py`, `pwa_tests/test_config_safety.py`, `pwa_tests/test_maintenance_commands.py`.
+- Проверено 27 июля 2026: 15 целевых migration/concurrency/factory/config tests и 7/7 maintenance guard tests; полный `pwa_tests` — 33/33 PASS на Python 3.14.3.
 - Этап 0 не закрыт: schema inventory, полноценный `baseline-v1`, characterization/golden manifest, auth/workload/toolchain/storage/Telegram preflights и runtime-isolation E2E ещё впереди.
 
 ## Проверка многокурсового прототипа
