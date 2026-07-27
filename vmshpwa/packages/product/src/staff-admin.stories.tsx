@@ -7,6 +7,7 @@ import {
   LatexUpload,
   MissingAssetsFlow,
   PublicationControl,
+  type MissingAsset,
   type PublicationLevelRow,
 } from './staff-publishing'
 import type { GroupView } from './types'
@@ -179,15 +180,97 @@ export const MissingAssets: Story = {
           {
             id: 'a1',
             ref: 'fig3.svg',
-            candidates: [
-              { id: 'c1', label: 'fig3_v2.svg' },
-              { id: 'c2', label: 'rooks.svg' },
-            ],
+            sourceKind: 'figure',
+            acceptedUploadKinds: ['raster', 'svg'],
+            selectedUploadKind: 'svg',
+            status: 'missing',
           },
-          { id: 'a2', ref: 'table7.svg' },
+          {
+            id: 'a2',
+            ref: 'tikz/diagram-2',
+            sourceKind: 'tikz',
+            acceptedUploadKinds: ['tikz'],
+            selectedUploadKind: 'tikz',
+            status: 'missing',
+          },
         ]}
-        onReuse={() => undefined}
-        onUpload={() => undefined}
+      />
+    </div>
+  ),
+}
+
+const assetState = (
+  status: MissingAsset['status'],
+  rest: Partial<MissingAsset> = {},
+): MissingAsset => ({
+  id: `asset-${status}`,
+  ref: 'figures/rook.png',
+  sourceKind: 'figure',
+  acceptedUploadKinds: ['raster', 'svg'],
+  selectedUploadKind: 'raster',
+  status,
+  ...rest,
+})
+
+export const MissingAssetUploading: Story = {
+  name: 'Недостающий ресурс · обработка',
+  render: () => (
+    <div className="max-w-2xl">
+      <MissingAssetsFlow assets={[assetState('uploading', { fileName: 'rook.heic' })]} />
+    </div>
+  ),
+}
+
+export const MissingAssetError: Story = {
+  name: 'Недостающий ресурс · ошибка с повтором',
+  render: () => (
+    <div className="max-w-2xl">
+      <MissingAssetsFlow
+        assets={[
+          assetState('error', {
+            fileName: 'rook.heic',
+            errorMessage: 'Соединение прервалось. Выбранный файл сохранён — повторите загрузку.',
+          }),
+        ]}
+      />
+    </div>
+  ),
+}
+
+export const MissingAssetReused: Story = {
+  name: 'Недостающий ресурс · переиспользован',
+  render: () => (
+    <div className="max-w-2xl">
+      <MissingAssetsFlow
+        assets={[
+          assetState('reused', {
+            assetHref: 'https://assets.example.test/content/rook.webp',
+          }),
+        ]}
+      />
+    </div>
+  ),
+}
+
+export const MissingAssetsResolved: Story = {
+  name: 'Недостающие ресурсы · разрешены',
+  render: () => (
+    <div className="max-w-2xl">
+      <MissingAssetsFlow
+        assets={[
+          assetState('attached', {
+            assetHref: 'https://assets.example.test/content/rook.webp',
+          }),
+          {
+            id: 'asset-tikz-attached',
+            ref: 'tikz/diagram-2',
+            sourceKind: 'tikz',
+            acceptedUploadKinds: ['tikz'],
+            selectedUploadKind: 'tikz',
+            status: 'attached',
+            assetHref: 'https://assets.example.test/content/diagram-2.svg',
+          },
+        ]}
       />
     </div>
   ),

@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest'
 
 import contentFixture from '../fixtures/content/web-document.v1.json'
 import {
+  contentAssetsMissingDetailsSchema,
   contentEtagSchema,
   contentQueryKeys,
   publishContentRequestSchema,
   publishedContentSchema,
   rollbackContentRequestSchema,
   staffContentHistorySchema,
+  staffContentAssetUploadSchema,
   staffContentPreviewSchema,
+  staffContentRevisionAssetsSchema,
   staffContentRevisionSchema,
 } from './content-api'
 
@@ -108,6 +111,146 @@ describe('Phase-2 content HTTP contracts', () => {
       'hint',
       'student-1',
     ])
+    expect(contentQueryKeys.assets(document.revisionId)).toEqual([
+      'content',
+      'assets',
+      document.revisionId,
+    ])
+  })
+
+  it('keeps missing and attached revision assets internally consistent', () => {
+    expect(
+      contentAssetsMissingDetailsSchema.parse({ missingAssets: ['figures/rook.svg'] }),
+    ).toEqual({ missingAssets: ['figures/rook.svg'] })
+    const response = {
+      revisionId: document.revisionId,
+      status: 'uploaded',
+      version: 3,
+      missingAssets: ['figures/rook.svg'],
+      assets: [
+        {
+          logicalName: 'figures/rook.svg',
+          sourceKind: 'figure',
+          status: 'missing',
+          acceptedUploadKinds: ['raster', 'svg'],
+          asset: null,
+        },
+        {
+          logicalName: 'tikz/diagram-1',
+          sourceKind: 'tikz',
+          status: 'attached',
+          acceptedUploadKinds: ['tikz'],
+          asset: {
+            assetId: 'asset-tikz-diagram-1',
+            contentSha256: 'a'.repeat(64),
+            src: '/staff/api/v1/content/assets/asset-tikz-diagram-1',
+            mediaType: 'image/svg+xml',
+            width: 640,
+            height: 360,
+          },
+        },
+      ],
+      requestId: 'asset-contract-test',
+    } as const
+
+    expect(staffContentRevisionAssetsSchema.parse(response).missingAssets).toEqual([
+      'figures/rook.svg',
+    ])
+    expect(() =>
+      staffContentRevisionAssetsSchema.parse({ ...response, missingAssets: [] }),
+    ).toThrow()
+    expect(() =>
+      staffContentRevisionAssetsSchema.parse({
+        ...response,
+        assets: [response.assets[0], response.assets[0]],
+        missingAssets: ['figures/rook.svg', 'figures/rook.svg'],
+      }),
+    ).toThrow()
+    expect(() =>
+      staffContentRevisionAssetsSchema.parse({
+        ...response,
+        assets: [
+          {
+            ...response.assets[0],
+            acceptedUploadKinds: ['tikz'],
+          },
+          response.assets[1],
+        ],
+      }),
+    ).toThrow()
+    expect(() =>
+      staffContentRevisionAssetsSchema.parse({
+        ...response,
+        assets: [
+          response.assets[0],
+          {
+            ...response.assets[1],
+            asset: {
+              ...response.assets[1].asset,
+              mediaType: 'image/webp',
+            },
+          },
+        ],
+      }),
+    ).toThrow()
+
+    expect(
+      staffContentAssetUploadSchema.parse({
+        revisionId: document.revisionId,
+        status: 'uploaded',
+        version: 4,
+        logicalName: 'figures/rook.svg',
+        sourceKind: 'figure',
+        asset: {
+          assetId: 'asset-rook',
+          contentSha256: 'b'.repeat(64),
+          src: 'https://assets.example.test/content/rook.webp',
+          mediaType: 'image/webp',
+          width: 1280,
+          height: 720,
+        },
+        reused: true,
+        requestId: 'asset-upload-contract-test',
+      }).reused,
+    ).toBe(true)
+    expect(() =>
+      staffContentAssetUploadSchema.parse({
+        revisionId: document.revisionId,
+        status: 'uploaded',
+        version: 4,
+        logicalName: 'figures/rook.png',
+        sourceKind: 'figure',
+        asset: {
+          assetId: 'asset-rook-original',
+          contentSha256: 'b'.repeat(64),
+          src: '/pwa-content-assets/asset-rook-original',
+          mediaType: 'image/png',
+          width: 1280,
+          height: 720,
+        },
+        reused: false,
+        requestId: 'asset-upload-original-test',
+      }),
+    ).toThrow()
+    expect(() =>
+      staffContentAssetUploadSchema.parse({
+        revisionId: document.revisionId,
+        status: 'uploaded',
+        version: 4,
+        logicalName: 'tikz/diagram-1',
+        sourceKind: 'tikz',
+        asset: {
+          assetId: 'asset-tikz-webp',
+          contentSha256: 'c'.repeat(64),
+          src: '/pwa-content-assets/asset-tikz-webp',
+          mediaType: 'image/webp',
+          width: 640,
+          height: 360,
+        },
+        reused: false,
+        requestId: 'asset-upload-tikz-webp-test',
+      }),
+    ).toThrow()
   })
 
   it('requires complete optimistic pairs for both publication slots', () => {

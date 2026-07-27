@@ -5,6 +5,7 @@ import {
   apiErrorSchema,
   contentEtagSchema,
   contentIfMatchSchema,
+  contentAssetUploadKindSchema,
   contentMaterialKindSchema,
   contentPublicationCancellationSchema,
   contentPublicationHidingSchema,
@@ -17,10 +18,13 @@ import {
   publishedContentSchema,
   rollbackContentRequestSchema,
   staffContentHistorySchema,
+  staffContentAssetUploadSchema,
   staffContentPreviewSchema,
+  staffContentRevisionAssetsSchema,
   staffContentRevisionSchema,
   type Audience,
   type ContentEtag,
+  type ContentAssetUploadKind,
   type ContentIfMatch,
   type ContentMaterialKind,
   type ContentPublication,
@@ -31,7 +35,9 @@ import {
   type BusinessTimezone,
   type LocalPublicationTime,
   type StaffContentHistory,
+  type StaffContentAssetUpload,
   type StaffContentPreview,
+  type StaffContentRevisionAssets,
   type StaffContentRevision,
 } from '@vmsh/contracts'
 
@@ -55,6 +61,14 @@ export interface UploadContentSourceInput {
   kind: ContentMaterialKind
   logicalFilename: string
   source: Blob
+}
+
+export interface UploadContentRevisionAssetInput {
+  revisionId: string
+  etag: ContentEtag
+  logicalName: string
+  kind: ContentAssetUploadKind
+  asset?: File
 }
 
 export interface PublicationSlotVersion {
@@ -99,6 +113,14 @@ export interface ContentApiClient {
     revisionId: string,
     options?: ContentRequestOptions,
   ): Promise<VersionedContentResource<StaffContentRevision>>
+  revisionAssets(
+    revisionId: string,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<StaffContentRevisionAssets>>
+  uploadRevisionAsset(
+    input: UploadContentRevisionAssetInput,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<StaffContentAssetUpload>>
   preview(
     revisionId: string,
     kind: 'web' | 'telegram',
@@ -243,6 +265,47 @@ class BrowserContentApiClient implements ContentApiClient {
       `/content/uploads/${encodeURIComponent(publicIdSchema.parse(revisionId))}/diagnostics`,
       { method: 'GET', ...options },
       staffContentRevisionSchema,
+    )
+  }
+
+  async revisionAssets(
+    revisionId: string,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<StaffContentRevisionAssets>> {
+    this.#requireStaff()
+    return this.#versionedJson(
+      `/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/assets`,
+      { method: 'GET', ...options },
+      staffContentRevisionAssetsSchema,
+    )
+  }
+
+  async uploadRevisionAsset(
+    input: UploadContentRevisionAssetInput,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<StaffContentAssetUpload>> {
+    this.#requireStaff()
+    const revisionId = publicIdSchema.parse(input.revisionId)
+    const kind = contentAssetUploadKindSchema.parse(input.kind)
+    const logicalName = input.logicalName.trim()
+    if (!logicalName || logicalName.length > 2_000 || logicalName !== input.logicalName) {
+      throw new TypeError('Asset logical name must be non-empty and trimmed')
+    }
+    if (kind === 'tikz' && input.asset !== undefined) {
+      throw new TypeError('TikZ generation uses the exact stored revision and accepts no file')
+    }
+    if (kind !== 'tikz' && input.asset === undefined) {
+      throw new TypeError('Raster and SVG asset uploads require a file')
+    }
+
+    const body = new FormData()
+    body.set('logicalName', logicalName)
+    body.set('kind', kind)
+    if (input.asset) body.set('asset', input.asset, input.asset.name)
+    return this.#versionedJson(
+      `/content/revisions/${encodeURIComponent(revisionId)}/assets`,
+      { method: 'POST', body, ifMatch: contentEtagSchema.parse(input.etag), ...options },
+      staffContentAssetUploadSchema,
     )
   }
 
@@ -550,6 +613,18 @@ export function useContentDiagnosticsQuery(
   return useQuery({
     queryKey: contentQueryKeys.diagnostics(revisionId),
     queryFn: ({ signal }) => client.diagnostics(revisionId, { signal }),
+    enabled: options.enabled ?? true,
+  })
+}
+
+export function useContentRevisionAssetsQuery(
+  client: Pick<ContentApiClient, 'revisionAssets'>,
+  revisionId: string,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: contentQueryKeys.assets(revisionId),
+    queryFn: ({ signal }) => client.revisionAssets(revisionId, { signal }),
     enabled: options.enabled ?? true,
   })
 }

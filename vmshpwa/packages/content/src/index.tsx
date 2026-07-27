@@ -14,6 +14,7 @@ export {
   ContentProtocolError,
   createContentApiClient,
   useContentDiagnosticsQuery,
+  useContentRevisionAssetsQuery,
   useContentPreviewQuery,
   usePublishedContentQuery,
   useStaffContentHistoryQuery,
@@ -26,6 +27,7 @@ export type {
   PublishedContentInput,
   PublishContentInput,
   UploadContentSourceInput,
+  UploadContentRevisionAssetInput,
   VersionedContentResource,
 } from './content-client'
 export { sanitizeSemanticHtml, semanticHtmlTags } from './sanitizer'

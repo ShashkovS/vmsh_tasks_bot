@@ -1,4 +1,4 @@
-import { AlertTriangle, FileWarning, Upload } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, FileWarning, LoaderCircle, Upload } from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -8,7 +8,14 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Input,
+  Label,
   Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -295,53 +302,185 @@ export function LatexUpload({ files, sourcePreview, onRetry, className }: LatexU
 export interface MissingAsset {
   id: string
   ref: string
-  candidates?: { id: string; label: string }[]
+  sourceKind: 'figure' | 'tikz'
+  acceptedUploadKinds: Array<'raster' | 'svg' | 'tikz'>
+  selectedUploadKind: 'raster' | 'svg' | 'tikz'
+  status: 'missing' | 'uploading' | 'attached' | 'reused' | 'error'
+  fileName?: string
+  assetHref?: string
+  errorMessage?: string
 }
 
 export interface MissingAssetsFlowProps {
   assets: MissingAsset[]
-  onReuse?: (assetId: string, candidateId: string) => void
-  onUpload?: (assetId: string) => void
+  disabled?: boolean
+  onUploadKindChange?: (assetId: string, kind: 'raster' | 'svg' | 'tikz') => void
+  onFileSelect?: (assetId: string, file: File | undefined) => void
+  onResolve?: (assetId: string) => void
   className?: string
+}
+
+const assetUploadKindLabels = {
+  raster: 'Фото или растровое изображение',
+  svg: 'Готовый SVG',
+  tikz: 'Собрать TikZ из LaTeX',
+} as const
+
+function assetFileAccept(kind: 'raster' | 'svg' | 'tikz'): string | undefined {
+  if (kind === 'svg') return '.svg,image/svg+xml'
+  if (kind === 'raster') {
+    return '.png,.jpg,.jpeg,.webp,.heic,.heif,image/png,image/jpeg,image/webp,image/heic,image/heif'
+  }
+  return undefined
 }
 
 export function MissingAssetsFlow({
   assets,
-  onReuse,
-  onUpload,
+  disabled = false,
+  onUploadKindChange,
+  onFileSelect,
+  onResolve,
   className,
 }: MissingAssetsFlowProps) {
+  const unresolvedCount = assets.filter(
+    (asset) => asset.status !== 'attached' && asset.status !== 'reused',
+  ).length
+
   return (
     <div className={cn('space-y-3', className)}>
-      <Alert role="alert" tone="danger">
-        <AlertTriangle aria-hidden="true" />
+      <Alert role="status" tone={unresolvedCount === 0 ? 'success' : 'danger'}>
+        {unresolvedCount === 0 ? (
+          <CheckCircle2 aria-hidden="true" />
+        ) : (
+          <AlertTriangle aria-hidden="true" />
+        )}
         <AlertContent>
-          <AlertTitle>Не хватает {assets.length} ресурс(ов)</AlertTitle>
-          <AlertDescription>Публикация недоступна, пока все ссылки не разрешены.</AlertDescription>
+          <AlertTitle>
+            {unresolvedCount === 0
+              ? 'Все ресурсы прикреплены'
+              : `Не хватает ресурсов: ${unresolvedCount}`}
+          </AlertTitle>
+          <AlertDescription>
+            {unresolvedCount === 0
+              ? 'Можно повторить сборку материала.'
+              : 'Публикация недоступна, пока все ссылки не разрешены.'}
+          </AlertDescription>
         </AlertContent>
       </Alert>
       <ul className="space-y-2">
-        {assets.map((asset) => (
-          <li className="space-y-1.5 rounded-md border border-border bg-surface p-2" key={asset.id}>
-            <p className="font-mono text-small text-foreground">{asset.ref}</p>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {(asset.candidates ?? []).map((candidate) => (
-                <Button
-                  key={candidate.id}
-                  onClick={() => onReuse?.(asset.id, candidate.id)}
-                  size="xs"
-                  variant="outline"
-                >
-                  Взять: {candidate.label}
-                </Button>
-              ))}
-              <Button onClick={() => onUpload?.(asset.id)} size="xs" variant="ghost">
-                <Upload aria-hidden="true" />
-                Загрузить
-              </Button>
-            </div>
-          </li>
-        ))}
+        {assets.map((asset, index) => {
+          const inputId = `missing-asset-file-${index}`
+          const selectId = `missing-asset-kind-${index}`
+          const resolved = asset.status === 'attached' || asset.status === 'reused'
+          const needsFile = asset.selectedUploadKind !== 'tikz'
+          return (
+            <li className="space-y-2 rounded-md border border-border bg-surface p-3" key={asset.id}>
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="break-all font-mono text-small text-foreground">{asset.ref}</p>
+                  <p className="text-caption text-muted-foreground">
+                    {asset.sourceKind === 'tikz' ? 'TikZ-фрагмент' : 'Рисунок из LaTeX'}
+                  </p>
+                </div>
+                {asset.status === 'uploading' ? (
+                  <Badge variant="info">
+                    <LoaderCircle aria-hidden="true" className="animate-spin" /> Обрабатываем
+                  </Badge>
+                ) : asset.status === 'reused' ? (
+                  <Badge variant="success">Переиспользован</Badge>
+                ) : asset.status === 'attached' ? (
+                  <Badge variant="success">Прикреплён</Badge>
+                ) : asset.status === 'error' ? (
+                  <Badge variant="danger">Ошибка</Badge>
+                ) : (
+                  <Badge variant="warning">Нужен ресурс</Badge>
+                )}
+              </div>
+
+              {resolved ? (
+                asset.assetHref ? (
+                  <a
+                    className="inline-flex text-small font-medium text-link underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                    href={asset.assetHref}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Открыть прикреплённый ресурс
+                  </a>
+                ) : null
+              ) : (
+                <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(10rem,0.7fr)_minmax(12rem,1fr)_auto] sm:items-end">
+                  <div className="min-w-0 space-y-1">
+                    <Label htmlFor={selectId}>Способ подготовки</Label>
+                    <Select
+                      disabled={disabled || asset.status === 'uploading'}
+                      onValueChange={(value) => value && onUploadKindChange?.(asset.id, value)}
+                      value={asset.selectedUploadKind}
+                    >
+                      <SelectTrigger className="w-full" id={selectId} size="sm">
+                        <SelectValue>{assetUploadKindLabels[asset.selectedUploadKind]}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {asset.acceptedUploadKinds.map((kind) => (
+                          <SelectItem key={kind} value={kind}>
+                            {assetUploadKindLabels[kind]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {needsFile ? (
+                    <div className="min-w-0 space-y-1">
+                      <Label htmlFor={inputId}>Файл</Label>
+                      <Input
+                        accept={assetFileAccept(asset.selectedUploadKind)}
+                        disabled={disabled || asset.status === 'uploading'}
+                        id={inputId}
+                        onChange={(event) => onFileSelect?.(asset.id, event.target.files?.[0])}
+                        type="file"
+                      />
+                      {asset.fileName ? (
+                        <p className="truncate text-caption text-muted-foreground">
+                          Выбран: {asset.fileName}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="text-caption text-muted-foreground">
+                      Сервер возьмёт точный TikZ-блок из этой revision.
+                    </p>
+                  )}
+                  <Button
+                    disabled={
+                      disabled ||
+                      asset.status === 'uploading' ||
+                      (needsFile && asset.fileName === undefined)
+                    }
+                    onClick={() => onResolve?.(asset.id)}
+                    size="sm"
+                    variant={asset.status === 'error' ? 'outline' : 'default'}
+                  >
+                    {asset.status === 'uploading' ? (
+                      <LoaderCircle aria-hidden="true" className="animate-spin" />
+                    ) : (
+                      <Upload aria-hidden="true" />
+                    )}
+                    {asset.status === 'error'
+                      ? 'Повторить'
+                      : asset.selectedUploadKind === 'tikz'
+                        ? 'Собрать SVG'
+                        : 'Загрузить'}
+                  </Button>
+                </div>
+              )}
+              {asset.errorMessage ? (
+                <p className="text-caption text-status-error" role="alert">
+                  {asset.errorMessage}
+                </p>
+              ) : null}
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

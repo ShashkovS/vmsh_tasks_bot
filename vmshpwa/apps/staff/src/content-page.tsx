@@ -12,6 +12,7 @@ import {
 } from '@vmsh/content'
 import {
   ApiResponseError,
+  contentAssetsMissingDetailsSchema,
   localPublicationTimeSchema,
   staffContentRevisionSchema,
   type BusinessTimezone,
@@ -42,6 +43,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@vmsh/ui'
+
+import { RevisionAssetsRecovery } from './revision-assets-recovery'
 
 const materialOrder: ContentMaterialKind[] = ['condition', 'hint', 'solution']
 const materialLabels: Record<ContentMaterialKind, string> = {
@@ -317,8 +320,17 @@ function MaterialWorkflowCard({
       const compiled = await client.compileRevision(revision.data.revisionId, revision.etag)
       await inspectCompiledRevision(compiled.data.revisionId)
     } catch (error) {
-      const invalidRevision =
-        error instanceof ApiResponseError
+      const missingAssets =
+        error instanceof ApiResponseError && error.code === 'content_assets_missing'
+          ? contentAssetsMissingDetailsSchema.safeParse(error.details)
+          : undefined
+      const invalidRevision = missingAssets?.success
+        ? staffContentRevisionSchema.safeParse({
+            ...revision.data,
+            status: 'uploaded',
+            missingAssets: missingAssets.data.missingAssets,
+          })
+        : error instanceof ApiResponseError
           ? staffContentRevisionSchema.safeParse(error.details)
           : undefined
       if (invalidRevision?.success) {
@@ -327,7 +339,7 @@ function MaterialWorkflowCard({
           phase: 'invalid',
           invalidRevision: invalidRevision.data,
           previewLoading: false,
-          errorMessage: errorMessage(error),
+          errorMessage: missingAssets?.success ? undefined : errorMessage(error),
         }))
       } else {
         patchState({ phase: 'error' })
@@ -651,16 +663,12 @@ function MaterialWorkflowCard({
         ) : null}
 
         {visibleRevision?.missingAssets.length ? (
-          <Alert role="alert" tone="danger">
-            <AlertTriangle aria-hidden="true" />
-            <AlertContent>
-              <AlertTitle>Не хватает ресурсов</AlertTitle>
-              <AlertDescription>
-                {visibleRevision.missingAssets.join(', ')}. Публикация закрыта; загрузка ресурсов
-                появится после отдельного server endpoint.
-              </AlertDescription>
-            </AlertContent>
-          </Alert>
+          <RevisionAssetsRecovery
+            client={client}
+            key={visibleRevision.revisionId}
+            onCompile={compileStoredRevision}
+            revisionId={visibleRevision.revisionId}
+          />
         ) : null}
 
         {state.errorMessage ? (

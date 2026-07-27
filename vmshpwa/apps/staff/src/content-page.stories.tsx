@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
 import fixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
-import type { ContentApiClient } from '@vmsh/content'
+import { ContentNetworkError, type ContentApiClient } from '@vmsh/content'
 import {
   ApiResponseError,
   contentEtagSchema,
@@ -14,6 +14,7 @@ import {
 } from '@vmsh/contracts'
 
 import { StaffContentWorkspace } from './content-page'
+import { RevisionAssetsRecovery } from './revision-assets-recovery'
 
 const revisionId = fixture.document.revisionId
 const groupLessonId = 'group-lesson-41-n'
@@ -83,6 +84,22 @@ function storyClient(overrides: Partial<ContentApiClient> = {}): ContentApiClien
         data: readyRevision,
         etag: contentEtagSchema.parse(`"${revisionId}:v2"`),
       })
+    },
+    revisionAssets(targetRevisionId) {
+      return Promise.resolve({
+        data: {
+          revisionId: targetRevisionId,
+          status: 'ready',
+          version: 2,
+          missingAssets: [],
+          assets: [],
+          requestId: 'storybook-assets',
+        },
+        etag: contentEtagSchema.parse(`"${targetRevisionId}:v2"`),
+      })
+    },
+    uploadRevisionAsset() {
+      return Promise.reject(new Error('В этом Storybook-сценарии нет недостающих ресурсов'))
     },
     preview(_revisionId, kind) {
       return Promise.resolve(
@@ -259,6 +276,40 @@ function revisionHistoryScenario(): StaffContentHistory {
   })
 }
 
+function missingAssetHistory(): StaffContentHistory {
+  const missingRevision = {
+    ...readyRevision,
+    status: 'uploaded' as const,
+    version: 1,
+    compileAttempt: 0,
+    missingAssets: ['figures/rook.png'],
+    etag: contentEtagSchema.parse(`"${revisionId}:v1"`),
+  }
+  return staffContentHistorySchema.parse({
+    groupLessonId,
+    courseId: 'course-math-5-7',
+    groupId: 'group-beginner',
+    businessTimezone: 'Europe/Moscow',
+    materials: [
+      {
+        kind: 'condition',
+        revisions: [missingRevision],
+        currentPublished: null,
+        currentScheduled: null,
+        publicationHistory: [],
+      },
+      ...(['hint', 'solution'] as const).map((kind) => ({
+        kind,
+        revisions: [],
+        currentPublished: null,
+        currentScheduled: null,
+        publicationHistory: [],
+      })),
+    ],
+    requestId: 'history-missing-asset',
+  })
+}
+
 function rollbackHistory(): StaffContentHistory {
   const revisions = [1, 2, 3].map((revisionNumber) => {
     const revisionPublicId = `revision-ready-${revisionNumber}`
@@ -368,6 +419,175 @@ export const ResumeInterruptedRevision: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Продолжить проверку revision 1' }))
     await expect(await canvas.findByRole('heading', { name: 'PWA' })).toBeVisible()
     await expect(canvas.getByRole('heading', { name: 'Telegram Rich HTML' })).toBeVisible()
+  },
+}
+
+export const RecoverMissingAsset: Story = {
+  name: 'Missing asset → reuse → recompile',
+  render: () => {
+    let compileCall = 0
+    let assetAttached = false
+    let compiledReady = false
+    const missingRevision = staffContentRevisionSchema.parse({
+      ...readyRevision,
+      status: 'uploaded',
+      version: 2,
+      compileAttempt: 1,
+      missingAssets: ['figures/rook.png'],
+      requestId: 'storybook-missing-asset',
+    })
+    const attachedAsset = {
+      assetId: 'asset-rook',
+      contentSha256: 'b'.repeat(64),
+      src: '/pwa-content-assets/asset-rook',
+      mediaType: 'image/webp' as const,
+      width: 1280,
+      height: 720,
+    }
+    const client = storyClient({
+      history: () => Promise.resolve(missingAssetHistory()),
+      compileRevision() {
+        compileCall += 1
+        if (compileCall === 1) {
+          return Promise.reject(
+            new ApiResponseError(422, {
+              error: {
+                code: 'content_assets_missing',
+                message: 'Прикрепите недостающие ресурсы',
+                requestId: 'storybook-compile-missing',
+                details: { missingAssets: ['figures/rook.png'] },
+              },
+            }),
+          )
+        }
+        compiledReady = true
+        return Promise.resolve({
+          data: { ...readyRevision, version: 4 },
+          etag: contentEtagSchema.parse(`"${revisionId}:v4"`),
+        })
+      },
+      diagnostics() {
+        return Promise.resolve({
+          data: compiledReady
+            ? { ...readyRevision, version: 4 }
+            : assetAttached
+              ? { ...missingRevision, version: 3, missingAssets: [] }
+              : missingRevision,
+          etag: contentEtagSchema.parse(
+            `"${revisionId}:v${compiledReady ? 4 : assetAttached ? 3 : 2}"`,
+          ),
+        })
+      },
+      revisionAssets() {
+        return Promise.resolve({
+          data: {
+            revisionId,
+            status: 'uploaded',
+            version: assetAttached ? 3 : 2,
+            missingAssets: assetAttached ? [] : ['figures/rook.png'],
+            assets: [
+              {
+                logicalName: 'figures/rook.png',
+                sourceKind: 'figure',
+                status: assetAttached ? ('attached' as const) : ('missing' as const),
+                acceptedUploadKinds: ['raster', 'svg'],
+                asset: assetAttached ? attachedAsset : null,
+              },
+            ],
+            requestId: 'storybook-revision-assets',
+          },
+          etag: contentEtagSchema.parse(`"${revisionId}:v${assetAttached ? 3 : 2}"`),
+        })
+      },
+      uploadRevisionAsset() {
+        assetAttached = true
+        return Promise.resolve({
+          data: {
+            revisionId,
+            status: 'uploaded',
+            version: 3,
+            logicalName: 'figures/rook.png',
+            sourceKind: 'figure',
+            asset: attachedAsset,
+            reused: true,
+            requestId: 'storybook-asset-reused',
+          },
+          etag: contentEtagSchema.parse(`"${revisionId}:v3"`),
+        })
+      },
+    })
+    return <StaffContentWorkspace client={client} groupLessonId={groupLessonId} />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(
+      await canvas.findByRole('button', { name: 'Продолжить проверку revision 1' }),
+    )
+    await expect(await canvas.findByText('figures/rook.png')).toBeVisible()
+    await userEvent.upload(
+      canvas.getByLabelText('Файл'),
+      new File(['synthetic image'], 'rook.png', { type: 'image/png' }),
+    )
+    await expect(canvas.getByText('Выбран: rook.png')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Загрузить' }))
+    await expect(await canvas.findByText('Переиспользован')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Повторить сборку материала' }))
+    await expect(await canvas.findByRole('heading', { name: 'PWA' })).toBeVisible()
+    await expect(canvas.queryByText('figures/rook.png')).not.toBeInTheDocument()
+  },
+}
+
+export const AssetUploadErrorKeepsSelection: Story = {
+  name: 'Asset upload error → keep file for retry',
+  render: () => {
+    const client = storyClient({
+      revisionAssets() {
+        return Promise.resolve({
+          data: {
+            revisionId,
+            status: 'uploaded',
+            version: 2,
+            missingAssets: ['figures/rook.png'],
+            assets: [
+              {
+                logicalName: 'figures/rook.png',
+                sourceKind: 'figure',
+                status: 'missing',
+                acceptedUploadKinds: ['raster'],
+                asset: null,
+              },
+            ],
+            requestId: 'storybook-revision-assets-error',
+          },
+          etag: contentEtagSchema.parse(`"${revisionId}:v2"`),
+        })
+      },
+      uploadRevisionAsset() {
+        return Promise.reject(new ContentNetworkError({ cause: new TypeError('socket closed') }))
+      },
+    })
+    return (
+      <div className="max-w-2xl p-4">
+        <RevisionAssetsRecovery
+          client={client}
+          onCompile={() => Promise.resolve()}
+          revisionId={revisionId}
+        />
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.upload(
+      await canvas.findByLabelText('Файл'),
+      new File(['synthetic image'], 'rook.png', { type: 'image/png' }),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Загрузить' }))
+    await expect(
+      await canvas.findByText('Нет связи с сервером. Проверьте подключение и повторите действие.'),
+    ).toBeVisible()
+    await expect(canvas.getByText('Выбран: rook.png')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Повторить' })).toBeEnabled()
   },
 }
 

@@ -8,6 +8,11 @@ import { cleanupOutdatedCaches, matchPrecache, precacheAndRoute } from 'workbox-
 import { NavigationRoute, registerRoute } from 'workbox-routing'
 import { CacheFirst } from 'workbox-strategies'
 
+import {
+  immutableContentAssetNavigationPattern,
+  shouldCacheRecentMediaRequest,
+} from '@vmsh/offline'
+
 declare let self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision?: string }>
 }
@@ -17,6 +22,7 @@ const twoWeeksInSeconds = 14 * 24 * 60 * 60
 const legacyUnscopedPrecacheName = 'vmsh-179-family-precache-v1'
 const legacyRecentMediaCacheName = 'vmsh-family-recent-media-v1'
 const reservedNavigationPaths = [
+  immutableContentAssetNavigationPattern,
   /^\/family\/(?:api|ws|assets|media)(?:\/|$)/,
   /^\/family\/(?:sw\.js|manifest\.webmanifest|icon[^/]*)$/,
   /^\/family\/.*\.(?:avif|css|csv|eot|gif|html|ico|jpe?g|js|json|map|mjs|otf|pdf|png|svg|ttf|txt|wasm|webmanifest|webp|woff2?|xml|zip)$/,
@@ -63,11 +69,14 @@ registerRoute(
 )
 registerRoute(
   ({ request, url }) => {
-    if (request.method !== 'GET' || request.destination !== 'image') return false
-    return (
-      url.pathname.startsWith('/family/media/generated/') ||
-      (Boolean(publicMediaOrigin) && url.origin === publicMediaOrigin)
-    )
+    return shouldCacheRecentMediaRequest({
+      method: request.method,
+      destination: request.destination,
+      url,
+      applicationOrigin: self.location.origin,
+      audienceGeneratedMediaPrefix: '/family/media/generated/',
+      publicMediaOrigin,
+    })
   },
   new CacheFirst({
     cacheName: 'vmsh-179-family-recent-media-v1',

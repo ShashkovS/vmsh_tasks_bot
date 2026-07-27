@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { publicIdSchema } from './auth'
-import { webContentDocumentSchema } from './content'
+import { webAssetUrlSchema, webContentDocumentSchema } from './content'
 
 /**
  * Phase-2 HTTP boundary for LaTeX revisions and published browser content.
@@ -233,6 +233,151 @@ export const staffContentRevisionSchema = z
   .strict()
 export type StaffContentRevision = z.infer<typeof staffContentRevisionSchema>
 
+export const contentAssetsMissingDetailsSchema = z
+  .object({
+    missingAssets: z.array(z.string().trim().min(1).max(2_000)).min(1).max(10_000),
+  })
+  .strict()
+export type ContentAssetsMissingDetails = z.infer<typeof contentAssetsMissingDetailsSchema>
+
+export const contentAssetUploadKindSchema = z.enum(['raster', 'svg', 'tikz'])
+export type ContentAssetUploadKind = z.infer<typeof contentAssetUploadKindSchema>
+
+export const contentAssetSourceKindSchema = z.enum(['figure', 'tikz'])
+export type ContentAssetSourceKind = z.infer<typeof contentAssetSourceKindSchema>
+
+export const contentRevisionAssetSchema = z
+  .object({
+    assetId: publicIdSchema,
+    contentSha256: z.string().regex(/^[0-9a-f]{64}$/),
+    src: webAssetUrlSchema,
+    mediaType: z.enum(['image/svg+xml', 'image/webp']),
+    width: z.number().int().positive().max(20_000),
+    height: z.number().int().positive().max(20_000),
+  })
+  .strict()
+export type ContentRevisionAsset = z.infer<typeof contentRevisionAssetSchema>
+
+export const contentRevisionAssetSlotSchema = z
+  .object({
+    logicalName: z.string().trim().min(1).max(2_000),
+    sourceKind: contentAssetSourceKindSchema,
+    status: z.enum(['missing', 'attached']),
+    acceptedUploadKinds: z.array(contentAssetUploadKindSchema).min(1).max(3),
+    asset: contentRevisionAssetSchema.nullable(),
+  })
+  .strict()
+  .superRefine((slot, context) => {
+    if (new Set(slot.acceptedUploadKinds).size !== slot.acceptedUploadKinds.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Accepted upload kinds must be unique',
+        path: ['acceptedUploadKinds'],
+      })
+    }
+    if (
+      slot.sourceKind === 'tikz' &&
+      (slot.acceptedUploadKinds.length !== 1 || slot.acceptedUploadKinds[0] !== 'tikz')
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'TikZ slots accept only server-side TikZ generation',
+        path: ['acceptedUploadKinds'],
+      })
+    }
+    if (
+      slot.sourceKind === 'figure' &&
+      (slot.acceptedUploadKinds.length !== 2 ||
+        !slot.acceptedUploadKinds.includes('raster') ||
+        !slot.acceptedUploadKinds.includes('svg'))
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Figure slots accept exactly raster and SVG uploads',
+        path: ['acceptedUploadKinds'],
+      })
+    }
+    if (
+      slot.sourceKind === 'tikz' &&
+      slot.asset !== null &&
+      slot.asset.mediaType !== 'image/svg+xml'
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Attached TikZ derivatives must be SVG',
+        path: ['asset', 'mediaType'],
+      })
+    }
+    if ((slot.status === 'missing') !== (slot.asset === null)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Missing asset slots must have null asset and attached slots must carry an asset',
+        path: ['asset'],
+      })
+    }
+  })
+export type ContentRevisionAssetSlot = z.infer<typeof contentRevisionAssetSlotSchema>
+
+export const staffContentRevisionAssetsSchema = z
+  .object({
+    revisionId: publicIdSchema,
+    status: contentRevisionStatusSchema,
+    version: z.number().int().positive(),
+    missingAssets: z.array(z.string().trim().min(1).max(2_000)).max(10_000),
+    assets: z.array(contentRevisionAssetSlotSchema).max(10_000),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((response, context) => {
+    const logicalNames = response.assets.map((asset) => asset.logicalName)
+    if (new Set(logicalNames).size !== logicalNames.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Revision asset logical names must be unique',
+        path: ['assets'],
+      })
+    }
+    const missingFromSlots = response.assets
+      .filter((asset) => asset.status === 'missing')
+      .map((asset) => asset.logicalName)
+      .sort()
+    const declaredMissing = [...response.missingAssets].sort()
+    if (
+      missingFromSlots.length !== declaredMissing.length ||
+      missingFromSlots.some((logicalName, index) => logicalName !== declaredMissing[index])
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'missingAssets must exactly match missing asset slots',
+        path: ['missingAssets'],
+      })
+    }
+  })
+export type StaffContentRevisionAssets = z.infer<typeof staffContentRevisionAssetsSchema>
+
+export const staffContentAssetUploadSchema = z
+  .object({
+    revisionId: publicIdSchema,
+    status: contentRevisionStatusSchema,
+    version: z.number().int().positive(),
+    logicalName: z.string().trim().min(1).max(2_000),
+    sourceKind: contentAssetSourceKindSchema,
+    asset: contentRevisionAssetSchema,
+    reused: z.boolean(),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((response, context) => {
+    if (response.sourceKind === 'tikz' && response.asset.mediaType !== 'image/svg+xml') {
+      context.addIssue({
+        code: 'custom',
+        message: 'Uploaded TikZ derivatives must be SVG',
+        path: ['asset', 'mediaType'],
+      })
+    }
+  })
+export type StaffContentAssetUpload = z.infer<typeof staffContentAssetUploadSchema>
+
 export const staffWebContentPreviewSchema = z
   .object({
     revisionId: publicIdSchema,
@@ -436,6 +581,7 @@ export const contentQueryKeys = {
     studentPublicId?: string,
   ) => ['content', 'published', audience, groupLessonId, kind, studentPublicId ?? 'self'] as const,
   diagnostics: (revisionId: string) => ['content', 'diagnostics', revisionId] as const,
+  assets: (revisionId: string) => ['content', 'assets', revisionId] as const,
   history: (groupLessonId: string) => ['content', 'history', groupLessonId] as const,
   preview: (revisionId: string, kind: 'web' | 'telegram') =>
     ['content', 'preview', revisionId, kind] as const,

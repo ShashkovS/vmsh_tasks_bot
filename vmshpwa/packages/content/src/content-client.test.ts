@@ -97,6 +97,129 @@ describe('Content API client', () => {
     expect(requests.every((request) => request.init?.credentials === 'include')).toBe(true)
   })
 
+  it('lists exact revision assets and uploads files under the latest revision ETag', async () => {
+    const requests: Array<{ url: string; init: RequestInit | undefined }> = []
+    const asset = {
+      assetId: 'asset-rook',
+      contentSha256: 'b'.repeat(64),
+      src: '/pwa-content-assets/asset-rook',
+      mediaType: 'image/webp',
+      width: 1280,
+      height: 720,
+    } as const
+    const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push({ url: requestUrl(input), init })
+      return Promise.resolve(
+        requests.length === 1
+          ? jsonResponse(
+              {
+                revisionId: revision.revisionId,
+                status: 'uploaded',
+                version: 2,
+                missingAssets: ['figures/rook.png'],
+                assets: [
+                  {
+                    logicalName: 'figures/rook.png',
+                    sourceKind: 'figure',
+                    status: 'missing',
+                    acceptedUploadKinds: ['raster', 'svg'],
+                    asset: null,
+                  },
+                ],
+                requestId: 'asset-list-test',
+              },
+              { etag: `"${revision.revisionId}:v2"` },
+            )
+          : jsonResponse(
+              {
+                revisionId: revision.revisionId,
+                status: 'uploaded',
+                version: 3,
+                logicalName: 'figures/rook.png',
+                sourceKind: 'figure',
+                asset,
+                reused: false,
+                requestId: 'asset-upload-test',
+              },
+              { status: 201, etag: `"${revision.revisionId}:v3"` },
+            ),
+      )
+    }) as typeof fetch
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    const listed = await client.revisionAssets(revision.revisionId)
+    const file = new File(['image'], 'rook.png', { type: 'image/png' })
+    await client.uploadRevisionAsset({
+      revisionId: revision.revisionId,
+      etag: listed.etag,
+      logicalName: 'figures/rook.png',
+      kind: 'raster',
+      asset: file,
+    })
+
+    expect(requests[0]?.url).toBe(
+      `/staff/api/v1/content/revisions/${encodeURIComponent(revision.revisionId)}/assets`,
+    )
+    expect(requests[1]?.url).toBe(requests[0]?.url)
+    expect(new Headers(requests[1]?.init?.headers).get('If-Match')).toBe(
+      `"${revision.revisionId}:v2"`,
+    )
+    const form = requests[1]?.init?.body
+    expect(form).toBeInstanceOf(FormData)
+    expect((form as FormData).get('logicalName')).toBe('figures/rook.png')
+    expect((form as FormData).get('kind')).toBe('raster')
+    expect((form as FormData).get('asset')).toBeInstanceOf(File)
+  })
+
+  it('generates TikZ from the stored revision without sending a browser file', async () => {
+    let body: FormData | undefined
+    const fetchImplementation = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      body = init?.body as FormData
+      return Promise.resolve(
+        jsonResponse(
+          {
+            revisionId: revision.revisionId,
+            status: 'uploaded',
+            version: 4,
+            logicalName: 'tikz/diagram-1',
+            sourceKind: 'tikz',
+            asset: {
+              assetId: 'asset-diagram-1',
+              contentSha256: 'c'.repeat(64),
+              src: 'https://assets.example.test/content/diagram-1.svg',
+              mediaType: 'image/svg+xml',
+              width: 640,
+              height: 360,
+            },
+            reused: true,
+            requestId: 'tikz-upload-test',
+          },
+          { etag: `"${revision.revisionId}:v4"` },
+        ),
+      )
+    }) as typeof fetch
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    await client.uploadRevisionAsset({
+      revisionId: revision.revisionId,
+      etag: contentEtagSchema.parse(`"${revision.revisionId}:v3"`),
+      logicalName: 'tikz/diagram-1',
+      kind: 'tikz',
+    })
+
+    expect(body?.get('logicalName')).toBe('tikz/diagram-1')
+    expect(body?.get('kind')).toBe('tikz')
+    expect(body?.has('asset')).toBe(false)
+    await expect(
+      client.uploadRevisionAsset({
+        revisionId: revision.revisionId,
+        etag: contentEtagSchema.parse(`"${revision.revisionId}:v3"`),
+        logicalName: 'figures/rook.svg',
+        kind: 'svg',
+      }),
+    ).rejects.toThrow('require a file')
+  })
+
   it('publishes a fresh slot with the explicit none precondition', async () => {
     let requestBody: unknown
     let ifMatch: string | null = null

@@ -66,12 +66,14 @@ export default defineConfig(({ command, mode }) => {
     ],
     server: {
       proxy: {
+        '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
         '/student/api': { target: apiOrigin, changeOrigin: false },
         '/student/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
     },
     preview: {
       proxy: {
+        '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
         '/student/api': { target: apiOrigin, changeOrigin: false },
         '/student/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },

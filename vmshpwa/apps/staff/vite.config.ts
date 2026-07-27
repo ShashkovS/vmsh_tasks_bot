@@ -15,12 +15,14 @@ export default defineConfig(({ command, mode }) => {
     plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react(), tailwindcss()],
     server: {
       proxy: {
+        '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
         '/staff/api': { target: apiOrigin, changeOrigin: false },
         '/staff/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
     },
     preview: {
       proxy: {
+        '/pwa-content-assets': { target: apiOrigin, changeOrigin: false },
         '/staff/api': { target: apiOrigin, changeOrigin: false },
         '/staff/ws': { target: apiOrigin, changeOrigin: false, ws: true },
       },
