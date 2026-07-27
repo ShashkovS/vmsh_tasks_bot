@@ -3342,6 +3342,23 @@ class PwaContentRepository:
 
         return await self._factory.run_read_async(read)
 
+    async def get_media_asset_by_id(self, asset_id: int) -> MediaAssetRecord:
+        """Resolve an internal derivative attachment without exposing its ID."""
+
+        if asset_id < 1:
+            raise ContentInvariantError("media asset ID must be positive")
+
+        def read(connection):
+            row = connection.execute(
+                "SELECT * FROM media_assets WHERE id = ? AND deleted_at IS NULL",
+                (asset_id,),
+            ).fetchone()
+            if row is None:
+                raise ContentNotFound("media asset does not exist")
+            return _media_asset(row)
+
+        return await self._factory.run_read_async(read)
+
     async def list_revision_assets(
         self, *, revision_id: int
     ) -> tuple[ContentRevisionAssetRecord, ...]:

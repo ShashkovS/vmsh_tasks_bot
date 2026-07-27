@@ -12,7 +12,7 @@
 | API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
 | Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
 | Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
-| Этап 2              | Phase 2A–2E backend implemented | Matching/metadata repository+API проверены; открыты их Staff UI/Storybook, PDF preview, bulk upload, content E2E и owner visual gate                              |
+| Этап 2              | Phase 2A–2E + PDF implemented   | Matching/metadata Staff workflow и persisted PDF проверены; открыты bulk upload, content E2E, production parity/backfill и owner visual gate                    |
 | Этапы 3–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
@@ -216,9 +216,14 @@
   `localStorage`. Targeted Storybook — **14 PASS**, Staff production build —
   PASS; snapshots не обновлялись. Proof:
   [`phase2-problem-review-ui.md`](../../../pwa_tests/reports/phase2-problem-review-ui.md).
-- Phase 2 всё ещё открыт для owner visual approval matching/metadata stories,
-  Staff-openable generated
-  PDF, bulk upload, production-build content E2E и owner visual approval.
+- Persisted-PDF increment добавляет admin-only descriptor/stream, проверяет
+  derivative metadata и exact stored bytes, а в Staff объединяет
+  PWA/Telegram/PDF preview без добавления print workflow. Python aiohttp —
+  **26 PASS**, frontend unit — **26 PASS**, targeted Storybook — **11 PASS**,
+  строгие проверки и Staff production build — PASS. Proof:
+  [`phase2-content-pdf-http.md`](../../../pwa_tests/reports/phase2-content-pdf-http.md).
+- Phase 2 всё ещё открыт для bulk upload, production-build content E2E,
+  production owner-reviewed parity/backfill и owner visual approval.
   Snapshots не обновлялись. Ранее закрытые HTTP/frontend proof:
   [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md),
   [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).

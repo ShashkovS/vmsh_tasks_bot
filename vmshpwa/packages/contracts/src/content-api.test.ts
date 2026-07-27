@@ -81,6 +81,31 @@ describe('Phase-2 content HTTP contracts', () => {
     ).toThrow()
   })
 
+  it('accepts only bounded same-origin Staff PDF preview descriptors', () => {
+    const preview = staffContentPreviewSchema.parse({
+      revisionId: document.revisionId,
+      kind: 'pdf',
+      src: `/staff/api/v1/content/revisions/${document.revisionId}/pdf`,
+      contentSha256: 'd'.repeat(64),
+      byteSize: 42_179,
+      rendererVersion: 'vmsh-content-pdf/1',
+    })
+
+    expect(preview.kind).toBe('pdf')
+    expect(() =>
+      staffContentPreviewSchema.parse({
+        ...preview,
+        src: 'https://untrusted.example.test/condition.pdf',
+      }),
+    ).toThrow()
+    expect(() =>
+      staffContentPreviewSchema.parse({
+        ...preview,
+        byteSize: 65 * 1024 * 1024,
+      }),
+    ).toThrow()
+  })
+
   it('rejects preview and published envelopes whose revision or kind diverges', () => {
     expect(() =>
       staffContentPreviewSchema.parse({

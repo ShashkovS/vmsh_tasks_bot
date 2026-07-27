@@ -161,7 +161,7 @@ export interface ContentApiClient {
   ): Promise<VersionedContentResource<StaffContentAssetUpload>>
   preview(
     revisionId: string,
-    kind: 'web' | 'telegram',
+    kind: 'web' | 'telegram' | 'pdf',
     options?: ContentRequestOptions,
   ): Promise<StaffContentPreview>
   history(groupLessonId: string, options?: ContentRequestOptions): Promise<StaffContentHistory>
@@ -418,7 +418,7 @@ class BrowserContentApiClient implements ContentApiClient {
 
   async preview(
     revisionId: string,
-    kind: 'web' | 'telegram',
+    kind: 'web' | 'telegram' | 'pdf',
     options: ContentRequestOptions = {},
   ): Promise<StaffContentPreview> {
     this.#requireStaff()
@@ -790,7 +790,7 @@ export function useStaffContentHistoryQuery(
 export function useContentPreviewQuery(
   client: ContentApiClient,
   revisionId: string,
-  kind: 'web' | 'telegram',
+  kind: 'web' | 'telegram' | 'pdf',
   options: { enabled?: boolean } = {},
 ) {
   return useQuery({

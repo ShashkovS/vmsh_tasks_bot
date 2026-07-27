@@ -55,6 +55,8 @@ from helpers.pwa.content import (
     compile_latex,
 )
 from helpers.pwa.content.model import canonical_json
+from helpers.pwa.content.pdf import PDF_RENDERER_VERSION
+from helpers.pwa.content.pdf_service import PDF_STORAGE_NAMESPACE
 from helpers.pwa.content.scanner import normalize_asset_reference
 from helpers.object_storage import ObjectStorage, ObjectStorageOperationError
 from helpers.pwa.permissions import (
@@ -1261,6 +1263,28 @@ def _asset_descriptor_payload(
     }
 
 
+async def _pdf_derivative_asset(
+    repository: PwaContentRepository, context: ContentRevisionContext
+) -> tuple[ContentDerivativeRecord, MediaAssetRecord]:
+    derivative = await repository.get_active_derivative(
+        revision_id=context.revision.id,
+        kind="pdf",
+    )
+    if derivative.asset_id is None or derivative.content_text is not None:
+        raise ContentRepositoryError("stored PDF derivative is invalid")
+    asset = await repository.get_media_asset_by_id(derivative.asset_id)
+    if (
+        derivative.renderer_version != PDF_RENDERER_VERSION
+        or derivative.sha256 != asset.sha256
+        or asset.storage_namespace != PDF_STORAGE_NAMESPACE
+        or asset.media_type != "application/pdf"
+        or asset.width is not None
+        or asset.height is not None
+    ):
+        raise ContentRepositoryError("stored PDF derivative is invalid")
+    return derivative, asset
+
+
 def _asset_references(value: object) -> dict[str, dict[str, object]]:
     """Extract exact figure identities from a bounded compiler AST."""
 
@@ -1970,7 +1994,7 @@ async def put_metadata_grid(request: web.Request) -> web.Response:
 
 
 @content_routes.get(
-    "/staff/api/v1/content/revisions/{revision_id}/previews/{preview:web|telegram}"
+    "/staff/api/v1/content/revisions/{revision_id}/previews/{preview:web|telegram|pdf}"
 )
 @_translate_content_errors
 async def content_preview(request: web.Request) -> web.Response:
@@ -1984,6 +2008,21 @@ async def content_preview(request: web.Request) -> web.Response:
             message="Preview доступно только после успешной компиляции",
         )
     preview = request.match_info["preview"]
+    if preview == "pdf":
+        derivative, asset = await _pdf_derivative_asset(repository, context)
+        return web.json_response(
+            {
+                "revisionId": context.revision.public_id,
+                "kind": "pdf",
+                "src": (
+                    f"/staff/api/v1/content/revisions/"
+                    f"{context.revision.public_id}/pdf"
+                ),
+                "contentSha256": asset.sha256,
+                "byteSize": asset.byte_size,
+                "rendererVersion": derivative.renderer_version,
+            }
+        )
     derivative = await repository.get_active_derivative(
         revision_id=context.revision.id,
         kind="web_ast" if preview == "web" else "telegram_html",
@@ -2007,6 +2046,54 @@ async def content_preview(request: web.Request) -> web.Response:
             "html": derivative.content_text,
         }
     return web.json_response(payload)
+
+
+@content_routes.get("/staff/api/v1/content/revisions/{revision_id}/pdf")
+@_translate_content_errors
+async def content_pdf(request: web.Request) -> web.Response:
+    """Stream one immutable stored PDF after Staff scope authorization."""
+
+    repository = _repository(request)
+    context = await repository.get_revision_context(request.match_info["revision_id"])
+    _staff_actor(request, context.scope)
+    if context.revision.status is not RevisionStatus.READY:
+        raise ContentConflict("PDF is available only for a ready revision")
+    _derivative, asset = await _pdf_derivative_asset(repository, context)
+    storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
+    if storage is None:
+        raise PwaApiError(
+            status=503,
+            code="content_storage_unavailable",
+            message="Хранилище PDF временно недоступно",
+        )
+    try:
+        payload = await storage.get(asset.object_key)
+    except (FileNotFoundError, KeyError):
+        raise ContentNotFound("stored PDF object does not exist") from None
+    except ObjectStorageOperationError:
+        raise PwaApiError(
+            status=503,
+            code="content_storage_unavailable",
+            message="Хранилище PDF временно недоступно",
+        ) from None
+    if (
+        len(payload) != asset.byte_size
+        or hashlib.sha256(payload).hexdigest() != asset.sha256
+        or not payload.startswith(b"%PDF-")
+        or b"%%EOF" not in payload[-2048:]
+    ):
+        logger.error("Stored content PDF %s failed integrity check", asset.public_id)
+        raise ContentRepositoryError("stored PDF object is invalid")
+    filename = f"{context.source.kind.value}-revision-{context.revision.revision_number}.pdf"
+    return web.Response(
+        body=payload,
+        headers={
+            "Content-Type": "application/pdf",
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "ETag": f'"sha256-{asset.sha256}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 def _expected_slot(

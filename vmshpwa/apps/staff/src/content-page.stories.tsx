@@ -143,11 +143,20 @@ function storyClient(overrides: Partial<ContentApiClient> = {}): ContentApiClien
       return Promise.resolve(
         kind === 'web'
           ? { revisionId, kind: 'web', document: webDocument }
-          : {
-              revisionId,
-              kind: 'telegram',
-              html: '<h2>Занятие 41</h2><p>Решите задачи.</p><tg-math>n^2</tg-math>',
-            },
+          : kind === 'telegram'
+            ? {
+                revisionId,
+                kind: 'telegram',
+                html: '<h2>Занятие 41</h2><p>Решите задачи.</p><tg-math>n^2</tg-math>',
+              }
+            : {
+                revisionId,
+                kind: 'pdf',
+                src: `/staff/api/v1/content/revisions/${revisionId}/pdf`,
+                contentSha256: 'd'.repeat(64),
+                byteSize: 42_179,
+                rendererVersion: 'vmsh-content-pdf/1',
+              },
       )
     },
     history() {
@@ -424,6 +433,11 @@ export const UploadPreviewPublish: Story = {
     await expect(canvas.getByText(/3:1 · Команда вертикального отступа/)).toBeVisible()
     await expect(canvas.getByRole('heading', { name: 'PWA' })).toBeVisible()
     await expect(canvas.getByRole('heading', { name: 'Telegram Rich HTML' })).toBeVisible()
+    await expect(canvas.getByRole('heading', { name: 'PDF' })).toBeVisible()
+    await expect(canvas.getByRole('link', { name: 'Открыть PDF' })).toHaveAttribute(
+      'href',
+      `/staff/api/v1/content/revisions/${revisionId}/pdf`,
+    )
     await expect(canvas.getByText(/<tg-math>n\^2<\/tg-math>/)).toBeVisible()
     await userEvent.click(await canvas.findByRole('button', { name: 'Опубликовать сейчас' }))
     await expect(canvas.getByText(/Опубликовать условие revision 1 сейчас/)).toBeVisible()

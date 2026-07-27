@@ -281,6 +281,36 @@ describe('Content API client', () => {
     ).rejects.toThrow('require a file')
   })
 
+  it('loads an authenticated persisted PDF descriptor without accepting an external URL', async () => {
+    const expected = {
+      revisionId: revision.revisionId,
+      kind: 'pdf' as const,
+      src: `/staff/api/v1/content/revisions/${revision.revisionId}/pdf`,
+      contentSha256: 'd'.repeat(64),
+      byteSize: 42_179,
+      rendererVersion: 'vmsh-content-pdf/1',
+    }
+    const fetchImplementation = vi.fn(() => Promise.resolve(jsonResponse(expected))) as typeof fetch
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    await expect(client.preview(revision.revisionId, 'pdf')).resolves.toEqual(expected)
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      `/staff/api/v1/content/revisions/${encodeURIComponent(revision.revisionId)}/previews/pdf`,
+      expect.objectContaining({ credentials: 'include', method: 'GET' }),
+    )
+
+    const invalidClient = createContentApiClient(runtime('staff'), {
+      fetchImplementation: vi.fn(() =>
+        Promise.resolve(
+          jsonResponse({ ...expected, src: 'https://untrusted.example.test/condition.pdf' }),
+        ),
+      ),
+    })
+    await expect(invalidClient.preview(revision.revisionId, 'pdf')).rejects.toBeInstanceOf(
+      ContentProtocolError,
+    )
+  })
+
   it('loads and atomically saves the complete problem-matching batch', async () => {
     const requests: Array<{ url: string; init: RequestInit | undefined }> = []
     const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {

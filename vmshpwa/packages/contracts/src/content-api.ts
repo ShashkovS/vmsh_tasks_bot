@@ -419,9 +419,29 @@ export const staffTelegramContentPreviewSchema = z
   })
   .strict()
 
+export const staffPdfContentPreviewSchema = z
+  .object({
+    revisionId: publicIdSchema,
+    kind: z.literal('pdf'),
+    src: z
+      .string()
+      .max(400)
+      .regex(/^\/staff\/api\/v1\/content\/revisions\/[A-Za-z0-9._:-]+\/pdf$/),
+    contentSha256: z.string().regex(/^[0-9a-f]{64}$/),
+    byteSize: z
+      .number()
+      .int()
+      .positive()
+      .max(64 * 1024 * 1024),
+    rendererVersion: z.string().trim().min(1).max(200),
+  })
+  .strict()
+export type StaffPdfContentPreview = z.infer<typeof staffPdfContentPreviewSchema>
+
 export const staffContentPreviewSchema = z.union([
   staffWebContentPreviewSchema,
   staffTelegramContentPreviewSchema,
+  staffPdfContentPreviewSchema,
 ])
 export type StaffContentPreview = z.infer<typeof staffContentPreviewSchema>
 
@@ -904,6 +924,6 @@ export const contentQueryKeys = {
   metadataGrid: (groupLessonId: string, revisionId: string) =>
     ['content', 'metadata-grid', groupLessonId, revisionId] as const,
   history: (groupLessonId: string) => ['content', 'history', groupLessonId] as const,
-  preview: (revisionId: string, kind: 'web' | 'telegram') =>
+  preview: (revisionId: string, kind: 'web' | 'telegram' | 'pdf') =>
     ['content', 'preview', revisionId, kind] as const,
 } as const

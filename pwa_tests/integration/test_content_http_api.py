@@ -23,9 +23,15 @@ from db_methods.pwa.content import PwaContentRepository
 from helpers.config import Config
 from helpers.consts import USER_TYPE
 from helpers.nats_brocker import InProcessBroker
+from helpers.object_storage import content_addressed_key
 from helpers.pwa.app_keys import RUNTIME_CONFIG
 from helpers.pwa.auth_config import AuthRuntimeConfig, COOKIE_POLICY
 from helpers.pwa.content import ContentAssetConverter, ContentAssetService, ConvertedAsset
+from helpers.pwa.content.pdf import PDF_RENDERER_VERSION
+from helpers.pwa.content.pdf_service import (
+    PDF_STORAGE_CONVERSION_VERSION,
+    PDF_STORAGE_NAMESPACE,
+)
 from models.pwa.auth import AuthAudience, CredentialHasher
 from models.pwa.content import ProblemMatchDecision, ProblemRevisionDraft
 
@@ -1442,6 +1448,94 @@ async def test_hint_requires_matching_but_not_duplicate_metadata_review(
         revision_id=revision["revisionId"],
     )
     assert published.status == 201, await published.text()
+
+
+async def test_staff_can_preview_and_stream_exact_persisted_pdf(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    revision, _ = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="pdf/condition.tex",
+        source="\\задача Условие для PDF. \\кзадача",
+    )
+    repository = PwaContentRepository(fixture.factory)
+    context = await repository.get_revision_context(revision["revisionId"])
+    payload = b"%PDF-1.7\nsynthetic staff preview\n%%EOF\n"
+    digest = hashlib.sha256(payload).hexdigest()
+    object_key = content_addressed_key(PDF_STORAGE_NAMESPACE, payload, "pdf")
+    await fixture.asset_storage.put(object_key, payload, "application/pdf")
+    asset = await repository.register_media_asset(
+        public_id="pdf-asset-content-http",
+        sha256=digest,
+        storage_namespace=PDF_STORAGE_NAMESPACE,
+        object_key=object_key,
+        public_url=None,
+        media_type="application/pdf",
+        byte_size=len(payload),
+        width=None,
+        height=None,
+        source_filename="condition.tex",
+        conversion_version=PDF_STORAGE_CONVERSION_VERSION,
+        actor_user_id=ADMIN_USER_ID,
+    )
+    await repository.add_derivative(
+        revision_id=context.revision.id,
+        kind="pdf",
+        renderer_version=PDF_RENDERER_VERSION,
+        asset_id=asset.id,
+        sha256=digest,
+        provenance={"rendererVersion": PDF_RENDERER_VERSION},
+    )
+
+    preview_url = (
+        f"/staff/api/v1/content/revisions/{revision['revisionId']}/previews/pdf"
+    )
+    forbidden = await fixture.client.get(
+        preview_url,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(),
+    )
+    assert forbidden.status == 403
+    preview = await fixture.client.get(
+        preview_url,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert preview.status == 200, await preview.text()
+    preview_payload = await preview.json()
+    assert preview_payload == {
+        "revisionId": revision["revisionId"],
+        "kind": "pdf",
+        "src": f"/staff/api/v1/content/revisions/{revision['revisionId']}/pdf",
+        "contentSha256": digest,
+        "byteSize": len(payload),
+        "rendererVersion": PDF_RENDERER_VERSION,
+    }
+
+    streamed = await fixture.client.get(
+        preview_payload["src"],
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert streamed.status == 200
+    assert await streamed.read() == payload
+    assert streamed.headers["Content-Type"] == "application/pdf"
+    assert streamed.headers["Content-Disposition"] == (
+        'inline; filename="condition-revision-1.pdf"'
+    )
+    assert streamed.headers["ETag"] == f'"sha256-{digest}"'
+
+    fixture.asset_storage.objects[object_key] = payload + b"tampered"
+    corrupt = await fixture.client.get(
+        preview_payload["src"],
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert corrupt.status == 500
+    assert (await corrupt.json())["error"]["code"] == "content_storage_invalid"
 
 
 async def test_lesson_window_cutoff_has_separate_confirmation_audit_and_etag(

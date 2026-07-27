@@ -21,6 +21,7 @@ import {
   type ContentPublicationHistoryItem,
   type StaffContentMaterialHistory,
   type StaffContentRevision,
+  type StaffPdfContentPreview,
   type WebContentDocument,
 } from '@vmsh/contracts'
 import { LatexUpload } from '@vmsh/product'
@@ -77,6 +78,9 @@ interface MaterialWorkflowState {
   invalidRevision: StaffContentRevision | undefined
   webDocument: WebContentDocument | undefined
   telegramHtml: string | undefined
+  pdfPreview: StaffPdfContentPreview | undefined
+  pdfCheckedRevisionId: string | undefined
+  pdfErrorMessage: string | undefined
   previewRevisionId: string | undefined
   previewLoading: boolean
   selectedRevisionId: string | undefined
@@ -123,6 +127,9 @@ function initialMaterialState(history?: StaffContentMaterialHistory): MaterialWo
     invalidRevision: undefined,
     webDocument: undefined,
     telegramHtml: undefined,
+    pdfPreview: undefined,
+    pdfCheckedRevisionId: undefined,
+    pdfErrorMessage: undefined,
     previewRevisionId: undefined,
     previewLoading: false,
     selectedRevisionId,
@@ -164,6 +171,20 @@ function errorMessage(error: unknown): string {
   if (error instanceof ApiResponseError) return error.message
   if (error instanceof Error) return error.message
   return 'Не удалось выполнить действие'
+}
+
+async function optionalPdfPreview(
+  client: ContentApiClient,
+  revisionId: string,
+): Promise<{ preview?: StaffPdfContentPreview; error?: string }> {
+  try {
+    const preview = await client.preview(revisionId, 'pdf')
+    if (preview.kind !== 'pdf') throw new Error('Сервер вернул несовместимый PDF preview')
+    return { preview }
+  } catch (error) {
+    if (error instanceof ApiResponseError && error.status === 404) return {}
+    return { error: errorMessage(error) }
+  }
 }
 
 function materialHistoryFor(
@@ -301,10 +322,11 @@ function MaterialWorkflowCard({
   }
 
   const inspectCompiledRevision = async (revisionId: string) => {
-    const [inspected, webPreview, telegramPreview] = await Promise.all([
+    const [inspected, webPreview, telegramPreview, pdf] = await Promise.all([
       client.diagnostics(revisionId),
       client.preview(revisionId, 'web'),
       client.preview(revisionId, 'telegram'),
+      optionalPdfPreview(client, revisionId),
     ])
     if (webPreview.kind !== 'web' || telegramPreview.kind !== 'telegram') {
       throw new Error('Сервер вернул несовместимые preview')
@@ -322,6 +344,9 @@ function MaterialWorkflowCard({
       reviewReadyRevisionId: undefined,
       webDocument: webPreview.document,
       telegramHtml: telegramPreview.html,
+      pdfPreview: pdf.preview,
+      pdfCheckedRevisionId: inspected.data.revisionId,
+      pdfErrorMessage: pdf.error,
       previewRevisionId: inspected.data.revisionId,
       previewLoading: false,
       invalidRevision: undefined,
@@ -336,6 +361,9 @@ function MaterialWorkflowCard({
       invalidRevision: undefined,
       webDocument: undefined,
       telegramHtml: undefined,
+      pdfPreview: undefined,
+      pdfCheckedRevisionId: undefined,
+      pdfErrorMessage: undefined,
       previewRevisionId: undefined,
       previewLoading: false,
     })
@@ -398,9 +426,10 @@ function MaterialWorkflowCard({
     if (!selectedRevision) return
     patchState({ previewLoading: true, errorMessage: undefined })
     try {
-      const [webPreview, telegramPreview] = await Promise.all([
+      const [webPreview, telegramPreview, pdf] = await Promise.all([
         client.preview(selectedRevision.data.revisionId, 'web'),
         client.preview(selectedRevision.data.revisionId, 'telegram'),
+        optionalPdfPreview(client, selectedRevision.data.revisionId),
       ])
       if (webPreview.kind !== 'web' || telegramPreview.kind !== 'telegram') {
         throw new Error('Сервер вернул несовместимые preview')
@@ -409,6 +438,9 @@ function MaterialWorkflowCard({
         previewLoading: false,
         webDocument: webPreview.document,
         telegramHtml: telegramPreview.html,
+        pdfPreview: pdf.preview,
+        pdfCheckedRevisionId: selectedRevision.data.revisionId,
+        pdfErrorMessage: pdf.error,
         previewRevisionId: selectedRevision.data.revisionId,
       })
     } catch (error) {
@@ -549,6 +581,9 @@ function MaterialWorkflowCard({
                   invalidRevision: undefined,
                   webDocument: undefined,
                   telegramHtml: undefined,
+                  pdfPreview: undefined,
+                  pdfCheckedRevisionId: undefined,
+                  pdfErrorMessage: undefined,
                   previewRevisionId: undefined,
                   previewLoading: false,
                   errorMessage: undefined,
@@ -640,6 +675,9 @@ function MaterialWorkflowCard({
                   reviewReadyRevisionId: undefined,
                   webDocument: undefined,
                   telegramHtml: undefined,
+                  pdfPreview: undefined,
+                  pdfCheckedRevisionId: undefined,
+                  pdfErrorMessage: undefined,
                   previewRevisionId: undefined,
                 })
               }
@@ -735,7 +773,7 @@ function MaterialWorkflowCard({
         state.previewRevisionId === selectedRevision?.data.revisionId ? (
           <section
             aria-label={`Preview: ${materialLabels[kind]}`}
-            className="grid min-w-0 gap-3 lg:grid-cols-2 lg:items-start"
+            className="grid min-w-0 gap-3 lg:grid-cols-3 lg:items-start"
           >
             <div className="min-w-0 space-y-2">
               <h3 className="text-small font-medium">PWA</h3>
@@ -748,6 +786,37 @@ function MaterialWorkflowCard({
               <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-surface-sunken p-3 font-mono text-caption text-foreground">
                 {state.telegramHtml}
               </pre>
+            </div>
+            <div className="min-w-0 space-y-2">
+              <h3 className="text-small font-medium">PDF</h3>
+              <div className="space-y-2 rounded-md border border-border bg-surface p-3 text-small">
+                {state.pdfPreview && state.pdfCheckedRevisionId === state.previewRevisionId ? (
+                  <>
+                    <p className="text-muted-foreground">
+                      Сохранённая производная ·{' '}
+                      <span className="font-num">
+                        {Math.ceil(state.pdfPreview.byteSize / 1024)} КБ
+                      </span>
+                    </p>
+                    <a
+                      className="inline-flex h-7 items-center rounded-md border border-border px-2.5 text-[0.8rem] font-medium text-primary outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-focus"
+                      href={state.pdfPreview.src}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Открыть PDF
+                    </a>
+                  </>
+                ) : state.pdfErrorMessage ? (
+                  <p className="text-status-danger" role="alert">
+                    PDF не удалось проверить: {state.pdfErrorMessage}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    PDF-производная для этой revision пока не сохранена.
+                  </p>
+                )}
+              </div>
             </div>
           </section>
         ) : null}

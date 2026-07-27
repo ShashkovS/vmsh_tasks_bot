@@ -189,8 +189,9 @@ Browser renderer increment реализован, но сам этап 2 не з�
 Этот gate сам по себе не означает публикацию контента. Позднейшие изолированные
 proof закрыли live S3 content-asset roundtrip, live Telegram Rich lifecycle,
 safe historical backfill tooling и authenticated HTTP/frontend orchestration.
-Production owner-reviewed backfill apply, problem-matching/metadata flow,
-открытие сохранённого PDF через Staff и browser E2E пока остаются открыты.
+Последующие инкременты закрыли problem-matching/metadata flow и открытие
+сохранённого PDF через Staff. Production owner-reviewed backfill/parity, bulk
+upload и production-build content E2E пока остаются открыты.
 
 Промежуточный gate **Phase 2C — authenticated HTTP и audience frontend**
 зафиксирован 28 июля 2026 в revisions [`1aad776`](../../../pwa_tests/reports/phase2-content-api.md)
@@ -224,15 +225,16 @@ Production owner-reviewed backfill apply, problem-matching/metadata flow,
 - [x] Staff missing-assets recovery с сохранением выбранного файла при сбое,
       `409` refresh, recompile и interaction stories;
 - [x] provider-first PDF persistence с hash/provenance, exact retry и
-      concurrent conflict checks; Staff preview/download ещё не подключён;
+      concurrent conflict checks; последующий Staff HTTP/UI increment открыл
+      exact persisted PDF без добавления print workflow;
 - [x] 302 Python asset regression, 10 PDF persistence, 21 frontend unit и 17
       Storybook browser tests, Ruff/ESLint/strict TypeScript и production build
       трёх apps — PASS.
 
 Полный [proof Phase 2D](../../../pwa_tests/reports/phase2-content-assets-http.md)
 не закрывает Phase 2 целиком. Открыты problem matching/metadata UI+API,
-Staff-openable generated PDF, bulk upload, production-build content E2E и
-ручное visual approval владельца. Snapshots не обновлялись.
+bulk upload, production-build content E2E и ручное visual approval владельца.
+Snapshots не обновлялись.
 
 Промежуточный backend gate **Phase 2E — problem matching и metadata review**
 реализован 28 июля 2026:
@@ -279,6 +281,23 @@ Production-build content E2E и owner visual approval остаются откр�
 proof и точные story IDs:
 [`phase2-problem-review-ui.md`](../../../pwa_tests/reports/phase2-problem-review-ui.md).
 
+Staff persisted-PDF increment реализован 28 июля 2026:
+
+- [x] admin-only descriptor и byte-stream endpoints для exact active PDF
+      derivative конкретной `ready` revision;
+- [x] повторная проверка asset/derivative metadata, SHA-256, размера и PDF
+      markers перед отдачей; повреждение fail closed;
+- [x] bounded same-origin Zod contract, authenticated client и третья колонка
+      PDF рядом с PWA/Telegram preview;
+- [x] 26 aiohttp integration tests, 26 frontend unit tests, 11 targeted
+      Storybook browser tests, strict TypeScript/ESLint/Ruff и Staff production
+      build PASS.
+
+Proof: [`phase2-content-pdf-http.md`](../../../pwa_tests/reports/phase2-content-pdf-http.md).
+Это не print workflow второй версии. После инкремента открыты bulk upload,
+production-build content E2E, production owner-reviewed parity/backfill и
+owner visual approval.
+
 - [x] Revision/migration/upgrade/rollback для Phase 2A:
       [`0041`](../../../migrations/0041.pwa_content_lessons.sql), 48 focused PASS,
       69 PASS вместе со schema inventory; full Phase-2 migration/backfill proof ещё
@@ -313,8 +332,9 @@ proof и точные story IDs:
       mobile 390 px reflow и ручной desktop/mobile light осмотр прошли. Owner visual
       approval и snapshots остаются в предыдущем незакрытом пункте:
       [`phase2-real-content-corpus.md`](../../../pwa_tests/reports/phase2-real-content-corpus.md).
-- [ ] Staff-openable persisted PDF and combined PDF/Telegram preview evidence:
-      `<paths>` (storage boundary реализован в `d39141d`).
+- [x] Staff-openable persisted PDF and combined PWA/Telegram/PDF preview:
+      [`phase2-content-pdf-http.md`](../../../pwa_tests/reports/phase2-content-pdf-http.md)
+      поверх storage boundary из `d39141d`.
 - [x] RecordingBot fixtures и разрешённый live test-channel Rich Message на
       границе 32 768 symbols: send/edit/delete PASS,
       [`phase2-derivative-adapters.md`](../../../pwa_tests/reports/phase2-derivative-adapters.md).
