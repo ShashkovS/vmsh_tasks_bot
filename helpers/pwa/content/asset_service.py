@@ -17,7 +17,11 @@ from pathlib import PurePath
 from db_methods.pwa.content import MediaAssetRecord, PwaContentRepository
 from helpers.object_storage import ObjectStorage, content_addressed_key
 
-from .assets import ContentAssetConverter, ConvertedAsset
+from .assets import (
+    ConfiguredContentAssetConverter,
+    ContentAssetConverter,
+    ConvertedAsset,
+)
 
 
 _CONVERSION_VERSION = "pwa-content-assets-v1"
@@ -30,6 +34,8 @@ class PersistedContentAsset:
     record: MediaAssetRecord
     source_sha256: str
     output_sha256: str
+    revision_version: int | None = None
+    attachment_created: bool = True
 
 
 class ContentAssetService:
@@ -38,7 +44,7 @@ class ContentAssetService:
     def __init__(
         self,
         *,
-        converter: ContentAssetConverter,
+        converter: ContentAssetConverter | ConfiguredContentAssetConverter,
         storage: ObjectStorage,
         repository: PwaContentRepository,
         conversion_version: str = _CONVERSION_VERSION,
@@ -53,6 +59,12 @@ class ContentAssetService:
         self._conversion_version = normalized_version
         self._public_id_factory = public_id_factory or (lambda: uuid.uuid4().hex)
 
+    @property
+    def storage(self) -> ObjectStorage:
+        """Expose the same adapter for the local immutable-media read route."""
+
+        return self._storage
+
     async def convert_and_attach_tikz(
         self,
         *,
@@ -60,6 +72,7 @@ class ContentAssetService:
         logical_name: str,
         source: str,
         actor_user_id: int | None,
+        expected_revision_version: int | None = None,
         ordinal: int = 0,
         alt_text: str | None = None,
     ) -> PersistedContentAsset:
@@ -71,6 +84,7 @@ class ContentAssetService:
             logical_name=logical_name,
             role="tikz",
             actor_user_id=actor_user_id,
+            expected_revision_version=expected_revision_version,
             ordinal=ordinal,
             alt_text=alt_text,
             source_filename=None,
@@ -83,6 +97,7 @@ class ContentAssetService:
         logical_name: str,
         payload: bytes,
         actor_user_id: int | None,
+        expected_revision_version: int | None = None,
         ordinal: int = 0,
         alt_text: str | None = None,
         source_filename: str | None = None,
@@ -95,6 +110,33 @@ class ContentAssetService:
             logical_name=logical_name,
             role="figure",
             actor_user_id=actor_user_id,
+            expected_revision_version=expected_revision_version,
+            ordinal=ordinal,
+            alt_text=alt_text,
+            source_filename=_safe_filename(source_filename),
+        )
+
+    async def sanitize_and_attach_svg(
+        self,
+        *,
+        revision_id: int,
+        logical_name: str,
+        payload: bytes,
+        actor_user_id: int | None,
+        expected_revision_version: int | None = None,
+        ordinal: int = 0,
+        alt_text: str | None = None,
+        source_filename: str | None = None,
+    ) -> PersistedContentAsset:
+        converted = await self._converter.svg_to_svg(payload)
+        return await self._persist_and_attach(
+            converted=converted,
+            extension="svg",
+            revision_id=revision_id,
+            logical_name=logical_name,
+            role="figure",
+            actor_user_id=actor_user_id,
+            expected_revision_version=expected_revision_version,
             ordinal=ordinal,
             alt_text=alt_text,
             source_filename=_safe_filename(source_filename),
@@ -109,6 +151,7 @@ class ContentAssetService:
         logical_name: str,
         role: str,
         actor_user_id: int | None,
+        expected_revision_version: int | None,
         ordinal: int,
         alt_text: str | None,
         source_filename: str | None,
@@ -138,18 +181,35 @@ class ContentAssetService:
             conversion_version=self._conversion_version,
             actor_user_id=actor_user_id,
         )
-        await self._repository.attach_asset(
-            revision_id=revision_id,
-            asset_id=record.id,
-            logical_name=logical_name,
-            role=role,
-            ordinal=ordinal,
-            alt_text=alt_text,
-        )
+        if expected_revision_version is None:
+            await self._repository.attach_asset(
+                revision_id=revision_id,
+                asset_id=record.id,
+                logical_name=logical_name,
+                role=role,
+                ordinal=ordinal,
+                alt_text=alt_text,
+            )
+            revision_version = None
+            attachment_created = True
+        else:
+            revision_version, attachment_created = (
+                await self._repository.attach_asset_to_uploaded_revision(
+                    revision_id=revision_id,
+                    expected_revision_version=expected_revision_version,
+                    asset_id=record.id,
+                    logical_name=logical_name,
+                    role=role,
+                    ordinal=ordinal,
+                    alt_text=alt_text,
+                )
+            )
         return PersistedContentAsset(
             record=record,
             source_sha256=converted.source_sha256,
             output_sha256=converted.output_sha256,
+            revision_version=revision_version,
+            attachment_created=attachment_created,
         )
 
 

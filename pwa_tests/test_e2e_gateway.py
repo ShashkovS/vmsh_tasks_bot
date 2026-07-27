@@ -79,6 +79,7 @@ async def upstream(aiohttp_server):
 
     application.router.add_route("*", "/{audience}/api", api)
     application.router.add_route("*", "/{audience}/api/{tail:.*}", api)
+    application.router.add_get("/pwa-content-assets/{asset_id}", api)
     application.router.add_get("/{audience}/ws", websocket)
     return await aiohttp_server(application)
 
@@ -168,6 +169,28 @@ async def test_gateway_proxies_api_before_fallback_and_forces_no_store(gateway_c
     api_root = await gateway_client.get("/family/api")
     assert api_root.status == 200
     assert (await api_root.json())["path"] == "/family/api"
+
+
+async def test_gateway_proxies_exact_content_asset_and_preserves_immutable_cache(
+    gateway_client,
+):
+    assert (
+        gateway_client.server.app._client_max_size
+        == e2e_gateway.GATEWAY_CLIENT_MAX_SIZE
+        == 64 * 1024 * 1024
+    )
+    response = await gateway_client.get("/pwa-content-assets/asset-content-41")
+
+    assert response.status == 200
+    assert response.headers["Cache-Control"] == "public, max-age=86400"
+    assert (await response.json())["path"] == (
+        "/pwa-content-assets/asset-content-41"
+    )
+    malformed = await gateway_client.get(
+        "/pwa-content-assets/asset-content-41/extra",
+        headers={"Accept": "text/html"},
+    )
+    assert malformed.status == 404
 
 
 async def test_gateway_relays_websocket_frames_and_request_id(gateway_client):

@@ -2,6 +2,7 @@
 
 from .assets import (
     AssetConversionError,
+    ConfiguredContentAssetConverter,
     ContentAssetConverter,
     ContentAssetTools,
     ConvertedAsset,
@@ -37,6 +38,7 @@ __all__ = [
     "AssetConversionError",
     "COMPILER_VERSION",
     "CompileResult",
+    "ConfiguredContentAssetConverter",
     "ContentCompileError",
     "ContentAssetConverter",
     "ContentAssetService",

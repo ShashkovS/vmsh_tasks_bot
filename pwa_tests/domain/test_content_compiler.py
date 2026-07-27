@@ -285,6 +285,24 @@ def test_compile_uses_one_published_asset_descriptor_in_every_derivative(
     assert descriptor.src in result.telegram.content
 
 
+def test_root_relative_local_asset_is_shared_by_web_and_telegram_previews() -> None:
+    descriptor = _published_asset(
+        asset_id="asset:local-preview",
+        content_sha256="d" * 64,
+        media_type="image/svg+xml",
+        src="/pwa-content-assets/asset:local-preview",
+    )
+    result = _compile(
+        r"\задача \includegraphics{figure.svg} \кзадача",
+        known_assets={"figure.svg": descriptor},
+    )
+
+    assert "asset.url_unsafe" not in _codes(result)
+    assert "telegram.derivative_invalid" not in _codes(result)
+    assert descriptor.src in result.web.content
+    assert descriptor.src in result.telegram.content
+
+
 def test_published_descriptor_wins_over_conflicting_legacy_url_for_all_renderers() -> (
     None
 ):

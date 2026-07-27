@@ -5,13 +5,16 @@ import re
 import uuid
 from collections.abc import Mapping
 from datetime import UTC, datetime
+from pathlib import Path
 
 from aiohttp import WSCloseCode, WSMsgType, web
 
 from apps.pwa_api.auth_routes import auth_routes
 from apps.pwa_api.auth_service import PwaAuthService
 from apps.pwa_api.content_routes import (
+    PWA_CONTENT_ASSET_SERVICE,
     PWA_CONTENT_INVALIDATOR,
+    PWA_CONTENT_OBJECT_STORAGE,
     PWA_CONTENT_REPOSITORY,
     content_routes,
 )
@@ -39,6 +42,7 @@ from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import GroupLessonContentScope, PwaContentRepository
 from helpers.config import logger
 from helpers.nats_brocker import InProcessBroker, JsonBroker, NatsBroker
+from helpers.object_storage import ObjectStorage, create_object_storage
 from helpers.pwa.api_contracts import (
     build_api_error_payload,
     build_realtime_error_payload,
@@ -47,6 +51,12 @@ from helpers.pwa.api_contracts import (
 )
 from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG
 from helpers.pwa.auth_config import AuthRuntimeConfig, load_auth_runtime_config
+from helpers.pwa.content import (
+    ConfiguredContentAssetConverter,
+    ContentAssetConverter,
+    ContentAssetService,
+)
+from helpers.pwa.storage_config import load_storage_config
 from models.pwa.auth import AuthAudience
 from models.pwa.content import ContentKind
 
@@ -72,6 +82,11 @@ PWA_CONTENT_SCHEDULER_TASK = web.AppKey(
     "pwa_content_scheduler_task", asyncio.Task[None]
 )
 PWA_RESPONSE_PREPARED = web.AppKey("pwa_response_prepared", bool)
+PWA_CONTENT_ASSET_CONVERTER = web.AppKey(
+    "pwa_content_asset_converter",
+    ContentAssetConverter | ConfiguredContentAssetConverter,
+)
+PWA_CONTENT_ASSETS_AUTO_WIRE = web.AppKey("pwa_content_assets_auto_wire", bool)
 PWA_SECURITY_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; "
@@ -618,12 +633,38 @@ async def on_auth_startup(app: web.Application) -> None:
 async def on_content_startup(app: web.Application) -> None:
     """Bind Phase-2 content routes to the verified shared SQLite factory."""
 
-    if PWA_CONTENT_REPOSITORY in app:
+    if PWA_CONTENT_REPOSITORY not in app:
+        factory = app[PWA_DATABASE].factory
+        if factory is None:
+            raise RuntimeError(
+                "PWA content startup requires a verified database factory"
+            )
+        app[PWA_CONTENT_REPOSITORY] = PwaContentRepository(factory)
+    if (
+        PWA_CONTENT_ASSET_SERVICE in app
+        or not app.get(PWA_CONTENT_ASSETS_AUTO_WIRE, False)
+    ):
         return
-    factory = app[PWA_DATABASE].factory
-    if factory is None:
-        raise RuntimeError("PWA content startup requires a verified database factory")
-    app[PWA_CONTENT_REPOSITORY] = PwaContentRepository(factory)
+
+    runtime_config = _runtime_config(app)
+    storage = app.get(PWA_CONTENT_OBJECT_STORAGE)
+    if storage is None:
+        storage_config = load_storage_config(
+            runtime_profile=runtime_config.runtime_profile,
+            media_root=runtime_config.pwa_media_root,
+            repository_root=Path(__file__).resolve().parents[1],
+        )
+        storage = create_object_storage(storage_config)
+        app[PWA_CONTENT_OBJECT_STORAGE] = storage
+    converter = app.get(PWA_CONTENT_ASSET_CONVERTER)
+    if converter is None:
+        converter = ConfiguredContentAssetConverter(runtime_config)
+        app[PWA_CONTENT_ASSET_CONVERTER] = converter
+    app[PWA_CONTENT_ASSET_SERVICE] = ContentAssetService(
+        converter=converter,
+        storage=storage,
+        repository=app[PWA_CONTENT_REPOSITORY],
+    )
 
 
 async def publish_content_invalidation(
@@ -769,6 +810,11 @@ def configure(
     auth_runtime_config: AuthRuntimeConfig | None = None,
     auth_service: PwaAuthService | None = None,
     content_repository: PwaContentRepository | None = None,
+    content_asset_service: ContentAssetService | None = None,
+    object_storage: ObjectStorage | None = None,
+    content_asset_converter: (
+        ContentAssetConverter | ConfiguredContentAssetConverter | None
+    ) = None,
 ):
     runtime_config = _runtime_config(app)
     # Browser storage uses this server-owned value verbatim. Rejecting an
@@ -820,6 +866,21 @@ def configure(
         if content_enabled:
             if content_repository is not None:
                 app[PWA_CONTENT_REPOSITORY] = content_repository
+            if content_asset_service is not None:
+                app[PWA_CONTENT_ASSET_SERVICE] = content_asset_service
+                app[PWA_CONTENT_OBJECT_STORAGE] = content_asset_service.storage
+            elif object_storage is not None:
+                app[PWA_CONTENT_OBJECT_STORAGE] = object_storage
+            if content_asset_converter is not None:
+                app[PWA_CONTENT_ASSET_CONVERTER] = content_asset_converter
+            app[PWA_CONTENT_ASSETS_AUTO_WIRE] = bool(
+                content_asset_service is not None
+                or (
+                    object_storage is not None
+                    and content_asset_converter is not None
+                )
+                or content_repository is None
+            )
 
             async def invalidate_content(
                 scope: GroupLessonContentScope,

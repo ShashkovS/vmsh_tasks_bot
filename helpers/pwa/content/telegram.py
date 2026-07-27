@@ -183,8 +183,16 @@ _INLINE_TAGS = {
 
 
 def _safe_url(value: str, *, media: bool, allow_emoji: bool = False) -> bool:
-    if not value or any(character in value for character in "\x00\r\n\t"):
+    if (
+        not value
+        or value != value.strip()
+        or any(character in value for character in "\x00\r\n\t\\")
+    ):
         return False
+    # Local dev/test storage uses one same-origin immutable route. Production
+    # descriptors use public HTTPS object URLs before Telegram delivery.
+    if media and value.startswith("/") and not value.startswith("//"):
+        return True
     if value.startswith("#"):
         return not media and bool(_ANCHOR_NAME.fullmatch(value[1:]))
     parsed = urlsplit(value)

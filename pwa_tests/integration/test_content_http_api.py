@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from types import MappingProxyType, SimpleNamespace
 from zoneinfo import ZoneInfo
@@ -24,6 +25,7 @@ from helpers.consts import USER_TYPE
 from helpers.nats_brocker import InProcessBroker
 from helpers.pwa.app_keys import RUNTIME_CONFIG
 from helpers.pwa.auth_config import AuthRuntimeConfig, COOKIE_POLICY
+from helpers.pwa.content import ContentAssetConverter, ContentAssetService, ConvertedAsset
 from models.pwa.auth import AuthAudience, CredentialHasher
 from models.pwa.content import ProblemMatchDecision, ProblemRevisionDraft
 
@@ -41,6 +43,61 @@ TEST_HASHER = PasswordHasher(
 STUDENT_USER_ID = 903_101
 TEACHER_USER_ID = 903_102
 ADMIN_USER_ID = 903_103
+SAFE_SVG = (
+    b'<svg xmlns="http://www.w3.org/2000/svg" '
+    b'width="40" height="20" viewBox="0 0 40 20"/>'
+)
+
+
+class SyntheticAssetConverter:
+    async def raster_to_webp(self, payload: bytes) -> ConvertedAsset:
+        output = b"synthetic-webp:" + hashlib.sha256(payload).digest()
+        return ConvertedAsset(
+            source_sha256=hashlib.sha256(payload).hexdigest(),
+            output_sha256=hashlib.sha256(output).hexdigest(),
+            media_type="image/webp",
+            data=output,
+            width=320,
+            height=240,
+        )
+
+    async def svg_to_svg(self, payload: bytes) -> ConvertedAsset:
+        # Exercise the real presentation-only SVG sanitizer in HTTP tests.
+        return await ContentAssetConverter.svg_to_svg(self, payload)  # type: ignore[arg-type]
+
+    async def tikz_to_svg(self, source: str) -> ConvertedAsset:
+        sanitized = await ContentAssetConverter.svg_to_svg(  # type: ignore[arg-type]
+            self, SAFE_SVG
+        )
+        return ConvertedAsset(
+            source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+            output_sha256=sanitized.output_sha256,
+            media_type="image/svg+xml",
+            data=sanitized.data,
+            width=sanitized.width,
+            height=sanitized.height,
+        )
+
+
+@dataclass
+class MemoryAssetStorage:
+    objects: dict[str, bytes] = field(default_factory=dict)
+    puts: list[str] = field(default_factory=list)
+
+    async def put(self, key: str, data: bytes, content_type: str) -> None:
+        del content_type
+        self.puts.append(key)
+        self.objects[key] = data
+
+    async def get(self, key: str) -> bytes:
+        return self.objects[key]
+
+    async def delete(self, key: str) -> None:
+        self.objects.pop(key, None)
+
+    def public_url(self, key: str) -> None:
+        del key
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +107,7 @@ class ContentHttpFixture:
     group_lesson_a: str
     group_lesson_b: str
     cookies: MappingProxyType
+    asset_storage: MemoryAssetStorage
 
 
 def _timestamp(value: datetime = NOW) -> str:
@@ -299,6 +357,12 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         credential_hasher=CredentialHasher(TEST_HASHER),
         clock=lambda: NOW,
     )
+    asset_storage = MemoryAssetStorage()
+    asset_service = ContentAssetService(
+        converter=SyntheticAssetConverter(),  # type: ignore[arg-type]
+        storage=asset_storage,
+        repository=content_repository,
+    )
     app = web.Application()
     app[RUNTIME_CONFIG] = Config(
         runtime_profile="pwa-e2e",
@@ -313,6 +377,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         auth_runtime_config=auth_config,
         auth_service=auth_service,
         content_repository=content_repository,
+        content_asset_service=asset_service,
     )
     client = await aiohttp_client(app)
 
@@ -344,6 +409,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         group_lesson_a=group_lesson_a.public_id,
         group_lesson_b=group_lesson_b.public_id,
         cookies=MappingProxyType(cookies),
+        asset_storage=asset_storage,
     )
 
 
@@ -374,7 +440,7 @@ async def _upload(
     source: bytes,
     identity: str = "admin",
 ):
-    form = FormData()
+    form = FormData(default_to_multipart=True)
     form.add_field("groupLessonId", group_lesson)
     form.add_field("kind", kind)
     form.add_field("logicalFilename", filename)
@@ -389,6 +455,35 @@ async def _upload(
         data=form,
         cookies=_cookie(fixture, identity),
         headers=_headers(unsafe=True),
+    )
+
+
+async def _upload_asset(
+    fixture: ContentHttpFixture,
+    *,
+    revision_id: str,
+    logical_name: str,
+    kind: str,
+    if_match: str | None,
+    payload: bytes | None = None,
+    filename: str | None = None,
+    identity: str = "admin",
+):
+    form = FormData(default_to_multipart=True)
+    form.add_field("logicalName", logical_name)
+    form.add_field("kind", kind)
+    if payload is not None:
+        form.add_field(
+            "asset",
+            payload,
+            filename=filename or logical_name.rsplit("/", 1)[-1],
+            content_type=("image/svg+xml" if kind == "svg" else "image/heic"),
+        )
+    return await fixture.client.post(
+        f"/staff/api/v1/content/revisions/{revision_id}/assets",
+        data=form,
+        cookies=_cookie(fixture, identity),
+        headers=_headers(unsafe=True, if_match=if_match),
     )
 
 
@@ -557,6 +652,389 @@ async def _create_lesson_window(
         cookies=_cookie(fixture, "admin"),
         headers=_headers(unsafe=True, if_match='"none"'),
     )
+
+
+async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    source = r"""
+\задача
+\includegraphics{figures/photo.heic}
+\includegraphics{figures/vector.svg}
+\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}
+\кзадача
+"""
+    uploaded = await _upload(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="assets/condition.tex",
+        source=source.encode(),
+    )
+    assert uploaded.status == 201, await uploaded.text()
+    revision = await uploaded.json()
+    revision_id = revision["revisionId"]
+    initial_etag = uploaded.headers["ETag"]
+    assets_url = f"/staff/api/v1/content/revisions/{revision_id}/assets"
+
+    teacher = await fixture.client.get(
+        assets_url,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(),
+    )
+    assert teacher.status == 403
+
+    inventory = await fixture.client.get(
+        assets_url,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert inventory.status == 200, await inventory.text()
+    inventory_payload = await inventory.json()
+    assert inventory_payload["status"] == "uploaded"
+    assert len(inventory_payload["missingAssets"]) == 3
+    tikz_name = next(
+        item["logicalName"]
+        for item in inventory_payload["assets"]
+        if item["sourceKind"] == "tikz"
+    )
+
+    blocked = await fixture.client.post(
+        f"/staff/api/v1/content/revisions/{revision_id}/compile",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial_etag),
+    )
+    assert blocked.status == 422
+    assert (await blocked.json())["error"]["code"] == "content_assets_missing"
+    stored_status = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT status FROM content_revisions WHERE public_id = ?", (revision_id,)
+        ).fetchone()["status"]
+    )
+    assert stored_status == "uploaded"
+
+    raster = await _upload_asset(
+        fixture,
+        revision_id=revision_id,
+        logical_name="figures/photo.heic",
+        kind="raster",
+        if_match=initial_etag,
+        payload=b"synthetic-heic",
+        filename="photo.heic",
+    )
+    assert raster.status == 201, await raster.text()
+    raster_payload = await raster.json()
+    assert raster_payload["asset"]["mediaType"] == "image/webp"
+    assert raster_payload["asset"]["src"].startswith("/pwa-content-assets/")
+    raster_etag = raster.headers["ETag"]
+
+    retry = await _upload_asset(
+        fixture,
+        revision_id=revision_id,
+        logical_name="figures/photo.heic",
+        kind="raster",
+        if_match=initial_etag,
+        payload=b"synthetic-heic",
+        filename="photo.heic",
+    )
+    assert retry.status == 200, await retry.text()
+    assert (await retry.json())["reused"] is True
+    assert retry.headers["ETag"] == raster_etag
+
+    puts_before_unsafe = len(fixture.asset_storage.puts)
+    unsafe = await _upload_asset(
+        fixture,
+        revision_id=revision_id,
+        logical_name="figures/vector.svg",
+        kind="svg",
+        if_match=raster_etag,
+        payload=(
+            b'<svg xmlns="http://www.w3.org/2000/svg">'
+            b'<script>alert(1)</script></svg>'
+        ),
+        filename="vector.svg",
+    )
+    assert unsafe.status == 422
+    assert (await unsafe.json())["error"]["code"] == "asset_conversion_failed"
+    assert len(fixture.asset_storage.puts) == puts_before_unsafe
+
+    vector = await _upload_asset(
+        fixture,
+        revision_id=revision_id,
+        logical_name="figures/vector.svg",
+        kind="svg",
+        if_match=raster_etag,
+        payload=SAFE_SVG,
+        filename="vector.svg",
+    )
+    assert vector.status == 201, await vector.text()
+    vector_etag = vector.headers["ETag"]
+    tikz = await _upload_asset(
+        fixture,
+        revision_id=revision_id,
+        logical_name=tikz_name,
+        kind="tikz",
+        if_match=vector_etag,
+    )
+    assert tikz.status == 201, await tikz.text()
+    final_etag = tikz.headers["ETag"]
+
+    resolved = await fixture.client.get(
+        assets_url,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    resolved_payload = await resolved.json()
+    assert resolved_payload["missingAssets"] == []
+    assert {item["status"] for item in resolved_payload["assets"]} == {"attached"}
+
+    compiled = await fixture.client.post(
+        f"/staff/api/v1/content/revisions/{revision_id}/compile",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=final_etag),
+    )
+    assert compiled.status == 200, await compiled.text()
+    web_preview = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{revision_id}/previews/web",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    web_document = (await web_preview.json())["document"]
+    serialized_web = json.dumps(web_document)
+    assert raster_payload["asset"]["src"] in serialized_web
+    telegram_preview = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{revision_id}/previews/telegram",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    telegram_html = (await telegram_preview.json())["html"]
+    assert raster_payload["asset"]["src"] in telegram_html
+
+    media = await fixture.client.get(raster_payload["asset"]["src"])
+    assert media.status == 200
+    assert (await media.read()).startswith(b"synthetic-webp:")
+    assert media.headers["Cache-Control"].endswith("immutable")
+    malformed_media = await fixture.client.get("/pwa-content-assets/INVALID")
+    assert malformed_media.status == 404
+    assert await malformed_media.text() == "Content asset not found"
+
+    counts = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute("SELECT count(*) AS count FROM media_assets").fetchone()[
+                "count"
+            ],
+            connection.execute(
+                "SELECT count(*) AS count FROM content_revision_assets"
+            ).fetchone()["count"],
+        )
+    )
+    # Direct SVG and TikZ intentionally deduplicate because their sanitized
+    # output bytes are identical; all three logical references stay attached.
+    assert counts == (2, 3)
+
+
+@pytest.mark.parametrize(
+    (
+        "case",
+        "target",
+        "logical_name",
+        "kind",
+        "payload",
+        "filename",
+        "expected_status",
+        "expected_code",
+    ),
+    [
+        (
+            "missing-if-match",
+            "figure",
+            None,
+            "raster",
+            b"raster",
+            "photo.heic",
+            422,
+            "if_match_required",
+        ),
+        (
+            "stale-if-match",
+            "figure",
+            None,
+            "raster",
+            b"raster",
+            "photo.heic",
+            409,
+            "version_conflict",
+        ),
+        (
+            "unreferenced-name",
+            "figure",
+            "figures/not-in-source.webp",
+            "raster",
+            b"raster",
+            "photo.heic",
+            422,
+            "asset_not_referenced",
+        ),
+        (
+            "tikz-must-not-have-file",
+            "tikz",
+            None,
+            "tikz",
+            SAFE_SVG,
+            "diagram.svg",
+            422,
+            "validation_error",
+        ),
+        (
+            "raster-requires-file",
+            "figure",
+            None,
+            "raster",
+            None,
+            None,
+            422,
+            "validation_error",
+        ),
+        (
+            "figure-is-not-tikz",
+            "figure",
+            None,
+            "tikz",
+            None,
+            None,
+            422,
+            "asset_kind_mismatch",
+        ),
+        (
+            "tikz-is-not-uploaded-svg",
+            "tikz",
+            None,
+            "svg",
+            SAFE_SVG,
+            "diagram.svg",
+            422,
+            "asset_kind_mismatch",
+        ),
+        (
+            "unsafe-logical-path",
+            "figure",
+            "figures/../photo.heic",
+            "raster",
+            b"raster",
+            "photo.heic",
+            422,
+            "validation_error",
+        ),
+        (
+            "unsafe-source-filename",
+            "figure",
+            None,
+            "raster",
+            b"raster",
+            " photo.heic ",
+            422,
+            "validation_error",
+        ),
+    ],
+    ids=[
+        "missing-if-match",
+        "stale-if-match",
+        "unreferenced-name",
+        "tikz-must-not-have-file",
+        "raster-requires-file",
+        "figure-is-not-tikz",
+        "tikz-is-not-uploaded-svg",
+        "unsafe-logical-path",
+        "unsafe-source-filename",
+    ],
+)
+async def test_asset_upload_rejects_stale_unreferenced_or_malformed_requests(
+    content_http: ContentHttpFixture,
+    case: str,
+    target: str,
+    logical_name: str | None,
+    kind: str,
+    payload: bytes | None,
+    filename: str | None,
+    expected_status: int,
+    expected_code: str,
+):
+    fixture = content_http
+    uploaded = await _upload(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename=f"asset-negative/{case}.tex",
+        source=(
+            r"\задача "
+            r"\includegraphics{figures/photo.heic} "
+            r"\begin{tikzpicture}x\end{tikzpicture} "
+            r"\кзадача"
+        ).encode(),
+    )
+    assert uploaded.status == 201, await uploaded.text()
+    revision = await uploaded.json()
+    revision_id = revision["revisionId"]
+    inventory = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{revision_id}/assets",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert inventory.status == 200, await inventory.text()
+    assets = (await inventory.json())["assets"]
+    target_name = next(
+        item["logicalName"]
+        for item in assets
+        if item["sourceKind"] == ("tikz" if target == "tikz" else "figure")
+    )
+    if_match = uploaded.headers["ETag"]
+    if case == "missing-if-match":
+        if_match = None
+    elif case == "stale-if-match":
+        if_match = f'"{revision_id}:v999"'
+
+    if case == "unsafe-source-filename":
+        boundary = "vmshpwa-unsafe-filename"
+        body = (
+            f'--{boundary}\r\nContent-Disposition: form-data; '
+            'name="logicalName"\r\n\r\n'
+            f'{logical_name or target_name}\r\n--{boundary}\r\n'
+            'Content-Disposition: form-data; name="kind"\r\n\r\n'
+            f'{kind}\r\n--{boundary}\r\nContent-Disposition: form-data; '
+            'name="asset"; filename=" photo.heic "\r\n'
+            'Content-Type: image/heic\r\n\r\nraster\r\n'
+            f'--{boundary}--\r\n'
+        ).encode()
+        response = await fixture.client.post(
+            f"/staff/api/v1/content/revisions/{revision_id}/assets",
+            data=body,
+            cookies=_cookie(fixture, "admin"),
+            headers={
+                **_headers(unsafe=True, if_match=if_match),
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+            },
+        )
+    else:
+        response = await _upload_asset(
+            fixture,
+            revision_id=revision_id,
+            logical_name=logical_name or target_name,
+            kind=kind,
+            if_match=if_match,
+            payload=payload,
+            filename=filename,
+        )
+
+    assert response.status == expected_status, await response.text()
+    assert (await response.json())["error"]["code"] == expected_code
+    stored = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT status, version FROM content_revisions WHERE public_id = ?",
+            (revision_id,),
+        ).fetchone()
+    )
+    assert (stored["status"], stored["version"]) == ("uploaded", 1)
 
 
 async def test_publication_requires_problem_matching_and_reviewed_metadata(

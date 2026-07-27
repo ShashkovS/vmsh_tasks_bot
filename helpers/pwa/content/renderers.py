@@ -36,11 +36,17 @@ TELEGRAM_RENDERER_VERSION = (
 
 
 def is_safe_media_url(value: str) -> bool:
-    if not value or any(character in value for character in "\x00\r\n\t"):
+    if (
+        not value
+        or value != value.strip()
+        or any(character in value for character in "\x00\r\n\t\\")
+    ):
         return False
+    if value.startswith("/") and not value.startswith("//"):
+        return True
     parsed = urlsplit(value)
     return (
-        parsed.scheme.lower() in {"http", "https"}
+        parsed.scheme.lower() == "https"
         and bool(parsed.netloc)
         and parsed.username is None
         and parsed.password is None

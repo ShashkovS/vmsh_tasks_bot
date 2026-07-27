@@ -622,6 +622,26 @@ class ContentAssetConverter:
             height=height,
         )
 
+    async def svg_to_svg(self, payload: bytes) -> ConvertedAsset:
+        """Sanitize an uploaded SVG through the same presentation allowlist.
+
+        Direct SVG uploads deliberately do not enter ImageMagick: keeping the
+        vector is useful for mathematical figures, while ``sanitize_svg``
+        rejects scripts, external references and unsupported XML before the
+        bytes can become public.
+        """
+
+        sanitized_svg = sanitize_svg(payload)
+        width, height = _svg_dimensions(sanitized_svg)
+        return ConvertedAsset(
+            source_sha256=_sha256(payload),
+            output_sha256=_sha256(sanitized_svg),
+            media_type="image/svg+xml",
+            data=sanitized_svg,
+            width=width,
+            height=height,
+        )
+
     async def raster_to_webp(self, payload: bytes) -> ConvertedAsset:
         if not isinstance(payload, bytes):
             raise TypeError("Raster payload must be bytes")
@@ -698,3 +718,35 @@ class ContentAssetConverter:
             width=width,
             height=height,
         )
+
+
+class ConfiguredContentAssetConverter:
+    """Resolve optional external tools only when conversion is requested.
+
+    PWA health, auth, reading and realtime must start even on a process that
+    does not perform Staff asset conversion. The upload endpoint still fails
+    closed with ``asset.tool_unavailable`` when the configured toolchain is
+    genuinely needed and unavailable.
+    """
+
+    def __init__(self, config: object) -> None:
+        self._config = config
+        self._resolved: ContentAssetConverter | None = None
+
+    def _converter(self) -> ContentAssetConverter:
+        if self._resolved is None:
+            self._resolved = ContentAssetConverter(
+                ContentAssetTools.from_config(self._config)
+            )
+        return self._resolved
+
+    async def tikz_to_svg(self, source: str) -> ConvertedAsset:
+        return await self._converter().tikz_to_svg(source)
+
+    async def svg_to_svg(self, payload: bytes) -> ConvertedAsset:
+        # Sanitizing direct SVG is in-process, but one capability boundary for
+        # all upload kinds keeps deployment diagnostics deterministic.
+        return await self._converter().svg_to_svg(payload)
+
+    async def raster_to_webp(self, payload: bytes) -> ConvertedAsset:
+        return await self._converter().raster_to_webp(payload)

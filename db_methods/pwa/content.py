@@ -219,6 +219,22 @@ class MediaAssetRecord:
     media_type: str
     byte_size: int
     conversion_version: str
+    public_url: str | None = None
+    width: int | None = None
+    height: int | None = None
+    source_filename: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ContentRevisionAssetRecord:
+    """One immutable media attachment on an exact source revision."""
+
+    revision_id: int
+    logical_name: str
+    role: str
+    ordinal: int
+    alt_text: str | None
+    asset: MediaAssetRecord
 
 
 @dataclass(frozen=True, slots=True)
@@ -708,6 +724,29 @@ def _publication(row: Mapping[str, object]) -> PublicationRecord:
             else int(row["terminal_by_user_id"])
         ),
         terminal_at=_optional_timestamp(row["terminal_at"]),
+    )
+
+
+def _media_asset(row: Mapping[str, object]) -> MediaAssetRecord:
+    return MediaAssetRecord(
+        id=int(row["id"]),
+        public_id=str(row["public_id"]),
+        sha256=str(row["sha256"]),
+        storage_namespace=str(row["storage_namespace"]),
+        object_key=str(row["object_key"]),
+        media_type=str(row["media_type"]),
+        byte_size=int(row["byte_size"]),
+        conversion_version=str(row["conversion_version"]),
+        public_url=(
+            None if row["public_url"] is None else str(row["public_url"])
+        ),
+        width=None if row["width"] is None else int(row["width"]),
+        height=None if row["height"] is None else int(row["height"]),
+        source_filename=(
+            None
+            if row["source_filename"] is None
+            else str(row["source_filename"])
+        ),
     )
 
 
@@ -2877,18 +2916,6 @@ class PwaContentRepository:
             )
         timestamp = self._timestamp()
 
-        def from_row(row):
-            return MediaAssetRecord(
-                id=int(row["id"]),
-                public_id=str(row["public_id"]),
-                sha256=str(row["sha256"]),
-                storage_namespace=str(row["storage_namespace"]),
-                object_key=str(row["object_key"]),
-                media_type=str(row["media_type"]),
-                byte_size=int(row["byte_size"]),
-                conversion_version=str(row["conversion_version"]),
-            )
-
         def write(connection):
             if storage_namespace in {"content", "generated"}:
                 existing = connection.execute(
@@ -2916,7 +2943,7 @@ class PwaContentRepository:
                         raise ContentConflict(
                             "deduplicated asset metadata contradicts stored bytes"
                         )
-                    return from_row(existing)
+                    return _media_asset(existing)
             try:
                 row = connection.execute(
                     "INSERT INTO media_assets "
@@ -2942,7 +2969,147 @@ class PwaContentRepository:
                 ).fetchone()
             except sqlite3.IntegrityError as error:
                 raise _translate_integrity(error, action="media asset") from error
-            return from_row(row)
+            return _media_asset(row)
+
+        return await self._factory.run_write_async(write)
+
+    async def get_media_asset(self, public_id: str) -> MediaAssetRecord:
+        """Resolve one live media row without exposing its internal ID."""
+
+        _require_public_id(public_id)
+
+        def read(connection):
+            row = connection.execute(
+                "SELECT * FROM media_assets WHERE public_id = ? "
+                "AND deleted_at IS NULL",
+                (public_id,),
+            ).fetchone()
+            if row is None:
+                raise ContentNotFound("media asset does not exist")
+            return _media_asset(row)
+
+        return await self._factory.run_read_async(read)
+
+    async def list_revision_assets(
+        self, *, revision_id: int
+    ) -> tuple[ContentRevisionAssetRecord, ...]:
+        """Return immutable live attachments in deterministic source order."""
+
+        def read(connection):
+            revision = connection.execute(
+                "SELECT 1 FROM content_revisions WHERE id = ?", (revision_id,)
+            ).fetchone()
+            if revision is None:
+                raise ContentNotFound("content revision does not exist")
+            rows = connection.execute(
+                "SELECT asset_link.revision_id, asset_link.logical_name, "
+                "asset_link.role, asset_link.ordinal, asset_link.alt_text, asset.* "
+                "FROM content_revision_assets AS asset_link "
+                "JOIN media_assets AS asset ON asset.id = asset_link.asset_id "
+                "WHERE asset_link.revision_id = ? AND asset.deleted_at IS NULL "
+                "ORDER BY asset_link.ordinal, asset_link.logical_name, asset_link.role",
+                (revision_id,),
+            ).fetchall()
+            return tuple(
+                ContentRevisionAssetRecord(
+                    revision_id=int(row["revision_id"]),
+                    logical_name=str(row["logical_name"]),
+                    role=str(row["role"]),
+                    ordinal=int(row["ordinal"]),
+                    alt_text=(
+                        None if row["alt_text"] is None else str(row["alt_text"])
+                    ),
+                    asset=_media_asset(row),
+                )
+                for row in rows
+            )
+
+        return await self._factory.run_read_async(read)
+
+    async def attach_asset_to_uploaded_revision(
+        self,
+        *,
+        revision_id: int,
+        expected_revision_version: int,
+        asset_id: int,
+        logical_name: str,
+        role: str,
+        ordinal: int = 0,
+        alt_text: str | None = None,
+    ) -> tuple[int, bool]:
+        """Attach once under an optimistic revision version.
+
+        The exact same attachment is an idempotent no-op even when a client
+        retries with the pre-insert ETag after losing the first HTTP response.
+        A different asset under the same logical revision key cannot replace
+        immutable provenance; staff uploads a new source revision instead.
+        """
+
+        logical_name = _required_text(logical_name, label="asset logical name")
+        if role not in {"figure", "tikz"}:
+            raise ContentInvariantError("upload attachment role is invalid")
+        if ordinal < 0:
+            raise ContentInvariantError("asset ordinal must be non-negative")
+        if expected_revision_version < 1:
+            raise ContentInvariantError("expected revision version must be positive")
+        timestamp = self._timestamp()
+
+        def write(connection):
+            revision = connection.execute(
+                "SELECT status, version FROM content_revisions WHERE id = ?",
+                (revision_id,),
+            ).fetchone()
+            if revision is None:
+                raise ContentNotFound("content revision does not exist")
+            existing = connection.execute(
+                "SELECT asset_id, ordinal, alt_text FROM content_revision_assets "
+                "WHERE revision_id = ? AND logical_name = ? AND role = ?",
+                (revision_id, logical_name, role),
+            ).fetchone()
+            if existing is not None:
+                if (
+                    int(existing["asset_id"]) == asset_id
+                    and int(existing["ordinal"]) == ordinal
+                    and existing["alt_text"] == alt_text
+                ):
+                    return int(revision["version"]), False
+                raise ContentConflict("revision logical asset is immutable")
+            if int(revision["version"]) != expected_revision_version:
+                raise ContentVersionConflict("content revision version changed")
+            if RevisionStatus(str(revision["status"])) is not RevisionStatus.UPLOADED:
+                raise ContentConflict("assets attach only to uploaded revisions")
+            asset = connection.execute(
+                "SELECT 1 FROM media_assets WHERE id = ? AND deleted_at IS NULL",
+                (asset_id,),
+            ).fetchone()
+            if asset is None:
+                raise ContentNotFound("revision media asset does not exist")
+            try:
+                connection.execute(
+                    "INSERT INTO content_revision_assets "
+                    "(revision_id, asset_id, logical_name, role, ordinal, alt_text, "
+                    "created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        revision_id,
+                        asset_id,
+                        logical_name,
+                        role,
+                        ordinal,
+                        alt_text,
+                        timestamp,
+                    ),
+                )
+                updated = connection.execute(
+                    "UPDATE content_revisions SET version = version + 1 "
+                    "WHERE id = ? AND version = ? AND status = 'uploaded' "
+                    "RETURNING version",
+                    (revision_id, expected_revision_version),
+                ).fetchone()
+            except sqlite3.IntegrityError as error:
+                raise _translate_integrity(error, action="revision asset") from error
+            if updated is None:  # pragma: no cover - same write transaction
+                raise ContentVersionConflict("content revision version changed")
+            return int(updated["version"]), True
 
         return await self._factory.run_write_async(write)
 

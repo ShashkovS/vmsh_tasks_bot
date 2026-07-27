@@ -77,6 +77,7 @@ DIST_ROOTS = web.AppKey("e2e_gateway_dist_roots", dict)
 API_ORIGIN = web.AppKey("e2e_gateway_api_origin", str)
 HTTP_CLIENT = web.AppKey("e2e_gateway_http_client", ClientSession)
 CONTROL_TOKEN = web.AppKey("e2e_gateway_control_token", str)
+GATEWAY_CLIENT_MAX_SIZE = 64 * 1024 * 1024
 
 
 class UnsafeStaticPath(ValueError):
@@ -162,6 +163,7 @@ def _forward_headers(
     headers: CIMultiDictProxy[str],
     *,
     request_headers: bool,
+    force_no_store: bool = True,
 ) -> CIMultiDict[str]:
     blocked = HOP_BY_HOP_HEADERS | _connection_header_names(headers)
     if request_headers:
@@ -173,14 +175,14 @@ def _forward_headers(
             "sec-websocket-protocol",
             "sec-websocket-version",
         }
-    else:
+    elif force_no_store:
         # Every API response is private and authoritative.  Do not let an
         # accidental upstream cache header weaken the E2E production boundary.
         blocked = blocked | {"cache-control", "expires", "pragma"}
     forwarded = CIMultiDict(
         (name, value) for name, value in headers.items() if name.lower() not in blocked
     )
-    if not request_headers:
+    if not request_headers and force_no_store:
         forwarded["Cache-Control"] = "no-store"
         forwarded["Pragma"] = "no-cache"
     return forwarded
@@ -203,6 +205,16 @@ def _upstream_url(request: web.Request) -> str:
 
 
 async def _proxy_http(request: web.Request) -> web.StreamResponse:
+    return await _proxy_upstream(request, force_no_store=True)
+
+
+async def _proxy_content_asset(request: web.Request) -> web.StreamResponse:
+    return await _proxy_upstream(request, force_no_store=False)
+
+
+async def _proxy_upstream(
+    request: web.Request, *, force_no_store: bool
+) -> web.StreamResponse:
     override = _runtime_override(request)
     if override is not None:
         return override
@@ -225,7 +237,11 @@ async def _proxy_http(request: web.Request) -> web.StreamResponse:
         response = web.StreamResponse(
             status=upstream.status,
             reason=upstream.reason,
-            headers=_forward_headers(upstream.headers, request_headers=False),
+            headers=_forward_headers(
+                upstream.headers,
+                request_headers=False,
+                force_no_store=force_no_store,
+            ),
         )
         await response.prepare(request)
         async for chunk in upstream.content.iter_any():
@@ -534,7 +550,9 @@ def create_gateway(
 ) -> web.Application:
     if not control_token:
         raise ValueError("A non-empty E2E control token is required")
-    app = web.Application(client_max_size=16 * 1024 * 1024)
+    # Match production nginx; endpoint-specific aiohttp readers retain their
+    # narrower limits (the Phase-2 asset body is 25 MiB plus multipart framing).
+    app = web.Application(client_max_size=GATEWAY_CLIENT_MAX_SIZE)
     app[DIST_ROOTS] = _load_dist_roots(workspace)
     app[API_ORIGIN] = _validate_api_origin(api_origin)
     app[CONTROL_TOKEN] = control_token
@@ -554,6 +572,10 @@ def create_gateway(
     app.router.add_route("*", "/{audience:student|family|staff}/api", _proxy_http)
     app.router.add_route(
         "*", "/{audience:student|family|staff}/api/{tail:.*}", _proxy_http
+    )
+    app.router.add_get(
+        "/pwa-content-assets/{asset_id:[a-z0-9][a-z0-9._:-]{0,127}}",
+        _proxy_content_asset,
     )
     app.router.add_route("*", "/{audience:student|family|staff}/ws", _transport)
     app.router.add_get("/{audience:student|family|staff}", _redirect_application_root)

@@ -13,6 +13,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import re
 import unicodedata
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
@@ -34,19 +35,25 @@ from db_methods.pwa.content import (
     ContentVersionConflict,
     GroupLessonContentScope,
     LessonWindowRecord,
+    MediaAssetRecord,
     PublicationContext,
     PublicationRecord,
     PwaContentRepository,
     TextDerivativeDraft,
 )
 from helpers.pwa.content import (
+    AssetConversionError,
     COMPILER_VERSION,
     ContentCompileError,
+    ContentAssetService,
     ContentRole,
     DiagnosticSeverity,
+    WebAssetDescriptor,
     compile_latex,
 )
 from helpers.pwa.content.model import canonical_json
+from helpers.pwa.content.scanner import normalize_asset_reference
+from helpers.object_storage import ObjectStorage, ObjectStorageOperationError
 from helpers.pwa.permissions import (
     AccessForbiddenError,
     AuthenticationRequiredError,
@@ -69,9 +76,12 @@ from models.pwa.content import (
 
 CONTENT_UPLOAD_SOURCE_LIMIT_BYTES = 512 * 1024
 CONTENT_UPLOAD_REQUEST_LIMIT_BYTES = CONTENT_UPLOAD_SOURCE_LIMIT_BYTES + 64 * 1024
+CONTENT_ASSET_UPLOAD_LIMIT_BYTES = 25 * 1024 * 1024
+CONTENT_ASSET_REQUEST_LIMIT_BYTES = CONTENT_ASSET_UPLOAD_LIMIT_BYTES + 64 * 1024
 CONTENT_JSON_BODY_LIMIT_BYTES = 32 * 1024
 CONTENT_PREVIEW_TEXT_LIMIT_BYTES = 8_000_000
 _UPLOAD_FIELDS = frozenset({"groupLessonId", "kind", "logicalFilename", "source"})
+_ASSET_UPLOAD_FIELDS = frozenset({"logicalName", "kind", "asset"})
 _PUBLISH_FIELDS = frozenset(
     {
         "groupLessonId",
@@ -117,12 +127,20 @@ _STUDENT_KINDS = frozenset(
 )
 
 PWA_CONTENT_REPOSITORY = web.AppKey("pwa_content_repository", PwaContentRepository)
+PWA_CONTENT_ASSET_SERVICE = web.AppKey(
+    "pwa_content_asset_service", ContentAssetService
+)
+PWA_CONTENT_OBJECT_STORAGE = web.AppKey("pwa_content_object_storage", ObjectStorage)
 ContentInvalidator = Callable[
     [GroupLessonContentScope, ContentKind, str], Awaitable[None]
 ]
 PWA_CONTENT_INVALIDATOR = web.AppKey("pwa_content_invalidator", ContentInvalidator)
 content_routes = web.RouteTableDef()
 logger = logging.getLogger(__name__)
+# Asset discovery is a read-only preflight performed before the concurrency
+# claim. Keep it separate from the claimed compiler call so cancellation tests
+# and production cancellation retain their established lease semantics.
+_compile_asset_inventory = compile_latex
 
 
 def _repository(request: web.Request) -> PwaContentRepository:
@@ -133,6 +151,17 @@ def _repository(request: web.Request) -> PwaContentRepository:
             status=503,
             code="content_unavailable",
             message="Работа с материалами временно недоступна",
+        ) from error
+
+
+def _asset_service(request: web.Request) -> ContentAssetService:
+    try:
+        return request.app[PWA_CONTENT_ASSET_SERVICE]
+    except KeyError as error:
+        raise PwaApiError(
+            status=503,
+            code="content_assets_unavailable",
+            message="Обработка рисунков временно недоступна",
         ) from error
 
 
@@ -362,6 +391,38 @@ def _translate_content_errors(
                 code="content_validation_failed",
                 message="Материал не прошёл проверку",
             ) from error
+        except AssetConversionError as error:
+            unavailable = error.code in {
+                "asset.tool_unavailable",
+                "asset.converter_start_failed",
+            }
+            raise PwaApiError(
+                status=503 if unavailable else 422,
+                code=(
+                    "content_assets_unavailable"
+                    if unavailable
+                    else "asset_conversion_failed"
+                ),
+                message=(
+                    "Обработка рисунков временно недоступна"
+                    if unavailable
+                    else "Рисунок не прошёл безопасную обработку"
+                ),
+                details={"reason": error.code, "capability": error.capability},
+            ) from error
+        except ObjectStorageOperationError as error:
+            raise PwaApiError(
+                status=503,
+                code="content_assets_unavailable",
+                message="Не удалось сохранить рисунок. Повторите попытку.",
+                details={"operation": error.operation},
+            ) from error
+        except ContentCompileError as error:
+            raise PwaApiError(
+                status=422,
+                code="content_compile_invalid",
+                message="LaTeX-файл не удалось разобрать",
+            ) from error
         except ContentRepositoryError as error:
             raise PwaApiError(
                 status=500,
@@ -442,6 +503,89 @@ async def _multipart_upload(request: web.Request) -> dict[str, bytes]:
     return values
 
 
+async def _multipart_asset_upload(
+    request: web.Request,
+) -> tuple[dict[str, bytes], str | None]:
+    if (
+        request.content_length is not None
+        and request.content_length > CONTENT_ASSET_REQUEST_LIMIT_BYTES
+    ):
+        raise PwaApiError(
+            status=413,
+            code="payload_too_large",
+            message="Рисунок слишком большой",
+        )
+    if request.content_type != "multipart/form-data":
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Загрузка рисунка должна использовать multipart/form-data",
+        )
+    try:
+        reader = await request.multipart()
+    except (AssertionError, ValueError) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Не удалось разобрать форму рисунка",
+        ) from error
+
+    values: dict[str, bytes] = {}
+    source_filename: str | None = None
+    while part := await reader.next():
+        name = part.name
+        if name not in _ASSET_UPLOAD_FIELDS or name in values:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Форма рисунка содержит неизвестное или повторное поле",
+            )
+        if name == "asset":
+            source_filename = _asset_source_filename(part.filename)
+            limit = CONTENT_ASSET_UPLOAD_LIMIT_BYTES
+        else:
+            if part.filename is not None:
+                raise PwaApiError(
+                    status=422,
+                    code="validation_error",
+                    message="Текстовое поле формы не должно быть файлом",
+                    details={"field": name},
+                )
+            limit = 2_048
+        values[name] = await _read_part_bytes(part, limit=limit)
+
+    required = {"logicalName", "kind"}
+    if not required.issubset(values):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Заполните поля логического имени и вида рисунка",
+            details={"required": sorted(required)},
+        )
+    asset_kind = _decode_form_text(values, "kind")
+    if asset_kind not in {"raster", "svg", "tikz"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Неизвестный вид рисунка",
+            details={"field": "kind"},
+        )
+    expected_fields = required if asset_kind == "tikz" else required | {"asset"}
+    if set(values) != expected_fields or (
+        "asset" in values and not values["asset"]
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message=(
+                "TikZ берётся из LaTeX без файла"
+                if asset_kind == "tikz"
+                else "Для рисунка нужен непустой файл"
+            ),
+        )
+    return values, source_filename
+
+
 def _decode_form_text(values: Mapping[str, bytes], name: str) -> str:
     try:
         value = values[name].decode("utf-8", errors="strict")
@@ -480,6 +624,43 @@ def _logical_source_name(value: str) -> str:
             code="validation_error",
             message="Имя LaTeX-файла должно быть безопасным относительным путём .tex",
             details={"field": "logicalFilename"},
+        )
+    return value
+
+
+def _logical_asset_name(value: str) -> str:
+    normalized = normalize_asset_reference(value)
+    if (
+        normalized is None
+        or normalized != value
+        or value != unicodedata.normalize("NFKC", value)
+        or len(value.encode("utf-8")) > 1_000
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Логическое имя рисунка должно точно совпадать с LaTeX",
+            details={"field": "logicalName"},
+        )
+    return value
+
+
+def _asset_source_filename(value: str | None) -> str:
+    if (
+        value is None
+        or value != value.strip()
+        or not value
+        or len(value.encode("utf-8")) > 255
+        or value != unicodedata.normalize("NFKC", value)
+        or "/" in value
+        or "\\" in value
+        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Имя загружаемого файла недопустимо",
+            details={"field": "asset"},
         )
     return value
 
@@ -760,6 +941,173 @@ def _reconstruct_source_bytes(context: ContentRevisionContext) -> bytes:
     return payload
 
 
+def _asset_descriptor(record: MediaAssetRecord) -> WebAssetDescriptor:
+    if record.storage_namespace != "content":
+        raise ContentRepositoryError("revision asset is outside content storage")
+    if record.width is None or record.height is None:
+        raise ContentRepositoryError("revision asset dimensions are missing")
+    source = record.public_url or f"/pwa-content-assets/{record.public_id}"
+    return WebAssetDescriptor(
+        asset_id=record.public_id,
+        content_sha256=record.sha256,
+        src=source,
+        media_type=record.media_type,
+        width=record.width,
+        height=record.height,
+    )
+
+
+def _asset_descriptor_payload(
+    descriptor: WebAssetDescriptor,
+) -> dict[str, object]:
+    return {
+        "assetId": descriptor.asset_id,
+        "contentSha256": descriptor.content_sha256,
+        "src": descriptor.src,
+        "mediaType": descriptor.media_type,
+        "width": descriptor.width,
+        "height": descriptor.height,
+    }
+
+
+def _asset_references(value: object) -> dict[str, dict[str, object]]:
+    """Extract exact figure identities from a bounded compiler AST."""
+
+    parsed = json.loads(canonical_json(value))
+    discovered: list[dict[str, object]] = []
+    stack = [parsed]
+    visited = 0
+    while stack:
+        current = stack.pop()
+        visited += 1
+        if visited > 200_000:
+            raise ContentRepositoryError("compiler AST exceeds asset boundary")
+        if isinstance(current, dict):
+            kind = current.get("kind")
+            logical_name = current.get("logical_name")
+            if kind in {"asset", "tikz"} and isinstance(logical_name, str):
+                span = current.get("span")
+                start = span.get("start") if isinstance(span, dict) else None
+                offset = start.get("offset") if isinstance(start, dict) else None
+                discovered.append(
+                    {
+                        "logicalName": logical_name,
+                        "sourceKind": "tikz" if kind == "tikz" else "figure",
+                        "tikzSource": current.get("tikz_source"),
+                        "altText": current.get("alt_text"),
+                        "offset": offset if isinstance(offset, int) else 0,
+                    }
+                )
+            stack.extend(current.values())
+        elif isinstance(current, list):
+            stack.extend(current)
+
+    result: dict[str, dict[str, object]] = {}
+    for ordinal, reference in enumerate(
+        sorted(discovered, key=lambda item: (int(item["offset"]), str(item["logicalName"])))
+    ):
+        logical_name = str(reference["logicalName"])
+        existing = result.get(logical_name)
+        if existing is not None:
+            if (
+                existing["sourceKind"] != reference["sourceKind"]
+                or existing["tikzSource"] != reference["tikzSource"]
+            ):
+                raise ContentRepositoryError(
+                    "one logical asset name resolves to conflicting sources"
+                )
+            continue
+        reference["ordinal"] = ordinal
+        result[logical_name] = reference
+    return result
+
+
+async def _inspect_revision_assets(
+    repository: PwaContentRepository,
+    context: ContentRevisionContext,
+):
+    attachments = await repository.list_revision_assets(
+        revision_id=context.revision.id
+    )
+    descriptors: dict[str, WebAssetDescriptor] = {}
+    for attachment in attachments:
+        descriptor = _asset_descriptor(attachment.asset)
+        existing = descriptors.get(attachment.logical_name)
+        if existing is not None and existing != descriptor:
+            raise ContentRepositoryError(
+                "revision has conflicting logical asset attachments"
+            )
+        descriptors[attachment.logical_name] = descriptor
+    source_bytes = _reconstruct_source_bytes(context)
+    result = await asyncio.to_thread(
+        partial(
+            _compile_asset_inventory,
+            source_bytes,
+            source_name=context.source.logical_filename,
+            role=_content_role(context.source.kind),
+            known_assets=descriptors,
+            revision_id=context.revision.public_id,
+        )
+    )
+    return result, _asset_references(result.ast), descriptors
+
+
+def _revision_asset_payload(
+    context: ContentRevisionContext,
+    references: Mapping[str, Mapping[str, object]],
+    descriptors: Mapping[str, WebAssetDescriptor],
+) -> dict[str, object]:
+    assets: list[dict[str, object]] = []
+    for logical_name, reference in references.items():
+        descriptor = descriptors.get(logical_name)
+        source_kind = str(reference["sourceKind"])
+        assets.append(
+            {
+                "logicalName": logical_name,
+                "sourceKind": source_kind,
+                "status": "attached" if descriptor is not None else "missing",
+                "acceptedUploadKinds": (
+                    ["tikz"] if source_kind == "tikz" else ["raster", "svg"]
+                ),
+                "asset": (
+                    None
+                    if descriptor is None
+                    else _asset_descriptor_payload(descriptor)
+                ),
+            }
+        )
+    missing = sorted(
+        logical_name
+        for logical_name in references
+        if logical_name not in descriptors
+    )
+    return {
+        "revisionId": context.revision.public_id,
+        "status": context.revision.status.value,
+        "version": context.revision.version,
+        "missingAssets": missing,
+        "assets": assets,
+    }
+
+
+def _revision_if_match_version(request: web.Request, *, public_id: str) -> int:
+    values = request.headers.getall("If-Match", [])
+    if len(values) != 1:
+        raise PwaApiError(
+            status=422,
+            code="if_match_required",
+            message="Обновите данные перед сохранением",
+        )
+    match = re.fullmatch(rf'"{re.escape(public_id)}:v([1-9][0-9]*)"', values[0])
+    if match is None:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Материал уже изменился. Обновите страницу.",
+        )
+    return int(match.group(1))
+
+
 def _web_document(
     derivative: ContentDerivativeRecord,
     *,
@@ -800,6 +1148,40 @@ def _compile_failure_diagnostic(
         },
         "recovery": "Исправьте LaTeX-файл и загрузите новую revision.",
     }
+
+
+@content_routes.get("/pwa-content-assets/{asset_id}")
+async def read_local_content_asset(request: web.Request) -> web.Response:
+    """Serve the filesystem adapter with the same immutable URL semantics as S3."""
+
+    repository = request.app.get(PWA_CONTENT_REPOSITORY)
+    storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
+    if repository is None or storage is None:
+        raise web.HTTPServiceUnavailable(text="Content assets unavailable")
+    try:
+        asset = await repository.get_media_asset(request.match_info["asset_id"])
+        if asset.storage_namespace != "content":
+            raise ContentNotFound("content media asset does not exist")
+        payload = await storage.get(asset.object_key)
+    except (ContentInvariantError, ContentNotFound, FileNotFoundError):
+        raise web.HTTPNotFound(text="Content asset not found") from None
+    except ObjectStorageOperationError:
+        raise web.HTTPServiceUnavailable(text="Content assets unavailable") from None
+    if (
+        len(payload) != asset.byte_size
+        or hashlib.sha256(payload).hexdigest() != asset.sha256
+    ):
+        logger.error("Stored content asset %s failed integrity check", asset.public_id)
+        raise web.HTTPInternalServerError(text="Content asset is invalid")
+    return web.Response(
+        body=payload,
+        headers={
+            "Content-Type": asset.media_type,
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "ETag": f'"sha256-{asset.sha256}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @content_routes.post("/staff/api/v1/content/uploads")
@@ -844,6 +1226,113 @@ async def content_diagnostics(request: web.Request) -> web.Response:
     return response
 
 
+@content_routes.get("/staff/api/v1/content/revisions/{revision_id}/assets")
+@_translate_content_errors
+async def list_content_revision_assets(request: web.Request) -> web.Response:
+    repository = _repository(request)
+    context = await repository.get_revision_context(request.match_info["revision_id"])
+    _staff_actor(request, context.scope)
+    _result, references, descriptors = await _inspect_revision_assets(
+        repository, context
+    )
+    response = web.json_response(
+        {
+            **_revision_asset_payload(context, references, descriptors),
+            "requestId": _request_id(request),
+        }
+    )
+    response.headers["ETag"] = _etag(
+        context.revision.public_id, context.revision.version
+    )
+    return response
+
+
+@content_routes.post("/staff/api/v1/content/revisions/{revision_id}/assets")
+@_translate_content_errors
+async def upload_content_revision_asset(request: web.Request) -> web.Response:
+    repository = _repository(request)
+    context = await repository.get_revision_context(request.match_info["revision_id"])
+    _principal, actor_user_id = _staff_actor(request, context.scope)
+    expected_version = _revision_if_match_version(
+        request, public_id=context.revision.public_id
+    )
+    values, source_filename = await _multipart_asset_upload(request)
+    logical_name = _logical_asset_name(_decode_form_text(values, "logicalName"))
+    asset_kind = _decode_form_text(values, "kind")
+    _result, references, _descriptors = await _inspect_revision_assets(
+        repository, context
+    )
+    reference = references.get(logical_name)
+    if reference is None:
+        raise PwaApiError(
+            status=422,
+            code="asset_not_referenced",
+            message="Такого рисунка нет в этой revision",
+            details={"logicalName": logical_name},
+        )
+    source_kind = str(reference["sourceKind"])
+    if (source_kind == "tikz") != (asset_kind == "tikz"):
+        raise PwaApiError(
+            status=422,
+            code="asset_kind_mismatch",
+            message="Вид рисунка не совпадает с исходным LaTeX",
+            details={"logicalName": logical_name},
+        )
+    common = {
+        "revision_id": context.revision.id,
+        "logical_name": logical_name,
+        "actor_user_id": actor_user_id,
+        "expected_revision_version": expected_version,
+        "ordinal": int(reference["ordinal"]),
+        "alt_text": (
+            str(reference["altText"])
+            if isinstance(reference["altText"], str)
+            else None
+        ),
+    }
+    service = _asset_service(request)
+    if asset_kind == "tikz":
+        tikz_source = reference["tikzSource"]
+        if not isinstance(tikz_source, str):
+            raise ContentRepositoryError("compiler TikZ reference has no source")
+        persisted = await service.convert_and_attach_tikz(
+            **common,
+            source=tikz_source,
+        )
+    elif asset_kind == "svg":
+        persisted = await service.sanitize_and_attach_svg(
+            **common,
+            payload=values["asset"],
+            source_filename=source_filename,
+        )
+    else:
+        persisted = await service.convert_and_attach_raster(
+            **common,
+            payload=values["asset"],
+            source_filename=source_filename,
+        )
+    updated = await repository.get_revision_context(context.revision.public_id)
+    descriptor = _asset_descriptor(persisted.record)
+    reused = not persisted.attachment_created
+    response = web.json_response(
+        {
+            "revisionId": updated.revision.public_id,
+            "status": updated.revision.status.value,
+            "version": updated.revision.version,
+            "logicalName": logical_name,
+            "sourceKind": source_kind,
+            "asset": _asset_descriptor_payload(descriptor),
+            "reused": reused,
+            "requestId": _request_id(request),
+        },
+        status=200 if reused else 201,
+    )
+    response.headers["ETag"] = _etag(
+        updated.revision.public_id, updated.revision.version
+    )
+    return response
+
+
 @content_routes.post("/staff/api/v1/content/revisions/{revision_id}/compile")
 @_translate_content_errors
 async def compile_content_revision(request: web.Request) -> web.Response:
@@ -853,6 +1342,20 @@ async def compile_content_revision(request: web.Request) -> web.Response:
     _require_if_match(
         request, _etag(context.revision.public_id, context.revision.version)
     )
+    _preflight, references, known_assets = await _inspect_revision_assets(
+        repository, context
+    )
+    missing_assets = sorted(set(references) - set(known_assets))
+    if missing_assets:
+        raise PwaApiError(
+            status=422,
+            code="content_assets_missing",
+            message="Сначала загрузите все рисунки из LaTeX-файла",
+            details={"missingAssets": missing_assets},
+            headers={
+                "ETag": _etag(context.revision.public_id, context.revision.version)
+            },
+        )
     claim_token = uuid.uuid4().hex
     compiling = await repository.claim_revision_compilation(
         public_id=context.revision.public_id,
@@ -873,7 +1376,7 @@ async def compile_content_revision(request: web.Request) -> web.Response:
                     source_bytes,
                     source_name=context.source.logical_filename,
                     role=_content_role(context.source.kind),
-                    known_assets={},
+                    known_assets=known_assets,
                     revision_id=context.revision.public_id,
                 )
             )

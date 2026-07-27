@@ -1044,6 +1044,100 @@ async def test_media_asset_input_boundary_rejects_empty_unsafe_or_credential_url
         )
 
 
+async def test_uploaded_revision_asset_attach_is_versioned_idempotent_and_public(
+    content_fixture,
+):
+    fixture = content_fixture
+    _, group_lesson = await _create_group_lesson(
+        fixture,
+        course_lesson_public_id="course-lesson-asset-attach",
+        course_id=fixture.course_id,
+        lesson_number=72,
+        group_id="content-a",
+        group_lesson_public_id="group-lesson-asset-attach",
+    )
+    source = await fixture.repository.create_content_source(
+        public_id="source-asset-attach",
+        group_lesson_id=group_lesson.id,
+        kind=ContentKind.CONDITION,
+        logical_filename="asset-attach.tex",
+        source_encoding="utf-8",
+        actor_user_id=fixture.actor_user_id,
+    )
+    revision = await fixture.repository.append_revision(
+        public_id="revision-asset-attach",
+        source_id=source.id,
+        payload=SourceRevisionPayload.from_bytes(
+            b"asset attach",
+            encoding="utf-8",
+            provenance={"logicalFilename": "asset-attach.tex"},
+        ),
+        actor_user_id=fixture.actor_user_id,
+        expected_previous_revision_number=0,
+    )
+    payload = b"synthetic-webp"
+    asset = await fixture.repository.register_media_asset(
+        public_id="asset-attach-public",
+        sha256=hashlib.sha256(payload).hexdigest(),
+        storage_namespace="content",
+        object_key="content/sha256/asset-attach.webp",
+        public_url="https://assets.example.test/asset-attach.webp",
+        media_type="image/webp",
+        byte_size=len(payload),
+        width=320,
+        height=240,
+        source_filename="source.heic",
+        actor_user_id=fixture.actor_user_id,
+    )
+
+    version, created = await fixture.repository.attach_asset_to_uploaded_revision(
+        revision_id=revision.id,
+        expected_revision_version=revision.version,
+        asset_id=asset.id,
+        logical_name="figures/source.heic",
+        role="figure",
+        alt_text="Рисунок",
+    )
+    assert (version, created) == (revision.version + 1, True)
+    retry_version, retry_created = (
+        await fixture.repository.attach_asset_to_uploaded_revision(
+            revision_id=revision.id,
+            expected_revision_version=revision.version,
+            asset_id=asset.id,
+            logical_name="figures/source.heic",
+            role="figure",
+            alt_text="Рисунок",
+        )
+    )
+    assert (retry_version, retry_created) == (version, False)
+
+    listed = await fixture.repository.list_revision_assets(revision_id=revision.id)
+    assert len(listed) == 1
+    assert listed[0].logical_name == "figures/source.heic"
+    assert listed[0].asset.public_url == (
+        "https://assets.example.test/asset-attach.webp"
+    )
+    assert listed[0].asset.width == 320
+    assert listed[0].asset.height == 240
+    assert listed[0].asset.source_filename == "source.heic"
+    assert await fixture.repository.get_media_asset(asset.public_id) == listed[0].asset
+
+    compiling = await fixture.repository.claim_revision_compilation(
+        public_id=revision.public_id,
+        expected_version=version,
+        claim_token="asset-attach-compile-claim",
+        parser_version="asset-test-v1",
+    )
+    with pytest.raises(ContentConflict, match="uploaded revisions"):
+        await fixture.repository.attach_asset_to_uploaded_revision(
+            revision_id=revision.id,
+            expected_revision_version=compiling.version,
+            asset_id=asset.id,
+            logical_name="figures/second.heic",
+            role="figure",
+        )
+
+
 async def test_publication_replace_activation_and_rollback_are_atomic(
     content_fixture,
 ):
