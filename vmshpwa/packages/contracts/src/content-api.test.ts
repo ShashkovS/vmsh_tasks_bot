@@ -5,6 +5,11 @@ import {
   contentAssetsMissingDetailsSchema,
   contentEtagSchema,
   contentQueryKeys,
+  historicalAnswerTypeValues,
+  problemMatchMutationRequestSchema,
+  problemMatchReviewSchema,
+  problemMetadataGridSchema,
+  problemMetadataMutationRequestSchema,
   publishContentRequestSchema,
   publishedContentSchema,
   rollbackContentRequestSchema,
@@ -363,6 +368,148 @@ describe('Phase-2 content HTTP contracts', () => {
     ).toThrow()
     expect(() =>
       publishContentRequestSchema.parse({ ...request, businessTimezone: 'browser-local' }),
+    ).toThrow()
+  })
+
+  it('validates complete problem matching batches and all historical answer types', () => {
+    const review = problemMatchReviewSchema.parse({
+      revisionId: document.revisionId,
+      groupLessonId: 'group-lesson-41-n',
+      version: 1,
+      etag: '"review-content-revision-41:v1"',
+      items: [
+        {
+          sourceOrdinal: 1,
+          sourceItem: '1',
+          displayNumber: '1',
+          sourceTitle: 'Орехи',
+          suggestedProblemId: -41,
+          match: null,
+        },
+      ],
+      candidates: [
+        {
+          problemId: -41,
+          problemNumber: 1,
+          item: '',
+          title: 'Сколько орехов',
+          problemType: 1,
+          answerType: 2,
+          answerValidation: null,
+          validationError: null,
+          correctAnswer: '7',
+          correctAnswerChecker: null,
+          wrongAnswer: 'Нет, не столько орехов',
+          congratulation: 'Да, всё верно!',
+        },
+      ],
+      requestId: 'problem-review-contract-test',
+    })
+
+    expect(review.items[0]?.suggestedProblemId).toBe(-41)
+    expect(historicalAnswerTypeValues).toHaveLength(23)
+    expect(
+      historicalAnswerTypeValues.every(
+        (answerType) =>
+          problemMetadataMutationRequestSchema.safeParse({
+            revisionId: document.revisionId,
+            rows: [
+              {
+                problemId: -answerType,
+                sourceOrdinal: answerType,
+                sourceItem: String(answerType),
+                displayNumber: String(answerType),
+                title: `Тип ответа ${answerType}`,
+                problemType: 1,
+                answerType,
+                answerValidation: null,
+                validationError: null,
+                correctAnswer: null,
+                correctAnswerChecker: null,
+                wrongAnswer: null,
+                congratulation: null,
+              },
+            ],
+          }).success,
+      ),
+    ).toBe(true)
+  })
+
+  it('rejects contradictory or duplicate matching decisions before HTTP', () => {
+    const row = {
+      sourceOrdinal: 1,
+      sourceItem: '1',
+      decision: 'manual_match',
+      problemId: -41,
+    } as const
+
+    expect(problemMatchMutationRequestSchema.parse({ matches: [row] })).toEqual({
+      matches: [row],
+    })
+    expect(() =>
+      problemMatchMutationRequestSchema.parse({
+        matches: [row, { ...row, sourceOrdinal: 2, sourceItem: '2' }],
+      }),
+    ).toThrow()
+    expect(() =>
+      problemMatchMutationRequestSchema.parse({
+        matches: [{ ...row, decision: 'omit', problemId: -41 }],
+      }),
+    ).toThrow()
+    expect(() =>
+      problemMatchMutationRequestSchema.parse({
+        matches: [{ ...row, decision: 'insert_new', problemId: -41 }],
+      }),
+    ).toThrow()
+  })
+
+  it('keeps metadata rows type-safe and strips empty optional answer values', () => {
+    const grid = problemMetadataGridSchema.parse({
+      revisionId: document.revisionId,
+      groupLessonId: 'group-lesson-41-n',
+      version: 3,
+      etag: '"review-content-revision-41:v3"',
+      rows: [
+        {
+          problemId: -41,
+          sourceOrdinal: 1,
+          sourceItem: '1',
+          displayNumber: '1',
+          title: 'Сколько орехов',
+          problemType: 1,
+          answerType: 2,
+          answerValidation: '',
+          validationError: 'Введите число орехов, например 7',
+          correctAnswer: '7',
+          correctAnswerChecker: '',
+          wrongAnswer: 'Нет, не столько орехов',
+          congratulation: 'Да, всё верно!',
+          reviewed: false,
+        },
+      ],
+      requestId: 'metadata-contract-test',
+    })
+
+    expect(grid.rows[0]?.answerValidation).toBeNull()
+    expect(grid.rows[0]?.correctAnswerChecker).toBeNull()
+    expect(() =>
+      problemMetadataMutationRequestSchema.parse({
+        revisionId: document.revisionId,
+        rows: [
+          {
+            ...grid.rows[0],
+            reviewed: undefined,
+            problemType: 2,
+            answerType: 2,
+          },
+        ],
+      }),
+    ).toThrow()
+    expect(() =>
+      problemMetadataGridSchema.parse({
+        ...grid,
+        rows: [grid.rows[0], grid.rows[0]],
+      }),
     ).toThrow()
   })
 })

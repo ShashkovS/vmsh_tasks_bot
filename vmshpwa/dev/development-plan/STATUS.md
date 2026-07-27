@@ -206,6 +206,11 @@
   matching без дублирования task metadata. Domain/repository/real-aiohttp
   suite — **111 PASS**, Ruff — PASS. Proof:
   [`phase2-problem-review-api.md`](../../../pwa_tests/reports/phase2-problem-review-api.md).
+- Phase 2E frontend boundary добавляет strict Zod full-batch contracts для
+  matching/condition metadata, все 23 historical answer types, GET/PUT client,
+  exact `If-Match`, body/header ETag consistency и query hooks. Два package
+  typecheck, ESLint и **24 unit tests** — PASS. Proof:
+  [`phase2-problem-review-frontend.md`](../../../pwa_tests/reports/phase2-problem-review-frontend.md).
 - Phase 2 всё ещё открыт для matching/metadata Staff UI и Storybook,
   Staff-openable generated
   PDF, bulk upload, production-build content E2E и owner visual approval.

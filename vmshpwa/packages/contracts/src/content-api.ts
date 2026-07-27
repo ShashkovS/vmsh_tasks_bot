@@ -532,6 +532,303 @@ export const staffContentHistorySchema = z
   })
 export type StaffContentHistory = z.infer<typeof staffContentHistorySchema>
 
+// `problemId` is deliberately the only legacy integer on this Staff-only
+// reconciliation boundary. Phase 3 replaces it with an opaque public ID before
+// task data reaches Student/Family; see Phase 2 MATCH-03 and METADATA-01.
+export const legacyProblemIdSchema = z
+  .number()
+  .int()
+  .refine(Number.isSafeInteger, 'Expected a safe integer problem ID')
+  .refine((value) => value !== 0, 'Problem ID cannot be zero')
+
+export const problemTypeSchema = z
+  .number()
+  .int()
+  .refine((value) => value >= 1 && value <= 4, 'Unknown problem type')
+export type ProblemType = z.infer<typeof problemTypeSchema>
+
+export const historicalAnswerTypeValues = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 98, 99,
+] as const
+export const answerTypeSchema = z
+  .number()
+  .int()
+  .refine(
+    (value): value is (typeof historicalAnswerTypeValues)[number] =>
+      (historicalAnswerTypeValues as readonly number[]).includes(value),
+    'Unknown historical answer type',
+  )
+export type AnswerType = z.infer<typeof answerTypeSchema>
+
+const sourceItemSchema = z.string().trim().min(1).max(80)
+const displayNumberSchema = z.string().trim().min(1).max(80)
+const problemTitleSchema = z.string().trim().min(1).max(500)
+const nullableAnswerTextSchema = z
+  .string()
+  .trim()
+  .max(4_000)
+  .nullable()
+  .transform((value) => (value === '' ? null : value))
+const nullableCheckerSchema = z
+  .string()
+  .trim()
+  .max(65_536)
+  .nullable()
+  .transform((value) => (value === '' ? null : value))
+
+export const problemMatchDecisionSchema = z.enum([
+  'auto_position',
+  'manual_match',
+  'insert_new',
+  'omit',
+])
+export type ProblemMatchDecision = z.infer<typeof problemMatchDecisionSchema>
+
+export const legacyProblemCandidateSchema = z
+  .object({
+    problemId: legacyProblemIdSchema,
+    problemNumber: z.number().int().nonnegative(),
+    // Historical rows can contain blank item/title values. They remain visible
+    // candidates, but the reviewed metadata request below requires both fields.
+    item: z.string().max(80),
+    title: z.string().max(500),
+    problemType: problemTypeSchema,
+    answerType: answerTypeSchema.nullable(),
+    answerValidation: z.string().max(4_000).nullable(),
+    validationError: z.string().max(4_000).nullable(),
+    correctAnswer: z.string().max(4_000).nullable(),
+    correctAnswerChecker: z.string().max(65_536).nullable(),
+    wrongAnswer: z.string().max(4_000).nullable(),
+    congratulation: z.string().max(4_000).nullable(),
+  })
+  .strict()
+export type LegacyProblemCandidate = z.infer<typeof legacyProblemCandidateSchema>
+
+const resolvedProblemMatchSchema = z
+  .object({
+    decision: problemMatchDecisionSchema,
+    problemId: legacyProblemIdSchema.nullable(),
+  })
+  .strict()
+  .superRefine((match, context) => {
+    if (match.decision === 'omit' && match.problemId !== null) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Omitted problems cannot carry a problem ID',
+        path: ['problemId'],
+      })
+    }
+    if (match.decision !== 'omit' && match.problemId === null) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Resolved problems require a problem ID',
+        path: ['problemId'],
+      })
+    }
+  })
+
+export const problemMatchReviewItemSchema = z
+  .object({
+    sourceOrdinal: z.number().int().nonnegative(),
+    sourceItem: sourceItemSchema,
+    displayNumber: displayNumberSchema,
+    sourceTitle: z.string().trim().min(1).max(500).nullable(),
+    suggestedProblemId: legacyProblemIdSchema.nullable(),
+    match: resolvedProblemMatchSchema.nullable(),
+  })
+  .strict()
+export type ProblemMatchReviewItem = z.infer<typeof problemMatchReviewItemSchema>
+
+export const problemMatchReviewSchema = z
+  .object({
+    revisionId: publicIdSchema,
+    groupLessonId: publicIdSchema,
+    version: z.number().int().positive(),
+    etag: contentEtagSchema,
+    items: z.array(problemMatchReviewItemSchema).max(2_000),
+    candidates: z.array(legacyProblemCandidateSchema).max(5_000),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((review, context) => {
+    const identities = review.items.map((item) => `${item.sourceOrdinal}\u0000${item.sourceItem}`)
+    if (new Set(identities).size !== identities.length) {
+      context.addIssue({ code: 'custom', message: 'Canonical problem identities must be unique' })
+    }
+    const candidateIds = review.candidates.map((candidate) => candidate.problemId)
+    if (new Set(candidateIds).size !== candidateIds.length) {
+      context.addIssue({ code: 'custom', message: 'Problem candidates must be unique' })
+    }
+    const candidateIdSet = new Set(candidateIds)
+    review.items.forEach((item, index) => {
+      if (item.suggestedProblemId !== null && !candidateIdSet.has(item.suggestedProblemId)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Suggested problem must be present in candidates',
+          path: ['items', index, 'suggestedProblemId'],
+        })
+      }
+    })
+  })
+export type ProblemMatchReview = z.infer<typeof problemMatchReviewSchema>
+
+export const problemMatchMutationRowSchema = z
+  .object({
+    sourceOrdinal: z.number().int().nonnegative(),
+    sourceItem: sourceItemSchema,
+    decision: problemMatchDecisionSchema,
+    problemId: legacyProblemIdSchema.nullable(),
+  })
+  .strict()
+  .superRefine((row, context) => {
+    const requiresProblem = row.decision === 'auto_position' || row.decision === 'manual_match'
+    if (requiresProblem !== (row.problemId !== null)) {
+      context.addIssue({
+        code: 'custom',
+        message: requiresProblem
+          ? 'Existing-problem matches require a problem ID'
+          : 'New and omitted problems cannot carry a problem ID',
+        path: ['problemId'],
+      })
+    }
+  })
+export type ProblemMatchMutationRow = z.infer<typeof problemMatchMutationRowSchema>
+
+export const problemMatchMutationRequestSchema = z
+  .object({ matches: z.array(problemMatchMutationRowSchema).max(2_000) })
+  .strict()
+  .superRefine((request, context) => {
+    const identities = request.matches.map(
+      (item) => `${item.sourceOrdinal}\u0000${item.sourceItem}`,
+    )
+    if (new Set(identities).size !== identities.length) {
+      context.addIssue({ code: 'custom', message: 'Canonical problem identities must be unique' })
+    }
+    const problemIds = request.matches.flatMap((item) =>
+      item.problemId === null ? [] : [item.problemId],
+    )
+    if (new Set(problemIds).size !== problemIds.length) {
+      context.addIssue({ code: 'custom', message: 'A problem may be matched only once' })
+    }
+  })
+export type ProblemMatchMutationRequest = z.infer<typeof problemMatchMutationRequestSchema>
+
+const problemMetadataMutationShape = {
+  problemId: legacyProblemIdSchema,
+  sourceOrdinal: z.number().int().nonnegative(),
+  sourceItem: sourceItemSchema,
+  displayNumber: displayNumberSchema,
+  title: problemTitleSchema,
+  problemType: problemTypeSchema,
+  answerType: answerTypeSchema.nullable(),
+  answerValidation: nullableAnswerTextSchema,
+  validationError: nullableAnswerTextSchema,
+  correctAnswer: nullableAnswerTextSchema,
+  correctAnswerChecker: nullableCheckerSchema,
+  wrongAnswer: nullableAnswerTextSchema,
+  congratulation: nullableAnswerTextSchema,
+}
+
+function validateProblemMetadata(
+  row: {
+    problemType: number
+    answerType: number | null
+    answerValidation: string | null
+    validationError: string | null
+    correctAnswer: string | null
+    correctAnswerChecker: string | null
+    wrongAnswer: string | null
+    congratulation: string | null
+  },
+  context: z.RefinementCtx,
+): void {
+  if (row.problemType === 1 && row.answerType === null) {
+    context.addIssue({
+      code: 'custom',
+      message: 'Test problems require an answer type',
+      path: ['answerType'],
+    })
+  }
+  if (row.problemType !== 1) {
+    const answerFields = [
+      'answerValidation',
+      'validationError',
+      'correctAnswer',
+      'correctAnswerChecker',
+      'wrongAnswer',
+      'congratulation',
+    ] as const
+    if (row.answerType !== null) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Only test problems can have an answer type',
+        path: ['answerType'],
+      })
+    }
+    answerFields.forEach((field) => {
+      if (row[field] !== null) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Non-test problems cannot retain test answer configuration',
+          path: [field],
+        })
+      }
+    })
+  }
+}
+
+export const problemMetadataMutationRowSchema = z
+  .object(problemMetadataMutationShape)
+  .strict()
+  .superRefine(validateProblemMetadata)
+export type ProblemMetadataMutationRow = z.infer<typeof problemMetadataMutationRowSchema>
+
+export const problemMetadataGridRowSchema = z
+  .object({ ...problemMetadataMutationShape, reviewed: z.boolean() })
+  .strict()
+  .superRefine(validateProblemMetadata)
+export type ProblemMetadataGridRow = z.infer<typeof problemMetadataGridRowSchema>
+
+export const problemMetadataGridSchema = z
+  .object({
+    revisionId: publicIdSchema,
+    groupLessonId: publicIdSchema,
+    version: z.number().int().positive(),
+    etag: contentEtagSchema,
+    rows: z.array(problemMetadataGridRowSchema).max(2_000),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((grid, context) => {
+    const identities = grid.rows.map((row) => `${row.sourceOrdinal}\u0000${row.sourceItem}`)
+    const problemIds = grid.rows.map((row) => row.problemId)
+    if (new Set(identities).size !== identities.length) {
+      context.addIssue({ code: 'custom', message: 'Metadata identities must be unique' })
+    }
+    if (new Set(problemIds).size !== problemIds.length) {
+      context.addIssue({ code: 'custom', message: 'Metadata problem IDs must be unique' })
+    }
+  })
+export type ProblemMetadataGrid = z.infer<typeof problemMetadataGridSchema>
+
+export const problemMetadataMutationRequestSchema = z
+  .object({
+    revisionId: publicIdSchema,
+    rows: z.array(problemMetadataMutationRowSchema).max(2_000),
+  })
+  .strict()
+  .superRefine((request, context) => {
+    const identities = request.rows.map((row) => `${row.sourceOrdinal}\u0000${row.sourceItem}`)
+    const problemIds = request.rows.map((row) => row.problemId)
+    if (new Set(identities).size !== identities.length) {
+      context.addIssue({ code: 'custom', message: 'Metadata identities must be unique' })
+    }
+    if (new Set(problemIds).size !== problemIds.length) {
+      context.addIssue({ code: 'custom', message: 'Metadata problem IDs must be unique' })
+    }
+  })
+export type ProblemMetadataMutationRequest = z.infer<typeof problemMetadataMutationRequestSchema>
+
 export const contentPublicationCancellationSchema = contentPublicationSchema
   .extend({ action: z.literal('cancelled'), state: z.literal('superseded') })
   .strict()
@@ -582,6 +879,9 @@ export const contentQueryKeys = {
   ) => ['content', 'published', audience, groupLessonId, kind, studentPublicId ?? 'self'] as const,
   diagnostics: (revisionId: string) => ['content', 'diagnostics', revisionId] as const,
   assets: (revisionId: string) => ['content', 'assets', revisionId] as const,
+  problemMatches: (revisionId: string) => ['content', 'problem-matches', revisionId] as const,
+  metadataGrid: (groupLessonId: string, revisionId: string) =>
+    ['content', 'metadata-grid', groupLessonId, revisionId] as const,
   history: (groupLessonId: string) => ['content', 'history', groupLessonId] as const,
   preview: (revisionId: string, kind: 'web' | 'telegram') =>
     ['content', 'preview', revisionId, kind] as const,

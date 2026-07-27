@@ -42,6 +42,67 @@ const revision = {
   requestId: 'content-test',
 } as const
 
+const reviewEtag = '"review-content-revision-41:v1"'
+const matchReview = {
+  revisionId: revision.revisionId,
+  groupLessonId: revision.groupLessonId,
+  version: 1,
+  etag: reviewEtag,
+  items: [
+    {
+      sourceOrdinal: 1,
+      sourceItem: '1',
+      displayNumber: '1',
+      sourceTitle: 'Орехи',
+      suggestedProblemId: -41,
+      match: null,
+    },
+  ],
+  candidates: [
+    {
+      problemId: -41,
+      problemNumber: 1,
+      item: '',
+      title: 'Сколько орехов',
+      problemType: 1,
+      answerType: 2,
+      answerValidation: null,
+      validationError: null,
+      correctAnswer: '7',
+      correctAnswerChecker: null,
+      wrongAnswer: 'Нет, не столько орехов',
+      congratulation: 'Да, всё верно!',
+    },
+  ],
+  requestId: 'problem-review-test',
+} as const
+
+const metadataGrid = {
+  revisionId: revision.revisionId,
+  groupLessonId: revision.groupLessonId,
+  version: 1,
+  etag: reviewEtag,
+  rows: [
+    {
+      problemId: -41,
+      sourceOrdinal: 1,
+      sourceItem: '1',
+      displayNumber: '1',
+      title: 'Сколько орехов',
+      problemType: 1,
+      answerType: 2,
+      answerValidation: null,
+      validationError: 'Введите число орехов, например 7',
+      correctAnswer: '7',
+      correctAnswerChecker: null,
+      wrongAnswer: 'Нет, не столько орехов',
+      congratulation: 'Да, всё верно!',
+      reviewed: false,
+    },
+  ],
+  requestId: 'metadata-grid-test',
+} as const
+
 function jsonResponse(body: unknown, init: ResponseInit & { etag?: string } = {}): Response {
   const headers = new Headers(init.headers)
   headers.set('Content-Type', 'application/json')
@@ -218,6 +279,143 @@ describe('Content API client', () => {
         kind: 'svg',
       }),
     ).rejects.toThrow('require a file')
+  })
+
+  it('loads and atomically saves the complete problem-matching batch', async () => {
+    const requests: Array<{ url: string; init: RequestInit | undefined }> = []
+    const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push({ url: requestUrl(input), init })
+      const body =
+        requests.length === 1
+          ? matchReview
+          : {
+              ...matchReview,
+              version: 2,
+              etag: '"review-content-revision-41:v2"',
+              items: [
+                {
+                  ...matchReview.items[0],
+                  match: { decision: 'manual_match', problemId: -41 },
+                },
+              ],
+            }
+      return Promise.resolve(
+        jsonResponse(body, {
+          etag: body.etag,
+        }),
+      )
+    }) as typeof fetch
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    const loaded = await client.problemMatches(revision.revisionId)
+    const saved = await client.resolveProblemMatches({
+      revisionId: revision.revisionId,
+      etag: loaded.etag,
+      matches: [
+        {
+          sourceOrdinal: 1,
+          sourceItem: '1',
+          decision: 'manual_match',
+          problemId: -41,
+        },
+      ],
+    })
+
+    const expectedPath = `/staff/api/v1/content/revisions/${encodeURIComponent(revision.revisionId)}/problem-matches`
+    expect(requests.map((request) => request.url)).toEqual([expectedPath, expectedPath])
+    expect(requests[1]?.init?.method).toBe('PUT')
+    expect(new Headers(requests[1]?.init?.headers).get('If-Match')).toBe(reviewEtag)
+    expect(JSON.parse(requests[1]?.init?.body as string)).toEqual({
+      matches: [
+        {
+          sourceOrdinal: 1,
+          sourceItem: '1',
+          decision: 'manual_match',
+          problemId: -41,
+        },
+      ],
+    })
+    expect(saved.data.items[0]?.match?.problemId).toBe(-41)
+  })
+
+  it('loads condition metadata by revision and saves a reviewed grid', async () => {
+    const requests: Array<{ url: string; init: RequestInit | undefined }> = []
+    const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push({ url: requestUrl(input), init })
+      const body =
+        requests.length === 1
+          ? metadataGrid
+          : {
+              ...metadataGrid,
+              version: 2,
+              etag: '"review-content-revision-41:v2"',
+              rows: [{ ...metadataGrid.rows[0], reviewed: true }],
+            }
+      return Promise.resolve(jsonResponse(body, { etag: body.etag }))
+    }) as typeof fetch
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    const loaded = await client.metadataGrid(revision.groupLessonId, revision.revisionId)
+    const row = loaded.data.rows[0]!
+    const saved = await client.saveMetadataGrid({
+      groupLessonId: revision.groupLessonId,
+      revisionId: revision.revisionId,
+      etag: loaded.etag,
+      rows: [
+        {
+          problemId: row.problemId,
+          sourceOrdinal: row.sourceOrdinal,
+          sourceItem: row.sourceItem,
+          displayNumber: row.displayNumber,
+          title: row.title,
+          problemType: row.problemType,
+          answerType: row.answerType,
+          answerValidation: row.answerValidation,
+          validationError: row.validationError,
+          correctAnswer: row.correctAnswer,
+          correctAnswerChecker: row.correctAnswerChecker,
+          wrongAnswer: row.wrongAnswer,
+          congratulation: row.congratulation,
+        },
+      ],
+    })
+
+    expect(requests[0]?.url).toBe(
+      `/staff/api/v1/group-lessons/${revision.groupLessonId}/metadata-grid?revisionId=${encodeURIComponent(revision.revisionId)}`,
+    )
+    expect(requests[1]?.url).toBe(
+      `/staff/api/v1/group-lessons/${revision.groupLessonId}/metadata-grid`,
+    )
+    expect(requests[1]?.init?.method).toBe('PUT')
+    expect(new Headers(requests[1]?.init?.headers).get('If-Match')).toBe(reviewEtag)
+    expect(JSON.parse(requests[1]?.init?.body as string)).not.toHaveProperty('rows.0.reviewed')
+    expect(saved.data.rows[0]?.reviewed).toBe(true)
+  })
+
+  it('rejects contradictory batches and mismatched review ETags before state can drift', async () => {
+    const fetchImplementation = vi.fn(() =>
+      Promise.resolve(jsonResponse(matchReview, { etag: '"review-content-revision-41:v2"' })),
+    ) as typeof fetch
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    await expect(client.problemMatches(revision.revisionId)).rejects.toBeInstanceOf(
+      ContentProtocolError,
+    )
+    await expect(
+      client.resolveProblemMatches({
+        revisionId: revision.revisionId,
+        etag: contentEtagSchema.parse(reviewEtag),
+        matches: [
+          {
+            sourceOrdinal: 1,
+            sourceItem: '1',
+            decision: 'omit',
+            problemId: -41,
+          },
+        ],
+      }),
+    ).rejects.toThrow('New and omitted problems cannot carry a problem ID')
+    expect(fetchImplementation).toHaveBeenCalledTimes(1)
   })
 
   it('publishes a fresh slot with the explicit none precondition', async () => {

@@ -7,6 +7,10 @@ import {
   contentIfMatchSchema,
   contentAssetUploadKindSchema,
   contentMaterialKindSchema,
+  problemMatchMutationRequestSchema,
+  problemMatchReviewSchema,
+  problemMetadataGridSchema,
+  problemMetadataMutationRequestSchema,
   contentPublicationCancellationSchema,
   contentPublicationHidingSchema,
   contentPublicationSchema,
@@ -34,6 +38,10 @@ import {
   type RuntimeConfig,
   type BusinessTimezone,
   type LocalPublicationTime,
+  type ProblemMatchMutationRow,
+  type ProblemMatchReview,
+  type ProblemMetadataGrid,
+  type ProblemMetadataMutationRow,
   type StaffContentHistory,
   type StaffContentAssetUpload,
   type StaffContentPreview,
@@ -94,6 +102,19 @@ export interface PublishedContentInput {
   studentPublicId?: string
 }
 
+export interface ResolveProblemMatchesInput {
+  revisionId: string
+  etag: ContentEtag
+  matches: ProblemMatchMutationRow[]
+}
+
+export interface SaveProblemMetadataGridInput {
+  groupLessonId: string
+  revisionId: string
+  etag: ContentEtag
+  rows: ProblemMetadataMutationRow[]
+}
+
 export interface ContentRequestOptions {
   signal?: AbortSignal
 }
@@ -117,6 +138,23 @@ export interface ContentApiClient {
     revisionId: string,
     options?: ContentRequestOptions,
   ): Promise<VersionedContentResource<StaffContentRevisionAssets>>
+  problemMatches(
+    revisionId: string,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<ProblemMatchReview>>
+  resolveProblemMatches(
+    input: ResolveProblemMatchesInput,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<ProblemMatchReview>>
+  metadataGrid(
+    groupLessonId: string,
+    revisionId: string,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<ProblemMetadataGrid>>
+  saveMetadataGrid(
+    input: SaveProblemMetadataGridInput,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<ProblemMetadataGrid>>
   uploadRevisionAsset(
     input: UploadContentRevisionAssetInput,
     options?: ContentRequestOptions,
@@ -306,6 +344,75 @@ class BrowserContentApiClient implements ContentApiClient {
       `/content/revisions/${encodeURIComponent(revisionId)}/assets`,
       { method: 'POST', body, ifMatch: contentEtagSchema.parse(input.etag), ...options },
       staffContentAssetUploadSchema,
+    )
+  }
+
+  async problemMatches(
+    revisionId: string,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<ProblemMatchReview>> {
+    this.#requireStaff()
+    return this.#reviewResource(
+      `/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/problem-matches`,
+      { method: 'GET', ...options },
+      problemMatchReviewSchema,
+    )
+  }
+
+  async resolveProblemMatches(
+    input: ResolveProblemMatchesInput,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<ProblemMatchReview>> {
+    this.#requireStaff()
+    const revisionId = publicIdSchema.parse(input.revisionId)
+    const request = problemMatchMutationRequestSchema.parse({ matches: input.matches })
+    return this.#reviewResource(
+      `/content/revisions/${encodeURIComponent(revisionId)}/problem-matches`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(request),
+        ifMatch: contentEtagSchema.parse(input.etag),
+        contentType: 'application/json',
+        ...options,
+      },
+      problemMatchReviewSchema,
+    )
+  }
+
+  async metadataGrid(
+    groupLessonId: string,
+    revisionId: string,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<ProblemMetadataGrid>> {
+    this.#requireStaff()
+    const query = new URLSearchParams({ revisionId: publicIdSchema.parse(revisionId) })
+    return this.#reviewResource(
+      `/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/metadata-grid?${query.toString()}`,
+      { method: 'GET', ...options },
+      problemMetadataGridSchema,
+    )
+  }
+
+  async saveMetadataGrid(
+    input: SaveProblemMetadataGridInput,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<ProblemMetadataGrid>> {
+    this.#requireStaff()
+    const groupLessonId = publicIdSchema.parse(input.groupLessonId)
+    const request = problemMetadataMutationRequestSchema.parse({
+      revisionId: publicIdSchema.parse(input.revisionId),
+      rows: input.rows,
+    })
+    return this.#reviewResource(
+      `/group-lessons/${encodeURIComponent(groupLessonId)}/metadata-grid`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(request),
+        ifMatch: contentEtagSchema.parse(input.etag),
+        contentType: 'application/json',
+        ...options,
+      },
+      problemMetadataGridSchema,
     )
   }
 
@@ -501,6 +608,20 @@ class BrowserContentApiClient implements ContentApiClient {
     return { data, etag: etag.data }
   }
 
+  async #reviewResource<T extends { etag: ContentEtag }>(
+    path: string,
+    request: ContentTransportRequest,
+    parser: ResponseParser<T>,
+  ): Promise<VersionedContentResource<T>> {
+    const resource = await this.#versionedJson(path, request, parser)
+    if (resource.data.etag !== resource.etag) {
+      throw new ContentProtocolError('Review response ETag does not match its body', {
+        status: 200,
+      })
+    }
+    return resource
+  }
+
   async #json<T>(
     path: string,
     request: ContentTransportRequest,
@@ -575,7 +696,7 @@ class BrowserContentApiClient implements ContentApiClient {
 }
 
 interface ContentTransportRequest extends ContentRequestOptions {
-  method: 'GET' | 'POST'
+  method: 'GET' | 'POST' | 'PUT'
   body?: BodyInit
   ifMatch?: ContentIfMatch
   contentType?: string
@@ -625,6 +746,31 @@ export function useContentRevisionAssetsQuery(
   return useQuery({
     queryKey: contentQueryKeys.assets(revisionId),
     queryFn: ({ signal }) => client.revisionAssets(revisionId, { signal }),
+    enabled: options.enabled ?? true,
+  })
+}
+
+export function useProblemMatchesQuery(
+  client: Pick<ContentApiClient, 'problemMatches'>,
+  revisionId: string,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: contentQueryKeys.problemMatches(revisionId),
+    queryFn: ({ signal }) => client.problemMatches(revisionId, { signal }),
+    enabled: options.enabled ?? true,
+  })
+}
+
+export function useProblemMetadataGridQuery(
+  client: Pick<ContentApiClient, 'metadataGrid'>,
+  groupLessonId: string,
+  revisionId: string,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: contentQueryKeys.metadataGrid(groupLessonId, revisionId),
+    queryFn: ({ signal }) => client.metadataGrid(groupLessonId, revisionId, { signal }),
     enabled: options.enabled ?? true,
   })
 }

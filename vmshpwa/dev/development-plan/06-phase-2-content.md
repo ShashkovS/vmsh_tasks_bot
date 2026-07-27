@@ -250,6 +250,20 @@ Frontend contracts, Staff workflow, Storybook interaction/visual gate и
 production-build content E2E остаются продолжением Phase 2E; backend proof:
 [`phase2-problem-review-api.md`](../../../pwa_tests/reports/phase2-problem-review-api.md).
 
+Contract/client increment Phase 2E также реализован 28 июля 2026:
+
+- [x] bounded strict Zod schemas, все 23 historical answer types и cross-field
+      task/answer validation;
+- [x] full-batch match/metadata request validation, unique identities и
+      Staff-only transitional legacy problem ID;
+- [x] authenticated GET/PUT client, exact `If-Match`, body/header ETag check и
+      стабильные TanStack Query keys/hooks;
+- [x] два strict TypeScript package check, ESLint и 24 unit tests PASS.
+
+Production Staff UI, Storybook interaction/visual gate и production-build
+content E2E остаются открыты. Contract proof:
+[`phase2-problem-review-frontend.md`](../../../pwa_tests/reports/phase2-problem-review-frontend.md).
+
 - [x] Revision/migration/upgrade/rollback для Phase 2A:
       [`0041`](../../../migrations/0041.pwa_content_lessons.sql), 48 focused PASS,
       69 PASS вместе со schema inventory; full Phase-2 migration/backfill proof ещё
