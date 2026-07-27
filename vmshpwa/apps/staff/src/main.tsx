@@ -2,7 +2,8 @@ import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
-import { AppProviders, initFrontendObservability } from '@vmsh/app-shell'
+import { AppProviders, RuntimeBootstrap, initFrontendObservability } from '@vmsh/app-shell'
+import { createBrowserStorageNamespace } from '@vmsh/contracts'
 import '@vmsh/ui/styles.css'
 
 import { routeTree } from './routeTree.gen'
@@ -32,8 +33,13 @@ if (!rootElement) throw new Error('Root element is missing')
 
 createRoot(rootElement).render(
   <StrictMode>
-    <AppProviders storageNamespace="staff">
-      <RouterProvider router={router} />
-    </AppProviders>
+    {/* Staff validates its runtime too, but deliberately has no Dexie/offline database. */}
+    <RuntimeBootstrap audience="staff">
+      {(runtime) => (
+        <AppProviders storageNamespace={createBrowserStorageNamespace(runtime)}>
+          <RouterProvider router={router} />
+        </AppProviders>
+      )}
+    </RuntimeBootstrap>
   </StrictMode>,
 )

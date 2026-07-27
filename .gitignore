@@ -7,6 +7,10 @@ tests/.pytest_cache
 # креды
 creds_test/*.json
 creds_prod/*.json
+.env
+.env.*
+!.env.example
+!**/.env.example
 
 # БД
 db/*.db

@@ -47,6 +47,35 @@
 
 Фактически реализованный seed находится в `vmshpwa/scripts/seed_runtime.py`; данные и loader — в `pwa_tests/fixtures/{baseline-v1.json,answer-types-v1.json,seed.py}`, проверки — в `pwa_tests/test_seed_runtime.py`, воспроизводимый отчёт — в `pwa_tests/reports/baseline-v1.md`.
 
+Фактически реализованная browser/runtime граница находится в:
+
+- `helpers/pwa/{api_contracts,app_keys}.py`, `apps/pwa_app.py`, `main.py` —
+  canonical aiohttp keys, versioned runtime/error builders, stable
+  `PwaApiError`, no-store middleware и fail-closed instance check;
+- `vmshpwa/packages/contracts/{src,fixtures}` — audience-specific boundary,
+  explicit wire `contractVersion`, rolling-deploy additive-field policy,
+  versioned runtime/HTTP/realtime-error fixtures и browser namespace
+  `vmsh-179:v1:<audience>:<instance>`;
+- `vmshpwa/packages/app-shell/src/{runtime-bootstrap,providers}.*` — validation
+  до router, bounded request, startup states, namespaced theme и safe
+  localStorage denial;
+- `vmshpwa/packages/offline/src/{database,provider}.*` — реальные отдельные
+  Dexie Student/Family, open-before-consumers, blocked/timeout/close recovery и
+  teardown;
+- `vmshpwa/apps/{student,family,staff}/src/main.tsx` и PWA `sw.ts` —
+  audience composition, update recovery outside startup gates, disjoint
+  scopes/scope-preserving cache versions и отсутствие Dexie/SW у Staff;
+- `vmshpwa/scripts/{e2e_gateway,e2e_runner}.py`,
+  `vmshpwa/playwright.config.ts`,
+  `vmshpwa/e2e/{shells,runtime-isolation}.spec.ts` — production bundles на
+  одном E2E origin 5380 с реальным aiohttp 8380 и единым cross-process lock;
+- `pwa_tests/test_{api_contracts,e2e_gateway,e2e_runner,production_build_guard}.py` —
+  Python↔TypeScript fixture parity, gateway/runner boundary и запрещённые
+  production flags из process environment и Vite mode files.
+
+Подробная матрица и актуальный статус проверок зафиксированы в
+[`runtime-isolation-phase0.md`](../../../pwa_tests/reports/runtime-isolation-phase0.md).
+
 Auth/workload preflight реализованы в `vmshpwa/scripts/{auth_preflight,workload_profile,report_io,safe_source}.py`; проверки находятся в `pwa_tests/test_{auth_preflight,workload_profile}.py`. `make pwa-auth-preflight-check` и `make pwa-workload-profile-check` только перечитывают реальные источники и сверяют четыре aggregate reports. Обновление вынесено в отдельные `*-update` targets и требует просмотра diff. Эти live-source gates намеренно не входят в hermetic `make pwa-test`.
 
 Auth preflight отклоняет sidecars и symlink/hard-link aliases, затем читает exact bytes через secure fd (`O_NOFOLLOW_ANY` либо final-component `O_NOFOLLOW`), сверяя `lstat`/`fstat` и SHA-256 до/после. Анализ выполняется над `:memory:` SQLite, созданной `Connection.deserialize(exact_bytes)`, с `query_only`; source path SQLite повторно не открывает, `immutable=1` не используется, отсутствие deserialize — ошибка. В отчёт не попадают source rows, фамилии, token/login candidates, identifiers и неизвестные raw `users.type`: последние складываются только в aggregate other count. На снимке 27 июля 2026 года измерено 1617 Student rows: 10 имеют field/token blocker, 26 входят в 13 lower-bound collision groups, объединённая lower bound — 36 rows, provisional remainder — 1581. Это не окончательный activation result: canonical login generator и явный test-account flag отсутствуют.
@@ -92,9 +121,29 @@ Seed `baseline-v1` и первый release fixture:
 - Python/toolchain: default-name lookup через контролируемый `PATH`, absolute override, `None`, missing/non-executable file, fake version/error/timeout executables; реальные binary smoke отмечаются как environment capability test.
 - Python/storage config: полный/частичный/отсутствующий набор `s3_*`, test/prod source selection, secret redaction и доказательство, что filesystem agent/E2E profile не читает credential files.
 - Python/Telegram: RecordingBot для hermetic suite; opt-in live probe проверяет `getMe/getChat/getChatMember`, сохраняет canonical group destination и может отправить synthetic boundary payloads в test channel без real student data.
-- TS: runtime config parsing, production prohibition MSW/prototype, query-key baseline, Dexie namespace isolation.
+- TS: versioned runtime config parsing с rolling-deploy additive fields,
+  production prohibition MSW/prototype через Vite `loadEnv`, query-key
+  baseline, Dexie namespace isolation.
+- TS/DOM: runtime bootstrap не монтирует protected shell до audience-specific
+  validation; cross-audience/incompatible payload и timeout fail-closed; retry
+  и correlation ID; localStorage-denied fallback; реальная IndexedDB isolation
+  по audience/instance и lifecycle provider с blocked/timeout/unexpected-close
+  recovery.
 - Storybook: shells и глобальные states, уже существующие в дизайн-фазе.
-- E2E production preview: base path/history fallback, health/runtime, WS reconnect/refetch signal, theme, audience isolation, SW installation/update smoke.
+- Storybook startup states:
+  `product-app-startup--runtime-loading`,
+  `product-app-startup--runtime-rejected`,
+  `product-app-startup--offline-storage-unavailable`.
+- E2E production bundles через one-origin gateway: exact base/history/asset
+  boundaries, health/runtime, WS reconnect/refetch signal, localStorage и
+  IndexedDB isolation, manifests/icons, active-worker navigation denylist,
+  disjoint SW scopes/caches, cleanup synthetic `v0` и настоящий byte-different
+  worker update даже при несовместимом runtime.
+- E2E runner: один fail-fast cross-process lock для build/seed/Playwright и
+  отдельные full/non-visual/runtime/visual modes; inherited `VITE_*` удаляются,
+  известные browser-build keys принудительно получают безопасные E2E-значения,
+  а Playwright auto-fixture блокирует любой browser HTTP/WebSocket origin,
+  кроме literal one-origin gateway `127.0.0.1:5380`.
 - Three-browser run. Проверки SW, недоступные конкретному engine, помечаются capability-based skip с объяснением.
 - Physical baseline: все критические сценарии на доступных Android-устройствах; iPhone — по возможности, при сохранении автоматического WebKit gate.
 
@@ -122,8 +171,17 @@ Seed `baseline-v1` и первый release fixture:
 
 - [ ] Revision: `<sha>`; миграции: `none` или `<paths>`.
 - [ ] Demo: `<make commands>`; seed `baseline-v1`; URLs всех трёх приложений.
-- [ ] Isolation report: `<path>` с портами, DB, media, NATS, IndexedDB и scopes.
-- [ ] Tests: Python `<result>`; TS `<result>`; Storybook `<result>`; E2E 3 browsers `<result>`.
+- [x] Isolation report создан: `pwa_tests/reports/runtime-isolation-phase0.md`;
+      в нём зафиксированы порты/origin, DB/media/NATS, browser namespaces, SW
+      scopes/cache names, функциональный three-browser gate 72/72 и оставшийся
+      visual owner gate.
+- [x] Tests runtime/browser инкремента: focused Python 97 PASS; `make pwa-test`
+      — Vitest 68 PASS и Python 461 PASS / 1 intentional skip;
+      `make pwa-storybook-test` — 32 files / 140 PASS; functional E2E — 72/72
+      PASS в Chromium/WebKit/Firefox; финальный runtime-only rerun после
+      static-suffix и external-network hardening — 60/60 PASS во всех трёх
+      engines; focused runner tests — 8 PASS. Полные детали и предупреждения —
+      в isolation report.
 - [ ] Golden corpus manifest: `<path>`; source hashes/encoding verified `<result>`.
 - [x] Legacy characterization report: `pwa_tests/reports/legacy-characterization.md`; 63 domain tests фиксируют 23 answer types, verdict/reaction/queue/synonym rules, `G`/`O` audit rows и nullable Telegram provenance без network/credentials.
 - [ ] DB concurrency/migration ADR и two-writer fault tests: `<path/result>`.
@@ -134,6 +192,11 @@ Seed `baseline-v1` и первый release fixture:
 - [x] Storage profile/config/redaction: `helpers/{object_storage,pwa/storage_config}.py`, `vmshpwa/docs/object-storage.md`; 86 focused tests PASS, pinned Beget test-bucket live runs `codex-phase0-20260727-f6c821d9` и collision-safe replay `codex-phase0-20260727-collision-safe` прошли put/private-read/public-GET/delete-ack. Production target Hetzner остаётся Phase-11 readiness gate.
 - [ ] RecordingBot suite и opt-in `@vmsh179devbot`/test-channel capability report с message IDs, без token: hermetic suite и двухшаговый harness готовы (`helpers/pwa/telegram_test_{harness,binding}.py`, `vmshpwa/scripts/telegram_test_capability.py`), но live bind/smoke ждёт canonical signed `chat.id` из раздела «Где взять канонический ID тестового канала?» в `20-implementation-questions.md`. Rich/limits proof выполняется с renderer в Phase 2.
 - [ ] Visual baseline environment and screenshots: `<paths>`.
-- [ ] Docs updated: `<paths>`.
-- [ ] Known limitations/issues: `<links or none>`.
+- [x] Docs updated для инкремента:
+      `vmshpwa/docs/{runtime-isolation,testing-strategy}.md`,
+      `vmshpwa/e2e/AGENTS.md`, этот phase-файл и `STATUS.md`.
+- [x] Known limitations/issues:
+      `pwa_tests/reports/runtime-isolation-phase0.md#remaining-gates-and-limitations`;
+      прежде всего network-only cold runtime bootstrap до этапа 3 и owner visual
+      approval без обновления snapshots.
 - [ ] Accepted by/date: `<name/date>`.

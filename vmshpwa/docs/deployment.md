@@ -40,7 +40,13 @@ S3 secret source выбирается профилем: ручная local/test 
 
 ## Checks
 
-Playwright собирает production bundles и проверяет их через `vite preview`; это единый gate для production splitting, manifests, service workers, функциональных сценариев и визуальных snapshots. После deployment отдельно запускается короткий smoke уже разложенных compiled assets. Визуальные snapshots пока воспроизводятся на машине владельца под macOS и не обновляются автоматически на сервере.
+Playwright собирает production bundles и проверяет их вместе с настоящим
+aiohttp через lock-aware test-only one-origin gateway; это единый gate для
+production splitting, manifests, service workers, функциональных сценариев и
+визуальных snapshots. До auth/CSRF gate он не заменяет trusted-proxy/public-origin
+модель production nginx. После deployment отдельно запускается короткий smoke
+уже разложенных compiled assets. Визуальные snapshots пока воспроизводятся на
+машине владельца под macOS и не обновляются автоматически на сервере.
 
 ## Backup, rollout и инциденты
 

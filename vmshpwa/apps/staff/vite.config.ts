@@ -3,15 +3,12 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+import { assertSafeProductionBuild } from '../../vite-production-guard'
+
 const apiOrigin = process.env.VMSH_API_ORIGIN ?? 'http://127.0.0.1:8180'
 
-export default defineConfig(({ command }) => {
-  if (
-    command === 'build' &&
-    (process.env.VITE_ENABLE_MSW === 'true' || process.env.VITE_PROTOTYPE === 'true')
-  ) {
-    throw new Error('MSW and prototype mode must never be enabled in a production build')
-  }
+export default defineConfig(({ command, mode }) => {
+  assertSafeProductionBuild({ command, mode }, import.meta.dirname)
 
   return {
     base: '/staff/',

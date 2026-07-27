@@ -72,7 +72,11 @@
 - GitHub Actions пока нет. Production обновляется серверным webhook: fetch exact revision, backup SQLite, frozen dependency sync, проверки/сборка изменившихся частей, migrations, controlled restart, healthcheck и detached post-deploy backup.
 - Dependency detection учитывает root Python manifests и весь pnpm workspace, включая `vmshpwa/pnpm-lock.yaml`, `pnpm-workspace.yaml` и package manifests.
 - Визуальные baselines пока считаются macOS-local artifacts; Docker normalization откладывается. Baseline меняется только после ручной проверки diff.
-- Основной E2E и visual regression выполняются на production bundles через `vite preview` с настоящим aiohttp. Deploy дополнительно выполняет короткий smoke уже разложенных assets и service workers.
+- Основной E2E и visual regression выполняются на production bundles через
+  lock-aware test-only one-origin gateway с настоящим aiohttp. Три отдельных
+  `vite preview` origin не моделируют production browser boundaries; общий
+  runner не допускает конкурентной перезаписи dist/seed. Deploy дополнительно
+  выполняет короткий smoke уже разложенных assets и service workers.
 - PWA JSON error/request-ID middleware ограничивается `/student`, `/family`, `/staff` API/WS путями и не меняет ответы legacy dashboards.
 
 ## Дополнение по первому выпуску

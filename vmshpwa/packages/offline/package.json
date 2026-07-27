@@ -10,7 +10,12 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@vmsh/contracts": "workspace:*",
     "dexie": "catalog:",
+    "react": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "catalog:"
   }
 }

@@ -3,22 +3,51 @@ import { Moon, Sun } from 'lucide-react'
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import { Button, Toaster, TooltipProvider } from '@vmsh/ui'
+import type { BrowserStorageNamespace } from '@vmsh/contracts'
 
 type Theme = 'light' | 'dark'
-type StorageNamespace = 'student' | 'family' | 'staff' | 'storybook'
+export const STORYBOOK_STORAGE_NAMESPACE = 'vmsh-179:storybook:default' as const
+type StorageNamespace = BrowserStorageNamespace | typeof STORYBOOK_STORAGE_NAMESPACE
 
-const StorageNamespaceContext = createContext<StorageNamespace>('storybook')
+const StorageNamespaceContext = createContext<StorageNamespace>(STORYBOOK_STORAGE_NAMESPACE)
+
+export function themeStorageKey(storageNamespace: StorageNamespace): string {
+  return `${storageNamespace}:theme`
+}
+
+function readTheme(storageNamespace: StorageNamespace): Theme | null {
+  try {
+    const stored = window.localStorage.getItem(themeStorageKey(storageNamespace))
+    return stored === 'light' || stored === 'dark' ? stored : null
+  } catch {
+    // Theme is a convenience, not user work. Storage-denied/private contexts
+    // must keep the shell usable; durable drafts use the explicit Dexie gate.
+    return null
+  }
+}
+
+function persistTheme(storageNamespace: StorageNamespace, theme: Theme): void {
+  try {
+    window.localStorage.setItem(themeStorageKey(storageNamespace), theme)
+  } catch {
+    // Keep the in-memory theme for this page without turning a cosmetic
+    // preference failure into an application startup failure.
+  }
+}
 
 function initialTheme(storageNamespace: StorageNamespace): Theme {
   if (typeof window === 'undefined') return 'light'
-  const stored = window.localStorage.getItem(`vmsh-${storageNamespace}-theme`)
-  if (stored === 'light' || stored === 'dark') return stored
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  const stored = readTheme(storageNamespace)
+  if (stored) return stored
+  return typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light'
 }
 
 export function AppProviders({
   children,
-  storageNamespace = 'storybook',
+  storageNamespace = STORYBOOK_STORAGE_NAMESPACE,
 }: {
   children: ReactNode
   storageNamespace?: StorageNamespace
@@ -53,7 +82,7 @@ export function ThemeToggle() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
     document.documentElement.style.colorScheme = theme
-    window.localStorage.setItem(`vmsh-${storageNamespace}-theme`, theme)
+    persistTheme(storageNamespace, theme)
   }, [storageNamespace, theme])
 
   const nextTheme = theme === 'dark' ? 'light' : 'dark'

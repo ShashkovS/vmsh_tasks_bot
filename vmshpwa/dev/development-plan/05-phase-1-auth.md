@@ -26,7 +26,11 @@ Student входит сгенерированным логином и текущ
 - Principal содержит `accountId`, `audience`, optional `userId`, role/capabilities, allowed groups и session version.
 - Signed short cookie + server session/refresh record либо выбранная альтернатива.
 - Cookie: отдельное имя, `Path=/student|family|staff`, `HttpOnly`, `Secure` production, `SameSite`, общий для всех audiences срок до ближайшего 10 августа и ранний revoke.
-- Origin/Referer check на unsafe methods, CSP для HTML/static, nginx rate-limit contract для login.
+- Origin/Referer check на unsafe methods, CSP для HTML/static, nginx rate-limit
+  contract для login. Public origin и доверенные reverse-proxy hops задаются
+  явно: приложение не выводит security origin из произвольных
+  `Forwarded`/`X-Forwarded-*` headers. Phase-0 E2E gateway отправляет upstream
+  `Host` API 8380 при browser `Origin` 5380 и не считается auth/CSRF моделью.
 - Помимо IP-level nginx limit, backend ведёт normalized-login/account-level throttling с bounded backoff/temporary lock, чтобы распределённые попытки не обходили защиту. Ответ и timing не подтверждают существование username.
 - Device list, revoke one, logout all, credential version invalidation.
 - API не отличает неверный login от неверного token сообщением.
@@ -47,6 +51,9 @@ Student входит сгенерированным логином и текущ
 - Hash/sign/expiry/revoke/credential-version unit tests с замороженным временем вокруг 10 августа.
 - API matrix: anonymous/Student/Family/Teacher/Admin × all audience bases.
 - Cookie path/domain/SameSite/Secure/HttpOnly assertions; session fixation and rotation tests.
+- Trusted-proxy/public-origin integration: direct и разрешённый proxy request,
+  неверный Origin/Referer, а также spoofed `Forwarded`, `X-Forwarded-Host`,
+  `X-Forwarded-Proto` и смешанные header chains.
 - Rate-limit header integration test с nginx test config или отдельным deploy smoke.
 - Account-level throttling: много IP → один login, один IP → много login, окно/сброс, конкурентные workers и отсутствие user enumeration.
 - No token/password in logs, Sentry events, response or fixtures.
@@ -60,6 +67,9 @@ Student входит сгенерированным логином и текущ
 - Teacher не может вызвать admin endpoint вручную.
 - Family поддерживает несколько детей и несколько родителей, но не может заменить child ID и открыть несвязанного ребёнка.
 - App factory и тесты не требуют Telegram/Google credentials.
+- CSRF/security origin не зависит от недоверенного proxy header; одинаковая
+  policy доказана через production-like trusted-proxy harness, а не только
+  Phase-0 loopback gateway.
 - Каждый активный Student из утверждённого launch cohort имеет активированный account либо явно перечисленное владельцем исключение; строка с отсутствующей birthday/небезопасным token не превращается в неожиданный production lockout.
 - Сгенерированные usernames воспроизводимы на frozen transliteration fixtures и не меняются после обновления helper version.
 
@@ -70,7 +80,8 @@ Student входит сгенерированным логином и текущ
 - [ ] Import/preflight report: birthday/surname/collision/credential-policy blockers без секретов; test/unknown rows исключены из production activation по `AUTH-01`: `<path/result>`.
 - [ ] Demo: Student, Family, Teacher, Admin fixture logins без публикации паролей `<route/result>`.
 - [ ] Permission matrix API test report: `<path/result>`.
-- [ ] Cookie/security assertions: `<result>`; nginx rate-limit smoke `<result>`.
+- [ ] Cookie/security assertions и trusted-proxy/spoofed-forwarded matrix:
+      `<result>`; nginx rate-limit smoke `<result>`.
 - [ ] Storybook login/session/forbidden states and visual approval: `<story ids/paths>`.
 - [ ] Playwright 3 browsers: `<result>`.
 - [ ] Telegram historical auth tests: `<result or N/A reason>`.

@@ -492,10 +492,7 @@ async def test_slow_websocket_is_bounded_and_removed(monkeypatch):
 
     monkeypatch.setattr(pwa_app, "WEBSOCKET_SEND_TIMEOUT_SECONDS", 0.01)
     app = web.Application()
-    app[pwa_app.PWA_STATE] = {
-        "cursors": {audience: 0 for audience in pwa_app.AUDIENCES},
-        "websockets": {audience: set() for audience in pwa_app.AUDIENCES},
-    }
+    app[pwa_app.PWA_STATE] = pwa_app._create_pwa_state()
     websocket = SlowWebSocket()
     app[pwa_app.PWA_STATE]["websockets"]["student"].add(websocket)
 
@@ -521,10 +518,7 @@ async def test_failed_websocket_close_remains_tracked_for_shutdown_retry(monkeyp
 
     monkeypatch.setattr(pwa_app, "WEBSOCKET_CLOSE_TIMEOUT_SECONDS", 0.01)
     app = web.Application()
-    app[pwa_app.PWA_STATE] = {
-        "cursors": {audience: 0 for audience in pwa_app.AUDIENCES},
-        "websockets": {audience: set() for audience in pwa_app.AUDIENCES},
-    }
+    app[pwa_app.PWA_STATE] = pwa_app._create_pwa_state()
     websocket = UnclosableWebSocket()
     connections = app[pwa_app.PWA_STATE]["websockets"]["student"]
     connections.add(websocket)

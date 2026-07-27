@@ -16,6 +16,7 @@
     "dev/**/*.ts",
     "dev/**/*.tsx",
     "e2e/**/*.ts",
+    "vite-production-guard.ts",
     "env.d.ts"
   ]
 }

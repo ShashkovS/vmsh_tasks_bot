@@ -17,12 +17,11 @@ from helpers.config import DATABASE_MUTABLE_CONFIG_FIELDS, Config, config, logge
 import db_methods as db
 from helpers.features import set_features
 from helpers.msg_texts import msgs
+from helpers.pwa.app_keys import ENABLED_ADAPTERS, RUNTIME_CONFIG
 from helpers.shutdown import wait_for_valuable_tasks
 from helpers.trace import init_trace
 
 LOCAL_APP_PORT = int(os.environ.get("VMSH_API_PORT", "8179"))
-RUNTIME_CONFIG = web.AppKey("runtime_config", Config)
-ENABLED_ADAPTERS = web.AppKey("enabled_adapters", tuple)
 
 
 class AppAdapter(Protocol):

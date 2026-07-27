@@ -16,9 +16,131 @@ Unit и Storybook используют MSW 2. Main E2E никогда не ис�
 
 E2E выполняется в Chromium, WebKit и Firefox. Критические mobile Student flows дополнительно получают device projects при появлении реальных submission endpoints. iOS baseline — 16.4, Android — 10. Перед первым production-выпуском обязательна ручная проверка на доступных реальных Android-устройствах; iPhone проверяется по возможности и не блокирует выпуск при отсутствии устройства.
 
-Основной E2E сначала собирает все три production bundles, затем запускает `vite preview` и настоящий aiohttp. Поэтому functional, visual, route splitting, manifests и service-worker проверки видят production CSS/chunks, а не dev/HMR-поведение. Deploy smoke остаётся отдельным коротким контролем уже разложенных сервером assets. MSW не используется ни в одном E2E-режиме.
+Основной E2E идёт через lock-aware
+[`scripts/e2e_runner.py`](../scripts/e2e_runner.py): один `flock` охватывает
+production build и Playwright и не даёт двум suite одновременно менять общие
+`dist`, порты и seeded SQLite. `make pwa-e2e-runtime` запускает только
+runtime/isolation spec, `make pwa-e2e-functional` — весь non-visual набор,
+`make pwa-e2e` — полный suite. Runner сначала собирает все три production
+bundles с очищенным browser-build environment: все унаследованные `VITE_*`
+удаляются, а полный текущий набор разрешённых ключей получает только
+безопасные E2E-значения (`Sentry` и внешний media origin отключены,
+MSW/prototype false). Это также перекрывает одноимённые значения из локальных
+Vite `.env` благодаря приоритету process environment. Затем runner запускает
+настоящий aiohttp и test-only one-origin gateway
+[`scripts/e2e_gateway.py`](../scripts/e2e_gateway.py). Gateway отдаёт готовые
+`dist` по `/student/*`, `/family/*`, `/staff/*` на
+`http://127.0.0.1:5380` и проксирует точные audience API/WS paths на isolated
+API 8380. Три независимых `vite preview` origin больше не используются: они не
+моделируют production cookie paths, service-worker scopes, Cache Storage,
+browser storage и history fallback одного host. Functional, visual, route
+splitting, manifests и service-worker проверки видят production CSS/chunks, а
+не dev/HMR-поведение. Deploy smoke остаётся отдельным коротким контролем уже
+разложенных сервером assets. MSW не используется ни в одном E2E-режиме.
+
+Gateway принимает только literal loopback bind/upstream и
+`VMSH_RUNTIME_PROFILE=pwa-e2e`. Он не сохраняет upstream cookies, форсирует
+`no-store` для API, отклоняет symlink самого dist root и escaping static paths и
+обслуживает SPA fallback только после API/WS/asset boundaries. Эфемерные local
+capability routes делают built `sw.js` byte-different и runtime несовместимым,
+чтобы проверить update recovery даже при закрытом protected shell; это не
+product endpoint и не production mock-auth.
+
+Server-side fallback test через `APIRequestContext` недостаточен для PWA.
+Поэтому browser test сначала получает активный worker, затем выполняет
+настоящие page navigations к exact `/api`, malformed `/ws/...`, `/assets`,
+missing root static и PDF. Manifest/icons проверяются отдельным request-based
+install-boundary сценарием, поскольку browser navigation может инициировать
+download UI. Так совместно проверяются gateway и `NavigationRoute` denylist:
+worker не может скрыть ошибку gateway за app shell.
+
+Все browser-facing E2E specs импортируют auto-fixture
+[`e2e/fixtures.ts`](../e2e/fixtures.ts). HTTP(S) и WebSocket соединения
+разрешены только к literal `127.0.0.1:5380`; `localhost`, другие loopback-порты
+и внешние origins блокируются до сети и считаются ошибкой теста. API 8380
+остаётся разрешён только server-side gateway/readiness процессам, но не
+product page. Исполняемый probe с `.invalid` HTTP и WebSocket URL доказывает
+работу этого запрета в Chromium, WebKit и Firefox. Совместно с очищенным build
+environment это не позволяет случайно отправить E2E telemetry в реальный
+Sentry или загрузить media из внешнего бакета.
+
+Playwright-specific Service Worker events и network interception официально
+доступны только в Chromium. Наш lifecycle proof не зависит от них: он вызывает
+browser-native `navigator.serviceWorker`/Cache Storage API и сейчас обязателен и
+зелёный в Chromium, WebKit и Firefox. Capability-based skip разрешён только
+если конкретный engine действительно не предоставляет нужный browser API, и
+остаётся видимым в результате. При активации worker тест ждёт browser
+state/controller, а не только событие регистрации — это соответствует
+[официальному руководству Playwright](https://playwright.dev/docs/service-workers).
+Update scenario также создаёт устаревший audience-owned precache `v0` и после
+активации `v1` проверяет его удаление. Scope остаётся частью Workbox suffix,
+поскольку именно по нему
+[`cleanupOutdatedCaches()`](https://developer.chrome.com/docs/workbox/modules/workbox-precaching/#cleanupoutdatedcaches)
+распознаёт принадлежащие текущей регистрации precaches.
 
 Перед стартом настоящего aiohttp Playwright вызывает изолированный seed/migration entrypoint. Сам server startup схему не меняет. Python PWA suite создаёт мигрированную временную SQLite отдельно в каждом pytest worker; тесты migration lifecycle дополнительно проверяют пустую/устаревшую/будущую схему, hash drift, WAL, конкурирующих writers и rollback после исключения.
+
+## Runtime contract и browser isolation
+
+Versioned fixtures в
+[`packages/contracts/fixtures`](../packages/contracts/fixtures) являются общей
+проверяемой границей, а не источником сгенерированных типов. TypeScript Zod
+schemas парсят runtime/error fixtures; Python builders в
+[`helpers/pwa/api_contracts.py`](../../helpers/pwa/api_contracts.py) собирают
+точно те же payload. Обязательный `contractVersion: 1` отделён от browser
+namespace version: неизвестная версия отклоняется, а дополнительные v1 fields
+при rolling deployment игнорируются. Несовпадение audience, base paths,
+instance grammar, fixture/contract version, HTTP error envelope или realtime
+invalid-JSON envelope должно ломать contract tests до E2E.
+
+Unit/DOM tests дополнительно доказывают:
+
+- protected shell не монтируется до успешной audience-specific runtime
+  validation;
+- malformed/cross-audience/incompatible runtime fail-closed, десятисекундный
+  timeout и retry не включают fallback configuration;
+- theme key содержит полный `audience + instance` namespace;
+- отказ `localStorage` оставляет shell и in-memory theme работоспособными;
+- Student/Family действительно записывают разные IndexedDB, а Staff Dexie не
+  создаёт;
+- Dexie открывается до consumers; blocked upgrade, timeout, rejected open и
+  unexpected close дают retryable error, а teardown закрывает точную базу;
+- `PwaUpdateController` остаётся снаружи runtime/Dexie gates, поэтому waiting
+  worker можно применить даже на startup error screen.
+
+Storybook фиксирует startup состояния отдельными story IDs:
+
+- `product-app-startup--runtime-loading`;
+- `product-app-startup--runtime-rejected`;
+- `product-app-startup--offline-storage-unavailable`.
+
+Production build sentinel в
+[`test_production_build_guard.py`](../../pwa_tests/test_production_build_guard.py)
+запускает все три Vite apps с каждым запрещённым флагом и проверяет, что build
+останавливается до изменения output. Unit test общего guard создаёт
+контролируемый `.env.production` и проверяет Vite `loadEnv`, а subprocess test
+проверяет process environment всех трёх приложений. One-origin transport,
+dist-root/path safety и preservation/no-store response headers проверяются в
+[`test_e2e_gateway.py`](../../pwa_tests/test_e2e_gateway.py), а browser proof —
+в [`runtime-isolation.spec.ts`](../e2e/runtime-isolation.spec.ts). Поведение
+runner lock/modes и browser-build environment allowlist отдельно фиксирует
+[`test_e2e_runner.py`](../../pwa_tests/test_e2e_runner.py).
+
+LocalStorage/Dexie/cache-name assertions доказывают ownership convention и
+отсутствие случайных коллизий. Они не доказывают security isolation между
+same-origin apps: такой JavaScript может перечислять соседние browser stores.
+Authorization/session/CSP proof закрывается отдельно на этапе 1.
+
+Ограничение этапа 0: `RuntimeBootstrap` пока делает обязательный network fetch
+на cold start. Offline cached runtime bootstrap с expiry/revocation semantics
+появляется на этапе 3; наличие precache и Dexie само по себе не считается
+доказательством cold offline reading.
+
+One-origin gateway этапа 0 не является моделью trusted reverse proxy: upstream
+`Host` указывает на API 8380, browser `Origin` — на gateway 5380. Перед auth/CSRF
+E2E этапа 1 вводится явный public-origin/proxy contract и negative cases для
+spoofed `Forwarded`/`X-Forwarded-*`; текущий transport suite не засчитывается
+как session/CSRF proof.
 
 ## Legacy characterization и golden corpus
 
@@ -99,7 +221,7 @@ telemetry/load characterization до закрытия этапа 0 и performanc
 
 ## Visual regression
 
-Снимки страниц хранятся по browser project, делаются при фиксированном viewport, locale, timezone и reduced motion. Сейчас reference environment — macOS машины владельца; Docker normalization откладывается. `pwa-visual-update` не является способом «починить» тест: перед обновлением человек или агент обязан открыть diff, проверить обе темы и убедиться, что изменение ожидаемо. Raw snapshots не меняются вместе с не относящимся к UI refactor.
+Снимки страниц хранятся по browser project, делаются при фиксированном viewport, locale, timezone и reduced motion. Перед снимком тест ждёт видимый app shell и `document.fonts.ready`, чтобы локальная скорость загрузки шрифтов не становилась случайным diff. Сейчас reference environment — macOS машины владельца; Docker normalization откладывается. `pwa-visual-update` не является способом «починить» тест: перед обновлением человек или агент обязан открыть diff, проверить обе темы и убедиться, что изменение ожидаемо. Raw snapshots не меняются вместе с не относящимся к UI refactor.
 
 Отдельный content visual gate сравнивает три реальных листка одного уровня во всех производных представлениях: PWA, Telegram-rich и PDF. Сравнение проверяет формулы, списки, таблицы и SVG/TikZ, а не только общий screenshot страницы.
 
@@ -122,6 +244,10 @@ Axe baseline действует для Student, Family и Staff. Для Staff о
 - Storybook строится и browser tests запускаются;
 - Playwright подтверждает shell/base/history/theme/runtime/WebSocket/PWA/audience separation во всех трёх движках;
 - Telegram regression запускается отдельной командой.
+
+Текущее доказательство именно runtime-isolation инкремента и честный список
+ещё не выполненных gates находятся в
+[`runtime-isolation-phase0.md`](../../pwa_tests/reports/runtime-isolation-phase0.md).
 
 ## Проверки миграции и интеграций
 

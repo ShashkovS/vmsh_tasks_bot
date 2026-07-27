@@ -13,6 +13,7 @@
     "@sentry/react": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
+    "@vmsh/contracts": "workspace:*",
     "@vmsh/ui": "workspace:*",
     "lucide-react": "catalog:",
     "react": "catalog:"

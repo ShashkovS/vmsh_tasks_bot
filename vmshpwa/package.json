@@ -31,9 +31,11 @@
     "storybook:build": "storybook build",
     "storybook:test": "vitest run --config vitest.storybook.config.ts",
     "e2e:prepare": "pnpm build",
-    "e2e": "pnpm e2e:prepare && playwright test",
-    "e2e:visual": "pnpm e2e:prepare && playwright test --grep @visual",
-    "e2e:visual:update": "pnpm e2e:prepare && playwright test --grep @visual --update-snapshots"
+    "e2e": "cd .. && uv run python -m vmshpwa.scripts.e2e_runner",
+    "e2e:functional": "cd .. && uv run python -m vmshpwa.scripts.e2e_runner --mode nonvisual",
+    "e2e:runtime-isolation": "cd .. && uv run python -m vmshpwa.scripts.e2e_runner --mode runtime-isolation",
+    "e2e:visual": "cd .. && uv run python -m vmshpwa.scripts.e2e_runner --mode visual",
+    "e2e:visual:update": "cd .. && uv run python -m vmshpwa.scripts.e2e_runner --mode visual-update"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",

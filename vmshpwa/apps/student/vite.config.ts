@@ -4,15 +4,12 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import { assertSafeProductionBuild } from '../../vite-production-guard'
+
 const apiOrigin = process.env.VMSH_API_ORIGIN ?? 'http://127.0.0.1:8180'
 
-export default defineConfig(({ command }) => {
-  if (
-    command === 'build' &&
-    (process.env.VITE_ENABLE_MSW === 'true' || process.env.VITE_PROTOTYPE === 'true')
-  ) {
-    throw new Error('MSW and prototype mode must never be enabled in a production build')
-  }
+export default defineConfig(({ command, mode }) => {
+  assertSafeProductionBuild({ command, mode }, import.meta.dirname)
 
   return {
     base: '/student/',
@@ -28,10 +25,10 @@ export default defineConfig(({ command }) => {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
           // Precache only the font subsets this Russian app renders (latin + cyrillic).
           globIgnores: [
-            '**/*greek*.woff2',
-            '**/*vietnamese*.woff2',
-            '**/*latin-ext*.woff2',
-            '**/*cyrillic-ext*.woff2',
+            '**/*greek*.{woff,woff2}',
+            '**/*vietnamese*.{woff,woff2}',
+            '**/*latin-ext*.{woff,woff2}',
+            '**/*cyrillic-ext*.{woff,woff2}',
           ],
         },
         registerType: 'prompt',

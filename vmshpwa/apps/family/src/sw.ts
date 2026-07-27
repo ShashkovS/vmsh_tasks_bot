@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import { clientsClaim } from 'workbox-core'
+import { clientsClaim, setCacheNameDetails } from 'workbox-core'
 import type { WorkboxPlugin } from 'workbox-core'
 import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 import { ExpirationPlugin } from 'workbox-expiration'
@@ -14,10 +14,37 @@ declare let self: ServiceWorkerGlobalScope & {
 
 const publicMediaOrigin = import.meta.env.VITE_PUBLIC_MEDIA_ORIGIN
 const twoWeeksInSeconds = 14 * 24 * 60 * 60
+const legacyUnscopedPrecacheName = 'vmsh-179-family-precache-v1'
+const legacyRecentMediaCacheName = 'vmsh-family-recent-media-v1'
+const reservedNavigationPaths = [
+  /^\/family\/(?:api|ws|assets|media)(?:\/|$)/,
+  /^\/family\/(?:sw\.js|manifest\.webmanifest|icon[^/]*)$/,
+  /^\/family\/.*\.(?:avif|css|csv|eot|gif|html|ico|jpe?g|js|json|map|mjs|otf|pdf|png|svg|ttf|txt|wasm|webmanifest|webp|woff2?|xml|zip)$/,
+]
 
+// Both PWAs share one production origin, so Workbox defaults are not an
+// acceptable ownership boundary. See Phase 0 and runtime-isolation.spec.ts.
+setCacheNameDetails({
+  prefix: 'vmsh-179-family',
+  precache: 'precache',
+  // Workbox cleanupOutdatedCaches identifies owned legacy caches by the
+  // registration scope. Keep it in the suffix while adding our own migration
+  // version, otherwise a future v2 worker would leak the v1 precache forever.
+  suffix: `${self.registration.scope}v1`,
+})
 clientsClaim()
 void cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
+self.addEventListener('activate', (event) => {
+  // One-time cleanup for the Phase-0 prototype names. Exact audience-owned
+  // names preserve the Student/Family boundary proven by runtime-isolation.spec.ts.
+  event.waitUntil(
+    Promise.all([
+      caches.delete(legacyUnscopedPrecacheName),
+      caches.delete(legacyRecentMediaCacheName),
+    ]),
+  )
+})
 
 registerRoute(
   new NavigationRoute(
@@ -26,7 +53,11 @@ registerRoute(
       return shell ?? fetch('/family/')
     },
     {
-      denylist: [/\/api\//, /\/ws$/],
+      // A navigation request is still capable of reaching API/static URLs.
+      // Keep reserved namespaces on the network so a 404/JSON response can
+      // never be replaced with the application shell. Phase 0 E2E activates
+      // the worker before probing these boundaries.
+      denylist: reservedNavigationPaths,
     },
   ),
 )
@@ -39,7 +70,7 @@ registerRoute(
     )
   },
   new CacheFirst({
-    cacheName: 'vmsh-family-recent-media-v1',
+    cacheName: 'vmsh-179-family-recent-media-v1',
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }) as WorkboxPlugin,
       new ExpirationPlugin({
@@ -52,5 +83,13 @@ registerRoute(
 )
 
 self.addEventListener('message', (event) => {
-  if (event.data === 'SKIP_WAITING') void self.skipWaiting()
+  const message: unknown = event.data
+  if (
+    typeof message === 'object' &&
+    message !== null &&
+    'type' in message &&
+    message.type === 'SKIP_WAITING'
+  ) {
+    event.waitUntil(self.skipWaiting())
+  }
 })

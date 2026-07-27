@@ -1,10 +1,11 @@
 import { http, HttpResponse } from 'msw'
 
-import type { Audience, RuntimeConfig } from '@vmsh/contracts'
+import { RUNTIME_CONTRACT_VERSION, type Audience, type RuntimeConfig } from '@vmsh/contracts'
 
 export function runtimeFixture(audience: Audience, instance = 'storybook'): RuntimeConfig {
   const appBase = `/${audience === 'staff' ? 'staff' : audience}`
   return {
+    contractVersion: RUNTIME_CONTRACT_VERSION,
     audience,
     appBase,
     apiBase: `${appBase}/api/v1`,

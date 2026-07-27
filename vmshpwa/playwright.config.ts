@@ -1,10 +1,19 @@
 import { defineConfig, devices } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const workspace = path.dirname(fileURLToPath(import.meta.url))
 const repository = path.resolve(workspace, '..')
 const apiOrigin = 'http://127.0.0.1:8380'
+const gatewayOrigin = 'http://127.0.0.1:5380'
+const gatewayControlToken = process.env.VMSH_E2E_GATEWAY_CONTROL_TOKEN ?? randomUUID()
+
+// Test workers inherit this ephemeral capability while the gateway receives
+// the same value explicitly below. It grants only loopback SW-generation
+// control and may be visible in a retained Playwright trace; it never enters a
+// frontend bundle or grants product access. See e2e/runtime-isolation.spec.ts.
+process.env.VMSH_E2E_GATEWAY_CONTROL_TOKEN = gatewayControlToken
 
 const backendEnv = {
   ...process.env,
@@ -32,6 +41,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}{ext}',
   use: {
+    baseURL: gatewayOrigin,
     locale: 'ru-RU',
     timezoneId: 'Europe/Moscow',
     colorScheme: 'light',
@@ -58,34 +68,16 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'pnpm --filter @vmsh/student preview',
-      cwd: workspace,
+      command:
+        'uv run python -m vmshpwa.scripts.e2e_gateway --host 127.0.0.1 --port 5380 --workspace vmshpwa --api-origin http://127.0.0.1:8380',
+      cwd: repository,
       env: {
         ...process.env,
-        VITE_PORT: '5373',
-        VMSH_API_ORIGIN: apiOrigin,
+        UV_CACHE_DIR: path.resolve(repository, '.runtime/uv-cache'),
+        VMSH_RUNTIME_PROFILE: 'pwa-e2e',
+        VMSH_E2E_GATEWAY_CONTROL_TOKEN: gatewayControlToken,
       },
-      url: 'http://127.0.0.1:5373/student/',
-      reuseExistingServer: false,
-      timeout: 120_000,
-    },
-    {
-      command: 'pnpm --filter @vmsh/family preview',
-      cwd: workspace,
-      env: {
-        ...process.env,
-        VITE_PORT: '5374',
-        VMSH_API_ORIGIN: apiOrigin,
-      },
-      url: 'http://127.0.0.1:5374/family/',
-      reuseExistingServer: false,
-      timeout: 120_000,
-    },
-    {
-      command: 'pnpm --filter @vmsh/staff preview',
-      cwd: workspace,
-      env: { ...process.env, VITE_PORT: '5375', VMSH_API_ORIGIN: apiOrigin },
-      url: 'http://127.0.0.1:5375/staff/',
+      url: `${gatewayOrigin}/__e2e__/health`,
       reuseExistingServer: false,
       timeout: 120_000,
     },

@@ -3,14 +3,22 @@ import asyncio
 import json
 import re
 import uuid
+from collections.abc import Mapping
 from datetime import UTC, datetime
 
 from aiohttp import WSCloseCode, WSMsgType, web
 
 from helpers.config import logger
 from helpers.nats_brocker import InProcessBroker, JsonBroker, NatsBroker
+from helpers.pwa.api_contracts import (
+    build_api_error_payload,
+    build_realtime_error_payload,
+    build_runtime_payload,
+    validate_runtime_instance,
+)
+from helpers.pwa.app_keys import RUNTIME_CONFIG
 
-__all__ = ["pwa_routes"]
+__all__ = ["PwaApiError", "pwa_routes"]
 
 AUDIENCES = ("student", "family", "staff")
 NATS_PWA_INVALIDATE = "pwa_invalidate"
@@ -22,6 +30,7 @@ WEBSOCKET_SEND_TIMEOUT_SECONDS = 2
 WEBSOCKET_CLOSE_TIMEOUT_SECONDS = 5
 PWA_STATE = web.AppKey("pwa_state", dict)
 PWA_BROKER = web.AppKey("pwa_broker", JsonBroker)
+PWA_RESPONSE_PREPARED = web.AppKey("pwa_response_prepared", bool)
 PWA_SECURITY_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; "
@@ -30,8 +39,52 @@ PWA_SECURITY_HEADERS = {
     "Referrer-Policy": "no-referrer",
     "X-Content-Type-Options": "nosniff",
 }
+PWA_NO_STORE_HEADERS = {
+    "Cache-Control": "no-store",
+    "Pragma": "no-cache",
+}
+REBUILT_RESPONSE_HEADERS = frozenset(
+    {
+        "connection",
+        "content-length",
+        "content-type",
+        "keep-alive",
+        "proxy-authenticate",
+        "proxy-authorization",
+        "te",
+        "trailer",
+        "transfer-encoding",
+        "upgrade",
+        "cache-control",
+        "expires",
+        "pragma",
+        *(name.casefold() for name in PWA_SECURITY_HEADERS),
+    }
+)
 
 pwa_routes = web.RouteTableDef()
+
+
+class PwaApiError(Exception):
+    """Stable domain-facing PWA error independent from aiohttp reason strings."""
+
+    def __init__(
+        self,
+        *,
+        status: int,
+        code: str,
+        message: str,
+        details: Mapping[str, object] | None = None,
+        headers: Mapping[str, str] | None = None,
+    ):
+        if not 400 <= status <= 599:
+            raise ValueError("PWA API error status must be between 400 and 599")
+        self.status = status
+        self.code = code
+        self.message = message
+        self.details = details
+        self.headers = headers or {}
+        super().__init__(message)
 
 
 def _now() -> str:
@@ -50,19 +103,58 @@ def _request_id(request: web.Request) -> str:
 
 
 def _runtime_config(app: web.Application):
-    # Importing the AppKey lazily avoids a module-import cycle while still making
-    # app-factory runtime_config authoritative over import-time legacy config.
-    # See vmshpwa/docs/phase-0-live-integration-harness.md.
-    from main import RUNTIME_CONFIG
-
     return app[RUNTIME_CONFIG]
 
 
 def _is_pwa_transport_path(path: str) -> bool:
     return any(
-        path == f"/{audience}/ws" or path.startswith(f"/{audience}/api/")
+        path == f"/{audience}/ws"
+        or path == f"/{audience}/api"
+        or path.startswith(f"/{audience}/api/")
         for audience in AUDIENCES
     )
+
+
+def _copy_rebuilt_response_headers(
+    response: web.StreamResponse, headers: Mapping[str, str]
+) -> None:
+    """Preserve end-to-end exception headers while owning body/cache headers."""
+
+    for name, value in headers.items():
+        if name.casefold() not in REBUILT_RESPONSE_HEADERS:
+            response.headers.add(name, value)
+
+
+def _apply_pwa_response_headers(response: web.StreamResponse, request_id: str) -> None:
+    response.headers["X-Request-ID"] = request_id
+    for name, value in PWA_NO_STORE_HEADERS.items():
+        response.headers[name] = value
+    for name, value in PWA_SECURITY_HEADERS.items():
+        response.headers[name] = value
+
+
+async def on_pwa_response_prepare(
+    request: web.Request, response: web.StreamResponse
+) -> None:
+    """Apply the PWA wire boundary immediately before headers are written."""
+
+    if not _is_pwa_transport_path(request.path):
+        return
+    # At this point aiohttp has attached its payload writer. If the handler
+    # later fails, middleware must not try to replace this response with JSON.
+    # See vmshpwa/docs/runtime-isolation.md.
+    request[PWA_RESPONSE_PREPARED] = True
+    _apply_pwa_response_headers(response, _request_id(request))
+
+
+def _create_pwa_state() -> dict[str, dict[str, object]]:
+    """Create one internally consistent realtime state for an app instance."""
+
+    return {
+        "cursors": {audience: 0 for audience in AUDIENCES},
+        "websockets": {audience: set() for audience in AUDIENCES},
+        "broadcast_locks": {audience: asyncio.Lock() for audience in AUDIENCES},
+    }
 
 
 @web.middleware
@@ -79,33 +171,46 @@ async def pwa_error_middleware(request: web.Request, handler):
     request["request_id"] = request_id
     try:
         response = await handler(request)
-    except web.HTTPException as exc:
-        response = web.json_response(
-            {
-                "error": {
-                    "code": exc.reason.lower().replace(" ", "_"),
-                    "message": exc.text,
-                    "requestId": request_id,
-                }
-            },
-            status=exc.status,
-        )
-    except Exception:
-        logger.exception("Unhandled PWA API exception, request_id=%s", request_id)
-        response = web.json_response(
-            {
-                "error": {
-                    "code": "internal_error",
-                    "message": "Внутренняя ошибка сервера",
-                    "requestId": request_id,
-                }
-            },
-            status=500,
-        )
+    except Exception as exc:
+        if request.get(PWA_RESPONSE_PREPARED, False):
+            logger.exception(
+                "PWA handler failed after response preparation, request_id=%s",
+                request_id,
+            )
+            raise
+        if isinstance(exc, PwaApiError):
+            response = web.json_response(
+                build_api_error_payload(
+                    code=exc.code,
+                    message=exc.message,
+                    request_id=request_id,
+                    details=exc.details,
+                ),
+                status=exc.status,
+            )
+            _copy_rebuilt_response_headers(response, exc.headers)
+        elif isinstance(exc, web.HTTPException):
+            response = web.json_response(
+                build_api_error_payload(
+                    code=exc.reason.lower().replace(" ", "_"),
+                    message=exc.text,
+                    request_id=request_id,
+                ),
+                status=exc.status,
+            )
+            _copy_rebuilt_response_headers(response, exc.headers)
+        else:
+            logger.exception("Unhandled PWA API exception, request_id=%s", request_id)
+            response = web.json_response(
+                build_api_error_payload(
+                    code="internal_error",
+                    message="Внутренняя ошибка сервера",
+                    request_id=request_id,
+                ),
+                status=500,
+            )
     if not response.prepared:
-        response.headers["X-Request-ID"] = request_id
-        for name, value in PWA_SECURITY_HEADERS.items():
-            response.headers.setdefault(name, value)
+        _apply_pwa_response_headers(response, request_id)
     return response
 
 
@@ -119,25 +224,19 @@ async def health(request: web.Request):
 @pwa_routes.get("/{audience:student|family|staff}/api/v1/runtime")
 async def runtime(request: web.Request):
     audience = _audience(request)
-    app_base = f"/{audience}"
     runtime_config = _runtime_config(request.app)
     broker = request.app[PWA_BROKER]
     return web.json_response(
-        {
-            "audience": audience,
-            "appBase": app_base,
-            "apiBase": f"{app_base}/api/v1",
-            "websocketPath": f"{app_base}/ws",
-            "instance": runtime_config.pwa_instance or runtime_config.config_name,
-            "serverTime": _now(),
-            "requestId": _request_id(request),
-            "features": {
-                "telegram": bool(runtime_config.telegram_bot_token),
-                "google": bool(runtime_config.google_cred_json),
-                "nats": broker.nats_is_working,
-                "prototype": runtime_config.pwa_prototype,
-            },
-        }
+        build_runtime_payload(
+            audience=audience,
+            instance=runtime_config.pwa_instance or runtime_config.config_name,
+            server_time=_now(),
+            request_id=_request_id(request),
+            telegram=bool(runtime_config.telegram_bot_token),
+            google=bool(runtime_config.google_cred_json),
+            nats=broker.nats_is_working,
+            prototype=runtime_config.pwa_prototype,
+        )
     )
 
 
@@ -197,26 +296,36 @@ async def _broadcast(
     if audience is not None and audience not in AUDIENCES:
         raise ValueError(f"Unknown PWA audience: {audience}")
 
-    state = app[PWA_STATE]
+    async def broadcast_to_audience(target_audience: str) -> None:
+        state = app[PWA_STATE]
+        # NATS happens to dispatch one subscription sequentially today, but
+        # the broker interface and direct domain callers do not promise that.
+        # Serialize cursor allocation and socket writes per audience while
+        # allowing Student/Family/Staff fan-out to proceed independently.
+        async with state["broadcast_locks"][target_audience]:
+            state["cursors"][target_audience] += 1
+            event = {
+                "type": "invalidate",
+                "cursor": state["cursors"][target_audience],
+                "serverTime": _now(),
+                "resources": resources,
+                "reason": reason,
+                "audience": target_audience,
+            }
+            connections = state["websockets"][target_audience]
+            await asyncio.gather(
+                *(
+                    _send_invalidation(connections, websocket, event)
+                    for websocket in connections.copy()
+                )
+            )
+
     target_audiences = (audience,) if audience is not None else AUDIENCES
-    deliveries = []
-    for target_audience in target_audiences:
-        state["cursors"][target_audience] += 1
-        event = {
-            "type": "invalidate",
-            "cursor": state["cursors"][target_audience],
-            "serverTime": _now(),
-            "resources": resources,
-            "reason": reason,
-            "audience": target_audience,
-        }
-        connections = state["websockets"][target_audience]
-        deliveries.extend(
-            _send_invalidation(connections, websocket, event)
-            for websocket in connections.copy()
-        )
     await asyncio.gather(
-        *deliveries,
+        *(
+            broadcast_to_audience(target_audience)
+            for target_audience in target_audiences
+        )
     )
 
 
@@ -235,44 +344,50 @@ async def realtime(request: web.Request):
             raise web.HTTPBadRequest(text="cursor must be a non-negative integer")
 
     websocket = web.WebSocketResponse(heartbeat=25, max_msg_size=64 * 1024)
-    websocket.headers["X-Request-ID"] = _request_id(request)
+    _apply_pwa_response_headers(websocket, _request_id(request))
     await websocket.prepare(request)
     state = request.app[PWA_STATE]
     state["websockets"][audience].add(websocket)
 
-    current_cursor = state["cursors"][audience]
-    if cursor_value is not None:
-        await websocket.send_json(
-            {
-                "type": "resync-required",
-                "cursor": current_cursor,
-                "serverTime": _now(),
-                "reason": "reconnect-full-refetch-required",
-            }
-        )
-    else:
-        await websocket.send_json(
-            {
-                "type": "connected",
-                "cursor": current_cursor,
-                "serverTime": _now(),
-                "audience": audience,
-            }
-        )
-
     try:
+        # The first send belongs inside the same cleanup guard as the receive
+        # loop: a client can vanish between upgrade and handshake delivery.
+        current_cursor = state["cursors"][audience]
+        if cursor_value is not None:
+            await websocket.send_json(
+                {
+                    "type": "resync-required",
+                    "cursor": current_cursor,
+                    "serverTime": _now(),
+                    "reason": "reconnect-full-refetch-required",
+                }
+            )
+        else:
+            await websocket.send_json(
+                {
+                    "type": "connected",
+                    "cursor": current_cursor,
+                    "serverTime": _now(),
+                    "audience": audience,
+                }
+            )
+
         async for message in websocket:
             if message.type == WSMsgType.TEXT:
                 try:
                     payload = json.loads(message.data)
-                except json.JSONDecodeError:
+                except json.JSONDecodeError, RecursionError:
+                    # HTTP middleware can no longer replace the response after
+                    # WebSocket upgrade. Keep protocol errors on the versioned
+                    # realtime wire contract instead. See Phase 0 contracts.
                     await websocket.send_json(
-                        {
-                            "error": {
-                                "code": "invalid_json",
-                                "requestId": _request_id(request),
-                            }
-                        }
+                        build_realtime_error_payload(
+                            cursor=state["cursors"][audience],
+                            server_time=_now(),
+                            code="invalid_json",
+                            message="Сообщение WebSocket должно быть корректным JSON",
+                            request_id=_request_id(request),
+                        )
                     )
                     continue
                 if isinstance(payload, dict) and payload.get("type") == "ping":
@@ -285,6 +400,21 @@ async def realtime(request: web.Request):
                     )
             elif message.type == WSMsgType.ERROR:
                 logger.warning("PWA websocket error: %s", websocket.exception())
+    except Exception:
+        # Once prepare() succeeds the HTTP error middleware cannot replace the
+        # upgraded response. Contain transport/serialization failures here,
+        # close with a bounded wait, and return the original WebSocket object.
+        logger.warning(
+            "PWA websocket failed after upgrade, request_id=%s",
+            _request_id(request),
+            exc_info=True,
+        )
+        await _close_websocket(
+            websocket,
+            code=WSCloseCode.INTERNAL_ERROR,
+            message=b"Realtime transport failure",
+            context="post-upgrade handler failure",
+        )
     finally:
         state["websockets"][audience].discard(websocket)
     return websocket
@@ -371,17 +501,19 @@ async def on_shutdown(app: web.Application):
 
 def configure(app: web.Application, *, broker: JsonBroker | None = None):
     runtime_config = _runtime_config(app)
+    # Browser storage uses this server-owned value verbatim. Rejecting an
+    # unsafe namespace during composition prevents a partially working process
+    # whose frontend would fail closed only after the first request.
+    validate_runtime_instance(runtime_config.pwa_instance or runtime_config.config_name)
     if broker is None:
         if runtime_config.nats_server:
             broker = NatsBroker(runtime_config.config_name)
         else:
             broker = InProcessBroker(runtime_config.config_name)
     app.middlewares.append(pwa_error_middleware)
+    app.on_response_prepare.append(on_pwa_response_prepare)
     app[PWA_BROKER] = broker
-    app[PWA_STATE] = {
-        "cursors": {audience: 0 for audience in AUDIENCES},
-        "websockets": {audience: set() for audience in AUDIENCES},
-    }
+    app[PWA_STATE] = _create_pwa_state()
     app.add_routes(pwa_routes)
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)

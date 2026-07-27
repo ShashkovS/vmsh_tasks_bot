@@ -2,7 +2,14 @@ import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
-import { AppProviders, initFrontendObservability } from '@vmsh/app-shell'
+import {
+  AppProviders,
+  AppStartupScreen,
+  RuntimeBootstrap,
+  initFrontendObservability,
+} from '@vmsh/app-shell'
+import { createBrowserStorageNamespace, type RuntimeConfig } from '@vmsh/contracts'
+import { OfflineDatabaseProvider } from '@vmsh/offline'
 import '@vmsh/ui/styles.css'
 
 import { routeTree } from './routeTree.gen'
@@ -31,11 +38,39 @@ declare module '@tanstack/react-router' {
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element is missing')
 
+function familyApplication(runtime: RuntimeConfig) {
+  const storageNamespace = createBrowserStorageNamespace(runtime)
+  return (
+    <AppProviders storageNamespace={storageNamespace}>
+      <OfflineDatabaseProvider
+        errorFallback={({ retry }) => (
+          <AppStartupScreen
+            description="Локальное хранилище сейчас недоступно. Чтобы не потерять сохранённые материалы, кабинет не открыт."
+            onRetry={retry}
+            state="error"
+            title="Не удалось подготовить работу без сети"
+          />
+        )}
+        loadingFallback={
+          <AppStartupScreen
+            description="Проверяем сохранённые материалы на этом устройстве."
+            state="loading"
+            title="Готовим работу без сети"
+          />
+        }
+        runtime={{ audience: 'family', instance: runtime.instance }}
+      >
+        <RouterProvider router={router} />
+      </OfflineDatabaseProvider>
+    </AppProviders>
+  )
+}
+
 createRoot(rootElement).render(
   <StrictMode>
-    <AppProviders storageNamespace="family">
-      <PwaUpdateController />
-      <RouterProvider router={router} />
-    </AppProviders>
+    {/* Update recovery must survive rejected runtime/IndexedDB bootstrap. */}
+    <PwaUpdateController />
+    {/* Phase 0: no protected Family route mounts before strict runtime validation. */}
+    <RuntimeBootstrap audience="family">{(runtime) => familyApplication(runtime)}</RuntimeBootstrap>
   </StrictMode>,
 )
