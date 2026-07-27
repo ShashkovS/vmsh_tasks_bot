@@ -99,7 +99,7 @@
     }
   },
   "product": {
-    "object_count": 90,
+    "object_count": 92,
     "objects": [
       {
         "columns": [
@@ -641,6 +641,123 @@
         "object_sha256": "7914e2e1fa0d7296156954e95894e2fc6fcbecacfb6b5c39ad84c794eef05838",
         "sql": "CREATE TABLE auth_events\n(\n    id            integer primary key,\n    account_id    integer references auth_accounts (id),\n    session_id    integer references auth_sessions (id),\n    event_type    text not null\n        check (length(trim(event_type)) > 0),\n    occurred_at   text not null,\n    request_id    text not null\n        check (length(trim(request_id)) > 0),\n    ip_prefix     text,\n    metadata_json text not null default '{}'\n        check (json_valid(metadata_json) = 1 and json_type(metadata_json) = 'object')\n);",
         "table_name": "auth_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "session_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "refresh_secret_hash",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "consumed_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "expires_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "session_id"
+            ],
+            "match": "NONE",
+            "on_delete": "CASCADE",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_sessions"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "expires_at",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "auth_refresh_consumed_secrets_expires_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "session_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "refresh_secret_hash",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_auth_refresh_consumed_secrets_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "auth_refresh_consumed_secrets",
+        "object_sha256": "22476f3245cdfb7c173f119f66c34331f1b7174f6fecece709c4740eb78a80d7",
+        "sql": "CREATE TABLE auth_refresh_consumed_secrets\n(\n    session_id          integer not null\n        references auth_sessions (id) on delete cascade,\n    refresh_secret_hash text    not null\n        check (\n            length(refresh_secret_hash) = 64\n            and refresh_secret_hash not glob '*[^0-9a-f]*'\n        ),\n    consumed_at         text    not null,\n    expires_at          text    not null,\n    primary key (session_id, refresh_secret_hash),\n    check (expires_at >= consumed_at)\n);",
+        "table_name": "auth_refresh_consumed_secrets",
         "type": "table"
       },
       {
@@ -7449,6 +7566,13 @@
         "type": "index"
       },
       {
+        "name": "auth_refresh_consumed_secrets_expires_idx",
+        "object_sha256": "ca491bdf9075baaa0181ef867df6dffb40c6f649e97efb964bc447d1cc85d263",
+        "sql": "CREATE INDEX auth_refresh_consumed_secrets_expires_idx\n    on auth_refresh_consumed_secrets (expires_at);",
+        "table_name": "auth_refresh_consumed_secrets",
+        "type": "index"
+      },
+      {
         "name": "auth_sessions_account_revoked_expires_idx",
         "object_sha256": "785f4f3adc124b93923d36299d989b7dede36d0de0d57e740ba0a53d17d1be83",
         "sql": "CREATE INDEX auth_sessions_account_revoked_expires_idx\n    on auth_sessions (account_id, revoked_at, expires_at);",
@@ -7694,8 +7818,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "d301a8b8e913bb9fc5089852969d6c8c6f983272eeae21efadc2f2ab67fa3a02",
-    "sha256": "ccf2343a8406d220703b3e76c98346ea009bbac71c85ce89165a47f0d8e6659a"
+    "pragma_structure_sha256": "f1f33e2d5cb43a86354cd1403141e73efddae8dfe3c1081cdf80320946ab3db2",
+    "sha256": "ef6e11591fa4f92150ba5f3c3c4791a02c6430ec8dac9422685551e1faa6b068"
   },
   "source_kind": "repository-migration-head"
 }

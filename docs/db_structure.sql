@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: ccf2343a8406d220703b3e76c98346ea009bbac71c85ce89165a47f0d8e6659a
+-- Product schema SHA-256: ef6e11591fa4f92150ba5f3c3c4791a02c6430ec8dac9422685551e1faa6b068
 
 CREATE TABLE auth_accounts
 (
@@ -59,6 +59,21 @@ CREATE TABLE auth_events
     ip_prefix     text,
     metadata_json text not null default '{}'
         check (json_valid(metadata_json) = 1 and json_type(metadata_json) = 'object')
+);
+
+CREATE TABLE auth_refresh_consumed_secrets
+(
+    session_id          integer not null
+        references auth_sessions (id) on delete cascade,
+    refresh_secret_hash text    not null
+        check (
+            length(refresh_secret_hash) = 64
+            and refresh_secret_hash not glob '*[^0-9a-f]*'
+        ),
+    consumed_at         text    not null,
+    expires_at          text    not null,
+    primary key (session_id, refresh_secret_hash),
+    check (expires_at >= consumed_at)
 );
 
 CREATE TABLE auth_sessions
@@ -774,6 +789,9 @@ CREATE INDEX auth_events_session_occurred_idx
 
 CREATE INDEX auth_events_type_occurred_idx
     on auth_events (event_type, occurred_at, id);
+
+CREATE INDEX auth_refresh_consumed_secrets_expires_idx
+    on auth_refresh_consumed_secrets (expires_at);
 
 CREATE INDEX auth_sessions_account_revoked_expires_idx
     on auth_sessions (account_id, revoked_at, expires_at);

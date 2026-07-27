@@ -46,8 +46,11 @@ in `vmshpwa/dev/development-plan/20-implementation-questions.md`.
   Signing keys form an oldest-to-newest rotation list; the newest key signs.
 - Access lifetime is 15 minutes for the initial implementation. Refresh/session
   expiry is the next 10 August 00:00 in `Europe/Moscow`, stored in UTC.
-- Refresh is single-use rotation with an optimistic session version. Reuse of a
-  superseded secret revokes the affected session lineage.
+- Refresh is single-use rotation with an optimistic session version. Each
+  consumed HMAC is retained only until that session expires. A mismatch revokes
+  the lineage only when it matches this bounded consumed-HMAC history; an
+  arbitrary invalid secret is not mislabeled as replay and cannot revoke a
+  session merely from its public ID. Raw refresh secrets are never retained.
 - Revocation is soft (`revoked_at`, reason, version increment) and is accompanied
   by a secret-free `auth_events` row. This preserves device/history UX and
   incident evidence. Cleanup is a later retention operation, not logout.
@@ -92,4 +95,3 @@ Checked on 2026-07-27:
 - `signons.token` must not receive PWA credentials. PWA login audit uses
   `auth_events`; any required legacy compatibility projection must be
   secret-free.
-

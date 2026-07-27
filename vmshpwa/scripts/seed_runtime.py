@@ -51,6 +51,7 @@ INSERT_ORDER = (
     "auth_accounts",
     "family_student_links",
     "auth_sessions",
+    "auth_refresh_consumed_secrets",
     "auth_events",
     "auth_throttle_buckets",
     "course_enrollments",
@@ -75,6 +76,7 @@ CANONICAL_ORDER_BY = {
     "auth_accounts": "id",
     "family_student_links": "family_account_id, student_user_id",
     "auth_sessions": "id",
+    "auth_refresh_consumed_secrets": "session_id, refresh_secret_hash",
     "auth_events": "id",
     "auth_throttle_buckets": ("audience, bucket_kind, bucket_key_hmac, key_version"),
     "course_enrollments": "id",
@@ -289,6 +291,7 @@ def _validate_fixture(payload: dict[str, Any]) -> None:
     # an unexplained prior request and would require embedding refresh secrets.
     for empty_table in (
         "auth_sessions",
+        "auth_refresh_consumed_secrets",
         "auth_events",
         "auth_throttle_buckets",
         "course_enrollment_events",

@@ -22,7 +22,7 @@ Argon2id и signed/opaque token primitives; production login endpoints пока 
 | Family   | `vmsh_family_access`  | `vmsh_family_refresh`  | `/family`  |
 | Staff    | `vmsh_staff_access`   | `vmsh_staff_refresh`   | `/staff`   |
 
-Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Student, Family и Staff refresh sessions истекают в ближайшее 10 августа 00:00 по Москве, access cookie живёт 15 минут. Конкретный `expiresAt` вычисляет server. Блокировка, сброс Telegram-токена, смена критичных прав и ручной отзыв мягко отзывают session раньше; строка и secret-free audit остаются для списка устройств и расследования.
+Production attributes: `Secure`, `HttpOnly`, `SameSite=Lax`, узкий `Path`, без токена в URL или localStorage. Student, Family и Staff refresh sessions истекают в ближайшее 10 августа 00:00 по Москве, access cookie живёт 15 минут. Конкретный `expiresAt` вычисляет server. При ротации прежний HMAC хранится в bounded consumed-history только до срока этой сессии: совпадение доказывает replay и отзывает lineage, а произвольный неверный secret даёт общий отказ без удалённого отзыва. Блокировка, сброс Telegram-токена, смена критичных прав и ручной отзыв мягко отзывают session раньше; строка и secret-free audit остаются для списка устройств и расследования.
 
 ## Обязательные механизмы
 

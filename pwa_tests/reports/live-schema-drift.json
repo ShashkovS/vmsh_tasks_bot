@@ -107,8 +107,8 @@
       "type": "index"
     }
   ],
-  "expected_pragma_structure_sha256": "d301a8b8e913bb9fc5089852969d6c8c6f983272eeae21efadc2f2ab67fa3a02",
-  "expected_product_sha256": "ccf2343a8406d220703b3e76c98346ea009bbac71c85ce89165a47f0d8e6659a",
+  "expected_pragma_structure_sha256": "f1f33e2d5cb43a86354cd1403141e73efddae8dfe3c1081cdf80320946ab3db2",
+  "expected_product_sha256": "ef6e11591fa4f92150ba5f3c3c4791a02c6430ec8dac9422685551e1faa6b068",
   "format": "vmsh.sqlite-schema-drift/v1",
   "known_out_of_scope_data_risks": [
     {
@@ -321,6 +321,10 @@
       "type": "table"
     },
     {
+      "name": "auth_refresh_consumed_secrets",
+      "type": "table"
+    },
+    {
       "name": "auth_sessions",
       "type": "table"
     },
@@ -378,6 +382,10 @@
     },
     {
       "name": "auth_events_type_occurred_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_refresh_consumed_secrets_expires_idx",
       "type": "index"
     },
     {

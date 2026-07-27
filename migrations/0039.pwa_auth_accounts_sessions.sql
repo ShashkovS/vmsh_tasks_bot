@@ -139,6 +139,29 @@ create index auth_sessions_expires_idx
 create index auth_sessions_audience_revoked_expires_idx
     on auth_sessions (audience, revoked_at, expires_at);
 
+-- A mismatch against only the current digest is not proof of replay. Keep the
+-- consumed HMACs until the session expires so a previously valid refresh
+-- secret can be distinguished from an arbitrary invalid value without storing
+-- raw secrets. Expired rows are removed by auth maintenance; deleting a
+-- session also removes its bounded history.
+create table auth_refresh_consumed_secrets
+(
+    session_id          integer not null
+        references auth_sessions (id) on delete cascade,
+    refresh_secret_hash text    not null
+        check (
+            length(refresh_secret_hash) = 64
+            and refresh_secret_hash not glob '*[^0-9a-f]*'
+        ),
+    consumed_at         text    not null,
+    expires_at          text    not null,
+    primary key (session_id, refresh_secret_hash),
+    check (expires_at >= consumed_at)
+);
+
+create index auth_refresh_consumed_secrets_expires_idx
+    on auth_refresh_consumed_secrets (expires_at);
+
 create table auth_events
 (
     id            integer primary key,

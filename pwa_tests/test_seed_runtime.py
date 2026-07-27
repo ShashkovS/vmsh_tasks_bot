@@ -68,6 +68,7 @@ def test_baseline_seed_has_exact_legacy_personas_and_phase1_context(tmp_path):
         "auth_accounts": 5,
         "family_student_links": 2,
         "auth_sessions": 0,
+        "auth_refresh_consumed_secrets": 0,
         "auth_events": 0,
         "auth_throttle_buckets": 0,
         "course_enrollments": 2,
@@ -175,6 +176,7 @@ def test_baseline_seed_has_exact_legacy_personas_and_phase1_context(tmp_path):
         ).fetchall() == [(201, "н", "teacher"), (301, None, "admin")]
         for empty_table in (
             "auth_sessions",
+            "auth_refresh_consumed_secrets",
             "auth_events",
             "auth_throttle_buckets",
             "course_enrollment_events",

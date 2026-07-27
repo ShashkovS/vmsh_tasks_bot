@@ -61,7 +61,11 @@ Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_use
 
 `id INTEGER PK`, `public_id TEXT UNIQUE`, `account_id INTEGER FK auth_accounts`, `audience TEXT`, `refresh_secret_hash TEXT UNIQUE`, `credential_version INTEGER`, `version INTEGER`, `created_at TEXT`, `updated_at TEXT`, `last_seen_at TEXT`, `expires_at TEXT`, `revoked_at TEXT NULL`, `revoke_reason TEXT NULL`, `device_label TEXT NULL`, `user_agent_family TEXT NULL`, `ip_prefix TEXT NULL`.
 
-`refresh_secret_hash` — только 64-символьный lowercase HMAC-SHA-256 digest. Indexes: `(account_id, revoked_at, expires_at)`, `(expires_at)`, `(audience, revoked_at, expires_at)`. Короткая signed cookie несёт только opaque session reference/version, не роль как источник истины. Refresh меняет digest и `version` атомарно; stale/replayed secret мягко отзывает эту session lineage.
+`refresh_secret_hash` — только 64-символьный lowercase HMAC-SHA-256 digest. Indexes: `(account_id, revoked_at, expires_at)`, `(expires_at)`, `(audience, revoked_at, expires_at)`. Короткая signed cookie несёт только opaque session reference/version, не роль как источник истины. Refresh меняет digest и `version` атомарно.
+
+### `auth_refresh_consumed_secrets`
+
+`session_id INTEGER FK auth_sessions ON DELETE CASCADE`, `refresh_secret_hash TEXT`, `consumed_at TEXT`, `expires_at TEXT`, PK `(session_id, refresh_secret_hash)`, index `(expires_at)`. При успешной ротации старый HMAC сохраняется до истечения сессии. Только совпадение с этой bounded history является доказанным replay и мягко отзывает session lineage; произвольный неверный secret не выдаётся за replay и не позволяет отозвать чужую сессию по одному public ID. Raw refresh secret не сохраняется.
 
 ### `auth_events`
 

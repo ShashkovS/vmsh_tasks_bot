@@ -1,7 +1,7 @@
 {
   "fixture": "baseline-v1",
   "schemaVersion": 2,
-  "expectedCanonicalDigest": "56e508522704e8d4d480d619d1016361253232143f3647e0fe9a6a67effec9fe",
+  "expectedCanonicalDigest": "432128566774c4f85539509009601c22bf2c75279ab9c72ea69004cee5535f1f",
   "seedMetadata": {
     "version": 1,
     "fixture": "baseline-v1",
@@ -339,6 +339,7 @@
       }
     ],
     "auth_sessions": [],
+    "auth_refresh_consumed_secrets": [],
     "auth_events": [],
     "auth_throttle_buckets": [],
     "course_enrollments": [

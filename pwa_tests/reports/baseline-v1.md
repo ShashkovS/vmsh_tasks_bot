@@ -5,7 +5,7 @@
 ## Результат
 
 - Fixture: `baseline-v1`.
-- Canonical data SHA-256: `56e508522704e8d4d480d619d1016361253232143f3647e0fe9a6a67effec9fe`.
+- Canonical data SHA-256: `432128566774c4f85539509009601c22bf2c75279ab9c72ea69004cee5535f1f`.
 - Два последовательных изолированных seed-запуска создали одинаковое логическое состояние.
 - Установленная база прошла `PRAGMA integrity_check` и scoped `foreign_key_check` без исключений на fresh migration head.
 - В успешно установленном final artifact migration-carried `kv_logins` удалены до наполнения; после `VACUUM` их исходные байты в нём не остаются.
@@ -22,6 +22,7 @@
 | `auth_accounts` | 5 |
 | `family_student_links` | 2 |
 | `auth_sessions` | 0 |
+| `auth_refresh_consumed_secrets` | 0 |
 | `auth_events` | 0 |
 | `auth_throttle_buckets` | 0 |
 | `course_enrollments` | 2 |

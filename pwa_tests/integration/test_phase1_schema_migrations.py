@@ -29,6 +29,7 @@ PHASE_1_TABLES = {
     "auth_accounts",
     "family_student_links",
     "auth_sessions",
+    "auth_refresh_consumed_secrets",
     "auth_events",
     "auth_throttle_buckets",
     "courses",
@@ -348,6 +349,37 @@ def test_auth_schema_constraints_indexes_and_soft_revoke(tmp_path):
                 "?, ?, ?, ?)",
                 (student_account_id, "b" * 64, NOW, NOW, NOW, LATER),
             )
+
+        connection.execute(
+            "INSERT INTO auth_refresh_consumed_secrets "
+            "(session_id, refresh_secret_hash, consumed_at, expires_at) "
+            "VALUES (?, ?, ?, ?)",
+            (session_id, "d" * 64, NOW, LATER),
+        )
+        with pytest.raises(sqlite3.IntegrityError):
+            connection.execute(
+                "INSERT INTO auth_refresh_consumed_secrets "
+                "(session_id, refresh_secret_hash, consumed_at, expires_at) "
+                "VALUES (?, 'not-a-hmac', ?, ?)",
+                (session_id, NOW, LATER),
+            )
+        with pytest.raises(sqlite3.IntegrityError):
+            connection.execute(
+                "INSERT INTO auth_refresh_consumed_secrets "
+                "(session_id, refresh_secret_hash, consumed_at, expires_at) "
+                "VALUES (?, ?, ?, ?)",
+                (session_id, "e" * 64, LATER, NOW),
+            )
+        consumed_foreign_keys = connection.execute(
+            "PRAGMA foreign_key_list(auth_refresh_consumed_secrets)"
+        ).fetchall()
+        assert any(
+            row[2] == "auth_sessions" and row[6] == "CASCADE"
+            for row in consumed_foreign_keys
+        )
+        assert _index_flags(connection, "auth_refresh_consumed_secrets")[
+            "auth_refresh_consumed_secrets_expires_idx"
+        ] == (False, False)
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "UPDATE auth_sessions SET version = 0 WHERE id = ?", (session_id,)
