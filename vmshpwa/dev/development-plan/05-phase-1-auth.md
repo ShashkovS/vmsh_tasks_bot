@@ -19,7 +19,7 @@ course enrollment/access/events и единственный новый permissio
 backfill сначала dry-run:
 
 - student username строится версионированным transliteration helper как фамилия + день рождения; import preview блокирует коллизии, `NULL`/невалидную дату, пустую фамилию и позволяет исправить source либо назначить явно сохранённый уникальный вариант;
-- student/staff account связывается с `users.id`;
+- student/staff account связывается с внутренним `users.id`, а controlled activation одновременно назначает отсутствующий opaque `users.public_id`; этот случайный стабильный ID является browser `userId`/`studentId` и не совпадает с `auth_accounts.public_id` (`accountId`);
 - student credential не копирует plaintext token во второе поле;
 - family accounts импортируются только из согласованного файла/Staff batch flow, хранят имя без фамилии/email и поддерживают many-to-many child links;
 - конфликтующие normalized usernames попадают в report, не исправляются автоматически.
@@ -29,7 +29,7 @@ backfill сначала dry-run:
 
 - App factory получает auth/session dependencies без Telegram/Google imports.
 - Middleware разрешает только login/health/static как public routes.
-- Principal содержит `accountId`, `audience`, optional `userId`, role/capabilities, allowed groups и session version.
+- Principal содержит разные `accountId` и optional `userId`, `audience`, role/capabilities, allowed groups и session version. Отсутствующий `users.public_id` у связанной Student/Staff строки является ошибкой целостности и закрывает вход.
 - Signed 15-minute access cookie + opaque single-use refresh secret; SQLite хранит только HMAC refresh secret, session/version/revocation и secret-free audit.
 - Cookie: отдельное имя, `Path=/student|family|staff`, `HttpOnly`, `Secure` production, `SameSite`, общий для всех audiences срок до ближайшего 10 августа и ранний revoke.
 - Origin/Referer check на unsafe methods, CSP для HTML/static, nginx rate-limit

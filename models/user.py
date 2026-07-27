@@ -36,6 +36,9 @@ class User:
     allowed_groups_set: set[str] = None
     _cached_group: Optional[Group] = None
     id: int = None
+    # Opaque browser identity is assigned by the Phase-1 activation/backfill.
+    # It stays optional so legacy Telegram rows remain readable before cutover.
+    public_id: Optional[str] = None
 
     def __post_init__(self):
         if not self.online:

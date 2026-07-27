@@ -219,6 +219,13 @@ def _validate_fixture(payload: dict[str, Any]) -> None:
         raise ValueError("baseline-v1 may use only example.invalid URLs")
 
     user_ids = {user["id"] for user in users}
+    user_public_ids = [user.get("public_id") for user in users]
+    if any(
+        not isinstance(public_id, str) or not public_id for public_id in user_public_ids
+    ):
+        raise ValueError("Every fixture user must have an opaque public ID")
+    if len(user_public_ids) != len(set(user_public_ids)):
+        raise ValueError("Fixture user public IDs must be unique")
     seasons = {season["id"] for season in tables["seasons"]}
     courses = {course["id"]: course for course in tables["courses"]}
     if any(course["season_id"] not in seasons for course in courses.values()):

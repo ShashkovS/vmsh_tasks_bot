@@ -118,8 +118,12 @@ def test_baseline_seed_has_exact_legacy_personas_and_phase1_context(tmp_path):
             ("no_level", 1, "archived", "neutral"),
         ]
         assert connection.execute(
-            "SELECT id, online, group_id FROM users WHERE type = 1 ORDER BY id"
-        ).fetchall() == [(101, 1, "н"), (102, 2, "п")]
+            "SELECT id, public_id, online, group_id FROM users "
+            "WHERE type = 1 ORDER BY id"
+        ).fetchall() == [
+            (101, "user-student-online-fixture", 1, "н"),
+            (102, "user-student-in-person-fixture", 2, "п"),
+        ]
         assert connection.execute(
             "SELECT id, allowed_groups FROM users WHERE id IN (201, 301) ORDER BY id"
         ).fetchall() == [(201, ";н;"), (301, ";н;п;э;testing;")]

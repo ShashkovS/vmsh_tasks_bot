@@ -47,6 +47,7 @@ GROUP_PHASE_1_COLUMNS = {
     "updated_at",
     "version",
 }
+USER_PHASE_1_COLUMNS = {"public_id"}
 NOW = "2026-07-27T08:00:00Z"
 LATER = "2026-07-27T09:00:00Z"
 
@@ -199,6 +200,10 @@ def test_phase1_dependencies_and_empty_database_apply(tmp_path):
             row[1] for row in connection.execute("PRAGMA table_info(groups)")
         }
         assert GROUP_PHASE_1_COLUMNS <= group_columns
+        user_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(users)")
+        }
+        assert USER_PHASE_1_COLUMNS <= user_columns
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
         # The merged legacy seed has pre-existing FK violations. Keep this gate
         # scoped to Phase 1 objects; the upgrade/rollback test below separately
@@ -422,6 +427,10 @@ def test_auth_schema_constraints_indexes_and_soft_revoke(tmp_path):
         assert _index_flags(connection, "auth_accounts")[
             "auth_accounts_linked_user_audience_uq"
         ] == (True, True)
+        assert _index_flags(connection, "users")["users_public_id_uq"] == (
+            True,
+            True,
+        )
         assert _index_flags(connection, "auth_throttle_buckets")[
             "auth_throttle_buckets_locked_idx"
         ] == (False, True)

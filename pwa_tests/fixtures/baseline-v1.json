@@ -1,7 +1,7 @@
 {
   "fixture": "baseline-v1",
   "schemaVersion": 2,
-  "expectedCanonicalDigest": "432128566774c4f85539509009601c22bf2c75279ab9c72ea69004cee5535f1f",
+  "expectedCanonicalDigest": "782b405180c02e59328d392f0cf2ce683128bb501ff59f3351ad77a5de9916b3",
   "seedMetadata": {
     "version": 1,
     "fixture": "baseline-v1",
@@ -171,6 +171,7 @@
     "users": [
       {
         "id": 101,
+        "public_id": "user-student-online-fixture",
         "chat_id": null,
         "type": 1,
         "group_id": "н",
@@ -185,6 +186,7 @@
       },
       {
         "id": 102,
+        "public_id": "user-student-in-person-fixture",
         "chat_id": null,
         "type": 1,
         "group_id": "п",
@@ -199,6 +201,7 @@
       },
       {
         "id": 201,
+        "public_id": "user-staff-fixture",
         "chat_id": null,
         "type": 2,
         "group_id": "н",
@@ -213,6 +216,7 @@
       },
       {
         "id": 301,
+        "public_id": "user-admin-fixture",
         "chat_id": null,
         "type": 128,
         "group_id": "no_level",
@@ -480,15 +484,15 @@
       }
     ],
     "lessons": [
-      {"id": 3901, "group_id": "н", "lesson": 39},
-      {"id": 3902, "group_id": "п", "lesson": 39},
-      {"id": 3903, "group_id": "э", "lesson": 39},
-      {"id": 4001, "group_id": "н", "lesson": 40},
-      {"id": 4002, "group_id": "п", "lesson": 40},
-      {"id": 4003, "group_id": "э", "lesson": 40},
-      {"id": 4101, "group_id": "н", "lesson": 41},
-      {"id": 4102, "group_id": "п", "lesson": 41},
-      {"id": 4103, "group_id": "э", "lesson": 41}
+      { "id": 3901, "group_id": "н", "lesson": 39 },
+      { "id": 3902, "group_id": "п", "lesson": 39 },
+      { "id": 3903, "group_id": "э", "lesson": 39 },
+      { "id": 4001, "group_id": "н", "lesson": 40 },
+      { "id": 4002, "group_id": "п", "lesson": 40 },
+      { "id": 4003, "group_id": "э", "lesson": 40 },
+      { "id": 4101, "group_id": "н", "lesson": 41 },
+      { "id": 4102, "group_id": "п", "lesson": 41 },
+      { "id": 4103, "group_id": "э", "lesson": 41 }
     ],
     "problems": [
       {
@@ -781,32 +785,186 @@
       }
     ],
     "states": [
-      {"user_id": 101, "state": 2, "problem_id": null, "last_student_id": null, "last_teacher_id": null, "oral_problem_id": null, "info": null},
-      {"user_id": 102, "state": 2, "problem_id": null, "last_student_id": null, "last_teacher_id": null, "oral_problem_id": null, "info": null},
-      {"user_id": 201, "state": 2, "problem_id": null, "last_student_id": null, "last_teacher_id": null, "oral_problem_id": null, "info": null},
-      {"user_id": 301, "state": 2, "problem_id": null, "last_student_id": null, "last_teacher_id": null, "oral_problem_id": null, "info": null}
+      {
+        "user_id": 101,
+        "state": 2,
+        "problem_id": null,
+        "last_student_id": null,
+        "last_teacher_id": null,
+        "oral_problem_id": null,
+        "info": null
+      },
+      {
+        "user_id": 102,
+        "state": 2,
+        "problem_id": null,
+        "last_student_id": null,
+        "last_teacher_id": null,
+        "oral_problem_id": null,
+        "info": null
+      },
+      {
+        "user_id": 201,
+        "state": 2,
+        "problem_id": null,
+        "last_student_id": null,
+        "last_teacher_id": null,
+        "oral_problem_id": null,
+        "info": null
+      },
+      {
+        "user_id": 301,
+        "state": 2,
+        "problem_id": null,
+        "last_student_id": null,
+        "last_teacher_id": null,
+        "oral_problem_id": null,
+        "info": null
+      }
     ],
     "user_changes_log": [
-      {"ts": "2026-01-01T10:00:00Z", "user_id": 101, "change_type": "G", "new_value": "н"},
-      {"ts": "2026-01-01T10:00:01Z", "user_id": 101, "change_type": "O", "new_value": "1"},
-      {"ts": "2026-01-01T10:00:02Z", "user_id": 102, "change_type": "G", "new_value": "п"},
-      {"ts": "2026-01-01T10:00:03Z", "user_id": 102, "change_type": "O", "new_value": "2"}
+      {
+        "ts": "2026-01-01T10:00:00Z",
+        "user_id": 101,
+        "change_type": "G",
+        "new_value": "н"
+      },
+      {
+        "ts": "2026-01-01T10:00:01Z",
+        "user_id": 101,
+        "change_type": "O",
+        "new_value": "1"
+      },
+      {
+        "ts": "2026-01-01T10:00:02Z",
+        "user_id": 102,
+        "change_type": "G",
+        "new_value": "п"
+      },
+      {
+        "ts": "2026-01-01T10:00:03Z",
+        "user_id": 102,
+        "change_type": "O",
+        "new_value": "2"
+      }
     ],
     "written_tasks_discussions": [
-      {"id": 6001, "ts": "2026-01-31T17:49:30Z", "student_id": 101, "problem_id": 41003, "teacher_id": null, "text": "Тестовое решение до дедлайна.", "attach_path": null, "chat_id": null, "tg_msg_id": null},
-      {"id": 6002, "ts": "2026-01-31T17:48:00Z", "student_id": 102, "problem_id": 41004, "teacher_id": null, "text": "Тестовое решение, которое уже проверяют.", "attach_path": null, "chat_id": null, "tg_msg_id": null},
-      {"id": 6003, "ts": "2026-01-31T17:30:00Z", "student_id": 101, "problem_id": 41005, "teacher_id": null, "text": "Полное тестовое решение.", "attach_path": null, "chat_id": null, "tg_msg_id": null},
-      {"id": 6004, "ts": "2026-01-31T17:40:00Z", "student_id": 101, "problem_id": 41005, "teacher_id": 201, "text": "Решение принято.", "attach_path": null, "chat_id": null, "tg_msg_id": null},
-      {"id": 6005, "ts": "2026-01-31T17:50:30Z", "student_id": 102, "problem_id": 41006, "teacher_id": null, "text": "Тестовое решение после дедлайна.", "attach_path": null, "chat_id": null, "tg_msg_id": null},
-      {"id": 6006, "ts": "2026-01-31T17:55:00Z", "student_id": 102, "problem_id": 41006, "teacher_id": 201, "text": "Нужно подробнее обосновать последний переход.", "attach_path": null, "chat_id": null, "tg_msg_id": null}
+      {
+        "id": 6001,
+        "ts": "2026-01-31T17:49:30Z",
+        "student_id": 101,
+        "problem_id": 41003,
+        "teacher_id": null,
+        "text": "Тестовое решение до дедлайна.",
+        "attach_path": null,
+        "chat_id": null,
+        "tg_msg_id": null
+      },
+      {
+        "id": 6002,
+        "ts": "2026-01-31T17:48:00Z",
+        "student_id": 102,
+        "problem_id": 41004,
+        "teacher_id": null,
+        "text": "Тестовое решение, которое уже проверяют.",
+        "attach_path": null,
+        "chat_id": null,
+        "tg_msg_id": null
+      },
+      {
+        "id": 6003,
+        "ts": "2026-01-31T17:30:00Z",
+        "student_id": 101,
+        "problem_id": 41005,
+        "teacher_id": null,
+        "text": "Полное тестовое решение.",
+        "attach_path": null,
+        "chat_id": null,
+        "tg_msg_id": null
+      },
+      {
+        "id": 6004,
+        "ts": "2026-01-31T17:40:00Z",
+        "student_id": 101,
+        "problem_id": 41005,
+        "teacher_id": 201,
+        "text": "Решение принято.",
+        "attach_path": null,
+        "chat_id": null,
+        "tg_msg_id": null
+      },
+      {
+        "id": 6005,
+        "ts": "2026-01-31T17:50:30Z",
+        "student_id": 102,
+        "problem_id": 41006,
+        "teacher_id": null,
+        "text": "Тестовое решение после дедлайна.",
+        "attach_path": null,
+        "chat_id": null,
+        "tg_msg_id": null
+      },
+      {
+        "id": 6006,
+        "ts": "2026-01-31T17:55:00Z",
+        "student_id": 102,
+        "problem_id": 41006,
+        "teacher_id": 201,
+        "text": "Нужно подробнее обосновать последний переход.",
+        "attach_path": null,
+        "chat_id": null,
+        "tg_msg_id": null
+      }
     ],
     "written_tasks_queue": [
-      {"id": 5001, "ts": "2026-01-31T17:49:30Z", "student_id": 101, "problem_id": 41003, "cur_status": 0, "teacher_ts": null, "teacher_id": null},
-      {"id": 5002, "ts": "2026-01-31T17:48:00Z", "student_id": 102, "problem_id": 41004, "cur_status": 1, "teacher_ts": "2026-01-31T17:45:00Z", "teacher_id": 201}
+      {
+        "id": 5001,
+        "ts": "2026-01-31T17:49:30Z",
+        "student_id": 101,
+        "problem_id": 41003,
+        "cur_status": 0,
+        "teacher_ts": null,
+        "teacher_id": null
+      },
+      {
+        "id": 5002,
+        "ts": "2026-01-31T17:48:00Z",
+        "student_id": 102,
+        "problem_id": 41004,
+        "cur_status": 1,
+        "teacher_ts": "2026-01-31T17:45:00Z",
+        "teacher_id": 201
+      }
     ],
     "results": [
-      {"id": 7001, "student_id": 101, "problem_id": 41005, "group_id": "н", "lesson": 41, "teacher_id": 201, "ts": "2026-01-31T17:40:00Z", "verdict": 17, "answer": "Письменное решение принято", "res_type": 2, "check_time_spent_sec": 180, "zoom_conversation_id": null},
-      {"id": 7002, "student_id": 102, "problem_id": 41006, "group_id": "н", "lesson": 41, "teacher_id": 201, "ts": "2026-01-31T17:55:00Z", "verdict": 15, "answer": "Требуется дополнительное обоснование", "res_type": 2, "check_time_spent_sec": 240, "zoom_conversation_id": null}
+      {
+        "id": 7001,
+        "student_id": 101,
+        "problem_id": 41005,
+        "group_id": "н",
+        "lesson": 41,
+        "teacher_id": 201,
+        "ts": "2026-01-31T17:40:00Z",
+        "verdict": 17,
+        "answer": "Письменное решение принято",
+        "res_type": 2,
+        "check_time_spent_sec": 180,
+        "zoom_conversation_id": null
+      },
+      {
+        "id": 7002,
+        "student_id": 102,
+        "problem_id": 41006,
+        "group_id": "н",
+        "lesson": 41,
+        "teacher_id": 201,
+        "ts": "2026-01-31T17:55:00Z",
+        "verdict": 15,
+        "answer": "Требуется дополнительное обоснование",
+        "res_type": 2,
+        "check_time_spent_sec": 240,
+        "zoom_conversation_id": null
+      }
     ]
   }
 }

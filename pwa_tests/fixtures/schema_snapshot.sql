@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: ef6e11591fa4f92150ba5f3c3c4791a02c6430ec8dac9422685551e1faa6b068
+-- Product schema SHA-256: 0743b36000b236e1c67aae02bc08739c29c0859d81e3ac025b51f91fa104a44a
 
 CREATE TABLE auth_accounts
 (
@@ -674,7 +674,7 @@ CREATE TABLE "users"
     grade          int,
     birthday       int,
     allowed_groups text
-);
+, public_id text);
 
 CREATE TABLE verdicts
 (
@@ -872,6 +872,10 @@ CREATE UNIQUE INDEX staff_scopes_one_active_course_role_uq
 CREATE UNIQUE INDEX staff_scopes_one_active_group_role_uq
     on staff_scopes (staff_user_id, course_id, group_id, role)
     where group_id is not null and valid_to is null;
+
+CREATE UNIQUE INDEX users_public_id_uq
+    on users (public_id)
+    where public_id is not null;
 
 CREATE INDEX waitlist_by_student
     on waitlist (student_id);

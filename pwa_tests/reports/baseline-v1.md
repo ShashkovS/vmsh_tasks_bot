@@ -5,7 +5,7 @@
 ## Результат
 
 - Fixture: `baseline-v1`.
-- Canonical data SHA-256: `432128566774c4f85539509009601c22bf2c75279ab9c72ea69004cee5535f1f`.
+- Canonical data SHA-256: `782b405180c02e59328d392f0cf2ce683128bb501ff59f3351ad77a5de9916b3`.
 - Два последовательных изолированных seed-запуска создали одинаковое логическое состояние.
 - Установленная база прошла `PRAGMA integrity_check` и scoped `foreign_key_check` без исключений на fresh migration head.
 - В успешно установленном final artifact migration-carried `kv_logins` удалены до наполнения; после `VACUUM` их исходные байты в нём не остаются.
@@ -13,34 +13,34 @@
 
 ## Данные
 
-| Таблица | Строк |
-| --- | ---: |
-| `seasons` | 1 |
-| `courses` | 1 |
-| `groups` | 5 |
-| `users` | 4 |
-| `auth_accounts` | 5 |
-| `family_student_links` | 2 |
-| `auth_sessions` | 0 |
-| `auth_refresh_consumed_secrets` | 0 |
-| `auth_events` | 0 |
-| `auth_throttle_buckets` | 0 |
-| `course_enrollments` | 2 |
-| `course_group_access` | 5 |
-| `course_enrollment_events` | 0 |
-| `staff_scopes` | 2 |
-| `student_strength` | 1 |
-| `lessons` | 9 |
-| `problems` | 16 |
-| `states` | 4 |
-| `user_changes_log` | 4 |
-| `written_tasks_discussions` | 6 |
-| `written_tasks_queue` | 2 |
-| `results` | 2 |
-| `kv` | 1 |
-| `kv_logins` | 0 |
+| Таблица                         | Строк |
+| ------------------------------- | ----: |
+| `seasons`                       |     1 |
+| `courses`                       |     1 |
+| `groups`                        |     5 |
+| `users`                         |     4 |
+| `auth_accounts`                 |     5 |
+| `family_student_links`          |     2 |
+| `auth_sessions`                 |     0 |
+| `auth_refresh_consumed_secrets` |     0 |
+| `auth_events`                   |     0 |
+| `auth_throttle_buckets`         |     0 |
+| `course_enrollments`            |     2 |
+| `course_group_access`           |     5 |
+| `course_enrollment_events`      |     0 |
+| `staff_scopes`                  |     2 |
+| `student_strength`              |     1 |
+| `lessons`                       |     9 |
+| `problems`                      |    16 |
+| `states`                        |     4 |
+| `user_changes_log`              |     4 |
+| `written_tasks_discussions`     |     6 |
+| `written_tasks_queue`           |     2 |
+| `results`                       |     2 |
+| `kv`                            |     1 |
+| `kv_logins`                     |     0 |
 
-Есть synthetic Student online, Student in-person, Family account, связанный с обоими учениками, Teacher и Admin. Существующие группы принадлежат одному синтетическому сезону и курсу «Математика 5–7»; оба ученика имеют отдельные course enrollment, active group, режим и интервалы доступа, а Teacher/Admin — разные Staff scopes. Baseline намеренно начинается до первого web-входа, поэтому sessions, auth audit, throttle buckets и enrollment events пусты.
+Есть synthetic Student online, Student in-person, Family account, связанный с обоими учениками, Teacher и Admin. Все synthetic users имеют разные opaque `public_id`, не совпадающие с account IDs. Существующие группы принадлежат одному синтетическому сезону и курсу «Математика 5–7»; оба ученика имеют отдельные course enrollment, active group, режим и интервалы доступа, а Teacher/Admin — разные Staff scopes. Baseline намеренно начинается до первого web-входа, поэтому sessions, auth audit, throttle buckets и enrollment events пусты.
 
 Пять credential hashes зафиксированы как Argon2id с разными синтетическими salt. Тест сверяет каждый hash через production `CredentialHasher` с явно синтетическим значением из отдельного test-only harness и также проверяет неверное значение. Plaintext не входит в runtime fixture, seed/report/console; production не может запустить seed из-за profile/path/production guards.
 

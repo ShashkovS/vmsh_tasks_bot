@@ -6,10 +6,10 @@ only by safe structural metadata and fingerprints; paths and timestamps are omit
 
 ## Summary
 
-- Expected product hash: `ef6e11591fa4f92150ba5f3c3c4791a02c6430ec8dac9422685551e1faa6b068`.
+- Expected product hash: `0743b36000b236e1c67aae02bc08739c29c0859d81e3ac025b51f91fa104a44a`.
 - Observed product hash: `f87af9f4843dcffe35651780b8b77ab9d1137d54b588423af4a01aa138c981e8`.
-- DDL text differences: 26.
-- PRAGMA-structure differences: 3.
+- DDL text differences: 27.
+- PRAGMA-structure differences: 4.
 - Yoyo infrastructure hash: `9d5f0fd33d7ccfd7253ad2bcbee6294307bc625c646839e5d4fb5edc1a8e6ec5`.
 - Repository migration head current: false.
 - Known legacy-derived objects: 12.

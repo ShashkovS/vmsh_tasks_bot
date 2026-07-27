@@ -5,3 +5,5 @@ drop table auth_sessions;
 drop table family_student_links;
 drop table auth_accounts;
 drop table seasons;
+drop index users_public_id_uq;
+alter table users drop column public_id;

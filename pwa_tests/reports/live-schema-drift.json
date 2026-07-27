@@ -67,6 +67,10 @@
       "type": "table"
     },
     {
+      "name": "users",
+      "type": "table"
+    },
+    {
       "name": "waitlist",
       "type": "table"
     },
@@ -107,8 +111,8 @@
       "type": "index"
     }
   ],
-  "expected_pragma_structure_sha256": "f1f33e2d5cb43a86354cd1403141e73efddae8dfe3c1081cdf80320946ab3db2",
-  "expected_product_sha256": "ef6e11591fa4f92150ba5f3c3c4791a02c6430ec8dac9422685551e1faa6b068",
+  "expected_pragma_structure_sha256": "1ccb3e05cb90b1f0bc22d3799bae1e2489a1feba8b178197018481fed60deb69",
+  "expected_product_sha256": "0743b36000b236e1c67aae02bc08739c29c0859d81e3ac025b51f91fa104a44a",
   "format": "vmsh.sqlite-schema-drift/v1",
   "known_out_of_scope_data_risks": [
     {
@@ -470,6 +474,10 @@
     },
     {
       "name": "staff_scopes_one_active_group_role_uq",
+      "type": "index"
+    },
+    {
+      "name": "users_public_id_uq",
       "type": "index"
     },
     {
@@ -1549,6 +1557,453 @@
         "type": "table"
       },
       "name": "reactions",
+      "type": "table"
+    },
+    {
+      "actual": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "chat_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "surname",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "middlename",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "token",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "online",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "grade",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "birthday",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "allowed_groups",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "b4e509bf6d252067f01764e4c9687429da9c4e782a71cbd1203ef22020ff94d5",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "chat_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_users_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "token",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_users_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "users",
+        "table_name": "users",
+        "type": "table"
+      },
+      "expected": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "chat_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "surname",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "middlename",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "token",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "online",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "grade",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "birthday",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "allowed_groups",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "f6434fec818c85a69a88fcf9247820347a709dd598b654cbca2dcc7d451a3893",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "chat_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_users_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "token",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_users_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 12,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "users_public_id_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          }
+        ],
+        "name": "users",
+        "table_name": "users",
+        "type": "table"
+      },
+      "name": "users",
       "type": "table"
     }
   ],

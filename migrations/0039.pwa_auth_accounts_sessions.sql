@@ -2,6 +2,15 @@
 
 -- Phase 1 identity/session schema. Authoritative contract:
 -- vmshpwa/dev/development-plan/05-phase-1-auth.md and ADR 0003.
+-- Legacy integer user IDs remain the internal FK. Browser contracts use this
+-- separately backfilled opaque ID; NULL fails closed until the controlled
+-- account activation/import has assigned one.
+alter table users add column public_id text;
+
+create unique index users_public_id_uq
+    on users (public_id)
+    where public_id is not null;
+
 create table seasons
 (
     id                 integer primary key,

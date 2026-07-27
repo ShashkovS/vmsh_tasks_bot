@@ -99,7 +99,7 @@
     }
   },
   "product": {
-    "object_count": 92,
+    "object_count": 93,
     "objects": [
       {
         "columns": [
@@ -6362,6 +6362,15 @@
             "name": "allowed_groups",
             "not_null": false,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -6426,11 +6435,35 @@
             "origin": "u",
             "partial": false,
             "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 12,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "users_public_id_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
           }
         ],
         "name": "users",
-        "object_sha256": "b4e509bf6d252067f01764e4c9687429da9c4e782a71cbd1203ef22020ff94d5",
-        "sql": "CREATE TABLE \"users\"\n(\n    id             INTEGER\n        primary key,\n    chat_id        INTEGER\n        unique,\n    type           INTEGER not null,\n    group_id       text\n        references groups,\n    name           TEXT    not null,\n    surname        TEXT    not null,\n    middlename     TEXT,\n    token          TEXT\n        unique,\n    online         INTEGER,\n    grade          int,\n    birthday       int,\n    allowed_groups text\n);",
+        "object_sha256": "f6434fec818c85a69a88fcf9247820347a709dd598b654cbca2dcc7d451a3893",
+        "sql": "CREATE TABLE \"users\"\n(\n    id             INTEGER\n        primary key,\n    chat_id        INTEGER\n        unique,\n    type           INTEGER not null,\n    group_id       text\n        references groups,\n    name           TEXT    not null,\n    surname        TEXT    not null,\n    middlename     TEXT,\n    token          TEXT\n        unique,\n    online         INTEGER,\n    grade          int,\n    birthday       int,\n    allowed_groups text\n, public_id text);",
         "table_name": "users",
         "type": "table"
       },
@@ -7741,6 +7774,13 @@
         "type": "index"
       },
       {
+        "name": "users_public_id_uq",
+        "object_sha256": "f047bfec350e84453ebab4a88e55865f3e583e62d947c15f938e239c73fa9ef4",
+        "sql": "CREATE UNIQUE INDEX users_public_id_uq\n    on users (public_id)\n    where public_id is not null;",
+        "table_name": "users",
+        "type": "index"
+      },
+      {
         "name": "waitlist_by_student",
         "object_sha256": "76283c0c7cd21191167a7cd7c4f44c87769d4b7e9a3781a15740a358a1ad2549",
         "sql": "CREATE INDEX waitlist_by_student\n    on waitlist (student_id);",
@@ -7818,8 +7858,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "f1f33e2d5cb43a86354cd1403141e73efddae8dfe3c1081cdf80320946ab3db2",
-    "sha256": "ef6e11591fa4f92150ba5f3c3c4791a02c6430ec8dac9422685551e1faa6b068"
+    "pragma_structure_sha256": "1ccb3e05cb90b1f0bc22d3799bae1e2489a1feba8b178197018481fed60deb69",
+    "sha256": "0743b36000b236e1c67aae02bc08739c29c0859d81e3ac025b51f91fa104a44a"
   },
   "source_kind": "repository-migration-head"
 }

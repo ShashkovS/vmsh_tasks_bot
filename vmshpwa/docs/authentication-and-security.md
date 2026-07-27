@@ -9,12 +9,19 @@ Argon2id и signed/opaque token primitives; production login endpoints пока 
 
 Школьник входит по логину вида `transliterated-surname-DD` и текущему Telegram-токену. Алгоритм v1 использует замороженную локальную транслитерацию и двузначный день месяца; коллизия блокирует import до явного сохранённого admin override, а не получает нестабильный suffix из row ID. Версионированный import проверяет уникальность сгенерированного login. `NULL`/невалидная дата рождения, пустая фамилия и явно guessable legacy token попадают в preflight и не превращаются в активный web account молча; исключительная policy фиксируется как `AUTH-01` в фазовом плане. Family account хранит минимальное имя без email; связи с детьми many-to-many. Если один человек является parent и teacher, он использует разные logins/audience sessions. Первичная выдача и восстановление Family/Staff доступа выполняются через администраторов по `vmsh@179.ru`.
 
+Внешняя идентичность человека отделена от учётной записи: nullable
+`users.public_id` становится стабильным browser `userId`/`studentId` только
+при controlled activation, тогда как `auth_accounts.public_id` является
+`accountId`. Оба значения opaque и не раскрывают legacy integer `users.id`.
+API не подставляет один ID вместо другого: связанный Student/Staff без
+`users.public_id` считается неактивированным и получает fail-closed отказ.
+
 Все credential hashes — Argon2id. Production использует актуальные defaults
 `argon2-cffi`; после успешного входа устаревшие параметры автоматически
 перехешируются. Student token проходит ту же trim/homoglyph normalization, что
 и исторический Telegram-бот, но не копируется в ещё одно plaintext-поле.
 
-Сессия использует две HttpOnly cookie на audience: короткую подписанную `itsdangerous` access cookie и ротируемую refresh cookie. Refresh session и hash raw token хранятся в SQLite, поэтому отдельное устройство можно отозвать без отдельного auth service.
+Сессия использует две HttpOnly cookie на audience: короткую подписанную `itsdangerous` access cookie и ротируемую refresh cookie. SQLite хранит HMAC-digest refresh secret, но не raw secret и не hash введённого credential в session row, поэтому отдельное устройство можно отозвать без отдельного auth service.
 
 | Audience | Access cookie         | Refresh cookie         | Path       |
 | -------- | --------------------- | ---------------------- | ---------- |

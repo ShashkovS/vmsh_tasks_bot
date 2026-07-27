@@ -11,6 +11,14 @@
 
 ## Идентичность и версии
 
+Legacy `users.id` остаётся внутренним FK. Browser получает отдельный opaque
+`users.public_id` как `userId`/`studentId`, а `auth_accounts.public_id` как
+`accountId`; эти значения имеют разные смыслы и не взаимозаменяемы. Новая
+колонка пользователя nullable только на переходном этапе: controlled
+activation присваивает случайное стабильное значение, а adapter fail-closed
+отказывает связанной строке без него. Такой переход не требует переписывать
+исторические integer foreign keys и не раскрывает последовательные IDs в URL.
+
 Внутренние records имеют стабильные IDs, но исходный LaTeX не получает обязательный problem ID. Conditions/solutions сначала сопоставляются по порядку; изменение структуры создаёт blocking reconciliation rows в Staff. Submission ссылается на publication revision. До первого review lock ученик может изменить исходную отправку; после lock он может только добавить новый материал в тред. Review complete сверяет thread version, включает всё досланное до commit и затем фиксирует object keys навсегда; teacher annotation — отдельный immutable overlay. Object overwrite запрещён.
 
 Synonym-group объединяет разные представления математически той же задачи. Совпадение названия внутри урока создаёт только кандидата. Автоматические результаты и статистика не сливаются до подтверждения.
@@ -53,7 +61,7 @@ One-time import текущего Excel-export использует `IDd`, `Ур�
 
 `make pwa-schema-check` строит временную базу до migration head и сверяет committed artifacts; отдельный unit-test доказывает воспроизводимость на двух независимо созданных базах. `make pwa-schema-live-check` открывает согласованный `db/vmsh.db` через SQLite `mode=ro`, включает `query_only`, держит одну read transaction и сверяет обезличенный drift report; исходный файл не меняется. Пишущие `*-update` цели атомарно заменяют только пять заранее заданных repository-artifacts — inventory, два SQL snapshot и два live-report — и отвергают произвольный output path.
 
-Migration-head baseline после добавочных Phase-1 миграций зафиксировал 50 product tables, 35 explicit indexes, 5 triggers и 2 views. Согласованная read-only `db/vmsh.db` намеренно остаётся на 0038 до отдельного production rehearsal: отчёт явно показывает missing 0039/0040, 45 отсутствующих объектов и изменение `groups`, не применяя миграции к файлу. В live-БД дополнительно находятся 12 явно перечисленных derived `temp_*` objects и два структурных дефекта: отсутствующий FK `reaction_enum → reaction_type_enum` и неверная FK-цель `reactions.zoom_conversation_id`. Они не нормализуются как «эквивалентный SQL»: до новых reaction writes требуется отдельная forward migration. Отчёт также фиксирует структуру yoyo и каждого allowlisted derived object. Live SQL и выражения `DEFAULT` никогда не сериализуются: сохраняются безопасные структурные сведения и SHA-256 fingerprints.
+Migration-head baseline после добавочных Phase-1 миграций зафиксировал 50 product tables, 36 explicit indexes, 5 triggers и 2 views. Согласованная read-only `db/vmsh.db` намеренно остаётся на 0038 до отдельного production rehearsal: отчёт явно показывает missing 0039/0040, 46 отсутствующих объектов и изменение `groups`/`users`, не применяя миграции к файлу. В live-БД дополнительно находятся 12 явно перечисленных derived `temp_*` objects и два структурных дефекта: отсутствующий FK `reaction_enum → reaction_type_enum` и неверная FK-цель `reactions.zoom_conversation_id`. Они не нормализуются как «эквивалентный SQL»: до новых reaction writes требуется отдельная forward migration. Отчёт также фиксирует структуру yoyo и каждого allowlisted derived object. Live SQL и выражения `DEFAULT` никогда не сериализуются: сохраняются безопасные структурные сведения и SHA-256 fingerprints.
 
 ## Многокурсовое расширение
 
