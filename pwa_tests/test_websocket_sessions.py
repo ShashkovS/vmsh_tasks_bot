@@ -199,6 +199,39 @@ async def test_pending_handshake_is_not_routable_until_initial_frame() -> None:
     ]
 
 
+async def test_peer_disconnect_before_initial_frame_is_not_a_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    registry = WebSocketSessionRegistry()
+    socket = FakeWebSocket(send_error=ConnectionResetError("peer closed"))
+    await registry.register_pending(
+        socket,
+        audience="student",
+        account_public_id="account-1",
+        session_public_id="session-peer-closed",
+    )
+
+    async def active(
+        _identity: WebSocketSessionIdentity,
+    ) -> SessionRevalidationStatus:
+        return SessionRevalidationStatus.VALID
+
+    assert (
+        await registry.revalidate_pending(socket, revalidate=active)
+        is SessionRevalidationStatus.VALID
+    )
+    with caplog.at_level("WARNING", logger="apps.pwa_api.websocket_sessions"):
+        status = await registry.activate_with_initial(
+            socket,
+            payload={"type": "connected", "cursor": 1},
+        )
+
+    assert status is SessionRevalidationStatus.CORRUPT
+    assert "Failed to send" not in caplog.text
+    assert socket.closed
+    assert await registry.connection_count() == 0
+
+
 async def test_close_session_is_scoped_by_audience_and_keeps_other_sessions() -> None:
     registry = WebSocketSessionRegistry()
     student_first = FakeWebSocket()

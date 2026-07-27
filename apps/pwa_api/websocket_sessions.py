@@ -327,6 +327,15 @@ class WebSocketSessionRegistry:
                             await record.socket.send_json(event)
             except asyncio.CancelledError:
                 raise
+            except ConnectionResetError:
+                # A browser can close the page after the HTTP upgrade but
+                # before the first frame reaches the transport.  This is a
+                # normal peer disconnect (especially during navigation), not
+                # an application/realtime failure worth a warning.
+                logger.debug(
+                    "PWA WebSocket peer disconnected before the initial event"
+                )
+                send_failed = True
             except Exception:
                 logger.warning(
                     "Failed to send an authenticated PWA WebSocket initial event"
