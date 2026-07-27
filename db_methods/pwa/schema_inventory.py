@@ -98,6 +98,8 @@ def validate_inventory(inventory: Mapping[str, Any]) -> None:
         raise SchemaInventoryError("unsupported inventory format")
     try:
         migration = inventory["migration"]
+        repository_head = migration["repository_head"]
+        repository_head_status = migration["repository_head_status"]
         infrastructure = migration["infrastructure"]
         infrastructure_objects = infrastructure["objects"]
         product = inventory["product"]
@@ -107,11 +109,59 @@ def validate_inventory(inventory: Mapping[str, Any]) -> None:
     except (KeyError, TypeError) as error:
         raise SchemaInventoryError("incomplete schema inventory") from error
     if (
-        not isinstance(infrastructure_objects, list)
+        not isinstance(repository_head, list)
+        or not isinstance(repository_head_status, dict)
+        or set(repository_head_status)
+        != {"is_current", "missing", "changed", "unexpected"}
+        or not isinstance(repository_head_status["is_current"], bool)
+        or any(
+            not isinstance(repository_head_status[key], list)
+            or not all(
+                isinstance(value, str) and value
+                for value in repository_head_status[key]
+            )
+            for key in ("missing", "changed", "unexpected")
+        )
+        or not isinstance(infrastructure_objects, list)
         or not isinstance(product_objects, list)
         or not isinstance(derived_objects, list)
     ):
         raise SchemaInventoryError("schema inventory object collections must be lists")
+    repository_ids: list[str] = []
+    for record in repository_head:
+        if not isinstance(record, dict) or set(record) != {"id", "sha256"}:
+            raise SchemaInventoryError("invalid repository migration record")
+        migration_id = record["id"]
+        migration_hash = record["sha256"]
+        if (
+            not isinstance(migration_id, str)
+            or not migration_id
+            or not isinstance(migration_hash, str)
+            or len(migration_hash) != 64
+            or any(character not in "0123456789abcdef" for character in migration_hash)
+        ):
+            raise SchemaInventoryError("invalid repository migration record")
+        repository_ids.append(migration_id)
+    if repository_ids != sorted(repository_ids) or len(repository_ids) != len(
+        set(repository_ids)
+    ):
+        raise SchemaInventoryError("repository migrations are not uniquely ordered")
+    status_sets = {
+        key: set(repository_head_status[key])
+        for key in ("missing", "changed", "unexpected")
+    }
+    if (
+        status_sets["missing"] - set(repository_ids)
+        or status_sets["changed"] - set(repository_ids)
+        or status_sets["missing"] & status_sets["changed"]
+        or status_sets["unexpected"] & set(repository_ids)
+        or any(
+            len(repository_head_status[key]) != len(status_sets[key])
+            for key in status_sets
+        )
+        or repository_head_status["is_current"] != (not any(status_sets.values()))
+    ):
+        raise SchemaInventoryError("invalid repository migration-head status")
     _validate_safe_fingerprints(
         infrastructure_objects,
         allowed_names=YOYO_SCHEMA_OBJECTS,
@@ -274,6 +324,7 @@ def _expected_migrations() -> tuple[tuple[str, str], ...]:
 def _migration_summary(
     connection: sqlite3.Connection, *, require_migration_head: bool
 ) -> dict[str, Any]:
+    expected = _expected_migrations()
     migration_table = connection.execute(
         "SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = '_yoyo_migration'"
     ).fetchone()
@@ -282,7 +333,16 @@ def _migration_summary(
             raise SchemaInventoryError("_yoyo_migration is missing")
         return {
             "merged_boundary": f"{MERGED_MIGRATION_BOUNDARY:04d}",
-            "repository_head": [],
+            "repository_head": [
+                {"id": migration_id, "sha256": migration_hash}
+                for migration_id, migration_hash in expected
+            ],
+            "repository_head_status": {
+                "is_current": False,
+                "missing": [migration_id for migration_id, _ in expected],
+                "changed": [],
+                "unexpected": [],
+            },
             "legacy_history": {
                 "count": 0,
                 "sha256": _json_sha256([]),
@@ -300,7 +360,6 @@ def _migration_summary(
             raise SchemaInventoryError(f"duplicate yoyo migration id: {migration_id}")
         applied_by_id[migration_id] = migration_hash
 
-    expected = _expected_migrations()
     expected_by_id = dict(expected)
     missing = [
         migration_id
@@ -349,6 +408,17 @@ def _migration_summary(
             {"id": migration_id, "sha256": migration_hash}
             for migration_id, migration_hash in expected
         ],
+        # A committed live report is an acknowledged drift snapshot, not the
+        # runtime readiness gate. It must be able to record that production is
+        # still behind newly authored migrations without applying them to the
+        # operator's database; ordinary PWA startup continues to require head.
+        # See development-plan/04-phase-0-baseline.md and Phase 1 migration proof.
+        "repository_head_status": {
+            "is_current": not (missing or changed or unexpected),
+            "missing": missing,
+            "changed": changed,
+            "unexpected": unexpected,
+        },
         # Old source files are intentionally not reconstructed. Their aggregate
         # proves which agreed history was observed without making it authoritative.
         "legacy_history": {
@@ -829,11 +899,25 @@ def render_drift_markdown(report: Mapping[str, Any]) -> str:
         f"- PRAGMA-structure differences: {len(report['pragma_structure_differences'])}.",
         "- Yoyo infrastructure hash: "
         f"`{report['migration']['infrastructure']['sha256']}`.",
+        "- Repository migration head current: "
+        f"{str(report['migration']['repository_head_status']['is_current']).lower()}.",
         f"- Known legacy-derived objects: {len(derived)}.",
         "",
-        "## Known schema defects",
+        "## Migration-head drift",
         "",
     ]
+    migration_status = report["migration"]["repository_head_status"]
+    for label in ("missing", "changed", "unexpected"):
+        values = migration_status[label]
+        rendered = ", ".join(f"`{value}`" for value in values) if values else "none"
+        lines.append(f"- {label.capitalize()}: {rendered}.")
+    lines.extend(
+        [
+            "",
+            "## Known schema defects",
+            "",
+        ]
+    )
     if defects:
         lines.extend(
             f"- `{defect['code']}` — {defect['summary']}." for defect in defects

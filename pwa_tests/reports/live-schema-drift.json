@@ -19,6 +19,10 @@
       "type": "table"
     },
     {
+      "name": "groups",
+      "type": "table"
+    },
+    {
       "name": "kv",
       "type": "table"
     },
@@ -103,8 +107,8 @@
       "type": "index"
     }
   ],
-  "expected_pragma_structure_sha256": "e096897c26d5d679718d97106e034e52ee9650bf0dc6686e10fcf36a10d876ba",
-  "expected_product_sha256": "5ba3e4323ba8b0808516bb3986a0460e3d2f0a87d33d351bc9c4161c93d5b594",
+  "expected_pragma_structure_sha256": "d301a8b8e913bb9fc5089852969d6c8c6f983272eeae21efadc2f2ab67fa3a02",
+  "expected_product_sha256": "ccf2343a8406d220703b3e76c98346ea009bbac71c85ce89165a47f0d8e6659a",
   "format": "vmsh.sqlite-schema-drift/v1",
   "known_out_of_scope_data_risks": [
     {
@@ -287,11 +291,901 @@
       {
         "id": "0038.kv_logins",
         "sha256": "7f2e56e8509eee557f071f98ad494337793170bd96f033d17b96de49cbd8eba0"
+      },
+      {
+        "id": "0039.pwa_auth_accounts_sessions",
+        "sha256": "3bac6fbc66a723260584d1caec31caf54a448125ce79639668cb7c17eaaadace"
+      },
+      {
+        "id": "0040.pwa_courses_access",
+        "sha256": "ee9bc548ba48e8cee203597db81337bdeb5f6951ed399970930edebe551f023d"
       }
-    ]
+    ],
+    "repository_head_status": {
+      "changed": [],
+      "is_current": false,
+      "missing": [
+        "0039.pwa_auth_accounts_sessions",
+        "0040.pwa_courses_access"
+      ],
+      "unexpected": []
+    }
   },
-  "missing_product_objects": [],
+  "missing_product_objects": [
+    {
+      "name": "auth_accounts",
+      "type": "table"
+    },
+    {
+      "name": "auth_events",
+      "type": "table"
+    },
+    {
+      "name": "auth_sessions",
+      "type": "table"
+    },
+    {
+      "name": "auth_throttle_buckets",
+      "type": "table"
+    },
+    {
+      "name": "course_enrollment_events",
+      "type": "table"
+    },
+    {
+      "name": "course_enrollments",
+      "type": "table"
+    },
+    {
+      "name": "course_group_access",
+      "type": "table"
+    },
+    {
+      "name": "courses",
+      "type": "table"
+    },
+    {
+      "name": "family_student_links",
+      "type": "table"
+    },
+    {
+      "name": "seasons",
+      "type": "table"
+    },
+    {
+      "name": "staff_scopes",
+      "type": "table"
+    },
+    {
+      "name": "auth_accounts_audience_status_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_accounts_linked_user_audience_uq",
+      "type": "index"
+    },
+    {
+      "name": "auth_events_account_occurred_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_events_request_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_events_session_occurred_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_events_type_occurred_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_sessions_account_revoked_expires_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_sessions_audience_revoked_expires_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_sessions_expires_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_throttle_buckets_locked_idx",
+      "type": "index"
+    },
+    {
+      "name": "auth_throttle_buckets_updated_idx",
+      "type": "index"
+    },
+    {
+      "name": "course_enrollment_events_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "course_enrollment_events_type_timeline_idx",
+      "type": "index"
+    },
+    {
+      "name": "course_enrollments_active_group_idx",
+      "type": "index"
+    },
+    {
+      "name": "course_enrollments_course_status_idx",
+      "type": "index"
+    },
+    {
+      "name": "course_group_access_enrollment_history_idx",
+      "type": "index"
+    },
+    {
+      "name": "course_group_access_group_active_idx",
+      "type": "index"
+    },
+    {
+      "name": "course_group_access_one_active_uq",
+      "type": "index"
+    },
+    {
+      "name": "courses_season_status_order_idx",
+      "type": "index"
+    },
+    {
+      "name": "family_student_links_student_revoked_idx",
+      "type": "index"
+    },
+    {
+      "name": "groups_course_group_uq",
+      "type": "index"
+    },
+    {
+      "name": "groups_course_public_name_uq",
+      "type": "index"
+    },
+    {
+      "name": "groups_course_short_code_uq",
+      "type": "index"
+    },
+    {
+      "name": "groups_public_id_uq",
+      "type": "index"
+    },
+    {
+      "name": "staff_scopes_lookup_idx",
+      "type": "index"
+    },
+    {
+      "name": "staff_scopes_one_active_course_role_uq",
+      "type": "index"
+    },
+    {
+      "name": "staff_scopes_one_active_group_role_uq",
+      "type": "index"
+    },
+    {
+      "name": "auth_accounts_audience_update",
+      "type": "trigger"
+    },
+    {
+      "name": "auth_sessions_audience_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "auth_sessions_audience_update",
+      "type": "trigger"
+    },
+    {
+      "name": "family_student_links_family_account_insert",
+      "type": "trigger"
+    },
+    {
+      "name": "family_student_links_family_account_update",
+      "type": "trigger"
+    }
+  ],
   "pragma_structure_differences": [
+    {
+      "actual": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "short_code",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "broadcast_code",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "tg_command",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "public_name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "conditions_url",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "tasks_header_template",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "switch_message",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "sort_order",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            "hidden": 0,
+            "name": "is_active",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            },
+            "hidden": 0,
+            "name": "is_default",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            },
+            "hidden": 0,
+            "name": "allow_self_switch",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            },
+            "hidden": 0,
+            "name": "is_system",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "REAL",
+            "default": {
+              "present": true,
+              "sha256": "d0ff5974b6aa52cf562bea5921840c032a860a91a3512f7fe8f768f6bbe005f6"
+            },
+            "hidden": 0,
+            "name": "score_weight",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "96da10f7806ca33c6d0f7ddce8e4b508d902ce950d4fe2ba7fc94da8349893fb",
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_groups_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "broadcast_code",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_groups_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "tg_command",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_groups_3",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "groups",
+        "table_name": "groups",
+        "type": "table"
+      },
+      "expected": {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "short_code",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "broadcast_code",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "tg_command",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "public_name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "conditions_url",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "tasks_header_template",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "switch_message",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "sort_order",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            "hidden": 0,
+            "name": "is_active",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            },
+            "hidden": 0,
+            "name": "is_default",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            },
+            "hidden": 0,
+            "name": "allow_self_switch",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+            },
+            "hidden": 0,
+            "name": "is_system",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "REAL",
+            "default": {
+              "present": true,
+              "sha256": "d0ff5974b6aa52cf562bea5921840c032a860a91a3512f7fe8f768f6bbe005f6"
+            },
+            "hidden": 0,
+            "name": "score_weight",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "TEXT",
+            "default": {
+              "present": true,
+              "sha256": "880684c199f7f20d14b8d1c1300fd60114d8049634f8d423bf3dfc5de839f2e1"
+            },
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 17,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "color_key",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 18,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 19,
+            "declared_type": "TEXT",
+            "default": {
+              "present": false
+            },
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 20,
+            "declared_type": "INTEGER",
+            "default": {
+              "present": true,
+              "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+            },
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "definition_sha256": "96a79ebebffaa445b1936478213810b4cd692d3d5d6d6c81613e761e27dfdcf8",
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "groups_course_group_uq",
+            "origin": "c",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_name",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "groups_course_public_name_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "short_code",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "groups_course_short_code_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 14,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "groups_public_id_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_groups_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "broadcast_code",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_groups_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "tg_command",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_groups_3",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "groups",
+        "table_name": "groups",
+        "type": "table"
+      },
+      "name": "groups",
+      "type": "table"
+    },
     {
       "actual": {
         "columns": [

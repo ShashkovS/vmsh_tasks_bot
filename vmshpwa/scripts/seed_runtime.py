@@ -39,12 +39,24 @@ PROFILE_LAYOUT = {
     "pwa-e2e": ("e2e", "vmshpwa_e2e.sqlite3"),
 }
 
-# Only current legacy tables appear here. Family/account/course rows start with
-# their Phase-1 migrations; the future Family relationship remains fixture
-# metadata until then. See dev/development-plan/04-phase-0-baseline.md.
+# Phase-1 ownership rows precede the legacy graph; actor references in the
+# course row intentionally stay NULL so the course can be inserted before the
+# groups/users cycle.  This is synthetic fixture wiring, not the production
+# backfill. See development-plan/05-phase-1-auth.md.
 INSERT_ORDER = (
+    "seasons",
+    "courses",
     "groups",
     "users",
+    "auth_accounts",
+    "family_student_links",
+    "auth_sessions",
+    "auth_events",
+    "auth_throttle_buckets",
+    "course_enrollments",
+    "course_group_access",
+    "course_enrollment_events",
+    "staff_scopes",
     "student_strength",
     "lessons",
     "problems",
@@ -56,8 +68,19 @@ INSERT_ORDER = (
 )
 
 CANONICAL_ORDER_BY = {
+    "seasons": "id",
+    "courses": "id",
     "groups": "group_id",
     "users": "id",
+    "auth_accounts": "id",
+    "family_student_links": "family_account_id, student_user_id",
+    "auth_sessions": "id",
+    "auth_events": "id",
+    "auth_throttle_buckets": ("audience, bucket_kind, bucket_key_hmac, key_version"),
+    "course_enrollments": "id",
+    "course_group_access": "enrollment_id, group_id, valid_from",
+    "course_enrollment_events": "id",
+    "staff_scopes": "id",
     "student_strength": "student_id",
     "lessons": "id",
     "problems": "id",
@@ -179,7 +202,9 @@ def _insert_rows(
 def _validate_fixture(payload: dict[str, Any]) -> None:
     tables = payload.get("tables")
     if not isinstance(tables, dict) or set(tables) != set(INSERT_ORDER):
-        raise ValueError("baseline-v1 must contain exactly the Phase-0 legacy tables")
+        raise ValueError("baseline-v1 must contain exactly the Phase-1 seed tables")
+    if payload.get("schemaVersion") != 2:
+        raise ValueError("baseline-v1 must use Phase-1 schemaVersion 2")
 
     users = tables["users"]
     if any(user["token"] is not None or user["chat_id"] is not None for user in users):
@@ -191,12 +216,103 @@ def _validate_fixture(payload: dict[str, Any]) -> None:
     ):
         raise ValueError("baseline-v1 may use only example.invalid URLs")
 
+    user_ids = {user["id"] for user in users}
+    seasons = {season["id"] for season in tables["seasons"]}
+    courses = {course["id"]: course for course in tables["courses"]}
+    if any(course["season_id"] not in seasons for course in courses.values()):
+        raise ValueError("Every fixture course must belong to a fixture season")
+
+    groups = {(group["course_id"], group["group_id"]) for group in tables["groups"]}
+    if any(course_id not in courses for course_id, _group_id in groups):
+        raise ValueError("Every fixture group must belong to a fixture course")
+
+    accounts = {account["id"]: account for account in tables["auth_accounts"]}
+    account_public_ids = {
+        account["public_id"]: account for account in accounts.values()
+    }
+    if len(account_public_ids) != len(accounts):
+        raise ValueError("Fixture auth account public IDs must be unique")
+    if any(
+        not account["credential_hash"].startswith("$argon2id$v=19$")
+        for account in accounts.values()
+    ):
+        raise ValueError("Fixture credentials must be encoded Argon2id hashes")
+    if any(
+        account["linked_user_id"] is not None
+        and account["linked_user_id"] not in user_ids
+        for account in accounts.values()
+    ):
+        raise ValueError("Fixture auth account refers to an unknown legacy user")
+
+    enrollments = {
+        enrollment["id"]: enrollment for enrollment in tables["course_enrollments"]
+    }
+    if any(
+        enrollment["student_user_id"] not in user_ids
+        or enrollment["course_id"] not in courses
+        or (enrollment["course_id"], enrollment["active_group_id"]) not in groups
+        for enrollment in enrollments.values()
+    ):
+        raise ValueError("Fixture enrollment has an unknown student/course/group")
+    access_rows = tables["course_group_access"]
+    if any(
+        row["enrollment_id"] not in enrollments
+        or row["course_id"] != enrollments[row["enrollment_id"]]["course_id"]
+        or (row["course_id"], row["group_id"]) not in groups
+        for row in access_rows
+    ):
+        raise ValueError("Fixture group access is outside its enrollment course")
+    active_access = {
+        (row["enrollment_id"], row["group_id"])
+        for row in access_rows
+        if row["valid_to"] is None
+    }
+    if any(
+        (enrollment["id"], enrollment["active_group_id"]) not in active_access
+        for enrollment in enrollments.values()
+    ):
+        raise ValueError("Every active fixture group must have active access")
+
+    if any(
+        scope["staff_user_id"] not in user_ids
+        or scope["course_id"] not in courses
+        or (
+            scope["group_id"] is not None
+            and (scope["course_id"], scope["group_id"]) not in groups
+        )
+        for scope in tables["staff_scopes"]
+    ):
+        raise ValueError("Fixture staff scope has an unknown user/course/group")
+
+    # A baseline starts before any browser has logged in. Populating sessions,
+    # auth audit, throttle state, or change history would make tests depend on
+    # an unexplained prior request and would require embedding refresh secrets.
+    for empty_table in (
+        "auth_sessions",
+        "auth_events",
+        "auth_throttle_buckets",
+        "course_enrollment_events",
+    ):
+        if tables[empty_table]:
+            raise ValueError(f"baseline-v1 requires an empty {empty_table} table")
+
     family = payload["seedMetadata"]["familyPersona"]
     student_ids = {user["id"] for user in users if user["type"] == 1}
     if set(family["studentUserIds"]) - student_ids:
         raise ValueError("The Family fixture refers to an unknown Student")
     if family.get("materializeInPhase") != 1:
-        raise ValueError("Family must remain manifest-only until Phase 1")
+        raise ValueError("The Family persona must identify its Phase-1 materialization")
+    family_account = account_public_ids.get(family.get("accountPublicId"))
+    if family_account is None or family_account["audience"] != "family":
+        raise ValueError("The Family persona must name its materialized Family account")
+    linked_students = {
+        link["student_user_id"]
+        for link in tables["family_student_links"]
+        if link["family_account_id"] == family_account["id"]
+        and link["revoked_at"] is None
+    }
+    if linked_students != set(family["studentUserIds"]):
+        raise ValueError("The Family persona links do not match its Student list")
 
 
 def _populate_database(database: PwaConnectionFactory, payload: dict[str, Any]) -> None:
@@ -341,20 +457,11 @@ def _validate_database(database_path: Path) -> tuple[str, ...]:
                     f"Seeded SQLite has foreign-key violations in {table}: {rendered}"
                 )
 
-        phase_one_tables = {
-            "courses",
-            "course_enrollments",
-            "course_group_access",
-            "auth_accounts",
-            "family_student_links",
-            "auth_sessions",
-            "staff_scopes",
-        }
-        premature = phase_one_tables.intersection(tables)
-        if premature:
+        missing_seed_tables = set(CANONICAL_ORDER_BY).difference(tables)
+        if missing_seed_tables:
             raise RuntimeError(
-                "Phase-0 seed unexpectedly contains Phase-1 tables: "
-                + ", ".join(sorted(premature))
+                "Seeded SQLite is missing canonical Phase-1 tables: "
+                + ", ".join(sorted(missing_seed_tables))
             )
 
         credential_count = connection.execute(

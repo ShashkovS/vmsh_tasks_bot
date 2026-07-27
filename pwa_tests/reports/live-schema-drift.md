@@ -6,12 +6,19 @@ only by safe structural metadata and fingerprints; paths and timestamps are omit
 
 ## Summary
 
-- Expected product hash: `5ba3e4323ba8b0808516bb3986a0460e3d2f0a87d33d351bc9c4161c93d5b594`.
+- Expected product hash: `ccf2343a8406d220703b3e76c98346ea009bbac71c85ce89165a47f0d8e6659a`.
 - Observed product hash: `f87af9f4843dcffe35651780b8b77ab9d1137d54b588423af4a01aa138c981e8`.
-- DDL text differences: 25.
-- PRAGMA-structure differences: 2.
+- DDL text differences: 26.
+- PRAGMA-structure differences: 3.
 - Yoyo infrastructure hash: `9d5f0fd33d7ccfd7253ad2bcbee6294307bc625c646839e5d4fb5edc1a8e6ec5`.
+- Repository migration head current: false.
 - Known legacy-derived objects: 12.
+
+## Migration-head drift
+
+- Missing: `0039.pwa_auth_accounts_sessions`, `0040.pwa_courses_access`.
+- Changed: none.
+- Unexpected: none.
 
 ## Known schema defects
 

@@ -23,6 +23,17 @@ class Group:
     allow_self_switch: int
     is_system: int
     score_weight: float
+    # Transitional Phase-1 fields are optional until the controlled Phase-11
+    # backfill assigns every legacy group to a course. Keeping them on the
+    # legacy dataclass lets its SELECT * readers survive the additive migration
+    # without making Telegram depend on the new course model.
+    public_id: Optional[str] = None
+    course_id: Optional[int] = None
+    status: Optional[str] = None
+    color_key: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    version: int = 1
 
     def save(self) -> str:
         return db.group.insert(self.__dict__)

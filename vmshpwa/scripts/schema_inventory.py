@@ -133,6 +133,10 @@ def build_live_report(
     actual = capture_schema_inventory(
         database_path,
         source_kind="agreed-live-baseline",
+        # This command fingerprints an acknowledged read-only snapshot. It must
+        # report a deployment lag rather than mutate the database or pretend it
+        # is runtime-ready; PwaConnectionFactory remains fail-closed at head.
+        require_migration_head=False,
     )
     return compare_schema_inventories(expected, actual)
 

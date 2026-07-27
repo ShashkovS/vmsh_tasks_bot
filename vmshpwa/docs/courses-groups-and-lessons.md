@@ -22,28 +22,43 @@
 
 - `id`, `public_id`, `season_id`;
 - `code`, `name`, `subject_code`;
-- `status`, `sort_order`, `accent_key`;
+- `status = draft | active | archived`, `sort_order`, `accent_key`;
 - `created_at`, `updated_at`, `created_by`, `updated_by`, `version`.
 
 Существующая `groups` расширяется полями:
 
 - `public_id`, `course_id`, `status`, `color_key`;
-- `created_at`, `updated_at`, `created_by`, `updated_by`, `version`.
+- `created_at`, `updated_at`, `version`.
 
 Legacy `group_id` сохраняется. Название и короткий код группы уникальны внутри курса; совпадения между курсами допустимы.
+В переходной миграции `course_id` и audit timestamps остаются nullable для
+legacy-строк, а `public_id` получает детерминированный `legacy-...`; Phase 11
+закрывает nullability после production-size backfill. Composite key
+`(course_id, group_id)` является FK-границей для course-owned записей.
 
 `course_enrollments`:
 
 - `id`, `public_id`, `student_user_id`, `course_id`;
 - `active_group_id` — ровно одна активная группа этого курса;
 - `attendance_mode = online | in_person`;
-- `status`, audit timestamps, `version`.
+- `status = active | paused | archived`, audit timestamps, `version`.
 
-`course_group_access` хранит интервалы доступа: `enrollment_id`, `group_id`, `valid_from`, `valid_to`, `granted_by`, `revoked_by`, `reason`, `version`. После отзыва ученик не получает новые материалы группы, но видит собственные старые работы и результаты.
+`course_group_access` хранит интервалы доступа: `enrollment_id`, технический
+ownership-key `course_id`, `group_id`, `valid_from`, `valid_to`, `granted_by`,
+`revoked_by`, `reason`, `version`. Composite FK одновременно связывает строку
+с курсом enrollment и курсом группы. После отзыва ученик не получает новые
+материалы группы, но видит собственные старые работы и результаты.
 
-`course_enrollment_events` хранит историю смены активной группы, режима и состояния курса. Existing `user_changes_log` остаётся legacy-аудитом до миграции и сверки.
+`course_enrollment_events` хранит историю смены активной группы, режима и
+состояния курса; технический `course_id` обеспечивает те же composite FK для
+старой/новой группы. Existing `user_changes_log` остаётся legacy-аудитом до
+миграции и сверки.
 
-`staff_scopes` задаёт `staff_user_id`, `course_id`, optional `group_id`, `role`, временные границы и audit. Scope без `group_id` покрывает весь курс. Отсутствие scope даёт `403`, а не только скрытую навигацию.
+`staff_scopes` задаёт `staff_user_id`, `course_id`, optional `group_id`,
+`role = teacher | admin`, временные границы и audit. Scope без `group_id`
+покрывает весь курс. Legacy admin остаётся глобальным bypass; сохранённая роль
+сама по себе не повышает teacher до admin. Отсутствие scope даёт `403`, а не
+только скрытую навигацию.
 
 ### Занятия и расписание
 

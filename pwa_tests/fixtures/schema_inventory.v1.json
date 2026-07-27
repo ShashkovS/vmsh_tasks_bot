@@ -81,12 +81,2585 @@
       {
         "id": "0038.kv_logins",
         "sha256": "7f2e56e8509eee557f071f98ad494337793170bd96f033d17b96de49cbd8eba0"
+      },
+      {
+        "id": "0039.pwa_auth_accounts_sessions",
+        "sha256": "3bac6fbc66a723260584d1caec31caf54a448125ce79639668cb7c17eaaadace"
+      },
+      {
+        "id": "0040.pwa_courses_access",
+        "sha256": "ee9bc548ba48e8cee203597db81337bdeb5f6951ed399970930edebe551f023d"
       }
-    ]
+    ],
+    "repository_head_status": {
+      "changed": [],
+      "is_current": true,
+      "missing": [],
+      "unexpected": []
+    }
   },
   "product": {
-    "object_count": 47,
+    "object_count": 90,
     "objects": [
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "audience",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "username",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "username_normalized",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "username_algorithm_version",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "provisioning_source",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "display_name",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "credential_kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "credential_hash",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "linked_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "credential_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "last_login_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "linked_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "audience",
+                "seqno": 0
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "status",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "auth_accounts_audience_status_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "linked_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "audience",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "auth_accounts_linked_user_audience_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_auth_accounts_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "audience",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "username_normalized",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_auth_accounts_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "auth_accounts",
+        "object_sha256": "7407f51500f6e43bc5b4bf953fc31c34fe5b349628432b67ec95ca28ff9d1cc0",
+        "sql": "CREATE TABLE auth_accounts\n(\n    id                         integer primary key,\n    public_id                  text    not null unique\n        check (length(trim(public_id)) > 0),\n    audience                   text    not null\n        check (audience in ('student', 'family', 'staff')),\n    username                   text    not null\n        check (length(trim(username)) > 0),\n    username_normalized        text    not null\n        check (length(trim(username_normalized)) > 0),\n    username_algorithm_version integer\n        check (username_algorithm_version > 0),\n    provisioning_source        text    not null\n        check (length(trim(provisioning_source)) > 0),\n    display_name               text,\n    credential_kind            text    not null\n        check (credential_kind in ('telegram_token', 'password')),\n    credential_hash            text,\n    linked_user_id             integer references users (id),\n    status                     text    not null\n        check (status in ('active', 'blocked', 'disabled', 'archived')),\n    credential_version         integer not null default 1\n        check (credential_version > 0),\n    last_login_at              text,\n    created_at                 text    not null,\n    updated_at                 text    not null,\n    unique (audience, username_normalized),\n    check (credential_hash is null or length(trim(credential_hash)) > 0),\n    check (status <> 'active' or credential_hash is not null),\n    check (audience <> 'student' or username_algorithm_version is not null),\n    check (\n        (audience = 'student' and credential_kind = 'telegram_token' and linked_user_id is not null)\n        or (audience = 'family' and credential_kind = 'password' and linked_user_id is null)\n        or (audience = 'staff' and credential_kind = 'password' and linked_user_id is not null)\n    ),\n    check (\n        audience <> 'family'\n        or (display_name is not null and length(trim(display_name)) > 0)\n    )\n);",
+        "table_name": "auth_accounts",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "account_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "session_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "event_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "occurred_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ip_prefix",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": "'{}'",
+            "hidden": 0,
+            "name": "metadata_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          },
+          {
+            "from_columns": [
+              "session_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_sessions"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "occurred_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "auth_events_account_occurred_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "request_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "auth_events_request_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "session_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "occurred_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "auth_events_session_occurred_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "event_type",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "occurred_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "auth_events_type_occurred_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "auth_events",
+        "object_sha256": "7914e2e1fa0d7296156954e95894e2fc6fcbecacfb6b5c39ad84c794eef05838",
+        "sql": "CREATE TABLE auth_events\n(\n    id            integer primary key,\n    account_id    integer references auth_accounts (id),\n    session_id    integer references auth_sessions (id),\n    event_type    text not null\n        check (length(trim(event_type)) > 0),\n    occurred_at   text not null,\n    request_id    text not null\n        check (length(trim(request_id)) > 0),\n    ip_prefix     text,\n    metadata_json text not null default '{}'\n        check (json_valid(metadata_json) = 1 and json_type(metadata_json) = 'object')\n);",
+        "table_name": "auth_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "audience",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "refresh_secret_hash",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "credential_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "last_seen_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "expires_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "revoked_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "revoke_reason",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "device_label",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_agent_family",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ip_prefix",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "revoked_at",
+                "seqno": 1
+              },
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "expires_at",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "auth_sessions_account_revoked_expires_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "audience",
+                "seqno": 0
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "revoked_at",
+                "seqno": 1
+              },
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "expires_at",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "auth_sessions_audience_revoked_expires_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "expires_at",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "auth_sessions_expires_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_auth_sessions_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "refresh_secret_hash",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_auth_sessions_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "auth_sessions",
+        "object_sha256": "1f48a95f4414b3212c8d7dbcff06373cfaa3fb49a17a1eeaed4aaf7cccf8c69d",
+        "sql": "CREATE TABLE auth_sessions\n(\n    id                   integer primary key,\n    public_id            text    not null unique\n        check (length(trim(public_id)) > 0),\n    account_id           integer not null references auth_accounts (id),\n    audience             text    not null\n        check (audience in ('student', 'family', 'staff')),\n    refresh_secret_hash  text    not null unique\n        check (\n            length(refresh_secret_hash) = 64\n            and refresh_secret_hash not glob '*[^0-9a-f]*'\n        ),\n    credential_version   integer not null\n        check (credential_version > 0),\n    version              integer not null default 1\n        check (version > 0),\n    created_at           text    not null,\n    updated_at           text    not null,\n    last_seen_at         text    not null,\n    expires_at           text    not null,\n    revoked_at           text,\n    revoke_reason        text,\n    device_label         text,\n    user_agent_family    text,\n    ip_prefix            text,\n    check (expires_at > created_at),\n    check (last_seen_at >= created_at),\n    check (revoked_at is null or revoked_at >= created_at),\n    check (\n        (revoked_at is null and revoke_reason is null)\n        or (\n            revoked_at is not null\n            and revoke_reason is not null\n            and length(trim(revoke_reason)) > 0\n        )\n    )\n);",
+        "table_name": "auth_sessions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "audience",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "bucket_kind",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "bucket_key_hmac",
+            "not_null": true,
+            "primary_key_ordinal": 3
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "key_version",
+            "not_null": true,
+            "primary_key_ordinal": 4
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "failure_count",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "window_started_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "last_failed_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "locked_until",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "locked_until",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "auth_throttle_buckets_locked_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "updated_at",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "auth_throttle_buckets_updated_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "audience",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "bucket_kind",
+                "seqno": 1
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "bucket_key_hmac",
+                "seqno": 2
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "key_version",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "sqlite_autoindex_auth_throttle_buckets_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "auth_throttle_buckets",
+        "object_sha256": "25bf7c5a470f5745e0cac4e4de1cf08c845023cd6dd690f70629407cc05c4e67",
+        "sql": "CREATE TABLE auth_throttle_buckets\n(\n    audience        text    not null\n        check (audience in ('student', 'family', 'staff')),\n    bucket_kind     text    not null\n        check (bucket_kind in ('normalized_login', 'account', 'ip')),\n    bucket_key_hmac text    not null\n        check (\n            length(bucket_key_hmac) = 64\n            and bucket_key_hmac not glob '*[^0-9a-f]*'\n        ),\n    key_version     integer not null default 1\n        check (key_version > 0),\n    failure_count   integer not null default 0\n        check (failure_count >= 0),\n    window_started_at text  not null,\n    last_failed_at  text,\n    locked_until    text,\n    created_at      text    not null,\n    updated_at      text    not null,\n    version         integer not null default 1\n        check (version > 0),\n    primary key (audience, bucket_kind, bucket_key_hmac, key_version),\n    check (last_failed_at is null or last_failed_at >= window_started_at),\n    check (locked_until is null or last_failed_at is not null)\n);",
+        "table_name": "auth_throttle_buckets",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "enrollment_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "event_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "previous_group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "new_group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "previous_attendance_mode",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "new_attendance_mode",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "previous_status",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "new_status",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "occurred_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "course_id",
+              "new_group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "course_id",
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "course_id",
+              "previous_group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "course_id",
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
+              "enrollment_id",
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "course_id"
+            ],
+            "target_table": "course_enrollments"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "enrollment_id",
+                "seqno": 0
+              },
+              {
+                "cid": 14,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "occurred_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "course_enrollment_events_timeline_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "event_type",
+                "seqno": 0
+              },
+              {
+                "cid": 14,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "occurred_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "course_enrollment_events_type_timeline_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_course_enrollment_events_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "enrollment_id",
+                "seqno": 0
+              },
+              {
+                "cid": 13,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "request_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_course_enrollment_events_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "course_enrollment_events",
+        "object_sha256": "011d77387900c6cdb4ca449119083b9e4597f4c82d49189572f8909269a70057",
+        "sql": "CREATE TABLE course_enrollment_events\n(\n    id                       integer primary key,\n    public_id                text    not null unique\n        check (length(trim(public_id)) > 0),\n    enrollment_id            integer not null,\n    course_id                integer not null references courses (id),\n    event_type               text    not null\n        check (event_type in (\n            'created',\n            'active_group_changed',\n            'attendance_mode_changed',\n            'status_changed'\n        )),\n    previous_group_id        text,\n    new_group_id             text,\n    previous_attendance_mode text\n        check (previous_attendance_mode in ('online', 'in_person')),\n    new_attendance_mode      text\n        check (new_attendance_mode in ('online', 'in_person')),\n    previous_status          text\n        check (previous_status in ('active', 'paused', 'archived')),\n    new_status               text\n        check (new_status in ('active', 'paused', 'archived')),\n    actor_user_id            integer references users (id),\n    source                   text    not null\n        check (source in ('pwa', 'telegram', 'staff', 'import', 'system')),\n    request_id               text    not null\n        check (length(trim(request_id)) > 0),\n    occurred_at              text    not null,\n    created_at               text    not null,\n    unique (enrollment_id, request_id),\n    check (\n        (\n            event_type = 'created'\n            and previous_group_id is null\n            and new_group_id is not null\n            and previous_attendance_mode is null\n            and new_attendance_mode is not null\n            and previous_status is null\n            and new_status is not null\n        )\n        or (\n            event_type = 'active_group_changed'\n            and previous_group_id is not null\n            and new_group_id is not null\n            and previous_group_id <> new_group_id\n            and previous_attendance_mode is null\n            and new_attendance_mode is null\n            and previous_status is null\n            and new_status is null\n        )\n        or (\n            event_type = 'attendance_mode_changed'\n            and previous_group_id is null\n            and new_group_id is null\n            and previous_attendance_mode is not null\n            and new_attendance_mode is not null\n            and previous_attendance_mode <> new_attendance_mode\n            and previous_status is null\n            and new_status is null\n        )\n        or (\n            event_type = 'status_changed'\n            and previous_group_id is null\n            and new_group_id is null\n            and previous_attendance_mode is null\n            and new_attendance_mode is null\n            and previous_status is not null\n            and new_status is not null\n            and previous_status <> new_status\n        )\n    ),\n    foreign key (enrollment_id, course_id)\n        references course_enrollments (id, course_id),\n    foreign key (course_id, previous_group_id)\n        references groups (course_id, group_id),\n    foreign key (course_id, new_group_id)\n        references groups (course_id, group_id)\n);",
+        "table_name": "course_enrollment_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "active_group_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "attendance_mode",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_by",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id",
+              "active_group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "course_id",
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
+              "created_by"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "updated_by"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "active_group_id",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "status",
+                "seqno": 1
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "course_enrollments_active_group_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "status",
+                "seqno": 1
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "course_enrollments_course_status_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_course_enrollments_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_course_enrollments_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_course_enrollments_3",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "course_enrollments",
+        "object_sha256": "e05f492eba05d008b42d47f759275401e134757b3bb1e2c40ea348791dc64b0f",
+        "sql": "CREATE TABLE course_enrollments\n(\n    id                 integer primary key,\n    public_id          text    not null unique\n        check (length(trim(public_id)) > 0),\n    student_user_id    integer not null references users (id),\n    course_id          integer not null references courses (id),\n    active_group_id    text    not null,\n    attendance_mode    text    not null\n        check (attendance_mode in ('online', 'in_person')),\n    status             text    not null\n        check (status in ('active', 'paused', 'archived')),\n    created_at         text    not null,\n    updated_at         text    not null,\n    created_by         integer references users (id),\n    updated_by         integer references users (id),\n    version            integer not null default 1\n        check (version > 0),\n    unique (student_user_id, course_id),\n    unique (id, course_id),\n    foreign key (course_id, active_group_id)\n        references groups (course_id, group_id)\n);",
+        "table_name": "course_enrollments",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "enrollment_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "valid_from",
+            "not_null": true,
+            "primary_key_ordinal": 3
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "valid_to",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "granted_by",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "revoked_by",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reason",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id",
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "course_id",
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
+              "enrollment_id",
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "course_id"
+            ],
+            "target_table": "course_enrollments"
+          },
+          {
+            "from_columns": [
+              "granted_by"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "revoked_by"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "enrollment_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "valid_from",
+                "seqno": 1
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "valid_to",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "course_group_access_enrollment_history_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 1
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "valid_to",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "enrollment_id",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "course_group_access_group_active_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "enrollment_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "course_group_access_one_active_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "enrollment_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "valid_from",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_course_group_access_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "course_group_access",
+        "object_sha256": "d111ed83edefcba4bbc6b424f23a788fc2bf604b664acd84aa66f20c203e2b14",
+        "sql": "CREATE TABLE course_group_access\n(\n    enrollment_id integer not null,\n    course_id      integer not null references courses (id),\n    group_id       text    not null,\n    valid_from     text    not null,\n    valid_to       text,\n    granted_by     integer references users (id),\n    revoked_by     integer references users (id),\n    reason         text,\n    created_at     text    not null,\n    updated_at     text    not null,\n    version        integer not null default 1\n        check (version > 0),\n    primary key (enrollment_id, group_id, valid_from),\n    check (valid_to is null or valid_to > valid_from),\n    check (reason is null or length(trim(reason)) > 0),\n    check (\n        (valid_to is null and revoked_by is null)\n        or valid_to is not null\n    ),\n    foreign key (enrollment_id, course_id)\n        references course_enrollments (id, course_id),\n    foreign key (course_id, group_id)\n        references groups (course_id, group_id)\n);",
+        "table_name": "course_group_access",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "season_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "code",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "subject_code",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "sort_order",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "accent_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_by",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "created_by"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "season_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "seasons"
+          },
+          {
+            "from_columns": [
+              "updated_by"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "season_id",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "status",
+                "seqno": 1
+              },
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "sort_order",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "courses_season_status_order_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_courses_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "season_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "code",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_courses_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "courses",
+        "object_sha256": "d1fa0f97d11e53f9fcad56350b13710a7bd7d99b336244880e53dcdaaddd1ced",
+        "sql": "CREATE TABLE courses\n(\n    id           integer primary key,\n    public_id    text    not null unique\n        check (length(trim(public_id)) > 0),\n    season_id    integer not null references seasons (id),\n    code         text    not null\n        check (length(trim(code)) > 0),\n    name         text    not null\n        check (length(trim(name)) > 0),\n    subject_code text    not null\n        check (length(trim(subject_code)) > 0),\n    status       text    not null\n        check (status in ('draft', 'active', 'archived')),\n    sort_order   integer not null default 0,\n    accent_key   text    not null\n        check (length(trim(accent_key)) > 0),\n    created_at   text    not null,\n    updated_at   text    not null,\n    created_by   integer references users (id),\n    updated_by   integer references users (id),\n    version      integer not null default 1\n        check (version > 0),\n    unique (season_id, code)\n);",
+        "table_name": "courses",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "family_account_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "relationship_label",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "is_primary",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "revoked_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "family_account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "revoked_at",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "family_student_links_student_revoked_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "family_account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_family_student_links_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "family_student_links",
+        "object_sha256": "f538d7bf0319bba6c5aa0913a01fc65a6acd7e5ec87ab94b36ccc2578fe55e26",
+        "sql": "CREATE TABLE family_student_links\n(\n    family_account_id integer not null references auth_accounts (id),\n    student_user_id   integer not null references users (id),\n    relationship_label text,\n    is_primary        integer not null default 0\n        check (is_primary in (0, 1)),\n    created_at        text    not null,\n    updated_at        text    not null,\n    revoked_at        text,\n    primary key (family_account_id, student_user_id),\n    check (relationship_label is null or length(trim(relationship_label)) > 0),\n    check (revoked_at is null or revoked_at >= created_at)\n);",
+        "table_name": "family_student_links",
+        "type": "table"
+      },
       {
         "columns": [
           {
@@ -718,10 +3291,206 @@
             "name": "score_weight",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "TEXT",
+            "default_sql": "'active'",
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 17,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "color_key",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 18,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 19,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 20,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
-        "foreign_keys": [],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          }
+        ],
         "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "groups_course_group_uq",
+            "origin": "c",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_name",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "groups_course_public_name_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "short_code",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "groups_course_short_code_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 14,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "groups_public_id_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
           {
             "columns": [
               {
@@ -796,8 +3565,8 @@
           }
         ],
         "name": "groups",
-        "object_sha256": "96da10f7806ca33c6d0f7ddce8e4b508d902ce950d4fe2ba7fc94da8349893fb",
-        "sql": "CREATE TABLE groups\n(\n    group_id              text primary key,\n    short_code            text    not null,\n    broadcast_code        text unique,\n    tg_command            text unique,\n    public_name           text    not null,\n    conditions_url        text,\n    tasks_header_template text,\n    switch_message        text,\n    sort_order            integer,\n    is_active             integer not null default 1,\n    is_default            integer not null default 0,\n    allow_self_switch     integer not null default 0,\n    is_system             integer not null default 0,\n    score_weight          real    not null default 1.0\n);",
+        "object_sha256": "96a79ebebffaa445b1936478213810b4cd692d3d5d6d6c81613e761e27dfdcf8",
+        "sql": "CREATE TABLE groups\n(\n    group_id              text primary key,\n    short_code            text    not null,\n    broadcast_code        text unique,\n    tg_command            text unique,\n    public_name           text    not null,\n    conditions_url        text,\n    tasks_header_template text,\n    switch_message        text,\n    sort_order            integer,\n    is_active             integer not null default 1,\n    is_default            integer not null default 0,\n    allow_self_switch     integer not null default 0,\n    is_system             integer not null default 0,\n    score_weight          real    not null default 1.0\n, public_id text, course_id integer references courses (id), status text not null default 'active'\n    check (status in ('draft', 'active', 'archived')), color_key text, created_at text, updated_at text, version integer not null default 1\n    check (version > 0));",
         "table_name": "groups",
         "type": "table"
       },
@@ -2230,6 +4999,165 @@
         "columns": [
           {
             "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "code",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "title",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "starts_on",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ends_on",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": "'Europe/Moscow'",
+            "hidden": 0,
+            "name": "timezone",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "session_expires_on",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_seasons_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "code",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_seasons_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "seasons",
+        "object_sha256": "582b103ed9a15b7cd266e8b0318903b4075c51abd23d225b1a280cbf3e5ea14d",
+        "sql": "CREATE TABLE seasons\n(\n    id                 integer primary key,\n    public_id          text    not null unique\n        check (length(trim(public_id)) > 0),\n    code               text    not null unique\n        check (length(trim(code)) > 0),\n    title              text    not null\n        check (length(trim(title)) > 0),\n    starts_on          text    not null,\n    ends_on            text    not null,\n    timezone           text    not null default 'Europe/Moscow'\n        check (length(trim(timezone)) > 0),\n    session_expires_on text    not null,\n    status             text    not null\n        check (status in ('draft', 'active', 'archived')),\n    created_at         text    not null,\n    updated_at         text    not null,\n    check (starts_on <= ends_on),\n    check (session_expires_on >= starts_on)\n);",
+        "table_name": "seasons",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
             "declared_type": "TIMESTAMP",
             "default_sql": null,
             "hidden": 0,
@@ -2311,6 +5239,334 @@
         "object_sha256": "9aa7f5a203f06860a2b14a6b3c55c1ecc8150efbfc515111e6cd4cb05ad0e2c9",
         "sql": "CREATE TABLE signons\n(\n    ts         timestamp not null,\n    user_id    INTEGER references users,\n    chat_id    INTEGER   not null,\n    first_name TEXT,\n    last_name  TEXT,\n    username   TEXT,\n    token      text\n);",
         "table_name": "signons",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "staff_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "role",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "valid_from",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "valid_to",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "granted_by",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "revoked_by",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reason",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id",
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "course_id",
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
+              "granted_by"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "revoked_by"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "staff_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "staff_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 2
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "valid_to",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "staff_scopes_lookup_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "staff_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 1
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "role",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "staff_scopes_one_active_course_role_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "staff_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 2
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "role",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "staff_scopes_one_active_group_role_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          }
+        ],
+        "name": "staff_scopes",
+        "object_sha256": "a38aec3ec2c2173f8711d7643379281e95e15df5de86c0c884fbd7e1f08eb538",
+        "sql": "CREATE TABLE staff_scopes\n(\n    id            integer primary key,\n    staff_user_id integer not null references users (id),\n    course_id     integer not null references courses (id),\n    group_id      text,\n    role          text    not null\n        check (role in ('teacher', 'admin')),\n    valid_from    text    not null,\n    valid_to      text,\n    granted_by    integer references users (id),\n    revoked_by    integer references users (id),\n    reason        text,\n    created_at    text    not null,\n    updated_at    text    not null,\n    version       integer not null default 1\n        check (version > 0),\n    check (valid_to is null or valid_to > valid_from),\n    check (reason is null or length(trim(reason)) > 0),\n    check (\n        (valid_to is null and revoked_by is null)\n        or valid_to is not null\n    ),\n    foreign key (course_id, group_id)\n        references groups (course_id, group_id)\n);",
+        "table_name": "staff_scopes",
         "type": "table"
       },
       {
@@ -4151,6 +7407,174 @@
         "type": "table"
       },
       {
+        "name": "auth_accounts_audience_status_idx",
+        "object_sha256": "b67c4795b68dfb8d65305743d741f29c1eea141876b5a6e3e7e3d7318f67f8e2",
+        "sql": "CREATE INDEX auth_accounts_audience_status_idx\n    on auth_accounts (audience, status);",
+        "table_name": "auth_accounts",
+        "type": "index"
+      },
+      {
+        "name": "auth_accounts_linked_user_audience_uq",
+        "object_sha256": "5978225073e1ab530e7f53fafa586c64fe3ff5f3c2c6c84f66fde3e01ccaf911",
+        "sql": "CREATE UNIQUE INDEX auth_accounts_linked_user_audience_uq\n    on auth_accounts (linked_user_id, audience)\n    where linked_user_id is not null;",
+        "table_name": "auth_accounts",
+        "type": "index"
+      },
+      {
+        "name": "auth_events_account_occurred_idx",
+        "object_sha256": "2702ac0375f850b1ed2df23ec9e306f78c7558bb6da0be1c73a40ab189e965a9",
+        "sql": "CREATE INDEX auth_events_account_occurred_idx\n    on auth_events (account_id, occurred_at, id);",
+        "table_name": "auth_events",
+        "type": "index"
+      },
+      {
+        "name": "auth_events_request_idx",
+        "object_sha256": "0f599ad6f6da2c331c4d24127028bab850999b0ea3a06617d679f0f0d3002008",
+        "sql": "CREATE INDEX auth_events_request_idx\n    on auth_events (request_id);",
+        "table_name": "auth_events",
+        "type": "index"
+      },
+      {
+        "name": "auth_events_session_occurred_idx",
+        "object_sha256": "59a2a2503d7e063a2172035af0ec0368625d5defb908abc0e36c175fd3e28eaf",
+        "sql": "CREATE INDEX auth_events_session_occurred_idx\n    on auth_events (session_id, occurred_at, id);",
+        "table_name": "auth_events",
+        "type": "index"
+      },
+      {
+        "name": "auth_events_type_occurred_idx",
+        "object_sha256": "d623c69ef66e29228bc85db19302671c41fee15ab401ae4f8adb11f4afdb9686",
+        "sql": "CREATE INDEX auth_events_type_occurred_idx\n    on auth_events (event_type, occurred_at, id);",
+        "table_name": "auth_events",
+        "type": "index"
+      },
+      {
+        "name": "auth_sessions_account_revoked_expires_idx",
+        "object_sha256": "785f4f3adc124b93923d36299d989b7dede36d0de0d57e740ba0a53d17d1be83",
+        "sql": "CREATE INDEX auth_sessions_account_revoked_expires_idx\n    on auth_sessions (account_id, revoked_at, expires_at);",
+        "table_name": "auth_sessions",
+        "type": "index"
+      },
+      {
+        "name": "auth_sessions_audience_revoked_expires_idx",
+        "object_sha256": "d0cf8b706d0eb786cb6c74d8a4feca9c003da0f304d6b8ff97730d42457f1bd1",
+        "sql": "CREATE INDEX auth_sessions_audience_revoked_expires_idx\n    on auth_sessions (audience, revoked_at, expires_at);",
+        "table_name": "auth_sessions",
+        "type": "index"
+      },
+      {
+        "name": "auth_sessions_expires_idx",
+        "object_sha256": "402409028b78a990dc7eca7d8537b6021e4193536d2ea6b6843dd259dab70dbe",
+        "sql": "CREATE INDEX auth_sessions_expires_idx\n    on auth_sessions (expires_at);",
+        "table_name": "auth_sessions",
+        "type": "index"
+      },
+      {
+        "name": "auth_throttle_buckets_locked_idx",
+        "object_sha256": "1be2ee58e8214273e7ebf04e3fdc60684d5282e6ddc5343c528dab44eaafc70b",
+        "sql": "CREATE INDEX auth_throttle_buckets_locked_idx\n    on auth_throttle_buckets (locked_until)\n    where locked_until is not null;",
+        "table_name": "auth_throttle_buckets",
+        "type": "index"
+      },
+      {
+        "name": "auth_throttle_buckets_updated_idx",
+        "object_sha256": "e48729a3ee8f153e7d87308bec2520b0e231176b66b8305578d6c077825f5852",
+        "sql": "CREATE INDEX auth_throttle_buckets_updated_idx\n    on auth_throttle_buckets (updated_at);",
+        "table_name": "auth_throttle_buckets",
+        "type": "index"
+      },
+      {
+        "name": "course_enrollment_events_timeline_idx",
+        "object_sha256": "0c5a5a789771ec73471b1bb468125c2412ea543fce150cb5045f4ced32fefb94",
+        "sql": "CREATE INDEX course_enrollment_events_timeline_idx\n    on course_enrollment_events (enrollment_id, occurred_at, id);",
+        "table_name": "course_enrollment_events",
+        "type": "index"
+      },
+      {
+        "name": "course_enrollment_events_type_timeline_idx",
+        "object_sha256": "1d54732161608749c28c4220c294f24c01050cca3bf89eab71c94d2881679184",
+        "sql": "CREATE INDEX course_enrollment_events_type_timeline_idx\n    on course_enrollment_events (event_type, occurred_at, id);",
+        "table_name": "course_enrollment_events",
+        "type": "index"
+      },
+      {
+        "name": "course_enrollments_active_group_idx",
+        "object_sha256": "b2a4a5208c3ffbf0025202730d2795f399c9c55b7529413820827da983fc0bd0",
+        "sql": "CREATE INDEX course_enrollments_active_group_idx\n    on course_enrollments (active_group_id, status, student_user_id);",
+        "table_name": "course_enrollments",
+        "type": "index"
+      },
+      {
+        "name": "course_enrollments_course_status_idx",
+        "object_sha256": "9bea201a4ad072bf3ac38c28eb1b4429f5a48179adcd6ab20cdc25e8aa129955",
+        "sql": "CREATE INDEX course_enrollments_course_status_idx\n    on course_enrollments (course_id, status, student_user_id);",
+        "table_name": "course_enrollments",
+        "type": "index"
+      },
+      {
+        "name": "course_group_access_enrollment_history_idx",
+        "object_sha256": "9dc68d320674888c5b766fbdc5242dc947e02dd44b1890745c8af10d0aefbb10",
+        "sql": "CREATE INDEX course_group_access_enrollment_history_idx\n    on course_group_access (enrollment_id, valid_from, valid_to);",
+        "table_name": "course_group_access",
+        "type": "index"
+      },
+      {
+        "name": "course_group_access_group_active_idx",
+        "object_sha256": "de08496bab495ed1d29e2f4e82572b799f7d7310e17e8e7203a203d29f621ac2",
+        "sql": "CREATE INDEX course_group_access_group_active_idx\n    on course_group_access (course_id, group_id, valid_to, enrollment_id);",
+        "table_name": "course_group_access",
+        "type": "index"
+      },
+      {
+        "name": "course_group_access_one_active_uq",
+        "object_sha256": "636dba9deeb52cd946ceea1ff1261dd7d2f19fb9db006a88cd96f3ac1710e8fa",
+        "sql": "CREATE UNIQUE INDEX course_group_access_one_active_uq\n    on course_group_access (enrollment_id, group_id)\n    where valid_to is null;",
+        "table_name": "course_group_access",
+        "type": "index"
+      },
+      {
+        "name": "courses_season_status_order_idx",
+        "object_sha256": "a2a7df087cfb0e8d40b9fad22861c6321f1b7c75a5f7ced5b356a38cc374b87e",
+        "sql": "CREATE INDEX courses_season_status_order_idx\n    on courses (season_id, status, sort_order, id);",
+        "table_name": "courses",
+        "type": "index"
+      },
+      {
+        "name": "family_student_links_student_revoked_idx",
+        "object_sha256": "e5eba7b172315a549d3e817f293b8e40f7036cfbc7f865ca778fd49aebb0a32c",
+        "sql": "CREATE INDEX family_student_links_student_revoked_idx\n    on family_student_links (student_user_id, revoked_at);",
+        "table_name": "family_student_links",
+        "type": "index"
+      },
+      {
+        "name": "groups_course_group_uq",
+        "object_sha256": "407af957e0d811285fa613b6e467daa16305028e02e96a9264bc05c3cc996193",
+        "sql": "CREATE UNIQUE INDEX groups_course_group_uq\n    on groups (course_id, group_id);",
+        "table_name": "groups",
+        "type": "index"
+      },
+      {
+        "name": "groups_course_public_name_uq",
+        "object_sha256": "dfbb502756f411a92d415c544a06a5544aa80d0a9d78fe42598bc8164bcd6862",
+        "sql": "CREATE UNIQUE INDEX groups_course_public_name_uq\n    on groups (course_id, public_name)\n    where course_id is not null;",
+        "table_name": "groups",
+        "type": "index"
+      },
+      {
+        "name": "groups_course_short_code_uq",
+        "object_sha256": "826ca48123bae7a06f6f223aef684dd2c4b2240fb23de6ac911442f7fdb308e2",
+        "sql": "CREATE UNIQUE INDEX groups_course_short_code_uq\n    on groups (course_id, short_code)\n    where course_id is not null;",
+        "table_name": "groups",
+        "type": "index"
+      },
+      {
+        "name": "groups_public_id_uq",
+        "object_sha256": "b7c539e11bdc75de32139b56064cda430fb6dbd583ba07cc529cda70c9a51765",
+        "sql": "CREATE UNIQUE INDEX groups_public_id_uq\n    on groups (public_id)\n    where public_id is not null;",
+        "table_name": "groups",
+        "type": "index"
+      },
+      {
         "name": "problems_by_synonyms",
         "object_sha256": "d245a446fd401ab017afda21ee18b68f99eb6367800613e1b901b4bc3ca6bfe3",
         "sql": "CREATE INDEX problems_by_synonyms\n    on problems (synonyms);",
@@ -4169,6 +7593,27 @@
         "object_sha256": "afda6c8f333a608b8e3f018198f1d1ee776ef5706fb6c76cfc921d1490d01a09",
         "sql": "CREATE INDEX results_teacher_id_lesson_index\n    on results (teacher_id, lesson)\n    where res_type = 2;",
         "table_name": "results",
+        "type": "index"
+      },
+      {
+        "name": "staff_scopes_lookup_idx",
+        "object_sha256": "141a34bed0f6eeabcff38c849c543b053e712b796048a2ca43add96047f402f8",
+        "sql": "CREATE INDEX staff_scopes_lookup_idx\n    on staff_scopes (staff_user_id, course_id, group_id, valid_to);",
+        "table_name": "staff_scopes",
+        "type": "index"
+      },
+      {
+        "name": "staff_scopes_one_active_course_role_uq",
+        "object_sha256": "1972a89017831e0de0dcaba4840176c0edda3e0d41fec700293ed75a684ca258",
+        "sql": "CREATE UNIQUE INDEX staff_scopes_one_active_course_role_uq\n    on staff_scopes (staff_user_id, course_id, role)\n    where group_id is null and valid_to is null;",
+        "table_name": "staff_scopes",
+        "type": "index"
+      },
+      {
+        "name": "staff_scopes_one_active_group_role_uq",
+        "object_sha256": "d39a3cc2dda3f6a43e5f9693b76c1bc9a3a57370595dfec0cd0ee0cc6e079ca7",
+        "sql": "CREATE UNIQUE INDEX staff_scopes_one_active_group_role_uq\n    on staff_scopes (staff_user_id, course_id, group_id, role)\n    where group_id is not null and valid_to is null;",
+        "table_name": "staff_scopes",
         "type": "index"
       },
       {
@@ -4212,10 +7657,45 @@
         "sql": "CREATE VIEW reaction_view AS\nSELECT rct.ts,\n       reaction_type,\n       problem_id,\n       result_id,\n       stud.name || ' ' || stud.surname || ' ' || stud.middlename    AS student_name,\n       reaction_enum.reaction,\n       teach.name || ' ' || teach.surname || ' ' || teach.middlename AS teacher_name,\n       coalesce(r.lesson, zc.lesson)                                 as lesson,\n       coalesce(r.group_id, zc.group_id)                             as group_id,\n       verdict,\n       coalesce(r.check_time_spent_sec, zc.check_time_spent_sec)     as check_time_spent_sec\nFROM reactions rct\n         JOIN reaction_enum USING (reaction_id)\n         JOIN reaction_type_enum USING (reaction_type_id)\n         LEFT JOIN results r ON rct.result_id = r.id\n         LEFT JOIN zoom_conversation zc on rct.zoom_conversation_id = zc.id\n         LEFT JOIN users AS stud ON (stud.id = coalesce(r.student_id, zc.student_id))\n         LEFT JOIN users AS teach ON (teach.id = coalesce(r.teacher_id, zc.teacher_id));",
         "table_name": "reaction_view",
         "type": "view"
+      },
+      {
+        "name": "auth_accounts_audience_update",
+        "object_sha256": "6be764355b43b27c907ac1570abc33e381e7ab8ae2dc93faed6fc37259fbeabb",
+        "sql": "CREATE TRIGGER auth_accounts_audience_update\nbefore update of audience on auth_accounts\nfor each row\nwhen new.audience <> old.audience and (\n    exists (\n        select 1 from auth_sessions where account_id = old.id\n    )\n    or exists (\n        select 1 from family_student_links where family_account_id = old.id\n    )\n)\nbegin\n    select raise(abort, 'account audience is immutable after links or sessions exist');\nend;",
+        "table_name": "auth_accounts",
+        "type": "trigger"
+      },
+      {
+        "name": "auth_sessions_audience_insert",
+        "object_sha256": "459d7184178dc0ecccd44df8111bdb7a1bebc972186d7b8e856db6487e36c251",
+        "sql": "CREATE TRIGGER auth_sessions_audience_insert\nbefore insert on auth_sessions\nfor each row\nwhen not exists (\n    select 1\n    from auth_accounts\n    where id = new.account_id and audience = new.audience\n)\nbegin\n    select raise(abort, 'auth session audience does not match account');\nend;",
+        "table_name": "auth_sessions",
+        "type": "trigger"
+      },
+      {
+        "name": "auth_sessions_audience_update",
+        "object_sha256": "9bb811d15ab291b8762ccb68483a255b5a2b016cca8e213ca3c6ff98a8a96e80",
+        "sql": "CREATE TRIGGER auth_sessions_audience_update\nbefore update of account_id, audience on auth_sessions\nfor each row\nwhen not exists (\n    select 1\n    from auth_accounts\n    where id = new.account_id and audience = new.audience\n)\nbegin\n    select raise(abort, 'auth session audience does not match account');\nend;",
+        "table_name": "auth_sessions",
+        "type": "trigger"
+      },
+      {
+        "name": "family_student_links_family_account_insert",
+        "object_sha256": "8de77acc9e454eb79aa4de42b27b9ebdc818be325dad502485edf97e48b03f9b",
+        "sql": "CREATE TRIGGER family_student_links_family_account_insert\nbefore insert on family_student_links\nfor each row\nwhen not exists (\n    select 1\n    from auth_accounts\n    where id = new.family_account_id and audience = 'family'\n)\nbegin\n    select raise(abort, 'family_student_links requires a family account');\nend;",
+        "table_name": "family_student_links",
+        "type": "trigger"
+      },
+      {
+        "name": "family_student_links_family_account_update",
+        "object_sha256": "79d60622c6012f462bfffbeed3f6e31efe9948ee2054cf9f8e74bf0447a2d648",
+        "sql": "CREATE TRIGGER family_student_links_family_account_update\nbefore update of family_account_id on family_student_links\nfor each row\nwhen not exists (\n    select 1\n    from auth_accounts\n    where id = new.family_account_id and audience = 'family'\n)\nbegin\n    select raise(abort, 'family_student_links requires a family account');\nend;",
+        "table_name": "family_student_links",
+        "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "e096897c26d5d679718d97106e034e52ee9650bf0dc6686e10fcf36a10d876ba",
-    "sha256": "5ba3e4323ba8b0808516bb3986a0460e3d2f0a87d33d351bc9c4161c93d5b594"
+    "pragma_structure_sha256": "d301a8b8e913bb9fc5089852969d6c8c6f983272eeae21efadc2f2ab67fa3a02",
+    "sha256": "ccf2343a8406d220703b3e76c98346ea009bbac71c85ce89165a47f0d8e6659a"
   },
   "source_kind": "repository-migration-head"
 }

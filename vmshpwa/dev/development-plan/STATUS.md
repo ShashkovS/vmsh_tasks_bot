@@ -11,10 +11,10 @@
 | Модель данных       | revised planning input                | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                            |
 | API/events/files    | accepted planning input               | Batch move, cross-group confirm и classroom history зафиксированы                                                                     |
 | Этап 0              | in progress                           | Runtime/schema/seed/auth/storage и one-origin functional E2E 72/72 готовы; visual owner gate, telemetry gaps и live Telegram остаются |
-| Этап 1              | in progress                           | Pure auth rules/Argon2id/ADR готовы; schema, repository, HTTP, frontend и E2E выполняются отдельными коммитами                        |
+| Этап 1              | in progress                           | Auth rules/config/Zod contracts и schema+seed готовы; repository, HTTP, frontend и E2E выполняются отдельными коммитами                |
 | Этапы 2–11          | planned with gates                    | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                         |
 | Design system       | phases 5–7 ready for review           | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                    |
-| Multi-course model  | verified prototype; owner visual gate | Phase 1–11, UI, stories и tests обновлены; backend/migrations не реализованы                                                          |
+| Multi-course model  | schema + verified prototype           | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                |
 
 ## Журнал решений
 
@@ -60,7 +60,7 @@
 | 2026-07-27 | PLAN-038 | PWA maintenance-команды выбирают состояние только через явный проверенный профиль                        | Guard выполняется до импорта legacy config; неизвестные CLI-аргументы отклоняются, поэтому опечатка не может выбрать fallback DB или credential loader        |
 | 2026-07-27 | PLAN-039 | Converter readiness подтверждается разрешением executable и поведенческим smoke                          | Fixed argv без shell, bounded output/timeout/process-group cleanup; synthetic TikZ→SVG и raster→WebP проверяют результат, HEIC capability отражается отдельно |
 | 2026-07-27 | PLAN-040 | Legacy rules защищаются executable characterization, corpus — schema-light manifest                      | 23 answer types, verdict/reaction/queue/synonym semantics зафиксированы; 54 source files покрыты hash/encoding/structure без дублирования содержания          |
-| 2026-07-27 | PLAN-041 | Schema baseline — migration-derived inventory, а live drift остаётся явным                               | 47 product objects воспроизводимы; 12 derived objects allowlisted; product row values не выбираются, live DDL/defaults сериализуются только fingerprints      |
+| 2026-07-27 | PLAN-041 | Schema baseline — migration-derived inventory, а live drift остаётся явным                               | Head содержит 90 product objects; live lag 0039/0040 и 12 derived objects фиксируются без записи; product rows не выбираются, DDL/defaults только fingerprint |
 | 2026-07-27 | PLAN-042 | `baseline-v1` строится вне target и устанавливается только после полной проверки                         | Exact profile/path allowlist, scoped FK gates, purge+VACUUM credentials, shared-runtime/exclusive-maintenance lock и durable atomic replace                   |
 | 2026-07-27 | PLAN-043 | Auth/workload preflight читает реальные источники fail-closed и публикует только безопасные агрегаты     | Same-fd bytes/hash и alias rejection защищают inputs; auth query использует deserialize snapshot; explicit check ловит missing/stale report-pair              |
 | 2026-07-27 | PLAN-044 | Live S3 разрешён только после pinned test-target check; SDK boundary всегда редактирует provider errors  | Beget test identity закреплена SHA-256, full provider key проверяется после prefix, optional checksums=`when_required`; Hetzner остаётся production target    |
@@ -80,8 +80,8 @@
 - Проверено 27 июля 2026: 15 целевых migration/concurrency/factory/config tests и 7/7 maintenance guard tests; полный `pwa_tests` — 33/33 PASS на Python 3.14.3.
 - Toolchain increment: `helpers/pwa/toolchain.py`, `vmshpwa/scripts/toolchain_{preflight,smoke}.py`, unit/integration tests и `pwa_tests/reports/toolchain-local.md`; локальный preflight и оба converter chains PASS, HEIC advertised.
 - Characterization increment: 63/63 domain tests PASS; `vmshpwa/scripts/golden_corpus.py check` подтвердил 54/54 source files. Дополнительно исполняемо зафиксированы `G`/`O` строки `user_changes_log`, повторные no-op commands, nullable `written_tasks_discussions.chat_id/tg_msg_id` и отсутствие достоверной связи legacy message→review round. Открытые правила backfill вынесены в вопросы 12–13. Подробности: `pwa_tests/reports/legacy-characterization.md`.
-- Schema increment: 22/22 inventory/migration tests PASS; fresh hash `5ba3e432…`, live read-only check воспроизвёл 12 fingerprinted derived objects, yoyo infrastructure и 2 известных FK-дефекта без изменения `db/vmsh.db`. Sentinel-тесты доказывают, что live SQL/default literals не попадают в отчёт. Подробности: `pwa_tests/reports/live-schema-drift.md`.
-- Seed/lifecycle-lock increment: 129/129 focused tests PASS; два последовательных `make pwa-agent-seed` дают digest `193cc450…`; exhaustive answer examples совпадают с legacy regex; scoped FK gate не скрывает ошибки `reactions`; stale WAL очищается только SQLite; shared locks независимых runtime workers исключают migrate/seed и сохраняются до aiohttp cleanup; fork/cancellation/startup-failure/path-alias cases и прежнее окно перед `os.replace` воспроизведены. Подробности: `pwa_tests/reports/baseline-v1.md` и ADR 0002.
+- Schema increment: migration head содержит 90 product objects с fresh hash `ccf2343a…`; live read-only report явно фиксирует lag 0039/0040, 43 отсутствующих объекта, 12 fingerprinted derived objects и 2 известных FK-дефекта без изменения `db/vmsh.db`. Migration/schema focused suite — 30 PASS; sentinel-тесты доказывают, что live SQL/default literals не попадают в отчёт. Подробности: `pwa_tests/reports/live-schema-drift.md`.
+- Seed/lifecycle-lock increment: Phase-1 focused seed+migration suite — 108 PASS; два последовательных seed запуска дают digest `56e50852…`; synthetic Family/auth/course/access/scopes материализованы, но sessions/audit/throttle/history намеренно пусты. Пять Argon2id hashes проверяются только против test-harness credentials; production/path guards и очистка migration-carried credentials сохранены. Exhaustive answer examples совпадают с legacy regex; scoped FK gate, SQLite recovery и lifecycle locking остаются покрыты. Подробности: `pwa_tests/reports/baseline-v1.md` и ADR 0002.
 - Auth/workload increment: 25/25 focused tests PASS; `make pwa-auth-preflight-check` подтвердил aggregate lower bound 36/1617 Student rows без source values; `make pwa-workload-profile-check` подтвердил 19 raw files, 176713 canonical events и 37408 traces, same-fd source checks и 0 unreviewed labels. Unknown user types, deserialize failure, source-change, symlink/hard-link/duplicate-inode и missing/stale report pairs закрыты. Отчёты: `pwa_tests/reports/{auth-preflight,workload-profile}.{json,md}`.
 - Storage increment: 86 focused tests PASS; filesystem atomicity/no-follow, fail-closed S3 config, secret-file race protection, redacted errors, collision-safe live probes, Beget/Hetzner URL rules, pinned live identity и checksum compatibility закрыты. Live Beget test-bucket runs `codex-phase0-20260727-f6c821d9` и `codex-phase0-20260727-collision-safe` прошли put/private-read/public-GET/delete acknowledgement. Отчёт: `pwa_tests/reports/object-storage-phase0.md`.
 - Realtime/Telegram harness increment: 74 focused tests PASS. NATS local fan-out/isolation smoke PASS; reconnect/cleanup/readiness, partial-startup cleanup, per-audience cursor, bounded fan-out с close-before-untrack, WebSocket shutdown, strict JSON/event boundary и RecordingBot/two-step binding покрыты. Актуальные полные `make pwa-test` totals приведены в runtime/browser increment ниже. Live Telegram bind/smoke ждёт canonical signed channel ID; Rich Message proof относится к Phase 2. Отчёты: `pwa_tests/reports/phase0-{nats-local,live-integration-template}.md`.
@@ -104,6 +104,37 @@
   390×1615. Owner approval остаётся обязательным. Отчёт:
   `pwa_tests/reports/runtime-isolation-phase0.md`.
 - Этап 0 не закрыт: workload пока не измеряет concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget; live Telegram bind/smoke и visual owner approval ещё впереди. Trusted-proxy/public-origin и spoofed-forwarded matrix явно переданы в Phase 1 и не считаются доказанными текущим gateway.
+
+## Текущий инкремент этапа 1
+
+- `4343371` добавляет чистые правила входа, Argon2id, вычисление ближайшей
+  границы 10 августа по Москве, HMAC refresh digest и audience-salted signed
+  access token; `08d6980` приводит публичный session ID к каноническому
+  lowercase browser-контракту. Focused Python suite: 24 PASS.
+- `3b22eaa` добавляет fail-closed auth runtime config: отдельные public origins,
+  cookie names/paths, signing keyring и независимые refresh/throttle peppers.
+  Prototype defaults существуют только для известных isolated profiles;
+  production не смешивается с ними. Auth/config suite: 36 PASS.
+- `36f6bb2` добавляет Zod-first audience-specific login/auth/session и
+  multi-course enrollment/access contracts, versioned synthetic valid/invalid
+  fixtures и principal-scoped query keys. Student body не принимает `audience`,
+  а срок fixture `2026-08-09T21:00:00Z` явно доказывает московскую границу.
+  Focused Vitest: 15 PASS; contracts typecheck, ESLint и Prettier PASS.
+- Миграции `0039`/`0040` добавляют auth/session/throttle и первый
+  course/enrollment/access/scope слой без изменения legacy IDs и имеют точный
+  rollback. Fresh inventory содержит 90 product objects; read-only live report
+  честно фиксирует, что `db/vmsh.db` пока отстаёт на две миграции. Phase-1
+  migration/schema suite — 30 PASS, полный Python PWA suite — 520 PASS / 1
+  intentional skip.
+- `baseline-v1` schemaVersion 2 детерминированно материализует Student online,
+  Student in-person, Family с двумя детьми, Teacher/Admin, один season/course,
+  enrollments/access/scopes и ни одной предварительно созданной browser session.
+  Два agent seed запуска дали одинаковый digest `56e50852…`; seed+migration
+  suite — 108 PASS.
+- Следующий gate: auth repository и HTTP middleware/routes, затем frontend и
+  browser E2E. Production Student activation всё ещё запрещена до
+  решения credential-exposure вопроса в
+  [`20-implementation-questions.md`](20-implementation-questions.md).
 
 ## Историческая проверка многокурсового прототипа
 

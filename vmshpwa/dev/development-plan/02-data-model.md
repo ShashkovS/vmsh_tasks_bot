@@ -39,17 +39,17 @@
 
 ### `auth_accounts`
 
-`id INTEGER PK`, `public_id TEXT UNIQUE`, `audience TEXT CHECK(student|family|staff)`, `username TEXT`, `username_normalized TEXT`, `display_name TEXT NULL`, `credential_kind TEXT CHECK(telegram_token|password)`, `credential_hash TEXT NULL`, `linked_user_id INTEGER NULL FK users(id)`, `status TEXT CHECK(active|blocked|disabled|archived)`, `credential_version INTEGER DEFAULT 1`, `last_login_at TEXT NULL`, `created_at TEXT`, `updated_at TEXT`.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `audience TEXT CHECK(student|family|staff)`, `username TEXT`, `username_normalized TEXT`, `username_algorithm_version INTEGER NULL`, `provisioning_source TEXT`, `display_name TEXT NULL`, `credential_kind TEXT CHECK(telegram_token|password)`, `credential_hash TEXT NULL`, `linked_user_id INTEGER NULL FK users(id)`, `status TEXT CHECK(active|blocked|disabled|archived)`, `credential_version INTEGER DEFAULT 1`, `last_login_at TEXT NULL`, `created_at TEXT`, `updated_at TEXT`.
 
 Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_user_id, audience)`. Student username импортируется версионированным helper как транслитерация фамилии + день рождения; коллизия, `NULL`/невалидная дата, пустая фамилия или credential, не прошедший security policy, блокируют активацию строки и попадают в report. Источник student credential — текущий Telegram token; второй plaintext не создаётся. Family хранит только минимальное display name без email.
 
 ### `family_student_links`
 
-`family_account_id INTEGER FK auth_accounts`, `student_user_id INTEGER FK users`, `relationship_label TEXT NULL`, `is_primary INTEGER DEFAULT 0`, `created_at TEXT`, `revoked_at TEXT NULL`, PK `(family_account_id, student_user_id)`.
+`family_account_id INTEGER FK auth_accounts`, `student_user_id INTEGER FK users`, `relationship_label TEXT NULL`, `is_primary INTEGER DEFAULT 0`, `created_at TEXT`, `updated_at TEXT`, `revoked_at TEXT NULL`, PK `(family_account_id, student_user_id)`. Триггер разрешает owner только с audience `family`.
 
-### `staff_group_permissions`
+### `staff_scopes`
 
-`staff_user_id INTEGER FK users`, `group_id TEXT FK groups`, `can_review INTEGER`, `can_manage_oral INTEGER`, `can_change_student_group INTEGER`, `can_recheck INTEGER`, `created_at TEXT`, `updated_at TEXT`, PK `(staff_user_id, group_id)`. Общая статистика доступна teacher-role отдельно; content/checker/classroom/broadcast/audit capabilities остаются admin-only.
+`id INTEGER PK`, `staff_user_id INTEGER FK users`, `course_id INTEGER FK courses`, `group_id TEXT NULL`, `role TEXT CHECK(teacher|admin)`, `valid_from TEXT`, `valid_to TEXT NULL`, `granted_by INTEGER NULL`, `revoked_by INTEGER NULL`, `reason TEXT NULL`, `created_at TEXT`, `updated_at TEXT`, `version INTEGER`. Scope без `group_id` покрывает курс, с `group_id` — только эту группу; composite FK запрещает ссылку на группу другого курса. Это единственный новый permission source: параллельная таблица `staff_group_permissions` не создаётся. Legacy admin остаётся глобальным bypass, а строка scope сама по себе не повышает teacher до admin.
 
 ### `telegram_bindings`
 
@@ -59,13 +59,17 @@ Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_use
 
 ### `auth_sessions`
 
-`id INTEGER PK`, `public_id TEXT UNIQUE`, `account_id INTEGER FK auth_accounts`, `audience TEXT`, `refresh_secret_hash TEXT`, `credential_version INTEGER`, `created_at TEXT`, `last_seen_at TEXT`, `expires_at TEXT`, `revoked_at TEXT NULL`, `revoke_reason TEXT NULL`, `device_label TEXT NULL`, `user_agent_family TEXT NULL`, `ip_prefix TEXT NULL`.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `account_id INTEGER FK auth_accounts`, `audience TEXT`, `refresh_secret_hash TEXT UNIQUE`, `credential_version INTEGER`, `version INTEGER`, `created_at TEXT`, `updated_at TEXT`, `last_seen_at TEXT`, `expires_at TEXT`, `revoked_at TEXT NULL`, `revoke_reason TEXT NULL`, `device_label TEXT NULL`, `user_agent_family TEXT NULL`, `ip_prefix TEXT NULL`.
 
-Indexes: `(account_id, revoked_at, expires_at)`, `(expires_at)`. Короткая signed cookie несёт только opaque session reference/version, не роль как источник истины.
+`refresh_secret_hash` — только 64-символьный lowercase HMAC-SHA-256 digest. Indexes: `(account_id, revoked_at, expires_at)`, `(expires_at)`, `(audience, revoked_at, expires_at)`. Короткая signed cookie несёт только opaque session reference/version, не роль как источник истины. Refresh меняет digest и `version` атомарно; stale/replayed secret мягко отзывает эту session lineage.
 
 ### `auth_events`
 
 `id INTEGER PK`, `account_id INTEGER NULL`, `session_id INTEGER NULL`, `event_type TEXT`, `occurred_at TEXT`, `request_id TEXT`, `ip_prefix TEXT NULL`, `metadata_json TEXT`. Не хранить введённый token/password.
+
+### `auth_throttle_buckets`
+
+`audience`, `bucket_kind CHECK(normalized_login|account|ip)`, `bucket_key_hmac`, `key_version`, `failure_count`, `window_started_at`, `last_failed_at NULL`, `locked_until NULL`, audit timestamps и optimistic `version`; PK `(audience, bucket_kind, bucket_key_hmac, key_version)`. В таблице разрешены только HMAC-SHA-256 keys: normalized login, internal account reference и IP никогда не сохраняются открыто. nginx остаётся первым IP-level limit, а SQLite обеспечивает общий для нескольких aiohttp workers account/login state.
 
 ## 2. Контент, revisions и assets
 

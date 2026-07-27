@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import sqlite3
 import subprocess
 import sys
 from contextlib import closing
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -13,6 +15,8 @@ from helpers import checkers
 from helpers.config import Config
 from helpers.consts import ANS_TYPE, PROB_TYPE
 from db_methods.pwa import DatabaseLifecycleBusyError, runtime_database_lock
+from models.pwa.auth import CredentialHasher, build_student_username
+from pwa_tests.fixtures.auth_credentials import SYNTHETIC_AUTH_CREDENTIALS_V1
 from pwa_tests.fixtures.seed import load_answer_types_v1, load_baseline_v1
 from vmshpwa.scripts import seed_runtime as seed_module
 from vmshpwa.scripts.seed_runtime import seed_runtime
@@ -48,7 +52,7 @@ def _fetch_value(connection: sqlite3.Connection, query: str):
     return connection.execute(query).fetchone()[0]
 
 
-def test_baseline_seed_has_exact_legacy_personas_and_states(tmp_path):
+def test_baseline_seed_has_exact_legacy_personas_and_phase1_context(tmp_path):
     _runtime_config, _database_root, _media_root, report = _seed(tmp_path)
     fixture = load_baseline_v1()
 
@@ -57,8 +61,19 @@ def test_baseline_seed_has_exact_legacy_personas_and_states(tmp_path):
     assert report.durability_warning is None
     assert report.canonical_digest == fixture["expectedCanonicalDigest"]
     assert report.row_counts == {
+        "seasons": 1,
+        "courses": 1,
         "groups": 5,
         "users": 4,
+        "auth_accounts": 5,
+        "family_student_links": 2,
+        "auth_sessions": 0,
+        "auth_events": 0,
+        "auth_throttle_buckets": 0,
+        "course_enrollments": 2,
+        "course_group_access": 5,
+        "course_enrollment_events": 0,
+        "staff_scopes": 2,
         "student_strength": 1,
         "lessons": 9,
         "problems": 16,
@@ -83,6 +98,24 @@ def test_baseline_seed_has_exact_legacy_personas_and_states(tmp_path):
         assert connection.execute(
             "SELECT group_id FROM groups WHERE is_system = 1"
         ).fetchall() == [("no_level",)]
+        assert connection.execute(
+            "SELECT public_id, code, status FROM seasons"
+        ).fetchall() == [("season-fixture-2025-26", "2025-26", "active")]
+        assert connection.execute(
+            "SELECT public_id, name, subject_code, status FROM courses"
+        ).fetchall() == [
+            ("course-fixture-math-5-7", "Математика 5–7", "math", "active")
+        ]
+        assert connection.execute(
+            "SELECT group_id, course_id, status, color_key FROM groups "
+            "ORDER BY sort_order"
+        ).fetchall() == [
+            ("н", 1, "active", "level-1"),
+            ("п", 1, "active", "level-2"),
+            ("э", 1, "active", "level-3"),
+            ("testing", 1, "active", "testing"),
+            ("no_level", 1, "archived", "neutral"),
+        ]
         assert connection.execute(
             "SELECT id, online, group_id FROM users WHERE type = 1 ORDER BY id"
         ).fetchall() == [(101, 1, "н"), (102, 2, "п")]
@@ -124,6 +157,31 @@ def test_baseline_seed_has_exact_legacy_personas_and_states(tmp_path):
         assert connection.execute(
             "SELECT problem_id, verdict FROM results ORDER BY id"
         ).fetchall() == [(41005, 17), (41006, 15)]
+        assert connection.execute(
+            "SELECT student_user_id, active_group_id, attendance_mode, status "
+            "FROM course_enrollments ORDER BY student_user_id"
+        ).fetchall() == [
+            (101, "н", "online", "active"),
+            (102, "п", "in_person", "active"),
+        ]
+        assert connection.execute(
+            "SELECT enrollment_id, group_concat(group_id, ',') FROM ("
+            "SELECT enrollment_id, group_id FROM course_group_access "
+            "WHERE valid_to IS NULL ORDER BY enrollment_id, group_id"
+            ") GROUP BY enrollment_id ORDER BY enrollment_id"
+        ).fetchall() == [(2001, "н,п,э"), (2002, "н,п")]
+        assert connection.execute(
+            "SELECT staff_user_id, group_id, role FROM staff_scopes ORDER BY id"
+        ).fetchall() == [(201, "н", "teacher"), (301, None, "admin")]
+        for empty_table in (
+            "auth_sessions",
+            "auth_events",
+            "auth_throttle_buckets",
+            "course_enrollment_events",
+        ):
+            assert (
+                _fetch_value(connection, f'SELECT count(*) FROM "{empty_table}"') == 0
+            )
         assert _fetch_value(connection, "SELECT count(*) FROM kv_logins") == 0
         assert (
             _fetch_value(
@@ -138,6 +196,10 @@ def test_baseline_seed_is_repeatable_and_removes_runtime_drift(tmp_path):
     runtime, database_root, media_root, first = _seed(tmp_path)
     with closing(sqlite3.connect(first.database_path)) as connection:
         connection.execute("UPDATE users SET name = 'drift' WHERE id = 101")
+        connection.execute("UPDATE courses SET name = 'drift' WHERE id = 1")
+        connection.execute(
+            "UPDATE auth_accounts SET display_name = 'drift' WHERE id = 1001"
+        )
         connection.execute("INSERT INTO kv (key, value) VALUES ('drift', '1')")
         connection.commit()
 
@@ -152,6 +214,15 @@ def test_baseline_seed_is_repeatable_and_removes_runtime_drift(tmp_path):
         )
         assert (
             _fetch_value(connection, "SELECT count(*) FROM kv WHERE key = 'drift'") == 0
+        )
+        assert _fetch_value(connection, "SELECT name FROM courses WHERE id = 1") == (
+            "Математика 5–7"
+        )
+        assert (
+            _fetch_value(
+                connection, "SELECT display_name FROM auth_accounts WHERE id = 1001"
+            )
+            == "Алексей Тестовый-Онлайн"
         )
 
 
@@ -204,9 +275,10 @@ def test_post_replace_directory_fsync_failure_is_reported_without_losing_seed(
     assert fsync_calls[0].suffix == ".tmp"
     assert fsync_calls[1:] == [database_root, database_root]
     with sqlite3.connect(report.database_path) as connection:
-        assert connection.execute(
-            "SELECT name FROM users WHERE id = 101"
-        ).fetchone()[0] == "Алексей"
+        assert (
+            connection.execute("SELECT name FROM users WHERE id = 101").fetchone()[0]
+            == "Алексей"
+        )
 
 
 @pytest.mark.parametrize(
@@ -238,6 +310,7 @@ def test_seed_rejects_production_and_authoritative_database(tmp_path):
     runtime, database_root, media_root = _runtime(tmp_path, production=True)
     with pytest.raises(RuntimeError, match="forbidden in production"):
         seed_runtime(runtime, database_root=database_root, media_root=media_root)
+    assert not Path(runtime.db_filename).exists()
 
     authoritative = seed_module.AUTHORITATIVE_DATABASE
     runtime.production_mode = False
@@ -248,6 +321,19 @@ def test_seed_rejects_production_and_authoritative_database(tmp_path):
             database_root=authoritative.parent,
             media_root=media_root,
         )
+
+
+def test_phase1_migrations_never_materialize_seed_accounts_or_credentials():
+    for migration_name in (
+        "0039.pwa_auth_accounts_sessions.sql",
+        "0040.pwa_courses_access.sql",
+    ):
+        migration_sql = (
+            seed_module.REPOSITORY_ROOT / "migrations" / migration_name
+        ).read_text(encoding="utf-8")
+        normalized_sql = " ".join(migration_sql.casefold().split())
+        assert "insert into auth_accounts" not in normalized_sql
+        assert "synthetic-" not in normalized_sql
 
 
 def test_seed_rejects_a_hard_link_to_authoritative_database(tmp_path, monkeypatch):
@@ -400,9 +486,12 @@ else:
 
     assert attempts == ["BLOCKED"]
     with sqlite3.connect(report.database_path) as connection:
-        assert connection.execute(
-            "SELECT count(*) FROM kv WHERE key = 'race'"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute("SELECT count(*) FROM kv WHERE key = 'race'").fetchone()[
+                0
+            ]
+            == 0
+        )
 
 
 def test_compaction_removes_deleted_synthetic_credential_bytes(tmp_path):
@@ -420,31 +509,98 @@ def test_compaction_removes_deleted_synthetic_credential_bytes(tmp_path):
     assert sentinel not in database_path.read_bytes()
 
 
-def test_family_is_manifest_only_until_phase_one(tmp_path):
+def test_family_persona_is_materialized_with_two_student_links(tmp_path):
     _runtime_config, _database_root, _media_root, report = _seed(tmp_path)
     family = load_baseline_v1()["seedMetadata"]["familyPersona"]
     assert family == {
         "fixtureKey": "fixture-family-1",
+        "accountPublicId": "account-family-fixture",
         "studentUserIds": [101, 102],
         "materializeInPhase": 1,
     }
 
     with sqlite3.connect(report.database_path) as connection:
-        tables = {
-            row[0]
-            for row in connection.execute(
-                "SELECT name FROM sqlite_schema WHERE type = 'table'"
+        family_account = connection.execute(
+            "SELECT id, audience, display_name FROM auth_accounts WHERE public_id = ?",
+            (family["accountPublicId"],),
+        ).fetchone()
+        assert family_account == (1101, "family", "Синтетический родитель")
+        assert connection.execute(
+            "SELECT student_user_id, relationship_label, is_primary "
+            "FROM family_student_links WHERE family_account_id = ? "
+            "AND revoked_at IS NULL ORDER BY student_user_id",
+            (family_account[0],),
+        ).fetchall() == [(101, "родитель", 1), (102, "родитель", 0)]
+
+
+def test_seeded_argon2id_hashes_match_only_test_harness_personas(tmp_path, capsys):
+    _runtime_config, _database_root, _media_root, report = _seed(tmp_path)
+    hasher = CredentialHasher()
+
+    with sqlite3.connect(report.database_path) as connection:
+        encoded_hashes = dict(
+            connection.execute(
+                "SELECT public_id, credential_hash FROM auth_accounts ORDER BY id"
             )
-        }
-    assert not {
-        "courses",
-        "course_enrollments",
-        "course_group_access",
-        "auth_accounts",
-        "family_student_links",
-        "auth_sessions",
-        "staff_scopes",
-    }.intersection(tables)
+        )
+
+    assert set(encoded_hashes) == set(SYNTHETIC_AUTH_CREDENTIALS_V1)
+    assert all(
+        credential.endswith("-not-a-secret")
+        for credential in SYNTHETIC_AUTH_CREDENTIALS_V1.values()
+    )
+    for public_id, credential in SYNTHETIC_AUTH_CREDENTIALS_V1.items():
+        assert hasher.verify(encoded_hashes[public_id], credential).valid is True
+        assert (
+            hasher.verify(encoded_hashes[public_id], credential + "-wrong").valid
+            is False
+        )
+
+    output = capsys.readouterr()
+    combined_output = output.out + output.err
+    assert all(
+        credential not in combined_output
+        for credential in SYNTHETIC_AUTH_CREDENTIALS_V1.values()
+    )
+    assert all(
+        encoded_hash not in combined_output for encoded_hash in encoded_hashes.values()
+    )
+
+
+def test_phase1_fixture_validation_rejects_invalid_identity_or_access_data():
+    fixture = load_baseline_v1()
+
+    invalid_hash = copy.deepcopy(fixture)
+    invalid_hash["tables"]["auth_accounts"][0]["credential_hash"] = "plaintext"
+    with pytest.raises(ValueError, match="Argon2id"):
+        seed_module._validate_fixture(invalid_hash)
+
+    invalid_access = copy.deepcopy(fixture)
+    invalid_access["tables"]["course_group_access"][0]["group_id"] = "unknown"
+    with pytest.raises(ValueError, match="group access"):
+        seed_module._validate_fixture(invalid_access)
+
+    invalid_family = copy.deepcopy(fixture)
+    invalid_family["seedMetadata"]["familyPersona"]["studentUserIds"] = [101]
+    with pytest.raises(ValueError, match="Family persona links"):
+        seed_module._validate_fixture(invalid_family)
+
+
+def test_phase1_student_usernames_follow_frozen_algorithm():
+    fixture = load_baseline_v1()
+    users = {user["id"]: user for user in fixture["tables"]["users"]}
+    accounts = {
+        account["linked_user_id"]: account
+        for account in fixture["tables"]["auth_accounts"]
+        if account["audience"] == "student"
+    }
+
+    for user_id, account in accounts.items():
+        birthday = date.fromisoformat(users[user_id]["birthday"])
+        assert account["username"] == build_student_username(
+            users[user_id]["surname"], birthday
+        )
+        assert account["username_normalized"] == account["username"]
 
 
 def test_known_legacy_reactions_fk_is_scoped_without_hiding_other_violations(
@@ -552,7 +708,7 @@ def _answer_type_fixture_examples():
                     answer,
                     expected,
                     tuple(row.get("options", ())),
-                    id=f'{row["name"]}-{expected_key}-{index}',
+                    id=f"{row['name']}-{expected_key}-{index}",
                 )
                 for index, answer in enumerate(row[expected_key], start=1)
             )

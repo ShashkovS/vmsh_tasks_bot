@@ -1,7 +1,7 @@
 {
   "fixture": "baseline-v1",
-  "schemaVersion": 1,
-  "expectedCanonicalDigest": "193cc450349f18240fe36f3f1de513fba1d827604cc6569ceff79d06b50afaa3",
+  "schemaVersion": 2,
+  "expectedCanonicalDigest": "56e508522704e8d4d480d619d1016361253232143f3647e0fe9a6a67effec9fe",
   "seedMetadata": {
     "version": 1,
     "fixture": "baseline-v1",
@@ -12,11 +12,45 @@
     "solutionPublishesAt": "2026-01-31T18:00:00Z",
     "familyPersona": {
       "fixtureKey": "fixture-family-1",
+      "accountPublicId": "account-family-fixture",
       "studentUserIds": [101, 102],
       "materializeInPhase": 1
     }
   },
   "tables": {
+    "seasons": [
+      {
+        "id": 1,
+        "public_id": "season-fixture-2025-26",
+        "code": "2025-26",
+        "title": "Синтетический сезон 2025–26",
+        "starts_on": "2025-09-01",
+        "ends_on": "2026-05-31",
+        "timezone": "Europe/Moscow",
+        "session_expires_on": "2026-08-10",
+        "status": "active",
+        "created_at": "2025-09-01T00:00:00Z",
+        "updated_at": "2025-09-01T00:00:00Z"
+      }
+    ],
+    "courses": [
+      {
+        "id": 1,
+        "public_id": "course-fixture-math-5-7",
+        "season_id": 1,
+        "code": "math-5-7",
+        "name": "Математика 5–7",
+        "subject_code": "math",
+        "status": "active",
+        "sort_order": 10,
+        "accent_key": "math",
+        "created_at": "2025-09-01T00:00:00Z",
+        "updated_at": "2025-09-01T00:00:00Z",
+        "created_by": null,
+        "updated_by": null,
+        "version": 1
+      }
+    ],
     "groups": [
       {
         "group_id": "н",
@@ -32,7 +66,14 @@
         "is_default": 1,
         "allow_self_switch": 1,
         "is_system": 0,
-        "score_weight": 1.0
+        "score_weight": 1.0,
+        "public_id": "group-fixture-beginner",
+        "course_id": 1,
+        "status": "active",
+        "color_key": "level-1",
+        "created_at": "2025-09-01T00:00:00Z",
+        "updated_at": "2025-09-01T00:00:00Z",
+        "version": 1
       },
       {
         "group_id": "п",
@@ -48,7 +89,14 @@
         "is_default": 0,
         "allow_self_switch": 1,
         "is_system": 0,
-        "score_weight": 1.0
+        "score_weight": 1.0,
+        "public_id": "group-fixture-continuing",
+        "course_id": 1,
+        "status": "active",
+        "color_key": "level-2",
+        "created_at": "2025-09-01T00:00:00Z",
+        "updated_at": "2025-09-01T00:00:00Z",
+        "version": 1
       },
       {
         "group_id": "э",
@@ -64,7 +112,14 @@
         "is_default": 0,
         "allow_self_switch": 1,
         "is_system": 0,
-        "score_weight": 1.0
+        "score_weight": 1.0,
+        "public_id": "group-fixture-expert",
+        "course_id": 1,
+        "status": "active",
+        "color_key": "level-3",
+        "created_at": "2025-09-01T00:00:00Z",
+        "updated_at": "2025-09-01T00:00:00Z",
+        "version": 1
       },
       {
         "group_id": "testing",
@@ -80,7 +135,14 @@
         "is_default": 0,
         "allow_self_switch": 0,
         "is_system": 0,
-        "score_weight": 1.0
+        "score_weight": 1.0,
+        "public_id": "group-fixture-testing",
+        "course_id": 1,
+        "status": "active",
+        "color_key": "testing",
+        "created_at": "2025-09-01T00:00:00Z",
+        "updated_at": "2025-09-01T00:00:00Z",
+        "version": 1
       },
       {
         "group_id": "no_level",
@@ -96,7 +158,14 @@
         "is_default": 0,
         "allow_self_switch": 0,
         "is_system": 1,
-        "score_weight": 1.0
+        "score_weight": 1.0,
+        "public_id": "group-fixture-no-level",
+        "course_id": 1,
+        "status": "archived",
+        "color_key": "neutral",
+        "created_at": "2025-09-01T00:00:00Z",
+        "updated_at": "2025-09-01T00:00:00Z",
+        "version": 1
       }
     ],
     "users": [
@@ -155,6 +224,251 @@
         "grade": null,
         "birthday": null,
         "allowed_groups": ";н;п;э;testing;"
+      }
+    ],
+    "auth_accounts": [
+      {
+        "id": 1001,
+        "public_id": "account-student-fixture",
+        "audience": "student",
+        "username": "testovyy-onlayn-14",
+        "username_normalized": "testovyy-onlayn-14",
+        "username_algorithm_version": 1,
+        "provisioning_source": "synthetic_seed_v1",
+        "display_name": "Алексей Тестовый-Онлайн",
+        "credential_kind": "telegram_token",
+        "credential_hash": "$argon2id$v=19$m=65536,t=3,p=4$dm1zaC1zZWVkLXN0dS0wMQ$v+dVXS2qRDp2Ry74Oo7mkMswGtsQ0THo7x5+cADCg/g",
+        "linked_user_id": 101,
+        "status": "active",
+        "credential_version": 1,
+        "last_login_at": null,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z"
+      },
+      {
+        "id": 1002,
+        "public_id": "account-student-in-person-fixture",
+        "audience": "student",
+        "username": "testovaya-ochno-02",
+        "username_normalized": "testovaya-ochno-02",
+        "username_algorithm_version": 1,
+        "provisioning_source": "synthetic_seed_v1",
+        "display_name": "Мария Тестовая-Очно",
+        "credential_kind": "telegram_token",
+        "credential_hash": "$argon2id$v=19$m=65536,t=3,p=4$dm1zaC1zZWVkLXN0dS0wMg$ITL7PbgW6rCe537gm2WTDL7jNH8XUnGJ/kPr+c2RVN8",
+        "linked_user_id": 102,
+        "status": "active",
+        "credential_version": 1,
+        "last_login_at": null,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z"
+      },
+      {
+        "id": 1101,
+        "public_id": "account-family-fixture",
+        "audience": "family",
+        "username": "synthetic-family",
+        "username_normalized": "synthetic-family",
+        "username_algorithm_version": null,
+        "provisioning_source": "synthetic_seed_v1",
+        "display_name": "Синтетический родитель",
+        "credential_kind": "password",
+        "credential_hash": "$argon2id$v=19$m=65536,t=3,p=4$dm1zaC1zZWVkLWZhbS0wMQ$1lYPvmCzkR6nP7foDI6G8FQikPfy75p9gFaZ8k/dg6Y",
+        "linked_user_id": null,
+        "status": "active",
+        "credential_version": 1,
+        "last_login_at": null,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z"
+      },
+      {
+        "id": 1201,
+        "public_id": "account-staff-fixture",
+        "audience": "staff",
+        "username": "synthetic-teacher",
+        "username_normalized": "synthetic-teacher",
+        "username_algorithm_version": null,
+        "provisioning_source": "synthetic_seed_v1",
+        "display_name": "Тестовый Преподаватель",
+        "credential_kind": "password",
+        "credential_hash": "$argon2id$v=19$m=65536,t=3,p=4$dm1zaC1zZWVkLXRjaC0wMQ$M7uhPRTfU1Fr0AxBL9SS1x2tg4Z+RhxFI+Q3kiVTd9U",
+        "linked_user_id": 201,
+        "status": "active",
+        "credential_version": 1,
+        "last_login_at": null,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z"
+      },
+      {
+        "id": 1301,
+        "public_id": "account-admin-fixture",
+        "audience": "staff",
+        "username": "synthetic-admin",
+        "username_normalized": "synthetic-admin",
+        "username_algorithm_version": null,
+        "provisioning_source": "synthetic_seed_v1",
+        "display_name": "Тестовый Администратор",
+        "credential_kind": "password",
+        "credential_hash": "$argon2id$v=19$m=65536,t=3,p=4$dm1zaC1zZWVkLWFkbS0wMQ$7XrL3LWsl5PoIF2K4uU/H9JtJf9G5fEqb9CRIcqbVZk",
+        "linked_user_id": 301,
+        "status": "active",
+        "credential_version": 1,
+        "last_login_at": null,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z"
+      }
+    ],
+    "family_student_links": [
+      {
+        "family_account_id": 1101,
+        "student_user_id": 101,
+        "relationship_label": "родитель",
+        "is_primary": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "revoked_at": null
+      },
+      {
+        "family_account_id": 1101,
+        "student_user_id": 102,
+        "relationship_label": "родитель",
+        "is_primary": 0,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "revoked_at": null
+      }
+    ],
+    "auth_sessions": [],
+    "auth_events": [],
+    "auth_throttle_buckets": [],
+    "course_enrollments": [
+      {
+        "id": 2001,
+        "public_id": "enrollment-student-online-fixture",
+        "student_user_id": 101,
+        "course_id": 1,
+        "active_group_id": "н",
+        "attendance_mode": "online",
+        "status": "active",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "created_by": 301,
+        "updated_by": 301,
+        "version": 1
+      },
+      {
+        "id": 2002,
+        "public_id": "enrollment-student-in-person-fixture",
+        "student_user_id": 102,
+        "course_id": 1,
+        "active_group_id": "п",
+        "attendance_mode": "in_person",
+        "status": "active",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "created_by": 301,
+        "updated_by": 301,
+        "version": 1
+      }
+    ],
+    "course_group_access": [
+      {
+        "enrollment_id": 2001,
+        "course_id": 1,
+        "group_id": "н",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "granted_by": 301,
+        "revoked_by": null,
+        "reason": "synthetic_seed_v1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "version": 1
+      },
+      {
+        "enrollment_id": 2001,
+        "course_id": 1,
+        "group_id": "п",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "granted_by": 301,
+        "revoked_by": null,
+        "reason": "synthetic_seed_v1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "version": 1
+      },
+      {
+        "enrollment_id": 2001,
+        "course_id": 1,
+        "group_id": "э",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "granted_by": 301,
+        "revoked_by": null,
+        "reason": "synthetic_seed_v1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "version": 1
+      },
+      {
+        "enrollment_id": 2002,
+        "course_id": 1,
+        "group_id": "н",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "granted_by": 301,
+        "revoked_by": null,
+        "reason": "synthetic_seed_v1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "version": 1
+      },
+      {
+        "enrollment_id": 2002,
+        "course_id": 1,
+        "group_id": "п",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "granted_by": 301,
+        "revoked_by": null,
+        "reason": "synthetic_seed_v1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "version": 1
+      }
+    ],
+    "course_enrollment_events": [],
+    "staff_scopes": [
+      {
+        "id": 3001,
+        "staff_user_id": 201,
+        "course_id": 1,
+        "group_id": "н",
+        "role": "teacher",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "granted_by": 301,
+        "revoked_by": null,
+        "reason": "synthetic_seed_v1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "version": 1
+      },
+      {
+        "id": 3002,
+        "staff_user_id": 301,
+        "course_id": 1,
+        "group_id": null,
+        "role": "admin",
+        "valid_from": "2026-01-01T00:00:00Z",
+        "valid_to": null,
+        "granted_by": 301,
+        "revoked_by": null,
+        "reason": "synthetic_seed_v1",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "version": 1
       }
     ],
     "student_strength": [

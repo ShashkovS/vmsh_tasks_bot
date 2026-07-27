@@ -6,8 +6,9 @@ import sqlite3
 from pathlib import Path
 
 import pytest
+import yoyo
 
-from db_methods.pwa.migrations import apply_schema_migrations
+from db_methods.pwa.migrations import MIGRATIONS_ROOT, apply_schema_migrations
 from db_methods.pwa.schema_inventory import (
     SchemaInventoryError,
     UnknownDerivedObjectError,
@@ -85,7 +86,7 @@ def test_inventory_is_deterministic_and_does_not_read_rows(tmp_path):
     assert sentinel not in rendered_json
     assert sentinel not in rendered_sql
     assert "insert into" not in rendered_sql.casefold()
-    assert second["product"]["object_count"] == 47
+    assert second["product"]["object_count"] == 90
     assert second["legacy_derived"]["object_count"] == 0
     assert all(
         not record["name"].startswith("sqlite_") and "yoyo" not in record["name"]
@@ -262,6 +263,20 @@ def test_inventory_validation_rejects_tampered_hash():
         validate_inventory(tampered)
 
 
+def test_inventory_validation_rejects_false_migration_readiness():
+    inventory = load_inventory(DEFAULT_INVENTORY)
+    tampered = copy.deepcopy(inventory)
+    tampered["migration"]["repository_head_status"] = {
+        "is_current": True,
+        "missing": ["0039.pwa_auth_accounts_sessions"],
+        "changed": [],
+        "unexpected": [],
+    }
+
+    with pytest.raises(SchemaInventoryError, match="migration-head status"):
+        validate_inventory(tampered)
+
+
 def test_committed_fresh_artifacts_match_repository_migrations(tmp_path):
     database_path = _migrated_database(tmp_path / "committed.sqlite3")
     generated = capture_schema_inventory(
@@ -285,6 +300,15 @@ def test_committed_live_report_is_sanitized_and_documents_known_defects():
         "LIVE_REACTIONS_ZOOM_FK_TARGET_INVALID",
     }
     assert len(report["legacy_derived_objects"]) == 12
+    assert report["migration"]["repository_head_status"] == {
+        "is_current": False,
+        "missing": [
+            "0039.pwa_auth_accounts_sessions",
+            "0040.pwa_courses_access",
+        ],
+        "changed": [],
+        "unexpected": [],
+    }
     assert all(
         key not in {"row", "rows", "value", "values"} for key in _walk_keys(report)
     )
@@ -292,7 +316,43 @@ def test_committed_live_report_is_sanitized_and_documents_known_defects():
     assert all(str(Path.home()) not in value for value in report_strings)
     assert all("default_sql" not in value for value in report_strings)
     assert "Product row values were not selected" in markdown
+    assert "Repository migration head current: false" in markdown
     assert render_drift_markdown(report) == markdown
+
+
+def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
+    database_path = tmp_path / "behind.sqlite3"
+    migrations = yoyo.read_migrations(str(MIGRATIONS_ROOT)).filter(
+        lambda migration: (
+            migration.id
+            not in {
+                "0039.pwa_auth_accounts_sessions",
+                "0040.pwa_courses_access",
+            }
+        )
+    )
+    with yoyo.get_backend(f"sqlite:///{database_path.resolve()}") as backend:
+        with backend.lock():
+            backend.apply_migrations(backend.to_apply(migrations))
+    before = database_path.read_bytes()
+
+    expected = _inventory(_migrated_database(tmp_path / "head.sqlite3"))
+    actual = capture_schema_inventory(
+        database_path,
+        source_kind="agreed-live-baseline",
+        require_migration_head=False,
+    )
+    report = compare_schema_inventories(expected, actual)
+
+    assert report["migration"]["repository_head_status"]["missing"] == [
+        "0039.pwa_auth_accounts_sessions",
+        "0040.pwa_courses_access",
+    ]
+    assert {item["name"] for item in report["missing_product_objects"]} >= {
+        "auth_accounts",
+        "courses",
+    }
+    assert database_path.read_bytes() == before
 
 
 def test_generate_cli_requires_explicit_write_flag(tmp_path):

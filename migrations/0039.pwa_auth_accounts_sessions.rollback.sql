@@ -1,0 +1,6 @@
+drop table auth_throttle_buckets;
+drop table auth_events;
+drop table auth_sessions;
+drop table family_student_links;
+drop table auth_accounts;
+drop table seasons;

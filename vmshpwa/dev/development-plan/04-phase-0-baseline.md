@@ -103,7 +103,7 @@ Decommission baseline реализован как связанная пара
 Seed `baseline-v1` и первый release fixture:
 
 - 4 динамических учебных группы + одна system group;
-- Student online, Student in-person, Teacher с одной разрешённой группой и Admin; Family с двумя детьми остаётся manifest-only до миграций Phase 1;
+- Student online, Student in-person, Teacher с одной разрешённой группой и Admin; после появления миграций Phase 1 Family account материализован и связан с обоими детьми;
 - один текущий и один прошлый урок, а также занятия 39–41 сезона 2025–2026 для трёх уровней;
 - по одной задаче каждого `PROB_TYPE`;
 - все значения `ANS_TYPE` в isolated answer fixtures;
