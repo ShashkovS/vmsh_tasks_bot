@@ -20,6 +20,12 @@ E2E выполняется в Chromium, WebKit и Firefox. Критически�
 
 Перед стартом настоящего aiohttp Playwright вызывает изолированный seed/migration entrypoint. Сам server startup схему не меняет. Python PWA suite создаёт мигрированную временную SQLite отдельно в каждом pytest worker; тесты migration lifecycle дополнительно проверяют пустую/устаревшую/будущую схему, hash drift, WAL, конкурирующих writers и rollback после исключения.
 
+## Legacy characterization и golden corpus
+
+Новые реализации не угадывают поведение Telegram-era кода по документации. Исполняемые тесты в `pwa_tests/domain/test_legacy_*.py` фиксируют все 23 `ANS_TYPE`, `strip()+fullmatch`, преобразования ответов, verdict weights/solved thresholds, реакции, 30-минутную аренду письменной очереди, SOS partition и старую title-based synonym projection. Тестовая БД после migrations сразу удаляет migration-carried `kv_logins`; исторические credential-shaped строки не становятся fixture и не попадают в вывод.
+
+`make pwa-golden-check` сверяет все 54 файла `_vmsh_examples` с `vmshpwa/fixtures/content/golden-manifest.json`: SHA-256, encoding, роль и структурные счётчики. Manifest содержит только относительные пути и метаданные, без копий математического текста и персональных данных. `pwa-golden-update` разрешён только после просмотра изменившихся исходников; visual parity PWA/Telegram/PDF остаётся отдельным gate.
+
 ## Visual regression
 
 Снимки страниц хранятся по browser project, делаются при фиксированном viewport, locale, timezone и reduced motion. Сейчас reference environment — macOS машины владельца; Docker normalization откладывается. `pwa-visual-update` не является способом «починить» тест: перед обновлением человек или агент обязан открыть diff, проверить обе темы и убедиться, что изменение ожидаемо. Raw snapshots не меняются вместе с не относящимся к UI refactor.

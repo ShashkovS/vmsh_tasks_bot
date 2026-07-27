@@ -88,6 +88,13 @@ pwa-toolchain-smoke:
 pwa-agent-toolchain-smoke:
 	$(PWA_UV_ENV) $(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.toolchain_smoke
 
+.PHONY: pwa-golden-check pwa-golden-update
+pwa-golden-check:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.golden_corpus check
+
+pwa-golden-update:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.golden_corpus write
+
 .PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-visual pwa-visual-update telegram-history-test
 pwa-format:
 	cd $(PWA_DIR) && CI=true pnpm format
