@@ -5,7 +5,16 @@
 -- Legacy integer user IDs remain the internal FK. Browser contracts use this
 -- separately backfilled opaque ID; NULL fails closed until the controlled
 -- account activation/import has assigned one.
-alter table users add column public_id text;
+alter table users add column public_id text
+    check (
+        public_id is null
+        or (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        )
+    );
 
 create unique index users_public_id_uq
     on users (public_id)
@@ -15,7 +24,12 @@ create table seasons
 (
     id                 integer primary key,
     public_id          text    not null unique
-        check (length(trim(public_id)) > 0),
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
     code               text    not null unique
         check (length(trim(code)) > 0),
     title              text    not null
@@ -37,7 +51,12 @@ create table auth_accounts
 (
     id                         integer primary key,
     public_id                  text    not null unique
-        check (length(trim(public_id)) > 0),
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
     audience                   text    not null
         check (audience in ('student', 'family', 'staff')),
     username                   text    not null
@@ -104,7 +123,10 @@ create table auth_sessions
 (
     id                   integer primary key,
     public_id            text    not null unique
-        check (length(trim(public_id)) > 0),
+        check (
+            length(public_id) = 32
+            and public_id not glob '*[^0-9a-f]*'
+        ),
     account_id           integer not null references auth_accounts (id),
     audience             text    not null
         check (audience in ('student', 'family', 'staff')),
@@ -295,4 +317,15 @@ when new.audience <> old.audience and (
 )
 begin
     select raise(abort, 'account audience is immutable after links or sessions exist');
+end;
+
+-- A web credential belongs to exactly one legacy identity. Corrections create a
+-- replacement account instead of silently transferring an already verified
+-- credential (and possibly live sessions) to another person.
+create trigger auth_accounts_linked_user_immutable
+before update of linked_user_id on auth_accounts
+for each row
+when new.linked_user_id is not old.linked_user_id
+begin
+    select raise(abort, 'auth account linked user is immutable');
 end;

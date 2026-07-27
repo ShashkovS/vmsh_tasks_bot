@@ -50,6 +50,9 @@ GROUP_PHASE_1_COLUMNS = {
 USER_PHASE_1_COLUMNS = {"public_id"}
 NOW = "2026-07-27T08:00:00Z"
 LATER = "2026-07-27T09:00:00Z"
+SESSION_PUBLIC_ID = "1" * 32
+SECOND_SESSION_PUBLIC_ID = "2" * 32
+THIRD_SESSION_PUBLIC_ID = "3" * 32
 
 
 def _read_migrations():
@@ -282,6 +285,18 @@ def test_auth_schema_constraints_indexes_and_soft_revoke(tmp_path):
             (NOW, NOW),
         ).fetchone()[0]
 
+        for invalid_public_id in ("", "Has-Uppercase", "-bad-edge", "x" * 129):
+            with pytest.raises(sqlite3.IntegrityError):
+                connection.execute(
+                    "UPDATE users SET public_id = ? WHERE id = ?",
+                    (invalid_public_id, user_ids[0]),
+                )
+        with pytest.raises(sqlite3.IntegrityError, match="linked user is immutable"):
+            connection.execute(
+                "UPDATE auth_accounts SET linked_user_id = ? WHERE id = ?",
+                (user_ids[1], student_account_id),
+            )
+
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO auth_accounts "
@@ -332,27 +347,58 @@ def test_auth_schema_constraints_indexes_and_soft_revoke(tmp_path):
             "INSERT INTO auth_sessions "
             "(public_id, account_id, audience, refresh_secret_hash, "
             "credential_version, created_at, updated_at, last_seen_at, expires_at) "
-            "VALUES ('session-student', ?, 'student', ?, 1, ?, ?, ?, ?) "
+            "VALUES (?, ?, 'student', ?, 1, ?, ?, ?, ?) "
             "RETURNING id",
-            (student_account_id, "a" * 64, NOW, NOW, NOW, LATER),
+            (
+                SESSION_PUBLIC_ID,
+                student_account_id,
+                "a" * 64,
+                NOW,
+                NOW,
+                NOW,
+                LATER,
+            ),
         ).fetchone()[0]
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO auth_sessions "
                 "(public_id, account_id, audience, refresh_secret_hash, "
                 "credential_version, created_at, updated_at, last_seen_at, "
-                "expires_at) VALUES ('session-duplicate', ?, 'student', ?, 1, "
-                "?, ?, ?, ?)",
-                (student_account_id, "a" * 64, NOW, NOW, NOW, LATER),
+                "expires_at) VALUES (?, ?, 'student', ?, 1, ?, ?, ?, ?)",
+                (
+                    SECOND_SESSION_PUBLIC_ID,
+                    student_account_id,
+                    "a" * 64,
+                    NOW,
+                    NOW,
+                    NOW,
+                    LATER,
+                ),
             )
         with pytest.raises(sqlite3.IntegrityError):
             connection.execute(
                 "INSERT INTO auth_sessions "
                 "(public_id, account_id, audience, refresh_secret_hash, "
                 "credential_version, created_at, updated_at, last_seen_at, "
-                "expires_at) VALUES ('session-wrong-audience', ?, 'staff', ?, 1, "
+                "expires_at) VALUES (?, ?, 'staff', ?, 1, ?, ?, ?, ?)",
+                (
+                    THIRD_SESSION_PUBLIC_ID,
+                    student_account_id,
+                    "b" * 64,
+                    NOW,
+                    NOW,
+                    NOW,
+                    LATER,
+                ),
+            )
+        with pytest.raises(sqlite3.IntegrityError):
+            connection.execute(
+                "INSERT INTO auth_sessions "
+                "(public_id, account_id, audience, refresh_secret_hash, "
+                "credential_version, created_at, updated_at, last_seen_at, "
+                "expires_at) VALUES ('not-canonical', ?, 'student', ?, 1, "
                 "?, ?, ?, ?)",
-                (student_account_id, "b" * 64, NOW, NOW, NOW, LATER),
+                (student_account_id, "f" * 64, NOW, NOW, NOW, LATER),
             )
 
         connection.execute(

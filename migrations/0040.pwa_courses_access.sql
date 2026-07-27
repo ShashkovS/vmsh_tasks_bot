@@ -6,7 +6,12 @@ create table courses
 (
     id           integer primary key,
     public_id    text    not null unique
-        check (length(trim(public_id)) > 0),
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
     season_id    integer not null references seasons (id),
     code         text    not null
         check (length(trim(code)) > 0),
@@ -33,7 +38,16 @@ create index courses_season_status_order_idx
 
 -- Transitional group ownership for Phase 1. Existing rows keep course_id NULL
 -- until the controlled backfill; Phase 11 closes the remaining nullability.
-alter table groups add column public_id text;
+alter table groups add column public_id text
+    check (
+        public_id is null
+        or (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        )
+    );
 alter table groups add column course_id integer references courses (id);
 alter table groups add column status text not null default 'active'
     check (status in ('draft', 'active', 'archived'));
@@ -70,7 +84,12 @@ create table course_enrollments
 (
     id                 integer primary key,
     public_id          text    not null unique
-        check (length(trim(public_id)) > 0),
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
     student_user_id    integer not null references users (id),
     course_id          integer not null references courses (id),
     active_group_id    text    not null,
@@ -137,7 +156,12 @@ create table course_enrollment_events
 (
     id                       integer primary key,
     public_id                text    not null unique
-        check (length(trim(public_id)) > 0),
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
     enrollment_id            integer not null,
     course_id                integer not null references courses (id),
     event_type               text    not null

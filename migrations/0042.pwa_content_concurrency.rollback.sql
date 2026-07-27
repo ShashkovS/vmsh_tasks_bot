@@ -1,0 +1,12 @@
+drop trigger lesson_publications_terminal_audit_guard;
+drop trigger lesson_publications_terminal_insert_guard;
+alter table lesson_publications drop column terminal_at;
+alter table lesson_publications drop column terminal_by_user_id;
+alter table content_revisions drop column compile_completed_at;
+alter table content_revisions drop column compile_attempt_count;
+alter table content_revisions drop column compile_lease_expires_at;
+alter table content_revisions drop column compile_claimed_at;
+alter table content_revisions drop column compile_claim_token;
+drop trigger content_sources_delete_forbidden;
+drop trigger content_sources_identity_archive_guard;
+drop index content_sources_one_active_material_uq;
