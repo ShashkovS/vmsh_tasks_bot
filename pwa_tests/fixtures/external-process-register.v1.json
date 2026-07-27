@@ -58,6 +58,17 @@
       ]
     },
     {
+      "id": "telegram-ui-scheduled-queue",
+      "title": "Очередь запланированных публикаций Telegram UI",
+      "credentialClass": "Личные аккаунты редакторов каналов; значения и Telegram IDs не фиксируются",
+      "dataClasses": [
+        "неопубликованные тексты и media",
+        "destination",
+        "плановое время",
+        "ручные изменения и отмены"
+      ]
+    },
+    {
       "id": "google-sheets",
       "title": "Google Sheets legacy",
       "credentialClass": "Service account или пользовательский доступ legacy; новый PWA-контур не загружает",
@@ -697,7 +708,8 @@
         "a00-update-db",
         "a52-teacher-stats",
         "a53-rating",
-        "a54-report"
+        "a54-report",
+        "legacy-z-consts"
       ],
       "target": {
         "phase": "phase-11",
@@ -748,7 +760,8 @@
       "artifactIds": [
         "a52-teacher-stats",
         "a53-rating",
-        "a54-report"
+        "a54-report",
+        "legacy-z-consts"
       ],
       "target": {
         "phase": "phase-9",
@@ -794,7 +807,9 @@
         "_external_pipelines/a01_school_to_conduit.py"
       ],
       "artifactIds": [
-        "a01-school-conduit"
+        "a01-school-conduit",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "phase-7/phase-9/phase-10",
@@ -868,11 +883,11 @@
         "текст приглашения"
       ],
       "outputs": [
-        "Напечатанные скриптом команды `/broadcast_html` по аудиториям",
-        "личные Telegram-сообщения после ручного выполнения команд"
+        "Одна напечатанная `/broadcast_html` batch-команда на аудиторию со списком recipient `IDd` tokens",
+        "отдельное личное Telegram-сообщение каждому listed recipient после ручного выполнения batch-команды"
       ],
       "sideEffects": [
-        "Telegram bot отправляет персональные назначения"
+        "Telegram bot раскрывает batch по recipient tokens и отправляет каждому персональное назначение в личный диалог"
       ],
       "externalSystems": [
         "local-spreadsheets",
@@ -883,21 +898,23 @@
         "Доступ к кондуиту"
       ],
       "rerunPolicy": "Скрипт можно повторно сгенерировать после сохранения workbook; повторная отправка выполняется только новым явным действием администратора",
-      "failureDetection": "Ручная сверка напечатанных recipient tokens/текста перед отправкой и ответ существующей bot-команды",
-      "recovery": "Исправить workbook, заново сгенерировать команды и вручную отправить correction только согласованным адресатам",
+      "failureDetection": "Ручная сверка одной batch-команды на аудиторию, её recipient tokens/текста перед отправкой и ответ существующей bot-команды",
+      "recovery": "Исправить workbook, заново сгенерировать batch-команды и вручную отправить correction только согласованным адресатам",
       "sourcePaths": [
         "_external_pipelines/a02_welcome_aud.py",
         "vmshpwa/dev/development-plan/11-phase-7-oral-and-classrooms.md"
       ],
       "artifactIds": [
-        "a02-welcome-aud"
+        "a02-welcome-aud",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "phase-7",
         "decision": "Staff action «Разослать аудитории» с выбором PWA/личный Telegram",
         "cutoverGate": "Immutable recipient snapshot, preview, retries и отсутствие auto-resend"
       },
-      "invocation": "Из рабочей Dropbox-папки запустить `python a02_welcome_aud.py`, просмотреть напечатанные `/broadcast_html` команды и вручную выполнить их в боте.",
+      "invocation": "Из рабочей Dropbox-папки запустить `python a02_welcome_aud.py`, просмотреть по одной напечатанной `/broadcast_html` batch-команде на аудиторию и вручную выполнить эти несколько команд в боте; бот отправляет отдельный personal-dialog message каждому перечисленному `IDd` token.",
       "upstreamProcessIds": [
         "classroom-plan-excel"
       ],
@@ -939,7 +956,11 @@
         "_external_pipelines/a11_spis_from_xls.py"
       ],
       "artifactIds": [
-        "a11-classroom-lists"
+        "a11-classroom-lists",
+        "legacy-z-consts",
+        "legacy-z-helpers",
+        "template-mega-floor-lists",
+        "template-per-aud-lists"
       ],
       "target": {
         "phase": "post-v1-print",
@@ -986,7 +1007,9 @@
       ],
       "artifactIds": [
         "a03-task-template",
-        "legacy-workbook"
+        "legacy-workbook",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "phase-2/phase-10",
@@ -1037,6 +1060,7 @@
       "recovery": "Вернуть значения через историю Google Sheet либо исправить строки и повторить import; уже затронутые результаты разбирать отдельно",
       "sourcePaths": [
         "_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx",
+        "handlers/student_handlers.py",
         "vmshpwa/dev/development-plan/08-phase-4-test-submissions.md"
       ],
       "artifactIds": [
@@ -1045,7 +1069,7 @@
       "target": {
         "phase": "phase-2/phase-4/phase-10",
         "decision": "Staff metadata grid, versioned trusted checker и publication gate",
-        "cutoverGate": "Все historical ANS_TYPE, TSV paste, validation/error fixtures и rollback"
+        "cutoverGate": "Все historical ANS_TYPE, TSV paste, synthetic characterization `is_py_func`/restricted globals/call-result/cache ошибок и rollback"
       },
       "invocation": "Вручную заполнить строки листа «Задачи», затем запустить существующую Telegram admin-команду импорта задач; точное имя команды отсутствует в snapshot.",
       "upstreamProcessIds": [
@@ -1085,7 +1109,9 @@
         "_external_pipelines/a12_dum_tex_files.py"
       ],
       "artifactIds": [
-        "a12-print-derivatives"
+        "a12-print-derivatives",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "phase-2/post-v1-print",
@@ -1132,7 +1158,10 @@
         "_external_pipelines/a13_print_per_aud_conds_tex.py"
       ],
       "artifactIds": [
-        "a13-previous-results"
+        "a13-previous-results",
+        "legacy-z-consts",
+        "legacy-z-helpers",
+        "template-prev-conduit"
       ],
       "target": {
         "phase": "post-v1-print",
@@ -1181,7 +1210,10 @@
         "_external_pipelines/a14_zall_auds_pdf.py"
       ],
       "artifactIds": [
-        "a14-print-pack"
+        "a14-print-pack",
+        "legacy-z-consts",
+        "legacy-z-helpers",
+        "legacy-z-cpdf"
       ],
       "target": {
         "phase": "post-v1-print",
@@ -1233,7 +1265,9 @@
         "_vmsh_examples"
       ],
       "artifactIds": [
-        "a16-html"
+        "a16-html",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "phase-2",
@@ -1323,7 +1357,9 @@
         "_external_pipelines/a17_upload_to_website.py"
       ],
       "artifactIds": [
-        "a17-site-upload"
+        "a17-site-upload",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "post-v1-old-site",
@@ -1346,7 +1382,8 @@
       "inputs": [
         "Пост с условиями",
         "ссылки на опубликованные листки",
-        "актуальный lesson state"
+        "актуальный lesson state",
+        "privacy-safe inventory ожидающих публикации записей Telegram UI для destination/time window"
       ],
       "outputs": [
         "Channel post",
@@ -1355,10 +1392,12 @@
         "автоматически открывшийся сайт"
       ],
       "sideEffects": [
-        "Несколько независимых публикаций и глобальная смена состояния бота"
+        "Несколько независимых публикаций и глобальная смена состояния бота",
+        "Telegram UI может хранить отдельную изменяемую pending-запись до фактической публикации"
       ],
       "externalSystems": [
         "telegram-spaces",
+        "telegram-ui-scheduled-queue",
         "telegram-bot",
         "legacy-site",
         "production-sqlite"
@@ -1367,9 +1406,9 @@
         "Channel editor",
         "Администратор бота"
       ],
-      "rerunPolicy": "Каждый текущий channel/bot/site effect повторяется отдельным явным ручным действием; массовую рассылку не повторяют автоматически",
-      "failureDetection": "Проверка поста, delivery report, состояния intake и публичной страницы",
-      "recovery": "Откатить конкретную публикацию/состояние независимо; не связывать deadline с solution schedule",
+      "rerunPolicy": "Каждый текущий channel/bot/site effect повторяется отдельным явным ручным действием; массовую рассылку не повторяют автоматически; перед передачей destination Staff scheduler pending Telegram UI entries получают explicit retain/cancel/recreate decision",
+      "failureDetection": "Проверка поста, delivery report, состояния intake и публичной страницы; cutover дополнительно сверяет pending Telegram UI inventory с Staff schedules",
+      "recovery": "Откатить конкретную публикацию/состояние независимо; не связывать deadline с solution schedule; при cutover оставить ровно одного владельца каждой ожидаемой доставки",
       "sourcePaths": [
         "docs/weekly_livecycle/02_monday.md",
         "vmshpwa/dev/development-plan/06-phase-2-content.md"
@@ -1380,7 +1419,7 @@
       "target": {
         "phase": "phase-2/phase-8",
         "decision": "Независимые group_lesson condition/hint/solution schedules и Telegram targets",
-        "cutoverGate": "Per-group preview, schedule, publish/rollback и delivery audit"
+        "cutoverGate": "Per-group preview, schedule, publish/rollback, delivery audit и reconcile Telegram UI pending queue без пропусков/дублей"
       },
       "invocation": "Отдельно вручную опубликовать пост в Telegram-канале, выполнить bot-команду рассылки ссылок и bot-команду открытия приёма; сайт открывается своим legacy schedule.",
       "upstreamProcessIds": [
@@ -1659,7 +1698,9 @@
         "_external_pipelines/a18_conduit_recognition.py"
       ],
       "artifactIds": [
-        "a18-conduit-ocr"
+        "a18-conduit-ocr",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "post-v1-results-import",
@@ -1705,7 +1746,9 @@
         "_external_pipelines/a19_from_excel_into_bot_via_api.py"
       ],
       "artifactIds": [
-        "a19-results-import"
+        "a19-results-import",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "post-v1-results-import",
@@ -1809,7 +1852,8 @@
       "schedule": "Исторически в субботу",
       "inputs": [
         "Подсказки, добавленные в solution TeX",
-        "текущий lesson/group"
+        "текущий lesson/group",
+        "privacy-safe inventory ожидающих публикации записей Telegram UI для destination/time window"
       ],
       "outputs": [
         "Извлечённый текст подсказок",
@@ -1817,12 +1861,14 @@
         "личное напоминание"
       ],
       "sideEffects": [
-        "Правка TeX, генерация текста, Telegram публикация/рассылка"
+        "Правка TeX, генерация текста, Telegram публикация/рассылка",
+        "Telegram UI может хранить отдельную изменяемую pending-запись до фактической публикации"
       ],
       "externalSystems": [
         "dropbox",
         "local-toolchain",
         "telegram-spaces",
+        "telegram-ui-scheduled-queue",
         "telegram-bot"
       ],
       "credentialClasses": [
@@ -1830,20 +1876,22 @@
         "Channel editor",
         "Администратор бота"
       ],
-      "rerunPolicy": "Извлечение повторяется после сохранения TeX; Telegram-пост и личный reminder повторяются только отдельными ручными действиями",
-      "failureDetection": "Ручная сверка извлечённого текста, опубликованного поста и ответа bot-команды",
-      "recovery": "Исправить TeX/скрипт, заново извлечь текст и вручную исправить либо заменить соответствующий пост/рассылку",
+      "rerunPolicy": "Извлечение повторяется после сохранения TeX; Telegram-пост и личный reminder повторяются только отдельными ручными действиями; перед Staff cutover pending UI entry получает explicit retain/cancel/recreate decision",
+      "failureDetection": "Ручная сверка извлечённого текста, опубликованного поста и ответа bot-команды; cutover дополнительно сверяет pending Telegram UI inventory",
+      "recovery": "Исправить TeX/скрипт, заново извлечь текст и вручную исправить либо заменить соответствующий пост/рассылку; при cutover оставить ровно одного владельца ожидаемой доставки",
       "sourcePaths": [
         "_external_pipelines/a20_подсказки.py",
         "docs/weekly_livecycle/04_thursday_to_sunday.md"
       ],
       "artifactIds": [
-        "a20-hints"
+        "a20-hints",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "phase-2/phase-8",
         "decision": "Independent group_lesson hint revision/schedule",
-        "cutoverGate": "Per-group preview, schedule, publish and rollback"
+        "cutoverGate": "Per-group preview, schedule, publish/rollback и reconcile Telegram UI pending queue без пропусков/дублей"
       },
       "invocation": "Из рабочей Dropbox-папки запустить `python a20_подсказки.py`, затем вручную опубликовать результат и выполнить bot-рассылку.",
       "upstreamProcessIds": [
@@ -1861,18 +1909,21 @@
       "inputs": [
         "Deadline action",
         "solution revision",
-        "Telegram post"
+        "Telegram post",
+        "privacy-safe inventory ожидающих публикации записей Telegram UI для destination/time window"
       ],
       "outputs": [
         "Закрытый intake",
         "опубликованные решения"
       ],
       "sideEffects": [
-        "Изменение lesson state и channel posts"
+        "Изменение lesson state и channel posts",
+        "Telegram UI может хранить отдельную изменяемую pending-запись решения до фактической публикации"
       ],
       "externalSystems": [
         "telegram-bot",
         "telegram-spaces",
+        "telegram-ui-scheduled-queue",
         "legacy-site",
         "production-sqlite"
       ],
@@ -1880,9 +1931,9 @@
         "Администратор бота",
         "Channel editor"
       ],
-      "rerunPolicy": "Deadline и решение — два независимых explicit actions; перенос решения не меняет deadline",
-      "failureDetection": "Проверка server state, доступности решения и аудитории публикации",
-      "recovery": "Откатить/перепланировать только затронутый объект; изменение deadline требует отдельного подтверждения",
+      "rerunPolicy": "Deadline и решение — два независимых explicit actions; перенос решения не меняет deadline; перед Staff cutover pending UI entry получает explicit retain/cancel/recreate decision",
+      "failureDetection": "Проверка server state, доступности решения и аудитории публикации; cutover дополнительно сверяет pending Telegram UI inventory",
+      "recovery": "Откатить/перепланировать только затронутый объект; изменение deadline требует отдельного подтверждения; при cutover оставить ровно одного владельца публикации решения",
       "sourcePaths": [
         "docs/weekly_livecycle/04_thursday_to_sunday.md",
         "vmshpwa/dev/development-plan/06-phase-2-content.md"
@@ -1893,7 +1944,7 @@
       "target": {
         "phase": "phase-2",
         "decision": "Независимые materialized windows и publication records per group",
-        "cutoverGate": "Schedule/rollback E2E proves no implicit deadline movement"
+        "cutoverGate": "Schedule/rollback E2E proves no implicit deadline movement; Telegram UI pending queue reconciled без пропусков/дублей"
       },
       "invocation": "Отдельными ручными bot/Telegram-действиями закрыть приём и опубликовать решения в назначенные моменты.",
       "upstreamProcessIds": [
@@ -1944,7 +1995,8 @@
         "a21-personal-plots",
         "a22-mails",
         "legacy-mailing-core",
-        "legacy-mailing-editor"
+        "legacy-mailing-editor",
+        "legacy-z-consts"
       ],
       "target": {
         "phase": "post-v1-email",
@@ -1990,7 +2042,9 @@
         "_external_pipelines/a23_mark_compl_in_html.py"
       ],
       "artifactIds": [
-        "a23-site-stats"
+        "a23-site-stats",
+        "legacy-z-consts",
+        "legacy-z-helpers"
       ],
       "target": {
         "phase": "phase-9/post-v1-old-site",
@@ -2040,7 +2094,8 @@
       ],
       "artifactIds": [
         "a21-group-plots",
-        "a54-report"
+        "a54-report",
+        "legacy-z-consts"
       ],
       "target": {
         "phase": "phase-9/phase-8",
@@ -2110,14 +2165,13 @@
       "title": "Резервное копирование production SQLite",
       "classification": "active_automated",
       "owner": "Технические администраторы",
-      "trigger": "Серверный schedule и deploy hooks",
-      "schedule": "Несколько раз в день; отдельный pre/post deploy backup",
+      "trigger": "Внешний cron на production host",
+      "schedule": "Несколько раз в день по подтверждённому описанию владельца; точное расписание не представлено",
       "inputs": [
-        "Production SQLite и связанные runtime data"
+        "Production SQLite"
       ],
       "outputs": [
-        "Копии на сервере другого провайдера",
-        "backup status"
+        "Копии на сервере другого провайдера"
       ],
       "sideEffects": [
         "Создание/retention удалённых backup artifacts"
@@ -2129,19 +2183,19 @@
       "credentialClasses": [
         "Service/SSH access к двум провайдерам"
       ],
-      "rerunPolicy": "Повтор создаёт новый identifiable backup; retention не удаляет единственную проверенную копию",
-      "failureDetection": "Job status, размер/hash и периодический restore rehearsal",
-      "recovery": "Остановить writes по runbook, восстановить проверенный backup и replay допустимых событий",
+      "rerunPolicy": "Точная механика повторного cron-run и количественная retention policy не документированы; владелец подтвердил длительное хранение копий",
+      "failureDetection": "Owner-confirmed evidence ограничено наличием долго хранимых копий и успешным запуском Telegram-модуля новых сообщений из копий; мониторинг cron/hash не представлен",
+      "recovery": "Полный recovery runbook и согласованное восстановление SQLite/WAL/SHM, media и outbox пока не доказаны; запускался только Telegram-модуль обработки новых сообщений",
       "sourcePaths": [
         "vmshpwa/dev/development-plan/15-phase-11-hardening-and-rollout.md"
       ],
       "artifactIds": [],
       "target": {
         "phase": "phase-11",
-        "decision": "Сохранить backup как operations-owned process и документировать restore",
-        "cutoverGate": "Production-size anonymized restore rehearsal with measured RPO/RTO"
+        "decision": "Сохранить внешний cron как operations-owned baseline; отдельно добавить documented full-stack restore runbook и pre/post-deploy backup policy",
+        "cutoverGate": "Coordinated SQLite/WAL/SHM, media and outbox restore; measured RPO/RTO; periodic full restore rehearsal"
       },
-      "invocation": "Запускается внешним server schedule и pre/post-deploy hooks; точная команда и unit отсутствуют в репозитории.",
+      "invocation": "Текущий процесс запускается внешним cron; точная команда и unit отсутствуют в репозитории. Pre/post-deploy backup и периодический full restore rehearsal являются целевым Phase-11 gate, а не подтверждённым текущим процессом.",
       "upstreamProcessIds": [],
       "transitionState": "legacy_bridge"
     },
@@ -3051,6 +3105,94 @@
       "targetPhase": "phase-9"
     },
     {
+      "id": "legacy-z-consts",
+      "path": "_external_pipelines/z_CONSTS.py",
+      "kind": "python_support_module",
+      "classification": "active_external",
+      "processIds": [
+        "production-db-mirror",
+        "analytics-refresh",
+        "classroom-conduit-sync",
+        "classroom-delivery",
+        "classroom-print-lists",
+        "task-template-generation",
+        "print-content-derivatives",
+        "previous-results-print",
+        "print-pack-assembly",
+        "web-content-render",
+        "legacy-site-publish",
+        "conduit-recognition",
+        "school-results-import",
+        "hints-publish",
+        "post-review-mailing",
+        "legacy-site-statistics",
+        "statistics-publications"
+      ],
+      "targetPhase": "phase-2/phase-7/phase-9/phase-10/phase-11/post-v1"
+    },
+    {
+      "id": "legacy-z-helpers",
+      "path": "_external_pipelines/z_helpers.py",
+      "kind": "python_support_module",
+      "classification": "active_external",
+      "processIds": [
+        "classroom-conduit-sync",
+        "classroom-delivery",
+        "classroom-print-lists",
+        "task-template-generation",
+        "print-content-derivatives",
+        "previous-results-print",
+        "print-pack-assembly",
+        "web-content-render",
+        "legacy-site-publish",
+        "conduit-recognition",
+        "school-results-import",
+        "hints-publish",
+        "legacy-site-statistics"
+      ],
+      "targetPhase": "phase-2/phase-7/phase-9/phase-10/post-v1"
+    },
+    {
+      "id": "legacy-z-cpdf",
+      "path": "_external_pipelines/z_cpdf.py",
+      "kind": "python_support_module",
+      "classification": "active_external",
+      "processIds": [
+        "print-pack-assembly"
+      ],
+      "targetPhase": "post-v1-print"
+    },
+    {
+      "id": "template-mega-floor-lists",
+      "path": "_external_pipelines/mega_floor_lists.tex",
+      "kind": "latex_template",
+      "classification": "active_external",
+      "processIds": [
+        "classroom-print-lists"
+      ],
+      "targetPhase": "post-v1-print"
+    },
+    {
+      "id": "template-per-aud-lists",
+      "path": "_external_pipelines/per_aud_lists.tex",
+      "kind": "latex_template",
+      "classification": "active_external",
+      "processIds": [
+        "classroom-print-lists"
+      ],
+      "targetPhase": "post-v1-print"
+    },
+    {
+      "id": "template-prev-conduit",
+      "path": "_external_pipelines/prev_conduit_template.tex",
+      "kind": "latex_template",
+      "classification": "active_external",
+      "processIds": [
+        "previous-results-print"
+      ],
+      "targetPhase": "post-v1-print"
+    },
+    {
       "id": "ref-edt-parser",
       "path": "_external_pipelines/edt_tasks_parser.py",
       "kind": "python_reference",
@@ -3208,20 +3350,20 @@
   "knownGaps": [
     {
       "id": "external-helper-snapshot",
-      "description": "Снимок `_external_pipelines` не содержит импортируемые `z_CONSTS`, `z_helpers`, `z_cpdf`, `plus_reader.plus_reader`, tex_templates, canonical Dropbox roots, runtime workbook из `XLS_CONDUIT_NAME`, credentials workbook почтового pipeline и внешний mail sender; active scripts нельзя считать воспроизводимыми из репозитория.",
+      "description": "Снимок `_external_pipelines` содержит reference-копии `z_CONSTS`, `z_helpers`, `z_cpdf` и трёх используемых LaTeX templates, но не содержит `plus_reader.plus_reader`, полного рабочего дерева tex_templates, canonical Dropbox roots, runtime workbook из `XLS_CONDUIT_NAME`, credentials workbook почтового pipeline и внешний mail sender; active scripts нельзя считать полностью воспроизводимыми из репозитория.",
       "impact": "Phase-specific characterization должна работать на явно подготовленных fixtures, не притворяться полным operational replay.",
       "questionRef": "20-implementation-questions.md#где-находятся-отсутствующие-зависимости"
     },
     {
       "id": "sanitized-characterization-bundle-missing",
-      "description": "Обезличенный комплект внешних helpers, templates, workbook fixtures, включая замену PII/password/email из registration workbook, и sender substitutes пока не передан.",
-      "impact": "Phase-specific parity может характеризовать код и предоставленные corpus-файлы, но полный historical replay остаётся недоказанным.",
+      "description": "Готовый committed обезличенный комплект внешних workbook/sender inputs намеренно не хранится. Для characterization разрешена только временная копия `db/vmsh.db` с заменой всех имён и фамилий через Faker; производные fixtures должны быть минимальными и синтетическими.",
+      "impact": "Phase-specific parity может характеризовать код, предоставленные corpus-файлы и безопасно подготовленную временную DB-копию, но полный historical replay внешнего Dropbox/mail runtime остаётся недоказанным.",
       "questionRef": "20-implementation-questions.md#можно-ли-подготовить-обезличенный-комплект"
     },
     {
       "id": "historical-filename-drift",
-      "description": "Рассказ оператора упоминает исторические имена a15/a21/a22, а предоставленный snapshot содержит соответствующие функции под a13/a22/a23; назначение подтверждено по коду, но canonical live filenames ещё нужно сверить.",
-      "impact": "Runbook использует функции и фактические пути snapshot, а не полагается только на номер префикса.",
+      "description": "Рассказ оператора упоминает исторические имена a15/a21/a22; владелец подтвердил, что актуальные после переименований пути snapshot — `a13_print_per_aud_conds_tex.py`, `a22_create_mails.py` и `a23_mark_compl_in_html.py`.",
+      "impact": "Runbook использует подтверждённые актуальные пути snapshot; старые имена сохраняются только как исторические labels.",
       "questionRef": "20-implementation-questions.md#какие-скрипты-используются-сейчас"
     },
     {
@@ -3232,8 +3374,8 @@
     },
     {
       "id": "backup-implementation-private",
-      "description": "Известны частота и межпровайдерная копия, но команда, retention и последний проверенный restore не представлены в репозитории.",
-      "impact": "Phase 11 не может закрыть recovery gate без отдельного безопасного runbook/rehearsal.",
+      "description": "Owner-confirmed current evidence: внешний cron несколько раз в день передаёт SQLite backup на другой физический сервер, копии хранятся долго, и Telegram-модуль новых сообщений запускался из них. Точная команда, количественная retention policy и full-stack restore proof отсутствуют.",
+      "impact": "Target Phase 11 отдельно требует documented runbook, coordinated SQLite/WAL/SHM + media/outbox restore, measured RPO/RTO и periodic full rehearsal; ни один из этих target-gates не выдан за текущий процесс.",
       "questionRef": "20-implementation-questions.md#как-сейчас-устроены-резервные-копии"
     }
   ],
@@ -3245,13 +3387,12 @@
   "knownExternalDependencies": [
     {
       "id": "legacy-python-support-modules",
-      "locator": "z_CONSTS.py, z_helpers.py и z_cpdf.py в рабочей Dropbox-папке",
-      "status": "absent_from_snapshot",
+      "locator": "Reference-копии _external_pipelines/z_CONSTS.py, _external_pipelines/z_helpers.py и _external_pipelines/z_cpdf.py; operational credentials, binary paths и Dropbox roots остаются внешними",
+      "status": "reference_copies_present_runtime_dependencies_external",
       "requiredByProcessIds": [
-        "lesson-calendar-config",
         "production-db-mirror",
+        "analytics-refresh",
         "classroom-conduit-sync",
-        "classroom-plan-excel",
         "classroom-delivery",
         "classroom-print-lists",
         "task-template-generation",
@@ -3264,9 +3405,13 @@
         "school-results-import",
         "hints-publish",
         "post-review-mailing",
-        "legacy-site-statistics"
+        "legacy-site-statistics",
+        "statistics-publications"
       ],
       "evidencePaths": [
+        "_external_pipelines/z_CONSTS.py",
+        "_external_pipelines/z_helpers.py",
+        "_external_pipelines/z_cpdf.py",
         "_external_pipelines/a00_update_db.py",
         "_external_pipelines/a01_school_to_conduit.py",
         "_external_pipelines/a14_zall_auds_pdf.py"
@@ -3307,8 +3452,8 @@
     },
     {
       "id": "tex-template-tree",
-      "locator": "рабочая папка tex_templates и связанные Dropbox templates",
-      "status": "absent_from_snapshot",
+      "locator": "Reference-копии mega_floor_lists.tex, per_aud_lists.tex и prev_conduit_template.tex присутствуют в _external_pipelines; полный рабочий tex_templates tree и связанные Dropbox templates остаются внешними",
+      "status": "partial_reference_templates_present",
       "requiredByProcessIds": [
         "content-authoring",
         "print-content-derivatives",
@@ -3319,7 +3464,11 @@
       ],
       "evidencePaths": [
         "_external_pipelines/a11_spis_from_xls.py",
-        "_external_pipelines/a12_dum_tex_files.py"
+        "_external_pipelines/a12_dum_tex_files.py",
+        "_external_pipelines/a13_print_per_aud_conds_tex.py",
+        "_external_pipelines/mega_floor_lists.tex",
+        "_external_pipelines/per_aud_lists.tex",
+        "_external_pipelines/prev_conduit_template.tex"
       ],
       "questionRef": "20-implementation-questions.md#где-находятся-отсутствующие-зависимости"
     },

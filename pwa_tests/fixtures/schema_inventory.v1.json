@@ -97,6 +97,10 @@
       {
         "id": "0042.pwa_content_concurrency",
         "sha256": "34810f496f2afaa325c7fd01e177dc26f607c6806169fc8a8eeed237c34666f3"
+      },
+      {
+        "id": "0043.pwa_lesson_window_audit",
+        "sha256": "7941b9933077a8fda2be354c3e5ae27bc579b012f09a056bb383c4e5957d0d60"
       }
     ],
     "repository_head_status": {
@@ -107,7 +111,7 @@
     }
   },
   "product": {
-    "object_count": 188,
+    "object_count": 192,
     "objects": [
       {
         "columns": [
@@ -7126,6 +7130,180 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "lesson_window_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "change_kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "before_json",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "after_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "lesson_window_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "lesson_windows"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson_window_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "lesson_window_changes_timeline_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_lesson_window_changes_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "lesson_window_changes",
+        "object_sha256": "43bb8b69068f32efaccdafd3e5466e51068950e8ab08f1d52a35450111be95f7",
+        "sql": "CREATE TABLE lesson_window_changes\n(\n    id                integer primary key,\n    public_id         text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    lesson_window_id  integer not null references lesson_windows (id),\n    change_kind       text    not null\n        check (change_kind in (\n            'created', 'schedule_changed', 'submission_cutoff_changed'\n        )),\n    before_json       text\n        check (before_json is null or json_valid(before_json) = 1),\n    after_json        text    not null check (json_valid(after_json) = 1),\n    actor_user_id     integer not null references users (id),\n    request_id        text    not null check (length(trim(request_id)) > 0),\n    created_at        text    not null,\n    check (\n        (change_kind = 'created' and before_json is null)\n        or (change_kind <> 'created' and before_json is not null)\n    )\n);",
+        "table_name": "lesson_window_changes",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "lesson_window_id",
             "not_null": true,
             "primary_key_ordinal": 1
@@ -12856,6 +13034,13 @@
         "type": "index"
       },
       {
+        "name": "lesson_window_changes_timeline_idx",
+        "object_sha256": "e440b7791e301b404281b7b95861c942e9c1dcb0a32537286d8bb8de2e045e71",
+        "sql": "CREATE INDEX lesson_window_changes_timeline_idx\n    on lesson_window_changes (lesson_window_id, id);",
+        "table_name": "lesson_window_changes",
+        "type": "index"
+      },
+      {
         "name": "lesson_window_schedule_sources_rule_idx",
         "object_sha256": "ff7a3e79c29591f4f1008fe84aff7005adce301fe124adb982fd549145fb8754",
         "sql": "CREATE INDEX lesson_window_schedule_sources_rule_idx\n    on lesson_window_schedule_sources (course_schedule_rule_id, lesson_window_id);",
@@ -13304,6 +13489,20 @@
         "type": "trigger"
       },
       {
+        "name": "lesson_window_changes_delete_forbidden",
+        "object_sha256": "d0c55cf6c681533a27e5095ec67fe50a08e2cfe6ff11752c58fbfb83f3d6ba96",
+        "sql": "CREATE TRIGGER lesson_window_changes_delete_forbidden\nbefore delete on lesson_window_changes\nfor each row\nbegin\n    select raise(abort, 'lesson window audit deletion is forbidden');\nend;",
+        "table_name": "lesson_window_changes",
+        "type": "trigger"
+      },
+      {
+        "name": "lesson_window_changes_immutable_update",
+        "object_sha256": "5d7a1b1a21b01f96dcf20a0b5027fe5a09092db95c0cce3855e9741cc0256317",
+        "sql": "CREATE TRIGGER lesson_window_changes_immutable_update\nbefore update on lesson_window_changes\nfor each row\nbegin\n    select raise(abort, 'lesson window audit is immutable');\nend;",
+        "table_name": "lesson_window_changes",
+        "type": "trigger"
+      },
+      {
         "name": "lesson_window_schedule_sources_delete_forbidden",
         "object_sha256": "5d69ed2a8b27d24e9a0b4e09672eb95b4102a8f30859e1fbe2046d0c1a579259",
         "sql": "CREATE TRIGGER lesson_window_schedule_sources_delete_forbidden\nbefore delete on lesson_window_schedule_sources\nfor each row\nbegin\n    select raise(abort, 'lesson window schedule source deletion is forbidden');\nend;",
@@ -13395,8 +13594,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "70698cb5931c0adff6d34f49c1e34c50c4ddd82fdf8063b322ca103da31cc32d",
-    "sha256": "2e9213ffa9e3c77306a1cc85dd161ae2c7ff196bf69b88eb55aff60c74a645e8"
+    "pragma_structure_sha256": "eb4b4753c84e26e7752d7a5d21a2a03b3c67afea4a9570c6686e9663f7689172",
+    "sha256": "0a7593ea6bb6bfa5785d2a8a799de69d3646fa6be05aff1d4609973b7a714388"
   },
   "source_kind": "repository-migration-head"
 }

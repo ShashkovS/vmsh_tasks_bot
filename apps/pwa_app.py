@@ -8,6 +8,35 @@ from datetime import UTC, datetime
 
 from aiohttp import WSCloseCode, WSMsgType, web
 
+from apps.pwa_api.auth_routes import auth_routes
+from apps.pwa_api.auth_service import PwaAuthService
+from apps.pwa_api.content_routes import (
+    PWA_CONTENT_INVALIDATOR,
+    PWA_CONTENT_REPOSITORY,
+    content_routes,
+)
+from apps.pwa_api.errors import PwaApiError
+from apps.pwa_api.middleware import (
+    PWA_AUTH_STATE,
+    PwaAuthState,
+    authenticate_access_cookie,
+    pwa_auth_request_security_middleware,
+    pwa_authentication_middleware,
+    validate_request_boundary,
+)
+from apps.pwa_api.realtime_control import (
+    NATS_PWA_SESSION_CONTROL,
+    PWA_REALTIME_SESSION_CONTROLLER,
+    RealtimeSessionController,
+)
+from apps.pwa_api.websocket_sessions import (
+    SessionRevalidationStatus,
+    WebSocketSessionAlreadyClosedError,
+    WebSocketSessionIdentity,
+    WebSocketSessionRegistry,
+)
+from db_methods.pwa.auth import PwaAuthRepository
+from db_methods.pwa.content import GroupLessonContentScope, PwaContentRepository
 from helpers.config import logger
 from helpers.nats_brocker import InProcessBroker, JsonBroker, NatsBroker
 from helpers.pwa.api_contracts import (
@@ -16,7 +45,10 @@ from helpers.pwa.api_contracts import (
     build_runtime_payload,
     validate_runtime_instance,
 )
-from helpers.pwa.app_keys import RUNTIME_CONFIG
+from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG
+from helpers.pwa.auth_config import AuthRuntimeConfig, load_auth_runtime_config
+from models.pwa.auth import AuthAudience
+from models.pwa.content import ContentKind
 
 __all__ = ["PwaApiError", "pwa_routes"]
 
@@ -25,11 +57,20 @@ NATS_PWA_INVALIDATE = "pwa_invalidate"
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 INVALIDATION_RESOURCE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9:._/-]{0,255}$")
 INVALIDATION_REASON_PATTERN = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
+ACCOUNT_PUBLIC_ID_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
+INVALIDATION_KEYS = frozenset({"resources", "reason", "audience", "accountId"})
 MAX_INVALIDATION_RESOURCES = 128
-WEBSOCKET_SEND_TIMEOUT_SECONDS = 2
 WEBSOCKET_CLOSE_TIMEOUT_SECONDS = 5
+CONTENT_SCHEDULER_INTERVAL_SECONDS = 5
+CONTENT_SCHEDULER_BATCH_SIZE = 128
+CONTENT_SCHEDULER_SHUTDOWN_TIMEOUT_SECONDS = 5
 PWA_STATE = web.AppKey("pwa_state", dict)
 PWA_BROKER = web.AppKey("pwa_broker", JsonBroker)
+PWA_WEBSOCKET_REGISTRY = web.AppKey("pwa_websocket_registry", WebSocketSessionRegistry)
+PWA_CONTENT_SCHEDULER_STOP = web.AppKey("pwa_content_scheduler_stop", asyncio.Event)
+PWA_CONTENT_SCHEDULER_TASK = web.AppKey(
+    "pwa_content_scheduler_task", asyncio.Task[None]
+)
 PWA_RESPONSE_PREPARED = web.AppKey("pwa_response_prepared", bool)
 PWA_SECURITY_HEADERS = {
     "Content-Security-Policy": (
@@ -63,28 +104,6 @@ REBUILT_RESPONSE_HEADERS = frozenset(
 )
 
 pwa_routes = web.RouteTableDef()
-
-
-class PwaApiError(Exception):
-    """Stable domain-facing PWA error independent from aiohttp reason strings."""
-
-    def __init__(
-        self,
-        *,
-        status: int,
-        code: str,
-        message: str,
-        details: Mapping[str, object] | None = None,
-        headers: Mapping[str, str] | None = None,
-    ):
-        if not 400 <= status <= 599:
-            raise ValueError("PWA API error status must be between 400 and 599")
-        self.status = status
-        self.code = code
-        self.message = message
-        self.details = details
-        self.headers = headers or {}
-        super().__init__(message)
 
 
 def _now() -> str:
@@ -152,7 +171,6 @@ def _create_pwa_state() -> dict[str, dict[str, object]]:
 
     return {
         "cursors": {audience: 0 for audience in AUDIENCES},
-        "websockets": {audience: set() for audience in AUDIENCES},
         "broadcast_locks": {audience: asyncio.Lock() for audience in AUDIENCES},
     }
 
@@ -245,46 +263,21 @@ async def legacy_health(_request: web.Request):
     return web.json_response({"ok": True})
 
 
-async def _close_websocket(
-    websocket,
-    *,
-    code: WSCloseCode,
-    message: bytes,
-    context: str,
-) -> bool:
-    if websocket.closed:
-        return True
-    try:
-        async with asyncio.timeout(WEBSOCKET_CLOSE_TIMEOUT_SECONDS):
-            await websocket.close(code=code, message=message)
-    except Exception:
-        logger.warning(
-            "Failed to close PWA websocket during %s", context, exc_info=True
-        )
-        return False
-    return bool(websocket.closed)
+async def _close_failed_websocket(websocket) -> None:
+    """Bound post-upgrade cleanup without logging transport exception data."""
 
-
-async def _send_invalidation(connections: set, websocket, event: dict):
     if websocket.closed:
-        connections.discard(websocket)
         return
     try:
-        async with asyncio.timeout(WEBSOCKET_SEND_TIMEOUT_SECONDS):
-            await websocket.send_json(event)
+        async with asyncio.timeout(WEBSOCKET_CLOSE_TIMEOUT_SECONDS):
+            await websocket.close(
+                code=WSCloseCode.INTERNAL_ERROR,
+                message=b"Realtime transport failure",
+            )
+    except asyncio.CancelledError:
+        raise
     except Exception:
-        logger.warning("Failed to send PWA invalidation", exc_info=True)
-        # Close before dropping tracking. If close also fails, shutdown retains a
-        # bounded second chance instead of leaking an untracked handler/transport.
-        # See vmshpwa/docs/phase-0-live-integration-harness.md.
-        closed = await _close_websocket(
-            websocket,
-            code=WSCloseCode.GOING_AWAY,
-            message=b"Invalidation delivery failed",
-            context="failed invalidation delivery",
-        )
-        if closed:
-            connections.discard(websocket)
+        logger.warning("Failed to close an authenticated PWA websocket")
 
 
 async def _broadcast(
@@ -292,9 +285,15 @@ async def _broadcast(
     resources: list[str],
     reason: str,
     audience: str | None = None,
+    account_public_id: str | None = None,
 ):
     if audience is not None and audience not in AUDIENCES:
         raise ValueError(f"Unknown PWA audience: {audience}")
+    if account_public_id is not None:
+        if audience is None:
+            raise ValueError("Owner-scoped invalidation requires an audience")
+        if ACCOUNT_PUBLIC_ID_PATTERN.fullmatch(account_public_id) is None:
+            raise ValueError("Invalid account public ID")
 
     async def broadcast_to_audience(target_audience: str) -> None:
         state = app[PWA_STATE]
@@ -312,13 +311,20 @@ async def _broadcast(
                 "reason": reason,
                 "audience": target_audience,
             }
-            connections = state["websockets"][target_audience]
-            await asyncio.gather(
-                *(
-                    _send_invalidation(connections, websocket, event)
-                    for websocket in connections.copy()
+            registry = app[PWA_WEBSOCKET_REGISTRY]
+            if account_public_id is None:
+                await registry.send_to_audience(
+                    audience=target_audience,
+                    payload=event,
                 )
-            )
+            else:
+                # The routing target is server-side broker metadata and must
+                # not be echoed to browser clients or logs.
+                await registry.send_to_account(
+                    audience=target_audience,
+                    account_public_id=account_public_id,
+                    payload=event,
+                )
 
     target_audiences = (audience,) if audience is not None else AUDIENCES
     await asyncio.gather(
@@ -332,6 +338,19 @@ async def _broadcast(
 @pwa_routes.get("/{audience:student|family|staff}/ws")
 async def realtime(request: web.Request):
     audience = _audience(request)
+    auth_audience = AuthAudience(audience)
+    validate_request_boundary(
+        request,
+        audience=auth_audience,
+        expects_json=False,
+        require_browser_source=True,
+    )
+    authenticated = await authenticate_access_cookie(
+        request,
+        audience=auth_audience,
+        required=True,
+    )
+    assert authenticated is not None
     cursor_value = request.query.get("cursor")
     if cursor_value is not None:
         try:
@@ -347,30 +366,64 @@ async def realtime(request: web.Request):
     _apply_pwa_response_headers(websocket, _request_id(request))
     await websocket.prepare(request)
     state = request.app[PWA_STATE]
-    state["websockets"][audience].add(websocket)
+    registry = request.app[PWA_WEBSOCKET_REGISTRY]
+    registered = False
 
     try:
-        # The first send belongs inside the same cleanup guard as the receive
-        # loop: a client can vanish between upgrade and handshake delivery.
-        current_cursor = state["cursors"][audience]
-        if cursor_value is not None:
-            await websocket.send_json(
+        await registry.register_pending(
+            websocket,
+            audience=audience,
+            account_public_id=authenticated.principal.account_public_id,
+            session_public_id=authenticated.principal.session_public_id,
+        )
+        registered = True
+
+        activation_status = await registry.revalidate_pending(
+            websocket,
+            revalidate=lambda candidate: _revalidate_websocket_identity(
+                request.app,
+                candidate,
+            ),
+        )
+        if activation_status is not SessionRevalidationStatus.VALID:
+            return websocket
+
+        # Keep a pending transport out of invalidation fan-out until SQLite
+        # has revalidated it and the initial cursor frame is on the wire.
+        # Authoritative DB I/O is complete before taking the audience-wide
+        # lock; any invalidation in that interval advances the cursor and is
+        # absorbed by the initial full state fetch.  Cursor capture + activation
+        # itself remains one operation with respect to _broadcast().
+        async with state["broadcast_locks"][audience]:
+            current_cursor = state["cursors"][audience]
+            initial_payload = (
                 {
                     "type": "resync-required",
                     "cursor": current_cursor,
                     "serverTime": _now(),
                     "reason": "reconnect-full-refetch-required",
                 }
-            )
-        else:
-            await websocket.send_json(
-                {
+                if cursor_value is not None
+                else {
                     "type": "connected",
                     "cursor": current_cursor,
                     "serverTime": _now(),
                     "audience": audience,
                 }
             )
+            activation_status = await registry.activate_with_initial(
+                websocket,
+                payload=initial_payload,
+            )
+        if activation_status is not SessionRevalidationStatus.VALID:
+            return websocket
+
+        async def send(payload: Mapping[str, object]) -> bool:
+            report = await registry.send_to_connection(
+                websocket,
+                payload=payload,
+            )
+            return report.succeeded == 1
 
         async for message in websocket:
             if message.type == WSMsgType.TEXT:
@@ -380,7 +433,7 @@ async def realtime(request: web.Request):
                     # HTTP middleware can no longer replace the response after
                     # WebSocket upgrade. Keep protocol errors on the versioned
                     # realtime wire contract instead. See Phase 0 contracts.
-                    await websocket.send_json(
+                    if not await send(
                         build_realtime_error_payload(
                             cursor=state["cursors"][audience],
                             server_time=_now(),
@@ -388,36 +441,72 @@ async def realtime(request: web.Request):
                             message="Сообщение WebSocket должно быть корректным JSON",
                             request_id=_request_id(request),
                         )
-                    )
+                    ):
+                        break
                     continue
                 if isinstance(payload, dict) and payload.get("type") == "ping":
-                    await websocket.send_json(
+                    if not await send(
                         {
                             "type": "pong",
                             "cursor": state["cursors"][audience],
                             "serverTime": _now(),
                         }
-                    )
+                    ):
+                        break
             elif message.type == WSMsgType.ERROR:
-                logger.warning("PWA websocket error: %s", websocket.exception())
+                logger.warning("Authenticated PWA websocket transport error")
+    except asyncio.CancelledError:
+        raise
+    except WebSocketSessionAlreadyClosedError:
+        # A same-worker/session control command won the gap between cookie
+        # authentication and process-local registration.  It is an expected
+        # fail-closed outcome, not a transport failure and never gets a
+        # ``connected`` frame.
+        await _close_failed_websocket(websocket)
     except Exception:
         # Once prepare() succeeds the HTTP error middleware cannot replace the
         # upgraded response. Contain transport/serialization failures here,
         # close with a bounded wait, and return the original WebSocket object.
-        logger.warning(
-            "PWA websocket failed after upgrade, request_id=%s",
-            _request_id(request),
-            exc_info=True,
-        )
-        await _close_websocket(
-            websocket,
-            code=WSCloseCode.INTERNAL_ERROR,
-            message=b"Realtime transport failure",
-            context="post-upgrade handler failure",
-        )
+        logger.warning("Authenticated PWA websocket failed after upgrade")
+        if registered:
+            await registry.close_connection(
+                websocket,
+                code=WSCloseCode.INTERNAL_ERROR,
+                message=b"Realtime transport failure",
+            )
+        else:
+            await _close_failed_websocket(websocket)
     finally:
-        state["websockets"][audience].discard(websocket)
+        # Failed close operations intentionally remain registered for the
+        # next authoritative revalidation or shutdown attempt.  Successful
+        # and peer-driven closes are removed immediately.
+        if websocket.closed:
+            await registry.unregister(websocket)
     return websocket
+
+
+async def _revalidate_websocket_identity(
+    app: web.Application,
+    identity: WebSocketSessionIdentity,
+) -> SessionRevalidationStatus:
+    """Map current SQLite session authority to the registry's close policy."""
+
+    auth_state = app.get(PWA_AUTH_STATE)
+    service = None if auth_state is None else auth_state.service
+    if service is None:
+        return SessionRevalidationStatus.CORRUPT
+    try:
+        audience = AuthAudience(identity.audience)
+    except ValueError:
+        return SessionRevalidationStatus.CORRUPT
+    active = await service.is_websocket_session_active(
+        audience=audience,
+        account_public_id=identity.account_public_id,
+        session_public_id=identity.session_public_id,
+    )
+    return (
+        SessionRevalidationStatus.VALID if active else SessionRevalidationStatus.REVOKED
+    )
 
 
 async def on_startup(app: web.Application):
@@ -431,6 +520,9 @@ async def on_startup(app: web.Application):
     async def handle_invalidation(payload):
         if not isinstance(payload, dict):
             logger.warning("Ignoring non-object PWA invalidation")
+            return
+        if not set(payload).issubset(INVALIDATION_KEYS):
+            logger.warning("Ignoring invalid PWA invalidation fields")
             return
         raw_resources = payload.get("resources")
         if (
@@ -448,58 +540,236 @@ async def on_startup(app: web.Application):
         if audience is not None and audience not in AUDIENCES:
             logger.warning("Ignoring invalid PWA invalidation audience")
             return
+        account_public_id = payload.get("accountId")
+        if account_public_id is not None:
+            if (
+                audience is None
+                or not isinstance(account_public_id, str)
+                or ACCOUNT_PUBLIC_ID_PATTERN.fullmatch(account_public_id) is None
+            ):
+                logger.warning("Ignoring invalid PWA invalidation owner scope")
+                return
         reason = payload.get("reason", "nats")
         if not isinstance(reason, str) or not INVALIDATION_REASON_PATTERN.fullmatch(
             reason
         ):
             logger.warning("Ignoring invalid PWA invalidation reason")
             return
-        await _broadcast(app, resources, reason, audience=audience)
+        await _broadcast(
+            app,
+            resources,
+            reason,
+            audience=audience,
+            account_public_id=account_public_id,
+        )
 
     try:
         await broker.setup(runtime_config.nats_server)
         await broker.subscribe(NATS_PWA_INVALIDATE, handle_invalidation)
+        await broker.subscribe(
+            NATS_PWA_SESSION_CONTROL,
+            app[PWA_REALTIME_SESSION_CONTROLLER].handle_broker_payload,
+        )
         await broker.ready()
+        if app.get(PWA_AUTH_STATE) is not None:
+            app[PWA_WEBSOCKET_REGISTRY].start_revalidation(
+                lambda identity: _revalidate_websocket_identity(app, identity)
+            )
     except BaseException as startup_error:
         # aiohttp does not promise to run an adapter's shutdown hook after that
         # adapter's startup callback fails. Setup itself may allocate a client
         # before raising, so the whole adapter startup belongs inside this guard.
+        cleanup_errors: list[BaseException] = []
+        try:
+            await app[PWA_WEBSOCKET_REGISTRY].shutdown()
+        except BaseException as cleanup_error:
+            cleanup_errors.append(cleanup_error)
         try:
             await broker.disconnect()
         except BaseException as cleanup_error:
+            cleanup_errors.append(cleanup_error)
+        if cleanup_errors:
             raise BaseExceptionGroup(
-                "PWA broker startup and cleanup both failed",
-                [startup_error, cleanup_error],
+                "PWA realtime startup and cleanup failed",
+                [startup_error, *cleanup_errors],
             ) from None
         raise
 
 
-async def on_shutdown(app: web.Application):
-    state = app[PWA_STATE]
+async def on_auth_startup(app: web.Application) -> None:
+    """Create auth dependencies after the shared DB cleanup context is ready."""
 
-    sockets = {
-        websocket
-        for connections in state["websockets"].values()
-        for websocket in connections.copy()
-    }
-    await asyncio.gather(
-        *(
-            _close_websocket(
-                websocket,
-                code=WSCloseCode.GOING_AWAY,
-                message=b"Server shutdown",
-                context="shutdown",
-            )
-            for websocket in sockets
-        )
+    state = app[PWA_AUTH_STATE]
+    if state.service is not None:
+        return
+    if PWA_DATABASE not in app:
+        # Small broker/protocol unit tests compose the adapter directly without
+        # the application factory. They do not expose auth routes/middleware.
+        return
+    factory = app[PWA_DATABASE].factory
+    if factory is None:
+        raise RuntimeError("PWA auth startup requires a verified database factory")
+    state.service = await PwaAuthService.create(
+        PwaAuthRepository(factory),
+        state.runtime_config,
     )
-    for connections in state["websockets"].values():
-        connections.clear()
-    await app[PWA_BROKER].disconnect()
+
+
+async def on_content_startup(app: web.Application) -> None:
+    """Bind Phase-2 content routes to the verified shared SQLite factory."""
+
+    if PWA_CONTENT_REPOSITORY in app:
+        return
+    factory = app[PWA_DATABASE].factory
+    if factory is None:
+        raise RuntimeError("PWA content startup requires a verified database factory")
+    app[PWA_CONTENT_REPOSITORY] = PwaContentRepository(factory)
+
+
+async def publish_content_invalidation(
+    app: web.Application,
+    scope: GroupLessonContentScope,
+    kind: ContentKind,
+    reason: str,
+) -> None:
+    """Best-effort realtime fan-out after an authoritative content commit."""
+
+    resource = f"group-lessons/{scope.group_lesson_public_id}/content/{kind.value}"
+    try:
+        await app[PWA_BROKER].publish(
+            NATS_PWA_INVALIDATE,
+            {"resources": [resource], "reason": reason},
+        )
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        # The SQLite transition is already authoritative.  NATS is transient
+        # fan-out, so a delivery failure must not turn a successful mutation
+        # into an HTTP error or invite an unsafe client retry.
+        logger.warning(
+            "Content invalidation failed after commit: resource=%s reason=%s",
+            resource,
+            reason,
+            exc_info=True,
+        )
+
+
+async def activate_due_content_publications(
+    app: web.Application,
+    *,
+    batch_size: int = CONTENT_SCHEDULER_BATCH_SIZE,
+) -> int:
+    """Activate at most one bounded batch of due publication rows."""
+
+    if batch_size < 1:
+        raise ValueError("content scheduler batch size must be positive")
+    repository = app[PWA_CONTENT_REPOSITORY]
+    invalidator = app[PWA_CONTENT_INVALIDATOR]
+    activated = 0
+    while activated < batch_size:
+        context = await repository.activate_next_due_publication(
+            published_public_id=f"publication-scheduled-{uuid.uuid4().hex}"
+        )
+        if context is None:
+            break
+        activated += 1
+        await invalidator(
+            context.scope,
+            context.publication.kind,
+            "content-schedule-activated",
+        )
+    return activated
+
+
+async def _content_scheduler_loop(app: web.Application) -> None:
+    stop = app[PWA_CONTENT_SCHEDULER_STOP]
+    while not stop.is_set():
+        try:
+            activated = await activate_due_content_publications(app)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            # A corrupt row or temporary SQLite failure must not silently kill
+            # scheduled publication for every other material in this worker.
+            logger.exception("PWA content scheduler iteration failed")
+            activated = 0
+
+        if stop.is_set():
+            break
+        if activated == CONTENT_SCHEDULER_BATCH_SIZE:
+            # A full batch may mean more rows are already due.  Yield to the
+            # event loop, then continue without an arbitrary five-second gap.
+            await asyncio.sleep(0)
+            continue
+        try:
+            await asyncio.wait_for(
+                stop.wait(), timeout=CONTENT_SCHEDULER_INTERVAL_SECONDS
+            )
+        except TimeoutError:
+            pass
+
+
+async def on_content_scheduler_startup(app: web.Application) -> None:
+    """Start the scheduler only after both SQLite and broker are ready."""
+
+    if PWA_CONTENT_REPOSITORY not in app:
+        return
+    stop = asyncio.Event()
+    app[PWA_CONTENT_SCHEDULER_STOP] = stop
+    app[PWA_CONTENT_SCHEDULER_TASK] = asyncio.create_task(
+        _content_scheduler_loop(app),
+        name="pwa-content-publication-scheduler",
+    )
+
+
+async def on_content_scheduler_shutdown(app: web.Application) -> None:
+    """Let the active transaction finish before realtime is disconnected."""
+
+    task = app.get(PWA_CONTENT_SCHEDULER_TASK)
+    stop = app.get(PWA_CONTENT_SCHEDULER_STOP)
+    if task is None or stop is None:
+        return
+    stop.set()
+    try:
+        async with asyncio.timeout(CONTENT_SCHEDULER_SHUTDOWN_TIMEOUT_SECONDS):
+            await asyncio.shield(task)
+    except TimeoutError:
+        logger.warning("PWA content scheduler did not stop before the deadline")
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+    except asyncio.CancelledError:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+        raise
+
+
+async def on_shutdown(app: web.Application):
+    shutdown_errors: list[BaseException] = []
+    try:
+        await on_content_scheduler_shutdown(app)
+    except BaseException as error:
+        shutdown_errors.append(error)
+    try:
+        await app[PWA_WEBSOCKET_REGISTRY].shutdown()
+    except BaseException as error:
+        shutdown_errors.append(error)
+    try:
+        await app[PWA_BROKER].disconnect()
+    except BaseException as error:
+        shutdown_errors.append(error)
+    if shutdown_errors:
+        raise BaseExceptionGroup("PWA realtime shutdown failed", shutdown_errors)
     logger.info("PWA app shutdown")
 
 
-def configure(app: web.Application, *, broker: JsonBroker | None = None):
+def configure(
+    app: web.Application,
+    *,
+    broker: JsonBroker | None = None,
+    auth_runtime_config: AuthRuntimeConfig | None = None,
+    auth_service: PwaAuthService | None = None,
+    content_repository: PwaContentRepository | None = None,
+):
     runtime_config = _runtime_config(app)
     # Browser storage uses this server-owned value verbatim. Rejecting an
     # unsafe namespace during composition prevents a partially working process
@@ -514,8 +784,60 @@ def configure(app: web.Application, *, broker: JsonBroker | None = None):
     app.on_response_prepare.append(on_pwa_response_prepare)
     app[PWA_BROKER] = broker
     app[PWA_STATE] = _create_pwa_state()
+    registry = WebSocketSessionRegistry()
+    app[PWA_WEBSOCKET_REGISTRY] = registry
+    app[PWA_REALTIME_SESSION_CONTROLLER] = RealtimeSessionController(
+        registry,
+        broker,
+    )
+    content_enabled = False
+    auth_enabled = (
+        auth_runtime_config is not None
+        or auth_service is not None
+        or PWA_DATABASE in app
+    )
+    if auth_enabled:
+        resolved_auth_config = auth_runtime_config or (
+            auth_service.runtime_config
+            if auth_service is not None
+            else load_auth_runtime_config(runtime_config)
+        )
+        if (
+            auth_service is not None
+            and auth_service.runtime_config is not resolved_auth_config
+            and auth_service.runtime_config != resolved_auth_config
+        ):
+            raise ValueError("Injected auth service and runtime config disagree")
+        app[PWA_AUTH_STATE] = PwaAuthState(
+            runtime_config=resolved_auth_config,
+            service=auth_service,
+        )
+        app.middlewares.append(pwa_auth_request_security_middleware)
+        app.middlewares.append(pwa_authentication_middleware)
+        app.add_routes(auth_routes)
+        app.on_startup.append(on_auth_startup)
+        content_enabled = content_repository is not None or PWA_DATABASE in app
+        if content_enabled:
+            if content_repository is not None:
+                app[PWA_CONTENT_REPOSITORY] = content_repository
+
+            async def invalidate_content(
+                scope: GroupLessonContentScope,
+                kind: ContentKind,
+                reason: str,
+            ) -> None:
+                await publish_content_invalidation(app, scope, kind, reason)
+
+            app[PWA_CONTENT_INVALIDATOR] = invalidate_content
+            app.add_routes(content_routes)
+            app.on_startup.append(on_content_startup)
     app.add_routes(pwa_routes)
     app.on_startup.append(on_startup)
+    if content_enabled:
+        # Registration order is deliberate: SQLite binding happens first,
+        # realtime/NATS second, and only then can the scheduler commit and fan
+        # out its first due activation.
+        app.on_startup.append(on_content_scheduler_startup)
     app.on_shutdown.append(on_shutdown)
 
 

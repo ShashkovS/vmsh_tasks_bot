@@ -14,8 +14,11 @@ revocation cannot rely on process memory.
 
 The repository also contains legacy plaintext/token-shaped data. It is not a
 source for fixtures and it is not copied into a second plaintext auth field.
-Production Student activation remains gated by the exposure/rotation questions
-in `vmshpwa/dev/development-plan/20-implementation-questions.md`.
+The owner accepted the historical migration/repository exposure risk on
+2026-07-27: current activation reads the authoritative user credential,
+requires the existing aggregate preflight and never reuses migration-carried
+rows. Rewriting Git history or rotating otherwise valid accounts solely because
+of migration `0038` is outside this phase.
 
 ## Decision
 
@@ -60,14 +63,59 @@ in `vmshpwa/dev/development-plan/20-implementation-questions.md`.
 
 ### Request protection and throttling
 
-- Unsafe cookie-authenticated requests require an allowed `Origin`, with a
-  strict `Referer` fallback for clients that omit Origin, plus Fetch Metadata
-  rejection where available. Public origin and trusted proxy hops are explicit
-  configuration; arbitrary forwarding headers are ignored.
+- Every unsafe browser request under an audience path, including login before
+  cookies exist, requires an allowed `Origin`, with a strict `Referer` fallback
+  for clients that omit Origin, plus Fetch Metadata rejection where available.
+  The exact safe set is `GET`, `HEAD` and `OPTIONS`; an unexpected `TRACE` is
+  handled as unsafe and the PWA adapter exposes no TRACE route.
+- Audience WebSocket handshakes are authenticated cookie-bearing GET requests,
+  so they are the explicit safe-method exception: every handshake requires an
+  exact allowlisted browser `Origin` before upgrade. The connection is mapped
+  after upgrade to its server-verified audience/account/session. Every
+  post-register write and close shares one bounded per-socket lock. Revoke,
+  logout and logout-all close local matches and publish an exact versioned NATS
+  session/account close command; invalid or extension-bearing commands are
+  ignored. If transient fan-out fails, periodic SQLite revalidation closes the
+  connection rather than trusting the initial cookie forever.
+- Refresh-only logout may request immediate socket close only when the
+  repository has constant-time verified the current refresh HMAC or bounded
+  consumed-HMAC history and returned an internal account/session target. A
+  malformed, arbitrary, foreign or already-revoked refresh cookie returns the
+  same public `204` but never becomes an owner-scoped close command.
+- Public origin and trusted proxy hops are explicit configuration. Forwarding
+  headers are rejected unless the immediate peer and exact chain length match
+  that configuration. When RFC 7239 `Forwarded` is enabled, the deployment
+  contract requires the client-facing trusted proxy to replace, rather than
+  append to, the header and put the external `host` and `proto` in its first
+  element. This convention is verified against the production nginx config;
+  it is not inferred from arbitrary RFC 7239 chains.
+- The immediate application-facing proxy may use either an explicitly
+  configured IP network or an exact canonical filesystem `AF_UNIX` socket
+  path. A Unix transport is not trusted merely because it is local: aiohttp's
+  transport socket family and server-side `sockname` must match the allowlist,
+  the forwarding hop count remains exact, and the socket directory/mode is an
+  operating-system deployment boundary. Abstract, relative, normalized-alias
+  and merely "other local" sockets are rejected. For more than one proxy hop,
+  the other proxy addresses still need explicit trusted networks.
 - nginx limits by network source. SQLite `auth_throttle_buckets` additionally
   limits normalized-login/account buckets across all aiohttp workers. Bucket
   keys are peppered HMACs, never raw logins.
 - Authentication responses and timing do not reveal whether an account exists.
+
+### Authorization
+
+- Legacy user types are exact enum values. In particular, negative archived or
+  deleted types are never interpreted as Staff through bitwise membership.
+- A legacy admin is global. A teacher has only the course-wide or group scopes
+  currently loaded from `staff_scopes`; a row whose local role says `admin`
+  does not promote that teacher to global admin.
+- Route parameters are not proof of membership. Student/Family authorization
+  combines ownership with authoritative enrollment rows. Staff services first
+  load the requested resource or membership and then authorize its persisted
+  course/group scope. Collection queries must apply the teacher's scopes in
+  SQLite and cannot pass on a bare capability check.
+- Missing, malformed or contradictory identity/access rows fail closed. UI
+  hiding is never an authorization boundary.
 
 ## Current primary references
 
@@ -79,9 +127,16 @@ Checked on 2026-07-27:
   [timed signatures](https://itsdangerous.palletsprojects.com/en/stable/timed/)
   and [key/salt concepts](https://itsdangerous.palletsprojects.com/en/stable/concepts/);
 - [aiohttp cookie API](https://docs.aiohttp.org/en/stable/_modules/aiohttp/web_response.html);
+- [aiohttp proxy security guidance](https://docs.aiohttp.org/en/stable/web_advanced.html#deploying-behind-a-proxy)
+  and [request transport access](https://docs.aiohttp.org/en/stable/web_reference.html#aiohttp.web.BaseRequest.transport);
+- [Python 3.14 socket address and AF_UNIX semantics](https://docs.python.org/3/library/socket.html#socket-families);
+- [nginx proxy header replacement/suppression](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header),
+  [WebSocket proxying](https://nginx.org/en/docs/http/websocket.html) and
+  [request limiting](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html);
 - [MDN Set-Cookie reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie);
 - [W3C Fetch Metadata](https://www.w3.org/TR/fetch-metadata/);
-- [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
+- [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html);
+- [OWASP WebSocket Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/WebSocket_Security_Cheat_Sheet.html).
 
 ## Consequences
 
@@ -95,3 +150,8 @@ Checked on 2026-07-27:
 - `signons.token` must not receive PWA credentials. PWA login audit uses
   `auth_events`; any required legacy compatibility projection must be
   secret-free.
+- A production Unix deployment must keep the rendered nginx upstream path and
+  `VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON` byte-for-byte aligned and protect
+  the socket with a dedicated directory/group. Loopback TCP remains supported
+  for controlled hosts, but loopback by itself does not identify a local
+  process and is therefore not the preferred production boundary.

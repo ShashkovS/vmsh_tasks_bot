@@ -1,5 +1,6 @@
 import asyncio
 import json
+from types import SimpleNamespace
 
 import pytest
 from aiohttp import ClientPayloadError, web
@@ -8,7 +9,41 @@ from apps import pwa_app
 from helpers.config import config
 from helpers.nats_brocker import InProcessBroker
 from helpers.object_storage import LocalObjectStorage
+from helpers.pwa.app_keys import RUNTIME_CONFIG
+from helpers.pwa.auth_config import COOKIE_POLICY, load_auth_runtime_config
 from main import create_app
+from models.pwa.auth import AuthAudience
+
+
+PWA_E2E_HOST = "127.0.0.1:5380"
+PWA_E2E_ORIGIN = f"http://{PWA_E2E_HOST}"
+
+
+class FakePwaAuthService:
+    def __init__(self, runtime_config):
+        self.runtime_config = runtime_config
+
+    async def authenticate_access(
+        self,
+        *,
+        audience,
+        access_cookie_value,
+        request_id,
+        client_address,
+    ):
+        del request_id, client_address
+        if access_cookie_value != f"synthetic-{audience.value}-access":
+            return None
+        return SimpleNamespace(
+            principal=SimpleNamespace(
+                account_public_id=f"account-{audience.value}-protocol",
+                session_public_id=(audience.value[0] * 32),
+                audience=audience,
+            )
+        )
+
+    async def is_websocket_session_active(self, **_identity):
+        return True
 
 
 class HermeticPwaAdapter:
@@ -18,14 +53,43 @@ class HermeticPwaAdapter:
         self.broker = broker
 
     def configure(self, app):
-        pwa_app.configure(app, broker=self.broker)
+        auth_runtime_config = load_auth_runtime_config(config)
+        pwa_app.configure(
+            app,
+            broker=self.broker,
+            auth_runtime_config=auth_runtime_config,
+            auth_service=FakePwaAuthService(auth_runtime_config),
+        )
+
+
+def _transport_only_app(broker):
+    """Compose protocol tests without the Phase-1 database/auth boundary."""
+
+    app = web.Application()
+    app[RUNTIME_CONFIG] = config
+    pwa_app.configure(app, broker=broker)
+    return app
 
 
 @pytest.fixture()
 async def client(aiohttp_client):
     broker = InProcessBroker("vmshpwa_e2e_pytest")
     app = create_app([HermeticPwaAdapter(broker)], runtime_config=config)
-    return await aiohttp_client(app)
+    test_client = await aiohttp_client(app)
+    test_client.session.headers["Host"] = PWA_E2E_HOST
+    return test_client
+
+
+async def _ws_connect(client, audience: str, path: str | None = None, **kwargs):
+    policy = COOKIE_POLICY[AuthAudience(audience)]
+    headers = dict(kwargs.pop("headers", {}))
+    headers["Cookie"] = f"{policy.access_name}=synthetic-{audience}-access"
+    return await client.ws_connect(
+        path or f"/{audience}/ws",
+        origin=PWA_E2E_ORIGIN,
+        headers=headers,
+        **kwargs,
+    )
 
 
 @pytest.mark.asyncio
@@ -93,7 +157,10 @@ async def test_pwa_api_has_baseline_security_headers(client):
 
 @pytest.mark.asyncio
 async def test_rebuilt_http_error_preserves_protocol_headers(client):
-    response = await client.post("/student/api/v1/health")
+    response = await client.post(
+        "/student/api/v1/health",
+        headers={"Origin": PWA_E2E_ORIGIN, "Sec-Fetch-Site": "same-origin"},
+    )
 
     assert response.status == 405
     assert response.content_type == "application/json"
@@ -114,7 +181,7 @@ async def test_stable_domain_error_keeps_details_and_retry_header(aiohttp_client
         )
 
     broker = InProcessBroker("vmshpwa_domain_error_test")
-    app = create_app([HermeticPwaAdapter(broker)], runtime_config=config)
+    app = _transport_only_app(broker)
     app.router.add_get("/student/api/v1/conflict", conflict)
     local_client = await aiohttp_client(app)
 
@@ -141,7 +208,7 @@ async def test_prepared_stream_gets_pwa_headers_before_first_chunk(aiohttp_clien
         return response
 
     broker = InProcessBroker("vmshpwa_prepared_stream_test")
-    app = create_app([HermeticPwaAdapter(broker)], runtime_config=config)
+    app = _transport_only_app(broker)
     app.router.add_get("/student/api/v1/stream", stream)
     local_client = await aiohttp_client(app)
 
@@ -174,7 +241,7 @@ async def test_prepared_stream_exception_is_not_rebuilt_as_json(
         raise AssertionError("prepared response must not be rebuilt as JSON")
 
     broker = InProcessBroker("vmshpwa_broken_stream_test")
-    app = create_app([HermeticPwaAdapter(broker)], runtime_config=config)
+    app = _transport_only_app(broker)
     app.router.add_get("/family/api/v1/broken-stream", broken_stream)
     local_client = await aiohttp_client(app)
     monkeypatch.setattr(pwa_app.web, "json_response", unexpected_json_response)
@@ -194,7 +261,7 @@ async def test_prepared_stream_exception_is_not_rebuilt_as_json(
 
 @pytest.mark.asyncio
 async def test_websocket_handshake_heartbeat_and_invalidation(client):
-    websocket = await client.ws_connect("/student/ws")
+    websocket = await _ws_connect(client, "student")
     connected = await websocket.receive_json()
     assert connected["type"] == "connected"
     assert connected["audience"] == "student"
@@ -214,7 +281,7 @@ async def test_websocket_handshake_heartbeat_and_invalidation(client):
 
 @pytest.mark.asyncio
 async def test_websocket_reconnect_always_requires_authoritative_resync(client):
-    websocket = await client.ws_connect("/student/ws?cursor=0")
+    websocket = await _ws_connect(client, "student", "/student/ws?cursor=0")
     event = await websocket.receive_json()
     assert event["type"] == "resync-required"
     assert event["reason"] == "reconnect-full-refetch-required"
@@ -223,8 +290,11 @@ async def test_websocket_reconnect_always_requires_authoritative_resync(client):
 
 @pytest.mark.asyncio
 async def test_websocket_invalid_json_uses_recoverable_wire_error(client):
-    websocket = await client.ws_connect(
-        "/student/ws", headers={"X-Request-ID": "ws.invalid-json"}
+    websocket = await _ws_connect(
+        client,
+        "student",
+        "/student/ws",
+        headers={"X-Request-ID": "ws.invalid-json"},
     )
     assert (await websocket.receive_json())["type"] == "connected"
 
@@ -246,8 +316,11 @@ async def test_websocket_invalid_json_uses_recoverable_wire_error(client):
 
 @pytest.mark.asyncio
 async def test_websocket_decoder_recursion_failure_is_recoverable(client, monkeypatch):
-    websocket = await client.ws_connect(
-        "/student/ws", headers={"X-Request-ID": "ws.recursion"}
+    websocket = await _ws_connect(
+        client,
+        "student",
+        "/student/ws",
+        headers={"X-Request-ID": "ws.recursion"},
     )
     assert (await websocket.receive_json())["type"] == "connected"
     original_loads = pwa_app.json.loads
@@ -285,8 +358,8 @@ async def test_websocket_post_upgrade_failure_never_reenters_http_middleware(
             raise ConnectionResetError("synthetic disconnect after upgrade")
 
         async def close(self, *, code, message):
-            assert code == pwa_app.WSCloseCode.INTERNAL_ERROR
-            assert message == b"Realtime transport failure"
+            assert code == pwa_app.WSCloseCode.GOING_AWAY
+            assert message == b"Realtime delivery failed"
             self.closed = True
 
     class Request:
@@ -294,7 +367,10 @@ async def test_websocket_post_upgrade_failure_never_reenters_http_middleware(
         query = {}
 
         def __init__(self):
-            self.app = {pwa_app.PWA_STATE: pwa_app._create_pwa_state()}
+            self.app = {
+                pwa_app.PWA_STATE: pwa_app._create_pwa_state(),
+                pwa_app.PWA_WEBSOCKET_REGISTRY: pwa_app.WebSocketSessionRegistry(),
+            }
 
         def __getitem__(self, key):
             assert key == "request_id"
@@ -302,19 +378,82 @@ async def test_websocket_post_upgrade_failure_never_reenters_http_middleware(
 
     websocket = FailingHandshakeWebSocket()
     monkeypatch.setattr(pwa_app.web, "WebSocketResponse", lambda **_kwargs: websocket)
+
+    def allow_boundary(*_args, **_kwargs):
+        return None
+
+    async def authenticated(*_args, **_kwargs):
+        return SimpleNamespace(
+            principal=SimpleNamespace(
+                account_public_id="account-student-protocol",
+                session_public_id="a" * 32,
+            )
+        )
+
+    monkeypatch.setattr(pwa_app, "validate_request_boundary", allow_boundary)
+    monkeypatch.setattr(pwa_app, "authenticate_access_cookie", authenticated)
+
+    async def active_session(*_args, **_kwargs):
+        return pwa_app.SessionRevalidationStatus.VALID
+
+    monkeypatch.setattr(
+        pwa_app,
+        "_revalidate_websocket_identity",
+        active_session,
+    )
     request = Request()
 
     response = await pwa_app.realtime(request)
 
     assert response is websocket
     assert websocket.closed is True
-    assert request.app[pwa_app.PWA_STATE]["websockets"]["student"] == set()
+    assert await request.app[pwa_app.PWA_WEBSOCKET_REGISTRY].connection_count() == 0
+
+
+@pytest.mark.asyncio
+async def test_pending_handshake_absorbs_concurrent_invalidation_into_initial_cursor(
+    client,
+    monkeypatch,
+):
+    validation_started = asyncio.Event()
+    release_validation = asyncio.Event()
+    service = client.app[pwa_app.PWA_AUTH_STATE].service
+
+    async def blocked_validation(**_identity):
+        validation_started.set()
+        await release_validation.wait()
+        return True
+
+    monkeypatch.setattr(service, "is_websocket_session_active", blocked_validation)
+    websocket_task = asyncio.create_task(_ws_connect(client, "student"))
+    await asyncio.wait_for(validation_started.wait(), timeout=1)
+
+    broadcast_task = asyncio.create_task(
+        pwa_app._broadcast(
+            client.app,
+            ["lesson:handshake-race"],
+            "lesson-published",
+            audience="student",
+        )
+    )
+    await asyncio.wait_for(broadcast_task, timeout=1)
+
+    release_validation.set()
+    websocket = await websocket_task
+    initial = await websocket.receive_json()
+
+    assert initial["type"] == "connected"
+    # The event completed while the socket was pending, so it could not arrive
+    # before the handshake.  Its cursor is incorporated into the initial state
+    # boundary instead of being lost or duplicated on the wire.
+    assert initial["cursor"] == 1
+    await websocket.close()
 
 
 @pytest.mark.asyncio
 async def test_invalidation_can_be_scoped_to_one_audience(client):
-    student = await client.ws_connect("/student/ws")
-    staff = await client.ws_connect("/staff/ws")
+    student = await _ws_connect(client, "student")
+    staff = await _ws_connect(client, "staff")
     assert (await student.receive_json())["type"] == "connected"
     assert (await staff.receive_json())["type"] == "connected"
 
@@ -347,6 +486,65 @@ async def test_invalidation_can_be_scoped_to_one_audience(client):
 
 
 @pytest.mark.asyncio
+async def test_invalidation_can_be_scoped_to_one_authenticated_account(client):
+    first_tab = await _ws_connect(client, "student")
+    second_tab = await _ws_connect(client, "student")
+    assert (await first_tab.receive_json())["type"] == "connected"
+    assert (await second_tab.receive_json())["type"] == "connected"
+
+    class OtherSocket:
+        def __init__(self):
+            self.closed = False
+            self.messages = []
+
+        async def send_json(self, payload):
+            self.messages.append(payload)
+
+        async def close(self, *, code, message):
+            del code, message
+            self.closed = True
+            return True
+
+    other_student = OtherSocket()
+    other_audience = OtherSocket()
+    registry = client.app[pwa_app.PWA_WEBSOCKET_REGISTRY]
+    await registry.register(
+        other_student,
+        audience="student",
+        account_public_id="account-student-other",
+        session_public_id="b" * 32,
+    )
+    await registry.register(
+        other_audience,
+        audience="family",
+        account_public_id="account-student-protocol",
+        session_public_id="c" * 32,
+    )
+
+    await client.app[pwa_app.PWA_BROKER].publish(
+        "pwa_invalidate",
+        {
+            "resources": ["submission:mine"],
+            "reason": "submission-updated",
+            "audience": "student",
+            "accountId": "account-student-protocol",
+        },
+    )
+
+    first_event = await first_tab.receive_json()
+    second_event = await second_tab.receive_json()
+    assert first_event == second_event
+    assert first_event["resources"] == ["submission:mine"]
+    assert "accountId" not in first_event
+    assert other_student.messages == []
+    assert other_audience.messages == []
+    await registry.unregister(other_student)
+    await registry.unregister(other_audience)
+    await first_tab.close()
+    await second_tab.close()
+
+
+@pytest.mark.asyncio
 async def test_concurrent_invalidations_are_ordered_per_socket(client):
     class BackpressuredSocket:
         closed = False
@@ -368,8 +566,19 @@ async def test_concurrent_invalidations_are_ordered_per_socket(client):
             finally:
                 self.in_send = False
 
+        async def close(self, *, code, message):
+            del code, message
+            self.closed = True
+            return True
+
     socket = BackpressuredSocket()
-    client.app[pwa_app.PWA_STATE]["websockets"]["student"].add(socket)
+    registry = client.app[pwa_app.PWA_WEBSOCKET_REGISTRY]
+    await registry.register(
+        socket,
+        audience="student",
+        account_public_id="account-student-protocol",
+        session_public_id="a" * 32,
+    )
 
     first = asyncio.create_task(
         pwa_app._broadcast(
@@ -393,7 +602,7 @@ async def test_concurrent_invalidations_are_ordered_per_socket(client):
         ["lesson:41"],
         ["lesson:42"],
     ]
-    client.app[pwa_app.PWA_STATE]["websockets"]["student"].remove(socket)
+    await registry.unregister(socket)
 
 
 @pytest.mark.asyncio
@@ -405,12 +614,19 @@ async def test_concurrent_invalidations_are_ordered_per_socket(client):
         {"resources": ["line\nbreak"]},
         {"resources": ["valid"], "reason": "INVALID REASON"},
         {"resources": ["valid"], "audience": "student\nforged-log"},
+        {"resources": ["valid"], "accountId": "account-student-protocol"},
+        {
+            "resources": ["valid"],
+            "audience": "student",
+            "accountId": "INVALID OWNER",
+        },
+        {"resources": ["valid"], "unexpectedTarget": "student"},
     ],
 )
 async def test_invalid_invalidation_payload_is_ignored_without_cursor_change(
     client, payload
 ):
-    websocket = await client.ws_connect("/student/ws")
+    websocket = await _ws_connect(client, "student")
     assert (await websocket.receive_json())["cursor"] == 0
 
     await client.app[pwa_app.PWA_BROKER].publish("pwa_invalidate", payload)

@@ -95,6 +95,13 @@ pwa-golden-check:
 pwa-golden-update:
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.golden_corpus write
 
+.PHONY: pwa-content-story-corpus-check pwa-content-story-corpus-update
+pwa-content-story-corpus-check:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.content_story_corpus check
+
+pwa-content-story-corpus-update:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.content_story_corpus write
+
 .PHONY: pwa-schema-check pwa-schema-update pwa-schema-live-check pwa-schema-live-update
 pwa-schema-check:
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.schema_inventory check
@@ -115,21 +122,46 @@ pwa-auth-preflight-check:
 pwa-auth-preflight-update:
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.auth_preflight write
 
+.PHONY: pwa-auth-import-inventory pwa-auth-import-preview pwa-auth-import-apply
+pwa-auth-import-inventory:
+	@test -n "$(PWA_AUTH_IMPORT_DATABASE)" || (echo "Set PWA_AUTH_IMPORT_DATABASE to an explicit migrated disposable copy"; exit 2)
+	@test -n "$(PWA_AUTH_IMPORT_REPORT)" || (echo "Set PWA_AUTH_IMPORT_REPORT"; exit 2)
+	@test -n "$(PWA_AUTH_IMPORT_DETAIL_REPORT)" || (echo "Set PWA_AUTH_IMPORT_DETAIL_REPORT below .runtime"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.auth_import inventory --database "$(PWA_AUTH_IMPORT_DATABASE)" --report "$(PWA_AUTH_IMPORT_REPORT)" --detail-report "$(PWA_AUTH_IMPORT_DETAIL_REPORT)"
+
+pwa-auth-import-preview:
+	@test -n "$(PWA_AUTH_IMPORT_DATABASE)" || (echo "Set PWA_AUTH_IMPORT_DATABASE to an explicit migrated disposable copy"; exit 2)
+	@test -n "$(PWA_AUTH_IMPORT_DECISIONS)" || (echo "Set PWA_AUTH_IMPORT_DECISIONS to an owner-only JSON file"; exit 2)
+	@test -n "$(PWA_AUTH_IMPORT_REPORT)" || (echo "Set PWA_AUTH_IMPORT_REPORT"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.auth_import preview --database "$(PWA_AUTH_IMPORT_DATABASE)" --decisions "$(PWA_AUTH_IMPORT_DECISIONS)" --report "$(PWA_AUTH_IMPORT_REPORT)"
+
+pwa-auth-import-apply:
+	@test -n "$(PWA_AUTH_IMPORT_DATABASE)" || (echo "Set PWA_AUTH_IMPORT_DATABASE to an explicit migrated disposable copy"; exit 2)
+	@test -n "$(PWA_AUTH_IMPORT_CONFIRM_DATABASE)" || (echo "Set PWA_AUTH_IMPORT_CONFIRM_DATABASE to the same exact path"; exit 2)
+	@test -n "$(PWA_AUTH_IMPORT_DECISIONS)" || (echo "Set PWA_AUTH_IMPORT_DECISIONS to an owner-only JSON file"; exit 2)
+	@test -n "$(PWA_AUTH_IMPORT_REPORT)" || (echo "Set PWA_AUTH_IMPORT_REPORT"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.auth_import apply --database "$(PWA_AUTH_IMPORT_DATABASE)" --confirm-database "$(PWA_AUTH_IMPORT_CONFIRM_DATABASE)" --decisions "$(PWA_AUTH_IMPORT_DECISIONS)" --report "$(PWA_AUTH_IMPORT_REPORT)"
+
 pwa-workload-profile-check:
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.workload_profile check
 
 pwa-workload-profile-update:
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.workload_profile write
 
-pwa-baseline-check: pwa-golden-check pwa-schema-check pwa-schema-live-check pwa-auth-preflight-check pwa-workload-profile-check
+pwa-baseline-check: pwa-golden-check pwa-content-story-corpus-check pwa-schema-check pwa-schema-live-check pwa-auth-preflight-check pwa-workload-profile-check
 
-.PHONY: pwa-s3-live-smoke
+.PHONY: pwa-s3-live-smoke pwa-content-assets-live-smoke
 pwa-s3-live-smoke:
 	@test "$(VMSH_ENABLE_LIVE_S3_TEST)" = "true" || (echo "Set VMSH_ENABLE_LIVE_S3_TEST=true"; exit 2)
 	@test -n "$(PWA_S3_RUN_ID)" || (echo "Set a unique lowercase PWA_S3_RUN_ID"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.storage_smoke --run-id "$(PWA_S3_RUN_ID)"
 
-.PHONY: pwa-nats-local-smoke pwa-telegram-bind-test-channel pwa-telegram-live-smoke
+pwa-content-assets-live-smoke:
+	@test "$(VMSH_ENABLE_LIVE_S3_TEST)" = "true" || (echo "Set VMSH_ENABLE_LIVE_S3_TEST=true"; exit 2)
+	@test -n "$(PWA_S3_RUN_ID)" || (echo "Set a unique lowercase PWA_S3_RUN_ID"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.content_asset_storage_smoke --run-id "$(PWA_S3_RUN_ID)"
+
+.PHONY: pwa-nats-local-smoke pwa-telegram-bind-test-channel pwa-telegram-live-smoke pwa-telegram-rich-live-smoke
 pwa-nats-local-smoke:
 	$(PWA_UV_ENV) VMSH_RUN_LOCAL_NATS_SMOKE=1 uv run pytest -q -n0 pwa_tests/integration/test_nats_live.py
 
@@ -143,7 +175,12 @@ pwa-telegram-live-smoke:
 	@test -z "$(VMSH_TELEGRAM_TEST_CHANNEL_ID)" || (echo "Unset VMSH_TELEGRAM_TEST_CHANNEL_ID; smoke uses the verified local binding"; exit 2)
 	$(PWA_UV_ENV) VMSH_RUN_TELEGRAM_LIVE_SMOKE=1 uv run python -m vmshpwa.scripts.telegram_test_capability --live --run-smoke --confirm vmsh179devbot-channel-synthetic
 
-.PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-e2e-functional pwa-e2e-runtime pwa-visual pwa-visual-update telegram-history-test
+pwa-telegram-rich-live-smoke:
+	@test "$(VMSH_RUN_TELEGRAM_LIVE_SMOKE)" = "1" || (echo "Set VMSH_RUN_TELEGRAM_LIVE_SMOKE=1"; exit 2)
+	@test -z "$(VMSH_TELEGRAM_TEST_CHANNEL_ID)" || (echo "Unset VMSH_TELEGRAM_TEST_CHANNEL_ID; smoke uses the verified local binding"; exit 2)
+	$(PWA_UV_ENV) VMSH_RUN_TELEGRAM_LIVE_SMOKE=1 uv run python -m vmshpwa.scripts.telegram_test_capability --live --run-rich-smoke --confirm vmsh179devbot-channel-synthetic
+
+.PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-e2e-auth pwa-e2e-functional pwa-e2e-realtime pwa-e2e-runtime pwa-visual pwa-visual-update telegram-history-test
 pwa-format:
 	cd $(PWA_DIR) && CI=true pnpm format
 
@@ -166,8 +203,14 @@ pwa-build:
 pwa-e2e:
 	cd $(PWA_DIR) && CI=true pnpm e2e
 
+pwa-e2e-auth:
+	cd $(PWA_DIR) && CI=true pnpm e2e:auth
+
 pwa-e2e-functional:
 	cd $(PWA_DIR) && CI=true pnpm e2e:functional
+
+pwa-e2e-realtime:
+	cd $(PWA_DIR) && CI=true pnpm e2e:realtime
 
 pwa-e2e-runtime:
 	cd $(PWA_DIR) && CI=true pnpm e2e:runtime-isolation
@@ -180,3 +223,7 @@ pwa-visual-update:
 
 telegram-history-test:
 	$(PWA_UV_ENV) VMSH_RUNTIME_PROFILE=telegram-history-test uv run pytest -q -n0 tests/test_handler_flows.py tests/test_admin_weekly_ops.py
+
+.PHONY: pwa-nginx-check
+pwa-nginx-check:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.nginx_config_check --config "$${VMSH_PWA_NGINX_CONFIG:-/etc/nginx/nginx.conf}" --site-config "$${VMSH_PWA_NGINX_SITE_CONFIG:-/etc/nginx/conf.d/vmshpwa.conf}" --public-host "$${VMSH_PWA_PUBLIC_HOST:-}"

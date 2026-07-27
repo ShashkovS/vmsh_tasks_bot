@@ -136,13 +136,25 @@ def _setup(*, force_production=False):
             sentry_dsn="",
         )
     if runtime_profile.startswith("pwa-"):
+        production_mode = (
+            force_production
+            or os.environ.get("PROD") == "true"
+            or runtime_profile == "pwa-production"
+        )
+        pwa_prototype = (
+            os.environ.get("VMSH_PWA_PROTOTYPE", "false").lower() == "true"
+        )
+        if production_mode and pwa_prototype:
+            raise RuntimeError(
+                "Production PWA runtime cannot enable VMSH_PWA_PROTOTYPE"
+            )
         config = Config(
             runtime_profile=runtime_profile,
             pwa_instance=os.environ.get(
                 "VMSH_INSTANCE", runtime_profile.removeprefix("pwa-")
             ),
-            pwa_prototype=os.environ.get("VMSH_PWA_PROTOTYPE", "false").lower()
-            == "true",
+            pwa_prototype=pwa_prototype,
+            production_mode=production_mode,
             config_name=os.environ.get(
                 "VMSH_NATS_TOPIC_PREFIX", runtime_profile.replace("-", "_")
             ),

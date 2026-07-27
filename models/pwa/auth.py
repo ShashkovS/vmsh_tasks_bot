@@ -21,8 +21,9 @@ from enum import StrEnum
 from typing import Any, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
-from argon2 import PasswordHasher
+from argon2 import PasswordHasher, extract_parameters
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
+from argon2.low_level import Type
 from itsdangerous import BadData, URLSafeTimedSerializer
 
 
@@ -30,6 +31,13 @@ STUDENT_USERNAME_ALGORITHM_VERSION = 1
 ACCESS_TOKEN_VERSION = 1
 DEFAULT_ACCESS_MAX_AGE_SECONDS = 15 * 60
 MOSCOW_TIMEZONE = ZoneInfo("Europe/Moscow")
+MAX_ARGON2_ENCODED_HASH_LENGTH = 1024
+MAX_ARGON2_TIME_COST = 10
+MAX_ARGON2_MEMORY_COST_KIB = 256 * 1024
+MAX_ARGON2_PARALLELISM = 16
+MAX_ARGON2_SALT_LENGTH = 64
+MAX_ARGON2_HASH_LENGTH = 128
+SUPPORTED_ARGON2_VERSIONS = frozenset({16, 19})
 
 # Historical Telegram tokens were sometimes typed with visually similar
 # Cyrillic characters.  PWA login must accept exactly the same correction as
@@ -83,6 +91,14 @@ _LOGIN_SEPARATOR = re.compile(r"[^a-z0-9]+")
 # canonical representation so malformed aliases never reach a repository
 # lookup; see Phase 1 in ``05-phase-1-auth.md`` and its Zod public-ID contract.
 _SESSION_PUBLIC_ID = re.compile(r"[0-9a-f]{32}\Z")
+_COMMON_LEGACY_TOKEN_PLACEHOLDERS = {
+    "123456",
+    "12345678",
+    "password",
+    "qwerty",
+    "test",
+    "token",
+}
 
 
 class AuthAudience(StrEnum):
@@ -131,6 +147,29 @@ def normalize_telegram_token(value: str) -> str:
     """Preserve the historical bot token-normalization contract."""
 
     return value.strip().translate(_TOKEN_HOMOGLYPHS).lower()
+
+
+def legacy_telegram_token_risk_shapes(token: str, chat_id: Any) -> frozenset[str]:
+    """Classify conservative legacy-token blockers without exposing the token.
+
+    The returned labels are aggregate-safe, while callers must keep the input
+    and per-user classification local. This shared public helper keeps the
+    canonical preflight and controlled importer on one policy version.
+    """
+
+    normalized = token.casefold()
+    shapes: set[str] = set()
+    if len(token) < 8:
+        shapes.add("shorterThan8")
+    if token.isdecimal():
+        shapes.add("digitsOnly")
+    if token and len(set(token)) == 1:
+        shapes.add("singleRepeatedCharacter")
+    if normalized in _COMMON_LEGACY_TOKEN_PLACEHOLDERS:
+        shapes.add("commonPlaceholder")
+    if chat_id is not None and token == str(chat_id).strip():
+        shapes.add("sameAsChatId")
+    return frozenset(shapes)
 
 
 def _transliterate_surname(value: str) -> str:
@@ -194,6 +233,40 @@ class CredentialHasher:
         if not credential:
             raise ValueError("Credential must not be empty")
         return self._hasher.hash(credential)
+
+    @staticmethod
+    def is_verifiable_hash(encoded_hash: str | None) -> bool:
+        """Return whether a stored value is a structurally valid Argon2id hash.
+
+        Login uses this check only to choose between the account hash and the
+        startup-precomputed dummy hash.  A malformed active row must still pay
+        for one real Argon2 verification; feeding it directly to ``verify``
+        would fail during parsing and create a cheap account-enumeration path.
+        """
+
+        if (
+            not encoded_hash
+            or len(encoded_hash) > MAX_ARGON2_ENCODED_HASH_LENGTH
+        ):
+            return False
+        try:
+            parameters = extract_parameters(encoded_hash)
+        except InvalidHashError:
+            return False
+        return (
+            parameters.type is Type.ID
+            and parameters.version in SUPPORTED_ARGON2_VERSIONS
+            and parameters.time_cost >= 1
+            and parameters.time_cost <= MAX_ARGON2_TIME_COST
+            and parameters.parallelism >= 1
+            and parameters.memory_cost <= MAX_ARGON2_MEMORY_COST_KIB
+            and parameters.memory_cost >= 8 * parameters.parallelism
+            and parameters.parallelism <= MAX_ARGON2_PARALLELISM
+            and parameters.salt_len >= 8
+            and parameters.salt_len <= MAX_ARGON2_SALT_LENGTH
+            and parameters.hash_len >= 4
+            and parameters.hash_len <= MAX_ARGON2_HASH_LENGTH
+        )
 
     def verify(
         self, encoded_hash: str | None, credential: str
@@ -279,13 +352,36 @@ class AccessTokenCodec:
     def loads(
         self, token: str, expected_audience: AuthAudience
     ) -> Mapping[str, str | int] | None:
+        loaded = self.loads_with_timestamp(token, expected_audience)
+        return None if loaded is None else loaded[0]
+
+    def loads_with_timestamp(
+        self, token: str, expected_audience: AuthAudience
+    ) -> tuple[Mapping[str, str | int], datetime] | None:
+        """Validate an access cookie and retain its trusted signing time.
+
+        ``/auth/me`` must report the expiry of the access cookie which actually
+        authenticated the request, rather than extending that timestamp on
+        every read.  The timestamp is covered by the timed signature and is
+        therefore safe to use after the authoritative SQLite session check.
+        See Phase 1 in ``05-phase-1-auth.md`` and ``authContextSchema``.
+        """
+
         try:
-            payload: Any = self._serializer(expected_audience).loads(
+            loaded: Any = self._serializer(expected_audience).loads(
                 token,
                 max_age=self.max_age_seconds,
+                return_timestamp=True,
             )
         except BadData:
             return None
+        if (
+            not isinstance(loaded, tuple)
+            or len(loaded) != 2
+            or not isinstance(loaded[1], datetime)
+        ):
+            return None
+        payload, signed_at = loaded
         if not isinstance(payload, dict) or set(payload) != {
             "v",
             "sid",
@@ -310,4 +406,6 @@ class AccessTokenCodec:
             return None
         if not isinstance(payload["sv"], int) or payload["sv"] <= 0:
             return None
-        return payload
+        if signed_at.tzinfo is None or signed_at.utcoffset() is None:
+            return None
+        return payload, signed_at.astimezone(UTC)

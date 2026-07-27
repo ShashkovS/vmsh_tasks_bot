@@ -125,6 +125,42 @@ def parse_utc_timestamp(value: str) -> datetime:
     return require_aware_datetime(parsed, label="stored timestamp")
 
 
+def resolve_local_wall_time(value: str, *, timezone: str) -> datetime:
+    """Resolve an exact minute in the lesson timezone, rejecting DST traps.
+
+    HTML ``datetime-local`` deliberately carries no offset.  Publication and
+    lesson-window APIs therefore submit the wall-clock value together with the
+    authoritative group-lesson timezone; accepting the administrator browser's
+    local timezone would make remote administration non-deterministic.  See
+    Phase 2 ``SCHEDULE-01`` in
+    ``vmshpwa/dev/development-plan/06-phase-2-content.md``.
+    """
+
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d", value) is None:
+        raise ContentInvariantError("schedule local date-time is invalid")
+    timezone = timezone.strip()
+    try:
+        zone = ZoneInfo(timezone)
+    except ZoneInfoNotFoundError as error:
+        raise ContentInvariantError("schedule timezone is unknown") from error
+    try:
+        local_naive = datetime.strptime(value, "%Y-%m-%dT%H:%M")
+    except ValueError as error:
+        raise ContentInvariantError("schedule local date-time is invalid") from error
+
+    first = local_naive.replace(tzinfo=zone, fold=0)
+    second = local_naive.replace(tzinfo=zone, fold=1)
+    first_roundtrip = first.astimezone(UTC).astimezone(zone).replace(tzinfo=None)
+    second_roundtrip = second.astimezone(UTC).astimezone(zone).replace(tzinfo=None)
+    valid_first = first_roundtrip == local_naive
+    valid_second = second_roundtrip == local_naive
+    if not valid_first and not valid_second:
+        raise ContentInvariantError("schedule local date-time does not exist")
+    if valid_first and valid_second and first.utcoffset() != second.utcoffset():
+        raise ContentInvariantError("schedule local date-time is ambiguous")
+    return (first if valid_first else second).astimezone(UTC)
+
+
 def normalize_problem_title(value: str) -> str:
     """Normalize a title only for candidate discovery, never as identity."""
 

@@ -20,12 +20,40 @@ from models.pwa.content import (
     find_problem_synonym_candidates,
     normalize_problem_title,
     materialize_lesson_window,
+    resolve_local_wall_time,
     require_publication_transition,
     require_revision_transition,
 )
 
 
 NOW = datetime(2026, 9, 20, 13, tzinfo=UTC)
+
+
+def test_local_wall_time_uses_named_business_timezone_not_machine_timezone():
+    assert resolve_local_wall_time(
+        "2026-09-20T16:30", timezone="Europe/Moscow"
+    ) == datetime(2026, 9, 20, 13, 30, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ("2026-03-29T03:30", "does not exist"),
+        ("2026-10-25T03:30", "ambiguous"),
+    ],
+)
+def test_local_wall_time_rejects_dst_gap_and_fold(value: str, message: str):
+    with pytest.raises(ContentInvariantError, match=message):
+        resolve_local_wall_time(value, timezone="Europe/Helsinki")
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["2026-09-20 16:30", "2026-09-20T16:30:00", "2026-09-20T16:30Z"],
+)
+def test_local_wall_time_requires_exact_minute_wire_shape(value: str):
+    with pytest.raises(ContentInvariantError, match="invalid"):
+        resolve_local_wall_time(value, timezone="Europe/Moscow")
 
 
 def test_source_payload_hashes_exact_uploaded_bytes_and_keeps_provenance():

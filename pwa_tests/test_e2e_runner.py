@@ -40,9 +40,25 @@ def test_visual_modes_keep_build_before_playwright():
 
 
 def test_diagnostic_modes_keep_the_same_exclusive_build_boundary():
+    assert commands_for_mode("authentication") == (
+        ("pnpm", "build"),
+        ("pnpm", "exec", "playwright", "test", "e2e/authentication.spec.ts"),
+    )
     assert commands_for_mode("runtime-isolation") == (
         ("pnpm", "build"),
         ("pnpm", "exec", "playwright", "test", "e2e/runtime-isolation.spec.ts"),
+    )
+    assert commands_for_mode("realtime") == (
+        ("pnpm", "build"),
+        (
+            "pnpm",
+            "exec",
+            "playwright",
+            "test",
+            "e2e/runtime-isolation.spec.ts",
+            "--grep",
+            "product realtime|current-session revoke",
+        ),
     )
     assert commands_for_mode("nonvisual")[-1][-2:] == ("--grep-invert", "@visual")
 

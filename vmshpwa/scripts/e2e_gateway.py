@@ -186,6 +186,18 @@ def _forward_headers(
     return forwarded
 
 
+def _forward_request_headers(request: web.Request) -> CIMultiDict[str]:
+    """Sanitize request headers while preserving the browser-facing Host."""
+
+    forwarded = _forward_headers(request.headers, request_headers=True)
+    incoming_host = request.headers.get("Host")
+    if incoming_host is not None:
+        # aiohttp would otherwise synthesize Host from API_ORIGIN.  Phase-1
+        # target-origin checks must see the same authority the browser used.
+        forwarded["Host"] = incoming_host
+    return forwarded
+
+
 def _upstream_url(request: web.Request) -> str:
     return f"{request.app[API_ORIGIN]}{request.rel_url.raw_path_qs}"
 
@@ -195,7 +207,7 @@ async def _proxy_http(request: web.Request) -> web.StreamResponse:
     if override is not None:
         return override
 
-    headers = _forward_headers(request.headers, request_headers=True)
+    headers = _forward_request_headers(request)
     body = request.content.iter_any() if request.can_read_body else None
     session = request.app[HTTP_CLIENT]
     try:
@@ -268,7 +280,7 @@ async def _relay_websocket(request: web.Request) -> web.WebSocketResponse:
         if REQUEST_ID_PATTERN.fullmatch(incoming_request_id)
         else uuid.uuid4().hex
     )
-    headers = _forward_headers(request.headers, request_headers=True)
+    headers = _forward_request_headers(request)
     headers["X-Request-ID"] = request_id
     protocols = tuple(
         item.strip()

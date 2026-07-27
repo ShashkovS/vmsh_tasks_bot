@@ -6,7 +6,7 @@ only by safe structural metadata and fingerprints; paths and timestamps are omit
 
 ## Summary
 
-- Expected product hash: `0743b36000b236e1c67aae02bc08739c29c0859d81e3ac025b51f91fa104a44a`.
+- Expected product hash: `9c282f564858edf857901a2293d7ad5d1ef0356b265a2c858bb5e7750a619e08`.
 - Observed product hash: `f87af9f4843dcffe35651780b8b77ab9d1137d54b588423af4a01aa138c981e8`.
 - DDL text differences: 27.
 - PRAGMA-structure differences: 4.

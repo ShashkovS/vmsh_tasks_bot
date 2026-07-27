@@ -213,6 +213,13 @@ uv run pytest -q -n0 \
 
 Production-like browser результаты:
 
+- follow-up 27 июля 2026: после обнаруженного regression test mismatch кнопка
+  обновления напрямую отправляет `SKIP_WAITING` browser-owned waiting worker,
+  а navigation assertion сохраняет фактический текущий audience-local URL
+  вместо предположения, что auth boundary оставил корень. Focused production
+  bundle proof — Student + Family, Chromium/WebKit/Firefox, **6/6 PASS**;
+  полный runtime suite на итоговом tree остаётся отдельным повторным gate;
+
 - `make pwa-e2e-functional` — сначала production build, затем 72/72 PASS
   суммарно в Chromium, WebKit и Firefox;
 - после расширения static-suffix denylist, очистки browser-build environment и

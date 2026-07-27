@@ -43,6 +43,23 @@ def _codes(result) -> set[str]:
     return {diagnostic.code for diagnostic in result.diagnostics}
 
 
+def _published_asset(
+    *,
+    asset_id: str,
+    content_sha256: str,
+    media_type: str,
+    src: str | None = None,
+) -> WebAssetDescriptor:
+    return WebAssetDescriptor(
+        asset_id=asset_id,
+        content_sha256=content_sha256,
+        src=src or f"https://assets.example.test/content/{asset_id}",
+        media_type=media_type,
+        width=800,
+        height=600,
+    )
+
+
 @pytest.mark.parametrize(
     ("payload", "encoding"),
     [
@@ -138,7 +155,9 @@ def test_each_material_role_projects_only_its_approved_branch() -> None:
     assert "solution" not in condition.web_document.content
 
 
-def test_print_header_whitespace_does_not_create_empty_web_or_telegram_paragraphs() -> None:
+def test_print_header_whitespace_does_not_create_empty_web_or_telegram_paragraphs() -> (
+    None
+):
     result = _compile(
         """
 \\Заголовок{Математический кружок}
@@ -158,6 +177,8 @@ def test_print_header_whitespace_does_not_create_empty_web_or_telegram_paragraph
 
 def test_lists_tables_subparts_assets_and_tikz_have_typed_nodes() -> None:
     known_hash = "a" * 64
+    tikz_source = r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}"
+    tikz_hash = hashlib.sha256(tikz_source.encode()).hexdigest()
     result = _compile(
         r"""
 \задача
@@ -168,7 +189,18 @@ def test_lists_tables_subparts_assets_and_tikz_have_typed_nodes() -> None:
 \begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}
 \кзадача
 """,
-        known_assets={"figures/schema.svg": known_hash},
+        known_assets={
+            "figures/schema.svg": _published_asset(
+                asset_id="asset:schema",
+                content_sha256=known_hash,
+                media_type="image/svg+xml",
+            ),
+            f"tikz-{tikz_hash[:16]}": _published_asset(
+                asset_id="asset:tikz",
+                content_sha256="b" * 64,
+                media_type="image/svg+xml",
+            ),
+        },
     )
 
     blocks = result.ast.problems[0].statement
@@ -188,6 +220,168 @@ def test_lists_tables_subparts_assets_and_tikz_have_typed_nodes() -> None:
     assert figures[0].content_sha256 == known_hash
     assert figures[1].tikz_source is not None
     assert "\\draw" in figures[1].tikz_source
+
+
+@pytest.mark.parametrize(
+    ("body", "logical_name", "descriptor"),
+    [
+        (
+            r"\задача \includegraphics{photos/page.heic} \кзадача",
+            "photos/page.heic",
+            _published_asset(
+                asset_id="asset:raster",
+                content_sha256="1" * 64,
+                media_type="image/webp",
+            ),
+        ),
+        (
+            r"\задача \includegraphics{figures/geometry.svg} \кзадача",
+            "figures/geometry.svg",
+            _published_asset(
+                asset_id="asset:svg",
+                content_sha256="2" * 64,
+                media_type="image/svg+xml",
+            ),
+        ),
+        (
+            (
+                r"\задача \begin{tikzpicture}\draw (0,0)--(1,1);"
+                r"\end{tikzpicture} \кзадача"
+            ),
+            "tikz-1435a39e5123382b",
+            _published_asset(
+                asset_id="asset:tikz-svg",
+                content_sha256="3" * 64,
+                media_type="image/svg+xml",
+            ),
+        ),
+    ],
+)
+def test_compile_uses_one_published_asset_descriptor_in_every_derivative(
+    body: str,
+    logical_name: str,
+    descriptor: WebAssetDescriptor,
+) -> None:
+    result = _compile(
+        body,
+        known_assets={logical_name: descriptor},
+        revision_id="revision:assets",
+    )
+
+    assert "asset.missing" not in _codes(result)
+    assert result.web_document is not None
+    document = json.loads(result.web_document.content)
+    figure = document["problems"][0]["blocks"][0]
+    assert figure["asset"] == {
+        "status": "available",
+        "assetId": descriptor.asset_id,
+        "contentSha256": descriptor.content_sha256,
+        "src": descriptor.src,
+        "mediaType": descriptor.media_type,
+        "width": descriptor.width,
+        "height": descriptor.height,
+    }
+    assert descriptor.src in result.web.content
+    assert descriptor.src in result.telegram.content
+
+
+def test_published_descriptor_wins_over_conflicting_legacy_url_for_all_renderers() -> (
+    None
+):
+    descriptor = _published_asset(
+        asset_id="asset:single-source",
+        content_sha256="4" * 64,
+        media_type="image/svg+xml",
+        src="https://assets.example.test/canonical.svg",
+    )
+    result = _compile(
+        r"\задача \includegraphics{figure.svg} \кзадача",
+        known_assets={"figure.svg": descriptor},
+        asset_urls={"figure.svg": "https://other.example.test/conflict.svg"},
+    )
+
+    assert "asset.url_conflict" in _codes(result)
+    assert descriptor.src in result.web.content
+    assert descriptor.src in result.telegram.content
+    assert "other.example.test" not in result.web.content
+    assert "other.example.test" not in result.telegram.content
+
+
+@pytest.mark.parametrize(
+    ("body", "logical_name"),
+    [
+        (
+            r"\задача \includegraphics{missing.svg} \кзадача",
+            "missing.svg",
+        ),
+        (
+            (
+                r"\задача \begin{tikzpicture}\draw (0,0)--(1,1);"
+                r"\end{tikzpicture} \кзадача"
+            ),
+            "tikz-1435a39e5123382b",
+        ),
+    ],
+)
+def test_missing_asset_remains_an_explicit_diagnostic_and_wire_state(
+    body: str, logical_name: str
+) -> None:
+    result = _compile(
+        body,
+        known_assets={},
+    )
+
+    assert "asset.missing" in _codes(result)
+    assert result.web_document is not None
+    document = json.loads(result.web_document.content)
+    figure = document["problems"][0]["blocks"][0]
+    assert figure["asset"] == {"status": "missing", "logicalName": logical_name}
+    assert "<img" not in result.web.content
+    assert "<img" not in result.telegram.content
+
+
+@pytest.mark.parametrize(
+    "descriptor",
+    [
+        {
+            "asset_id": "asset:raw-dict",
+            "content_sha256": "5" * 64,
+            "src": "file:///private/server/secret.svg?token=do-not-leak",
+            "media_type": "image/svg+xml",
+            "width": 10,
+            "height": 10,
+            "data": "do-not-leak",
+        },
+        WebAssetDescriptor(
+            asset_id="asset:unsafe-url",
+            content_sha256="5" * 64,
+            src="file:///private/server/secret.svg?token=do-not-leak",
+            media_type="image/svg+xml",
+            width=10,
+            height=10,
+        ),
+        WebAssetDescriptor(
+            asset_id="asset:bad-dimension",
+            content_sha256="5" * 64,
+            src="https://assets.example.test/figure.svg",
+            media_type="image/svg+xml",
+            width=True,
+            height=10,
+        ),
+    ],
+)
+def test_compile_rejects_untrusted_asset_descriptors_without_leaking_values(
+    descriptor: object,
+) -> None:
+    with pytest.raises(ContentCompileError) as captured:
+        _compile(
+            r"\задача \includegraphics{figure.svg} \кзадача",
+            known_assets={"figure.svg": descriptor},  # type: ignore[dict-item]
+        )
+
+    message = str(captured.value)
+    assert "/private/server" not in message
+    assert "do-not-leak" not in message
 
 
 def test_missing_invalid_assets_and_unsafe_derivative_url_are_diagnostics() -> None:

@@ -21,6 +21,11 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Iterable
 
+from models.pwa.auth import (
+    STUDENT_USERNAME_ALGORITHM_VERSION,
+    build_student_username,
+    legacy_telegram_token_risk_shapes,
+)
 from vmshpwa.scripts.report_io import AtomicReportWriteError, atomic_write_text
 from vmshpwa.scripts.safe_source import (
     SafeSourceError,
@@ -35,7 +40,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATABASE = REPOSITORY_ROOT / "db/vmsh.db"
 JSON_REPORT = REPOSITORY_ROOT / "pwa_tests/reports/auth-preflight.json"
 MARKDOWN_REPORT = REPOSITORY_ROOT / "pwa_tests/reports/auth-preflight.md"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 STUDENT_TYPE = 1
 
 _TYPE_LABELS = {
@@ -45,14 +50,6 @@ _TYPE_LABELS = {
     1: "student",
     2: "teacher",
     128: "admin",
-}
-_COMMON_PLACEHOLDERS = {
-    "123456",
-    "12345678",
-    "password",
-    "qwerty",
-    "test",
-    "token",
 }
 
 
@@ -119,7 +116,7 @@ def _birthday(value: Any) -> tuple[str, date | None]:
         return "blank", None
     try:
         parsed = date.fromisoformat(text)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):  # fmt: skip
         return "invalidIsoDate", None
     if parsed > date.today():
         return "futureDate", parsed
@@ -141,22 +138,6 @@ def _length_bucket(token: str) -> str:
     if length <= 31:
         return "16-31"
     return "32+"
-
-
-def _guessable_shapes(token: str, chat_id: Any) -> set[str]:
-    normalized = token.casefold()
-    shapes: set[str] = set()
-    if len(token) < 8:
-        shapes.add("shorterThan8")
-    if token.isdecimal():
-        shapes.add("digitsOnly")
-    if token and len(set(token)) == 1:
-        shapes.add("singleRepeatedCharacter")
-    if normalized in _COMMON_PLACEHOLDERS:
-        shapes.add("commonPlaceholder")
-    if chat_id is not None and token == str(chat_id).strip():
-        shapes.add("sameAsChatId")
-    return shapes
 
 
 def _collision_counts(keys: Iterable[str]) -> dict[str, int]:
@@ -205,7 +186,7 @@ def analyze_database(database_path: Path) -> dict[str, Any]:
                 surname_counts: Counter[str] = Counter()
                 length_counts: Counter[str] = Counter()
                 shape_counts: Counter[str] = Counter()
-                source_login_keys: list[str] = []
+                canonical_login_keys: list[str] = []
                 assessments: list[tuple[bool, str | None]] = []
 
                 for row in student_rows:
@@ -223,7 +204,7 @@ def analyze_database(database_path: Path) -> dict[str, Any]:
                         token_status = "blankAfterTrim"
                     length_counts[_length_bucket(raw_token)] += 1
                     shapes = (
-                        _guessable_shapes(raw_token, row["chat_id"])
+                        legacy_telegram_token_risk_shapes(raw_token, row["chat_id"])
                         if raw_token
                         else set()
                     )
@@ -231,28 +212,43 @@ def analyze_database(database_path: Path) -> dict[str, Any]:
                     if shapes:
                         shape_counts["anyGuessableShape"] += 1
 
+                    canonical_login = None
+                    if (
+                        surname
+                        and parsed_birthday is not None
+                        and birthday_status == "validIsoDate"
+                    ):
+                        try:
+                            canonical_login = build_student_username(
+                                str(row["surname"]), parsed_birthday
+                            )
+                        except ValueError:
+                            surname_counts["emptyLoginStem"] += 1
+
                     birthday_blocked = birthday_status != "validIsoDate"
                     token_blocked = token_status != "present" or bool(shapes)
-                    blocked_by_fields = birthday_blocked or not surname or token_blocked
-                    source_login_key = None
-                    if surname and parsed_birthday is not None and not birthday_blocked:
-                        # Lower bound only; Phase 1 owns the canonical generator.
-                        source_login_key = (
-                            f"{surname}\u0000{parsed_birthday.isoformat()}"
-                        )
-                        source_login_keys.append(source_login_key)
-                    assessments.append((blocked_by_fields, source_login_key))
+                    blocked_by_fields = (
+                        birthday_blocked
+                        or not surname
+                        or canonical_login is None
+                        or token_blocked
+                    )
+                    if canonical_login is not None:
+                        canonical_login_keys.append(canonical_login)
+                    assessments.append((blocked_by_fields, canonical_login))
 
-                source_key_counts = Counter(source_login_keys)
-                colliding_source_keys = {
-                    key for key, count in source_key_counts.items() if count > 1
+                canonical_login_counts = Counter(canonical_login_keys)
+                colliding_canonical_logins = {
+                    key for key, count in canonical_login_counts.items() if count > 1
                 }
                 field_blocked_rows = sum(blocked for blocked, _key in assessments)
-                source_collision_rows = sum(
-                    key in colliding_source_keys for _blocked, key in assessments if key
+                canonical_collision_rows = sum(
+                    key in colliding_canonical_logins
+                    for _blocked, key in assessments
+                    if key
                 )
-                measured_blocked_rows = sum(
-                    blocked or key in colliding_source_keys
+                activation_blocked_rows = sum(
+                    blocked or key in colliding_canonical_logins
                     for blocked, key in assessments
                 )
 
@@ -346,7 +342,8 @@ def analyze_database(database_path: Path) -> dict[str, Any]:
                 )
             },
             "surname": {
-                key: surname_counts[key] for key in ("present", "emptyAfterTrim")
+                key: surname_counts[key]
+                for key in ("present", "emptyAfterTrim", "emptyLoginStem")
             },
             "tokenLengthBuckets": {
                 key: length_counts[key]
@@ -367,19 +364,27 @@ def analyze_database(database_path: Path) -> dict[str, Any]:
                 "blockedByFieldOrTokenCondition": field_blocked_rows,
                 "eligibleByFieldAndTokenConditions": len(student_rows)
                 - field_blocked_rows,
-                "sourceKeyCollisionRows": source_collision_rows,
-                "blockedByMeasuredLowerBound": measured_blocked_rows,
-                "provisionallyEligibleAfterMeasuredLowerBound": len(student_rows)
-                - measured_blocked_rows,
-                "finalEligibilityUnknown": True,
+                "canonicalLoginCollisionRows": canonical_collision_rows,
+                "blockedBeforeExplicitOverrides": activation_blocked_rows,
+                "eligibleBeforeExplicitOverrides": len(student_rows)
+                - activation_blocked_rows,
+                "explicitOverridesApplied": 0,
+                "canonicalEligibilityMeasured": True,
+                "finalEligibilityKnown": False,
+                "finalEligibilityUnknownReason": (
+                    "Launch cohort exclusions and explicit collision overrides have "
+                    "not been supplied."
+                ),
             },
         },
         "loginCollisions": {
-            "futureCanonicalGeneratorAvailable": False,
-            "normalizedSurnameBirthdaySourceKey": {
-                **_collision_counts(source_login_keys),
+            "canonicalGeneratorAvailable": True,
+            "studentUsernameAlgorithmVersion": STUDENT_USERNAME_ALGORITHM_VERSION,
+            "canonicalStudentUsername": {
+                **_collision_counts(canonical_login_keys),
                 "interpretation": (
-                    "Lower bound before transliteration; this is not a generated login."
+                    "Exact v1 transliterated-surname-DD candidates before any "
+                    "explicit stored admin overrides; candidate values are not retained."
                 ),
             },
             "legacyKvLogin": legacy_login_report,
@@ -397,7 +402,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     birthday = students["birthday"]
     surname = students["surname"]
     activation = students["activation"]
-    source_collisions = report["loginCollisions"]["normalizedSurnameBirthdaySourceKey"]
+    canonical_collisions = report["loginCollisions"]["canonicalStudentUsername"]
     legacy_collisions = report["loginCollisions"]["legacyKvLogin"]
     bucket_lines = "\n".join(
         f"- `{name}`: {count}" for name, count in students["tokenLengthBuckets"].items()
@@ -429,13 +434,15 @@ chat IDs и user IDs не сохранялись.
 - birthday NULL/blank: {birthday["null"] + birthday["blank"]}
 - birthday invalid/future: {birthday["invalidIsoDate"] + birthday["futureDate"]}
 - surname empty after trim: {surname["emptyAfterTrim"]}
+- surname present, but canonical login stem empty: {surname["emptyLoginStem"]}
 - проходят field/token checks: {activation["eligibleByFieldAndTokenConditions"]}
 - имеют field/token blocker: {activation["blockedByFieldOrTokenCondition"]}
-- входят в collision по lower-bound source key: {activation["sourceKeyCollisionRows"]}
-- provisionally eligible после объединения измеренных blockers: {activation["provisionallyEligibleAfterMeasuredLowerBound"]}
+- входят в collision канонического login v{report["loginCollisions"]["studentUsernameAlgorithmVersion"]}: {activation["canonicalLoginCollisionRows"]}
+- можно активировать до явных admin overrides: {activation["eligibleBeforeExplicitOverrides"]}
 
-Это не окончательное число активируемых аккаунтов: canonical login generator ещё
-не реализован, а явного признака test-account в legacy-схеме нет.
+Это точный dry-run канонического генератора для выбранного `users.type = 1`
+cohort до явных admin overrides. Явного признака test-account в legacy-схеме нет;
+поэтому test/unknown exclusions всё равно должны быть утверждены перед apply.
 
 ### Длины token
 
@@ -449,18 +456,18 @@ chat IDs и user IDs не сохранялись.
 
 ## Login collisions
 
-- Canonical Phase-1 transliterator/suffix policy ещё не реализован, поэтому
-  окончательное число будущих login collisions неизвестно.
-- Нижняя оценка по normalized surname + exact birthday: groups
-  {source_collisions["collisionGroups"]}, affected rows
-  {source_collisions["affectedRows"]}. Сами ключи не сохранялись.
+- Canonical Student username algorithm version:
+  {report["loginCollisions"]["studentUsernameAlgorithmVersion"]}.
+- Точный dry-run `transliterated-surname-DD`: groups
+  {canonical_collisions["collisionGroups"]}, affected rows
+  {canonical_collisions["affectedRows"]}. Сами login candidates не сохранялись.
 - Legacy `kv_logins`: rows {legacy_collisions["studentRows"]}, blank
   {legacy_collisions["nullOrBlank"]}, normalized collision groups
   {legacy_collisions["collisionGroups"]}, affected rows
   {legacy_collisions["affectedRows"]}.
 
-До активации Phase 1 нужен versioned production login generator и повтор этого
-preflight: текущая source-key оценка является только нижней границей.
+До активации Phase 1 нужно явно разрешить каждую collision сохранённым уникальным
+override и утвердить launch cohort. Автоматические row-ID suffixes запрещены.
 """
 
 

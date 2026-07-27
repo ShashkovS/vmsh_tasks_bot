@@ -111,8 +111,8 @@
       "type": "index"
     }
   ],
-  "expected_pragma_structure_sha256": "1ccb3e05cb90b1f0bc22d3799bae1e2489a1feba8b178197018481fed60deb69",
-  "expected_product_sha256": "0743b36000b236e1c67aae02bc08739c29c0859d81e3ac025b51f91fa104a44a",
+  "expected_pragma_structure_sha256": "00bebc45b5f13776d4cf61dc8898073f231218364e447ba987d565636505bbe1",
+  "expected_product_sha256": "9c282f564858edf857901a2293d7ad5d1ef0356b265a2c858bb5e7750a619e08",
   "format": "vmsh.sqlite-schema-drift/v1",
   "known_out_of_scope_data_risks": [
     {
@@ -482,6 +482,10 @@
     },
     {
       "name": "auth_accounts_audience_update",
+      "type": "trigger"
+    },
+    {
+      "name": "auth_accounts_linked_user_immutable",
       "type": "trigger"
     },
     {
@@ -986,7 +990,7 @@
             "primary_key_ordinal": 0
           }
         ],
-        "definition_sha256": "96a79ebebffaa445b1936478213810b4cd692d3d5d6d6c81613e761e27dfdcf8",
+        "definition_sha256": "d53dea3a21b95c79c4099e32357152091e4b2391d61fd15671a2d0286832a408",
         "foreign_keys": [
           {
             "from_columns": [
@@ -1910,7 +1914,7 @@
             "primary_key_ordinal": 0
           }
         ],
-        "definition_sha256": "f6434fec818c85a69a88fcf9247820347a709dd598b654cbca2dcc7d451a3893",
+        "definition_sha256": "af23435b1cb7ecd2c2c00831a9e939706cf198c55da028b0d9c51f04e6d880ff",
         "foreign_keys": [
           {
             "from_columns": [

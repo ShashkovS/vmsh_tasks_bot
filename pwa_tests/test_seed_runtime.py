@@ -17,7 +17,12 @@ from helpers.consts import ANS_TYPE, PROB_TYPE
 from db_methods.pwa import DatabaseLifecycleBusyError, runtime_database_lock
 from models.pwa.auth import CredentialHasher, build_student_username
 from pwa_tests.fixtures.auth_credentials import SYNTHETIC_AUTH_CREDENTIALS_V1
-from pwa_tests.fixtures.seed import load_answer_types_v1, load_baseline_v1
+from pwa_tests.fixtures.seed import (
+    FIXTURES_ROOT,
+    load_answer_types_v1,
+    load_baseline_v1,
+    load_json_fixture,
+)
 from vmshpwa.scripts import seed_runtime as seed_module
 from vmshpwa.scripts.seed_runtime import seed_runtime
 
@@ -571,6 +576,35 @@ def test_seeded_argon2id_hashes_match_only_test_harness_personas(tmp_path, capsy
     assert all(
         encoded_hash not in combined_output for encoded_hash in encoded_hashes.values()
     )
+
+
+def test_browser_auth_personas_match_seeded_account_identifiers_and_login_fields():
+    """Keep Playwright's real-login fixture aligned with the immutable seed."""
+
+    baseline = load_baseline_v1()
+    browser_fixture = load_json_fixture(FIXTURES_ROOT / "auth-credentials-v1.json")
+    seeded_accounts = {
+        account["public_id"]: {
+            "audience": account["audience"],
+            "username": account["username"],
+            "credentialField": (
+                "telegramToken"
+                if account["credential_kind"] == "telegram_token"
+                else "password"
+            ),
+        }
+        for account in baseline["tables"]["auth_accounts"]
+    }
+    browser_accounts = {
+        account["accountPublicId"]: {
+            "audience": account["audience"],
+            "username": account["username"],
+            "credentialField": account["credentialField"],
+        }
+        for account in browser_fixture["accounts"]
+    }
+
+    assert browser_accounts == seeded_accounts
 
 
 def test_phase1_fixture_validation_rejects_invalid_identity_or_access_data():

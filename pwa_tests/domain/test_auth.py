@@ -11,6 +11,7 @@ from models.pwa.auth import (
     build_student_username,
     create_session_token_pair,
     hash_refresh_secret,
+    legacy_telegram_token_risk_shapes,
     next_session_expiry,
     normalize_login,
     normalize_telegram_token,
@@ -55,6 +56,13 @@ def test_student_username_refuses_an_empty_transliterated_surname():
 
 def test_telegram_token_normalization_matches_historical_homoglyph_behavior():
     assert normalize_telegram_token("  УКЕНХВАРОСМТ  ") == "ykehxbapocmt"
+
+
+def test_legacy_telegram_token_risk_shapes_are_shared_aggregate_labels():
+    assert legacy_telegram_token_risk_shapes("123456", 123456) == frozenset(
+        {"shorterThan8", "digitsOnly", "commonPlaceholder", "sameAsChatId"}
+    )
+    assert legacy_telegram_token_risk_shapes("safeTokenA8", 123456) == frozenset()
 
 
 @pytest.mark.parametrize(

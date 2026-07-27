@@ -21,13 +21,15 @@ chat IDs и user IDs не сохранялись.
 - birthday NULL/blank: 10
 - birthday invalid/future: 0
 - surname empty after trim: 0
+- surname present, but canonical login stem empty: 0
 - проходят field/token checks: 1607
 - имеют field/token blocker: 10
-- входят в collision по lower-bound source key: 26
-- provisionally eligible после объединения измеренных blockers: 1581
+- входят в collision канонического login v1: 58
+- можно активировать до явных admin overrides: 1549
 
-Это не окончательное число активируемых аккаунтов: canonical login generator ещё
-не реализован, а явного признака test-account в legacy-схеме нет.
+Это точный dry-run канонического генератора для выбранного `users.type = 1`
+cohort до явных admin overrides. Явного признака test-account в legacy-схеме нет;
+поэтому test/unknown exclusions всё равно должны быть утверждены перед apply.
 
 ### Длины token
 
@@ -52,15 +54,15 @@ chat IDs и user IDs не сохранялись.
 
 ## Login collisions
 
-- Canonical Phase-1 transliterator/suffix policy ещё не реализован, поэтому
-  окончательное число будущих login collisions неизвестно.
-- Нижняя оценка по normalized surname + exact birthday: groups
-  13, affected rows
-  26. Сами ключи не сохранялись.
+- Canonical Student username algorithm version:
+  1.
+- Точный dry-run `transliterated-surname-DD`: groups
+  29, affected rows
+  58. Сами login candidates не сохранялись.
 - Legacy `kv_logins`: rows 627, blank
   0, normalized collision groups
   0, affected rows
   0.
 
-До активации Phase 1 нужен versioned production login generator и повтор этого
-preflight: текущая source-key оценка является только нижней границей.
+До активации Phase 1 нужно явно разрешить каждую collision сохранённым уникальным
+override и утвердить launch cohort. Автоматические row-ID suffixes запрещены.

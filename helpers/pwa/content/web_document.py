@@ -103,10 +103,22 @@ def _is_web_link_url(value: str) -> bool:
 
 
 def _asset(descriptor: WebAssetDescriptor) -> dict[str, Any]:
+    if not all(
+        isinstance(value, str)
+        for value in (
+            descriptor.asset_id,
+            descriptor.content_sha256,
+            descriptor.src,
+            descriptor.media_type,
+        )
+    ):
+        raise WebDocumentError("asset text metadata has an invalid type")
     if _PUBLIC_ID.fullmatch(descriptor.asset_id) is None:
         raise WebDocumentError("asset_id is not a canonical public ID")
     if _SHA256.fullmatch(descriptor.content_sha256) is None:
         raise WebDocumentError("asset content_sha256 is invalid")
+    if len(descriptor.src) > 4_096:
+        raise WebDocumentError("asset src exceeds 4096 characters")
     if not _is_web_asset_url(descriptor.src):
         raise WebDocumentError(
             "asset src is not root-relative or credential-free HTTPS"
@@ -115,6 +127,8 @@ def _asset(descriptor: WebAssetDescriptor) -> dict[str, Any]:
         raise WebDocumentError(
             "asset media_type is not supported by WebContentDocument"
         )
+    if type(descriptor.width) is not int or type(descriptor.height) is not int:
+        raise WebDocumentError("asset dimensions must be integers")
     if not 1 <= descriptor.width <= 20_000 or not 1 <= descriptor.height <= 20_000:
         raise WebDocumentError("asset dimensions are outside 1..20000")
     return {
@@ -126,6 +140,14 @@ def _asset(descriptor: WebAssetDescriptor) -> dict[str, Any]:
         "width": descriptor.width,
         "height": descriptor.height,
     }
+
+
+def validate_web_asset_descriptor(descriptor: WebAssetDescriptor) -> None:
+    """Validate one descriptor before any renderer consumes its public URL."""
+
+    if not isinstance(descriptor, WebAssetDescriptor):
+        raise WebDocumentError("asset descriptor has an invalid type")
+    _asset(descriptor)
 
 
 def _inline(nodes: Sequence[InlineNode]) -> list[dict[str, Any]]:

@@ -12,6 +12,7 @@ from db_methods.pwa.migrations import MIGRATIONS_ROOT
 
 
 MIGRATION_ID = "0042.pwa_content_concurrency"
+FOLLOWING_MIGRATION_ID = "0043.pwa_lesson_window_audit"
 EXPECTED_COLUMNS = {
     "content_revisions": {
         "compile_claim_token",
@@ -72,7 +73,11 @@ def test_phase2_content_concurrency_exact_up_down_up(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0041.pwa_content_lessons"
     }
-    pre_hardening = {item.id for item in migrations.values() if item.id != MIGRATION_ID}
+    pre_hardening = {
+        item.id
+        for item in migrations.values()
+        if item.id not in {MIGRATION_ID, FOLLOWING_MIGRATION_ID}
+    }
     _apply(database_path, pre_hardening)
 
     with sqlite3.connect(database_path) as connection:

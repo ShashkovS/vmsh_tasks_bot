@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 2e9213ffa9e3c77306a1cc85dd161ae2c7ff196bf69b88eb55aff60c74a645e8
+-- Product schema SHA-256: 0a7593ea6bb6bfa5785d2a8a799de69d3646fa6be05aff1d4609973b7a714388
 
 CREATE TABLE auth_accounts
 (
@@ -790,6 +790,33 @@ CREATE TABLE lesson_publications
     check (state <> 'hidden' or hidden_at is not null)
 );
 
+CREATE TABLE lesson_window_changes
+(
+    id                integer primary key,
+    public_id         text    not null unique
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
+    lesson_window_id  integer not null references lesson_windows (id),
+    change_kind       text    not null
+        check (change_kind in (
+            'created', 'schedule_changed', 'submission_cutoff_changed'
+        )),
+    before_json       text
+        check (before_json is null or json_valid(before_json) = 1),
+    after_json        text    not null check (json_valid(after_json) = 1),
+    actor_user_id     integer not null references users (id),
+    request_id        text    not null check (length(trim(request_id)) > 0),
+    created_at        text    not null,
+    check (
+        (change_kind = 'created' and before_json is null)
+        or (change_kind <> 'created' and before_json is not null)
+    )
+);
+
 CREATE TABLE lesson_window_schedule_sources
 (
     lesson_window_id           integer not null references lesson_windows (id),
@@ -1501,6 +1528,9 @@ CREATE UNIQUE INDEX lesson_publications_one_scheduled_uq
 CREATE INDEX lesson_publications_timeline_idx
     on lesson_publications (group_lesson_id, kind, created_at, id);
 
+CREATE INDEX lesson_window_changes_timeline_idx
+    on lesson_window_changes (lesson_window_id, id);
+
 CREATE INDEX lesson_window_schedule_sources_rule_idx
     on lesson_window_schedule_sources (course_schedule_rule_id, lesson_window_id);
 
@@ -2156,6 +2186,20 @@ when new.state not in ('scheduled', 'published')
     or new.terminal_at is not null
 begin
     select raise(abort, 'publication must begin in an active non-terminal state');
+end;
+
+CREATE TRIGGER lesson_window_changes_delete_forbidden
+before delete on lesson_window_changes
+for each row
+begin
+    select raise(abort, 'lesson window audit deletion is forbidden');
+end;
+
+CREATE TRIGGER lesson_window_changes_immutable_update
+before update on lesson_window_changes
+for each row
+begin
+    select raise(abort, 'lesson window audit is immutable');
 end;
 
 CREATE TRIGGER lesson_window_schedule_sources_delete_forbidden

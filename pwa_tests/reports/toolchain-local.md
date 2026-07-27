@@ -10,6 +10,12 @@
 - `magick`: `ImageMagick 7.1.2-27`, сборка `20260705`;
 - абсолютный локальный override `pdflatex` был передан через environment и не сохранён в отчёте.
 
+MiKTeX хранит служебное состояние вне рабочего дерева. Поэтому запуск из
+ограниченного filesystem sandbox может корректно закончиться timeout даже при
+рабочем executable; приведённый ниже proof получен с разрешённым доступом
+MiKTeX к собственным локальным каталогам, но без сетевого доступа и без доступа
+к production credentials.
+
 ## Поведенческий smoke
 
 - synthetic TikZ с числом 179 успешно прошёл `pdflatex -no-shell-escape → pdf2svg`;

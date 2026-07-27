@@ -1175,11 +1175,20 @@ class LatexAstParser:
             )
             return None
         content_hash = hashlib.sha256(tikz_source.encode("utf-8")).hexdigest()
+        logical_name = f"tikz-{content_hash[:16]}"
+        if self.known_assets is not None and logical_name not in self.known_assets:
+            self._diagnose(
+                "asset.missing",
+                "Сгенерированный SVG для TikZ отсутствует в переданной библиотеке assets.",
+                start,
+                end,
+                recovery="Сконвертируйте TikZ в SVG и прикрепите полученный asset.",
+            )
         return self._count(
             FigureNode(
                 span=self.source_map.span(start, end),
                 kind=FigureKind.TIKZ,
-                logical_name=f"tikz-{content_hash[:16]}",
+                logical_name=logical_name,
                 content_sha256=content_hash,
                 width_hint=width_hint or None,
                 float_hint=float_hint,

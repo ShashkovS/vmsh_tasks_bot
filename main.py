@@ -2,14 +2,12 @@
 import asyncio
 import os
 from contextlib import suppress
-from dataclasses import dataclass
 from typing import Iterable, Protocol
 
 from aiohttp import web
 
 import apps
 from db_methods.pwa import (
-    DatabaseLifecycleLock,
     PwaConnectionFactory,
     runtime_database_lock,
 )
@@ -17,7 +15,12 @@ from helpers.config import DATABASE_MUTABLE_CONFIG_FIELDS, Config, config, logge
 import db_methods as db
 from helpers.features import set_features
 from helpers.msg_texts import msgs
-from helpers.pwa.app_keys import ENABLED_ADAPTERS, RUNTIME_CONFIG
+from helpers.pwa.app_keys import (
+    ENABLED_ADAPTERS,
+    PWA_DATABASE,
+    RUNTIME_CONFIG,
+    PwaDatabaseState,
+)
 from helpers.shutdown import wait_for_valuable_tasks
 from helpers.trace import init_trace
 
@@ -28,17 +31,6 @@ class AppAdapter(Protocol):
     """Structural boundary implemented by both Python modules and test adapters."""
 
     def configure(self, app: web.Application) -> None: ...
-
-
-@dataclass(slots=True)
-class PwaDatabaseState:
-    """Mutable startup result without mutating a frozen aiohttp app mapping."""
-
-    factory: PwaConnectionFactory | None = None
-    lifecycle_lock: DatabaseLifecycleLock | None = None
-
-
-PWA_DATABASE = web.AppKey("pwa_database", PwaDatabaseState)
 
 
 async def pwa_database_lifecycle(app: web.Application):

@@ -463,8 +463,19 @@ async def test_pwa_shutdown_closes_all_tracked_websockets_before_broker():
     await broker.setup()
     student = RecordingWebSocket()
     staff = RecordingWebSocket()
-    app[pwa_app.PWA_STATE]["websockets"]["student"].add(student)
-    app[pwa_app.PWA_STATE]["websockets"]["staff"].add(staff)
+    registry = app[pwa_app.PWA_WEBSOCKET_REGISTRY]
+    await registry.register(
+        student,
+        audience="student",
+        account_public_id="account-student-shutdown",
+        session_public_id="a" * 32,
+    )
+    await registry.register(
+        staff,
+        audience="staff",
+        account_public_id="account-staff-shutdown",
+        session_public_id="b" * 32,
+    )
 
     await pwa_app.on_shutdown(app)
 
@@ -472,11 +483,11 @@ async def test_pwa_shutdown_closes_all_tracked_websockets_before_broker():
     assert student.close_args["code"] == pwa_app.WSCloseCode.GOING_AWAY
     assert staff.close_args["message"] == b"Server shutdown"
     assert not broker.active
-    assert all(not sockets for sockets in app[pwa_app.PWA_STATE]["websockets"].values())
+    assert await registry.connection_count() == 0
 
 
 @pytest.mark.asyncio
-async def test_slow_websocket_is_bounded_and_removed(monkeypatch):
+async def test_slow_websocket_is_bounded_and_removed():
     class SlowWebSocket:
         closed = False
 
@@ -490,23 +501,29 @@ async def test_slow_websocket_is_bounded_and_removed(monkeypatch):
             self.close_calls += 1
             self.closed = True
 
-    monkeypatch.setattr(pwa_app, "WEBSOCKET_SEND_TIMEOUT_SECONDS", 0.01)
     app = web.Application()
     app[pwa_app.PWA_STATE] = pwa_app._create_pwa_state()
+    registry = pwa_app.WebSocketSessionRegistry(operation_timeout_seconds=0.01)
+    app[pwa_app.PWA_WEBSOCKET_REGISTRY] = registry
     websocket = SlowWebSocket()
-    app[pwa_app.PWA_STATE]["websockets"]["student"].add(websocket)
+    await registry.register(
+        websocket,
+        audience="student",
+        account_public_id="account-student-slow",
+        session_public_id="c" * 32,
+    )
 
     await asyncio.wait_for(
         pwa_app._broadcast(app, ["lesson:42"], "lesson-published", "student"),
         timeout=0.2,
     )
 
-    assert websocket not in app[pwa_app.PWA_STATE]["websockets"]["student"]
+    assert await registry.connection_count() == 0
     assert websocket.close_calls == 1
 
 
 @pytest.mark.asyncio
-async def test_failed_websocket_close_remains_tracked_for_shutdown_retry(monkeypatch):
+async def test_failed_websocket_close_remains_tracked_for_shutdown_retry():
     class UnclosableWebSocket:
         closed = False
 
@@ -516,13 +533,18 @@ async def test_failed_websocket_close_remains_tracked_for_shutdown_retry(monkeyp
         async def close(self, **_kwargs):
             raise RuntimeError("synthetic close failure")
 
-    monkeypatch.setattr(pwa_app, "WEBSOCKET_CLOSE_TIMEOUT_SECONDS", 0.01)
     app = web.Application()
     app[pwa_app.PWA_STATE] = pwa_app._create_pwa_state()
+    registry = pwa_app.WebSocketSessionRegistry(operation_timeout_seconds=0.01)
+    app[pwa_app.PWA_WEBSOCKET_REGISTRY] = registry
     websocket = UnclosableWebSocket()
-    connections = app[pwa_app.PWA_STATE]["websockets"]["student"]
-    connections.add(websocket)
+    await registry.register(
+        websocket,
+        audience="student",
+        account_public_id="account-student-unclosable",
+        session_public_id="d" * 32,
+    )
 
     await pwa_app._broadcast(app, ["lesson:42"], "lesson-published", "student")
 
-    assert websocket in connections
+    assert await registry.connection_count() == 1

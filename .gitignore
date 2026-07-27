@@ -43,6 +43,7 @@ vmshpwa/.vite/
 vmshpwa/**/*.tsbuildinfo
 .pnpm-store/
 .runtime/vmshpwa/
+.runtime/auth-import/
 db/vmshpwa_*.sqlite3
 db/vmshpwa_*.sqlite3-wal
 db/vmshpwa_*.sqlite3-shm

@@ -46,15 +46,17 @@ async def upstream(aiohttp_server):
 
     async def api(request: web.Request) -> web.Response:
         body = await request.read()
+        payload = {
+            "method": request.method,
+            "path": request.path,
+            "query": request.query_string,
+            "body": body.decode(),
+            "requestId": request.headers.get("X-Request-ID"),
+        }
+        if request.path.endswith("/host"):
+            payload["host"] = request.headers.get("Host")
         response = web.json_response(
-            {
-                "method": request.method,
-                "path": request.path,
-                "query": request.query_string,
-                "body": body.decode(),
-                "requestId": request.headers.get("X-Request-ID"),
-            },
-            status=418 if request.path.endswith("missing") else 200,
+            payload, status=418 if request.path.endswith("missing") else 200
         )
         response.headers["Cache-Control"] = "public, max-age=86400"
         response.headers["X-Upstream"] = "yes"
@@ -63,12 +65,13 @@ async def upstream(aiohttp_server):
     async def websocket(request: web.Request) -> web.WebSocketResponse:
         socket = web.WebSocketResponse()
         await socket.prepare(request)
-        await socket.send_json(
-            {
-                "type": "connected",
-                "requestId": request.headers.get("X-Request-ID"),
-            }
-        )
+        payload = {
+            "type": "connected",
+            "requestId": request.headers.get("X-Request-ID"),
+        }
+        if request.query.get("includeHost") == "1":
+            payload["host"] = request.headers.get("Host")
+        await socket.send_json(payload)
         async for message in socket:
             if message.type == WSMsgType.TEXT:
                 await socket.send_str(f"echo:{message.data}")
@@ -179,6 +182,22 @@ async def test_gateway_relays_websocket_frames_and_request_id(gateway_client):
     }
     await socket.send_str("ping")
     assert (await socket.receive()).data == "echo:ping"
+    await socket.close()
+
+
+async def test_gateway_preserves_browser_host_for_http_and_websocket(gateway_client):
+    browser_host = "pwa.test.invalid:5380"
+
+    response = await gateway_client.get(
+        "/student/api/v1/host", headers={"Host": browser_host}
+    )
+    assert response.status == 200
+    assert (await response.json())["host"] == browser_host
+
+    socket = await gateway_client.ws_connect(
+        "/staff/ws?includeHost=1", headers={"Host": browser_host}
+    )
+    assert (await socket.receive_json())["host"] == browser_host
     await socket.close()
 
 
@@ -348,3 +367,19 @@ def test_gateway_cli_requires_e2e_profile(monkeypatch):
     monkeypatch.delenv("VMSH_RUNTIME_PROFILE", raising=False)
     with pytest.raises(SystemExit, match="VMSH_RUNTIME_PROFILE=pwa-e2e"):
         main([])
+
+
+@pytest.mark.parametrize("audience", AUDIENCES)
+def test_vite_dev_and_preview_proxies_preserve_browser_host(audience):
+    repository_root = Path(__file__).resolve().parents[1]
+    source = (
+        repository_root / "vmshpwa" / "apps" / audience / "vite.config.ts"
+    ).read_text(encoding="utf-8")
+
+    api_proxy = f"'/{audience}/api': {{ target: apiOrigin, changeOrigin: false }}"
+    websocket_proxy = (
+        f"'/{audience}/ws': {{ target: apiOrigin, changeOrigin: false, ws: true }}"
+    )
+    assert source.count(api_proxy) == 2
+    assert source.count(websocket_proxy) == 2
+    assert "changeOrigin: true" not in source

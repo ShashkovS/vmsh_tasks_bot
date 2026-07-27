@@ -41,7 +41,10 @@ def _auth_fixture(path) -> None:
             "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)",
             (
                 (1, 1, "Иванов", "2012-01-02", "safeA7x9", 900001),
-                (2, 1, "  ИВАНОВ ", "2012-01-02", "123456", 900002),
+                # Distinct source strings collapse only after the frozen
+                # Cyrillic→ASCII username algorithm; a pre-transliteration
+                # surname key would miss this collision.
+                (2, 1, "  Ivanov ", "2012-01-02", "123456", 900002),
                 (3, 1, "   ", "not-a-date", "aaaaaaaa", 900003),
                 (4, 1, "Петров", None, "12345678", 12345678),
                 (10, 2, "PrivateTeacher", "1980-01-01", "teacher-secret", 910000),
@@ -88,7 +91,11 @@ def test_auth_preflight_is_aggregate_deterministic_and_read_only(tmp_path):
         "invalidIsoDate": 1,
         "futureDate": 0,
     }
-    assert students["surname"] == {"present": 3, "emptyAfterTrim": 1}
+    assert students["surname"] == {
+        "present": 3,
+        "emptyAfterTrim": 1,
+        "emptyLoginStem": 0,
+    }
     assert students["tokenLengthBuckets"] == {
         "0": 0,
         "1-5": 0,
@@ -109,16 +116,23 @@ def test_auth_preflight_is_aggregate_deterministic_and_read_only(tmp_path):
     assert students["activation"] == {
         "blockedByFieldOrTokenCondition": 3,
         "eligibleByFieldAndTokenConditions": 1,
-        "sourceKeyCollisionRows": 2,
-        "blockedByMeasuredLowerBound": 4,
-        "provisionallyEligibleAfterMeasuredLowerBound": 0,
-        "finalEligibilityUnknown": True,
+        "canonicalLoginCollisionRows": 2,
+        "blockedBeforeExplicitOverrides": 4,
+        "eligibleBeforeExplicitOverrides": 0,
+        "explicitOverridesApplied": 0,
+        "canonicalEligibilityMeasured": True,
+        "finalEligibilityKnown": False,
+        "finalEligibilityUnknownReason": (
+            "Launch cohort exclusions and explicit collision overrides have not "
+            "been supplied."
+        ),
     }
 
     collisions = first["loginCollisions"]
-    assert collisions["futureCanonicalGeneratorAvailable"] is False
-    assert collisions["normalizedSurnameBirthdaySourceKey"]["collisionGroups"] == 1
-    assert collisions["normalizedSurnameBirthdaySourceKey"]["affectedRows"] == 2
+    assert collisions["canonicalGeneratorAvailable"] is True
+    assert collisions["studentUsernameAlgorithmVersion"] == 1
+    assert collisions["canonicalStudentUsername"]["collisionGroups"] == 1
+    assert collisions["canonicalStudentUsername"]["affectedRows"] == 2
     assert collisions["legacyKvLogin"] == {
         "tablePresent": True,
         "studentRows": 3,

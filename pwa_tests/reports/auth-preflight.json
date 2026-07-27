@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": "db/vmsh.db",
   "sourceAccess": "secure pre-open fd with strongest available nofollow flag; exact bytes read+SHA-256 on that fd; in-memory sqlite deserialize; PRAGMA query_only=ON; explicit read transaction; source path/fingerprint rechecked; WAL/journal sidecars refused",
   "sourceUnchanged": true,
@@ -44,7 +44,8 @@
     },
     "surname": {
       "present": 1617,
-      "emptyAfterTrim": 0
+      "emptyAfterTrim": 0,
+      "emptyLoginStem": 0
     },
     "tokenLengthBuckets": {
       "0": 0,
@@ -66,18 +67,22 @@
     "activation": {
       "blockedByFieldOrTokenCondition": 10,
       "eligibleByFieldAndTokenConditions": 1607,
-      "sourceKeyCollisionRows": 26,
-      "blockedByMeasuredLowerBound": 36,
-      "provisionallyEligibleAfterMeasuredLowerBound": 1581,
-      "finalEligibilityUnknown": true
+      "canonicalLoginCollisionRows": 58,
+      "blockedBeforeExplicitOverrides": 68,
+      "eligibleBeforeExplicitOverrides": 1549,
+      "explicitOverridesApplied": 0,
+      "canonicalEligibilityMeasured": true,
+      "finalEligibilityKnown": false,
+      "finalEligibilityUnknownReason": "Launch cohort exclusions and explicit collision overrides have not been supplied."
     }
   },
   "loginCollisions": {
-    "futureCanonicalGeneratorAvailable": false,
-    "normalizedSurnameBirthdaySourceKey": {
-      "collisionGroups": 13,
-      "affectedRows": 26,
-      "interpretation": "Lower bound before transliteration; this is not a generated login."
+    "canonicalGeneratorAvailable": true,
+    "studentUsernameAlgorithmVersion": 1,
+    "canonicalStudentUsername": {
+      "collisionGroups": 29,
+      "affectedRows": 58,
+      "interpretation": "Exact v1 transliterated-surname-DD candidates before any explicit stored admin overrides; candidate values are not retained."
     },
     "legacyKvLogin": {
       "tablePresent": true,

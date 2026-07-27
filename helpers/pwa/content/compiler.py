@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import unicodedata
 from collections.abc import Mapping
 from pathlib import PurePosixPath
@@ -35,11 +34,16 @@ from .scanner import (
     syntax_diagnostic,
 )
 from .telegram import TelegramMarkupError
-from .web_document import WebDocumentError, render_web_document
+from .web_document import (
+    WebAssetDescriptor,
+    WebDocumentError,
+    render_web_document,
+    validate_web_asset_descriptor,
+)
 
 
 COMPILER_VERSION = "vmsh-latex-compiler/1"
-_SHA256 = re.compile(r"[0-9a-f]{64}")
+_MAX_KNOWN_ASSETS = 20_000
 _FORBIDDEN_TEX_COMMANDS = {
     "catcode",
     "csname",
@@ -61,21 +65,37 @@ class ContentCompileError(ValueError):
     """Raised before parsing when the immutable source envelope is invalid."""
 
 
-def _normalized_assets(assets: Mapping[str, str] | None) -> Mapping[str, str] | None:
+def _normalized_assets(
+    assets: Mapping[str, WebAssetDescriptor] | None,
+) -> tuple[Mapping[str, str] | None, Mapping[str, WebAssetDescriptor]]:
     if assets is None:
-        return None
-    normalized: dict[str, str] = {}
-    for raw_name, raw_hash in assets.items():
+        return None, {}
+    if len(assets) > _MAX_KNOWN_ASSETS:
+        raise ContentCompileError(
+            f"known_assets exceeds {_MAX_KNOWN_ASSETS} descriptors"
+        )
+    hashes: dict[str, str] = {}
+    descriptors: dict[str, WebAssetDescriptor] = {}
+    for raw_name, descriptor in assets.items():
+        if not isinstance(raw_name, str):
+            raise ContentCompileError("Invalid logical asset name")
         name = normalize_asset_reference(raw_name)
-        if name is None:
-            raise ContentCompileError(f"Invalid logical asset name: {raw_name!r}")
-        hash_value = raw_hash.strip().lower()
-        if _SHA256.fullmatch(hash_value) is None:
-            raise ContentCompileError(f"Invalid SHA-256 for asset {name!r}")
-        if name in normalized and normalized[name] != hash_value:
-            raise ContentCompileError(f"Conflicting hashes for asset {name!r}")
-        normalized[name] = hash_value
-    return normalized
+        if name is None or len(name) > 2_000:
+            raise ContentCompileError("Invalid logical asset name")
+        try:
+            validate_web_asset_descriptor(descriptor)
+        except WebDocumentError as error:
+            raise ContentCompileError(
+                f"Invalid published descriptor for logical asset {name!r}: {error}"
+            ) from error
+        existing = descriptors.get(name)
+        if existing is not None and existing != descriptor:
+            raise ContentCompileError(
+                f"Conflicting published descriptors for logical asset {name!r}"
+            )
+        hashes[name] = descriptor.content_sha256
+        descriptors[name] = descriptor
+    return hashes, descriptors
 
 
 def _normalized_urls(
@@ -128,7 +148,7 @@ def compile_latex(
     *,
     source_name: str,
     role: ContentRole,
-    known_assets: Mapping[str, str] | None = None,
+    known_assets: Mapping[str, WebAssetDescriptor] | None = None,
     asset_urls: Mapping[str, str] | None = None,
     limits: ParserLimits | None = None,
     revision_id: str | None = None,
@@ -172,7 +192,9 @@ def compile_latex(
     except (UnicodeDecodeError, ValueError) as error:
         raise ContentCompileError(str(error)) from error
 
-    normalized_assets = _normalized_assets(known_assets)
+    normalized_asset_hashes, normalized_asset_descriptors = _normalized_assets(
+        known_assets
+    )
     normalized_urls, rejected_urls = _normalized_urls(asset_urls)
     parser = LatexAstParser(
         source_name=source.source_name,
@@ -180,7 +202,7 @@ def compile_latex(
         source_encoding=source.encoding,
         text=source.text,
         limits=parser_limits,
-        known_assets=normalized_assets,
+        known_assets=normalized_asset_hashes,
     )
     document = parser.parse()
     diagnostics = list(parser.diagnostics)
@@ -197,6 +219,27 @@ def compile_latex(
             )
         )
 
+    for logical_name, descriptor in normalized_asset_descriptors.items():
+        previous_url = normalized_urls.get(logical_name)
+        if previous_url is not None and previous_url != descriptor.src:
+            diagnostics.append(
+                syntax_diagnostic(
+                    code="asset.url_conflict",
+                    message=(
+                        "URL производного asset расходится с опубликованным "
+                        "typed descriptor."
+                    ),
+                    source_map=parser.source_map,
+                    start=0,
+                    end=min(1, len(source.text)),
+                    recovery=(
+                        "Используйте один опубликованный descriptor для web и Telegram."
+                    ),
+                )
+            )
+        # The descriptor is the single source of truth for every derivative.
+        normalized_urls[logical_name] = descriptor.src
+
     web_content = render_web_html(
         document,
         role=role,
@@ -211,6 +254,7 @@ def compile_latex(
                     role=role,
                     revision_id=revision_id,
                     title=title,
+                    assets=normalized_asset_descriptors,
                 )
             )
         except WebDocumentError as error:

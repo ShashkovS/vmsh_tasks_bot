@@ -33,6 +33,24 @@ class AuthConfigurationError(RuntimeError):
     """Authentication cannot start without an unambiguous safe configuration."""
 
 
+def _validate_proxy_unix_socket_paths(values: tuple[str, ...]) -> tuple[str, ...]:
+    for value in values:
+        if (
+            not isinstance(value, str)
+            or not value
+            or value != value.strip()
+            or "\x00" in value
+            or not os.path.isabs(value)
+            or os.path.normpath(value) != value
+        ):
+            raise AuthConfigurationError(
+                "Trusted proxy Unix socket paths must be exact canonical absolute paths"
+            )
+    if len(set(values)) != len(values):
+        raise AuthConfigurationError("Trusted proxy Unix socket paths must be unique")
+    return values
+
+
 @dataclass(frozen=True, slots=True)
 class AudienceCookiePolicy:
     access_name: str
@@ -69,21 +87,36 @@ class AuthRuntimeConfig:
     signing_keys: tuple[str, ...] = field(repr=False)
     refresh_pepper: bytes = field(repr=False)
     throttle_pepper: bytes = field(repr=False)
+    trusted_proxy_unix_socket_paths: tuple[str, ...] = ()
     test_only_defaults: bool = False
 
     def __post_init__(self) -> None:
+        _validate_proxy_unix_socket_paths(self.trusted_proxy_unix_socket_paths)
         if set(self.origins_by_audience) != set(AuthAudience):
             raise AuthConfigurationError("Every PWA audience needs allowed origins")
         if any(not origins for origins in self.origins_by_audience.values()):
             raise AuthConfigurationError("Every PWA audience needs an allowed origin")
         if self.trusted_proxy_hops < 0:
             raise AuthConfigurationError("Trusted proxy hop count must be non-negative")
-        if self.trusted_proxy_hops and not self.trusted_proxy_networks:
+        if self.trusted_proxy_hops and not (
+            self.trusted_proxy_networks or self.trusted_proxy_unix_socket_paths
+        ):
             raise AuthConfigurationError(
-                "Trusted proxy hops require at least one trusted proxy network"
+                "Trusted proxy hops require at least one explicit TCP network "
+                "or Unix socket"
+            )
+        if self.trusted_proxy_hops > 1 and not self.trusted_proxy_networks:
+            raise AuthConfigurationError(
+                "Multiple trusted proxy hops require explicit proxy networks"
+            )
+        if self.trusted_proxy_unix_socket_paths and not self.trusted_proxy_hops:
+            raise AuthConfigurationError(
+                "Trusted Unix proxy sockets require a positive proxy hop count"
             )
         if len(self.refresh_pepper) < 32 or len(self.throttle_pepper) < 32:
-            raise AuthConfigurationError("Authentication peppers must be at least 32 bytes")
+            raise AuthConfigurationError(
+                "Authentication peppers must be at least 32 bytes"
+            )
         # Construction also validates signing-key length and access TTL.
         self.access_codec()
 
@@ -142,8 +175,10 @@ def _parse_origins(
     parsed: dict[AuthAudience, frozenset[str]] = {}
     for audience in AuthAudience:
         values = payload[audience.value]
-        if not isinstance(values, list) or not values or not all(
-            isinstance(value, str) for value in values
+        if (
+            not isinstance(values, list)
+            or not values
+            or not all(isinstance(value, str) for value in values)
         ):
             raise AuthConfigurationError(
                 f"PWA {audience.value} origins must be a non-empty string array"
@@ -161,10 +196,14 @@ def _parse_signing_keys(raw_value: str) -> tuple[str, ...]:
         raise AuthConfigurationError(
             "VMSH_PWA_AUTH_SIGNING_KEYS_JSON must be a JSON array"
         ) from error
-    if not isinstance(payload, list) or not payload or not all(
-        isinstance(value, str) and value for value in payload
+    if (
+        not isinstance(payload, list)
+        or not payload
+        or not all(isinstance(value, str) and value for value in payload)
     ):
-        raise AuthConfigurationError("Access signing keys must be a non-empty string array")
+        raise AuthConfigurationError(
+            "Access signing keys must be a non-empty string array"
+        )
     return tuple(payload)
 
 
@@ -172,9 +211,13 @@ def _decode_pepper(raw_value: str, variable_name: str) -> bytes:
     try:
         decoded = base64.b64decode(raw_value, altchars=b"-_", validate=True)
     except (ValueError, TypeError) as error:
-        raise AuthConfigurationError(f"{variable_name} must be URL-safe base64") from error
+        raise AuthConfigurationError(
+            f"{variable_name} must be URL-safe base64"
+        ) from error
     if len(decoded) < 32:
-        raise AuthConfigurationError(f"{variable_name} must decode to at least 32 bytes")
+        raise AuthConfigurationError(
+            f"{variable_name} must decode to at least 32 bytes"
+        )
     return decoded
 
 
@@ -188,6 +231,27 @@ def _parse_proxy_networks(raw_value: str) -> tuple[Network, ...]:
         raise AuthConfigurationError(
             "VMSH_PWA_TRUSTED_PROXY_CIDRS contains an invalid canonical CIDR"
         ) from error
+
+
+def _parse_proxy_unix_socket_paths(raw_value: str) -> tuple[str, ...]:
+    if not raw_value.strip():
+        return ()
+    try:
+        payload = json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError) as error:
+        raise AuthConfigurationError(
+            "VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON must be a JSON array"
+        ) from error
+    if (
+        not isinstance(payload, list)
+        or not payload
+        or not all(isinstance(value, str) and value for value in payload)
+    ):
+        raise AuthConfigurationError(
+            "Trusted proxy Unix sockets must be a non-empty string array"
+        )
+
+    return _validate_proxy_unix_socket_paths(tuple(payload))
 
 
 def _prototype_origins(runtime_config: Config) -> Mapping[AuthAudience, frozenset[str]]:
@@ -272,7 +336,9 @@ def load_auth_runtime_config(
         )
         test_only_defaults = False
 
-    raw_ttl = env.get("VMSH_PWA_ACCESS_TTL_SECONDS", str(DEFAULT_ACCESS_MAX_AGE_SECONDS))
+    raw_ttl = env.get(
+        "VMSH_PWA_ACCESS_TTL_SECONDS", str(DEFAULT_ACCESS_MAX_AGE_SECONDS)
+    )
     try:
         access_ttl_seconds = int(raw_ttl)
     except ValueError as error:
@@ -280,7 +346,9 @@ def load_auth_runtime_config(
     try:
         trusted_proxy_hops = int(env.get("VMSH_PWA_TRUSTED_PROXY_HOPS", "0"))
     except ValueError as error:
-        raise AuthConfigurationError("Trusted proxy hop count must be an integer") from error
+        raise AuthConfigurationError(
+            "Trusted proxy hop count must be an integer"
+        ) from error
 
     return AuthRuntimeConfig(
         origins_by_audience=origins,
@@ -293,6 +361,9 @@ def load_auth_runtime_config(
         signing_keys=signing_keys,
         refresh_pepper=refresh_pepper,
         throttle_pepper=throttle_pepper,
+        trusted_proxy_unix_socket_paths=_parse_proxy_unix_socket_paths(
+            env.get("VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON", "")
+        ),
         test_only_defaults=test_only_defaults,
     )
 

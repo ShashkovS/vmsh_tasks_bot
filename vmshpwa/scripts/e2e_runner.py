@@ -73,8 +73,18 @@ def exclusive_e2e_run(lock_path: Path = DEFAULT_LOCK_PATH) -> Iterator[None]:
 
 def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
     playwright = ["pnpm", "exec", "playwright", "test"]
-    if mode == "runtime-isolation":
+    if mode == "authentication":
+        playwright.append("e2e/authentication.spec.ts")
+    elif mode == "runtime-isolation":
         playwright.append("e2e/runtime-isolation.spec.ts")
+    elif mode == "realtime":
+        playwright.extend(
+            [
+                "e2e/runtime-isolation.spec.ts",
+                "--grep",
+                "product realtime|current-session revoke",
+            ]
+        )
     elif mode == "nonvisual":
         playwright.extend(["--grep-invert", "@visual"])
     elif mode == "visual":
@@ -134,8 +144,10 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--mode",
         choices=(
             "all",
+            "authentication",
             "nonvisual",
             "runtime-isolation",
+            "realtime",
             "visual",
             "visual-update",
         ),
