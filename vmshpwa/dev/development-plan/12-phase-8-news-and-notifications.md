@@ -2,7 +2,7 @@
 
 ## Результат
 
-Посты Telegram-канала с 1 апреля 2026 года, включая edits/deletes, идемпотентно зеркалируются в Student/Family PWA. Admin может скрыть пост только в PWA и создать scheduled local publication/banner. Полный broadcast composer и Staff→Telegram publishing откладываются во вторую версию.
+Посты Telegram-канала с 1 апреля 2026 года, включая edits/deletes, идемпотентно зеркалируются в Student/Family PWA. Admin может скрыть пост только в PWA и создать scheduled local publication/banner. Полный broadcast composer и Staff→Telegram channel publishing откладываются во вторую версию; узкая персональная рассылка подтверждённых аудиторий реализует transport этапа 7.
 
 Дизайн-контракт этапа: [Telegram-rich news, connectivity/update/push states, audience news pages и Storybook stories](18-design-implementation-map.md#phase-8-design).
 
@@ -12,12 +12,12 @@ Migration: `pwa_news_notifications_delivery`.
 
 Таблицы: `news_posts`, `news_revisions`, `news_media`, `news_visibility`, `notification_preferences`, `push_subscriptions`, `notification_events`, `notification_deliveries`, `delivery_outbox`, `group_banners`. `broadcasts`, targets/deliveries и Markdown-editor schema добавляются во второй фазе, а не заранее пустыми таблицами.
 
-Telegram update identity: chat/message/media-group IDs + source hash. Source chat сопоставляется с группой через verified `groups.telegram_channel_id`; `news_posts.group_id` фиксирует это сопоставление. Edit creates new revision; source delete убирает пост из обычной PWA-ленты, manual hide не меняет Telegram.
+Telegram update identity: chat/message/media-group IDs + source hash. Source chat сопоставляется с course/group только через verified `telegram_bindings` purpose `news_source`; `news_posts` snapshot-ит source binding, concrete owner и фактические IDs. Edit creates new revision; source delete убирает пост из обычной PWA-ленты, manual hide не меняет Telegram.
 
 ## News ingest/rendering
 
 - Telegram adapter backfills from `2026-04-01` and consumes new/edited/deleted channel posts without becoming required app startup adapter.
-- У каждой учебной группы свой DB-configured Telegram channel. Unmapped/disabled channel update не присваивается группе по title/username, а останавливается в diagnostics до явной настройки.
+- Course/group Telegram channels задаются verified `telegram_bindings`. Course и group news sources складываются; unmapped/disabled channel update не угадывает owner по title/username, а останавливается в diagnostics до явной настройки.
 - Media copies to S3/file storage; local DB keeps source payload and revision.
 - Telegram-rich source is sanitized into PWA representation with headings, paragraphs, emphasis/mark/sub/sup/spoiler, links, lists, quotes, code, details, tables, divider, media and math extensions; unsupported entity produces diagnostic/fallback, not raw unsafe HTML.
 - Новые условия задач публикуются в Telegram полноценным текстом Rich Message. Скриншот условия не является основным представлением; отдельные SVG/рисунки остаются media. Исторические fixtures берутся из `_external_pipelines/ChatExport_2026-07-25`.
@@ -35,7 +35,7 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - Foreground can suppress duplicate native push display while still marking in-app event.
 - Review event становится read после минимум трёх непрерывных секунд видимости: client запускает monotonic timer только для реально видимого события и затем отправляет идемпотентный acknowledgement, а server ставит собственный `readAt`. Read-state account-scoped, поэтому второе устройство получает invalidation/refetch и снимает badge. Telegram delivery не считается read без надёжного receipt. Badge «Задачи» считает обновлённые/проверенные задачи, которые student ещё не видел.
 - Family по умолчанию получает один weekly digest после окончания всей проверки, без потока individual review pushes.
-- `classroom_assignment.changed` продолжает vertical slice этапа 7: Student получает push/in-app при назначении, сбросе и новой комнате; Family только refetch-ит API/WS state и не получает delivery этой категории.
+- `classroom.assignment.changed` продолжает vertical slice этапа 7 как тихая Student/Family invalidation после confirm/change. Только явный admin delivery batch создаёт `classroom.assignment.announced`: выбранный PWA channel даёт Student in-app/push, выбранный Telegram channel — личное bot message. Family не получает delivery этой категории.
 - Delivery is DB-durable with retry/backoff/dead-letter/admin diagnostics. NATS only invalidates read models.
 
 ## WebSocket scoping
@@ -56,12 +56,12 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 ## Tests
 
 - Telegram new/edit/album/duplicate/reordered/retry fixtures, no live Bot API in unit/E2E.
-- Channel routing fixtures: две группы/два channel ID, unmapped/disabled/changed destination, запрет дубля channel ID и неизменность исторического `news_posts.telegram_chat_id` после перенастройки группы.
+- Binding routing fixtures: course+две группы/несколько channel IDs, additive news sources, inherited/replaced materials target, unmapped/disabled/changed destination и неизменность historical binding/chat/message snapshot после перенастройки.
 - Sanitizer/CSP/entity/math/oversize/unsupported media tests.
 - Delivery outbox crash/lease/retry/dedup/batching/quiet hours tests with frozen clocks.
 - Read acknowledgement: background tab/быстрый scroll не засчитываются, два устройства сходятся к одному `readAt`, duplicate ack безопасен, Telegram sent не снимает PWA badge.
 - Three-audience WS plus private owner leakage tests across two workers/NATS.
-- Classroom delivery routing: owner Student получает event/push, связанный Family socket обновляет state без push, посторонние principals не видят payload.
+- Classroom delivery routing: confirm обновляет Student/Family sockets без push; explicit batch доставляет только Student через выбранные PWA/Telegram каналы. Проверяются immutable recipient snapshot, preview/version conflict, no-auto-resend, idempotency, retry/partial failure и отсутствие token/chat ID в browser/logs.
 - Service-worker push/update routing tests on supported browser; contract tests elsewhere.
 - Storybook news cards/albums/two previews/banner/push prompts/connection states.
 - Playwright production build: backfill/edit/delete fixture → PWA; offline news; scheduled banner with local dismiss; WS/read-after-3s; family weekly digest; teacher forbidden admin routes.
@@ -72,7 +72,7 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - Private review event cannot be observed by other student, family or unrelated staff socket.
 - Reconnect yields correct state even when worker cursor is lower.
 - Quiet hours do not hide/belay in-app information, only suppress sound behavior.
-- Storybook первой фазы честно показывает deferred scope рассылок и не имитирует отправку. Markdown editor, aggregated delivery/retry и Staff→Telegram остаются phase two.
+- Storybook различает узкий classroom delivery preview/send и отложенный общий broadcast composer. Markdown editor, произвольные audiences/content и Staff→Telegram channel publication остаются phase two.
 - Telegram adapter outage does not stop PWA API.
 
 ## Пруфы завершения этапа

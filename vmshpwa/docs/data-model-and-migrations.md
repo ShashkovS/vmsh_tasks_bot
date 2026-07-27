@@ -23,7 +23,7 @@ Lesson window хранит отдельный `submission_closes_at` в `Europe/
 
 История смены группы/уровня/режима не схлопывается до текущего значения. Legacy `user_changes_log` с `ts`, `user_id`, `change_type`, `new_value` является источником backfill. Модель уровней не ограничена тремя строками: текущие три получают именованные presentation tokens по `groups.sort_order`, последующие — нейтральный доступный fallback.
 
-Telegram destination является настройкой группы в SQLite, а не глобальным config: `groups.telegram_channel_id`, cached title, enabled и verified timestamp. ID сохраняется как возвращённый Bot API 64-bit integer без ручного преобразования UI-значения; partial unique index защищает от случайного назначения одного production channel двум группам. Bot token остаётся credential config. Telegram-derived news дополнительно snapshot-ит `group_id` и фактические chat/message IDs, чтобы смена destination не переписывала историю.
+Telegram destination является записью `telegram_bindings`, а не глобальным config или полем `groups`: owner — course/group, purpose — news source/materials target, canonical `chat_id` сохраняется как возвращённый Bot API 64-bit integer без ручного преобразования UI-значения. Bot token остаётся credential config. Telegram-derived news snapshot-ит binding, concrete owner и фактические chat/message IDs, чтобы смена destination не переписывала историю. Личный Telegram destination Student для classroom delivery разрешается server-side через существующую связь с ботом и никогда не отдаётся browser-клиенту.
 
 ## Review locks
 
@@ -36,6 +36,8 @@ Lock имеет owner и lease expiry, продлевается heartbeat и м�
 `classroom_layout_versions` и `classroom_layout_rooms` задают наследуемую схему «аудитория → группа». Новое занятие читает последнюю confirmed-версию, а первая правка materialize-ит draft с `base_version_id`. Одна аудитория встречается в версии один раз, одна группа может использовать любое число комнат. Вместимость и веса отсутствуют.
 
 `classroom_assignment_plans` и `classroom_assignments` сохраняют отдельную версию распределения для занятия со snapshot группы школьника. Алгоритм сохраняет прежнюю допустимую комнату, иначе выбирает наименее заполненную с natural-name tie-break. Confirmed membership/history не перезаписывается; глобальный rename меняет отображаемое имя, а старое остаётся в audit. Layout change делает plan `stale`; скрытие используемой комнаты немедленно даёт текущим затронутым школьникам `reassigning`, restore не возвращает назначение. `not_applicable` зарезервирован для школьника, которому не нужна очная комната.
+
+`classroom_assignment_delivery_batches` и recipient rows snapshot-ят confirmed plan version, выбранные PWA/Telegram channels и Student recipients. Confirm меняет read model, но не отправляет уведомление. Delivery создаётся только отдельным admin action после preview; Family recipient rows отсутствуют, а более новая версия плана не запускает resend автоматически.
 
 One-time import текущего Excel-export использует `IDd`, `Уровень`, `Аудитория`, требует dry-run/hash/audit и не создаёт постоянный spreadsheet adapter.
 

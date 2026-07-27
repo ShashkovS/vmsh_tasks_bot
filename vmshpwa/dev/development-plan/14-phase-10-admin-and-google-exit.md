@@ -74,7 +74,7 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 - Dry-run diff объясняет каждое создаваемое/изменяемое/пропущенное значение.
 - Валидные строки импортируются, невалидные пропускаются и перечисляются в отчёте; пропущенная строка не оставляет частично записанных данных.
 - Permission changes вступают в силу и отзывают доступ/session according policy.
-- Каждая Telegram-enabled группа имеет ровно один verified channel destination; публикация никогда не использует глобальный fallback, а изменение channel не переписывает chat/message IDs исторических публикаций.
+- Каждый active course/group binding имеет verified canonical destination и явный purpose; news inheritance/material target replacement не используют глобальный fallback, а изменение binding не переписывает binding/chat/message IDs исторических публикаций.
 - Reload/обновление SPA не теряет несохранённые правки grid/import; новый server version не перезаписывается молча.
 - Cutover обратим и имеет parity report; при rollover автоматически переносятся только teachers, остальные данные импортируются заново.
 

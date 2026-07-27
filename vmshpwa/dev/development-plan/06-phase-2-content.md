@@ -12,7 +12,7 @@ Admin загружает условие/подсказку/решение одн
 
 Таблицы: `content_sources`, `content_revisions`, `media_assets`, `content_revision_assets`, `content_derivatives`, `content_problem_matches`, `problem_revisions`, `problem_synonym_groups`, `problem_synonym_members`, `lesson_publications`, `lesson_windows`, `hint_reveals`, `solution_reveals`.
 
-Legacy `lessons/problems` сохраняются. Compiler создаёт versioned representation и только после явной публикации обновляет совместимую projection/adapter, если это требуется Telegram. Telegram destination выбирается по `lesson.group_id → groups.telegram_channel_id`, а не из глобального config; token по-прежнему принадлежит runtime config.
+Legacy `lessons/problems` сохраняются. Compiler создаёт versioned representation и только после явной публикации обновляет совместимую projection/adapter, если это требуется Telegram. Source/publication принадлежат concrete `group_lesson`; Telegram destination разрешается через effective `telegram_bindings` (`group materials_target` заменяет course default, иначе наследует его), а token по-прежнему принадлежит runtime config.
 
 Production migration не начинает историю с занятия 39. Для существующих занятий 1–38 текущего сезона отдельный dry-run/backfill создаёт минимальные source/revision/problem-match/publication/window records из legacy `lessons`/`problems`, файлового корпуса и утверждённого schedule mapping. Report показывает занятия/уровни без source, несовпадающее число задач и неизвестные фактические timestamps. Неизвестное время сохраняется как nullable/provenance, а не подменяется точным вымышленным значением.
 
@@ -55,7 +55,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - Characterization against selected `_external_pipelines` outputs with intentional diff report.
 - Storage adapter contract: filesystem and mocked S3 implement same methods; retries/dedup/hash/collision.
 - Telegram-rich sanitizer/limit fixtures; Bot API sending is not used in unit/E2E.
-- Opt-in live integration с `@vmsh179devbot`: verified test-group destination → private test channel, synthetic Rich Message boundary cases в пределах Telegram limits, сохранение returned chat/message IDs. Это proof adapter/renderer, не Staff→Telegram v1 action.
+- Opt-in live integration с `@vmsh179devbot`: verified test binding → private test channel, synthetic Rich Message boundary cases в пределах Telegram limits, сохранение returned binding/chat/message IDs. Это proof adapter/renderer, не общий Staff→Telegram channel publisher; classroom personal delivery тестируется своим contract в этапах 7/8.
 - PDF smoke plus visual pages for representative geometry/table examples.
 - Toolchain contract: default-name/absolute-path lookup, disabled/missing binary, version probe, timeout/non-zero exit/stderr truncation и отсутствие shell interpolation; local smoke для `pdflatex → pdf2svg` и raster → `cwebp`/`magick`, повторяемый на staging в этапе 11.
 - API publish/rollback concurrency, unauthorized Teacher, partial level failure and immutable revision.

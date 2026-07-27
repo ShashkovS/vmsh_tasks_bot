@@ -67,7 +67,8 @@ Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](0
 - [ ] Age/grade/strength nullable states, room count и отдельные averages возраста/класса/силы, fuzzy search+jump и confirmed classroom history представлены и не раскрывают дату рождения.
 - [ ] Local classroom draft переживает reload/update, не теряется при conflict и удаляется только после receipt/confirm либо explicit discard.
 - [ ] Stale, reassigning, empty group, no-room incident, фактические 6/5/2 комнаты и historical immutability представлены отдельными stories.
-- [ ] Student/Family показывают `not_applicable|reassigning|assigned`; Student notification states есть, Family classroom push отсутствует.
+- [ ] Student/Family показывают `not_applicable|reassigning|assigned`; confirm тихо обновляет оба read model, а Student notification появляется только после explicit admin delivery. Family classroom push/Telegram отсутствует.
+- [ ] Classroom delivery preview показывает plan version, Student/changed/unreachable counts и PWA/Telegram selection; plan change инвалидирует preview и не вызывает auto-resend.
 - [ ] Progress не содержит рейтингов, цвет-only charts или маркера/словесного сравнения конкретного школьника с группой.
 - [ ] Course — явный крупный контекст; group остаётся мягким marker, интерфейс не превращён в набор цветных pills.
 - [ ] Student «Сейчас», Tasks, Progress и notifications поддерживают несколько независимых курсов.
@@ -101,7 +102,7 @@ Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](0
 - [ ] Visual diffs просмотрены, baseline не обновлён вслепую.
 - [ ] Telegram/Google не вызываются новыми unit/E2E.
 - [ ] Первый content gate сравнивает три реальных листка одного уровня в PWA, Telegram и PDF; перед выпуском пройдены реальные Android-устройства, iPhone — по возможности.
-- [ ] Classroom E2E в трёх браузерах проверяет Unicode duplicate, layout/plan confirm, Student/Family state, archive→reassigning и reassignment на настоящем aiohttp/SQLite.
+- [ ] Classroom E2E в трёх браузерах проверяет Unicode duplicate, layout/plan confirm, тихий Student/Family state update, explicit Student PWA/Telegram delivery, отсутствие Family delivery, archive→reassigning и no-auto-resend на настоящем aiohttp/SQLite.
 - [ ] Документация и `STATUS.md` соответствуют фактическому решению.
 
 ## Финальная ручная проверка

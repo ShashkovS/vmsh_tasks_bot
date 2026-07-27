@@ -126,6 +126,10 @@ Student и Family никогда не видят место, процентил�
 
 В плане аудиторий школьник представлен участием конкретного курса и `group_lesson`. Ручной выбор комнаты другой группы того же курса может после подтверждения изменить `active_group_id` этого enrollment. Комнаты групп другого курса не являются допустимыми вариантами той же строки.
 
+Confirm плана и его рассылка — разные действия. Confirm сразу обновляет authoritative Student/Family read model через owner-scoped invalidation без notification. Затем admin открывает delivery preview, выбирает PWA и/или Telegram и явно создаёт immutable batch только для Student: PWA даёт in-app/push, Telegram отправляет личное сообщение через существующего бота. Family только читает актуальное назначение. Любая последующая перестановка помечается Staff как неразосланная и не вызывает автоматический resend.
+
+`classroom_assignment_delivery_batches` snapshot-ит confirmed plan/version, selected channels, recipient hash/counts, admin actor, idempotency key и aggregate state. Recipient rows связывают batch с concrete Student `course_enrollment`/assignment и per-channel delivery state. Telegram destination остаётся server-side; browser видит только безопасный preview и diagnostics.
+
 ## API-контуры
 
 Student/Family:
@@ -145,7 +149,8 @@ Staff:
 - независимые actions condition/hint/solution;
 - Telegram binding CRUD и inheritance preview;
 - synonym candidates, merge/split и impact preview;
-- создание/изменение `in_person_event` и inherited classroom plan.
+- создание/изменение `in_person_event` и inherited classroom plan;
+- classroom delivery preview/send/status для confirmed plan с PWA/Telegram channel selection.
 
 Ошибки scope возвращают `403`; optimistic conflict — `409`. Search state курса, группы, занятия, события и вкладки проходит runtime-валидацию TanStack Router/Zod.
 
@@ -161,7 +166,8 @@ Invalidation payload допускает `audience`, `courseId`, `groupId` и `st
 - `course.progress.invalidated`;
 - `notification.preference.changed`;
 - `in-person-event.changed`;
-- `classroom.assignment.changed`.
+- `classroom.assignment.changed`;
+- `classroom.assignment.announced`.
 
 После любого reconnect клиент делает authoritative refetch; NATS не является durable log.
 

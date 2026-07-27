@@ -16,7 +16,7 @@
 
 Текущие CSS tokens и страницы — технические placeholders. Их разрешено целенаправленно заменить в рамках принятой фазы. Архитектуру workspace, routing, API contracts и production guards менять нельзя без отдельного согласования.
 
-Обязательные продуктовые inputs для всех фаз: `../../docs/accepted-technical-decisions-2026-07.md`, `../../docs/product-ux-decisions-2026-07.md` и `../development-plan/01-decisions-and-boundaries.md`. Фазовое ТЗ не дублирует все enum values и migration caveats из этих реестров; визуальная модель обязана читать их полностью и не заменять конфигурируемую доменную модель удобным hardcode в story. Первый рабочий corpus — уроки 39–41 сезона 2025–2026 всех трёх уровней; print, быстрый очный ввод, Staff→Telegram и реальная AI-проверка не должны незаметно попасть в v1 gate.
+Обязательные продуктовые inputs для всех фаз: `../../docs/accepted-technical-decisions-2026-07.md`, `../../docs/product-ux-decisions-2026-07.md` и `../development-plan/01-decisions-and-boundaries.md`. Фазовое ТЗ не дублирует все enum values и migration caveats из этих реестров; визуальная модель обязана читать их полностью и не заменять конфигурируемую доменную модель удобным hardcode в story. Первый рабочий corpus — уроки 39–41 сезона 2025–2026 всех трёх уровней; print, быстрый очный ввод, общий Staff→Telegram channel publisher и реальная AI-проверка не должны незаметно попасть в v1 gate. Узкая персональная classroom delivery Student через PWA/Telegram входит в v1 отдельным типизированным flow.
 
 ## Последовательность
 

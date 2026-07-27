@@ -10,7 +10,9 @@ NATS переносит invalidation между процессами. Отсут
 
 Audience scope не является user scope. До появления authenticated WebSocket principal запрещено публиковать через student/family-wide invalidation приватный submission ID или другой идентификатор, видимый только одному аккаунту. Owner-scoped fan-out добавляется вместе с реальными сессиями: соединение связывается с account/user ID, а backend проверяет право до отправки. Независимо от события API повторно проверяет authorization.
 
-Назначение аудитории использует owner-scoped `classroom.assignment.changed`. Student получает push/in-app при первом назначении, немедленном сбросе скрытой комнаты и новой аудитории. Каждый связанный Family account получает собственную owner-scoped invalidation и читает то же актуальное состояние `not_applicable | reassigning | assigned`, но отдельный classroom push не получает. Событие несёт только публичный статус и invalidation keys; authoritative имя комнаты и `publishedAt` читаются из SQLite.
+Назначение аудитории разделяет изменение состояния и доставку. После confirm/change owner-scoped `classroom.assignment.changed` тихо инвалидирует Student и каждый связанный Family account; оба читают authoritative `not_applicable | reassigning | assigned`, имя комнаты и `confirmedAt` из SQLite. Это событие не создаёт notification delivery.
+
+Только admin-only «Разослать аудитории» после preview создаёт immutable delivery batch и `classroom.assignment.announced` для Student. Выбранный PWA-канал создаёт in-app/push, Telegram-канал отправляет личное сообщение через существующего бота. Family не получает classroom push/Telegram. Изменение плана после batch отображается Staff как неразосланное, но автоматический resend запрещён; admin повторяет preview/send явно. Browser/WS payload никогда не содержит token или Telegram chat ID.
 
 ## Background
 

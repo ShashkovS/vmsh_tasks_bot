@@ -2,16 +2,16 @@
 
 Этот файл — журнал gates. Визуальная модель обновляет evidence и вопросы, но ставит `accepted` только после явного решения владельца продукта.
 
-| Фаза                       | Статус           | Принято    | Evidence/решение                                                                       |
-| -------------------------- | ---------------- | ---------- | -------------------------------------------------------------------------------------- |
-| 1. Art direction           | accepted         | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.            |
-| 2. Brand and tokens        | accepted         | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                |
-| 3. UI primitives           | accepted         | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                  |
-| 4. Product components      | accepted         | 2026-07-25 | Владелец: «в остальном вроде ок», направил к фазам 5–7; partial validation исправлена. |
-| 4M. Multi-course extension | ready for review | —          | Компоненты, страницы и проверки готовы; новые visual baselines ждут решения владельца. |
-| 5. Pages and flows         | ready for review | —          | Student/Family/Staff page corpus, shells и состояния реализованы; нужен owner gate.    |
-| 6. Storybook and testing   | ready for review | —          | 31 файл / 137 browser tests с axe error; page/classroom/review/admin matrices готовы.  |
-| 7. Final acceptance        | ready for review | —          | Functional gates зелёные; multi-course Student visual diff ждёт решения владельца.     |
+| Фаза                       | Статус            | Принято    | Evidence/решение                                                                       |
+| -------------------------- | ----------------- | ---------- | -------------------------------------------------------------------------------------- |
+| 1. Art direction           | accepted          | 2026-07-23 | Направление B принято как основа + заимствования из C. Журнал решений ниже.            |
+| 2. Brand and tokens        | accepted          | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                |
+| 3. UI primitives           | accepted          | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                  |
+| 4. Product components      | accepted          | 2026-07-25 | Владелец: «в остальном вроде ок», направил к фазам 5–7; partial validation исправлена. |
+| 4M. Multi-course extension | changes requested | —          | Добавлен ClassroomDeliveryPreview; component/story ещё нужно реализовать.              |
+| 5. Pages and flows         | changes requested | —          | `/staff/classrooms` требует отдельный confirm→preview→send delivery step.              |
+| 6. Storybook and testing   | changes requested | —          | Предыдущие 137 tests зелёные; новая delivery interaction matrix ещё не реализована.    |
+| 7. Final acceptance        | ready for review  | —          | Functional gates зелёные; multi-course Student visual diff ждёт решения владельца.     |
 
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
@@ -57,6 +57,10 @@ Production visual regression:
 Known follow-ups:
   Backend endpoints and migrations are explicitly not implemented. Owner must
   принять новые Storybook-сценарии и Student visual diff до обновления baseline.
+  Решение 27 июля добавило узкий ClassroomDeliveryPreview: explicit PWA/Telegram
+  send только Student, без Family delivery и auto-resend. Его component/page
+  story и interaction tests ещё не реализованы и честно возвращают Phase 4M–6
+  в changes requested.
 ```
 
 ## Журнал решений
@@ -70,6 +74,27 @@ Chosen option and exact combination:
 Rejected traits:
 Evidence stories:
 Known follow-ups:
+```
+
+```text
+2026-07-27 — Phase 4M/5/6 — changes requested
+Decision owner: Сергей Шашков (владелец продукта)
+Chosen option and exact combination:
+  Confirm classroom plan обновляет Student/Family state без notification.
+  Затем admin отдельно открывает preview, выбирает PWA и/или Telegram и
+  отправляет personal classroom message только Student. Telegram означает
+  личный bot dialogue, не channel. Изменение плана не вызывает auto-resend.
+Rejected traits:
+  notification на каждый confirm/change; Family classroom push/Telegram;
+  использование общего broadcast composer; показ token/chat ID; draft send.
+Evidence stories required:
+  Product/Classrooms--delivery-preview;
+  Product/Classrooms--delivery-changed-after-send;
+  Pages/Staff--classroom-delivery;
+  interaction: confirm is silent, explicit channels/send, stale preview,
+  partial failure/retry, no Family recipient, no automatic resend.
+Known follow-ups:
+  Компонент и stories ещё не реализованы; snapshots до owner review не менять.
 ```
 
 ```text
@@ -220,7 +245,8 @@ Chosen option and exact combination:
   `/staff/classrooms` получает три вкладки: «Каталог», «По группам»,
   «Школьники». У комнат нет capacity/weights и drag interaction; используются
   select/move, preview, recalculate и confirm. Student и Family видят
-  assigned/reassigning/not-applicable, но classroom push получает только Student.
+  assigned/reassigning/not-applicable; исторически предполагался автоматический
+  Student push. Решение 27 июля выше заменяет его explicit admin delivery batch.
 Rejected traits:
   Старый единый ClassroomPlanner с capacity, per-lesson room records и простой
   перестройкой без inherited/materialized/stale version states.
@@ -421,7 +447,7 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 
 ## Решения итогового продуктового опросника — 24 июля 2026
 
-- Первый рабочий корпус: занятия 39–41 сезона 2025–2026, все три уровня; сначала полный online flow. Print, быстрый очный ввод, Staff→Telegram и AI-интеграция — следующая версия.
+- Первый рабочий корпус: занятия 39–41 сезона 2025–2026, все три уровня; сначала полный online flow. Print, быстрый очный ввод, общий Staff→Telegram channel publisher и AI-интеграция — следующая версия; персональная classroom delivery Student входит в v1.
 - Clock skew больше часа помечается для диагностики. Одинаковый idempotency key с другим payload не перезаписывает операцию и требует нового ключа после явного действия.
 - На один verdict разрешена одна внутренняя teacher reaction и одна student reaction; обе меняются/удаляются в течение часа.
 - Отдельного dispute/«вернуть на доработку» workflow в v1 нет: состояние интерфейса выводится из актуального registry verdict. `REJECTED_ANSWER` остаётся отрицательным результатом после перепроверки.

@@ -51,11 +51,11 @@ Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_use
 
 `staff_user_id INTEGER FK users`, `group_id TEXT FK groups`, `can_review INTEGER`, `can_manage_oral INTEGER`, `can_change_student_group INTEGER`, `can_recheck INTEGER`, `created_at TEXT`, `updated_at TEXT`, PK `(staff_user_id, group_id)`. Общая статистика доступна teacher-role отдельно; content/checker/classroom/broadcast/audit capabilities остаются admin-only.
 
-### Telegram destination группы
+### `telegram_bindings`
 
-Существующая `groups` расширяется полями `telegram_channel_id INTEGER NULL`, `telegram_channel_title TEXT NULL`, `telegram_channel_enabled INTEGER NOT NULL DEFAULT 0`, `telegram_channel_verified_at TEXT NULL`; partial unique index на `telegram_channel_id WHERE telegram_channel_id IS NOT NULL` не позволяет двум production-группам случайно публиковать в один канал. Bot token остаётся в runtime credential config и никогда не хранится в SQLite.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `owner_type TEXT CHECK(course|group)`, `owner_course_id INTEGER NULL FK courses`, `owner_group_id TEXT NULL FK groups`, `purpose TEXT CHECK(news_source|materials_target)`, `chat_id INTEGER`, `message_thread_id INTEGER NULL`, `title_cached TEXT NULL`, `status TEXT CHECK(draft|verified|disabled)`, `verified_at TEXT NULL`, audit timestamps, `version INTEGER`. Constraint требует ровно одного owner, соответствующего `owner_type`; effective-binding indexes защищают от двусмысленного активного назначения одной цели в одном scope/purpose.
 
-`telegram_channel_id` — canonical `chat.id`, возвращённый Bot API, сохранённый без преобразования. SQLite/Python используют 64-bit integer; поле не смешивается с `users.chat_id`. Перед `enabled=1` probe проверяет `getMe`, `getChat` и admin/post capability бота, сохраняет возвращённые ID/title и время проверки. Число, показанное внешним UI, является bootstrap input: префикс `-100` или знак нельзя добавлять эвристически. Publication/delivery record сохраняет фактически использованный chat/message ID, поэтому последующая смена настройки группы не переписывает историю.
+`chat_id` — canonical `chat.id`, возвращённый Bot API, без ручного преобразования UI-значения. SQLite/Python используют 64-bit integer; поле не смешивается с `users.chat_id`. Перед `verified` probe проверяет `getMe`, `getChat` и требуемую capability бота. Course/group news sources складываются; group `materials_target` заменяет course default, иначе наследует его. Publication/delivery record snapshot-ит фактически использованные binding/chat/message IDs, поэтому последующая смена binding не переписывает историю. Bot token остаётся runtime credential и никогда не хранится в SQLite.
 
 ### `auth_sessions`
 
@@ -71,7 +71,7 @@ Indexes: `(account_id, revoked_at, expires_at)`, `(expires_at)`. Коротка�
 
 ### `content_sources`
 
-`id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id INTEGER FK seasons`, `lesson_number INTEGER`, `group_id TEXT FK groups`, `kind TEXT CHECK(condition|hint|solution|teacher_note)`, `logical_filename TEXT`, `source_encoding TEXT`, `created_at TEXT`, `created_by_user_id INTEGER FK users`, `archived_at TEXT NULL`.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `group_lesson_id INTEGER FK group_lessons`, `kind TEXT CHECK(condition|hint|solution|teacher_note)`, `logical_filename TEXT`, `source_encoding TEXT`, `created_at TEXT`, `created_by_user_id INTEGER FK users`, `archived_at TEXT NULL`. Legacy `season/lesson/group` выводятся через `group_lesson → course_lesson/group` и не являются вторым владельцем source.
 
 Unique candidate: `(season_id, lesson_number, group_id, kind, logical_filename)`.
 
@@ -107,19 +107,19 @@ Revision: `id INTEGER PK`, `problem_id INTEGER FK problems`, `content_revision_i
 
 ### `problem_synonym_groups` и `problem_synonym_members`
 
-Group: `id INTEGER PK`, `season_id`, `lesson_number`, `group_key TEXT`, `display_title TEXT`, `created_by_user_id`, `created_at`, `updated_at`.
+Group: `id INTEGER PK`, `public_id TEXT UNIQUE`, `course_lesson_id INTEGER FK course_lessons`, `group_key TEXT`, `display_title TEXT`, `created_by_user_id`, `created_at`, `updated_at`, `version INTEGER`.
 
-Member: `synonym_group_id INTEGER`, `problem_id INTEGER`, `created_at TEXT`, PK `(synonym_group_id, problem_id)`.
+Member: `id INTEGER PK`, `synonym_group_id INTEGER`, `problem_id INTEGER`, `added_by_user_id`, `added_at TEXT`, `removed_by_user_id NULL`, `removed_at TEXT NULL`, `membership_version INTEGER`. Active unique constraints запрещают problem одновременно состоять в двух synonym groups одного `course_lesson` и запрещают два active member одной synonym group внутри одного `group_lesson`. История merge/split не удаляется.
 
 ### `lesson_publications`
 
-`id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id INTEGER`, `lesson_number INTEGER`, `group_id TEXT`, `kind TEXT CHECK(condition|hint|solution)`, `revision_id INTEGER FK content_revisions`, `state TEXT CHECK(scheduled|published|superseded|hidden)`, `scheduled_at TEXT NULL`, `published_at TEXT NULL`, `hidden_at TEXT NULL`, `published_by_user_id INTEGER`, `supersedes_publication_id INTEGER NULL`, `version INTEGER`.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `group_lesson_id INTEGER FK group_lessons`, `kind TEXT CHECK(condition|hint|solution)`, `revision_id INTEGER FK content_revisions`, `state TEXT CHECK(scheduled|published|superseded|hidden)`, `scheduled_at TEXT NULL`, `published_at TEXT NULL`, `hidden_at TEXT NULL`, `published_by_user_id INTEGER`, `supersedes_publication_id INTEGER NULL`, `version INTEGER`. Condition/hint/solution одной группы независимы от другой даже при общем `course_lesson`.
 
 ### `lesson_windows`
 
-`id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id INTEGER`, `lesson_number INTEGER`, `group_id TEXT`, `opens_at TEXT NULL`, `submission_closes_at TEXT`, `hint_scheduled_at TEXT NULL`, `solution_scheduled_at TEXT NULL`, `timezone TEXT`, `source TEXT CHECK(native|legacy_schedule|manual_backfill)`, `created_by_user_id INTEGER NULL`, `created_at TEXT`, `updated_at TEXT`, `version INTEGER`; unique `(season_id, lesson_number, group_id)`.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `group_lesson_id INTEGER FK group_lessons UNIQUE`, `opens_at TEXT NULL`, `submission_closes_at TEXT`, `hint_scheduled_at TEXT NULL`, `solution_scheduled_at TEXT NULL`, `timezone TEXT`, `source TEXT CHECK(native|legacy_schedule|manual_backfill)`, `schedule_rule_version INTEGER NULL`, `created_by_user_id INTEGER NULL`, `created_at TEXT`, `updated_at TEXT`, `version INTEGER`.
 
-Authoritative дедлайн сдачи — отдельный `submission_closes_at`, преобразованный в UTC из бизнес-зоны сезона. `solution_scheduled_at` управляет ожидаемой публикацией, а `lesson_publications.published_at` фиксирует фактическое событие. Эти timestamps могут совпасть, но один не выводится из другого. Клиент получает оба значения и никогда не вычисляет cutoff из локального календаря. Открытый вопрос `SCHEDULE-01` определяет, должна ли правка расписания решения когда-либо автоматически предлагать перенос cutoff.
+Authoritative дедлайн сдачи — отдельный `submission_closes_at`, преобразованный в UTC из бизнес-зоны сезона. `solution_scheduled_at` управляет ожидаемой публикацией, а `lesson_publications.published_at` фиксирует фактическое событие. Эти timestamps могут совпасть, но один не выводится из другого. Клиент получает оба значения и никогда не вычисляет cutoff из локального календаря. По закрытому `SCHEDULE-01` правка расписания решения не меняет cutoff; дедлайн редактируется только отдельным confirmed/audited action.
 
 Для первого запуска content migration создаёт revision/publication/window records и для уже прошедших занятий текущего сезона. Источник и точность исторического времени фиксируются в backfill report; неизвестный фактический timestamp не подменяется выдуманной точностью и не используется для ретроактивного отклонения legacy results.
 
@@ -191,13 +191,13 @@ Legacy backfill определяет `actor_kind` по `reaction_type_id`, а ac
 
 ### `support_threads` и `support_entries`
 
-Thread: `id`, `public_id`, `student_user_id`, `problem_id NULL`, `lesson_id NULL`, `kind CHECK(problem_question|sos|general)`, timestamps/version. Это диалоговая лента, а не назначаемая одному teacher заявка со статусом закрытия.
+Thread: `id`, `public_id`, `student_user_id`, `problem_id NULL`, `group_lesson_id NULL`, `kind CHECK(problem_question|sos|general)`, timestamps/version. Это диалоговая лента, а не назначаемая одному teacher заявка со статусом закрытия.
 
 Entry: `id`, `thread_id`, `author_kind`, `author_user_id`, `text`, `asset_id NULL`, `channel`, `client_created_at`, `server_received_at`, `legacy_question_id NULL`, `legacy_problem_id NULL`.
 
 ### `oral_windows`
 
-`id`, `public_id`, `season_id`, `lesson_number`, `group_id`, `sequence_number`, `opens_at`, `closes_at`, `join_label`, `join_url_encrypted_or_ref`, `join_code_encrypted_or_ref`, `status`, `created_by_user_id`, timestamps/version. Для одной группы разрешено несколько окон (в текущем процессе три). Join secrets не попадают в list endpoint и логи; provider v1 — Zoom.
+`id`, `public_id`, `group_lesson_id INTEGER FK group_lessons`, `sequence_number`, `opens_at`, `closes_at`, `join_label`, `join_url_encrypted_or_ref`, `join_code_encrypted_or_ref`, `status`, `created_by_user_id`, timestamps/version. Для одного `group_lesson` разрешено несколько окон (в текущем процессе три). Join secrets не попадают в list endpoint и логи; provider v1 — Zoom.
 
 ### `classrooms`
 
@@ -207,9 +207,9 @@ Entry: `id`, `thread_id`, `author_kind`, `author_user_id`, `text`, `asset_id NUL
 
 ### `classroom_layout_versions`
 
-Версия схемы «аудитория → группа»: `id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id`, `effective_from_lesson`, `base_version_id NULL`, `state TEXT CHECK(draft|confirmed|superseded)`, `created_by_user_id`, `confirmed_by_user_id NULL`, `created_at`, `updated_at`, `confirmed_at NULL`, `superseded_at NULL`, `version INTEGER`.
+Версия схемы «аудитория → группа» для очного события: `id INTEGER PK`, `public_id TEXT UNIQUE`, `in_person_event_id INTEGER FK in_person_events`, `base_version_id NULL`, `state TEXT CHECK(draft|confirmed|superseded)`, `created_by_user_id`, `confirmed_by_user_id NULL`, `created_at`, `updated_at`, `confirmed_at NULL`, `superseded_at NULL`, `version INTEGER`.
 
-Для `(season_id, effective_from_lesson)` существует не более одного активного draft. Effective layout — последняя финализированная версия (`confirmed` либо историческая `superseded`) с `effective_from_lesson <= requested lesson`, которую не перекрывает более поздняя версия, уже действующая для того же requested lesson. Запрос просмотра не копирует строки. Первая мутация материализует draft со ссылкой `base_version_id` и копией связей. Финализированные версии не редактируются; новая confirmed-версия переводит прежнюю в `superseded` только как признак замены для следующих занятий, но прежняя остаётся источником истории до своей границы.
+Для `in_person_event_id` существует не более одного активного draft. Просмотр нового события виртуально объединяет последние confirmed mappings участвующих групп; запрос просмотра не копирует строки. Первая мутация materialize-ит event draft со ссылкой на base/provenance versions и копией только выбранных групп. Финализированные версии не редактируются; новая confirmed-версия события supersede-ит его прежнюю версию, не меняя планы прошлых событий.
 
 ### `classroom_layout_rooms`
 
@@ -217,13 +217,13 @@ Entry: `id`, `thread_id`, `author_kind`, `author_user_id`, `text`, `asset_id NUL
 
 ### `classroom_assignment_plans`
 
-Версия распределения для занятия: `id INTEGER PK`, `public_id TEXT UNIQUE`, `season_id`, `lesson_number`, `layout_version_id`, `base_plan_id NULL`, `state TEXT CHECK(draft|confirmed|stale|superseded)`, `stale_reason TEXT NULL`, `created_by_user_id`, `confirmed_by_user_id NULL`, `created_at`, `updated_at`, `confirmed_at NULL`, `superseded_at NULL`, `version INTEGER`.
+Версия распределения для очного события: `id INTEGER PK`, `public_id TEXT UNIQUE`, `in_person_event_id INTEGER FK in_person_events`, `layout_version_id`, `base_plan_id NULL`, `state TEXT CHECK(draft|confirmed|stale|superseded)`, `stale_reason TEXT NULL`, `created_by_user_id`, `confirmed_by_user_id NULL`, `created_at`, `updated_at`, `confirmed_at NULL`, `superseded_at NULL`, `version INTEGER`.
 
 Confirmed plan становится `stale`, если изменился effective layout или скрыта используемая аудитория. Транзакция скрытия материализует/обновляет replacement draft и создаёт затронутым школьникам строки `reassigning`; прежний confirmed plan не мутирует, но больше не считается действующим для текущего показа. Новый calculation всегда создаёт preview/draft; подтверждение новой версии supersede-ит старую, не перезаписывая её.
 
 ### `classroom_assignments`
 
-`plan_id`, `student_user_id`, `group_id` (snapshot), `classroom_id NULL`, `status TEXT CHECK(assigned|reassigning)`, `source TEXT CHECK(previous-room|least-loaded|manual|group-change|mode-change|import)`, `previous_classroom_id NULL`, `assigned_by_user_id NULL`, `created_at`, `updated_at`; PK `(plan_id, student_user_id)`, индекс `(plan_id, classroom_id)`.
+`plan_id`, `course_enrollment_id`, `student_user_id`, `group_lesson_id`, `group_id` (snapshot), `classroom_id NULL`, `status TEXT CHECK(assigned|reassigning)`, `source TEXT CHECK(previous-room|least-loaded|manual|group-change|mode-change|import)`, `previous_classroom_id NULL`, `assigned_by_user_id NULL`, `created_at`, `updated_at`; PK `(plan_id, course_enrollment_id)`, indexes `(plan_id, student_user_id)` и `(plan_id, classroom_id)`.
 
 `classroom_id` обязателен для `assigned` и отсутствует для `reassigning`. Domain validation запрещает назначить школьника в комнату другой группы или смешать группы в одной комнате. В confirmed plan каждый очный школьник имеет `assigned`; online student в плане отсутствует и получает публичный статус `not_applicable`. Очный школьник без действующего опубликованного назначения получает `reassigning`, а не `not_applicable`. Неиспользованные active rooms допустимы.
 
@@ -233,7 +233,7 @@ Classroom plan read model не дублирует профиль школьни�
 
 Group summary считает всех активных школьников выбранной группы, для которых на выбранное занятие действует очный режим, и отдельно число уже распределённых. Room summary считает назначенных очных школьников, средние возраст, класс и силу; каждый aggregate исключает собственные `NULL` и округляется до одного знака. Полнота age/grade/strength отдельным полем UI не показывается. История аудиторий выводится из immutable confirmed `classroom_assignment_plans` + `classroom_assignments`; отдельная таблица истории не нужна.
 
-Select комнаты другой группы создаёт в локальном draft связанную пару `group change + assignment`. Batch-save применяет её одной backend transaction, пишет совместимое событие в `user_changes_log` и новую assignment row; без явного confirmation flag запрос отклоняется. До batch-save изменения существуют только в account/lesson/base-version-scoped browser draft и не меняют authoritative SQLite.
+Select комнаты другой группы того же курса создаёт в локальном draft связанную пару `course enrollment group change + assignment`. Batch-save применяет её одной backend transaction, пишет `course_enrollment_events`, совместимый legacy event при необходимости и новую assignment row; без явного confirmation flag запрос отклоняется. Комната другого курса не является вариантом той же enrollment row. До batch-save изменения существуют только в account/event/base-version-scoped browser draft и не меняют authoritative SQLite.
 
 ### `group_banners`
 
@@ -243,7 +243,7 @@ Select комнаты другой группы создаёт в локальн
 
 ### `news_posts`
 
-`id`, `public_id`, `source CHECK(telegram|local)`, `group_id TEXT NULL FK groups`, `telegram_chat_id NULL`, `telegram_message_id NULL`, `telegram_media_group_id NULL`, `current_revision_id`, `published_at`, `hidden_at NULL`, `created_by_user_id NULL`, timestamps. Unique Telegram source identity. Для Telegram source `group_id` определяется по verified `groups.telegram_channel_id`; unmapped channel update не угадывает группу и попадает в diagnostics/quarantine.
+`id`, `public_id`, `source CHECK(telegram|local)`, `source_binding_id INTEGER NULL FK telegram_bindings`, `owner_course_id INTEGER NULL`, `owner_group_id TEXT NULL`, `telegram_chat_id NULL`, `telegram_message_id NULL`, `telegram_media_group_id NULL`, `current_revision_id`, `published_at`, `hidden_at NULL`, `created_by_user_id NULL`, timestamps. Unique Telegram source identity. Для Telegram source owner определяется только по verified `telegram_bindings` с purpose `news_source`; unmapped channel update не угадывает course/group и попадает в diagnostics/quarantine. Concrete owner и фактические chat/message IDs snapshot-ятся и не переписываются после изменения binding.
 
 ### `news_revisions`
 
@@ -272,6 +272,14 @@ Select комнаты другой группы создаёт в локальн
 ### `notification_deliveries`
 
 `id`, `event_id`, `channel CHECK(in_app|web_push|telegram)`, `destination_ref`, `state CHECK(pending|sending|sent|failed|suppressed)`, `attempt_count`, `next_attempt_at`, `last_error_code`, `sent_at`, timestamps.
+
+### `classroom_assignment_delivery_batches`
+
+`id`, `public_id`, `assignment_plan_id`, `assignment_plan_version`, `requested_by_user_id`, `channels_json`, `recipient_snapshot_hash`, `recipient_count`, `changed_since_previous_count`, `state CHECK(previewed|queued|sending|completed|completed_with_errors|cancelled)`, `idempotency_key`, `created_at`, `started_at NULL`, `completed_at NULL`, `version`. Batch создаётся только для confirmed plan и immutable snapshot получателей; draft/stale plan отправить нельзя. Изменение плана после batch не запускает доставку и появляется в следующем preview как `not announced`.
+
+### `classroom_assignment_delivery_recipients`
+
+`batch_id`, `student_user_id`, `course_enrollment_id`, `classroom_assignment_id`, snapshot публичного room/event text, `pwa_event_id NULL`, server-side `telegram_destination_ref NULL`, per-channel state/error/sent timestamps, unique `(batch_id, student_user_id, course_enrollment_id)`. Browser получает имя/счётчики/status preview, но не Telegram token/chat ID. PWA delivery создаёт Student in-app/push; Telegram delivery идёт в личный bot dialogue. Family rows не создаются.
 
 ### `delivery_outbox`
 

@@ -76,13 +76,15 @@ Course/group catalog, lesson list/detail, upload по group lesson, positional p
 
 ### Operations
 
-News moderation; users/groups/roles; statistics with accessible tables; searchable audit with request ID и before/after. Полный broadcast composer с Markdown editor, print, быстрый очный ввод результатов и Staff→Telegram publication относятся ко второй фазе.
+News moderation; users/groups/roles; statistics with accessible tables; searchable audit with request ID и before/after. Полный broadcast composer с Markdown editor, print, быстрый очный ввод результатов и Staff→Telegram channel publication относятся ко второй фазе. Узкая персональная classroom delivery Student входит в v1 как отдельный confirm→preview→send flow.
 
 `/staff/classrooms` называется «Аудитории», доступен только admin и сохраняет URL-state `event`, optional `course/group`, `tab`, `roomStatus`:
 
 1. «Каталог»: add/rename/search, active/hidden filter, archive и quick restore; duplicate conflict не очищает ввод и показывает существующую аудиторию.
 2. «По группам»: effective inherited layout, явное materialize-on-edit, строки комнат с group select/unassigned, level-color marker + мягкая border tint, фактические counts комнат и `очно/распределено` по каждой группе, confirm с optimistic conflict.
 3. «Школьники»: compact flex-wrap room cards, отдельная reassigning/unassigned-секция, строки имя/возраст/класс/сила + compact room select, room count/average age/average grade/average strength, fuzzy search с подсветкой/jump, single и checkbox bulk move, classroom history, recalculate, stale state, blocking no-room/mismatch incident и confirm.
+
+После confirm появляется отдельный блок «Рассылка аудиторий». Он не отправляет ничего автоматически: admin открывает preview, проверяет Student/changed/unreachable counts, выбирает PWA и/или Telegram и нажимает «Разослать аудитории». Изменение плана после batch возвращает статус `есть неразосланные изменения`. Family получает только authoritative room state через API/WS. Общий broadcast composer и печать на этом экране не имитируются.
 
 Школьники внутри каждой комнаты всегда отсортированы по фамилии и имени. Выбор комнаты другой группы того же курса требует confirmation одновременной смены active group; комнаты другого курса не предлагаются для этой строки. Изменения не пишутся на сервер по одному: local draft переживает reload и очищается после explicit batch-save/confirm либо явного discard. Типичный fixture показывает 6/5/2 фактически используемых комнат, но не изображает эти значения как вместимость или целевое ограничение. Неиспользованные active rooms допустимы. Archive используемой комнаты немедленно переводит затронутых текущих школьников в reassigning; restore не возвращает назначения. Mobile Staff использует последовательный layout без потери трёх шагов.
 

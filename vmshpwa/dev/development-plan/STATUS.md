@@ -1,17 +1,17 @@
 # Статус плана разработки
 
-Последнее обновление: 2026-07-26.
+Последнее обновление: 2026-07-27.
 
 ## Состояние документов
 
 | Документ/этап       | Статус                                | Решение/блокер                                                                                     |
 | ------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | Инженерный контракт | draft for approval                    | Формат proof описан; фактически заполняется при реализации                                         |
-| Решения и границы   | reviewed input                        | Исходный опросник закрыт; 4 новые развилки ревью зафиксированы в `17-open-questions.md`            |
+| Решения и границы   | accepted planning input               | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                     |
 | Модель данных       | revised planning input                | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                         |
 | API/events/files    | accepted planning input               | Batch move, cross-group confirm и classroom history зафиксированы                                  |
 | Этап 0              | ready                                 | Вопросы ревью не блокируют baseline/preflight; добавлены DB/auth/load/external gates               |
-| Этапы 1–11          | planned with gates                    | `SCHEDULE-01`, `AUTH-01`, `CLASSROOM-01`, `RETENTION-01` блокируют только названные cutover        |
+| Этапы 1–11          | planned with gates                    | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом      |
 | Design system       | phases 5–7 ready for review           | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate |
 | Multi-course model  | verified prototype; owner visual gate | Phase 1–11, UI, stories и tests обновлены; backend/migrations не реализованы                       |
 
@@ -26,7 +26,7 @@
 | 2026-07-23 | PLAN-005 | `_vmsh_examples` — golden corpus, `_external_pipelines` — characterization references                    | Их не редактируют и не импортируют в новый production runtime                                                                                      |
 | 2026-07-24 | PLAN-006 | Первый выпуск: сезон 2025–2026, занятия 39–41, все три уровня                                            | Вертикальные этапы должны привести к полному онлайн-занятию, а не к pilot одной группы                                                             |
 | 2026-07-24 | PLAN-007 | Telegram остаётся двусторонним рабочим каналом на переходе                                               | Треды и provenance объединяют PWA и Telegram; все external pipelines сохраняются до cutover                                                        |
-| 2026-07-24 | PLAN-008 | Печатный/очный раздел, Staff→Telegram и AI перенесены во вторую версию                                   | Эти функции не блокируют первый рабочий выпуск                                                                                                     |
+| 2026-07-24 | PLAN-008 | Печатный/очный раздел, общий Staff→Telegram publisher и AI перенесены во вторую версию                   | Узкая персональная classroom delivery позже выделена отдельным v1-исключением; остальные функции не блокируют первый выпуск                        |
 | 2026-07-24 | PLAN-009 | Исходный продуктовый опросник закрыт                                                                     | Новые вопросы добавляются только при реальной развилке реализации                                                                                  |
 | 2026-07-24 | PLAN-010 | Ответы разнесены по модели, API, этапам и эксплуатационным документам                                    | Этап 0 можно начинать без повторного сбора продуктовых требований                                                                                  |
 | 2026-07-24 | PLAN-011 | Аудитории разделены на глобальный каталог, наследуемую схему по группам и версионируемый план школьников | Этап 7 получает admin-only catalog/layout/preview/confirm, без capacity и drag-and-drop; initial Excel используется один раз через dry-run/import  |
@@ -49,8 +49,12 @@
 | 2026-07-26 | PLAN-028 | Internal teacher reactions получают компактный Mod+Alt shortcut                                          | `⌘/Ctrl + Alt + 1…4` работает при фокусе в комментарии; простой Mod+digit оставлен браузеру, `AltGraph` игнорируется                               |
 | 2026-07-26 | PLAN-029 | Внешние converter binaries задаются общим backend config и разрешаются через service `PATH`              | Defaults: `pdf2svg`, `cwebp`, `pdflatex`, `magick`; absolute override/`None` явны, readiness/deploy проверяют capabilities до первого задания      |
 | 2026-07-26 | PLAN-030 | S3 adapter использует общий profile-aware backend config для Beget                                       | Local/manual integration читает allowlisted `s3_*` из test config, production — из prod; agent/E2E остаются filesystem, secrets всегда redacted    |
-| 2026-07-26 | PLAN-031 | Telegram channel destination хранится отдельно для каждой группы в SQLite                                | `@vmsh179devbot` + private test channel используются opt-in; Bot API canonical ID/rights проверяются, token остаётся config-only, unit/E2E offline |
+| 2026-07-26 | PLAN-031 | Telegram channel destinations хранятся в course/group `telegram_bindings`                                | `@vmsh179devbot` + private test channel используются opt-in; Bot API canonical ID/rights проверяются, token остаётся config-only, unit/E2E offline |
 | 2026-07-26 | PLAN-032 | Принята иерархия season→course→group→lesson, логические синонимы и multi-course in-person events         | Фазы 1–11 дополнены; Storybook prototype реализован; production backend/migrations остаются невыполненными                                         |
+| 2026-07-27 | PLAN-033 | Cutoff и solution schedule независимы; реальные accounts валидны, тестовые исключаются preflight-ом      | `SCHEDULE-01` и `AUTH-01` закрыты; deadline меняется только отдельным audited action, неизвестный account не активируется молча                    |
+| 2026-07-27 | PLAN-034 | Classroom confirm и notification разделены                                                               | Admin после preview явно выбирает PWA/Telegram; Student получает personal delivery, Family только state refetch, auto-resend отсутствует           |
+| 2026-07-27 | PLAN-035 | Print остаётся отдельным разделом v2, media retention — бессрочная admin-managed policy                  | V1 не обещает `a11`–`a14` compatibility export; очистка только manual manifest-driven с preview/audit                                              |
+| 2026-07-27 | PLAN-036 | Opt-in test S3/Telegram side effects явно разрешены владельцем                                           | Disposable test-prefix objects и synthetic test-channel messages можно create/read/edit/delete; production resources запрещены                     |
 
 ## Проверка многокурсового прототипа
 

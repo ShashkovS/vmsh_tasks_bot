@@ -20,7 +20,14 @@
 10. Для каждого реально запускаемого `_external_pipelines` записать owner, команду/расписание, upstream, side effects, rollback и состояние `legacy bridge | v1 cutover | later internalization`.
 11. Зафиксировать внешний converter contract: четыре настраиваемых executable (`pdf2svg`, `cwebp`, `pdflatex`, `magick` по умолчанию из service `PATH`), capability probe, безопасный argv-вызов, timeout и поведение при `None`/missing binary.
 12. Зафиксировать storage profile contract: filesystem/mock для hermetic unit/agent/E2E; opt-in Beget S3 integration берёт allowlisted `s3_*` поля из test secret file, production — из production secret file, без побочной загрузки Telegram/Google credentials.
-13. Зафиксировать live Telegram integration profile: `@vmsh179devbot`, token только из test config, private test channel `vmsh179devbot channel` с UI ID `3913815635`; Bot API probe получает canonical chat ID/admin capability, после чего local test-group row в SQLite становится единственным destination source.
+13. Зафиксировать live Telegram integration profile: `@vmsh179devbot`, token только из test config, private test channel `vmsh179devbot channel` с UI ID `3913815635`; Bot API probe получает canonical chat ID/admin capability, после чего verified test `telegram_binding` в SQLite становится единственным channel destination source.
+
+## Подтверждённые локальные входы — 27 июля 2026
+
+- Локальный NATS уже управляется пользователем и слушает `127.0.0.1:4222`; Docker/NATS container для этого runtime не запускается. Agent tests сохраняют собственный topic prefix и не останавливают внешний процесс.
+- Authoritative read-only preflight source — `db/vmsh.db`. Любые schema/auth/migration эксперименты выполняются только над отдельной временной копией; исходный файл не изменяется и не коммитится.
+- `pdflatex` доступен через локальный human toolchain override. Абсолютный пользовательский путь не попадает в репозиторий: capability probe получает его из environment/config и обязан доказать реальную TikZ compile, а не только наличие executable.
+- Владелец явно разрешил opt-in side effects только в выделенных test resources: S3 create/read/public-GET/delete под disposable `integration/<run-id>/` и send/edit/delete synthetic content через `@vmsh179devbot` в private test channel. Production bucket/credentials/channels/recipients запрещены.
 
 ## Файлы реализации
 

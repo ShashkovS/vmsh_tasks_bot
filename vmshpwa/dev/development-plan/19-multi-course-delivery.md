@@ -70,7 +70,7 @@ Student «Сейчас» показывает отдельную карточк�
 
 ## Обязательные API/events
 
-Полный список находится в [`03-api-events-and-files.md`](03-api-events-and-files.md) и product model. Минимальный набор: course list/enrollment/switch/attendance/lessons/progress; Staff course/group CRUD, schedule preview/confirm, Telegram bindings, synonym candidates/merge/split/impact, in-person event composition/inherited plan. События имеют optional `audience`, `courseId`, `groupId`, `studentUserId`.
+Полный список находится в [`03-api-events-and-files.md`](03-api-events-and-files.md) и product model. Минимальный набор: course list/enrollment/switch/attendance/lessons/progress; Staff course/group CRUD, schedule preview/confirm, Telegram bindings, synonym candidates/merge/split/impact, in-person event composition/inherited plan и explicit classroom delivery preview/send/status. События имеют optional `audience`, `courseId`, `groupId`, `studentUserId`.
 
 ## Prototype → implementation
 

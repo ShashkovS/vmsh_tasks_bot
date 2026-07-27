@@ -148,9 +148,13 @@ Family endpoints никогда не принимают произвольный
 - `POST /staff/api/v1/classroom-assignment-plans/recalculate`
 - `PATCH /staff/api/v1/classroom-assignment-plans/{planPublicId}/assignments` — явный batch-save локально накопленных select/move; принимает одну или несколько строк и confirmation для cross-group changes
 - `GET /staff/api/v1/classroom-assignment-plans/{planPublicId}/students/{studentPublicId}/history` — подтверждённые прошлые аудитории школьника
-- `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/confirm`; полноценные print/export endpoints относятся ко второй версии, а узкий v1 compatibility export для действующих `a02`/`a11`–`a14` зависит от ответа `CLASSROOM-01`
+- `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/confirm`
+- `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/delivery-preview` — только confirmed current version; возвращает число получателей, изменения после предыдущей рассылки, недоступные Telegram destinations и безопасный recipient preview
+- `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/delivery-batches` — admin явно выбирает `pwa` и/или `telegram`, передаёт expected plan version, preview hash и idempotency key; draft/stale/изменившийся после preview plan получает conflict
+- `GET /staff/api/v1/classroom-assignment-delivery-batches/{batchPublicId}` — агрегированные per-channel states/retries без токенов и chat IDs
+- Полноценные print/export endpoints относятся ко второй версии. V1 не создаёт compatibility export для `a11`–`a14`; narrow classroom delivery не является общим broadcast API.
 - `/staff/api/v1/news/import-status`, `/news/posts`, `/news/posts/{id}/visibility`
-- будущие `/staff/api/v1/broadcasts`, `/broadcasts/{id}/preview`, `/broadcasts/{id}/send` относятся ко второй фазе вместе с Markdown editor и не входят в initial v1 contract; Staff→Telegram publication также относится ко второй версии
+- будущие `/staff/api/v1/broadcasts`, `/broadcasts/{id}/preview`, `/broadcasts/{id}/send` относятся ко второй фазе вместе с Markdown editor и не входят в initial v1 contract; Staff→Telegram channel publication также относится ко второй версии. Исключение v1 — строго типизированная персональная рассылка подтверждённых аудиторий через endpoints выше.
 - `/staff/api/v1/users`, `/groups`, `/permissions`, `/imports`, `/statistics`, `/audit`
 
 Teacher получает `403` на content/checker, broadcasts, Staff classroom catalog/layout/plan routes и audit. Он может менять активную группу доступного ученика внутри разрешённого курса, исправлять/перепроверять работу и читать разрешённую статистику. Остальные capabilities проверяются по course/group scopes, а не предполагаются по видимости navigation.
@@ -159,7 +163,7 @@ Teacher получает `403` на content/checker, broadcasts, Staff classroom
 
 Assignment batch не вызывается на каждую смену select. Клиент передаёт полный набор локальных изменений, base plan version и для каждого перехода в другую группу того же курса явное `confirmGroupChange=true`; server применяет group history и assignments атомарно. Аудитория группы другого курса не является допустимым вариантом этой строки. Read payload содержит nullable `ageYears`, `grade`, `strength`, но не `birthday`; room summary содержит `studentCount`, nullable `averageAgeYears`, `averageGrade`, `averageStrength`. Каждый average исключает соответствующие `NULL` и округляется до одного знака. Fuzzy name search выполняется на клиенте по уже загруженным нескольким сотням строк и не требует отдельного endpoint.
 
-Student/Family read model одинаков по смыслу и содержит только `eventPublicId`, исходные `courseId/groupId/groupLessonId`, `status: not_applicable | reassigning | assigned`, nullable `classroomName` и nullable `publishedAt`; internal IDs, layout draft и другие школьники не попадают в payload. `not_applicable` означает online/отсутствие необходимости в очной комнате; очный школьник без действующего опубликованного назначения получает `reassigning`. Скрытие используемой комнаты немедленно меняет `assigned` на `reassigning`.
+Student/Family read model одинаков по смыслу и содержит только `eventPublicId`, исходные `courseId/groupId/groupLessonId`, `status: not_applicable | reassigning | assigned`, nullable `classroomName`, `confirmedAt` и nullable `lastAnnouncedAt`; internal IDs, layout draft, delivery destinations и другие школьники не попадают в payload. `not_applicable` означает online/отсутствие необходимости в очной комнате; очный школьник без действующего подтверждённого назначения получает `reassigning`. Скрытие используемой комнаты немедленно меняет `assigned` на `reassigning`. Confirm/update вызывает authoritative refetch, но notification появляется только после отдельного delivery batch.
 
 ## WebSocket protocol
 
@@ -178,7 +182,8 @@ Server events:
 - `lease-changed`: staff group/queue key, не чужая работа целиком.
 - `server-update`: новая frontend release/service-worker hint.
 - `resync-required`: protocol/schema mismatch или обнаруженный gap.
-- `classroom.assignment.changed`: owner-scoped invalidation с `audience`, `ownerAccountId`, `studentUserId`, `eventPublicId`, исходными `courseId/groupId`, новым публичным `status` и query keys. Для школьника выпускается Student event, для каждого связанного Family account — отдельная Family invalidation; Student может создать push/in-app, Family только обновляет API/WS state.
+- `classroom.assignment.changed`: owner-scoped invalidation с `audience`, `ownerAccountId`, `studentUserId`, `eventPublicId`, исходными `courseId/groupId`, новым публичным `status` и query keys. После confirm/change отдельные Student и Family sockets только refetch-ят read model; событие не создаёт push/in-app delivery.
+- `classroom.assignment.announced`: создаётся только явным admin delivery batch для Student account. PWA-канал создаёт персональные in-app/push deliveries, Telegram-канал отправляет личное сообщение через существующего бота. Family event/delivery отсутствует. Payload ссылается на immutable plan/batch version и не содержит токен или chat ID.
 
 NATS subject: `<runtimePrefix>.pwa.<audience>.<event>`. Payload обязан иметь `audience`; owner-targeted event фильтруется по authenticated principal до отправки socket. Broad lesson publication публикуется в три явных audience subjects.
 
@@ -195,6 +200,7 @@ NATS subject: `<runtimePrefix>.pwa.<audience>.<event>`. Payload обязан и�
 - `progressKeys.summary(student, course)`, `progressKeys.lesson(student, course, lesson)`
 - `adminKeys.contentRevision(id)`, `adminKeys.publications(lesson, group)`
 - `classroomKeys.catalog(filters)`, `classroomKeys.layout(event)`, `classroomKeys.plan(event)`, `classroomKeys.assignment(audience, student, event)`
+- `classroomKeys.deliveryPreview(plan, version, channels)`, `classroomKeys.deliveryBatch(batch)`
 - `classroomKeys.studentHistory(plan, student)`
 
 Raw query-key arrays в product code запрещаются после появления factory.
@@ -295,8 +301,8 @@ Canonical JSON fixtures размещаются в `vmshpwa/packages/contracts/fi
 
 ## Multi-course API и события
 
-Student/Family получают course list, enrollment, active-group switch, attendance, course lessons и course progress. Staff получает CRUD/archive courses/groups, scopes, schedule inheritance/override/materialization, Telegram binding management, synonym candidate/merge/split/impact preview и in-person event composition/inherited plan.
+Student/Family получают course list, enrollment, active-group switch, attendance, course lessons и course progress. Staff получает CRUD/archive courses/groups, scopes, schedule inheritance/override/materialization, Telegram binding management, synonym candidate/merge/split/impact preview, in-person event composition/inherited plan и admin-only classroom delivery preview/send/status.
 
-URL state использует validated `course`, `group`, `lesson`/`event`, `tab`. Query keys и draft keys включают course/group context. Owner-scoped invalidations допускают `audience`, `courseId`, `groupId`, `studentUserId`; отсутствие scope означает общий ресурс. События: `course.enrollment.changed`, `course.group-access.changed`, `group-lesson.publication.changed`, `problem-synonyms.changed`, `review.case.changed`, `course.progress.invalidated`, `notification.preference.changed`, `in-person-event.changed`, `classroom.assignment.changed`.
+URL state использует validated `course`, `group`, `lesson`/`event`, `tab`. Query keys и draft keys включают course/group context. Owner-scoped invalidations допускают `audience`, `courseId`, `groupId`, `studentUserId`; отсутствие scope означает общий ресурс. События: `course.enrollment.changed`, `course.group-access.changed`, `group-lesson.publication.changed`, `problem-synonyms.changed`, `review.case.changed`, `course.progress.invalidated`, `notification.preference.changed`, `in-person-event.changed`, `classroom.assignment.changed`, `classroom.assignment.announced`.
 
 Concrete endpoints and payload invariants: [`docs/courses-groups-and-lessons.md`](../../docs/courses-groups-and-lessons.md). Planned frontend files: `packages/product/src/{course-context,course-admin,synonym-context,in-person-event}.tsx`; route compositions — `apps/{student,family,staff}/src/pages.tsx`; contracts migrate to `packages/contracts` only in their vertical phase.

@@ -50,7 +50,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 - SQLite backup три раза в день и перед каждым deploy считается достаточным baseline; restore rehearsal использует согласованную копию трёх файлов SQLite/WAL/SHM в изолированном runtime.
 - Полный отдельный backup S3 не требуется. Student images не versioned; teacher-authored отправленные artifacts защищаются application immutability или отдельной policy.
 - Document what «manual bucket cleanup» may safely delete; preferably manifest-driven orphan report before any deletion.
-- Retention remains indefinite only as explicitly accepted interim risk. До production acceptance назначаются owner и review date по `RETENTION-01`; до этой даты доступны growth/orphan reports, а удаление остаётся manual и manifest-driven.
+- По закрытому `RETENTION-01` retention остаётся бессрочным без автоматической review/cleanup даты. Решение о ручной очистке принимает admin; операция обязана быть manifest-driven, иметь preview/audit и согласованно обновлять SQLite/S3. Growth/orphan reports остаются обязательной эксплуатационной диагностикой.
 
 ## Rollout strategy
 

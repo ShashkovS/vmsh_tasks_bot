@@ -48,6 +48,7 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - classroom assignment assigned/reassigning/unassigned × Student/Family/Staff visibility, включая empty group, no-room blocking incident, missing age/grade/strength, room average age/grade/strength и classroom history;
 - classroom density 6/5/2 и 15-room/~200-student × group colors/`очно–распределено` × compact flex wrap;
 - classroom draft clean/dirty/restored/conflict/saved × single/bulk/cross-group move;
+- classroom delivery confirmed/changed-since-send × PWA/Telegram selection × preview/sending/partial failure/completed/stale-preview; Family delivery отсутствует;
 - short/long Russian text, 200% zoom и narrow width.
 
 ## Interaction tests
@@ -74,6 +75,7 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - classroom catalog duplicate/archive/restore, materialize layout, single/bulk select, cross-group confirmation, recalculate и confirm;
 - classroom fuzzy search с `ё/е`, переставленными словами и опечаткой; jump/focus найденной строки; history disclosure;
 - classroom local draft восстанавливается после remount/reload simulation, очищается после receipt и сохраняется при version conflict;
+- classroom confirm не отправляет уведомление; delivery preview инвалидируется при смене plan version, явный send создаёт только Student recipients, а повторная перестановка не запускает resend;
 - archive assigned room → Student/Family reassigning, затем новая confirmed room; Family notification control отсутствует;
 - update prompt preserving draft.
 
@@ -101,7 +103,7 @@ Addon a11y имеет `test: error`. Перед принятием:
 
 Page screenshots в Playwright — Chromium, WebKit, Firefox с фиксированными locale/timezone/reduced-motion и production Vite build/preview, а не HMR/dev CSS. Component visual checks допустимы дополнительно. Baseline обновляется только после просмотра diff; в описании change указываются принятый gate и ожидаемые области изменения. Content gate отдельно сравнивает три листка одного уровня в PWA, Telegram и PDF derivatives.
 
-Classroom visual set фиксирует catalog active/hidden/duplicate, inherited/materialized layout, group markers/tints, `очно/распределено`, фактические 6/5/2 и плотный 15-room/~200-student вариант, stale plan, отдельные reassigning/unassigned, missing profile data, room averages возраста/класса/силы, fuzzy result, history, bulk selection, local draft states, preview/confirm и mobile Staff. Story `mobile-staff-layout` обязана показывать все три student fields и все три room averages, а не только имена/count. Ни одна story не показывает capacity, weight или drag affordance.
+Classroom visual set фиксирует catalog active/hidden/duplicate, inherited/materialized layout, group markers/tints, `очно/распределено`, фактические 6/5/2 и плотный 15-room/~200-student вариант, stale plan, отдельные reassigning/unassigned, missing profile data, room averages возраста/класса/силы, fuzzy result, history, bulk selection, local draft states, preview/confirm, explicit delivery preview/send и mobile Staff. Story `mobile-staff-layout` обязана показывать все три student fields и все три room averages, а не только имена/count. Ни одна story не показывает capacity, weight или drag affordance.
 
 ## Реализованный Phase 6 corpus
 

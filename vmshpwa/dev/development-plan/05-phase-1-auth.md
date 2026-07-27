@@ -17,7 +17,7 @@ Student входит сгенерированным логином и текущ
 - student credential не копирует plaintext token во второе поле;
 - family accounts импортируются только из согласованного файла/Staff batch flow, хранят имя без фамилии/email и поддерживают many-to-many child links;
 - конфликтующие normalized usernames попадают в report, не исправляются автоматически.
-- credential profile сверяется с этапом 0. Guessable/chat-id-shaped legacy tokens не активируются для web без решения `AUTH-01`; report не содержит plaintext/hash, по которому можно восстановить token.
+- credential profile сверяется с этапом 0. По закрытому `AUTH-01` настоящие аккаунты должны иметь корректную фамилию и пригодный Telegram token; некорректные test/unknown rows не активируются для production web и попадают в aggregate/quarantine report без plaintext/hash, по которому можно восстановить token.
 
 ## Backend
 
@@ -67,7 +67,7 @@ Student входит сгенерированным логином и текущ
 
 - [ ] Revision и migration: `<sha/path>`; empty/upgrade/rollback results `<path>`.
 - [ ] Auth decision record: cookie/session/expiry/revoke/CSRF details `<path>`.
-- [ ] Import/preflight report: birthday/surname/collision/credential-policy blockers без секретов; решение `AUTH-01` `<path/result>`.
+- [ ] Import/preflight report: birthday/surname/collision/credential-policy blockers без секретов; test/unknown rows исключены из production activation по `AUTH-01`: `<path/result>`.
 - [ ] Demo: Student, Family, Teacher, Admin fixture logins без публикации паролей `<route/result>`.
 - [ ] Permission matrix API test report: `<path/result>`.
 - [ ] Cookie/security assertions: `<result>`; nginx rate-limit smoke `<result>`.

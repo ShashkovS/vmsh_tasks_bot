@@ -218,6 +218,7 @@ Storybook:
 
 - [`Product/Classrooms — Multi-course inherited event`](http://localhost:6006/?path=/story/product-classrooms--multi-course-inherited-event) — [composer](../../packages/product/src/in-person-event.tsx), [story](../../packages/product/src/classroom-event.stories.tsx);
 - [`Pages/Staff — Очное событие · несколько курсов`](http://localhost:6006/?path=/story/pages-staff--multi-course-classroom-event) — [StaffClassroomsPage](../../apps/staff/src/pages.tsx);
+- `Product/Classrooms--delivery-preview`, `Product/Classrooms--delivery-changed-after-send`, `Pages/Staff--classroom-delivery` — обязательные stories решения 27 июля; **ещё не реализованы**. Целевые точки: `ClassroomDeliveryPreview` в `packages/product/src`, `/staff/classrooms` в [`apps/staff/src/pages.tsx`](../../apps/staff/src/pages.tsx), API contract в [`03-api-events-and-files.md`](03-api-events-and-files.md);
 - [`Product/Progress — Courses separated`](http://localhost:6006/?path=/story/product-progress--courses-separated) — [story](../../packages/product/src/course-progress.stories.tsx), pure projection tests [multi-course-projection.test.ts](../../packages/product/src/multi-course-projection.test.ts).
 
 Эти stories являются prototype proof только для интерфейса и детерминированной projection logic. Backend endpoints, migrations и production wiring закрываются соответствующими Phase 1–11.
