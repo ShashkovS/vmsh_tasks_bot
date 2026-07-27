@@ -57,13 +57,15 @@
 | 2026-07-27 | PLAN-036 | Opt-in test S3/Telegram side effects явно разрешены владельцем                                           | Disposable test-prefix objects и synthetic test-channel messages можно create/read/edit/delete; production resources запрещены                                |
 | 2026-07-27 | PLAN-037 | PWA runtime использует connection-per-operation и никогда не мигрирует SQLite при startup                | Отдельная maintenance-команда применяет yoyo под lock и включает WAL; startup fail-closed проверяет migration IDs/hash/WAL, legacy auto-migrate пока сохранён |
 | 2026-07-27 | PLAN-038 | PWA maintenance-команды выбирают состояние только через явный проверенный профиль                        | Guard выполняется до импорта legacy config; неизвестные CLI-аргументы отклоняются, поэтому опечатка не может выбрать fallback DB или credential loader         |
+| 2026-07-27 | PLAN-039 | Converter readiness подтверждается разрешением executable и поведенческим smoke                           | Fixed argv без shell, bounded output/timeout/process-group cleanup; synthetic TikZ→SVG и raster→WebP проверяют результат, HEIC capability отражается отдельно |
 
 ## Текущий инкремент этапа 0
 
 - Реализация: `db_methods/pwa/migrations.py`, `db_methods/pwa/connection.py`, `main.py`, `vmshpwa/scripts/{runtime_guard,migrate_runtime,seed_runtime}.py`.
 - Fault/API tests: `pwa_tests/integration/test_migration_lifecycle.py`, `pwa_tests/integration/test_sqlite_concurrency.py`, `pwa_tests/test_app_factory.py`, `pwa_tests/test_config_safety.py`, `pwa_tests/test_maintenance_commands.py`.
 - Проверено 27 июля 2026: 15 целевых migration/concurrency/factory/config tests и 7/7 maintenance guard tests; полный `pwa_tests` — 33/33 PASS на Python 3.14.3.
-- Этап 0 не закрыт: schema inventory, полноценный `baseline-v1`, characterization/golden manifest, auth/workload/toolchain/storage/Telegram preflights и runtime-isolation E2E ещё впереди.
+- Toolchain increment: `helpers/pwa/toolchain.py`, `vmshpwa/scripts/toolchain_{preflight,smoke}.py`, unit/integration tests и `pwa_tests/reports/toolchain-local.md`; локальный preflight и оба converter chains PASS, HEIC advertised.
+- Этап 0 не закрыт: schema inventory, полноценный `baseline-v1`, characterization/golden manifest, auth/workload, storage/Telegram preflights и runtime-isolation E2E ещё впереди.
 
 ## Проверка многокурсового прототипа
 

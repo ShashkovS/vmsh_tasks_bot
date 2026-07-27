@@ -60,7 +60,7 @@ pwa-agent-staff:
 pwa-agent-storybook:
 	cd $(PWA_DIR) && CI=true STORYBOOK_PORT=6106 pnpm storybook
 
-.PHONY: pwa-migrate pwa-agent-migrate pwa-e2e-migrate pwa-seed pwa-agent-seed
+.PHONY: pwa-migrate pwa-agent-migrate pwa-e2e-migrate pwa-seed pwa-agent-seed pwa-toolchain-check pwa-agent-toolchain-check pwa-toolchain-smoke pwa-agent-toolchain-smoke
 pwa-migrate:
 	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.migrate_runtime
 
@@ -75,6 +75,18 @@ pwa-seed:
 
 pwa-agent-seed:
 	$(PWA_UV_ENV) $(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.seed_runtime
+
+pwa-toolchain-check:
+	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.toolchain_preflight
+
+pwa-agent-toolchain-check:
+	$(PWA_UV_ENV) $(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.toolchain_preflight
+
+pwa-toolchain-smoke:
+	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.toolchain_smoke
+
+pwa-agent-toolchain-smoke:
+	$(PWA_UV_ENV) $(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.toolchain_smoke
 
 .PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-visual pwa-visual-update telegram-history-test
 pwa-format:

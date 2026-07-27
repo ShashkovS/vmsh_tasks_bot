@@ -23,6 +23,7 @@ Legacy aiohttp остаётся на 8179. Новые команды его не
 - отдельные цели `pwa-api`, `pwa-student`, `pwa-family`, `pwa-staff`, `pwa-storybook` и их `pwa-agent-*` аналоги;
 - `make pwa-migrate` / `make pwa-agent-migrate` — явное применение yoyo migrations и включение WAL до запуска API;
 - `make pwa-seed` / `make pwa-agent-seed` — явные миграции и детерминированная prototype-fixture;
+- `make pwa-toolchain-check` / `make pwa-agent-toolchain-check` — redacted capability/version preflight; соответствующие `*-toolchain-smoke` реально строят synthetic TikZ→SVG и raster→WebP во временной папке;
 - `make pwa-format`, `pwa-lint`, `pwa-typecheck`, `pwa-test`, `pwa-storybook-test`, `pwa-build`;
 - `make pwa-e2e`, `pwa-visual`, `pwa-visual-update`;
 - `make telegram-history-test` — отдельная историческая регрессия Telegram.

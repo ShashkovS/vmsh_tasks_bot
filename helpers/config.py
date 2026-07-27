@@ -6,12 +6,12 @@ import pathlib
 from dataclasses import dataclass, field
 from typing import Union, Optional, ContextManager
 
-APP_LOGGER = 'MathBot'
+APP_LOGGER = "MathBot"
 APP_PATH = pathlib.Path(__file__).parent.parent.resolve()
 sentry_sdk: ContextManager = None
 os.chdir(APP_PATH)
 
-__all__ = ['APP_PATH', 'logger', 'config', 'DEBUG', 'sentry_sdk']
+__all__ = ["APP_PATH", "logger", "config", "DEBUG", "sentry_sdk"]
 
 
 def _absolute_path(path: str) -> pathlib.Path:
@@ -36,24 +36,36 @@ DATABASE_MUTABLE_CONFIG_FIELDS = frozenset(
 )
 
 
+def _optional_executable_from_env(name: str, default: str) -> Optional[str]:
+    """Read an executable override without accepting a shell command fallback."""
+
+    raw_value = os.environ.get(name)
+    if raw_value is None:
+        return default
+    value = raw_value.strip()
+    if not value or value.casefold() in {"none", "disabled"}:
+        return None
+    return value
+
+
 @dataclass()
 class Config:
-    runtime_profile: str = 'legacy'
-    pwa_instance: str = ''
-    pwa_media_root: str = ''
+    runtime_profile: str = "legacy"
+    pwa_instance: str = ""
+    pwa_media_root: str = ""
     pwa_prototype: bool = False
-    config_name: str = ''
-    google_sheets_key: str = ''
-    google_cred_json: str = field(default='', repr=False)
-    telegram_bot_token: str = field(default='', repr=False)
-    webhook_host: str = ''
-    webhook_path: str = ''
+    config_name: str = ""
+    google_sheets_key: str = ""
+    google_cred_json: str = field(default="", repr=False)
+    telegram_bot_token: str = field(default="", repr=False)
+    webhook_host: str = ""
+    webhook_path: str = ""
     webhook_port: int = -1
     production_mode: bool = False
-    db_filename: str = ''
-    sos_channel: Union[str, int] = ''
-    exceptions_channel: Union[str, int] = ''
-    sentry_dsn: Optional[str] = field(default='', repr=False)
+    db_filename: str = ""
+    sos_channel: Union[str, int] = ""
+    exceptions_channel: Union[str, int] = ""
+    sentry_dsn: Optional[str] = field(default="", repr=False)
     nats_server: Optional[str] = "nats://127.0.0.1:4222"
     logging_level = logging.WARNING
     verdict_mode: str = "verdict_plus_minus_half"
@@ -76,98 +88,138 @@ class Config:
     s3_bucket_name: Optional[str] = None
     s3_access_key: Optional[str] = field(default=None, repr=False)
     s3_secret_key: Optional[str] = field(default=None, repr=False)
+    # See vmshpwa/docs/latex-content-pipeline.md. These are executable paths,
+    # never shell fragments; the worker supplies every argument itself.
+    pdf2svg_path: Optional[str] = "pdf2svg"
+    cwebp_path: Optional[str] = "cwebp"
+    pdflatex_path: Optional[str] = "pdflatex"
+    magick_path: Optional[str] = "magick"
 
     def update_from_dict(self, update_dict: dict, *, allowed_fields=None):
         for key, value in update_dict.items():
             if allowed_fields is not None and key not in allowed_fields:
-                raise ValueError(f'Runtime database cannot override config field {key!r}')
+                raise ValueError(
+                    f"Runtime database cannot override config field {key!r}"
+                )
             setattr(self, key, value)
+
 
 def _create_logger():
     # Настраиваем
     logging.basicConfig(
         level=logging.WARNING,
-        format='%(asctime)s %(name)-8s: %(levelname)-8s %(message)s',
-        datefmt='%Y-%d-%m %H:%M:%S'
+        format="%(asctime)s %(name)-8s: %(levelname)-8s %(message)s",
+        datefmt="%Y-%d-%m %H:%M:%S",
     )
     logger = logging.getLogger(APP_LOGGER)
     return logger
 
 
 def _setup(*, force_production=False):
-    runtime_profile = os.environ.get('VMSH_RUNTIME_PROFILE', '').strip()
-    if runtime_profile == 'telegram-history-test':
+    runtime_profile = os.environ.get("VMSH_RUNTIME_PROFILE", "").strip()
+    if runtime_profile == "telegram-history-test":
         # Historical handler scenarios need aiogram to accept a token-shaped
         # value, but must never load credentials or contact Telegram/Google.
         return Config(
             runtime_profile=runtime_profile,
-            config_name='telegram_history_test',
-            db_filename=str(_absolute_path('.runtime/vmshpwa/telegram_history.sqlite3')),
-            pwa_media_root=str(_absolute_path('.runtime/vmshpwa/telegram_history')),
-            apps='',
-            google_sheets_key='',
-            google_cred_json='',
-            telegram_bot_token='123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            config_name="telegram_history_test",
+            db_filename=str(
+                _absolute_path(".runtime/vmshpwa/telegram_history.sqlite3")
+            ),
+            pwa_media_root=str(_absolute_path(".runtime/vmshpwa/telegram_history")),
+            apps="",
+            google_sheets_key="",
+            google_cred_json="",
+            telegram_bot_token="123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
             nats_server=None,
             trace_enabled=False,
-            sentry_dsn='',
+            sentry_dsn="",
         )
-    if runtime_profile.startswith('pwa-'):
+    if runtime_profile.startswith("pwa-"):
         config = Config(
             runtime_profile=runtime_profile,
-            pwa_instance=os.environ.get('VMSH_INSTANCE', runtime_profile.removeprefix('pwa-')),
-            pwa_prototype=os.environ.get('VMSH_PWA_PROTOTYPE', 'false').lower() == 'true',
-            config_name=os.environ.get('VMSH_NATS_TOPIC_PREFIX', runtime_profile.replace('-', '_')),
-            db_filename=str(_absolute_path(os.environ.get('VMSH_DB_FILENAME', f'db/{runtime_profile}.sqlite3'))),
-            pwa_media_root=str(_absolute_path(os.environ.get('VMSH_MEDIA_ROOT', f'.runtime/vmshpwa/{runtime_profile}'))),
-            apps='pwa_app',
-            google_sheets_key='',
-            google_cred_json='',
-            telegram_bot_token='',
-            nats_server=os.environ.get('VMSH_NATS_SERVER') or None,
+            pwa_instance=os.environ.get(
+                "VMSH_INSTANCE", runtime_profile.removeprefix("pwa-")
+            ),
+            pwa_prototype=os.environ.get("VMSH_PWA_PROTOTYPE", "false").lower()
+            == "true",
+            config_name=os.environ.get(
+                "VMSH_NATS_TOPIC_PREFIX", runtime_profile.replace("-", "_")
+            ),
+            db_filename=str(
+                _absolute_path(
+                    os.environ.get("VMSH_DB_FILENAME", f"db/{runtime_profile}.sqlite3")
+                )
+            ),
+            pwa_media_root=str(
+                _absolute_path(
+                    os.environ.get(
+                        "VMSH_MEDIA_ROOT", f".runtime/vmshpwa/{runtime_profile}"
+                    )
+                )
+            ),
+            apps="pwa_app",
+            google_sheets_key="",
+            google_cred_json="",
+            telegram_bot_token="",
+            nats_server=os.environ.get("VMSH_NATS_SERVER") or None,
             trace_enabled=False,
-            sentry_dsn='',
+            sentry_dsn="",
+            pdf2svg_path=_optional_executable_from_env("VMSH_PDF2SVG_PATH", "pdf2svg"),
+            cwebp_path=_optional_executable_from_env("VMSH_CWEBP_PATH", "cwebp"),
+            pdflatex_path=_optional_executable_from_env(
+                "VMSH_PDFLATEX_PATH", "pdflatex"
+            ),
+            magick_path=_optional_executable_from_env("VMSH_MAGICK_PATH", "magick"),
         )
-        logger.info('PWA runtime profile %s uses DB %s', runtime_profile, config.db_filename)
+        logger.info(
+            "PWA runtime profile %s uses DB %s", runtime_profile, config.db_filename
+        )
         return config
 
     config = Config()
-    logging.info(f'Current working dir: {os.getcwd()}')
-    if force_production or os.environ.get('PROD', None) == 'true':
-        logger.info('Настройки в режиме PRODUCTION!!!')
+    logging.info(f"Current working dir: {os.getcwd()}")
+    if force_production or os.environ.get("PROD", None) == "true":
+        logger.info("Настройки в режиме PRODUCTION!!!")
         config.production_mode = True
-        config_filename = _absolute_path('creds_prod/vmsh_bot_config_prod.json')
-        config.google_cred_json = _absolute_path('creds_prod/vmsh_bot_sheets_creds_prod.json')
+        config_filename = _absolute_path("creds_prod/vmsh_bot_config_prod.json")
+        config.google_cred_json = _absolute_path(
+            "creds_prod/vmsh_bot_sheets_creds_prod.json"
+        )
     else:
-        logging.info('Настройки в режиме test')
+        logging.info("Настройки в режиме test")
         config.production_mode = False
-        config_filename = _absolute_path('creds_test/vmsh_bot_config_test.json')
-        config.google_cred_json = _absolute_path('creds_test/vmsh_bot_sheets_creds_test.json')
+        config_filename = _absolute_path("creds_test/vmsh_bot_config_test.json")
+        config.google_cred_json = _absolute_path(
+            "creds_test/vmsh_bot_sheets_creds_test.json"
+        )
 
     try:
-        with open(config.google_cred_json, 'r') as f:
+        with open(config.google_cred_json, "r") as f:
             cred = json.load(f)
-        logging.info(f'Google service email: {cred["client_email"]}')
+        logging.info(f"Google service email: {cred['client_email']}")
     except:
-        logging.critical(f'Запишите гугл-креды в {config.google_cred_json}')
+        logging.critical(f"Запишите гугл-креды в {config.google_cred_json}")
         raise
 
     try:
-        with open(config_filename, 'r') as f:
+        with open(config_filename, "r") as f:
             config_from_json = json.load(f)
     except:
         logging.critical(
-            f'Запишите конфиг в {config_filename} в формате\n'
+            f"Запишите конфиг в {config_filename} в формате\n"
             '`{"telegram_bot_token": "...", "google_sheets_key": "...", "webhook_host": "host.ru", "webhook_port": 443, "db_filename": "test.db"}`'
         )
         raise
 
     # Определяем абсолютный путь к БД
-    config_from_json['db_filename'] = _absolute_path(config_from_json['db_filename'])
+    config_from_json["db_filename"] = _absolute_path(config_from_json["db_filename"])
 
     # Обновляем настройки
     config.update_from_dict(config_from_json)
-    assert config.config_name != '', f'{config.config_name=}, but needs to be meanfull string'
+    assert config.config_name != "", (
+        f"{config.config_name=}, but needs to be meanfull string"
+    )
     return config
 
 
@@ -196,10 +248,10 @@ def _init_sentry(dsn: str, environment: str):
                 environment=environment,
                 send_default_pii=True,
             )
-            logging.info('Sentry started')
+            logging.info("Sentry started")
 
         except Exception:
-            logging.exception('Sentry init failed')
+            logging.exception("Sentry init failed")
     else:
         sentry_sdk = None
 
@@ -214,24 +266,24 @@ init_trace(config)
 # logger.debug(f'{config=}')
 
 if config.production_mode:
-    logger.info(('*' * 50 + '\n') * 5)
-    logger.info('Production mode')
-    logger.info('*' * 50)
+    logger.info(("*" * 50 + "\n") * 5)
+    logger.info("Production mode")
+    logger.info("*" * 50)
 else:
-    logger.info('Dev mode')
+    logger.info("Dev mode")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(config)
-    print('-' * 50)
+    print("-" * 50)
     # Тестируем sentry
     if config.sentry_dsn:
-        logger.debug('debug message')
-        logger.info('info message')
-        logger.warning('warn message')
-        logger.error('error message')
+        logger.debug("debug message")
+        logger.info("info message")
+        logger.warning("warn message")
+        logger.error("error message")
         try:
             a = [1][2]
         except Exception:
-            logger.exception('exception message')
+            logger.exception("exception message")
         # Наконец-то валимся
         division_by_zero = 1 / 0

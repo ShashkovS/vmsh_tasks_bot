@@ -57,6 +57,8 @@ magick_path: Optional[str] = "magick"
 
 Каждое поле содержит только имя/путь executable. Вызов выполняется без shell, с фиксированными argv flags, isolated temporary directory, timeout/resource bounds и ограниченным stderr. Startup/readiness probe проверяет наличие, executable bit и capability/version; включённый pipeline с отсутствующей обязательной утилитой fail-fast до пользовательского compile/upload. В provenance derivative сохраняются compiler version и нормализованные версии использованных tools, но публичный diagnostic не раскрывает абсолютный server path.
 
+Реализация этого контракта находится в `helpers/pwa/toolchain.py`, а redacted preflight и реальный synthetic smoke — в `vmshpwa/scripts/toolchain_{preflight,smoke}.py`. Выбор executable следует актуальному поведению [`shutil.which`](https://docs.python.org/3.14/library/shutil.html#shutil.which). Процессы запускаются через [`asyncio.create_subprocess_exec`](https://docs.python.org/3.14/library/asyncio-subprocess.html#asyncio.create_subprocess_exec), читаются через `communicate()` и ограничиваются внешним timeout, как требует Python 3.14 API; при timeout завершается отдельная process group. Smoke всегда передаёт LaTeX `-no-shell-escape` и проверяет сигнатуры полученных PDF, SVG, PNG и WebP, а не только exit code.
+
 ## Версии и откат
 
 Публикация может быть scheduled и выполняется независимо по уровню/типу. Student, который открывал прежнее условие, видит заметный update marker; teacher review показывает последнюю опубликованную версию. Скрытие занятия убирает его из Student UI как неопубликованное. Старый публичный сайт пока обновляется внешними скриптами и не входит в этот pipeline.
