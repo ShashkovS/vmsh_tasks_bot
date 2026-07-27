@@ -13,9 +13,20 @@ from .migrations import (
     inspect_migration_state,
     require_current_schema,
 )
+from .runtime_lock import (
+    DatabaseLifecycleBusyError,
+    DatabaseLifecycleLock,
+    DatabaseLifecycleLockMode,
+    lifecycle_lock_path,
+    maintenance_database_lock,
+    runtime_database_lock,
+)
 
 __all__ = [
     "BusyRetryExhausted",
+    "DatabaseLifecycleBusyError",
+    "DatabaseLifecycleLock",
+    "DatabaseLifecycleLockMode",
     "JournalModeMismatchError",
     "MigrationState",
     "PwaConnectionFactory",
@@ -23,5 +34,8 @@ __all__ = [
     "SqliteConcurrencyPolicy",
     "apply_schema_migrations",
     "inspect_migration_state",
+    "lifecycle_lock_path",
+    "maintenance_database_lock",
     "require_current_schema",
+    "runtime_database_lock",
 ]

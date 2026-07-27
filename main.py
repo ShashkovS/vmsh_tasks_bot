@@ -8,7 +8,11 @@ from typing import Iterable, Protocol
 from aiohttp import web
 
 import apps
-from db_methods.pwa import PwaConnectionFactory
+from db_methods.pwa import (
+    DatabaseLifecycleLock,
+    PwaConnectionFactory,
+    runtime_database_lock,
+)
 from helpers.config import DATABASE_MUTABLE_CONFIG_FIELDS, Config, config, logger
 import db_methods as db
 from helpers.features import set_features
@@ -32,21 +36,63 @@ class PwaDatabaseState:
     """Mutable startup result without mutating a frozen aiohttp app mapping."""
 
     factory: PwaConnectionFactory | None = None
+    lifecycle_lock: DatabaseLifecycleLock | None = None
 
 
 PWA_DATABASE = web.AppKey("pwa_database", PwaDatabaseState)
+
+
+async def pwa_database_lifecycle(app: web.Application):
+    """Hold the database pathname lock until aiohttp has drained handlers."""
+
+    runtime_config = app[RUNTIME_CONFIG]
+    if not runtime_config.runtime_profile.startswith("pwa-"):
+        yield
+        return
+
+    state = app[PWA_DATABASE]
+    lifecycle_lock = runtime_database_lock(runtime_config.db_filename)
+    # The non-blocking flock is acquired synchronously so cancellation cannot
+    # lose its descriptor. SQLite preflight stays off the event loop; if startup
+    # is cancelled, a done callback releases the lock only after that worker
+    # thread has closed every SQLite connection. See ADR 0002.
+    lifecycle_lock.acquire()
+    preflight_task = asyncio.create_task(
+        asyncio.to_thread(PwaConnectionFactory, runtime_config.db_filename)
+    )
+    try:
+        factory = await asyncio.shield(preflight_task)
+    except BaseException:
+        if preflight_task.done():
+            lifecycle_lock.release()
+        else:
+            def release_when_preflight_finishes(completed_task):
+                # Retrieve a delayed exception so cancellation does not create
+                # an unobserved-task warning; keep the lock until the worker
+                # has closed every SQLite descriptor.
+                with suppress(BaseException):
+                    completed_task.result()
+                lifecycle_lock.release()
+
+            preflight_task.add_done_callback(release_when_preflight_finishes)
+        raise
+
+    state.lifecycle_lock = lifecycle_lock
+    state.factory = factory
+    try:
+        yield
+    finally:
+        state.factory = None
+        state.lifecycle_lock = None
+        lifecycle_lock.release()
 
 
 async def on_startup(app):
     logger.warning("MainApp Start up!")
     runtime_config = app[RUNTIME_CONFIG]
     if runtime_config.runtime_profile.startswith("pwa-"):
-        # The PWA contour is deploy-before-start: checking and opening a
-        # connection happen off the event loop, but no migration is applied.
-        # See adr/0002-pwa-sqlite-concurrency-and-migrations.md.
-        app[PWA_DATABASE].factory = await asyncio.to_thread(
-            PwaConnectionFactory, runtime_config.db_filename
-        )
+        # The cleanup context above owns schema preflight and the shared lock;
+        # ordinary startup never applies migrations. See ADR 0002.
         return
 
     # Legacy startup keeps its historical auto-migration path until the
@@ -93,6 +139,10 @@ def create_app(
     app[RUNTIME_CONFIG] = selected_config
     app[ENABLED_ADAPTERS] = selected_adapters
     app[PWA_DATABASE] = PwaDatabaseState()
+    # aiohttp runs cleanup contexts after on_shutdown and request draining.
+    # Keeping the DB lifecycle lock here prevents maintenance from replacing
+    # SQLite while a graceful-shutdown handler still owns a connection.
+    app.cleanup_ctx.append(pwa_database_lifecycle)
     # Важно, что текущие on_startup и on_shutdown первые. Мы потом развернём список on_shutdown в обратном порядке
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
@@ -125,17 +175,18 @@ if __name__ == "__main__":
             apps.tg_bot.start_bot_in_polling_mode()
 
         runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, host="127.0.0.1", port=LOCAL_APP_PORT)
-        await site.start()
-        logger.info(f"Веб-сервер запущен на порту {LOCAL_APP_PORT}")
-
-        polling_task = (
-            asyncio.create_task(apps.tg_bot.run_tg_bot_in_polling_mode())
-            if telegram_enabled
-            else None
-        )
+        polling_task = None
         try:
+            await runner.setup()
+            site = web.TCPSite(runner, host="127.0.0.1", port=LOCAL_APP_PORT)
+            await site.start()
+            logger.info(f"Веб-сервер запущен на порту {LOCAL_APP_PORT}")
+
+            polling_task = (
+                asyncio.create_task(apps.tg_bot.run_tg_bot_in_polling_mode())
+                if telegram_enabled
+                else None
+            )
             await asyncio.Event().wait()
         finally:
             if polling_task is not None:

@@ -59,6 +59,8 @@
 | 2026-07-27 | PLAN-038 | PWA maintenance-команды выбирают состояние только через явный проверенный профиль                        | Guard выполняется до импорта legacy config; неизвестные CLI-аргументы отклоняются, поэтому опечатка не может выбрать fallback DB или credential loader         |
 | 2026-07-27 | PLAN-039 | Converter readiness подтверждается разрешением executable и поведенческим smoke                           | Fixed argv без shell, bounded output/timeout/process-group cleanup; synthetic TikZ→SVG и raster→WebP проверяют результат, HEIC capability отражается отдельно |
 | 2026-07-27 | PLAN-040 | Legacy rules защищаются executable characterization, corpus — schema-light manifest                       | 23 answer types, verdict/reaction/queue/synonym semantics зафиксированы; 54 source files покрыты hash/encoding/structure без дублирования содержания           |
+| 2026-07-27 | PLAN-041 | Schema baseline — migration-derived inventory, а live drift остаётся явным                               | 47 product objects воспроизводимы; 12 derived objects allowlisted; product row values не выбираются, live DDL/defaults сериализуются только fingerprints      |
+| 2026-07-27 | PLAN-042 | `baseline-v1` строится вне target и устанавливается только после полной проверки                         | Exact profile/path allowlist, scoped FK gates, purge+VACUUM credentials, shared-runtime/exclusive-maintenance lock и durable atomic replace                    |
 
 ## Текущий инкремент этапа 0
 
@@ -67,7 +69,9 @@
 - Проверено 27 июля 2026: 15 целевых migration/concurrency/factory/config tests и 7/7 maintenance guard tests; полный `pwa_tests` — 33/33 PASS на Python 3.14.3.
 - Toolchain increment: `helpers/pwa/toolchain.py`, `vmshpwa/scripts/toolchain_{preflight,smoke}.py`, unit/integration tests и `pwa_tests/reports/toolchain-local.md`; локальный preflight и оба converter chains PASS, HEIC advertised.
 - Characterization increment: 59/59 domain tests PASS; `vmshpwa/scripts/golden_corpus.py check` подтвердил 54/54 source files. Подробности: `pwa_tests/reports/legacy-characterization.md`.
-- Этап 0 не закрыт: schema inventory, полноценный `baseline-v1`, auth/workload, storage/Telegram preflights и runtime-isolation E2E ещё впереди.
+- Schema increment: 22/22 inventory/migration tests PASS; fresh hash `5ba3e432…`, live read-only check воспроизвёл 12 fingerprinted derived objects, yoyo infrastructure и 2 известных FK-дефекта без изменения `db/vmsh.db`. Sentinel-тесты доказывают, что live SQL/default literals не попадают в отчёт. Подробности: `pwa_tests/reports/live-schema-drift.md`.
+- Seed/lifecycle-lock increment: 129/129 focused tests PASS; два последовательных `make pwa-agent-seed` дают digest `193cc450…`; exhaustive answer examples совпадают с legacy regex; scoped FK gate не скрывает ошибки `reactions`; stale WAL очищается только SQLite; shared locks независимых runtime workers исключают migrate/seed и сохраняются до aiohttp cleanup; fork/cancellation/startup-failure/path-alias cases и прежнее окно перед `os.replace` воспроизведены. Подробности: `pwa_tests/reports/baseline-v1.md` и ADR 0002.
+- Этап 0 не закрыт: auth/workload, storage/Telegram preflights и runtime-isolation E2E ещё впереди.
 
 ## Проверка многокурсового прототипа
 

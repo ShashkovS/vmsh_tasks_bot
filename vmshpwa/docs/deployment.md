@@ -14,12 +14,13 @@ Production host: `vmsh.shashkovs.ru`. Желаемый staging host: `devvmsh.sh
 4. Если изменились `pyproject.toml`/`uv.lock`, выполнить frozen production sync в выделенное окружение.
 5. Если изменились `vmshpwa/pnpm-lock.yaml`, `pnpm-workspace.yaml` или любой `package.json`, выполнить `pnpm install --frozen-lockfile` под закреплёнными Node 26 и pnpm 11.15.1.
 6. Для frontend-изменений выполнить format-check, lint, typecheck, unit/Storybook tests и production build. Не собирать с `VITE_ENABLE_MSW` или `VITE_PROTOTYPE`.
-7. Применить yoyo migrations до переключения backend revision. Каждая migration имеет backup/rollback procedure.
-8. Атомарно переключить static assets, перезапустить gunicorn и связанные workers только при соответствующих изменениях.
-9. Под service profile выполнить toolchain preflight для включённых capabilities: config defaults `pdflatex`, `pdf2svg`, `cwebp`, `magick` должны разрешиться через его `PATH` либо через явный absolute override; сохранить redacted version report.
-10. Проверить production `s3_url`, bucket и наличие access/secret key из `creds_prod/vmsh_bot_config_prod.json`, затем выполнить redacted Beget S3 capability probe; значения ключей и signed URLs не печатать.
-11. Проверить три audience health/runtime URL, static history fallback, WebSocket upgrade, CSP/security headers и service-worker files.
-12. Запустить detached post-deploy backup и отправить оператору итог с revision и статусами.
+7. Для schema maintenance остановить и дождаться завершения Gunicorn master/workers, Telegram adapter и всех background jobs, которые могут открыть общую SQLite. Rolling HUP для этого шага запрещён: перекрывающиеся shared locks намеренно не оставляют окна для migration.
+8. Получить exclusive database lifecycle lock и применить yoyo migrations до переключения backend revision. Каждая migration имеет backup/rollback procedure; занятый lock прерывает deploy до любого DDL.
+9. Атомарно переключить static assets и запустить gunicorn/связанные workers только при соответствующих изменениях.
+10. Под service profile выполнить toolchain preflight для включённых capabilities: config defaults `pdflatex`, `pdf2svg`, `cwebp`, `magick` должны разрешиться через его `PATH` либо через явный absolute override; сохранить redacted version report.
+11. Проверить production `s3_url`, bucket и наличие access/secret key из `creds_prod/vmsh_bot_config_prod.json`, затем выполнить redacted Beget S3 capability probe; значения ключей и signed URLs не печатать.
+12. Проверить три audience health/runtime URL, static history fallback, WebSocket upgrade, CSP/security headers и service-worker files.
+13. Запустить detached post-deploy backup и отправить оператору итог с revision и статусами.
 
 Yoyo apply выполняется только этим отдельным шагом под deploy lock. Обычный startup/connect не пытается применить migrations из каждого gunicorn/Telegram процесса: он сверяет ожидаемую schema version и останавливается до обслуживания при mismatch.
 

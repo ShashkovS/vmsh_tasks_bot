@@ -45,6 +45,8 @@
 - `vmshpwa/e2e/runtime-isolation.spec.ts`;
 - `vmshpwa/docs/developer-runtime.md` или обновление существующего runtime doc.
 
+Фактически реализованный seed находится в `vmshpwa/scripts/seed_runtime.py`; данные и loader — в `pwa_tests/fixtures/{baseline-v1.json,answer-types-v1.json,seed.py}`, проверки — в `pwa_tests/test_seed_runtime.py`, воспроизводимый отчёт — в `pwa_tests/reports/baseline-v1.md`.
+
 Не коммитить production DB snapshot, credential-bearing rows из migration fixtures и реальные персональные данные.
 
 ## Fixtures
@@ -52,7 +54,7 @@
 Seed `baseline-v1` и первый release fixture:
 
 - 4 динамических учебных группы + одна system group;
-- Student online, Student in-person, Family с двумя детьми, Teacher с одной разрешённой группой, Admin;
+- Student online, Student in-person, Teacher с одной разрешённой группой и Admin; Family с двумя детьми остаётся manifest-only до миграций Phase 1;
 - один текущий и один прошлый урок, а также занятия 39–41 сезона 2025–2026 для трёх уровней;
 - по одной задаче каждого `PROB_TYPE`;
 - все значения `ANS_TYPE` в isolated answer fixtures;
@@ -65,6 +67,7 @@ Seed `baseline-v1` и первый release fixture:
 
 - Python: schema snapshot, seed repeatability, legacy characterization, app factory imports без Telegram/Google.
 - Python/integration: два connection/process writers, `SQLITE_BUSY` retry exhaustion, crash внутри transaction и schema-version mismatch без auto-apply.
+- Python/integration: два runtime workers держат shared lifecycle locks, seed/migrate требуют exclusive lock; lock сохраняется до aiohttp cleanup, а отдельный процесс не может открыть старую SQLite между финальной проверкой seed и `os.replace`.
 - Python/toolchain: default-name lookup через контролируемый `PATH`, absolute override, `None`, missing/non-executable file, fake version/error/timeout executables; реальные binary smoke отмечаются как environment capability test.
 - Python/storage config: полный/частичный/отсутствующий набор `s3_*`, test/prod source selection, secret redaction и доказательство, что filesystem agent/E2E profile не читает credential files.
 - Python/Telegram: RecordingBot для hermetic suite; opt-in live probe проверяет `getMe/getChat/getChatMember`, сохраняет canonical group destination и может отправить synthetic boundary payloads в test channel без real student data.

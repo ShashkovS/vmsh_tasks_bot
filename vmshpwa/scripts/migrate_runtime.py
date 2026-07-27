@@ -2,8 +2,9 @@
 
 import argparse
 from collections.abc import Sequence
+from pathlib import Path
 
-from db_methods.pwa import apply_schema_migrations
+from db_methods.pwa import apply_schema_migrations, maintenance_database_lock
 from vmshpwa.scripts.runtime_guard import (
     PwaMaintenanceConfig,
     require_pwa_maintenance_profile,
@@ -13,7 +14,13 @@ from vmshpwa.scripts.runtime_guard import (
 
 def migrate_runtime(runtime_config: PwaMaintenanceConfig) -> int:
     require_pwa_maintenance_profile(runtime_config)
-    state = apply_schema_migrations(runtime_config.db_filename)
+    database_path = Path(runtime_config.db_filename)
+    database_path.parent.mkdir(parents=True, exist_ok=True)
+    # Yoyo serializes two migration commands, while this application lock also
+    # excludes every live PWA worker from the complete schema transition.
+    # Decision: adr/0002-pwa-sqlite-concurrency-and-migrations.md.
+    with maintenance_database_lock(database_path):
+        state = apply_schema_migrations(database_path)
     print(
         f"Migrated {runtime_config.pwa_instance}: "
         f"{runtime_config.db_filename} ({len(state.expected)} migrations)"

@@ -42,6 +42,7 @@ vmshpwa/**/*.tsbuildinfo
 db/vmshpwa_*.sqlite3
 db/vmshpwa_*.sqlite3-wal
 db/vmshpwa_*.sqlite3-shm
+db/.*.vmshpwa-lifecycle.lock
 /_vmsh_examples/
 /_external_pipelines/
 /db/arch/

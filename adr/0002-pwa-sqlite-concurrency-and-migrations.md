@@ -21,6 +21,8 @@ Primary references checked on 27 July 2026:
 - <https://sqlite.org/wal.html#concurrency>
 - <https://sqlite.org/lang_transaction.html#deferred_immediate_and_exclusive_transactions>
 - <https://sqlite.org/pragma.html#pragma_busy_timeout>
+- <https://sqlite.org/howtocorrupt.html#_unlinking_or_renaming_a_database_file_while_in_use>
+- <https://docs.python.org/3.14/library/fcntl.html#fcntl.flock>
 - <https://ollycope.com/software/yoyo/latest/#calling-yoyo-from-python-code>
 
 ## Decision
@@ -48,6 +50,29 @@ Primary references checked on 27 July 2026:
    transaction boundary.
 7. WAL files stay on the same host/filesystem as the database and are included
    with `-wal`/`-shm` in migration rehearsal and backup coordination.
+8. Every PWA worker acquires a non-blocking shared `flock` on a stable sibling
+   lifecycle file before it checks or opens SQLite, and holds that descriptor
+   in an aiohttp cleanup context until after `on_shutdown` and active-request
+   draining. Seed and migration commands acquire the exclusive
+   form before inspecting sidecars and hold it through the final schema change
+   or atomic replacement plus directory sync. The lock file is never renamed or
+   removed. This application-level protocol is required because SQLite warns
+   that renaming an open database can pair two database inodes with the same
+   pathname-derived WAL/journal and cause corruption. A busy lock fails fast;
+   operators stop the runtime or retry maintenance instead of waiting silently.
+   Runtime acquisition happens synchronously during worker startup, after the
+   Gunicorn fork; the blocking schema preflight runs in a worker thread while
+   the lock remains cancellation-safe. Descriptors use `CLOEXEC` and release
+   by final `close()`, not explicit `LOCK_UN`, so an inherited duplicate cannot
+   unlock its parent. Existing database and lock files must be regular,
+   single-link, non-symlink paths; lock open uses `O_NOFOLLOW` and verifies
+   pathname/device/inode identity.
+   This is a cooperative contract for the PWA runtime and maintenance commands,
+   not a replacement for SQLite's transaction locks or yoyo's migration lock.
+9. Backend runtime is supported on a local filesystem with working Unix/BSD
+   `flock` semantics (macOS development and Linux production). Runtime and
+   maintenance run as the same service identity; the persistent lock file is
+   mode `0600`. Network filesystems with uncertain lock semantics are excluded.
 
 ## Consequences
 
@@ -59,6 +84,10 @@ Primary references checked on 27 July 2026:
 - SQLite remains suitable while measured workload stays within the Phase 0
   workload profile. Phase 11 re-evaluates that decision against production
   latency, busy-rate and queue-depth evidence.
+- Seed/migrate cannot race a cooperating two-worker deployment, and a worker
+  cannot start against a database pathname while it is being replaced. Legacy
+  scripts that bypass this lock remain outside the atomic-reseed contract; the
+  production deploy must stop all such writers before database replacement.
 
 ## Verification
 
@@ -69,3 +98,9 @@ Primary references checked on 27 July 2026:
 - `pwa_tests/test_app_factory.py` proves that the real aiohttp startup rejects
   an absent schema and exposes the verified connection factory after explicit
   migration.
+- `pwa_tests/integration/test_runtime_lifecycle_lock.py` proves shared
+  multi-process/exclusive-maintenance semantics, fork-safe close, stale-lock
+  reuse, fail-fast behavior and DB/lock path identity guards.
+  `pwa_tests/test_app_factory.py` additionally proves cancellation-safe
+  preflight and cleanup after a later startup failure. `pwa_tests/test_seed_runtime.py` exercises a
+  runtime start attempt at the exact pre-`os.replace` boundary.
