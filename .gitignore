@@ -44,3 +44,4 @@ db/vmshpwa_*.sqlite3-wal
 db/vmshpwa_*.sqlite3-shm
 /_vmsh_examples/
 /_external_pipelines/
+/db/arch/
