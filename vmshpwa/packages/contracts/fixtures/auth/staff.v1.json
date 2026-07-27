@@ -1,0 +1,85 @@
+{
+  "fixtureVersion": 1,
+  "audience": "staff",
+  "loginRequest": {
+    "username": "synthetic-teacher",
+    "password": "synthetic-staff-password-not-a-secret",
+    "deviceLabel": "Synthetic staff browser"
+  },
+  "authContext": {
+    "principal": {
+      "accountId": "account-staff-fixture",
+      "audience": "staff",
+      "displayName": "Синтетический преподаватель",
+      "sessionVersion": 4,
+      "credentialVersion": 1,
+      "userId": "user-staff-fixture",
+      "role": "teacher",
+      "capabilities": [
+        "review",
+        "manage_oral",
+        "change_student_group",
+        "recheck",
+        "view_statistics"
+      ],
+      "scopes": [
+        {
+          "courseId": "course-fixture-alpha",
+          "groupId": null,
+          "role": "teacher",
+          "validFrom": "2026-07-01T00:00:00Z",
+          "validTo": null,
+          "version": 1
+        },
+        {
+          "courseId": "course-fixture-beta",
+          "groupId": "group-fixture-beta-one",
+          "role": "teacher",
+          "validFrom": "2026-07-15T00:00:00Z",
+          "validTo": "2026-08-09T21:00:00Z",
+          "version": 2
+        }
+      ]
+    },
+    "currentSession": {
+      "sessionId": "session-staff-current",
+      "audience": "staff",
+      "isCurrent": true,
+      "deviceLabel": "Synthetic staff browser",
+      "userAgentFamily": "Fixture Browser",
+      "createdAt": "2026-07-22T11:00:00Z",
+      "lastSeenAt": "2026-07-27T08:10:00Z",
+      "expiresAt": "2026-08-09T21:00:00Z"
+    },
+    "policy": {
+      "accessExpiresAt": "2026-07-27T08:25:00Z",
+      "sessionExpiresAt": "2026-08-09T21:00:00Z",
+      "supportEmail": "support-fixture@example.invalid"
+    }
+  },
+  "sessionsResponse": {
+    "audience": "staff",
+    "sessions": [
+      {
+        "sessionId": "session-staff-current",
+        "audience": "staff",
+        "isCurrent": true,
+        "deviceLabel": "Synthetic staff browser",
+        "userAgentFamily": "Fixture Browser",
+        "createdAt": "2026-07-22T11:00:00Z",
+        "lastSeenAt": "2026-07-27T08:10:00Z",
+        "expiresAt": "2026-08-09T21:00:00Z"
+      },
+      {
+        "sessionId": "session-staff-secondary",
+        "audience": "staff",
+        "isCurrent": false,
+        "deviceLabel": "Synthetic review workstation",
+        "userAgentFamily": "Fixture Desktop",
+        "createdAt": "2026-07-23T07:30:00Z",
+        "lastSeenAt": "2026-07-26T16:45:00Z",
+        "expiresAt": "2026-08-09T21:00:00Z"
+      }
+    ]
+  }
+}

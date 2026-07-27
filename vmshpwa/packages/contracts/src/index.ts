@@ -1,7 +1,9 @@
 import { z } from 'zod'
 
-export const audienceSchema = z.enum(['student', 'family', 'staff'])
-export type Audience = z.infer<typeof audienceSchema>
+import { audienceSchema, type Audience } from './auth'
+
+export * from './auth'
+export * from './courses'
 
 export const runtimeContractVersionSchema = z.literal(1)
 export const RUNTIME_CONTRACT_VERSION = runtimeContractVersionSchema.value
@@ -162,13 +164,6 @@ export const realtimeEventSchema = z.discriminatedUnion('type', [
   realtimeBaseSchema.extend({ type: z.literal('resync-required'), reason: z.string().min(1) }),
 ])
 export type RealtimeEvent = z.infer<typeof realtimeEventSchema>
-
-export const loginContractSchema = z.object({
-  login: z.string().trim().min(1).max(128),
-  password: z.string().min(1).max(512),
-  audience: audienceSchema,
-})
-export type LoginContract = z.infer<typeof loginContractSchema>
 
 export const offlineMutationSchema = z.object({
   idempotencyKey: z.uuid(),

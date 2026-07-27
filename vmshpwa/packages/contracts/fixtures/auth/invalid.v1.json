@@ -1,0 +1,103 @@
+{
+  "fixtureVersion": 1,
+  "cases": [
+    {
+      "name": "student_body_audience",
+      "target": "student_login_request",
+      "payload": {
+        "username": "synthetic-student-14",
+        "telegramToken": "synthetic-credential",
+        "audience": "student"
+      }
+    },
+    {
+      "name": "student_password_field",
+      "target": "student_login_request",
+      "payload": {
+        "username": "synthetic-student-14",
+        "password": "synthetic-credential"
+      }
+    },
+    {
+      "name": "family_telegram_field",
+      "target": "family_login_request",
+      "payload": {
+        "username": "synthetic-family",
+        "telegramToken": "synthetic-credential"
+      }
+    },
+    {
+      "name": "staff_blank_username",
+      "target": "staff_login_request",
+      "payload": {
+        "username": "   ",
+        "password": "synthetic-credential"
+      }
+    },
+    {
+      "name": "student_principal_family_shape",
+      "target": "principal",
+      "payload": {
+        "accountId": "account-student-fixture",
+        "audience": "student",
+        "displayName": "Synthetic principal",
+        "sessionVersion": 1,
+        "credentialVersion": 1,
+        "linkedChildren": []
+      }
+    },
+    {
+      "name": "context_cross_audience_session",
+      "target": "auth_context",
+      "payload": {
+        "principal": {
+          "accountId": "account-student-fixture",
+          "audience": "student",
+          "displayName": "Synthetic principal",
+          "sessionVersion": 1,
+          "credentialVersion": 1,
+          "userId": "user-student-fixture"
+        },
+        "currentSession": {
+          "sessionId": "session-family-fixture",
+          "audience": "family",
+          "isCurrent": true,
+          "deviceLabel": null,
+          "userAgentFamily": null,
+          "createdAt": "2026-07-20T09:00:00Z",
+          "lastSeenAt": "2026-07-27T08:00:00Z",
+          "expiresAt": "2026-08-09T21:00:00Z"
+        },
+        "policy": {
+          "accessExpiresAt": "2026-07-27T08:15:00Z",
+          "sessionExpiresAt": "2026-08-09T21:00:00Z",
+          "supportEmail": "support-fixture@example.invalid"
+        }
+      }
+    },
+    {
+      "name": "sessions_without_current",
+      "target": "sessions_response",
+      "payload": {
+        "audience": "student",
+        "sessions": [
+          {
+            "sessionId": "session-student-other",
+            "audience": "student",
+            "isCurrent": false,
+            "deviceLabel": null,
+            "userAgentFamily": "Fixture Browser",
+            "createdAt": "2026-07-20T09:00:00Z",
+            "lastSeenAt": "2026-07-27T08:00:00Z",
+            "expiresAt": "2026-08-09T21:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "enumerating_blocked_code",
+      "target": "auth_error_code",
+      "payload": "blocked"
+    }
+  ]
+}

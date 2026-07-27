@@ -1,0 +1,62 @@
+{
+  "fixtureVersion": 1,
+  "audience": "family",
+  "loginRequest": {
+    "username": "synthetic-family",
+    "password": "synthetic-family-password-not-a-secret",
+    "deviceLabel": "Synthetic family browser"
+  },
+  "authContext": {
+    "principal": {
+      "accountId": "account-family-fixture",
+      "audience": "family",
+      "displayName": "Синтетический родитель",
+      "sessionVersion": 1,
+      "credentialVersion": 1,
+      "linkedChildren": [
+        {
+          "studentId": "user-child-alpha",
+          "displayName": "Синтетический ребёнок А",
+          "relationshipLabel": "родитель",
+          "isPrimary": true
+        },
+        {
+          "studentId": "user-child-beta",
+          "displayName": "Синтетический ребёнок Б",
+          "relationshipLabel": null,
+          "isPrimary": false
+        }
+      ]
+    },
+    "currentSession": {
+      "sessionId": "session-family-current",
+      "audience": "family",
+      "isCurrent": true,
+      "deviceLabel": "Synthetic family browser",
+      "userAgentFamily": "Fixture Browser",
+      "createdAt": "2026-07-21T10:00:00Z",
+      "lastSeenAt": "2026-07-27T08:05:00Z",
+      "expiresAt": "2026-08-09T21:00:00Z"
+    },
+    "policy": {
+      "accessExpiresAt": "2026-07-27T08:20:00Z",
+      "sessionExpiresAt": "2026-08-09T21:00:00Z",
+      "supportEmail": "support-fixture@example.invalid"
+    }
+  },
+  "sessionsResponse": {
+    "audience": "family",
+    "sessions": [
+      {
+        "sessionId": "session-family-current",
+        "audience": "family",
+        "isCurrent": true,
+        "deviceLabel": "Synthetic family browser",
+        "userAgentFamily": "Fixture Browser",
+        "createdAt": "2026-07-21T10:00:00Z",
+        "lastSeenAt": "2026-07-27T08:05:00Z",
+        "expiresAt": "2026-08-09T21:00:00Z"
+      }
+    ]
+  }
+}
