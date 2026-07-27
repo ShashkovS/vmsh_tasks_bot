@@ -46,6 +46,37 @@ Production migration не начинает историю с занятия 39. 
 
 Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `mathimg_*`, `a12`, `a14`, `a20`; production не импортирует их напрямую.
 
+## Сопоставление задач и metadata review
+
+- **MATCH-01.** Canonical identity строки — `(source_ordinal, source_item)` из
+  exact compiler AST; если `source_item` в LaTeX отсутствует, используется
+  строковое значение ordinal. Один полный batch обязан покрывать каждую
+  canonical задачу ровно один раз. Частичные batch, повтор одного legacy
+  `problem_id` и match за пределами concrete group lesson отклоняются до
+  публикации.
+- **MATCH-02.** `auto_position` разрешён только при совпадении ordinal;
+  `manual_match` выбирает существующую задачу того же group lesson;
+  `insert_new` создаёт минимальную legacy projection со статусом письменной
+  задачи, которую всё равно нельзя опубликовать до review metadata; `omit`
+  оставляет явную immutable запись без `problem_id`. Исправление уже
+  подтверждённого batch выполняется новой source revision.
+- **MATCH-03.** Готовая `content_revision` и строки review immutable. Поэтому
+  optimistic review version равна `1 + count(content_problem_matches) +
+  count(problem_revisions)` для exact revision. API выдаёт отдельный
+  hash-derived review ETag, который нельзя перепутать с compile ETag. Полные
+  batch вставляются одной `BEGIN IMMEDIATE` транзакцией; точный повтор уже
+  сохранённого batch идемпотентен.
+- **METADATA-01.** Metadata-grid подтверждает все non-omitted match одной
+  транзакцией. Каждая строка создаёт immutable `problem_revisions`, а legacy
+  `problems` обновляется только как текущая Telegram-compatible projection.
+  Все 23 исторических `ANS_TYPE` поддерживаются; test требует answer type,
+  non-test не сохраняет скрытую test-конфигурацию. Пустой checker допустим и
+  означает будущий `pending_configuration`, а не ложную успешную проверку.
+- До появления `problems.public_id` в Phase 3 Staff-only reconciliation wire
+  использует legacy integer `problemId` только как candidate/mutation token.
+  Он не попадает в Student/Family URL или payload; Phase 3 заменяет эту
+  переходную Staff-границу opaque problem identity вместе с task-list API.
+
 ## Staff UI
 
 - Routes: `staff/src/routes/lessons.*`, `problems.*`.
@@ -195,6 +226,22 @@ Production owner-reviewed backfill apply, problem-matching/metadata flow,
 не закрывает Phase 2 целиком. Открыты problem matching/metadata UI+API,
 Staff-openable generated PDF, bulk upload, production-build content E2E и
 ручное visual approval владельца. Snapshots не обновлялись.
+
+Промежуточный backend gate **Phase 2E — problem matching и metadata review**
+реализован 28 июля 2026:
+
+- [x] полный positional/manual/insert/omit batch с group-lesson scope и
+      атомарным rollback;
+- [x] отдельный review ETag, stale conflict и идемпотентный exact retry;
+- [x] полная metadata-grid mutation, immutable problem revision и обновление
+      legacy projection;
+- [x] admin-only aiohttp endpoints, Teacher `403`, publication fail-closed до
+      обоих review шагов;
+- [x] 110 domain/repository/real-aiohttp tests и Ruff PASS.
+
+Frontend contracts, Staff workflow, Storybook interaction/visual gate и
+production-build content E2E остаются продолжением Phase 2E; backend proof:
+[`phase2-problem-review-api.md`](../../../pwa_tests/reports/phase2-problem-review-api.md).
 
 - [x] Revision/migration/upgrade/rollback для Phase 2A:
       [`0041`](../../../migrations/0041.pwa_content_lessons.sql), 48 focused PASS,

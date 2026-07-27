@@ -494,6 +494,7 @@ async def _upload_and_compile(
     kind: str,
     filename: str,
     source: str,
+    review: bool = True,
 ):
     uploaded = await _upload(
         fixture,
@@ -511,9 +512,10 @@ async def _upload_and_compile(
     )
     assert compiled.status == 200, await compiled.text()
     compiled_payload = await compiled.json()
-    await _review_compiled_problem_metadata(
-        fixture, revision_public_id=compiled_payload["revisionId"]
-    )
+    if review:
+        await _review_compiled_problem_metadata(
+            fixture, revision_public_id=compiled_payload["revisionId"]
+        )
     return compiled_payload, compiled.headers["ETag"]
 
 
@@ -1138,6 +1140,203 @@ async def test_publication_requires_problem_matching_and_reviewed_metadata(
             (problem_id, revision_id, _timestamp(), ADMIN_USER_ID),
         )
     )
+    published = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=revision["revisionId"],
+    )
+    assert published.status == 201, await published.text()
+
+
+async def test_staff_problem_matching_and_metadata_grid_http_workflow(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    revision, _compile_etag = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="review/condition.tex",
+        source=(
+            "\\задача[title=Орехи] Сколько орехов? \\кзадача\n"
+            "\\задача[title=Ладьи] Расставьте ладьи. \\кзадача"
+        ),
+        review=False,
+    )
+    match_url = (
+        f"/staff/api/v1/content/revisions/{revision['revisionId']}/problem-matches"
+    )
+    forbidden = await fixture.client.get(
+        match_url,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(),
+    )
+    assert forbidden.status == 403
+
+    initial_response = await fixture.client.get(
+        match_url,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert initial_response.status == 200, await initial_response.text()
+    initial = await initial_response.json()
+    assert initial["version"] == 1
+    assert initial["etag"] == initial_response.headers["ETag"]
+    assert [item["sourceTitle"] for item in initial["items"]] == [
+        "Орехи",
+        "Ладьи",
+    ]
+    assert initial["candidates"] == []
+    match_request = {
+        "matches": [
+            {
+                "sourceOrdinal": item["sourceOrdinal"],
+                "sourceItem": item["sourceItem"],
+                "decision": "insert_new",
+                "problemId": None,
+            }
+            for item in initial["items"]
+        ]
+    }
+    missing_etag = await fixture.client.put(
+        match_url,
+        json=match_request,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert missing_etag.status == 422
+    assert (await missing_etag.json())["error"]["code"] == "if_match_required"
+
+    partial = await fixture.client.put(
+        match_url,
+        json={"matches": match_request["matches"][:1]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial_response.headers["ETag"]),
+    )
+    assert partial.status == 422
+    assert (await partial.json())["error"]["code"] == "content_validation_failed"
+
+    matched_response = await fixture.client.put(
+        match_url,
+        json=match_request,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial_response.headers["ETag"]),
+    )
+    assert matched_response.status == 200, await matched_response.text()
+    matched = await matched_response.json()
+    assert matched["version"] == 3
+    assert all(item["match"]["problemId"] for item in matched["items"])
+
+    stale_match = await fixture.client.put(
+        match_url,
+        json=match_request,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial_response.headers["ETag"]),
+    )
+    assert stale_match.status == 409
+    assert (await stale_match.json())["error"]["code"] == "version_conflict"
+
+    # A retry made after reading the new ETag is harmless and creates no rows.
+    retried_match = await fixture.client.put(
+        match_url,
+        json=match_request,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=matched_response.headers["ETag"]),
+    )
+    assert retried_match.status == 200
+    assert (await retried_match.json())["version"] == 3
+
+    grid_url = f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/metadata-grid"
+    grid_response = await fixture.client.get(
+        grid_url,
+        params={"revisionId": revision["revisionId"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert grid_response.status == 200, await grid_response.text()
+    grid = await grid_response.json()
+    first, second = grid["rows"]
+    assert not first["reviewed"] and not second["reviewed"]
+    first.update(
+        {
+            "title": "Сколько орехов",
+            "problemType": 1,
+            "answerType": 2,
+            "answerValidation": None,
+            "validationError": "Введите число орехов, например 7",
+            "correctAnswer": "7",
+            "correctAnswerChecker": None,
+            "wrongAnswer": "Нет, не столько орехов",
+            "congratulation": "Да, всё верно!",
+        }
+    )
+    second.update(
+        {
+            "title": "Расстановка ладей",
+            "problemType": 2,
+            "answerType": None,
+            "answerValidation": None,
+            "validationError": None,
+            "correctAnswer": None,
+            "correctAnswerChecker": None,
+            "wrongAnswer": None,
+            "congratulation": None,
+        }
+    )
+    for row in (first, second):
+        row.pop("reviewed")
+    metadata_request = {"revisionId": revision["revisionId"], "rows": [first, second]}
+
+    invalid_request = json.loads(json.dumps(metadata_request))
+    invalid_request["rows"][1]["correctAnswer"] = "скрытое старое значение"
+    invalid = await fixture.client.put(
+        grid_url,
+        json=invalid_request,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=grid_response.headers["ETag"]),
+    )
+    assert invalid.status == 422
+    assert (await invalid.json())["error"]["code"] == "content_validation_failed"
+    unchanged = await fixture.client.get(
+        grid_url,
+        params={"revisionId": revision["revisionId"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert not any(row["reviewed"] for row in (await unchanged.json())["rows"])
+
+    wrong_scope = await fixture.client.put(
+        f"/staff/api/v1/group-lessons/{fixture.group_lesson_b}/metadata-grid",
+        json=metadata_request,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=grid_response.headers["ETag"]),
+    )
+    assert wrong_scope.status == 422
+    assert (await wrong_scope.json())["error"]["code"] == "revision_scope_mismatch"
+
+    saved_response = await fixture.client.put(
+        grid_url,
+        json=metadata_request,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=grid_response.headers["ETag"]),
+    )
+    assert saved_response.status == 200, await saved_response.text()
+    saved = await saved_response.json()
+    assert saved["version"] == 5
+    assert all(row["reviewed"] for row in saved["rows"])
+
+    conflicting_request = json.loads(json.dumps(metadata_request))
+    conflicting_request["rows"][0]["title"] = "Ошибочно изменённое название"
+    conflict = await fixture.client.put(
+        grid_url,
+        json=conflicting_request,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=saved_response.headers["ETag"]),
+    )
+    assert conflict.status == 409
+    assert (await conflict.json())["error"]["code"] == "version_conflict"
+
     published = await _publish(
         fixture,
         group_lesson=fixture.group_lesson_a,

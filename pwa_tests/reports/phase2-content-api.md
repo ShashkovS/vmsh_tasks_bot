@@ -80,7 +80,11 @@ checkpoint — `866e3fe`.
 POST /staff/api/v1/content/uploads
 GET  /staff/api/v1/content/uploads/{revisionId}/diagnostics
 POST /staff/api/v1/content/revisions/{revisionId}/compile
+GET  /staff/api/v1/content/revisions/{revisionId}/problem-matches
+PUT  /staff/api/v1/content/revisions/{revisionId}/problem-matches
 GET  /staff/api/v1/content/revisions/{revisionId}/previews/{web|telegram}
+GET  /staff/api/v1/group-lessons/{groupLessonId}/metadata-grid?revisionId={revisionId}
+PUT  /staff/api/v1/group-lessons/{groupLessonId}/metadata-grid
 GET  /staff/api/v1/group-lessons/{groupLessonId}/lesson-window
 POST /staff/api/v1/group-lessons/{groupLessonId}/lesson-window
 PATCH /staff/api/v1/group-lessons/{groupLessonId}/lesson-window/schedule
@@ -97,7 +101,10 @@ GET /family/api/v1/children/{studentPublicId}/group-lessons/{groupLessonPublicId
 
 Ошибки используют общий `PwaApiError` envelope и request/correlation ID.
 Проверены устойчивые `401`, `403`, `404`, `409`, `413` и `422`; SQLite internal
-IDs не входят в wire payload.
+IDs не входят в audience wire payload. До Phase 3 Staff-only reconciliation
+временно использует legacy integer `problemId` как candidate token; подробный
+контракт и тесты находятся в
+[`phase2-problem-review-api.md`](phase2-problem-review-api.md).
 
 ## Проверки
 
@@ -168,10 +175,10 @@ credentials не используются.
   Авторитетный `problemPublicId` отсутствует в legacy `problems` и в текущей
   additive schema; Phase 3 должен добавить public problem identity и task-list
   read model. Временный integer/composite problem ID намеренно не введён.
-- Asset upload/resolution, bulk lesson upload, problem-matching/metadata mutation
-  API и metadata grid ещё не входят в этот HTTP increment. Publication уже
-  нельзя обойти без соответствующих repository records; Staff mutation flow
-  добавляется отдельным вертикальным инкрементом.
+- Problem-matching и metadata mutation API уже реализованы отдельным Phase 2E
+  backend gate; Staff frontend/Storybook и production-build content E2E ещё не
+  закрыты. Asset recovery API/UI также реализованы более поздним Phase 2D
+  increment. Bulk lesson upload остаётся открытым.
 - Персональные `hint_reveals`/`solution_reveals` и осознанное раскрытие в
   Student/Family API отложены до Phase 3. Пока published hint/solution — общий
   read model для имеющих доступ к группе.

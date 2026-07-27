@@ -10,6 +10,9 @@ import pytest
 from models.pwa.content import (
     ContentInvariantError,
     LessonWindowDraft,
+    ProblemMatchDecision,
+    ProblemMatchDraft,
+    ProblemMetadataDraft,
     ProblemRevisionDraft,
     ProblemTitleCandidateInput,
     PublicationState,
@@ -286,6 +289,67 @@ def test_problem_revision_allows_empty_type_specific_configs():
 
     assert draft.answer_config_json() == "{}"
     assert draft.attempt_policy_json() == "{}"
+
+
+@pytest.mark.parametrize(
+    "answer_type",
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 98, 99],
+)
+def test_metadata_review_accepts_every_historical_answer_type(answer_type: int):
+    draft = ProblemMetadataDraft(
+        problem_id=1,
+        source_ordinal=1,
+        source_item=" 1 ",
+        display_number=" 1 ",
+        title=" Тестовая задача ",
+        problem_type=1,
+        answer_type=answer_type,
+        answer_validation=None,
+        validation_error="Введите ответ",
+        correct_answer=None,
+        correct_answer_checker=None,
+        wrong_answer="Нет",
+        congratulation="Да",
+    )
+
+    assert draft.source_item == "1"
+    assert draft.title == "Тестовая задача"
+    assert draft.answer_config["answerType"] == answer_type
+
+
+def test_metadata_review_rejects_hidden_test_config_for_written_problem():
+    with pytest.raises(ContentInvariantError, match="must not keep"):
+        ProblemMetadataDraft(
+            problem_id=1,
+            source_ordinal=1,
+            source_item="1",
+            display_number="1",
+            title="Письменная задача",
+            problem_type=2,
+            answer_type=None,
+            answer_validation=None,
+            validation_error=None,
+            correct_answer="stale",
+            correct_answer_checker=None,
+            wrong_answer=None,
+            congratulation=None,
+        )
+
+
+def test_problem_match_decision_controls_problem_identity():
+    assert ProblemMatchDraft(
+        source_ordinal=1,
+        source_item="1",
+        decision=ProblemMatchDecision.INSERT_NEW,
+        problem_id=None,
+    ).problem_id is None
+    with pytest.raises(ContentInvariantError, match="must not have"):
+        ProblemMatchDraft(
+            source_ordinal=1,
+            source_item="1",
+            decision=ProblemMatchDecision.OMIT,
+            problem_id=1,
+        )
 
 
 @pytest.mark.parametrize(

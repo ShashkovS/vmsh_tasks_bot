@@ -1,8 +1,9 @@
 """Connection-per-operation repository for Phase-2 lesson/content storage.
 
 This is the persistence half of the first Phase-2 increment.  It deliberately
-contains no aiohttp or compiler behavior and never updates legacy
-``lessons``/``problems`` projections.  See
+contains no aiohttp or compiler behavior. It updates the legacy ``problems``
+projection only when an administrator atomically confirms a metadata grid; it
+never rewrites legacy ``lessons`` or historical result rows. See
 ``vmshpwa/dev/development-plan/06-phase-2-content.md`` and tests in
 ``pwa_tests/{domain,integration}/test_content*.py``.
 """
@@ -23,7 +24,9 @@ from models.pwa.content import (
     ContentInvariantError,
     ContentKind,
     LessonWindowDraft,
+    ProblemMatchDraft,
     ProblemMatchDecision,
+    ProblemMetadataDraft,
     ProblemRevisionDraft,
     ProblemSynonymCandidate,
     ProblemTitleCandidateInput,
@@ -330,6 +333,71 @@ class RevisionPublicationReadiness:
 
 
 @dataclass(frozen=True, slots=True)
+class CanonicalProblemRecord:
+    source_ordinal: int
+    source_item: str
+    source_title: str | None
+    display_number: str
+
+
+@dataclass(frozen=True, slots=True)
+class LegacyProblemRecord:
+    problem_id: int
+    problem_number: int
+    item: str
+    title: str
+    problem_type: int
+    answer_type: int | None
+    answer_validation: str | None
+    validation_error: str | None
+    correct_answer: str | None
+    correct_answer_checker: str | None
+    wrong_answer: str | None
+    congratulation: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ProblemMatchRecord:
+    source_ordinal: int
+    source_item: str
+    problem_id: int | None
+    decision: ProblemMatchDecision
+
+
+@dataclass(frozen=True, slots=True)
+class ProblemMatchReviewItem:
+    source: CanonicalProblemRecord
+    match: ProblemMatchRecord | None
+    suggested_problem_id: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class ProblemMatchReview:
+    revision_id: int
+    revision_public_id: str
+    group_lesson_public_id: str
+    review_version: int
+    items: tuple[ProblemMatchReviewItem, ...]
+    candidates: tuple[LegacyProblemRecord, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ProblemMetadataRecord:
+    source: CanonicalProblemRecord
+    problem: LegacyProblemRecord
+    reviewed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ProblemMetadataGrid:
+    revision_id: int
+    revision_public_id: str
+    group_lesson_public_id: str
+    review_version: int
+    rows: tuple[ProblemMetadataRecord, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class ProblemRevisionRecord:
     id: int
     problem_id: int
@@ -562,6 +630,306 @@ def _content_revision(row: Mapping[str, object]) -> ContentRevisionRecord:
         compile_lease_expires_at=_optional_timestamp(row["compile_lease_expires_at"]),
         compile_attempt_count=int(row["compile_attempt_count"]),
         compile_completed_at=_optional_timestamp(row["compile_completed_at"]),
+    )
+
+
+def _canonical_problem_records(value: object) -> tuple[CanonicalProblemRecord, ...]:
+    """Decode the exact compiler identities used by immutable review rows."""
+
+    if not isinstance(value, dict) or not isinstance(value.get("problems"), list):
+        raise ContentRepositoryError("content revision canonical AST has no problem list")
+    records: list[CanonicalProblemRecord] = []
+    identities: set[tuple[int, str]] = set()
+    for raw in value["problems"]:
+        if (
+            not isinstance(raw, dict)
+            or not isinstance(raw.get("ordinal"), int)
+            or isinstance(raw.get("ordinal"), bool)
+        ):
+            raise ContentRepositoryError("content revision canonical problem is invalid")
+        ordinal = int(raw["ordinal"])
+        source_item_value = raw.get("source_item")
+        if source_item_value is not None and not isinstance(source_item_value, str):
+            raise ContentRepositoryError(
+                "content revision canonical problem identity is invalid"
+            )
+        source_item = (
+            str(ordinal)
+            if source_item_value is None or source_item_value == ""
+            else str(source_item_value).strip()
+        )
+        if ordinal < 0 or not source_item:
+            raise ContentRepositoryError(
+                "content revision canonical problem identity is invalid"
+            )
+        identity = (ordinal, source_item)
+        if identity in identities:
+            raise ContentRepositoryError(
+                "content revision canonical problem identities are duplicated"
+            )
+        identities.add(identity)
+        source_title_value = raw.get("source_title")
+        if source_title_value is None or source_title_value == "":
+            source_title = None
+        elif isinstance(source_title_value, str):
+            source_title = source_title_value.strip() or None
+        else:
+            raise ContentRepositoryError("content revision canonical title is invalid")
+        records.append(
+            CanonicalProblemRecord(
+                source_ordinal=ordinal,
+                source_item=source_item,
+                source_title=source_title,
+                display_number=str(ordinal),
+            )
+        )
+    return tuple(records)
+
+
+def _legacy_problem(row: Mapping[str, object]) -> LegacyProblemRecord:
+    return LegacyProblemRecord(
+        problem_id=int(row["id"]),
+        problem_number=int(row["prob"]),
+        item=str(row["item"]),
+        title=str(row["title"]),
+        problem_type=int(row["prob_type"]),
+        answer_type=None if row["ans_type"] is None else int(row["ans_type"]),
+        answer_validation=(
+            None if row["ans_validation"] is None else str(row["ans_validation"])
+        ),
+        validation_error=(
+            None if row["validation_error"] is None else str(row["validation_error"])
+        ),
+        correct_answer=None if row["cor_ans"] is None else str(row["cor_ans"]),
+        correct_answer_checker=(
+            None if row["cor_ans_checker"] is None else str(row["cor_ans_checker"])
+        ),
+        wrong_answer=None if row["wrong_ans"] is None else str(row["wrong_ans"]),
+        congratulation=None if row["congrat"] is None else str(row["congrat"]),
+    )
+
+
+def _review_version(connection: sqlite3.Connection, revision_id: int) -> int:
+    """Return a monotonic version for the append-only review workflow.
+
+    Phase 2 intentionally keeps a compiled revision immutable.  Match and
+    metadata rows are also immutable and inserted only as full batches, so the
+    sum of their counts is a sufficient optimistic-concurrency token without a
+    second mutable state table.  See ``06-phase-2-content.md``, MATCH-03.
+    """
+
+    row = connection.execute(
+        "SELECT "
+        "(SELECT count(*) FROM content_problem_matches "
+        " WHERE content_revision_id = ?) + "
+        "(SELECT count(*) FROM problem_revisions "
+        " WHERE content_revision_id = ?) AS review_rows",
+        (revision_id, revision_id),
+    ).fetchone()
+    return 1 + int(row["review_rows"])
+
+
+def _review_scope_row(
+    connection: sqlite3.Connection, revision_public_id: str
+) -> Mapping[str, object]:
+    row = connection.execute(
+        "SELECT revision.id AS revision_id, revision.public_id AS revision_public_id, "
+        "revision.status AS revision_status, revision.canonical_json, "
+        "source.group_lesson_id, group_lesson.public_id AS group_lesson_public_id, "
+        "group_lesson.group_id, course_lesson.lesson_number "
+        "FROM content_revisions AS revision "
+        "JOIN content_sources AS source ON source.id = revision.source_id "
+        "JOIN group_lessons AS group_lesson "
+        "  ON group_lesson.id = source.group_lesson_id "
+        "JOIN course_lessons AS course_lesson "
+        "  ON course_lesson.id = group_lesson.course_lesson_id "
+        "WHERE revision.public_id = ?",
+        (revision_public_id,),
+    ).fetchone()
+    if row is None:
+        raise ContentNotFound("content revision does not exist")
+    if row["revision_status"] != RevisionStatus.READY.value:
+        raise ContentConflict("problem review requires a ready revision")
+    if not isinstance(row["canonical_json"], str):
+        raise ContentRepositoryError("content revision has no canonical AST")
+    return row
+
+
+def _problem_match_review_from_connection(
+    connection: sqlite3.Connection, revision_public_id: str
+) -> ProblemMatchReview:
+    scope = _review_scope_row(connection, revision_public_id)
+    try:
+        document = json.loads(str(scope["canonical_json"]))
+    except (json.JSONDecodeError, RecursionError) as error:
+        raise ContentRepositoryError("content revision canonical AST is invalid") from error
+    sources = _canonical_problem_records(document)
+    revision_id = int(scope["revision_id"])
+    matches = {
+        (int(row["source_ordinal"]), str(row["source_item"])): ProblemMatchRecord(
+            source_ordinal=int(row["source_ordinal"]),
+            source_item=str(row["source_item"]),
+            problem_id=None if row["problem_id"] is None else int(row["problem_id"]),
+            decision=ProblemMatchDecision(str(row["decision"])),
+        )
+        for row in connection.execute(
+            "SELECT source_ordinal, source_item, problem_id, decision "
+            "FROM content_problem_matches WHERE content_revision_id = ? "
+            "ORDER BY source_ordinal, source_item",
+            (revision_id,),
+        ).fetchall()
+    }
+    candidate_rows = connection.execute(
+        "SELECT * FROM problems WHERE group_id = ? AND lesson = ? "
+        "ORDER BY prob, item COLLATE NOCASE, id LIMIT 5001",
+        (scope["group_id"], scope["lesson_number"]),
+    ).fetchall()
+    if len(candidate_rows) > 5_000:
+        raise ContentRepositoryError("legacy problem candidate list exceeds limit")
+    candidates = tuple(_legacy_problem(row) for row in candidate_rows)
+    by_position: dict[int, list[LegacyProblemRecord]] = {}
+    for candidate in candidates:
+        by_position.setdefault(candidate.problem_number, []).append(candidate)
+
+    items: list[ProblemMatchReviewItem] = []
+    for source in sources:
+        exact = by_position.get(source.source_ordinal, [])
+        suggested: int | None = None
+        if len(exact) == 1:
+            suggested = exact[0].problem_id
+        elif exact:
+            by_item = [
+                candidate
+                for candidate in exact
+                if candidate.item.strip() == source.source_item
+            ]
+            if len(by_item) == 1:
+                suggested = by_item[0].problem_id
+        match = matches.get((source.source_ordinal, source.source_item))
+        if match is not None:
+            suggested = match.problem_id
+        items.append(
+            ProblemMatchReviewItem(
+                source=source,
+                match=match,
+                suggested_problem_id=suggested,
+            )
+        )
+    return ProblemMatchReview(
+        revision_id=revision_id,
+        revision_public_id=str(scope["revision_public_id"]),
+        group_lesson_public_id=str(scope["group_lesson_public_id"]),
+        review_version=_review_version(connection, revision_id),
+        items=tuple(items),
+        candidates=candidates,
+    )
+
+
+def _reviewed_problem(
+    legacy: LegacyProblemRecord, row: Mapping[str, object]
+) -> LegacyProblemRecord:
+    try:
+        answer_config = json.loads(str(row["answer_config_json"]))
+    except (json.JSONDecodeError, RecursionError) as error:
+        raise ContentRepositoryError("stored answer config is invalid") from error
+    if not isinstance(answer_config, dict):
+        raise ContentRepositoryError("stored answer config is not an object")
+
+    def optional_config(name: str) -> str | None:
+        value = answer_config.get(name)
+        return None if value is None else str(value)
+
+    return LegacyProblemRecord(
+        problem_id=legacy.problem_id,
+        problem_number=legacy.problem_number,
+        item=legacy.item,
+        title=str(row["title"]),
+        problem_type=int(row["problem_type"]),
+        answer_type=None if row["answer_type"] is None else int(row["answer_type"]),
+        answer_validation=optional_config("answerValidation"),
+        validation_error=optional_config("validationError"),
+        correct_answer=optional_config("correctAnswer"),
+        correct_answer_checker=optional_config("correctAnswerChecker"),
+        wrong_answer=optional_config("wrongAnswer"),
+        congratulation=optional_config("congratulation"),
+    )
+
+
+def _metadata_matches_draft(
+    problem: LegacyProblemRecord, draft: ProblemMetadataDraft
+) -> bool:
+    return (
+        problem.problem_id == draft.problem_id
+        and problem.title == draft.title
+        and problem.problem_type == draft.problem_type
+        and problem.answer_type == draft.answer_type
+        and problem.answer_validation == draft.answer_validation
+        and problem.validation_error == draft.validation_error
+        and problem.correct_answer == draft.correct_answer
+        and problem.correct_answer_checker == draft.correct_answer_checker
+        and problem.wrong_answer == draft.wrong_answer
+        and problem.congratulation == draft.congratulation
+    )
+
+
+def _problem_metadata_grid_from_connection(
+    connection: sqlite3.Connection, revision_public_id: str
+) -> ProblemMetadataGrid:
+    review = _problem_match_review_from_connection(connection, revision_public_id)
+    source_by_identity = {
+        (item.source.source_ordinal, item.source.source_item): item.source
+        for item in review.items
+    }
+    match_rows = connection.execute(
+        "SELECT source_ordinal, source_item, problem_id, decision "
+        "FROM content_problem_matches WHERE content_revision_id = ? "
+        "ORDER BY source_ordinal, source_item",
+        (review.revision_id,),
+    ).fetchall()
+    if len(match_rows) != len(review.items):
+        raise ContentConflict("problem matches are incomplete")
+    candidates = {candidate.problem_id: candidate for candidate in review.candidates}
+    revision_rows = {
+        int(row["problem_id"]): row
+        for row in connection.execute(
+            "SELECT * FROM problem_revisions WHERE content_revision_id = ?",
+            (review.revision_id,),
+        ).fetchall()
+    }
+    rows: list[ProblemMetadataRecord] = []
+    seen: set[tuple[int, str]] = set()
+    for match in match_rows:
+        identity = (int(match["source_ordinal"]), str(match["source_item"]))
+        source = source_by_identity.get(identity)
+        if source is None or identity in seen:
+            raise ContentRepositoryError("stored problem match structure is invalid")
+        seen.add(identity)
+        if match["decision"] == ProblemMatchDecision.OMIT.value:
+            continue
+        problem_id = int(match["problem_id"])
+        legacy = candidates.get(problem_id)
+        if legacy is None:
+            raise ContentRepositoryError("matched legacy problem is outside lesson scope")
+        revision_row = revision_rows.get(problem_id)
+        rows.append(
+            ProblemMetadataRecord(
+                source=source,
+                problem=(
+                    legacy
+                    if revision_row is None
+                    else _reviewed_problem(legacy, revision_row)
+                ),
+                reviewed=revision_row is not None,
+            )
+        )
+    if seen != set(source_by_identity):
+        raise ContentConflict("problem matches are incomplete")
+    return ProblemMetadataGrid(
+        revision_id=review.revision_id,
+        revision_public_id=review.revision_public_id,
+        group_lesson_public_id=review.group_lesson_public_id,
+        review_version=review.review_version,
+        rows=tuple(rows),
     )
 
 
@@ -2136,37 +2504,15 @@ class PwaContentRepository:
                 raise ContentRepositoryError(
                     "content revision canonical AST is invalid"
                 ) from error
-            problems = document.get("problems") if isinstance(document, dict) else None
-            if not isinstance(problems, list):
-                raise ContentRepositoryError(
-                    "content revision canonical AST has no problem list"
-                )
+            problems = _canonical_problem_records(document)
             match_rows = connection.execute(
                 "SELECT source_ordinal, source_item, decision, resolved_at "
                 "FROM content_problem_matches WHERE content_revision_id = ?",
                 (revision_id,),
             ).fetchall()
-            expected_keys: set[tuple[int, str]] = set()
-            for problem in problems:
-                if not isinstance(problem, dict) or not isinstance(
-                    problem.get("ordinal"), int
-                ):
-                    raise ContentRepositoryError(
-                        "content revision canonical problem is invalid"
-                    )
-                ordinal = int(problem["ordinal"])
-                source_item = problem.get("source_item")
-                if source_item is None:
-                    source_item = str(ordinal)
-                if not isinstance(source_item, str) or not source_item.strip():
-                    raise ContentRepositoryError(
-                        "content revision canonical problem identity is invalid"
-                    )
-                expected_keys.add((ordinal, source_item.strip()))
-            if len(expected_keys) != len(problems):
-                raise ContentRepositoryError(
-                    "content revision canonical problem identities are duplicated"
-                )
+            expected_keys = {
+                (problem.source_ordinal, problem.source_item) for problem in problems
+            }
             resolved_keys = {
                 (int(row["source_ordinal"]), str(row["source_item"]))
                 for row in match_rows
@@ -3400,6 +3746,333 @@ class PwaContentRepository:
             raise ContentConflict("content derivative is already invalidated")
 
         await self._factory.run_write_async(write)
+
+    async def get_problem_match_review(
+        self, *, revision_public_id: str
+    ) -> ProblemMatchReview:
+        """Return canonical source identities and same-lesson legacy candidates."""
+
+        _require_public_id(revision_public_id)
+        return await self._factory.run_read_async(
+            lambda connection: _problem_match_review_from_connection(
+                connection, revision_public_id
+            )
+        )
+
+    async def resolve_problem_matches(
+        self,
+        *,
+        revision_public_id: str,
+        expected_review_version: int,
+        drafts: Sequence[ProblemMatchDraft],
+        actor_user_id: int | None,
+    ) -> ProblemMatchReview:
+        """Persist one complete, immutable positional reconciliation batch."""
+
+        _require_public_id(revision_public_id)
+        if expected_review_version < 1:
+            raise ContentInvariantError("expected review version must be positive")
+        prepared = tuple(drafts)
+        if len(prepared) > 2_000:
+            raise ContentInvariantError("problem match batch is too large")
+        timestamp = self._timestamp()
+
+        def write(connection):
+            scope = _review_scope_row(connection, revision_public_id)
+            revision_id = int(scope["revision_id"])
+            try:
+                document = json.loads(str(scope["canonical_json"]))
+            except (json.JSONDecodeError, RecursionError) as error:
+                raise ContentRepositoryError(
+                    "content revision canonical AST is invalid"
+                ) from error
+            sources = _canonical_problem_records(document)
+            source_by_identity = {
+                (source.source_ordinal, source.source_item): source
+                for source in sources
+            }
+            draft_by_identity = {
+                (draft.source_ordinal, draft.source_item): draft for draft in prepared
+            }
+            if len(draft_by_identity) != len(prepared):
+                raise ContentInvariantError("problem match identities are duplicated")
+            if set(draft_by_identity) != set(source_by_identity):
+                raise ContentInvariantError(
+                    "problem match batch must cover the canonical problem list"
+                )
+            explicit_problem_ids = [
+                draft.problem_id
+                for draft in prepared
+                if draft.problem_id is not None
+            ]
+            if len(set(explicit_problem_ids)) != len(explicit_problem_ids):
+                raise ContentInvariantError(
+                    "one legacy problem cannot match multiple source problems"
+                )
+
+            existing = connection.execute(
+                "SELECT source_ordinal, source_item, problem_id, decision "
+                "FROM content_problem_matches WHERE content_revision_id = ? "
+                "ORDER BY source_ordinal, source_item",
+                (revision_id,),
+            ).fetchall()
+            if existing:
+                existing_by_identity = {
+                    (int(row["source_ordinal"]), str(row["source_item"])): row
+                    for row in existing
+                }
+                identical = set(existing_by_identity) == set(draft_by_identity)
+                if identical:
+                    for identity, draft in draft_by_identity.items():
+                        row = existing_by_identity[identity]
+                        stored_decision = ProblemMatchDecision(str(row["decision"]))
+                        stored_problem_id = (
+                            None if row["problem_id"] is None else int(row["problem_id"])
+                        )
+                        if stored_decision is not draft.decision:
+                            identical = False
+                            break
+                        if draft.decision is ProblemMatchDecision.INSERT_NEW:
+                            if stored_problem_id is None:
+                                identical = False
+                                break
+                        elif stored_problem_id != draft.problem_id:
+                            identical = False
+                            break
+                if identical:
+                    return _problem_match_review_from_connection(
+                        connection, revision_public_id
+                    )
+                raise ContentVersionConflict("problem matches are already resolved")
+            if _review_version(connection, revision_id) != expected_review_version:
+                raise ContentVersionConflict("problem review version changed")
+
+            for identity in sorted(draft_by_identity):
+                draft = draft_by_identity[identity]
+                source = source_by_identity[identity]
+                problem_id = draft.problem_id
+                if draft.decision is ProblemMatchDecision.INSERT_NEW:
+                    # The compiler's fallback source identity is the ordinal;
+                    # legacy ``item`` uses an empty suffix for that ordinary
+                    # case. An explicit TeX name remains available as item.
+                    legacy_item = (
+                        ""
+                        if source.source_item == str(source.source_ordinal)
+                        else source.source_item
+                    )
+                    try:
+                        created = connection.execute(
+                            "INSERT INTO problems "
+                            "(group_id, lesson, prob, item, title, prob_text, "
+                            "prob_type, ans_type, ans_validation, validation_error, "
+                            "cor_ans, cor_ans_checker, wrong_ans, congrat, synonyms) "
+                            "VALUES (?, ?, ?, ?, ?, '', 2, NULL, NULL, NULL, NULL, "
+                            "NULL, NULL, NULL, '') RETURNING id",
+                            (
+                                scope["group_id"],
+                                scope["lesson_number"],
+                                source.source_ordinal,
+                                legacy_item,
+                                source.source_title
+                                or f"Задача {source.display_number}",
+                            ),
+                        ).fetchone()
+                    except sqlite3.IntegrityError as error:
+                        raise ContentConflict(
+                            "problem position already exists; choose an explicit match"
+                        ) from error
+                    problem_id = int(created["id"])
+                elif draft.decision is not ProblemMatchDecision.OMIT:
+                    candidate = connection.execute(
+                        "SELECT id, prob FROM problems WHERE id = ? "
+                        "AND group_id = ? AND lesson = ?",
+                        (
+                            draft.problem_id,
+                            scope["group_id"],
+                            scope["lesson_number"],
+                        ),
+                    ).fetchone()
+                    if candidate is None:
+                        raise ContentInvariantError(
+                            "matched problem is outside the group lesson"
+                        )
+                    if (
+                        draft.decision is ProblemMatchDecision.AUTO_POSITION
+                        and int(candidate["prob"]) != source.source_ordinal
+                    ):
+                        raise ContentInvariantError(
+                            "automatic match must preserve source position"
+                        )
+                try:
+                    connection.execute(
+                        "INSERT INTO content_problem_matches "
+                        "(content_revision_id, source_ordinal, source_item, problem_id, "
+                        "decision, resolved_by_user_id, resolved_at, diagnostics_json, "
+                        "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, '[]', ?)",
+                        (
+                            revision_id,
+                            source.source_ordinal,
+                            source.source_item,
+                            problem_id,
+                            draft.decision.value,
+                            actor_user_id,
+                            timestamp,
+                            timestamp,
+                        ),
+                    )
+                except sqlite3.IntegrityError as error:
+                    raise _translate_integrity(
+                        error, action="problem match review"
+                    ) from error
+            return _problem_match_review_from_connection(
+                connection, revision_public_id
+            )
+
+        return await self._factory.run_write_async(write)
+
+    async def get_problem_metadata_grid(
+        self, *, revision_public_id: str
+    ) -> ProblemMetadataGrid:
+        _require_public_id(revision_public_id)
+        return await self._factory.run_read_async(
+            lambda connection: _problem_metadata_grid_from_connection(
+                connection, revision_public_id
+            )
+        )
+
+    async def save_problem_metadata_grid(
+        self,
+        *,
+        revision_public_id: str,
+        expected_review_version: int,
+        drafts: Sequence[ProblemMetadataDraft],
+        actor_user_id: int | None,
+    ) -> ProblemMetadataGrid:
+        """Confirm a complete grid and update the legacy current projection."""
+
+        _require_public_id(revision_public_id)
+        if expected_review_version < 1:
+            raise ContentInvariantError("expected review version must be positive")
+        prepared = tuple(drafts)
+        if len(prepared) > 2_000:
+            raise ContentInvariantError("problem metadata batch is too large")
+        timestamp = self._timestamp()
+
+        def write(connection):
+            current_grid = _problem_metadata_grid_from_connection(
+                connection, revision_public_id
+            )
+            expected_identities = {
+                (
+                    row.source.source_ordinal,
+                    row.source.source_item,
+                    row.problem.problem_id,
+                )
+                for row in current_grid.rows
+            }
+            draft_by_identity = {
+                (draft.source_ordinal, draft.source_item, draft.problem_id): draft
+                for draft in prepared
+            }
+            if len(draft_by_identity) != len(prepared):
+                raise ContentInvariantError("problem metadata identities are duplicated")
+            if set(draft_by_identity) != expected_identities:
+                raise ContentInvariantError(
+                    "metadata grid must cover every matched non-omitted problem"
+                )
+
+            if any(row.reviewed for row in current_grid.rows):
+                identical = all(
+                    row.reviewed
+                    and _metadata_matches_draft(
+                        row.problem,
+                        draft_by_identity[
+                            (
+                                row.source.source_ordinal,
+                                row.source.source_item,
+                                row.problem.problem_id,
+                            )
+                        ],
+                    )
+                    for row in current_grid.rows
+                )
+                if identical:
+                    return current_grid
+                raise ContentVersionConflict("problem metadata is already reviewed")
+            if current_grid.review_version != expected_review_version:
+                raise ContentVersionConflict("problem review version changed")
+
+            for identity in sorted(draft_by_identity):
+                metadata = draft_by_identity[identity]
+                config_version_row = connection.execute(
+                    "SELECT coalesce(max(config_version), 0) + 1 AS value "
+                    "FROM problem_revisions WHERE problem_id = ?",
+                    (metadata.problem_id,),
+                ).fetchone()
+                base = metadata.as_revision_draft()
+                revision_draft = ProblemRevisionDraft(
+                    problem_id=base.problem_id,
+                    source_ordinal=base.source_ordinal,
+                    source_item=base.source_item,
+                    display_number=base.display_number,
+                    title=base.title,
+                    problem_type=base.problem_type,
+                    answer_type=base.answer_type,
+                    answer_config=base.answer_config,
+                    attempt_policy=base.attempt_policy,
+                    config_version=int(config_version_row["value"]),
+                )
+                connection.execute(
+                    "UPDATE problems SET title = ?, prob_type = ?, ans_type = ?, "
+                    "ans_validation = ?, validation_error = ?, cor_ans = ?, "
+                    "cor_ans_checker = ?, wrong_ans = ?, congrat = ? WHERE id = ?",
+                    (
+                        metadata.title,
+                        metadata.problem_type,
+                        metadata.answer_type,
+                        metadata.answer_validation,
+                        metadata.validation_error,
+                        metadata.correct_answer,
+                        metadata.correct_answer_checker,
+                        metadata.wrong_answer,
+                        metadata.congratulation,
+                        metadata.problem_id,
+                    ),
+                )
+                try:
+                    connection.execute(
+                        "INSERT INTO problem_revisions "
+                        "(problem_id, content_revision_id, source_ordinal, source_item, "
+                        "display_number, title, normalized_title, problem_type, "
+                        "answer_type, answer_config_json, attempt_policy_json, "
+                        "config_version, created_at, created_by_user_id) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            revision_draft.problem_id,
+                            current_grid.revision_id,
+                            revision_draft.source_ordinal,
+                            revision_draft.source_item,
+                            revision_draft.display_number,
+                            revision_draft.title,
+                            revision_draft.normalized_title,
+                            revision_draft.problem_type,
+                            revision_draft.answer_type,
+                            revision_draft.answer_config_json(),
+                            revision_draft.attempt_policy_json(),
+                            revision_draft.config_version,
+                            timestamp,
+                            actor_user_id,
+                        ),
+                    )
+                except sqlite3.IntegrityError as error:
+                    raise _translate_integrity(
+                        error, action="problem metadata review"
+                    ) from error
+            return _problem_metadata_grid_from_connection(
+                connection, revision_public_id
+            )
+
+        return await self._factory.run_write_async(write)
 
     async def add_problem_revision(
         self,

@@ -73,6 +73,36 @@ class ProblemMatchDecision(StrEnum):
     OMIT = "omit"
 
 
+PROBLEM_TYPE_VALUES = frozenset({1, 2, 3, 4})
+ANSWER_TYPE_VALUES = frozenset(
+    {
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        98,
+        99,
+    }
+)
+
+
 _PUBLICATION_TRANSITIONS: Mapping[PublicationState, frozenset[PublicationState]] = {
     PublicationState.SCHEDULED: frozenset(
         {
@@ -442,6 +472,139 @@ class ProblemRevisionDraft:
             ensure_ascii=False,
             sort_keys=True,
             separators=(",", ":"),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ProblemMatchDraft:
+    """One explicit decision for a canonical LaTeX problem identity."""
+
+    source_ordinal: int
+    source_item: str
+    decision: ProblemMatchDecision
+    problem_id: int | None
+
+    def __post_init__(self) -> None:
+        if self.source_ordinal < 0:
+            raise ContentInvariantError("source ordinal must be non-negative")
+        source_item = self.source_item.strip()
+        if not source_item:
+            raise ContentInvariantError("source item must not be empty")
+        if self.decision is ProblemMatchDecision.OMIT:
+            if self.problem_id is not None:
+                raise ContentInvariantError("omitted problem must not have problem ID")
+        elif self.decision is ProblemMatchDecision.INSERT_NEW:
+            if self.problem_id is not None:
+                raise ContentInvariantError("new problem must not have problem ID")
+        elif self.problem_id is None or self.problem_id == 0:
+            raise ContentInvariantError("matched problem requires a non-zero problem ID")
+        object.__setattr__(self, "source_item", source_item)
+
+
+@dataclass(frozen=True, slots=True)
+class ProblemMetadataDraft:
+    """Reviewed Staff-grid values before they become an immutable revision."""
+
+    problem_id: int
+    source_ordinal: int
+    source_item: str
+    display_number: str
+    title: str
+    problem_type: int
+    answer_type: int | None
+    answer_validation: str | None
+    validation_error: str | None
+    correct_answer: str | None
+    correct_answer_checker: str | None
+    wrong_answer: str | None
+    congratulation: str | None
+
+    def __post_init__(self) -> None:
+        if self.problem_id == 0:
+            raise ContentInvariantError("problem ID must be non-zero")
+        if self.source_ordinal < 0:
+            raise ContentInvariantError("source ordinal must be non-negative")
+        for field_name, value, label, limit in (
+            ("source_item", self.source_item, "source item", 80),
+            ("display_number", self.display_number, "display number", 80),
+            ("title", self.title, "problem title", 500),
+        ):
+            normalized = value.strip()
+            if not normalized:
+                raise ContentInvariantError(f"{label} must not be empty")
+            if len(normalized) > limit:
+                raise ContentInvariantError(f"{label} is too long")
+            object.__setattr__(self, field_name, normalized)
+        if self.problem_type not in PROBLEM_TYPE_VALUES:
+            raise ContentInvariantError("problem type is invalid")
+        if self.problem_type == 1:
+            if self.answer_type not in ANSWER_TYPE_VALUES:
+                raise ContentInvariantError("test problem requires an answer type")
+        elif self.answer_type is not None:
+            raise ContentInvariantError("non-test problem must not have an answer type")
+        for field_name in (
+            "answer_validation",
+            "validation_error",
+            "correct_answer",
+            "wrong_answer",
+            "congratulation",
+        ):
+            value = getattr(self, field_name)
+            if value is not None:
+                normalized = value.strip()
+                if len(normalized) > 4_000:
+                    raise ContentInvariantError(f"{field_name} is too long")
+                object.__setattr__(self, field_name, normalized or None)
+        if self.correct_answer_checker is not None:
+            checker = self.correct_answer_checker.strip()
+            if len(checker) > 65_536:
+                raise ContentInvariantError("correct answer checker is too long")
+            object.__setattr__(
+                self, "correct_answer_checker", checker or None
+            )
+        if self.problem_type != 1 and any(
+            getattr(self, field_name) is not None
+            for field_name in (
+                "answer_validation",
+                "validation_error",
+                "correct_answer",
+                "correct_answer_checker",
+                "wrong_answer",
+                "congratulation",
+            )
+        ):
+            raise ContentInvariantError(
+                "non-test problem must not keep test answer configuration"
+            )
+
+    @property
+    def answer_config(self) -> Mapping[str, object]:
+        return {
+            "schemaVersion": 1,
+            "source": "staff-metadata-v1",
+            "answerType": self.answer_type,
+            "answerValidation": self.answer_validation,
+            "validationError": self.validation_error,
+            "correctAnswer": self.correct_answer,
+            "correctAnswerChecker": self.correct_answer_checker,
+            "wrongAnswer": self.wrong_answer,
+            "congratulation": self.congratulation,
+        }
+
+    def as_revision_draft(self) -> ProblemRevisionDraft:
+        return ProblemRevisionDraft(
+            problem_id=self.problem_id,
+            source_ordinal=self.source_ordinal,
+            source_item=self.source_item,
+            display_number=self.display_number,
+            title=self.title,
+            problem_type=self.problem_type,
+            answer_type=self.answer_type,
+            answer_config=self.answer_config,
+            attempt_policy={
+                "schemaVersion": 1,
+                "source": "staff-metadata-v1",
+            },
         )
 
 

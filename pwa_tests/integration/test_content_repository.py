@@ -6,7 +6,7 @@ import asyncio
 import hashlib
 import sqlite3
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, time, timedelta
 
 import pytest
@@ -27,6 +27,8 @@ from models.pwa.content import (
     ContentKind,
     LessonWindowDraft,
     ProblemMatchDecision,
+    ProblemMatchDraft,
+    ProblemMetadataDraft,
     ProblemRevisionDraft,
     PublicationState,
     RevisionStatus,
@@ -199,6 +201,7 @@ async def _create_source_revision(
     group_lesson_id: int,
     suffix: str,
     kind: ContentKind = ContentKind.CONDITION,
+    canonical_document: object | None = None,
 ):
     source = await fixture.repository.create_content_source(
         public_id=f"source-{suffix}",
@@ -231,7 +234,11 @@ async def _create_source_revision(
         expected_version=compiling.version,
         target=RevisionStatus.READY,
         parser_version="fixture-parser-v1",
-        canonical_document={"children": [], "type": "document"},
+        canonical_document=(
+            {"children": [], "type": "document"}
+            if canonical_document is None
+            else canonical_document
+        ),
     )
     return source, revision
 
@@ -1440,6 +1447,243 @@ async def test_hint_and_solution_reveals_are_scoped_and_immutable(content_fixtur
                     f"DELETE FROM {table} WHERE id = ?", (reveal_id,)
                 )
             )
+
+
+async def test_problem_matching_is_complete_scoped_and_idempotent(content_fixture):
+    fixture = content_fixture
+    _, group_lesson = await _create_group_lesson(
+        fixture,
+        course_lesson_public_id="course-lesson-match-review",
+        course_id=fixture.course_id,
+        lesson_number=41,
+        group_id="content-a",
+        group_lesson_public_id="group-lesson-match-review",
+    )
+    _, revision = await _create_source_revision(
+        fixture,
+        group_lesson_id=group_lesson.id,
+        suffix="match-review",
+        canonical_document={
+            "problems": [
+                {"ordinal": 1, "source_item": None, "source_title": "Первая"},
+                {"ordinal": 2, "source_item": "named", "source_title": None},
+            ]
+        },
+    )
+
+    initial = await fixture.repository.get_problem_match_review(
+        revision_public_id=revision.public_id
+    )
+    assert initial.review_version == 1
+    assert [item.source.source_item for item in initial.items] == ["1", "named"]
+    assert [item.suggested_problem_id for item in initial.items] == [
+        fixture.problem_a_id,
+        fixture.problem_a2_id,
+    ]
+    with pytest.raises(ContentInvariantError, match="outside the group lesson"):
+        await fixture.repository.resolve_problem_matches(
+            revision_public_id=revision.public_id,
+            expected_review_version=initial.review_version,
+            drafts=(
+                ProblemMatchDraft(
+                    source_ordinal=1,
+                    source_item="1",
+                    decision=ProblemMatchDecision.AUTO_POSITION,
+                    problem_id=fixture.problem_a_id,
+                ),
+                ProblemMatchDraft(
+                    source_ordinal=2,
+                    source_item="named",
+                    decision=ProblemMatchDecision.AUTO_POSITION,
+                    problem_id=fixture.problem_other_id,
+                ),
+            ),
+            actor_user_id=fixture.actor_user_id,
+        )
+    assert (
+        fixture.factory.run_read(
+            lambda connection: connection.execute(
+                "SELECT count(*) AS value FROM content_problem_matches "
+                "WHERE content_revision_id = ?",
+                (revision.id,),
+            ).fetchone()["value"]
+        )
+        == 0
+    )
+    drafts = (
+        ProblemMatchDraft(
+            source_ordinal=1,
+            source_item="1",
+            decision=ProblemMatchDecision.AUTO_POSITION,
+            problem_id=fixture.problem_a_id,
+        ),
+        ProblemMatchDraft(
+            source_ordinal=2,
+            source_item="named",
+            decision=ProblemMatchDecision.MANUAL_MATCH,
+            problem_id=fixture.problem_a2_id,
+        ),
+    )
+    resolved = await fixture.repository.resolve_problem_matches(
+        revision_public_id=revision.public_id,
+        expected_review_version=initial.review_version,
+        drafts=drafts,
+        actor_user_id=fixture.actor_user_id,
+    )
+    assert resolved.review_version == 3
+    assert [item.match.decision for item in resolved.items if item.match] == [
+        ProblemMatchDecision.AUTO_POSITION,
+        ProblemMatchDecision.MANUAL_MATCH,
+    ]
+
+    retried = await fixture.repository.resolve_problem_matches(
+        revision_public_id=revision.public_id,
+        expected_review_version=initial.review_version,
+        drafts=drafts,
+        actor_user_id=fixture.actor_user_id,
+    )
+    assert retried == resolved
+    with pytest.raises(ContentVersionConflict):
+        await fixture.repository.resolve_problem_matches(
+            revision_public_id=revision.public_id,
+            expected_review_version=resolved.review_version,
+            drafts=(
+                drafts[0],
+                ProblemMatchDraft(
+                    source_ordinal=2,
+                    source_item="named",
+                    decision=ProblemMatchDecision.OMIT,
+                    problem_id=None,
+                ),
+            ),
+            actor_user_id=fixture.actor_user_id,
+        )
+
+
+async def test_metadata_grid_updates_projection_and_keeps_revision_history(
+    content_fixture,
+):
+    fixture = content_fixture
+    _, group_lesson = await _create_group_lesson(
+        fixture,
+        course_lesson_public_id="course-lesson-metadata-grid",
+        course_id=fixture.course_id,
+        lesson_number=42,
+        group_id="content-a",
+        group_lesson_public_id="group-lesson-metadata-grid",
+    )
+    _, revision = await _create_source_revision(
+        fixture,
+        group_lesson_id=group_lesson.id,
+        suffix="metadata-grid",
+        canonical_document={
+            "problems": [
+                {"ordinal": 1, "source_item": None, "source_title": "Орехи"},
+                {"ordinal": 2, "source_item": None, "source_title": "Ладьи"},
+            ]
+        },
+    )
+    matched = await fixture.repository.resolve_problem_matches(
+        revision_public_id=revision.public_id,
+        expected_review_version=1,
+        drafts=tuple(
+            ProblemMatchDraft(
+                source_ordinal=ordinal,
+                source_item=str(ordinal),
+                decision=ProblemMatchDecision.INSERT_NEW,
+                problem_id=None,
+            )
+            for ordinal in (1, 2)
+        ),
+        actor_user_id=fixture.actor_user_id,
+    )
+    grid = await fixture.repository.get_problem_metadata_grid(
+        revision_public_id=revision.public_id
+    )
+    assert grid.review_version == matched.review_version == 3
+    assert [row.problem.item for row in grid.rows] == ["", ""]
+    assert not any(row.reviewed for row in grid.rows)
+
+    first, second = grid.rows
+    drafts = (
+        ProblemMetadataDraft(
+            problem_id=first.problem.problem_id,
+            source_ordinal=first.source.source_ordinal,
+            source_item=first.source.source_item,
+            display_number=first.source.display_number,
+            title="Сколько орехов",
+            problem_type=1,
+            answer_type=2,
+            answer_validation=None,
+            validation_error="Введите число орехов, например 7",
+            correct_answer="7;семь",
+            correct_answer_checker=None,
+            wrong_answer="Нет, не столько орехов",
+            congratulation="Да, всё верно!",
+        ),
+        ProblemMetadataDraft(
+            problem_id=second.problem.problem_id,
+            source_ordinal=second.source.source_ordinal,
+            source_item=second.source.source_item,
+            display_number=second.source.display_number,
+            title="Расстановка ладей",
+            problem_type=2,
+            answer_type=None,
+            answer_validation=None,
+            validation_error=None,
+            correct_answer=None,
+            correct_answer_checker=None,
+            wrong_answer=None,
+            congratulation=None,
+        ),
+    )
+    saved = await fixture.repository.save_problem_metadata_grid(
+        revision_public_id=revision.public_id,
+        expected_review_version=grid.review_version,
+        drafts=drafts,
+        actor_user_id=fixture.actor_user_id,
+    )
+    assert saved.review_version == 5
+    assert all(row.reviewed for row in saved.rows)
+    assert saved.rows[0].problem.correct_answer == "7;семь"
+    assert saved.rows[1].problem.answer_type is None
+
+    persisted = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT title, prob_type, ans_type, validation_error, cor_ans "
+            "FROM problems WHERE id = ?",
+            (first.problem.problem_id,),
+        ).fetchone()
+    )
+    assert persisted == {
+        "title": "Сколько орехов",
+        "prob_type": 1,
+        "ans_type": 2,
+        "validation_error": "Введите число орехов, например 7",
+        "cor_ans": "7;семь",
+    }
+    readiness = await fixture.repository.get_revision_publication_readiness(
+        revision_id=revision.id
+    )
+    assert readiness.is_ready
+
+    retried = await fixture.repository.save_problem_metadata_grid(
+        revision_public_id=revision.public_id,
+        expected_review_version=grid.review_version,
+        drafts=drafts,
+        actor_user_id=fixture.actor_user_id,
+    )
+    assert retried == saved
+    with pytest.raises(ContentVersionConflict):
+        await fixture.repository.save_problem_metadata_grid(
+            revision_public_id=revision.public_id,
+            expected_review_version=saved.review_version,
+            drafts=(
+                replace(drafts[0], title="Другое название"),
+                drafts[1],
+            ),
+            actor_user_id=fixture.actor_user_id,
+        )
 
 
 async def test_synonym_candidates_do_not_merge_and_membership_is_versioned(

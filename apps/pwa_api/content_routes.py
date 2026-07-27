@@ -36,6 +36,9 @@ from db_methods.pwa.content import (
     GroupLessonContentScope,
     LessonWindowRecord,
     MediaAssetRecord,
+    LegacyProblemRecord,
+    ProblemMatchReview,
+    ProblemMetadataGrid,
     PublicationContext,
     PublicationRecord,
     PwaContentRepository,
@@ -65,6 +68,9 @@ from models.pwa.auth import AuthAudience
 from models.pwa.content import (
     ContentInvariantError,
     ContentKind,
+    ProblemMatchDecision,
+    ProblemMatchDraft,
+    ProblemMetadataDraft,
     PublicationState,
     RevisionStatus,
     LessonWindowDraft,
@@ -80,6 +86,7 @@ CONTENT_ASSET_UPLOAD_LIMIT_BYTES = 25 * 1024 * 1024
 CONTENT_ASSET_REQUEST_LIMIT_BYTES = CONTENT_ASSET_UPLOAD_LIMIT_BYTES + 64 * 1024
 CONTENT_JSON_BODY_LIMIT_BYTES = 32 * 1024
 CONTENT_PREVIEW_TEXT_LIMIT_BYTES = 8_000_000
+CONTENT_METADATA_JSON_LIMIT_BYTES = 2 * 1024 * 1024
 _UPLOAD_FIELDS = frozenset({"groupLessonId", "kind", "logicalFilename", "source"})
 _ASSET_UPLOAD_FIELDS = frozenset({"logicalName", "kind", "asset"})
 _PUBLISH_FIELDS = frozenset(
@@ -122,6 +129,28 @@ _ROLLBACK_FIELDS = frozenset(
 )
 _CANCEL_FIELDS = frozenset()
 _HIDE_FIELDS = frozenset()
+_PROBLEM_MATCH_FIELDS = frozenset({"matches"})
+_PROBLEM_MATCH_ROW_FIELDS = frozenset(
+    {"sourceOrdinal", "sourceItem", "decision", "problemId"}
+)
+_METADATA_GRID_FIELDS = frozenset({"revisionId", "rows"})
+_METADATA_ROW_FIELDS = frozenset(
+    {
+        "problemId",
+        "sourceOrdinal",
+        "sourceItem",
+        "displayNumber",
+        "title",
+        "problemType",
+        "answerType",
+        "answerValidation",
+        "validationError",
+        "correctAnswer",
+        "correctAnswerChecker",
+        "wrongAnswer",
+        "congratulation",
+    }
+)
 _STUDENT_KINDS = frozenset(
     {ContentKind.CONDITION, ContentKind.HINT, ContentKind.SOLUTION}
 )
@@ -697,11 +726,14 @@ def _source_payload(source_bytes: bytes, *, filename: str) -> SourceRevisionPayl
 
 
 async def _json_object(
-    request: web.Request, *, allowed_fields: frozenset[str]
+    request: web.Request,
+    *,
+    allowed_fields: frozenset[str],
+    max_bytes: int = CONTENT_JSON_BODY_LIMIT_BYTES,
 ) -> dict[str, object]:
     if (
         request.content_length is not None
-        and request.content_length > CONTENT_JSON_BODY_LIMIT_BYTES
+        and request.content_length > max_bytes
     ):
         raise PwaApiError(
             status=413,
@@ -722,7 +754,7 @@ async def _json_object(
             code="payload_too_large",
             message="Запрос слишком большой",
         ) from error
-    if len(body) > CONTENT_JSON_BODY_LIMIT_BYTES:
+    if len(body) > max_bytes:
         raise PwaApiError(
             status=413,
             code="payload_too_large",
@@ -857,6 +889,254 @@ def _lesson_window_payload(
         "source": record.source,
         "version": record.version,
     }
+
+
+def _review_etag(revision_public_id: str, version: int) -> str:
+    # Compile and review are separate resources even though both are addressed
+    # by revision ID. A bounded hash-derived identity prevents a compile ETag
+    # from accidentally authorizing a metadata mutation. Phase 2 MATCH-03.
+    resource_id = "review-" + hashlib.sha256(
+        revision_public_id.encode("utf-8")
+    ).hexdigest()[:24]
+    return _etag(resource_id, version)
+
+
+def _legacy_problem_payload(problem: LegacyProblemRecord) -> dict[str, object]:
+    return {
+        "problemId": problem.problem_id,
+        "problemNumber": problem.problem_number,
+        "item": problem.item,
+        "title": problem.title,
+        "problemType": problem.problem_type,
+        "answerType": problem.answer_type,
+        "answerValidation": problem.answer_validation,
+        "validationError": problem.validation_error,
+        "correctAnswer": problem.correct_answer,
+        "correctAnswerChecker": problem.correct_answer_checker,
+        "wrongAnswer": problem.wrong_answer,
+        "congratulation": problem.congratulation,
+    }
+
+
+def _problem_match_payload(
+    review: ProblemMatchReview, *, request_id: str
+) -> dict[str, object]:
+    etag = _review_etag(review.revision_public_id, review.review_version)
+    return {
+        "revisionId": review.revision_public_id,
+        "groupLessonId": review.group_lesson_public_id,
+        "version": review.review_version,
+        "etag": etag,
+        "items": [
+            {
+                "sourceOrdinal": item.source.source_ordinal,
+                "sourceItem": item.source.source_item,
+                "displayNumber": item.source.display_number,
+                "sourceTitle": item.source.source_title,
+                "suggestedProblemId": item.suggested_problem_id,
+                "match": (
+                    None
+                    if item.match is None
+                    else {
+                        "decision": item.match.decision.value,
+                        "problemId": item.match.problem_id,
+                    }
+                ),
+            }
+            for item in review.items
+        ],
+        "candidates": [
+            _legacy_problem_payload(candidate) for candidate in review.candidates
+        ],
+        "requestId": request_id,
+    }
+
+
+def _metadata_grid_payload(
+    grid: ProblemMetadataGrid, *, request_id: str
+) -> dict[str, object]:
+    etag = _review_etag(grid.revision_public_id, grid.review_version)
+    return {
+        "revisionId": grid.revision_public_id,
+        "groupLessonId": grid.group_lesson_public_id,
+        "version": grid.review_version,
+        "etag": etag,
+        "rows": [
+            {
+                "problemId": row.problem.problem_id,
+                "sourceOrdinal": row.source.source_ordinal,
+                "sourceItem": row.source.source_item,
+                "displayNumber": row.source.display_number,
+                "title": row.problem.title,
+                "problemType": row.problem.problem_type,
+                "answerType": row.problem.answer_type,
+                "answerValidation": row.problem.answer_validation,
+                "validationError": row.problem.validation_error,
+                "correctAnswer": row.problem.correct_answer,
+                "correctAnswerChecker": row.problem.correct_answer_checker,
+                "wrongAnswer": row.problem.wrong_answer,
+                "congratulation": row.problem.congratulation,
+                "reviewed": row.reviewed,
+            }
+            for row in grid.rows
+        ],
+        "requestId": request_id,
+    }
+
+
+def _required_row_object(
+    value: object, *, fields: frozenset[str], row_index: int
+) -> dict[str, object]:
+    if not isinstance(value, dict) or set(value) != fields:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте поля строки",
+            details={"row": row_index, "required": sorted(fields)},
+        )
+    return value
+
+
+def _required_int(value: object, *, field: str, row_index: int) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте числовое поле строки",
+            details={"row": row_index, "field": field},
+        )
+    return value
+
+
+def _required_string(value: object, *, field: str, row_index: int) -> str:
+    if not isinstance(value, str):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте текстовое поле строки",
+            details={"row": row_index, "field": field},
+        )
+    return value
+
+
+def _optional_string(value: object, *, field: str, row_index: int) -> str | None:
+    if value is None:
+        return None
+    return _required_string(value, field=field, row_index=row_index)
+
+
+def _problem_match_drafts(value: object) -> tuple[ProblemMatchDraft, ...]:
+    if not isinstance(value, list) or len(value) > 2_000:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Список сопоставлений имеет неверный формат",
+        )
+    drafts: list[ProblemMatchDraft] = []
+    for row_index, value_row in enumerate(value):
+        row = _required_row_object(
+            value_row, fields=_PROBLEM_MATCH_ROW_FIELDS, row_index=row_index
+        )
+        try:
+            decision = ProblemMatchDecision(str(row["decision"]))
+        except ValueError as error:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Неизвестное решение сопоставления",
+                details={"row": row_index, "field": "decision"},
+            ) from error
+        raw_problem_id = row["problemId"]
+        problem_id = (
+            None
+            if raw_problem_id is None
+            else _required_int(raw_problem_id, field="problemId", row_index=row_index)
+        )
+        drafts.append(
+            ProblemMatchDraft(
+                source_ordinal=_required_int(
+                    row["sourceOrdinal"], field="sourceOrdinal", row_index=row_index
+                ),
+                source_item=_required_string(
+                    row["sourceItem"], field="sourceItem", row_index=row_index
+                ),
+                decision=decision,
+                problem_id=problem_id,
+            )
+        )
+    return tuple(drafts)
+
+
+def _metadata_drafts(value: object) -> tuple[ProblemMetadataDraft, ...]:
+    if not isinstance(value, list) or len(value) > 2_000:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Таблица метаданных имеет неверный формат",
+        )
+    drafts: list[ProblemMetadataDraft] = []
+    for row_index, value_row in enumerate(value):
+        row = _required_row_object(
+            value_row, fields=_METADATA_ROW_FIELDS, row_index=row_index
+        )
+        raw_answer_type = row["answerType"]
+        answer_type = (
+            None
+            if raw_answer_type is None
+            else _required_int(
+                raw_answer_type, field="answerType", row_index=row_index
+            )
+        )
+        drafts.append(
+            ProblemMetadataDraft(
+                problem_id=_required_int(
+                    row["problemId"], field="problemId", row_index=row_index
+                ),
+                source_ordinal=_required_int(
+                    row["sourceOrdinal"], field="sourceOrdinal", row_index=row_index
+                ),
+                source_item=_required_string(
+                    row["sourceItem"], field="sourceItem", row_index=row_index
+                ),
+                display_number=_required_string(
+                    row["displayNumber"], field="displayNumber", row_index=row_index
+                ),
+                title=_required_string(
+                    row["title"], field="title", row_index=row_index
+                ),
+                problem_type=_required_int(
+                    row["problemType"], field="problemType", row_index=row_index
+                ),
+                answer_type=answer_type,
+                answer_validation=_optional_string(
+                    row["answerValidation"],
+                    field="answerValidation",
+                    row_index=row_index,
+                ),
+                validation_error=_optional_string(
+                    row["validationError"],
+                    field="validationError",
+                    row_index=row_index,
+                ),
+                correct_answer=_optional_string(
+                    row["correctAnswer"], field="correctAnswer", row_index=row_index
+                ),
+                correct_answer_checker=_optional_string(
+                    row["correctAnswerChecker"],
+                    field="correctAnswerChecker",
+                    row_index=row_index,
+                ),
+                wrong_answer=_optional_string(
+                    row["wrongAnswer"], field="wrongAnswer", row_index=row_index
+                ),
+                congratulation=_optional_string(
+                    row["congratulation"],
+                    field="congratulation",
+                    row_index=row_index,
+                ),
+            )
+        )
+    return tuple(drafts)
 
 
 async def _require_publication_readiness(
@@ -1524,6 +1804,151 @@ async def compile_content_revision(request: web.Request) -> web.Response:
         {**_revision_payload(ready_context), "requestId": _request_id(request)}
     )
     response.headers["ETag"] = _etag(ready.public_id, ready.version)
+    return response
+
+
+@content_routes.get(
+    "/staff/api/v1/content/revisions/{revision_id}/problem-matches"
+)
+@_translate_content_errors
+async def get_problem_matches(request: web.Request) -> web.Response:
+    repository = _repository(request)
+    revision_public_id = request.match_info["revision_id"]
+    context = await repository.get_revision_context(revision_public_id)
+    _staff_actor(request, context.scope)
+    review = await repository.get_problem_match_review(
+        revision_public_id=revision_public_id
+    )
+    response = web.json_response(
+        _problem_match_payload(review, request_id=_request_id(request))
+    )
+    response.headers["ETag"] = _review_etag(
+        review.revision_public_id, review.review_version
+    )
+    return response
+
+
+@content_routes.put(
+    "/staff/api/v1/content/revisions/{revision_id}/problem-matches"
+)
+@_translate_content_errors
+async def put_problem_matches(request: web.Request) -> web.Response:
+    repository = _repository(request)
+    revision_public_id = request.match_info["revision_id"]
+    context = await repository.get_revision_context(revision_public_id)
+    _principal, actor_user_id = _staff_actor(request, context.scope)
+    current = await repository.get_problem_match_review(
+        revision_public_id=revision_public_id
+    )
+    _require_if_match(
+        request,
+        _review_etag(current.revision_public_id, current.review_version),
+    )
+    payload = await _json_object(
+        request,
+        allowed_fields=_PROBLEM_MATCH_FIELDS,
+        max_bytes=CONTENT_METADATA_JSON_LIMIT_BYTES,
+    )
+    review = await repository.resolve_problem_matches(
+        revision_public_id=revision_public_id,
+        expected_review_version=current.review_version,
+        drafts=_problem_match_drafts(payload["matches"]),
+        actor_user_id=actor_user_id,
+    )
+    response = web.json_response(
+        _problem_match_payload(review, request_id=_request_id(request))
+    )
+    response.headers["ETag"] = _review_etag(
+        review.revision_public_id, review.review_version
+    )
+    return response
+
+
+async def _authorized_metadata_grid(
+    request: web.Request, *, revision_public_id: str
+) -> tuple[PwaContentRepository, ContentRevisionContext, int]:
+    repository = _repository(request)
+    context = await repository.get_revision_context(revision_public_id)
+    _principal, actor_user_id = _staff_actor(request, context.scope)
+    if (
+        context.scope.group_lesson_public_id
+        != request.match_info["group_lesson_id"]
+    ):
+        raise PwaApiError(
+            status=422,
+            code="revision_scope_mismatch",
+            message="Revision относится к другому групповому занятию",
+        )
+    return repository, context, actor_user_id
+
+
+@content_routes.get(
+    "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid"
+)
+@_translate_content_errors
+async def get_metadata_grid(request: web.Request) -> web.Response:
+    if list(request.query) != ["revisionId"] or len(request.query.getall("revisionId")) != 1:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Укажите одну revision для таблицы метаданных",
+        )
+    revision_public_id = request.query["revisionId"]
+    repository, _context, _actor_user_id = await _authorized_metadata_grid(
+        request, revision_public_id=revision_public_id
+    )
+    grid = await repository.get_problem_metadata_grid(
+        revision_public_id=revision_public_id
+    )
+    response = web.json_response(
+        _metadata_grid_payload(grid, request_id=_request_id(request))
+    )
+    response.headers["ETag"] = _review_etag(
+        grid.revision_public_id, grid.review_version
+    )
+    return response
+
+
+@content_routes.put(
+    "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid"
+)
+@_translate_content_errors
+async def put_metadata_grid(request: web.Request) -> web.Response:
+    payload = await _json_object(
+        request,
+        allowed_fields=_METADATA_GRID_FIELDS,
+        max_bytes=CONTENT_METADATA_JSON_LIMIT_BYTES,
+    )
+    revision_public_id = payload["revisionId"]
+    if not isinstance(revision_public_id, str):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Укажите revision для таблицы метаданных",
+            details={"field": "revisionId"},
+        )
+    repository, _context, actor_user_id = await _authorized_metadata_grid(
+        request, revision_public_id=revision_public_id
+    )
+    current = await repository.get_problem_metadata_grid(
+        revision_public_id=revision_public_id
+    )
+    _require_if_match(
+        request,
+        _review_etag(current.revision_public_id, current.review_version),
+    )
+    grid = await repository.save_problem_metadata_grid(
+        revision_public_id=revision_public_id,
+        expected_review_version=current.review_version,
+        drafts=_metadata_drafts(payload["rows"]),
+        actor_user_id=actor_user_id,
+    )
+    response = web.json_response(
+        _metadata_grid_payload(grid, request_id=_request_id(request))
+    )
+    response.headers["ETag"] = _review_etag(
+        grid.revision_public_id, grid.review_version
+    )
     return response
 
 

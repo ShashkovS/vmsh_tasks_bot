@@ -12,7 +12,7 @@
 | API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
 | Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
 | Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
-| Этап 2              | Phase 2A–2D implemented     | Asset recovery и durable media зафиксированы в `43b0323`/`08a8d0b`/`d39141d`; открыты matching/metadata, PDF preview, bulk upload, content E2E и owner visual gate    |
+| Этап 2              | Phase 2A–2E backend implemented | Matching/metadata repository+API проверены; открыты их Staff UI/Storybook, PDF preview, bulk upload, content E2E и owner visual gate                              |
 | Этапы 3–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
@@ -199,7 +199,14 @@
   unit и 17 Storybook browser tests; Ruff/ESLint/typecheck/production builds
   PASS. Proof:
   [`phase2-content-assets-http.md`](../../../pwa_tests/reports/phase2-content-assets-http.md).
-- Phase 2 всё ещё открыт для matching/metadata UI/API, Staff-openable generated
+- Phase 2E backend добавляет полный immutable positional matching, отдельный
+  review ETag, atomic metadata-grid confirmation и legacy `problems`
+  projection. Teacher получает `403`, stale write — `409`, а publication gate
+  открывается только после обоих review шагов. Domain/repository/real-aiohttp
+  suite — **110 PASS**, Ruff — PASS. Proof:
+  [`phase2-problem-review-api.md`](../../../pwa_tests/reports/phase2-problem-review-api.md).
+- Phase 2 всё ещё открыт для matching/metadata Staff UI и Storybook,
+  Staff-openable generated
   PDF, bulk upload, production-build content E2E и owner visual approval.
   Snapshots не обновлялись. Ранее закрытые HTTP/frontend proof:
   [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md),
