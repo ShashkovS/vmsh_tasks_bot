@@ -10,7 +10,7 @@
 | Решения и границы   | accepted planning input               | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                     |
 | Модель данных       | revised planning input                | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                         |
 | API/events/files    | accepted planning input               | Batch move, cross-group confirm и classroom history зафиксированы                                                                  |
-| Этап 0              | in progress                           | Реализованы ADR 0002, deploy-only migrations, WAL/schema startup gate и fault tests; остальные baseline-доказательства выполняются |
+| Этап 0              | in progress                           | Реализованы runtime/schema/seed/auth gates и observed workload profile; telemetry gaps, storage/Telegram и isolation E2E остаются   |
 | Этапы 1–11          | planned with gates                    | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                      |
 | Design system       | phases 5–7 ready for review           | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                 |
 | Multi-course model  | verified prototype; owner visual gate | Phase 1–11, UI, stories и tests обновлены; backend/migrations не реализованы                                                       |
@@ -61,6 +61,7 @@
 | 2026-07-27 | PLAN-040 | Legacy rules защищаются executable characterization, corpus — schema-light manifest                       | 23 answer types, verdict/reaction/queue/synonym semantics зафиксированы; 54 source files покрыты hash/encoding/structure без дублирования содержания           |
 | 2026-07-27 | PLAN-041 | Schema baseline — migration-derived inventory, а live drift остаётся явным                               | 47 product objects воспроизводимы; 12 derived objects allowlisted; product row values не выбираются, live DDL/defaults сериализуются только fingerprints      |
 | 2026-07-27 | PLAN-042 | `baseline-v1` строится вне target и устанавливается только после полной проверки                         | Exact profile/path allowlist, scoped FK gates, purge+VACUUM credentials, shared-runtime/exclusive-maintenance lock и durable atomic replace                    |
+| 2026-07-27 | PLAN-043 | Auth/workload preflight читает реальные источники fail-closed и публикует только безопасные агрегаты      | Same-fd bytes/hash и alias rejection защищают inputs; auth query использует deserialize snapshot; explicit check ловит missing/stale report-pair               |
 
 ## Текущий инкремент этапа 0
 
@@ -71,7 +72,8 @@
 - Characterization increment: 59/59 domain tests PASS; `vmshpwa/scripts/golden_corpus.py check` подтвердил 54/54 source files. Подробности: `pwa_tests/reports/legacy-characterization.md`.
 - Schema increment: 22/22 inventory/migration tests PASS; fresh hash `5ba3e432…`, live read-only check воспроизвёл 12 fingerprinted derived objects, yoyo infrastructure и 2 известных FK-дефекта без изменения `db/vmsh.db`. Sentinel-тесты доказывают, что live SQL/default literals не попадают в отчёт. Подробности: `pwa_tests/reports/live-schema-drift.md`.
 - Seed/lifecycle-lock increment: 129/129 focused tests PASS; два последовательных `make pwa-agent-seed` дают digest `193cc450…`; exhaustive answer examples совпадают с legacy regex; scoped FK gate не скрывает ошибки `reactions`; stale WAL очищается только SQLite; shared locks независимых runtime workers исключают migrate/seed и сохраняются до aiohttp cleanup; fork/cancellation/startup-failure/path-alias cases и прежнее окно перед `os.replace` воспроизведены. Подробности: `pwa_tests/reports/baseline-v1.md` и ADR 0002.
-- Этап 0 не закрыт: auth/workload, storage/Telegram preflights и runtime-isolation E2E ещё впереди.
+- Auth/workload increment: 25/25 focused tests PASS; `make pwa-auth-preflight-check` подтвердил aggregate lower bound 36/1617 Student rows без source values; `make pwa-workload-profile-check` подтвердил 19 raw files, 176713 canonical events и 37408 traces, same-fd source checks и 0 unreviewed labels. Unknown user types, deserialize failure, source-change, symlink/hard-link/duplicate-inode и missing/stale report pairs закрыты. Отчёты: `pwa_tests/reports/{auth-preflight,workload-profile}.{json,md}`.
+- Этап 0 не закрыт: workload пока не измеряет concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget; storage/Telegram preflights и runtime-isolation E2E ещё впереди.
 
 ## Проверка многокурсового прототипа
 

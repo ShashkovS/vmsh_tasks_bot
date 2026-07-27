@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "source": "db/vmsh.db",
+  "sourceAccess": "secure pre-open fd with strongest available nofollow flag; exact bytes read+SHA-256 on that fd; in-memory sqlite deserialize; PRAGMA query_only=ON; explicit read transaction; source path/fingerprint rechecked; WAL/journal sidecars refused",
+  "sourceUnchanged": true,
+  "cohort": {
+    "definition": "users.type = 1",
+    "studentRows": 1617,
+    "excludedNonStudentRows": 662,
+    "rowsByKnownType": [
+      {
+        "type": -4,
+        "label": "unknown",
+        "count": 183
+      },
+      {
+        "type": -1,
+        "label": "deleted",
+        "count": 11
+      },
+      {
+        "type": 1,
+        "label": "student",
+        "count": 1617
+      },
+      {
+        "type": 2,
+        "label": "teacher",
+        "count": 468
+      }
+    ],
+    "otherTypeRows": 0,
+    "explicitTestFlagAvailable": false,
+    "explicitTestRows": null,
+    "classificationNote": "The legacy schema has no explicit test-account flag; no rows were classified from names, tokens, groups or identifiers."
+  },
+  "students": {
+    "birthday": {
+      "null": 10,
+      "blank": 0,
+      "validIsoDate": 1607,
+      "invalidIsoDate": 0,
+      "futureDate": 0
+    },
+    "surname": {
+      "present": 1617,
+      "emptyAfterTrim": 0
+    },
+    "tokenLengthBuckets": {
+      "0": 0,
+      "1-5": 0,
+      "6-7": 9,
+      "8-11": 1608,
+      "12-15": 0,
+      "16-31": 0,
+      "32+": 0
+    },
+    "guessableTokenShapes": {
+      "shorterThan8": 9,
+      "digitsOnly": 0,
+      "singleRepeatedCharacter": 0,
+      "commonPlaceholder": 0,
+      "sameAsChatId": 0,
+      "anyGuessableShape": 9
+    },
+    "activation": {
+      "blockedByFieldOrTokenCondition": 10,
+      "eligibleByFieldAndTokenConditions": 1607,
+      "sourceKeyCollisionRows": 26,
+      "blockedByMeasuredLowerBound": 36,
+      "provisionallyEligibleAfterMeasuredLowerBound": 1581,
+      "finalEligibilityUnknown": true
+    }
+  },
+  "loginCollisions": {
+    "futureCanonicalGeneratorAvailable": false,
+    "normalizedSurnameBirthdaySourceKey": {
+      "collisionGroups": 13,
+      "affectedRows": 26,
+      "interpretation": "Lower bound before transliteration; this is not a generated login."
+    },
+    "legacyKvLogin": {
+      "tablePresent": true,
+      "studentRows": 627,
+      "nullOrBlank": 0,
+      "collisionGroups": 0,
+      "affectedRows": 0
+    }
+  }
+}

@@ -16,7 +16,7 @@
 6. Зафиксировать contract/error/clock conventions и test data privacy.
 7. Принять ADR по SQLite concurrency/migration lifecycle: connection ownership, async boundary, `busy_timeout`, bounded retry, write transaction mode, отсутствие `await` внутри transaction и отдельный deploy-only yoyo command.
 8. Провести auth preflight без выгрузки секретов: количество `NULL`/невалидных birthday, пустых фамилий, коллизий будущих логинов, token-length buckets и chat-id/других явно guessable token shapes. Отчёт содержит только агрегаты и synthetic examples.
-9. Зафиксировать измеримый workload profile по traces/production counts: одновременные Student/Staff sessions, submits/minute в пике, photo count/bytes, write latency, queue/outbox depth и допустимый `SQLITE_BUSY`/error budget. Число `200 учеников` само по себе не является load-test specification.
+9. Зафиксировать измеримый workload profile по raw traces/production counts: честно отделить доступные minute-level proxies от пока отсутствующих измерений одновременных Student/Staff sessions, photo bytes, write latency, outbox depth и допустимого `SQLITE_BUSY`/error budget. Число `200 учеников` само по себе не является load-test specification.
 10. Для каждого реально запускаемого `_external_pipelines` записать owner, команду/расписание, upstream, side effects, rollback и состояние `legacy bridge | v1 cutover | later internalization`.
 11. Зафиксировать внешний converter contract: четыре настраиваемых executable (`pdf2svg`, `cwebp`, `pdflatex`, `magick` по умолчанию из service `PATH`), capability probe, безопасный argv-вызов, timeout и поведение при `None`/missing binary.
 12. Зафиксировать storage profile contract: filesystem/mock для hermetic unit/agent/E2E; opt-in Beget S3 integration берёт allowlisted `s3_*` поля из test secret file, production — из production secret file, без побочной загрузки Telegram/Google credentials.
@@ -35,7 +35,7 @@
 
 - `pwa_tests/fixtures/seed.py`, `pwa_tests/fixtures/schema_snapshot.sql`;
 - `adr/NNNN-pwa-sqlite-concurrency-and-migrations.md`;
-- `pwa_tests/reports/auth-preflight.example.json`, `pwa_tests/reports/workload-profile.md`;
+- `pwa_tests/reports/auth-preflight.{json,md}`, `pwa_tests/reports/workload-profile.{json,md}`;
 - `helpers/pwa/toolchain.py` и поля toolchain в общем backend config;
 - `pwa_tests/domain/test_legacy_answer_types.py`;
 - `pwa_tests/domain/test_legacy_review_queue.py`;
@@ -46,6 +46,16 @@
 - `vmshpwa/docs/developer-runtime.md` или обновление существующего runtime doc.
 
 Фактически реализованный seed находится в `vmshpwa/scripts/seed_runtime.py`; данные и loader — в `pwa_tests/fixtures/{baseline-v1.json,answer-types-v1.json,seed.py}`, проверки — в `pwa_tests/test_seed_runtime.py`, воспроизводимый отчёт — в `pwa_tests/reports/baseline-v1.md`.
+
+Auth/workload preflight реализованы в `vmshpwa/scripts/{auth_preflight,workload_profile,report_io,safe_source}.py`; проверки находятся в `pwa_tests/test_{auth_preflight,workload_profile}.py`. `make pwa-auth-preflight-check` и `make pwa-workload-profile-check` только перечитывают реальные источники и сверяют четыре aggregate reports. Обновление вынесено в отдельные `*-update` targets и требует просмотра diff. Эти live-source gates намеренно не входят в hermetic `make pwa-test`.
+
+Auth preflight отклоняет sidecars и symlink/hard-link aliases, затем читает exact bytes через secure fd (`O_NOFOLLOW_ANY` либо final-component `O_NOFOLLOW`), сверяя `lstat`/`fstat` и SHA-256 до/после. Анализ выполняется над `:memory:` SQLite, созданной `Connection.deserialize(exact_bytes)`, с `query_only`; source path SQLite повторно не открывает, `immutable=1` не используется, отсутствие deserialize — ошибка. В отчёт не попадают source rows, фамилии, token/login candidates, identifiers и неизвестные raw `users.type`: последние складываются только в aggregate other count. На снимке 27 июля 2026 года измерено 1617 Student rows: 10 имеют field/token blocker, 26 входят в 13 lower-bound collision groups, объединённая lower bound — 36 rows, provisional remainder — 1581. Это не окончательный activation result: canonical login generator и явный test-account flag отсутствуют.
+
+Техническая опора этой гарантии: [Python 3.14 `Connection.deserialize`](https://docs.python.org/3.14/library/sqlite3.html#sqlite3.Connection.deserialize), [SQLite `sqlite3_deserialize`](https://sqlite.org/c3ref/deserialize.html) с ограничением WAL-mode serialization и platform-dependent [`O_NOFOLLOW_ANY`](https://docs.python.org/3.14/library/os.html#os.O_NOFOLLOW_ANY), [`O_NOFOLLOW`](https://docs.python.org/3.14/library/os.html#os.O_NOFOLLOW), [`fstat`](https://docs.python.org/3.14/library/os.html#os.fstat). Код не меняет SQLite header bytes; непригодный к deserialize snapshot отклоняется fail-closed. Полная тестовая формулировка зафиксирована в [`testing-strategy.md`](../../docs/testing-strategy.md#aggregate-preflight-реальных-источников).
+
+Workload profile использует только raw `logs/events.jsonl` и 18 rotations `events.jsonl.YYYY-MM-DD`; PII-bearing filtered derivative `logs/selected.jsonl` исключён, чтобы не дублировать и не смещать выборку. Все source fd удерживаются открытыми; bytes читаются и хешируются через эти же descriptors, после parsing повторяются `fstat`/hash/path checks. Состав rotations проверяется повторно, symlink/hard-link/duplicate-inode aliases отклоняются, JSON records deduplicate-ятся по canonical representation, а event/source/actor labels проходят explicit allowlists. Текущий отчёт покрывает 176713 observed records и 37408 traces в окне 2–20 марта; completeness metadata отсутствует. Peak minute proxies — 38 ingress updates, 13 submission events, 11 review completions и 12 distinct flows. Concurrent sessions, request/write latency, photo bytes, outbox depth и `SQLITE_BUSY` budget остаются неизвестными и всё ещё блокируют окончательный performance input этапа 11.
+
+Каждый JSON/Markdown-файл заменяется отдельно через same-directory temporary file, file `fsync`, `os.replace` и directory `fsync`. Пара файлов не объявляется транзакцией: прерванная запись обнаруживается последующим `*-check`.
 
 Не коммитить production DB snapshot, credential-bearing rows из migration fixtures и реальные персональные данные.
 
@@ -66,6 +76,7 @@ Seed `baseline-v1` и первый release fixture:
 ## Автоматические проверки
 
 - Python: schema snapshot, seed repeatability, legacy characterization, app factory imports без Telegram/Google.
+- Python/preflight: aggregate-only auth classification, unknown-type redaction и collision lower bound; отказ от symlink/hard-link/SQLite sidecars; descriptor-bound source-change и duplicate-inode detection; deserialize absence/failure; exact/canonical event dedup; raw rotation selection; label allowlists, включая динамический middleware label; missing/stale report-pair detection и durable single-file replacement.
 - Python/integration: два connection/process writers, `SQLITE_BUSY` retry exhaustion, crash внутри transaction и schema-version mismatch без auto-apply.
 - Python/integration: два runtime workers держат shared lifecycle locks, seed/migrate требуют exclusive lock; lock сохраняется до aiohttp cleanup, а отдельный процесс не может открыть старую SQLite между финальной проверкой seed и `os.replace`.
 - Python/toolchain: default-name lookup через контролируемый `PATH`, absolute override, `None`, missing/non-executable file, fake version/error/timeout executables; реальные binary smoke отмечаются как environment capability test.
@@ -92,7 +103,7 @@ Seed `baseline-v1` и первый release fixture:
 - Characterization tests падают при изменении очереди, verdict mapping или answer enum.
 - Все последующие фазы имеют один воспроизводимый seed entrypoint.
 - Принят DB concurrency ADR; обычный app startup не применяет migrations, а намеренно устаревшая schema останавливает startup до обслуживания.
-- Auth preflight перечисляет все неактивируемые Student rows, workload profile задаёт численные входы для этапа 11, а external-process register не содержит строки без владельца/срока следующего решения.
+- Auth preflight считает measured lower-bound blockers без сериализации source values. Workload profile фиксирует доступные численные proxies и явно перечисляет недостающие performance inputs этапа 11; external-process register не содержит строки без владельца/срока следующего решения.
 - Toolchain config не содержит локальных абсолютных путей по умолчанию; preflight до запуска pipeline сообщает все отсутствующие обязательные capabilities и версии найденных converters.
 - S3 adapter fail-fast отклоняет неполную конфигурацию, а filesystem agent/E2E проходит без `creds_test`, `creds_prod` и network access.
 - Live Telegram test не запускается обычным unit/E2E, не использует production token/channel и перед отправкой подтверждает, что bot username/channel mapping совпали с test profile.
@@ -106,8 +117,8 @@ Seed `baseline-v1` и первый release fixture:
 - [ ] Golden corpus manifest: `<path>`; source hashes/encoding verified `<result>`.
 - [ ] Legacy characterization report: `<path>`.
 - [ ] DB concurrency/migration ADR и two-writer fault tests: `<path/result>`.
-- [ ] Auth preflight aggregates и unresolved policy rows: `<path/result>`.
-- [ ] Approved workload profile и external-process decommission register: `<paths>`.
+- [x] Auth preflight aggregates и unresolved policy: `pwa_tests/reports/auth-preflight.{json,md}`; 1617 Student, 36 measured lower-bound blockers, 1581 provisionally eligible, final eligibility unknown.
+- [ ] Workload profile: `pwa_tests/reports/workload-profile.{json,md}`; 176713 observed events/37408 traces и minute proxies зафиксированы, но concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget и approval всё ещё отсутствуют. External-process decommission register: `<path>`.
 - [ ] Converter config/probe contract и local capability report; server повторяет gate в этапе 11: `<paths/results>`.
 - [ ] Storage profile/config/redaction tests; opt-in test-bucket smoke либо documented skip: `<paths/results>`.
 - [ ] RecordingBot suite и opt-in `@vmsh179devbot`/test-channel capability+limits report с message IDs, без token: `<paths/results>`.

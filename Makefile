@@ -108,6 +108,21 @@ pwa-schema-live-check:
 pwa-schema-live-update:
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.schema_inventory report-live --database db/vmsh.db --write
 
+.PHONY: pwa-auth-preflight-check pwa-auth-preflight-update pwa-workload-profile-check pwa-workload-profile-update pwa-baseline-check
+pwa-auth-preflight-check:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.auth_preflight check
+
+pwa-auth-preflight-update:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.auth_preflight write
+
+pwa-workload-profile-check:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.workload_profile check
+
+pwa-workload-profile-update:
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.workload_profile write
+
+pwa-baseline-check: pwa-golden-check pwa-schema-check pwa-schema-live-check pwa-auth-preflight-check pwa-workload-profile-check
+
 .PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-visual pwa-visual-update telegram-history-test
 pwa-format:
 	cd $(PWA_DIR) && CI=true pnpm format

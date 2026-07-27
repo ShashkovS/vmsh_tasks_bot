@@ -26,6 +26,77 @@ E2E выполняется в Chromium, WebKit и Firefox. Критически�
 
 `make pwa-golden-check` сверяет все 54 файла `_vmsh_examples` с `vmshpwa/fixtures/content/golden-manifest.json`: SHA-256, encoding, роль и структурные счётчики. Manifest содержит только относительные пути и метаданные, без копий математического текста и персональных данных. `pwa-golden-update` разрешён только после просмотра изменившихся исходников; visual parity PWA/Telegram/PDF остаётся отдельным gate.
 
+## Aggregate preflight реальных источников
+
+Auth и workload baseline — локальные read-only проверки реальных артефактов, а не
+hermetic unit-тесты. Поэтому они не входят неявно в `make pwa-test`:
+
+- `make pwa-auth-preflight-check` повторно анализирует quiescent `db/vmsh.db` и
+  сверяет только агрегатные `pwa_tests/reports/auth-preflight.{json,md}`;
+- `make pwa-workload-profile-check` анализирует raw
+  `logs/events.jsonl` + `events.jsonl.YYYY-MM-DD` и сверяет
+  `pwa_tests/reports/workload-profile.{json,md}`;
+- `*-update` перезаписывает отчёты только после просмотра aggregate diff;
+- `make pwa-baseline-check` собирает эти read-only gates с golden/schema checks.
+
+Auth-команда отказывается работать при `-wal`/`-shm`/`-journal`, symlink и
+hard-link alias. Она открывает source fd с `O_NOFOLLOW_ANY`, где он доступен,
+иначе с final-component `O_NOFOLLOW`; сравнивает `lstat`/`fstat`, читает и
+SHA-256-хеширует exact bytes через тот же fd. Запросы идут к `:memory:` SQLite,
+полученной через `Connection.deserialize(exact_bytes)`, с `query_only` и явной
+read transaction: SQLite повторно path не открывает. Отсутствие/ошибка
+`deserialize` — fail-closed; `immutable=1` не используется. После запроса source
+fd и path проверяются повторно. Hard link запрещён, потому что journal sidecars
+привязаны к имени файла. Команда не сериализует фамилии, token, login candidates,
+chat/user IDs и неизвестные raw `users.type`: известные enum показываются
+allowlist-строками, остальные только общим count. Collision и activation
+остаются lower-bound до versioned login generator и явной классификации test
+accounts.
+
+Нормативные детали этого gate привязаны к primary documentation:
+
+- [Python 3.14 `sqlite3.Connection.deserialize`](https://docs.python.org/3.14/library/sqlite3.html#sqlite3.Connection.deserialize)
+  описывает замену database connection сериализованными bytes;
+  preflight отдельно доказывает `query_only=1` и fail-closed при
+  отсутствии или ошибке capability;
+- [SQLite `sqlite3_deserialize`](https://sqlite.org/c3ref/deserialize.html)
+  фиксирует in-memory semantics, возможность сборки без deserialize
+  и ограничение для WAL-mode serialization. Preflight не меняет
+  SQLite header bytes: WAL/journal sidecars и недесериализуемый
+  snapshot отклоняются;
+- [`os.O_NOFOLLOW_ANY`](https://docs.python.org/3.14/library/os.html#os.O_NOFOLLOW_ANY),
+  [`os.O_NOFOLLOW`](https://docs.python.org/3.14/library/os.html#os.O_NOFOLLOW) и
+  [`os.fstat`](https://docs.python.org/3.14/library/os.html#os.fstat) задают
+  платформенные примитивы. `O_NOFOLLOW_ANY` используется только
+  если его экспортирует platform; fallback защищает финальный
+  component через `O_NOFOLLOW`, а identity доказывается сверкой
+  `lstat`/`fstat`.
+
+Workload-команда держит fd всех источников открытыми, читает и хеширует bytes
+через эти же descriptors, затем повторяет `fstat`/hash и path identity check.
+Применяется strongest available `O_NOFOLLOW_ANY`/`O_NOFOLLOW`; состав rotations
+перепроверяется. Symlink, hard-link и duplicate-inode aliases, способные повторно
+посчитать одни raw lines, отклоняются.
+`logs/selected.jsonl` намеренно исключён: это PII-bearing filtered derivative,
+который дублирует выбранные raw events и искажает нагрузку. Raw labels проходят
+explicit allowlists; неизвестные значения становятся `other-*`, legacy numeric
+actor labels преобразуются только явной таблицей, а missing actor учитывается
+отдельно. Отчёт не содержит trace/flow, Telegram/user/chat IDs или payload
+fragments.
+
+Каждый report-файл создаётся во временном файле в том же каталоге, получает
+`fsync`, заменяется через `os.replace`, после чего выполняется `fsync` каталога.
+JSON и Markdown при этом не образуют общую транзакцию: прерванная между двумя
+replace команда может оставить частичную пару, и именно поэтому следующий
+`*-check` обязан сверять наличие и содержимое обоих файлов. Сообщение об ошибке
+ведёт к `make ...-update` либо эквивалентному `python -m ... write`, а не к
+неработоспособному запуску файла по path.
+
+Minute-level workload numbers — только observed proxies. Они не доказывают
+concurrent sessions, request/write latency, photo bytes, outbox depth или
+`SQLITE_BUSY` budget; отсутствующие входы должны быть получены отдельной
+telemetry/load characterization до закрытия этапа 0 и performance gate этапа 11.
+
 ## Visual regression
 
 Снимки страниц хранятся по browser project, делаются при фиксированном viewport, locale, timezone и reduced motion. Сейчас reference environment — macOS машины владельца; Docker normalization откладывается. `pwa-visual-update` не является способом «починить» тест: перед обновлением человек или агент обязан открыть diff, проверить обе темы и убедиться, что изменение ожидаемо. Raw snapshots не меняются вместе с не относящимся к UI refactor.
