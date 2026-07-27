@@ -128,6 +128,10 @@ Apply target обязан:
 - В immutable `content_revisions.provenance_json` неизвестные времена остаются
   `{value: null, source: manual_backfill, precision: unknown}`. Известные
   значения имеют provenance `explicit_mapping/exact`.
+- Известная историческая публикация помечается
+  `lesson_publications.provenance_kind = legacy_backfill`; исходный actor
+  остаётся `null`, а не подменяется текущим администратором. Для обычных
+  `interactive` публикаций database guard по-прежнему требует реального actor.
 - Condition source компилируется тем же Phase-2 compiler. Flattened число задач
   и подпунктов обязано совпасть с числом legacy problem rows; metadata сохраняет
   ссылку на исходный `problems.id`.

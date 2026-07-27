@@ -20,7 +20,11 @@ EXPECTED_COLUMNS = {
         "compile_attempt_count",
         "compile_completed_at",
     },
-    "lesson_publications": {"terminal_by_user_id", "terminal_at"},
+    "lesson_publications": {
+        "terminal_by_user_id",
+        "terminal_at",
+        "provenance_kind",
+    },
 }
 EXPECTED_OBJECTS = {
     "content_sources_one_active_material_uq",

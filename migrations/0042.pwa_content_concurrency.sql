@@ -44,14 +44,34 @@ alter table content_revisions add column compile_completed_at text;
 
 alter table lesson_publications add column terminal_by_user_id integer references users (id);
 alter table lesson_publications add column terminal_at text;
+-- Historical publication timestamps can be known even when the original actor
+-- is not.  Keep that uncertainty explicit instead of inventing a user ID, while
+-- retaining the stricter actor requirement for every interactive/API insert.
+alter table lesson_publications add column provenance_kind text not null default 'interactive'
+    check (provenance_kind in ('interactive', 'legacy_backfill'));
 
 create trigger lesson_publications_terminal_insert_guard
 before insert on lesson_publications
 for each row
 when new.state not in ('scheduled', 'published')
-    or new.created_by_user_id is null
-    or (new.state = 'scheduled' and new.published_by_user_id is not null)
-    or (new.state = 'published' and new.published_by_user_id is null)
+    or (
+        new.provenance_kind = 'interactive'
+        and (
+            new.created_by_user_id is null
+            or (new.state = 'scheduled' and new.published_by_user_id is not null)
+            or (new.state = 'published' and new.published_by_user_id is null)
+        )
+    )
+    or (
+        new.provenance_kind = 'legacy_backfill'
+        and (
+            new.state <> 'published'
+            or new.created_by_user_id is not null
+            or new.published_by_user_id is not null
+            or new.supersedes_publication_id is not null
+            or new.activated_from_schedule_id is not null
+        )
+    )
     or new.terminal_by_user_id is not null
     or new.terminal_at is not null
 begin
@@ -83,6 +103,7 @@ when not (
     )
     and new.created_by_user_id is old.created_by_user_id
     and new.published_by_user_id is old.published_by_user_id
+    and new.provenance_kind is old.provenance_kind
     and new.supersedes_publication_id is old.supersedes_publication_id
     and new.activated_from_schedule_id is old.activated_from_schedule_id
     and new.created_at is old.created_at

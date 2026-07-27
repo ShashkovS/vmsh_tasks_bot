@@ -1,5 +1,6 @@
 drop trigger lesson_publications_terminal_audit_guard;
 drop trigger lesson_publications_terminal_insert_guard;
+alter table lesson_publications drop column provenance_kind;
 alter table lesson_publications drop column terminal_at;
 alter table lesson_publications drop column terminal_by_user_id;
 alter table content_revisions drop column compile_completed_at;

@@ -350,6 +350,11 @@ def test_apply_is_transactional_and_idempotent_and_never_rewrites_legacy_rows(
             connection.execute("PRAGMA foreign_key_check").fetchall()
             == foreign_keys_before
         )
+        publication_provenance = connection.execute(
+            "SELECT DISTINCT provenance_kind, created_by_user_id, "
+            "published_by_user_id FROM lesson_publications"
+        ).fetchall()
+        assert publication_provenance == [("legacy_backfill", None, None)]
 
     _second_plan, second = apply_backfill(
         source,

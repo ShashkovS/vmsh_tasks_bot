@@ -1710,6 +1710,7 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                         "revision_id",
                         "state",
                         "published_at",
+                        "provenance_kind",
                         "created_at",
                         "updated_at",
                     ),
@@ -1720,6 +1721,7 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                         revision_id,
                         "published",
                         material.published_at,
+                        "legacy_backfill",
                         mapping.recorded_at,
                         mapping.recorded_at,
                     ),
@@ -1730,6 +1732,7 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                         "revision_id",
                         "state",
                         "published_at",
+                        "provenance_kind",
                     ),
                     expected=(
                         group_lesson_id,
@@ -1737,6 +1740,7 @@ def _apply_plan(connection: sqlite3.Connection, plan: BackfillPlan) -> Counter[s
                         revision_id,
                         "published",
                         material.published_at,
+                        "legacy_backfill",
                     ),
                 )
                 changes["publications"] += inserted

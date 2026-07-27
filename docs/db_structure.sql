@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: cd6d6a6c105419c31beb87a20fcc0942cb51b03648abec121854e1b0ec3db8a7
+-- Product schema SHA-256: 2e9213ffa9e3c77306a1cc85dd161ae2c7ff196bf69b88eb55aff60c74a645e8
 
 CREATE TABLE auth_accounts
 (
@@ -780,7 +780,8 @@ CREATE TABLE lesson_publications
     activated_from_schedule_id integer references lesson_publications (id),
     created_at                text    not null,
     updated_at                text    not null,
-    version                   integer not null default 1 check (version > 0), terminal_by_user_id integer references users (id), terminal_at text,
+    version                   integer not null default 1 check (version > 0), terminal_by_user_id integer references users (id), terminal_at text, provenance_kind text not null default 'interactive'
+    check (provenance_kind in ('interactive', 'legacy_backfill')),
     check (supersedes_publication_id is null or supersedes_publication_id <> id),
     check (activated_from_schedule_id is null or activated_from_schedule_id <> id),
     check (activated_from_schedule_id is null or state = 'published'),
@@ -2115,6 +2116,7 @@ when not (
     )
     and new.created_by_user_id is old.created_by_user_id
     and new.published_by_user_id is old.published_by_user_id
+    and new.provenance_kind is old.provenance_kind
     and new.supersedes_publication_id is old.supersedes_publication_id
     and new.activated_from_schedule_id is old.activated_from_schedule_id
     and new.created_at is old.created_at
@@ -2132,9 +2134,24 @@ CREATE TRIGGER lesson_publications_terminal_insert_guard
 before insert on lesson_publications
 for each row
 when new.state not in ('scheduled', 'published')
-    or new.created_by_user_id is null
-    or (new.state = 'scheduled' and new.published_by_user_id is not null)
-    or (new.state = 'published' and new.published_by_user_id is null)
+    or (
+        new.provenance_kind = 'interactive'
+        and (
+            new.created_by_user_id is null
+            or (new.state = 'scheduled' and new.published_by_user_id is not null)
+            or (new.state = 'published' and new.published_by_user_id is null)
+        )
+    )
+    or (
+        new.provenance_kind = 'legacy_backfill'
+        and (
+            new.state <> 'published'
+            or new.created_by_user_id is not null
+            or new.published_by_user_id is not null
+            or new.supersedes_publication_id is not null
+            or new.activated_from_schedule_id is not null
+        )
+    )
     or new.terminal_by_user_id is not null
     or new.terminal_at is not null
 begin

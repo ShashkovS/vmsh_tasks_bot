@@ -6878,6 +6878,15 @@
             "name": "terminal_at",
             "not_null": false,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 18,
+            "declared_type": "TEXT",
+            "default_sql": "'interactive'",
+            "hidden": 0,
+            "name": "provenance_kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -7105,8 +7114,8 @@
           }
         ],
         "name": "lesson_publications",
-        "object_sha256": "41f7d0c7972fbe66f40434b84578881d5c1d37a1f08cefc9ac067ce340f9455a",
-        "sql": "CREATE TABLE lesson_publications\n(\n    id                        integer primary key,\n    public_id                 text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    group_lesson_id           integer not null references group_lessons (id),\n    kind                      text    not null\n        check (kind in ('condition', 'hint', 'solution')),\n    revision_id               integer not null references content_revisions (id),\n    state                     text    not null\n        check (state in ('scheduled', 'published', 'superseded', 'hidden')),\n    scheduled_at              text,\n    published_at              text,\n    hidden_at                 text,\n    created_by_user_id        integer references users (id),\n    published_by_user_id      integer references users (id),\n    supersedes_publication_id integer references lesson_publications (id),\n    activated_from_schedule_id integer references lesson_publications (id),\n    created_at                text    not null,\n    updated_at                text    not null,\n    version                   integer not null default 1 check (version > 0), terminal_by_user_id integer references users (id), terminal_at text,\n    check (supersedes_publication_id is null or supersedes_publication_id <> id),\n    check (activated_from_schedule_id is null or activated_from_schedule_id <> id),\n    check (activated_from_schedule_id is null or state = 'published'),\n    check (state <> 'scheduled' or scheduled_at is not null),\n    check (state <> 'published' or published_at is not null),\n    check (state <> 'hidden' or hidden_at is not null)\n);",
+        "object_sha256": "77f0ecfda2a51c5192c7595a197e16ec6410754f3b7c468b42f27add815af1f8",
+        "sql": "CREATE TABLE lesson_publications\n(\n    id                        integer primary key,\n    public_id                 text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    group_lesson_id           integer not null references group_lessons (id),\n    kind                      text    not null\n        check (kind in ('condition', 'hint', 'solution')),\n    revision_id               integer not null references content_revisions (id),\n    state                     text    not null\n        check (state in ('scheduled', 'published', 'superseded', 'hidden')),\n    scheduled_at              text,\n    published_at              text,\n    hidden_at                 text,\n    created_by_user_id        integer references users (id),\n    published_by_user_id      integer references users (id),\n    supersedes_publication_id integer references lesson_publications (id),\n    activated_from_schedule_id integer references lesson_publications (id),\n    created_at                text    not null,\n    updated_at                text    not null,\n    version                   integer not null default 1 check (version > 0), terminal_by_user_id integer references users (id), terminal_at text, provenance_kind text not null default 'interactive'\n    check (provenance_kind in ('interactive', 'legacy_backfill')),\n    check (supersedes_publication_id is null or supersedes_publication_id <> id),\n    check (activated_from_schedule_id is null or activated_from_schedule_id <> id),\n    check (activated_from_schedule_id is null or state = 'published'),\n    check (state <> 'scheduled' or scheduled_at is not null),\n    check (state <> 'published' or published_at is not null),\n    check (state <> 'hidden' or hidden_at is not null)\n);",
         "table_name": "lesson_publications",
         "type": "table"
       },
@@ -13282,15 +13291,15 @@
       },
       {
         "name": "lesson_publications_terminal_audit_guard",
-        "object_sha256": "7dda18915d47de2cb5da5fe32a5561ef8eb5c9c0626dd55844dc310e7165361f",
-        "sql": "CREATE TRIGGER lesson_publications_terminal_audit_guard\nbefore update on lesson_publications\nfor each row\nwhen not (\n    old.state in ('scheduled', 'published')\n    and new.state in ('hidden', 'superseded')\n    and new.state is not old.state\n    and new.version = old.version + 1\n    and old.terminal_by_user_id is null\n    and old.terminal_at is null\n    and new.public_id is old.public_id\n    and new.group_lesson_id is old.group_lesson_id\n    and new.kind is old.kind\n    and new.revision_id is old.revision_id\n    and new.scheduled_at is old.scheduled_at\n    and new.published_at is old.published_at\n    and (\n        (new.state = 'hidden' and new.hidden_at is not null)\n        or (new.state = 'superseded' and new.hidden_at is old.hidden_at)\n    )\n    and new.created_by_user_id is old.created_by_user_id\n    and new.published_by_user_id is old.published_by_user_id\n    and new.supersedes_publication_id is old.supersedes_publication_id\n    and new.activated_from_schedule_id is old.activated_from_schedule_id\n    and new.created_at is old.created_at\n    and new.updated_at >= old.updated_at\n    and new.terminal_by_user_id is not null\n    and new.terminal_at is not null\n    and new.terminal_at is new.updated_at\n    and new.terminal_at >= old.created_at\n)\nbegin\n    select raise(abort, 'publication terminal audit/version transition is invalid');\nend;",
+        "object_sha256": "0bb85564299b50cf7f57a6fb40fe40bc86ad270bb89f5bda6957cb1df815f7e5",
+        "sql": "CREATE TRIGGER lesson_publications_terminal_audit_guard\nbefore update on lesson_publications\nfor each row\nwhen not (\n    old.state in ('scheduled', 'published')\n    and new.state in ('hidden', 'superseded')\n    and new.state is not old.state\n    and new.version = old.version + 1\n    and old.terminal_by_user_id is null\n    and old.terminal_at is null\n    and new.public_id is old.public_id\n    and new.group_lesson_id is old.group_lesson_id\n    and new.kind is old.kind\n    and new.revision_id is old.revision_id\n    and new.scheduled_at is old.scheduled_at\n    and new.published_at is old.published_at\n    and (\n        (new.state = 'hidden' and new.hidden_at is not null)\n        or (new.state = 'superseded' and new.hidden_at is old.hidden_at)\n    )\n    and new.created_by_user_id is old.created_by_user_id\n    and new.published_by_user_id is old.published_by_user_id\n    and new.provenance_kind is old.provenance_kind\n    and new.supersedes_publication_id is old.supersedes_publication_id\n    and new.activated_from_schedule_id is old.activated_from_schedule_id\n    and new.created_at is old.created_at\n    and new.updated_at >= old.updated_at\n    and new.terminal_by_user_id is not null\n    and new.terminal_at is not null\n    and new.terminal_at is new.updated_at\n    and new.terminal_at >= old.created_at\n)\nbegin\n    select raise(abort, 'publication terminal audit/version transition is invalid');\nend;",
         "table_name": "lesson_publications",
         "type": "trigger"
       },
       {
         "name": "lesson_publications_terminal_insert_guard",
-        "object_sha256": "1e7d758d8e65608f081e0717f19a2784e9fee9dda3841a3377c071646f78345f",
-        "sql": "CREATE TRIGGER lesson_publications_terminal_insert_guard\nbefore insert on lesson_publications\nfor each row\nwhen new.state not in ('scheduled', 'published')\n    or new.created_by_user_id is null\n    or (new.state = 'scheduled' and new.published_by_user_id is not null)\n    or (new.state = 'published' and new.published_by_user_id is null)\n    or new.terminal_by_user_id is not null\n    or new.terminal_at is not null\nbegin\n    select raise(abort, 'publication must begin in an active non-terminal state');\nend;",
+        "object_sha256": "c7b753da223008fcce08ae66f397add0fd134b8b914a250d861dc069f6d683a0",
+        "sql": "CREATE TRIGGER lesson_publications_terminal_insert_guard\nbefore insert on lesson_publications\nfor each row\nwhen new.state not in ('scheduled', 'published')\n    or (\n        new.provenance_kind = 'interactive'\n        and (\n            new.created_by_user_id is null\n            or (new.state = 'scheduled' and new.published_by_user_id is not null)\n            or (new.state = 'published' and new.published_by_user_id is null)\n        )\n    )\n    or (\n        new.provenance_kind = 'legacy_backfill'\n        and (\n            new.state <> 'published'\n            or new.created_by_user_id is not null\n            or new.published_by_user_id is not null\n            or new.supersedes_publication_id is not null\n            or new.activated_from_schedule_id is not null\n        )\n    )\n    or new.terminal_by_user_id is not null\n    or new.terminal_at is not null\nbegin\n    select raise(abort, 'publication must begin in an active non-terminal state');\nend;",
         "table_name": "lesson_publications",
         "type": "trigger"
       },
@@ -13386,8 +13395,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "cc42bbb543042059ad0bd30c5f99fa6e4d57c36f176489d858beddca2e6486a2",
-    "sha256": "cd6d6a6c105419c31beb87a20fcc0942cb51b03648abec121854e1b0ec3db8a7"
+    "pragma_structure_sha256": "70698cb5931c0adff6d34f49c1e34c50c4ddd82fdf8063b322ca103da31cc32d",
+    "sha256": "2e9213ffa9e3c77306a1cc85dd161ae2c7ff196bf69b88eb55aff60c74a645e8"
   },
   "source_kind": "repository-migration-head"
 }
