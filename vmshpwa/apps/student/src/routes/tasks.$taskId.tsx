@@ -7,7 +7,9 @@ import { StudentPublishedContentPage } from '../content-page'
 
 const taskContentSearchSchema = z.object({
   groupLesson: publicIdSchema.optional(),
-  material: contentMaterialKindSchema.catch('condition'),
+  // Keep an omitted default out of the URL so auth redirects preserve a
+  // shared deep link byte-for-byte. The component applies the product default.
+  material: contentMaterialKindSchema.optional().catch(undefined),
   problem: z.coerce.number().int().positive().optional(),
 })
 
@@ -20,7 +22,7 @@ function StudentTaskRoute() {
   const search = Route.useSearch()
   return (
     <StudentPublishedContentPage
-      kind={search.material}
+      kind={search.material ?? 'condition'}
       taskId={Route.useParams().taskId}
       {...(search.groupLesson ? { groupLessonId: search.groupLesson } : {})}
       {...(search.problem ? { problemOrdinal: search.problem } : {})}

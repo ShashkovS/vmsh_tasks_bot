@@ -54,4 +54,19 @@ describe('Student authentication routing', () => {
       }),
     ).toBe('/tasks?course=math#part-2')
   })
+
+  it('does not write an implicit content kind into an anonymous deep link', async () => {
+    const router = createRouter({
+      routeTree,
+      basepath: '/student',
+      history: createMemoryHistory({
+        initialEntries: ['/student/tasks/geometry-7?course=math-5-7&view=sheet#part-2'],
+      }),
+    })
+
+    await router.load()
+
+    expect(router.state.location.searchStr).toBe('?course=math-5-7&view=sheet')
+    expect(router.state.location.href).not.toContain('material=condition')
+  })
 })

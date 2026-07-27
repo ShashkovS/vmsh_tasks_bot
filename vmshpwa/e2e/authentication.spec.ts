@@ -217,7 +217,12 @@ for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONA
       ),
     ).toEqual([])
 
-    await page.reload()
+    // The authenticated boundary may already be redirecting after the 401.
+    // Wait for that navigation before reloading so WebKit does not race two
+    // top-level loads and report a spurious "Frame load interrupted".
+    await expect(page).toHaveURL((url) => url.pathname === `/${persona.audience}/login`)
+    await expect(page.getByRole('button', { name: 'Войти' })).toBeVisible()
+    await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL((url) => url.pathname === `/${persona.audience}/login`)
     await expect(page.getByRole('button', { name: 'Войти' })).toBeVisible()
   })
