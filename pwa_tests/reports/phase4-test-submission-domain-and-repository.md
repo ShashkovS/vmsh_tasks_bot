@@ -1,15 +1,16 @@
-# Phase 4A–4C — правила, хранение и Student API тестовых сдач
+# Phase 4A–4D — правила, хранение, Student API и offline foundation тестовых сдач
 
 Дата: 2026-07-28
 
-Revisions: `6409191`, `bd0487f`, `1d5df54`, `7793d0f`, `0475cd0`
+Revisions: `6409191`, `bd0487f`, `1d5df54`, `7793d0f`, `0475cd0`,
+`6d1909c`, `bab5947`, `5b682d1`, `3d22373`
 
 ## Проверяемый результат
 
 Каркас Phase 4 теперь содержит доменные правила всех исторических типов
-тестового ответа, атомарный SQLite repository и authenticated Student HTTP
-вертикаль. Инкремент ещё не включает production Student UI/outbox и не
-считается завершением всего этапа.
+тестового ответа, атомарный SQLite repository, authenticated Student HTTP
+вертикаль, браузерный transport, local draft и Dexie outbox. Инкремент ещё не
+подключён к production Student page и не считается завершением всего этапа.
 
 Реализовано:
 
@@ -42,8 +43,8 @@ Strict Zod contract и versioned fixtures находятся в
 `vmshpwa/packages/contracts/src/submissions.ts` и
 `vmshpwa/packages/contracts/fixtures/submissions/`. Они фиксируют:
 
-- request `schemaVersion`, canonical UUID, исходный `displayAnswer` и UTC
-  `clientCreatedAt`;
+- request `schemaVersion`, canonical UUID, expected `problemRevision`, исходный
+  `displayAnswer` и UTC `clientCreatedAt`;
 - согласованные `outcome`, `checkStatus`, nullable verdict/result version,
   user-facing feedback и лимиты;
 - owner/problem-scoped query keys и безопасную reverse-chronological history;
@@ -63,6 +64,33 @@ Strict Zod contract и versioned fixtures находятся в
 
 После будущего admin recheck история предпочитает authoritative attempt state
 и не соединяет его со stale feedback старого idempotency receipt.
+
+## Browser transport, draft и outbox
+
+[`submission-client.ts`](../../vmshpwa/packages/app-shell/src/submission-client.ts)
+даёт same-origin Student transport и TanStack Query hooks. При единственном
+retry после `401` он повторяет тот же сериализованный body и idempotency UUID,
+отделяет network/cancel/protocol/API errors и принимает только точные `201`/`200`
+contract responses.
+
+[`test-answer-draft.ts`](../../vmshpwa/packages/offline/src/test-answer-draft.ts)
+хранит малый текстовый draft в `localStorage` под ключом runtime + audience +
+account + problem + condition revision + config version. Несовместимая старая
+revision возвращается отдельно и не перезаписывается; corrupt value удаляется,
+а quota/write error обязательно доходит до UI.
+
+[`test-answer-outbox.ts`](../../vmshpwa/packages/offline/src/test-answer-outbox.ts)
+создаёт один immutable versioned wire request в Dexie. Expected
+`problemRevision` является обязательной частью POST-контракта, поэтому сервер
+отклоняет доставленный после редактирования условия ответ как
+`409 test_problem_revision_changed`. Очередь:
+
+- повторяет исходные UUID, timestamp, display value, revision и payload hash;
+- сериализует конкурентный claim и восстанавливает просроченный sending lease;
+- оставляет network failure в `retrying`, revision/idempotency mismatch — в
+  `conflict`, terminal отказ — в `failed`;
+- сохраняет валидный server receipt в состоянии `synced` до того, как UI
+  очистит точный draft и явно вызовет acknowledge.
 
 ## Границы authority и транзакции
 
@@ -101,7 +129,13 @@ full pwa_tests (JUnit authority)
 1172 PASS / 3 intentional skips / 5 existing SymPy warnings
 
 full frontend unit
-36 files / 294 PASS
+39 files / 311 PASS
+
+offline package focused
+7 files / 34 PASS
+
+submission contract + browser transport focused
+2 files / 14 PASS
 
 Ruff format-check + Ruff check
 PASS
@@ -135,9 +169,9 @@ Student-only realtime cursor.
 
 ## Открытые границы Phase 4
 
-- нет frontend draft/outbox, optimistic/pending UI и восстановления после
-  reload;
-- нет production page wiring и Storybook interaction для настоящего клиента;
+- local draft/outbox и transport ещё не скомпонованы с production Student
+  route; нет optimistic/pending UI и полного reload orchestration;
+- нет production page wiring и Storybook interaction с настоящим transport;
 - нет production-build Playwright сценария с настоящим aiohttp/SQLite;
 - legacy Telegram adapter ещё не переведён на общий submission service;
 - нет Staff recheck/configuration-repair flow.

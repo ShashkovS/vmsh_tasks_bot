@@ -634,6 +634,27 @@
   Snapshots не обновлялись, owner visual approval и generated-PDF parity всё
   ещё не закрыты.
 
+## Phase 4 browser transport и offline foundation — 28 июля 2026
+
+- [`submission-client.ts`](../../packages/app-shell/src/submission-client.ts)
+  добавляет strict same-origin Student transport и TanStack Query hooks;
+  единственный `401` retry повторяет тот же body и UUID.
+- POST-контракт теперь обязательно несёт expected condition revision/config
+  version. Реальный aiohttp отклоняет stale offline payload как
+  `409 test_problem_revision_changed`; focused Python integration — **21 PASS**.
+- [`test-answer-draft.ts`](../../packages/offline/src/test-answer-draft.ts)
+  сохраняет account/problem/revision-scoped текст в `localStorage`, явно
+  возвращает несовместимую revision и не скрывает write/quota failure.
+- [`test-answer-outbox.ts`](../../packages/offline/src/test-answer-outbox.ts)
+  сохраняет immutable request/UUID/hash в Dexie, сериализует claim, повторяет
+  network failure и crashed sending lease, удерживает conflict/failed и
+  удаляет synced запись только после явного acknowledge.
+- Offline focused — **7 файлов / 34 PASS**; полный frontend unit — **39 файлов /
+  311 PASS**; TypeScript и scoped ESLint — PASS. Подробный proof:
+  [`phase4-test-submission-domain-and-repository.md`](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md).
+- Production Student route ещё не компонует transport + draft + outbox;
+  optimistic/pending UI, Storybook interaction и Playwright остаются открыты.
+
 ## Историческая проверка многокурсового прототипа
 
 Проверено 26 июля 2026 года до Phase 0 runtime-hardening; числовые результаты
@@ -659,7 +680,7 @@
 |    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)            | частично; production gates открыты |
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)         | Browser path принят; этап открыт   |
 |    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A–3H приняты; visual открыт |
-|    4 | `6409191`…`0475cd0` | [Phase 4A–4C proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | частично; UI/E2E открыты            |
+|    4 | `6409191`…`3d22373` | [Phase 4A–4D proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | частично; UI/E2E открыты            |
 |    5 | —                    | —                                                              | —                                  |
 |    6 | —                    | —                                                              | —                                  |
 |    7 | —                    | —                                                              | —                                  |
