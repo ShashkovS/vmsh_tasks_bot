@@ -15,7 +15,7 @@
 | Этап 2              | Phase 2A–2E + browser E2E      | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
 | Этап 3              | Phase 3A–3H reading slice      | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
 | Этап 4              | Phase 4A–4G functionally ready | Domain/API, draft/outbox, Student submit, Staff recheck и общая PWA/Telegram policy готовы; открыт только visual owner gate                                           |
-| Этап 5              | Phase 5A–5C server vertical    | Evidence schema, text/photo draft/submit/read, WebP storage compensation, strict contracts и authenticated API проверены; edit/offline UI/backfill ещё не реализованы |
+| Этап 5              | Phase 5A–5D server vertical    | Evidence schema, text/photo draft/submit/read/edit, WebP compensation и review-lock проверены; offline UI/backfill ещё не реализованы                              |
 | Этапы 6–11          | planned with gates             | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review    | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype    | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
@@ -103,6 +103,7 @@
 | 2026-07-28 | PLAN-077 | Каждая Student written entry фиксирует exact problem revision                                            | Thread остаётся общей историей после правки условия; новая entry не теряет provenance, legacy teacher/Telegram backfill может оставить revision nullable      |
 | 2026-07-28 | PLAN-078 | Written draft синхронизируется отдельно от окончательной отправки                                        | Поздняя offline-доставка не теряет материал; cutoff применяется при submit к immutable client time, server time и suspicious-clock сохраняются                |
 | 2026-07-28 | PLAN-079 | Submission photo хранится только как уникальный final WebP после server re-encode                         | Source не попадает в durable storage; DB failure компенсирует object delete, filesystem использует owner-only mediaPath, production может отдать public S3 URL |
+| 2026-07-28 | PLAN-080 | До review-lock страницы можно удалить и переупорядочить; после lock evidence неизменяемо                  | Удаление сразу убирает projection и ставит asset deleted_at; final object остаётся под admin-managed retention до отдельной manifest-driven очистки             |
 
 ## Текущий инкремент этапа 0
 
@@ -426,11 +427,27 @@
   warning**, Storybook browser **38 файлов / 187 PASS**; lint, strict typecheck
   и production build с обоими injectManifest — PASS. Proof:
   [`phase5-written-attachment-api.md`](../../../pwa_tests/reports/phase5-written-attachment-api.md).
-- Следующий gate: attachment delete/reorder и lock conflict, затем browser
-  worker + localStorage/Dexie composer/outbox. Post-submit pre-review atomic
-  replacement, live test S3, legacy backfill/reassignment, Staff review,
-  Storybook interaction, production E2E и visual owner gate остаются открыты;
-  snapshots не обновлялись.
+- Phase 5D revision `38579a5` добавляет complete-list reorder, logical delete
+  и explicit no-op response для draft и submitted-before-review evidence.
+  SQLite migration `0049` запрещает оставить submitted entry без текста и
+  фотографий; owner/version/state/lock повторно проверяются в одной write
+  transaction.
+- Reorder использует временные sparse ordinals и заканчивает плотным `0…n-1`.
+  Delete сразу удаляет attachment из projection и ставит asset `deleted_at`;
+  physical final WebP остаётся под принятой admin-managed retention policy.
+  Locked evidence возвращает отдельный conflict, exact replay не меняет версии
+  и не публикует повторную invalidation.
+- Repository/schema/real-aiohttp checkpoint — **88 PASS**, written Zod — **6
+  PASS**, schema inventory — **264 objects / PASS**. Полный checkpoint:
+  frontend **43 файла / 329 PASS**, Python PWA **1215 PASS / 3 intentional
+  skips / 1 existing SymPy warning**, Storybook browser **38 файлов / 187
+  PASS**; lint, strict typecheck и production build с обоими injectManifest —
+  PASS. Proof:
+  [`phase5-written-attachment-mutations.md`](../../../pwa_tests/reports/phase5-written-attachment-mutations.md).
+- Следующий gate: browser worker + localStorage/Dexie composer/outbox и
+  thumbnails. Post-submit pre-review atomic replacement, live test S3, legacy
+  backfill/reassignment, Staff review, Storybook interaction, production E2E
+  и visual owner gate остаются открыты; snapshots не обновлялись.
 
 ## Текущий инкремент этапа 1
 
@@ -793,7 +810,7 @@
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                          | Browser path принят; этап открыт      |
 |    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                  | Phase 3A–3H приняты; visual открыт    |
 |    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | функционально; visual открыт          |
-|    5 | `5acecbb`…`9c065db`  | [Phase 5A–5C proof](../../../pwa_tests/reports/phase5-written-attachment-api.md)                | частично; server text/photo vertical принят |
+|    5 | `5acecbb`…`38579a5`  | [Phase 5A–5D proof](../../../pwa_tests/reports/phase5-written-attachment-mutations.md)          | частично; server text/photo edit vertical принят |
 |    6 | —                    | —                                                                                               | —                                     |
 |    7 | —                    | —                                                                                               | —                                     |
 |    8 | —                    | —                                                                                               | —                                     |
