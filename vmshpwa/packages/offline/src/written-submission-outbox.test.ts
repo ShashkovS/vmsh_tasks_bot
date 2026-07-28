@@ -11,6 +11,8 @@ import {
   type CreateWrittenEntryResponse,
   type MutateWrittenAttachmentsResponse,
   type ReorderWrittenAttachmentsRequest,
+  type ReplaceWrittenEntryRequest,
+  type ReplaceWrittenEntryResponse,
   type SubmitWrittenEntryRequest,
   type SubmitWrittenEntryResponse,
   type WrittenAttachment,
@@ -224,6 +226,27 @@ class RecordingTransport implements WrittenSubmissionTransport {
     })
   }
 
+  replace(
+    _entryId: string,
+    request: ReplaceWrittenEntryRequest,
+  ): Promise<ReplaceWrittenEntryResponse> {
+    this.calls.push({ operation: 'replace', request })
+    expect(request.expectedEntryVersion).toBe(this.entryVersion)
+    expect(request.expectedThreadVersion).toBe(this.threadVersion)
+    this.entryVersion += 1
+    this.threadVersion += 1
+    return Promise.resolve({
+      ...this.mutation<ReplaceWrittenEntryResponse>(
+        'submitted',
+        'awaiting_review',
+        'request-replace',
+      ),
+      replacedEntryId: request.replacedEntryId,
+      replacementEventId: 'written-replacement-one',
+      clockSuspicious: false,
+    })
+  }
+
   private mutation<T>(
     state: 'draft' | 'submitted',
     threadStatus: 'open' | 'awaiting_review',
@@ -381,6 +404,38 @@ describe('written-submission outbox', () => {
     expect(result.state).toBe('synced')
     expect(transport.calls.map(({ operation }) => operation)).toEqual(['create', 'submit'])
     expect((transport.calls[1]?.request as SubmitWrittenEntryRequest).attachmentIds).toEqual([])
+  })
+
+  it('persists replacement intent and atomically completes through replace instead of submit', async () => {
+    const { draft, outbox } = stores('written-replacement')
+    draft.saveText(descriptor(), 'Исправленное решение')
+    draft.saveReplacementTarget(descriptor(), {
+      entryId: 'written-entry-original',
+      entryVersion: 7,
+    })
+    const queued = await outbox.enqueue(descriptor())
+    const transport = new RecordingTransport()
+
+    const result = await outbox.deliverNext(transport)
+
+    expect(result.state).toBe('synced')
+    expect(transport.calls.map(({ operation }) => operation)).toEqual(['create', 'replace'])
+    expect(transport.calls[1]?.request).toMatchObject({
+      replacedEntryId: 'written-entry-original',
+      expectedReplacedEntryVersion: 7,
+    })
+    const stored = (await outbox.list())[0]
+    expect(stored).toMatchObject({
+      id: queued.id,
+      status: 'synced',
+      payload: {
+        replacementTarget: { entryId: 'written-entry-original', entryVersion: 7 },
+      },
+      result: {
+        replacedEntryId: 'written-entry-original',
+        replacementEventId: 'written-replacement-one',
+      },
+    })
   })
 
   it('does not issue a redundant reorder request for one photo', async () => {

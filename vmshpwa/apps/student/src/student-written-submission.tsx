@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CheckCircle2, CloudOff, TriangleAlert } from 'lucide-react'
+import { CheckCircle2, CloudOff, Pencil, TriangleAlert } from 'lucide-react'
 
 import {
   createWrittenSubmissionClient,
@@ -13,6 +13,7 @@ import {
   useOfflineDatabase,
   type ResolvedWrittenDraftPhoto,
   type WrittenDraftDescriptor,
+  type WrittenDraftReplacementTarget,
   type WrittenSubmissionOutboxItem,
 } from '@vmsh/offline'
 import { SubmissionComposer, type AttachmentView } from '@vmsh/product'
@@ -160,6 +161,10 @@ export function StudentWrittenSubmission({
   const [photos, setPhotos] = useState<ResolvedWrittenDraftPhoto[]>([])
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
   const [queueItem, setQueueItem] = useState<WrittenSubmissionOutboxItem | null>(null)
+  const [replacementTarget, setReplacementTarget] = useState<WrittenDraftReplacementTarget | null>(
+    null,
+  )
+  const [replacementLoading, setReplacementLoading] = useState(false)
   const [storageError, setStorageError] = useState<unknown>(draftStore.error)
   const [sendError, setSendError] = useState<string | null>(null)
   const [savedAt, setSavedAt] = useState<string | null>(null)
@@ -172,6 +177,7 @@ export function StudentWrittenSubmission({
     const loaded = await draftStore.value.load(descriptor)
     setText(loaded.compatible?.text ?? '')
     setPhotos(loaded.compatible?.photos ?? [])
+    setReplacementTarget(loaded.compatible?.replacementTarget ?? null)
     setStorageError(null)
   }, [descriptor, draftStore.value])
 
@@ -191,6 +197,7 @@ export function StudentWrittenSubmission({
         const item = relevantItem(items, descriptor)
         setText(loaded.compatible?.text ?? '')
         setPhotos(loaded.compatible?.photos ?? [])
+        setReplacementTarget(loaded.compatible?.replacementTarget ?? null)
         setQueueItem(item)
         setStorageError(null)
         setHydrated(true)
@@ -200,6 +207,7 @@ export function StudentWrittenSubmission({
           if (active) {
             setText('')
             setPhotos([])
+            setReplacementTarget(null)
             setQueueItem(null)
             void refetchThread()
           }
@@ -259,6 +267,7 @@ export function StudentWrittenSubmission({
       setQueueItem(null)
       setText('')
       setPhotos([])
+      setReplacementTarget(null)
       await refetchThread()
     } catch (error) {
       setSendError(deliveryMessage(error))
@@ -397,6 +406,14 @@ export function StudentWrittenSubmission({
   const submit = async () => {
     setSendError(null)
     try {
+      if (
+        replacementTarget &&
+        !window.confirm(
+          'Заменить ранее отправленное решение этой версией? Прежняя версия исчезнет из очереди проверки.',
+        )
+      ) {
+        return
+      }
       const item = await outbox.enqueue(descriptor)
       setQueueItem(item)
       if (navigator.onLine) await deliver()
@@ -432,13 +449,110 @@ export function StudentWrittenSubmission({
   const queued = queueItem !== null && ['queued', 'retrying', 'sending'].includes(queueItem.status)
   const totalBytes = photos.reduce((sum, photo) => sum + photo.byteSize, 0)
   const threadStatus = threadQuery.data?.thread?.status ?? null
+  const replaceableEntry = [...(threadQuery.data?.thread?.entries ?? [])]
+    .reverse()
+    .find(
+      (entry) =>
+        entry.authorKind === 'student' &&
+        entry.entryKind === 'submission' &&
+        entry.state === 'submitted',
+    )
+
+  const beginReplacement = async () => {
+    if (!replaceableEntry || queued || replacementLoading) return
+    if (
+      !window.confirm(
+        'Подготовить замену отправленного решения? До отправки прежняя версия останется без изменений.',
+      )
+    ) {
+      return
+    }
+    const target = {
+      entryId: replaceableEntry.entryId,
+      entryVersion: replaceableEntry.version,
+    }
+    try {
+      draftStore.value.saveReplacementTarget(descriptor, target)
+      setReplacementTarget(target)
+      setSent(false)
+      if (text.trim() || photos.length > 0) return
+      setReplacementLoading(true)
+      draftStore.value.saveText(descriptor, replaceableEntry.text ?? '')
+      for (const [index, attachment] of replaceableEntry.attachments.entries()) {
+        const blob = await client.attachmentMedia(replaceableEntry.entryId, attachment.attachmentId)
+        await draftStore.value.addPhoto(descriptor, {
+          fileName: `Страница ${index + 1}.webp`,
+          blob,
+          width: attachment.width,
+          height: attachment.height,
+          processing: 'client-webp',
+        })
+      }
+      await reloadDraft()
+      setSavedAt(new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }))
+    } catch {
+      setSendError(
+        'Не удалось полностью скопировать прежнюю версию. Уже сохранённые страницы не потеряны; проверьте черновик и добавьте недостающие.',
+      )
+      await reloadDraft().catch(() => undefined)
+    } finally {
+      setReplacementLoading(false)
+    }
+  }
+
+  const cancelReplacement = () => {
+    if (
+      !window.confirm(
+        'Отменить режим замены? Текст и фотографии останутся в черновике и смогут отправиться новым сообщением.',
+      )
+    ) {
+      return
+    }
+    try {
+      draftStore.value.saveReplacementTarget(descriptor, null)
+      setReplacementTarget(null)
+      setStorageError(null)
+    } catch (error) {
+      setStorageError(error)
+    }
+  }
 
   return (
     <Card className="mt-5">
       <CardHeader>
-        <CardTitle>Сдать решение</CardTitle>
+        <CardTitle>{replacementTarget ? 'Изменить решение' : 'Сдать решение'}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {replaceableEntry && !replacementTarget && !queued ? (
+          <Button
+            disabled={replacementLoading}
+            onClick={() => void beginReplacement()}
+            size="sm"
+            variant="outline"
+          >
+            <Pencil aria-hidden="true" />
+            Изменить отправленное решение
+          </Button>
+        ) : null}
+        {replacementTarget ? (
+          <Alert tone="info">
+            <Pencil aria-hidden="true" />
+            <AlertContent>
+              <AlertTitle>
+                {replacementLoading ? 'Копируем прежнее решение…' : 'Готовится замена'}
+              </AlertTitle>
+              <AlertDescription>
+                Прежнее решение останется в очереди до полной отправки этой версии. После
+                подтверждения текст и фотографии заменятся одной операцией.
+              </AlertDescription>
+              {!queued && !replacementLoading ? (
+                <Button className="mt-2" onClick={cancelReplacement} size="sm" variant="ghost">
+                  Отменить замену
+                </Button>
+              ) : null}
+            </AlertContent>
+          </Alert>
+        ) : null}
         {threadStatus === 'awaiting_review' ? (
           <Alert tone="info">
             <AlertContent>
@@ -517,7 +631,7 @@ export function StudentWrittenSubmission({
           onSubmit={() => void submit()}
           onTextChange={saveText}
           queued={queued}
-          submitting={queueItem?.status === 'sending'}
+          submitting={queueItem?.status === 'sending' || replacementLoading}
           taskType={problemType}
           text={text}
           {...(photos.length > 0 ? { totalSizeLabel: formatBytes(totalBytes) } : {})}

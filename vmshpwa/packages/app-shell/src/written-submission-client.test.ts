@@ -93,6 +93,33 @@ describe('Student written-submission client', () => {
     expect((form.get('asset') as File).name).toBe('page-1.webp')
   })
 
+  it('loads authenticated WebP evidence for a durable replacement draft', async () => {
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(
+        new Response(new Blob(['webp-bytes'], { type: 'image/webp' }), {
+          status: 200,
+          headers: { 'Content-Type': 'image/webp' },
+        }),
+      ),
+    )
+    const client = createWrittenSubmissionClient(runtime, { fetchImplementation })
+
+    const media = await client.attachmentMedia('written-entry-one', 'written-attachment-one')
+
+    expect(media.type).toBe('image/webp')
+    expect(media.size).toBeGreaterThan(0)
+    expect(fetchImplementation).toHaveBeenCalledExactlyOnceWith(
+      '/student/api/v1/thread-entries/written-entry-one/attachments/written-attachment-one/media',
+      {
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: { Accept: 'image/webp' },
+        redirect: 'error',
+      },
+    )
+  })
+
   it('uses exact versioned paths for reorder, delete, submit and atomic replacement', async () => {
     const fetchImplementation = vi
       .fn<typeof globalThis.fetch>()

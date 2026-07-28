@@ -321,6 +321,14 @@ export const replaceWrittenEntryResponseSchema = z
   })
 export type ReplaceWrittenEntryResponse = z.infer<typeof replaceWrittenEntryResponseSchema>
 
+export const writtenSubmissionCompletionResponseSchema = z.union([
+  submitWrittenEntryResponseSchema,
+  replaceWrittenEntryResponseSchema,
+])
+export type WrittenSubmissionCompletionResponse = z.infer<
+  typeof writtenSubmissionCompletionResponseSchema
+>
+
 export const writtenThreadResponseSchema = z
   .object({
     schemaVersion: contractVersionSchema,

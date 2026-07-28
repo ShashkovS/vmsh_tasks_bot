@@ -70,6 +70,11 @@ export interface WrittenSubmissionClient {
     upload: WrittenAttachmentUpload,
     options?: WrittenSubmissionRequestOptions,
   ): Promise<CreateWrittenAttachmentResponse>
+  attachmentMedia(
+    entryId: string,
+    attachmentId: string,
+    options?: WrittenSubmissionRequestOptions,
+  ): Promise<Blob>
   reorder(
     entryId: string,
     request: ReorderWrittenAttachmentsRequest,
@@ -118,6 +123,7 @@ interface WrittenRequest {
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
   body?: BodyInit
   contentType?: string
+  accept?: string
 }
 
 class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
@@ -187,6 +193,38 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
       201,
       createWrittenAttachmentResponseSchema,
     )
+  }
+
+  async attachmentMedia(
+    entryId: string,
+    attachmentId: string,
+    options: WrittenSubmissionRequestOptions = {},
+  ): Promise<Blob> {
+    const parsedEntryId = publicIdSchema.parse(entryId)
+    const parsedAttachmentId = publicIdSchema.parse(attachmentId)
+    const path = `/thread-entries/${encodeURIComponent(parsedEntryId)}/attachments/${encodeURIComponent(parsedAttachmentId)}/media`
+    let response = await this.#send(path, { method: 'GET', accept: 'image/webp' }, options)
+    if (response.status === 401 && this.#refreshSession) {
+      await response.body?.cancel()
+      await this.#refreshSession()
+      response = await this.#send(path, { method: 'GET', accept: 'image/webp' }, options)
+    }
+    if (!response.ok) throw await this.#responseError(response)
+    if (response.status !== 200) {
+      await response.body?.cancel()
+      throw new WrittenSubmissionProtocolError(
+        `Written attachment API returned unexpected HTTP ${response.status}`,
+        { status: response.status },
+      )
+    }
+    const contentType = response.headers.get('Content-Type')?.split(';', 1)[0]?.trim()
+    const blob = await response.blob()
+    if (contentType !== 'image/webp' || blob.size < 1) {
+      throw new WrittenSubmissionProtocolError('Written attachment API returned invalid media', {
+        status: response.status,
+      })
+    }
+    return blob.type === 'image/webp' ? blob : new Blob([blob], { type: 'image/webp' })
   }
 
   async reorder(
@@ -301,7 +339,7 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
     input: WrittenRequest,
     options: WrittenSubmissionRequestOptions,
   ): Promise<Response> {
-    const headers: Record<string, string> = { Accept: 'application/json' }
+    const headers: Record<string, string> = { Accept: input.accept ?? 'application/json' }
     if (input.contentType) headers['Content-Type'] = input.contentType
     try {
       return await this.#fetch(`${this.runtime.apiBase}${path}`, {

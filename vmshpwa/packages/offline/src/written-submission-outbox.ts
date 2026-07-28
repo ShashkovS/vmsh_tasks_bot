@@ -4,22 +4,28 @@ import {
   ApiResponseError,
   createWrittenEntryRequestSchema,
   publicIdSchema,
+  replaceWrittenEntryResponseSchema,
   submitWrittenEntryResponseSchema,
+  writtenSubmissionCompletionResponseSchema,
   writtenProblemRevisionSchema,
   type CreateWrittenAttachmentResponse,
   type CreateWrittenEntryRequest,
   type CreateWrittenEntryResponse,
   type MutateWrittenAttachmentsResponse,
   type ReorderWrittenAttachmentsRequest,
+  type ReplaceWrittenEntryRequest,
+  type ReplaceWrittenEntryResponse,
   type SubmitWrittenEntryRequest,
   type SubmitWrittenEntryResponse,
   type WrittenAttachmentUploadMetadata,
+  type WrittenSubmissionCompletionResponse,
   type WrittenProblemRevision,
 } from '@vmsh/contracts'
 
 import { type OutboxItem, type VmshOfflineDatabase } from './database'
 import {
   writtenDraftDescriptorSchema,
+  writtenDraftReplacementTargetSchema,
   writtenDraftServerStateSchema,
   resolveWrittenDraftPhotoRecordBlob,
   type WrittenDraftDescriptor,
@@ -62,6 +68,7 @@ export const writtenSubmissionOutboxPayloadSchema = z
     createIdempotencyKey: z.uuid(),
     reorderIdempotencyKey: z.uuid(),
     submitIdempotencyKey: z.uuid(),
+    replacementTarget: writtenDraftReplacementTargetSchema.nullable().default(null),
     photos: z.array(writtenOutboxPhotoSchema).max(10),
     serverState: writtenDraftServerStateSchema.nullable(),
     reordered: z.boolean(),
@@ -111,6 +118,16 @@ export const writtenSubmissionOutboxPayloadSchema = z
         path: ['serverState'],
       })
     }
+    if (
+      payload.serverState !== null &&
+      payload.replacementTarget?.entryId === payload.serverState.entryId
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'A replacement target cannot be the prepared draft itself',
+        path: ['replacementTarget'],
+      })
+    }
     if (payload.reordered && payload.photos.some((photo) => photo.serverAttachmentId === null)) {
       context.addIssue({
         code: 'custom',
@@ -138,7 +155,7 @@ const writtenSubmissionOutboxItemSchema = z
     status: z.enum(['queued', 'sending', 'retrying', 'synced', 'conflict', 'failed']),
     attempts: z.number().int().nonnegative(),
     payload: writtenSubmissionOutboxPayloadSchema,
-    result: submitWrittenEntryResponseSchema.optional(),
+    result: writtenSubmissionCompletionResponseSchema.optional(),
     lastError: z.string().min(1).max(300).optional(),
     deliveryLeaseId: z.uuid().optional(),
   })
@@ -190,6 +207,10 @@ export interface WrittenSubmissionTransport {
     request: ReorderWrittenAttachmentsRequest,
   ): Promise<MutateWrittenAttachmentsResponse>
   submit(entryId: string, request: SubmitWrittenEntryRequest): Promise<SubmitWrittenEntryResponse>
+  replace(
+    entryId: string,
+    request: ReplaceWrittenEntryRequest,
+  ): Promise<ReplaceWrittenEntryResponse>
 }
 
 export type WrittenSubmissionDeliveryResult =
@@ -197,7 +218,7 @@ export type WrittenSubmissionDeliveryResult =
   | {
       state: 'synced'
       item: WrittenSubmissionOutboxItem
-      receipt: SubmitWrittenEntryResponse
+      receipt: WrittenSubmissionCompletionResponse
     }
   | {
       state: 'retrying' | 'conflict' | 'failed'
@@ -261,7 +282,9 @@ function validatedItem(item: OutboxItem): WrittenSubmissionOutboxItem {
 
 function serverState(
   response:
-    CreateWrittenEntryResponse | MutateWrittenAttachmentsResponse | SubmitWrittenEntryResponse,
+    | CreateWrittenEntryResponse
+    | MutateWrittenAttachmentsResponse
+    | WrittenSubmissionCompletionResponse,
 ) {
   return writtenDraftServerStateSchema.parse({
     threadId: response.threadId,
@@ -473,6 +496,7 @@ export function createWrittenSubmissionOutbox(
         createIdempotencyKey: randomUUID(),
         reorderIdempotencyKey: randomUUID(),
         submitIdempotencyKey: randomUUID(),
+        replacementTarget: draft.replacementTarget,
         photos: draft.photos.map((photo, ordinal) => ({
           localPhotoId: photo.id,
           fileName: photo.fileName,
@@ -616,13 +640,21 @@ export function createWrittenSubmissionOutbox(
           }
           return photo.serverAttachmentId
         })
-        const receipt = await transport.submit(state.entryId, {
-          schemaVersion: 1,
+        const completionRequest = {
+          schemaVersion: 1 as const,
           idempotencyKey: item.payload.submitIdempotencyKey,
           expectedEntryVersion: state.entryVersion,
           expectedThreadVersion: state.threadVersion,
           attachmentIds,
-        })
+        }
+        const replacementTarget = item.payload.replacementTarget
+        const receipt = replacementTarget
+          ? await transport.replace(state.entryId, {
+              ...completionRequest,
+              replacedEntryId: replacementTarget.entryId,
+              expectedReplacedEntryVersion: replacementTarget.entryVersion,
+            })
+          : await transport.submit(state.entryId, completionRequest)
         if (
           receipt.problemId !== item.payload.descriptor.problemId ||
           receipt.entry.entryId !== state.entryId
@@ -642,7 +674,13 @@ export function createWrittenSubmissionOutbox(
           ) {
             throw new WrittenSubmissionLeaseLostError()
           }
-          const next = { ...parsed, status: 'synced' as const, result: receipt }
+          const next = {
+            ...parsed,
+            status: 'synced' as const,
+            result: replacementTarget
+              ? replaceWrittenEntryResponseSchema.parse(receipt)
+              : submitWrittenEntryResponseSchema.parse(receipt),
+          }
           delete next.deliveryLeaseId
           const validated = writtenSubmissionOutboxItemSchema.parse({
             ...next,

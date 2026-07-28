@@ -118,6 +118,10 @@ describe('written-submission local draft store', () => {
       entryId: 'entry-one',
       entryVersion: 4,
     })
+    first.saveReplacementTarget(draftDescriptor, {
+      entryId: 'entry-original',
+      entryVersion: 3,
+    })
 
     expect(
       (await target.writtenDraftPhotos.toArray()).map(({ id, bytes, mediaType }) => ({
@@ -136,6 +140,7 @@ describe('written-submission local draft store', () => {
     expect(restored.compatible).toMatchObject({
       text: 'Решение с пояснением',
       serverState: { threadId: 'thread-one', entryId: 'entry-one' },
+      replacementTarget: { entryId: 'entry-original', entryVersion: 3 },
       photos: [{ id: PHOTO_TWO }, { id: PHOTO_ONE }],
     })
     expect(await restored.compatible?.photos[0]?.blob.text()).toBe('second-page')

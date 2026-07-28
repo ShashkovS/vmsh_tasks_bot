@@ -55,6 +55,14 @@ export const writtenDraftServerStateSchema = z
   .strict()
 export type WrittenDraftServerState = z.infer<typeof writtenDraftServerStateSchema>
 
+export const writtenDraftReplacementTargetSchema = z
+  .object({
+    entryId: publicIdSchema,
+    entryVersion: z.number().int().positive(),
+  })
+  .strict()
+export type WrittenDraftReplacementTarget = z.infer<typeof writtenDraftReplacementTargetSchema>
+
 export const writtenDraftPhotoProcessingSchema = z.enum(['client-webp', 'server-fallback-source'])
 export type WrittenDraftPhotoProcessing = z.infer<typeof writtenDraftPhotoProcessingSchema>
 
@@ -123,9 +131,10 @@ export const writtenSubmissionDraftSchema = z
     problemId: publicIdSchema,
     conditionRevisionId: publicIdSchema,
     configVersion: z.number().int().positive(),
-    text: z.string().max(16_384),
+    text: z.string().max(100_000),
     photos: z.array(writtenDraftPhotoSchema).max(MAX_WRITTEN_SUBMISSION_PHOTOS),
     serverState: writtenDraftServerStateSchema.nullable(),
+    replacementTarget: writtenDraftReplacementTargetSchema.nullable().default(null),
     updatedAt: z.iso.datetime(),
   })
   .strict()
@@ -203,6 +212,10 @@ export interface WrittenSubmissionDraftStore {
   saveServerState(
     descriptor: WrittenDraftDescriptor,
     serverState: WrittenDraftServerState | null,
+  ): WrittenSubmissionDraft
+  saveReplacementTarget(
+    descriptor: WrittenDraftDescriptor,
+    replacementTarget: WrittenDraftReplacementTarget | null,
   ): WrittenSubmissionDraft
   addPhoto(
     descriptor: WrittenDraftDescriptor,
@@ -333,6 +346,7 @@ function emptyDraft(
     text: '',
     photos: [],
     serverState: null,
+    replacementTarget: null,
     updatedAt: now.toISOString(),
   })
 }
@@ -388,7 +402,9 @@ function photoRecordMatchesMetadata(
 function withTimestamp(
   draft: WrittenSubmissionDraft,
   now: Date,
-  changes: Partial<Pick<WrittenSubmissionDraft, 'text' | 'photos' | 'serverState'>>,
+  changes: Partial<
+    Pick<WrittenSubmissionDraft, 'text' | 'photos' | 'serverState' | 'replacementTarget'>
+  >,
 ): WrittenSubmissionDraft {
   return writtenSubmissionDraftSchema.parse({
     ...draft,
@@ -527,6 +543,20 @@ export function createWrittenSubmissionDraftStore(
       return save(
         parsedDescriptor,
         withTimestamp(current(parsedDescriptor), now(), { serverState: parsedServerState }),
+      )
+    },
+
+    saveReplacementTarget(value, replacementTarget) {
+      const parsedDescriptor = descriptor(value)
+      const parsedReplacementTarget =
+        replacementTarget === null
+          ? null
+          : writtenDraftReplacementTargetSchema.parse(replacementTarget)
+      return save(
+        parsedDescriptor,
+        withTimestamp(current(parsedDescriptor), now(), {
+          replacementTarget: parsedReplacementTarget,
+        }),
       )
     },
 
