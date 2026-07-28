@@ -102,18 +102,8 @@ def _pre_content_ids() -> set[str]:
     return {
         item.id
         for item in _migrations()
-        if item.id
-        not in {
-            CONTENT_MIGRATION_ID,
-            CONTENT_HARDENING_MIGRATION_ID,
-            LESSON_WINDOW_AUDIT_MIGRATION_ID,
-            PROBLEM_IDENTITY_MIGRATION_ID,
-            MATERIAL_REVEAL_MATCHES_MIGRATION_ID,
-            TEST_ATTEMPTS_MIGRATION_ID,
-            WRITTEN_SUBMISSIONS_MIGRATION_ID,
-            WRITTEN_ENTRY_REVISION_MIGRATION_ID,
-            WRITTEN_ATTACHMENT_MUTATION_MIGRATION_ID,
-        }
+        if item.id.partition(".")[0].isdigit()
+        and int(item.id.partition(".")[0]) < 41
     }
 
 

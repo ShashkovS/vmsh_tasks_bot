@@ -417,13 +417,8 @@ def test_phase5_written_schema_exact_up_down_up_and_additive(tmp_path):
     preceding = {
         item.id
         for item in migrations.values()
-        if item.id
-        not in {
-            MIGRATION_ID,
-            ENTRY_REVISION_MIGRATION_ID,
-            ATTACHMENT_MUTATION_MIGRATION_ID,
-            ENTRY_REPLACEMENT_MIGRATION_ID,
-        }
+        if item.id.partition(".")[0].isdigit()
+        and int(item.id.partition(".")[0]) < 47
     }
     _apply(database_path, preceding)
 
