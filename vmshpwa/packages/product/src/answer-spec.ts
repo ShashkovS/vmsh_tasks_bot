@@ -52,6 +52,39 @@ export interface AnswerSpec {
   validationError?: string
 }
 
+/** Exact numeric compatibility registry from `helpers.consts.ANS_TYPE`. */
+export const answerTypeByLegacyId = {
+  1: 'digit',
+  2: 'natural',
+  3: 'integer',
+  4: 'ratio',
+  5: 'float',
+  6: 'fraction',
+  7: 'int-seq',
+  8: 'int-2',
+  9: 'int-3',
+  10: 'int-4',
+  11: 'int-set',
+  12: 'polynomial',
+  13: 'float-eps',
+  14: 'time',
+  15: 'date',
+  16: 'weekday',
+  17: 'frac-seq',
+  18: 'multiset',
+  19: 'mixed-fraction',
+  20: 'symb-expression',
+  21: 'symb-equiv',
+  98: 'select-one',
+  99: 'string',
+} as const satisfies Record<number, AnswerType>
+
+export function answerTypeFromLegacyId(value: number): AnswerType {
+  const answerType = (answerTypeByLegacyId as Record<number, AnswerType | undefined>)[value]
+  if (!answerType) throw new RangeError(`Unsupported legacy answer type: ${value}`)
+  return answerType
+}
+
 const tupleArity: Partial<Record<AnswerType, number>> = {
   'int-2': 2,
   'int-3': 3,

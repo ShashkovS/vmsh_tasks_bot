@@ -18,6 +18,7 @@ export const offlineDocumentKindSchema = z.enum([
   'student-problem-list',
   'published-content',
   'student-material-reveal',
+  'student-test-answer-input',
 ])
 export type OfflineDocumentKind = z.infer<typeof offlineDocumentKindSchema>
 

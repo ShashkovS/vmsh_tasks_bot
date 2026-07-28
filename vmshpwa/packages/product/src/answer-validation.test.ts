@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
+import { answerTypeFromLegacyId } from './answer-spec'
 import { parseLegacyAnswerItems, validateAnswerFormat } from './answer-validation'
 
 describe('legacy answer format mirror', () => {
+  it('maps every historical numeric answer type and rejects unknown values', () => {
+    expect(
+      [1, 2, 3, 4, 5, 6, 19, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 98, 99].map(
+        answerTypeFromLegacyId,
+      ),
+    ).toHaveLength(23)
+    expect(answerTypeFromLegacyId(98)).toBe('select-one')
+    expect(() => answerTypeFromLegacyId(22)).toThrow(RangeError)
+  })
+
   it.each([
     ['digit', '7', true],
     ['digit', '17', false],

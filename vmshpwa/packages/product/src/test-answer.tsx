@@ -191,14 +191,17 @@ export function TestAnswer({
           onValueChange={(value) => emitText(String(value))}
           value={text}
         >
-          {(spec.options ?? []).map((option) => (
-            <div className="flex items-center gap-2" key={option.value}>
-              <RadioGroupItem id={`${fieldId}-${option.value}`} value={option.label} />
-              <Label className="font-normal" htmlFor={`${fieldId}-${option.value}`}>
-                {option.label}
-              </Label>
-            </div>
-          ))}
+          {(spec.options ?? []).map((option, index) => {
+            const optionId = `${fieldId}-option-${index}`
+            return (
+              <div className="flex items-center gap-2" key={option.value}>
+                <RadioGroupItem id={optionId} value={option.label} />
+                <Label className="font-normal" htmlFor={optionId}>
+                  {option.label}
+                </Label>
+              </div>
+            )
+          })}
         </RadioGroup>
       ) : null}
 

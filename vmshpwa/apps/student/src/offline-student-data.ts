@@ -2,9 +2,12 @@ import { useSyncExternalStore } from 'react'
 
 import {
   CourseNetworkError,
+  TestSubmissionNetworkError,
   type CourseRequestOptions,
   type StudentCourseClient,
   type StudentLessonListOptions,
+  type TestSubmissionClient,
+  type TestSubmissionRequestOptions,
 } from '@vmsh/app-shell'
 import {
   ContentNetworkError,
@@ -21,6 +24,7 @@ import {
   studentLessonSummarySchema,
   studentProblemListResponseSchema,
   studentProblemRevealSchema,
+  testAnswerInputResponseSchema,
   type CourseEnrollment,
   type PublishedContent,
   type StudentCourseAccessResponse,
@@ -30,6 +34,7 @@ import {
   type StudentProblemListResponse,
   type StudentProblemReveal,
   type StudentRevealKind,
+  type TestAnswerInputResponse,
 } from '@vmsh/contracts'
 import {
   readOfflineDocument,
@@ -235,6 +240,31 @@ export function createOfflineStudentCourseClient(
         request: () => online.problems(courseId, groupLessonId, options),
         version: (payload) => payload.conditionRevisionId,
         isNetworkError: (error) => error instanceof CourseNetworkError,
+      })
+    },
+  }
+}
+
+export type StudentTestAnswerInputClient = Pick<TestSubmissionClient, 'input'>
+
+export function createOfflineStudentTestAnswerInputClient(
+  online: StudentTestAnswerInputClient,
+  database: VmshOfflineDatabase,
+  ownerId: string,
+): StudentTestAnswerInputClient {
+  return {
+    input(
+      problemId: string,
+      options: TestSubmissionRequestOptions = {},
+    ): Promise<TestAnswerInputResponse> {
+      return readThroughCache({
+        database,
+        descriptor: descriptor(ownerId, 'student-test-answer-input', problemId),
+        parser: testAnswerInputResponseSchema,
+        request: () => online.input(problemId, options),
+        version: (payload) =>
+          `${payload.problemRevision.conditionRevisionId}:${payload.problemRevision.configVersion}`,
+        isNetworkError: (error) => error instanceof TestSubmissionNetworkError,
       })
     },
   }
