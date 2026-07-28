@@ -197,8 +197,8 @@ Browser renderer increment реализован, но сам этап 2 не з�
 proof закрыли live S3 content-asset roundtrip, live Telegram Rich lifecycle,
 safe historical backfill tooling и authenticated HTTP/frontend orchestration.
 Последующие инкременты закрыли problem-matching/metadata flow, открытие
-сохранённого PDF и пакетную загрузку через Staff. Production owner-reviewed
-backfill/parity и production-build content E2E пока остаются открыты.
+сохранённого PDF, пакетную загрузку через Staff и production-build content E2E.
+Production owner-reviewed backfill/parity остаётся открытым.
 
 Промежуточный gate **Phase 2C — authenticated HTTP и audience frontend**
 зафиксирован 28 июля 2026 в revisions [`1aad776`](../../../pwa_tests/reports/phase2-content-api.md)
@@ -239,9 +239,10 @@ backfill/parity и production-build content E2E пока остаются отк
       трёх apps — PASS.
 
 Полный [proof Phase 2D](../../../pwa_tests/reports/phase2-content-assets-http.md)
-не закрывает Phase 2 целиком. Открыты problem matching/metadata UI+API,
-production-build content E2E и ручное visual approval владельца.
-Snapshots не обновлялись.
+не закрывал Phase 2 целиком. На момент этого gate оставались problem
+matching/metadata UI+API, production-build content E2E и ручное visual approval
+владельца; первые два позднее закрыты следующими checkpoint. Snapshots не
+обновлялись.
 
 Промежуточный backend gate **Phase 2E — problem matching и metadata review**
 реализован 28 июля 2026:
@@ -256,7 +257,8 @@ Snapshots не обновлялись.
 - [x] 111 domain/repository/real-aiohttp tests и Ruff PASS.
 
 Frontend contracts, Staff workflow, Storybook interaction/visual gate и
-production-build content E2E остаются продолжением Phase 2E; backend proof:
+production-build content E2E были продолжением Phase 2E и позднее получили
+отдельные checkpoint; backend proof:
 [`phase2-problem-review-api.md`](../../../pwa_tests/reports/phase2-problem-review-api.md).
 
 Contract/client increment Phase 2E также реализован 28 июля 2026:
@@ -284,8 +286,9 @@ Production Staff UI increment Phase 2E реализован 28 июля 2026:
 - [x] strict TypeScript/ESLint, 24 contract/client unit tests, 14 targeted
       Storybook browser tests и Staff production build PASS.
 
-Production-build content E2E и owner visual approval остаются открыты. UI
-proof и точные story IDs:
+На момент этого UI checkpoint production-build content E2E и owner visual
+approval оставались открыты; первый позднее закрыт revision `3b5a4e8`. UI proof
+и точные story IDs:
 [`phase2-problem-review-ui.md`](../../../pwa_tests/reports/phase2-problem-review-ui.md).
 
 Staff persisted-PDF increment реализован 28 июля 2026:
@@ -301,8 +304,9 @@ Staff persisted-PDF increment реализован 28 июля 2026:
       build PASS.
 
 Proof: [`phase2-content-pdf-http.md`](../../../pwa_tests/reports/phase2-content-pdf-http.md).
-Это не print workflow второй версии. После инкремента открыты production-build
-content E2E, production owner-reviewed parity/backfill и owner visual approval.
+Это не print workflow второй версии. После инкремента были открыты
+production-build content E2E, production owner-reviewed parity/backfill и owner
+visual approval; browser gate позднее закрыт revision `3b5a4e8`.
 
 Backend/contract precondition массовой загрузки реализован 28 июля 2026:
 
@@ -334,7 +338,25 @@ Staff bulk-upload UI реализован и проверен 28 июля 2026:
       snapshots не обновлялись.
 
 Proof: [`phase2-bulk-upload-ui.md`](../../../pwa_tests/reports/phase2-bulk-upload-ui.md).
-Production-build content E2E остаётся следующим gate.
+
+Production-build content E2E реализован revision `3b5a4e8`:
+
+- [x] отдельный lock-aware `make pwa-e2e-content` собирает три production apps
+      и поднимает настоящий aiohttp, one-origin gateway и отдельную seeded
+      SQLite без MSW;
+- [x] Chromium, WebKit и Firefox используют разные mutable group lessons и
+      проходят Staff login/upload/compile/matching/metadata/publish, Student
+      login/read, вторую revision и явный rollback;
+- [x] HTTP status, revision identity и group-lesson identity проверяются вместе
+      с видимым состоянием UI;
+- [x] seed разрешён только точному `pwa-e2e` profile/database, атомарен и
+      идемпотентен; его границы и runner mode покрыты 12 Python tests;
+- [x] итог: **3 PASS** в трёх browser engines после production build.
+
+Proof: [`phase2-content-e2e.md`](../../../pwa_tests/reports/phase2-content-e2e.md).
+Missing-asset recovery не включён в этот browser flow и сохраняет отдельные
+live/API/Storybook proof; owner-reviewed production parity/backfill и visual
+approval остаются открытыми gates Phase 2.
 
 - [x] Revision/migration/upgrade/rollback для Phase 2A:
       [`0041`](../../../migrations/0041.pwa_content_lessons.sql), 48 focused PASS,
@@ -378,7 +400,9 @@ Production-build content E2E остаётся следующим gate.
       границе 32 768 symbols: send/edit/delete PASS,
       [`phase2-derivative-adapters.md`](../../../pwa_tests/reports/phase2-derivative-adapters.md).
 - [ ] Toolchain config/probe и версии `pdflatex`/`pdf2svg`/`cwebp`/`magick` в local target runtime; staging gate относится к этапу 11: `<path/result>`.
-- [ ] Production-build content Playwright в трёх браузерах: `<result>`.
+- [x] Production-build content Playwright в трёх браузерах: **3 PASS** —
+      [`phase2-content-e2e.md`](../../../pwa_tests/reports/phase2-content-e2e.md),
+      revision `3b5a4e8`.
 - [x] Pure compiler support matrix/known limitations:
       [`content-compiler-support-matrix.md`](../../docs/content-compiler-support-matrix.md),
       принято как Phase 2B engineering gate 27 июля 2026; product acceptance всего

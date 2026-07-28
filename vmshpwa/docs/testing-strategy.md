@@ -170,10 +170,18 @@ solution-cutoff gates, `0043` lesson-window audit, server-side bounded history
 проверяют reload resume, rollback только к `ready`, confirmations,
 business-timezone schedule, два preview и audience update marker.
 
-Зелёный auth Playwright не является content E2E. До принятия Phase 2 нужны
-production-build upload→resolve assets→match metadata→publish→Student/Family
-read/rollback в трёх браузерах, stored PDF/bulk upload coverage и ручное visual
-approval. Snapshots не обновлялись. Proof:
+Отдельный `make pwa-e2e-content` в revision `3b5a4e8` закрывает обычный
+production-build browser path upload→compile→match metadata→publish→Student
+read→second revision→rollback: **3 PASS** в Chromium, WebKit и Firefox на
+настоящих aiohttp/SQLite без MSW. Каждый project получает независимый mutable
+group lesson через guarded E2E-only seed. Proof:
+[`phase2-content-e2e.md`](../../pwa_tests/reports/phase2-content-e2e.md).
+
+Этот Playwright flow пока не проходит missing-asset recovery. Его TikZ/SVG/
+WebP/S3, authenticated HTTP и Staff states доказаны отдельными live/API/
+Storybook suites. До принятия всего Phase 2 также нужны production
+owner-reviewed parity/backfill и ручное visual approval. Snapshots не
+обновлялись. Ранее закрытые proof:
 [`phase2-content-api.md`](../../pwa_tests/reports/phase2-content-api.md) и
 [`phase2-content-frontend.md`](../../pwa_tests/reports/phase2-content-frontend.md).
 

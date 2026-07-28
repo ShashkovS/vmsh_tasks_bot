@@ -4,18 +4,18 @@
 
 ## Состояние документов
 
-| Документ/этап       | Статус                         | Решение/блокер                                                                                                                                                        |
-| ------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Инженерный контракт | draft for approval             | Формат proof описан; фактически заполняется при реализации                                                                                                            |
-| Решения и границы   | accepted planning input        | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
-| Модель данных       | revised planning input         | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
-| API/events/files    | accepted planning input        | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
-| Этап 0              | in progress                    | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
-| Этап 1              | in progress                    | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
-| Этап 2              | Phase 2A–2E + Staff bulk ready | Matching/metadata, PDF и пакетная загрузка проверены; открыты content E2E, production parity/backfill и owner visual gate                                   |
-| Этапы 3–11          | planned with gates             | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
-| Design system       | phases 5–7 ready for review    | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
-| Multi-course model  | schema + verified prototype    | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
+| Документ/этап       | Статус                      | Решение/блокер                                                                                                                                                        |
+| ------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                                                                                            |
+| Решения и границы   | accepted planning input     | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
+| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
+| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
+| Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
+| Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
+| Этап 2              | Phase 2A–2E + browser E2E   | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
+| Этапы 3–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
+| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
+| Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
 
 ## Журнал решений
 
@@ -235,8 +235,15 @@
   PASS**, strict checks и Staff production build — PASS; mobile/desktop light
   просмотрены вручную, snapshots не обновлялись. Proof:
   [`phase2-bulk-upload-ui.md`](../../../pwa_tests/reports/phase2-bulk-upload-ui.md).
-- Phase 2 всё ещё открыт для production-build content E2E,
-  production owner-reviewed parity/backfill и owner visual approval.
+- Production-build browser checkpoint `3b5a4e8` добавляет отдельный guarded
+  content fixture/seed и `make pwa-e2e-content`. Настоящие Staff и Student UI,
+  aiohttp, compiler и SQLite прошли upload → matching → metadata → publish →
+  Student read → вторую revision → rollback: **3 PASS** в Chromium, WebKit и
+  Firefox. Proof:
+  [`phase2-content-e2e.md`](../../../pwa_tests/reports/phase2-content-e2e.md).
+- Phase 2 всё ещё открыт для production owner-reviewed parity/backfill и owner
+  visual approval. Missing-asset recovery пока не включён в один Playwright
+  flow с публикацией и остаётся доказан отдельными live/API/Storybook suites.
   Snapshots не обновлялись. Ранее закрытые HTTP/frontend proof:
   [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md),
   [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
@@ -408,7 +415,8 @@
   access-cookie, two-tab recovery с ровно одним refresh request и revoke
   отдельного устройства.
 - Этот production-build gate повторно подтверждён 28 июля после исправления
-  default deep-link; отдельный Phase-2 content Playwright flow всё ещё открыт.
+  default deep-link; отдельный Phase-2 content Playwright flow позднее закрыт
+  revision `3b5a4e8`.
 - Browser proof нашёл и закрыл Family `500` на ISO `users.birthday`:
   `FamilyChildRecord.birthday` читает nullable строку; repository regression
   закрепляет реальный формат legacy данных.
@@ -513,10 +521,11 @@
   product schema objects. Подробные команды и остающиеся границы:
   [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md) и
   [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
-- Этот checkpoint сам по себе не завершал Phase 2: перечисленные
-  здесь asset, matching/metadata, stored PDF и bulk-upload gaps закрыты
-  последующими proof выше. Текущие открытые gate — production
-  content E2E и owner visual approval. Snapshots не обновлялись.
+- Этот checkpoint сам по себе не завершал Phase 2: перечисленные здесь asset,
+  matching/metadata, stored PDF, bulk-upload и production content E2E gaps
+  закрыты последующими proof выше. Текущие открытые gate — production
+  owner-reviewed parity/backfill и owner visual approval. Snapshots не
+  обновлялись.
 
 ## Phase 2 real-content Storybook gate — 27 июля 2026
 
@@ -556,17 +565,17 @@
 Таблица различает промежуточный проверенный инкремент и окончательное принятие
 этапа. Наличие revision/proof не закрывает оставшиеся criteria из phase-файла.
 
-| Этап | Revision                        | Proof                                                  | Принято                            |
-| ---: | ------------------------------- | ------------------------------------------------------ | ---------------------------------- |
-|    0 | —                               | —                                                      | —                                  |
-|    1 | `1aad776`, `866e3fe`            | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)    | частично; production gates открыты |
-|    2 | `43b0323`, `08a8d0b`, `d39141d` | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа) | Phase 2D принят; этап открыт       |
-|    3 | —                               | —                                                      | —                                  |
-|    4 | —                               | —                                                      | —                                  |
-|    5 | —                               | —                                                      | —                                  |
-|    6 | —                               | —                                                      | —                                  |
-|    7 | —                               | —                                                      | —                                  |
-|    8 | —                               | —                                                      | —                                  |
-|    9 | —                               | —                                                      | —                                  |
-|   10 | —                               | —                                                      | —                                  |
-|   11 | —                               | —                                                      | —                                  |
+| Этап | Revision             | Proof                                                  | Принято                            |
+| ---: | -------------------- | ------------------------------------------------------ | ---------------------------------- |
+|    0 | —                    | —                                                      | —                                  |
+|    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)    | частично; production gates открыты |
+|    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа) | Browser path принят; этап открыт   |
+|    3 | —                    | —                                                      | —                                  |
+|    4 | —                    | —                                                      | —                                  |
+|    5 | —                    | —                                                      | —                                  |
+|    6 | —                    | —                                                      | —                                  |
+|    7 | —                    | —                                                      | —                                  |
+|    8 | —                    | —                                                      | —                                  |
+|    9 | —                    | —                                                      | —                                  |
+|   10 | —                    | —                                                      | —                                  |
+|   11 | —                    | —                                                      | —                                  |
