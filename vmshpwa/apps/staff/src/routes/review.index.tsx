@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { ReviewQueuePage } from '../pages'
+import { StaffReviewQueuePage } from '../review-queue-page'
 
-export const Route = createFileRoute('/review/')({ component: ReviewQueuePage })
+export const Route = createFileRoute('/review/')({ component: StaffReviewQueuePage })

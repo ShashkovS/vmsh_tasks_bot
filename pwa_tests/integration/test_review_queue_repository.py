@@ -270,6 +270,23 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
                     ),
                 ).fetchone()["id"]
             )
+            if index == 1:
+                connection.execute(
+                    "INSERT INTO submission_entries "
+                    "(public_id, thread_id, problem_revision_id, author_kind, "
+                    "author_user_id, channel, entry_kind, state, text, client_created_at, "
+                    "server_received_at, locked_at, version) VALUES "
+                    "('review-old-teacher-comment', ?, ?, 'teacher', ?, 'pwa', "
+                    "'teacher_comment', 'locked', 'Поясните первый переход.', ?, ?, ?, 1)",
+                    (
+                        thread_id,
+                        problem_revision_id,
+                        TEACHER_ONE_ID,
+                        submitted_at,
+                        submitted_at,
+                        submitted_at,
+                    ),
+                )
             entry_id = int(
                 connection.execute(
                     "INSERT INTO submission_entries "
@@ -365,7 +382,16 @@ async def test_claim_heartbeat_and_release_cover_one_synonym_case(review_queue_f
         entry.entry_public_id
         for branch in lease.evidence_branches
         for entry in branch.timeline_entries
-    ] == ["review-entry-test-1", "review-entry-test-2"]
+    ] == [
+        "review-old-teacher-comment",
+        "review-entry-test-1",
+        "review-entry-test-2",
+    ]
+    assert [
+        entry.author_kind
+        for branch in lease.evidence_branches
+        for entry in branch.timeline_entries
+    ] == ["teacher", "student", "student"]
 
     fixture.clock.value += timedelta(minutes=10)
     heartbeat = await fixture.repository.heartbeat(

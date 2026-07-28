@@ -21,9 +21,17 @@ export interface ReviewFeedbackResult {
   reactionId: number | null
 }
 
+export interface ReviewFeedbackDraft {
+  verdictValue: string | null
+  comment: string
+  reactionId: number | null
+}
+
 export interface ReviewFeedbackFormProps {
   verdicts: VerdictView[]
   onSubmit: (result: ReviewFeedbackResult) => void
+  initialDraft?: ReviewFeedbackDraft
+  onDraftChange?: (draft: ReviewFeedbackDraft) => void
   disabled?: boolean
   className?: string
 }
@@ -31,13 +39,17 @@ export interface ReviewFeedbackFormProps {
 export function ReviewFeedbackForm({
   verdicts,
   onSubmit,
+  initialDraft,
+  onDraftChange,
   disabled,
   className,
 }: ReviewFeedbackFormProps) {
   const commentId = useId()
-  const [comment, setComment] = useState('')
-  const [verdict, setVerdict] = useState<VerdictView | null>(null)
-  const [reactionId, setReactionId] = useState<number | null>(null)
+  const [comment, setComment] = useState(initialDraft?.comment ?? '')
+  const [verdict, setVerdict] = useState<VerdictView | null>(
+    () => verdicts.find((item) => item.value === initialDraft?.verdictValue) ?? null,
+  )
+  const [reactionId, setReactionId] = useState<number | null>(initialDraft?.reactionId ?? null)
   const [confirming, setConfirming] = useState(false)
 
   const submit = () => {
@@ -69,7 +81,13 @@ export function ReviewFeedbackForm({
           disabled={disabled}
           id={commentId}
           onChange={(event) => {
-            setComment(event.target.value)
+            const nextComment = event.target.value
+            setComment(nextComment)
+            onDraftChange?.({
+              verdictValue: verdict?.value ?? null,
+              comment: nextComment,
+              reactionId,
+            })
             setConfirming(false)
           }}
           placeholder="Что получилось, что стоит поправить…"
@@ -81,6 +99,7 @@ export function ReviewFeedbackForm({
         disabled={disabled}
         onPick={(picked) => {
           setVerdict(picked)
+          onDraftChange?.({ verdictValue: picked.value, comment, reactionId })
           setConfirming(false)
         }}
         selectedValue={verdict?.value}
@@ -91,7 +110,14 @@ export function ReviewFeedbackForm({
         compact
         hotkeys
         legend="Внутренняя пометка (не видна ученику)"
-        onSelect={setReactionId}
+        onSelect={(nextReactionId) => {
+          setReactionId(nextReactionId)
+          onDraftChange?.({
+            verdictValue: verdict?.value ?? null,
+            comment,
+            reactionId: nextReactionId,
+          })
+        }}
         options={teacherWrittenReactions}
         value={reactionId}
       />

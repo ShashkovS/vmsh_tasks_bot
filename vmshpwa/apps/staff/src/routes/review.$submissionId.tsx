@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { ReviewWorkspacePage } from '../pages'
+import { StaffReviewWorkspacePage } from '../review-workspace-page'
 
 export const Route = createFileRoute('/review/$submissionId')({
   component: ReviewWorkspaceRoute,
 })
 
 function ReviewWorkspaceRoute() {
-  return <ReviewWorkspacePage submissionId={Route.useParams().submissionId} />
+  return <StaffReviewWorkspacePage queueId={Route.useParams().submissionId} />
 }

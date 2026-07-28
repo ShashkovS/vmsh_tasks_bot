@@ -39,6 +39,7 @@ const navigation: StaffNavigationItem[] = [
     label: 'Проверка',
     to: '/review',
     icon: <ClipboardCheck className="size-4" aria-hidden="true" />,
+    capability: 'review.write',
   },
   {
     label: 'Вопросы',

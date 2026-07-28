@@ -368,6 +368,20 @@ export function useClaimReviewItemMutation(
   })
 }
 
+/** Opens a queue item directly and reuses a claim placed by the queue page. */
+export function useReviewLeaseQuery(
+  client: Pick<ReviewQueueClient, 'claim'>,
+  principal: PrincipalQueryScope,
+  queueId: string,
+) {
+  return useQuery({
+    queryKey: reviewQueueQueryKeys.lease(principal, queueId),
+    queryFn: ({ signal }) => client.claim(queueId, { signal }),
+    staleTime: Number.POSITIVE_INFINITY,
+    retry: false,
+  })
+}
+
 export function useHeartbeatReviewLeaseMutation(
   client: Pick<ReviewQueueClient, 'heartbeat'>,
   principal: PrincipalQueryScope,

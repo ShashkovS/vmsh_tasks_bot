@@ -160,6 +160,43 @@ export const FeedbackGuard: Story = {
   },
 }
 
+function RestoredDraftHarness() {
+  const [draft, setDraft] = useState('Черновик не менялся')
+  return (
+    <div className="max-w-md space-y-3">
+      <ReviewFeedbackForm
+        initialDraft={{
+          verdictValue: 'plus-minus',
+          comment: 'Проверьте последний переход.',
+          reactionId: 100,
+        }}
+        onDraftChange={(value) => setDraft(JSON.stringify(value))}
+        onSubmit={() => undefined}
+        verdicts={fullVerdictScale}
+      />
+      <p data-testid="draft-readout" role="status">
+        {draft}
+      </p>
+    </div>
+  )
+}
+
+export const FeedbackRestoredDraft: Story = {
+  name: 'Восстановленный черновик проверки',
+  render: () => <RestoredDraftHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const comment = canvas.getByLabelText('Комментарий')
+    await expect(comment).toHaveValue('Проверьте последний переход.')
+    await expect(canvas.getByRole('button', { name: /В целом верно/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await userEvent.type(comment, ' Ещё один штрих.')
+    await expect(canvas.getByTestId('draft-readout')).toHaveTextContent('Ещё один штрих.')
+  },
+}
+
 export const FeedbackReactionShortcuts: Story = {
   name: 'Внутренняя пометка — компактно и с hotkeys',
   render: () => <FormHarness />,
