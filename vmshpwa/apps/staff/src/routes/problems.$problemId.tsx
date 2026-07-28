@@ -1,16 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { StaffGenericPage } from '../pages'
+import { StaffCapabilityBoundary } from '@vmsh/app-shell'
+
+import { StaffTestAttemptRecheckPage } from '../test-attempt-recheck-page'
 
 export const Route = createFileRoute('/problems/$problemId')({
   component: StaffProblemRoute,
 })
 
 function StaffProblemRoute() {
+  const { problemId } = Route.useParams()
   return (
-    <StaffGenericPage
-      title={`Задача ${Route.useParams().problemId}`}
-      description="Подробные метаданные, версии, варианты ответа, сообщения и произвольный Python checker."
-    />
+    <StaffCapabilityBoundary capability="checker.manage">
+      <StaffTestAttemptRecheckPage problemId={problemId} />
+    </StaffCapabilityBoundary>
   )
 }

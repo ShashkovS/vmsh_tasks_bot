@@ -25,6 +25,7 @@ import { Route as StatisticsRouteImport } from './routes/statistics'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as LessonsIndexRouteImport } from './routes/lessons.index'
 import { Route as LessonsLessonIdRouteImport } from './routes/lessons.$lessonId'
+import { Route as ProblemsIndexRouteImport } from './routes/problems.index'
 import { Route as ProblemsProblemIdRouteImport } from './routes/problems.$problemId'
 import { Route as ReviewIndexRouteImport } from './routes/review.index'
 import { Route as ReviewSubmissionIdRouteImport } from './routes/review.$submissionId'
@@ -109,6 +110,11 @@ const LessonsLessonIdRoute = LessonsLessonIdRouteImport.update({
   path: '/$lessonId',
   getParentRoute: () => LessonsRoute,
 } as any)
+const ProblemsIndexRoute = ProblemsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProblemsRoute,
+} as any)
 const ProblemsProblemIdRoute = ProblemsProblemIdRouteImport.update({
   id: '/$problemId',
   path: '/$problemId',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/problems/$problemId': typeof ProblemsProblemIdRoute
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/lessons/': typeof LessonsIndexRoute
+  '/problems/': typeof ProblemsIndexRoute
   '/review/': typeof ReviewIndexRoute
 }
 export interface FileRoutesByTo {
@@ -155,7 +162,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/oral': typeof OralRoute
-  '/problems': typeof ProblemsRouteWithChildren
   '/questions': typeof QuestionsRoute
   '/statistics': typeof StatisticsRoute
   '/users': typeof UsersRoute
@@ -163,6 +169,7 @@ export interface FileRoutesByTo {
   '/problems/$problemId': typeof ProblemsProblemIdRoute
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/lessons': typeof LessonsIndexRoute
+  '/problems': typeof ProblemsIndexRoute
   '/review': typeof ReviewIndexRoute
 }
 export interface FileRoutesById {
@@ -185,6 +192,7 @@ export interface FileRoutesById {
   '/problems/$problemId': typeof ProblemsProblemIdRoute
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/lessons/': typeof LessonsIndexRoute
+  '/problems/': typeof ProblemsIndexRoute
   '/review/': typeof ReviewIndexRoute
 }
 export interface FileRouteTypes {
@@ -208,6 +216,7 @@ export interface FileRouteTypes {
     | '/problems/$problemId'
     | '/review/$submissionId'
     | '/lessons/'
+    | '/problems/'
     | '/review/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -219,7 +228,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/news'
     | '/oral'
-    | '/problems'
     | '/questions'
     | '/statistics'
     | '/users'
@@ -227,6 +235,7 @@ export interface FileRouteTypes {
     | '/problems/$problemId'
     | '/review/$submissionId'
     | '/lessons'
+    | '/problems'
     | '/review'
   id:
     | '__root__'
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/problems/$problemId'
     | '/review/$submissionId'
     | '/lessons/'
+    | '/problems/'
     | '/review/'
   fileRoutesById: FileRoutesById
 }
@@ -382,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LessonsLessonIdRouteImport
       parentRoute: typeof LessonsRoute
     }
+    '/problems/': {
+      id: '/problems/'
+      path: '/'
+      fullPath: '/problems/'
+      preLoaderRoute: typeof ProblemsIndexRouteImport
+      parentRoute: typeof ProblemsRoute
+    }
     '/problems/$problemId': {
       id: '/problems/$problemId'
       path: '/$problemId'
@@ -421,10 +438,12 @@ const LessonsRouteWithChildren =
 
 interface ProblemsRouteChildren {
   ProblemsProblemIdRoute: typeof ProblemsProblemIdRoute
+  ProblemsIndexRoute: typeof ProblemsIndexRoute
 }
 
 const ProblemsRouteChildren: ProblemsRouteChildren = {
   ProblemsProblemIdRoute: ProblemsProblemIdRoute,
+  ProblemsIndexRoute: ProblemsIndexRoute,
 }
 
 const ProblemsRouteWithChildren = ProblemsRoute._addFileChildren(
