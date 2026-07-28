@@ -13,7 +13,7 @@
 | Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
 | Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
 | Этап 2              | Phase 2A–2E + browser E2E   | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
-| Этап 3              | Phase 3A–3F reading slice   | Course/lesson/home, архив, canonical task/status и audited hint/solution reveal проверены в 3 браузерах; offline gate открыт                                          |
+| Этап 3              | Phase 3A–3G reading slice   | Course/lesson/home, canonical task/reveal и owner-isolated cold-offline reading проверены в 3 браузерах; performance и visual gates открыты                           |
 | Этапы 4–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
@@ -288,8 +288,16 @@
   **265 TS + 1100 Python PASS**, Storybook **181 PASS**, production browser
   checkpoint **3/3 PASS**. Proof:
   [`phase3-student-material-reveal.md`](../../../pwa_tests/reports/phase3-student-material-reveal.md).
-- Phase 3 остаётся открыт: следующий gate — authenticated Dexie/offline cache,
-  cold-offline reading и cache isolation.
+- Phase 3G revisions `50cd541`, `d4b0b9b`, `89cefb7`, `bb6c6ef`, `d822e2e`
+  добавляют secret-free durable auth boundary, 10 MiB owner-scoped validated
+  Dexie cache и offline read-through для production Student. Audited hint
+  доступен после cold reload, новая publication не доверяет старому reveal, а
+  второй Student не видит cache первого. Полный regression: **283 TS + 1101
+  Python PASS**, Storybook **182 PASS**, production browser checkpoint **3/3
+  PASS**. Proof:
+  [`phase3-student-offline-reading.md`](../../../pwa_tests/reports/phase3-student-offline-reading.md).
+- Phase 3 остаётся открыт только для performance proof длинного KaTeX-листка и
+  ручного visual owner gate; snapshots не обновлялись.
 
 ## Текущий инкремент этапа 1
 
@@ -613,7 +621,7 @@
 |    0 | —                    | —                                                              | —                                  |
 |    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)            | частично; production gates открыты |
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)         | Browser path принят; этап открыт   |
-|    3 | `d70b0d9`…`fabdf93`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A–3F приняты; этап открыт   |
+|    3 | `d70b0d9`…`d822e2e`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A–3G приняты; этап открыт   |
 |    4 | —                    | —                                                              | —                                  |
 |    5 | —                    | —                                                              | —                                  |
 |    6 | —                    | —                                                              | —                                  |

@@ -185,32 +185,59 @@ Proof:
 
 Proof:
 [`phase3-student-material-reveal.md`](../../../pwa_tests/reports/phase3-student-material-reveal.md).
-Следующий gate — authenticated Dexie/offline cache и cold-offline reading.
+Следующий после него gate Phase 3G закрыт ниже.
 
-- [x] Revision/migrations: `1aeb78d`, `8448a8b`, `fabdf93`;
-      public identity — `migrations/0044.pwa_problem_identity*`, reveal использует
-      существующие immutable таблицы из `0041`; API/read model и frontend paths
-      перечислены в Phase 3E/3F proof.
-- [ ] Demo Student Now/list/long/focused/offline: Now + lesson archive +
-      canonical problem status + focused condition + audited hint reveal
-      **3/3 PASS**; offline открыт.
+Промежуточный gate **Phase 3G — authenticated Dexie и cold-offline reading**
+реализован 28 июля 2026, revisions `50cd541`, `d4b0b9b`, `89cefb7`,
+`bb6c6ef`, `d822e2e`:
+
+- [x] secret-free auth snapshot открывает только ещё действующий namespace
+      прежнего аккаунта; expiry, authoritative rejection, logout и account
+      switch очищают его атомарно вместе с documents/outbox;
+- [x] все Student read models и condition сохраняются отдельными
+      owner/resource-scoped Zod-validated envelopes с version/fetched/expiry;
+- [x] expired copy явно помечается stale, повреждённая удаляется, а fallback
+      разрешён только для настоящей сетевой ошибки;
+- [x] audited hint повторно открывается offline, но unaudited или заменённая
+      publication не может использовать старый cached reveal;
+- [x] document budget — 10 MiB/500 записей на owner; oldest-first eviction,
+      owner separation и corrupt-record recovery покрыты unit-тестами;
+- [x] production browser flow после холодной перезагрузки с недоступным API
+      читает condition/hint, а после login второго Student доказывает отсутствие
+      утечки первого owner во всех трёх браузерах;
+- [x] полный regression **283 TS + 1101 Python PASS**, Storybook **182 PASS**,
+      strict checks и production build PASS, browser checkpoint **3/3 PASS**.
+
+Proof:
+[`phase3-student-offline-reading.md`](../../../pwa_tests/reports/phase3-student-offline-reading.md).
+
+- [x] Revision/migrations: `1aeb78d`, `8448a8b`, `fabdf93`, `50cd541`,
+      `d4b0b9b`, `89cefb7`, `bb6c6ef`, `d822e2e`; public identity — `0044`,
+      exact material-match reveal trigger — `0045`; paths перечислены в proof.
+- [x] Demo Student Now/list/long/focused/offline: Now + lesson archive +
+      canonical problem status + focused condition + audited hint reveal +
+      cold API failure + account switch **3/3 PASS**.
 - [x] Lesson list query/read contract: один bounded SQLite statement; proof выше.
 - [x] Home query count/plan and response contract: bounded single statement,
       Zod fixture и browser proof в `phase3-student-home.md`.
 - [x] Hint/solution authorization + reveal events: exact current-publication
-      projection, immutable/idempotent audit, **33 HTTP PASS**, production
+      projection, immutable/idempotent audit, **34 HTTP PASS**, production
       browser **3/3 PASS**; proof выше.
-- [ ] Dexie cache/quota/isolation tests: `<result>`.
+- [x] Dexie cache/quota/isolation tests: strict envelope, stale/corrupt records,
+      10 MiB/500-entry eviction, auth expiry/logout/account switch и owner
+      separation входят в общий **283 TS PASS**.
 - [ ] Storybook priority stories, interactions, a11y, visuals:
       `product-courses--allowed-group-reading-context` и
-      `product-reading--audited-reveal-recovery`, suite **181 PASS**; offline
-      stories и visual owner gate открыты.
-- [ ] Playwright online/offline/deep-link 3 browsers: online
+      `product-reading--audited-reveal-recovery`,
+      `product-reading--offline-last-copy`, suite **182 PASS**; visual owner
+      gate открыт, snapshots не обновлялись.
+- [x] Playwright online/offline/deep-link 3 browsers: online
       home→course/group archive→URL-selected lesson→opaque problem URL→focused
-      condition→audited hint→reload without confirmation **3/3 PASS**;
-      cold-offline/deep-link isolation ещё открыты.
+      condition→audited hint→cold reload/API failure→online rollback→login
+      второго Student→offline cache-isolation **3/3 PASS**.
 - [ ] Performance evidence long math document/KaTeX: `<path/result>`.
-- [ ] Docs/cache policy/known limitations/acceptance: `<paths/issues/name/date>`.
+- [x] Docs/cache policy/known limitations/acceptance:
+      `phase3-student-offline-reading.md`, 28 июля 2026.
 
 ## Многокурсовый инкремент Phase 3
 

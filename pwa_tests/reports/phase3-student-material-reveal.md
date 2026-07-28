@@ -30,8 +30,13 @@ Revision: `fabdf93`
 - Family read boundary не менялся: родитель продолжает читать опубликованные
   материалы своего ребёнка без Student reveal event.
 
-Новая миграция не потребовалась: immutable таблицы и DB-триггеры reveal были
-созданы в `migrations/0041.pwa_content_lessons.sql`.
+Immutable таблицы были созданы в `migrations/0041.pwa_content_lessons.sql`.
+Последующий real Staff/offline E2E выявил, что hint/solution workflow сохраняет
+структурный `content_problem_matches`, но намеренно не дублирует condition
+metadata в `problem_revisions`. Follow-up `89cefb7` добавил миграцию
+`0045.pwa_material_reveal_matches`: текущий DB trigger теперь требует точный
+resolved match именно опубликованной material revision. Подробности и полный
+regression зафиксированы в `phase3-student-offline-reading.md`.
 
 ## Реализация
 
