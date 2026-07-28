@@ -162,25 +162,53 @@ Proof: [`phase3-student-task-archive.md`](../../../pwa_tests/reports/phase3-stud
 
 Proof:
 [`phase3-student-problem-list.md`](../../../pwa_tests/reports/phase3-student-problem-list.md).
-Следующий gate — deliberate reveal подсказок/решений и offline Dexie.
+Следующий после него gate Phase 3F закрыт ниже.
 
-- [x] Revision/migrations: `1aeb78d`, `8448a8b`;
-      `migrations/0044.pwa_problem_identity*`, API/read model и frontend paths
-      перечислены в Phase 3E proof.
+Промежуточный gate **Phase 3F — осознанное раскрытие подсказок и решений**
+реализован 28 июля 2026, revision `fabdf93`:
+
+- [x] canonical task projection сообщает отдельно `unavailable`, `available`
+      и `revealed` для подсказки и решения конкретной задачи;
+- [x] старый прямой Student GET закрыт `409`, а strict POST повторно проверяет
+      session, course/group access, текущие condition/material publications и
+      точный opaque problem ID;
+- [x] immutable reveal event создаётся атомарно и идемпотентно; повтор сохраняет
+      первоначальный timestamp, а новая publication образует новую audit
+      boundary;
+- [x] API возвращает только выбранную задачу, без introduction, соседних задач
+      и материала другого вида;
+- [x] shared disclosure не показывает содержимое до успешного audit-запроса,
+      восстанавливается после сетевой ошибки и не просит повторное подтверждение
+      после reload;
+- [x] полный regression **265 TS + 1100 Python PASS**, Storybook **181 PASS**,
+      strict checks PASS, production browser checkpoint **3/3 PASS**.
+
+Proof:
+[`phase3-student-material-reveal.md`](../../../pwa_tests/reports/phase3-student-material-reveal.md).
+Следующий gate — authenticated Dexie/offline cache и cold-offline reading.
+
+- [x] Revision/migrations: `1aeb78d`, `8448a8b`, `fabdf93`;
+      public identity — `migrations/0044.pwa_problem_identity*`, reveal использует
+      существующие immutable таблицы из `0041`; API/read model и frontend paths
+      перечислены в Phase 3E/3F proof.
 - [ ] Demo Student Now/list/long/focused/offline: Now + lesson archive +
-      canonical problem status + focused condition **3/3 PASS**; offline и
-      deliberate reveal открыты.
+      canonical problem status + focused condition + audited hint reveal
+      **3/3 PASS**; offline открыт.
 - [x] Lesson list query/read contract: один bounded SQLite statement; proof выше.
 - [x] Home query count/plan and response contract: bounded single statement,
       Zod fixture и browser proof в `phase3-student-home.md`.
-- [ ] Hint/solution authorization + reveal events: `<tests/result>`.
+- [x] Hint/solution authorization + reveal events: exact current-publication
+      projection, immutable/idempotent audit, **33 HTTP PASS**, production
+      browser **3/3 PASS**; proof выше.
 - [ ] Dexie cache/quota/isolation tests: `<result>`.
 - [ ] Storybook priority stories, interactions, a11y, visuals:
-      `product-courses--allowed-group-reading-context`, suite **180 PASS**;
-      problem/offline stories и visual owner gate открыты.
+      `product-courses--allowed-group-reading-context` и
+      `product-reading--audited-reveal-recovery`, suite **181 PASS**; offline
+      stories и visual owner gate открыты.
 - [ ] Playwright online/offline/deep-link 3 browsers: online
       home→course/group archive→URL-selected lesson→opaque problem URL→focused
-      condition **3/3 PASS**; cold-offline/deep-link isolation ещё открыты.
+      condition→audited hint→reload without confirmation **3/3 PASS**;
+      cold-offline/deep-link isolation ещё открыты.
 - [ ] Performance evidence long math document/KaTeX: `<path/result>`.
 - [ ] Docs/cache policy/known limitations/acceptance: `<paths/issues/name/date>`.
 
