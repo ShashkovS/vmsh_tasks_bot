@@ -137,6 +137,10 @@
       {
         "id": "0052.pwa_submission_reviews_evidence",
         "sha256": "9b020734d44c2e8a5ec302aeeef81aa40f3d185d823edf77dfdfc70f7b443b61"
+      },
+      {
+        "id": "0053.pwa_submission_review_annotations",
+        "sha256": "08ea4b90fd5804dc7e24f5f6fde1f4cbd8dc68fed3bc34c4e7e231e1671f362c"
       }
     ],
     "repository_head_status": {
@@ -147,7 +151,7 @@
     }
   },
   "product": {
-    "object_count": 298,
+    "object_count": 303,
     "objects": [
       {
         "columns": [
@@ -12907,6 +12911,226 @@
           },
           {
             "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "attachment_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "schema_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "rotation",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "marks_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "attachment_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_attachments"
+          },
+          {
+            "from_columns": [
+              "review_id",
+              "attachment_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "review_id",
+              "attachment_id"
+            ],
+            "target_table": "submission_review_evidence_attachments"
+          },
+          {
+            "from_columns": [
+              "review_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_reviews"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_review_annotations_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "attachment_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_review_annotations_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "attachment_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_review_annotations_attachment_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_review_annotations",
+        "object_sha256": "51a7b0160b6d1fff02952e2ff04199e70ad66eb8214999db273f26c44b240e06",
+        "sql": "CREATE TABLE submission_review_annotations\n(\n    id             integer primary key,\n    public_id      text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    review_id      integer not null references submission_reviews (id),\n    attachment_id  integer not null references submission_attachments (id),\n    schema_version integer not null check (schema_version = 1),\n    rotation       integer not null check (rotation in (0, 90, 180, 270)),\n    marks_json     text    not null\n        check (\n            json_valid(marks_json) = 1\n            and json_type(marks_json) = 'array'\n            and json_array_length(marks_json) between 1 and 250\n            and length(marks_json) <= 1000000\n        ),\n    payload_sha256 text    not null\n        check (length(payload_sha256) = 64 and payload_sha256 not glob '*[^0-9a-f]*'),\n    created_at     text    not null,\n    unique (review_id, attachment_id),\n    foreign key (review_id, attachment_id)\n        references submission_review_evidence_attachments (review_id, attachment_id)\n);",
+        "table_name": "submission_review_annotations",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "review_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -16892,6 +17116,13 @@
         "type": "index"
       },
       {
+        "name": "submission_review_annotations_attachment_idx",
+        "object_sha256": "7b57bdf380c54bcc5eeccf92daaefb95c66e05c5943942bca04fe836372fa7d6",
+        "sql": "CREATE INDEX submission_review_annotations_attachment_idx\n    on submission_review_annotations (attachment_id, review_id);",
+        "table_name": "submission_review_annotations",
+        "type": "index"
+      },
+      {
         "name": "submission_review_evidence_attachments_asset_idx",
         "object_sha256": "de9b5b7315e61315ed3af8677571807b4c5253c5312004bebe2d2301256a6fa7",
         "sql": "CREATE INDEX submission_review_evidence_attachments_asset_idx\n    on submission_review_evidence_attachments (asset_id, review_id);",
@@ -17718,6 +17949,27 @@
         "type": "trigger"
       },
       {
+        "name": "submission_review_annotations_delete_forbidden",
+        "object_sha256": "0c770cc7eff2a1a9c55d114b5856bf940cbda26a6049bc2edff4dc5c48ce48b3",
+        "sql": "CREATE TRIGGER submission_review_annotations_delete_forbidden\nbefore delete on submission_review_annotations\nfor each row\nbegin\n    select raise(abort, 'completed review annotation deletion is forbidden');\nend;",
+        "table_name": "submission_review_annotations",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_annotations_immutable_update",
+        "object_sha256": "aac886c10231d261480272a93b4e080c216738ac6b653f46dcdc9421200a442a",
+        "sql": "CREATE TRIGGER submission_review_annotations_immutable_update\nbefore update on submission_review_annotations\nfor each row\nbegin\n    select raise(abort, 'completed review annotation is immutable');\nend;",
+        "table_name": "submission_review_annotations",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_annotations_scope_insert",
+        "object_sha256": "fe31ed09110abd471bd028e83ff767c5c8d10864b3987218249d3c570d52ab25",
+        "sql": "CREATE TRIGGER submission_review_annotations_scope_insert\nbefore insert on submission_review_annotations\nfor each row\nwhen not exists (\n    select 1\n    from submission_review_evidence_attachments as evidence\n    where evidence.review_id = new.review_id\n      and evidence.attachment_id = new.attachment_id\n)\nbegin\n    select raise(abort, 'review annotation is outside immutable evidence');\nend;",
+        "table_name": "submission_review_annotations",
+        "type": "trigger"
+      },
+      {
         "name": "submission_review_events_delete_forbidden",
         "object_sha256": "91771ae499a113fbe8ee22af7d77fe29e2894b90b7376e153eddf798f4bef984",
         "sql": "CREATE TRIGGER submission_review_events_delete_forbidden\nbefore delete on submission_review_events\nfor each row\nbegin\n    select raise(abort, 'submission review event deletion is forbidden');\nend;",
@@ -17893,8 +18145,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "a9bf6351b19faa753acc3defe52a63386be7890bba695533022d9480719c84f2",
-    "sha256": "d9247cd66b5b23b329936aa7fc144e751193302f31f6f16c4b4d72e50ce6635d"
+    "pragma_structure_sha256": "50041b6d13b7bca4d0f54a86ae3cc7435976f0cf1e6474898403b97f731a3e0b",
+    "sha256": "e8473a302eb8875406ffdd1a52251515f41862a0b589f68b9a96665e026bd99b"
   },
   "source_kind": "repository-migration-head"
 }

@@ -6,6 +6,7 @@ import sqlite3
 import uuid
 import hashlib
 import json
+import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -20,6 +21,13 @@ from .connection import PwaConnectionFactory
 REVIEW_LEASE_DURATION = timedelta(minutes=30)
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _WRITTEN_REVIEW_VERDICTS = frozenset(range(11, 18))
+_ANNOTATION_KINDS = frozenset(
+    {"pencil", "eraser", "text", "arrow", "rectangle", "highlight"}
+)
+_ANNOTATION_COLORS = frozenset({"red", "blue", "graphite", "amber"})
+_ANNOTATION_ROTATIONS = frozenset({0, 90, 180, 270})
+_MAX_ANNOTATION_POINTS = 20_000
+_MAX_ANNOTATION_MANIFEST_BYTES = 1_000_000
 
 
 class ReviewQueueError(RuntimeError):
@@ -56,6 +64,254 @@ class ReviewIdempotencyConflict(ReviewQueueError):
 
 class ReviewCompletionInvalid(ReviewQueueError):
     """The completion payload violates the written-review policy."""
+
+
+def _annotation_number(
+    value: object,
+    *,
+    label: str,
+    minimum: float = 0.0,
+    maximum: float = 1.0,
+) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ReviewCompletionInvalid(f"annotation {label} must be a number")
+    normalized = float(value)
+    if not math.isfinite(normalized) or not minimum <= normalized <= maximum:
+        raise ReviewCompletionInvalid(
+            f"annotation {label} must be between {minimum} and {maximum}"
+        )
+    return normalized
+
+
+def _annotation_exact_keys(
+    value: object, *, expected: frozenset[str], label: str
+) -> Mapping[str, object]:
+    if not isinstance(value, Mapping) or set(value) != expected:
+        raise ReviewCompletionInvalid(f"annotation {label} has invalid fields")
+    return value
+
+
+def _annotation_point(value: object, *, label: str) -> dict[str, float]:
+    point = _annotation_exact_keys(value, expected=frozenset({"x", "y"}), label=label)
+    return {
+        "x": _annotation_number(point["x"], label=f"{label}.x"),
+        "y": _annotation_number(point["y"], label=f"{label}.y"),
+    }
+
+
+def _annotation_color(value: object) -> str:
+    if not isinstance(value, str) or value not in _ANNOTATION_COLORS:
+        raise ReviewCompletionInvalid("annotation color is not supported")
+    return value
+
+
+def _annotation_box(data: Mapping[str, object], *, label: str) -> dict[str, float]:
+    x = _annotation_number(data["x"], label=f"{label}.x")
+    y = _annotation_number(data["y"], label=f"{label}.y")
+    width = _annotation_number(data["width"], label=f"{label}.width", minimum=0.001)
+    height = _annotation_number(data["height"], label=f"{label}.height", minimum=0.001)
+    if x + width > 1.0 or y + height > 1.0:
+        raise ReviewCompletionInvalid(f"annotation {label} leaves the image bounds")
+    return {"x": x, "y": y, "width": width, "height": height}
+
+
+def _normalize_annotation_data(
+    *, kind: str, value: object
+) -> tuple[dict[str, object], int]:
+    if kind in {"pencil", "eraser"}:
+        expected = (
+            frozenset({"points", "width", "color"})
+            if kind == "pencil"
+            else frozenset({"points", "width"})
+        )
+        data = _annotation_exact_keys(value, expected=expected, label=kind)
+        points_value = data["points"]
+        if (
+            not isinstance(points_value, (list, tuple))
+            or not 2 <= len(points_value) <= 4096
+        ):
+            raise ReviewCompletionInvalid(
+                f"annotation {kind} requires between 2 and 4096 points"
+            )
+        normalized: dict[str, object] = {
+            "points": [
+                _annotation_point(point, label=f"{kind}.points[{index}]")
+                for index, point in enumerate(points_value)
+            ],
+            "width": _annotation_number(
+                data["width"], label=f"{kind}.width", minimum=0.001, maximum=0.1
+            ),
+        }
+        if kind == "pencil":
+            normalized["color"] = _annotation_color(data["color"])
+        return normalized, len(points_value)
+
+    if kind == "text":
+        data = _annotation_exact_keys(
+            value,
+            expected=frozenset({"x", "y", "text", "size", "color"}),
+            label=kind,
+        )
+        text = data["text"]
+        if not isinstance(text, str) or not text.strip() or len(text) > 500:
+            raise ReviewCompletionInvalid(
+                "annotation text must contain between 1 and 500 characters"
+            )
+        return (
+            {
+                "x": _annotation_number(data["x"], label="text.x"),
+                "y": _annotation_number(data["y"], label="text.y"),
+                "text": text,
+                "size": _annotation_number(
+                    data["size"], label="text.size", minimum=0.01, maximum=0.2
+                ),
+                "color": _annotation_color(data["color"]),
+            },
+            0,
+        )
+
+    if kind == "arrow":
+        data = _annotation_exact_keys(
+            value,
+            expected=frozenset({"start", "end", "width", "color"}),
+            label=kind,
+        )
+        start = _annotation_point(data["start"], label="arrow.start")
+        end = _annotation_point(data["end"], label="arrow.end")
+        if start == end:
+            raise ReviewCompletionInvalid("annotation arrow must have a direction")
+        return (
+            {
+                "start": start,
+                "end": end,
+                "width": _annotation_number(
+                    data["width"], label="arrow.width", minimum=0.001, maximum=0.1
+                ),
+                "color": _annotation_color(data["color"]),
+            },
+            0,
+        )
+
+    if kind == "rectangle":
+        data = _annotation_exact_keys(
+            value,
+            expected=frozenset({"x", "y", "width", "height", "strokeWidth", "color"}),
+            label=kind,
+        )
+        return (
+            {
+                **_annotation_box(data, label="rectangle"),
+                "strokeWidth": _annotation_number(
+                    data["strokeWidth"],
+                    label="rectangle.strokeWidth",
+                    minimum=0.001,
+                    maximum=0.1,
+                ),
+                "color": _annotation_color(data["color"]),
+            },
+            0,
+        )
+
+    if kind == "highlight":
+        data = _annotation_exact_keys(
+            value,
+            expected=frozenset({"x", "y", "width", "height"}),
+            label=kind,
+        )
+        return _annotation_box(data, label="highlight"), 0
+
+    raise ReviewCompletionInvalid("annotation kind is not supported")
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewAnnotationMark:
+    mark_public_id: str
+    kind: str
+    data_json: str
+    point_count: int
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.mark_public_id):
+            raise ReviewCompletionInvalid("annotation mark ID is invalid")
+        if self.kind not in _ANNOTATION_KINDS:
+            raise ReviewCompletionInvalid("annotation kind is not supported")
+        try:
+            raw_data = json.loads(self.data_json)
+        except (TypeError, json.JSONDecodeError) as error:
+            raise ReviewCompletionInvalid("annotation mark data is invalid") from error
+        normalized, point_count = _normalize_annotation_data(
+            kind=self.kind, value=raw_data
+        )
+        if self.data_json != _canonical_json(normalized):
+            raise ReviewCompletionInvalid("annotation mark data is not canonical")
+        if self.point_count != point_count:
+            raise ReviewCompletionInvalid("annotation mark point count is invalid")
+
+    @classmethod
+    def from_payload(
+        cls, *, mark_public_id: str, kind: str, data: object
+    ) -> ReviewAnnotationMark:
+        if not _PUBLIC_ID.fullmatch(mark_public_id):
+            raise ReviewCompletionInvalid("annotation mark ID is invalid")
+        if kind not in _ANNOTATION_KINDS:
+            raise ReviewCompletionInvalid("annotation kind is not supported")
+        normalized, point_count = _normalize_annotation_data(kind=kind, value=data)
+        return cls(
+            mark_public_id=mark_public_id,
+            kind=kind,
+            data_json=_canonical_json(normalized),
+            point_count=point_count,
+        )
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "markId": self.mark_public_id,
+            "kind": self.kind,
+            "data": json.loads(self.data_json),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewAnnotationManifest:
+    attachment_public_id: str
+    schema_version: int
+    rotation: int
+    marks: tuple[ReviewAnnotationMark, ...]
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.attachment_public_id):
+            raise ReviewCompletionInvalid("annotation attachment ID is invalid")
+        if type(self.schema_version) is not int or self.schema_version != 1:
+            raise ReviewCompletionInvalid("annotation schema version is not supported")
+        if type(self.rotation) is not int or self.rotation not in _ANNOTATION_ROTATIONS:
+            raise ReviewCompletionInvalid("annotation rotation is not supported")
+        if not 1 <= len(self.marks) <= 250:
+            raise ReviewCompletionInvalid(
+                "annotation manifest requires between 1 and 250 marks"
+            )
+        if any(not isinstance(mark, ReviewAnnotationMark) for mark in self.marks):
+            raise ReviewCompletionInvalid(
+                "annotation manifest contains an invalid mark"
+            )
+        if len({mark.mark_public_id for mark in self.marks}) != len(self.marks):
+            raise ReviewCompletionInvalid("annotation mark IDs must be unique")
+        if sum(mark.point_count for mark in self.marks) > _MAX_ANNOTATION_POINTS:
+            raise ReviewCompletionInvalid("annotation manifest has too many points")
+        if len(_canonical_json(self.marks_payload()).encode("utf-8")) > (
+            _MAX_ANNOTATION_MANIFEST_BYTES
+        ):
+            raise ReviewCompletionInvalid("annotation manifest is too large")
+
+    def marks_payload(self) -> list[dict[str, object]]:
+        return [mark.payload() for mark in self.marks]
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "attachmentId": self.attachment_public_id,
+            "schemaVersion": self.schema_version,
+            "rotation": self.rotation,
+            "marks": self.marks_payload(),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -178,6 +434,7 @@ class CompleteReviewCommand:
     comment: str | None
     confirm_without_comment: bool
     branches: tuple[ReviewEvidenceBranchExpectation, ...]
+    annotations: tuple[ReviewAnnotationManifest, ...] = ()
 
     def __post_init__(self) -> None:
         if not _PUBLIC_ID.fullmatch(self.queue_public_id):
@@ -207,6 +464,12 @@ class CompleteReviewCommand:
             self.branches
         ):
             raise ValueError("review branch queue IDs must be unique")
+        if len({item.attachment_public_id for item in self.annotations}) != len(
+            self.annotations
+        ):
+            raise ReviewCompletionInvalid(
+                "review annotation attachment IDs must be unique"
+            )
 
     def payload(self) -> dict[str, object]:
         return {
@@ -231,7 +494,17 @@ class CompleteReviewCommand:
                 }
                 for branch in self.branches
             ],
+            "annotations": [annotation.payload() for annotation in self.annotations],
         }
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewAnnotationReceipt:
+    annotation_public_id: str
+    attachment_public_id: str
+    schema_version: int
+    rotation: int
+    mark_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -245,6 +518,7 @@ class CompleteReviewReceipt:
     evidence_entry_public_ids: tuple[str, ...]
     evidence_problem_public_ids: tuple[str, ...]
     owner_account_public_ids: tuple[str, ...]
+    annotations: tuple[ReviewAnnotationReceipt, ...]
     completed_at: datetime
     replayed: bool = False
 
@@ -291,7 +565,7 @@ def _timestamp(value: datetime) -> str:
     )
 
 
-def _canonical_json(value: Mapping[str, object]) -> str:
+def _canonical_json(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
@@ -602,6 +876,9 @@ class PwaWrittenReviewQueueRepository:
         clock: Callable[[], datetime] = _utc_now,
         claim_token_factory: Callable[[], str] = lambda: f"review-claim-{uuid.uuid4()}",
         review_public_id_factory: Callable[[], str] = lambda: f"review-{uuid.uuid4()}",
+        annotation_public_id_factory: Callable[[], str] = lambda: (
+            f"review-annotation-{uuid.uuid4()}"
+        ),
         comment_public_id_factory: Callable[[], str] = lambda: f"entry-{uuid.uuid4()}",
         event_public_id_factory: Callable[[], str] = lambda: (
             f"review-event-{uuid.uuid4()}"
@@ -611,6 +888,7 @@ class PwaWrittenReviewQueueRepository:
         self._clock = clock
         self._claim_token_factory = claim_token_factory
         self._review_public_id_factory = review_public_id_factory
+        self._annotation_public_id_factory = annotation_public_id_factory
         self._comment_public_id_factory = comment_public_id_factory
         self._event_public_id_factory = event_public_id_factory
 
@@ -906,6 +1184,16 @@ class PwaWrittenReviewQueueRepository:
                 "AND account.status = 'active' ORDER BY account.id",
                 (row["thread_id"],),
             ).fetchall()
+            annotations = connection.execute(
+                "SELECT annotation.public_id, attachment.public_id AS attachment_public_id, "
+                "annotation.schema_version, annotation.rotation, "
+                "json_array_length(annotation.marks_json) AS mark_count "
+                "FROM submission_review_annotations AS annotation "
+                "JOIN submission_attachments AS attachment "
+                "ON attachment.id = annotation.attachment_id "
+                "WHERE annotation.review_id = ? ORDER BY attachment.ordinal, annotation.id",
+                (row["id"],),
+            ).fetchall()
             return CompleteReviewReceipt(
                 review_public_id=str(row["public_id"]),
                 target_thread_public_id=str(row["thread_public_id"]),
@@ -929,6 +1217,16 @@ class PwaWrittenReviewQueueRepository:
                 ),
                 owner_account_public_ids=tuple(
                     str(account["public_id"]) for account in owner_accounts
+                ),
+                annotations=tuple(
+                    ReviewAnnotationReceipt(
+                        annotation_public_id=str(item["public_id"]),
+                        attachment_public_id=str(item["attachment_public_id"]),
+                        schema_version=int(item["schema_version"]),
+                        rotation=int(item["rotation"]),
+                        mark_count=int(item["mark_count"]),
+                    )
+                    for item in annotations
                 ),
                 completed_at=_parse_timestamp(row["created_at"], label="review time"),
                 replayed=replayed,
@@ -995,6 +1293,19 @@ class PwaWrittenReviewQueueRepository:
             actual_by_queue = {
                 branch.queue_public_id: branch for branch in actual_branches
             }
+            actual_attachment_ids = {
+                attachment.attachment_public_id
+                for branch in actual_branches
+                for entry in branch.entries
+                for attachment in entry.attachments
+            }
+            requested_attachment_ids = {
+                annotation.attachment_public_id for annotation in command.annotations
+            }
+            if not requested_attachment_ids <= actual_attachment_ids:
+                raise ReviewCompletionInvalid(
+                    "review annotation references an attachment outside current evidence"
+                )
             queue_by_public_id = {str(row["public_id"]): row for row in queue_rows}
             for queue_public_id, expected in expected_by_queue.items():
                 actual = actual_by_queue[queue_public_id]
@@ -1163,6 +1474,7 @@ class PwaWrittenReviewQueueRepository:
             )
 
             evidence_public_ids: list[str] = []
+            evidence_attachments_by_public_id: dict[str, int] = {}
             for entry in sorted(
                 evidence_rows,
                 key=lambda row: (str(row["server_received_at"]), int(row["id"])),
@@ -1182,7 +1494,8 @@ class PwaWrittenReviewQueueRepository:
                 )
                 evidence_public_ids.append(str(entry["public_id"]))
                 attachments = connection.execute(
-                    "SELECT id, entry_id, asset_id, ordinal FROM submission_attachments "
+                    "SELECT id, public_id, entry_id, asset_id, ordinal "
+                    "FROM submission_attachments "
                     "WHERE entry_id = ? AND upload_status = 'stored' "
                     "ORDER BY ordinal, id",
                     (entry["id"],),
@@ -1200,6 +1513,45 @@ class PwaWrittenReviewQueueRepository:
                             attachment["ordinal"],
                         ),
                     )
+                    evidence_attachments_by_public_id[str(attachment["public_id"])] = (
+                        int(attachment["id"])
+                    )
+
+            annotation_receipts: list[ReviewAnnotationReceipt] = []
+            for annotation in command.annotations:
+                annotation_public_id = self._annotation_public_id_factory().strip()
+                if not _PUBLIC_ID.fullmatch(annotation_public_id):
+                    raise ValueError(
+                        "annotation public ID factory returned an invalid value"
+                    )
+                marks_json = _canonical_json(annotation.marks_payload())
+                connection.execute(
+                    "INSERT INTO submission_review_annotations "
+                    "(public_id, review_id, attachment_id, schema_version, rotation, "
+                    "marks_json, payload_sha256, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        annotation_public_id,
+                        review_id,
+                        evidence_attachments_by_public_id[
+                            annotation.attachment_public_id
+                        ],
+                        annotation.schema_version,
+                        annotation.rotation,
+                        marks_json,
+                        _payload_hash(annotation.payload()),
+                        completed_at,
+                    ),
+                )
+                annotation_receipts.append(
+                    ReviewAnnotationReceipt(
+                        annotation_public_id=annotation_public_id,
+                        attachment_public_id=annotation.attachment_public_id,
+                        schema_version=annotation.schema_version,
+                        rotation=annotation.rotation,
+                        mark_count=len(annotation.marks),
+                    )
+                )
 
             target_status = (
                 "accepted"
@@ -1242,6 +1594,10 @@ class PwaWrittenReviewQueueRepository:
                             "studentUserId": target_thread["student_user_id"],
                             "targetProblemId": target_problem["id"],
                             "evidenceEntryIds": evidence_public_ids,
+                            "annotationIds": [
+                                annotation.annotation_public_id
+                                for annotation in annotation_receipts
+                            ],
                         }
                     ),
                     completed_at,
@@ -1268,6 +1624,7 @@ class PwaWrittenReviewQueueRepository:
                         (target_thread["student_user_id"],),
                     ).fetchall()
                 ),
+                annotations=tuple(annotation_receipts),
                 completed_at=now,
             )
 
@@ -1332,6 +1689,9 @@ __all__ = [
     "ReviewLeaseItem",
     "ReviewLeaseLost",
     "ReviewCompletionInvalid",
+    "ReviewAnnotationManifest",
+    "ReviewAnnotationMark",
+    "ReviewAnnotationReceipt",
     "ReviewEvidenceAttachment",
     "ReviewEvidenceBranch",
     "ReviewEvidenceBranchExpectation",

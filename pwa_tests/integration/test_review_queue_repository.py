@@ -14,6 +14,10 @@ from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.reviews import (
     CompleteReviewCommand,
     PwaWrittenReviewQueueRepository,
+    ReviewAnnotationManifest,
+    ReviewAnnotationMark,
+    ReviewAnnotationReceipt,
+    ReviewCompletionInvalid,
     ReviewEvidenceBranchExpectation,
     ReviewEvidenceEntryExpectation,
     ReviewIdempotencyConflict,
@@ -72,6 +76,7 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
         clock=clock,
         claim_token_factory=lambda: next(tokens),
         review_public_id_factory=lambda: "review-completed-test",
+        annotation_public_id_factory=lambda: "review-annotation-test",
         comment_public_id_factory=lambda: "review-comment-test",
         event_public_id_factory=lambda: "review-event-test",
     )
@@ -258,22 +263,46 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
                     ),
                 ).fetchone()["id"]
             )
-            connection.execute(
-                "INSERT INTO submission_entries "
-                "(public_id, thread_id, problem_revision_id, author_kind, "
-                "author_user_id, channel, entry_kind, state, text, client_created_at, "
-                "server_received_at, version) VALUES (?, ?, ?, 'student', ?, 'pwa', "
-                "'submission', 'submitted', ?, ?, ?, 2)",
-                (
-                    f"review-entry-test-{index}",
-                    thread_id,
-                    problem_revision_id,
-                    STUDENT_ID,
-                    f"Решение {index}",
-                    submitted_at,
-                    submitted_at,
-                ),
+            entry_id = int(
+                connection.execute(
+                    "INSERT INTO submission_entries "
+                    "(public_id, thread_id, problem_revision_id, author_kind, "
+                    "author_user_id, channel, entry_kind, state, text, client_created_at, "
+                    "server_received_at, version) VALUES (?, ?, ?, 'student', ?, 'pwa', "
+                    "'submission', 'submitted', ?, ?, ?, 2) RETURNING id",
+                    (
+                        f"review-entry-test-{index}",
+                        thread_id,
+                        problem_revision_id,
+                        STUDENT_ID,
+                        f"Решение {index}",
+                        submitted_at,
+                        submitted_at,
+                    ),
+                ).fetchone()["id"]
             )
+            if index == 1:
+                asset_id = int(
+                    connection.execute(
+                        "INSERT INTO media_assets "
+                        "(public_id, sha256, storage_namespace, object_key, public_url, "
+                        "media_type, byte_size, width, height, source_filename, "
+                        "conversion_version, created_by_user_id, created_at) "
+                        "VALUES ('review-asset-test-1', ?, 'submission', "
+                        "'submission/review-asset-test-1.webp', "
+                        "'https://assets.test/review-asset-test-1.webp', "
+                        "'image/webp', 1024, 1200, 900, 'page.webp', "
+                        "'submission-webp-v1', ?, ?) RETURNING id",
+                        ("a" * 64, STUDENT_ID, submitted_at),
+                    ).fetchone()["id"]
+                )
+                connection.execute(
+                    "INSERT INTO submission_attachments "
+                    "(public_id, entry_id, asset_id, ordinal, client_filename, "
+                    "upload_status, created_at) VALUES "
+                    "('review-attachment-test-1', ?, ?, 0, 'page.webp', 'stored', ?)",
+                    (entry_id, asset_id, submitted_at),
+                )
             queue_public_id = f"review-queue-test-{index}"
             connection.execute(
                 "INSERT INTO written_tasks_queue "
@@ -356,6 +385,7 @@ def _complete_command(
     *,
     idempotency_key: str = "review-completion-idempotency-1",
     verdict: VERDICT = VERDICT.VERDICT_PLUS_DOT,
+    annotations: tuple[ReviewAnnotationManifest, ...] = (),
 ) -> CompleteReviewCommand:
     evidence_by_queue = {
         branch.queue_public_id: branch for branch in lease.evidence_branches
@@ -389,7 +419,192 @@ def _complete_command(
             )
             for item in lease.items
         ),
+        annotations=annotations,
     )
+
+
+def _annotation_manifest(
+    *, attachment_public_id: str = "review-attachment-test-1"
+) -> ReviewAnnotationManifest:
+    return ReviewAnnotationManifest(
+        attachment_public_id=attachment_public_id,
+        schema_version=1,
+        rotation=90,
+        marks=(
+            ReviewAnnotationMark.from_payload(
+                mark_public_id="mark-pencil-1",
+                kind="pencil",
+                data={
+                    "points": [{"x": 0.1, "y": 0.2}, {"x": 0.3, "y": 0.4}],
+                    "width": 0.01,
+                    "color": "red",
+                },
+            ),
+            ReviewAnnotationMark.from_payload(
+                mark_public_id="mark-text-1",
+                kind="text",
+                data={
+                    "x": 0.35,
+                    "y": 0.45,
+                    "text": "Проверьте этот переход",
+                    "size": 0.04,
+                    "color": "blue",
+                },
+            ),
+            ReviewAnnotationMark.from_payload(
+                mark_public_id="mark-arrow-1",
+                kind="arrow",
+                data={
+                    "start": {"x": 0.5, "y": 0.5},
+                    "end": {"x": 0.7, "y": 0.6},
+                    "width": 0.008,
+                    "color": "graphite",
+                },
+            ),
+            ReviewAnnotationMark.from_payload(
+                mark_public_id="mark-rectangle-1",
+                kind="rectangle",
+                data={
+                    "x": 0.1,
+                    "y": 0.7,
+                    "width": 0.25,
+                    "height": 0.15,
+                    "strokeWidth": 0.006,
+                    "color": "red",
+                },
+            ),
+            ReviewAnnotationMark.from_payload(
+                mark_public_id="mark-highlight-1",
+                kind="highlight",
+                data={"x": 0.4, "y": 0.75, "width": 0.3, "height": 0.08},
+            ),
+            ReviewAnnotationMark.from_payload(
+                mark_public_id="mark-eraser-1",
+                kind="eraser",
+                data={
+                    "points": [{"x": 0.2, "y": 0.2}, {"x": 0.21, "y": 0.22}],
+                    "width": 0.02,
+                },
+            ),
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    ("kind", "data"),
+    (
+        (
+            "pencil",
+            {
+                "points": [{"x": -0.1, "y": 0}, {"x": 0, "y": 0}],
+                "width": 0.01,
+                "color": "red",
+            },
+        ),
+        (
+            "arrow",
+            {
+                "start": {"x": 0.5, "y": 0.5},
+                "end": {"x": 0.5, "y": 0.5},
+                "width": 0.01,
+                "color": "red",
+            },
+        ),
+        (
+            "rectangle",
+            {
+                "x": 0.9,
+                "y": 0.9,
+                "width": 0.2,
+                "height": 0.2,
+                "strokeWidth": 0.01,
+                "color": "red",
+            },
+        ),
+        ("text", {"x": 0.1, "y": 0.1, "text": " ", "size": 0.04, "color": "blue"}),
+    ),
+)
+def test_annotation_domain_rejects_invalid_normalized_geometry(kind, data):
+    with pytest.raises(ReviewCompletionInvalid, match="annotation"):
+        ReviewAnnotationMark.from_payload(
+            mark_public_id="invalid-mark", kind=kind, data=data
+        )
+
+
+@pytest.mark.asyncio
+async def test_complete_persists_annotation_manifest_atomically_and_immutably(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    command = _complete_command(lease, annotations=(_annotation_manifest(),))
+
+    receipt = await fixture.repository.complete(command)
+
+    assert receipt.annotations == (
+        ReviewAnnotationReceipt(
+            annotation_public_id="review-annotation-test",
+            attachment_public_id="review-attachment-test-1",
+            schema_version=1,
+            rotation=90,
+            mark_count=6,
+        ),
+    )
+    stored = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT marks_json, payload_sha256 FROM submission_review_annotations"
+        ).fetchone()
+    )
+    assert len(stored["payload_sha256"]) == 64
+    assert '"kind":"pencil"' in stored["marks_json"]
+    assert '"kind":"text"' in stored["marks_json"]
+
+    for statement in (
+        "UPDATE submission_review_annotations SET rotation = 0",
+        "DELETE FROM submission_review_annotations",
+    ):
+        with pytest.raises(sqlite3.IntegrityError, match="review annotation"):
+            fixture.factory.run_write(
+                lambda connection, sql=statement: connection.execute(sql)
+            )
+
+    replay = await fixture.repository.complete(command)
+    assert replay.replayed is True
+    assert replay.annotations == receipt.annotations
+
+
+@pytest.mark.asyncio
+async def test_complete_rejects_annotation_outside_current_evidence_without_writes(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+
+    with pytest.raises(ReviewCompletionInvalid, match="outside current evidence"):
+        await fixture.repository.complete(
+            _complete_command(
+                lease,
+                annotations=(
+                    _annotation_manifest(attachment_public_id="foreign-attachment"),
+                ),
+            )
+        )
+    counts = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT (SELECT count(*) FROM submission_reviews) AS reviews, "
+            "(SELECT count(*) FROM submission_review_annotations) AS annotations, "
+            "(SELECT count(*) FROM results) AS results"
+        ).fetchone()
+    )
+    assert counts == {"reviews": 0, "annotations": 0, "results": 0}
 
 
 @pytest.mark.asyncio

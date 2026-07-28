@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: d9247cd66b5b23b329936aa7fc144e751193302f31f6f16c4b4d72e50ce6635d
+-- Product schema SHA-256: e8473a302eb8875406ffdd1a52251515f41862a0b589f68b9a96665e026bd99b
 
 CREATE TABLE auth_accounts
 (
@@ -1445,6 +1445,35 @@ CREATE TABLE submission_material_reassignments
     check (source_problem_id <> target_problem_id)
 );
 
+CREATE TABLE submission_review_annotations
+(
+    id             integer primary key,
+    public_id      text    not null unique
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
+    review_id      integer not null references submission_reviews (id),
+    attachment_id  integer not null references submission_attachments (id),
+    schema_version integer not null check (schema_version = 1),
+    rotation       integer not null check (rotation in (0, 90, 180, 270)),
+    marks_json     text    not null
+        check (
+            json_valid(marks_json) = 1
+            and json_type(marks_json) = 'array'
+            and json_array_length(marks_json) between 1 and 250
+            and length(marks_json) <= 1000000
+        ),
+    payload_sha256 text    not null
+        check (length(payload_sha256) = 64 and payload_sha256 not glob '*[^0-9a-f]*'),
+    created_at     text    not null,
+    unique (review_id, attachment_id),
+    foreign key (review_id, attachment_id)
+        references submission_review_evidence_attachments (review_id, attachment_id)
+);
+
 CREATE TABLE submission_review_events
 (
     id          integer primary key,
@@ -2107,6 +2136,9 @@ CREATE INDEX submission_material_reassignment_items_projection_idx
 
 CREATE INDEX submission_material_reassignments_student_history_idx
     on submission_material_reassignments (student_user_id, created_at, id);
+
+CREATE INDEX submission_review_annotations_attachment_idx
+    on submission_review_annotations (attachment_id, review_id);
 
 CREATE INDEX submission_review_evidence_attachments_asset_idx
     on submission_review_evidence_attachments (asset_id, review_id);
@@ -3471,6 +3503,33 @@ before update on submission_material_reassignments
 for each row
 begin
     select raise(abort, 'submission material reassignment is immutable');
+end;
+
+CREATE TRIGGER submission_review_annotations_delete_forbidden
+before delete on submission_review_annotations
+for each row
+begin
+    select raise(abort, 'completed review annotation deletion is forbidden');
+end;
+
+CREATE TRIGGER submission_review_annotations_immutable_update
+before update on submission_review_annotations
+for each row
+begin
+    select raise(abort, 'completed review annotation is immutable');
+end;
+
+CREATE TRIGGER submission_review_annotations_scope_insert
+before insert on submission_review_annotations
+for each row
+when not exists (
+    select 1
+    from submission_review_evidence_attachments as evidence
+    where evidence.review_id = new.review_id
+      and evidence.attachment_id = new.attachment_id
+)
+begin
+    select raise(abort, 'review annotation is outside immutable evidence');
 end;
 
 CREATE TRIGGER submission_review_events_delete_forbidden
