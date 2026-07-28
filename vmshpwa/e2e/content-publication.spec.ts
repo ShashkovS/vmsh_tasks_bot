@@ -119,25 +119,31 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await loginThroughUi(page, AUTH_PERSONAS.admin, staffUrl)
   await expect(page.getByRole('heading', { name: 'LaTeX и публикации' })).toBeVisible()
 
-  const firstStatement = `Первая опубликованная версия для ${testInfo.project.name}.`
+  const attempt = `${testInfo.project.name}, запуск ${testInfo.retry + 1}`
+  const firstStatement = `Первая опубликованная версия для ${attempt}.`
   const firstRevisionId = await uploadReviewAndPublish({
     page,
     target,
     source: latexSource('Первая версия', firstStatement),
-    metadataTitle: 'Первая E2E-задача',
+    metadataTitle: `Первая E2E-задача, запуск ${testInfo.retry + 1}`,
     match: 'insert-new',
   })
 
-  await loginThroughUi(page, AUTH_PERSONAS.student, studentUrl)
+  await loginThroughUi(page, AUTH_PERSONAS.student, '/student/')
+  await expect(page.getByRole('heading', { name: 'Сейчас', exact: true })).toBeVisible()
+  await expect(page.getByText('Математика 5–7', { exact: true })).toBeVisible()
+  await expect(page.getByText('1 задача в листке')).toBeVisible()
+
+  await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()
 
   await page.goto(staffUrl)
-  const secondStatement = `Вторая опубликованная версия для ${testInfo.project.name}.`
+  const secondStatement = `Вторая опубликованная версия для ${attempt}.`
   const secondRevisionId = await uploadReviewAndPublish({
     page,
     target,
     source: latexSource('Вторая версия', secondStatement),
-    metadataTitle: 'Вторая E2E-задача',
+    metadataTitle: `Вторая E2E-задача, запуск ${testInfo.retry + 1}`,
     match: 'suggested',
   })
   expect(secondRevisionId).not.toBe(firstRevisionId)

@@ -20,16 +20,74 @@ from models.pwa.content import (
     ScheduleField,
     ScheduleRuleValue,
     SourceRevisionPayload,
+    StudentLessonPhase,
     find_problem_synonym_candidates,
     normalize_problem_title,
     materialize_lesson_window,
     resolve_local_wall_time,
+    resolve_student_lesson_phase,
     require_publication_transition,
     require_revision_transition,
 )
 
 
 NOW = datetime(2026, 9, 20, 13, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    ("opens_at", "cutoff", "hint", "solution", "expected"),
+    [
+        (None, None, False, False, StudentLessonPhase.PUBLISHED),
+        (
+            NOW + timedelta(hours=1),
+            NOW + timedelta(days=4),
+            False,
+            False,
+            StudentLessonPhase.PUBLISHED,
+        ),
+        (
+            NOW - timedelta(hours=1),
+            NOW + timedelta(days=4),
+            False,
+            False,
+            StudentLessonPhase.SOLVING,
+        ),
+        (
+            NOW - timedelta(days=1),
+            NOW + timedelta(days=1),
+            True,
+            False,
+            StudentLessonPhase.HINTS,
+        ),
+        (
+            NOW - timedelta(days=4),
+            NOW,
+            True,
+            False,
+            StudentLessonPhase.CHECKING,
+        ),
+        (
+            NOW - timedelta(days=4),
+            NOW - timedelta(days=1),
+            True,
+            True,
+            StudentLessonPhase.SOLUTIONS,
+        ),
+    ],
+)
+def test_student_lesson_phase_keeps_cutoff_and_solution_publication_independent(
+    opens_at, cutoff, hint, solution, expected
+):
+    assert (
+        resolve_student_lesson_phase(
+            now=NOW,
+            opens_at=opens_at,
+            submission_closes_at=cutoff,
+            hint_published=hint,
+            solution_published=solution,
+        )
+        is expected
+    )
 
 
 def test_local_wall_time_uses_named_business_timezone_not_machine_timezone():

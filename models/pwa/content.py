@@ -59,6 +59,14 @@ class ScheduleOverrideMode(StrEnum):
     DISABLED = "disabled"
 
 
+class StudentLessonPhase(StrEnum):
+    PUBLISHED = "published"
+    SOLVING = "solving"
+    HINTS = "hints"
+    CHECKING = "checking"
+    SOLUTIONS = "solutions"
+
+
 class PublicationState(StrEnum):
     SCHEDULED = "scheduled"
     PUBLISHED = "published"
@@ -424,6 +432,47 @@ def materialize_lesson_window(
         timezone=business_timezone,
         source=WindowSource.NATIVE,
     )
+
+
+def resolve_student_lesson_phase(
+    *,
+    now: datetime,
+    opens_at: datetime | None,
+    submission_closes_at: datetime | None,
+    hint_published: bool,
+    solution_published: bool,
+) -> StudentLessonPhase:
+    """Resolve the quiet Student home label from authoritative facts.
+
+    The close boundary and solution publication are intentionally independent:
+    moving either one never changes the other implicitly. A lesson without a
+    materialized window remains readable but is labelled only as published.
+    """
+
+    now = require_aware_datetime(now, label="student home time")
+    opens_at = (
+        None
+        if opens_at is None
+        else require_aware_datetime(opens_at, label="lesson opening")
+    )
+    submission_closes_at = (
+        None
+        if submission_closes_at is None
+        else require_aware_datetime(
+            submission_closes_at, label="submission cutoff"
+        )
+    )
+    if solution_published:
+        return StudentLessonPhase.SOLUTIONS
+    if submission_closes_at is None:
+        return StudentLessonPhase.PUBLISHED
+    if opens_at is not None and now < opens_at:
+        return StudentLessonPhase.PUBLISHED
+    if now >= submission_closes_at:
+        return StudentLessonPhase.CHECKING
+    if hint_published:
+        return StudentLessonPhase.HINTS
+    return StudentLessonPhase.SOLVING
 
 
 @dataclass(frozen=True, slots=True)

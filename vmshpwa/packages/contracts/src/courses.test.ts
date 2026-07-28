@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import invalidCourseFixture from '../fixtures/courses/invalid.v1.json'
 import studentAccessFixture from '../fixtures/courses/student-access.v1.json'
+import studentHomeFixture from '../fixtures/courses/student-home.v1.json'
 import studentLessonsFixture from '../fixtures/courses/student-lessons.v1.json'
 
 import {
@@ -12,6 +13,8 @@ import {
   courseQueryKeys,
   courseSummarySchema,
   groupSummarySchema,
+  studentHomeContractFixtureSchema,
+  studentHomeResponseSchema,
   studentLessonContractFixtureSchema,
   studentLessonListResponseSchema,
   studentLessonSummarySchema,
@@ -151,6 +154,39 @@ describe('Phase-1 course access contracts', () => {
         '../unsafe-cursor',
       ),
     ).toThrow()
+  })
+
+  it('validates a multi-course home with one visible lesson and one empty course', () => {
+    const response = studentHomeContractFixtureSchema.parse(studentHomeFixture).response
+
+    expect(response.courses).toHaveLength(2)
+    expect(response.courses[0]?.phase).toBe('solving')
+    expect(response.courses[0]?.currentLesson?.groupId).toBe('group-fixture-alpha-one')
+    expect(response.courses[1]).toMatchObject({ phase: 'no_lesson', currentLesson: null })
+  })
+
+  it('rejects a home lesson from a non-active group and duplicate courses', () => {
+    const parsed = studentHomeContractFixtureSchema.parse(studentHomeFixture).response
+    const first = parsed.courses[0]
+    if (!first || first.currentLesson === null) throw new Error('Expected a current lesson')
+
+    expect(
+      studentHomeResponseSchema.safeParse({
+        ...parsed,
+        courses: [
+          {
+            ...first,
+            currentLesson: {
+              ...first.currentLesson,
+              groupId: 'group-fixture-alpha-two',
+            },
+          },
+        ],
+      }).success,
+    ).toBe(false)
+    expect(
+      studentHomeResponseSchema.safeParse({ ...parsed, courses: [first, first] }).success,
+    ).toBe(false)
   })
 
   it('rejects unknown fixture versions', () => {

@@ -256,8 +256,84 @@ export const studentLessonListResponseSchema = z
   })
 export type StudentLessonListResponse = z.infer<typeof studentLessonListResponseSchema>
 
+export const studentLessonPhaseSchema = z.enum([
+  'no_lesson',
+  'published',
+  'solving',
+  'hints',
+  'checking',
+  'solutions',
+])
+export type StudentLessonPhase = z.infer<typeof studentLessonPhaseSchema>
+
+const studentHomeCourseShape = {
+  enrollment: courseEnrollmentSchema,
+}
+export const studentHomeCourseSchema = z
+  .discriminatedUnion('phase', [
+    z
+      .object({
+        ...studentHomeCourseShape,
+        phase: z.literal('no_lesson'),
+        currentLesson: z.null(),
+      })
+      .strip(),
+    z
+      .object({
+        ...studentHomeCourseShape,
+        phase: z.enum(['published', 'solving', 'hints', 'checking', 'solutions']),
+        currentLesson: studentLessonSummarySchema,
+      })
+      .strip(),
+  ])
+  .superRefine((course, context) => {
+    if (
+      course.currentLesson !== null &&
+      (course.currentLesson.courseId !== course.enrollment.course.courseId ||
+        course.currentLesson.groupId !== course.enrollment.activeGroupId)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Current lesson must belong to the enrollment active group',
+        path: ['currentLesson'],
+      })
+    }
+  })
+export type StudentHomeCourse = z.infer<typeof studentHomeCourseSchema>
+
+export const studentHomeResponseSchema = z
+  .object({
+    studentId: publicIdSchema,
+    generatedAt: z.iso.datetime(),
+    courses: z.array(studentHomeCourseSchema),
+  })
+  .strip()
+  .superRefine((response, context) => {
+    const courseIds = new Set<string>()
+    response.courses.forEach((course, index) => {
+      if (course.enrollment.studentId !== response.studentId) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Home enrollment student must match the response student',
+          path: ['courses', index, 'enrollment', 'studentId'],
+        })
+      }
+      const courseId = course.enrollment.course.courseId
+      if (courseIds.has(courseId)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Home courses must be unique',
+          path: ['courses', index, 'enrollment', 'course', 'courseId'],
+        })
+      }
+      courseIds.add(courseId)
+    })
+  })
+export type StudentHomeResponse = z.infer<typeof studentHomeResponseSchema>
+
 export const courseQueryKeys = {
   all: (principal: PrincipalQueryScope) => [...principalQueryKey(principal), 'courses'] as const,
+  home: (principal: PrincipalQueryScope) => [...principalQueryKey(principal), 'home'] as const,
   list: (principal: PrincipalQueryScope) => [...courseQueryKeys.all(principal), 'list'] as const,
   detail: (principal: PrincipalQueryScope, courseId: string) =>
     [...courseQueryKeys.all(principal), publicIdSchema.parse(courseId)] as const,
@@ -312,6 +388,14 @@ export const studentLessonContractFixtureSchema = z
   })
   .strict()
 export type StudentLessonContractFixture = z.infer<typeof studentLessonContractFixtureSchema>
+
+export const studentHomeContractFixtureSchema = z
+  .object({
+    fixtureVersion: courseContractFixtureVersionSchema,
+    response: studentHomeResponseSchema,
+  })
+  .strict()
+export type StudentHomeContractFixture = z.infer<typeof studentHomeContractFixtureSchema>
 
 export const courseInvalidFixtureTargetSchema = z.enum([
   'course',

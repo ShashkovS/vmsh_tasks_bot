@@ -43,6 +43,7 @@ from models.pwa.content import (
     parse_utc_timestamp,
     require_publication_transition,
     require_revision_transition,
+    resolve_student_lesson_phase,
 )
 
 from .connection import PwaConnectionFactory
@@ -352,6 +353,18 @@ class StudentLessonSummaryRecord:
     hint: StudentLessonMaterialRecord | None
     solution: StudentLessonMaterialRecord | None
     problem_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class StudentHomeLessonRecord:
+    lesson: StudentLessonSummaryRecord
+    phase: str
+
+
+@dataclass(frozen=True, slots=True)
+class StudentHomeSnapshot:
+    generated_at: datetime
+    lessons: tuple[StudentHomeLessonRecord, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1267,7 +1280,10 @@ _GROUP_LESSON_SCOPE_SELECT = (
 
 
 _STUDENT_LESSON_SELECT = (
-    "SELECT group_lesson.id AS group_lesson_id, "
+    "SELECT row_number() OVER ("
+    "  PARTITION BY course.public_id, group_record.public_id "
+    "  ORDER BY course_lesson.lesson_number DESC, group_lesson.id DESC"
+    ") AS scope_rank, group_lesson.id AS group_lesson_id, "
     "group_lesson.public_id AS group_lesson_public_id, "
     "course_lesson.public_id AS course_lesson_public_id, "
     "course.public_id AS course_public_id, "
@@ -1515,6 +1531,74 @@ class PwaContentRepository:
             return tuple(_student_lesson_summary(row) for row in rows)
 
         return await self._factory.run_read_async(read)
+
+    async def get_student_home_snapshot(
+        self,
+        *,
+        scopes: Sequence[tuple[str, str]],
+    ) -> StudentHomeSnapshot:
+        """Return the latest visible lesson for every course enrollment.
+
+        The dynamic scope predicate is built only from placeholders and the
+        window rank is applied inside the same SQLite statement. Thus a home
+        with several courses remains one bounded repository read instead of an
+        application-level query loop.
+        """
+
+        if len(scopes) > 100:
+            raise ContentInvariantError("student home scope count exceeds limit")
+        prepared: list[tuple[str, str]] = []
+        seen: set[tuple[str, str]] = set()
+        for course_public_id, group_public_id in scopes:
+            _require_public_id(course_public_id)
+            _require_public_id(group_public_id)
+            scope = (course_public_id, group_public_id)
+            if scope in seen:
+                raise ContentInvariantError("student home scopes are duplicated")
+            seen.add(scope)
+            prepared.append(scope)
+        generated_at = self._clock()
+        if generated_at.tzinfo is None or generated_at.utcoffset() is None:
+            raise ContentInvariantError("student home clock must be timezone-aware")
+        generated_at = generated_at.astimezone(UTC)
+        if not prepared:
+            return StudentHomeSnapshot(generated_at=generated_at, lessons=())
+
+        def read(connection):
+            predicates = " OR ".join(
+                "(course.public_id = ? AND group_record.public_id = ?)"
+                for _scope in prepared
+            )
+            parameters = [value for scope in prepared for value in scope]
+            rows = connection.execute(
+                "SELECT * FROM ("
+                + _STUDENT_LESSON_SELECT
+                + "WHERE group_lesson.status = 'active' AND ("
+                + predicates
+                + ")) AS visible_lessons WHERE scope_rank = 1 "
+                + "ORDER BY course_public_id, group_public_id",
+                parameters,
+            ).fetchall()
+            records: list[StudentHomeLessonRecord] = []
+            for row in rows:
+                lesson = _student_lesson_summary(row)
+                window = lesson.window
+                phase = resolve_student_lesson_phase(
+                    now=generated_at,
+                    opens_at=None if window is None else window.opens_at,
+                    submission_closes_at=(
+                        None if window is None else window.submission_closes_at
+                    ),
+                    hint_published=lesson.hint is not None,
+                    solution_published=lesson.solution is not None,
+                )
+                records.append(
+                    StudentHomeLessonRecord(lesson=lesson, phase=phase.value)
+                )
+            return tuple(records)
+
+        lessons = await self._factory.run_read_async(read)
+        return StudentHomeSnapshot(generated_at=generated_at, lessons=lessons)
 
     async def get_student_lesson(
         self,

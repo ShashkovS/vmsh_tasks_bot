@@ -7,6 +7,7 @@ import {
   lessonCursorSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
+  studentHomeResponseSchema,
   studentLessonListResponseSchema,
   studentLessonSummarySchema,
   studentCourseAccessResponseSchema,
@@ -15,6 +16,7 @@ import {
   type PrincipalQueryScope,
   type RuntimeConfig,
   type StudentCourseAccessResponse,
+  type StudentHomeResponse,
   type StudentLessonListResponse,
   type StudentLessonSummary,
 } from '@vmsh/contracts'
@@ -41,6 +43,7 @@ export interface StudentCourseClientOptions {
 
 export interface StudentCourseClient {
   readonly runtime: RuntimeConfig
+  home(options?: CourseRequestOptions): Promise<StudentHomeResponse>
   list(options?: CourseRequestOptions): Promise<StudentCourseAccessResponse>
   enrollment(courseId: string, options?: CourseRequestOptions): Promise<CourseEnrollment>
   lessons(courseId: string, options?: StudentLessonListOptions): Promise<StudentLessonListResponse>
@@ -83,6 +86,10 @@ class BrowserStudentCourseClient implements StudentCourseClient {
     const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
+  }
+
+  async home(options: CourseRequestOptions = {}): Promise<StudentHomeResponse> {
+    return this.#request('/home', options, studentHomeResponseSchema)
   }
 
   async list(options: CourseRequestOptions = {}): Promise<StudentCourseAccessResponse> {
@@ -211,6 +218,16 @@ export function useStudentCoursesQuery(
   return useQuery({
     queryKey: courseQueryKeys.list(principal),
     queryFn: ({ signal }) => client.list({ signal }),
+  })
+}
+
+export function useStudentHomeQuery(
+  client: Pick<StudentCourseClient, 'home'>,
+  principal: PrincipalQueryScope,
+) {
+  return useQuery({
+    queryKey: courseQueryKeys.home(principal),
+    queryFn: ({ signal }) => client.home({ signal }),
   })
 }
 

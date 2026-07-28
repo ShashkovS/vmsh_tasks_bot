@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import studentAccessFixture from '../../contracts/fixtures/courses/student-access.v1.json'
+import studentHomeFixture from '../../contracts/fixtures/courses/student-home.v1.json'
 import studentLessonsFixture from '../../contracts/fixtures/courses/student-lessons.v1.json'
 import { runtimeBoundaryByAudience, type RuntimeConfig } from '@vmsh/contracts'
 
@@ -29,6 +30,17 @@ function jsonResponse(payload: unknown, status = 200): Response {
 }
 
 describe('Phase-3 Student course client', () => {
+  it('reads the complete multi-course home through one request', async () => {
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(jsonResponse(studentHomeFixture.response)),
+    )
+    const client = createStudentCourseClient(runtime(), { fetchImplementation })
+
+    await expect(client.home()).resolves.toEqual(studentHomeFixture.response)
+    expect(fetchImplementation).toHaveBeenCalledOnce()
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/student/api/v1/home')
+  })
+
   it('reads and validates the course list through the Student API base', async () => {
     const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(jsonResponse(studentAccessFixture.response)),

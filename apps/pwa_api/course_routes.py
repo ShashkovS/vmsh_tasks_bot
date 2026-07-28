@@ -237,6 +237,51 @@ async def get_student_course_enrollment(request: web.Request) -> web.Response:
     return web.json_response(course_enrollment_payload(enrollment))
 
 
+@course_routes.get("/student/api/v1/home")
+async def get_student_home(request: web.Request) -> web.Response:
+    _reject_query(request)
+    authenticated = _student_session(request)
+    enrollments = tuple(authenticated.course_enrollments)
+    snapshot = await _repository(request).get_student_home_snapshot(
+        scopes=tuple(
+            (enrollment.course_public_id, enrollment.active_group_public_id)
+            for enrollment in enrollments
+        )
+    )
+    lessons_by_scope = {
+        (record.lesson.course_public_id, record.lesson.group_public_id): record
+        for record in snapshot.lessons
+    }
+    if len(lessons_by_scope) != len(snapshot.lessons):
+        raise ContentRepositoryError("student home returned duplicate lesson scopes")
+    courses: list[dict[str, object]] = []
+    for enrollment in enrollments:
+        key = (enrollment.course_public_id, enrollment.active_group_public_id)
+        current = lessons_by_scope.pop(key, None)
+        courses.append(
+            {
+                "enrollment": course_enrollment_payload(enrollment),
+                "phase": "no_lesson" if current is None else current.phase,
+                "currentLesson": (
+                    None
+                    if current is None
+                    else _student_lesson_payload(current.lesson)
+                ),
+            }
+        )
+    if lessons_by_scope:
+        raise ContentRepositoryError("student home returned an unauthorized scope")
+    student_public_id = authenticated.current.linked_user_public_id
+    assert student_public_id is not None
+    return web.json_response(
+        {
+            "studentId": student_public_id,
+            "generatedAt": _iso(snapshot.generated_at),
+            "courses": courses,
+        }
+    )
+
+
 @course_routes.get("/student/api/v1/courses/{course_id}/lessons")
 async def list_student_lessons(request: web.Request) -> web.Response:
     unexpected = set(request.query) - {"group", "cursor"}

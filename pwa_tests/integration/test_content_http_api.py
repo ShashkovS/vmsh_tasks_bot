@@ -2534,6 +2534,13 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
     )
     assert initially_empty.status == 200, await initially_empty.text()
     assert (await initially_empty.json())["lessons"] == []
+    empty_home = await fixture.client.get(
+        "/student/api/v1/home",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert empty_home.status == 200, await empty_home.text()
+    assert (await empty_home.json())["courses"][0]["phase"] == "no_lesson"
 
     revision, _ = await _upload_and_compile(
         fixture,
@@ -2604,6 +2611,51 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
     )
     assert detailed.status == 200, await detailed.text()
     assert await detailed.json() == lesson
+    home = await fixture.client.get(
+        "/student/api/v1/home",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert home.status == 200, await home.text()
+    home_payload = await home.json()
+    assert home_payload["studentId"] == "user-content-student"
+    assert home_payload["generatedAt"] == "2026-09-20T13:00:00.000000Z"
+    assert home_payload["courses"] == [
+        {
+            "enrollment": {
+                "enrollmentId": "enrollment-content-http",
+                "studentId": "user-content-student",
+                "course": {
+                    "courseId": "course-content-http",
+                    "code": "math",
+                    "name": "Математика",
+                    "subjectCode": "math",
+                    "status": "active",
+                    "sortOrder": 1,
+                    "accentKey": "math",
+                    "version": 1,
+                },
+                "activeGroupId": "group-content-http-a",
+                "allowedGroups": [
+                    {
+                        "groupId": "group-content-http-a",
+                        "courseId": "course-content-http",
+                        "code": "a",
+                        "name": "A",
+                        "status": "active",
+                        "sortOrder": 1,
+                        "colorKey": "neutral",
+                        "version": 1,
+                    }
+                ],
+                "attendanceMode": "online",
+                "status": "active",
+                "version": 1,
+            },
+            "phase": "solving",
+            "currentLesson": lesson,
+        }
+    ]
 
     publication_payload = await publication.json()
     hidden = await fixture.client.post(
@@ -2619,6 +2671,12 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
         headers=_headers(),
     )
     assert (await after_hide.json())["lessons"] == []
+    home_after_hide = await fixture.client.get(
+        "/student/api/v1/home",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert (await home_after_hide.json())["courses"][0]["phase"] == "no_lesson"
     hidden_detail = await fixture.client.get(
         f"{list_url}/{fixture.group_lesson_a}",
         cookies=_cookie(fixture, "student"),
