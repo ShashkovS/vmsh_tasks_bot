@@ -141,6 +141,66 @@ describe('Phase-6 review queue contracts', () => {
         threadVersion: 2,
         evidence: [{ entryId: `entry-${index + 1}`, entryVersion: 2 }],
       })),
+      annotations: [
+        {
+          attachmentId: 'attachment-one',
+          schemaVersion: 1 as const,
+          rotation: 90 as const,
+          marks: [
+            {
+              markId: 'mark-pencil-one',
+              kind: 'pencil' as const,
+              data: {
+                points: [
+                  { x: 0.1, y: 0.2 },
+                  { x: 0.3, y: 0.4 },
+                ],
+                width: 0.01,
+                color: 'red' as const,
+              },
+            },
+            {
+              markId: 'mark-text-one',
+              kind: 'text' as const,
+              data: {
+                x: 0.4,
+                y: 0.5,
+                text: 'Проверьте переход',
+                size: 0.04,
+                color: 'blue' as const,
+              },
+            },
+            {
+              markId: 'mark-eraser-one',
+              kind: 'eraser' as const,
+              data: {
+                points: [
+                  { x: 0.2, y: 0.2 },
+                  { x: 0.21, y: 0.22 },
+                ],
+                width: 0.02,
+              },
+            },
+            {
+              markId: 'mark-rectangle-one',
+              kind: 'rectangle' as const,
+              data: {
+                x: 0.1,
+                y: 0.7,
+                width: 0.25,
+                height: 0.15,
+                strokeWidth: 0.006,
+                color: 'graphite' as const,
+              },
+            },
+            {
+              markId: 'mark-highlight-one',
+              kind: 'highlight' as const,
+              data: { x: 0.4, y: 0.75, width: 0.3, height: 0.08 },
+            },
+          ],
+        },
+      ],
     }
     expect(completeReviewRequestSchema.parse(request)).toEqual(request)
     expect(
@@ -161,12 +221,45 @@ describe('Phase-6 review queue contracts', () => {
           verdict: 16,
           commentEntryId: 'comment-one',
           evidenceEntryIds: ['entry-1', 'entry-2'],
+          annotations: [
+            {
+              annotationId: 'annotation-one',
+              attachmentId: 'attachment-one',
+              schemaVersion: 1,
+              rotation: 90,
+              markCount: 5,
+            },
+          ],
           completedAt: '2026-10-04T12:10:00.000000Z',
           replayed: false,
         },
         requestId: 'request-review-complete',
       }).review.targetProblemId,
     ).toBe('problem-two')
+    expect(
+      completeReviewRequestSchema.safeParse({
+        ...request,
+        annotations: [
+          {
+            ...request.annotations[0],
+            marks: [
+              {
+                markId: 'bad-rectangle',
+                kind: 'rectangle',
+                data: {
+                  x: 0.9,
+                  y: 0.9,
+                  width: 0.2,
+                  height: 0.2,
+                  strokeWidth: 0.01,
+                  color: 'red',
+                },
+              },
+            ],
+          },
+        ],
+      }).success,
+    ).toBe(false)
   })
 
   it('rejects a lease whose evidence branches do not match the claim', () => {

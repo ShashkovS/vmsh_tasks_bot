@@ -186,6 +186,15 @@ describe('Staff review queue client', () => {
         verdict: 16,
         commentEntryId: 'comment-one',
         evidenceEntryIds: ['entry-one'],
+        annotations: [
+          {
+            annotationId: 'annotation-one',
+            attachmentId: 'attachment-one',
+            schemaVersion: 1 as const,
+            rotation: 0 as const,
+            markCount: 1,
+          },
+        ],
         completedAt: '2026-10-04T12:03:00.000000Z',
         replayed: false,
       },
@@ -209,6 +218,25 @@ describe('Staff review queue client', () => {
           threadId: 'thread-one',
           threadVersion: 2,
           evidence: [{ entryId: 'entry-one', entryVersion: 2 }],
+        },
+      ],
+      annotations: [
+        {
+          attachmentId: 'attachment-one',
+          schemaVersion: 1 as const,
+          rotation: 0 as const,
+          marks: [
+            {
+              markId: 'mark-one',
+              kind: 'arrow' as const,
+              data: {
+                start: { x: 0.1, y: 0.1 },
+                end: { x: 0.4, y: 0.5 },
+                width: 0.01,
+                color: 'red' as const,
+              },
+            },
+          ],
         },
       ],
     }

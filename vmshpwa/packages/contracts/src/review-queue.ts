@@ -210,6 +210,147 @@ export const completeReviewBranchSchema = z
   })
   .strict()
 
+const annotationCoordinateSchema = z.number().min(0).max(1)
+const annotationStrokeWidthSchema = z.number().min(0.001).max(0.1)
+const annotationColorSchema = z.enum(['red', 'blue', 'graphite', 'amber'])
+const annotationPointSchema = z
+  .object({ x: annotationCoordinateSchema, y: annotationCoordinateSchema })
+  .strict()
+const annotationBoxShape = {
+  x: annotationCoordinateSchema,
+  y: annotationCoordinateSchema,
+  width: z.number().min(0.001).max(1),
+  height: z.number().min(0.001).max(1),
+}
+const annotationBoxDataSchema = z
+  .object(annotationBoxShape)
+  .strict()
+  .refine((box) => box.x + box.width <= 1 && box.y + box.height <= 1, {
+    message: 'Annotation box must stay inside the evidence image',
+  })
+
+export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      markId: publicIdSchema,
+      kind: z.literal('pencil'),
+      data: z
+        .object({
+          points: z.array(annotationPointSchema).min(2).max(4096),
+          width: annotationStrokeWidthSchema,
+          color: annotationColorSchema,
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      markId: publicIdSchema,
+      kind: z.literal('eraser'),
+      data: z
+        .object({
+          points: z.array(annotationPointSchema).min(2).max(4096),
+          width: annotationStrokeWidthSchema,
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      markId: publicIdSchema,
+      kind: z.literal('text'),
+      data: z
+        .object({
+          x: annotationCoordinateSchema,
+          y: annotationCoordinateSchema,
+          text: z
+            .string()
+            .min(1)
+            .max(500)
+            .refine((value) => value.trim().length > 0, {
+              message: 'Annotation text must not be blank',
+            }),
+          size: z.number().min(0.01).max(0.2),
+          color: annotationColorSchema,
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      markId: publicIdSchema,
+      kind: z.literal('arrow'),
+      data: z
+        .object({
+          start: annotationPointSchema,
+          end: annotationPointSchema,
+          width: annotationStrokeWidthSchema,
+          color: annotationColorSchema,
+        })
+        .strict()
+        .refine((arrow) => arrow.start.x !== arrow.end.x || arrow.start.y !== arrow.end.y, {
+          message: 'Annotation arrow must have a direction',
+        }),
+    })
+    .strict(),
+  z
+    .object({
+      markId: publicIdSchema,
+      kind: z.literal('rectangle'),
+      data: z
+        .object({
+          ...annotationBoxShape,
+          strokeWidth: annotationStrokeWidthSchema,
+          color: annotationColorSchema,
+        })
+        .strict()
+        .refine((box) => box.x + box.width <= 1 && box.y + box.height <= 1, {
+          message: 'Annotation rectangle must stay inside the evidence image',
+        }),
+    })
+    .strict(),
+  z
+    .object({
+      markId: publicIdSchema,
+      kind: z.literal('highlight'),
+      data: annotationBoxDataSchema,
+    })
+    .strict(),
+])
+export type ReviewAnnotationMark = z.infer<typeof reviewAnnotationMarkSchema>
+
+export const reviewAnnotationManifestSchema = z
+  .object({
+    attachmentId: publicIdSchema,
+    schemaVersion: z.literal(1),
+    rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
+    marks: z.array(reviewAnnotationMarkSchema).min(1).max(250),
+  })
+  .strict()
+  .superRefine((manifest, context) => {
+    const markIds = manifest.marks.map((mark) => mark.markId)
+    if (new Set(markIds).size !== markIds.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Annotation mark IDs must be unique',
+        path: ['marks'],
+      })
+    }
+    const pointCount = manifest.marks.reduce(
+      (count, mark) =>
+        count + (mark.kind === 'pencil' || mark.kind === 'eraser' ? mark.data.points.length : 0),
+      0,
+    )
+    if (pointCount > 20_000) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Annotation manifest has too many points',
+        path: ['marks'],
+      })
+    }
+  })
+export type ReviewAnnotationManifest = z.infer<typeof reviewAnnotationManifestSchema>
+
 export const completeReviewRequestSchema = z
   .object({
     schemaVersion: contractVersionSchema,
@@ -219,6 +360,7 @@ export const completeReviewRequestSchema = z
     comment: z.string().max(100_000).nullable(),
     confirmWithoutComment: z.boolean(),
     branches: z.array(completeReviewBranchSchema).min(1),
+    annotations: z.array(reviewAnnotationManifestSchema).max(10),
   })
   .strict()
   .superRefine((request, context) => {
@@ -237,6 +379,14 @@ export const completeReviewRequestSchema = z
         path: ['branches'],
       })
     }
+    const attachmentIds = request.annotations.map((annotation) => annotation.attachmentId)
+    if (new Set(attachmentIds).size !== attachmentIds.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Review annotations must target unique attachments',
+        path: ['annotations'],
+      })
+    }
   })
 export type CompleteReviewRequest = z.infer<typeof completeReviewRequestSchema>
 
@@ -249,6 +399,17 @@ export const completedReviewSchema = z
     verdict: writtenReviewVerdictSchema,
     commentEntryId: publicIdSchema.nullable(),
     evidenceEntryIds: z.array(publicIdSchema).min(1),
+    annotations: z.array(
+      z
+        .object({
+          annotationId: publicIdSchema,
+          attachmentId: publicIdSchema,
+          schemaVersion: z.literal(1),
+          rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
+          markCount: z.number().int().min(1).max(250),
+        })
+        .strict(),
+    ),
     completedAt: z.iso.datetime(),
     replayed: z.boolean(),
   })

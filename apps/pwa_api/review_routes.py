@@ -20,6 +20,8 @@ from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.reviews import (
     CompleteReviewCommand,
     PwaWrittenReviewQueueRepository,
+    ReviewAnnotationManifest,
+    ReviewAnnotationMark,
     ReviewCompletionInvalid,
     ReviewEvidenceBranchExpectation,
     ReviewEvidenceEntryExpectation,
@@ -38,7 +40,9 @@ from helpers.pwa.permissions import Capability
 from models.pwa.auth import AuthAudience
 
 
-REVIEW_BODY_LIMIT_BYTES = 128 * 1024
+# Keep the route below aiohttp's default one-megabyte application limit while
+# leaving room for the bounded 20k-point normalized annotation manifest.
+REVIEW_BODY_LIMIT_BYTES = 900 * 1024
 REVIEW_PAGE_SIZE = 50
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _CLAIM_TOKEN = _PUBLIC_ID
@@ -53,6 +57,7 @@ _COMPLETE_FIELDS = frozenset(
         "comment",
         "confirmWithoutComment",
         "branches",
+        "annotations",
     }
 )
 _LIST_QUERY_FIELDS = frozenset({"problemGroup", "sort", "cursor"})
@@ -394,6 +399,96 @@ def _complete_branches(value: object) -> tuple[ReviewEvidenceBranchExpectation, 
     return tuple(branches)
 
 
+def _complete_annotations(value: object) -> tuple[ReviewAnnotationManifest, ...]:
+    if not isinstance(value, list) or len(value) > 10:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте аннотации к работе",
+            details={"field": "annotations"},
+        )
+    manifests: list[ReviewAnnotationManifest] = []
+    try:
+        for annotation_index, annotation in enumerate(value):
+            if not isinstance(annotation, dict) or set(annotation) != {
+                "attachmentId",
+                "schemaVersion",
+                "rotation",
+                "marks",
+            }:
+                raise PwaApiError(
+                    status=422,
+                    code="validation_error",
+                    message="Проверьте формат аннотации",
+                    details={"field": f"annotations.{annotation_index}"},
+                )
+            marks_value = annotation["marks"]
+            if not isinstance(marks_value, list):
+                raise PwaApiError(
+                    status=422,
+                    code="validation_error",
+                    message="Проверьте разметку фотографии",
+                    details={"field": f"annotations.{annotation_index}.marks"},
+                )
+            marks: list[ReviewAnnotationMark] = []
+            for mark_index, mark in enumerate(marks_value):
+                if not isinstance(mark, dict) or set(mark) != {
+                    "markId",
+                    "kind",
+                    "data",
+                }:
+                    raise PwaApiError(
+                        status=422,
+                        code="validation_error",
+                        message="Проверьте элемент разметки",
+                        details={
+                            "field": (
+                                f"annotations.{annotation_index}.marks.{mark_index}"
+                            )
+                        },
+                    )
+                kind = mark["kind"]
+                if not isinstance(kind, str):
+                    raise ReviewCompletionInvalid("annotation kind is invalid")
+                marks.append(
+                    ReviewAnnotationMark.from_payload(
+                        mark_public_id=_required_public_id(
+                            mark["markId"],
+                            field=(
+                                f"annotations.{annotation_index}.marks."
+                                f"{mark_index}.markId"
+                            ),
+                        ),
+                        kind=kind,
+                        data=mark["data"],
+                    )
+                )
+            schema_version = annotation["schemaVersion"]
+            rotation = annotation["rotation"]
+            if isinstance(schema_version, bool) or not isinstance(schema_version, int):
+                raise ReviewCompletionInvalid("annotation schema version is invalid")
+            if isinstance(rotation, bool) or not isinstance(rotation, int):
+                raise ReviewCompletionInvalid("annotation rotation is invalid")
+            manifests.append(
+                ReviewAnnotationManifest(
+                    attachment_public_id=_required_public_id(
+                        annotation["attachmentId"],
+                        field=f"annotations.{annotation_index}.attachmentId",
+                    ),
+                    schema_version=schema_version,
+                    rotation=rotation,
+                    marks=tuple(marks),
+                )
+            )
+    except ReviewCompletionInvalid as error:
+        raise PwaApiError(
+            status=422,
+            code="review_annotation_invalid",
+            message="Проверьте аннотации к работе",
+        ) from error
+    return tuple(manifests)
+
+
 def _required_public_id(value: object, *, field: str) -> str:
     if not isinstance(value, str) or _PUBLIC_ID.fullmatch(value) is None:
         raise PwaApiError(
@@ -449,6 +544,12 @@ def _translate_queue_error(error: Exception) -> PwaApiError:
             message="Это действие уже было отправлено с другими данными",
         )
     if isinstance(error, ReviewCompletionInvalid):
+        if "annotation" in str(error):
+            return PwaApiError(
+                status=422,
+                code="review_annotation_invalid",
+                message="Проверьте аннотации к работе",
+            )
         return PwaApiError(
             status=422,
             code="review_confirmation_required",
@@ -620,6 +721,7 @@ async def complete_review_item(request: web.Request) -> web.Response:
             comment=comment,
             confirm_without_comment=payload["confirmWithoutComment"],
             branches=_complete_branches(payload["branches"]),
+            annotations=_complete_annotations(payload["annotations"]),
         )
         receipt = await _repository(request).complete(command)
     except (
@@ -663,6 +765,16 @@ async def complete_review_item(request: web.Request) -> web.Response:
                 "verdict": receipt.verdict,
                 "commentEntryId": receipt.comment_entry_public_id,
                 "evidenceEntryIds": list(receipt.evidence_entry_public_ids),
+                "annotations": [
+                    {
+                        "annotationId": annotation.annotation_public_id,
+                        "attachmentId": annotation.attachment_public_id,
+                        "schemaVersion": annotation.schema_version,
+                        "rotation": annotation.rotation,
+                        "markCount": annotation.mark_count,
+                    }
+                    for annotation in receipt.annotations
+                ],
                 "completedAt": _timestamp(receipt.completed_at),
                 "replayed": receipt.replayed,
             },

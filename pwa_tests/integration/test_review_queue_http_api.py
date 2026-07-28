@@ -328,22 +328,46 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                     ),
                 ).fetchone()["id"]
             )
-            connection.execute(
-                "INSERT INTO submission_entries "
-                "(public_id, thread_id, problem_revision_id, author_kind, "
-                "author_user_id, channel, entry_kind, state, text, client_created_at, "
-                "server_received_at, version) VALUES (?, ?, ?, 'student', ?, 'pwa', "
-                "'submission', 'submitted', ?, ?, ?, 2)",
-                (
-                    f"review-http-entry-{index}",
-                    thread_id,
-                    problem_revision_id,
-                    STUDENT_ID,
-                    f"Решение HTTP {index}",
-                    submitted_at,
-                    submitted_at,
-                ),
+            entry_id = int(
+                connection.execute(
+                    "INSERT INTO submission_entries "
+                    "(public_id, thread_id, problem_revision_id, author_kind, "
+                    "author_user_id, channel, entry_kind, state, text, client_created_at, "
+                    "server_received_at, version) VALUES (?, ?, ?, 'student', ?, 'pwa', "
+                    "'submission', 'submitted', ?, ?, ?, 2) RETURNING id",
+                    (
+                        f"review-http-entry-{index}",
+                        thread_id,
+                        problem_revision_id,
+                        STUDENT_ID,
+                        f"Решение HTTP {index}",
+                        submitted_at,
+                        submitted_at,
+                    ),
+                ).fetchone()["id"]
             )
+            if index == 1:
+                asset_id = int(
+                    connection.execute(
+                        "INSERT INTO media_assets "
+                        "(public_id, sha256, storage_namespace, object_key, public_url, "
+                        "media_type, byte_size, width, height, source_filename, "
+                        "conversion_version, created_by_user_id, created_at) "
+                        "VALUES ('review-http-asset-1', ?, 'submission', "
+                        "'submission/review-http-asset-1.webp', "
+                        "'https://assets.test/review-http-asset-1.webp', "
+                        "'image/webp', 1024, 1200, 900, 'page.webp', "
+                        "'submission-webp-v1', ?, ?) RETURNING id",
+                        ("f" * 64, STUDENT_ID, submitted_at),
+                    ).fetchone()["id"]
+                )
+                connection.execute(
+                    "INSERT INTO submission_attachments "
+                    "(public_id, entry_id, asset_id, ordinal, client_filename, "
+                    "upload_status, created_at) VALUES "
+                    "('review-http-attachment-1', ?, ?, 0, 'page.webp', 'stored', ?)",
+                    (entry_id, asset_id, submitted_at),
+                )
             queue_public_id = f"review-http-queue-{index}"
             connection.execute(
                 "INSERT INTO written_tasks_queue "
@@ -386,6 +410,7 @@ async def review_http(tmp_path, aiohttp_client) -> ReviewHttpFixture:
         clock=lambda: NOW,
         claim_token_factory=lambda: next(claim_tokens),
         review_public_id_factory=lambda: "review-http-completed",
+        annotation_public_id_factory=lambda: "review-http-annotation",
         comment_public_id_factory=lambda: "review-http-comment",
         event_public_id_factory=lambda: "review-http-event",
     )
@@ -474,6 +499,7 @@ def _complete_payload(lease: dict[str, object]) -> dict[str, object]:
             }
             for branch in lease["branches"]
         ],
+        "annotations": [],
     }
 
 
@@ -619,6 +645,25 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
         "review-http-thread-2",
     ]
     payload = _complete_payload(lease)
+    payload["annotations"] = [
+        {
+            "attachmentId": "review-http-attachment-1",
+            "schemaVersion": 1,
+            "rotation": 90,
+            "marks": [
+                {
+                    "markId": "review-http-mark-1",
+                    "kind": "arrow",
+                    "data": {
+                        "start": {"x": 0.1, "y": 0.2},
+                        "end": {"x": 0.5, "y": 0.6},
+                        "width": 0.01,
+                        "color": "red",
+                    },
+                }
+            ],
+        }
+    ]
 
     completed = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/complete",
@@ -636,6 +681,15 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
         "verdict": 16,
         "commentEntryId": "review-http-comment",
         "evidenceEntryIds": ["review-http-entry-1", "review-http-entry-2"],
+        "annotations": [
+            {
+                "annotationId": "review-http-annotation",
+                "attachmentId": "review-http-attachment-1",
+                "schemaVersion": 1,
+                "rotation": 90,
+                "markCount": 1,
+            }
+        ],
         "completedAt": _timestamp(),
         "replayed": False,
     }
@@ -672,6 +726,38 @@ async def test_complete_review_reports_thread_change_and_confirmation_errors(
     )
     lease = (await claim.json())["lease"]
     payload = _complete_payload(lease)
+    payload["annotations"] = [
+        {
+            "attachmentId": "review-http-attachment-1",
+            "schemaVersion": 1,
+            "rotation": 0,
+            "marks": [
+                {
+                    "markId": "review-http-invalid-box",
+                    "kind": "rectangle",
+                    "data": {
+                        "x": 0.9,
+                        "y": 0.9,
+                        "width": 0.2,
+                        "height": 0.2,
+                        "strokeWidth": 0.01,
+                        "color": "red",
+                    },
+                }
+            ],
+        }
+    ]
+    invalid_annotation = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=payload,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert invalid_annotation.status == 422
+    assert (await invalid_annotation.json())["error"]["code"] == (
+        "review_annotation_invalid"
+    )
+    payload["annotations"] = []
     payload.update({"verdict": 11, "comment": None})
     confirmation = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/complete",
