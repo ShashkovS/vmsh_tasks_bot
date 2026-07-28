@@ -180,7 +180,7 @@ pwa-telegram-rich-live-smoke:
 	@test -z "$(VMSH_TELEGRAM_TEST_CHANNEL_ID)" || (echo "Unset VMSH_TELEGRAM_TEST_CHANNEL_ID; smoke uses the verified local binding"; exit 2)
 	$(PWA_UV_ENV) VMSH_RUN_TELEGRAM_LIVE_SMOKE=1 uv run python -m vmshpwa.scripts.telegram_test_capability --live --run-rich-smoke --confirm vmsh179devbot-channel-synthetic
 
-.PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-e2e-auth pwa-e2e-functional pwa-e2e-realtime pwa-e2e-runtime pwa-visual pwa-visual-update telegram-history-test
+.PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-e2e-auth pwa-e2e-content pwa-e2e-functional pwa-e2e-realtime pwa-e2e-runtime pwa-visual pwa-visual-update telegram-history-test
 pwa-format:
 	cd $(PWA_DIR) && CI=true pnpm format
 
@@ -205,6 +205,9 @@ pwa-e2e:
 
 pwa-e2e-auth:
 	cd $(PWA_DIR) && CI=true pnpm e2e:auth
+
+pwa-e2e-content:
+	cd $(PWA_DIR) && CI=true pnpm e2e:content
 
 pwa-e2e-functional:
 	cd $(PWA_DIR) && CI=true pnpm e2e:functional

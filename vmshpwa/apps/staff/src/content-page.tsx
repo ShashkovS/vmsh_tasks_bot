@@ -551,7 +551,7 @@ function MaterialWorkflowCard({
   )
 
   return (
-    <Card>
+    <Card data-testid={`content-workflow-${kind}`}>
       <CardHeader className="gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle aria-level={2} role="heading">

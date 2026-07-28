@@ -75,6 +75,8 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
     playwright = ["pnpm", "exec", "playwright", "test"]
     if mode == "authentication":
         playwright.append("e2e/authentication.spec.ts")
+    elif mode == "content":
+        playwright.append("e2e/content-publication.spec.ts")
     elif mode == "runtime-isolation":
         playwright.append("e2e/runtime-isolation.spec.ts")
     elif mode == "realtime":
@@ -145,6 +147,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         choices=(
             "all",
             "authentication",
+            "content",
             "nonvisual",
             "runtime-isolation",
             "realtime",

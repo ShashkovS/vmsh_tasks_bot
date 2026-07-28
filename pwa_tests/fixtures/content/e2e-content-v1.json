@@ -1,0 +1,32 @@
+{
+  "fixture": "phase2-content-e2e-v1",
+  "fixtureVersion": 1,
+  "coursePublicId": "course-fixture-math-5-7",
+  "groupPublicId": "group-fixture-beginner",
+  "actorUserPublicId": "user-admin-fixture",
+  "cycleAnchorDate": "2026-07-26",
+  "businessTimezone": "Europe/Moscow",
+  "targets": [
+    {
+      "project": "chromium",
+      "courseLessonPublicId": "course-lesson-content-e2e-chromium",
+      "groupLessonPublicId": "group-lesson-content-e2e-chromium",
+      "lessonNumber": 901,
+      "title": "E2E Chromium"
+    },
+    {
+      "project": "webkit",
+      "courseLessonPublicId": "course-lesson-content-e2e-webkit",
+      "groupLessonPublicId": "group-lesson-content-e2e-webkit",
+      "lessonNumber": 902,
+      "title": "E2E WebKit"
+    },
+    {
+      "project": "firefox",
+      "courseLessonPublicId": "course-lesson-content-e2e-firefox",
+      "groupLessonPublicId": "group-lesson-content-e2e-firefox",
+      "lessonNumber": 903,
+      "title": "E2E Firefox"
+    }
+  ]
+}
