@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import studentAccessFixture from '../../contracts/fixtures/courses/student-access.v1.json'
 import studentHomeFixture from '../../contracts/fixtures/courses/student-home.v1.json'
 import studentLessonsFixture from '../../contracts/fixtures/courses/student-lessons.v1.json'
+import studentProblemsFixture from '../../contracts/fixtures/courses/student-problems.v1.json'
 import { runtimeBoundaryByAudience, type RuntimeConfig } from '@vmsh/contracts'
 
 import { CourseProtocolError, createStudentCourseClient } from './course-client'
@@ -101,6 +102,21 @@ describe('Phase-3 Student course client', () => {
     )
   })
 
+  it('loads the canonical problem list for one published group lesson', async () => {
+    const response = studentProblemsFixture.response
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(jsonResponse(response)),
+    )
+    const client = createStudentCourseClient(runtime(), { fetchImplementation })
+
+    await expect(client.problems(response.courseId, response.groupLessonId)).resolves.toEqual(
+      response,
+    )
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      `/student/api/v1/courses/${response.courseId}/lessons/${response.groupLessonId}/problems`,
+    )
+  })
+
   it('refreshes once after 401 and retries the same bounded read', async () => {
     const refreshSession = vi.fn(() => Promise.resolve())
     const fetchImplementation = vi
@@ -139,6 +155,7 @@ describe('Phase-3 Student course client', () => {
       client.lessons('course-fixture-alpha', { cursor: '../unsafe-cursor' }),
     ).rejects.toThrow()
     await expect(client.lesson('course-fixture-alpha', '../unsafe-lesson')).rejects.toThrow()
+    await expect(client.problems('course-fixture-alpha', '../unsafe-lesson')).rejects.toThrow()
     expect(fetchImplementation).not.toHaveBeenCalled()
   })
 

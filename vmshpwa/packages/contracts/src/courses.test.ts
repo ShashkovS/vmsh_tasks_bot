@@ -5,6 +5,7 @@ import invalidCourseFixture from '../fixtures/courses/invalid.v1.json'
 import studentAccessFixture from '../fixtures/courses/student-access.v1.json'
 import studentHomeFixture from '../fixtures/courses/student-home.v1.json'
 import studentLessonsFixture from '../fixtures/courses/student-lessons.v1.json'
+import studentProblemsFixture from '../fixtures/courses/student-problems.v1.json'
 
 import {
   courseContractFixtureSchema,
@@ -18,6 +19,8 @@ import {
   studentLessonContractFixtureSchema,
   studentLessonListResponseSchema,
   studentLessonSummarySchema,
+  studentProblemContractFixtureSchema,
+  studentProblemListResponseSchema,
   studentCourseAccessResponseSchema,
   type CourseInvalidFixtureTarget,
 } from './courses'
@@ -170,6 +173,38 @@ describe('Phase-1 course access contracts', () => {
     expect(response.courses[0]?.phase).toBe('solving')
     expect(response.courses[0]?.currentLesson?.groupId).toBe('group-fixture-alpha-one')
     expect(response.courses[1]).toMatchObject({ phase: 'no_lesson', currentLesson: null })
+  })
+
+  it('validates exact published problems and honest persisted work states', () => {
+    const response = studentProblemContractFixtureSchema.parse(studentProblemsFixture).response
+
+    expect(response.problems.map((problem) => problem.status)).toEqual([
+      'accepted',
+      'checking',
+      'needs-work',
+    ])
+    expect(response.problems[0]?.problemId).toBe('problem-fixture-42-1')
+    expect(response.problems[1]?.verdict).toBeNull()
+  })
+
+  it('rejects duplicate public identities and verdicts on pending work', () => {
+    const response = studentProblemContractFixtureSchema.parse(studentProblemsFixture).response
+    const first = response.problems[0]
+    const second = response.problems[1]
+    if (!first || !second) throw new Error('Expected problem fixtures')
+
+    expect(
+      studentProblemListResponseSchema.safeParse({
+        ...response,
+        problems: [first, { ...second, problemId: first.problemId }],
+      }).success,
+    ).toBe(false)
+    expect(
+      studentProblemListResponseSchema.safeParse({
+        ...response,
+        problems: [{ ...second, verdict: first.verdict }],
+      }).success,
+    ).toBe(false)
   })
 
   it('rejects a home lesson from a non-active group and duplicate courses', () => {

@@ -1,0 +1,41 @@
+{
+  "fixtureVersion": 1,
+  "response": {
+    "courseId": "course-fixture-alpha",
+    "groupId": "group-fixture-alpha-one",
+    "groupLessonId": "group-lesson-fixture-42-alpha-one",
+    "conditionRevisionId": "revision-fixture-condition-42",
+    "problems": [
+      {
+        "problemId": "problem-fixture-42-1",
+        "sourceOrdinal": 1,
+        "displayNumber": "1",
+        "title": "Разнообразные вагоны",
+        "type": "test",
+        "answerType": 2,
+        "status": "accepted",
+        "verdict": { "verdictId": 17, "symbol": "✅+", "weight": 1.0 }
+      },
+      {
+        "problemId": "problem-fixture-42-2",
+        "sourceOrdinal": 2,
+        "displayNumber": "2",
+        "title": "Расстановка ладей",
+        "type": "written",
+        "answerType": null,
+        "status": "checking",
+        "verdict": null
+      },
+      {
+        "problemId": "problem-fixture-42-3",
+        "sourceOrdinal": 3,
+        "displayNumber": "3а",
+        "title": "Крылья бабочки",
+        "type": "oral",
+        "answerType": null,
+        "status": "needs-work",
+        "verdict": { "verdictId": 15, "symbol": "🟨±", "weight": 0.7 }
+      }
+    ]
+  }
+}

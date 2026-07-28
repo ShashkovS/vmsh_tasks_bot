@@ -30,6 +30,7 @@ from models.pwa.content import (
     ProblemRevisionDraft,
     ProblemSynonymCandidate,
     ProblemTitleCandidateInput,
+    PROBLEM_TYPE_VALUES,
     PublicationState,
     RevisionStatus,
     ScheduleField,
@@ -365,6 +366,40 @@ class StudentHomeLessonRecord:
 class StudentHomeSnapshot:
     generated_at: datetime
     lessons: tuple[StudentHomeLessonRecord, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class StudentProblemVerdictRecord:
+    """Best persisted verdict across the problem's current synonym projection."""
+
+    verdict_id: int
+    symbol: str
+    weight: float
+
+
+@dataclass(frozen=True, slots=True)
+class StudentProblemSummaryRecord:
+    """One exact problem revision with Student-owned work state."""
+
+    problem_public_id: str
+    source_ordinal: int
+    display_number: str
+    title: str
+    problem_type: int
+    answer_type: int | None
+    status: str
+    verdict: StudentProblemVerdictRecord | None
+
+
+@dataclass(frozen=True, slots=True)
+class StudentProblemListRecord:
+    """Canonical task list of the condition revision currently published."""
+
+    group_lesson_public_id: str
+    course_public_id: str
+    group_public_id: str
+    condition_revision_public_id: str
+    problems: tuple[StudentProblemSummaryRecord, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -724,7 +759,9 @@ def _canonical_problem_records(value: object) -> tuple[CanonicalProblemRecord, .
     """Decode the exact compiler identities used by immutable review rows."""
 
     if not isinstance(value, dict) or not isinstance(value.get("problems"), list):
-        raise ContentRepositoryError("content revision canonical AST has no problem list")
+        raise ContentRepositoryError(
+            "content revision canonical AST has no problem list"
+        )
     records: list[CanonicalProblemRecord] = []
     identities: set[tuple[int, str]] = set()
     for raw in value["problems"]:
@@ -733,7 +770,9 @@ def _canonical_problem_records(value: object) -> tuple[CanonicalProblemRecord, .
             or not isinstance(raw.get("ordinal"), int)
             or isinstance(raw.get("ordinal"), bool)
         ):
-            raise ContentRepositoryError("content revision canonical problem is invalid")
+            raise ContentRepositoryError(
+                "content revision canonical problem is invalid"
+            )
         ordinal = int(raw["ordinal"])
         source_item_value = raw.get("source_item")
         if source_item_value is not None and not isinstance(source_item_value, str):
@@ -849,7 +888,9 @@ def _problem_match_review_from_connection(
     try:
         document = json.loads(str(scope["canonical_json"]))
     except (json.JSONDecodeError, RecursionError) as error:
-        raise ContentRepositoryError("content revision canonical AST is invalid") from error
+        raise ContentRepositoryError(
+            "content revision canonical AST is invalid"
+        ) from error
     sources = _canonical_problem_records(document)
     revision_id = int(scope["revision_id"])
     matches = {
@@ -996,7 +1037,9 @@ def _problem_metadata_grid_from_connection(
         problem_id = int(match["problem_id"])
         legacy = candidates.get(problem_id)
         if legacy is None:
-            raise ContentRepositoryError("matched legacy problem is outside lesson scope")
+            raise ContentRepositoryError(
+                "matched legacy problem is outside lesson scope"
+            )
         revision_row = revision_rows.get(problem_id)
         rows.append(
             ProblemMetadataRecord(
@@ -1241,6 +1284,52 @@ def _student_lesson_summary(
     )
 
 
+def _student_problem_summary(
+    row: Mapping[str, object],
+) -> StudentProblemSummaryRecord:
+    public_id = row["problem_public_id"]
+    if public_id is None:
+        raise ContentRepositoryError("published problem has no public identity")
+    problem_type = int(row["problem_type"])
+    if problem_type not in PROBLEM_TYPE_VALUES:
+        raise ContentRepositoryError("published problem type is invalid")
+
+    verdict = None
+    queue_checking = row["queue_checking"]
+    if queue_checking is not None:
+        status = "checking" if int(queue_checking) == 1 else "sent"
+    elif row["verdict_id"] is not None:
+        weight = float(row["verdict_weight"])
+        if not 0 <= weight <= 1:
+            raise ContentRepositoryError("published problem verdict weight is invalid")
+        verdict = StudentProblemVerdictRecord(
+            verdict_id=int(row["verdict_id"]),
+            symbol=str(row["verdict_symbol"]),
+            weight=weight,
+        )
+        if weight >= 0.8:
+            status = "accepted"
+        elif problem_type == 1:
+            status = "rejected"
+        else:
+            status = "needs-work"
+    elif row["has_discussion"] is not None:
+        status = "sent"
+    else:
+        status = "not-started"
+
+    return StudentProblemSummaryRecord(
+        problem_public_id=str(public_id),
+        source_ordinal=int(row["source_ordinal"]),
+        display_number=str(row["display_number"]),
+        title=str(row["title"]),
+        problem_type=problem_type,
+        answer_type=(None if row["answer_type"] is None else int(row["answer_type"])),
+        status=status,
+        verdict=verdict,
+    )
+
+
 def _media_asset(row: Mapping[str, object]) -> MediaAssetRecord:
     return MediaAssetRecord(
         id=int(row["id"]),
@@ -1251,15 +1340,11 @@ def _media_asset(row: Mapping[str, object]) -> MediaAssetRecord:
         media_type=str(row["media_type"]),
         byte_size=int(row["byte_size"]),
         conversion_version=str(row["conversion_version"]),
-        public_url=(
-            None if row["public_url"] is None else str(row["public_url"])
-        ),
+        public_url=(None if row["public_url"] is None else str(row["public_url"])),
         width=None if row["width"] is None else int(row["width"]),
         height=None if row["height"] is None else int(row["height"]),
         source_filename=(
-            None
-            if row["source_filename"] is None
-            else str(row["source_filename"])
+            None if row["source_filename"] is None else str(row["source_filename"])
         ),
     )
 
@@ -1353,6 +1438,160 @@ _STUDENT_LESSON_SELECT = (
     "  ON solution_revision.id = solution_publication.revision_id "
     " AND solution_revision.status = 'ready' "
 )
+
+
+_STUDENT_PROBLEM_LIST_SELECT = """
+WITH published_scope AS (
+    SELECT group_lesson.course_lesson_id,
+           group_lesson.course_id,
+           course_lesson.lesson_number,
+           group_lesson.public_id AS group_lesson_public_id,
+           course.public_id AS course_public_id,
+           group_record.public_id AS group_public_id,
+           condition_revision.id AS condition_revision_id,
+           condition_revision.public_id AS condition_revision_public_id
+    FROM group_lessons AS group_lesson
+    JOIN course_lessons AS course_lesson
+      ON course_lesson.id = group_lesson.course_lesson_id
+    JOIN courses AS course ON course.id = group_lesson.course_id
+    JOIN groups AS group_record
+      ON group_record.course_id = group_lesson.course_id
+     AND group_record.group_id = group_lesson.group_id
+    JOIN lesson_publications AS condition_publication
+      ON condition_publication.group_lesson_id = group_lesson.id
+     AND condition_publication.kind = 'condition'
+     AND condition_publication.state = 'published'
+    JOIN content_revisions AS condition_revision
+      ON condition_revision.id = condition_publication.revision_id
+     AND condition_revision.status = 'ready'
+    WHERE course.public_id = :course_public_id
+      AND group_record.public_id = :group_public_id
+      AND group_lesson.public_id = :group_lesson_public_id
+      AND group_lesson.status = 'active'
+      AND EXISTS (
+          SELECT 1
+          FROM content_derivatives AS derivative
+          WHERE derivative.revision_id = condition_revision.id
+            AND derivative.kind = 'web_ast'
+            AND derivative.invalidated_at IS NULL
+      )
+),
+visible_problem AS (
+    SELECT problem_revision.problem_id,
+           problem.public_id AS problem_public_id,
+           problem.synonyms AS legacy_synonyms,
+           problem_revision.display_number,
+           problem_revision.title,
+           problem_revision.problem_type,
+           problem_revision.answer_type,
+           problem_revision.source_ordinal,
+           problem_revision.source_item,
+           published_scope.course_lesson_id,
+           published_scope.course_id,
+           published_scope.lesson_number
+    FROM published_scope
+    JOIN problem_revisions AS problem_revision
+      ON problem_revision.content_revision_id = published_scope.condition_revision_id
+    JOIN problems AS problem ON problem.id = problem_revision.problem_id
+),
+logical_member AS (
+    SELECT problem_id AS visible_problem_id,
+           problem_id AS member_problem_id
+    FROM visible_problem
+    UNION
+    SELECT visible.problem_id,
+           peer.problem_id
+    FROM visible_problem AS visible
+    JOIN problem_synonym_members AS own
+      ON own.problem_id = visible.problem_id
+     AND own.removed_at IS NULL
+    JOIN problem_synonym_groups AS synonym_group
+      ON synonym_group.id = own.synonym_group_id
+     AND synonym_group.course_lesson_id = visible.course_lesson_id
+     AND synonym_group.status = 'active'
+    JOIN problem_synonym_members AS peer
+      ON peer.synonym_group_id = synonym_group.id
+     AND peer.removed_at IS NULL
+    UNION
+    SELECT visible.problem_id,
+           legacy_peer.id
+    FROM visible_problem AS visible
+    JOIN problems AS legacy_peer
+      ON legacy_peer.lesson = visible.lesson_number
+     AND instr(
+         ';' || visible.legacy_synonyms || ';',
+         ';' || cast(legacy_peer.id AS text) || ';'
+     ) > 0
+    JOIN groups AS legacy_group
+      ON legacy_group.group_id = legacy_peer.group_id
+     AND legacy_group.course_id = visible.course_id
+    WHERE trim(visible.legacy_synonyms) <> ''
+      AND NOT EXISTS (
+          SELECT 1
+          FROM problem_synonym_members AS current_member
+          JOIN problem_synonym_groups AS current_group
+            ON current_group.id = current_member.synonym_group_id
+           AND current_group.status = 'active'
+          WHERE current_member.problem_id = visible.problem_id
+            AND current_member.removed_at IS NULL
+      )
+),
+queue_state AS (
+    SELECT logical_member.visible_problem_id,
+           max(CASE WHEN queue.cur_status > 0 THEN 1 ELSE 0 END) AS checking
+    FROM logical_member
+    JOIN written_tasks_queue AS queue
+      ON queue.problem_id = logical_member.member_problem_id
+     AND queue.student_id = :student_user_id
+    GROUP BY logical_member.visible_problem_id
+),
+ranked_result AS (
+    SELECT logical_member.visible_problem_id,
+           result.verdict AS verdict_id,
+           verdict.tick AS verdict_symbol,
+           verdict.val AS verdict_weight,
+           row_number() OVER (
+               PARTITION BY logical_member.visible_problem_id
+               ORDER BY verdict.val DESC, result.ts DESC, result.id DESC
+           ) AS result_rank
+    FROM logical_member
+    JOIN results AS result
+      ON result.problem_id = logical_member.member_problem_id
+     AND result.student_id = :student_user_id
+    JOIN verdicts AS verdict ON verdict.id = result.verdict
+),
+discussion_state AS (
+    SELECT logical_member.visible_problem_id,
+           1 AS has_discussion
+    FROM logical_member
+    JOIN written_tasks_discussions AS discussion
+      ON discussion.problem_id = logical_member.member_problem_id
+     AND discussion.student_id = :student_user_id
+    GROUP BY logical_member.visible_problem_id
+)
+SELECT published_scope.group_lesson_public_id,
+       published_scope.course_public_id,
+       published_scope.group_public_id,
+       published_scope.condition_revision_public_id,
+       visible_problem.*,
+       queue_state.checking AS queue_checking,
+       ranked_result.verdict_id,
+       ranked_result.verdict_symbol,
+       ranked_result.verdict_weight,
+       discussion_state.has_discussion
+FROM published_scope
+LEFT JOIN visible_problem ON true
+LEFT JOIN queue_state
+  ON queue_state.visible_problem_id = visible_problem.problem_id
+LEFT JOIN ranked_result
+  ON ranked_result.visible_problem_id = visible_problem.problem_id
+ AND ranked_result.result_rank = 1
+LEFT JOIN discussion_state
+  ON discussion_state.visible_problem_id = visible_problem.problem_id
+ORDER BY visible_problem.source_ordinal,
+         visible_problem.source_item,
+         visible_problem.problem_id
+"""
 
 
 def _scope_by_group_lesson_id(
@@ -1627,6 +1866,58 @@ class PwaContentRepository:
 
         return await self._factory.run_read_async(read)
 
+    async def list_student_problems(
+        self,
+        *,
+        student_user_id: int,
+        course_public_id: str,
+        group_public_id: str,
+        group_lesson_public_id: str,
+    ) -> StudentProblemListRecord:
+        """Read the exact published problem list and one logical work status each.
+
+        Source rows remain tied to their concrete ``problem_id``. Status reads
+        may span an explicitly active synonym group; the old semicolon
+        projection is a compatibility fallback only until the Phase-11
+        synonym rehearsal has materialized current memberships.
+        """
+
+        if student_user_id < 1:
+            raise ContentInvariantError("student user ID must be positive")
+        _require_public_id(course_public_id)
+        _require_public_id(group_public_id)
+        _require_public_id(group_lesson_public_id)
+
+        def read(connection):
+            rows = connection.execute(
+                _STUDENT_PROBLEM_LIST_SELECT,
+                {
+                    "student_user_id": student_user_id,
+                    "course_public_id": course_public_id,
+                    "group_public_id": group_public_id,
+                    "group_lesson_public_id": group_lesson_public_id,
+                },
+            ).fetchall()
+            if not rows:
+                raise ContentNotFound("published student problem list does not exist")
+            first = rows[0]
+            problems = tuple(
+                _student_problem_summary(row)
+                for row in rows
+                if row["problem_id"] is not None
+            )
+            if len(problems) > 2_000:  # compiler/WebContentDocument invariant
+                raise ContentRepositoryError("published problem list exceeds limit")
+            return StudentProblemListRecord(
+                group_lesson_public_id=str(first["group_lesson_public_id"]),
+                course_public_id=str(first["course_public_id"]),
+                group_public_id=str(first["group_public_id"]),
+                condition_revision_public_id=str(first["condition_revision_public_id"]),
+                problems=problems,
+            )
+
+        return await self._factory.run_read_async(read)
+
     async def list_content_upload_targets(
         self, anchor_group_lesson_public_id: str
     ) -> tuple[ContentUploadTargetRecord, ...]:
@@ -1675,7 +1966,9 @@ class PwaContentRepository:
                 or not target.course_lesson_public_id
                 for target in targets
             ):
-                raise ContentRepositoryError("content upload target identity is invalid")
+                raise ContentRepositoryError(
+                    "content upload target identity is invalid"
+                )
             return targets
 
         return await self._factory.run_read_async(read)
@@ -3740,8 +4033,7 @@ class PwaContentRepository:
 
         def read(connection):
             row = connection.execute(
-                "SELECT * FROM media_assets WHERE public_id = ? "
-                "AND deleted_at IS NULL",
+                "SELECT * FROM media_assets WHERE public_id = ? AND deleted_at IS NULL",
                 (public_id,),
             ).fetchone()
             if row is None:
@@ -4232,9 +4524,7 @@ class PwaContentRepository:
                     "problem match batch must cover the canonical problem list"
                 )
             explicit_problem_ids = [
-                draft.problem_id
-                for draft in prepared
-                if draft.problem_id is not None
+                draft.problem_id for draft in prepared if draft.problem_id is not None
             ]
             if len(set(explicit_problem_ids)) != len(explicit_problem_ids):
                 raise ContentInvariantError(
@@ -4258,7 +4548,9 @@ class PwaContentRepository:
                         row = existing_by_identity[identity]
                         stored_decision = ProblemMatchDecision(str(row["decision"]))
                         stored_problem_id = (
-                            None if row["problem_id"] is None else int(row["problem_id"])
+                            None
+                            if row["problem_id"] is None
+                            else int(row["problem_id"])
                         )
                         if stored_decision is not draft.decision:
                             identical = False
@@ -4355,9 +4647,7 @@ class PwaContentRepository:
                     raise _translate_integrity(
                         error, action="problem match review"
                     ) from error
-            return _problem_match_review_from_connection(
-                connection, revision_public_id
-            )
+            return _problem_match_review_from_connection(connection, revision_public_id)
 
         return await self._factory.run_write_async(write)
 
@@ -4406,7 +4696,9 @@ class PwaContentRepository:
                 for draft in prepared
             }
             if len(draft_by_identity) != len(prepared):
-                raise ContentInvariantError("problem metadata identities are duplicated")
+                raise ContentInvariantError(
+                    "problem metadata identities are duplicated"
+                )
             if set(draft_by_identity) != expected_identities:
                 raise ContentInvariantError(
                     "metadata grid must cover every matched non-omitted problem"

@@ -12,6 +12,7 @@ import {
   useAuthentication,
   useStudentCoursesQuery,
   useStudentLessonArchiveQuery,
+  useStudentProblemsQuery,
   type StudentCourseClient,
 } from '@vmsh/app-shell'
 import {
@@ -20,7 +21,7 @@ import {
   type PrincipalQueryScope,
   type StudentLessonSummary,
 } from '@vmsh/contracts'
-import { CourseContext, CourseGroupSwitcher } from '@vmsh/product'
+import { CourseContext, CourseGroupSwitcher, TaskListItem } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
 import { formatCalendarDate, problemCountLabel, toCourseEnrollmentView } from './student-home-view'
@@ -28,6 +29,7 @@ import {
   lessonHeading,
   publishedMaterialLabel,
   resolveStudentTasksContext,
+  toStudentTaskView,
   type StudentTasksSearch,
 } from './student-tasks-view'
 
@@ -64,6 +66,82 @@ function LessonCard({ lesson, onOpen }: { lesson: StudentLessonSummary; onOpen: 
         </Button>
       </CardContent>
     </Card>
+  )
+}
+
+function StudentProblemList({
+  client,
+  principal,
+  enrollment,
+  groupId,
+  lesson,
+}: {
+  client: StudentCourseClient
+  principal: PrincipalQueryScope
+  enrollment: CourseEnrollment
+  groupId: string
+  lesson: StudentLessonSummary
+}) {
+  const navigate = useNavigate({ from: '/tasks/' })
+  const query = useStudentProblemsQuery(
+    client,
+    principal,
+    enrollment.course.courseId,
+    groupId,
+    lesson.groupLessonId,
+  )
+  const group = enrollment.allowedGroups.find((candidate) => candidate.groupId === groupId)
+
+  if (query.isPending) return <PageStatePanel state="loading" />
+  if (query.error) {
+    const state = requestState(query.error)
+    return (
+      <PageStatePanel
+        {...(state === 'error' || state === 'offline'
+          ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+          : {})}
+        state={state}
+      />
+    )
+  }
+  if (!group) {
+    return <PageStatePanel state="forbidden" />
+  }
+
+  return (
+    <PageSection
+      description="Состояния учитывают ваши посылки и синонимичные задачи в других доступных группах."
+      title="Задачи листка"
+    >
+      {query.data.problems.length === 0 ? (
+        <PageStatePanel
+          description="В опубликованном условии пока нет задач."
+          state="empty"
+          title="Пустой листок"
+        />
+      ) : (
+        <div className="space-y-2">
+          {query.data.problems.map((problem) => (
+            <TaskListItem
+              key={problem.problemId}
+              onOpen={(problemId) => {
+                void navigate({
+                  to: '/tasks/$taskId',
+                  params: { taskId: problemId },
+                  search: {
+                    course: enrollment.course.courseId,
+                    group: groupId,
+                    groupLesson: lesson.groupLessonId,
+                    material: 'condition',
+                  },
+                })
+              }}
+              task={toStudentTaskView(problem, lesson.lessonNumber, group.code)}
+            />
+          ))}
+        </div>
+      )}
+    </PageSection>
   )
 }
 
@@ -196,6 +274,15 @@ function StudentLessonArchive({
           </Button>
         ) : null}
       </PageSection>
+      {search.lesson !== undefined && visibleLessons.length === 1 ? (
+        <StudentProblemList
+          client={client}
+          enrollment={enrollment}
+          groupId={groupId}
+          lesson={visibleLessons[0]!}
+          principal={principal}
+        />
+      ) : null}
     </div>
   )
 }

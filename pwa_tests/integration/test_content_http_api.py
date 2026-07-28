@@ -26,7 +26,11 @@ from helpers.nats_brocker import InProcessBroker
 from helpers.object_storage import content_addressed_key
 from helpers.pwa.app_keys import RUNTIME_CONFIG
 from helpers.pwa.auth_config import AuthRuntimeConfig, COOKIE_POLICY
-from helpers.pwa.content import ContentAssetConverter, ContentAssetService, ConvertedAsset
+from helpers.pwa.content import (
+    ContentAssetConverter,
+    ContentAssetService,
+    ConvertedAsset,
+)
 from helpers.pwa.content.pdf import PDF_RENDERER_VERSION
 from helpers.pwa.content.pdf_service import (
     PDF_STORAGE_CONVERSION_VERSION,
@@ -666,10 +670,7 @@ async def test_staff_lists_explicit_same_lesson_bulk_upload_targets(
     content_http: ContentHttpFixture,
 ):
     fixture = content_http
-    url = (
-        "/staff/api/v1/content/group-lessons/"
-        f"{fixture.group_lesson_a}/upload-targets"
-    )
+    url = f"/staff/api/v1/content/group-lessons/{fixture.group_lesson_a}/upload-targets"
 
     forbidden = await fixture.client.get(
         url,
@@ -814,8 +815,7 @@ async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
         kind="svg",
         if_match=raster_etag,
         payload=(
-            b'<svg xmlns="http://www.w3.org/2000/svg">'
-            b'<script>alert(1)</script></svg>'
+            b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
         ),
         filename="vector.svg",
     )
@@ -1061,14 +1061,14 @@ async def test_asset_upload_rejects_stale_unreferenced_or_malformed_requests(
     if case == "unsafe-source-filename":
         boundary = "vmshpwa-unsafe-filename"
         body = (
-            f'--{boundary}\r\nContent-Disposition: form-data; '
+            f"--{boundary}\r\nContent-Disposition: form-data; "
             'name="logicalName"\r\n\r\n'
-            f'{logical_name or target_name}\r\n--{boundary}\r\n'
+            f"{logical_name or target_name}\r\n--{boundary}\r\n"
             'Content-Disposition: form-data; name="kind"\r\n\r\n'
-            f'{kind}\r\n--{boundary}\r\nContent-Disposition: form-data; '
+            f"{kind}\r\n--{boundary}\r\nContent-Disposition: form-data; "
             'name="asset"; filename=" photo.heic "\r\n'
-            'Content-Type: image/heic\r\n\r\nraster\r\n'
-            f'--{boundary}--\r\n'
+            "Content-Type: image/heic\r\n\r\nraster\r\n"
+            f"--{boundary}--\r\n"
         ).encode()
         response = await fixture.client.post(
             f"/staff/api/v1/content/revisions/{revision_id}/assets",
@@ -1174,9 +1174,7 @@ async def test_publication_requires_problem_matching_and_reviewed_metadata(
         )
         return int(revision_row["id"]), int(problem_id)
 
-    revision_id, problem_id = fixture.factory.run_write(
-        resolve_match_without_metadata
-    )
+    revision_id, problem_id = fixture.factory.run_write(resolve_match_without_metadata)
     metadata_blocked = await _publish(
         fixture,
         group_lesson=fixture.group_lesson_a,
@@ -1428,9 +1426,7 @@ async def test_solution_publication_fails_closed_without_submission_cutoff(
     assert blocked.status == 422
     assert (await blocked.json())["error"]["code"] == "submission_cutoff_required"
 
-    created = await _create_lesson_window(
-        fixture, group_lesson=fixture.group_lesson_a
-    )
+    created = await _create_lesson_window(fixture, group_lesson=fixture.group_lesson_a)
     assert created.status == 201, await created.text()
     published = await _publish(
         fixture,
@@ -1598,9 +1594,7 @@ async def test_lesson_window_cutoff_has_separate_confirmation_audit_and_etag(
     content_http: ContentHttpFixture,
 ):
     fixture = content_http
-    route = (
-        f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/lesson-window"
-    )
+    route = f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/lesson-window"
     body = {
         "opensLocalTime": _local_time(NOW),
         "submissionClosesLocalTime": _local_time(NOW + timedelta(days=4)),
@@ -1644,9 +1638,7 @@ async def test_lesson_window_cutoff_has_separate_confirmation_audit_and_etag(
     assert created.status == 201, await created.text()
     created_payload = await created.json()
     assert created_payload["businessTimezone"] == "Europe/Moscow"
-    assert created_payload["submissionClosesAt"] == _timestamp(
-        NOW + timedelta(days=4)
-    )
+    assert created_payload["submissionClosesAt"] == _timestamp(NOW + timedelta(days=4))
     teacher_read = await fixture.client.get(
         route,
         cookies=_cookie(fixture, "teacher"),
@@ -1667,9 +1659,9 @@ async def test_lesson_window_cutoff_has_separate_confirmation_audit_and_etag(
     )
     assert schedule.status == 200, await schedule.text()
     schedule_payload = await schedule.json()
-    assert schedule_payload["submissionClosesAt"] == created_payload[
-        "submissionClosesAt"
-    ]
+    assert (
+        schedule_payload["submissionClosesAt"] == created_payload["submissionClosesAt"]
+    )
 
     unconfirmed_cutoff = await fixture.client.patch(
         f"{route}/submission-cutoff",
@@ -1732,7 +1724,9 @@ async def test_lesson_window_cutoff_has_separate_confirmation_audit_and_etag(
             "request_id": "content.http.test",
         },
     ]
-    with pytest.raises(sqlite3.IntegrityError, match="lesson window audit is immutable"):
+    with pytest.raises(
+        sqlite3.IntegrityError, match="lesson window audit is immutable"
+    ):
         fixture.factory.run_write(
             lambda connection: connection.execute(
                 "UPDATE lesson_window_changes SET request_id = 'tampered' "
@@ -1822,9 +1816,7 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
         filename="lesson/solution.tex",
         source=source,
     )
-    window = await _create_lesson_window(
-        fixture, group_lesson=fixture.group_lesson_a
-    )
+    window = await _create_lesson_window(fixture, group_lesson=fixture.group_lesson_a)
     assert window.status == 201, await window.text()
 
     condition_preview = await fixture.client.get(
@@ -2685,6 +2677,192 @@ async def test_student_lesson_list_and_detail_expose_only_published_condition(
     assert hidden_detail.status == 404
 
 
+async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    revision_a, _ = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="student-problems/a.tex",
+        source="""
+\\задача Первая задача \\кзадача
+\\задача Вторая задача \\кзадача
+\\задача Третья задача \\кзадача
+\\задача Четвёртая задача \\кзадача
+\\задача Синонимичная задача \\кзадача
+""",
+    )
+    publication_a = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=revision_a["revisionId"],
+    )
+    assert publication_a.status == 201, await publication_a.text()
+
+    revision_b, _ = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_b,
+        kind="condition",
+        filename="student-problems/b.tex",
+        source="\\задача Синонимичная задача \\кзадача",
+    )
+    publication_b = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_b,
+        kind="condition",
+        revision_id=revision_b["revisionId"],
+    )
+    assert publication_b.status == 201, await publication_b.text()
+
+    def seed_work(connection):
+        problems_a = connection.execute(
+            "SELECT problem.id, problem.public_id, problem_revision.source_ordinal "
+            "FROM problem_revisions AS problem_revision "
+            "JOIN content_revisions AS revision "
+            "  ON revision.id = problem_revision.content_revision_id "
+            "JOIN problems AS problem ON problem.id = problem_revision.problem_id "
+            "WHERE revision.public_id = ? ORDER BY problem_revision.source_ordinal",
+            (revision_a["revisionId"],),
+        ).fetchall()
+        problem_b = connection.execute(
+            "SELECT problem.id FROM problem_revisions AS problem_revision "
+            "JOIN content_revisions AS revision "
+            "  ON revision.id = problem_revision.content_revision_id "
+            "JOIN problems AS problem ON problem.id = problem_revision.problem_id "
+            "WHERE revision.public_id = ?",
+            (revision_b["revisionId"],),
+        ).fetchone()
+        assert len(problems_a) == 5
+        connection.executemany(
+            "INSERT INTO results "
+            "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, answer, res_type) "
+            "VALUES (?, ?, 'content-a', 41, ?, ?, ?, '', 1)",
+            (
+                (
+                    STUDENT_USER_ID,
+                    problems_a[0]["id"],
+                    TEACHER_USER_ID,
+                    "2026-09-20T12:00:00Z",
+                    17,
+                ),
+                (
+                    STUDENT_USER_ID,
+                    problems_a[1]["id"],
+                    TEACHER_USER_ID,
+                    "2026-09-20T12:01:00Z",
+                    17,
+                ),
+                (
+                    STUDENT_USER_ID,
+                    problems_a[2]["id"],
+                    TEACHER_USER_ID,
+                    "2026-09-20T12:02:00Z",
+                    -1,
+                ),
+            ),
+        )
+        connection.execute(
+            "INSERT INTO written_tasks_queue "
+            "(ts, student_id, problem_id, cur_status, teacher_ts, teacher_id) "
+            "VALUES ('2026-09-20T12:03:00Z', ?, ?, 1, "
+            "'2026-09-20T12:03:00Z', ?)",
+            (STUDENT_USER_ID, problems_a[1]["id"], TEACHER_USER_ID),
+        )
+        connection.execute(
+            "INSERT INTO written_tasks_discussions "
+            "(ts, student_id, problem_id, teacher_id, text) "
+            "VALUES ('2026-09-20T12:04:00Z', ?, ?, NULL, 'Отправлено')",
+            (STUDENT_USER_ID, problems_a[3]["id"]),
+        )
+        connection.execute(
+            "INSERT INTO results "
+            "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, answer, res_type) "
+            "VALUES (?, ?, 'content-b', 41, ?, '2026-09-20T12:05:00Z', 16, '', 2)",
+            (STUDENT_USER_ID, problem_b["id"], TEACHER_USER_ID),
+        )
+        course_lesson_id = connection.execute(
+            "SELECT course_lesson_id FROM group_lessons WHERE public_id = ?",
+            (fixture.group_lesson_a,),
+        ).fetchone()["course_lesson_id"]
+        group_lessons = {
+            row["public_id"]: row["id"]
+            for row in connection.execute(
+                "SELECT id, public_id FROM group_lessons WHERE public_id IN (?, ?)",
+                (fixture.group_lesson_a, fixture.group_lesson_b),
+            )
+        }
+        return problems_a, int(problem_b["id"]), int(course_lesson_id), group_lessons
+
+    problems_a, problem_b_id, course_lesson_id, group_lessons = (
+        fixture.factory.run_write(seed_work)
+    )
+    repository = PwaContentRepository(fixture.factory, clock=lambda: NOW)
+    synonym_group = await repository.create_synonym_group(
+        public_id="synonym-student-problems",
+        course_lesson_id=course_lesson_id,
+        group_key="student-problems",
+        display_title="Синонимичная задача",
+        actor_user_id=ADMIN_USER_ID,
+    )
+    await repository.add_synonym_member(
+        synonym_group_id=synonym_group.id,
+        group_lesson_id=group_lessons[fixture.group_lesson_a],
+        problem_id=int(problems_a[4]["id"]),
+        actor_user_id=ADMIN_USER_ID,
+    )
+    await repository.add_synonym_member(
+        synonym_group_id=synonym_group.id,
+        group_lesson_id=group_lessons[fixture.group_lesson_b],
+        problem_id=problem_b_id,
+        actor_user_id=ADMIN_USER_ID,
+    )
+
+    response = await fixture.client.get(
+        "/student/api/v1/courses/course-content-http/lessons/"
+        f"{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+
+    assert response.status == 200, await response.text()
+    payload = await response.json()
+    assert payload["conditionRevisionId"] == revision_a["revisionId"]
+    assert payload["courseId"] == "course-content-http"
+    assert payload["groupId"] == "group-content-http-a"
+    assert payload["groupLessonId"] == fixture.group_lesson_a
+    assert [problem["status"] for problem in payload["problems"]] == [
+        "accepted",
+        "checking",
+        "rejected",
+        "sent",
+        "accepted",
+    ]
+    assert all(
+        problem["problemId"].startswith("problem-") for problem in payload["problems"]
+    )
+    assert [problem["sourceOrdinal"] for problem in payload["problems"]] == [
+        1,
+        2,
+        3,
+        4,
+        5,
+    ]
+    assert payload["problems"][0]["verdict"] == {
+        "verdictId": 17,
+        "symbol": "✅+",
+        "weight": 1.0,
+    }
+    assert payload["problems"][1]["verdict"] is None
+    assert payload["problems"][4]["verdict"] == {
+        "verdictId": 16,
+        "symbol": "✅+.",
+        "weight": 0.95,
+    }
+
+
 async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
     content_http: ContentHttpFixture,
 ):
@@ -2715,9 +2893,15 @@ async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
     )
+    forbidden_problems = await fixture.client.get(
+        f"{base}/{fixture.group_lesson_b}/problems",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
 
     assert forbidden_group.status == 403
     assert malformed_cursor.status == 422
     assert duplicate_group.status == 422
     assert forbidden_detail.status == 403
+    assert forbidden_problems.status == 403
     assert malformed_detail.status == 404

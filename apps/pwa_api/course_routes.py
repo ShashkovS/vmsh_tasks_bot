@@ -21,6 +21,8 @@ from db_methods.pwa.auth import CourseEnrollmentRecord, CourseGroupAccessRecord
 from db_methods.pwa.content import (
     ContentNotFound,
     ContentRepositoryError,
+    StudentProblemListRecord,
+    StudentProblemSummaryRecord,
     StudentLessonMaterialRecord,
     StudentLessonSummaryRecord,
 )
@@ -210,6 +212,52 @@ def _student_lesson_payload(
     }
 
 
+def _student_problem_payload(
+    problem: StudentProblemSummaryRecord,
+) -> dict[str, object]:
+    problem_type = {
+        1: "test",
+        2: "written",
+        3: "oral",
+        # WRITTEN_BEFORE_ORALLY is a storage/checking distinction. Student
+        # always sees an oral task; see design-system/04-product-components.md.
+        4: "oral",
+    }.get(problem.problem_type)
+    if problem_type is None:  # pragma: no cover - repository invariant
+        raise ContentRepositoryError("published problem type is invalid")
+    verdict = problem.verdict
+    return {
+        "problemId": problem.problem_public_id,
+        "sourceOrdinal": problem.source_ordinal,
+        "displayNumber": problem.display_number,
+        "title": problem.title,
+        "type": problem_type,
+        "answerType": problem.answer_type,
+        "status": problem.status,
+        "verdict": (
+            None
+            if verdict is None
+            else {
+                "verdictId": verdict.verdict_id,
+                "symbol": verdict.symbol,
+                "weight": verdict.weight,
+            }
+        ),
+    }
+
+
+def _student_problem_list_payload(
+    record: StudentProblemListRecord,
+) -> dict[str, object]:
+    return {
+        "courseId": record.course_public_id,
+        "groupId": record.group_public_id,
+        "groupLessonId": record.group_lesson_public_id,
+        "conditionRevisionId": record.condition_revision_public_id,
+        "problems": [_student_problem_payload(problem) for problem in record.problems],
+    }
+
+
 @course_routes.get("/student/api/v1/courses")
 async def list_student_courses(request: web.Request) -> web.Response:
     _reject_query(request)
@@ -263,9 +311,7 @@ async def get_student_home(request: web.Request) -> web.Response:
                 "enrollment": course_enrollment_payload(enrollment),
                 "phase": "no_lesson" if current is None else current.phase,
                 "currentLesson": (
-                    None
-                    if current is None
-                    else _student_lesson_payload(current.lesson)
+                    None if current is None else _student_lesson_payload(current.lesson)
                 ),
             }
         )
@@ -367,6 +413,54 @@ async def get_student_lesson(request: web.Request) -> web.Response:
             message="Опубликованное занятие не найдено",
         ) from error
     return web.json_response(_student_lesson_payload(lesson))
+
+
+@course_routes.get(
+    "/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}/problems"
+)
+async def list_student_problems(request: web.Request) -> web.Response:
+    _reject_query(request)
+    authenticated = _student_session(request)
+    enrollment = _course_enrollment(authenticated, request.match_info["course_id"])
+    repository = _repository(request)
+    group_lesson_public_id = request.match_info["group_lesson_id"]
+    if _PUBLIC_ID.fullmatch(group_lesson_public_id) is None:
+        raise PwaApiError(
+            status=404,
+            code="not_found",
+            message="Занятие не найдено",
+        )
+    try:
+        scope = await repository.get_group_lesson_scope(group_lesson_public_id)
+    except ContentNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="not_found",
+            message="Занятие не найдено",
+        ) from error
+    if scope.course_public_id != enrollment.course_public_id:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Занятие недоступно этому школьнику",
+        )
+    group = _allowed_group(enrollment, scope.group_public_id)
+    student_user_id = authenticated.principal.linked_user_id
+    assert student_user_id is not None
+    try:
+        result = await repository.list_student_problems(
+            student_user_id=student_user_id,
+            course_public_id=enrollment.course_public_id,
+            group_public_id=group.group_public_id,
+            group_lesson_public_id=group_lesson_public_id,
+        )
+    except ContentNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="not_found",
+            message="Опубликованный список задач не найден",
+        ) from error
+    return web.json_response(_student_problem_list_payload(result))
 
 
 __all__ = ["course_enrollment_payload", "course_routes"]

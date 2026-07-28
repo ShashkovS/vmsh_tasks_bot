@@ -2,17 +2,24 @@ import { describe, expect, it } from 'vitest'
 
 import studentAccessFixture from '../../../packages/contracts/fixtures/courses/student-access.v1.json'
 import studentLessonsFixture from '../../../packages/contracts/fixtures/courses/student-lessons.v1.json'
-import { studentCourseAccessResponseSchema, studentLessonListResponseSchema } from '@vmsh/contracts'
+import studentProblemsFixture from '../../../packages/contracts/fixtures/courses/student-problems.v1.json'
+import {
+  studentCourseAccessResponseSchema,
+  studentLessonListResponseSchema,
+  studentProblemListResponseSchema,
+} from '@vmsh/contracts'
 
 import {
   lessonHeading,
   publishedMaterialLabel,
   resolveStudentTasksContext,
   studentTasksSearchSchema,
+  toStudentTaskView,
 } from './student-tasks-view'
 
 const access = studentCourseAccessResponseSchema.parse(studentAccessFixture.response)
 const lessons = studentLessonListResponseSchema.parse(studentLessonsFixture.response).lessons
+const problems = studentProblemListResponseSchema.parse(studentProblemsFixture.response).problems
 
 describe('Student production Tasks mapping', () => {
   it('uses the first course and its active group when URL context is omitted', () => {
@@ -63,5 +70,26 @@ describe('Student production Tasks mapping', () => {
       view: 'sheet',
       topic: 'геометрия',
     })
+  })
+
+  it('maps real server states and opaque identities into Product task rows', () => {
+    expect(problems.map((problem) => toStudentTaskView(problem, 42, 'н'))).toEqual([
+      expect.objectContaining({
+        id: 'problem-fixture-42-1',
+        number: '42н.1',
+        status: { kind: 'accepted', label: 'Зачтено', tone: 'success' },
+        verdict: expect.objectContaining({ value: 'plus', symbol: '✅+', weight: 1 }),
+      }),
+      expect.objectContaining({
+        id: 'problem-fixture-42-2',
+        status: { kind: 'checking', label: 'На проверке', tone: 'info' },
+      }),
+      expect.objectContaining({
+        id: 'problem-fixture-42-3',
+        number: '42н.3а',
+        status: { kind: 'needs-work', label: 'Нужна доработка', tone: 'warning' },
+        verdict: expect.objectContaining({ value: 'plus-minus', symbol: '🟨±', weight: 0.7 }),
+      }),
+    ])
   })
 })

@@ -216,6 +216,109 @@ export const studentLessonSummarySchema = z
   })
 export type StudentLessonSummary = z.infer<typeof studentLessonSummarySchema>
 
+export const studentProblemTypeSchema = z.enum(['test', 'written', 'oral'])
+export type StudentProblemType = z.infer<typeof studentProblemTypeSchema>
+
+export const studentProblemStatusSchema = z.enum([
+  'not-started',
+  'sent',
+  'checking',
+  'accepted',
+  'needs-work',
+  'rejected',
+])
+export type StudentProblemStatus = z.infer<typeof studentProblemStatusSchema>
+
+export const legacyVerdictIdSchema = z.union([
+  z.literal(-32768),
+  z.literal(-2),
+  z.literal(-1),
+  z.literal(11),
+  z.literal(12),
+  z.literal(13),
+  z.literal(14),
+  z.literal(15),
+  z.literal(16),
+  z.literal(17),
+  z.literal(18),
+])
+export type LegacyVerdictId = z.infer<typeof legacyVerdictIdSchema>
+
+export const studentProblemVerdictSchema = z
+  .object({
+    verdictId: legacyVerdictIdSchema,
+    symbol: z.string().max(16),
+    weight: z.number().min(0).max(1),
+  })
+  .strip()
+export type StudentProblemVerdict = z.infer<typeof studentProblemVerdictSchema>
+
+export const studentProblemSummarySchema = z
+  .object({
+    problemId: publicIdSchema,
+    sourceOrdinal: z.number().int().positive(),
+    displayNumber: z.string().trim().min(1).max(80),
+    title: z.string().trim().min(1).max(500),
+    type: studentProblemTypeSchema,
+    answerType: z.number().int().positive().max(99).nullable(),
+    status: studentProblemStatusSchema,
+    verdict: studentProblemVerdictSchema.nullable(),
+  })
+  .strip()
+  .superRefine((problem, context) => {
+    const terminal = ['accepted', 'needs-work', 'rejected'].includes(problem.status)
+    if (terminal !== (problem.verdict !== null)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Only a completed problem status may expose a verdict',
+        path: ['verdict'],
+      })
+    }
+    if (problem.status === 'accepted' && problem.verdict !== null && problem.verdict.weight < 0.8) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Accepted problem verdict must meet the solved threshold',
+        path: ['verdict', 'weight'],
+      })
+    }
+    if (
+      ['needs-work', 'rejected'].includes(problem.status) &&
+      problem.verdict !== null &&
+      problem.verdict.weight >= 0.8
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Unaccepted problem verdict must stay below the solved threshold',
+        path: ['verdict', 'weight'],
+      })
+    }
+  })
+export type StudentProblemSummary = z.infer<typeof studentProblemSummarySchema>
+
+export const studentProblemListResponseSchema = z
+  .object({
+    courseId: publicIdSchema,
+    groupId: publicIdSchema,
+    groupLessonId: publicIdSchema,
+    conditionRevisionId: publicIdSchema,
+    problems: z.array(studentProblemSummarySchema).max(2_000),
+  })
+  .strip()
+  .superRefine((response, context) => {
+    const seen = new Set<string>()
+    response.problems.forEach((problem, index) => {
+      if (seen.has(problem.problemId)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Problem public IDs must be unique in a published list',
+          path: ['problems', index, 'problemId'],
+        })
+      }
+      seen.add(problem.problemId)
+    })
+  })
+export type StudentProblemListResponse = z.infer<typeof studentProblemListResponseSchema>
+
 export const studentLessonListResponseSchema = z
   .object({
     courseId: publicIdSchema,
@@ -370,6 +473,13 @@ export const courseQueryKeys = {
       'lessons',
       publicIdSchema.parse(groupLessonId),
     ] as const,
+  problems: (
+    principal: PrincipalQueryScope,
+    courseId: string,
+    groupId: string,
+    groupLessonId: string,
+  ) =>
+    [...courseQueryKeys.lesson(principal, courseId, groupId, groupLessonId), 'problems'] as const,
 } as const
 
 export const COURSE_CONTRACT_FIXTURE_VERSION = 1 as const
@@ -398,6 +508,14 @@ export const studentHomeContractFixtureSchema = z
   })
   .strict()
 export type StudentHomeContractFixture = z.infer<typeof studentHomeContractFixtureSchema>
+
+export const studentProblemContractFixtureSchema = z
+  .object({
+    fixtureVersion: courseContractFixtureVersionSchema,
+    response: studentProblemListResponseSchema,
+  })
+  .strict()
+export type StudentProblemContractFixture = z.infer<typeof studentProblemContractFixtureSchema>
 
 export const courseInvalidFixtureTargetSchema = z.enum([
   'course',

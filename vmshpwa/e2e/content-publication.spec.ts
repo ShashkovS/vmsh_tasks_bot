@@ -121,11 +121,12 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
 
   const attempt = `${testInfo.project.name}, запуск ${testInfo.retry + 1}`
   const firstStatement = `Первая опубликованная версия для ${attempt}.`
+  const firstTaskTitle = `Первая E2E-задача, запуск ${testInfo.retry + 1}`
   const firstRevisionId = await uploadReviewAndPublish({
     page,
     target,
     source: latexSource('Первая версия', firstStatement),
-    metadataTitle: `Первая E2E-задача, запуск ${testInfo.retry + 1}`,
+    metadataTitle: firstTaskTitle,
     match: testInfo.retry === 0 ? 'insert-new' : 'suggested',
   })
 
@@ -142,7 +143,10 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await expect(lessonSelect).toContainText(`${target.lessonNumber} ·`)
   await lessonSelect.selectOption(String(target.lessonNumber))
   await expect(page).toHaveURL(new RegExp(`[?&]lesson=${target.lessonNumber}(?:&|$)`))
-  await page.getByRole('button', { name: 'Открыть листок' }).click()
+  const taskRow = page.getByRole('button', { name: new RegExp(firstTaskTitle) })
+  await expect(taskRow).toContainText('Не начата')
+  await taskRow.click()
+  await expect(page).toHaveURL(/\/student\/tasks\/problem-[0-9a-f]{32}\?/)
   await expect(page.getByText(firstStatement)).toBeVisible()
 
   await page.goto(studentUrl)

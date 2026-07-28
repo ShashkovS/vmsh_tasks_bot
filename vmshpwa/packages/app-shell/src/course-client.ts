@@ -9,6 +9,7 @@ import {
   publicIdSchema,
   studentHomeResponseSchema,
   studentLessonListResponseSchema,
+  studentProblemListResponseSchema,
   studentLessonSummarySchema,
   studentCourseAccessResponseSchema,
   type CourseEnrollment,
@@ -19,6 +20,7 @@ import {
   type StudentHomeResponse,
   type StudentLessonListResponse,
   type StudentLessonSummary,
+  type StudentProblemListResponse,
 } from '@vmsh/contracts'
 
 /**
@@ -52,6 +54,11 @@ export interface StudentCourseClient {
     groupLessonId: string,
     options?: CourseRequestOptions,
   ): Promise<StudentLessonSummary>
+  problems(
+    courseId: string,
+    groupLessonId: string,
+    options?: CourseRequestOptions,
+  ): Promise<StudentProblemListResponse>
 }
 
 export class CourseProtocolError extends Error {
@@ -139,6 +146,20 @@ class BrowserStudentCourseClient implements StudentCourseClient {
       `/courses/${encodeURIComponent(parsedCourseId)}/lessons/${encodeURIComponent(parsedLessonId)}`,
       options,
       studentLessonSummarySchema,
+    )
+  }
+
+  async problems(
+    courseId: string,
+    groupLessonId: string,
+    options: CourseRequestOptions = {},
+  ): Promise<StudentProblemListResponse> {
+    const parsedCourseId = publicIdSchema.parse(courseId)
+    const parsedLessonId = publicIdSchema.parse(groupLessonId)
+    return this.#request(
+      `/courses/${encodeURIComponent(parsedCourseId)}/lessons/${encodeURIComponent(parsedLessonId)}/problems`,
+      options,
+      studentProblemListResponseSchema,
     )
   }
 
@@ -290,5 +311,19 @@ export function useStudentLessonQuery(
   return useQuery({
     queryKey: courseQueryKeys.lesson(principal, courseId, groupId, groupLessonId),
     queryFn: ({ signal }) => client.lesson(courseId, groupLessonId, { signal }),
+  })
+}
+
+/** Canonical published task list with server-projected Student work states. */
+export function useStudentProblemsQuery(
+  client: Pick<StudentCourseClient, 'problems'>,
+  principal: PrincipalQueryScope,
+  courseId: string,
+  groupId: string,
+  groupLessonId: string,
+) {
+  return useQuery({
+    queryKey: courseQueryKeys.problems(principal, courseId, groupId, groupLessonId),
+    queryFn: ({ signal }) => client.problems(courseId, groupLessonId, { signal }),
   })
 }
