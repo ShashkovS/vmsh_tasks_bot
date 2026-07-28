@@ -21,6 +21,7 @@ from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import PwaContentRepository
 from db_methods.pwa.submissions import PwaTestSubmissionRepository
+from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import Config
 from helpers.consts import USER_TYPE
 from helpers.nats_brocker import InProcessBroker
@@ -331,6 +332,9 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
     course_id = _seed_content_accounts(factory)
     content_repository = PwaContentRepository(factory, clock=lambda: NOW)
     test_submission_repository = PwaTestSubmissionRepository(factory, clock=lambda: NOW)
+    written_submission_repository = PwaWrittenSubmissionRepository(
+        factory, clock=lambda: NOW
+    )
     course_lesson = await content_repository.create_course_lesson(
         public_id="course-lesson-content-http",
         course_id=course_id,
@@ -390,6 +394,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         auth_service=auth_service,
         content_repository=content_repository,
         test_submission_repository=test_submission_repository,
+        written_submission_repository=written_submission_repository,
         content_asset_service=asset_service,
     )
     client = await aiohttp_client(app)
@@ -725,6 +730,7 @@ async def _prepare_published_test_problem(
     *,
     correct_answer: str | None = "7",
     correct_answer_checker: str | None = None,
+    problem_type: int = 1,
 ) -> tuple[str, str]:
     """Use the real Staff content API to create one submit-ready problem."""
 
@@ -782,15 +788,19 @@ async def _prepare_published_test_problem(
     row = grid["rows"][0]
     row.update(
         {
-            "title": "Целое число",
-            "problemType": 1,
-            "answerType": 3,
+            "title": ("Целое число" if problem_type == 1 else "Письменная задача"),
+            "problemType": problem_type,
+            "answerType": 3 if problem_type == 1 else None,
             "answerValidation": None,
-            "validationError": "Введите целое число, например -7",
-            "correctAnswer": correct_answer,
-            "correctAnswerChecker": correct_answer_checker,
-            "wrongAnswer": "Нет, это другое число.",
-            "congratulation": "Да, всё верно!",
+            "validationError": (
+                "Введите целое число, например -7" if problem_type == 1 else None
+            ),
+            "correctAnswer": correct_answer if problem_type == 1 else None,
+            "correctAnswerChecker": (
+                correct_answer_checker if problem_type == 1 else None
+            ),
+            "wrongAnswer": "Нет, это другое число." if problem_type == 1 else None,
+            "congratulation": "Да, всё верно!" if problem_type == 1 else None,
         }
     )
     row.pop("reviewed")
@@ -1143,6 +1153,214 @@ async def test_student_test_submission_http_rejects_unauthenticated_and_bad_curs
         headers=_headers(),
     )
     assert invalid_cursor.status == 422
+
+
+async def test_student_written_submission_http_is_strict_idempotent_and_readable(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    problem_public_id, condition_revision_id = await _prepare_published_test_problem(
+        fixture, problem_type=2
+    )
+    thread_route = f"/student/api/v1/problems/{problem_public_id}/thread"
+    create_route = f"{thread_route}/entries"
+    create_payload = {
+        "schemaVersion": 1,
+        "idempotencyKey": "d301d1d4-1a8a-4d56-9a07-a5511dc4ed2c",
+        "problemRevision": {
+            "conditionRevisionId": condition_revision_id,
+            "configVersion": 1,
+        },
+        "text": "Пусть x — искомое число. Тогда x + 7 = 19.",
+        "clientCreatedAt": _timestamp(),
+    }
+
+    unauthenticated = await fixture.client.get(thread_route, headers=_headers())
+    assert unauthenticated.status == 401
+    empty = await fixture.client.get(
+        thread_route,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert empty.status == 200, await empty.text()
+    assert await empty.json() == {
+        "schemaVersion": 1,
+        "problemId": problem_public_id,
+        "thread": None,
+        "requestId": "content.http.test",
+    }
+    invalid_identity = await fixture.client.post(
+        create_route,
+        json={**create_payload, "studentId": "user-content-student"},
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert invalid_identity.status == 422
+
+    cursors_before = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
+    created = await fixture.client.post(
+        create_route,
+        json=create_payload,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert created.status == 201, await created.text()
+    draft = await created.json()
+    assert draft["problemId"] == problem_public_id
+    assert draft["threadStatus"] == "open"
+    assert draft["threadVersion"] == 1
+    assert draft["entry"]["state"] == "draft"
+    assert draft["entry"]["problemRevision"] == create_payload["problemRevision"]
+    assert draft["entry"]["attachments"] == []
+    assert draft["requestId"] == "content.http.test"
+    cursors_after_create = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
+    assert cursors_after_create == {
+        **cursors_before,
+        "student": cursors_before["student"] + 1,
+    }
+
+    replay = await fixture.client.post(
+        create_route,
+        json=create_payload,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert replay.status == 201
+    assert await replay.json() == draft
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == (
+        cursors_after_create
+    )
+
+    submit_route = f"/student/api/v1/thread-entries/{draft['entry']['entryId']}/submit"
+    submit_payload = {
+        "schemaVersion": 1,
+        "idempotencyKey": "05eb8741-c75e-43bd-b592-8ff7baf81cc1",
+        "expectedEntryVersion": 1,
+        "expectedThreadVersion": 1,
+        "attachmentIds": [],
+    }
+    submitted = await fixture.client.post(
+        submit_route,
+        json=submit_payload,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert submitted.status == 200, await submitted.text()
+    receipt = await submitted.json()
+    assert receipt["threadStatus"] == "awaiting_review"
+    assert receipt["threadVersion"] == 2
+    assert receipt["entry"]["state"] == "submitted"
+    assert receipt["entry"]["version"] == 2
+    assert receipt["clockSuspicious"] is False
+    cursors_after_submit = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
+    assert cursors_after_submit == {
+        **cursors_after_create,
+        "student": cursors_after_create["student"] + 1,
+    }
+
+    submit_replay = await fixture.client.post(
+        submit_route,
+        json=submit_payload,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert submit_replay.status == 200
+    assert await submit_replay.json() == receipt
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == (
+        cursors_after_submit
+    )
+
+    history = await fixture.client.get(
+        thread_route,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert history.status == 200, await history.text()
+    thread = (await history.json())["thread"]
+    assert thread["status"] == "awaiting_review"
+    assert thread["version"] == 2
+    assert [entry["entryId"] for entry in thread["entries"]] == [
+        draft["entry"]["entryId"]
+    ]
+
+    counts = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_threads"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_entries"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT count(*) AS n FROM idempotency_records "
+                "WHERE operation LIKE 'written-entry:%'"
+            ).fetchone()["n"],
+        )
+    )
+    assert counts == (1, 1, 2)
+
+
+async def test_student_written_submission_http_persists_safe_failures(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    problem_public_id, condition_revision_id = await _prepare_published_test_problem(
+        fixture, problem_type=2
+    )
+    created = await fixture.client.post(
+        f"/student/api/v1/problems/{problem_public_id}/thread/entries",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "e70bc72f-457d-4684-b748-08e1af2877b0",
+            "problemRevision": {
+                "conditionRevisionId": condition_revision_id,
+                "configVersion": 1,
+            },
+            "text": "   ",
+            "clientCreatedAt": _timestamp(),
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert created.status == 201, await created.text()
+    draft = await created.json()
+    submit_route = f"/student/api/v1/thread-entries/{draft['entry']['entryId']}/submit"
+    payload = {
+        "schemaVersion": 1,
+        "idempotencyKey": "7ad0d1d1-2714-4365-9b4e-91afccbe22c1",
+        "expectedEntryVersion": 1,
+        "expectedThreadVersion": 1,
+        "attachmentIds": [],
+    }
+
+    first = await fixture.client.post(
+        submit_route,
+        json=payload,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    second = await fixture.client.post(
+        submit_route,
+        json=payload,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+
+    assert first.status == second.status == 422
+    assert await first.json() == await second.json()
+    entry, record = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT state, version FROM submission_entries"
+            ).fetchone(),
+            connection.execute(
+                "SELECT state, http_status FROM idempotency_records "
+                "WHERE operation = 'written-entry:submit'"
+            ).fetchone(),
+        )
+    )
+    assert entry == {"state": "draft", "version": 1}
+    assert record == {"state": "failed", "http_status": 422}
 
 
 async def test_staff_rechecks_pending_attempts_after_publishing_repaired_config(

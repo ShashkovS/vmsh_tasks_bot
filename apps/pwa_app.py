@@ -44,9 +44,15 @@ from apps.pwa_api.websocket_sessions import (
     WebSocketSessionIdentity,
     WebSocketSessionRegistry,
 )
+from apps.pwa_api.written_submission_routes import (
+    PWA_WRITTEN_SUBMISSION_INVALIDATOR,
+    PWA_WRITTEN_SUBMISSION_REPOSITORY,
+    written_submission_routes,
+)
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import GroupLessonContentScope, PwaContentRepository
 from db_methods.pwa.submissions import PwaTestSubmissionRepository
+from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import logger
 from helpers.nats_brocker import InProcessBroker, JsonBroker, NatsBroker
 from helpers.object_storage import ObjectStorage, create_object_storage
@@ -686,6 +692,19 @@ async def on_test_submission_startup(app: web.Application) -> None:
     app[PWA_TEST_SUBMISSION_REPOSITORY] = PwaTestSubmissionRepository(factory)
 
 
+async def on_written_submission_startup(app: web.Application) -> None:
+    """Bind Phase-5 written routes to the verified shared SQLite factory."""
+
+    if PWA_WRITTEN_SUBMISSION_REPOSITORY in app:
+        return
+    factory = app[PWA_DATABASE].factory
+    if factory is None:
+        raise RuntimeError(
+            "PWA written submission startup requires a verified database factory"
+        )
+    app[PWA_WRITTEN_SUBMISSION_REPOSITORY] = PwaWrittenSubmissionRepository(factory)
+
+
 async def publish_content_invalidation(
     app: web.Application,
     scope: GroupLessonContentScope,
@@ -727,6 +746,26 @@ async def publish_test_submission_invalidation(
         NATS_PWA_INVALIDATE,
         {
             "resources": [f"problems/{problem_public_id}/test-attempts"],
+            "reason": reason,
+            "audience": AuthAudience.STUDENT.value,
+            "accountId": account_public_id,
+        },
+    )
+
+
+async def publish_written_submission_invalidation(
+    app: web.Application,
+    *,
+    account_public_id: str,
+    problem_public_id: str,
+    reason: str,
+) -> None:
+    """Publish one owner-scoped written-thread refetch hint after commit."""
+
+    await app[PWA_BROKER].publish(
+        NATS_PWA_INVALIDATE,
+        {
+            "resources": [f"problems/{problem_public_id}/thread"],
             "reason": reason,
             "audience": AuthAudience.STUDENT.value,
             "accountId": account_public_id,
@@ -850,6 +889,7 @@ def configure(
     auth_service: PwaAuthService | None = None,
     content_repository: PwaContentRepository | None = None,
     test_submission_repository: PwaTestSubmissionRepository | None = None,
+    written_submission_repository: PwaWrittenSubmissionRepository | None = None,
     content_asset_service: ContentAssetService | None = None,
     object_storage: ObjectStorage | None = None,
     content_asset_converter: (
@@ -925,6 +965,28 @@ def configure(
             app[PWA_TEST_SUBMISSION_INVALIDATOR] = invalidate_test_submission
             app.add_routes(submission_routes)
             app.on_startup.append(on_test_submission_startup)
+        written_submissions_enabled = (
+            written_submission_repository is not None or PWA_DATABASE in app
+        )
+        if written_submissions_enabled:
+            if written_submission_repository is not None:
+                app[PWA_WRITTEN_SUBMISSION_REPOSITORY] = written_submission_repository
+
+            async def invalidate_written_submission(
+                account_public_id: str,
+                problem_public_id: str,
+                reason: str,
+            ) -> None:
+                await publish_written_submission_invalidation(
+                    app,
+                    account_public_id=account_public_id,
+                    problem_public_id=problem_public_id,
+                    reason=reason,
+                )
+
+            app[PWA_WRITTEN_SUBMISSION_INVALIDATOR] = invalidate_written_submission
+            app.add_routes(written_submission_routes)
+            app.on_startup.append(on_written_submission_startup)
         content_enabled = content_repository is not None or PWA_DATABASE in app
         if content_enabled:
             if content_repository is not None:
