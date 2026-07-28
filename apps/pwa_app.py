@@ -33,6 +33,10 @@ from apps.pwa_api.realtime_control import (
     PWA_REALTIME_SESSION_CONTROLLER,
     RealtimeSessionController,
 )
+from apps.pwa_api.review_routes import (
+    PWA_REVIEW_QUEUE_REPOSITORY,
+    review_routes,
+)
 from apps.pwa_api.submission_routes import (
     PWA_TEST_SUBMISSION_INVALIDATOR,
     PWA_TEST_SUBMISSION_REPOSITORY,
@@ -52,6 +56,7 @@ from apps.pwa_api.written_submission_routes import (
 )
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import GroupLessonContentScope, PwaContentRepository
+from db_methods.pwa.reviews import PwaWrittenReviewQueueRepository
 from db_methods.pwa.submissions import PwaTestSubmissionRepository
 from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import logger
@@ -707,6 +712,19 @@ async def on_written_submission_startup(app: web.Application) -> None:
     app[PWA_WRITTEN_SUBMISSION_REPOSITORY] = PwaWrittenSubmissionRepository(factory)
 
 
+async def on_review_queue_startup(app: web.Application) -> None:
+    """Bind Phase-6 review routes to the verified shared SQLite factory."""
+
+    if PWA_REVIEW_QUEUE_REPOSITORY in app:
+        return
+    factory = app[PWA_DATABASE].factory
+    if factory is None:
+        raise RuntimeError(
+            "PWA review queue startup requires a verified database factory"
+        )
+    app[PWA_REVIEW_QUEUE_REPOSITORY] = PwaWrittenReviewQueueRepository(factory)
+
+
 async def on_written_attachment_startup(app: web.Application) -> None:
     """Compose Phase-5 uploads from the already verified shared adapters."""
 
@@ -911,6 +929,7 @@ def configure(
     content_repository: PwaContentRepository | None = None,
     test_submission_repository: PwaTestSubmissionRepository | None = None,
     written_submission_repository: PwaWrittenSubmissionRepository | None = None,
+    review_queue_repository: PwaWrittenReviewQueueRepository | None = None,
     written_attachment_service: WrittenAttachmentService | None = None,
     content_asset_service: ContentAssetService | None = None,
     object_storage: ObjectStorage | None = None,
@@ -1013,6 +1032,14 @@ def configure(
             app[PWA_WRITTEN_SUBMISSION_INVALIDATOR] = invalidate_written_submission
             app.add_routes(written_submission_routes)
             app.on_startup.append(on_written_submission_startup)
+        review_queue_enabled = (
+            review_queue_repository is not None or PWA_DATABASE in app
+        )
+        if review_queue_enabled:
+            if review_queue_repository is not None:
+                app[PWA_REVIEW_QUEUE_REPOSITORY] = review_queue_repository
+            app.add_routes(review_routes)
+            app.on_startup.append(on_review_queue_startup)
         content_enabled = content_repository is not None or PWA_DATABASE in app
         if content_enabled:
             if content_repository is not None:

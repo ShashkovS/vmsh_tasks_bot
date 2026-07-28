@@ -16,6 +16,7 @@ from db_methods.pwa.reviews import (
     ReviewLeaseConflict,
     ReviewLeaseLost,
     ReviewQueueForbidden,
+    ReviewStaffScope,
 )
 
 
@@ -45,6 +46,11 @@ class ReviewQueueFixture:
     repository: PwaWrittenReviewQueueRepository
     clock: MutableClock
     queue_public_ids: tuple[str, str]
+
+
+ALL_GROUPS_SCOPE = ReviewStaffScope(
+    group_public_ids=frozenset({"review-group-a", "review-group-b"})
+)
 
 
 @pytest.fixture()
@@ -251,7 +257,7 @@ async def test_claim_heartbeat_and_release_cover_one_synonym_case(review_queue_f
     lease = await fixture.repository.claim(
         queue_public_id=fixture.queue_public_ids[0],
         teacher_user_id=TEACHER_ONE_ID,
-        allowed_group_ids={"review-a", "review-b"},
+        scope=ALL_GROUPS_SCOPE,
     )
 
     assert lease.logical_case_public_id == "review-synonym-case"
@@ -262,21 +268,50 @@ async def test_claim_heartbeat_and_release_cover_one_synonym_case(review_queue_f
 
     fixture.clock.value += timedelta(minutes=10)
     heartbeat = await fixture.repository.heartbeat(
-        claim_token=lease.claim_token, teacher_user_id=TEACHER_ONE_ID
+        queue_public_id=fixture.queue_public_ids[0],
+        claim_token=lease.claim_token,
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
     )
     assert heartbeat.expires_at == fixture.clock.value + timedelta(minutes=30)
     assert {item.lease_version for item in heartbeat.items} == {2}
 
     assert (
         await fixture.repository.release(
-            claim_token=lease.claim_token, teacher_user_id=TEACHER_ONE_ID
+            queue_public_id=fixture.queue_public_ids[0],
+            claim_token=lease.claim_token,
+            teacher_user_id=TEACHER_ONE_ID,
+            scope=ALL_GROUPS_SCOPE,
         )
         == 2
     )
     with pytest.raises(ReviewLeaseLost):
         await fixture.repository.heartbeat(
-            claim_token=lease.claim_token, teacher_user_id=TEACHER_ONE_ID
+            queue_public_id=fixture.queue_public_ids[0],
+            claim_token=lease.claim_token,
+            teacher_user_id=TEACHER_ONE_ID,
+            scope=ALL_GROUPS_SCOPE,
         )
+
+
+@pytest.mark.asyncio
+async def test_list_groups_synonyms_and_hides_partial_scope(review_queue_fixture):
+    fixture = review_queue_fixture
+    page = await fixture.repository.list_cases(scope=ALL_GROUPS_SCOPE)
+
+    assert page.next_cursor is None
+    assert len(page.items) == 1
+    case = page.items[0]
+    assert case.queue_public_id == fixture.queue_public_ids[0]
+    assert case.logical_case_public_id == "review-synonym-case"
+    assert [item.group_id for item in case.items] == ["review-a", "review-b"]
+    assert all(item.problem_public_id.startswith("problem-") for item in case.items)
+    assert case.lock is None
+
+    partial = await fixture.repository.list_cases(
+        scope=ReviewStaffScope(group_public_ids=frozenset({"review-group-a"}))
+    )
+    assert partial.items == ()
 
 
 @pytest.mark.asyncio
@@ -287,12 +322,12 @@ async def test_concurrent_staff_claims_have_exactly_one_winner(review_queue_fixt
         fixture.repository.claim(
             queue_public_id=fixture.queue_public_ids[0],
             teacher_user_id=TEACHER_ONE_ID,
-            allowed_group_ids={"review-a", "review-b"},
+            scope=ALL_GROUPS_SCOPE,
         ),
         fixture.repository.claim(
             queue_public_id=fixture.queue_public_ids[0],
             teacher_user_id=TEACHER_TWO_ID,
-            allowed_group_ids={"review-a", "review-b"},
+            scope=ALL_GROUPS_SCOPE,
         ),
         return_exceptions=True,
     )
@@ -313,7 +348,7 @@ async def test_claim_fails_closed_when_one_synonym_branch_is_outside_scope(
         await fixture.repository.claim(
             queue_public_id=fixture.queue_public_ids[0],
             teacher_user_id=TEACHER_ONE_ID,
-            allowed_group_ids={"review-a"},
+            scope=ReviewStaffScope(group_public_ids=frozenset({"review-group-a"})),
         )
 
     rows = fixture.factory.run_read(
@@ -349,13 +384,13 @@ async def test_active_legacy_claim_blocks_pwa_until_thirty_minute_expiry(
         await fixture.repository.claim(
             queue_public_id=fixture.queue_public_ids[0],
             teacher_user_id=TEACHER_ONE_ID,
-            allowed_group_ids={"review-a", "review-b"},
+            scope=ALL_GROUPS_SCOPE,
         )
 
     fixture.clock.value += timedelta(minutes=31)
     lease = await fixture.repository.claim(
         queue_public_id=fixture.queue_public_ids[0],
         teacher_user_id=TEACHER_ONE_ID,
-        allowed_group_ids={"review-a", "review-b"},
+        scope=ALL_GROUPS_SCOPE,
     )
     assert len(lease.items) == 2

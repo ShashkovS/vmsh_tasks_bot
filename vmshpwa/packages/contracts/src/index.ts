@@ -6,6 +6,7 @@ export * from './auth'
 export * from './content'
 export * from './content-api'
 export * from './courses'
+export * from './review-queue'
 export * from './submissions'
 export * from './written-submissions'
 
