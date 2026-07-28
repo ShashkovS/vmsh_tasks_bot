@@ -101,6 +101,10 @@
       {
         "id": "0043.pwa_lesson_window_audit",
         "sha256": "7941b9933077a8fda2be354c3e5ae27bc579b012f09a056bb383c4e5957d0d60"
+      },
+      {
+        "id": "0044.pwa_problem_identity",
+        "sha256": "d9435d0af58bd3da47a00f3fae32ebb33b993a7368366d1b5553ac93a2da6856"
       }
     ],
     "repository_head_status": {
@@ -111,7 +115,7 @@
     }
   },
   "product": {
-    "object_count": 192,
+    "object_count": 195,
     "objects": [
       {
         "columns": [
@@ -9389,6 +9393,15 @@
             "name": "synonyms",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -9429,6 +9442,30 @@
             "origin": "c",
             "partial": false,
             "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 16,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "problems_public_id_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
           },
           {
             "columns": [
@@ -9480,8 +9517,8 @@
           }
         ],
         "name": "problems",
-        "object_sha256": "08b924dee759e275f8a223eac905bdc4a3c1969b78a0e11de187686cbbcf49c2",
-        "sql": "CREATE TABLE \"problems\"\n(\n    id               INTEGER\n        primary key,\n    group_id         text\n        references groups,\n    lesson           INTEGER         not null,\n    prob             INTEGER         not null,\n    item             TEXT            not null,\n    title            text            not null,\n    prob_text        text            not null,\n    prob_type        integer         not null,\n    ans_type         integer,\n    ans_validation   text,\n    validation_error text,\n    cor_ans          text,\n    cor_ans_checker  text,\n    wrong_ans        text,\n    congrat          text,\n    synonyms         text default '' not null,\n    unique (group_id, lesson, prob, item)\n);",
+        "object_sha256": "eab07e4e7d0a5d671850c7a3d144b7cefd3b9230bbd374cf510aedb0b2acd84f",
+        "sql": "CREATE TABLE \"problems\"\n(\n    id               INTEGER\n        primary key,\n    group_id         text\n        references groups,\n    lesson           INTEGER         not null,\n    prob             INTEGER         not null,\n    item             TEXT            not null,\n    title            text            not null,\n    prob_text        text            not null,\n    prob_type        integer         not null,\n    ans_type         integer,\n    ans_validation   text,\n    validation_error text,\n    cor_ans          text,\n    cor_ans_checker  text,\n    wrong_ans        text,\n    congrat          text,\n    synonyms         text default '' not null, public_id text\n    check (\n        public_id is null\n        or (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        )\n    ),\n    unique (group_id, lesson, prob, item)\n);",
         "table_name": "problems",
         "type": "table"
       },
@@ -13111,6 +13148,13 @@
         "type": "index"
       },
       {
+        "name": "problems_public_id_uq",
+        "object_sha256": "a36d08e90bd2bf1a237428025e2b4662763d975c7c148542505f542c7a64a4da",
+        "sql": "CREATE UNIQUE INDEX problems_public_id_uq\n    on problems (public_id)\n    where public_id is not null;",
+        "table_name": "problems",
+        "type": "index"
+      },
+      {
         "name": "results_by_student_problem",
         "object_sha256": "362c3ddad4e8595680d39d8eb4b1d3e3310ec27a47bf3992028f538f99200924",
         "sql": "CREATE INDEX results_by_student_problem\n    on results (student_id, problem_id);",
@@ -13573,6 +13617,20 @@
         "type": "trigger"
       },
       {
+        "name": "problems_public_id_fill_after_insert",
+        "object_sha256": "d866a61d306d4dac2d1cd6ba70d6734c208922b52d46462a4cacc91564ed300d",
+        "sql": "CREATE TRIGGER problems_public_id_fill_after_insert\nafter insert on problems\nfor each row\nwhen new.public_id is null\nbegin\n    update problems\n    set public_id = 'problem-' || lower(hex(randomblob(16)))\n    where id = new.id;\nend;",
+        "table_name": "problems",
+        "type": "trigger"
+      },
+      {
+        "name": "problems_public_id_immutable",
+        "object_sha256": "14849ec0becbcd6af74c804a3f9183801b75e02365c984062f196241439927ad",
+        "sql": "CREATE TRIGGER problems_public_id_immutable\nbefore update on problems\nfor each row\nwhen old.public_id is not null and new.public_id is not old.public_id\nbegin\n    select raise(abort, 'problem public identity is immutable');\nend;",
+        "table_name": "problems",
+        "type": "trigger"
+      },
+      {
         "name": "solution_reveals_delete_forbidden",
         "object_sha256": "fafa4a3fe196f4664afb3cb401d362411c3d5f7feba605eda0e8bb24ead0ff94",
         "sql": "CREATE TRIGGER solution_reveals_delete_forbidden\nbefore delete on solution_reveals\nfor each row\nbegin\n    select raise(abort, 'solution reveal deletion is forbidden');\nend;",
@@ -13594,8 +13652,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "eb4b4753c84e26e7752d7a5d21a2a03b3c67afea4a9570c6686e9663f7689172",
-    "sha256": "0a7593ea6bb6bfa5785d2a8a799de69d3646fa6be05aff1d4609973b7a714388"
+    "pragma_structure_sha256": "0dbe5e08124485a2a4e7f946c02b12f4f9ad3456e94e6b088389aa0fa10fddb0",
+    "sha256": "d57395fcd5117cabfa4660e9824382b543d502da10ee3a8ea411aa043a655b16"
   },
   "source_kind": "repository-migration-head"
 }

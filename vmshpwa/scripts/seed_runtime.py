@@ -205,8 +205,8 @@ def _validate_fixture(payload: dict[str, Any]) -> None:
     tables = payload.get("tables")
     if not isinstance(tables, dict) or set(tables) != set(INSERT_ORDER):
         raise ValueError("baseline-v1 must contain exactly the Phase-1 seed tables")
-    if payload.get("schemaVersion") != 2:
-        raise ValueError("baseline-v1 must use Phase-1 schemaVersion 2")
+    if payload.get("schemaVersion") != 3:
+        raise ValueError("baseline-v1 must use Phase-3 schemaVersion 3")
 
     users = tables["users"]
     if any(user["token"] is not None or user["chat_id"] is not None for user in users):
@@ -226,6 +226,14 @@ def _validate_fixture(payload: dict[str, Any]) -> None:
         raise ValueError("Every fixture user must have an opaque public ID")
     if len(user_public_ids) != len(set(user_public_ids)):
         raise ValueError("Fixture user public IDs must be unique")
+    problem_public_ids = [problem.get("public_id") for problem in tables["problems"]]
+    if any(
+        not isinstance(public_id, str) or not public_id
+        for public_id in problem_public_ids
+    ):
+        raise ValueError("Every fixture problem must have an opaque public ID")
+    if len(problem_public_ids) != len(set(problem_public_ids)):
+        raise ValueError("Fixture problem public IDs must be unique")
     seasons = {season["id"] for season in tables["seasons"]}
     courses = {course["id"]: course for course in tables["courses"]}
     if any(course["season_id"] not in seasons for course in courses.values()):

@@ -1,7 +1,7 @@
 {
   "fixture": "baseline-v1",
-  "schemaVersion": 2,
-  "expectedCanonicalDigest": "782b405180c02e59328d392f0cf2ce683128bb501ff59f3351ad77a5de9916b3",
+  "schemaVersion": 3,
+  "expectedCanonicalDigest": "df8cd26b5264401dcc8aa438d89ec3c000a989ff14708945c9d457c4ee514085",
   "seedMetadata": {
     "version": 1,
     "fixture": "baseline-v1",
@@ -497,6 +497,7 @@
     "problems": [
       {
         "id": 39001,
+        "public_id": "problem-fixture-39001",
         "group_id": "н",
         "lesson": 39,
         "prob": 1,
@@ -515,6 +516,7 @@
       },
       {
         "id": 39101,
+        "public_id": "problem-fixture-39101",
         "group_id": "п",
         "lesson": 39,
         "prob": 1,
@@ -533,6 +535,7 @@
       },
       {
         "id": 39201,
+        "public_id": "problem-fixture-39201",
         "group_id": "э",
         "lesson": 39,
         "prob": 1,
@@ -551,6 +554,7 @@
       },
       {
         "id": 40001,
+        "public_id": "problem-fixture-40001",
         "group_id": "н",
         "lesson": 40,
         "prob": 1,
@@ -569,6 +573,7 @@
       },
       {
         "id": 40101,
+        "public_id": "problem-fixture-40101",
         "group_id": "п",
         "lesson": 40,
         "prob": 1,
@@ -587,6 +592,7 @@
       },
       {
         "id": 40201,
+        "public_id": "problem-fixture-40201",
         "group_id": "э",
         "lesson": 40,
         "prob": 1,
@@ -605,6 +611,7 @@
       },
       {
         "id": 41001,
+        "public_id": "problem-fixture-41001",
         "group_id": "н",
         "lesson": 41,
         "prob": 1,
@@ -623,6 +630,7 @@
       },
       {
         "id": 41002,
+        "public_id": "problem-fixture-41002",
         "group_id": "н",
         "lesson": 41,
         "prob": 2,
@@ -641,6 +649,7 @@
       },
       {
         "id": 41003,
+        "public_id": "problem-fixture-41003",
         "group_id": "н",
         "lesson": 41,
         "prob": 3,
@@ -659,6 +668,7 @@
       },
       {
         "id": 41004,
+        "public_id": "problem-fixture-41004",
         "group_id": "н",
         "lesson": 41,
         "prob": 4,
@@ -677,6 +687,7 @@
       },
       {
         "id": 41005,
+        "public_id": "problem-fixture-41005",
         "group_id": "н",
         "lesson": 41,
         "prob": 5,
@@ -695,6 +706,7 @@
       },
       {
         "id": 41006,
+        "public_id": "problem-fixture-41006",
         "group_id": "н",
         "lesson": 41,
         "prob": 6,
@@ -713,6 +725,7 @@
       },
       {
         "id": 41007,
+        "public_id": "problem-fixture-41007",
         "group_id": "н",
         "lesson": 41,
         "prob": 7,
@@ -731,6 +744,7 @@
       },
       {
         "id": 41008,
+        "public_id": "problem-fixture-41008",
         "group_id": "н",
         "lesson": 41,
         "prob": 8,
@@ -749,6 +763,7 @@
       },
       {
         "id": 41101,
+        "public_id": "problem-fixture-41101",
         "group_id": "п",
         "lesson": 41,
         "prob": 1,
@@ -767,6 +782,7 @@
       },
       {
         "id": 41201,
+        "public_id": "problem-fixture-41201",
         "group_id": "э",
         "lesson": 41,
         "prob": 1,

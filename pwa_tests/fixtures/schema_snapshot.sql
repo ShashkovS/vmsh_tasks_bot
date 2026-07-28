@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 0a7593ea6bb6bfa5785d2a8a799de69d3646fa6be05aff1d4609973b7a714388
+-- Product schema SHA-256: d57395fcd5117cabfa4660e9824382b543d502da10ee3a8ea411aa043a655b16
 
 CREATE TABLE auth_accounts
 (
@@ -1056,7 +1056,16 @@ CREATE TABLE "problems"
     cor_ans_checker  text,
     wrong_ans        text,
     congrat          text,
-    synonyms         text default '' not null,
+    synonyms         text default '' not null, public_id text
+    check (
+        public_id is null
+        or (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        )
+    ),
     unique (group_id, lesson, prob, item)
 );
 
@@ -1563,6 +1572,10 @@ CREATE UNIQUE INDEX problem_synonym_members_problem_active_uq
 
 CREATE INDEX problems_by_synonyms
     on problems (synonyms);
+
+CREATE UNIQUE INDEX problems_public_id_uq
+    on problems (public_id)
+    where public_id is not null;
 
 CREATE INDEX results_by_student_problem
     on results (student_id, problem_id);
@@ -2352,6 +2365,24 @@ when not exists (
 )
 begin
     select raise(abort, 'synonym member is outside its course/group lesson');
+end;
+
+CREATE TRIGGER problems_public_id_fill_after_insert
+after insert on problems
+for each row
+when new.public_id is null
+begin
+    update problems
+    set public_id = 'problem-' || lower(hex(randomblob(16)))
+    where id = new.id;
+end;
+
+CREATE TRIGGER problems_public_id_immutable
+before update on problems
+for each row
+when old.public_id is not null and new.public_id is not old.public_id
+begin
+    select raise(abort, 'problem public identity is immutable');
 end;
 
 CREATE TRIGGER solution_reveals_delete_forbidden
