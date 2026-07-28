@@ -180,16 +180,25 @@ Student/Family:
 - `GET /{audience}/api/v1/courses/{courseId}/enrollment`;
 - `PATCH /student/api/v1/courses/{courseId}/enrollment/active-group`;
 - `PATCH /student/api/v1/courses/{courseId}/enrollment/attendance`;
-- `GET /{audience}/api/v1/courses/{courseId}/lessons`;
+- `GET /{audience}/api/v1/courses/{courseId}/lessons?group=&cursor=`;
+- `GET /{audience}/api/v1/courses/{courseId}/lessons/{groupLessonId}`;
 - `GET /{audience}/api/v1/courses/{courseId}/progress`;
 - course-scoped notification overrides.
 
 Первый Phase 3 Student read slice реализован revision `d70b0d9`: список курсов
 и enrollment detail читают revalidated session authority через
 [`course_routes.py`](../../apps/pwa_api/course_routes.py), а браузер использует
-strict [`course-client.ts`](../packages/app-shell/src/course-client.ts). Lesson,
-home и Family reads остаются в своих последующих вертикальных gate; наличие
-route в этом перечне само по себе не означает готовность endpoint.
+strict [`course-client.ts`](../packages/app-shell/src/course-client.ts).
+Revision `66f30c0` добавляет Student lesson list/detail: routable ID всегда
+принадлежит конкретному `group_lesson`, active group используется по умолчанию,
+а explicit `group` принимается только из revalidated `allowed_groups`. Bounded
+список строится одним SQLite statement, содержит только активные занятия с
+фактически опубликованным browser-readable condition и не раскрывает
+scheduled/hidden revisions. Window возвращает самостоятельные
+`submissionClosesAt` и `solutionScheduledAt`; hint/solution availability
+следует только actual publication. Home, Family reads и offline cache остаются
+в последующих вертикальных gate; наличие остальных routes в перечне само по себе
+не означает готовность endpoint.
 
 Staff:
 

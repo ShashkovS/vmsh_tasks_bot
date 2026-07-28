@@ -81,8 +81,28 @@ Proof: [`phase3-course-access-api.md`](../../../pwa_tests/reports/phase3-course-
 Экран «Сейчас» намеренно ещё не подключён: до этого нужен настоящий lesson/home
 read model, чтобы не выдавать фиктивные даты и progress за server state.
 
+Промежуточный gate **Phase 3B — Student lesson read model** реализован
+28 июля 2026, revision `66f30c0`:
+
+- [x] course/group-scoped list и detail используют конкретный `group_lesson`;
+- [x] список ограничен 50 строками, имеет cursor и строится одним SQLite query;
+- [x] active group выбирается по умолчанию, другой `allowed_group` разрешён,
+      группа вне revalidated enrollment получает `403`;
+- [x] scheduled/draft/hidden condition не раскрывает занятие, а hide удаляет
+      его и из list, и из detail;
+- [x] condition/hint/solution содержат только фактическую published projection;
+- [x] `submissionClosesAt` и `solutionScheduledAt` передаются независимо;
+- [x] общий Zod fixture, browser client и principal/course/group query keys
+      проверены TypeScript unit suite;
+- [x] полный content HTTP regression: **32 PASS**; focused TS: **16 PASS**.
+
+Proof: [`phase3-student-lessons-api.md`](../../../pwa_tests/reports/phase3-student-lessons-api.md).
+Production «Сейчас» всё ещё не подключён: следующий gate — server-owned home
+projection и только затем замена prototype data на реальный transport.
+
 - [ ] Revision/migrations: `<sha/paths>`; integrity/index plans `<path>`.
 - [ ] Demo Student Now/list/long/focused/offline: `<seed/routes/evidence>`.
+- [x] Lesson list query/read contract: один bounded SQLite statement; proof выше.
 - [ ] Home query count/plan and response contract: `<path/result>`.
 - [ ] Hint/solution authorization + reveal events: `<tests/result>`.
 - [ ] Dexie cache/quota/isolation tests: `<result>`.

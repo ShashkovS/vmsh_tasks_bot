@@ -185,6 +185,22 @@ owner-reviewed parity/backfill и ручное visual approval. Snapshots не
 [`phase2-content-api.md`](../../pwa_tests/reports/phase2-content-api.md) и
 [`phase2-content-frontend.md`](../../pwa_tests/reports/phase2-content-frontend.md).
 
+## Phase 3: Student course and lesson reads
+
+Phase 3A проецирует course enrollment непосредственно из revalidated session,
+а Phase 3B добавляет опубликованный lesson list/detail. Реальный aiohttp/SQLite
+suite проверяет `403` для недоступной группы, строгие query/cursor, отсутствие
+урока до condition publication, появление после publication и полное исчезновение
+после hide. Bounded list извлекает окно, три material slots и problem count одним
+SQLite statement без per-lesson queries. Zod fixture отдельно фиксирует provenance,
+обратный порядок и независимые `submissionClosesAt`/`solutionScheduledAt`.
+
+Зафиксированный результат 28 июля 2026: полный content HTTP файл — **32 PASS**,
+focused contracts/client — **2 файла / 16 PASS**. Proof:
+[`phase3-student-lessons-api.md`](../../pwa_tests/reports/phase3-student-lessons-api.md).
+Это ещё не browser proof: production Student pages, home projection, Dexie cache
+и offline navigation остаются следующими gates.
+
 ## Runtime contract и browser isolation
 
 Versioned fixtures в
