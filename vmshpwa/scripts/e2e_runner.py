@@ -79,6 +79,8 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
         playwright.append("e2e/content-publication.spec.ts")
     elif mode == "submissions":
         playwright.append("e2e/test-submission.spec.ts")
+    elif mode == "review":
+        playwright.append("e2e/review-workspace.spec.ts")
     elif mode == "runtime-isolation":
         playwright.append("e2e/runtime-isolation.spec.ts")
     elif mode == "realtime":
@@ -153,6 +155,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "nonvisual",
             "runtime-isolation",
             "realtime",
+            "review",
             "submissions",
             "visual",
             "visual-update",

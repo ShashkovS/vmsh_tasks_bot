@@ -217,6 +217,9 @@ pwa-e2e-content:
 pwa-e2e-submissions:
 	cd $(PWA_DIR) && CI=true pnpm e2e:submissions
 
+pwa-e2e-review:
+	cd $(PWA_DIR) && CI=true pnpm e2e:review
+
 pwa-e2e-functional:
 	cd $(PWA_DIR) && CI=true pnpm e2e:functional
 
