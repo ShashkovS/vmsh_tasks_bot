@@ -33,6 +33,11 @@ from apps.pwa_api.realtime_control import (
     PWA_REALTIME_SESSION_CONTROLLER,
     RealtimeSessionController,
 )
+from apps.pwa_api.submission_routes import (
+    PWA_TEST_SUBMISSION_INVALIDATOR,
+    PWA_TEST_SUBMISSION_REPOSITORY,
+    submission_routes,
+)
 from apps.pwa_api.websocket_sessions import (
     SessionRevalidationStatus,
     WebSocketSessionAlreadyClosedError,
@@ -41,6 +46,7 @@ from apps.pwa_api.websocket_sessions import (
 )
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import GroupLessonContentScope, PwaContentRepository
+from db_methods.pwa.submissions import PwaTestSubmissionRepository
 from helpers.config import logger
 from helpers.nats_brocker import InProcessBroker, JsonBroker, NatsBroker
 from helpers.object_storage import ObjectStorage, create_object_storage
@@ -641,9 +647,8 @@ async def on_content_startup(app: web.Application) -> None:
                 "PWA content startup requires a verified database factory"
             )
         app[PWA_CONTENT_REPOSITORY] = PwaContentRepository(factory)
-    if (
-        PWA_CONTENT_ASSET_SERVICE in app
-        or not app.get(PWA_CONTENT_ASSETS_AUTO_WIRE, False)
+    if PWA_CONTENT_ASSET_SERVICE in app or not app.get(
+        PWA_CONTENT_ASSETS_AUTO_WIRE, False
     ):
         return
 
@@ -666,6 +671,19 @@ async def on_content_startup(app: web.Application) -> None:
         storage=storage,
         repository=app[PWA_CONTENT_REPOSITORY],
     )
+
+
+async def on_test_submission_startup(app: web.Application) -> None:
+    """Bind Phase-4 test routes to the verified shared SQLite factory."""
+
+    if PWA_TEST_SUBMISSION_REPOSITORY in app:
+        return
+    factory = app[PWA_DATABASE].factory
+    if factory is None:
+        raise RuntimeError(
+            "PWA test submission startup requires a verified database factory"
+        )
+    app[PWA_TEST_SUBMISSION_REPOSITORY] = PwaTestSubmissionRepository(factory)
 
 
 async def publish_content_invalidation(
@@ -694,6 +712,26 @@ async def publish_content_invalidation(
             reason,
             exc_info=True,
         )
+
+
+async def publish_test_submission_invalidation(
+    app: web.Application,
+    *,
+    account_public_id: str,
+    problem_public_id: str,
+    reason: str,
+) -> None:
+    """Publish one owner-scoped refetch hint after an attempt commit."""
+
+    await app[PWA_BROKER].publish(
+        NATS_PWA_INVALIDATE,
+        {
+            "resources": [f"problems/{problem_public_id}/test-attempts"],
+            "reason": reason,
+            "audience": AuthAudience.STUDENT.value,
+            "accountId": account_public_id,
+        },
+    )
 
 
 async def activate_due_content_publications(
@@ -811,6 +849,7 @@ def configure(
     auth_runtime_config: AuthRuntimeConfig | None = None,
     auth_service: PwaAuthService | None = None,
     content_repository: PwaContentRepository | None = None,
+    test_submission_repository: PwaTestSubmissionRepository | None = None,
     content_asset_service: ContentAssetService | None = None,
     object_storage: ObjectStorage | None = None,
     content_asset_converter: (
@@ -864,6 +903,28 @@ def configure(
         app.add_routes(auth_routes)
         app.add_routes(course_routes)
         app.on_startup.append(on_auth_startup)
+        test_submissions_enabled = (
+            test_submission_repository is not None or PWA_DATABASE in app
+        )
+        if test_submissions_enabled:
+            if test_submission_repository is not None:
+                app[PWA_TEST_SUBMISSION_REPOSITORY] = test_submission_repository
+
+            async def invalidate_test_submission(
+                account_public_id: str,
+                problem_public_id: str,
+                reason: str,
+            ) -> None:
+                await publish_test_submission_invalidation(
+                    app,
+                    account_public_id=account_public_id,
+                    problem_public_id=problem_public_id,
+                    reason=reason,
+                )
+
+            app[PWA_TEST_SUBMISSION_INVALIDATOR] = invalidate_test_submission
+            app.add_routes(submission_routes)
+            app.on_startup.append(on_test_submission_startup)
         content_enabled = content_repository is not None or PWA_DATABASE in app
         if content_enabled:
             if content_repository is not None:
@@ -877,10 +938,7 @@ def configure(
                 app[PWA_CONTENT_ASSET_CONVERTER] = content_asset_converter
             app[PWA_CONTENT_ASSETS_AUTO_WIRE] = bool(
                 content_asset_service is not None
-                or (
-                    object_storage is not None
-                    and content_asset_converter is not None
-                )
+                or (object_storage is not None and content_asset_converter is not None)
                 or content_repository is None
             )
 

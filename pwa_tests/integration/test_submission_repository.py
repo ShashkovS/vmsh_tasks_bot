@@ -814,3 +814,152 @@ async def test_other_student_cannot_discover_or_submit_the_problem(
 
     assert caught.value.http_status == 404
     assert caught.value.code == "test_problem_not_found"
+
+
+async def test_history_is_reverse_ordered_paginated_and_keeps_safe_feedback(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    first = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            answer="8",
+            key="00000000-0000-4000-8000-000000000031",
+        )
+    )
+    fixture.clock.value += timedelta(minutes=1)
+    second = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            answer="7",
+            key="00000000-0000-4000-8000-000000000032",
+            client_created_at=fixture.clock.value,
+        )
+    )
+
+    first_page = await fixture.repository.list_test_attempts(
+        account_id=fixture.student_account_id,
+        problem_public_id=PROBLEM_PUBLIC_ID,
+        limit=1,
+    )
+    assert first_page.problem_public_id == PROBLEM_PUBLIC_ID
+    assert [attempt.attempt_public_id for attempt in first_page.attempts] == [
+        second.attempt_public_id
+    ]
+    assert first_page.attempts[0].outcome == "correct"
+    assert first_page.attempts[0].check_status == "checked"
+    assert first_page.attempts[0].feedback == "Да, всё верно!"
+    assert first_page.attempts[0].result_version == 1
+    assert first_page.next_cursor == second.attempt_public_id
+
+    second_page = await fixture.repository.list_test_attempts(
+        account_id=fixture.student_account_id,
+        problem_public_id=PROBLEM_PUBLIC_ID,
+        cursor=first_page.next_cursor,
+        limit=1,
+    )
+    assert [attempt.attempt_public_id for attempt in second_page.attempts] == [
+        first.attempt_public_id
+    ]
+    assert second_page.attempts[0].outcome == "wrong"
+    assert second_page.attempts[0].display_answer == "8"
+    assert second_page.attempts[0].feedback == "Нет, это другое число."
+    assert second_page.next_cursor is None
+
+
+async def test_history_allows_empty_current_problem_and_old_owned_work_after_access_revoked(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    empty = await fixture.repository.list_test_attempts(
+        account_id=fixture.student_account_id,
+        problem_public_id=PROBLEM_PUBLIC_ID,
+    )
+    assert empty.attempts == ()
+
+    receipt = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            answer="7",
+            key="00000000-0000-4000-8000-000000000033",
+        )
+    )
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE course_group_access SET valid_to = ?, updated_at = ? "
+            "WHERE group_id = 'submission-a'",
+            (
+                timestamp(NOW + timedelta(seconds=1)),
+                timestamp(NOW + timedelta(seconds=1)),
+            ),
+        )
+    )
+    fixture.clock.value = NOW + timedelta(seconds=2)
+
+    history = await fixture.repository.list_test_attempts(
+        account_id=fixture.student_account_id,
+        problem_public_id=PROBLEM_PUBLIC_ID,
+    )
+    assert [attempt.attempt_public_id for attempt in history.attempts] == [
+        receipt.attempt_public_id
+    ]
+
+
+async def test_history_does_not_expose_stale_receipt_copy_after_recheck(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    pending = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+            answer="179",
+            key="00000000-0000-4000-8000-000000000034",
+        )
+    )
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE test_attempts SET check_status = 'failed', "
+            "checker_version = 'synthetic-recheck-v1', checked_at = ? "
+            "WHERE public_id = ?",
+            (timestamp(NOW), pending.attempt_public_id),
+        )
+    )
+
+    history = await fixture.repository.list_test_attempts(
+        account_id=fixture.student_account_id,
+        problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+    )
+    attempt = history.attempts[0]
+    assert attempt.outcome == "checker_failed"
+    assert attempt.check_status == "failed"
+    assert attempt.feedback is None
+    assert attempt.checker_message is None
+
+
+async def test_history_rejects_foreign_owner_and_foreign_cursor_without_disclosure(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    receipt = await fixture.repository.submit_test_answer(
+        command(
+            fixture,
+            answer="7",
+            key="00000000-0000-4000-8000-000000000035",
+        )
+    )
+
+    with pytest.raises(SubmissionRejected) as foreign_problem:
+        await fixture.repository.list_test_attempts(
+            account_id=fixture.other_account_id,
+            problem_public_id=PROBLEM_PUBLIC_ID,
+        )
+    assert foreign_problem.value.http_status == 404
+
+    with pytest.raises(SubmissionRejected) as foreign_cursor:
+        await fixture.repository.list_test_attempts(
+            account_id=fixture.student_account_id,
+            problem_public_id=PENDING_PROBLEM_PUBLIC_ID,
+            cursor=receipt.attempt_public_id,
+        )
+    assert foreign_cursor.value.http_status in {404, 422}

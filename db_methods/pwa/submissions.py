@@ -16,11 +16,11 @@ import re
 import sqlite3
 import uuid
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from helpers.consts import RES_TYPE
+from helpers.consts import RES_TYPE, VERDICT
 from helpers.pwa.test_checkers import TrustedCheckerExecutor
 from models.pwa.submissions import (
     SubmissionConfigurationError,
@@ -185,6 +185,7 @@ class TestAttemptReceipt:
     server_received_at: str
     clock_suspicious: bool
     attempts: AttemptLimitReceipt
+    replayed: bool = field(default=False, compare=False)
 
     def response_payload(self) -> dict[str, object]:
         return {
@@ -236,11 +237,66 @@ class TestAttemptReceipt:
                 server_received_at=str(payload["serverReceivedAt"]),
                 clock_suspicious=bool(payload["clockSuspicious"]),
                 attempts=AttemptLimitReceipt.from_payload(attempts),
+                replayed=True,
             )
         except (KeyError, TypeError, ValueError) as error:
             raise TestSubmissionRepositoryError(
                 "stored idempotency success response is invalid"
             ) from error
+
+
+@dataclass(frozen=True, slots=True)
+class TestAttemptHistoryRecord:
+    """Student-safe projection of one immutable test attempt."""
+
+    attempt_public_id: str
+    problem_public_id: str
+    condition_revision_public_id: str
+    config_version: int
+    outcome: str
+    check_status: str
+    display_answer: str
+    feedback: str | None
+    checker_message: str | None
+    verdict: int | None
+    result_version: int | None
+    client_created_at: str
+    server_received_at: str
+    clock_suspicious: bool
+
+    def response_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "attemptId": self.attempt_public_id,
+            "problemId": self.problem_public_id,
+            "problemRevision": {
+                "conditionRevisionId": self.condition_revision_public_id,
+                "configVersion": self.config_version,
+            },
+            "outcome": self.outcome,
+            "checkStatus": self.check_status,
+            "displayAnswer": self.display_answer,
+            "feedback": self.feedback,
+            "checkerMessage": self.checker_message,
+            "verdict": self.verdict,
+            # Legacy results are immutable test verdict events. Their initial
+            # API projection is version 1; a future recheck migration must
+            # advance this value rather than overwriting history implicitly.
+            "resultVersion": self.result_version,
+            "clientCreatedAt": self.client_created_at,
+            "serverReceivedAt": self.server_received_at,
+            "clockSuspicious": self.clock_suspicious,
+            "threadInvalidationKey": (
+                f"problems/{self.problem_public_id}/test-attempts"
+            ),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class TestAttemptHistoryPage:
+    problem_public_id: str
+    attempts: tuple[TestAttemptHistoryRecord, ...]
+    next_cursor: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -557,6 +613,233 @@ def _raise_if_limited(
         )
 
 
+def _history_outcome(
+    *, parse_status: str, check_status: str, verdict: int | None
+) -> str:
+    if parse_status == "invalid_format":
+        if check_status != "checked" or verdict is not None:
+            raise TestSubmissionRepositoryError(
+                "stored invalid-format attempt state is inconsistent"
+            )
+        return "invalid_format"
+    if parse_status != "valid":
+        raise TestSubmissionRepositoryError("stored attempt parse status is invalid")
+    if check_status == "pending_configuration":
+        if verdict is not None:
+            raise TestSubmissionRepositoryError(
+                "stored pending attempt exposes a verdict"
+            )
+        return "pending_configuration"
+    if check_status == "failed":
+        if verdict is not None:
+            raise TestSubmissionRepositoryError(
+                "stored failed attempt exposes a verdict"
+            )
+        return "checker_failed"
+    if check_status == "checked":
+        if verdict == int(VERDICT.SOLVED):
+            return "correct"
+        if verdict == int(VERDICT.WRONG_ANSWER):
+            return "wrong"
+        raise TestSubmissionRepositoryError("stored checked attempt verdict is invalid")
+    if check_status == "pending":
+        raise TestSubmissionRepositoryError(
+            "pending asynchronous check has no Student outcome contract yet"
+        )
+    raise TestSubmissionRepositoryError("stored attempt check status is invalid")
+
+
+def _stored_attempt_messages(
+    response_json: object,
+    *,
+    attempt_public_id: str,
+    current_outcome: str,
+) -> tuple[str | None, str | None]:
+    if response_json is None:
+        return None, None
+    try:
+        payload = json.loads(str(response_json))
+    except json.JSONDecodeError, RecursionError:
+        return None, None
+    if (
+        not isinstance(payload, dict)
+        or payload.get("attemptId") != attempt_public_id
+        or payload.get("outcome") != current_outcome
+    ):
+        # A future admin recheck can change authoritative attempt state. Never
+        # pair it with stale user-facing copy from the original receipt.
+        return None, None
+    feedback = payload.get("feedback")
+    checker_message = payload.get("checkerMessage")
+    return (
+        feedback if isinstance(feedback, str) else None,
+        checker_message if isinstance(checker_message, str) else None,
+    )
+
+
+def _history_record(row: Mapping[str, object]) -> TestAttemptHistoryRecord:
+    try:
+        answer_payload = json.loads(str(row["answer_payload_json"]))
+    except (json.JSONDecodeError, KeyError, RecursionError) as error:
+        raise TestSubmissionRepositoryError(
+            "stored test attempt answer payload is invalid"
+        ) from error
+    if not isinstance(answer_payload, dict) or not isinstance(
+        answer_payload.get("displayAnswer"), str
+    ):
+        raise TestSubmissionRepositoryError(
+            "stored test attempt display answer is invalid"
+        )
+    verdict = None if row["verdict"] is None else int(row["verdict"])
+    outcome = _history_outcome(
+        parse_status=str(row["parse_status"]),
+        check_status=str(row["check_status"]),
+        verdict=verdict,
+    )
+    attempt_public_id = str(row["attempt_public_id"])
+    feedback, checker_message = _stored_attempt_messages(
+        row["response_json"],
+        attempt_public_id=attempt_public_id,
+        current_outcome=outcome,
+    )
+    return TestAttemptHistoryRecord(
+        attempt_public_id=attempt_public_id,
+        problem_public_id=str(row["problem_public_id"]),
+        condition_revision_public_id=str(row["condition_revision_public_id"]),
+        config_version=int(row["config_version"]),
+        outcome=outcome,
+        check_status=str(row["check_status"]),
+        display_answer=str(answer_payload["displayAnswer"]),
+        feedback=feedback,
+        checker_message=checker_message,
+        verdict=verdict,
+        result_version=None if row["result_id"] is None else 1,
+        client_created_at=str(row["client_created_at"]),
+        server_received_at=str(row["server_received_at"]),
+        clock_suspicious=bool(row["clock_suspicious"]),
+    )
+
+
+def _list_test_attempt_history(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    problem_public_id: str,
+    cursor: str | None,
+    limit: int,
+    now: datetime,
+) -> TestAttemptHistoryPage:
+    account = connection.execute(
+        "SELECT linked_user_id FROM auth_accounts WHERE id = ? "
+        "AND audience = 'student' AND status = 'active' "
+        "AND linked_user_id IS NOT NULL",
+        (account_id,),
+    ).fetchone()
+    if account is None:
+        raise TestSubmissionRejected(
+            code="test_problem_not_found",
+            message="Тестовая задача недоступна.",
+            http_status=404,
+        )
+    student_user_id = int(account["linked_user_id"])
+    problem = connection.execute(
+        "SELECT id FROM problems WHERE public_id = ?",
+        (problem_public_id,),
+    ).fetchone()
+    if problem is None:
+        raise TestSubmissionRejected(
+            code="test_problem_not_found",
+            message="Тестовая задача недоступна.",
+            http_status=404,
+        )
+    problem_id = int(problem["id"])
+    has_history = connection.execute(
+        "SELECT 1 FROM test_attempts WHERE student_user_id = ? "
+        "AND problem_id = ? LIMIT 1",
+        (student_user_id, problem_id),
+    ).fetchone()
+    if has_history is None:
+        # An empty history is visible only while the exact published problem
+        # remains available. Historical attempts themselves are sufficient
+        # authority after group access is later revoked.
+        _resolve_context(
+            connection,
+            account_id=account_id,
+            problem_public_id=problem_public_id,
+            now=now,
+        )
+
+    cursor_timestamp: str | None = None
+    cursor_id: int | None = None
+    if cursor is not None:
+        cursor_row = connection.execute(
+            "SELECT id, server_received_at FROM test_attempts "
+            "WHERE public_id = ? AND student_user_id = ? AND problem_id = ?",
+            (cursor, student_user_id, problem_id),
+        ).fetchone()
+        if cursor_row is None:
+            raise TestSubmissionRejected(
+                code="test_attempt_cursor_invalid",
+                message="История ответов изменилась. Обновите страницу.",
+                http_status=422,
+            )
+        cursor_timestamp = str(cursor_row["server_received_at"])
+        cursor_id = int(cursor_row["id"])
+
+    rows = connection.execute(
+        "SELECT attempt.id AS attempt_id, "
+        "attempt.public_id AS attempt_public_id, "
+        "problem.public_id AS problem_public_id, "
+        "condition_revision.public_id AS condition_revision_public_id, "
+        "problem_revision.config_version, attempt.answer_payload_json, "
+        "attempt.parse_status, attempt.check_status, attempt.client_created_at, "
+        "attempt.server_received_at, attempt.clock_suspicious, attempt.verdict, "
+        "attempt.result_id, "
+        "(SELECT idempotency.response_json "
+        " FROM idempotency_records AS idempotency "
+        " JOIN auth_accounts AS attempt_account "
+        "   ON attempt_account.id = idempotency.account_id "
+        "  AND attempt_account.audience = 'student' "
+        "  AND attempt_account.linked_user_id = attempt.student_user_id "
+        " WHERE idempotency.operation = ? "
+        "   AND idempotency.idempotency_key = attempt.idempotency_key "
+        "   AND idempotency.payload_sha256 = attempt.payload_sha256 "
+        "   AND idempotency.state = 'completed' "
+        " ORDER BY idempotency.id DESC LIMIT 1) AS response_json "
+        "FROM test_attempts AS attempt "
+        "JOIN problems AS problem ON problem.id = attempt.problem_id "
+        "JOIN problem_revisions AS problem_revision "
+        "  ON problem_revision.id = attempt.problem_revision_id "
+        " AND problem_revision.problem_id = attempt.problem_id "
+        "JOIN content_revisions AS condition_revision "
+        "  ON condition_revision.id = problem_revision.content_revision_id "
+        "WHERE attempt.student_user_id = ? AND attempt.problem_id = ? "
+        "AND (? IS NULL OR attempt.server_received_at < ? "
+        "     OR (attempt.server_received_at = ? AND attempt.id < ?)) "
+        "ORDER BY attempt.server_received_at DESC, attempt.id DESC LIMIT ?",
+        (
+            IDEMPOTENCY_OPERATION,
+            student_user_id,
+            problem_id,
+            cursor_timestamp,
+            cursor_timestamp,
+            cursor_timestamp,
+            cursor_id,
+            limit + 1,
+        ),
+    ).fetchall()
+    page_rows = rows[:limit]
+    attempts = tuple(_history_record(row) for row in page_rows)
+    next_cursor = (
+        None if len(rows) <= limit or not attempts else attempts[-1].attempt_public_id
+    )
+    return TestAttemptHistoryPage(
+        problem_public_id=problem_public_id,
+        attempts=attempts,
+        next_cursor=next_cursor,
+    )
+
+
 class PwaTestSubmissionRepository:
     """Async-facing submission repository with transaction-scoped retries."""
 
@@ -631,6 +914,34 @@ class PwaTestSubmissionRepository:
             raise error
         assert receipt is not None
         return receipt
+
+    async def list_test_attempts(
+        self,
+        *,
+        account_id: int,
+        problem_public_id: str,
+        cursor: str | None = None,
+        limit: int = 50,
+    ) -> TestAttemptHistoryPage:
+        if account_id < 1:
+            raise ValueError("account ID must be positive")
+        if not _PUBLIC_ID.fullmatch(problem_public_id):
+            raise ValueError("problem public ID is invalid")
+        if cursor is not None and not _PUBLIC_ID.fullmatch(cursor):
+            raise ValueError("test attempt cursor is invalid")
+        if not 1 <= limit <= 50:
+            raise ValueError("test attempt history limit must be between 1 and 50")
+        now = self._now()
+        return await self._factory.run_read_async(
+            lambda connection: _list_test_attempt_history(
+                connection,
+                account_id=account_id,
+                problem_public_id=problem_public_id,
+                cursor=cursor,
+                limit=limit,
+                now=now,
+            )
+        )
 
     def _write_submission(
         self,
@@ -855,6 +1166,8 @@ __all__ = [
     "IdempotencyPayloadMismatch",
     "PwaTestSubmissionRepository",
     "SubmitTestAnswerCommand",
+    "TestAttemptHistoryPage",
+    "TestAttemptHistoryRecord",
     "TestAttemptReceipt",
     "TestSubmissionRejected",
     "TestSubmissionRepositoryError",

@@ -22,12 +22,7 @@ export const testAttemptOutcomeSchema = z.enum([
 ])
 export type TestAttemptOutcome = z.infer<typeof testAttemptOutcomeSchema>
 
-export const testAttemptCheckStatusSchema = z.enum([
-  'pending_configuration',
-  'pending',
-  'checked',
-  'failed',
-])
+export const testAttemptCheckStatusSchema = z.enum(['pending_configuration', 'checked', 'failed'])
 export type TestAttemptCheckStatus = z.infer<typeof testAttemptCheckStatusSchema>
 
 export const submitTestAnswerRequestSchema = z
@@ -35,7 +30,7 @@ export const submitTestAnswerRequestSchema = z
     schemaVersion: testSubmissionContractVersionSchema,
     idempotencyKey: z.uuid(),
     displayAnswer: z.string().max(16_384),
-    clientCreatedAt: z.iso.datetime(),
+    clientCreatedAt: z.iso.datetime().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/),
   })
   .strict()
 export type SubmitTestAnswerRequest = z.infer<typeof submitTestAnswerRequestSchema>
