@@ -40,6 +40,18 @@ describe('Phase-4 test-submission contracts', () => {
         clientCreatedAt: '2026-09-20T16:00:00',
       }).success,
     ).toBe(false)
+    const withoutRevision: Record<string, unknown> = { ...mutationFixture.request }
+    delete withoutRevision.problemRevision
+    expect(submitTestAnswerRequestSchema.safeParse(withoutRevision).success).toBe(false)
+    expect(
+      submitTestAnswerRequestSchema.safeParse({
+        ...mutationFixture.request,
+        problemRevision: {
+          ...mutationFixture.request.problemRevision,
+          configVersion: true,
+        },
+      }).success,
+    ).toBe(false)
   })
 
   it.each([

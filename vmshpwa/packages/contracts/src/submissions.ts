@@ -13,6 +13,14 @@ import { legacyVerdictIdSchema } from './courses'
 export const TEST_SUBMISSION_CONTRACT_VERSION = 1 as const
 const testSubmissionContractVersionSchema = z.literal(TEST_SUBMISSION_CONTRACT_VERSION)
 
+export const testProblemRevisionSchema = z
+  .object({
+    conditionRevisionId: publicIdSchema,
+    configVersion: z.number().int().positive(),
+  })
+  .strict()
+export type TestProblemRevision = z.infer<typeof testProblemRevisionSchema>
+
 export const testAttemptOutcomeSchema = z.enum([
   'correct',
   'wrong',
@@ -29,6 +37,7 @@ export const submitTestAnswerRequestSchema = z
   .object({
     schemaVersion: testSubmissionContractVersionSchema,
     idempotencyKey: z.uuid(),
+    problemRevision: testProblemRevisionSchema,
     displayAnswer: z.string().max(16_384),
     clientCreatedAt: z.iso.datetime().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/),
   })
@@ -57,13 +66,6 @@ export const testAttemptLimitReceiptSchema = z
     }
   })
 export type TestAttemptLimitReceipt = z.infer<typeof testAttemptLimitReceiptSchema>
-
-const testProblemRevisionSchema = z
-  .object({
-    conditionRevisionId: publicIdSchema,
-    configVersion: z.number().int().positive(),
-  })
-  .strip()
 
 const testAttemptCommonShape = {
   schemaVersion: testSubmissionContractVersionSchema,

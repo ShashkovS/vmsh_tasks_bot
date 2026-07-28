@@ -722,7 +722,7 @@ async def _create_lesson_window(
 
 async def _prepare_published_test_problem(
     fixture: ContentHttpFixture,
-) -> str:
+) -> tuple[str, str]:
     """Use the real Staff content API to create one submit-ready problem."""
 
     revision, _compile_etag = await _upload_and_compile(
@@ -811,18 +811,24 @@ async def _prepare_published_test_problem(
         revision_id=revision["revisionId"],
     )
     assert published.status == 201, await published.text()
-    return str(problem_public_id)
+    return str(problem_public_id), str(revision["revisionId"])
 
 
 async def test_student_test_submission_http_is_strict_idempotent_and_readable(
     content_http: ContentHttpFixture,
 ):
     fixture = content_http
-    problem_public_id = await _prepare_published_test_problem(fixture)
+    problem_public_id, condition_revision_id = await _prepare_published_test_problem(
+        fixture
+    )
     route = f"/student/api/v1/problems/{problem_public_id}/test-attempts"
     payload = {
         "schemaVersion": 1,
         "idempotencyKey": "018f47f6-7668-7c85-a034-c5b8218bac05",
+        "problemRevision": {
+            "conditionRevisionId": condition_revision_id,
+            "configVersion": 1,
+        },
         "displayAnswer": " 7 ",
         "clientCreatedAt": _timestamp(),
     }
@@ -850,6 +856,24 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
         headers=_headers(unsafe=True),
     )
     assert invalid_version.status == 422
+
+    stale_revision = await fixture.client.post(
+        route,
+        json={
+            **payload,
+            "idempotencyKey": "018f47f6-7668-7c85-a034-c5b8218bac04",
+            "problemRevision": {
+                "conditionRevisionId": "revision-stale-condition",
+                "configVersion": 1,
+            },
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert stale_revision.status == 409
+    assert (await stale_revision.json())["error"]["code"] == (
+        "test_problem_revision_changed"
+    )
 
     cursors_before = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
     created = await fixture.client.post(
@@ -970,7 +994,9 @@ async def test_student_test_submission_http_rejects_unauthenticated_and_bad_curs
     content_http: ContentHttpFixture,
 ):
     fixture = content_http
-    problem_public_id = await _prepare_published_test_problem(fixture)
+    problem_public_id, _condition_revision_id = await _prepare_published_test_problem(
+        fixture
+    )
     route = f"/student/api/v1/problems/{problem_public_id}/test-attempts"
 
     unauthenticated = await fixture.client.get(route, headers=_headers())

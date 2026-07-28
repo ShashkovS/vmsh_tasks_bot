@@ -3,6 +3,10 @@
   "request": {
     "schemaVersion": 1,
     "idempotencyKey": "018f47f6-7668-7c85-a034-c5b8218bac05",
+    "problemRevision": {
+      "conditionRevisionId": "revision-fixture-condition",
+      "configVersion": 3
+    },
     "displayAnswer": " 7 ",
     "clientCreatedAt": "2026-09-20T12:59:55.000Z"
   },

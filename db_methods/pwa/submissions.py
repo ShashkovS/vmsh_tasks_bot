@@ -111,6 +111,8 @@ class SubmitTestAnswerCommand:
     display_answer: str
     client_created_at: datetime
     idempotency_key: str
+    expected_condition_revision_public_id: str | None = None
+    expected_config_version: int | None = None
 
     def __post_init__(self) -> None:
         if self.account_id < 1:
@@ -127,6 +129,18 @@ class SubmitTestAnswerCommand:
             or self.client_created_at.utcoffset() is None
         ):
             raise ValueError("client creation time must be timezone-aware")
+        if (self.expected_condition_revision_public_id is None) != (
+            self.expected_config_version is None
+        ):
+            raise ValueError("expected problem revision must be complete")
+        if self.expected_condition_revision_public_id is not None:
+            if not _PUBLIC_ID.fullmatch(self.expected_condition_revision_public_id):
+                raise ValueError("expected condition revision public ID is invalid")
+            if (
+                type(self.expected_config_version) is not int
+                or self.expected_config_version < 1
+            ):
+                raise ValueError("expected problem config version must be positive")
 
 
 @dataclass(frozen=True, slots=True)
@@ -353,12 +367,18 @@ def _canonical_json(value: Mapping[str, object]) -> str:
 
 
 def _request_payload(command: SubmitTestAnswerCommand) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "schemaVersion": 1,
         "problemId": command.problem_public_id,
         "displayAnswer": command.display_answer.strip(),
         "clientCreatedAt": _timestamp(command.client_created_at),
     }
+    if command.expected_condition_revision_public_id is not None:
+        payload["problemRevision"] = {
+            "conditionRevisionId": command.expected_condition_revision_public_id,
+            "configVersion": command.expected_config_version,
+        }
+    return payload
 
 
 def _payload_hash(payload: Mapping[str, object]) -> str:
@@ -489,6 +509,24 @@ def _resolve_context(
             http_status=404,
         )
     return _context_from_row(rows[0])
+
+
+def _require_expected_revision(
+    command: SubmitTestAnswerCommand,
+    context: _SubmissionContext,
+) -> None:
+    expected_revision = command.expected_condition_revision_public_id
+    if expected_revision is None:
+        return
+    if (
+        context.condition_revision_public_id != expected_revision
+        or context.config_version != command.expected_config_version
+    ):
+        raise TestSubmissionRejected(
+            code="test_problem_revision_changed",
+            message="Условие задачи изменилось. Обновите страницу.",
+            http_status=409,
+        )
 
 
 def _read_idempotency(
@@ -892,6 +930,7 @@ class PwaTestSubmissionRepository:
                 now=now,
             )
         )
+        _require_expected_revision(command, context)
         evaluation = await asyncio.to_thread(
             evaluate_test_answer,
             context.answer_config,

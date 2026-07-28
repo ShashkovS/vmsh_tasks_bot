@@ -38,7 +38,13 @@ TEST_ATTEMPT_HISTORY_PAGE_SIZE = 50
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _UTC_DATETIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$")
 _REQUEST_FIELDS = frozenset(
-    {"schemaVersion", "idempotencyKey", "displayAnswer", "clientCreatedAt"}
+    {
+        "schemaVersion",
+        "idempotencyKey",
+        "problemRevision",
+        "displayAnswer",
+        "clientCreatedAt",
+    }
 )
 
 PWA_TEST_SUBMISSION_REPOSITORY = web.AppKey(
@@ -196,6 +202,34 @@ def _client_created_at(value: object) -> datetime:
     return parsed.astimezone(UTC)
 
 
+def _problem_revision(value: object) -> tuple[str, int]:
+    if not isinstance(value, dict) or set(value) != {
+        "conditionRevisionId",
+        "configVersion",
+    }:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте версию условия задачи",
+            details={"field": "problemRevision"},
+        )
+    condition_revision_id = value["conditionRevisionId"]
+    config_version = value["configVersion"]
+    if (
+        not isinstance(condition_revision_id, str)
+        or _PUBLIC_ID.fullmatch(condition_revision_id) is None
+        or type(config_version) is not int
+        or config_version < 1
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте версию условия задачи",
+            details={"field": "problemRevision"},
+        )
+    return condition_revision_id, config_version
+
+
 def _command(
     *, account_id: int, problem_public_id: str, payload: dict[str, object]
 ) -> SubmitTestAnswerCommand:
@@ -223,12 +257,17 @@ def _command(
             message="Проверьте введённый ответ",
             details={"field": "displayAnswer"},
         ) from error
+    condition_revision_id, config_version = _problem_revision(
+        payload["problemRevision"]
+    )
     return SubmitTestAnswerCommand(
         account_id=account_id,
         problem_public_id=problem_public_id,
         display_answer=display_answer,
         client_created_at=_client_created_at(payload["clientCreatedAt"]),
         idempotency_key=_canonical_uuid(payload["idempotencyKey"]),
+        expected_condition_revision_public_id=condition_revision_id,
+        expected_config_version=config_version,
     )
 
 
