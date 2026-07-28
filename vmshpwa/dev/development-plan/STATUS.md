@@ -13,7 +13,7 @@
 | Этап 0              | in progress                  | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
 | Этап 1              | in progress                  | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
 | Этап 2              | Phase 2A–2E + browser E2E    | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
-| Этап 3              | Phase 3A–3B read boundaries  | Course enrollment и published lesson list/detail проверены; home/UI/problem/offline gates открыты                                                                     |
+| Этап 3              | Phase 3A–3C read/home slice  | Course/lesson APIs и production Student «Сейчас» проверены в 3 браузерах; Tasks/problem/offline gates открыты                                                         |
 | Этапы 4–11          | planned with gates           | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review  | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype  | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
@@ -262,8 +262,17 @@
   contracts — **90 PASS**; Ruff, Prettier, ESLint, два strict typecheck и Student
   production build/injectManifest — PASS. Proof:
   [`phase3-course-access-api.md`](../../../pwa_tests/reports/phase3-course-access-api.md).
-- Phase 3 остаётся открыт: следующий gate — lesson/home read model и подключение
-  production «Сейчас»/«Задачи», затем focused task/reveal audit и offline Dexie.
+- Phase 3B revision `66f30c0` добавляет опубликованный lesson list/detail одним
+  bounded query; полный content HTTP regression — **32 PASS**, focused TS —
+  **16 PASS**. Proof:
+  [`phase3-student-lessons-api.md`](../../../pwa_tests/reports/phase3-student-lessons-api.md).
+- Phase 3C revision `77927e0` добавляет server-owned home snapshot и подключает
+  production `/student/` к реальным enrollment/lesson данным. Production-build
+  Staff publish→Student home/read→rollback прошёл **3/3** в Chromium, WebKit и
+  Firefox; focused TS — **22 PASS**, content HTTP — **32 PASS**. Proof:
+  [`phase3-student-home.md`](../../../pwa_tests/reports/phase3-student-home.md).
+- Phase 3 остаётся открыт: следующий gate — production «Задачи», затем focused
+  task/reveal audit и offline Dexie.
 
 ## Текущий инкремент этапа 1
 
@@ -587,7 +596,7 @@
 |    0 | —                    | —                                                              | —                                  |
 |    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)            | частично; production gates открыты |
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)         | Browser path принят; этап открыт   |
-|    3 | `d70b0d9`            | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A принят; этап открыт       |
+|    3 | `d70b0d9`…`77927e0`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A–3C приняты; этап открыт   |
 |    4 | —                    | —                                                              | —                                  |
 |    5 | —                    | —                                                              | —                                  |
 |    6 | —                    | —                                                              | —                                  |

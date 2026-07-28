@@ -97,17 +97,41 @@ read model, чтобы не выдавать фиктивные даты и prog
 - [x] полный content HTTP regression: **32 PASS**; focused TS: **16 PASS**.
 
 Proof: [`phase3-student-lessons-api.md`](../../../pwa_tests/reports/phase3-student-lessons-api.md).
-Production «Сейчас» всё ещё не подключён: следующий gate — server-owned home
-projection и только затем замена prototype data на реальный transport.
+Production «Сейчас» ещё не входил в этот gate: его server-owned projection и
+реальный transport закрыты следующим инкрементом.
+
+Промежуточный gate **Phase 3C — production Student «Сейчас»** реализован
+28 июля 2026, revision `77927e0`:
+
+- [x] `GET /student/api/v1/home` возвращает один consistent snapshot всех
+      course enrollments и выбирает последнее опубликованное занятие active
+      group одним bounded SQLite statement;
+- [x] фаза занятия вычисляется на сервере с независимыми cutoff и публикацией
+      решения; скрытое condition удаляет урок из home projection;
+- [x] Zod contract/fixture запрещает duplicate courses и current lesson другой
+      группы, browser client использует один same-origin запрос;
+- [x] production `/student/` заменил prototype данные на настоящий transport и
+      показывает loading/error/offline/empty/published states без фиктивных
+      чисел;
+- [x] переход из карточки курса открывает конкретный опубликованный
+      `group_lesson` с provenance группы;
+- [x] полный content HTTP regression **32 PASS**, focused TS **22 PASS**,
+      production build PASS, browser checkpoint **3/3 PASS**.
+
+Proof: [`phase3-student-home.md`](../../../pwa_tests/reports/phase3-student-home.md).
+Следующий gate — production «Задачи» с course/group context, после него —
+problem/reveal и offline Dexie.
 
 - [ ] Revision/migrations: `<sha/paths>`; integrity/index plans `<path>`.
 - [ ] Demo Student Now/list/long/focused/offline: `<seed/routes/evidence>`.
 - [x] Lesson list query/read contract: один bounded SQLite statement; proof выше.
-- [ ] Home query count/plan and response contract: `<path/result>`.
+- [x] Home query count/plan and response contract: bounded single statement,
+      Zod fixture и browser proof в `phase3-student-home.md`.
 - [ ] Hint/solution authorization + reveal events: `<tests/result>`.
 - [ ] Dexie cache/quota/isolation tests: `<result>`.
 - [ ] Storybook priority stories, interactions, a11y, visuals: `<ids/paths>`.
-- [ ] Playwright online/offline/deep-link 3 browsers: `<result>`.
+- [ ] Playwright online/offline/deep-link 3 browsers: online home→published
+      lesson **3/3 PASS**; cold-offline/deep-link isolation ещё открыты.
 - [ ] Performance evidence long math document/KaTeX: `<path/result>`.
 - [ ] Docs/cache policy/known limitations/acceptance: `<paths/issues/name/date>`.
 
