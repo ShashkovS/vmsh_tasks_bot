@@ -188,8 +188,9 @@ owner-reviewed parity/backfill и ручное visual approval. Snapshots не
 ## Phase 3: Student course, lesson and home reads
 
 Phase 3A проецирует course enrollment непосредственно из revalidated session,
-Phase 3B добавляет опубликованный lesson list/detail, а Phase 3C — единый home
-snapshot и production страницу `/student/`. Реальный aiohttp/SQLite
+Phase 3B добавляет опубликованный lesson list/detail, Phase 3C — единый home
+snapshot и production страницу `/student/`, Phase 3D — cursor archive
+`/student/tasks`. Реальный aiohttp/SQLite
 suite проверяет `403` для недоступной группы, строгие query/cursor, отсутствие
 урока до condition publication, появление после publication и полное исчезновение
 после hide. Bounded list извлекает окно, три material slots и problem count одним
@@ -200,12 +201,15 @@ Home выбирает последнее видимое занятие кажд�
 statement, а Zod запрещает duplicate course и lesson другой группы. Production
 страница не использует prototype state и открывает exact `group_lesson`.
 
-Зафиксированный результат 28 июля 2026: полный content HTTP файл — **32 PASS**,
-focused contracts/client/home mapping — **3 файла / 22 PASS**; production-build
-publish→home/read→rollback — **3 PASS** в Chromium, WebKit и Firefox. Proof:
+Зафиксированный результат 28 июля 2026: полный regression — **259 TypeScript +
+1098 Python PASS**, Storybook browser mode — **180 PASS**; production-build
+publish→home→course/group archive→URL-selected lesson→read→rollback — **3
+PASS** в Chromium, WebKit и Firefox. Proof:
 [`phase3-student-lessons-api.md`](../../pwa_tests/reports/phase3-student-lessons-api.md)
-и [`phase3-student-home.md`](../../pwa_tests/reports/phase3-student-home.md).
-Production Tasks, Dexie cache и offline navigation остаются следующими gates.
+[`phase3-student-home.md`](../../pwa_tests/reports/phase3-student-home.md) и
+[`phase3-student-task-archive.md`](../../pwa_tests/reports/phase3-student-task-archive.md).
+Problem status projection, Dexie cache и offline navigation остаются следующими
+gates.
 
 ## Runtime contract и browser isolation
 

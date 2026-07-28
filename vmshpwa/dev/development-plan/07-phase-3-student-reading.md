@@ -122,16 +122,40 @@ Proof: [`phase3-student-home.md`](../../../pwa_tests/reports/phase3-student-home
 Следующий gate — production «Задачи» с course/group context, после него —
 problem/reveal и offline Dexie.
 
+Промежуточный gate **Phase 3D — production Student «Задачи» и архив листков**
+реализован 28 июля 2026, revision `42ea05c`:
+
+- [x] production `/student/tasks` использует course/group/lesson API вместо
+      prototype задач и фиктивных verdict/status;
+- [x] validated URL state выбирает только revalidated course и allowed group;
+      недоступный context отображается как forbidden;
+- [x] архив страниц подгружается по server cursor через infinite query и
+      сохраняет canonical reverse lesson order;
+- [x] выбор другого allowed group меняет только контекст чтения, а не active
+      enrollment; отдельный текст этого режима проверен Storybook interaction;
+- [x] карточка показывает только server-owned публикации и открывает точный
+      `group_lesson` в long-sheet renderer;
+- [x] полный unit/integration regression **259 TS + 1098 Python PASS**,
+      Storybook **180 PASS**, production browser checkpoint **3/3 PASS**.
+
+Proof: [`phase3-student-task-archive.md`](../../../pwa_tests/reports/phase3-student-task-archive.md).
+Следующий gate — публичная identity и canonical problem list/status projection;
+после него deliberate reveal и offline Dexie.
+
 - [ ] Revision/migrations: `<sha/paths>`; integrity/index plans `<path>`.
-- [ ] Demo Student Now/list/long/focused/offline: `<seed/routes/evidence>`.
+- [ ] Demo Student Now/list/long/focused/offline: Now + lesson archive + long
+      published sheet **3/3 PASS**; problem-focused status и offline открыты.
 - [x] Lesson list query/read contract: один bounded SQLite statement; proof выше.
 - [x] Home query count/plan and response contract: bounded single statement,
       Zod fixture и browser proof в `phase3-student-home.md`.
 - [ ] Hint/solution authorization + reveal events: `<tests/result>`.
 - [ ] Dexie cache/quota/isolation tests: `<result>`.
-- [ ] Storybook priority stories, interactions, a11y, visuals: `<ids/paths>`.
-- [ ] Playwright online/offline/deep-link 3 browsers: online home→published
-      lesson **3/3 PASS**; cold-offline/deep-link isolation ещё открыты.
+- [ ] Storybook priority stories, interactions, a11y, visuals:
+      `product-courses--allowed-group-reading-context`, suite **180 PASS**;
+      problem/offline stories и visual owner gate открыты.
+- [ ] Playwright online/offline/deep-link 3 browsers: online
+      home→course/group archive→URL-selected lesson→published sheet **3/3
+      PASS**; cold-offline/deep-link isolation ещё открыты.
 - [ ] Performance evidence long math document/KaTeX: `<path/result>`.
 - [ ] Docs/cache policy/known limitations/acceptance: `<paths/issues/name/date>`.
 

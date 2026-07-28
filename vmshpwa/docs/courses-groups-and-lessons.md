@@ -201,9 +201,12 @@ scheduled/hidden revisions. Window возвращает самостоятель
 последнее опубликованное занятие active group одним bounded SQLite statement,
 а server-owned phase не выводит solution из cutoff. Production `/student/`
 использует этот контракт; путь publish→home→content→rollback прошёл в Chromium,
-WebKit и Firefox. Family reads, production Tasks и offline cache остаются в
-последующих вертикальных gate; наличие остальных routes в перечне само по себе
-не означает готовность endpoint.
+WebKit и Firefox. Revision `42ea05c` подключает production `/student/tasks`:
+course/group/lesson — validated URL context, allowed-group просмотр не меняет
+active enrollment, а cursor archive открывает exact published `group_lesson`.
+Family reads, problem status projection и offline cache остаются в последующих
+вертикальных gate; наличие остальных routes в перечне само по себе не означает
+готовность endpoint.
 
 Staff:
 
