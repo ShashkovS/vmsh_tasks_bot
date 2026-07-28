@@ -43,6 +43,7 @@ export type AuthenticationState =
       error: AuthNetworkError
       context?: AuthSessionContext
       principal?: Principal
+      sessionExpiresAt?: string
     }
   | { status: 'error'; error: unknown }
 
@@ -66,6 +67,25 @@ export interface AuthenticationLoginController {
   submit(request: AuthLoginRequest): Promise<boolean>
 }
 
+/**
+ * Secret-free durable identity used only to unlock owner-scoped cached data.
+ * The store must never persist cookies, credentials, access tokens or the
+ * server session ID. See Phase 3 in `07-phase-3-student-reading.md`.
+ */
+export interface PersistedAuthenticationSnapshot {
+  audience: Extract<Audience, 'student' | 'family'>
+  ownerId: string
+  principal: Principal
+  sessionExpiresAt: string
+  cachedAt: string
+}
+
+export interface AuthenticationOfflineStore {
+  read(): Promise<PersistedAuthenticationSnapshot | null>
+  save(context: AuthSessionContext): Promise<PersistedAuthenticationSnapshot>
+  clear(): Promise<void>
+}
+
 const AuthenticationContext = createContext<AuthenticationController | null>(null)
 
 export interface AuthenticationProviderProps {
@@ -74,6 +94,7 @@ export interface AuthenticationProviderProps {
   children: ReactNode
   fetchImplementation?: AuthClientOptions['fetchImplementation']
   refreshCoordinator?: AuthRefreshCoordinator
+  offlineStore?: AuthenticationOfflineStore
 }
 
 /**
@@ -89,6 +110,7 @@ export function AuthenticationProvider({
   children,
   fetchImplementation,
   refreshCoordinator,
+  offlineStore,
 }: AuthenticationProviderProps) {
   const queryClient = useQueryClient()
   const client = useMemo(
@@ -102,13 +124,63 @@ export function AuthenticationProvider({
   const [locallySignedOut, setLocallySignedOut] = useState(false)
   const [localEndReason, setLocalEndReason] = useState<AuthErrorCode | undefined>()
   const [clockNow, setClockNow] = useState(() => Date.now())
+  const [offlineSnapshotState, setOfflineSnapshotState] = useState<
+    { status: 'loading' } | { status: 'ready'; snapshot: PersistedAuthenticationSnapshot | null }
+  >(() =>
+    offlineStore === undefined ? { status: 'ready', snapshot: null } : { status: 'loading' },
+  )
   const queryKey = authQueryKeys.me(audience)
+
+  useEffect(() => {
+    let active = true
+    if (!offlineStore) {
+      return () => {
+        active = false
+      }
+    }
+    void offlineStore.read().then(
+      (snapshot) => {
+        if (active) setOfflineSnapshotState({ status: 'ready', snapshot })
+      },
+      () => {
+        // An unreadable local snapshot never widens access. Online auth may
+        // still succeed; cold offline remains fail-closed.
+        if (active) setOfflineSnapshotState({ status: 'ready', snapshot: null })
+      },
+    )
+    return () => {
+      active = false
+    }
+  }, [offlineStore])
+
+  const persistContext = useCallback(
+    async (context: AuthSessionContext) => {
+      if (!offlineStore) return
+      const snapshot = await offlineStore.save(context)
+      setOfflineSnapshotState({ status: 'ready', snapshot })
+    },
+    [offlineStore],
+  )
+
+  const clearOfflineSnapshot = useCallback(async () => {
+    setOfflineSnapshotState({ status: 'ready', snapshot: null })
+    await offlineStore?.clear()
+  }, [offlineStore])
+
   const currentSessionQuery = useQuery({
     queryKey,
     queryFn: async ({ signal }) => {
-      const context = await client.me({ signal })
-      setClockNow(Date.now())
-      return context
+      try {
+        const context = await client.me({ signal })
+        await persistContext(context)
+        setClockNow(Date.now())
+        return context
+      } catch (error) {
+        if (classifyAuthApiError(error) === 'unauthenticated') {
+          await clearOfflineSnapshot()
+        }
+        throw error
+      }
     },
     enabled: !locallySignedOut,
     retry: false,
@@ -118,20 +190,22 @@ export function AuthenticationProvider({
   })
 
   const endLocalSession = useCallback(
-    (reason?: AuthErrorCode) => {
+    (reason?: AuthErrorCode, clearOffline = true) => {
       setLocallySignedOut(true)
       setLocalEndReason(reason)
       void queryClient.cancelQueries()
       // Account-owned server state must not survive a logout/account switch in
-      // memory. Durable owner-scoped cleanup is composed by the apps later.
+      // memory; the optional durable store removes the same owner's local data.
       queryClient.clear()
+      if (clearOffline) void clearOfflineSnapshot().catch(() => undefined)
     },
-    [queryClient],
+    [clearOfflineSnapshot, queryClient],
   )
 
   const login = useCallback(
     async (request: AuthLoginRequest, options: AuthRequestOptions = {}) => {
       const context = await client.login(request, options)
+      await persistContext(context)
       await queryClient.cancelQueries()
       // Keep the active `/me` observer mounted while dropping every query that
       // may belong to the previous account. Removing that observer with
@@ -149,35 +223,38 @@ export function AuthenticationProvider({
       setLocalEndReason(undefined)
       return context
     },
-    [client, queryClient, queryKey],
+    [client, persistContext, queryClient, queryKey],
   )
 
   const refresh = useCallback(
     async (options: AuthRequestOptions = {}) => {
       const context = await client.refresh(options)
+      await persistContext(context)
       queryClient.setQueryData(queryKey, context)
       setClockNow(Date.now())
       setLocallySignedOut(false)
       setLocalEndReason(undefined)
       return context
     },
-    [client, queryClient, queryKey],
+    [client, persistContext, queryClient, queryKey],
   )
 
   const logout = useCallback(
     async (options: AuthRequestOptions = {}) => {
       await client.logout(options)
-      endLocalSession()
+      await clearOfflineSnapshot()
+      endLocalSession(undefined, false)
     },
-    [client, endLocalSession],
+    [clearOfflineSnapshot, client, endLocalSession],
   )
 
   const logoutAll = useCallback(
     async (options: AuthRequestOptions = {}) => {
       await client.logoutAll(options)
-      endLocalSession()
+      await clearOfflineSnapshot()
+      endLocalSession(undefined, false)
     },
-    [client, endLocalSession],
+    [clearOfflineSnapshot, client, endLocalSession],
   )
 
   const retry = useCallback(async () => {
@@ -202,8 +279,13 @@ export function AuthenticationProvider({
 
   useEffect(() => {
     const context = currentSessionQuery.data
-    if (!context || locallySignedOut) return
-    const expiresAt = Date.parse(context.policy.sessionExpiresAt)
+    const cachedExpiry =
+      offlineSnapshotState.status === 'ready'
+        ? offlineSnapshotState.snapshot?.sessionExpiresAt
+        : undefined
+    const sessionExpiresAt = context?.policy.sessionExpiresAt ?? cachedExpiry
+    if (!sessionExpiresAt || locallySignedOut) return
+    const expiresAt = Date.parse(sessionExpiresAt)
     let timeout: ReturnType<typeof setTimeout> | undefined
 
     const scheduleExpiryCheck = () => {
@@ -236,7 +318,7 @@ export function AuthenticationProvider({
         document.removeEventListener('visibilitychange', checkAfterBrowserResume)
       }
     }
-  }, [currentSessionQuery.data, endLocalSession, locallySignedOut])
+  }, [currentSessionQuery.data, endLocalSession, locallySignedOut, offlineSnapshotState])
 
   const state = useMemo<AuthenticationState>(() => {
     if (locallySignedOut) {
@@ -274,6 +356,17 @@ export function AuthenticationProvider({
             error: queryError,
             context: verifiedContext,
             principal: verifiedContext.principal,
+            sessionExpiresAt: verifiedContext.policy.sessionExpiresAt,
+          }
+        }
+        if (offlineSnapshotState.status === 'loading') return { status: 'checking' }
+        const snapshot = offlineSnapshotState.snapshot
+        if (snapshot && clockNow < Date.parse(snapshot.sessionExpiresAt)) {
+          return {
+            status: 'offline-unverified',
+            error: queryError,
+            principal: snapshot.principal,
+            sessionExpiresAt: snapshot.sessionExpiresAt,
           }
         }
         return { status: 'offline-unverified', error: queryError }
@@ -295,6 +388,7 @@ export function AuthenticationProvider({
     currentSessionQuery.error,
     localEndReason,
     locallySignedOut,
+    offlineSnapshotState,
   ])
 
   const value = useMemo<AuthenticationController>(

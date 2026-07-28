@@ -1,5 +1,5 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router'
-import { StrictMode } from 'react'
+import { StrictMode, useMemo } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import {
@@ -11,7 +11,11 @@ import {
   initFrontendObservability,
 } from '@vmsh/app-shell'
 import { createBrowserStorageNamespace, type RuntimeConfig } from '@vmsh/contracts'
-import { OfflineDatabaseProvider } from '@vmsh/offline'
+import {
+  OfflineDatabaseProvider,
+  createOfflineAuthenticationStore,
+  useOfflineDatabase,
+} from '@vmsh/offline'
 import '@vmsh/ui/styles.css'
 
 import { routeTree } from './routeTree.gen'
@@ -62,13 +66,24 @@ function studentApplication(runtime: RuntimeConfig) {
         }
         runtime={{ audience: 'student', instance: runtime.instance }}
       >
-        <AuthenticationProvider audience="student" runtime={runtime}>
-          <RealtimeProvider audience="student" runtime={runtime}>
-            <RouterProvider router={router} />
-          </RealtimeProvider>
-        </AuthenticationProvider>
+        <StudentAuthenticatedApplication runtime={runtime} />
       </OfflineDatabaseProvider>
     </AppProviders>
+  )
+}
+
+export function StudentAuthenticatedApplication({ runtime }: { runtime: RuntimeConfig }) {
+  const database = useOfflineDatabase()
+  const offlineStore = useMemo(
+    () => createOfflineAuthenticationStore(database, 'student'),
+    [database],
+  )
+  return (
+    <AuthenticationProvider audience="student" offlineStore={offlineStore} runtime={runtime}>
+      <RealtimeProvider audience="student" runtime={runtime}>
+        <RouterProvider router={router} />
+      </RealtimeProvider>
+    </AuthenticationProvider>
   )
 }
 

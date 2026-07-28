@@ -51,7 +51,7 @@ export function AuthenticationBoundary({
     )
   }
   if (state.status === 'offline-unverified') {
-    if (state.context && state.principal) return children
+    if (state.principal) return children
     return typeof offlineFallback === 'function'
       ? offlineFallback(retry)
       : (offlineFallback ?? (

@@ -41,6 +41,14 @@ export interface CachedDocument {
   payload: unknown
 }
 
+export interface CachedAuthenticationSnapshot {
+  key: 'current'
+  ownerId: string
+  expiresAt: string
+  cachedAt: string
+  payload: unknown
+}
+
 export const offlineAudienceSchema = z.enum(['student', 'family'])
 export type OfflineAudience = z.infer<typeof offlineAudienceSchema>
 export type OfflineRuntime = Pick<RuntimeConfig, 'instance'> & { audience: OfflineAudience }
@@ -60,6 +68,7 @@ export function offlineDatabaseName(runtime: OfflineRuntime): BrowserStorageName
 export class VmshOfflineDatabase extends Dexie {
   outbox!: EntityTable<OutboxItem, 'id'>
   documents!: EntityTable<CachedDocument, 'key'>
+  authentication!: EntityTable<CachedAuthenticationSnapshot, 'key'>
 
   constructor(runtime: OfflineRuntime) {
     // The Dexie name is exactly the canonical Phase-0 namespace. Adding a
@@ -85,6 +94,11 @@ export class VmshOfflineDatabase extends Dexie {
             item.timezoneOffsetMinutes ??= 0
           })
       })
+    this.version(3).stores({
+      outbox: '&id, &idempotencyKey, ownerId, status, createdAtClient, kind',
+      documents: '&key, ownerId, version, cachedAt',
+      authentication: '&key, ownerId, expiresAt',
+    })
   }
 }
 

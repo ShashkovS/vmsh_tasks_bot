@@ -10,6 +10,7 @@ import studentRuntimeFixture from '@vmsh/contracts/fixtures/runtime/student.v1.j
 import {
   ApiResponseError,
   apiErrorSchema,
+  authContextSchema,
   parseRuntimeConfigForAudience,
   staffCapabilitySchema,
 } from '@vmsh/contracts'
@@ -19,12 +20,19 @@ import {
   AuthenticationRedirectBoundary,
   StaffCapabilityBoundary,
 } from './auth-boundary'
-import { AuthenticationProvider, useAuthentication, useAuthenticationLogin } from './auth-context'
+import {
+  AuthenticationProvider,
+  useAuthentication,
+  useAuthenticationLogin,
+  type AuthenticationOfflineStore,
+  type PersistedAuthenticationSnapshot,
+} from './auth-context'
 import { createInMemoryAuthRefreshCoordinator } from './auth-refresh-coordinator'
 import { AppProviders, createAppQueryClient } from './providers'
 
 const studentRuntime = parseRuntimeConfigForAudience('student', studentRuntimeFixture.response)
 const staffRuntime = parseRuntimeConfigForAudience('staff', staffRuntimeFixture.response)
+const studentAuthContext = authContextSchema.parse(studentAuthFixture.authContext)
 
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
@@ -66,13 +74,46 @@ function authContextExpiringAt(sessionExpiresAt: string) {
   }
 }
 
-function renderStudentBoundary(fetchImplementation: typeof globalThis.fetch) {
+function durableSnapshot(
+  sessionExpiresAt = studentAuthFixture.authContext.policy.sessionExpiresAt,
+): PersistedAuthenticationSnapshot {
+  return {
+    audience: 'student',
+    ownerId: studentAuthContext.principal.accountId,
+    principal: studentAuthContext.principal,
+    sessionExpiresAt,
+    cachedAt: '2026-07-27T08:00:00.000Z',
+  }
+}
+
+function mockOfflineStore(snapshot: PersistedAuthenticationSnapshot | null) {
+  const store = {
+    read: vi.fn<AuthenticationOfflineStore['read']>(() => Promise.resolve(snapshot)),
+    save: vi.fn<AuthenticationOfflineStore['save']>((context) =>
+      Promise.resolve({
+        audience: 'student',
+        ownerId: context.principal.accountId,
+        principal: context.principal,
+        sessionExpiresAt: context.policy.sessionExpiresAt,
+        cachedAt: '2026-07-27T08:00:01.000Z',
+      }),
+    ),
+    clear: vi.fn<AuthenticationOfflineStore['clear']>(() => Promise.resolve()),
+  } satisfies AuthenticationOfflineStore
+  return store
+}
+
+function renderStudentBoundary(
+  fetchImplementation: typeof globalThis.fetch,
+  offlineStore?: AuthenticationOfflineStore,
+) {
   const queryClient = createAppQueryClient()
   return render(
     <AppProviders queryClient={queryClient}>
       <AuthenticationProvider
         audience="student"
         fetchImplementation={fetchImplementation}
+        {...(offlineStore ? { offlineStore } : {})}
         refreshCoordinator={createInMemoryAuthRefreshCoordinator()}
         runtime={studentRuntime}
       >
@@ -192,11 +233,13 @@ describe('authentication provider and boundary', () => {
     }
 
     const queryClient = createAppQueryClient()
+    const offlineStore = mockOfflineStore(null)
     render(
       <AppProviders queryClient={queryClient}>
         <AuthenticationProvider
           audience="student"
           fetchImplementation={fetchImplementation}
+          offlineStore={offlineStore}
           refreshCoordinator={createInMemoryAuthRefreshCoordinator()}
           runtime={studentRuntime}
         >
@@ -218,6 +261,8 @@ describe('authentication provider and boundary', () => {
       '/student/api/v1/auth/login',
       '/student/api/v1/auth/logout',
     ])
+    expect(offlineStore.save).toHaveBeenCalledWith(studentAuthFixture.authContext)
+    expect(offlineStore.clear).toHaveBeenCalledTimes(2)
   })
 
   it('drives pending, rate-limited and authenticated public-login states', async () => {
@@ -300,7 +345,7 @@ describe('authentication provider and boundary', () => {
       Promise.reject(new TypeError('synthetic offline')),
     )
     const offlineView = renderStudentBoundary(offlineFetch)
-    expect(await screen.findByText('Не удалось проверить вход')).not.toBeNull()
+    await vi.waitFor(() => expect(screen.queryByText('Не удалось проверить вход')).not.toBeNull())
     expect(screen.queryByText('Защищённое содержимое')).toBeNull()
     offlineView.unmount()
 
@@ -311,6 +356,49 @@ describe('authentication provider and boundary', () => {
     expect(await screen.findByText('Не удалось безопасно открыть кабинет')).not.toBeNull()
     expect(screen.queryByText('Защищённое содержимое')).toBeNull()
     expect(screen.queryByText('Synthetic server copy')).toBeNull()
+  })
+
+  it('unlocks only the previous owner cache on a secret-free cold-offline snapshot', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime('2026-07-28T08:00:00.000Z')
+    const offlineFetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.reject(new TypeError('synthetic offline')),
+    )
+    const offlineStore = mockOfflineStore(durableSnapshot())
+
+    renderStudentBoundary(offlineFetch, offlineStore)
+
+    await vi.waitFor(() => expect(screen.queryByText('Защищённое содержимое')).not.toBeNull())
+    expect(offlineStore.read).toHaveBeenCalledOnce()
+    expect(offlineStore.save).not.toHaveBeenCalled()
+  })
+
+  it('clears a durable owner snapshot after an authoritative session rejection', async () => {
+    const rejectedFetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(apiError(401, 'session_revoked')),
+    )
+    const offlineStore = mockOfflineStore(durableSnapshot())
+
+    renderStudentBoundary(rejectedFetch, offlineStore)
+
+    await vi.waitFor(() => expect(screen.queryByText('Требуется вход')).not.toBeNull())
+    expect(screen.queryByText('Защищённое содержимое')).toBeNull()
+    expect(offlineStore.clear).toHaveBeenCalledOnce()
+  })
+
+  it('does not unlock a durable snapshot past its server-owned expiry', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime('2026-08-10T08:00:00.000Z')
+    const offlineFetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.reject(new TypeError('synthetic offline')),
+    )
+    const offlineStore = mockOfflineStore(durableSnapshot('2026-08-09T21:00:00.000Z'))
+
+    renderStudentBoundary(offlineFetch, offlineStore)
+
+    await vi.waitFor(() => expect(screen.queryByText('Требуется вход')).not.toBeNull())
+    expect(screen.queryByText('Защищённое содержимое')).toBeNull()
+    expect(offlineStore.clear).toHaveBeenCalledOnce()
   })
 
   it('unmounts protected content at the absolute server session expiry', async () => {
