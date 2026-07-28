@@ -15,7 +15,7 @@
 | Этап 2              | Phase 2A–2E + browser E2E      | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
 | Этап 3              | Phase 3A–3H reading slice      | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
 | Этап 4              | Phase 4A–4G functionally ready | Domain/API, draft/outbox, Student submit, Staff recheck и общая PWA/Telegram policy готовы; открыт только visual owner gate                                           |
-| Этап 5              | Phase 5A–5F browser vertical   | Server text/photo vertical, canonical Student composer, durable outbox и production E2E готовы; backfill, replacement, Staff review и visual gate открыты             |
+| Этап 5              | Phase 5A–5F browser + live S3  | Server/browser vertical и guarded written-photo S3 lifecycle готовы; replacement, backfill, Staff review, media corpus и visual gate открыты                          |
 | Этапы 6–11          | planned with gates             | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review    | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype    | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
@@ -470,11 +470,19 @@
   offline enqueue не пишет в сеть, reconnect делает ровно один create/upload/
   submit и сервер хранит submitted WebP evidence. E2E gateway abort regression
   — **17 PASS**.
+- Revision `71e96e6` добавляет отдельный guarded
+  `make pwa-written-attachment-live-smoke`. Run
+  `phase5-written-service-20260728-b2` подтвердил настоящий
+  WrittenAttachmentService → raster converter → test S3 путь: `sol_imgs` key,
+  final WebP, private read, public GET и delete acknowledgement — PASS. Общий
+  run `phase5-written-20260728-a2` тем же bucket проверил также TikZ→SVG.
+  Focused storage/service/harness regression — **86 PASS**. Proof:
+  [`phase5-written-storage-live.md`](../../../pwa_tests/reports/phase5-written-storage-live.md).
 - Объединённый proof:
   [`phase5-written-browser-draft.md`](../../../pwa_tests/reports/phase5-written-browser-draft.md).
-- Следующий gate: post-submit pre-review atomic replacement и live test S3.
-  Legacy backfill/reassignment, Staff review и visual owner gate также остаются
-  открыты; snapshots не обновлялись.
+- Следующий gate: post-submit pre-review atomic replacement. Legacy
+  backfill/reassignment, большой media corpus, Staff review и visual owner gate
+  также остаются открыты; snapshots не обновлялись.
 
 ## Текущий инкремент этапа 1
 
@@ -837,7 +845,7 @@
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                          | Browser path принят; этап открыт                 |
 |    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                  | Phase 3A–3H приняты; visual открыт               |
 |    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | функционально; visual открыт                     |
-|    5 | `5acecbb`…`2158398`  | [Phase 5A–5F proof](../../../pwa_tests/reports/phase5-written-browser-draft.md)                 | browser submit vertical принят; прочие gates открыты |
+|    5 | `5acecbb`…`71e96e6`  | [Phase 5A–5F proof](../../../pwa_tests/reports/phase5-written-browser-draft.md)                 | browser + test-S3 vertical приняты; прочие gates открыты |
 |    6 | —                    | —                                                                                               | —                                                |
 |    7 | —                    | —                                                                                               | —                                                |
 |    8 | —                    | —                                                                                               | —                                                |

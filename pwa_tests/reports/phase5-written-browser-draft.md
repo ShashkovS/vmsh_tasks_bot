@@ -1,7 +1,7 @@
 # Phase 5E–5F — browser photo pipeline, durable draft and Student delivery
 
 Дата проверки: 2026-07-28.
-Revisions реализации: `d3b29f2`, `4e835ec`, `2158398`.
+Revisions реализации: `d3b29f2`, `4e835ec`, `2158398`, `71e96e6`.
 
 ## Проверяемый результат
 
@@ -67,6 +67,10 @@ Revisions реализации: `d3b29f2`, `4e835ec`, `2158398`.
   фото; client создаёт WebP; reload восстанавливает draft; offline submit не
   делает сетевых writes; reconnect выполняет ровно один create, upload и submit;
   серверный thread содержит submitted text и WebP evidence.
+- Guarded test-S3 proof проверил общий TikZ→SVG/raster→WebP pipeline и отдельно
+  настоящий WrittenAttachmentService: server-derived `sol_imgs` key,
+  private/public read и delete acknowledgement — **PASS**. Детали и run IDs:
+  [`phase5-written-storage-live.md`](phase5-written-storage-live.md).
 - `git diff --check` для инкремента — **PASS**.
 
 ## Что этот proof ещё не доказывает
@@ -74,10 +78,8 @@ Revisions реализации: `d3b29f2`, `4e835ec`, `2158398`.
 - Post-submit pre-review replacement как отдельная атомарная операция,
   legacy backfill/reassignment и Staff review относятся к следующим
   инкрементам.
-- Live test S3 upload/read/public-GET/delete уже разрешён владельцем, но этим
-  browser checkpoint не выполнялся: E2E намеренно остаётся hermetic на
-  filesystem adapter.
+- Browser E2E намеренно остаётся hermetic на filesystem adapter; live S3
+  проверен отдельной opt-in командой и не создавал product submission в SQLite.
 - Owner visual gate для focused Student composer ещё не принят; visual
   snapshots не обновлялись.
-- Telegram, Google, NATS, live S3 и `db/vmsh.db` этим инкрементом не
-  использовались.
+- Telegram, Google, NATS и `db/vmsh.db` этим инкрементом не использовались.
