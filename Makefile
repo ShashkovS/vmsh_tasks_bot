@@ -150,7 +150,7 @@ pwa-workload-profile-update:
 
 pwa-baseline-check: pwa-golden-check pwa-content-story-corpus-check pwa-schema-check pwa-schema-live-check pwa-auth-preflight-check pwa-workload-profile-check
 
-.PHONY: pwa-s3-live-smoke pwa-content-assets-live-smoke
+.PHONY: pwa-s3-live-smoke pwa-content-assets-live-smoke pwa-written-attachment-live-smoke
 pwa-s3-live-smoke:
 	@test "$(VMSH_ENABLE_LIVE_S3_TEST)" = "true" || (echo "Set VMSH_ENABLE_LIVE_S3_TEST=true"; exit 2)
 	@test -n "$(PWA_S3_RUN_ID)" || (echo "Set a unique lowercase PWA_S3_RUN_ID"; exit 2)
@@ -160,6 +160,11 @@ pwa-content-assets-live-smoke:
 	@test "$(VMSH_ENABLE_LIVE_S3_TEST)" = "true" || (echo "Set VMSH_ENABLE_LIVE_S3_TEST=true"; exit 2)
 	@test -n "$(PWA_S3_RUN_ID)" || (echo "Set a unique lowercase PWA_S3_RUN_ID"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.content_asset_storage_smoke --run-id "$(PWA_S3_RUN_ID)"
+
+pwa-written-attachment-live-smoke:
+	@test "$(VMSH_ENABLE_LIVE_S3_TEST)" = "true" || (echo "Set VMSH_ENABLE_LIVE_S3_TEST=true"; exit 2)
+	@test -n "$(PWA_S3_RUN_ID)" || (echo "Set a unique lowercase PWA_S3_RUN_ID"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.written_attachment_storage_smoke --run-id "$(PWA_S3_RUN_ID)"
 
 .PHONY: pwa-nats-local-smoke pwa-telegram-bind-test-channel pwa-telegram-live-smoke pwa-telegram-rich-live-smoke
 pwa-nats-local-smoke:
