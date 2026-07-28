@@ -1,20 +1,21 @@
-# Phase 4A–4F — правила, хранение, Student UI, E2E и Telegram policy
+# Phase 4A–4G — правила, хранение, Student/Staff UI, E2E и Telegram policy
 
 Дата: 2026-07-28
 
 Revisions: `6409191`, `bd0487f`, `1d5df54`, `7793d0f`, `0475cd0`,
 `6d1909c`, `bab5947`, `5b682d1`, `3d22373`, `a779493`, `6268092`,
-`9358e76`, `2b00b06`
+`9358e76`, `2b00b06`, `e5b83a4`, `0fde237`
 
 ## Проверяемый результат
 
 Каркас Phase 4 теперь содержит доменные правила всех исторических типов
 тестового ответа, атомарный SQLite repository, authenticated Student HTTP
-вертикаль, браузерный transport, local draft и Dexie outbox. Инкремент ещё не
-считается завершением всего этапа: production Student page и Playwright path
-готовы, а Telegram и PWA используют одну domain normalization/verdict policy.
-Открыты Staff recheck/configuration-repair для нового attempt ledger и ручной
-visual gate.
+вертикаль, браузерный transport, local draft, Dexie outbox и Staff-поток
+повторной проверки отложенных попыток после исправления конфигурации. Production
+Student и Staff pages и сквозной Playwright path готовы, а Telegram и PWA
+используют одну domain normalization/verdict policy. Инкремент ещё не считается
+завершением всего этапа из-за ручного visual gate и отдельной будущей миграции
+исторического Telegram persistence в structured attempt ledger.
 
 Реализовано:
 
@@ -66,8 +67,45 @@ Strict Zod contract и versioned fixtures находятся в
 - историю до 50 строк на страницу. Пустая история требует текущего доступа,
   но собственная старая работа остаётся видимой после отзыва group access.
 
-После будущего admin recheck история предпочитает authoritative attempt state
+После admin recheck история предпочитает authoritative attempt state
 и не соединяет его со stale feedback старого idempotency receipt.
+
+## Staff recheck после исправления конфигурации
+
+Revisions `e5b83a4`, `0fde237` закрывают Staff recheck/configuration-repair
+вертикаль для нового attempt ledger:
+
+- `GET` и `POST`
+  `/staff/api/v1/problems/{problemPublicId}/recheck-test-attempts` дают preview
+  и применяют повторную проверку только пользователю с `checker.manage`;
+- repository выбирает только `pending_configuration`, заново загружает текущую
+  опубликованную конфигурацию и перед записью повторно проверяет её revision;
+- исходные answer, timestamps, payload и attempt ID остаются неизменными;
+  меняются только authoritative check outcome, verdict, feedback, actor и
+  result projection;
+- broken checker оставляет попытку в повторяемом pending-состоянии без ложного
+  результата; stale revision получает `409`, а ошибка записи откатывает весь
+  batch;
+- конкурентные recheck не создают дубликаты результатов, успешный commit
+  публикует только owner-scoped Student invalidations;
+- teacher получает `403`; Origin, cookie authority и strict request/response
+  schemas проверяются на настоящем aiohttp.
+
+[`test-recheck-client.ts`](../../vmshpwa/packages/app-shell/src/test-recheck-client.ts)
+предоставляет strict Staff transport и TanStack Query hooks.
+[`test-attempt-recheck.tsx`](../../vmshpwa/packages/product/src/test-attempt-recheck.tsx)
+фиксирует product states preview/apply/still-pending/conflict/loading в stories
+`product-test-answer--recheck-pending`,
+`product-test-answer--recheck-still-pending`,
+`product-test-answer--recheck-conflict` и
+`product-test-answer--recheck-loading`.
+
+Production route
+[`/staff/problems/$problemId`](../../vmshpwa/apps/staff/src/routes/problems.$problemId.tsx)
+использует server-backed page
+[`test-attempt-recheck-page.tsx`](../../vmshpwa/apps/staff/src/test-attempt-recheck-page.tsx).
+Parent route теперь корректно рендерит вложенный `Outlet`, а индексный экран
+вынесен в отдельный route.
 
 ## Browser transport, draft и outbox
 
@@ -177,13 +215,13 @@ repository + real aiohttp + app-factory regression
 91 PASS
 
 contracts package
-6 files / 92 PASS; typecheck and ESLint PASS
+6 files / 94 PASS; typecheck and ESLint PASS
 
 full pwa_tests
-1174 PASS / 3 intentional skips / 1 existing SymPy warning
+1180 PASS / 3 intentional skips / 1 existing SymPy warning
 
 full frontend unit
-41 files / 318 PASS
+42 files / 323 PASS
 
 offline package focused
 7 files / 34 PASS
@@ -191,8 +229,11 @@ offline package focused
 submission contract + browser transport focused
 2 files / 14 PASS
 
+full Storybook browser mode
+38 files / 187 PASS
+
 production-build Playwright test submissions
-3 PASS: Chromium / WebKit / Firefox
+6 PASS: two workflows in Chromium / WebKit / Firefox
 
 ESLint + Stylelint + strict TypeScript + production Vite build
 PASS
@@ -212,11 +253,18 @@ SQLite и доказывают:
 - полный rollback через synthetic SQLite trigger failure;
 - owner isolation: чужая задача не раскрывается и отвечает `404`.
 
+Recheck integration дополнительно доказывает preview/apply, current-publication
+binding, teacher `403`, broken-checker retry, stale revision `409`, конкурентный
+batch и полный rollback без частично обновлённых attempts/results.
+
 Real aiohttp test дополнительно проходит настоящий Staff upload → compile →
 matching → metadata → lesson window → publication, после чего Student делает
-submit/replay/mismatch/invalid-format/history. Проверены same-origin gate,
-отсутствие client identity, отсутствие checker secrets, точные row counts и
-Student-only realtime cursor.
+submit/replay/mismatch/invalid-format/history. Второй production browser workflow
+сначала публикует неполную checker-конфигурацию и получает immutable pending
+attempt, затем Staff загружает новую revision с тем же logical filename,
+публикует исправление, выполняет recheck и проверяет обновлённую Student history.
+Проверены same-origin gate, отсутствие client identity, отсутствие checker
+secrets, точные row counts и Student-only realtime cursor.
 
 ## Изоляция
 
@@ -226,14 +274,12 @@ Student-only realtime cursor.
 
 ## Открытые границы Phase 4
 
-- нет Staff recheck/configuration-repair flow для `test_attempts`; legacy
-  Telegram recheck уже безопасно использует общую policy, но не обновляет новый
-  attempt ledger;
 - Telegram `results` persistence ещё не перенесён в structured attempt/
   idempotency ledger; это отдельная cutover-задача, а не дублирование domain
   normalization/verdict policy;
-- production route не имеет отдельной server-backed Storybook story: матрица
-  input/states живёт в `Product/Test answer`, а реальный transport проверяет
-  Playwright. Ручной visual gate focused Student page остаётся открытым.
+- Storybook проверяет изолированную матрицу Staff recheck states, а настоящий
+  transport и production routes проверяет Playwright. Ручной visual gate
+  focused Student page и нового Staff recheck panel остаётся открытым.
 
-Phase 4 остаётся открытым до закрытия этих границ и ручного visual gate.
+Phase 4 остаётся открытым до решения Telegram ledger cutover и ручного visual
+gate. Snapshots намеренно не обновлялись.
