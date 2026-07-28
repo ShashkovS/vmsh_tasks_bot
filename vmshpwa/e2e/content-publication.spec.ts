@@ -126,13 +126,24 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
     target,
     source: latexSource('Первая версия', firstStatement),
     metadataTitle: `Первая E2E-задача, запуск ${testInfo.retry + 1}`,
-    match: 'insert-new',
+    match: testInfo.retry === 0 ? 'insert-new' : 'suggested',
   })
 
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/')
   await expect(page.getByRole('heading', { name: 'Сейчас', exact: true })).toBeVisible()
   await expect(page.getByText('Математика 5–7', { exact: true })).toBeVisible()
   await expect(page.getByText('1 задача в листке')).toBeVisible()
+
+  await page.goto(
+    `/student/tasks?course=${contentFixture.coursePublicId}&group=${contentFixture.groupPublicId}`,
+  )
+  await expect(page.getByRole('heading', { name: 'Задачи', exact: true })).toBeVisible()
+  const lessonSelect = page.getByRole('combobox', { name: 'Занятие' })
+  await expect(lessonSelect).toContainText(`${target.lessonNumber} ·`)
+  await lessonSelect.selectOption(String(target.lessonNumber))
+  await expect(page).toHaveURL(new RegExp(`[?&]lesson=${target.lessonNumber}(?:&|$)`))
+  await page.getByRole('button', { name: 'Открыть листок' }).click()
+  await expect(page.getByText(firstStatement)).toBeVisible()
 
   await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()

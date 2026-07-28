@@ -24,7 +24,7 @@ import {
 } from './student-home-view'
 
 function EmptyCourseCard({ course }: { course: StudentHomeCourse }) {
-  const enrollment = toCourseEnrollmentView(course)
+  const enrollment = toCourseEnrollmentView(course.enrollment)
   const group = enrollment.allowedGroups.find(
     (candidate) => candidate.id === enrollment.activeGroupId,
   )
@@ -133,7 +133,7 @@ export function StudentHomePage() {
               const lesson = course.currentLesson
               return (
                 <CourseCard
-                  enrollment={toCourseEnrollmentView(course)}
+                  enrollment={toCourseEnrollmentView(course.enrollment)}
                   key={course.enrollment.enrollmentId}
                   lessonDate={formatCalendarDate(lesson.cycleAnchorDate)}
                   lessonNumber={lesson.lessonNumber}

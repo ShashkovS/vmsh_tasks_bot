@@ -1,4 +1,4 @@
-import type { StudentHomeCourse } from '@vmsh/contracts'
+import type { CourseEnrollment, StudentHomeCourse } from '@vmsh/contracts'
 import type { CourseEnrollmentView } from '@vmsh/product'
 
 type AccentIndex = 0 | 1 | 2 | 3 | 4
@@ -9,8 +9,7 @@ function presentationIndex(token: string, fallback: number): AccentIndex {
   return (((Math.max(1, fallback) - 1) % 4) + 1) as AccentIndex
 }
 
-export function toCourseEnrollmentView(course: StudentHomeCourse): CourseEnrollmentView {
-  const enrollment = course.enrollment
+export function toCourseEnrollmentView(enrollment: CourseEnrollment): CourseEnrollmentView {
   return {
     course: {
       id: enrollment.course.courseId,

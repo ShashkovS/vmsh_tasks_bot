@@ -80,3 +80,21 @@ export const ActiveAndAllowedGroups: Story = {
     await expect(canvas.getByRole('status')).toHaveTextContent('Активная группа: Эксперты')
   },
 }
+
+export const AllowedGroupReadingContext: Story = {
+  name: 'Allowed group reading context',
+  render: () => (
+    <div className="max-w-xl">
+      <CourseGroupSwitcher
+        activeGroupId="math-beginner"
+        course={mathCourse}
+        groups={mathGroups}
+        helpText="Можно читать опубликованные листки всех доступных вам групп. Активная группа курса от этого не меняется."
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/Активная группа курса от этого не меняется/)).toBeVisible()
+  },
+}

@@ -12,7 +12,7 @@ describe('Student production home mapping', () => {
     const course = response.courses[0]
     if (!course) throw new Error('Expected a fixture course')
 
-    expect(toCourseEnrollmentView(course)).toMatchObject({
+    expect(toCourseEnrollmentView(course.enrollment)).toMatchObject({
       course: {
         id: 'course-fixture-alpha',
         accentIndex: 1,

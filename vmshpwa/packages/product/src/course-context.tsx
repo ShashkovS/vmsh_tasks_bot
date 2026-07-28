@@ -59,6 +59,7 @@ export interface CourseGroupSwitcherProps {
   activeGroupId: string
   onChange?: (groupId: string) => void
   compact?: boolean
+  helpText?: ReactNode
   className?: string
 }
 
@@ -68,6 +69,7 @@ export function CourseGroupSwitcher({
   activeGroupId,
   onChange,
   compact = false,
+  helpText = 'Смена действует только внутри этого курса и требует подтверждения в приложении.',
   className,
 }: CourseGroupSwitcherProps) {
   return (
@@ -99,9 +101,7 @@ export function CourseGroupSwitcher({
           )
         })}
       </div>
-      <p className="text-caption text-muted-foreground">
-        Смена действует только внутри этого курса и требует подтверждения в приложении.
-      </p>
+      {helpText ? <p className="text-caption text-muted-foreground">{helpText}</p> : null}
     </fieldset>
   )
 }

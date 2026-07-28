@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
   ApiResponseError,
   apiErrorSchema,
@@ -257,6 +257,26 @@ export function useStudentLessonsQuery(
         ...(cursor === null ? {} : { cursor }),
         signal,
       }),
+  })
+}
+
+/** One canonical, cursor-backed archive for the production Student Tasks page. */
+export function useStudentLessonArchiveQuery(
+  client: Pick<StudentCourseClient, 'lessons'>,
+  principal: PrincipalQueryScope,
+  courseId: string,
+  groupId: string,
+) {
+  return useInfiniteQuery({
+    queryKey: courseQueryKeys.lessonArchive(principal, courseId, groupId),
+    initialPageParam: null as LessonCursor | null,
+    queryFn: ({ pageParam, signal }) =>
+      client.lessons(courseId, {
+        groupId,
+        ...(pageParam === null ? {} : { cursor: pageParam }),
+        signal,
+      }),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
   })
 }
 

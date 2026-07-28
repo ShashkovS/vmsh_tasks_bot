@@ -357,6 +357,8 @@ export const courseQueryKeys = {
       'pages',
       cursor === null ? 'first' : lessonCursorSchema.parse(cursor),
     ] as const,
+  lessonArchive: (principal: PrincipalQueryScope, courseId: string, groupId: string) =>
+    [...courseQueryKeys.group(principal, courseId, groupId), 'lessons', 'archive'] as const,
   lesson: (
     principal: PrincipalQueryScope,
     courseId: string,

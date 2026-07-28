@@ -144,8 +144,15 @@ describe('Phase-1 course access contracts', () => {
       'group-fixture-alpha-one',
       'group-lesson-fixture-42-alpha-one',
     )
+    const archiveKey = courseQueryKeys.lessonArchive(
+      principal,
+      'course-fixture-alpha',
+      'group-fixture-alpha-one',
+    )
 
     expect(pageKey).not.toEqual(lessonKey)
+    expect(archiveKey).not.toEqual(pageKey)
+    expect(archiveKey).not.toEqual(lessonKey)
     expect(() =>
       courseQueryKeys.lessons(
         principal,

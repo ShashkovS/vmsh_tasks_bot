@@ -1,17 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
 
-import { StudentTasksPage } from '../pages'
-
-const searchSchema = z.object({
-  course: z.string().trim().min(1).optional(),
-  group: z.string().trim().min(1).optional(),
-  view: z.enum(['list', 'sheet']).catch('list'),
-  lesson: z.coerce.number().int().positive().optional(),
-  topic: z.string().trim().min(1).optional(),
-})
+import { StudentTasksArchivePage } from '../student-tasks-page'
+import { studentTasksSearchSchema } from '../student-tasks-view'
 
 export const Route = createFileRoute('/tasks/')({
-  validateSearch: searchSchema,
-  component: StudentTasksPage,
+  validateSearch: studentTasksSearchSchema,
+  component: StudentTasksRoute,
 })
+
+function StudentTasksRoute() {
+  return <StudentTasksArchivePage search={Route.useSearch()} />
+}
