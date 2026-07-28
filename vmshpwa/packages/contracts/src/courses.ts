@@ -135,6 +135,127 @@ export const studentCourseAccessResponseSchema = z
   })
 export type StudentCourseAccessResponse = z.infer<typeof studentCourseAccessResponseSchema>
 
+export const lessonCursorSchema = z
+  .string()
+  .regex(/^[1-9][0-9]{0,8}$/, 'Lesson cursor must be a positive lesson number')
+export type LessonCursor = z.infer<typeof lessonCursorSchema>
+
+export const studentLessonMaterialSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('unavailable') }).strip(),
+  z
+    .object({
+      status: z.literal('published'),
+      revisionId: publicIdSchema,
+      publishedAt: z.iso.datetime(),
+      publicationVersion: versionSchema,
+    })
+    .strip(),
+])
+export type StudentLessonMaterial = z.infer<typeof studentLessonMaterialSchema>
+
+export const studentLessonWindowSchema = z
+  .object({
+    windowId: publicIdSchema,
+    opensAt: z.iso.datetime().nullable(),
+    submissionClosesAt: z.iso.datetime(),
+    hintScheduledAt: z.iso.datetime().nullable(),
+    solutionScheduledAt: z.iso.datetime().nullable(),
+    timezone: z.string().trim().min(1).max(100),
+    source: z.enum(['native', 'legacy_schedule', 'manual_backfill']),
+    version: versionSchema,
+  })
+  .strip()
+  .superRefine((window, context) => {
+    if (window.opensAt !== null && window.opensAt >= window.submissionClosesAt) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Lesson opening must precede the submission cutoff',
+        path: ['opensAt'],
+      })
+    }
+  })
+export type StudentLessonWindow = z.infer<typeof studentLessonWindowSchema>
+
+export const studentLessonSummarySchema = z
+  .object({
+    groupLessonId: publicIdSchema,
+    courseLessonId: publicIdSchema,
+    courseId: publicIdSchema,
+    groupId: publicIdSchema,
+    lessonNumber: z.number().int().positive(),
+    title: displayTextSchema.nullable(),
+    cycleAnchorDate: z.iso.date(),
+    businessTimezone: z.string().trim().min(1).max(100),
+    version: versionSchema,
+    problemCount: z.number().int().nonnegative(),
+    window: studentLessonWindowSchema.nullable(),
+    materials: z
+      .object({
+        condition: studentLessonMaterialSchema,
+        hint: studentLessonMaterialSchema,
+        solution: studentLessonMaterialSchema,
+      })
+      .strip(),
+  })
+  .strip()
+  .superRefine((lesson, context) => {
+    if (lesson.materials.condition.status !== 'published') {
+      context.addIssue({
+        code: 'custom',
+        message: 'A Student-visible lesson must have a published condition',
+        path: ['materials', 'condition'],
+      })
+    }
+    if (lesson.window !== null && lesson.window.timezone !== lesson.businessTimezone) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Lesson window timezone must match the group lesson timezone',
+        path: ['window', 'timezone'],
+      })
+    }
+  })
+export type StudentLessonSummary = z.infer<typeof studentLessonSummarySchema>
+
+export const studentLessonListResponseSchema = z
+  .object({
+    courseId: publicIdSchema,
+    groupId: publicIdSchema,
+    activeGroupId: publicIdSchema,
+    lessons: z.array(studentLessonSummarySchema),
+    nextCursor: lessonCursorSchema.nullable(),
+  })
+  .strip()
+  .superRefine((response, context) => {
+    const groupLessonIds = new Set<string>()
+    let previousLessonNumber: number | null = null
+    response.lessons.forEach((lesson, index) => {
+      if (lesson.courseId !== response.courseId || lesson.groupId !== response.groupId) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Every lesson must belong to the response course and group',
+          path: ['lessons', index],
+        })
+      }
+      if (groupLessonIds.has(lesson.groupLessonId)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Group lesson IDs must be unique',
+          path: ['lessons', index, 'groupLessonId'],
+        })
+      }
+      if (previousLessonNumber !== null && lesson.lessonNumber >= previousLessonNumber) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Lessons must use stable reverse lesson-number order',
+          path: ['lessons', index, 'lessonNumber'],
+        })
+      }
+      groupLessonIds.add(lesson.groupLessonId)
+      previousLessonNumber = lesson.lessonNumber
+    })
+  })
+export type StudentLessonListResponse = z.infer<typeof studentLessonListResponseSchema>
+
 export const courseQueryKeys = {
   all: (principal: PrincipalQueryScope) => [...principalQueryKey(principal), 'courses'] as const,
   list: (principal: PrincipalQueryScope) => [...courseQueryKeys.all(principal), 'list'] as const,
@@ -148,6 +269,29 @@ export const courseQueryKeys = {
       'groups',
       publicIdSchema.parse(groupId),
     ] as const,
+  lessons: (
+    principal: PrincipalQueryScope,
+    courseId: string,
+    groupId: string,
+    cursor: string | null = null,
+  ) =>
+    [
+      ...courseQueryKeys.group(principal, courseId, groupId),
+      'lessons',
+      'pages',
+      cursor === null ? 'first' : lessonCursorSchema.parse(cursor),
+    ] as const,
+  lesson: (
+    principal: PrincipalQueryScope,
+    courseId: string,
+    groupId: string,
+    groupLessonId: string,
+  ) =>
+    [
+      ...courseQueryKeys.group(principal, courseId, groupId),
+      'lessons',
+      publicIdSchema.parse(groupLessonId),
+    ] as const,
 } as const
 
 export const COURSE_CONTRACT_FIXTURE_VERSION = 1 as const
@@ -160,6 +304,14 @@ export const courseContractFixtureSchema = z
   })
   .strict()
 export type CourseContractFixture = z.infer<typeof courseContractFixtureSchema>
+
+export const studentLessonContractFixtureSchema = z
+  .object({
+    fixtureVersion: courseContractFixtureVersionSchema,
+    response: studentLessonListResponseSchema,
+  })
+  .strict()
+export type StudentLessonContractFixture = z.infer<typeof studentLessonContractFixtureSchema>
 
 export const courseInvalidFixtureTargetSchema = z.enum([
   'course',

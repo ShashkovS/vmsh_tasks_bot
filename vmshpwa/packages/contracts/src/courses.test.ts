@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import invalidCourseFixture from '../fixtures/courses/invalid.v1.json'
 import studentAccessFixture from '../fixtures/courses/student-access.v1.json'
+import studentLessonsFixture from '../fixtures/courses/student-lessons.v1.json'
 
 import {
   courseContractFixtureSchema,
@@ -11,6 +12,9 @@ import {
   courseQueryKeys,
   courseSummarySchema,
   groupSummarySchema,
+  studentLessonContractFixtureSchema,
+  studentLessonListResponseSchema,
+  studentLessonSummarySchema,
   studentCourseAccessResponseSchema,
   type CourseInvalidFixtureTarget,
 } from './courses'
@@ -92,6 +96,61 @@ describe('Phase-1 course access contracts', () => {
     ])
     expect(courseQueryKeys.list(principal)).not.toEqual(courseQueryKeys.list(otherPrincipal))
     expect(() => courseQueryKeys.detail(principal, '../unsafe-course')).toThrow()
+  })
+
+  it('validates a reverse-ordered lesson page with independent cutoff and solution times', () => {
+    const fixture = studentLessonContractFixtureSchema.parse(studentLessonsFixture)
+    const current = fixture.response.lessons[0]
+
+    expect(current?.lessonNumber).toBe(42)
+    expect(current?.window?.submissionClosesAt).toBe('2026-09-26T17:50:00.000000Z')
+    expect(current?.window?.solutionScheduledAt).toBe('2026-09-26T18:00:00.000000Z')
+    expect(current?.materials.solution.status).toBe('unavailable')
+    expect(fixture.response.lessons.map((lesson) => lesson.lessonNumber)).toEqual([42, 41])
+  })
+
+  it('rejects hidden condition projections and inconsistent lesson pages', () => {
+    const lesson =
+      studentLessonContractFixtureSchema.parse(studentLessonsFixture).response.lessons[0]
+    if (!lesson) throw new Error('Expected a fixture lesson')
+
+    expect(
+      studentLessonSummarySchema.safeParse({
+        ...lesson,
+        materials: { ...lesson.materials, condition: { status: 'unavailable' } },
+      }).success,
+    ).toBe(false)
+    expect(
+      studentLessonListResponseSchema.safeParse({
+        ...studentLessonsFixture.response,
+        lessons: [...studentLessonsFixture.response.lessons].reverse(),
+      }).success,
+    ).toBe(false)
+  })
+
+  it('separates lesson pages from exact lesson query keys', () => {
+    const principal = { audience: 'student' as const, accountId: 'account-student-fixture' }
+    const pageKey = courseQueryKeys.lessons(
+      principal,
+      'course-fixture-alpha',
+      'group-fixture-alpha-one',
+    )
+    const lessonKey = courseQueryKeys.lesson(
+      principal,
+      'course-fixture-alpha',
+      'group-fixture-alpha-one',
+      'group-lesson-fixture-42-alpha-one',
+    )
+
+    expect(pageKey).not.toEqual(lessonKey)
+    expect(() =>
+      courseQueryKeys.lessons(
+        principal,
+        'course-fixture-alpha',
+        'group-fixture-alpha-one',
+        '../unsafe-cursor',
+      ),
+    ).toThrow()
   })
 
   it('rejects unknown fixture versions', () => {

@@ -9,18 +9,29 @@ contract: ``vmshpwa/dev/development-plan/07-phase-3-student-reading.md``.
 from __future__ import annotations
 
 import re
+from datetime import UTC, datetime
 
 from aiohttp import web
 
 from apps.pwa_api.auth_service import AuthenticatedSession
+from apps.pwa_api.content_routes import PWA_CONTENT_REPOSITORY
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.auth import CourseEnrollmentRecord, CourseGroupAccessRecord
+from db_methods.pwa.content import (
+    ContentNotFound,
+    ContentRepositoryError,
+    StudentLessonMaterialRecord,
+    StudentLessonSummaryRecord,
+)
 from models.pwa.auth import AuthAudience
 
 
 course_routes = web.RouteTableDef()
 _CANONICAL_TOKEN = re.compile(r"^[a-z0-9](?:[a-z0-9._-]{0,62}[a-z0-9])?$")
+_PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
+_LESSON_CURSOR = re.compile(r"^[1-9][0-9]{0,8}$")
+_LESSON_PAGE_SIZE = 50
 
 
 def _student_session(request: web.Request) -> AuthenticatedSession:
@@ -93,6 +104,112 @@ def course_enrollment_payload(record: CourseEnrollmentRecord) -> dict[str, objec
     }
 
 
+def _course_enrollment(
+    authenticated: AuthenticatedSession, course_public_id: str
+) -> CourseEnrollmentRecord:
+    matches = [
+        record
+        for record in authenticated.course_enrollments
+        if record.course_public_id == course_public_id
+    ]
+    if len(matches) != 1:
+        # Do not disclose whether an ungranted course exists.
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Курс недоступен этому школьнику",
+        )
+    return matches[0]
+
+
+def _allowed_group(
+    enrollment: CourseEnrollmentRecord, group_public_id: str
+) -> CourseGroupAccessRecord:
+    matches = [
+        group
+        for group in enrollment.allowed_groups
+        if group.group_public_id == group_public_id
+    ]
+    if len(matches) != 1:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Группа недоступна этому школьнику",
+        )
+    return matches[0]
+
+
+def _repository(request: web.Request):
+    repository = request.app.get(PWA_CONTENT_REPOSITORY)
+    if repository is None:
+        raise PwaApiError(
+            status=503,
+            code="service_unavailable",
+            message="Материалы занятий временно недоступны",
+        )
+    return repository
+
+
+def _iso(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ContentRepositoryError("stored lesson timestamp is naive")
+    return (
+        value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    )
+
+
+def _material_payload(
+    material: StudentLessonMaterialRecord | None,
+) -> dict[str, object]:
+    if material is None:
+        return {"status": "unavailable"}
+    return {
+        "status": "published",
+        "revisionId": material.revision_public_id,
+        "publishedAt": _iso(material.published_at),
+        "publicationVersion": material.publication_version,
+    }
+
+
+def _student_lesson_payload(
+    lesson: StudentLessonSummaryRecord,
+) -> dict[str, object]:
+    window = lesson.window
+    return {
+        "groupLessonId": lesson.group_lesson_public_id,
+        "courseLessonId": lesson.course_lesson_public_id,
+        "courseId": lesson.course_public_id,
+        "groupId": lesson.group_public_id,
+        "lessonNumber": lesson.lesson_number,
+        "title": lesson.title,
+        "cycleAnchorDate": lesson.cycle_anchor_date.isoformat(),
+        "businessTimezone": lesson.business_timezone,
+        "version": lesson.version,
+        "problemCount": lesson.problem_count,
+        "window": (
+            None
+            if window is None
+            else {
+                "windowId": window.public_id,
+                "opensAt": _iso(window.opens_at),
+                "submissionClosesAt": _iso(window.submission_closes_at),
+                "hintScheduledAt": _iso(window.hint_scheduled_at),
+                "solutionScheduledAt": _iso(window.solution_scheduled_at),
+                "timezone": window.timezone,
+                "source": window.source,
+                "version": window.version,
+            }
+        ),
+        "materials": {
+            "condition": _material_payload(lesson.condition),
+            "hint": _material_payload(lesson.hint),
+            "solution": _material_payload(lesson.solution),
+        },
+    }
+
+
 @course_routes.get("/student/api/v1/courses")
 async def list_student_courses(request: web.Request) -> web.Response:
     _reject_query(request)
@@ -116,20 +233,95 @@ async def list_student_courses(request: web.Request) -> web.Response:
 async def get_student_course_enrollment(request: web.Request) -> web.Response:
     _reject_query(request)
     authenticated = _student_session(request)
-    course_public_id = request.match_info["course_id"]
-    matches = [
-        record
-        for record in authenticated.course_enrollments
-        if record.course_public_id == course_public_id
-    ]
-    if len(matches) != 1:
-        # Do not disclose whether an ungranted course exists.
+    enrollment = _course_enrollment(authenticated, request.match_info["course_id"])
+    return web.json_response(course_enrollment_payload(enrollment))
+
+
+@course_routes.get("/student/api/v1/courses/{course_id}/lessons")
+async def list_student_lessons(request: web.Request) -> web.Response:
+    unexpected = set(request.query) - {"group", "cursor"}
+    duplicate = any(
+        len(request.query.getall(field, [])) > 1 for field in ("group", "cursor")
+    )
+    if unexpected or duplicate:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Параметры списка занятий некорректны",
+        )
+    authenticated = _student_session(request)
+    enrollment = _course_enrollment(authenticated, request.match_info["course_id"])
+    requested_group_id = request.query.get("group", enrollment.active_group_public_id)
+    group = _allowed_group(enrollment, requested_group_id)
+    cursor_value = request.query.get("cursor")
+    if cursor_value is not None and _LESSON_CURSOR.fullmatch(cursor_value) is None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Курсор списка занятий некорректен",
+        )
+    lessons = await _repository(request).list_student_lessons(
+        course_public_id=enrollment.course_public_id,
+        group_public_id=group.group_public_id,
+        before_lesson_number=(None if cursor_value is None else int(cursor_value)),
+        limit=_LESSON_PAGE_SIZE + 1,
+    )
+    page = lessons[:_LESSON_PAGE_SIZE]
+    next_cursor = (
+        None if len(lessons) <= _LESSON_PAGE_SIZE else str(page[-1].lesson_number)
+    )
+    return web.json_response(
+        {
+            "courseId": enrollment.course_public_id,
+            "groupId": group.group_public_id,
+            "activeGroupId": enrollment.active_group_public_id,
+            "lessons": [_student_lesson_payload(lesson) for lesson in page],
+            "nextCursor": next_cursor,
+        }
+    )
+
+
+@course_routes.get("/student/api/v1/courses/{course_id}/lessons/{group_lesson_id}")
+async def get_student_lesson(request: web.Request) -> web.Response:
+    _reject_query(request)
+    authenticated = _student_session(request)
+    enrollment = _course_enrollment(authenticated, request.match_info["course_id"])
+    repository = _repository(request)
+    group_lesson_public_id = request.match_info["group_lesson_id"]
+    if _PUBLIC_ID.fullmatch(group_lesson_public_id) is None:
+        raise PwaApiError(
+            status=404,
+            code="not_found",
+            message="Занятие не найдено",
+        )
+    try:
+        scope = await repository.get_group_lesson_scope(group_lesson_public_id)
+    except ContentNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="not_found",
+            message="Занятие не найдено",
+        ) from error
+    if scope.course_public_id != enrollment.course_public_id:
         raise PwaApiError(
             status=403,
             code="forbidden",
-            message="Курс недоступен этому школьнику",
+            message="Занятие недоступно этому школьнику",
         )
-    return web.json_response(course_enrollment_payload(matches[0]))
+    group = _allowed_group(enrollment, scope.group_public_id)
+    try:
+        lesson = await repository.get_student_lesson(
+            course_public_id=enrollment.course_public_id,
+            group_public_id=group.group_public_id,
+            group_lesson_public_id=group_lesson_public_id,
+        )
+    except ContentNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="not_found",
+            message="Опубликованное занятие не найдено",
+        ) from error
+    return web.json_response(_student_lesson_payload(lesson))
 
 
 __all__ = ["course_enrollment_payload", "course_routes"]

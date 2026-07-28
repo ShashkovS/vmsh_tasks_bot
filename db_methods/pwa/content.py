@@ -320,6 +320,41 @@ class PublishedContentRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class StudentLessonMaterialRecord:
+    """One currently published, browser-readable Student material."""
+
+    revision_public_id: str
+    published_at: datetime
+    publication_version: int
+
+
+@dataclass(frozen=True, slots=True)
+class StudentLessonSummaryRecord:
+    """Bounded course/group lesson projection for Student navigation.
+
+    ``group_lesson_public_id`` is deliberately the routable lesson identity:
+    schedule and content belong to a concrete group lesson even when several
+    groups share one course lesson number. See Phase 3 in
+    ``vmshpwa/dev/development-plan/07-phase-3-student-reading.md``.
+    """
+
+    group_lesson_public_id: str
+    course_lesson_public_id: str
+    course_public_id: str
+    group_public_id: str
+    lesson_number: int
+    title: str | None
+    cycle_anchor_date: date
+    business_timezone: str
+    version: int
+    window: LessonWindowRecord | None
+    condition: StudentLessonMaterialRecord
+    hint: StudentLessonMaterialRecord | None
+    solution: StudentLessonMaterialRecord | None
+    problem_count: int
+
+
+@dataclass(frozen=True, slots=True)
 class GroupLessonContentHistory:
     """Staff read model needed to resume publication work after a reload."""
 
@@ -1134,6 +1169,65 @@ def _publication(row: Mapping[str, object]) -> PublicationRecord:
     )
 
 
+def _student_lesson_material(
+    row: Mapping[str, object], prefix: str
+) -> StudentLessonMaterialRecord | None:
+    revision_public_id = row[f"{prefix}_revision_public_id"]
+    if revision_public_id is None:
+        return None
+    published_at = _optional_timestamp(row[f"{prefix}_published_at"])
+    publication_version = row[f"{prefix}_publication_version"]
+    if published_at is None or publication_version is None:
+        raise ContentRepositoryError("published lesson material is incomplete")
+    return StudentLessonMaterialRecord(
+        revision_public_id=str(revision_public_id),
+        published_at=published_at,
+        publication_version=int(publication_version),
+    )
+
+
+def _student_lesson_summary(
+    row: Mapping[str, object],
+) -> StudentLessonSummaryRecord:
+    condition = _student_lesson_material(row, "condition")
+    if condition is None:  # pragma: no cover - inner-join invariant
+        raise ContentRepositoryError("student lesson has no published condition")
+    window = None
+    if row["window_public_id"] is not None:
+        window = LessonWindowRecord(
+            id=int(row["window_id"]),
+            public_id=str(row["window_public_id"]),
+            group_lesson_id=int(row["group_lesson_id"]),
+            opens_at=_optional_timestamp(row["window_opens_at"]),
+            submission_closes_at=parse_utc_timestamp(
+                str(row["window_submission_closes_at"])
+            ),
+            hint_scheduled_at=_optional_timestamp(row["window_hint_scheduled_at"]),
+            solution_scheduled_at=_optional_timestamp(
+                row["window_solution_scheduled_at"]
+            ),
+            timezone=str(row["window_timezone"]),
+            source=str(row["window_source"]),
+            version=int(row["window_version"]),
+        )
+    return StudentLessonSummaryRecord(
+        group_lesson_public_id=str(row["group_lesson_public_id"]),
+        course_lesson_public_id=str(row["course_lesson_public_id"]),
+        course_public_id=str(row["course_public_id"]),
+        group_public_id=str(row["group_public_id"]),
+        lesson_number=int(row["lesson_number"]),
+        title=None if row["lesson_title"] is None else str(row["lesson_title"]),
+        cycle_anchor_date=date.fromisoformat(str(row["cycle_anchor_date"])),
+        business_timezone=str(row["business_timezone"]),
+        version=int(row["group_lesson_version"]),
+        window=window,
+        condition=condition,
+        hint=_student_lesson_material(row, "hint"),
+        solution=_student_lesson_material(row, "solution"),
+        problem_count=int(row["problem_count"]),
+    )
+
+
 def _media_asset(row: Mapping[str, object]) -> MediaAssetRecord:
     return MediaAssetRecord(
         id=int(row["id"]),
@@ -1169,6 +1263,79 @@ _GROUP_LESSON_SCOPE_SELECT = (
     "JOIN groups AS group_record "
     "  ON group_record.course_id = group_lesson.course_id "
     " AND group_record.group_id = group_lesson.group_id "
+)
+
+
+_STUDENT_LESSON_SELECT = (
+    "SELECT group_lesson.id AS group_lesson_id, "
+    "group_lesson.public_id AS group_lesson_public_id, "
+    "course_lesson.public_id AS course_lesson_public_id, "
+    "course.public_id AS course_public_id, "
+    "group_record.public_id AS group_public_id, "
+    "course_lesson.lesson_number, course_lesson.title AS lesson_title, "
+    "group_lesson.cycle_anchor_date, group_lesson.business_timezone, "
+    "group_lesson.version AS group_lesson_version, "
+    "lesson_window.id AS window_id, lesson_window.public_id AS window_public_id, "
+    "lesson_window.opens_at AS window_opens_at, "
+    "lesson_window.submission_closes_at AS window_submission_closes_at, "
+    "lesson_window.hint_scheduled_at AS window_hint_scheduled_at, "
+    "lesson_window.solution_scheduled_at AS window_solution_scheduled_at, "
+    "lesson_window.timezone AS window_timezone, "
+    "lesson_window.source AS window_source, "
+    "lesson_window.version AS window_version, "
+    "condition_revision.public_id AS condition_revision_public_id, "
+    "condition_publication.published_at AS condition_published_at, "
+    "condition_publication.version AS condition_publication_version, "
+    "hint_revision.public_id AS hint_revision_public_id, "
+    "hint_publication.published_at AS hint_published_at, "
+    "hint_publication.version AS hint_publication_version, "
+    "solution_revision.public_id AS solution_revision_public_id, "
+    "solution_publication.published_at AS solution_published_at, "
+    "solution_publication.version AS solution_publication_version, "
+    "(SELECT count(*) FROM problem_revisions AS problem_revision "
+    " WHERE problem_revision.content_revision_id = condition_publication.revision_id) "
+    "AS problem_count "
+    "FROM group_lessons AS group_lesson "
+    "JOIN course_lessons AS course_lesson "
+    "  ON course_lesson.id = group_lesson.course_lesson_id "
+    "JOIN courses AS course ON course.id = group_lesson.course_id "
+    "JOIN groups AS group_record "
+    "  ON group_record.course_id = group_lesson.course_id "
+    " AND group_record.group_id = group_lesson.group_id "
+    "JOIN lesson_publications AS condition_publication "
+    "  ON condition_publication.group_lesson_id = group_lesson.id "
+    " AND condition_publication.kind = 'condition' "
+    " AND condition_publication.state = 'published' "
+    " AND EXISTS (SELECT 1 FROM content_derivatives AS condition_derivative "
+    "             WHERE condition_derivative.revision_id = condition_publication.revision_id "
+    "               AND condition_derivative.kind = 'web_ast' "
+    "               AND condition_derivative.invalidated_at IS NULL) "
+    "JOIN content_revisions AS condition_revision "
+    "  ON condition_revision.id = condition_publication.revision_id "
+    " AND condition_revision.status = 'ready' "
+    "LEFT JOIN lesson_windows AS lesson_window "
+    "  ON lesson_window.group_lesson_id = group_lesson.id "
+    "LEFT JOIN lesson_publications AS hint_publication "
+    "  ON hint_publication.group_lesson_id = group_lesson.id "
+    " AND hint_publication.kind = 'hint' AND hint_publication.state = 'published' "
+    " AND EXISTS (SELECT 1 FROM content_derivatives AS hint_derivative "
+    "             WHERE hint_derivative.revision_id = hint_publication.revision_id "
+    "               AND hint_derivative.kind = 'web_ast' "
+    "               AND hint_derivative.invalidated_at IS NULL) "
+    "LEFT JOIN content_revisions AS hint_revision "
+    "  ON hint_revision.id = hint_publication.revision_id "
+    " AND hint_revision.status = 'ready' "
+    "LEFT JOIN lesson_publications AS solution_publication "
+    "  ON solution_publication.group_lesson_id = group_lesson.id "
+    " AND solution_publication.kind = 'solution' "
+    " AND solution_publication.state = 'published' "
+    " AND EXISTS (SELECT 1 FROM content_derivatives AS solution_derivative "
+    "             WHERE solution_derivative.revision_id = solution_publication.revision_id "
+    "               AND solution_derivative.kind = 'web_ast' "
+    "               AND solution_derivative.invalidated_at IS NULL) "
+    "LEFT JOIN content_revisions AS solution_revision "
+    "  ON solution_revision.id = solution_publication.revision_id "
+    " AND solution_revision.status = 'ready' "
 )
 
 
@@ -1302,6 +1469,77 @@ class PwaContentRepository:
             if row is None:
                 raise ContentNotFound("group lesson does not exist")
             return _group_lesson_content_scope(row)
+
+        return await self._factory.run_read_async(read)
+
+    async def list_student_lessons(
+        self,
+        *,
+        course_public_id: str,
+        group_public_id: str,
+        before_lesson_number: int | None = None,
+        limit: int = 50,
+    ) -> tuple[StudentLessonSummaryRecord, ...]:
+        """Return one bounded, query-complete Student lesson page.
+
+        The condition publication is an inner join, so drafts, scheduled-only
+        conditions, hidden conditions and broken browser derivatives never
+        reveal a lesson. All optional material/window state is projected by the
+        same SQL statement; callers do not need per-lesson reads.
+        """
+
+        _require_public_id(course_public_id)
+        _require_public_id(group_public_id)
+        if before_lesson_number is not None and before_lesson_number < 1:
+            raise ContentInvariantError("lesson cursor must be positive")
+        if limit < 1 or limit > 100:
+            raise ContentInvariantError("lesson page limit must be between 1 and 100")
+
+        def read(connection):
+            where = (
+                "WHERE course.public_id = ? AND group_record.public_id = ? "
+                "AND group_lesson.status = 'active' "
+            )
+            parameters: list[object] = [course_public_id, group_public_id]
+            if before_lesson_number is not None:
+                where += "AND course_lesson.lesson_number < ? "
+                parameters.append(before_lesson_number)
+            parameters.append(limit)
+            rows = connection.execute(
+                _STUDENT_LESSON_SELECT
+                + where
+                + "ORDER BY course_lesson.lesson_number DESC, group_lesson.id DESC "
+                + "LIMIT ?",
+                parameters,
+            ).fetchall()
+            return tuple(_student_lesson_summary(row) for row in rows)
+
+        return await self._factory.run_read_async(read)
+
+    async def get_student_lesson(
+        self,
+        *,
+        course_public_id: str,
+        group_public_id: str,
+        group_lesson_public_id: str,
+    ) -> StudentLessonSummaryRecord:
+        """Read one published group lesson inside an explicit allowed scope."""
+
+        _require_public_id(course_public_id)
+        _require_public_id(group_public_id)
+        _require_public_id(group_lesson_public_id)
+
+        def read(connection):
+            row = connection.execute(
+                _STUDENT_LESSON_SELECT
+                + "WHERE course.public_id = ? AND group_record.public_id = ? "
+                + "AND group_lesson.public_id = ? "
+                + "AND group_lesson.status = 'active' LIMIT 1",
+                (course_public_id, group_public_id, group_lesson_public_id),
+            ).fetchone()
+            if row is None:
+                raise ContentNotFound("published student lesson does not exist")
+            return _student_lesson_summary(row)
 
         return await self._factory.run_read_async(read)
 

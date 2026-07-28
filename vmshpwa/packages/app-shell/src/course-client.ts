@@ -4,13 +4,19 @@ import {
   apiErrorSchema,
   courseEnrollmentSchema,
   courseQueryKeys,
+  lessonCursorSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
+  studentLessonListResponseSchema,
+  studentLessonSummarySchema,
   studentCourseAccessResponseSchema,
   type CourseEnrollment,
+  type LessonCursor,
   type PrincipalQueryScope,
   type RuntimeConfig,
   type StudentCourseAccessResponse,
+  type StudentLessonListResponse,
+  type StudentLessonSummary,
 } from '@vmsh/contracts'
 
 /**
@@ -23,6 +29,11 @@ export interface CourseRequestOptions {
   signal?: AbortSignal
 }
 
+export interface StudentLessonListOptions extends CourseRequestOptions {
+  groupId?: string
+  cursor?: LessonCursor
+}
+
 export interface StudentCourseClientOptions {
   fetchImplementation?: typeof globalThis.fetch
   refreshSession?: () => Promise<unknown>
@@ -32,6 +43,12 @@ export interface StudentCourseClient {
   readonly runtime: RuntimeConfig
   list(options?: CourseRequestOptions): Promise<StudentCourseAccessResponse>
   enrollment(courseId: string, options?: CourseRequestOptions): Promise<CourseEnrollment>
+  lessons(courseId: string, options?: StudentLessonListOptions): Promise<StudentLessonListResponse>
+  lesson(
+    courseId: string,
+    groupLessonId: string,
+    options?: CourseRequestOptions,
+  ): Promise<StudentLessonSummary>
 }
 
 export class CourseProtocolError extends Error {
@@ -81,6 +98,40 @@ class BrowserStudentCourseClient implements StudentCourseClient {
       `/courses/${encodeURIComponent(parsedCourseId)}/enrollment`,
       options,
       courseEnrollmentSchema,
+    )
+  }
+
+  async lessons(
+    courseId: string,
+    options: StudentLessonListOptions = {},
+  ): Promise<StudentLessonListResponse> {
+    const parsedCourseId = publicIdSchema.parse(courseId)
+    const parameters = new URLSearchParams()
+    if (options.groupId !== undefined) {
+      parameters.set('group', publicIdSchema.parse(options.groupId))
+    }
+    if (options.cursor !== undefined) {
+      parameters.set('cursor', lessonCursorSchema.parse(options.cursor))
+    }
+    const query = parameters.size === 0 ? '' : `?${parameters.toString()}`
+    return this.#request(
+      `/courses/${encodeURIComponent(parsedCourseId)}/lessons${query}`,
+      options,
+      studentLessonListResponseSchema,
+    )
+  }
+
+  async lesson(
+    courseId: string,
+    groupLessonId: string,
+    options: CourseRequestOptions = {},
+  ): Promise<StudentLessonSummary> {
+    const parsedCourseId = publicIdSchema.parse(courseId)
+    const parsedLessonId = publicIdSchema.parse(groupLessonId)
+    return this.#request(
+      `/courses/${encodeURIComponent(parsedCourseId)}/lessons/${encodeURIComponent(parsedLessonId)}`,
+      options,
+      studentLessonSummarySchema,
     )
   }
 
@@ -171,5 +222,36 @@ export function useStudentCourseEnrollmentQuery(
   return useQuery({
     queryKey: courseQueryKeys.enrollment(principal, courseId),
     queryFn: ({ signal }) => client.enrollment(courseId, { signal }),
+  })
+}
+
+export function useStudentLessonsQuery(
+  client: Pick<StudentCourseClient, 'lessons'>,
+  principal: PrincipalQueryScope,
+  courseId: string,
+  groupId: string,
+  cursor: LessonCursor | null = null,
+) {
+  return useQuery({
+    queryKey: courseQueryKeys.lessons(principal, courseId, groupId, cursor),
+    queryFn: ({ signal }) =>
+      client.lessons(courseId, {
+        groupId,
+        ...(cursor === null ? {} : { cursor }),
+        signal,
+      }),
+  })
+}
+
+export function useStudentLessonQuery(
+  client: Pick<StudentCourseClient, 'lesson'>,
+  principal: PrincipalQueryScope,
+  courseId: string,
+  groupId: string,
+  groupLessonId: string,
+) {
+  return useQuery({
+    queryKey: courseQueryKeys.lesson(principal, courseId, groupId, groupLessonId),
+    queryFn: ({ signal }) => client.lesson(courseId, groupLessonId, { signal }),
   })
 }

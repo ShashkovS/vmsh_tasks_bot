@@ -2520,3 +2520,146 @@ async def test_student_course_reads_reject_ambiguous_query_parameters(
 
     assert response.status == 422
     assert (await response.json())["error"]["code"] == "validation_error"
+
+
+async def test_student_lesson_list_and_detail_expose_only_published_condition(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    list_url = "/student/api/v1/courses/course-content-http/lessons"
+    initially_empty = await fixture.client.get(
+        list_url,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert initially_empty.status == 200, await initially_empty.text()
+    assert (await initially_empty.json())["lessons"] == []
+
+    revision, _ = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="student-read/condition.tex",
+        source="\\задача Видимое условие \\кзадача",
+    )
+    window = await _create_lesson_window(fixture, group_lesson=fixture.group_lesson_a)
+    assert window.status == 201, await window.text()
+    publication = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=revision["revisionId"],
+    )
+    assert publication.status == 201, await publication.text()
+
+    listed = await fixture.client.get(
+        list_url,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert listed.status == 200, await listed.text()
+    payload = await listed.json()
+    assert payload["courseId"] == "course-content-http"
+    assert payload["groupId"] == "group-content-http-a"
+    assert payload["activeGroupId"] == "group-content-http-a"
+    assert payload["nextCursor"] is None
+    assert len(payload["lessons"]) == 1
+    lesson = payload["lessons"][0]
+    assert lesson == {
+        "groupLessonId": fixture.group_lesson_a,
+        "courseLessonId": "course-lesson-content-http",
+        "courseId": "course-content-http",
+        "groupId": "group-content-http-a",
+        "lessonNumber": 41,
+        "title": "Занятие 41",
+        "cycleAnchorDate": "2026-09-14",
+        "businessTimezone": "Europe/Moscow",
+        "version": 1,
+        "problemCount": 1,
+        "window": {
+            "windowId": (await window.json())["lessonWindowId"],
+            "opensAt": "2026-09-20T13:00:00.000000Z",
+            "submissionClosesAt": "2026-09-24T13:00:00.000000Z",
+            "hintScheduledAt": None,
+            "solutionScheduledAt": "2026-09-24T13:00:00.000000Z",
+            "timezone": "Europe/Moscow",
+            "source": "native",
+            "version": 1,
+        },
+        "materials": {
+            "condition": {
+                "status": "published",
+                "revisionId": revision["revisionId"],
+                "publishedAt": "2026-09-20T13:00:00.000000Z",
+                "publicationVersion": 1,
+            },
+            "hint": {"status": "unavailable"},
+            "solution": {"status": "unavailable"},
+        },
+    }
+    detailed = await fixture.client.get(
+        f"{list_url}/{fixture.group_lesson_a}",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert detailed.status == 200, await detailed.text()
+    assert await detailed.json() == lesson
+
+    publication_payload = await publication.json()
+    hidden = await fixture.client.post(
+        f"/staff/api/v1/publications/{publication_payload['publicationId']}/hide",
+        json={},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=publication.headers["ETag"]),
+    )
+    assert hidden.status == 200, await hidden.text()
+    after_hide = await fixture.client.get(
+        list_url,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert (await after_hide.json())["lessons"] == []
+    hidden_detail = await fixture.client.get(
+        f"{list_url}/{fixture.group_lesson_a}",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert hidden_detail.status == 404
+
+
+async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    base = "/student/api/v1/courses/course-content-http/lessons"
+    forbidden_group = await fixture.client.get(
+        f"{base}?group=group-content-http-b",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    malformed_cursor = await fixture.client.get(
+        f"{base}?cursor=0",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    duplicate_group = await fixture.client.get(
+        f"{base}?group=group-content-http-a&group=group-content-http-a",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    forbidden_detail = await fixture.client.get(
+        f"{base}/{fixture.group_lesson_b}",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    malformed_detail = await fixture.client.get(
+        f"{base}/INVALID-LESSON-ID",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+
+    assert forbidden_group.status == 403
+    assert malformed_cursor.status == 422
+    assert duplicate_group.status == 422
+    assert forbidden_detail.status == 403
+    assert malformed_detail.status == 404
