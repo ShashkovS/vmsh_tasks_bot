@@ -1,18 +1,19 @@
-# Phase 4A–4B — правила и атомарное хранение тестовых сдач
+# Phase 4A–4C — правила, хранение и Student API тестовых сдач
 
 Дата: 2026-07-28
 
-Revisions: `6409191`, `bd0487f`, `1d5df54`
+Revisions: `6409191`, `bd0487f`, `1d5df54`, `7793d0f`, `0475cd0`
 
 ## Проверяемый результат
 
 Каркас Phase 4 теперь содержит доменные правила всех исторических типов
-тестового ответа и атомарный SQLite repository. Этот инкремент не открывает
-HTTP endpoint и не считается завершением всего этапа.
+тестового ответа, атомарный SQLite repository и authenticated Student HTTP
+вертикаль. Инкремент ещё не включает production Student UI/outbox и не
+считается завершением всего этапа.
 
 Реализовано:
 
-- additive migration `0046.pwa_test_attempt_ledger.sql` с immutable попытками,
+- additive migration `0046.pwa_test_attempts_idempotency.sql` с immutable попытками,
   idempotency ledger и snapshot версии checker/config;
 - поддержка всех 23 значений legacy `ANS_TYPE`, включая точные правила
   `strip()` + `fullmatch`, несколько `cor_ans` через `;` и visible-label
@@ -34,6 +35,34 @@ HTTP endpoint и не считается завершением всего эт�
   `results`. Ошибка между вставками откатывает обе записи;
 - повторная тестовая сдача после правильного ответа разрешена, а попытки и
   rate limits остаются привязанными к исходному `problem_id`.
+
+## Wire и HTTP
+
+Strict Zod contract и versioned fixtures находятся в
+`vmshpwa/packages/contracts/src/submissions.ts` и
+`vmshpwa/packages/contracts/fixtures/submissions/`. Они фиксируют:
+
+- request `schemaVersion`, canonical UUID, исходный `displayAnswer` и UTC
+  `clientCreatedAt`;
+- согласованные `outcome`, `checkStatus`, nullable verdict/result version,
+  user-facing feedback и лимиты;
+- owner/problem-scoped query keys и безопасную reverse-chronological history;
+- отсутствие client-controlled `studentId`, правильного ответа, checker source
+  и внутренних SQLite ID.
+
+`apps/pwa_api/submission_routes.py` реализует:
+
+- `POST /student/api/v1/problems/{problemPublicId}/test-attempts`;
+- `GET /student/api/v1/problems/{problemPublicId}/test-attempts?cursor=`;
+- strict JSON/body/time/UUID validation и общий correlated error envelope;
+- revalidated cookie identity вместо identity из payload;
+- owner-scoped `problems/{problemId}/test-attempts` invalidation только после
+  нового commit. Exact replay не создаёт вторую invalidation;
+- историю до 50 строк на страницу. Пустая история требует текущего доступа,
+  но собственная старая работа остаётся видимой после отзыва group access.
+
+После будущего admin recheck история предпочитает authoritative attempt state
+и не соединяет его со stale feedback старого idempotency receipt.
 
 ## Границы authority и транзакции
 
@@ -57,16 +86,22 @@ condition revision с `web_ast` derivative и открытое `lesson_window`.
 
 ```text
 domain + repository focused suite
-62 PASS
+66 PASS
 
 wide answer/content/schema/SQLite regression
 142 PASS
 
-full pwa_tests (JUnit authority)
-1169 tests / 0 failures / 0 errors / 3 intentional skips
+repository + real aiohttp + app-factory regression
+91 PASS
 
-make pwa-test frontend unit
-35 files / 285 PASS
+contracts package
+6 files / 92 PASS; typecheck and ESLint PASS
+
+full pwa_tests (JUnit authority)
+1172 PASS / 3 intentional skips / 5 existing SymPy warnings
+
+full frontend unit
+36 files / 294 PASS
 
 Ruff format-check + Ruff check
 PASS
@@ -86,6 +121,12 @@ SQLite и доказывают:
 - полный rollback через synthetic SQLite trigger failure;
 - owner isolation: чужая задача не раскрывается и отвечает `404`.
 
+Real aiohttp test дополнительно проходит настоящий Staff upload → compile →
+matching → metadata → lesson window → publication, после чего Student делает
+submit/replay/mismatch/invalid-format/history. Проверены same-origin gate,
+отсутствие client identity, отсутствие checker secrets, точные row counts и
+Student-only realtime cursor.
+
 ## Изоляция
 
 Тесты этого инкремента не обращались к Telegram, Google, S3 или внешней сети,
@@ -94,7 +135,6 @@ SQLite и доказывают:
 
 ## Открытые границы Phase 4
 
-- нет Student HTTP contract, route и истории попыток;
 - нет frontend draft/outbox, optimistic/pending UI и восстановления после
   reload;
 - нет production page wiring и Storybook interaction для настоящего клиента;
