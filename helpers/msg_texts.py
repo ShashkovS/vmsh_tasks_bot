@@ -295,7 +295,10 @@ class Msgs:
     a_teachers_commands_updated = "Команды учителей обновлены"
     a_teachers_commands_task_created = "Создано задание обновления статусов"
     a_recheck_task_created = "Создано задание по перепроверке тестовой задачи"
-    a_recheck_summary = "Задача {problem} перепроверена. {oks} плюсов, {errs} минусов. Исправлено {changes} посылок"
+    a_recheck_summary = (
+        "Задача {problem} перепроверена. {oks} плюсов, {errs} минусов, "
+        "{skipped} без изменения. Исправлено {changes} посылок"
+    )
     a_all_students_awakened = "Все школьники переведены в режим сдачи задач"
     a_pluses_refreshed = "Все плюсики обновлены: {num_updated} обновлено, {not_updated} не обновлено, {errors_count} ошибок."
     a_pluses_errors = "Ошибки по: `{errors_joined}`"

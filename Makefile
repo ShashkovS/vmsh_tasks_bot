@@ -228,7 +228,7 @@ pwa-visual-update:
 	cd $(PWA_DIR) && CI=true pnpm e2e:visual:update
 
 telegram-history-test:
-	$(PWA_UV_ENV) VMSH_RUNTIME_PROFILE=telegram-history-test uv run pytest -q -n0 tests/test_handler_flows.py tests/test_admin_weekly_ops.py
+	$(PWA_UV_ENV) VMSH_RUNTIME_PROFILE=telegram-history-test uv run pytest -q -n0 tests/test_telegram_test_submission_policy.py tests/test_handler_flows.py tests/test_admin_weekly_ops.py
 
 .PHONY: pwa-nginx-check
 pwa-nginx-check:

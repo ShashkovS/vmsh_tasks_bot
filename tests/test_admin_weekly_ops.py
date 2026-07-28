@@ -96,6 +96,33 @@ async def test_problem_recheck_recomputes_test_verdicts(scenario_env):
     assert any(row["verdict"] == int(VERDICT.SOLVED) for row in rows)
 
 
+async def test_problem_recheck_leaves_results_unchanged_when_checker_is_broken(scenario_env):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    teacher = data.bind_chat(data.get_teacher(), 63002)
+    student = data.get_user("qwerty1")
+    problem = data.add_problem(
+        group_id="i27c",
+        lesson=1,
+        prob=21,
+        title="Broken checker",
+        prob_type=PROB_TYPE.TEST,
+        ans_type=99,
+        cor_ans_checker="def check(answer):\n    return missing_name(answer)",
+    )
+    db.result.insert(
+        student.id, problem.id, problem.lesson, None, int(VERDICT.SOLVED),
+        "179", int(RES_TYPE.TEST), None, group_id=problem.group_id,
+    )
+
+    await admin_handlers.recheck_problem_task(teacher.chat_id, problem)
+    await _drain(scenario_env)
+
+    rows = db.result.get_for_recheck_by_problem_id(problem.id)
+    assert [row["verdict"] for row in rows] == [int(VERDICT.SOLVED)]
+    assert "1 без изменения" in bot.sent_messages[-1].text
+
+
 async def test_broadcast_command_dispatches_to_expected_students(scenario_env):
     data = scenario_env["data"]
     bot = scenario_env["bot"]
