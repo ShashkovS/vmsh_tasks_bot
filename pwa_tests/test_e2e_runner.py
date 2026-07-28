@@ -52,6 +52,10 @@ def test_diagnostic_modes_keep_the_same_exclusive_build_boundary():
         ("pnpm", "build"),
         ("pnpm", "exec", "playwright", "test", "e2e/content-publication.spec.ts"),
     )
+    assert commands_for_mode("submissions") == (
+        ("pnpm", "build"),
+        ("pnpm", "exec", "playwright", "test", "e2e/test-submission.spec.ts"),
+    )
     assert commands_for_mode("realtime") == (
         ("pnpm", "build"),
         (

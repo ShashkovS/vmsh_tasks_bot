@@ -48,13 +48,18 @@ def _seed_owners(connection: sqlite3.Connection) -> None:
 def test_fixture_has_one_independent_target_per_browser():
     fixture = _load_fixture()
 
-    assert {target["project"] for target in fixture["targets"]} == {
-        "chromium",
-        "webkit",
-        "firefox",
-    }
-    assert len({target["lessonNumber"] for target in fixture["targets"]}) == 3
-    assert len({target["groupLessonPublicId"] for target in fixture["targets"]}) == 3
+    for key in ("targets", "submissionTargets"):
+        assert {target["project"] for target in fixture[key]} == {
+            "chromium",
+            "webkit",
+            "firefox",
+        }
+        assert len({target["lessonNumber"] for target in fixture[key]}) == 3
+        assert len({target["groupLessonPublicId"] for target in fixture[key]}) == 3
+
+    all_targets = [*fixture["targets"], *fixture["submissionTargets"]]
+    assert len({target["lessonNumber"] for target in all_targets}) == 6
+    assert len({target["groupLessonPublicId"] for target in all_targets}) == 6
 
 
 def test_fixture_rejects_duplicate_project():
@@ -62,6 +67,16 @@ def test_fixture_rejects_duplicate_project():
     fixture["targets"][1]["project"] = fixture["targets"][0]["project"]
 
     with pytest.raises(ValueError, match="every browser exactly once"):
+        _validate_fixture(fixture)
+
+
+def test_fixture_rejects_identity_reused_between_phase_targets():
+    fixture = _load_fixture()
+    fixture["submissionTargets"][0]["groupLessonPublicId"] = fixture["targets"][0][
+        "groupLessonPublicId"
+    ]
+
+    with pytest.raises(ValueError, match="non-empty and unique"):
         _validate_fixture(fixture)
 
 
@@ -74,13 +89,24 @@ def test_fixture_insert_is_atomic_and_idempotent(tmp_path):
     try:
         _seed_owners(connection)
         fixture = _load_fixture()
-        assert _insert_content_fixture(connection, fixture) == 3
+        assert _insert_content_fixture(connection, fixture) == 6
         assert _insert_content_fixture(connection, fixture) == 0
         assert (
-            connection.execute("SELECT count(*) FROM course_lessons").fetchone()[0] == 3
+            connection.execute("SELECT count(*) FROM course_lessons").fetchone()[0] == 6
         )
         assert (
-            connection.execute("SELECT count(*) FROM group_lessons").fetchone()[0] == 3
+            connection.execute("SELECT count(*) FROM group_lessons").fetchone()[0] == 6
+        )
+        assert (
+            connection.execute("SELECT count(*) FROM lesson_windows").fetchone()[0] == 3
+        )
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM lesson_windows AS window "
+                "JOIN group_lessons AS lesson ON lesson.id = window.group_lesson_id "
+                "WHERE lesson.public_id LIKE 'group-lesson-submission-e2e-%'"
+            ).fetchone()[0]
+            == 3
         )
         connection.commit()
     finally:

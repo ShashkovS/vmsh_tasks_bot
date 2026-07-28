@@ -224,6 +224,55 @@ async def test_gateway_preserves_browser_host_for_http_and_websocket(gateway_cli
     await socket.close()
 
 
+async def test_gateway_releases_upstream_when_offline_browser_drops_response(
+    monkeypatch,
+):
+    class UpstreamContent:
+        async def iter_any(self):
+            yield b"never forwarded"
+
+    class UpstreamResponse:
+        status = 201
+        reason = "Created"
+        headers = CIMultiDictProxy(CIMultiDict())
+        content = UpstreamContent()
+        released = False
+
+        def release(self) -> None:
+            self.released = True
+
+    upstream = UpstreamResponse()
+
+    class HttpClient:
+        async def request(self, *_args, **_kwargs):
+            return upstream
+
+    class AbortedDownstream:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        async def prepare(self, _request) -> None:
+            raise ConnectionResetError("browser switched offline")
+
+    monkeypatch.setattr(e2e_gateway.web, "StreamResponse", AbortedDownstream)
+    request = SimpleNamespace(
+        app={
+            e2e_gateway.API_ORIGIN: "http://127.0.0.1:8380",
+            e2e_gateway.HTTP_CLIENT: HttpClient(),
+        },
+        headers=CIMultiDictProxy(CIMultiDict()),
+        rel_url=SimpleNamespace(raw_path_qs="/student/api/v1/problems/p/test-attempts"),
+        match_info={},
+        method="POST",
+        can_read_body=False,
+    )
+
+    response = await e2e_gateway._proxy_upstream(request, force_no_store=True)
+
+    assert isinstance(response, AbortedDownstream)
+    assert upstream.released is True
+
+
 async def test_gateway_closes_upstream_when_downstream_upgrade_aborts(monkeypatch):
     class UpstreamSocket:
         protocol = None

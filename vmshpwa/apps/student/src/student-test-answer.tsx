@@ -318,7 +318,11 @@ export function StudentTestAnswer({ problemId }: { problemId: string }) {
         displayAnswer: answer,
       })
       setPendingItem(queued)
-      setSendState('queued')
+      // Do not claim that an answer is safely waiting for retry while its
+      // first network delivery still owns the outbox sending lease. The
+      // queued state is shown only after deliverNext persisted a retryable
+      // failure, so a reload cannot strand a just-created answer as sending.
+      setSendState('sending')
       const result = await outbox.deliverNext(online)
       if (result.state === 'idle' || result.item.id !== queued.id) {
         setSendState('queued')

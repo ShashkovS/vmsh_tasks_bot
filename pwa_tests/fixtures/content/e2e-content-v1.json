@@ -28,5 +28,28 @@
       "lessonNumber": 903,
       "title": "E2E Firefox"
     }
+  ],
+  "submissionTargets": [
+    {
+      "project": "chromium",
+      "courseLessonPublicId": "course-lesson-submission-e2e-chromium",
+      "groupLessonPublicId": "group-lesson-submission-e2e-chromium",
+      "lessonNumber": 911,
+      "title": "E2E сдача Chromium"
+    },
+    {
+      "project": "webkit",
+      "courseLessonPublicId": "course-lesson-submission-e2e-webkit",
+      "groupLessonPublicId": "group-lesson-submission-e2e-webkit",
+      "lessonNumber": 912,
+      "title": "E2E сдача WebKit"
+    },
+    {
+      "project": "firefox",
+      "courseLessonPublicId": "course-lesson-submission-e2e-firefox",
+      "groupLessonPublicId": "group-lesson-submission-e2e-firefox",
+      "lessonNumber": 913,
+      "title": "E2E сдача Firefox"
+    }
   ]
 }

@@ -243,10 +243,22 @@ async def _proxy_upstream(
                 force_no_store=force_no_store,
             ),
         )
-        await response.prepare(request)
+        try:
+            await response.prepare(request)
+        except ConnectionResetError:
+            # Playwright's real offline mode deliberately drops the browser
+            # transport before the upstream response arrives.  That is a
+            # normal downstream cancellation, not a gateway failure.
+            return response
         async for chunk in upstream.content.iter_any():
-            await response.write(chunk)
-        await response.write_eof()
+            try:
+                await response.write(chunk)
+            except ConnectionResetError:
+                return response
+        try:
+            await response.write_eof()
+        except ConnectionResetError:
+            pass
         return response
     finally:
         upstream.release()

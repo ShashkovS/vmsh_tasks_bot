@@ -1,9 +1,9 @@
-"""Seed mutable Phase-2 lessons exclusively for production-build E2E.
+"""Seed mutable content lessons exclusively for production-build E2E.
 
 The baseline-v1 seed remains a stable Phase-1 artifact. This bounded follow-up
-adds one independent group lesson per Playwright project so three browsers can
-mutate real SQLite concurrently without sharing revisions or publications.
-See vmshpwa/dev/development-plan/06-phase-2-content.md.
+adds independent publication and test-submission lessons per Playwright project
+so three browsers can mutate real SQLite concurrently without sharing revisions,
+publications or attempts. See development-plan phases 2 and 4.
 """
 
 from __future__ import annotations
@@ -52,15 +52,27 @@ def _validate_fixture(payload: Mapping[str, Any]) -> None:
         raise ValueError("Unknown Phase-2 E2E content fixture")
     if payload.get("fixtureVersion") != 1:
         raise ValueError("Unsupported Phase-2 E2E content fixture version")
-    targets = payload.get("targets")
-    if not isinstance(targets, list) or len(targets) != len(EXPECTED_PROJECTS):
-        raise ValueError("Phase-2 E2E fixture must define exactly three targets")
-    projects = {target.get("project") for target in targets if isinstance(target, dict)}
-    if projects != EXPECTED_PROJECTS:
-        raise ValueError("Phase-2 E2E targets must cover every browser exactly once")
-    lesson_numbers = [target.get("lessonNumber") for target in targets]
-    course_lessons = [target.get("courseLessonPublicId") for target in targets]
-    group_lessons = [target.get("groupLessonPublicId") for target in targets]
+    target_collections = {
+        "targets": "Phase-2 publication",
+        "submissionTargets": "Phase-4 submission",
+    }
+    all_targets: list[Mapping[str, Any]] = []
+    for key, label in target_collections.items():
+        targets = payload.get(key)
+        if not isinstance(targets, list) or len(targets) != len(EXPECTED_PROJECTS):
+            raise ValueError(f"{label} E2E fixture must define exactly three targets")
+        if any(not isinstance(target, dict) for target in targets):
+            raise ValueError(f"{label} E2E targets must be objects")
+        projects = {target.get("project") for target in targets}
+        if projects != EXPECTED_PROJECTS:
+            raise ValueError(
+                f"{label} E2E targets must cover every browser exactly once"
+            )
+        all_targets.extend(targets)
+
+    lesson_numbers = [target.get("lessonNumber") for target in all_targets]
+    course_lessons = [target.get("courseLessonPublicId") for target in all_targets]
+    group_lessons = [target.get("groupLessonPublicId") for target in all_targets]
     if (
         any(not isinstance(value, int) or value < 1 for value in lesson_numbers)
         or len(lesson_numbers) != len(set(lesson_numbers))
@@ -69,7 +81,7 @@ def _validate_fixture(payload: Mapping[str, Any]) -> None:
         or any(not isinstance(value, str) or not value for value in group_lessons)
         or len(group_lessons) != len(set(group_lessons))
     ):
-        raise ValueError("Phase-2 E2E lesson identities must be non-empty and unique")
+        raise ValueError("E2E content lesson identities must be non-empty and unique")
 
 
 def _require_e2e_target(runtime_config: PwaMaintenanceConfig) -> Path:
@@ -117,7 +129,10 @@ def _insert_content_fixture(
     payload: Mapping[str, Any],
 ) -> int:
     course_id, actor_user_id, group_id = _lookup_owner(connection, payload)
-    targets = payload["targets"]
+    targets = [*payload["targets"], *payload["submissionTargets"]]
+    submission_group_lessons = {
+        target["groupLessonPublicId"] for target in payload["submissionTargets"]
+    }
     public_ids = [
         value
         for target in targets
@@ -158,12 +173,12 @@ def _insert_content_fixture(
                 TIMESTAMP,
             ),
         ).fetchone()["id"]
-        connection.execute(
+        group_lesson_id = connection.execute(
             "INSERT INTO group_lessons "
             "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
             "business_timezone, status, created_by_user_id, updated_by_user_id, "
             "created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?) RETURNING id",
             (
                 target["groupLessonPublicId"],
                 course_lesson_id,
@@ -176,7 +191,25 @@ def _insert_content_fixture(
                 TIMESTAMP,
                 TIMESTAMP,
             ),
-        )
+        ).fetchone()["id"]
+        if target["groupLessonPublicId"] in submission_group_lessons:
+            connection.execute(
+                "INSERT INTO lesson_windows "
+                "(public_id, group_lesson_id, opens_at, submission_closes_at, "
+                "timezone, source, created_by_user_id, updated_by_user_id, "
+                "created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'native', ?, ?, ?, ?)",
+                (
+                    f"window-{target['groupLessonPublicId']}",
+                    group_lesson_id,
+                    "2026-07-01T00:00:00Z",
+                    "2099-12-31T23:59:59Z",
+                    payload["businessTimezone"],
+                    actor_user_id,
+                    actor_user_id,
+                    TIMESTAMP,
+                    TIMESTAMP,
+                ),
+            )
         inserted += 1
     return inserted
 
@@ -190,7 +223,9 @@ def seed_e2e_content(runtime_config: PwaMaintenanceConfig) -> int:
             lambda connection: _insert_content_fixture(connection, payload)
         )
     print(
-        f"Seeded Phase-2 E2E content: targets={len(payload['targets'])} inserted={inserted}"
+        "Seeded E2E content: "
+        f"targets={len(payload['targets']) + len(payload['submissionTargets'])} "
+        f"inserted={inserted}"
     )
     return inserted
 
