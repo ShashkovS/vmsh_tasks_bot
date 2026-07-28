@@ -193,6 +193,14 @@ export type ReleaseReviewLeaseResponse = z.infer<typeof releaseReviewLeaseRespon
 export const writtenReviewVerdictSchema = z.number().int().min(11).max(17)
 export type WrittenReviewVerdict = z.infer<typeof writtenReviewVerdictSchema>
 
+export const writtenTeacherReactionIdSchema = z.union([
+  z.literal(100),
+  z.literal(101),
+  z.literal(102),
+  z.literal(103),
+])
+export type WrittenTeacherReactionId = z.infer<typeof writtenTeacherReactionIdSchema>
+
 export const completeReviewEvidenceEntrySchema = z
   .object({
     entryId: publicIdSchema,
@@ -361,10 +369,16 @@ export const completeReviewRequestSchema = z
     confirmWithoutComment: z.boolean(),
     branches: z.array(completeReviewBranchSchema).min(1),
     annotations: z.array(reviewAnnotationManifestSchema).max(10),
+    internalReactionId: writtenTeacherReactionIdSchema.nullable(),
   })
   .strict()
   .superRefine((request, context) => {
-    if (request.verdict !== 17 && !request.comment?.trim() && !request.confirmWithoutComment) {
+    if (
+      request.verdict !== 16 &&
+      request.verdict !== 17 &&
+      !request.comment?.trim() &&
+      !request.confirmWithoutComment
+    ) {
       context.addIssue({
         code: 'custom',
         message: 'A non-accepted verdict without a comment requires confirmation',
@@ -390,6 +404,56 @@ export const completeReviewRequestSchema = z
   })
 export type CompleteReviewRequest = z.infer<typeof completeReviewRequestSchema>
 
+export const reviewInternalReactionSchema = z
+  .object({
+    reviewId: publicIdSchema,
+    reactionId: writtenTeacherReactionIdSchema.nullable(),
+    version: z.number().int().positive(),
+    editableUntil: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    deleted: z.boolean(),
+  })
+  .strict()
+  .refine((state) => state.deleted === (state.reactionId === null), {
+    message: 'Deleted internal-reaction state must not expose a reaction ID',
+    path: ['deleted'],
+  })
+  .refine((state) => state.updatedAt <= state.editableUntil, {
+    message: 'Internal reaction update must be inside its edit window',
+    path: ['updatedAt'],
+  })
+export type ReviewInternalReaction = z.infer<typeof reviewInternalReactionSchema>
+
+export const setReviewInternalReactionRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    reactionId: writtenTeacherReactionIdSchema,
+    expectedVersion: z.number().int().nonnegative(),
+  })
+  .strict()
+export type SetReviewInternalReactionRequest = z.infer<
+  typeof setReviewInternalReactionRequestSchema
+>
+
+export const deleteReviewInternalReactionRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    expectedVersion: z.number().int().positive(),
+  })
+  .strict()
+export type DeleteReviewInternalReactionRequest = z.infer<
+  typeof deleteReviewInternalReactionRequestSchema
+>
+
+export const reviewInternalReactionResponseSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    internalReaction: reviewInternalReactionSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type ReviewInternalReactionResponse = z.infer<typeof reviewInternalReactionResponseSchema>
+
 export const completedReviewSchema = z
   .object({
     reviewId: publicIdSchema,
@@ -410,6 +474,7 @@ export const completedReviewSchema = z
         })
         .strict(),
     ),
+    internalReaction: reviewInternalReactionSchema.nullable(),
     completedAt: z.iso.datetime(),
     replayed: z.boolean(),
   })
@@ -439,4 +504,6 @@ export const reviewQueueQueryKeys = {
   },
   lease: (principal: PrincipalQueryScope, queueId: string) =>
     [...principalQueryKey(principal), 'review-lease', publicIdSchema.parse(queueId)] as const,
+  review: (principal: PrincipalQueryScope, reviewId: string) =>
+    [...principalQueryKey(principal), 'review', publicIdSchema.parse(reviewId)] as const,
 } as const

@@ -5,21 +5,26 @@ import {
   claimReviewItemRequestSchema,
   completeReviewRequestSchema,
   completeReviewResponseSchema,
+  deleteReviewInternalReactionRequestSchema,
   mutateReviewLeaseRequestSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
   releaseReviewLeaseResponseSchema,
   reviewLeaseResponseSchema,
+  reviewInternalReactionResponseSchema,
   reviewQueueListQuerySchema,
   reviewQueueListResponseSchema,
   reviewQueueQueryKeys,
+  setReviewInternalReactionRequestSchema,
   type CompleteReviewRequest,
   type CompleteReviewResponse,
   type PrincipalQueryScope,
+  type ReviewInternalReactionResponse,
   type ReviewLeaseResponse,
   type ReviewQueueListQuery,
   type ReviewQueueListResponse,
   type RuntimeConfig,
+  type WrittenTeacherReactionId,
 } from '@vmsh/contracts'
 
 /** Staff transport for the Phase-6 scoped, synonym-aware review queue. */
@@ -51,6 +56,17 @@ export interface ReviewQueueClient {
     request: CompleteReviewRequest,
     options?: ReviewQueueRequestOptions,
   ): Promise<CompleteReviewResponse>
+  setInternalReaction(
+    reviewId: string,
+    reactionId: WrittenTeacherReactionId,
+    expectedVersion: number,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<ReviewInternalReactionResponse>
+  deleteInternalReaction(
+    reviewId: string,
+    expectedVersion: number,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<ReviewInternalReactionResponse>
 }
 
 export class ReviewQueueProtocolError extends Error {
@@ -160,6 +176,50 @@ class BrowserReviewQueueClient implements ReviewQueueClient {
     )
   }
 
+  async setInternalReaction(
+    reviewId: string,
+    reactionId: WrittenTeacherReactionId,
+    expectedVersion: number,
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<ReviewInternalReactionResponse> {
+    const parsedReviewId = publicIdSchema.parse(reviewId)
+    const body = JSON.stringify(
+      setReviewInternalReactionRequestSchema.parse({
+        schemaVersion: 1,
+        reactionId,
+        expectedVersion,
+      }),
+    )
+    return this.#jsonRequest(
+      `/reviews/${encodeURIComponent(parsedReviewId)}/internal-reaction`,
+      'PUT',
+      body,
+      options,
+      reviewInternalReactionResponseSchema,
+    )
+  }
+
+  async deleteInternalReaction(
+    reviewId: string,
+    expectedVersion: number,
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<ReviewInternalReactionResponse> {
+    const parsedReviewId = publicIdSchema.parse(reviewId)
+    const body = JSON.stringify(
+      deleteReviewInternalReactionRequestSchema.parse({
+        schemaVersion: 1,
+        expectedVersion,
+      }),
+    )
+    return this.#jsonRequest(
+      `/reviews/${encodeURIComponent(parsedReviewId)}/internal-reaction`,
+      'DELETE',
+      body,
+      options,
+      reviewInternalReactionResponseSchema,
+    )
+  }
+
   async #leaseMutation(
     queueId: string,
     claimToken: string,
@@ -197,7 +257,7 @@ class BrowserReviewQueueClient implements ReviewQueueClient {
 
   async #jsonRequest<T>(
     path: string,
-    method: 'GET' | 'POST',
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     body: string | undefined,
     options: ReviewQueueRequestOptions,
     parser: ResponseParser<T>,
@@ -237,12 +297,12 @@ class BrowserReviewQueueClient implements ReviewQueueClient {
 
   async #send(
     path: string,
-    method: 'GET' | 'POST',
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     body: string | undefined,
     options: ReviewQueueRequestOptions,
   ): Promise<Response> {
     const headers: Record<string, string> = { Accept: 'application/json' }
-    if (method === 'POST') headers['Content-Type'] = 'application/json'
+    if (method !== 'GET') headers['Content-Type'] = 'application/json'
     try {
       return await this.#fetch(`${this.runtime.apiBase}${path}`, {
         method,
@@ -355,6 +415,47 @@ export function useCompleteReviewMutation(
       await queryClient.invalidateQueries({
         queryKey: reviewQueueQueryKeys.all(principal),
       })
+    },
+  })
+}
+
+export function useSetReviewInternalReactionMutation(
+  client: Pick<ReviewQueueClient, 'setInternalReaction'>,
+  principal: PrincipalQueryScope,
+  reviewId: string,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationKey: [...reviewQueueQueryKeys.review(principal, reviewId), 'internal-reaction', 'set'],
+    mutationFn: ({
+      reactionId,
+      expectedVersion,
+    }: {
+      reactionId: WrittenTeacherReactionId
+      expectedVersion: number
+    }) => client.setInternalReaction(reviewId, reactionId, expectedVersion),
+    onSuccess: (response) => {
+      queryClient.setQueryData(reviewQueueQueryKeys.review(principal, reviewId), response)
+    },
+  })
+}
+
+export function useDeleteReviewInternalReactionMutation(
+  client: Pick<ReviewQueueClient, 'deleteInternalReaction'>,
+  principal: PrincipalQueryScope,
+  reviewId: string,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationKey: [
+      ...reviewQueueQueryKeys.review(principal, reviewId),
+      'internal-reaction',
+      'delete',
+    ],
+    mutationFn: (expectedVersion: number) =>
+      client.deleteInternalReaction(reviewId, expectedVersion),
+    onSuccess: (response) => {
+      queryClient.setQueryData(reviewQueueQueryKeys.review(principal, reviewId), response)
     },
   })
 }

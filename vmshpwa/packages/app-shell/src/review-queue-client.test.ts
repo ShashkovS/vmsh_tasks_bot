@@ -195,6 +195,14 @@ describe('Staff review queue client', () => {
             markCount: 1,
           },
         ],
+        internalReaction: {
+          reviewId: 'review-one',
+          reactionId: 100,
+          version: 1,
+          editableUntil: '2026-10-04T13:03:00.000000Z',
+          updatedAt: '2026-10-04T12:03:00.000000Z',
+          deleted: false,
+        },
         completedAt: '2026-10-04T12:03:00.000000Z',
         replayed: false,
       },
@@ -239,6 +247,7 @@ describe('Staff review queue client', () => {
           ],
         },
       ],
+      internalReactionId: 100 as const,
     }
 
     await expect(client.complete('review-queue-one', request)).resolves.toEqual(completion)
@@ -253,6 +262,67 @@ describe('Staff review queue client', () => {
         body: JSON.stringify(request),
       },
     )
+  })
+
+  it('sends optimistic internal reaction set and delete requests', async () => {
+    const responses = [
+      {
+        schemaVersion: 1,
+        internalReaction: {
+          reviewId: 'review-one',
+          reactionId: 103,
+          version: 1,
+          editableUntil: '2026-10-04T13:03:00.000000Z',
+          updatedAt: '2026-10-04T12:03:00.000000Z',
+          deleted: false,
+        },
+        requestId: 'review-reaction-set',
+      },
+      {
+        schemaVersion: 1,
+        internalReaction: {
+          reviewId: 'review-one',
+          reactionId: null,
+          version: 2,
+          editableUntil: '2026-10-04T13:03:00.000000Z',
+          updatedAt: '2026-10-04T12:04:00.000000Z',
+          deleted: true,
+        },
+        requestId: 'review-reaction-delete',
+      },
+    ]
+    const fetchImplementation = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(jsonResponse(responses[0]))
+      .mockResolvedValueOnce(jsonResponse(responses[1]))
+    const client = createReviewQueueClient(runtime, { fetchImplementation })
+
+    await expect(client.setInternalReaction('review-one', 103, 0)).resolves.toEqual(responses[0])
+    await expect(client.deleteInternalReaction('review-one', 1)).resolves.toEqual(responses[1])
+    expect(fetchImplementation.mock.calls).toEqual([
+      [
+        '/staff/api/v1/reviews/review-one/internal-reaction',
+        {
+          method: 'PUT',
+          cache: 'no-store',
+          credentials: 'include',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+          redirect: 'error',
+          body: '{"schemaVersion":1,"reactionId":103,"expectedVersion":0}',
+        },
+      ],
+      [
+        '/staff/api/v1/reviews/review-one/internal-reaction',
+        {
+          method: 'DELETE',
+          cache: 'no-store',
+          credentials: 'include',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+          redirect: 'error',
+          body: '{"schemaVersion":1,"expectedVersion":1}',
+        },
+      ],
+    ])
   })
 
   it('separates API, malformed-contract and network failures', async () => {

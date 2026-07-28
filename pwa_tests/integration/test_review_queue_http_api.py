@@ -500,6 +500,7 @@ def _complete_payload(lease: dict[str, object]) -> dict[str, object]:
             for branch in lease["branches"]
         ],
         "annotations": [],
+        "internalReactionId": None,
     }
 
 
@@ -645,6 +646,7 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
         "review-http-thread-2",
     ]
     payload = _complete_payload(lease)
+    payload["internalReactionId"] = 100
     payload["annotations"] = [
         {
             "attachmentId": "review-http-attachment-1",
@@ -690,6 +692,14 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
                 "markCount": 1,
             }
         ],
+        "internalReaction": {
+            "reviewId": "review-http-completed",
+            "reactionId": 100,
+            "version": 1,
+            "editableUntil": _timestamp(NOW + timedelta(hours=1)),
+            "updatedAt": _timestamp(),
+            "deleted": False,
+        },
         "completedAt": _timestamp(),
         "replayed": False,
     }
@@ -710,6 +720,84 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
         ).fetchone()
     )
     assert counts == {"results": 1, "reviews": 1, "queue": 0}
+
+
+@pytest.mark.asyncio
+async def test_internal_reaction_http_is_strict_optimistic_and_reviewer_owned(
+    review_http: ReviewHttpFixture,
+):
+    fixture = review_http
+    queue_id = fixture.queue_public_ids[0]
+    claim = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    lease = (await claim.json())["lease"]
+    completed = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=_complete_payload(lease),
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert completed.status == 200, await completed.text()
+    review_id = (await completed.json())["review"]["reviewId"]
+
+    selected = await fixture.client.put(
+        f"/staff/api/v1/reviews/{review_id}/internal-reaction",
+        json={"schemaVersion": 1, "reactionId": 103, "expectedVersion": 0},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert selected.status == 200, await selected.text()
+    selected_payload = (await selected.json())["internalReaction"]
+    assert selected_payload["reactionId"] == 103
+    assert selected_payload["version"] == 1
+    assert selected_payload["deleted"] is False
+
+    stale = await fixture.client.put(
+        f"/staff/api/v1/reviews/{review_id}/internal-reaction",
+        json={"schemaVersion": 1, "reactionId": 101, "expectedVersion": 0},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert stale.status == 409
+    assert (await stale.json())["error"]["code"] == (
+        "review_internal_reaction_changed"
+    )
+
+    foreign = await fixture.client.put(
+        f"/staff/api/v1/reviews/{review_id}/internal-reaction",
+        json={"schemaVersion": 1, "reactionId": 101, "expectedVersion": 1},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert foreign.status == 403
+    assert (await foreign.json())["error"]["code"] == "forbidden"
+
+    invalid = await fixture.client.put(
+        f"/staff/api/v1/reviews/{review_id}/internal-reaction",
+        json={"schemaVersion": 1, "reactionId": 1, "expectedVersion": 1},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert invalid.status == 422
+    assert (await invalid.json())["error"]["code"] == (
+        "review_internal_reaction_invalid"
+    )
+
+    deleted = await fixture.client.delete(
+        f"/staff/api/v1/reviews/{review_id}/internal-reaction",
+        json={"schemaVersion": 1, "expectedVersion": 1},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert deleted.status == 200, await deleted.text()
+    deleted_payload = (await deleted.json())["internalReaction"]
+    assert deleted_payload["reactionId"] is None
+    assert deleted_payload["version"] == 2
+    assert deleted_payload["deleted"] is True
 
 
 @pytest.mark.asyncio

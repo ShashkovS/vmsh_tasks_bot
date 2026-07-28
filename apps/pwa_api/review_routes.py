@@ -27,6 +27,11 @@ from db_methods.pwa.reviews import (
     ReviewEvidenceEntryExpectation,
     ReviewEvidenceUnavailable,
     ReviewIdempotencyConflict,
+    ReviewInternalReactionConflict,
+    ReviewInternalReactionInvalid,
+    ReviewInternalReactionNotFound,
+    ReviewInternalReactionState,
+    ReviewInternalReactionWindowClosed,
     ReviewLease,
     ReviewLeaseConflict,
     ReviewLeaseLost,
@@ -58,8 +63,13 @@ _COMPLETE_FIELDS = frozenset(
         "confirmWithoutComment",
         "branches",
         "annotations",
+        "internalReactionId",
     }
 )
+_REACTION_SET_FIELDS = frozenset(
+    {"schemaVersion", "reactionId", "expectedVersion"}
+)
+_REACTION_DELETE_FIELDS = frozenset({"schemaVersion", "expectedVersion"})
 _LIST_QUERY_FIELDS = frozenset({"problemGroup", "sort", "cursor"})
 
 PWA_REVIEW_QUEUE_REPOSITORY = web.AppKey(
@@ -135,6 +145,17 @@ def _queue_public_id(request: web.Request) -> str:
             status=404,
             code="review_queue_item_not_found",
             message="Работа в очереди не найдена",
+        )
+    return value
+
+
+def _review_public_id(request: web.Request) -> str:
+    value = request.match_info["review_public_id"]
+    if _PUBLIC_ID.fullmatch(value) is None:
+        raise PwaApiError(
+            status=404,
+            code="review_not_found",
+            message="Проверка не найдена",
         )
     return value
 
@@ -313,6 +334,32 @@ def _positive_integer(value: object, *, field: str) -> int:
             details={"field": field},
         )
     return value
+
+
+def _nonnegative_integer(value: object, *, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте данные внутренней пометки",
+            details={"field": field},
+        )
+    return value
+
+
+def _internal_reaction_payload(
+    state: ReviewInternalReactionState | None,
+) -> dict[str, object] | None:
+    if state is None:
+        return None
+    return {
+        "reviewId": state.review_public_id,
+        "reactionId": state.reaction_id,
+        "version": state.version,
+        "editableUntil": _timestamp(state.editable_until),
+        "updatedAt": _timestamp(state.updated_at),
+        "deleted": state.deleted,
+    }
 
 
 def _complete_branches(value: object) -> tuple[ReviewEvidenceBranchExpectation, ...]:
@@ -543,6 +590,30 @@ def _translate_queue_error(error: Exception) -> PwaApiError:
             code="idempotency_payload_mismatch",
             message="Это действие уже было отправлено с другими данными",
         )
+    if isinstance(error, ReviewInternalReactionNotFound):
+        return PwaApiError(
+            status=404,
+            code="review_internal_reaction_not_found",
+            message="Внутренняя пометка не найдена",
+        )
+    if isinstance(error, ReviewInternalReactionInvalid):
+        return PwaApiError(
+            status=422,
+            code="review_internal_reaction_invalid",
+            message="Выберите доступную внутреннюю пометку",
+        )
+    if isinstance(error, ReviewInternalReactionConflict):
+        return PwaApiError(
+            status=409,
+            code="review_internal_reaction_changed",
+            message="Внутренняя пометка уже изменилась. Обновите проверку.",
+        )
+    if isinstance(error, ReviewInternalReactionWindowClosed):
+        return PwaApiError(
+            status=409,
+            code="review_internal_reaction_window_closed",
+            message="Время изменения внутренней пометки закончилось",
+        )
     if isinstance(error, ReviewCompletionInvalid):
         if "annotation" in str(error):
             return PwaApiError(
@@ -722,6 +793,13 @@ async def complete_review_item(request: web.Request) -> web.Response:
             confirm_without_comment=payload["confirmWithoutComment"],
             branches=_complete_branches(payload["branches"]),
             annotations=_complete_annotations(payload["annotations"]),
+            internal_reaction_id=(
+                None
+                if payload["internalReactionId"] is None
+                else _positive_integer(
+                    payload["internalReactionId"], field="internalReactionId"
+                )
+            ),
         )
         receipt = await _repository(request).complete(command)
     except (
@@ -732,6 +810,7 @@ async def complete_review_item(request: web.Request) -> web.Response:
         ReviewEvidenceUnavailable,
         ReviewIdempotencyConflict,
         ReviewCompletionInvalid,
+        ReviewInternalReactionInvalid,
     ) as error:
         raise _translate_queue_error(error) from error
     except ValueError as error:
@@ -775,9 +854,78 @@ async def complete_review_item(request: web.Request) -> web.Response:
                     }
                     for annotation in receipt.annotations
                 ],
+                "internalReaction": _internal_reaction_payload(
+                    receipt.internal_reaction
+                ),
                 "completedAt": _timestamp(receipt.completed_at),
                 "replayed": receipt.replayed,
             },
+            "requestId": request["request_id"],
+        }
+    )
+
+
+@review_routes.put(
+    "/staff/api/v1/reviews/{review_public_id}/internal-reaction"
+)
+async def set_review_internal_reaction(request: web.Request) -> web.Response:
+    teacher_user_id, scope = _require_review_write(request)
+    payload = await _json_object(request, required_fields=_REACTION_SET_FIELDS)
+    try:
+        state = await _repository(request).set_internal_reaction(
+            review_public_id=_review_public_id(request),
+            reaction_id=_positive_integer(
+                payload["reactionId"], field="reactionId"
+            ),
+            expected_version=_nonnegative_integer(
+                payload["expectedVersion"], field="expectedVersion"
+            ),
+            teacher_user_id=teacher_user_id,
+            scope=scope,
+        )
+    except (
+        ReviewInternalReactionNotFound,
+        ReviewInternalReactionInvalid,
+        ReviewInternalReactionConflict,
+        ReviewInternalReactionWindowClosed,
+        ReviewQueueForbidden,
+    ) as error:
+        raise _translate_queue_error(error) from error
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "internalReaction": _internal_reaction_payload(state),
+            "requestId": request["request_id"],
+        }
+    )
+
+
+@review_routes.delete(
+    "/staff/api/v1/reviews/{review_public_id}/internal-reaction"
+)
+async def delete_review_internal_reaction(request: web.Request) -> web.Response:
+    teacher_user_id, scope = _require_review_write(request)
+    payload = await _json_object(request, required_fields=_REACTION_DELETE_FIELDS)
+    try:
+        state = await _repository(request).delete_internal_reaction(
+            review_public_id=_review_public_id(request),
+            expected_version=_positive_integer(
+                payload["expectedVersion"], field="expectedVersion"
+            ),
+            teacher_user_id=teacher_user_id,
+            scope=scope,
+        )
+    except (
+        ReviewInternalReactionNotFound,
+        ReviewInternalReactionConflict,
+        ReviewInternalReactionWindowClosed,
+        ReviewQueueForbidden,
+    ) as error:
+        raise _translate_queue_error(error) from error
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "internalReaction": _internal_reaction_payload(state),
             "requestId": request["request_id"],
         }
     )

@@ -4,11 +4,14 @@ import {
   claimReviewItemRequestSchema,
   completeReviewRequestSchema,
   completeReviewResponseSchema,
+  deleteReviewInternalReactionRequestSchema,
   mutateReviewLeaseRequestSchema,
   releaseReviewLeaseResponseSchema,
   reviewLeaseResponseSchema,
   reviewQueueListResponseSchema,
   reviewQueueQueryKeys,
+  reviewInternalReactionResponseSchema,
+  setReviewInternalReactionRequestSchema,
 } from './review-queue'
 
 const branches = [
@@ -201,6 +204,7 @@ describe('Phase-6 review queue contracts', () => {
           ],
         },
       ],
+      internalReactionId: 103 as const,
     }
     expect(completeReviewRequestSchema.parse(request)).toEqual(request)
     expect(
@@ -230,6 +234,14 @@ describe('Phase-6 review queue contracts', () => {
               markCount: 5,
             },
           ],
+          internalReaction: {
+            reviewId: 'review-one',
+            reactionId: 103,
+            version: 1,
+            editableUntil: '2026-10-04T13:10:00.000000Z',
+            updatedAt: '2026-10-04T12:10:00.000000Z',
+            deleted: false,
+          },
           completedAt: '2026-10-04T12:10:00.000000Z',
           replayed: false,
         },
@@ -258,6 +270,57 @@ describe('Phase-6 review queue contracts', () => {
             ],
           },
         ],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('validates optimistic internal Teacher reaction changes and tombstones', () => {
+    expect(
+      setReviewInternalReactionRequestSchema.parse({
+        schemaVersion: 1,
+        reactionId: 100,
+        expectedVersion: 0,
+      }),
+    ).toEqual({ schemaVersion: 1, reactionId: 100, expectedVersion: 0 })
+    expect(
+      deleteReviewInternalReactionRequestSchema.parse({
+        schemaVersion: 1,
+        expectedVersion: 2,
+      }),
+    ).toEqual({ schemaVersion: 1, expectedVersion: 2 })
+    expect(
+      reviewInternalReactionResponseSchema.parse({
+        schemaVersion: 1,
+        internalReaction: {
+          reviewId: 'review-one',
+          reactionId: null,
+          version: 3,
+          editableUntil: '2026-10-04T13:10:00.000000Z',
+          updatedAt: '2026-10-04T12:20:00.000001Z',
+          deleted: true,
+        },
+        requestId: 'request-reaction-delete',
+      }).internalReaction.deleted,
+    ).toBe(true)
+    expect(
+      setReviewInternalReactionRequestSchema.safeParse({
+        schemaVersion: 1,
+        reactionId: 1,
+        expectedVersion: 0,
+      }).success,
+    ).toBe(false)
+    expect(
+      reviewInternalReactionResponseSchema.safeParse({
+        schemaVersion: 1,
+        internalReaction: {
+          reviewId: 'review-one',
+          reactionId: 100,
+          version: 3,
+          editableUntil: '2026-10-04T13:10:00.000000Z',
+          updatedAt: '2026-10-04T12:20:00.000001Z',
+          deleted: true,
+        },
+        requestId: 'request-reaction-invalid',
       }).success,
     ).toBe(false)
   })
