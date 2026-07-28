@@ -270,4 +270,28 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()
   await expect(page.getByText(secondStatement)).toHaveCount(0)
+
+  // Account-isolation checkpoint: bypass the local provider for the server
+  // logout so an old-owner cache really exists until the next login performs
+  // its atomic owner switch. The second Student can authenticate normally but
+  // cannot read the first Student's condition when the API then disappears.
+  const logoutStatus = await page.evaluate(async () => {
+    const response = await fetch('/student/api/v1/auth/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    return response.status
+  })
+  expect(logoutStatus).toBe(204)
+  await loginThroughUi(page, AUTH_PERSONAS.studentInPerson, '/student/')
+  await page.evaluate((marker) => window.sessionStorage.setItem(marker, '1'), offlineMarker)
+  try {
+    await page.goto(studentUrl)
+    await expect(page.getByRole('heading', { name: 'Нет сети' })).toBeVisible()
+    await expect(page.getByText(firstStatement)).toHaveCount(0)
+    await expect(page.getByText(hintStatement)).toHaveCount(0)
+  } finally {
+    await page.evaluate((marker) => window.sessionStorage.removeItem(marker), offlineMarker)
+  }
 })
