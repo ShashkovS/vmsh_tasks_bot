@@ -142,9 +142,34 @@ Proof: [`phase3-student-task-archive.md`](../../../pwa_tests/reports/phase3-stud
 Следующий gate — публичная identity и canonical problem list/status projection;
 после него deliberate reveal и offline Dexie.
 
-- [ ] Revision/migrations: `<sha/paths>`; integrity/index plans `<path>`.
-- [ ] Demo Student Now/list/long/focused/offline: Now + lesson archive + long
-      published sheet **3/3 PASS**; problem-focused status и offline открыты.
+Промежуточный gate **Phase 3E — canonical список задач и реальные статусы**
+реализован 28 июля 2026, revisions `1aeb78d`, `8448a8b`:
+
+- [x] legacy `problems` получили отдельный immutable public ID с точным
+      migration up/down/up и deterministic fixture identities;
+- [x] новый course/group-scoped endpoint отдаёт задачи только текущей
+      опубликованной condition revision и запрещает недоступную группу;
+- [x] статусы строятся из настоящих queue/discussion/result/verdict rows;
+      pending queue перекрывает старую оценку;
+- [x] подтверждённые synonym groups объединяют work state логически, сохраняя
+      исходные задачи и результаты раздельно;
+- [x] strict Zod fixture, same-origin client и principal-scoped query key не
+      пропускают произвольные IDs или malformed payload;
+- [x] production task rows используют принятый `TaskListItem`, реальные
+      status/verdict и route с непрозрачным `problem-*` ID;
+- [x] полный regression **263 TS + 1100 Python PASS**, strict checks PASS,
+      production browser checkpoint **3/3 PASS**.
+
+Proof:
+[`phase3-student-problem-list.md`](../../../pwa_tests/reports/phase3-student-problem-list.md).
+Следующий gate — deliberate reveal подсказок/решений и offline Dexie.
+
+- [x] Revision/migrations: `1aeb78d`, `8448a8b`;
+      `migrations/0044.pwa_problem_identity*`, API/read model и frontend paths
+      перечислены в Phase 3E proof.
+- [ ] Demo Student Now/list/long/focused/offline: Now + lesson archive +
+      canonical problem status + focused condition **3/3 PASS**; offline и
+      deliberate reveal открыты.
 - [x] Lesson list query/read contract: один bounded SQLite statement; proof выше.
 - [x] Home query count/plan and response contract: bounded single statement,
       Zod fixture и browser proof в `phase3-student-home.md`.
@@ -154,8 +179,8 @@ Proof: [`phase3-student-task-archive.md`](../../../pwa_tests/reports/phase3-stud
       `product-courses--allowed-group-reading-context`, suite **180 PASS**;
       problem/offline stories и visual owner gate открыты.
 - [ ] Playwright online/offline/deep-link 3 browsers: online
-      home→course/group archive→URL-selected lesson→published sheet **3/3
-      PASS**; cold-offline/deep-link isolation ещё открыты.
+      home→course/group archive→URL-selected lesson→opaque problem URL→focused
+      condition **3/3 PASS**; cold-offline/deep-link isolation ещё открыты.
 - [ ] Performance evidence long math document/KaTeX: `<path/result>`.
 - [ ] Docs/cache policy/known limitations/acceptance: `<paths/issues/name/date>`.
 

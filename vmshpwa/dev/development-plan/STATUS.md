@@ -4,19 +4,19 @@
 
 ## Состояние документов
 
-| Документ/этап       | Статус                       | Решение/блокер                                                                                                                                                        |
-| ------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Инженерный контракт | draft for approval           | Формат proof описан; фактически заполняется при реализации                                                                                                            |
-| Решения и границы   | accepted planning input      | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
-| Модель данных       | revised planning input       | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
-| API/events/files    | accepted planning input      | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
-| Этап 0              | in progress                  | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
-| Этап 1              | in progress                  | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
-| Этап 2              | Phase 2A–2E + browser E2E    | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
-| Этап 3              | Phase 3A–3D reading slice    | Course/lesson/home и production «Сейчас»/архив листков проверены в 3 браузерах; problem/reveal/offline gates открыты                                                  |
-| Этапы 4–11          | planned with gates           | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
-| Design system       | phases 5–7 ready for review  | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
-| Multi-course model  | schema + verified prototype  | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
+| Документ/этап       | Статус                      | Решение/блокер                                                                                                                                                        |
+| ------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                                                                                            |
+| Решения и границы   | accepted planning input     | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
+| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
+| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
+| Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
+| Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
+| Этап 2              | Phase 2A–2E + browser E2E   | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
+| Этап 3              | Phase 3A–3E reading slice   | Course/lesson/home, архив и canonical task/status/focused condition проверены в 3 браузерах; reveal/offline gates открыты                                             |
+| Этапы 4–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
+| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
+| Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
 
 ## Журнал решений
 
@@ -276,8 +276,13 @@
   regression: **259 TS + 1098 Python PASS**, Storybook **180 PASS**,
   production browser checkpoint **3/3 PASS**. Proof:
   [`phase3-student-task-archive.md`](../../../pwa_tests/reports/phase3-student-task-archive.md).
-- Phase 3 остаётся открыт: следующий gate — public problem identity и
-  task/status projection, затем reveal audit и offline Dexie.
+- Phase 3E revisions `1aeb78d`, `8448a8b` добавляют immutable public identity,
+  course/group-scoped canonical problem list, реальные queue/result/synonym
+  states и focused condition URL с `problem-*`. Полный regression: **263 TS +
+  1100 Python PASS**; production browser checkpoint **3/3 PASS**. Proof:
+  [`phase3-student-problem-list.md`](../../../pwa_tests/reports/phase3-student-problem-list.md).
+- Phase 3 остаётся открыт: следующий gate — deliberate reveal audit, затем
+  offline Dexie.
 
 ## Текущий инкремент этапа 1
 
@@ -601,7 +606,7 @@
 |    0 | —                    | —                                                              | —                                  |
 |    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)            | частично; production gates открыты |
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)         | Browser path принят; этап открыт   |
-|    3 | `d70b0d9`…`42ea05c`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A–3D приняты; этап открыт   |
+|    3 | `d70b0d9`…`8448a8b`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A–3E приняты; этап открыт   |
 |    4 | —                    | —                                                              | —                                  |
 |    5 | —                    | —                                                              | —                                  |
 |    6 | —                    | —                                                              | —                                  |
