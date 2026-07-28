@@ -14,7 +14,8 @@
 | Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
 | Этап 2              | Phase 2A–2E + browser E2E   | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
 | Этап 3              | Phase 3A–3H reading slice   | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
-| Этапы 4–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
+| Этап 4              | Phase 4A–4B in progress     | Все legacy answer rules и атомарный idempotent SQLite ledger готовы; HTTP, outbox/UI, browser E2E и Telegram consolidation открыты                                    |
+| Этапы 5–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
 
@@ -305,6 +306,29 @@
   [`phase3-long-math-rendering.md`](../../../pwa_tests/reports/phase3-long-math-rendering.md).
 - Phase 3 остаётся открыт только для ручного visual owner gate; snapshots не
   обновлялись.
+
+## Текущий инкремент этапа 4
+
+- Phase 4A revision `6409191` добавляет additive ledger schema: immutable
+  test attempts, idempotency operation и exact checker/config snapshots без
+  изменения legacy `results`.
+- Phase 4B revisions `bd0487f`, `1d5df54` фиксируют все 23 historical
+  `ANS_TYPE`, `strip()` + `fullmatch`, visible-label `SELECT_ONE`, несколько
+  правильных ответов, trusted-admin `cor_ans_checker`, client/server cutoff и
+  default 3/hour + 6/day rate policy.
+- Connection-per-operation repository проверяет account/course/group/content
+  authority, исполняет checker вне writer transaction, затем revalidate-ит
+  контекст и атомарно пишет attempt + ровно одну legacy `results` строку.
+  Exact idempotency replay, mismatch, concurrent race и fault rollback
+  проверены отдельными интеграционными тестами.
+- Focused domain/repository — **62 PASS**; широкий answer/content/schema/SQLite
+  regression — **142 PASS**; чистый полный JUnit run — **1169 tests / 0
+  failures / 0 errors / 3 intentional skips**; frontend unit — **285 PASS**;
+  Ruff — PASS. Proof:
+  [`phase4-test-submission-domain-and-repository.md`](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md).
+- Phase 4 остаётся открытым: нужны Student HTTP wire/history, durable frontend
+  draft/outbox, production UI/Storybook, aiohttp browser E2E и перевод legacy
+  Telegram adapter на общий submission service. Snapshots не обновлялись.
 
 ## Текущий инкремент этапа 1
 
@@ -629,7 +653,7 @@
 |    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)            | частично; production gates открыты |
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)         | Browser path принят; этап открыт   |
 |    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A–3H приняты; visual открыт |
-|    4 | —                    | —                                                              | —                                  |
+|    4 | `6409191`…`1d5df54` | [Phase 4A–4B proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | частично; HTTP/UI/E2E открыты       |
 |    5 | —                    | —                                                              | —                                  |
 |    6 | —                    | —                                                              | —                                  |
 |    7 | —                    | —                                                              | —                                  |
