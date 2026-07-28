@@ -1,10 +1,10 @@
-# Phase 4A–4E — правила, хранение, Student UI и E2E тестовых сдач
+# Phase 4A–4F — правила, хранение, Student UI, E2E и Telegram policy
 
 Дата: 2026-07-28
 
 Revisions: `6409191`, `bd0487f`, `1d5df54`, `7793d0f`, `0475cd0`,
 `6d1909c`, `bab5947`, `5b682d1`, `3d22373`, `a779493`, `6268092`,
-`9358e76`
+`9358e76`, `2b00b06`
 
 ## Проверяемый результат
 
@@ -12,7 +12,9 @@ Revisions: `6409191`, `bd0487f`, `1d5df54`, `7793d0f`, `0475cd0`,
 тестового ответа, атомарный SQLite repository, authenticated Student HTTP
 вертикаль, браузерный transport, local draft и Dexie outbox. Инкремент ещё не
 считается завершением всего этапа: production Student page и Playwright path
-готовы, но Telegram consolidation, Staff recheck и visual gate ещё открыты.
+готовы, а Telegram и PWA используют одну domain normalization/verdict policy.
+Открыты Staff recheck/configuration-repair для нового attempt ledger и ручной
+visual gate.
 
 Реализовано:
 
@@ -119,6 +121,31 @@ Admin UI загружает LaTeX, создаёт задачу, задаёт met
 реальный browser-offline outbox, reload и retry. Финальная история в настоящей
 SQLite содержит ровно две попытки в ожидаемом порядке; MSW не используется.
 
+## Telegram compatibility adapter
+
+Revision `2b00b06` переводит исторический Telegram test-answer path на
+[`evaluate_test_answer`](../../models/pwa/submissions.py). Handler больше не
+копирует regex/checker/verdict rules и сохраняет прежние публичные compatibility
+symbols как aliases общей policy.
+
+Telegram adapter при этом намеренно остаётся отдельным каналом доставки и
+пишет проверенные ответы в legacy `results`: migration 0046 не требует у
+исторических bot-задач web account, publication revision и PWA idempotency
+context. Это не вторая реализация правил проверки; это сохранённая граница
+persistence до отдельного cutover.
+
+Проверено:
+
+- все 23 исторических `ANS_TYPE`, включая visible-label `SELECT_ONE`;
+- invalid-format не расходует legacy rate limit;
+- malformed trusted checker даёт безопасный `pending_configuration`, не пишет
+  ложный минус и не раскрывает source/answer/traceback;
+- legacy admin recheck не меняет существующий verdict, пока checker сломан;
+- исторический handler-flow сбрасывает state и возвращает ученика к задачам.
+
+`make telegram-history-test`: **44 PASS**. Тест использует fake Bot и
+изолированную SQLite, без Telegram network/credentials.
+
 ## Границы authority и транзакции
 
 Repository разрешает сдачу только через активный Student account, активный
@@ -193,16 +220,18 @@ Student-only realtime cursor.
 
 ## Изоляция
 
-Тесты этого инкремента не обращались к Telegram, Google, S3 или внешней сети,
-не использовали настоящие credentials и не записывали в `db/vmsh.db`.
+Тесты этого инкремента не обращались к Telegram API, Google, S3 или внешней
+сети, не использовали настоящие credentials и не записывали в `db/vmsh.db`.
 Пропущены только уже существующие явно opt-in live/local-toolchain smokes.
 
 ## Открытые границы Phase 4
 
-- legacy Telegram adapter ещё не переведён на общий submission service;
-- исторические Telegram test-submission scenarios ещё не прогнаны поверх общей
-  domain policy;
-- нет Staff recheck/configuration-repair flow;
+- нет Staff recheck/configuration-repair flow для `test_attempts`; legacy
+  Telegram recheck уже безопасно использует общую policy, но не обновляет новый
+  attempt ledger;
+- Telegram `results` persistence ещё не перенесён в structured attempt/
+  idempotency ledger; это отдельная cutover-задача, а не дублирование domain
+  normalization/verdict policy;
 - production route не имеет отдельной server-backed Storybook story: матрица
   input/states живёт в `Product/Test answer`, а реальный transport проверяет
   Playwright. Ручной visual gate focused Student page остаётся открытым.

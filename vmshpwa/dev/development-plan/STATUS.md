@@ -14,7 +14,7 @@
 | Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
 | Этап 2              | Phase 2A–2E + browser E2E   | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
 | Этап 3              | Phase 3A–3H reading slice   | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
-| Этап 4              | Phase 4A–4E in progress     | Domain/API, durable draft/outbox, production Student UI и browser E2E готовы; Telegram consolidation, Staff recheck и visual gate открыты                             |
+| Этап 4              | Phase 4A–4F in progress     | Domain/API, durable draft/outbox, Student E2E и общая PWA/Telegram verdict policy готовы; Staff ledger recheck и visual gate открыты                                 |
 | Этапы 5–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
@@ -336,16 +336,24 @@
   matching → metadata → publish, после чего Student UI проходит client format
   error без POST, reload draft, online verdict, реальный browser-offline reload
   и exactly-once retry.
+- Phase 4F revision `2b00b06` переводит historical Telegram test-answer
+  handler и legacy admin recheck на ту же `evaluate_test_answer` policy. Все
+  23 `ANS_TYPE`, visible-label `SELECT_ONE`, invalid-format без расхода лимита
+  и безопасный broken-checker path закреплены в `make telegram-history-test`:
+  **44 PASS**. Telegram по-прежнему пишет в legacy `results`; PWA attempt/
+  idempotency ledger не подменяет отсутствие web revision/account context у
+  старых bot-задач.
 - Focused domain/repository — **66 PASS**; repository/real-aiohttp/app-factory
   regression — **91 PASS**; contracts — **92 PASS**; чистый полный Python run —
   **1174 PASS / 3 intentional skips**; frontend unit — **41 файл / 318 PASS**;
   production-build Phase-4 E2E — **3/3 PASS** в Chromium, WebKit и Firefox;
   lint, strict typecheck и production build — PASS. Proof:
   [`phase4-test-submission-domain-and-repository.md`](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md).
-- Phase 4 остаётся открытым: нужны перевод legacy Telegram adapter на общий
-  submission service и его historical regression, Staff recheck/configuration
-  repair, а также ручной visual gate. Product input/state stories уже служат
-  UI-контрактом; snapshots не обновлялись.
+- Phase 4 остаётся открытым: нужны Staff recheck/configuration repair для
+  `test_attempts` и ручной visual gate. Structured Telegram attempt/
+  idempotency persistence остаётся отдельной cutover-задачей; общая PWA/
+  Telegram normalization/verdict policy и historical regression уже готовы.
+  Product input/state stories служат UI-контрактом; snapshots не обновлялись.
 
 ## Текущий инкремент этапа 1
 
@@ -645,7 +653,7 @@
   Snapshots не обновлялись, owner visual approval и generated-PDF parity всё
   ещё не закрыты.
 
-## Phase 4 browser transport, production UI и E2E — 28 июля 2026
+## Phase 4 browser transport, production UI, E2E и Telegram — 28 июля 2026
 
 - [`submission-client.ts`](../../packages/app-shell/src/submission-client.ts)
   добавляет strict same-origin Student transport и TanStack Query hooks;
@@ -670,8 +678,13 @@
   **1174 PASS / 3 intentional skips**, production-build E2E **3/3 PASS** в
   Chromium, WebKit и Firefox; lint/typecheck/build PASS. MSW, Telegram, Google,
   S3 и `db/vmsh.db` не использовались.
-- Открыты Telegram consolidation/historical test submissions, Staff recheck и
-  ручной visual owner gate; snapshots не обновлялись.
+- Revision `2b00b06`: Telegram test-answer handler и legacy admin recheck
+  используют общую PWA domain policy; historical fake-Bot/isolated-SQLite
+  regression — **44 PASS**, без Telegram network/credentials. Сломанный checker
+  не создаёт ложный минус и не раскрывает source/answer/traceback.
+- Открыты Staff recheck/configuration repair для нового attempt ledger и ручной
+  visual owner gate; snapshots не обновлялись. Legacy Telegram `results`
+  остаётся отдельной persistence boundary до будущего cutover.
 
 ## Историческая проверка многокурсового прототипа
 
@@ -698,7 +711,7 @@
 |    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)                                             | частично; production gates открыты        |
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                          | Browser path принят; этап открыт          |
 |    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                  | Phase 3A–3H приняты; visual открыт        |
-|    4 | `6409191`…`9358e76`  | [Phase 4A–4E proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | частично; Telegram/recheck/visual открыты |
+|    4 | `6409191`…`2b00b06`  | [Phase 4A–4F proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | частично; Staff recheck/visual открыты    |
 |    5 | —                    | —                                                                                               | —                                         |
 |    6 | —                    | —                                                                                               | —                                         |
 |    7 | —                    | —                                                                                               | —                                         |
