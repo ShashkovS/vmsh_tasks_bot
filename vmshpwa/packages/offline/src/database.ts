@@ -30,7 +30,8 @@ export interface OutboxItem {
   status: OutboxStatus
   attempts: number
   payload: unknown
-  lastError?: string
+  result?: unknown
+  lastError?: string | undefined
 }
 
 export interface CachedDocument {
