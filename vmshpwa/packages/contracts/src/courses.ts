@@ -263,6 +263,7 @@ export type StudentProblemVerdict = z.infer<typeof studentProblemVerdictSchema>
 export const studentProblemSummarySchema = z
   .object({
     problemId: publicIdSchema,
+    configVersion: z.number().int().positive(),
     sourceOrdinal: z.number().int().positive(),
     displayNumber: z.string().trim().min(1).max(80),
     title: z.string().trim().min(1).max(500),

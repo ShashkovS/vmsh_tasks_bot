@@ -8,6 +8,7 @@
     "problems": [
       {
         "problemId": "problem-fixture-42-1",
+        "configVersion": 3,
         "sourceOrdinal": 1,
         "displayNumber": "1",
         "title": "Разнообразные вагоны",
@@ -22,6 +23,7 @@
       },
       {
         "problemId": "problem-fixture-42-2",
+        "configVersion": 2,
         "sourceOrdinal": 2,
         "displayNumber": "2",
         "title": "Расстановка ладей",
@@ -36,6 +38,7 @@
       },
       {
         "problemId": "problem-fixture-42-3",
+        "configVersion": 5,
         "sourceOrdinal": 3,
         "displayNumber": "3а",
         "title": "Крылья бабочки",

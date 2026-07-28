@@ -228,6 +228,7 @@ def _student_problem_payload(
     verdict = problem.verdict
     return {
         "problemId": problem.problem_public_id,
+        "configVersion": problem.config_version,
         "sourceOrdinal": problem.source_ordinal,
         "displayNumber": problem.display_number,
         "title": problem.title,

@@ -4299,6 +4299,7 @@ async def test_student_problem_list_uses_opaque_ids_and_logical_work_status(
         4,
         5,
     ]
+    assert all(problem["configVersion"] >= 1 for problem in payload["problems"])
     assert payload["problems"][0]["verdict"] == {
         "verdictId": 17,
         "symbol": "✅+",

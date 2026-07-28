@@ -394,6 +394,7 @@ class StudentProblemSummaryRecord:
     """One exact problem revision with Student-owned work state."""
 
     problem_public_id: str
+    config_version: int
     source_ordinal: int
     display_number: str
     title: str
@@ -1334,6 +1335,7 @@ def _student_problem_summary(
 
     return StudentProblemSummaryRecord(
         problem_public_id=str(public_id),
+        config_version=int(row["config_version"]),
         source_ordinal=int(row["source_ordinal"]),
         display_number=str(row["display_number"]),
         title=str(row["title"]),
@@ -1501,6 +1503,7 @@ WITH published_scope AS (
 ),
 visible_problem AS (
     SELECT problem_revision.problem_id,
+           problem_revision.config_version,
            problem.public_id AS problem_public_id,
            problem.synonyms AS legacy_synonyms,
            problem_revision.display_number,
