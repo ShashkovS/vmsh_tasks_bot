@@ -1,47 +1,62 @@
-export interface ImageCompressionRequest {
-  file: File
-  quality?: number
+import {
+  calculateImageCompressionSize,
+  WRITTEN_IMAGE_MAX_DIMENSION,
+  type ImageCompressionRequest,
+  type ImageCompressionResponse,
+} from '../image-compression'
+
+function respond(response: ImageCompressionResponse): void {
+  self.postMessage(response)
 }
 
-export type ImageCompressionResponse =
-  | { status: 'ready'; blob: Blob; width: number; height: number }
-  | { status: 'server-fallback'; reason: 'decode-failed' | 'webp-unavailable' }
-
-const MAX_DIMENSION = 1920
-const DEFAULT_QUALITY = 0.82
-
 self.onmessage = async (event: MessageEvent<ImageCompressionRequest>) => {
+  const { requestId } = event.data
   let bitmap: ImageBitmap
   try {
     bitmap = await createImageBitmap(event.data.file, { imageOrientation: 'from-image' })
   } catch {
-    self.postMessage({
+    respond({
+      requestId,
       status: 'server-fallback',
       reason: 'decode-failed',
-    } satisfies ImageCompressionResponse)
+    })
     return
   }
 
   try {
-    const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height))
-    const width = Math.max(1, Math.round(bitmap.width * scale))
-    const height = Math.max(1, Math.round(bitmap.height * scale))
+    const { width, height } = calculateImageCompressionSize(
+      bitmap.width,
+      bitmap.height,
+      WRITTEN_IMAGE_MAX_DIMENSION,
+    )
     const canvas = new OffscreenCanvas(width, height)
     const context = canvas.getContext('2d')
-    if (!context) throw new Error('Canvas 2D context is unavailable')
-    context.drawImage(bitmap, 0, 0, width, height)
-    const blob = await canvas.convertToBlob({
-      type: 'image/webp',
-      quality: event.data.quality ?? DEFAULT_QUALITY,
-    })
-    if (blob.type !== 'image/webp') {
-      self.postMessage({
-        status: 'server-fallback',
-        reason: 'webp-unavailable',
-      } satisfies ImageCompressionResponse)
+    if (!context) {
+      respond({ requestId, status: 'server-fallback', reason: 'processing-failed' })
       return
     }
-    self.postMessage({ status: 'ready', blob, width, height } satisfies ImageCompressionResponse)
+    context.drawImage(bitmap, 0, 0, width, height)
+    let blob: Blob
+    try {
+      blob = await canvas.convertToBlob({
+        type: 'image/webp',
+        quality: event.data.quality,
+      })
+    } catch {
+      respond({
+        requestId,
+        status: 'server-fallback',
+        reason: 'webp-unavailable',
+      })
+      return
+    }
+    if (blob.type !== 'image/webp' || blob.size === 0) {
+      respond({ requestId, status: 'server-fallback', reason: 'webp-unavailable' })
+      return
+    }
+    respond({ requestId, status: 'ready', blob, width, height })
+  } catch {
+    respond({ requestId, status: 'server-fallback', reason: 'processing-failed' })
   } finally {
     bitmap.close()
   }

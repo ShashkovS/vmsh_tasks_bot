@@ -50,6 +50,30 @@ export interface CachedAuthenticationSnapshot {
   payload: unknown
 }
 
+/**
+ * Binary part of a Student written-submission draft. Serializable metadata and
+ * page order live in localStorage; IndexedDB owns only the bytes needed to
+ * survive a reload. See Phase 5 in
+ * `dev/development-plan/09-phase-5-written-submissions.md`.
+ */
+export interface WrittenDraftPhotoRecord {
+  id: string
+  draftKey: string
+  ownerId: string
+  problemId: string
+  conditionRevisionId: string
+  configVersion: number
+  fileName: string
+  mediaType: string
+  byteSize: number
+  width: number | null
+  height: number | null
+  processing: 'client-webp' | 'server-fallback-source'
+  createdAt: string
+  updatedAt: string
+  blob: Blob
+}
+
 export const offlineAudienceSchema = z.enum(['student', 'family'])
 export type OfflineAudience = z.infer<typeof offlineAudienceSchema>
 export type OfflineRuntime = Pick<RuntimeConfig, 'instance'> & { audience: OfflineAudience }
@@ -70,6 +94,7 @@ export class VmshOfflineDatabase extends Dexie {
   outbox!: EntityTable<OutboxItem, 'id'>
   documents!: EntityTable<CachedDocument, 'key'>
   authentication!: EntityTable<CachedAuthenticationSnapshot, 'key'>
+  writtenDraftPhotos!: EntityTable<WrittenDraftPhotoRecord, 'id'>
 
   constructor(runtime: OfflineRuntime) {
     // The Dexie name is exactly the canonical Phase-0 namespace. Adding a
@@ -99,6 +124,12 @@ export class VmshOfflineDatabase extends Dexie {
       outbox: '&id, &idempotencyKey, ownerId, status, createdAtClient, kind',
       documents: '&key, ownerId, version, cachedAt',
       authentication: '&key, ownerId, expiresAt',
+    })
+    this.version(4).stores({
+      outbox: '&id, &idempotencyKey, ownerId, status, createdAtClient, kind',
+      documents: '&key, ownerId, version, cachedAt',
+      authentication: '&key, ownerId, expiresAt',
+      writtenDraftPhotos: '&id, draftKey, ownerId, [ownerId+draftKey], createdAt',
     })
   }
 }

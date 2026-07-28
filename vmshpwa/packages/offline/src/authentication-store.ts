@@ -71,8 +71,17 @@ async function clearOwner(database: VmshOfflineDatabase, ownerId: string): Promi
   await Promise.all([
     database.documents.where('ownerId').equals(ownerId).delete(),
     database.outbox.where('ownerId').equals(ownerId).delete(),
+    database.writtenDraftPhotos.where('ownerId').equals(ownerId).delete(),
   ])
 }
+
+const ownerScopedTables = (database: VmshOfflineDatabase) =>
+  [
+    database.authentication,
+    database.documents,
+    database.outbox,
+    database.writtenDraftPhotos,
+  ] as const
 
 export function createOfflineAuthenticationStore(
   database: VmshOfflineDatabase,
@@ -97,18 +106,12 @@ export function createOfflineAuthenticationStore(
         Date.parse(snapshot.sessionExpiresAt) <= now().getTime()
       if (!invalid) return snapshot
 
-      await database.transaction(
-        'rw',
-        database.authentication,
-        database.documents,
-        database.outbox,
-        async () => {
-          if (typeof stored.ownerId === 'string' && stored.ownerId !== '') {
-            await clearOwner(database, stored.ownerId)
-          }
-          await database.authentication.delete('current')
-        },
-      )
+      await database.transaction('rw', ownerScopedTables(database), async () => {
+        if (typeof stored.ownerId === 'string' && stored.ownerId !== '') {
+          await clearOwner(database, stored.ownerId)
+        }
+        await database.authentication.delete('current')
+      })
       return null
     },
 
@@ -129,34 +132,22 @@ export function createOfflineAuthenticationStore(
         throw new TypeError('Expired authentication cannot unlock an offline cache')
       }
 
-      await database.transaction(
-        'rw',
-        database.authentication,
-        database.documents,
-        database.outbox,
-        async () => {
-          const previous = await database.authentication.get('current')
-          if (previous && previous.ownerId !== snapshot.ownerId) {
-            await clearOwner(database, previous.ownerId)
-          }
-          await database.authentication.put(record(snapshot))
-        },
-      )
+      await database.transaction('rw', ownerScopedTables(database), async () => {
+        const previous = await database.authentication.get('current')
+        if (previous && previous.ownerId !== snapshot.ownerId) {
+          await clearOwner(database, previous.ownerId)
+        }
+        await database.authentication.put(record(snapshot))
+      })
       return snapshot
     },
 
     async clear() {
-      await database.transaction(
-        'rw',
-        database.authentication,
-        database.documents,
-        database.outbox,
-        async () => {
-          const current = await database.authentication.get('current')
-          if (current) await clearOwner(database, current.ownerId)
-          await database.authentication.delete('current')
-        },
-      )
+      await database.transaction('rw', ownerScopedTables(database), async () => {
+        const current = await database.authentication.get('current')
+        if (current) await clearOwner(database, current.ownerId)
+        await database.authentication.delete('current')
+      })
     },
   }
 }

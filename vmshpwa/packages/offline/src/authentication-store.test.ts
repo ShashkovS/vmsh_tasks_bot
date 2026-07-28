@@ -6,7 +6,12 @@ import studentAuthFixture from '@vmsh/contracts/fixtures/auth/student.v1.json'
 import { authContextSchema } from '@vmsh/contracts'
 
 import { createOfflineAuthenticationStore } from './authentication-store'
-import { VmshOfflineDatabase, type CachedDocument, type OutboxItem } from './database'
+import {
+  VmshOfflineDatabase,
+  type CachedDocument,
+  type OutboxItem,
+  type WrittenDraftPhotoRecord,
+} from './database'
 
 const databases = new Set<VmshOfflineDatabase>()
 const NOW = new Date('2026-07-28T10:00:00.000Z')
@@ -60,6 +65,29 @@ function outbox(ownerId: string): OutboxItem {
   }
 }
 
+async function photo(ownerId: string): Promise<WrittenDraftPhotoRecord> {
+  const blob = await new Response('photo', {
+    headers: { 'content-type': 'image/webp' },
+  }).blob()
+  return {
+    id: `photo-${ownerId}`,
+    draftKey: `draft-${ownerId}`,
+    ownerId,
+    problemId: 'problem-written',
+    conditionRevisionId: 'condition-revision-one',
+    configVersion: 1,
+    fileName: 'page.webp',
+    mediaType: blob.type,
+    byteSize: blob.size,
+    width: 100,
+    height: 100,
+    processing: 'client-webp',
+    createdAt: NOW.toISOString(),
+    updatedAt: NOW.toISOString(),
+    blob,
+  }
+}
+
 describe('offline authentication store', () => {
   it('persists only a secret-free owner snapshot and reads it before expiry', async () => {
     const target = database('auth-snapshot')
@@ -89,7 +117,11 @@ describe('offline authentication store', () => {
     const authenticated = context()
     const ownerId = authenticated.principal.accountId
     await store.save(authenticated)
-    await Promise.all([target.documents.put(document(ownerId)), target.outbox.put(outbox(ownerId))])
+    await Promise.all([
+      target.documents.put(document(ownerId)),
+      target.outbox.put(outbox(ownerId)),
+      target.writtenDraftPhotos.put(await photo(ownerId)),
+    ])
 
     const afterExpiry = createOfflineAuthenticationStore(target, 'student', {
       now: () => new Date('2026-08-10T00:00:00.000Z'),
@@ -98,6 +130,7 @@ describe('offline authentication store', () => {
     expect(await target.authentication.count()).toBe(0)
     expect(await target.documents.where('ownerId').equals(ownerId).count()).toBe(0)
     expect(await target.outbox.where('ownerId').equals(ownerId).count()).toBe(0)
+    expect(await target.writtenDraftPhotos.where('ownerId').equals(ownerId).count()).toBe(0)
   })
 
   it('atomically removes the previous owner cache on an account switch', async () => {
@@ -109,6 +142,7 @@ describe('offline authentication store', () => {
     await Promise.all([
       target.documents.put(document(oldOwner)),
       target.outbox.put(outbox(oldOwner)),
+      target.writtenDraftPhotos.put(await photo(oldOwner)),
       target.documents.put(document(newOwner)),
     ])
 
@@ -117,6 +151,7 @@ describe('offline authentication store', () => {
     expect((await store.read())?.ownerId).toBe(newOwner)
     expect(await target.documents.where('ownerId').equals(oldOwner).count()).toBe(0)
     expect(await target.outbox.where('ownerId').equals(oldOwner).count()).toBe(0)
+    expect(await target.writtenDraftPhotos.where('ownerId').equals(oldOwner).count()).toBe(0)
     expect(await target.documents.where('ownerId').equals(newOwner).count()).toBe(1)
   })
 
@@ -125,13 +160,18 @@ describe('offline authentication store', () => {
     const store = createOfflineAuthenticationStore(target, 'student', { now: () => NOW })
     const ownerId = context().principal.accountId
     await store.save(context())
-    await Promise.all([target.documents.put(document(ownerId)), target.outbox.put(outbox(ownerId))])
+    await Promise.all([
+      target.documents.put(document(ownerId)),
+      target.outbox.put(outbox(ownerId)),
+      target.writtenDraftPhotos.put(await photo(ownerId)),
+    ])
 
     await store.clear()
 
     expect(await store.read()).toBeNull()
     expect(await target.documents.count()).toBe(0)
     expect(await target.outbox.count()).toBe(0)
+    expect(await target.writtenDraftPhotos.count()).toBe(0)
   })
 
   it('rejects a context from another audience', async () => {
