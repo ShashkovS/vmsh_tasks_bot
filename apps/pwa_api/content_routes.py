@@ -42,6 +42,7 @@ from db_methods.pwa.content import (
     PublicationContext,
     PublicationRecord,
     PwaContentRepository,
+    StudentProblemRevealRecord,
     TextDerivativeDraft,
 )
 from helpers.pwa.content import (
@@ -158,9 +159,7 @@ _STUDENT_KINDS = frozenset(
 )
 
 PWA_CONTENT_REPOSITORY = web.AppKey("pwa_content_repository", PwaContentRepository)
-PWA_CONTENT_ASSET_SERVICE = web.AppKey(
-    "pwa_content_asset_service", ContentAssetService
-)
+PWA_CONTENT_ASSET_SERVICE = web.AppKey("pwa_content_asset_service", ContentAssetService)
 PWA_CONTENT_OBJECT_STORAGE = web.AppKey("pwa_content_object_storage", ObjectStorage)
 ContentInvalidator = Callable[
     [GroupLessonContentScope, ContentKind, str], Awaitable[None]
@@ -602,9 +601,7 @@ async def _multipart_asset_upload(
             details={"field": "kind"},
         )
     expected_fields = required if asset_kind == "tikz" else required | {"asset"}
-    if set(values) != expected_fields or (
-        "asset" in values and not values["asset"]
-    ):
+    if set(values) != expected_fields or ("asset" in values and not values["asset"]):
         raise PwaApiError(
             status=422,
             code="validation_error",
@@ -733,10 +730,7 @@ async def _json_object(
     allowed_fields: frozenset[str],
     max_bytes: int = CONTENT_JSON_BODY_LIMIT_BYTES,
 ) -> dict[str, object]:
-    if (
-        request.content_length is not None
-        and request.content_length > max_bytes
-    ):
+    if request.content_length is not None and request.content_length > max_bytes:
         raise PwaApiError(
             status=413,
             code="payload_too_large",
@@ -897,9 +891,9 @@ def _review_etag(revision_public_id: str, version: int) -> str:
     # Compile and review are separate resources even though both are addressed
     # by revision ID. A bounded hash-derived identity prevents a compile ETag
     # from accidentally authorizing a metadata mutation. Phase 2 MATCH-03.
-    resource_id = "review-" + hashlib.sha256(
-        revision_public_id.encode("utf-8")
-    ).hexdigest()[:24]
+    resource_id = (
+        "review-" + hashlib.sha256(revision_public_id.encode("utf-8")).hexdigest()[:24]
+    )
     return _etag(resource_id, version)
 
 
@@ -1085,9 +1079,7 @@ def _metadata_drafts(value: object) -> tuple[ProblemMetadataDraft, ...]:
         answer_type = (
             None
             if raw_answer_type is None
-            else _required_int(
-                raw_answer_type, field="answerType", row_index=row_index
-            )
+            else _required_int(raw_answer_type, field="answerType", row_index=row_index)
         )
         drafts.append(
             ProblemMetadataDraft(
@@ -1149,11 +1141,7 @@ async def _require_publication_readiness(
         revision_id=context.revision.id
     )
     metadata_required = context.source.kind is ContentKind.CONDITION
-    if (
-        readiness.is_ready
-        if metadata_required
-        else readiness.is_structurally_ready
-    ):
+    if readiness.is_ready if metadata_required else readiness.is_structurally_ready:
         return
     raise PwaApiError(
         status=422,
@@ -1185,16 +1173,12 @@ async def _require_solution_cutoff(
 ) -> None:
     if kind is not ContentKind.SOLUTION:
         return
-    window = await repository.get_lesson_window(
-        group_lesson_id=scope.group_lesson_id
-    )
+    window = await repository.get_lesson_window(group_lesson_id=scope.group_lesson_id)
     if window is None:
         raise PwaApiError(
             status=422,
             code="submission_cutoff_required",
-            message=(
-                "До публикации или планирования решения задайте дедлайн сдачи."
-            ),
+            message=("До публикации или планирования решения задайте дедлайн сдачи."),
         )
 
 
@@ -1319,7 +1303,9 @@ def _asset_references(value: object) -> dict[str, dict[str, object]]:
 
     result: dict[str, dict[str, object]] = {}
     for ordinal, reference in enumerate(
-        sorted(discovered, key=lambda item: (int(item["offset"]), str(item["logicalName"])))
+        sorted(
+            discovered, key=lambda item: (int(item["offset"]), str(item["logicalName"]))
+        )
     ):
         logical_name = str(reference["logicalName"])
         existing = result.get(logical_name)
@@ -1341,9 +1327,7 @@ async def _inspect_revision_assets(
     repository: PwaContentRepository,
     context: ContentRevisionContext,
 ):
-    attachments = await repository.list_revision_assets(
-        revision_id=context.revision.id
-    )
+    attachments = await repository.list_revision_assets(revision_id=context.revision.id)
     descriptors: dict[str, WebAssetDescriptor] = {}
     for attachment in attachments:
         descriptor = _asset_descriptor(attachment.asset)
@@ -1392,9 +1376,7 @@ def _revision_asset_payload(
             }
         )
     missing = sorted(
-        logical_name
-        for logical_name in references
-        if logical_name not in descriptors
+        logical_name for logical_name in references if logical_name not in descriptors
     )
     return {
         "revisionId": context.revision.public_id,
@@ -1478,7 +1460,7 @@ async def read_local_content_asset(request: web.Request) -> web.Response:
         if asset.storage_namespace != "content":
             raise ContentNotFound("content media asset does not exist")
         payload = await storage.get(asset.object_key)
-    except (ContentInvariantError, ContentNotFound, FileNotFoundError):
+    except ContentInvariantError, ContentNotFound, FileNotFoundError:
         raise web.HTTPNotFound(text="Content asset not found") from None
     except ObjectStorageOperationError:
         raise web.HTTPServiceUnavailable(text="Content assets unavailable") from None
@@ -1642,9 +1624,7 @@ async def upload_content_revision_asset(request: web.Request) -> web.Response:
         "expected_revision_version": expected_version,
         "ordinal": int(reference["ordinal"]),
         "alt_text": (
-            str(reference["altText"])
-            if isinstance(reference["altText"], str)
-            else None
+            str(reference["altText"]) if isinstance(reference["altText"], str) else None
         ),
     }
     service = _asset_service(request)
@@ -1884,9 +1864,7 @@ async def compile_content_revision(request: web.Request) -> web.Response:
     return response
 
 
-@content_routes.get(
-    "/staff/api/v1/content/revisions/{revision_id}/problem-matches"
-)
+@content_routes.get("/staff/api/v1/content/revisions/{revision_id}/problem-matches")
 @_translate_content_errors
 async def get_problem_matches(request: web.Request) -> web.Response:
     repository = _repository(request)
@@ -1905,9 +1883,7 @@ async def get_problem_matches(request: web.Request) -> web.Response:
     return response
 
 
-@content_routes.put(
-    "/staff/api/v1/content/revisions/{revision_id}/problem-matches"
-)
+@content_routes.put("/staff/api/v1/content/revisions/{revision_id}/problem-matches")
 @_translate_content_errors
 async def put_problem_matches(request: web.Request) -> web.Response:
     repository = _repository(request)
@@ -1947,10 +1923,7 @@ async def _authorized_metadata_grid(
     repository = _repository(request)
     context = await repository.get_revision_context(revision_public_id)
     _principal, actor_user_id = _staff_actor(request, context.scope)
-    if (
-        context.scope.group_lesson_public_id
-        != request.match_info["group_lesson_id"]
-    ):
+    if context.scope.group_lesson_public_id != request.match_info["group_lesson_id"]:
         raise PwaApiError(
             status=422,
             code="revision_scope_mismatch",
@@ -1965,12 +1938,13 @@ async def _authorized_metadata_grid(
     return repository, context, actor_user_id
 
 
-@content_routes.get(
-    "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid"
-)
+@content_routes.get("/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid")
 @_translate_content_errors
 async def get_metadata_grid(request: web.Request) -> web.Response:
-    if list(request.query) != ["revisionId"] or len(request.query.getall("revisionId")) != 1:
+    if (
+        list(request.query) != ["revisionId"]
+        or len(request.query.getall("revisionId")) != 1
+    ):
         raise PwaApiError(
             status=422,
             code="validation_error",
@@ -1992,9 +1966,7 @@ async def get_metadata_grid(request: web.Request) -> web.Response:
     return response
 
 
-@content_routes.put(
-    "/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid"
-)
+@content_routes.put("/staff/api/v1/group-lessons/{group_lesson_id}/metadata-grid")
 @_translate_content_errors
 async def put_metadata_grid(request: web.Request) -> web.Response:
     payload = await _json_object(
@@ -2057,8 +2029,7 @@ async def content_preview(request: web.Request) -> web.Response:
                 "revisionId": context.revision.public_id,
                 "kind": "pdf",
                 "src": (
-                    f"/staff/api/v1/content/revisions/"
-                    f"{context.revision.public_id}/pdf"
+                    f"/staff/api/v1/content/revisions/{context.revision.public_id}/pdf"
                 ),
                 "contentSha256": asset.sha256,
                 "byteSize": asset.byte_size,
@@ -2110,7 +2081,7 @@ async def content_pdf(request: web.Request) -> web.Response:
         )
     try:
         payload = await storage.get(asset.object_key)
-    except (FileNotFoundError, KeyError):
+    except FileNotFoundError, KeyError:
         raise ContentNotFound("stored PDF object does not exist") from None
     except ObjectStorageOperationError:
         raise PwaApiError(
@@ -2126,7 +2097,9 @@ async def content_pdf(request: web.Request) -> web.Response:
     ):
         logger.error("Stored content PDF %s failed integrity check", asset.public_id)
         raise ContentRepositoryError("stored PDF object is invalid")
-    filename = f"{context.source.kind.value}-revision-{context.revision.revision_number}.pdf"
+    filename = (
+        f"{context.source.kind.value}-revision-{context.revision.revision_number}.pdf"
+    )
     return web.Response(
         body=payload,
         headers={
@@ -2195,15 +2168,11 @@ async def _authorized_lesson_window_scope(
     return repository, scope, actor_user_id
 
 
-@content_routes.get(
-    "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window"
-)
+@content_routes.get("/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window")
 @_translate_content_errors
 async def get_lesson_window(request: web.Request) -> web.Response:
     repository, scope, _actor_user_id = await _authorized_lesson_window_scope(request)
-    window = await repository.get_lesson_window(
-        group_lesson_id=scope.group_lesson_id
-    )
+    window = await repository.get_lesson_window(group_lesson_id=scope.group_lesson_id)
     if window is None:
         raise ContentNotFound("lesson window does not exist")
     response = web.json_response(
@@ -2218,14 +2187,10 @@ async def get_lesson_window(request: web.Request) -> web.Response:
     return response
 
 
-@content_routes.post(
-    "/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window"
-)
+@content_routes.post("/staff/api/v1/group-lessons/{group_lesson_id}/lesson-window")
 @_translate_content_errors
 async def create_lesson_window(request: web.Request) -> web.Response:
-    payload = await _json_object(
-        request, allowed_fields=_LESSON_WINDOW_CREATE_FIELDS
-    )
+    payload = await _json_object(request, allowed_fields=_LESSON_WINDOW_CREATE_FIELDS)
     repository, scope, actor_user_id = await _authorized_lesson_window_scope(request)
     _require_if_match(request, _none_etag())
     if payload["confirmSubmissionCutoff"] is not True:
@@ -2289,13 +2254,9 @@ async def create_lesson_window(request: web.Request) -> web.Response:
 )
 @_translate_content_errors
 async def update_lesson_window_schedule(request: web.Request) -> web.Response:
-    payload = await _json_object(
-        request, allowed_fields=_LESSON_WINDOW_SCHEDULE_FIELDS
-    )
+    payload = await _json_object(request, allowed_fields=_LESSON_WINDOW_SCHEDULE_FIELDS)
     repository, scope, actor_user_id = await _authorized_lesson_window_scope(request)
-    current = await repository.get_lesson_window(
-        group_lesson_id=scope.group_lesson_id
-    )
+    current = await repository.get_lesson_window(group_lesson_id=scope.group_lesson_id)
     if current is None:
         raise ContentNotFound("lesson window does not exist")
     _require_if_match(request, _etag(current.public_id, current.version))
@@ -2342,13 +2303,9 @@ async def update_lesson_window_schedule(request: web.Request) -> web.Response:
 )
 @_translate_content_errors
 async def update_submission_cutoff(request: web.Request) -> web.Response:
-    payload = await _json_object(
-        request, allowed_fields=_LESSON_WINDOW_CUTOFF_FIELDS
-    )
+    payload = await _json_object(request, allowed_fields=_LESSON_WINDOW_CUTOFF_FIELDS)
     repository, scope, actor_user_id = await _authorized_lesson_window_scope(request)
-    current = await repository.get_lesson_window(
-        group_lesson_id=scope.group_lesson_id
-    )
+    current = await repository.get_lesson_window(group_lesson_id=scope.group_lesson_id)
     if current is None:
         raise ContentNotFound("lesson window does not exist")
     _require_if_match(request, _etag(current.public_id, current.version))
@@ -2881,6 +2838,25 @@ async def _published_content_response(
     )
 
 
+def _student_reveal_payload(record: StudentProblemRevealRecord) -> dict[str, object]:
+    published = record.content
+    return {
+        "groupLessonId": published.scope.group_lesson_public_id,
+        "courseId": published.scope.course_public_id,
+        "groupId": published.scope.group_public_id,
+        "kind": record.kind.value,
+        "publicationId": published.publication.public_id,
+        "publicationVersion": published.publication.version,
+        "publishedAt": _iso(published.publication.published_at),
+        "revisionId": published.revision_public_id,
+        "problemId": record.problem_public_id,
+        "sourceOrdinal": record.source_ordinal,
+        "revealedAt": _iso(record.revealed_at),
+        "firstReveal": record.first_reveal,
+        "document": published.document,
+    }
+
+
 @content_routes.get(
     "/student/api/v1/group-lessons/{group_lesson_id}/content/"
     "{kind:condition|hint|solution}"
@@ -2890,11 +2866,49 @@ async def student_published_content(request: web.Request) -> web.Response:
     principal = authenticated_session(request).principal
     if principal.linked_user_id is None:  # pragma: no cover - principal invariant
         raise ContentRepositoryError("student principal has no linked identity")
+    if request.match_info["kind"] != ContentKind.CONDITION.value:
+        raise PwaApiError(
+            status=409,
+            code="reveal_confirmation_required",
+            message="Подтвердите открытие материала в задаче",
+        )
     return await _published_content_response(
         request,
         audience=AuthAudience.STUDENT,
         student_user_id=principal.linked_user_id,
     )
+
+
+@content_routes.post(
+    "/student/api/v1/group-lessons/{group_lesson_id}/problems/{problem_id}/"
+    "reveal/{kind:hint|solution}"
+)
+@_translate_content_errors
+async def reveal_student_problem_material(request: web.Request) -> web.Response:
+    await _json_object(request, allowed_fields=frozenset())
+    principal = authenticated_session(request).principal
+    if principal.linked_user_id is None:  # pragma: no cover - principal invariant
+        raise ContentRepositoryError("student principal has no linked identity")
+    kind = _content_kind(request.match_info["kind"])
+    repository = _repository(request)
+    scope = await repository.get_group_lesson_scope(
+        request.match_info["group_lesson_id"]
+    )
+    _authorize(
+        request,
+        expected_audience=AuthAudience.STUDENT,
+        capability=Capability.GROUP_READ,
+        scope=scope,
+        student_user_id=principal.linked_user_id,
+    )
+    revealed = await repository.reveal_student_problem_material(
+        student_user_id=principal.linked_user_id,
+        group_lesson_public_id=scope.group_lesson_public_id,
+        problem_public_id=request.match_info["problem_id"],
+        kind=kind,
+        request_id=_request_id(request),
+    )
+    return web.json_response(_student_reveal_payload(revealed))
 
 
 @content_routes.get(

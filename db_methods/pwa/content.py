@@ -322,6 +322,18 @@ class PublishedContentRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class StudentProblemRevealRecord:
+    """One idempotent, audited Student reveal of a published task material."""
+
+    problem_public_id: str
+    source_ordinal: int
+    kind: ContentKind
+    revealed_at: datetime
+    first_reveal: bool
+    content: PublishedContentRecord
+
+
+@dataclass(frozen=True, slots=True)
 class StudentLessonMaterialRecord:
     """One currently published, browser-readable Student material."""
 
@@ -387,6 +399,8 @@ class StudentProblemSummaryRecord:
     title: str
     problem_type: int
     answer_type: int | None
+    hint_state: str
+    solution_state: str
     status: str
     verdict: StudentProblemVerdictRecord | None
 
@@ -1325,6 +1339,14 @@ def _student_problem_summary(
         title=str(row["title"]),
         problem_type=problem_type,
         answer_type=(None if row["answer_type"] is None else int(row["answer_type"])),
+        hint_state=(
+            "unavailable" if row["hint_available"] is None else str(row["hint_state"])
+        ),
+        solution_state=(
+            "unavailable"
+            if row["solution_available"] is None
+            else str(row["solution_state"])
+        ),
         status=status,
         verdict=verdict,
     )
@@ -1444,6 +1466,7 @@ _STUDENT_PROBLEM_LIST_SELECT = """
 WITH published_scope AS (
     SELECT group_lesson.course_lesson_id,
            group_lesson.course_id,
+           group_lesson.id AS group_lesson_id,
            course_lesson.lesson_number,
            group_lesson.public_id AS group_lesson_public_id,
            course.public_id AS course_public_id,
@@ -1488,11 +1511,62 @@ visible_problem AS (
            problem_revision.source_item,
            published_scope.course_lesson_id,
            published_scope.course_id,
+           published_scope.group_lesson_id,
            published_scope.lesson_number
     FROM published_scope
     JOIN problem_revisions AS problem_revision
       ON problem_revision.content_revision_id = published_scope.condition_revision_id
     JOIN problems AS problem ON problem.id = problem_revision.problem_id
+),
+hint_state AS (
+    SELECT visible.problem_id,
+           1 AS hint_available,
+           CASE WHEN reveal.id IS NULL THEN 'available' ELSE 'revealed' END AS hint_state
+    FROM visible_problem AS visible
+    JOIN lesson_publications AS publication
+      ON publication.group_lesson_id = visible.group_lesson_id
+     AND publication.kind = 'hint'
+     AND publication.state = 'published'
+    JOIN content_revisions AS revision
+      ON revision.id = publication.revision_id
+     AND revision.status = 'ready'
+    JOIN problem_revisions AS problem_revision
+      ON problem_revision.content_revision_id = revision.id
+     AND problem_revision.problem_id = visible.problem_id
+    JOIN content_derivatives AS derivative
+      ON derivative.revision_id = revision.id
+     AND derivative.kind = 'web_ast'
+     AND derivative.invalidated_at IS NULL
+    LEFT JOIN hint_reveals AS reveal
+      ON reveal.student_user_id = :student_user_id
+     AND reveal.problem_id = visible.problem_id
+     AND reveal.publication_id = publication.id
+    GROUP BY visible.problem_id, publication.id, reveal.id
+),
+solution_state AS (
+    SELECT visible.problem_id,
+           1 AS solution_available,
+           CASE WHEN reveal.id IS NULL THEN 'available' ELSE 'revealed' END AS solution_state
+    FROM visible_problem AS visible
+    JOIN lesson_publications AS publication
+      ON publication.group_lesson_id = visible.group_lesson_id
+     AND publication.kind = 'solution'
+     AND publication.state = 'published'
+    JOIN content_revisions AS revision
+      ON revision.id = publication.revision_id
+     AND revision.status = 'ready'
+    JOIN problem_revisions AS problem_revision
+      ON problem_revision.content_revision_id = revision.id
+     AND problem_revision.problem_id = visible.problem_id
+    JOIN content_derivatives AS derivative
+      ON derivative.revision_id = revision.id
+     AND derivative.kind = 'web_ast'
+     AND derivative.invalidated_at IS NULL
+    LEFT JOIN solution_reveals AS reveal
+      ON reveal.student_user_id = :student_user_id
+     AND reveal.problem_id = visible.problem_id
+     AND reveal.publication_id = publication.id
+    GROUP BY visible.problem_id, publication.id, reveal.id
 ),
 logical_member AS (
     SELECT problem_id AS visible_problem_id,
@@ -1578,9 +1652,15 @@ SELECT published_scope.group_lesson_public_id,
        ranked_result.verdict_id,
        ranked_result.verdict_symbol,
        ranked_result.verdict_weight,
-       discussion_state.has_discussion
+       discussion_state.has_discussion,
+       hint_state.hint_available,
+       hint_state.hint_state,
+       solution_state.solution_available,
+       solution_state.solution_state
 FROM published_scope
 LEFT JOIN visible_problem ON true
+LEFT JOIN hint_state ON hint_state.problem_id = visible_problem.problem_id
+LEFT JOIN solution_state ON solution_state.problem_id = visible_problem.problem_id
 LEFT JOIN queue_state
   ON queue_state.visible_problem_id = visible_problem.problem_id
 LEFT JOIN ranked_result
@@ -3840,6 +3920,145 @@ class PwaContentRepository:
             )
 
         return await self._factory.run_read_async(read)
+
+    async def reveal_student_problem_material(
+        self,
+        *,
+        student_user_id: int,
+        group_lesson_public_id: str,
+        problem_public_id: str,
+        kind: ContentKind,
+        request_id: str,
+    ) -> StudentProblemRevealRecord:
+        """Atomically audit and return one problem's current hint/solution.
+
+        Both the problem and material must belong to the exact currently
+        published revisions of one group lesson. The unique reveal row makes a
+        retry idempotent; a replaced publication intentionally creates a new
+        reveal boundary. See Phase 3 in
+        ``vmshpwa/dev/development-plan/07-phase-3-student-reading.md``.
+        """
+
+        if student_user_id < 1:
+            raise ContentInvariantError("student user ID must be positive")
+        _require_public_id(group_lesson_public_id)
+        _require_public_id(problem_public_id)
+        if kind not in {ContentKind.HINT, ContentKind.SOLUTION}:
+            raise ContentInvariantError("only hint or solution can be revealed")
+        request_id = _required_text(request_id, label="reveal request ID")
+        timestamp = self._timestamp()
+        reveal_table = (
+            "hint_reveals" if kind is ContentKind.HINT else "solution_reveals"
+        )
+
+        def write(connection):
+            row = connection.execute(
+                "SELECT publication.*, "
+                "material_revision.public_id AS revision_public_id, "
+                "derivative.content_text AS web_document, "
+                "material_problem.source_ordinal AS material_source_ordinal, "
+                "problem.id AS selected_problem_id "
+                "FROM group_lessons AS group_lesson "
+                "JOIN lesson_publications AS condition_publication "
+                "  ON condition_publication.group_lesson_id = group_lesson.id "
+                " AND condition_publication.kind = 'condition' "
+                " AND condition_publication.state = 'published' "
+                "JOIN problem_revisions AS condition_problem "
+                "  ON condition_problem.content_revision_id = condition_publication.revision_id "
+                "JOIN problems AS problem ON problem.id = condition_problem.problem_id "
+                "JOIN lesson_publications AS publication "
+                "  ON publication.group_lesson_id = group_lesson.id "
+                " AND publication.kind = ? AND publication.state = 'published' "
+                "JOIN content_revisions AS material_revision "
+                "  ON material_revision.id = publication.revision_id "
+                " AND material_revision.status = 'ready' "
+                "JOIN problem_revisions AS material_problem "
+                "  ON material_problem.content_revision_id = material_revision.id "
+                " AND material_problem.problem_id = problem.id "
+                "JOIN content_derivatives AS derivative "
+                "  ON derivative.revision_id = material_revision.id "
+                " AND derivative.kind = 'web_ast' "
+                " AND derivative.invalidated_at IS NULL "
+                "WHERE group_lesson.public_id = ? AND problem.public_id = ? "
+                "ORDER BY derivative.created_at DESC, derivative.id DESC LIMIT 1",
+                (kind.value, group_lesson_public_id, problem_public_id),
+            ).fetchone()
+            if row is None:
+                raise ContentNotFound("published problem material does not exist")
+
+            raw_document = row["web_document"]
+            if not isinstance(raw_document, str) or len(raw_document) > 8_000_000:
+                raise ContentRepositoryError("stored web document is invalid")
+            try:
+                document = json.loads(raw_document)
+            except (json.JSONDecodeError, RecursionError) as error:
+                raise ContentRepositoryError(
+                    "stored web document is invalid"
+                ) from error
+            revision_public_id = str(row["revision_public_id"])
+            if (
+                not isinstance(document, dict)
+                or document.get("contractVersion") != 1
+                or document.get("revisionId") != revision_public_id
+                or document.get("materialKind") != kind.value
+                or not isinstance(document.get("problems"), list)
+            ):
+                raise ContentRepositoryError("stored web document is invalid")
+            source_ordinal = int(row["material_source_ordinal"])
+            selected = [
+                problem
+                for problem in document["problems"]
+                if isinstance(problem, dict)
+                and problem.get("ordinal") == source_ordinal
+            ]
+            if len(selected) != 1:
+                raise ContentRepositoryError("published problem material is ambiguous")
+            selected_document = dict(document)
+            selected_document["introduction"] = []
+            selected_document["problems"] = selected
+
+            publication = _publication(row)
+            cursor = connection.execute(
+                f"INSERT INTO {reveal_table} "
+                "(student_user_id, problem_id, publication_id, revealed_at, request_id) "
+                "VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT(student_user_id, problem_id, publication_id) DO NOTHING",
+                (
+                    student_user_id,
+                    int(row["selected_problem_id"]),
+                    publication.id,
+                    timestamp,
+                    request_id,
+                ),
+            )
+            reveal = connection.execute(
+                f"SELECT revealed_at FROM {reveal_table} "
+                "WHERE student_user_id = ? AND problem_id = ? AND publication_id = ?",
+                (
+                    student_user_id,
+                    int(row["selected_problem_id"]),
+                    publication.id,
+                ),
+            ).fetchone()
+            if reveal is None:  # pragma: no cover - transaction invariant
+                raise ContentRepositoryError("problem reveal was not persisted")
+            return StudentProblemRevealRecord(
+                problem_public_id=problem_public_id,
+                source_ordinal=source_ordinal,
+                kind=kind,
+                revealed_at=parse_utc_timestamp(str(reveal["revealed_at"])),
+                first_reveal=cursor.rowcount == 1,
+                content=PublishedContentRecord(
+                    publication=publication,
+                    revision_public_id=revision_public_id,
+                    scope=_scope_by_group_lesson_id(
+                        connection, int(row["group_lesson_id"])
+                    ),
+                    document=selected_document,
+                ),
+            )
+
+        return await self._factory.run_write_async(write)
 
     async def get_group_lesson_content_history(
         self, *, group_lesson_public_id: str

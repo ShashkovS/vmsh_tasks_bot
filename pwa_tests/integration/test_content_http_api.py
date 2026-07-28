@@ -537,7 +537,7 @@ async def _review_compiled_problem_metadata(
     def create_legacy_problems(connection):
         revision = connection.execute(
             "SELECT revision.id, revision.canonical_json, source.group_lesson_id, "
-            "group_lesson.group_id, course_lesson.lesson_number "
+            "source.kind, group_lesson.group_id, course_lesson.lesson_number "
             "FROM content_revisions AS revision "
             "JOIN content_sources AS source ON source.id = revision.source_id "
             "JOIN group_lessons AS group_lesson "
@@ -550,12 +550,47 @@ async def _review_compiled_problem_metadata(
         document = json.loads(revision["canonical_json"])
         rows = []
         for problem in document["problems"]:
+            source_item = problem["source_item"] or str(problem["ordinal"])
+            existing_condition = (
+                None
+                if revision["kind"] == "condition"
+                else connection.execute(
+                    "SELECT problem.id, problem.title "
+                    "FROM problem_revisions AS problem_revision "
+                    "JOIN content_revisions AS candidate_revision "
+                    "  ON candidate_revision.id = problem_revision.content_revision_id "
+                    "JOIN content_sources AS candidate_source "
+                    "  ON candidate_source.id = candidate_revision.source_id "
+                    "JOIN problems AS problem ON problem.id = problem_revision.problem_id "
+                    "WHERE candidate_source.group_lesson_id = ? "
+                    "  AND candidate_source.kind = 'condition' "
+                    "  AND problem_revision.source_ordinal = ? "
+                    "  AND problem_revision.source_item = ? "
+                    "ORDER BY candidate_revision.revision_number DESC, "
+                    "candidate_revision.id DESC LIMIT 1",
+                    (
+                        revision["group_lesson_id"],
+                        problem["ordinal"],
+                        source_item,
+                    ),
+                ).fetchone()
+            )
+            if existing_condition is not None:
+                rows.append(
+                    (
+                        int(revision["id"]),
+                        int(existing_condition["id"]),
+                        int(problem["ordinal"]),
+                        source_item,
+                        str(existing_condition["title"]),
+                    )
+                )
+                continue
             next_problem = connection.execute(
                 "SELECT coalesce(max(prob), 0) + 1 AS value FROM problems "
                 "WHERE group_id = ? AND lesson = ?",
                 (revision["group_id"], revision["lesson_number"]),
             ).fetchone()["value"]
-            source_item = problem["source_item"] or str(problem["ordinal"])
             title = problem["source_title"] or f"Задача {problem['ordinal']}"
             problem_id = connection.execute(
                 "INSERT INTO problems "
@@ -642,6 +677,22 @@ async def _student_read(fixture: ContentHttpFixture, *, group_lesson: str, kind:
         f"/student/api/v1/group-lessons/{group_lesson}/content/{kind}",
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
+    )
+
+
+async def _student_reveal(
+    fixture: ContentHttpFixture,
+    *,
+    group_lesson: str,
+    problem_id: str,
+    kind: str,
+):
+    return await fixture.client.post(
+        f"/student/api/v1/group-lessons/{group_lesson}/problems/"
+        f"{problem_id}/reveal/{kind}",
+        json={},
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
     )
 
 
@@ -1867,23 +1918,88 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
     student_condition = await _student_read(
         fixture, group_lesson=fixture.group_lesson_a, kind="condition"
     )
-    student_hint = await _student_read(
+    student_hint_without_confirmation = await _student_read(
         fixture, group_lesson=fixture.group_lesson_a, kind="hint"
     )
     student_solution_before_publish = await _student_read(
         fixture, group_lesson=fixture.group_lesson_a, kind="solution"
     )
-    assert student_condition.status == student_hint.status == 200
-    assert student_solution_before_publish.status == 404
+    assert student_condition.status == 200
+    assert student_hint_without_confirmation.status == 409
+    assert (await student_hint_without_confirmation.json())["error"]["code"] == (
+        "reveal_confirmation_required"
+    )
+    assert student_solution_before_publish.status == 409
     condition_wire = json.dumps(await student_condition.json(), ensure_ascii=False)
-    hint_wire = json.dumps(await student_hint.json(), ensure_ascii=False)
     assert "УСЛОВИЕ_ТОЛЬКО" in condition_wire
-    assert "ПОДСКАЗКА_ТОЛЬКО" in hint_wire
     assert "РЕШЕНИЕ_ТОЛЬКО" not in condition_wire
-    assert "РЕШЕНИЕ_ТОЛЬКО" not in hint_wire
     assert "diagnostics" not in condition_wire
     assert "canonical" not in condition_wire
     assert "telegram" not in condition_wire.casefold()
+
+    problem_list_response = await fixture.client.get(
+        "/student/api/v1/courses/course-content-http/lessons/"
+        f"{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert problem_list_response.status == 200, await problem_list_response.text()
+    problem_list = await problem_list_response.json()
+    problem_id = problem_list["problems"][0]["problemId"]
+    assert problem_list["problems"][0]["materials"] == {
+        "hint": {"status": "available"},
+        "solution": {"status": "unavailable"},
+    }
+    unpublished_solution_reveal = await _student_reveal(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        problem_id=problem_id,
+        kind="solution",
+    )
+    assert unpublished_solution_reveal.status == 404
+    invalid_reveal_body = await fixture.client.post(
+        f"/student/api/v1/group-lessons/{fixture.group_lesson_a}/problems/"
+        f"{problem_id}/reveal/hint",
+        json={"confirmed": True},
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert invalid_reveal_body.status == 422
+
+    student_hint = await _student_reveal(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        problem_id=problem_id,
+        kind="hint",
+    )
+    assert student_hint.status == 200, await student_hint.text()
+    hint_payload = await student_hint.json()
+    hint_wire = json.dumps(hint_payload, ensure_ascii=False)
+    assert hint_payload["problemId"] == problem_id
+    assert hint_payload["firstReveal"] is True
+    assert hint_payload["document"]["introduction"] == []
+    assert len(hint_payload["document"]["problems"]) == 1
+    assert "ПОДСКАЗКА_ТОЛЬКО" in hint_wire
+    assert "РЕШЕНИЕ_ТОЛЬКО" not in hint_wire
+    repeated_hint = await _student_reveal(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        problem_id=problem_id,
+        kind="hint",
+    )
+    assert repeated_hint.status == 200
+    repeated_hint_payload = await repeated_hint.json()
+    assert repeated_hint_payload["firstReveal"] is False
+    assert repeated_hint_payload["revealedAt"] == hint_payload["revealedAt"]
+    problem_list_after_reveal = await fixture.client.get(
+        "/student/api/v1/courses/course-content-http/lessons/"
+        f"{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert (await problem_list_after_reveal.json())["problems"][0]["materials"][
+        "hint"
+    ] == {"status": "revealed"}
 
     family = await fixture.client.get(
         f"/family/api/v1/children/user-content-student/group-lessons/"
@@ -1910,15 +2026,32 @@ async def test_upload_compile_preview_and_three_material_publications_are_indepe
         ).fetchone()["state"]
     )
     assert scheduled_state == "superseded"
-    student_solution = await _student_read(
-        fixture, group_lesson=fixture.group_lesson_a, kind="solution"
+    student_solution = await _student_reveal(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        problem_id=problem_id,
+        kind="solution",
     )
-    solution_wire = json.dumps(await student_solution.json(), ensure_ascii=False)
+    assert student_solution.status == 200, await student_solution.text()
+    solution_payload = await student_solution.json()
+    assert solution_payload["firstReveal"] is True
+    solution_wire = json.dumps(solution_payload, ensure_ascii=False)
     assert all(
         value in solution_wire
         for value in ("УСЛОВИЕ_ТОЛЬКО", "ОТВЕТ_ТОЛЬКО", "РЕШЕНИЕ_ТОЛЬКО")
     )
     assert "ПОДСКАЗКА_ТОЛЬКО" not in solution_wire
+    reveal_rows = fixture.factory.run_read(
+        lambda connection: {
+            "hint": connection.execute(
+                "SELECT count(*) AS count FROM hint_reveals"
+            ).fetchone()["count"],
+            "solution": connection.execute(
+                "SELECT count(*) AS count FROM solution_reveals"
+            ).fetchone()["count"],
+        }
+    )
+    assert reveal_rows == {"hint": 1, "solution": 1}
 
     counts = fixture.factory.run_read(
         lambda connection: connection.execute(
@@ -2898,10 +3031,17 @@ async def test_student_lesson_reads_enforce_group_scope_and_strict_cursor(
         cookies=_cookie(fixture, "student"),
         headers=_headers(),
     )
+    forbidden_reveal = await _student_reveal(
+        fixture,
+        group_lesson=fixture.group_lesson_b,
+        problem_id="problem-forbidden-scope",
+        kind="hint",
+    )
 
     assert forbidden_group.status == 403
     assert malformed_cursor.status == 422
     assert duplicate_group.status == 422
     assert forbidden_detail.status == 403
     assert forbidden_problems.status == 403
+    assert forbidden_reveal.status == 403
     assert malformed_detail.status == 404

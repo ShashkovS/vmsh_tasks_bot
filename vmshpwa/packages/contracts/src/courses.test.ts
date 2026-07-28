@@ -184,6 +184,11 @@ describe('Phase-1 course access contracts', () => {
       'needs-work',
     ])
     expect(response.problems[0]?.problemId).toBe('problem-fixture-42-1')
+    expect(response.problems.map((problem) => problem.materials.hint.status)).toEqual([
+      'revealed',
+      'available',
+      'unavailable',
+    ])
     expect(response.problems[1]?.verdict).toBeNull()
   })
 

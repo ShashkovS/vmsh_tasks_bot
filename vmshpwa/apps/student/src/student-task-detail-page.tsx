@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 import {
   CourseNetworkError,
@@ -9,18 +9,107 @@ import {
   useAuthentication,
   useStudentProblemsQuery,
 } from '@vmsh/app-shell'
-import { ApiResponseError, publicIdSchema } from '@vmsh/contracts'
+import { ContentNetworkError, SemanticMathDocument, createContentApiClient } from '@vmsh/content'
+import {
+  ApiResponseError,
+  publicIdSchema,
+  type StudentProblemReveal,
+  type StudentProblemSummary,
+  type StudentRevealKind,
+} from '@vmsh/contracts'
+import { HintDisclosure, SolutionDisclosure } from '@vmsh/product'
 
 import { StudentPublishedContentPage } from './content-page'
 
 function problemRequestState(error: unknown) {
-  return error instanceof CourseNetworkError
+  return error instanceof CourseNetworkError || error instanceof ContentNetworkError
     ? ('offline' as const)
     : error instanceof ApiResponseError && error.status === 403
       ? ('forbidden' as const)
       : error instanceof ApiResponseError && error.status === 404
         ? ('empty' as const)
         : ('error' as const)
+}
+
+function StudentTaskMaterials({
+  problem,
+  groupLessonId,
+}: {
+  problem: StudentProblemSummary
+  groupLessonId: string
+}) {
+  const authentication = useAuthentication()
+  const client = useMemo(
+    () =>
+      createContentApiClient(authentication.client.runtime, {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const [hint, setHint] = useState<StudentProblemReveal | null>(null)
+  const [solution, setSolution] = useState<StudentProblemReveal | null>(null)
+
+  const reveal = async (kind: StudentRevealKind) => {
+    const response = await client.revealStudentProblemMaterial({
+      groupLessonId,
+      problemId: problem.problemId,
+      kind,
+    })
+    if (
+      response.groupLessonId !== groupLessonId ||
+      response.problemId !== problem.problemId ||
+      response.kind !== kind
+    ) {
+      throw new Error('Reveal response does not match the requested task')
+    }
+    if (kind === 'hint') setHint(response)
+    else setSolution(response)
+  }
+
+  if (
+    problem.materials.hint.status === 'unavailable' &&
+    problem.materials.solution.status === 'unavailable'
+  ) {
+    return null
+  }
+
+  return (
+    <section aria-label="Подсказка и решение" className="mt-5 space-y-2">
+      {problem.materials.hint.status === 'unavailable' ? null : (
+        <HintDisclosure
+          initiallyRevealed={problem.materials.hint.status === 'revealed'}
+          meta={
+            hint
+              ? `опубликовано ${new Date(hint.publishedAt).toLocaleDateString('ru-RU')}`
+              : undefined
+          }
+          onReveal={() => reveal('hint')}
+        >
+          {hint ? <SemanticMathDocument document={hint.document} /> : null}
+        </HintDisclosure>
+      )}
+      {problem.materials.solution.status === 'unavailable' ? null : (
+        <SolutionDisclosure
+          initiallyRevealed={problem.materials.solution.status === 'revealed'}
+          meta={
+            solution
+              ? `опубликовано ${new Date(solution.publishedAt).toLocaleDateString('ru-RU')}`
+              : undefined
+          }
+          onReveal={() => reveal('solution')}
+        >
+          {solution ? <SemanticMathDocument document={solution.document} /> : null}
+        </SolutionDisclosure>
+      )}
+    </section>
+  )
 }
 
 function CanonicalStudentTask({
@@ -107,6 +196,7 @@ function CanonicalStudentTask({
 
   return (
     <StudentPublishedContentPage
+      afterDocument={<StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} />}
       groupLessonId={groupLessonId}
       kind="condition"
       problemOrdinal={problem.sourceOrdinal}

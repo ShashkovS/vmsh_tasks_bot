@@ -775,6 +775,12 @@ describe('Content API client', () => {
       groupLessonId: revision.groupLessonId,
       kind: 'condition',
     })
+    await expect(
+      createContentApiClient(runtime('student'), { fetchImplementation }).published({
+        groupLessonId: revision.groupLessonId,
+        kind: 'hint',
+      }),
+    ).rejects.toThrow('audited problem reveal')
     await createContentApiClient(runtime('family'), { fetchImplementation }).published({
       groupLessonId: revision.groupLessonId,
       kind: 'condition',
@@ -785,6 +791,57 @@ describe('Content API client', () => {
       `/student/api/v1/group-lessons/${revision.groupLessonId}/content/condition`,
       `/family/api/v1/children/student-179/group-lessons/${revision.groupLessonId}/content/condition`,
     ])
+  })
+
+  it('audits one Student problem reveal through an exact JSON POST', async () => {
+    const hintDocument = {
+      ...fixture.document,
+      materialKind: 'hint',
+      introduction: [],
+      problems: [fixture.document.problems[0]],
+    }
+    const revealed = {
+      groupLessonId: revision.groupLessonId,
+      courseId: revision.courseId,
+      groupId: revision.groupId,
+      kind: 'hint',
+      publicationId: 'publication-41-hint',
+      publicationVersion: 1,
+      publishedAt: '2026-07-27T10:01:00Z',
+      revisionId: revision.revisionId,
+      problemId: 'problem-41-n-1',
+      sourceOrdinal: 1,
+      revealedAt: '2026-07-27T10:02:00Z',
+      firstReveal: true,
+      document: hintDocument,
+    }
+    const fetchImplementation = vi.fn<typeof fetch>(() => Promise.resolve(jsonResponse(revealed)))
+    const client = createContentApiClient(runtime('student'), { fetchImplementation })
+
+    await expect(
+      client.revealStudentProblemMaterial({
+        groupLessonId: revision.groupLessonId,
+        problemId: revealed.problemId,
+        kind: 'hint',
+      }),
+    ).resolves.toEqual(revealed)
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      `/student/api/v1/group-lessons/${revision.groupLessonId}/problems/${revealed.problemId}/reveal/hint`,
+    )
+    expect(fetchImplementation.mock.calls[0]?.[1]).toMatchObject({
+      method: 'POST',
+      body: '{}',
+      credentials: 'include',
+    })
+
+    const family = createContentApiClient(runtime('family'), { fetchImplementation })
+    await expect(
+      family.revealStudentProblemMaterial({
+        groupLessonId: revision.groupLessonId,
+        problemId: revealed.problemId,
+        kind: 'hint',
+      }),
+    ).rejects.toThrow('Only Student')
   })
 
   it('refreshes once on 401 and rejects an invalid success envelope', async () => {

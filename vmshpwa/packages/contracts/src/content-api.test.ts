@@ -19,6 +19,7 @@ import {
   staffContentRevisionAssetsSchema,
   staffContentRevisionSchema,
   staffContentUploadTargetsSchema,
+  studentProblemRevealSchema,
 } from './content-api'
 
 const document = contentFixture.document
@@ -170,6 +171,39 @@ describe('Phase-2 content HTTP contracts', () => {
         document,
       }),
     ).toThrow()
+  })
+
+  it('accepts only one exact audited problem material in a reveal response', () => {
+    const hintDocument = {
+      ...document,
+      materialKind: 'hint',
+      introduction: [],
+      problems: [document.problems[0]],
+    }
+    const reveal = studentProblemRevealSchema.parse({
+      groupLessonId: 'group-lesson-41-n',
+      courseId: 'course-math-5-7',
+      groupId: 'group-beginner',
+      kind: 'hint',
+      publicationId: 'publication-41-hint',
+      publicationVersion: 1,
+      publishedAt: '2026-01-28T09:00:00Z',
+      revisionId: document.revisionId,
+      problemId: 'problem-41-n-1',
+      sourceOrdinal: document.problems[0]?.ordinal,
+      revealedAt: '2026-01-28T10:00:00Z',
+      firstReveal: true,
+      document: hintDocument,
+    })
+
+    expect(reveal.document.problems).toHaveLength(1)
+    expect(() =>
+      studentProblemRevealSchema.parse({
+        ...reveal,
+        document: { ...hintDocument, introduction: document.introduction },
+      }),
+    ).toThrow()
+    expect(() => studentProblemRevealSchema.parse({ ...reveal, kind: 'solution' })).toThrow()
   })
 
   it('keeps ETags and audience/owner query keys exact', () => {

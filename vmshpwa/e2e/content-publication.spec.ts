@@ -6,6 +6,7 @@ import { expect, test, type Page } from './fixtures'
 test.setTimeout(90_000)
 
 type ContentTarget = (typeof contentFixture.targets)[number]
+type ContentKind = 'condition' | 'hint' | 'solution'
 
 function targetForProject(projectName: string): ContentTarget {
   const target = contentFixture.targets.find((candidate) => candidate.project === projectName)
@@ -29,18 +30,20 @@ async function uploadReviewAndPublish({
   source,
   metadataTitle,
   match,
+  kind = 'condition',
 }: {
   page: Page
   target: ContentTarget
   source: string
-  metadataTitle: string
+  metadataTitle?: string
   match: 'insert-new' | 'suggested'
+  kind?: ContentKind
 }): Promise<string> {
-  const workflow = page.getByTestId('content-workflow-condition')
+  const workflow = page.getByTestId(`content-workflow-${kind}`)
   await expect(workflow).toBeVisible()
 
   await workflow.getByLabel('LaTeX-файл').setInputFiles({
-    name: 'condition.tex',
+    name: `${kind}.tex`,
     mimeType: 'application/x-tex',
     buffer: Buffer.from(source, 'utf-8'),
   })
@@ -64,18 +67,25 @@ async function uploadReviewAndPublish({
   }
   await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
 
-  const title = workflow.getByLabel('Название, строка 1')
-  await title.fill(metadataTitle)
-  const metadataResponsePromise = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'PUT' &&
-      new URL(response.url()).pathname ===
-        `/staff/api/v1/group-lessons/${target.groupLessonPublicId}/metadata-grid`,
-  )
-  await workflow.getByRole('button', { name: 'Сохранить' }).click()
-  const metadataResponse = await metadataResponsePromise
-  expect(metadataResponse.status()).toBe(200)
-  await expect(workflow.getByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
+  if (kind === 'condition') {
+    if (!metadataTitle) throw new Error('Condition publication requires a task title')
+    const title = workflow.getByLabel('Название, строка 1')
+    await title.fill(metadataTitle)
+    const metadataResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PUT' &&
+        new URL(response.url()).pathname ===
+          `/staff/api/v1/group-lessons/${target.groupLessonPublicId}/metadata-grid`,
+    )
+    await workflow.getByRole('button', { name: 'Сохранить' }).click()
+    const metadataResponse = await metadataResponsePromise
+    expect(metadataResponse.status()).toBe(200)
+    await expect(workflow.getByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
+  } else {
+    await expect(
+      workflow.getByText('Сопоставление задач подтверждено; метаданные берутся из условия.'),
+    ).toBeVisible()
+  }
 
   // Phase 2 publication contract: an explicit confirmation changes only the
   // selected concrete group-lesson revision; upload/review never auto-publish.
@@ -95,6 +105,7 @@ async function uploadReviewAndPublish({
   expect(publication).toMatchObject({
     groupLessonId: target.groupLessonPublicId,
     revisionId: uploadPayload.revisionId,
+    kind,
   })
   await expect(workflow.getByText(`Публичная revision: ${uploadPayload.revisionId}`)).toBeVisible()
   return uploadPayload.revisionId
@@ -129,6 +140,14 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
     metadataTitle: firstTaskTitle,
     match: testInfo.retry === 0 ? 'insert-new' : 'suggested',
   })
+  const hintStatement = `Аудируемая подсказка для ${attempt}.`
+  await uploadReviewAndPublish({
+    page,
+    target,
+    source: latexSource('Первая версия', hintStatement),
+    match: 'suggested',
+    kind: 'hint',
+  })
 
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/')
   await expect(page.getByRole('heading', { name: 'Сейчас', exact: true })).toBeVisible()
@@ -148,6 +167,24 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await taskRow.click()
   await expect(page).toHaveURL(/\/student\/tasks\/problem-[0-9a-f]{32}\?/)
   await expect(page.getByText(firstStatement)).toBeVisible()
+  await page.getByRole('button', { name: /^Подсказка/ }).click()
+  const revealResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      /\/student\/api\/v1\/group-lessons\/[^/]+\/problems\/[^/]+\/reveal\/hint$/.test(
+        new URL(response.url()).pathname,
+      ),
+  )
+  await page.getByRole('button', { name: 'Показать подсказку' }).click()
+  const revealResponse = await revealResponsePromise
+  expect(revealResponse.status()).toBe(200)
+  expect(await revealResponse.json()).toMatchObject({ firstReveal: true, kind: 'hint' })
+  await expect(page.getByText(hintStatement)).toBeVisible()
+
+  await page.reload()
+  await page.getByRole('button', { name: /^Подсказка/ }).click()
+  await expect(page.getByRole('button', { name: 'Показать подсказку' })).toHaveCount(0)
+  await expect(page.getByText(hintStatement)).toBeVisible()
 
   await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()

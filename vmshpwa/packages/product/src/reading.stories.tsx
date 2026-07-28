@@ -223,3 +223,40 @@ export const TaskReading: Story = {
     await expect(canvas.getByText(/никакие две не били друг друга/)).toBeInTheDocument()
   },
 }
+
+export const AuditedRevealRecovery: Story = {
+  name: 'Раскрытие через API: ошибка и повтор',
+  render: () => {
+    let hintAttempts = 0
+    return (
+      <div className="mx-auto max-w-2xl space-y-3">
+        <HintDisclosure
+          onReveal={() => {
+            hintAttempts += 1
+            if (hintAttempts === 1) return Promise.reject(new Error('offline'))
+            return Promise.resolve()
+          }}
+        >
+          Подсказка загружена только после успешного audit-запроса.
+        </HintDisclosure>
+        <SolutionDisclosure initiallyRevealed onReveal={() => Promise.resolve()}>
+          Ранее раскрытое решение открывается без повторного подтверждения.
+        </SolutionDisclosure>
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByRole('button', { name: /^Подсказка/ }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Показать подсказку' }))
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Не удалось открыть материал')
+    await expect(canvas.queryByText(/Подсказка загружена/)).not.toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Повторить' }))
+    await expect(canvas.getByText(/Подсказка загружена/)).toBeInTheDocument()
+
+    await userEvent.click(canvas.getByRole('button', { name: /^Решение/ }))
+    await expect(canvas.queryByText('Открыть решение?')).not.toBeInTheDocument()
+    await expect(canvas.getByText(/Ранее раскрытое решение/)).toBeInTheDocument()
+  },
+}

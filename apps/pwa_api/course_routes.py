@@ -233,6 +233,10 @@ def _student_problem_payload(
         "title": problem.title,
         "type": problem_type,
         "answerType": problem.answer_type,
+        "materials": {
+            "hint": {"status": problem.hint_state},
+            "solution": {"status": problem.solution_state},
+        },
         "status": problem.status,
         "verdict": (
             None

@@ -947,6 +947,55 @@ export const publishedContentSchema = z
   })
 export type PublishedContent = z.infer<typeof publishedContentSchema>
 
+export const studentRevealKindSchema = z.enum(['hint', 'solution'])
+export type StudentRevealKind = z.infer<typeof studentRevealKindSchema>
+
+export const studentProblemRevealSchema = z
+  .object({
+    groupLessonId: publicIdSchema,
+    courseId: publicIdSchema,
+    groupId: publicIdSchema,
+    kind: studentRevealKindSchema,
+    publicationId: publicIdSchema,
+    publicationVersion: z.number().int().positive(),
+    publishedAt: z.iso.datetime(),
+    revisionId: publicIdSchema,
+    problemId: publicIdSchema,
+    sourceOrdinal: z.number().int().positive(),
+    revealedAt: z.iso.datetime(),
+    firstReveal: z.boolean(),
+    document: webContentDocumentSchema,
+  })
+  .strict()
+  .superRefine((revealed, context) => {
+    if (revealed.document.revisionId !== revealed.revisionId) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Revealed revision must match the document revision',
+        path: ['document', 'revisionId'],
+      })
+    }
+    if (revealed.document.materialKind !== revealed.kind) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Revealed material kind must match the document kind',
+        path: ['document', 'materialKind'],
+      })
+    }
+    if (
+      revealed.document.introduction.length !== 0 ||
+      revealed.document.problems.length !== 1 ||
+      revealed.document.problems[0]?.ordinal !== revealed.sourceOrdinal
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'A reveal must contain exactly its selected problem',
+        path: ['document', 'problems'],
+      })
+    }
+  })
+export type StudentProblemReveal = z.infer<typeof studentProblemRevealSchema>
+
 export const contentQueryKeys = {
   published: (
     audience: 'student' | 'family',

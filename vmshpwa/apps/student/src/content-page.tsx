@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 
 import { PageLayout, PageStatePanel, useAuthentication } from '@vmsh/app-shell'
 import {
@@ -27,11 +27,13 @@ export function StudentPublishedContentPage({
   groupLessonId,
   kind,
   problemOrdinal,
+  afterDocument,
 }: {
   taskId: string
   groupLessonId?: string
   kind: ContentMaterialKind
   problemOrdinal?: number
+  afterDocument?: ReactNode
 }) {
   const authentication = useAuthentication()
   const client = useMemo(
@@ -131,6 +133,7 @@ export function StudentPublishedContentPage({
     >
       <ContentUpdateMarker visible={contentWasReplaced} />
       <SemanticMathDocument document={visibleDocument} />
+      {afterDocument}
     </PageLayout>
   )
 }

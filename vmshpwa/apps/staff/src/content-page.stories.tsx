@@ -249,6 +249,9 @@ function storyClient(overrides: Partial<ContentApiClient> = {}): ContentApiClien
         }),
       )
     },
+    revealStudentProblemMaterial() {
+      return Promise.reject(new Error('Staff не раскрывает ученические материалы'))
+    },
     ...overrides,
   }
 }

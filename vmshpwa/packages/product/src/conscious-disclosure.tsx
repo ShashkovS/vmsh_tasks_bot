@@ -19,7 +19,11 @@ export interface ConsciousDisclosureProps {
   meta?: string | undefined
   /** When set, the section is locked (not yet available) and cannot open. */
   lockedNote?: string | undefined
-  defaultOpen?: boolean
+  /** Server says this publication was already revealed by this student. */
+  initiallyRevealed?: boolean | undefined
+  /** Loads and audits the exact material before any child content is shown. */
+  onReveal?: (() => void | Promise<void>) | undefined
+  defaultOpen?: boolean | undefined
   className?: string | undefined
 }
 
@@ -30,12 +34,17 @@ export function ConsciousDisclosure({
   confirm,
   meta,
   lockedNote,
+  initiallyRevealed = false,
+  onReveal,
   defaultOpen = false,
   className,
 }: ConsciousDisclosureProps) {
-  const [open, setOpen] = useState(defaultOpen)
+  const [open, setOpen] = useState(defaultOpen && onReveal === undefined)
   const [confirming, setConfirming] = useState(false)
-  const [revealed, setRevealed] = useState(defaultOpen || !confirm)
+  const [revealed, setRevealed] = useState(defaultOpen || initiallyRevealed || !confirm)
+  const [loaded, setLoaded] = useState(onReveal === undefined)
+  const [revealing, setRevealing] = useState(false)
+  const [revealError, setRevealError] = useState<string | null>(null)
   const panelId = useId()
 
   if (lockedNote) {
@@ -54,11 +63,29 @@ export function ConsciousDisclosure({
     )
   }
 
+  const loadAndOpen = async () => {
+    if (!loaded && onReveal) {
+      setRevealing(true)
+      setRevealError(null)
+      try {
+        await onReveal()
+        setLoaded(true)
+      } catch {
+        setRevealError('Не удалось открыть материал. Проверьте соединение и повторите попытку.')
+        setRevealing(false)
+        return
+      }
+      setRevealing(false)
+    }
+    setConfirming(false)
+    setOpen(true)
+  }
+
   const toggle = () => {
     if (open) {
       setOpen(false)
     } else if (revealed) {
-      setOpen(true)
+      void loadAndOpen()
     } else {
       setConfirming(true)
     }
@@ -67,7 +94,7 @@ export function ConsciousDisclosure({
   const reveal = () => {
     setRevealed(true)
     setConfirming(false)
-    setOpen(true)
+    void loadAndOpen()
   }
 
   return (
@@ -77,6 +104,7 @@ export function ConsciousDisclosure({
         aria-expanded={open}
         className="flex min-h-(--touch-target) w-full items-center gap-2 px-3 text-left text-small font-medium text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
         onClick={toggle}
+        disabled={revealing}
         type="button"
       >
         <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
@@ -103,8 +131,8 @@ export function ConsciousDisclosure({
           <p className="font-medium text-foreground">{confirm.title}</p>
           <p className="mt-0.5 text-muted-foreground">{confirm.body}</p>
           <div className="mt-2 flex gap-2">
-            <Button onClick={reveal} size="sm">
-              {confirm.action}
+            <Button disabled={revealing} onClick={reveal} size="sm">
+              {revealing ? 'Открываем…' : confirm.action}
             </Button>
             <Button onClick={() => setConfirming(false)} size="sm" variant="ghost">
               Не сейчас
@@ -113,7 +141,19 @@ export function ConsciousDisclosure({
         </div>
       ) : null}
 
-      {open ? (
+      {revealError ? (
+        <div
+          className="flex flex-wrap items-center gap-2 border-t border-border bg-destructive/10 px-3 py-2 text-small text-destructive"
+          role="alert"
+        >
+          <span className="min-w-0 flex-1">{revealError}</span>
+          <Button onClick={() => void loadAndOpen()} size="sm" variant="outline">
+            Повторить
+          </Button>
+        </div>
+      ) : null}
+
+      {open && loaded ? (
         <div
           className="border-t border-border px-3 py-3 font-reading text-body leading-relaxed text-foreground"
           id={panelId}
@@ -127,12 +167,21 @@ export function ConsciousDisclosure({
 
 export interface DisclosurePresetProps {
   children: ReactNode
-  meta?: string
-  lockedNote?: string
-  className?: string
+  meta?: string | undefined
+  lockedNote?: string | undefined
+  initiallyRevealed?: boolean | undefined
+  onReveal?: (() => void | Promise<void>) | undefined
+  className?: string | undefined
 }
 
-export function HintDisclosure({ children, meta, lockedNote, className }: DisclosurePresetProps) {
+export function HintDisclosure({
+  children,
+  meta,
+  lockedNote,
+  initiallyRevealed,
+  onReveal,
+  className,
+}: DisclosurePresetProps) {
   return (
     <ConsciousDisclosure
       className={className}
@@ -145,6 +194,8 @@ export function HintDisclosure({ children, meta, lockedNote, className }: Disclo
       label="Подсказка"
       lockedNote={lockedNote}
       meta={meta}
+      initiallyRevealed={initiallyRevealed}
+      onReveal={onReveal}
     >
       {children}
     </ConsciousDisclosure>
@@ -155,6 +206,8 @@ export function SolutionDisclosure({
   children,
   meta,
   lockedNote,
+  initiallyRevealed,
+  onReveal,
   className,
 }: DisclosurePresetProps) {
   return (
@@ -169,6 +222,8 @@ export function SolutionDisclosure({
       label="Решение"
       lockedNote={lockedNote}
       meta={meta}
+      initiallyRevealed={initiallyRevealed}
+      onReveal={onReveal}
     >
       {children}
     </ConsciousDisclosure>

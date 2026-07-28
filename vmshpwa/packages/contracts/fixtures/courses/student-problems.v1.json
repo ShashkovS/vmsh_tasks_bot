@@ -13,6 +13,10 @@
         "title": "Разнообразные вагоны",
         "type": "test",
         "answerType": 2,
+        "materials": {
+          "hint": { "status": "revealed" },
+          "solution": { "status": "available" }
+        },
         "status": "accepted",
         "verdict": { "verdictId": 17, "symbol": "✅+", "weight": 1.0 }
       },
@@ -23,6 +27,10 @@
         "title": "Расстановка ладей",
         "type": "written",
         "answerType": null,
+        "materials": {
+          "hint": { "status": "available" },
+          "solution": { "status": "unavailable" }
+        },
         "status": "checking",
         "verdict": null
       },
@@ -33,6 +41,10 @@
         "title": "Крылья бабочки",
         "type": "oral",
         "answerType": null,
+        "materials": {
+          "hint": { "status": "unavailable" },
+          "solution": { "status": "unavailable" }
+        },
         "status": "needs-work",
         "verdict": { "verdictId": 15, "symbol": "🟨±", "weight": 0.7 }
       }

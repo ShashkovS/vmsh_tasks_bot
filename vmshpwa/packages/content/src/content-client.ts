@@ -20,6 +20,8 @@ import {
   publishContentRequestSchema,
   publicIdSchema,
   publishedContentSchema,
+  studentProblemRevealSchema,
+  studentRevealKindSchema,
   rollbackContentRequestSchema,
   staffContentHistorySchema,
   staffContentAssetUploadSchema,
@@ -36,6 +38,8 @@ import {
   type ContentPublicationCancellation,
   type ContentPublicationHiding,
   type PublishedContent,
+  type StudentProblemReveal,
+  type StudentRevealKind,
   type RuntimeConfig,
   type BusinessTimezone,
   type LocalPublicationTime,
@@ -102,6 +106,12 @@ export interface PublishedContentInput {
   groupLessonId: string
   kind: ContentMaterialKind
   studentPublicId?: string
+}
+
+export interface RevealStudentProblemMaterialInput {
+  groupLessonId: string
+  problemId: string
+  kind: StudentRevealKind
 }
 
 export interface ResolveProblemMatchesInput {
@@ -193,6 +203,10 @@ export interface ContentApiClient {
     input: PublishedContentInput,
     options?: ContentRequestOptions,
   ): Promise<PublishedContent>
+  revealStudentProblemMaterial(
+    input: RevealStudentProblemMaterialInput,
+    options?: ContentRequestOptions,
+  ): Promise<StudentProblemReveal>
 }
 
 export interface ContentApiClientOptions {
@@ -594,6 +608,9 @@ class BrowserContentApiClient implements ContentApiClient {
       if (input.studentPublicId !== undefined) {
         throw new TypeError('Student content read cannot select another student')
       }
+      if (kind !== 'condition') {
+        throw new TypeError('Student hint and solution require an audited problem reveal')
+      }
       path = `/group-lessons/${groupLessonId}/content/${kind}`
     } else if (this.audience === 'family') {
       const studentPublicId = publicIdSchema.parse(input.studentPublicId)
@@ -602,6 +619,28 @@ class BrowserContentApiClient implements ContentApiClient {
       throw new TypeError('Staff cannot use the Student/Family published-content endpoint')
     }
     return this.#json(path, { method: 'GET', ...options }, publishedContentSchema)
+  }
+
+  async revealStudentProblemMaterial(
+    input: RevealStudentProblemMaterialInput,
+    options: ContentRequestOptions = {},
+  ): Promise<StudentProblemReveal> {
+    if (this.audience !== 'student') {
+      throw new TypeError('Only Student can audit a task material reveal')
+    }
+    const groupLessonId = publicIdSchema.parse(input.groupLessonId)
+    const problemId = publicIdSchema.parse(input.problemId)
+    const kind = studentRevealKindSchema.parse(input.kind)
+    return this.#json(
+      `/group-lessons/${encodeURIComponent(groupLessonId)}/problems/${encodeURIComponent(problemId)}/reveal/${kind}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(emptyContentMutationRequestSchema.parse({})),
+        contentType: 'application/json',
+        ...options,
+      },
+      studentProblemRevealSchema,
+    )
   }
 
   #requireStaff(): void {
