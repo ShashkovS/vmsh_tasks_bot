@@ -113,6 +113,10 @@
       {
         "id": "0046.pwa_test_attempts_idempotency",
         "sha256": "6db9af4016d61821f6812644a0b50965399962f2e9522ffeefaf7dcbd50c6756"
+      },
+      {
+        "id": "0047.pwa_submission_threads_entries_assets",
+        "sha256": "ca3d5381cbedc6700a2b3a60f3b8d51934b58222248591145be87407c41caa29"
       }
     ],
     "repository_head_status": {
@@ -123,7 +127,7 @@
     }
   },
   "product": {
-    "object_count": 211,
+    "object_count": 261,
     "objects": [
       {
         "columns": [
@@ -11403,6 +11407,1502 @@
           },
           {
             "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "asset_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ordinal",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "client_filename",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "upload_status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "locked_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "locked_by_result_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "asset_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "media_assets"
+          },
+          {
+            "from_columns": [
+              "entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          },
+          {
+            "from_columns": [
+              "locked_by_result_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "results"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_attachments_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "entry_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ordinal",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_attachments_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "asset_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_attachments_asset_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "entry_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ordinal",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "submission_attachments_entry_order_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "entry_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_attachments_id_entry_uq",
+            "origin": "c",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "submission_attachments",
+        "object_sha256": "38b26cfeb56dbec3cb9ca17b7a3550dede8388b5d45036fc466861a17a8f78bd",
+        "sql": "CREATE TABLE submission_attachments\n(\n    id                  integer primary key,\n    public_id           text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    entry_id            integer not null references submission_entries (id),\n    asset_id            integer not null references media_assets (id),\n    -- Ordinals are deliberately sparse and non-negative. SQLite does not defer\n    -- UNIQUE checks, so reorder code needs temporary high values; the separate\n    -- count trigger, not the ordinal range, enforces the product limit of ten.\n    ordinal             integer not null check (ordinal >= 0),\n    client_filename     text check (client_filename is null or length(client_filename) <= 512),\n    upload_status       text    not null\n        check (upload_status in ('pending', 'stored', 'failed', 'locked')),\n    created_at          text    not null,\n    locked_at           text,\n    locked_by_result_id integer references results (id),\n    unique (entry_id, ordinal),\n    check (\n        (upload_status = 'locked' and locked_at is not null and locked_by_result_id is not null)\n        or (upload_status <> 'locked' and locked_at is null and locked_by_result_id is null)\n    ),\n    check (locked_at is null or locked_at >= created_at)\n);",
+        "table_name": "submission_attachments",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "thread_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "author_kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "author_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "channel",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "channel_group_key",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entry_kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "text",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "client_created_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "server_received_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_sha256",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "legacy_discussion_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "locked_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 17,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "deleted_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "author_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "legacy_discussion_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "written_tasks_discussions"
+          },
+          {
+            "from_columns": [
+              "thread_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_threads"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_entries_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 14,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "legacy_discussion_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_entries_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "author_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 12,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_entries_author_idempotency_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "thread_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_entries_id_thread_uq",
+            "origin": "c",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "channel_group_key",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_entries_legacy_group_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "thread_id",
+                "seqno": 0
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "server_received_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "submission_entries_thread_history_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_entries",
+        "object_sha256": "a69945016a947317cd95b17ad74112bb5051a9463ddc710a1c20a60f23998339",
+        "sql": "CREATE TABLE submission_entries\n(\n    id                   integer primary key,\n    public_id            text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    thread_id            integer not null references submission_threads (id),\n    author_kind          text    not null\n        check (author_kind in ('student', 'teacher', 'admin', 'ai', 'system')),\n    author_user_id       integer references users (id),\n    channel              text    not null\n        check (channel in ('pwa', 'telegram', 'staff', 'system')),\n    channel_group_key    text\n        check (\n            channel_group_key is null\n            or (\n                length(channel_group_key) between 1 and 200\n                and channel_group_key = trim(channel_group_key)\n            )\n        ),\n    entry_kind           text    not null\n        check (entry_kind in ('text', 'submission', 'teacher_comment', 'ai_comment', 'system_event')),\n    state                text    not null\n        check (state in ('draft', 'uploading', 'submitted', 'deleted', 'locked')),\n    text                 text    check (text is null or length(text) <= 100000),\n    client_created_at    text,\n    server_received_at   text    not null,\n    idempotency_key      text\n        check (\n            idempotency_key is null\n            or (\n                length(idempotency_key) between 1 and 200\n                and idempotency_key = trim(idempotency_key)\n            )\n        ),\n    payload_sha256       text\n        check (\n            payload_sha256 is null\n            or (\n                length(payload_sha256) = 64\n                and payload_sha256 not glob '*[^0-9a-f]*'\n            )\n        ),\n    legacy_discussion_id integer unique references written_tasks_discussions (id),\n    version              integer not null default 1 check (version > 0),\n    locked_at            text,\n    deleted_at           text,\n    check ((idempotency_key is null) = (payload_sha256 is null)),\n    check (channel_group_key is null or channel = 'telegram'),\n    check (\n        (author_kind in ('student', 'teacher', 'admin') and author_user_id is not null)\n        or (author_kind in ('ai', 'system') and author_user_id is null)\n    ),\n    check (\n        (author_kind = 'student' and entry_kind in ('text', 'submission'))\n        or (author_kind in ('teacher', 'admin') and entry_kind = 'teacher_comment')\n        or (author_kind = 'ai' and entry_kind = 'ai_comment')\n        or (author_kind = 'system' and entry_kind = 'system_event')\n    ),\n    check (\n        (state = 'locked' and locked_at is not null and deleted_at is null)\n        or (state = 'deleted' and deleted_at is not null and locked_at is null)\n        or (state not in ('locked', 'deleted') and locked_at is null and deleted_at is null)\n    ),\n    check (locked_at is null or locked_at >= server_received_at),\n    check (deleted_at is null or deleted_at >= server_received_at)\n);",
+        "table_name": "submission_entries",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reassignment_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "item_kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "attachment_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ordinal",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "attachment_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_attachments"
+          },
+          {
+            "from_columns": [
+              "reassignment_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_material_reassignments"
+          },
+          {
+            "from_columns": [
+              "source_entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "reassignment_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ordinal",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_material_reassignment_items_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "source_entry_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "item_kind",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "attachment_id",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "reassignment_id",
+                "seqno": 3
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ordinal",
+                "seqno": 4
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 5
+              }
+            ],
+            "name": "submission_material_reassignment_items_projection_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_material_reassignment_items",
+        "object_sha256": "a37f8f3b15dc8af7ff542acb85c5dfb3f6481841096ee75c2e60042e07a16171",
+        "sql": "CREATE TABLE submission_material_reassignment_items\n(\n    reassignment_id integer not null references submission_material_reassignments (id),\n    source_entry_id integer not null references submission_entries (id),\n    item_kind       text    not null check (item_kind in ('entry_text', 'attachment')),\n    attachment_id   integer references submission_attachments (id),\n    ordinal         integer not null check (ordinal >= 0),\n    primary key (reassignment_id, ordinal),\n    check (\n        (item_kind = 'entry_text' and attachment_id is null)\n        or (item_kind = 'attachment' and attachment_id is not null)\n    )\n);",
+        "table_name": "submission_material_reassignment_items",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_thread_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "target_thread_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "target_problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "performed_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reason",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "performed_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "source_problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "source_thread_id",
+              "student_user_id",
+              "source_problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "student_user_id",
+              "problem_id"
+            ],
+            "target_table": "submission_threads"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "target_problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "target_thread_id",
+              "student_user_id",
+              "target_problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "student_user_id",
+              "problem_id"
+            ],
+            "target_table": "submission_threads"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_material_reassignments_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "performed_by_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "request_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_material_reassignments_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "created_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "submission_material_reassignments_student_history_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_material_reassignments",
+        "object_sha256": "5edfcb3027d31e77594fc9e313af1a2513133f18759355cdc0ec930d0f6013b0",
+        "sql": "CREATE TABLE submission_material_reassignments\n(\n    id                   integer primary key,\n    public_id            text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    student_user_id      integer not null references users (id),\n    source_thread_id     integer not null,\n    target_thread_id     integer not null,\n    source_problem_id    integer not null references problems (id),\n    target_problem_id    integer not null references problems (id),\n    performed_by_user_id integer not null references users (id),\n    reason               text\n        check (reason is null or (length(trim(reason)) between 1 and 2000)),\n    request_id           text    not null\n        check (length(request_id) between 1 and 200 and request_id = trim(request_id)),\n    created_at           text    not null,\n    foreign key (source_thread_id, student_user_id, source_problem_id)\n        references submission_threads (id, student_user_id, problem_id),\n    foreign key (target_thread_id, student_user_id, target_problem_id)\n        references submission_threads (id, student_user_id, problem_id),\n    unique (performed_by_user_id, request_id),\n    check (source_thread_id <> target_thread_id),\n    check (source_problem_id <> target_problem_id)\n);",
+        "table_name": "submission_material_reassignments",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "condition_revision_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "latest_result_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "latest_entry_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "condition_revision_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "content_revisions"
+          },
+          {
+            "from_columns": [
+              "latest_result_id",
+              "student_user_id",
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "student_id",
+              "problem_id"
+            ],
+            "target_table": "results"
+          },
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_threads_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "submission_threads_id_owner_problem_uq",
+            "origin": "c",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_threads_one_active_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "latest_entry_at",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_threads_review_queue_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "updated_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "submission_threads_student_updated_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_threads",
+        "object_sha256": "0bbce3756ab6bb5511b0d3c2e155b94b13b5ae4746bb8dd4ef1d8d1737e5420d",
+        "sql": "CREATE TABLE submission_threads\n(\n    id                    integer primary key,\n    public_id             text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    student_user_id       integer not null references users (id),\n    problem_id            integer not null references problems (id),\n    -- The public conditionRevisionId contract names the source/content\n    -- revision. A scope trigger below proves the concrete problem has a\n    -- problem_revision inside that content revision.\n    condition_revision_id integer not null references content_revisions (id),\n    status                 text    not null\n        check (status in ('open', 'awaiting_review', 'needs_work', 'accepted', 'closed')),\n    latest_result_id       integer,\n    latest_entry_at        text    not null,\n    created_at             text    not null,\n    updated_at             text    not null,\n    version                integer not null default 1 check (version > 0),\n    foreign key (latest_result_id, student_user_id, problem_id)\n        references results (id, student_id, problem_id),\n    check (latest_entry_at >= created_at),\n    check (updated_at >= created_at),\n    check (status not in ('needs_work', 'accepted') or latest_result_id is not null)\n);",
+        "table_name": "submission_threads",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -13959,6 +15459,97 @@
         "type": "index"
       },
       {
+        "name": "submission_attachments_asset_idx",
+        "object_sha256": "6bb6ebbf1d3bf258e97554db896520a46efdd61213c886dc674fc7de19112124",
+        "sql": "CREATE INDEX submission_attachments_asset_idx\n    on submission_attachments (asset_id, id);",
+        "table_name": "submission_attachments",
+        "type": "index"
+      },
+      {
+        "name": "submission_attachments_entry_order_idx",
+        "object_sha256": "6da473fab4fb2f5047105c72d2f1ea2702d647a3982d781e5e092d62c1ad0f26",
+        "sql": "CREATE INDEX submission_attachments_entry_order_idx\n    on submission_attachments (entry_id, ordinal, id);",
+        "table_name": "submission_attachments",
+        "type": "index"
+      },
+      {
+        "name": "submission_attachments_id_entry_uq",
+        "object_sha256": "73a542060f3027d2597596d12e32b6e8b77ee1ae3491a2a137d6f1b5267c9e62",
+        "sql": "CREATE UNIQUE INDEX submission_attachments_id_entry_uq\n    on submission_attachments (id, entry_id);",
+        "table_name": "submission_attachments",
+        "type": "index"
+      },
+      {
+        "name": "submission_entries_author_idempotency_uq",
+        "object_sha256": "6f2cb05b0ffa6f8ab2c1fab13d4ae4e99c9c477fdde6dcc063d500507eb8d0a1",
+        "sql": "CREATE UNIQUE INDEX submission_entries_author_idempotency_uq\n    on submission_entries (author_user_id, idempotency_key)\n    where idempotency_key is not null;",
+        "table_name": "submission_entries",
+        "type": "index"
+      },
+      {
+        "name": "submission_entries_id_thread_uq",
+        "object_sha256": "27da6f0db28dd5dac22f65afd2ca9262f98b87f0280b41a2236e287536996667",
+        "sql": "CREATE UNIQUE INDEX submission_entries_id_thread_uq\n    on submission_entries (id, thread_id);",
+        "table_name": "submission_entries",
+        "type": "index"
+      },
+      {
+        "name": "submission_entries_legacy_group_idx",
+        "object_sha256": "9380d0edbd8fbc4e669209d427628b6c6bc3a3e97c09175b28310972ab45cb45",
+        "sql": "CREATE INDEX submission_entries_legacy_group_idx\n    on submission_entries (channel_group_key, id)\n    where channel = 'telegram' and channel_group_key is not null;",
+        "table_name": "submission_entries",
+        "type": "index"
+      },
+      {
+        "name": "submission_entries_thread_history_idx",
+        "object_sha256": "fcbe9ff9bdb4bb39d9cbe24d41365e3a37bcf256083d4b2a2d472a8d378d5142",
+        "sql": "CREATE INDEX submission_entries_thread_history_idx\n    on submission_entries (thread_id, server_received_at, id);",
+        "table_name": "submission_entries",
+        "type": "index"
+      },
+      {
+        "name": "submission_material_reassignment_items_projection_idx",
+        "object_sha256": "ce2c65c4bbc0434fa56037b2d9793d66e7f6d664ed0faa0c319946523ce993bf",
+        "sql": "CREATE INDEX submission_material_reassignment_items_projection_idx\n    on submission_material_reassignment_items\n       (source_entry_id, item_kind, attachment_id, reassignment_id, ordinal);",
+        "table_name": "submission_material_reassignment_items",
+        "type": "index"
+      },
+      {
+        "name": "submission_material_reassignments_student_history_idx",
+        "object_sha256": "c66ec7c6ece540c3ca5e37afefcb3b806644891fa87bef1ef4c0660734c28643",
+        "sql": "CREATE INDEX submission_material_reassignments_student_history_idx\n    on submission_material_reassignments (student_user_id, created_at, id);",
+        "table_name": "submission_material_reassignments",
+        "type": "index"
+      },
+      {
+        "name": "submission_threads_id_owner_problem_uq",
+        "object_sha256": "085072cac03140d6557008dc37fd9aeb4aef65ac626c1ff086c227e8820fe5f4",
+        "sql": "CREATE UNIQUE INDEX submission_threads_id_owner_problem_uq\n    on submission_threads (id, student_user_id, problem_id);",
+        "table_name": "submission_threads",
+        "type": "index"
+      },
+      {
+        "name": "submission_threads_one_active_uq",
+        "object_sha256": "e244771f964d658e7038daa778963cd34765342915f3ef338b23872f2a3e3b8b",
+        "sql": "CREATE UNIQUE INDEX submission_threads_one_active_uq\n    on submission_threads (student_user_id, problem_id)\n    where status <> 'closed';",
+        "table_name": "submission_threads",
+        "type": "index"
+      },
+      {
+        "name": "submission_threads_review_queue_idx",
+        "object_sha256": "90d57408ce551d1efdce97ca718663d48a6021c9eaf4be7903bf459d6a58c675",
+        "sql": "CREATE INDEX submission_threads_review_queue_idx\n    on submission_threads (latest_entry_at, id)\n    where status = 'awaiting_review';",
+        "table_name": "submission_threads",
+        "type": "index"
+      },
+      {
+        "name": "submission_threads_student_updated_idx",
+        "object_sha256": "427818c555ee26c19924e977342c592152e1b1c2dabfb8c888249be0a2fd03e9",
+        "sql": "CREATE INDEX submission_threads_student_updated_idx\n    on submission_threads (student_user_id, updated_at desc, id desc);",
+        "table_name": "submission_threads",
+        "type": "index"
+      },
+      {
         "name": "test_attempts_pending_configuration_idx",
         "object_sha256": "2ccf6a76d82c2bbc0166f60afd614355a9c337c89627e17468c054217a8b19d7",
         "sql": "CREATE INDEX test_attempts_pending_configuration_idx\n    on test_attempts (problem_id, server_received_at, id)\n    where check_status = 'pending_configuration';",
@@ -14372,6 +15963,13 @@
         "type": "trigger"
       },
       {
+        "name": "media_assets_locked_submission_immutable",
+        "object_sha256": "95476654315dd4b879a8a13f1c03393ec96576ebc12dd9bc06068ee36f1983bc",
+        "sql": "CREATE TRIGGER media_assets_locked_submission_immutable\nbefore update on media_assets\nfor each row\nwhen exists (\n    select 1\n    from submission_attachments as attachment\n    where attachment.asset_id = old.id\n      and attachment.upload_status = 'locked'\n)\nbegin\n    select raise(abort, 'locked submission media asset is immutable');\nend;",
+        "table_name": "media_assets",
+        "type": "trigger"
+      },
+      {
         "name": "problem_revisions_delete_forbidden",
         "object_sha256": "c1633df6b6255b5bd7f77caefa03975efa296fab79ea19aa95df630a1a12a4e8",
         "sql": "CREATE TRIGGER problem_revisions_delete_forbidden\nbefore delete on problem_revisions\nfor each row\nbegin\n    select raise(abort, 'problem revision deletion is forbidden');\nend;",
@@ -14456,6 +16054,223 @@
         "type": "trigger"
       },
       {
+        "name": "submission_attachments_asset_contract_insert",
+        "object_sha256": "0a04eba460d37353895f009cdd84f15881f15ac3ec48c298bfa69559bcbe68a5",
+        "sql": "CREATE TRIGGER submission_attachments_asset_contract_insert\nbefore insert on submission_attachments\nfor each row\nwhen not exists (\n    select 1\n    from media_assets as asset\n    where asset.id = new.asset_id\n      and asset.storage_namespace = 'submission'\n      and asset.media_type = 'image/webp'\n      and asset.deleted_at is null\n      and asset.width between 1 and 1920\n      and asset.height between 1 and 1920\n)\nbegin\n    select raise(abort, 'submission attachment requires final webp asset');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_delete_guard",
+        "object_sha256": "0061b61d8576764e8ddb5b5a4cd6c77f9da901cc526cdfcddc2a6d5ec4465a4c",
+        "sql": "CREATE TRIGGER submission_attachments_delete_guard\nbefore delete on submission_attachments\nfor each row\nwhen old.upload_status = 'locked' or exists (\n    select 1\n    from submission_entries as entry\n    where entry.id = old.entry_id\n      and entry.state = 'locked'\n)\nbegin\n    select raise(abort, 'locked submission attachment deletion is forbidden');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_entry_mutable_insert",
+        "object_sha256": "c504415162c9095ef011fc2e44de5b5a28fea68b92bad9261234d4f8c865b296",
+        "sql": "CREATE TRIGGER submission_attachments_entry_mutable_insert\nbefore insert on submission_attachments\nfor each row\nwhen not exists (\n    select 1\n    from submission_entries as entry\n    where entry.id = new.entry_id\n      and entry.state in ('draft', 'uploading', 'submitted')\n)\nbegin\n    select raise(abort, 'submission attachment entry is not mutable');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_entry_mutable_update",
+        "object_sha256": "be7537f400a0f21e3033e1949bef0d48e2d4f948c6a98e810d7514309f1a97a6",
+        "sql": "CREATE TRIGGER submission_attachments_entry_mutable_update\nbefore update on submission_attachments\nfor each row\nwhen not exists (\n    select 1\n    from submission_entries as entry\n    where entry.id = new.entry_id\n      and entry.state in ('draft', 'uploading', 'submitted')\n)\nbegin\n    select raise(abort, 'submission attachment entry is not mutable');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_identity_immutable",
+        "object_sha256": "8f47c385240f8c5fbabe301269e76ee3fe7cfea7b7e46d92b4d975428679861b",
+        "sql": "CREATE TRIGGER submission_attachments_identity_immutable\nbefore update on submission_attachments\nfor each row\nwhen new.public_id is not old.public_id\n    or new.entry_id is not old.entry_id\n    or new.asset_id is not old.asset_id\n    or new.client_filename is not old.client_filename\n    or new.created_at is not old.created_at\nbegin\n    select raise(abort, 'submission attachment identity is immutable');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_lock_result_scope_update",
+        "object_sha256": "83590749434b838a2d189d851fbc86583b4d900efffaf491a0e96b0cda479f8f",
+        "sql": "CREATE TRIGGER submission_attachments_lock_result_scope_update\nbefore update of upload_status, locked_by_result_id on submission_attachments\nfor each row\nwhen new.upload_status = 'locked' and not exists (\n    select 1\n    from submission_entries as entry\n    join submission_threads as thread on thread.id = entry.thread_id\n    join results as result on result.id = new.locked_by_result_id\n    join media_assets as asset on asset.id = new.asset_id\n    where entry.id = new.entry_id\n      and result.student_id = thread.student_user_id\n      and result.problem_id = thread.problem_id\n      and result.res_type = 2\n      and asset.immutable_at is not null\n)\nbegin\n    select raise(abort, 'submission attachment lock is outside review evidence');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_locked_immutable",
+        "object_sha256": "86df591e358a01923fd4e4e1e5c993fe972c8c72d1fc0fb8201553ae97c63f63",
+        "sql": "CREATE TRIGGER submission_attachments_locked_immutable\nbefore update on submission_attachments\nfor each row\nwhen old.upload_status = 'locked'\nbegin\n    select raise(abort, 'locked submission attachment is immutable');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_max_ten_insert",
+        "object_sha256": "2e4d622541a8484cb32508716076be0e0ad6d8bad5728721186dd347da4477b7",
+        "sql": "CREATE TRIGGER submission_attachments_max_ten_insert\nbefore insert on submission_attachments\nfor each row\nwhen (\n    select count(*)\n    from submission_attachments as attachment\n    where attachment.entry_id = new.entry_id\n) >= 10\nbegin\n    select raise(abort, 'submission entry accepts at most ten attachments');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_state_transition_guard",
+        "object_sha256": "33cef93885d1a844fb70aaaae1edbc5534890a56652ad674401437510d67ef8a",
+        "sql": "CREATE TRIGGER submission_attachments_state_transition_guard\nbefore update of upload_status on submission_attachments\nfor each row\nwhen new.upload_status is not old.upload_status and not (\n    (old.upload_status = 'pending' and new.upload_status in ('stored', 'failed'))\n    or (old.upload_status = 'failed' and new.upload_status in ('pending', 'stored'))\n    or (old.upload_status = 'stored' and new.upload_status = 'locked')\n)\nbegin\n    select raise(abort, 'invalid submission attachment state transition');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_author_scope_insert",
+        "object_sha256": "1e71ab982a4585fd763d1c3481eb06da3b4f68d0cb9e0588173db78d04a0b9a1",
+        "sql": "CREATE TRIGGER submission_entries_author_scope_insert\nbefore insert on submission_entries\nfor each row\nwhen new.author_kind = 'student' and not exists (\n    select 1\n    from submission_threads as thread\n    where thread.id = new.thread_id\n      and thread.student_user_id = new.author_user_id\n)\nbegin\n    select raise(abort, 'student submission entry author is outside thread scope');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_author_scope_update",
+        "object_sha256": "0ee20e302145e66950ea41ae7181c4f70dac54ddc8906ec907b3092a0e03d1f4",
+        "sql": "CREATE TRIGGER submission_entries_author_scope_update\nbefore update on submission_entries\nfor each row\nwhen new.author_kind = 'student' and not exists (\n    select 1\n    from submission_threads as thread\n    where thread.id = new.thread_id\n      and thread.student_user_id = new.author_user_id\n)\nbegin\n    select raise(abort, 'student submission entry author is outside thread scope');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_delete_forbidden",
+        "object_sha256": "776afb2ac0815dcf245d83290091fcd2700b8d8d0bc6a0f1314f9cf3aeb9f738",
+        "sql": "CREATE TRIGGER submission_entries_delete_forbidden\nbefore delete on submission_entries\nfor each row\nbegin\n    select raise(abort, 'submission entry deletion is forbidden');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_identity_immutable",
+        "object_sha256": "e18936282b3194c0789d6dc6f5c223cdc68dd29423632d733a66e446b8cab61d",
+        "sql": "CREATE TRIGGER submission_entries_identity_immutable\nbefore update on submission_entries\nfor each row\nwhen new.public_id is not old.public_id\n    or new.thread_id is not old.thread_id\n    or new.author_kind is not old.author_kind\n    or new.author_user_id is not old.author_user_id\n    or new.channel is not old.channel\n    or new.channel_group_key is not old.channel_group_key\n    or new.entry_kind is not old.entry_kind\n    or new.client_created_at is not old.client_created_at\n    or new.server_received_at is not old.server_received_at\n    or new.idempotency_key is not old.idempotency_key\n    or new.legacy_discussion_id is not old.legacy_discussion_id\nbegin\n    select raise(abort, 'submission entry identity is immutable');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_lock_requires_attachments_locked",
+        "object_sha256": "53ee82c9d601b3f329bdacff539de45a3ffcb175871e1cd1ebde8c74224b49d0",
+        "sql": "CREATE TRIGGER submission_entries_lock_requires_attachments_locked\nbefore update of state on submission_entries\nfor each row\nwhen new.state = 'locked' and exists (\n    select 1\n    from submission_attachments as attachment\n    where attachment.entry_id = new.id\n      and attachment.upload_status <> 'locked'\n)\nbegin\n    select raise(abort, 'submission entry lock requires locked attachments');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_nonempty_insert",
+        "object_sha256": "9a8470784c98c59103a6999caeb5f755ee0af347fa89173675ea4800155423c1",
+        "sql": "CREATE TRIGGER submission_entries_nonempty_insert\nbefore insert on submission_entries\nfor each row\nwhen new.state in ('submitted', 'locked')\n    and coalesce(length(trim(new.text)), 0) = 0\nbegin\n    select raise(abort, 'submitted entry requires text or stored attachment');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_nonempty_update",
+        "object_sha256": "3a706d0fb284d7868f286e272112769d97774d107e077bcc2b4b0c61da30fc20",
+        "sql": "CREATE TRIGGER submission_entries_nonempty_update\nbefore update of state, text on submission_entries\nfor each row\nwhen new.state in ('submitted', 'locked')\n    and coalesce(length(trim(new.text)), 0) = 0\n    and not exists (\n        select 1\n        from submission_attachments as attachment\n        where attachment.entry_id = new.id\n          and attachment.upload_status in ('stored', 'locked')\n    )\nbegin\n    select raise(abort, 'submitted entry requires text or stored attachment');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_state_transition_guard",
+        "object_sha256": "bfbf25111d84a58c85433b3e285a2c31543ccf1703d7927607db7cb15e0858b1",
+        "sql": "CREATE TRIGGER submission_entries_state_transition_guard\nbefore update of state on submission_entries\nfor each row\nwhen new.state is not old.state and not (\n    (old.state = 'draft' and new.state in ('uploading', 'submitted', 'deleted'))\n    or (old.state = 'uploading' and new.state in ('draft', 'submitted', 'deleted'))\n    or (old.state = 'submitted' and new.state in ('deleted', 'locked'))\n)\nbegin\n    select raise(abort, 'invalid submission entry state transition');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_terminal_immutable",
+        "object_sha256": "f0a9daa52fa5164cd9db5a407ab7acf86526dba37edb1842bfc481b84cf56ddd",
+        "sql": "CREATE TRIGGER submission_entries_terminal_immutable\nbefore update on submission_entries\nfor each row\nwhen old.state in ('locked', 'deleted')\nbegin\n    select raise(abort, 'locked or deleted submission entry is immutable');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_version_guard",
+        "object_sha256": "b484ea819b65493ac561151304071d7afbe60abf05aefd89889468d96074cf13",
+        "sql": "CREATE TRIGGER submission_entries_version_guard\nbefore update on submission_entries\nfor each row\nwhen new.version <> old.version + 1\nbegin\n    select raise(abort, 'submission entry update requires next version');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_material_reassignment_items_delete_forbidden",
+        "object_sha256": "97ad82a44c80edb0133bcf1c5be8a90962b9055b8a5ae91d2ae3df9e4cb0968e",
+        "sql": "CREATE TRIGGER submission_material_reassignment_items_delete_forbidden\nbefore delete on submission_material_reassignment_items\nfor each row\nbegin\n    select raise(abort, 'submission reassignment item deletion is forbidden');\nend;",
+        "table_name": "submission_material_reassignment_items",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_material_reassignment_items_immutable_update",
+        "object_sha256": "05dc15397c483f08321fe7f1c012b4fff2f6033a09c5758917afec23b2540d93",
+        "sql": "CREATE TRIGGER submission_material_reassignment_items_immutable_update\nbefore update on submission_material_reassignment_items\nfor each row\nbegin\n    select raise(abort, 'submission reassignment item is immutable');\nend;",
+        "table_name": "submission_material_reassignment_items",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_material_reassignment_items_scope_insert",
+        "object_sha256": "4ba1c64e08163ffd3a43eea3cab331b8ccc199408be8ece1db5fde12f6fd589d",
+        "sql": "CREATE TRIGGER submission_material_reassignment_items_scope_insert\nbefore insert on submission_material_reassignment_items\nfor each row\nwhen not exists (\n    select 1\n    from submission_material_reassignments as reassignment\n    join submission_entries as entry\n      on entry.id = new.source_entry_id\n     and entry.thread_id = reassignment.source_thread_id\n    where reassignment.id = new.reassignment_id\n      and (\n          (\n              new.item_kind = 'entry_text'\n              and new.attachment_id is null\n              and coalesce(length(trim(entry.text)), 0) > 0\n          )\n          or (\n              new.item_kind = 'attachment'\n              and exists (\n                  select 1\n                  from submission_attachments as attachment\n                  where attachment.id = new.attachment_id\n                    and attachment.entry_id = entry.id\n              )\n          )\n      )\n)\nbegin\n    select raise(abort, 'submission reassignment item is outside source scope');\nend;",
+        "table_name": "submission_material_reassignment_items",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_material_reassignments_delete_forbidden",
+        "object_sha256": "4364ba52f78898a1555925331b2f73cf7f5c67e97576e34e318e676aa8ca6958",
+        "sql": "CREATE TRIGGER submission_material_reassignments_delete_forbidden\nbefore delete on submission_material_reassignments\nfor each row\nbegin\n    select raise(abort, 'submission material reassignment deletion is forbidden');\nend;",
+        "table_name": "submission_material_reassignments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_material_reassignments_immutable_update",
+        "object_sha256": "0f535291e8849cf3f68de03936392a243eebf25ed4224563f09601ae45364a06",
+        "sql": "CREATE TRIGGER submission_material_reassignments_immutable_update\nbefore update on submission_material_reassignments\nfor each row\nbegin\n    select raise(abort, 'submission material reassignment is immutable');\nend;",
+        "table_name": "submission_material_reassignments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_threads_delete_forbidden",
+        "object_sha256": "f0b735fed625343c693b6e0d646248284a83cb1a435302761b803975599fd960",
+        "sql": "CREATE TRIGGER submission_threads_delete_forbidden\nbefore delete on submission_threads\nfor each row\nbegin\n    select raise(abort, 'submission thread deletion is forbidden');\nend;",
+        "table_name": "submission_threads",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_threads_identity_immutable",
+        "object_sha256": "721465bee59f77a1fd9af27e0ce88425a77c15a6ae16569f57d1ac1cf2748638",
+        "sql": "CREATE TRIGGER submission_threads_identity_immutable\nbefore update on submission_threads\nfor each row\nwhen new.public_id is not old.public_id\n    or new.student_user_id is not old.student_user_id\n    or new.problem_id is not old.problem_id\n    or new.condition_revision_id is not old.condition_revision_id\n    or new.created_at is not old.created_at\nbegin\n    select raise(abort, 'submission thread identity is immutable');\nend;",
+        "table_name": "submission_threads",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_threads_problem_revision_scope_insert",
+        "object_sha256": "62aa18e08c8be44d8687775038b9c545e66a3ddbafa240c0652f9932cfc18e0e",
+        "sql": "CREATE TRIGGER submission_threads_problem_revision_scope_insert\nbefore insert on submission_threads\nfor each row\nwhen not exists (\n    select 1\n    from problem_revisions as problem_revision\n    where problem_revision.problem_id = new.problem_id\n      and problem_revision.content_revision_id = new.condition_revision_id\n)\nbegin\n    select raise(abort, 'submission thread condition revision is outside problem scope');\nend;",
+        "table_name": "submission_threads",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_threads_result_kind_insert",
+        "object_sha256": "52c50b744b2b6aa51624c3aad1ffa2bad03c4f9e5f7790bb22533adad3a5cff0",
+        "sql": "CREATE TRIGGER submission_threads_result_kind_insert\nbefore insert on submission_threads\nfor each row\nwhen new.latest_result_id is not null and not exists (\n    select 1\n    from results as result\n    where result.id = new.latest_result_id\n      and result.student_id = new.student_user_id\n      and result.problem_id = new.problem_id\n      and result.res_type = 2\n)\nbegin\n    select raise(abort, 'submission thread latest result is not written evidence');\nend;",
+        "table_name": "submission_threads",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_threads_result_kind_update",
+        "object_sha256": "8d26472ca60cbdbbd15e7fa1514b8b6fef362494b1f856e68e18a2b1e8c4aa41",
+        "sql": "CREATE TRIGGER submission_threads_result_kind_update\nbefore update of latest_result_id on submission_threads\nfor each row\nwhen new.latest_result_id is not null and not exists (\n    select 1\n    from results as result\n    where result.id = new.latest_result_id\n      and result.student_id = new.student_user_id\n      and result.problem_id = new.problem_id\n      and result.res_type = 2\n)\nbegin\n    select raise(abort, 'submission thread latest result is not written evidence');\nend;",
+        "table_name": "submission_threads",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_threads_state_transition_guard",
+        "object_sha256": "c106f8d5549aac8546f3eee3934e0cfa2a7cfea89a84675ce2aab709078b8ae3",
+        "sql": "CREATE TRIGGER submission_threads_state_transition_guard\nbefore update of status on submission_threads\nfor each row\nwhen new.status is not old.status and not (\n    (old.status = 'open' and new.status in ('awaiting_review', 'closed'))\n    or (\n        old.status = 'awaiting_review'\n        and new.status in ('needs_work', 'accepted', 'closed')\n    )\n    or (\n        old.status in ('needs_work', 'accepted')\n        and new.status in ('awaiting_review', 'closed')\n    )\n)\nbegin\n    select raise(abort, 'invalid submission thread state transition');\nend;",
+        "table_name": "submission_threads",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_threads_version_guard",
+        "object_sha256": "672525fd785647f924914ce077238c6a9cec005b2f3851c21a664507df730489",
+        "sql": "CREATE TRIGGER submission_threads_version_guard\nbefore update on submission_threads\nfor each row\nwhen new.version <> old.version + 1\n    or new.updated_at < old.updated_at\n    or new.latest_entry_at < old.latest_entry_at\nbegin\n    select raise(abort, 'submission thread update requires next version and monotonic time');\nend;",
+        "table_name": "submission_threads",
+        "type": "trigger"
+      },
+      {
         "name": "test_attempts_check_transition_guard",
         "object_sha256": "0c5fd136f1989529ea3196aeffdb360def067f113ee58da307297346db057b17",
         "sql": "CREATE TRIGGER test_attempts_check_transition_guard\nbefore update on test_attempts\nfor each row\nwhen not (\n    old.check_status = 'pending_configuration'\n    and new.check_status in ('pending', 'checked', 'failed')\n) and not (\n    old.check_status = 'pending'\n    and new.check_status in ('checked', 'failed')\n)\nbegin\n    select raise(abort, 'invalid test attempt check transition');\nend;",
@@ -14491,8 +16306,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "62de5ee479eeae064086c04364e6f3689daa7acbac0627c1314ef17490f07950",
-    "sha256": "309091bbb8ea0672147f7c7536dfc88554f8c336be71db0e5891579f6f845143"
+    "pragma_structure_sha256": "b0a9579d857d9575c7fb3f40cfdabb86f7e6bd59c7a73d7a7ad19a76068c30a8",
+    "sha256": "fcec02abb06c4b8c28f113f872a39c507f790fc95aa35a67da530b279f1cf7db"
   },
   "source_kind": "repository-migration-head"
 }

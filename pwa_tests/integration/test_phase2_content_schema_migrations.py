@@ -18,6 +18,7 @@ LESSON_WINDOW_AUDIT_MIGRATION_ID = "0043.pwa_lesson_window_audit"
 PROBLEM_IDENTITY_MIGRATION_ID = "0044.pwa_problem_identity"
 MATERIAL_REVEAL_MATCHES_MIGRATION_ID = "0045.pwa_material_reveal_matches"
 TEST_ATTEMPTS_MIGRATION_ID = "0046.pwa_test_attempts_idempotency"
+WRITTEN_SUBMISSIONS_MIGRATION_ID = "0047.pwa_submission_threads_entries_assets"
 CONTENT_TABLES = {
     "course_lessons",
     "group_lessons",
@@ -105,6 +106,7 @@ def _pre_content_ids() -> set[str]:
             PROBLEM_IDENTITY_MIGRATION_ID,
             MATERIAL_REVEAL_MATCHES_MIGRATION_ID,
             TEST_ATTEMPTS_MIGRATION_ID,
+            WRITTEN_SUBMISSIONS_MIGRATION_ID,
         }
     }
 
