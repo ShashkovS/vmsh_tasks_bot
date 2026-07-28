@@ -447,14 +447,27 @@ class WrittenAttachmentRecord:
     width: int
     height: int
 
-    def payload(self) -> dict[str, object]:
+    def payload(self, *, media_audience: str = "student") -> dict[str, object]:
+        if media_audience not in {"student", "staff"}:
+            raise ValueError("written attachment media audience is invalid")
+        media_path = self.media_path
+        if media_audience == "staff":
+            if not media_path.startswith("/student/api/v1/thread-entries/"):
+                raise WrittenSubmissionRepositoryError(
+                    "stored written attachment media path is invalid"
+                )
+            media_path = media_path.replace(
+                "/student/api/v1/thread-entries/",
+                "/staff/api/v1/thread-entries/",
+                1,
+            )
         return {
             "attachmentId": self.public_id,
             "ordinal": self.ordinal,
             "uploadStatus": self.upload_status,
             "mediaId": self.media_public_id,
             "publicUrl": self.public_url,
-            "mediaPath": self.media_path,
+            "mediaPath": media_path,
             "mediaType": self.media_type,
             "width": self.width,
             "height": self.height,
@@ -831,7 +844,9 @@ class WrittenMaterialPreviewItem:
             "entryState": self.entry_state,
             "text": self.text,
             "attachment": (
-                None if self.attachment is None else self.attachment.payload()
+                None
+                if self.attachment is None
+                else self.attachment.payload(media_audience="staff")
             ),
             "locked": self.locked,
         }
@@ -885,6 +900,14 @@ class WrittenMaterialReassignmentPreview:
                 "studentLabel": "Перенесено преподавателем",
             },
         }
+
+
+@dataclass(frozen=True, slots=True)
+class StaffWrittenAttachmentMedia:
+    """Stored bytes plus the trusted course/group scope required to read them."""
+
+    media: WrittenAttachmentMedia
+    scope: WrittenMaterialScope
 
 
 @dataclass(frozen=True, slots=True)
@@ -3391,6 +3414,69 @@ class PwaWrittenSubmissionRepository:
             completed_at=moved_at,
         )
         return receipt, None
+
+    async def get_staff_attachment_media(
+        self,
+        *,
+        entry_public_id: str,
+        attachment_public_id: str,
+    ) -> StaffWrittenAttachmentMedia:
+        """Resolve immutable bytes and their current trusted Staff scope."""
+
+        if not _PUBLIC_ID.fullmatch(entry_public_id) or not _PUBLIC_ID.fullmatch(
+            attachment_public_id
+        ):
+            raise ValueError("Staff attachment media lookup arguments are invalid")
+
+        def read(connection: sqlite3.Connection) -> StaffWrittenAttachmentMedia:
+            row = connection.execute(
+                "SELECT asset.object_key, asset.sha256, asset.byte_size, "
+                "asset.media_type, course.public_id AS course_public_id, "
+                "group_record.public_id AS group_public_id, "
+                "group_lesson.public_id AS group_lesson_public_id "
+                "FROM submission_entries AS entry "
+                "JOIN submission_threads AS thread ON thread.id = entry.thread_id "
+                "JOIN problem_revisions AS problem_revision "
+                "ON problem_revision.id = entry.problem_revision_id "
+                "AND problem_revision.problem_id = thread.problem_id "
+                "JOIN content_revisions AS revision "
+                "ON revision.id = problem_revision.content_revision_id "
+                "JOIN content_sources AS content_source "
+                "ON content_source.id = revision.source_id "
+                "JOIN group_lessons AS group_lesson "
+                "ON group_lesson.id = content_source.group_lesson_id "
+                "JOIN groups AS group_record "
+                "ON group_record.course_id = group_lesson.course_id "
+                "AND group_record.group_id = group_lesson.group_id "
+                "JOIN courses AS course ON course.id = group_lesson.course_id "
+                "JOIN submission_attachments AS attachment "
+                "ON attachment.entry_id = entry.id "
+                "JOIN media_assets AS asset ON asset.id = attachment.asset_id "
+                "WHERE entry.public_id = ? AND attachment.public_id = ? "
+                "AND asset.deleted_at IS NULL",
+                (entry_public_id, attachment_public_id),
+            ).fetchone()
+            if row is None:
+                raise WrittenSubmissionRejected(
+                    code="written_attachment_not_found",
+                    message="Фотография решения не найдена.",
+                    http_status=404,
+                )
+            return StaffWrittenAttachmentMedia(
+                media=WrittenAttachmentMedia(
+                    object_key=str(row["object_key"]),
+                    sha256=str(row["sha256"]),
+                    byte_size=int(row["byte_size"]),
+                    media_type=str(row["media_type"]),
+                ),
+                scope=WrittenMaterialScope(
+                    course_public_id=str(row["course_public_id"]),
+                    group_public_id=str(row["group_public_id"]),
+                    group_lesson_public_id=str(row["group_lesson_public_id"]),
+                ),
+            )
+
+        return await self._factory.run_read_async(read)
 
     async def get_attachment_media(
         self,

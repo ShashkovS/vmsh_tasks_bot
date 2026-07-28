@@ -33,6 +33,8 @@ from db_methods.pwa.written_submissions import (
     ReorderWrittenAttachmentsCommand,
     ReplaceWrittenEntryCommand,
     SubmitWrittenEntryCommand,
+    WrittenAttachmentMedia,
+    WrittenMaterialScope,
     WrittenSubmissionRejected,
     WrittenSubmissionRepositoryError,
     WrittenMaterialItemRef,
@@ -478,6 +480,26 @@ def _authorize_reassignment_scope(
         ) from error
 
 
+def _authorize_staff_material_scope(
+    request: web.Request, scope: WrittenMaterialScope, *, message: str
+) -> None:
+    principal = authenticated_session(request).principal
+    try:
+        require_access(
+            principal,
+            expected_audience=AuthAudience.STAFF,
+            capability=Capability.REVIEW_WRITE,
+            course_public_id=scope.course_public_id,
+            group_public_id=scope.group_public_id,
+        )
+    except (AuthenticationRequiredError, AccessForbiddenError) as error:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message=message,
+        ) from error
+
+
 async def _read_part_bytes(part, *, limit: int) -> bytes:
     chunks: list[bytes] = []
     size = 0
@@ -709,6 +731,43 @@ async def _invalidate_after_commit(
         )
 
 
+async def _attachment_media_response(
+    request: web.Request,
+    *,
+    media: WrittenAttachmentMedia,
+    attachment_public_id: str,
+) -> web.Response:
+    try:
+        payload = await _attachment_service(request).storage.get(media.object_key)
+    except FileNotFoundError as error:
+        raise PwaApiError(
+            status=500,
+            code="written_attachment_storage_invalid",
+            message="Фотография недоступна из-за ошибки хранилища",
+        ) from error
+    if (
+        media.media_type != "image/webp"
+        or len(payload) != media.byte_size
+        or hashlib.sha256(payload).hexdigest() != media.sha256
+    ):
+        logger.error(
+            "Stored written attachment failed integrity check: attachment=%s",
+            attachment_public_id,
+        )
+        raise PwaApiError(
+            status=500,
+            code="written_attachment_storage_invalid",
+            message="Фотография недоступна из-за ошибки хранилища",
+        )
+    return web.Response(
+        body=payload,
+        content_type="image/webp",
+        headers={
+            "ETag": f'"sha256-{media.sha256}"',
+        },
+    )
+
+
 @written_submission_routes.post(
     "/student/api/v1/problems/{problem_public_id}/thread/entries"
 )
@@ -776,34 +835,47 @@ async def get_written_attachment_media(request: web.Request) -> web.Response:
         entry_public_id=entry_public_id,
         attachment_public_id=attachment_public_id,
     )
-    try:
-        payload = await _attachment_service(request).storage.get(media.object_key)
-    except FileNotFoundError as error:
+    return await _attachment_media_response(
+        request,
+        media=media,
+        attachment_public_id=attachment_public_id,
+    )
+
+
+@written_submission_routes.get(
+    "/staff/api/v1/thread-entries/{entry_public_id}/attachments/"
+    "{attachment_public_id}/media"
+)
+@_translate_repository_errors
+async def get_staff_written_attachment_media(request: web.Request) -> web.Response:
+    if request.query:
         raise PwaApiError(
-            status=500,
-            code="written_attachment_storage_invalid",
-            message="Фотография недоступна из-за ошибки хранилища",
-        ) from error
-    if (
-        media.media_type != "image/webp"
-        or len(payload) != media.byte_size
-        or hashlib.sha256(payload).hexdigest() != media.sha256
-    ):
-        logger.error(
-            "Stored written attachment failed integrity check: attachment=%s",
-            attachment_public_id,
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
         )
-        raise PwaApiError(
-            status=500,
-            code="written_attachment_storage_invalid",
-            message="Фотография недоступна из-за ошибки хранилища",
-        )
-    return web.Response(
-        body=payload,
-        content_type="image/webp",
-        headers={
-            "ETag": f'"sha256-{media.sha256}"',
-        },
+    _staff_reassignment_identity(request)
+    entry_public_id = _public_id(
+        request, "entry_public_id", error_code="written_entry_not_found"
+    )
+    attachment_public_id = _public_id(
+        request,
+        "attachment_public_id",
+        error_code="written_attachment_not_found",
+    )
+    access = await _repository(request).get_staff_attachment_media(
+        entry_public_id=entry_public_id,
+        attachment_public_id=attachment_public_id,
+    )
+    _authorize_staff_material_scope(
+        request,
+        access.scope,
+        message="Недостаточно прав для просмотра фотографии",
+    )
+    return await _attachment_media_response(
+        request,
+        media=access.media,
+        attachment_public_id=attachment_public_id,
     )
 
 

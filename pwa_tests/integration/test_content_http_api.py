@@ -1504,14 +1504,35 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
     )
     assert created_response.status == 201, await created_response.text()
     created = await created_response.json()
+    upload_form = FormData()
+    upload_form.add_field("schemaVersion", "1")
+    upload_form.add_field("idempotencyKey", "48a3845d-f857-44d1-893e-766d6a376f46")
+    upload_form.add_field("expectedEntryVersion", str(created["entry"]["version"]))
+    upload_form.add_field("expectedThreadVersion", str(created["threadVersion"]))
+    upload_form.add_field("ordinal", "0")
+    upload_form.add_field(
+        "asset",
+        b"synthetic-reassignment-photo",
+        filename="перенос.heic",
+        content_type="image/heic",
+    )
+    uploaded_response = await fixture.client.post(
+        f"/student/api/v1/thread-entries/{created['entry']['entryId']}/attachments",
+        data=upload_form,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert uploaded_response.status == 201, await uploaded_response.text()
+    uploaded = await uploaded_response.json()
+    attachment = uploaded["entry"]["attachments"][0]
     submitted_response = await fixture.client.post(
         f"/student/api/v1/thread-entries/{created['entry']['entryId']}/submit",
         json={
             "schemaVersion": 1,
             "idempotencyKey": "8911a420-bbc8-4a8d-b7da-9d8693b98652",
-            "expectedEntryVersion": created["entry"]["version"],
-            "expectedThreadVersion": created["threadVersion"],
-            "attachmentIds": [],
+            "expectedEntryVersion": uploaded["entry"]["version"],
+            "expectedThreadVersion": uploaded["threadVersion"],
+            "attachmentIds": [attachment["attachmentId"]],
         },
         cookies=_cookie(fixture, "student"),
         headers=_headers(unsafe=True),
@@ -1523,7 +1544,12 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
             "entryId": submitted["entry"]["entryId"],
             "itemKind": "entry_text",
             "attachmentId": None,
-        }
+        },
+        {
+            "entryId": submitted["entry"]["entryId"],
+            "itemKind": "attachment",
+            "attachmentId": attachment["attachmentId"],
+        },
     ]
     preview_response = await fixture.client.post(
         "/staff/api/v1/submission-material-reassignments/preview",
@@ -1547,6 +1573,12 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
         "scope": preview["source"]["scope"],
     }
     assert preview["items"][0]["text"] == "Эта работа относится ко второй задаче."
+    assert preview["items"][1]["attachment"] == {
+        **attachment,
+        "mediaPath": attachment["mediaPath"].replace(
+            "/student/api/v1/", "/staff/api/v1/", 1
+        ),
+    }
     assert preview["impact"] == {
         "postReview": False,
         "sourceEvidenceUnchanged": True,
@@ -1579,6 +1611,26 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
     assert fixture.client.app[pwa_app.PWA_STATE]["cursors"]["student"] == (
         cursor_before + 2
     )
+
+    staff_media_path = preview["items"][1]["attachment"]["mediaPath"]
+    staff_media = await fixture.client.get(
+        staff_media_path,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(),
+    )
+    assert staff_media.status == 200
+    assert staff_media.headers["Content-Type"] == "image/webp"
+    assert (await staff_media.read()).startswith(b"synthetic-webp:")
+    assert (
+        await fixture.client.get(staff_media_path, headers=_headers())
+    ).status == 401
+    assert (
+        await fixture.client.get(
+            staff_media_path,
+            cookies=_cookie(fixture, "student"),
+            headers=_headers(),
+        )
+    ).status == 401
 
     replay = await fixture.client.post(
         "/staff/api/v1/submission-material-reassignments",
@@ -1653,6 +1705,12 @@ async def test_staff_written_material_reassignment_previews_commits_and_projects
             "DELETE FROM staff_scopes WHERE staff_user_id = ?", (TEACHER_USER_ID,)
         )
     )
+    forbidden_media = await fixture.client.get(
+        staff_media_path,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(),
+    )
+    assert forbidden_media.status == 403
     forbidden = await fixture.client.post(
         "/staff/api/v1/submission-material-reassignments/preview",
         json={

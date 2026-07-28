@@ -1757,6 +1757,16 @@ async def test_written_attachment_keeps_server_scope_and_replays_once(
         attachment_public_id=receipt.entry.attachments[0].public_id,
     )
     assert media.object_key == persisted_written_attachment().object_key
+    staff_media = await fixture.written_repository.get_staff_attachment_media(
+        entry_public_id=draft.entry.public_id,
+        attachment_public_id=receipt.entry.attachments[0].public_id,
+    )
+    assert staff_media.media == media
+    assert staff_media.scope.payload() == {
+        "courseId": "course-submission",
+        "groupId": "group-submission-a",
+        "groupLessonId": "group-lesson-submission-41",
+    }
     with pytest.raises(WrittenSubmissionRejected) as foreign:
         await fixture.written_repository.get_attachment_media(
             account_id=fixture.other_account_id,

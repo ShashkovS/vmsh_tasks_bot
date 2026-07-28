@@ -14,6 +14,7 @@ import {
   reorderWrittenAttachmentsRequestSchema,
   replaceWrittenEntryRequestSchema,
   replaceWrittenEntryResponseSchema,
+  staffWrittenAttachmentSchema,
   submitWrittenEntryRequestSchema,
   writtenSubmissionFixtureSchema,
   writtenSubmissionQueryKeys,
@@ -138,6 +139,33 @@ describe('Phase-5 written-submission contracts', () => {
     expect(previewWrittenMaterialReassignmentResponseSchema.parse(previewResponse)).toEqual(
       previewResponse,
     )
+
+    const staffAttachment = {
+      ...fixture.attachmentResponse.entry.attachments[0],
+      mediaPath:
+        '/staff/api/v1/thread-entries/written-entry-fixture-1/attachments/written-attachment-fixture-1/media',
+    }
+    expect(staffWrittenAttachmentSchema.parse(staffAttachment)).toEqual(staffAttachment)
+    expect(
+      previewWrittenMaterialReassignmentResponseSchema.parse({
+        ...previewResponse,
+        items: [
+          {
+            entryId: item.entryId,
+            itemKind: 'attachment',
+            attachmentId: staffAttachment.attachmentId,
+            entryState: 'submitted',
+            text: null,
+            attachment: staffAttachment,
+            locked: false,
+          },
+        ],
+      }).items.at(0)?.attachment?.mediaPath,
+    ).toBe(staffAttachment.mediaPath)
+    expect(
+      staffWrittenAttachmentSchema.safeParse(fixture.attachmentResponse.entry.attachments[0])
+        .success,
+    ).toBe(false)
 
     const request = {
       ...previewRequest,

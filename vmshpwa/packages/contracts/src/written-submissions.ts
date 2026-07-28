@@ -17,24 +17,40 @@ export const writtenProblemRevisionSchema = z
   .strict()
 export type WrittenProblemRevision = z.infer<typeof writtenProblemRevisionSchema>
 
+const writtenAttachmentShape = {
+  attachmentId: publicIdSchema,
+  ordinal: z.number().int().nonnegative(),
+  uploadStatus: z.enum(['pending', 'stored', 'failed', 'locked']),
+  mediaId: publicIdSchema,
+  publicUrl: z.url().nullable(),
+  mediaType: z.literal('image/webp'),
+  width: z.number().int().min(1).max(1920),
+  height: z.number().int().min(1).max(1920),
+}
+
 export const writtenAttachmentSchema = z
   .object({
-    attachmentId: publicIdSchema,
-    ordinal: z.number().int().nonnegative(),
-    uploadStatus: z.enum(['pending', 'stored', 'failed', 'locked']),
-    mediaId: publicIdSchema,
-    publicUrl: z.url().nullable(),
+    ...writtenAttachmentShape,
     mediaPath: z
       .string()
       .regex(
         /^\/student\/api\/v1\/thread-entries\/[a-z0-9][a-z0-9._:-]*\/attachments\/[a-z0-9][a-z0-9._:-]*\/media$/,
       ),
-    mediaType: z.literal('image/webp'),
-    width: z.number().int().min(1).max(1920),
-    height: z.number().int().min(1).max(1920),
   })
   .strict()
 export type WrittenAttachment = z.infer<typeof writtenAttachmentSchema>
+
+export const staffWrittenAttachmentSchema = z
+  .object({
+    ...writtenAttachmentShape,
+    mediaPath: z
+      .string()
+      .regex(
+        /^\/staff\/api\/v1\/thread-entries\/[a-z0-9][a-z0-9._:-]*\/attachments\/[a-z0-9][a-z0-9._:-]*\/media$/,
+      ),
+  })
+  .strict()
+export type StaffWrittenAttachment = z.infer<typeof staffWrittenAttachmentSchema>
 
 export const writtenMaterialProjectionSchema = z
   .object({
@@ -410,7 +426,7 @@ const writtenMaterialPreviewItemSchema = writtenMaterialItemRefSchema
   .safeExtend({
     entryState: z.enum(['submitted', 'locked']),
     text: z.string().max(100_000).nullable(),
-    attachment: writtenAttachmentSchema.nullable(),
+    attachment: staffWrittenAttachmentSchema.nullable(),
     locked: z.boolean(),
   })
   .superRefine((item, context) => {
