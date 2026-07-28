@@ -210,6 +210,12 @@ describe('Phase-6 review queue contracts', () => {
     expect(
       completeReviewRequestSchema.safeParse({
         ...request,
+        comment: null,
+      }).success,
+    ).toBe(true)
+    expect(
+      completeReviewRequestSchema.safeParse({
+        ...request,
         verdict: 11,
         comment: null,
       }).success,
