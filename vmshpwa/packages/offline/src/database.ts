@@ -32,6 +32,7 @@ export interface OutboxItem {
   payload: unknown
   result?: unknown
   lastError?: string | undefined
+  deliveryLeaseId?: string | undefined
 }
 
 export interface CachedDocument {
