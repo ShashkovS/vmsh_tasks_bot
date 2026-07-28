@@ -1,4 +1,5 @@
 export * from './authentication-store'
 export * from './database'
+export * from './document-cache'
 export * from './provider'
 export * from './recent-media-policy'
