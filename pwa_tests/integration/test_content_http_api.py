@@ -1311,6 +1311,124 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
     assert counts == (1, 1, 2)
 
 
+async def test_student_written_replacement_is_one_visible_atomic_commit(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    problem_public_id, condition_revision_id = await _prepare_published_test_problem(
+        fixture, problem_type=2
+    )
+    create_route = f"/student/api/v1/problems/{problem_public_id}/thread/entries"
+    original_response = await fixture.client.post(
+        create_route,
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "05f3c912-3044-4709-902a-9a8e6c02fe81",
+            "problemRevision": {
+                "conditionRevisionId": condition_revision_id,
+                "configVersion": 1,
+            },
+            "text": "Первоначальное решение.",
+            "clientCreatedAt": _timestamp(),
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert original_response.status == 201, await original_response.text()
+    original_draft = await original_response.json()
+    submitted_response = await fixture.client.post(
+        f"/student/api/v1/thread-entries/{original_draft['entry']['entryId']}/submit",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "bbde7b77-80a4-4c24-927a-b0b99ee7ca1f",
+            "expectedEntryVersion": 1,
+            "expectedThreadVersion": 1,
+            "attachmentIds": [],
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert submitted_response.status == 200, await submitted_response.text()
+    original = await submitted_response.json()
+    replacement_response = await fixture.client.post(
+        create_route,
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "988a6fb3-99da-4f28-ac84-219dc8c30742",
+            "problemRevision": {
+                "conditionRevisionId": condition_revision_id,
+                "configVersion": 1,
+            },
+            "text": "Исправленное решение.",
+            "clientCreatedAt": _timestamp(),
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert replacement_response.status == 201, await replacement_response.text()
+    replacement_draft = await replacement_response.json()
+    replace_route = f"/student/api/v1/thread-entries/{replacement_draft['entry']['entryId']}/replace"
+    replace_payload = {
+        "schemaVersion": 1,
+        "idempotencyKey": "158564ae-56cc-446a-b1d6-12ef8cc2c71b",
+        "replacedEntryId": original["entry"]["entryId"],
+        "expectedEntryVersion": replacement_draft["entry"]["version"],
+        "expectedReplacedEntryVersion": original["entry"]["version"],
+        "expectedThreadVersion": replacement_draft["threadVersion"],
+        "attachmentIds": [],
+    }
+    cursor_before = fixture.client.app[pwa_app.PWA_STATE]["cursors"]["student"]
+
+    replaced_response = await fixture.client.post(
+        replace_route,
+        json=replace_payload,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert replaced_response.status == 200, await replaced_response.text()
+    replaced = await replaced_response.json()
+    assert replaced["replacedEntryId"] == original["entry"]["entryId"]
+    assert replaced["replacementEventId"].startswith("written-replacement-")
+    assert replaced["entry"]["entryId"] == replacement_draft["entry"]["entryId"]
+    assert replaced["entry"]["state"] == "submitted"
+    assert replaced["threadStatus"] == "awaiting_review"
+    assert fixture.client.app[pwa_app.PWA_STATE]["cursors"]["student"] == (
+        cursor_before + 1
+    )
+
+    replay = await fixture.client.post(
+        replace_route,
+        json=replace_payload,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert replay.status == 200
+    assert await replay.json() == replaced
+    assert fixture.client.app[pwa_app.PWA_STATE]["cursors"]["student"] == (
+        cursor_before + 1
+    )
+
+    history_response = await fixture.client.get(
+        f"/student/api/v1/problems/{problem_public_id}/thread",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert history_response.status == 200
+    history = (await history_response.json())["thread"]
+    assert [(entry["entryId"], entry["state"]) for entry in history["entries"]] == [
+        (original["entry"]["entryId"], "deleted"),
+        (replacement_draft["entry"]["entryId"], "submitted"),
+    ]
+    assert (
+        fixture.factory.run_read(
+            lambda connection: connection.execute(
+                "SELECT count(*) AS n FROM submission_entry_replacements"
+            ).fetchone()["n"]
+        )
+        == 1
+    )
+
+
 async def test_student_written_photo_upload_converts_persists_replays_and_submits(
     content_http: ContentHttpFixture,
 ):
@@ -1558,9 +1676,7 @@ async def test_student_written_photo_order_delete_and_reload_contract(
         second_attachment["attachmentId"],
         first_attachment["attachmentId"],
     ]
-    cursor_before_reorder = fixture.client.app[pwa_app.PWA_STATE]["cursors"][
-        "student"
-    ]
+    cursor_before_reorder = fixture.client.app[pwa_app.PWA_STATE]["cursors"]["student"]
     reorder_body = {
         "schemaVersion": 1,
         "idempotencyKey": "a8c582c2-5d32-4f27-8295-0067ddaf1af0",
@@ -1568,9 +1684,7 @@ async def test_student_written_photo_order_delete_and_reload_contract(
         "expectedThreadVersion": second["threadVersion"],
         "attachmentIds": reversed_ids,
     }
-    reorder_route = (
-        f"/student/api/v1/thread-entries/{entry_id}/attachments/order"
-    )
+    reorder_route = f"/student/api/v1/thread-entries/{entry_id}/attachments/order"
     reordered_response = await fixture.client.patch(
         reorder_route,
         json=reorder_body,
@@ -1583,8 +1697,7 @@ async def test_student_written_photo_order_delete_and_reload_contract(
     assert reordered["entry"]["version"] == second["entry"]["version"] + 1
     assert reordered["threadVersion"] == second["threadVersion"] + 1
     assert [
-        attachment["attachmentId"]
-        for attachment in reordered["entry"]["attachments"]
+        attachment["attachmentId"] for attachment in reordered["entry"]["attachments"]
     ] == reversed_ids
     assert [
         attachment["ordinal"] for attachment in reordered["entry"]["attachments"]
@@ -1661,8 +1774,7 @@ async def test_student_written_photo_order_delete_and_reload_contract(
     assert deleted["changed"] is True
     assert deleted["entry"]["state"] == "submitted"
     assert [
-        attachment["attachmentId"]
-        for attachment in deleted["entry"]["attachments"]
+        attachment["attachmentId"] for attachment in deleted["entry"]["attachments"]
     ] == [first_attachment["attachmentId"]]
     assert deleted["entry"]["attachments"][0]["ordinal"] == 0
 
@@ -1706,16 +1818,21 @@ async def test_student_written_photo_order_delete_and_reload_contract(
             ).fetchall(),
         )
     )
-    assert rows[0] == [
-        {"public_id": first_attachment["attachmentId"], "ordinal": 0}
-    ]
+    assert rows[0] == [{"public_id": first_attachment["attachmentId"], "ordinal": 0}]
     assert rows[1][0]["deleted_at"] is None
     assert rows[1][1]["deleted_at"] is not None
     # Final WebP retention is admin-managed: logical deletion immediately
     # removes app access, while physical object cleanup remains a separate job.
-    assert len(
-        [key for key in fixture.asset_storage.objects if key.startswith("sol_imgs/")]
-    ) == 2
+    assert (
+        len(
+            [
+                key
+                for key in fixture.asset_storage.objects
+                if key.startswith("sol_imgs/")
+            ]
+        )
+        == 2
+    )
 
 
 async def test_student_written_submission_http_persists_safe_failures(

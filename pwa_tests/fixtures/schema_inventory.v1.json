@@ -125,6 +125,10 @@
       {
         "id": "0049.pwa_submission_attachment_mutations",
         "sha256": "35933691295116e834d0d705d680eca3daa071fdc402fe74896da7e76224a361"
+      },
+      {
+        "id": "0050.pwa_submission_entry_replacements",
+        "sha256": "6b30445ef64b380ea0202edabfa63bcb9a861a2a86d5b0eba3171512df0f23c3"
       }
     ],
     "repository_head_status": {
@@ -135,7 +139,7 @@
     }
   },
   "product": {
-    "object_count": 264,
+    "object_count": 269,
     "objects": [
       {
         "columns": [
@@ -12124,6 +12128,283 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "thread_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "replaced_entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "replacement_entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "replaced_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "replaced_entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          },
+          {
+            "from_columns": [
+              "replacement_entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "thread_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_threads"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_entry_replacements_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "replaced_entry_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_entry_replacements_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "replacement_entry_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_entry_replacements_3",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_entry_replacements_4",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "thread_id",
+                "seqno": 0
+              },
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "replaced_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "submission_entry_replacements_thread_history_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_entry_replacements",
+        "object_sha256": "928d2b0f82d95c5a5d666785f5e9317175cbab4828f110b1ae6aac529ebb5948",
+        "sql": "CREATE TABLE submission_entry_replacements\n(\n    id                   integer primary key,\n    public_id            text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    thread_id            integer not null references submission_threads (id),\n    student_user_id      integer not null references users (id),\n    replaced_entry_id    integer not null unique references submission_entries (id),\n    replacement_entry_id integer not null unique references submission_entries (id),\n    idempotency_key      text    not null\n        check (\n            length(idempotency_key) between 1 and 200\n            and idempotency_key = trim(idempotency_key)\n        ),\n    replaced_at          text    not null,\n    unique (student_user_id, idempotency_key),\n    check (replaced_entry_id <> replacement_entry_id)\n);",
+        "table_name": "submission_entry_replacements",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "reassignment_id",
             "not_null": true,
             "primary_key_ordinal": 1
@@ -15537,6 +15818,13 @@
         "type": "index"
       },
       {
+        "name": "submission_entry_replacements_thread_history_idx",
+        "object_sha256": "df898cf83f672f7cce29acf6132b72916d6f6d664e86b821e9469c525bf85bdb",
+        "sql": "CREATE INDEX submission_entry_replacements_thread_history_idx\n    on submission_entry_replacements (thread_id, replaced_at, id);",
+        "table_name": "submission_entry_replacements",
+        "type": "index"
+      },
+      {
         "name": "submission_material_reassignment_items_projection_idx",
         "object_sha256": "ce2c65c4bbc0434fa56037b2d9793d66e7f6d664ed0faa0c319946523ce993bf",
         "sql": "CREATE INDEX submission_material_reassignment_items_projection_idx\n    on submission_material_reassignment_items\n       (source_entry_id, item_kind, attachment_id, reassignment_id, ordinal);",
@@ -16237,6 +16525,27 @@
         "type": "trigger"
       },
       {
+        "name": "submission_entry_replacements_delete_forbidden",
+        "object_sha256": "670230605906e730661a8a4a5cd6287e634e784d1ca9b753d44975948436623a",
+        "sql": "CREATE TRIGGER submission_entry_replacements_delete_forbidden\nbefore delete on submission_entry_replacements\nfor each row\nbegin\n    select raise(abort, 'submission replacement deletion is forbidden');\nend;",
+        "table_name": "submission_entry_replacements",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entry_replacements_immutable_update",
+        "object_sha256": "8384e842fc083fdda38728142b420cd58af6d45ee6326947d0c0e284c6fb6ef8",
+        "sql": "CREATE TRIGGER submission_entry_replacements_immutable_update\nbefore update on submission_entry_replacements\nfor each row\nbegin\n    select raise(abort, 'submission replacement is immutable');\nend;",
+        "table_name": "submission_entry_replacements",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entry_replacements_scope_insert",
+        "object_sha256": "4cab7b4fa1b34c908d9c292c5b34b75f4ae05302b52b038ab7d8fa99a8af9605",
+        "sql": "CREATE TRIGGER submission_entry_replacements_scope_insert\nbefore insert on submission_entry_replacements\nfor each row\nwhen not exists (\n    select 1\n    from submission_threads as thread\n    join submission_entries as replaced\n      on replaced.id = new.replaced_entry_id\n     and replaced.thread_id = thread.id\n     and replaced.author_kind = 'student'\n     and replaced.author_user_id = thread.student_user_id\n     and replaced.state = 'deleted'\n    join submission_entries as replacement\n      on replacement.id = new.replacement_entry_id\n     and replacement.thread_id = thread.id\n     and replacement.author_kind = 'student'\n     and replacement.author_user_id = thread.student_user_id\n     and replacement.state = 'submitted'\n    where thread.id = new.thread_id\n      and thread.student_user_id = new.student_user_id\n)\nbegin\n    select raise(abort, 'submission replacement is outside mutable thread scope');\nend;",
+        "table_name": "submission_entry_replacements",
+        "type": "trigger"
+      },
+      {
         "name": "submission_material_reassignment_items_delete_forbidden",
         "object_sha256": "97ad82a44c80edb0133bcf1c5be8a90962b9055b8a5ae91d2ae3df9e4cb0968e",
         "sql": "CREATE TRIGGER submission_material_reassignment_items_delete_forbidden\nbefore delete on submission_material_reassignment_items\nfor each row\nbegin\n    select raise(abort, 'submission reassignment item deletion is forbidden');\nend;",
@@ -16356,8 +16665,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "ba824e11c1f2520780f397470b6fe67113d7f06523afce6050678603c658ee2e",
-    "sha256": "33f28638117020d1ad111fa047212944c1c3a73aea60cfbf7348e9314b7df465"
+    "pragma_structure_sha256": "db2b3bd08d511b93350b14045f27013cf1fb6f6a663383022280a50f22d7193d",
+    "sha256": "5457af9da8f22b27dc765819b0e4afb9a6130c143fa13ca994fd744484212e26"
   },
   "source_kind": "repository-migration-head"
 }

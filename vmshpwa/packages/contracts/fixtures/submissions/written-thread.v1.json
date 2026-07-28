@@ -118,6 +118,53 @@
     "clockSuspicious": false,
     "requestId": "request-written-submit-fixture"
   },
+  "replaceRequest": {
+    "schemaVersion": 1,
+    "idempotencyKey": "8dcfef6e-b1a2-4d81-8f80-26039e7efab5",
+    "replacedEntryId": "written-entry-fixture-1",
+    "expectedEntryVersion": 2,
+    "expectedReplacedEntryVersion": 3,
+    "expectedThreadVersion": 5,
+    "attachmentIds": ["written-attachment-fixture-2"]
+  },
+  "replaceResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "awaiting_review",
+    "threadVersion": 6,
+    "entry": {
+      "entryId": "written-entry-fixture-2",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "submitted",
+      "text": "Исправленное решение.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 3,
+      "clientCreatedAt": "2026-09-20T13:10:00.000000Z",
+      "serverReceivedAt": "2026-09-20T13:10:02.000000Z",
+      "attachments": [
+        {
+          "attachmentId": "written-attachment-fixture-2",
+          "ordinal": 0,
+          "uploadStatus": "stored",
+          "mediaId": "submission-media-fixture-2",
+          "publicUrl": "https://assets.example.invalid/sol_imgs/replacement.webp",
+          "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-2/attachments/written-attachment-fixture-2/media",
+          "mediaType": "image/webp",
+          "width": 1200,
+          "height": 1600
+        }
+      ]
+    },
+    "replacedEntryId": "written-entry-fixture-1",
+    "replacementEventId": "written-replacement-fixture-1",
+    "clockSuspicious": false,
+    "requestId": "request-written-replace-fixture"
+  },
   "reorderRequest": {
     "schemaVersion": 1,
     "idempotencyKey": "253de35e-3890-4374-8153-c564b13db3da",

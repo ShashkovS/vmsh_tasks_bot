@@ -276,6 +276,51 @@ export const submitWrittenEntryResponseSchema = z
   })
 export type SubmitWrittenEntryResponse = z.infer<typeof submitWrittenEntryResponseSchema>
 
+export const replaceWrittenEntryRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    idempotencyKey: z.uuid(),
+    replacedEntryId: publicIdSchema,
+    expectedEntryVersion: z.number().int().positive(),
+    expectedReplacedEntryVersion: z.number().int().positive(),
+    expectedThreadVersion: z.number().int().positive(),
+    attachmentIds: z.array(publicIdSchema).max(10),
+  })
+  .strict()
+  .superRefine((request, context) => {
+    if (new Set(request.attachmentIds).size !== request.attachmentIds.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Attachment IDs must be unique',
+        path: ['attachmentIds'],
+      })
+    }
+  })
+export type ReplaceWrittenEntryRequest = z.infer<typeof replaceWrittenEntryRequestSchema>
+
+export const replaceWrittenEntryResponseSchema = z
+  .object({
+    ...writtenEntryMutationShape,
+    replacedEntryId: publicIdSchema,
+    replacementEventId: publicIdSchema,
+    clockSuspicious: z.boolean(),
+  })
+  .strict()
+  .superRefine((response, context) => {
+    if (
+      response.threadStatus !== 'awaiting_review' ||
+      response.entry.state !== 'submitted' ||
+      response.entry.entryId === response.replacedEntryId
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Replacement must expose new evidence awaiting review',
+        path: ['entry'],
+      })
+    }
+  })
+export type ReplaceWrittenEntryResponse = z.infer<typeof replaceWrittenEntryResponseSchema>
+
 export const writtenThreadResponseSchema = z
   .object({
     schemaVersion: contractVersionSchema,
@@ -319,6 +364,8 @@ export const writtenSubmissionFixtureSchema = z
     deleteResponse: mutateWrittenAttachmentsResponseSchema,
     submitRequest: submitWrittenEntryRequestSchema,
     submitResponse: submitWrittenEntryResponseSchema,
+    replaceRequest: replaceWrittenEntryRequestSchema,
+    replaceResponse: replaceWrittenEntryResponseSchema,
     threadResponse: writtenThreadResponseSchema,
   })
   .strict()

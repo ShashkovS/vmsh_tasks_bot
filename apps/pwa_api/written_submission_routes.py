@@ -28,6 +28,7 @@ from db_methods.pwa.written_submissions import (
     ProblemRevisionRef,
     PwaWrittenSubmissionRepository,
     ReorderWrittenAttachmentsCommand,
+    ReplaceWrittenEntryCommand,
     SubmitWrittenEntryCommand,
     WrittenSubmissionRejected,
     WrittenSubmissionRepositoryError,
@@ -60,6 +61,17 @@ _SUBMIT_FIELDS = frozenset(
         "schemaVersion",
         "idempotencyKey",
         "expectedEntryVersion",
+        "expectedThreadVersion",
+        "attachmentIds",
+    }
+)
+_REPLACE_FIELDS = frozenset(
+    {
+        "schemaVersion",
+        "idempotencyKey",
+        "replacedEntryId",
+        "expectedEntryVersion",
+        "expectedReplacedEntryVersion",
         "expectedThreadVersion",
         "attachmentIds",
     }
@@ -681,9 +693,7 @@ async def reorder_written_attachments(request: web.Request) -> web.Response:
     entry_public_id = _public_id(
         request, "entry_public_id", error_code="written_entry_not_found"
     )
-    payload = await _json_object(
-        request, required_fields=_REORDER_ATTACHMENT_FIELDS
-    )
+    payload = await _json_object(request, required_fields=_REORDER_ATTACHMENT_FIELDS)
     _schema_version(payload["schemaVersion"])
     receipt = await _repository(request).reorder_attachments(
         ReorderWrittenAttachmentsCommand(
@@ -726,9 +736,7 @@ async def delete_written_attachment(request: web.Request) -> web.Response:
         "attachment_public_id",
         error_code="written_attachment_not_found",
     )
-    payload = await _json_object(
-        request, required_fields=_DELETE_ATTACHMENT_FIELDS
-    )
+    payload = await _json_object(request, required_fields=_DELETE_ATTACHMENT_FIELDS)
     _schema_version(payload["schemaVersion"])
     receipt = await _repository(request).delete_attachment(
         DeleteWrittenAttachmentCommand(
@@ -788,6 +796,61 @@ async def submit_written_entry(request: web.Request) -> web.Response:
             account_public_id=account_public_id,
             problem_public_id=receipt.problem_public_id,
             reason="written-entry-submitted",
+        )
+    response = receipt.response_payload()
+    response["requestId"] = request["request_id"]
+    return web.json_response(response)
+
+
+@written_submission_routes.post(
+    "/student/api/v1/thread-entries/{entry_public_id}/replace"
+)
+@_translate_repository_errors
+async def replace_written_entry(request: web.Request) -> web.Response:
+    """Atomically swap a complete draft for one unlocked submitted entry."""
+
+    account_id, account_public_id = _student_identity(request)
+    entry_public_id = _public_id(
+        request, "entry_public_id", error_code="written_entry_not_found"
+    )
+    payload = await _json_object(request, required_fields=_REPLACE_FIELDS)
+    _schema_version(payload["schemaVersion"])
+    replaced_entry_public_id = payload["replacedEntryId"]
+    if (
+        not isinstance(replaced_entry_public_id, str)
+        or _PUBLIC_ID.fullmatch(replaced_entry_public_id) is None
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте исходную версию решения",
+            details={"field": "replacedEntryId"},
+        )
+    receipt = await _repository(request).replace_entry(
+        ReplaceWrittenEntryCommand(
+            account_id=account_id,
+            entry_public_id=entry_public_id,
+            replaced_entry_public_id=replaced_entry_public_id,
+            expected_entry_version=_positive_version(
+                payload["expectedEntryVersion"], field="expectedEntryVersion"
+            ),
+            expected_replaced_entry_version=_positive_version(
+                payload["expectedReplacedEntryVersion"],
+                field="expectedReplacedEntryVersion",
+            ),
+            expected_thread_version=_positive_version(
+                payload["expectedThreadVersion"], field="expectedThreadVersion"
+            ),
+            attachment_public_ids=_attachment_ids(payload["attachmentIds"]),
+            idempotency_key=_canonical_uuid(payload["idempotencyKey"]),
+        )
+    )
+    if not receipt.replayed:
+        await _invalidate_after_commit(
+            request,
+            account_public_id=account_public_id,
+            problem_public_id=receipt.problem_public_id,
+            reason="written-entry-replaced",
         )
     response = receipt.response_payload()
     response["requestId"] = request["request_id"]

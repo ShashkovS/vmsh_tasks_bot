@@ -8,6 +8,8 @@ import {
   deleteWrittenAttachmentRequestSchema,
   mutateWrittenAttachmentsResponseSchema,
   reorderWrittenAttachmentsRequestSchema,
+  replaceWrittenEntryRequestSchema,
+  replaceWrittenEntryResponseSchema,
   submitWrittenEntryRequestSchema,
   writtenSubmissionFixtureSchema,
   writtenSubmissionQueryKeys,
@@ -37,6 +39,27 @@ describe('Phase-5 written-submission contracts', () => {
       submitWrittenEntryRequestSchema.safeParse({
         ...fixture.submitRequest,
         attachmentIds: ['attachment-one', 'attachment-one'],
+      }).success,
+    ).toBe(false)
+    expect(
+      replaceWrittenEntryRequestSchema.safeParse({
+        ...fixture.replaceRequest,
+        attachmentIds: ['attachment-one', 'attachment-one'],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('keeps replacement target, optimistic versions and audit identity explicit', () => {
+    expect(replaceWrittenEntryRequestSchema.parse(fixture.replaceRequest)).toEqual(
+      fixture.replaceRequest,
+    )
+    expect(replaceWrittenEntryResponseSchema.parse(fixture.replaceResponse)).toEqual(
+      fixture.replaceResponse,
+    )
+    expect(
+      replaceWrittenEntryResponseSchema.safeParse({
+        ...fixture.replaceResponse,
+        replacedEntryId: fixture.replaceResponse.entry.entryId,
       }).success,
     ).toBe(false)
   })

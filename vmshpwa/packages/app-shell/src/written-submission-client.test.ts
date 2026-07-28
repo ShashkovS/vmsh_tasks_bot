@@ -7,6 +7,7 @@ import {
   createWrittenEntryRequestSchema,
   deleteWrittenAttachmentRequestSchema,
   reorderWrittenAttachmentsRequestSchema,
+  replaceWrittenEntryRequestSchema,
   runtimeConfigSchema,
   submitWrittenEntryRequestSchema,
   writtenAttachmentUploadMetadataSchema,
@@ -92,12 +93,13 @@ describe('Student written-submission client', () => {
     expect((form.get('asset') as File).name).toBe('page-1.webp')
   })
 
-  it('uses exact versioned paths for reorder, delete and submit', async () => {
+  it('uses exact versioned paths for reorder, delete, submit and atomic replacement', async () => {
     const fetchImplementation = vi
       .fn<typeof globalThis.fetch>()
       .mockResolvedValueOnce(jsonResponse(writtenFixture.reorderResponse, 200))
       .mockResolvedValueOnce(jsonResponse(writtenFixture.deleteResponse, 200))
       .mockResolvedValueOnce(jsonResponse(writtenFixture.submitResponse, 200))
+      .mockResolvedValueOnce(jsonResponse(writtenFixture.replaceResponse, 200))
     const client = createWrittenSubmissionClient(runtime, { fetchImplementation })
     const entryId = writtenFixture.createResponse.entry.entryId
     const attachmentId = writtenFixture.attachmentResponse.entry.attachments[0]!.attachmentId
@@ -106,10 +108,12 @@ describe('Student written-submission client', () => {
     )
     const deleteRequest = deleteWrittenAttachmentRequestSchema.parse(writtenFixture.deleteRequest)
     const submitRequest = submitWrittenEntryRequestSchema.parse(writtenFixture.submitRequest)
+    const replaceRequest = replaceWrittenEntryRequestSchema.parse(writtenFixture.replaceRequest)
 
     await client.reorder(entryId, reorderRequest)
     await client.deleteAttachment(entryId, attachmentId, deleteRequest)
     await client.submit(entryId, submitRequest)
+    await client.replace(writtenFixture.replaceResponse.entry.entryId, replaceRequest)
 
     expect(
       fetchImplementation.mock.calls.map(([path, init]) => [path, init?.method, init?.body]),
@@ -125,6 +129,11 @@ describe('Student written-submission client', () => {
         JSON.stringify(deleteRequest),
       ],
       [`/student/api/v1/thread-entries/${entryId}/submit`, 'POST', JSON.stringify(submitRequest)],
+      [
+        `/student/api/v1/thread-entries/${writtenFixture.replaceResponse.entry.entryId}/replace`,
+        'POST',
+        JSON.stringify(replaceRequest),
+      ],
     ])
   })
 

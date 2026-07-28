@@ -28,6 +28,7 @@ CREATE_ATTACHMENT_OPERATION = "written-attachment:create"
 REORDER_ATTACHMENTS_OPERATION = "written-attachment:reorder"
 DELETE_ATTACHMENT_OPERATION = "written-attachment:delete"
 SUBMIT_ENTRY_OPERATION = "written-entry:submit"
+REPLACE_ENTRY_OPERATION = "written-entry:replace"
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -164,6 +165,56 @@ class SubmitWrittenEntryCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class ReplaceWrittenEntryCommand:
+    """Atomically publish a prepared draft in place of unlocked evidence."""
+
+    account_id: int
+    entry_public_id: str
+    replaced_entry_public_id: str
+    expected_entry_version: int
+    expected_replaced_entry_version: int
+    expected_thread_version: int
+    attachment_public_ids: tuple[str, ...]
+    idempotency_key: str
+
+    def __post_init__(self) -> None:
+        _validate_attachment_mutation_command(
+            account_id=self.account_id,
+            entry_public_id=self.entry_public_id,
+            expected_entry_version=self.expected_entry_version,
+            expected_thread_version=self.expected_thread_version,
+            idempotency_key=self.idempotency_key,
+        )
+        if (
+            not _PUBLIC_ID.fullmatch(self.replaced_entry_public_id)
+            or self.replaced_entry_public_id == self.entry_public_id
+        ):
+            raise ValueError("replaced entry public ID is invalid")
+        if (
+            type(self.expected_replaced_entry_version) is not int
+            or self.expected_replaced_entry_version < 1
+        ):
+            raise ValueError("expected replaced-entry version must be positive")
+        if len(self.attachment_public_ids) > 10 or len(
+            set(self.attachment_public_ids)
+        ) != len(self.attachment_public_ids):
+            raise ValueError("attachment IDs must be unique and limited to ten")
+        if any(not _PUBLIC_ID.fullmatch(item) for item in self.attachment_public_ids):
+            raise ValueError("attachment public ID is invalid")
+
+    def request_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "entryId": self.entry_public_id,
+            "replacedEntryId": self.replaced_entry_public_id,
+            "expectedEntryVersion": self.expected_entry_version,
+            "expectedReplacedEntryVersion": self.expected_replaced_entry_version,
+            "expectedThreadVersion": self.expected_thread_version,
+            "attachmentIds": list(self.attachment_public_ids),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class CreateWrittenAttachmentCommand:
     """Identity and optimistic state of one browser-selected source image."""
 
@@ -237,11 +288,9 @@ class ReorderWrittenAttachmentsCommand:
         )
         if (
             len(self.attachment_public_ids) > 10
-            or len(set(self.attachment_public_ids))
-            != len(self.attachment_public_ids)
+            or len(set(self.attachment_public_ids)) != len(self.attachment_public_ids)
             or any(
-                not _PUBLIC_ID.fullmatch(item)
-                for item in self.attachment_public_ids
+                not _PUBLIC_ID.fullmatch(item) for item in self.attachment_public_ids
             )
         ):
             raise ValueError("attachment IDs must be unique and limited to ten")
@@ -576,6 +625,56 @@ class SubmitWrittenEntryReceipt:
         except (KeyError, TypeError, ValueError) as error:
             raise WrittenSubmissionRepositoryError(
                 "stored submit-entry response is invalid"
+            ) from error
+
+
+@dataclass(frozen=True, slots=True)
+class ReplaceWrittenEntryReceipt:
+    thread_public_id: str
+    problem_public_id: str
+    thread_status: str
+    thread_version: int
+    entry: WrittenEntryRecord
+    replaced_entry_public_id: str
+    replacement_event_public_id: str
+    clock_suspicious: bool
+    replayed: bool = field(default=False, compare=False)
+
+    def response_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "threadId": self.thread_public_id,
+            "problemId": self.problem_public_id,
+            "threadStatus": self.thread_status,
+            "threadVersion": self.thread_version,
+            "entry": self.entry.payload(),
+            "replacedEntryId": self.replaced_entry_public_id,
+            "replacementEventId": self.replacement_event_public_id,
+            "clockSuspicious": self.clock_suspicious,
+        }
+
+    @classmethod
+    def from_response(
+        cls, payload: Mapping[str, object]
+    ) -> "ReplaceWrittenEntryReceipt":
+        try:
+            clock_suspicious = payload["clockSuspicious"]
+            if type(clock_suspicious) is not bool:
+                raise TypeError
+            return cls(
+                thread_public_id=str(payload["threadId"]),
+                problem_public_id=str(payload["problemId"]),
+                thread_status=str(payload["threadStatus"]),
+                thread_version=int(payload["threadVersion"]),
+                entry=_entry_from_payload(payload["entry"]),
+                replaced_entry_public_id=str(payload["replacedEntryId"]),
+                replacement_event_public_id=str(payload["replacementEventId"]),
+                clock_suspicious=clock_suspicious,
+                replayed=True,
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise WrittenSubmissionRepositoryError(
+                "stored replace-entry response is invalid"
             ) from error
 
 
@@ -1200,6 +1299,7 @@ class PwaWrittenSubmissionRepository:
         entry_public_id_factory: Callable[[], str] | None = None,
         attachment_public_id_factory: Callable[[], str] | None = None,
         media_public_id_factory: Callable[[], str] | None = None,
+        replacement_event_public_id_factory: Callable[[], str] | None = None,
     ) -> None:
         self._factory = factory
         self._clock = clock or (lambda: datetime.now(UTC))
@@ -1214,6 +1314,10 @@ class PwaWrittenSubmissionRepository:
         )
         self._media_public_id_factory = media_public_id_factory or (
             lambda: f"submission-media-{uuid.uuid4()}"
+        )
+        self._replacement_event_public_id_factory = (
+            replacement_event_public_id_factory
+            or (lambda: f"written-replacement-{uuid.uuid4()}")
         )
 
     async def create_entry(
@@ -2066,6 +2170,273 @@ class PwaWrittenSubmissionRepository:
         )
         return receipt, None
 
+    async def replace_entry(
+        self, command: ReplaceWrittenEntryCommand
+    ) -> ReplaceWrittenEntryReceipt:
+        """Publish a complete draft and retire one unlocked submitted entry."""
+
+        payload_sha256 = _payload_hash(command.request_payload())
+        replay = await self._factory.run_read_async(
+            lambda connection: _read_idempotency(
+                connection,
+                account_id=command.account_id,
+                operation=REPLACE_ENTRY_OPERATION,
+                idempotency_key=command.idempotency_key,
+                payload_sha256=payload_sha256,
+            )
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return ReplaceWrittenEntryReceipt.from_response(replay.response)
+        replacement_event_public_id = self._replacement_event_public_id_factory()
+        if not _PUBLIC_ID.fullmatch(replacement_event_public_id):
+            raise WrittenSubmissionRepositoryError(
+                "replacement event public ID factory returned an invalid value"
+            )
+        receipt, error = await self._factory.run_write_async(
+            lambda connection: self._write_replace_entry(
+                connection,
+                command=command,
+                payload_sha256=payload_sha256,
+                replacement_event_public_id=replacement_event_public_id,
+                now=self._clock(),
+            )
+        )
+        if error is not None:
+            raise error
+        assert receipt is not None
+        return receipt
+
+    def _write_replace_entry(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        command: ReplaceWrittenEntryCommand,
+        payload_sha256: str,
+        replacement_event_public_id: str,
+        now: datetime,
+    ) -> tuple[ReplaceWrittenEntryReceipt | None, WrittenSubmissionRejected | None]:
+        replay = _read_idempotency(
+            connection,
+            account_id=command.account_id,
+            operation=REPLACE_ENTRY_OPERATION,
+            idempotency_key=command.idempotency_key,
+            payload_sha256=payload_sha256,
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return ReplaceWrittenEntryReceipt.from_response(replay.response), None
+        replaced_at = _timestamp(now)
+        idempotency_id = int(
+            connection.execute(
+                "INSERT INTO idempotency_records "
+                "(audience, account_id, operation, idempotency_key, payload_sha256, "
+                "state, created_at) VALUES ('student', ?, ?, ?, ?, 'processing', ?) "
+                "RETURNING id",
+                (
+                    command.account_id,
+                    REPLACE_ENTRY_OPERATION,
+                    command.idempotency_key,
+                    payload_sha256,
+                    replaced_at,
+                ),
+            ).fetchone()["id"]
+        )
+        try:
+            row = connection.execute(
+                "SELECT entry.id, entry.state, entry.version AS entry_version, "
+                "entry.text, entry.client_created_at, entry.problem_revision_id, "
+                "thread.id AS thread_id, thread.public_id AS thread_public_id, "
+                "thread.student_user_id, thread.status AS thread_status, "
+                "thread.version AS thread_version, problem.public_id AS problem_public_id "
+                "FROM auth_accounts AS account "
+                "JOIN submission_threads AS thread "
+                "ON thread.student_user_id = account.linked_user_id "
+                "JOIN submission_entries AS entry ON entry.thread_id = thread.id "
+                "JOIN problems AS problem ON problem.id = thread.problem_id "
+                "WHERE account.id = ? AND account.audience = 'student' "
+                "AND account.status = 'active' AND entry.public_id = ?",
+                (command.account_id, command.entry_public_id),
+            ).fetchone()
+            if row is None:
+                raise WrittenSubmissionRejected(
+                    code="written_entry_not_found",
+                    message="Черновик замены не найден.",
+                    http_status=404,
+                )
+            if row["state"] not in ("draft", "uploading"):
+                raise WrittenSubmissionRejected(
+                    code="written_entry_not_editable",
+                    message="Эту версию решения уже нельзя использовать для замены.",
+                    http_status=409,
+                )
+            if row["thread_status"] != "awaiting_review":
+                raise WrittenSubmissionRejected(
+                    code="written_replacement_unavailable",
+                    message="Отправленное решение уже начали проверять или проверили.",
+                    http_status=409,
+                )
+            if (
+                int(row["entry_version"]) != command.expected_entry_version
+                or int(row["thread_version"]) != command.expected_thread_version
+            ):
+                raise WrittenSubmissionRejected(
+                    code="written_submission_version_conflict",
+                    message="Решение изменилось в другом окне. Обновите страницу.",
+                    http_status=409,
+                )
+            replaced = connection.execute(
+                "SELECT id, state, version FROM submission_entries "
+                "WHERE thread_id = ? AND public_id = ? AND author_kind = 'student' "
+                "AND author_user_id = ?",
+                (
+                    row["thread_id"],
+                    command.replaced_entry_public_id,
+                    row["student_user_id"],
+                ),
+            ).fetchone()
+            if replaced is None:
+                raise WrittenSubmissionRejected(
+                    code="written_replaced_entry_not_found",
+                    message="Исходное отправленное решение не найдено.",
+                    http_status=404,
+                )
+            if (
+                replaced["state"] != "submitted"
+                or int(replaced["version"]) != command.expected_replaced_entry_version
+            ):
+                raise WrittenSubmissionRejected(
+                    code="written_replacement_target_changed",
+                    message="Исходное решение уже изменилось или попало в проверку.",
+                    http_status=409,
+                )
+            if connection.execute(
+                "SELECT 1 FROM submission_attachments WHERE entry_id = ? "
+                "AND upload_status = 'locked' LIMIT 1",
+                (replaced["id"],),
+            ).fetchone():
+                raise WrittenSubmissionRejected(
+                    code="written_attachment_locked",
+                    message="Фотографии уже зафиксированы проверкой.",
+                    http_status=409,
+                )
+            context = _resolve_context(
+                connection,
+                account_id=command.account_id,
+                problem_public_id=str(row["problem_public_id"]),
+                now=now,
+            )
+            if context.problem_revision_id != int(row["problem_revision_id"]):
+                raise WrittenSubmissionRejected(
+                    code="written_problem_revision_changed",
+                    message="Условие задачи изменилось. Проверьте решение перед заменой.",
+                    http_status=409,
+                )
+            attachments = connection.execute(
+                "SELECT public_id, upload_status FROM submission_attachments "
+                "WHERE entry_id = ? ORDER BY ordinal, id",
+                (row["id"],),
+            ).fetchall()
+            stored_ids = tuple(str(item["public_id"]) for item in attachments)
+            if stored_ids != command.attachment_public_ids or any(
+                item["upload_status"] != "stored" for item in attachments
+            ):
+                raise WrittenSubmissionRejected(
+                    code="written_attachments_not_ready",
+                    message="Не все фотографии готовы к замене.",
+                    http_status=409,
+                )
+            if not str(row["text"] or "").strip() and not stored_ids:
+                raise WrittenSubmissionRejected(
+                    code="written_entry_empty",
+                    message="Добавьте текст или фотографии решения.",
+                    http_status=422,
+                )
+            client_created_at = _parse_timestamp(
+                row["client_created_at"], label="entry creation time"
+            )
+            clock = assess_submission_clock(
+                client_created_at=client_created_at,
+                server_received_at=now,
+                submission_closes_at=context.submission_closes_at,
+            )
+            if not clock.timely:
+                raise WrittenSubmissionRejected(
+                    code="submission_deadline_passed",
+                    message="Срок сдачи этой задачи уже закончился.",
+                    http_status=409,
+                    details={
+                        "submissionClosesAt": _timestamp(context.submission_closes_at)
+                    },
+                )
+            connection.execute(
+                "UPDATE submission_entries SET state = 'deleted', deleted_at = ?, "
+                "version = ? WHERE id = ?",
+                (
+                    replaced_at,
+                    command.expected_replaced_entry_version + 1,
+                    replaced["id"],
+                ),
+            )
+            entry_version = int(row["entry_version"]) + 1
+            thread_version = int(row["thread_version"]) + 1
+            connection.execute(
+                "UPDATE submission_entries SET state = 'submitted', version = ? "
+                "WHERE id = ?",
+                (entry_version, row["id"]),
+            )
+            connection.execute(
+                "UPDATE submission_threads SET latest_entry_at = ?, updated_at = ?, "
+                "version = ? WHERE id = ?",
+                (replaced_at, replaced_at, thread_version, row["thread_id"]),
+            )
+            connection.execute(
+                "INSERT INTO submission_entry_replacements "
+                "(public_id, thread_id, student_user_id, replaced_entry_id, "
+                "replacement_entry_id, idempotency_key, replaced_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    replacement_event_public_id,
+                    row["thread_id"],
+                    row["student_user_id"],
+                    replaced["id"],
+                    row["id"],
+                    command.idempotency_key,
+                    replaced_at,
+                ),
+            )
+            receipt = ReplaceWrittenEntryReceipt(
+                thread_public_id=str(row["thread_public_id"]),
+                problem_public_id=str(row["problem_public_id"]),
+                thread_status="awaiting_review",
+                thread_version=thread_version,
+                entry=_entry_record(connection, entry_id=int(row["id"])),
+                replaced_entry_public_id=command.replaced_entry_public_id,
+                replacement_event_public_id=replacement_event_public_id,
+                clock_suspicious=clock.suspicious,
+            )
+        except WrittenSubmissionRejected as error:
+            _complete_idempotency(
+                connection,
+                record_id=idempotency_id,
+                state="failed",
+                http_status=error.http_status,
+                response=error.response_payload(),
+                completed_at=replaced_at,
+            )
+            return None, error
+        _complete_idempotency(
+            connection,
+            record_id=idempotency_id,
+            state="completed",
+            http_status=200,
+            response=receipt.response_payload(),
+            completed_at=replaced_at,
+        )
+        return receipt, None
+
     async def get_attachment_media(
         self,
         *,
@@ -2171,6 +2542,7 @@ __all__ = [
     "CREATE_ENTRY_OPERATION",
     "DELETE_ATTACHMENT_OPERATION",
     "REORDER_ATTACHMENTS_OPERATION",
+    "REPLACE_ENTRY_OPERATION",
     "SUBMIT_ENTRY_OPERATION",
     "CreateWrittenAttachmentCommand",
     "CreateWrittenAttachmentReceipt",
@@ -2183,6 +2555,8 @@ __all__ = [
     "ProblemRevisionRef",
     "PwaWrittenSubmissionRepository",
     "ReorderWrittenAttachmentsCommand",
+    "ReplaceWrittenEntryCommand",
+    "ReplaceWrittenEntryReceipt",
     "SubmitWrittenEntryCommand",
     "SubmitWrittenEntryReceipt",
     "WrittenAttachmentRecord",

@@ -15,6 +15,7 @@ from db_methods.pwa.migrations import MIGRATIONS_ROOT
 MIGRATION_ID = "0047.pwa_submission_threads_entries_assets"
 ENTRY_REVISION_MIGRATION_ID = "0048.pwa_submission_entry_revision"
 ATTACHMENT_MUTATION_MIGRATION_ID = "0049.pwa_submission_attachment_mutations"
+ENTRY_REPLACEMENT_MIGRATION_ID = "0050.pwa_submission_entry_replacements"
 NOW = "2026-09-27T13:00:00.000000Z"
 LATER = "2026-09-27T13:01:00.000000Z"
 EXPECTED_OBJECTS = {
@@ -421,6 +422,7 @@ def test_phase5_written_schema_exact_up_down_up_and_additive(tmp_path):
             MIGRATION_ID,
             ENTRY_REVISION_MIGRATION_ID,
             ATTACHMENT_MUTATION_MIGRATION_ID,
+            ENTRY_REPLACEMENT_MIGRATION_ID,
         }
     }
     _apply(database_path, preceding)
@@ -444,7 +446,10 @@ def test_phase5_written_schema_exact_up_down_up_and_additive(tmp_path):
             "submission_material_reassignments",
             "submission_material_reassignment_items",
         ):
-            assert connection.execute(f'PRAGMA foreign_key_check("{table}")').fetchall() == []
+            assert (
+                connection.execute(f'PRAGMA foreign_key_check("{table}")').fetchall()
+                == []
+            )
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
 
     _rollback(database_path, {MIGRATION_ID})
@@ -469,7 +474,11 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
         item.id
         for item in migrations.values()
         if item.id
-        not in {ENTRY_REVISION_MIGRATION_ID, ATTACHMENT_MUTATION_MIGRATION_ID}
+        not in {
+            ENTRY_REVISION_MIGRATION_ID,
+            ATTACHMENT_MUTATION_MIGRATION_ID,
+            ENTRY_REPLACEMENT_MIGRATION_ID,
+        }
     }
     _apply(database_path, preceding)
     with sqlite3.connect(database_path) as connection:
@@ -479,7 +488,8 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
     _apply(database_path, {ENTRY_REVISION_MIGRATION_ID})
     with sqlite3.connect(database_path) as connection:
         columns = {
-            str(row[1]) for row in connection.execute("PRAGMA table_info(submission_entries)")
+            str(row[1])
+            for row in connection.execute("PRAGMA table_info(submission_entries)")
         }
         assert "problem_revision_id" in columns
         assert {
@@ -535,9 +545,12 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
                 "WHERE id = ?",
                 (other_problem_revision_id, entry_id),
             )
-        assert connection.execute(
-            'PRAGMA foreign_key_check("submission_entries")'
-        ).fetchall() == []
+        assert (
+            connection.execute(
+                'PRAGMA foreign_key_check("submission_entries")'
+            ).fetchall()
+            == []
+        )
         # Keep the rollback comparison about migration effects, not synthetic
         # rows created only to exercise the new provenance triggers.
         connection.rollback()
@@ -551,7 +564,8 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
     _apply(database_path, {ENTRY_REVISION_MIGRATION_ID})
     with sqlite3.connect(database_path) as connection:
         assert "problem_revision_id" in {
-            str(row[1]) for row in connection.execute("PRAGMA table_info(submission_entries)")
+            str(row[1])
+            for row in connection.execute("PRAGMA table_info(submission_entries)")
         }
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
 
@@ -565,7 +579,8 @@ def test_phase5_attachment_mutation_guard_exact_up_down_up(tmp_path):
     preceding = {
         item.id
         for item in migrations.values()
-        if item.id != ATTACHMENT_MUTATION_MIGRATION_ID
+        if item.id
+        not in {ATTACHMENT_MUTATION_MIGRATION_ID, ENTRY_REPLACEMENT_MIGRATION_ID}
     }
     _apply(database_path, preceding)
     with sqlite3.connect(database_path) as connection:
@@ -624,6 +639,102 @@ def test_phase5_attachment_mutation_guard_exact_up_down_up(tmp_path):
         assert "submission_attachments_submitted_nonempty_delete" in _objects(
             connection
         )
+        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+
+
+def test_phase5_entry_replacement_audit_exact_up_down_up_and_scope(tmp_path):
+    database_path = tmp_path / "phase5-entry-replacement.sqlite3"
+    migrations = {item.id: item for item in _migrations()}
+    assert {item.id for item in migrations[ENTRY_REPLACEMENT_MIGRATION_ID].depends} == {
+        ATTACHMENT_MUTATION_MIGRATION_ID
+    }
+    preceding = {
+        item.id
+        for item in migrations.values()
+        if item.id != ENTRY_REPLACEMENT_MIGRATION_ID
+    }
+    _apply(database_path, preceding)
+    with sqlite3.connect(database_path) as connection:
+        before_schema = _schema(connection)
+        before_counts = _counts(connection)
+
+    _apply(database_path, {ENTRY_REPLACEMENT_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        connection.execute("PRAGMA foreign_keys = ON")
+        expected = {
+            "submission_entry_replacements",
+            "submission_entry_replacements_thread_history_idx",
+            "submission_entry_replacements_scope_insert",
+            "submission_entry_replacements_immutable_update",
+            "submission_entry_replacements_delete_forbidden",
+        }
+        assert expected <= _objects(connection)
+        context = _insert_context(connection)
+        thread_id = _insert_thread(
+            connection,
+            public_id="thread-entry-replacement",
+            student_id=context["student"],
+            problem_id=context["problem_one"],
+            revision_id=context["revision"],
+            status="awaiting_review",
+        )
+        replaced_id = _insert_entry(
+            connection,
+            public_id="entry-replaced",
+            thread_id=thread_id,
+            student_id=context["student"],
+            state="submitted",
+            text="Прежнее решение",
+        )
+        replacement_id = _insert_entry(
+            connection,
+            public_id="entry-replacement",
+            thread_id=thread_id,
+            student_id=context["student"],
+            state="draft",
+            text="Исправленное решение",
+        )
+        connection.execute(
+            "UPDATE submission_entries SET state = 'deleted', deleted_at = ?, "
+            "version = version + 1 WHERE id = ?",
+            (LATER, replaced_id),
+        )
+        connection.execute(
+            "UPDATE submission_entries SET state = 'submitted', version = version + 1 "
+            "WHERE id = ?",
+            (replacement_id,),
+        )
+        connection.execute(
+            "INSERT INTO submission_entry_replacements "
+            "(public_id, thread_id, student_user_id, replaced_entry_id, "
+            "replacement_entry_id, idempotency_key, replaced_at) "
+            "VALUES ('replacement-audit-one', ?, ?, ?, ?, 'replacement-key-one', ?)",
+            (
+                thread_id,
+                context["student"],
+                replaced_id,
+                replacement_id,
+                LATER,
+            ),
+        )
+        with pytest.raises(sqlite3.IntegrityError, match="immutable"):
+            connection.execute(
+                "UPDATE submission_entry_replacements SET replaced_at = ? WHERE id = 1",
+                (NOW,),
+            )
+        with pytest.raises(sqlite3.IntegrityError, match="deletion is forbidden"):
+            connection.execute("DELETE FROM submission_entry_replacements WHERE id = 1")
+        connection.rollback()
+
+    _rollback(database_path, {ENTRY_REPLACEMENT_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert _schema(connection) == before_schema
+        assert _counts(connection) == before_counts
+        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+
+    _apply(database_path, {ENTRY_REPLACEMENT_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert "submission_entry_replacements" in _objects(connection)
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
 
 
@@ -713,7 +824,9 @@ def test_phase5_thread_scope_result_state_version_and_one_active(tmp_path):
                 (context["problem_two"], thread_id),
             )
         with pytest.raises(sqlite3.IntegrityError, match="deletion is forbidden"):
-            connection.execute("DELETE FROM submission_threads WHERE id = ?", (thread_id,))
+            connection.execute(
+                "DELETE FROM submission_threads WHERE id = ?", (thread_id,)
+            )
 
 
 def test_phase5_entry_author_idempotency_nonempty_and_lifecycle(tmp_path):
@@ -790,7 +903,9 @@ def test_phase5_entry_author_idempotency_nonempty_and_lifecycle(tmp_path):
                 (entry_id,),
             )
         with pytest.raises(sqlite3.IntegrityError, match="deletion is forbidden"):
-            connection.execute("DELETE FROM submission_entries WHERE id = ?", (entry_id,))
+            connection.execute(
+                "DELETE FROM submission_entries WHERE id = ?", (entry_id,)
+            )
 
 
 def test_phase5_attachment_contract_limit_reorder_and_lock(tmp_path):
@@ -1078,7 +1193,8 @@ def test_phase5_material_reassignment_scope_and_append_only(tmp_path):
             "submission_material_reassignments",
             "submission_material_reassignment_items",
         ):
-            assert connection.execute(
-                f'PRAGMA foreign_key_check("{table}")'
-            ).fetchall() == []
+            assert (
+                connection.execute(f'PRAGMA foreign_key_check("{table}")').fetchall()
+                == []
+            )
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)

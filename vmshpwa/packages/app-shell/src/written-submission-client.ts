@@ -10,6 +10,8 @@ import {
   parseRuntimeConfigForAudience,
   publicIdSchema,
   reorderWrittenAttachmentsRequestSchema,
+  replaceWrittenEntryRequestSchema,
+  replaceWrittenEntryResponseSchema,
   submitWrittenEntryRequestSchema,
   submitWrittenEntryResponseSchema,
   writtenAttachmentUploadMetadataSchema,
@@ -22,6 +24,8 @@ import {
   type MutateWrittenAttachmentsResponse,
   type PrincipalQueryScope,
   type ReorderWrittenAttachmentsRequest,
+  type ReplaceWrittenEntryRequest,
+  type ReplaceWrittenEntryResponse,
   type RuntimeConfig,
   type SubmitWrittenEntryRequest,
   type SubmitWrittenEntryResponse,
@@ -82,6 +86,11 @@ export interface WrittenSubmissionClient {
     request: SubmitWrittenEntryRequest,
     options?: WrittenSubmissionRequestOptions,
   ): Promise<SubmitWrittenEntryResponse>
+  replace(
+    entryId: string,
+    request: ReplaceWrittenEntryRequest,
+    options?: WrittenSubmissionRequestOptions,
+  ): Promise<ReplaceWrittenEntryResponse>
 }
 
 export class WrittenSubmissionProtocolError extends Error {
@@ -227,6 +236,22 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
       options,
       200,
       submitWrittenEntryResponseSchema,
+    )
+  }
+
+  async replace(
+    entryId: string,
+    request: ReplaceWrittenEntryRequest,
+    options: WrittenSubmissionRequestOptions = {},
+  ): Promise<ReplaceWrittenEntryResponse> {
+    const parsedEntryId = publicIdSchema.parse(entryId)
+    const body = JSON.stringify(replaceWrittenEntryRequestSchema.parse(request))
+    return this.#request(
+      `/thread-entries/${encodeURIComponent(parsedEntryId)}/replace`,
+      { method: 'POST', body, contentType: 'application/json' },
+      options,
+      200,
+      replaceWrittenEntryResponseSchema,
     )
   }
 

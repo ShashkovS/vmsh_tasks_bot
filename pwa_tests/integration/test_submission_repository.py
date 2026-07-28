@@ -28,6 +28,7 @@ from db_methods.pwa.written_submissions import (
     ProblemRevisionRef,
     PwaWrittenSubmissionRepository,
     ReorderWrittenAttachmentsCommand,
+    ReplaceWrittenEntryCommand,
     SubmitWrittenEntryCommand,
     WrittenIdempotencyPayloadMismatch,
     WrittenSubmissionRejected,
@@ -91,11 +92,15 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
     entry_public_ids = (
         f"written-entry-repository-{index}" for index in itertools.count(1)
     )
+    replacement_public_ids = (
+        f"written-replacement-repository-{index}" for index in itertools.count(1)
+    )
     written_repository = PwaWrittenSubmissionRepository(
         factory,
         clock=clock,
         thread_public_id_factory=lambda: next(thread_public_ids),
         entry_public_id_factory=lambda: next(entry_public_ids),
+        replacement_event_public_id_factory=lambda: next(replacement_public_ids),
     )
     now = timestamp(NOW)
 
@@ -1513,6 +1518,29 @@ def submit_written_entry_command(
     )
 
 
+def replace_written_entry_command(
+    fixture: SubmissionFixture,
+    *,
+    entry_public_id: str,
+    replaced_entry_public_id: str,
+    entry_version: int,
+    replaced_entry_version: int,
+    thread_version: int,
+    attachment_public_ids: tuple[str, ...] = (),
+    key: str = "written-replace-key-1",
+) -> ReplaceWrittenEntryCommand:
+    return ReplaceWrittenEntryCommand(
+        account_id=fixture.student_account_id,
+        entry_public_id=entry_public_id,
+        replaced_entry_public_id=replaced_entry_public_id,
+        expected_entry_version=entry_version,
+        expected_replaced_entry_version=replaced_entry_version,
+        expected_thread_version=thread_version,
+        attachment_public_ids=attachment_public_ids,
+        idempotency_key=key,
+    )
+
+
 def written_attachment_command(
     fixture: SubmissionFixture,
     *,
@@ -1952,13 +1980,16 @@ async def test_submitted_photo_delete_preserves_evidence_and_review_lock(
         with pytest.raises(WrittenSubmissionRejected) as empty:
             await fixture.written_repository.delete_attachment(command)
         assert empty.value.code == "written_entry_empty"
-    assert fixture.factory.run_read(
-        lambda connection: connection.execute(
-            "SELECT state FROM idempotency_records "
-            "WHERE operation = 'written-attachment:delete' "
-            "AND idempotency_key = 'written-delete-submitted-last'"
-        ).fetchone()["state"]
-    ) == "failed"
+    assert (
+        fixture.factory.run_read(
+            lambda connection: connection.execute(
+                "SELECT state FROM idempotency_records "
+                "WHERE operation = 'written-attachment:delete' "
+                "AND idempotency_key = 'written-delete-submitted-last'"
+            ).fetchone()["state"]
+        )
+        == "failed"
+    )
 
     result_id, attachment_db_id, asset_id = fixture.factory.run_write(
         lambda connection: (
@@ -2055,6 +2086,150 @@ async def test_written_text_entry_submits_atomically_and_replays(
     assert entry["state"] == "submitted"
     assert entry["version"] == 2
     assert len(idempotency) == 1
+
+
+async def test_written_entry_replacement_swaps_visibility_and_audits_once(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    original_draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text="Первоначальное решение.")
+    )
+    original = await fixture.written_repository.submit_entry(
+        submit_written_entry_command(
+            fixture,
+            entry_public_id=original_draft.entry.public_id,
+            thread_version=original_draft.thread_version,
+        )
+    )
+    replacement_draft = await fixture.written_repository.create_entry(
+        written_entry_command(
+            fixture,
+            text="Исправленное решение.",
+            key="written-create-replacement-draft",
+        )
+    )
+    command = replace_written_entry_command(
+        fixture,
+        entry_public_id=replacement_draft.entry.public_id,
+        replaced_entry_public_id=original.entry.public_id,
+        entry_version=replacement_draft.entry.version,
+        replaced_entry_version=original.entry.version,
+        thread_version=replacement_draft.thread_version,
+    )
+
+    receipt = await fixture.written_repository.replace_entry(command)
+    replay = await fixture.written_repository.replace_entry(command)
+    thread = await fixture.written_repository.get_thread(
+        account_id=fixture.student_account_id,
+        problem_public_id=WRITTEN_PROBLEM_PUBLIC_ID,
+    )
+    assert thread is not None
+    rows = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT public_id, state, version, deleted_at FROM submission_entries "
+                "ORDER BY id"
+            ).fetchall(),
+            connection.execute(
+                "SELECT replacement.public_id, replaced.public_id AS replaced_entry, "
+                "new_entry.public_id AS replacement_entry "
+                "FROM submission_entry_replacements AS replacement "
+                "JOIN submission_entries AS replaced "
+                "ON replaced.id = replacement.replaced_entry_id "
+                "JOIN submission_entries AS new_entry "
+                "ON new_entry.id = replacement.replacement_entry_id"
+            ).fetchall(),
+            connection.execute(
+                "SELECT state FROM idempotency_records "
+                "WHERE operation = 'written-entry:replace'"
+            ).fetchall(),
+        )
+    )
+
+    assert receipt.replaced_entry_public_id == original.entry.public_id
+    assert receipt.replacement_event_public_id == "written-replacement-repository-1"
+    assert receipt.entry.public_id == replacement_draft.entry.public_id
+    assert receipt.entry.state == "submitted"
+    assert receipt.thread_status == "awaiting_review"
+    assert receipt.thread_version == replacement_draft.thread_version + 1
+    assert replay == receipt
+    assert replay.replayed is True
+    assert [(entry.public_id, entry.state) for entry in thread.entries] == [
+        (original.entry.public_id, "deleted"),
+        (replacement_draft.entry.public_id, "submitted"),
+    ]
+    assert rows[0][0]["deleted_at"] == timestamp(NOW)
+    assert rows[0][0]["version"] == original.entry.version + 1
+    assert rows[0][1]["deleted_at"] is None
+    assert rows[1] == [
+        {
+            "public_id": "written-replacement-repository-1",
+            "replaced_entry": original.entry.public_id,
+            "replacement_entry": replacement_draft.entry.public_id,
+        }
+    ]
+    assert rows[2] == [{"state": "completed"}]
+
+
+async def test_written_entry_replacement_conflict_keeps_both_versions_unchanged(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    original_draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text="Первоначальное решение.")
+    )
+    original = await fixture.written_repository.submit_entry(
+        submit_written_entry_command(
+            fixture,
+            entry_public_id=original_draft.entry.public_id,
+            thread_version=original_draft.thread_version,
+        )
+    )
+    replacement_draft = await fixture.written_repository.create_entry(
+        written_entry_command(
+            fixture,
+            text="Исправленное решение.",
+            key="written-create-conflicting-replacement",
+        )
+    )
+    command = replace_written_entry_command(
+        fixture,
+        entry_public_id=replacement_draft.entry.public_id,
+        replaced_entry_public_id=original.entry.public_id,
+        entry_version=replacement_draft.entry.version,
+        replaced_entry_version=original.entry.version + 1,
+        thread_version=replacement_draft.thread_version,
+        key="written-replace-conflict",
+    )
+
+    for _ in range(2):
+        with pytest.raises(WrittenSubmissionRejected) as conflict:
+            await fixture.written_repository.replace_entry(command)
+        assert conflict.value.code == "written_replacement_target_changed"
+
+    rows = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT state, version FROM submission_entries ORDER BY id"
+            ).fetchall(),
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_entry_replacements"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT state, http_status FROM idempotency_records "
+                "WHERE operation = 'written-entry:replace'"
+            ).fetchall(),
+        )
+    )
+    assert rows == (
+        [
+            {"state": "submitted", "version": original.entry.version},
+            {"state": "draft", "version": replacement_draft.entry.version},
+        ],
+        0,
+        [{"state": "failed", "http_status": 409}],
+    )
 
 
 async def test_written_blank_submit_failure_is_idempotent_and_non_mutating(
