@@ -14,8 +14,9 @@
 | Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
 | Этап 2              | Phase 2A–2E + browser E2E   | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
 | Этап 3              | Phase 3A–3H reading slice   | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
-| Этап 4              | Phase 4A–4G in progress     | Domain/API, durable draft/outbox, Student submit и Staff recheck E2E, общая PWA/Telegram verdict policy готовы; Telegram ledger cutover и visual gate открыты       |
-| Этапы 5–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
+| Этап 4              | Phase 4A–4G functionally ready | Domain/API, draft/outbox, Student submit, Staff recheck и общая PWA/Telegram policy готовы; открыт только visual owner gate                                         |
+| Этап 5              | Phase 5A schema ready        | Written threads/entries/WebP attachments/reassignment evidence schema и rollback проверены; repository/media/UI ещё не реализованы                                  |
+| Этапы 6–11          | planned with gates           | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                        |
 | Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
 
@@ -98,6 +99,7 @@
 | 2026-07-27 | PLAN-073 | Stored Argon2id ограничен fail-closed resource envelope                                                  | Malformed и чрезмерно дорогой encoding выбирают startup dummy; unknown/invalid paths делают один instrumented Argon verify без wall-clock oracle              |
 | 2026-07-27 | PLAN-074 | Telegram renderer закреплён на проверенном Bot API 10.2 Rich HTML dialect                                | До send проверяются 32 768 UTF-8 characters, 500 blocks, nesting 16, 50 media и 20 columns; dialect/limits входят в provenance и live corpus                  |
 | 2026-07-28 | PLAN-075 | Publication wall time разрешает только backend в timezone группового занятия                             | Browser передаёт `scheduledLocalTime` + IANA `businessTimezone`; `zoneinfo` переводит в UTC и отклоняет DST gap/fold, `Date.parse()` не используется          |
+| 2026-07-28 | PLAN-076 | Written evidence хранит final WebP, а порядок использует sparse ordinal                                   | Durable attachment принимает submission WebP ≤1920; лимит 10 проверяет trigger, временный высокий ordinal позволяет swap при immediate SQLite UNIQUE        |
 
 ## Текущий инкремент этапа 0
 
@@ -361,10 +363,32 @@
   Chromium, WebKit и Firefox; lint, strict typecheck и production build — PASS.
   Proof:
   [`phase4-test-submission-domain-and-repository.md`](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md).
-- Phase 4 остаётся открытым для ручного visual gate и решения отдельной
-  cutover-задачи structured Telegram attempt/idempotency persistence. Staff
-  recheck/configuration-repair для PWA ledger закрыт. Product input/recheck
-  stories служат UI-контрактом; snapshots не обновлялись.
+- Функциональные критерии Phase 4 закрыты; открыт только ручной visual owner
+  gate. Structured Telegram attempt/idempotency persistence остаётся отдельной
+  будущей cutover-задачей и не блокирует этап. Staff recheck/configuration-repair
+  для PWA ledger закрыт. Product input/recheck stories служат UI-контрактом;
+  snapshots не обновлялись.
+
+## Текущий инкремент этапа 5
+
+- Phase 5A revision `5acecbb` добавляет migration
+  `0047.pwa_submission_threads_entries_assets`: versioned threads/entries,
+  максимум 10 final submission WebP ≤1920, review evidence lock и append-only
+  material reassignment без изменения legacy Telegram discussions/queue.
+- Condition revision scope проверяется через concrete `problem_revisions`.
+  Sparse non-negative attachment ordinal позволяет безопасный reorder при
+  immediate SQLite UNIQUE; отдельный trigger обеспечивает продуктовый лимит.
+- Exact `up → down → up`, additive row preservation, state/version/owner/result
+  scopes, attachment contract/limit/reorder/lock и reassignment audit:
+  **5 PASS**. Schema lifecycle regression: **30 PASS**.
+- Fresh inventory: **261 product objects**, SHA-256 `fcec02ab…`; полный
+  checkpoint: **323 frontend + 1185 Python PASS**, 3 intentional skips и одна
+  существующая SymPy warning. `make pwa-schema-check`, Ruff и
+  `git diff --check` — PASS. Proof:
+  [`phase5-written-submission-schema.md`](../../../pwa_tests/reports/phase5-written-submission-schema.md).
+- Repository, upload/conversion/cleanup, offline composer, backfill,
+  reassignment API/UI, Storybook и E2E остаются следующими Phase 5 increments;
+  наличие схемы их не доказывает.
 
 ## Текущий инкремент этапа 1
 
@@ -726,8 +750,8 @@
 |    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)                                             | частично; production gates открыты        |
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                          | Browser path принят; этап открыт          |
 |    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                  | Phase 3A–3H приняты; visual открыт        |
-|    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | частично; Telegram ledger/visual открыты |
-|    5 | —                    | —                                                                                               | —                                         |
+|    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | функционально; visual открыт             |
+|    5 | `5acecbb`             | [Phase 5A proof](../../../pwa_tests/reports/phase5-written-submission-schema.md)                | частично; schema принят                  |
 |    6 | —                    | —                                                                                               | —                                         |
 |    7 | —                    | —                                                                                               | —                                         |
 |    8 | —                    | —                                                                                               | —                                         |

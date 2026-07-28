@@ -15,7 +15,8 @@ Revisions: `6409191`, `bd0487f`, `1d5df54`, `7793d0f`, `0475cd0`,
 Student и Staff pages и сквозной Playwright path готовы, а Telegram и PWA
 используют одну domain normalization/verdict policy. Инкремент ещё не считается
 завершением всего этапа из-за ручного visual gate и отдельной будущей миграции
-исторического Telegram persistence в structured attempt ledger.
+исторического Telegram persistence в structured attempt ledger. Последнее не
+является gate Phase 4: legacy Telegram намеренно остаётся совместимым adapter.
 
 Реализовано:
 
@@ -281,5 +282,6 @@ secrets, точные row counts и Student-only realtime cursor.
   transport и production routes проверяет Playwright. Ручной visual gate
   focused Student page и нового Staff recheck panel остаётся открытым.
 
-Phase 4 остаётся открытым до решения Telegram ledger cutover и ручного visual
-gate. Snapshots намеренно не обновлялись.
+Функциональные критерии Phase 4 закрыты. Этап остаётся открыт только для ручного
+visual owner gate; Telegram ledger cutover относится к будущей миграции adapter,
+а не к приёмке тестовых ответов. Snapshots намеренно не обновлялись.
