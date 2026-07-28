@@ -38,6 +38,7 @@ from helpers.pwa.content.pdf_service import (
     PDF_STORAGE_CONVERSION_VERSION,
     PDF_STORAGE_NAMESPACE,
 )
+from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience, CredentialHasher
 from models.pwa.content import ProblemMatchDecision, ProblemRevisionDraft
 
@@ -374,10 +375,18 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         clock=lambda: NOW,
     )
     asset_storage = MemoryAssetStorage()
+    asset_converter = SyntheticAssetConverter()
     asset_service = ContentAssetService(
-        converter=SyntheticAssetConverter(),  # type: ignore[arg-type]
+        converter=asset_converter,  # type: ignore[arg-type]
         storage=asset_storage,
         repository=content_repository,
+    )
+    written_attachment_service = WrittenAttachmentService(
+        converter=asset_converter,  # type: ignore[arg-type]
+        storage=asset_storage,
+        repository=written_submission_repository,
+        clock=lambda: NOW,
+        object_token_factory=lambda: "2" * 32,
     )
     app = web.Application()
     app[RUNTIME_CONFIG] = Config(
@@ -395,6 +404,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         content_repository=content_repository,
         test_submission_repository=test_submission_repository,
         written_submission_repository=written_submission_repository,
+        written_attachment_service=written_attachment_service,
         content_asset_service=asset_service,
     )
     client = await aiohttp_client(app)
@@ -1298,6 +1308,178 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
         )
     )
     assert counts == (1, 1, 2)
+
+
+async def test_student_written_photo_upload_converts_persists_replays_and_submits(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    problem_public_id, condition_revision_id = await _prepare_published_test_problem(
+        fixture, problem_type=2
+    )
+    created = await fixture.client.post(
+        f"/student/api/v1/problems/{problem_public_id}/thread/entries",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "6ea1b2ad-7dc1-49db-b27a-909f8add9955",
+            "problemRevision": {
+                "conditionRevisionId": condition_revision_id,
+                "configVersion": 1,
+            },
+            "text": None,
+            "clientCreatedAt": _timestamp(),
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert created.status == 201, await created.text()
+    draft = await created.json()
+    upload_route = (
+        f"/student/api/v1/thread-entries/{draft['entry']['entryId']}/attachments"
+    )
+
+    def upload_form(*, source: bytes = b"synthetic-heic-source") -> FormData:
+        form = FormData()
+        form.add_field("schemaVersion", "1")
+        form.add_field("idempotencyKey", "ce55c871-d3fa-46ea-89f2-34f7e54cfa12")
+        form.add_field("expectedEntryVersion", "1")
+        form.add_field("expectedThreadVersion", "1")
+        form.add_field("ordinal", "0")
+        form.add_field(
+            "asset",
+            source,
+            filename="страница 1.heic",
+            content_type="image/heic",
+        )
+        return form
+
+    cursors_before = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
+    uploaded = await fixture.client.post(
+        upload_route,
+        data=upload_form(),
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert uploaded.status == 201, await uploaded.text()
+    receipt = await uploaded.json()
+    assert receipt["threadVersion"] == 2
+    assert receipt["entry"]["version"] == 2
+    assert receipt["entry"]["state"] == "draft"
+    assert len(receipt["entry"]["attachments"]) == 1
+    attachment = receipt["entry"]["attachments"][0]
+    assert attachment == {
+        "attachmentId": attachment["attachmentId"],
+        "ordinal": 0,
+        "uploadStatus": "stored",
+        "mediaId": attachment["mediaId"],
+        "publicUrl": None,
+        "mediaPath": (
+            f"/student/api/v1/thread-entries/{draft['entry']['entryId']}"
+            f"/attachments/{attachment['attachmentId']}/media"
+        ),
+        "mediaType": "image/webp",
+        "width": 320,
+        "height": 240,
+    }
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+        **cursors_before,
+        "student": cursors_before["student"] + 1,
+    }
+    submission_keys = [
+        key for key in fixture.asset_storage.objects if key.startswith("sol_imgs/")
+    ]
+    assert len(submission_keys) == 1
+    assert submission_keys[0].startswith(
+        f"sol_imgs/user_{STUDENT_USER_ID}/2026/lesson_41/{problem_public_id}_"
+    )
+    assert submission_keys[0].endswith(f"_{'2' * 32}.webp")
+    assert fixture.asset_storage.objects[submission_keys[0]].startswith(
+        b"synthetic-webp:"
+    )
+    unauthenticated_media = await fixture.client.get(
+        attachment["mediaPath"], headers=_headers()
+    )
+    assert unauthenticated_media.status == 401
+    media = await fixture.client.get(
+        attachment["mediaPath"],
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert media.status == 200
+    assert media.headers["Content-Type"] == "image/webp"
+    assert media.headers["Cache-Control"] == "no-store"
+    assert await media.read() == fixture.asset_storage.objects[submission_keys[0]]
+
+    replay = await fixture.client.post(
+        upload_route,
+        data=upload_form(),
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert replay.status == 201
+    assert await replay.json() == receipt
+    assert [
+        key for key in fixture.asset_storage.objects if key.startswith("sol_imgs/")
+    ] == (submission_keys)
+
+    mismatch = await fixture.client.post(
+        upload_route,
+        data=upload_form(source=b"different-source"),
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert mismatch.status == 409
+    assert (await mismatch.json())["error"]["code"] == "idempotency_payload_mismatch"
+    assert [
+        key for key in fixture.asset_storage.objects if key.startswith("sol_imgs/")
+    ] == submission_keys
+
+    submitted = await fixture.client.post(
+        f"/student/api/v1/thread-entries/{draft['entry']['entryId']}/submit",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "14095dae-8eb4-40e4-b784-f7b233c26c39",
+            "expectedEntryVersion": 2,
+            "expectedThreadVersion": 2,
+            "attachmentIds": [attachment["attachmentId"]],
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert submitted.status == 200, await submitted.text()
+    submitted_payload = await submitted.json()
+    assert submitted_payload["entry"]["state"] == "submitted"
+    assert submitted_payload["entry"]["attachments"] == [attachment]
+    assert submitted_payload["threadVersion"] == 3
+
+    rows = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT storage_namespace, media_type, width, height, source_filename "
+                "FROM media_assets WHERE storage_namespace = 'submission'"
+            ).fetchall(),
+            connection.execute(
+                "SELECT ordinal, upload_status FROM submission_attachments"
+            ).fetchall(),
+            connection.execute(
+                "SELECT state FROM idempotency_records "
+                "WHERE operation = 'written-attachment:create'"
+            ).fetchall(),
+        )
+    )
+    assert rows == (
+        [
+            {
+                "storage_namespace": "submission",
+                "media_type": "image/webp",
+                "width": 320,
+                "height": 240,
+                "source_filename": "страница 1.heic",
+            }
+        ],
+        [{"ordinal": 0, "upload_status": "stored"}],
+        [{"state": "completed"}],
+    )
 
 
 async def test_student_written_submission_http_persists_safe_failures(

@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest'
 import fixture from '../fixtures/submissions/written-thread.v1.json'
 
 import {
+  createWrittenAttachmentResponseSchema,
   createWrittenEntryRequestSchema,
   submitWrittenEntryRequestSchema,
   writtenSubmissionFixtureSchema,
   writtenSubmissionQueryKeys,
+  writtenAttachmentUploadMetadataSchema,
   writtenThreadResponseSchema,
 } from './written-submissions'
 
@@ -32,6 +34,21 @@ describe('Phase-5 written-submission contracts', () => {
       submitWrittenEntryRequestSchema.safeParse({
         ...fixture.submitRequest,
         attachmentIds: ['attachment-one', 'attachment-one'],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('validates bounded multipart metadata and the stored WebP response', () => {
+    expect(writtenAttachmentUploadMetadataSchema.parse(fixture.attachmentMetadata)).toEqual(
+      fixture.attachmentMetadata,
+    )
+    expect(createWrittenAttachmentResponseSchema.parse(fixture.attachmentResponse)).toEqual(
+      fixture.attachmentResponse,
+    )
+    expect(
+      writtenAttachmentUploadMetadataSchema.safeParse({
+        ...fixture.attachmentMetadata,
+        ordinal: 10,
       }).success,
     ).toBe(false)
   })

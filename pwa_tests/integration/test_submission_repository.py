@@ -19,7 +19,11 @@ from db_methods.pwa.submissions import (
     TestSubmissionRejected as SubmissionRejected,
 )
 from db_methods.pwa.written_submissions import (
+    CreateWrittenAttachmentCommand,
+    CreateWrittenAttachmentReceipt,
     CreateWrittenEntryCommand,
+    PersistWrittenAttachment,
+    PreparedWrittenAttachmentUpload,
     ProblemRevisionRef,
     PwaWrittenSubmissionRepository,
     SubmitWrittenEntryCommand,
@@ -1507,6 +1511,39 @@ def submit_written_entry_command(
     )
 
 
+def written_attachment_command(
+    fixture: SubmissionFixture,
+    *,
+    entry_public_id: str,
+    thread_version: int,
+    entry_version: int = 1,
+    ordinal: int = 0,
+    key: str = "written-attachment-key-1",
+    source_sha256: str = "b" * 64,
+) -> CreateWrittenAttachmentCommand:
+    return CreateWrittenAttachmentCommand(
+        account_id=fixture.student_account_id,
+        entry_public_id=entry_public_id,
+        expected_entry_version=entry_version,
+        expected_thread_version=thread_version,
+        ordinal=ordinal,
+        client_filename="страница-1.heic",
+        source_sha256=source_sha256,
+        idempotency_key=key,
+    )
+
+
+def persisted_written_attachment(*, suffix: str = "1") -> PersistWrittenAttachment:
+    return PersistWrittenAttachment(
+        object_key=f"sol_imgs/user_{STUDENT_USER_ID}/2026/lesson_41/final-{suffix}.webp",
+        public_url=f"https://assets.invalid/final-{suffix}.webp",
+        output_sha256=suffix[-1] * 64,
+        byte_size=1_024,
+        width=1_440,
+        height=1_920,
+    )
+
+
 async def test_written_draft_keeps_exact_revision_and_replays_without_duplicates(
     submission_fixture: SubmissionFixture,
 ):
@@ -1547,6 +1584,140 @@ async def test_written_create_key_rejects_a_different_payload(
         await fixture.written_repository.create_entry(
             written_entry_command(fixture, text="Другое решение.")
         )
+
+
+async def test_written_attachment_keeps_server_scope_and_replays_once(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture)
+    )
+    command = written_attachment_command(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        thread_version=draft.thread_version,
+    )
+
+    prepared = await fixture.written_repository.prepare_attachment_upload(command)
+    assert isinstance(prepared, PreparedWrittenAttachmentUpload)
+    assert prepared.scope.student_user_id == STUDENT_USER_ID
+    assert prepared.scope.season_year == 2026
+    assert prepared.scope.lesson_number == 41
+    assert prepared.scope.problem_public_id == WRITTEN_PROBLEM_PUBLIC_ID
+
+    receipt = await fixture.written_repository.complete_attachment_upload(
+        prepared, persisted_written_attachment()
+    )
+    replay = await fixture.written_repository.prepare_attachment_upload(command)
+    assert isinstance(replay, CreateWrittenAttachmentReceipt)
+    stored = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute("SELECT * FROM media_assets").fetchall(),
+            connection.execute("SELECT * FROM submission_attachments").fetchall(),
+            connection.execute("SELECT * FROM submission_entries").fetchone(),
+            connection.execute("SELECT * FROM submission_threads").fetchone(),
+            connection.execute(
+                "SELECT * FROM idempotency_records "
+                "WHERE operation = 'written-attachment:create'"
+            ).fetchall(),
+        )
+    )
+
+    assert receipt.entry.version == 2
+    assert receipt.thread_version == 2
+    assert len(receipt.entry.attachments) == 1
+    assert receipt.entry.attachments[0].ordinal == 0
+    assert receipt.entry.attachments[0].media_type == "image/webp"
+    assert receipt.entry.attachments[0].media_path.endswith(
+        f"/{receipt.entry.attachments[0].public_id}/media"
+    )
+    media = await fixture.written_repository.get_attachment_media(
+        account_id=fixture.student_account_id,
+        entry_public_id=draft.entry.public_id,
+        attachment_public_id=receipt.entry.attachments[0].public_id,
+    )
+    assert media.object_key == persisted_written_attachment().object_key
+    with pytest.raises(WrittenSubmissionRejected) as foreign:
+        await fixture.written_repository.get_attachment_media(
+            account_id=fixture.other_account_id,
+            entry_public_id=draft.entry.public_id,
+            attachment_public_id=receipt.entry.attachments[0].public_id,
+        )
+    assert foreign.value.code == "written_attachment_not_found"
+    assert replay == receipt
+    assert replay.replayed is True
+    assert [len(rows) for rows in (stored[0], stored[1], stored[4])] == [1, 1, 1]
+    assert stored[0][0]["storage_namespace"] == "submission"
+    assert stored[0][0]["source_filename"] == "страница-1.heic"
+    assert stored[2]["version"] == 2
+    assert stored[3]["version"] == 2
+
+
+async def test_written_attachment_version_failure_is_idempotent_and_empty(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture)
+    )
+    stale = written_attachment_command(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        thread_version=draft.thread_version + 1,
+    )
+
+    for _ in range(2):
+        with pytest.raises(WrittenSubmissionRejected) as rejected:
+            await fixture.written_repository.prepare_attachment_upload(stale)
+        assert rejected.value.code == "written_submission_version_conflict"
+
+    assert fixture.factory.run_read(
+        lambda connection: (
+            connection.execute("SELECT count(*) AS n FROM media_assets").fetchone()[
+                "n"
+            ],
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_attachments"
+            ).fetchone()["n"],
+        )
+    ) == (0, 0)
+
+
+async def test_written_photo_only_entry_submits_with_exact_attachment_order(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text=None)
+    )
+    prepared = await fixture.written_repository.prepare_attachment_upload(
+        written_attachment_command(
+            fixture,
+            entry_public_id=draft.entry.public_id,
+            thread_version=draft.thread_version,
+        )
+    )
+    assert isinstance(prepared, PreparedWrittenAttachmentUpload)
+    uploaded = await fixture.written_repository.complete_attachment_upload(
+        prepared, persisted_written_attachment()
+    )
+    attachment_id = uploaded.entry.attachments[0].public_id
+
+    submitted = await fixture.written_repository.submit_entry(
+        SubmitWrittenEntryCommand(
+            account_id=fixture.student_account_id,
+            entry_public_id=draft.entry.public_id,
+            expected_entry_version=uploaded.entry.version,
+            expected_thread_version=uploaded.thread_version,
+            attachment_public_ids=(attachment_id,),
+            idempotency_key="written-photo-submit-key-1",
+        )
+    )
+
+    assert submitted.entry.state == "submitted"
+    assert [item.public_id for item in submitted.entry.attachments] == [attachment_id]
+    assert submitted.thread_status == "awaiting_review"
 
 
 async def test_written_text_entry_submits_atomically_and_replays(

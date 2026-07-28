@@ -24,8 +24,10 @@ from .connection import PwaConnectionFactory
 
 
 CREATE_ENTRY_OPERATION = "written-entry:create"
+CREATE_ATTACHMENT_OPERATION = "written-attachment:create"
 SUBMIT_ENTRY_OPERATION = "written-entry:submit"
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 class WrittenSubmissionRepositoryError(RuntimeError):
@@ -160,12 +162,66 @@ class SubmitWrittenEntryCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class CreateWrittenAttachmentCommand:
+    """Identity and optimistic state of one browser-selected source image."""
+
+    account_id: int
+    entry_public_id: str
+    expected_entry_version: int
+    expected_thread_version: int
+    ordinal: int
+    client_filename: str
+    source_sha256: str
+    idempotency_key: str
+
+    def __post_init__(self) -> None:
+        if self.account_id < 1:
+            raise ValueError("account ID must be positive")
+        if not _PUBLIC_ID.fullmatch(self.entry_public_id):
+            raise ValueError("entry public ID is invalid")
+        if (
+            type(self.expected_entry_version) is not int
+            or self.expected_entry_version < 1
+            or type(self.expected_thread_version) is not int
+            or self.expected_thread_version < 1
+        ):
+            raise ValueError("expected versions must be positive")
+        if type(self.ordinal) is not int or not 0 <= self.ordinal < 10:
+            raise ValueError("attachment ordinal must be between zero and nine")
+        if (
+            not isinstance(self.client_filename, str)
+            or not self.client_filename
+            or len(self.client_filename) > 512
+            or self.client_filename != self.client_filename.strip()
+            or "/" in self.client_filename
+            or "\\" in self.client_filename
+            or any(ord(character) < 32 for character in self.client_filename)
+        ):
+            raise ValueError("client filename is invalid")
+        if not _SHA256.fullmatch(self.source_sha256):
+            raise ValueError("source SHA-256 is invalid")
+        _validate_idempotency_key(self.idempotency_key)
+
+    def request_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "entryId": self.entry_public_id,
+            "expectedEntryVersion": self.expected_entry_version,
+            "expectedThreadVersion": self.expected_thread_version,
+            "ordinal": self.ordinal,
+            "clientFilename": self.client_filename,
+            "sourceSha256": self.source_sha256,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class WrittenAttachmentRecord:
     public_id: str
     ordinal: int
     upload_status: str
     media_public_id: str
     public_url: str | None
+    media_path: str
     media_type: str
     width: int
     height: int
@@ -177,6 +233,7 @@ class WrittenAttachmentRecord:
             "uploadStatus": self.upload_status,
             "mediaId": self.media_public_id,
             "publicUrl": self.public_url,
+            "mediaPath": self.media_path,
             "mediaType": self.media_type,
             "width": self.width,
             "height": self.height,
@@ -277,6 +334,93 @@ class CreateWrittenEntryReceipt:
 
 
 @dataclass(frozen=True, slots=True)
+class WrittenAttachmentUploadScope:
+    """Server-derived path scope; none of these values come from multipart fields."""
+
+    student_user_id: int
+    season_year: int
+    lesson_number: int
+    problem_public_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class WrittenAttachmentMedia:
+    object_key: str
+    sha256: str
+    byte_size: int
+    media_type: str
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedWrittenAttachmentUpload:
+    command: CreateWrittenAttachmentCommand
+    payload_sha256: str
+    scope: WrittenAttachmentUploadScope
+
+
+@dataclass(frozen=True, slots=True)
+class PersistWrittenAttachment:
+    """Verified final WebP metadata passed from the conversion/storage service."""
+
+    object_key: str
+    public_url: str | None
+    output_sha256: str
+    byte_size: int
+    width: int
+    height: int
+
+    def __post_init__(self) -> None:
+        if not _SHA256.fullmatch(self.output_sha256):
+            raise ValueError("output SHA-256 is invalid")
+        if not self.object_key or self.object_key != self.object_key.strip():
+            raise ValueError("object key is invalid")
+        if (
+            self.byte_size < 1
+            or not 1 <= self.width <= 1920
+            or not 1 <= self.height <= 1920
+        ):
+            raise ValueError("final WebP metadata is invalid")
+
+
+@dataclass(frozen=True, slots=True)
+class CreateWrittenAttachmentReceipt:
+    thread_public_id: str
+    problem_public_id: str
+    thread_status: str
+    thread_version: int
+    entry: WrittenEntryRecord
+    replayed: bool = field(default=False, compare=False)
+
+    def response_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "threadId": self.thread_public_id,
+            "problemId": self.problem_public_id,
+            "threadStatus": self.thread_status,
+            "threadVersion": self.thread_version,
+            "entry": self.entry.payload(),
+        }
+
+    @classmethod
+    def from_response(
+        cls, payload: Mapping[str, object]
+    ) -> "CreateWrittenAttachmentReceipt":
+        try:
+            return cls(
+                thread_public_id=str(payload["threadId"]),
+                problem_public_id=str(payload["problemId"]),
+                thread_status=str(payload["threadStatus"]),
+                thread_version=int(payload["threadVersion"]),
+                entry=_entry_from_payload(payload["entry"]),
+                replayed=True,
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise WrittenSubmissionRepositoryError(
+                "stored create-attachment response is invalid"
+            ) from error
+
+
+@dataclass(frozen=True, slots=True)
 class SubmitWrittenEntryReceipt:
     thread_public_id: str
     problem_public_id: str
@@ -328,6 +472,17 @@ class _WrittenContext:
     condition_revision_public_id: str
     config_version: int
     submission_closes_at: datetime
+    season_year: int
+    lesson_number: int
+
+
+@dataclass(frozen=True, slots=True)
+class _AttachmentTarget:
+    entry_id: int
+    thread_id: int
+    thread_public_id: str
+    thread_status: str
+    context: _WrittenContext
 
 
 @dataclass(frozen=True, slots=True)
@@ -346,7 +501,9 @@ SELECT account.id AS account_id,
        condition_revision.id AS content_revision_id,
        condition_revision.public_id AS condition_revision_public_id,
        problem_revision.config_version,
-       lesson_window.submission_closes_at
+       lesson_window.submission_closes_at,
+       season.starts_on AS season_starts_on,
+       course_lesson.lesson_number
 FROM auth_accounts AS account
 JOIN course_enrollments AS enrollment
   ON enrollment.student_user_id = account.linked_user_id
@@ -365,6 +522,10 @@ JOIN groups AS group_record
 JOIN courses AS course
   ON course.id = group_lesson.course_id
  AND course.status = 'active'
+JOIN seasons AS season ON season.id = course.season_id
+JOIN course_lessons AS course_lesson
+  ON course_lesson.id = group_lesson.course_lesson_id
+ AND course_lesson.course_id = course.id
 JOIN lesson_windows AS lesson_window
   ON lesson_window.group_lesson_id = group_lesson.id
 JOIN lesson_publications AS publication
@@ -480,6 +641,8 @@ def _resolve_context(
         submission_closes_at=_parse_timestamp(
             row["submission_closes_at"], label="submission cutoff"
         ),
+        season_year=int(str(row["season_starts_on"])[:4]),
+        lesson_number=int(row["lesson_number"]),
     )
 
 
@@ -540,6 +703,87 @@ def _raise_replay_failure(replay: _IdempotencyReplay) -> None:
     raise WrittenSubmissionRejected.from_response(replay.response, replay.http_status)
 
 
+def _attachment_target(
+    connection: sqlite3.Connection,
+    *,
+    command: CreateWrittenAttachmentCommand,
+    now: datetime,
+) -> _AttachmentTarget:
+    """Revalidate ownership and both optimistic versions at each DB boundary."""
+
+    row = connection.execute(
+        "SELECT entry.id AS entry_id, entry.state, "
+        "entry.version AS entry_version, entry.problem_revision_id, "
+        "thread.id AS thread_id, thread.public_id AS thread_public_id, "
+        "thread.status AS thread_status, thread.version AS thread_version, "
+        "problem.public_id AS problem_public_id "
+        "FROM auth_accounts AS account "
+        "JOIN submission_threads AS thread "
+        "ON thread.student_user_id = account.linked_user_id "
+        "JOIN submission_entries AS entry ON entry.thread_id = thread.id "
+        "JOIN problems AS problem ON problem.id = thread.problem_id "
+        "WHERE account.id = ? AND account.audience = 'student' "
+        "AND account.status = 'active' AND entry.public_id = ?",
+        (command.account_id, command.entry_public_id),
+    ).fetchone()
+    if row is None:
+        raise WrittenSubmissionRejected(
+            code="written_entry_not_found",
+            message="Черновик письменного решения не найден.",
+            http_status=404,
+        )
+    if row["state"] not in ("draft", "uploading"):
+        raise WrittenSubmissionRejected(
+            code="written_entry_not_editable",
+            message="Эта версия решения уже отправлена.",
+            http_status=409,
+        )
+    if (
+        int(row["entry_version"]) != command.expected_entry_version
+        or int(row["thread_version"]) != command.expected_thread_version
+    ):
+        raise WrittenSubmissionRejected(
+            code="written_submission_version_conflict",
+            message="Решение изменилось в другом окне. Обновите страницу.",
+            http_status=409,
+        )
+    context = _resolve_context(
+        connection,
+        account_id=command.account_id,
+        problem_public_id=str(row["problem_public_id"]),
+        now=now,
+    )
+    if context.problem_revision_id != int(row["problem_revision_id"]):
+        raise WrittenSubmissionRejected(
+            code="written_problem_revision_changed",
+            message="Условие задачи изменилось. Проверьте решение перед загрузкой.",
+            http_status=409,
+        )
+    attachment_rows = connection.execute(
+        "SELECT ordinal FROM submission_attachments WHERE entry_id = ?",
+        (row["entry_id"],),
+    ).fetchall()
+    if len(attachment_rows) >= 10:
+        raise WrittenSubmissionRejected(
+            code="written_attachment_limit_reached",
+            message="К одному решению можно приложить не больше 10 фотографий.",
+            http_status=409,
+        )
+    if any(int(item["ordinal"]) == command.ordinal for item in attachment_rows):
+        raise WrittenSubmissionRejected(
+            code="written_attachment_ordinal_conflict",
+            message="Порядок фотографий изменился. Обновите страницу.",
+            http_status=409,
+        )
+    return _AttachmentTarget(
+        entry_id=int(row["entry_id"]),
+        thread_id=int(row["thread_id"]),
+        thread_public_id=str(row["thread_public_id"]),
+        thread_status=str(row["thread_status"]),
+        context=context,
+    )
+
+
 def _entry_from_payload(value: object) -> WrittenEntryRecord:
     if not isinstance(value, Mapping):
         raise TypeError
@@ -568,6 +812,7 @@ def _entry_from_payload(value: object) -> WrittenEntryRecord:
                 public_url=None
                 if item["publicUrl"] is None
                 else str(item["publicUrl"]),
+                media_path=str(item["mediaPath"]),
                 media_type=str(item["mediaType"]),
                 width=int(item["width"]),
                 height=int(item["height"]),
@@ -639,6 +884,10 @@ def _entry_record(
                 public_url=(
                     None if item["public_url"] is None else str(item["public_url"])
                 ),
+                media_path=(
+                    f"/student/api/v1/thread-entries/{row['public_id']}"
+                    f"/attachments/{item['public_id']}/media"
+                ),
                 media_type=str(item["media_type"]),
                 width=int(item["width"]),
                 height=int(item["height"]),
@@ -674,6 +923,8 @@ class PwaWrittenSubmissionRepository:
         clock: Callable[[], datetime] | None = None,
         thread_public_id_factory: Callable[[], str] | None = None,
         entry_public_id_factory: Callable[[], str] | None = None,
+        attachment_public_id_factory: Callable[[], str] | None = None,
+        media_public_id_factory: Callable[[], str] | None = None,
     ) -> None:
         self._factory = factory
         self._clock = clock or (lambda: datetime.now(UTC))
@@ -682,6 +933,12 @@ class PwaWrittenSubmissionRepository:
         )
         self._entry_public_id_factory = entry_public_id_factory or (
             lambda: f"written-entry-{uuid.uuid4()}"
+        )
+        self._attachment_public_id_factory = attachment_public_id_factory or (
+            lambda: f"written-attachment-{uuid.uuid4()}"
+        )
+        self._media_public_id_factory = media_public_id_factory or (
+            lambda: f"submission-media-{uuid.uuid4()}"
         )
 
     async def create_entry(
@@ -837,6 +1094,191 @@ class PwaWrittenSubmissionRepository:
                 thread_status=thread_status,
                 thread_version=thread_version,
                 entry=_entry_record(connection, entry_id=entry_id),
+            )
+        except WrittenSubmissionRejected as error:
+            _complete_idempotency(
+                connection,
+                record_id=idempotency_id,
+                state="failed",
+                http_status=error.http_status,
+                response=error.response_payload(),
+                completed_at=received_at,
+            )
+            return None, error
+        _complete_idempotency(
+            connection,
+            record_id=idempotency_id,
+            state="completed",
+            http_status=201,
+            response=receipt.response_payload(),
+            completed_at=received_at,
+        )
+        return receipt, None
+
+    async def prepare_attachment_upload(
+        self, command: CreateWrittenAttachmentCommand
+    ) -> PreparedWrittenAttachmentUpload | CreateWrittenAttachmentReceipt:
+        """Fail before conversion when an upload is stale, foreign or replayed."""
+
+        payload_sha256 = _payload_hash(command.request_payload())
+        replay = await self._factory.run_read_async(
+            lambda connection: _read_idempotency(
+                connection,
+                account_id=command.account_id,
+                operation=CREATE_ATTACHMENT_OPERATION,
+                idempotency_key=command.idempotency_key,
+                payload_sha256=payload_sha256,
+            )
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return CreateWrittenAttachmentReceipt.from_response(replay.response)
+        now = self._clock()
+        target = await self._factory.run_read_async(
+            lambda connection: _attachment_target(connection, command=command, now=now)
+        )
+        return PreparedWrittenAttachmentUpload(
+            command=command,
+            payload_sha256=payload_sha256,
+            scope=WrittenAttachmentUploadScope(
+                student_user_id=target.context.student_user_id,
+                season_year=target.context.season_year,
+                lesson_number=target.context.lesson_number,
+                problem_public_id=target.context.problem_public_id,
+            ),
+        )
+
+    async def complete_attachment_upload(
+        self,
+        prepared: PreparedWrittenAttachmentUpload,
+        asset: PersistWrittenAttachment,
+    ) -> CreateWrittenAttachmentReceipt:
+        """Atomically publish final media metadata and its entry attachment."""
+
+        now = self._clock()
+        media_public_id = self._media_public_id_factory()
+        attachment_public_id = self._attachment_public_id_factory()
+        if not _PUBLIC_ID.fullmatch(media_public_id) or not _PUBLIC_ID.fullmatch(
+            attachment_public_id
+        ):
+            raise WrittenSubmissionRepositoryError(
+                "attachment public ID factory returned an invalid value"
+            )
+        receipt, error = await self._factory.run_write_async(
+            lambda connection: self._write_complete_attachment_upload(
+                connection,
+                prepared=prepared,
+                asset=asset,
+                media_public_id=media_public_id,
+                attachment_public_id=attachment_public_id,
+                now=now,
+            )
+        )
+        if error is not None:
+            raise error
+        assert receipt is not None
+        return receipt
+
+    def _write_complete_attachment_upload(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        prepared: PreparedWrittenAttachmentUpload,
+        asset: PersistWrittenAttachment,
+        media_public_id: str,
+        attachment_public_id: str,
+        now: datetime,
+    ) -> tuple[
+        CreateWrittenAttachmentReceipt | None,
+        WrittenSubmissionRejected | None,
+    ]:
+        command = prepared.command
+        replay = _read_idempotency(
+            connection,
+            account_id=command.account_id,
+            operation=CREATE_ATTACHMENT_OPERATION,
+            idempotency_key=command.idempotency_key,
+            payload_sha256=prepared.payload_sha256,
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return CreateWrittenAttachmentReceipt.from_response(replay.response), None
+        received_at = _timestamp(now)
+        idempotency_id = int(
+            connection.execute(
+                "INSERT INTO idempotency_records "
+                "(audience, account_id, operation, idempotency_key, payload_sha256, "
+                "state, created_at) VALUES ('student', ?, ?, ?, ?, 'processing', ?) "
+                "RETURNING id",
+                (
+                    command.account_id,
+                    CREATE_ATTACHMENT_OPERATION,
+                    command.idempotency_key,
+                    prepared.payload_sha256,
+                    received_at,
+                ),
+            ).fetchone()["id"]
+        )
+        try:
+            target = _attachment_target(
+                connection,
+                command=command,
+                now=now,
+            )
+            media_id = int(
+                connection.execute(
+                    "INSERT INTO media_assets "
+                    "(public_id, sha256, storage_namespace, object_key, public_url, "
+                    "media_type, byte_size, width, height, source_filename, "
+                    "conversion_version, created_by_user_id, created_at) VALUES "
+                    "(?, ?, 'submission', ?, ?, 'image/webp', ?, ?, ?, ?, "
+                    "'pwa-written-image-v1', ?, ?) RETURNING id",
+                    (
+                        media_public_id,
+                        asset.output_sha256,
+                        asset.object_key,
+                        asset.public_url,
+                        asset.byte_size,
+                        asset.width,
+                        asset.height,
+                        command.client_filename,
+                        target.context.student_user_id,
+                        received_at,
+                    ),
+                ).fetchone()["id"]
+            )
+            connection.execute(
+                "INSERT INTO submission_attachments "
+                "(public_id, entry_id, asset_id, ordinal, client_filename, "
+                "upload_status, created_at) VALUES (?, ?, ?, ?, ?, 'stored', ?)",
+                (
+                    attachment_public_id,
+                    target.entry_id,
+                    media_id,
+                    command.ordinal,
+                    command.client_filename,
+                    received_at,
+                ),
+            )
+            entry_version = command.expected_entry_version + 1
+            thread_version = command.expected_thread_version + 1
+            connection.execute(
+                "UPDATE submission_entries SET version = ? WHERE id = ?",
+                (entry_version, target.entry_id),
+            )
+            connection.execute(
+                "UPDATE submission_threads SET latest_entry_at = ?, updated_at = ?, "
+                "version = ? WHERE id = ?",
+                (received_at, received_at, thread_version, target.thread_id),
+            )
+            receipt = CreateWrittenAttachmentReceipt(
+                thread_public_id=target.thread_public_id,
+                problem_public_id=target.context.problem_public_id,
+                thread_status=target.thread_status,
+                thread_version=thread_version,
+                entry=_entry_record(connection, entry_id=target.entry_id),
             )
         except WrittenSubmissionRejected as error:
             _complete_idempotency(
@@ -1057,6 +1499,52 @@ class PwaWrittenSubmissionRepository:
         )
         return receipt, None
 
+    async def get_attachment_media(
+        self,
+        *,
+        account_id: int,
+        entry_public_id: str,
+        attachment_public_id: str,
+    ) -> WrittenAttachmentMedia:
+        """Resolve only media owned by the authenticated Student account."""
+
+        if (
+            account_id < 1
+            or not _PUBLIC_ID.fullmatch(entry_public_id)
+            or not _PUBLIC_ID.fullmatch(attachment_public_id)
+        ):
+            raise ValueError("attachment media lookup arguments are invalid")
+
+        def read(connection: sqlite3.Connection) -> WrittenAttachmentMedia:
+            row = connection.execute(
+                "SELECT asset.object_key, asset.sha256, asset.byte_size, "
+                "asset.media_type FROM auth_accounts AS account "
+                "JOIN submission_threads AS thread "
+                "ON thread.student_user_id = account.linked_user_id "
+                "JOIN submission_entries AS entry ON entry.thread_id = thread.id "
+                "JOIN submission_attachments AS attachment "
+                "ON attachment.entry_id = entry.id "
+                "JOIN media_assets AS asset ON asset.id = attachment.asset_id "
+                "WHERE account.id = ? AND account.audience = 'student' "
+                "AND account.status = 'active' AND entry.public_id = ? "
+                "AND attachment.public_id = ? AND asset.deleted_at IS NULL",
+                (account_id, entry_public_id, attachment_public_id),
+            ).fetchone()
+            if row is None:
+                raise WrittenSubmissionRejected(
+                    code="written_attachment_not_found",
+                    message="Фотография решения не найдена.",
+                    http_status=404,
+                )
+            return WrittenAttachmentMedia(
+                object_key=str(row["object_key"]),
+                sha256=str(row["sha256"]),
+                byte_size=int(row["byte_size"]),
+                media_type=str(row["media_type"]),
+            )
+
+        return await self._factory.run_read_async(read)
+
     async def get_thread(
         self, *, account_id: int, problem_public_id: str
     ) -> WrittenThreadRecord | None:
@@ -1112,15 +1600,22 @@ class PwaWrittenSubmissionRepository:
 
 
 __all__ = [
+    "CREATE_ATTACHMENT_OPERATION",
     "CREATE_ENTRY_OPERATION",
     "SUBMIT_ENTRY_OPERATION",
+    "CreateWrittenAttachmentCommand",
+    "CreateWrittenAttachmentReceipt",
     "CreateWrittenEntryCommand",
     "CreateWrittenEntryReceipt",
+    "PersistWrittenAttachment",
+    "PreparedWrittenAttachmentUpload",
     "ProblemRevisionRef",
     "PwaWrittenSubmissionRepository",
     "SubmitWrittenEntryCommand",
     "SubmitWrittenEntryReceipt",
     "WrittenAttachmentRecord",
+    "WrittenAttachmentMedia",
+    "WrittenAttachmentUploadScope",
     "WrittenEntryRecord",
     "WrittenIdempotencyPayloadMismatch",
     "WrittenSubmissionRejected",

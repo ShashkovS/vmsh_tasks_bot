@@ -33,19 +33,61 @@
     },
     "requestId": "request-written-create-fixture"
   },
+  "attachmentMetadata": {
+    "schemaVersion": 1,
+    "idempotencyKey": "50da3298-f2c7-4200-af71-2f8c353e6004",
+    "expectedEntryVersion": 1,
+    "expectedThreadVersion": 1,
+    "ordinal": 0
+  },
+  "attachmentResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "open",
+    "threadVersion": 2,
+    "entry": {
+      "entryId": "written-entry-fixture-1",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "draft",
+      "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 2,
+      "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
+      "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
+      "attachments": [
+        {
+          "attachmentId": "written-attachment-fixture-1",
+          "ordinal": 0,
+          "uploadStatus": "stored",
+          "mediaId": "submission-media-fixture-1",
+          "publicUrl": "https://assets.example.invalid/sol_imgs/example.webp",
+          "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-1/attachments/written-attachment-fixture-1/media",
+          "mediaType": "image/webp",
+          "width": 1440,
+          "height": 1920
+        }
+      ]
+    },
+    "requestId": "request-written-attachment-fixture"
+  },
   "submitRequest": {
     "schemaVersion": 1,
     "idempotencyKey": "103b144f-4d02-4f3a-a936-88d91f65be87",
-    "expectedEntryVersion": 1,
-    "expectedThreadVersion": 1,
-    "attachmentIds": []
+    "expectedEntryVersion": 2,
+    "expectedThreadVersion": 2,
+    "attachmentIds": ["written-attachment-fixture-1"]
   },
   "submitResponse": {
     "schemaVersion": 1,
     "threadId": "written-thread-fixture-1",
     "problemId": "problem-written-fixture",
     "threadStatus": "awaiting_review",
-    "threadVersion": 2,
+    "threadVersion": 3,
     "entry": {
       "entryId": "written-entry-fixture-1",
       "authorKind": "student",
@@ -56,10 +98,22 @@
         "conditionRevisionId": "revision-condition-41-v3",
         "configVersion": 2
       },
-      "version": 2,
+      "version": 3,
       "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
       "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
-      "attachments": []
+      "attachments": [
+        {
+          "attachmentId": "written-attachment-fixture-1",
+          "ordinal": 0,
+          "uploadStatus": "stored",
+          "mediaId": "submission-media-fixture-1",
+          "publicUrl": "https://assets.example.invalid/sol_imgs/example.webp",
+          "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-1/attachments/written-attachment-fixture-1/media",
+          "mediaType": "image/webp",
+          "width": 1440,
+          "height": 1920
+        }
+      ]
     },
     "clockSuspicious": false,
     "requestId": "request-written-submit-fixture"
@@ -72,7 +126,7 @@
       "problemId": "problem-written-fixture",
       "status": "awaiting_review",
       "conditionRevisionId": "revision-condition-41-v3",
-      "version": 2,
+      "version": 3,
       "latestEntryAt": "2026-09-20T13:05:00.000000Z",
       "entries": [
         {
@@ -85,10 +139,22 @@
             "conditionRevisionId": "revision-condition-41-v3",
             "configVersion": 2
           },
-          "version": 2,
+          "version": 3,
           "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
           "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
-          "attachments": []
+          "attachments": [
+            {
+              "attachmentId": "written-attachment-fixture-1",
+              "ordinal": 0,
+              "uploadStatus": "stored",
+              "mediaId": "submission-media-fixture-1",
+              "publicUrl": "https://assets.example.invalid/sol_imgs/example.webp",
+              "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-1/attachments/written-attachment-fixture-1/media",
+              "mediaType": "image/webp",
+              "width": 1440,
+              "height": 1920
+            }
+          ]
         }
       ]
     },

@@ -24,6 +24,11 @@ export const writtenAttachmentSchema = z
     uploadStatus: z.enum(['pending', 'stored', 'failed', 'locked']),
     mediaId: publicIdSchema,
     publicUrl: z.url().nullable(),
+    mediaPath: z
+      .string()
+      .regex(
+        /^\/student\/api\/v1\/thread-entries\/[a-z0-9][a-z0-9._:-]*\/attachments\/[a-z0-9][a-z0-9._:-]*\/media$/,
+      ),
     mediaType: z.literal('image/webp'),
     width: z.number().int().min(1).max(1920),
     height: z.number().int().min(1).max(1920),
@@ -149,6 +154,36 @@ export const createWrittenEntryResponseSchema = z
   })
 export type CreateWrittenEntryResponse = z.infer<typeof createWrittenEntryResponseSchema>
 
+/** Typed text fields used to build the multipart attachment request. */
+export const writtenAttachmentUploadMetadataSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    idempotencyKey: z.uuid(),
+    expectedEntryVersion: z.number().int().positive(),
+    expectedThreadVersion: z.number().int().positive(),
+    ordinal: z.number().int().min(0).max(9),
+  })
+  .strict()
+export type WrittenAttachmentUploadMetadata = z.infer<typeof writtenAttachmentUploadMetadataSchema>
+
+export const createWrittenAttachmentResponseSchema = z
+  .object(writtenEntryMutationShape)
+  .strict()
+  .superRefine((response, context) => {
+    if (
+      response.entry.state !== 'draft' ||
+      response.entry.attachments.length === 0 ||
+      response.entry.attachments.some((attachment) => attachment.uploadStatus !== 'stored')
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Attachment response must expose a stored image on the Student draft',
+        path: ['entry', 'attachments'],
+      })
+    }
+  })
+export type CreateWrittenAttachmentResponse = z.infer<typeof createWrittenAttachmentResponseSchema>
+
 export const submitWrittenEntryRequestSchema = z
   .object({
     schemaVersion: contractVersionSchema,
@@ -221,6 +256,8 @@ export const writtenSubmissionFixtureSchema = z
     fixtureVersion: contractVersionSchema,
     createRequest: createWrittenEntryRequestSchema,
     createResponse: createWrittenEntryResponseSchema,
+    attachmentMetadata: writtenAttachmentUploadMetadataSchema,
+    attachmentResponse: createWrittenAttachmentResponseSchema,
     submitRequest: submitWrittenEntryRequestSchema,
     submitResponse: submitWrittenEntryResponseSchema,
     threadResponse: writtenThreadResponseSchema,

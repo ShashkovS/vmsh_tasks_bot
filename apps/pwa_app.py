@@ -45,6 +45,7 @@ from apps.pwa_api.websocket_sessions import (
     WebSocketSessionRegistry,
 )
 from apps.pwa_api.written_submission_routes import (
+    PWA_WRITTEN_ATTACHMENT_SERVICE,
     PWA_WRITTEN_SUBMISSION_INVALIDATOR,
     PWA_WRITTEN_SUBMISSION_REPOSITORY,
     written_submission_routes,
@@ -70,6 +71,7 @@ from helpers.pwa.content import (
     ContentAssetService,
 )
 from helpers.pwa.storage_config import load_storage_config
+from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience
 from models.pwa.content import ContentKind
 
@@ -705,6 +707,25 @@ async def on_written_submission_startup(app: web.Application) -> None:
     app[PWA_WRITTEN_SUBMISSION_REPOSITORY] = PwaWrittenSubmissionRepository(factory)
 
 
+async def on_written_attachment_startup(app: web.Application) -> None:
+    """Compose Phase-5 uploads from the already verified shared adapters."""
+
+    if PWA_WRITTEN_ATTACHMENT_SERVICE in app:
+        return
+    repository = app.get(PWA_WRITTEN_SUBMISSION_REPOSITORY)
+    storage = app.get(PWA_CONTENT_OBJECT_STORAGE)
+    converter = app.get(PWA_CONTENT_ASSET_CONVERTER)
+    if repository is None or storage is None or converter is None:
+        raise RuntimeError(
+            "PWA written attachment startup requires repository, storage and converter"
+        )
+    app[PWA_WRITTEN_ATTACHMENT_SERVICE] = WrittenAttachmentService(
+        converter=converter,
+        storage=storage,
+        repository=repository,
+    )
+
+
 async def publish_content_invalidation(
     app: web.Application,
     scope: GroupLessonContentScope,
@@ -890,6 +911,7 @@ def configure(
     content_repository: PwaContentRepository | None = None,
     test_submission_repository: PwaTestSubmissionRepository | None = None,
     written_submission_repository: PwaWrittenSubmissionRepository | None = None,
+    written_attachment_service: WrittenAttachmentService | None = None,
     content_asset_service: ContentAssetService | None = None,
     object_storage: ObjectStorage | None = None,
     content_asset_converter: (
@@ -966,11 +988,15 @@ def configure(
             app.add_routes(submission_routes)
             app.on_startup.append(on_test_submission_startup)
         written_submissions_enabled = (
-            written_submission_repository is not None or PWA_DATABASE in app
+            written_submission_repository is not None
+            or written_attachment_service is not None
+            or PWA_DATABASE in app
         )
         if written_submissions_enabled:
             if written_submission_repository is not None:
                 app[PWA_WRITTEN_SUBMISSION_REPOSITORY] = written_submission_repository
+            if written_attachment_service is not None:
+                app[PWA_WRITTEN_ATTACHMENT_SERVICE] = written_attachment_service
 
             async def invalidate_written_submission(
                 account_public_id: str,
@@ -1014,6 +1040,14 @@ def configure(
             app[PWA_CONTENT_INVALIDATOR] = invalidate_content
             app.add_routes(content_routes)
             app.on_startup.append(on_content_startup)
+        if (
+            written_submissions_enabled
+            and written_attachment_service is None
+            and content_enabled
+        ):
+            # Content startup owns construction of the shared storage and
+            # converter. Written media is composed immediately afterwards.
+            app.on_startup.append(on_written_attachment_startup)
     app.add_routes(pwa_routes)
     app.on_startup.append(on_startup)
     if content_enabled:
