@@ -4,21 +4,21 @@
 
 ## Состояние документов
 
-| Документ/этап       | Статус                      | Решение/блокер                                                                                                                                                        |
-| ------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                                                                                            |
-| Решения и границы   | accepted planning input     | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
-| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
-| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
-| Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
-| Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
-| Этап 2              | Phase 2A–2E + browser E2E   | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
-| Этап 3              | Phase 3A–3H reading slice   | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
-| Этап 4              | Phase 4A–4G functionally ready | Domain/API, draft/outbox, Student submit, Staff recheck и общая PWA/Telegram policy готовы; открыт только visual owner gate                                         |
-| Этап 5              | Phase 5A schema ready        | Written threads/entries/WebP attachments/reassignment evidence schema и rollback проверены; repository/media/UI ещё не реализованы                                  |
-| Этапы 6–11          | planned with gates           | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                        |
-| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
-| Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
+| Документ/этап       | Статус                         | Решение/блокер                                                                                                                                                        |
+| ------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval             | Формат proof описан; фактически заполняется при реализации                                                                                                            |
+| Решения и границы   | accepted planning input        | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
+| Модель данных       | revised planning input         | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
+| API/events/files    | accepted planning input        | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
+| Этап 0              | in progress                    | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
+| Этап 1              | in progress                    | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
+| Этап 2              | Phase 2A–2E + browser E2E      | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
+| Этап 3              | Phase 3A–3H reading slice      | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
+| Этап 4              | Phase 4A–4G functionally ready | Domain/API, draft/outbox, Student submit, Staff recheck и общая PWA/Telegram policy готовы; открыт только visual owner gate                                           |
+| Этап 5              | Phase 5A–5B server vertical    | Evidence schema, text draft/submit/read repository, strict contracts и authenticated API проверены; media/offline UI/backfill ещё не реализованы                      |
+| Этапы 6–11          | planned with gates             | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
+| Design system       | phases 5–7 ready for review    | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
+| Multi-course model  | schema + verified prototype    | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
 
 ## Журнал решений
 
@@ -99,8 +99,9 @@
 | 2026-07-27 | PLAN-073 | Stored Argon2id ограничен fail-closed resource envelope                                                  | Malformed и чрезмерно дорогой encoding выбирают startup dummy; unknown/invalid paths делают один instrumented Argon verify без wall-clock oracle              |
 | 2026-07-27 | PLAN-074 | Telegram renderer закреплён на проверенном Bot API 10.2 Rich HTML dialect                                | До send проверяются 32 768 UTF-8 characters, 500 blocks, nesting 16, 50 media и 20 columns; dialect/limits входят в provenance и live corpus                  |
 | 2026-07-28 | PLAN-075 | Publication wall time разрешает только backend в timezone группового занятия                             | Browser передаёт `scheduledLocalTime` + IANA `businessTimezone`; `zoneinfo` переводит в UTC и отклоняет DST gap/fold, `Date.parse()` не используется          |
-| 2026-07-28 | PLAN-076 | Written evidence хранит final WebP, а порядок использует sparse ordinal                                   | Durable attachment принимает submission WebP ≤1920; лимит 10 проверяет trigger, временный высокий ordinal позволяет swap при immediate SQLite UNIQUE        |
-| 2026-07-28 | PLAN-077 | Каждая Student written entry фиксирует exact problem revision                                              | Thread остаётся общей историей после правки условия; новая entry не теряет provenance, legacy teacher/Telegram backfill может оставить revision nullable     |
+| 2026-07-28 | PLAN-076 | Written evidence хранит final WebP, а порядок использует sparse ordinal                                  | Durable attachment принимает submission WebP ≤1920; лимит 10 проверяет trigger, временный высокий ordinal позволяет swap при immediate SQLite UNIQUE          |
+| 2026-07-28 | PLAN-077 | Каждая Student written entry фиксирует exact problem revision                                            | Thread остаётся общей историей после правки условия; новая entry не теряет provenance, legacy teacher/Telegram backfill может оставить revision nullable      |
+| 2026-07-28 | PLAN-078 | Written draft синхронизируется отдельно от окончательной отправки                                        | Поздняя offline-доставка не теряет материал; cutoff применяется при submit к immutable client time, server time и suspicious-clock сохраняются                |
 
 ## Текущий инкремент этапа 0
 
@@ -391,9 +392,28 @@
   существующая SymPy warning. `make pwa-schema-check`, Ruff и
   `git diff --check` — PASS. Proof:
   [`phase5-written-submission-schema.md`](../../../pwa_tests/reports/phase5-written-submission-schema.md).
-- Repository, upload/conversion/cleanup, offline composer, backfill,
+- Upload/conversion/cleanup, offline composer, backfill,
   reassignment API/UI, Storybook и E2E остаются следующими Phase 5 increments;
   наличие схемы их не доказывает.
+- Phase 5B revisions `dbfd1ae`, `acbc8ec` добавляют text-only server vertical:
+  connection-per-operation repository, strict Zod fixture/contract и три
+  authenticated Student endpoints create/submit/read. Устные типы 3/4 также
+  принимают письменный материал; test type 1 остаётся в Phase 4 API.
+- Draft→submitted и thread→awaiting_review выполняются атомарно; exact replay и
+  ожидаемый failure хранятся в общем idempotency ledger, а неожиданный fault
+  откатывает весь unit of work. Closed owner history читается после access
+  revoke; чужая/недоступная задача не раскрывается.
+- Focused repository — **11 PASS**, общий submission repository — **34 PASS**,
+  real aiohttp content/submission — **39 PASS**, written Zod — **4 PASS**.
+  Полный checkpoint: frontend **43 файла / 327 PASS**, Python PWA **1199 PASS /
+  3 intentional skips / 1 existing SymPy warning**, Storybook browser **38
+  файлов / 187 PASS**; lint, strict typecheck и production build с обоими
+  injectManifest — PASS. Proof:
+  [`phase5-written-submission-api.md`](../../../pwa_tests/reports/phase5-written-submission-api.md).
+- Следующий gate: streaming raster/HEIC→WebP upload и compensation, затем
+  localStorage/Dexie composer/outbox. Legacy backfill, reassignment, Staff
+  review, Storybook interaction, production E2E и visual owner gate остаются
+  открыты; snapshots не обновлялись.
 
 ## Текущий инкремент этапа 1
 
@@ -749,17 +769,17 @@
 Таблица различает промежуточный проверенный инкремент и окончательное принятие
 этапа. Наличие revision/proof не закрывает оставшиеся criteria из phase-файла.
 
-| Этап | Revision             | Proof                                                                                           | Принято                                   |
-| ---: | -------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------- |
-|    0 | —                    | —                                                                                               | —                                         |
-|    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)                                             | частично; production gates открыты        |
-|    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                          | Browser path принят; этап открыт          |
-|    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                  | Phase 3A–3H приняты; visual открыт        |
-|    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | функционально; visual открыт             |
-|    5 | `5acecbb`, `c6d6fd8`  | [Phase 5A proof](../../../pwa_tests/reports/phase5-written-submission-schema.md)                | частично; schema принят                  |
-|    6 | —                    | —                                                                                               | —                                         |
-|    7 | —                    | —                                                                                               | —                                         |
-|    8 | —                    | —                                                                                               | —                                         |
-|    9 | —                    | —                                                                                               | —                                         |
-|   10 | —                    | —                                                                                               | —                                         |
-|   11 | —                    | —                                                                                               | —                                         |
+| Этап | Revision             | Proof                                                                                           | Принято                               |
+| ---: | -------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------- |
+|    0 | —                    | —                                                                                               | —                                     |
+|    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)                                             | частично; production gates открыты    |
+|    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                          | Browser path принят; этап открыт      |
+|    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                  | Phase 3A–3H приняты; visual открыт    |
+|    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | функционально; visual открыт          |
+|    5 | `5acecbb`…`acbc8ec`  | [Phase 5A–5B proof](../../../pwa_tests/reports/phase5-written-submission-api.md)                | частично; server text vertical принят |
+|    6 | —                    | —                                                                                               | —                                     |
+|    7 | —                    | —                                                                                               | —                                     |
+|    8 | —                    | —                                                                                               | —                                     |
+|    9 | —                    | —                                                                                               | —                                     |
+|   10 | —                    | —                                                                                               | —                                     |
+|   11 | —                    | —                                                                                               | —                                     |

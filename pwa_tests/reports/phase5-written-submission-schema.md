@@ -107,9 +107,10 @@ backfill-ились и не менялись.
 
 ## Следующий инкремент Phase 5
 
-Phase 5A создаёт только durable identity/evidence boundary. Ещё не реализованы:
+Phase 5A создаёт только durable identity/evidence boundary. Repository и
+authenticated text-only thread API уже закрыты последующим
+[`Phase 5B proof`](phase5-written-submission-api.md). Всё ещё не реализованы:
 
-- repository и authenticated thread/entry HTTP API;
 - streaming upload, MIME sniffing, WebP conversion и cleanup compensation;
 - localStorage/Dexie composer outbox и production Student UI;
 - lazy/batch import `written_tasks_discussions`;
