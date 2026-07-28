@@ -18,6 +18,7 @@ from models.pwa.submissions import (
     SubmissionConfigurationError,
     TestAnswerOutcome as AnswerOutcome,
     TestAttemptCheckStatus as AttemptCheckStatus,
+    TestAttemptPolicy as AttemptPolicy,
     TestAttemptParseStatus as AttemptParseStatus,
     TestProblemAnswerConfig as ProblemAnswerConfig,
     assess_submission_clock,
@@ -222,6 +223,11 @@ def test_revision_config_parser_is_strict_and_does_not_retain_blank_metadata():
             answer_type=404,
             answer_config={},
         )
+    with pytest.raises(SubmissionConfigurationError, match="unknown answer type"):
+        ProblemAnswerConfig.from_revision(
+            answer_type=True,
+            answer_config={},
+        )
     with pytest.raises(SubmissionConfigurationError, match="must be text"):
         ProblemAnswerConfig.from_revision(
             answer_type=int(ANS_TYPE.INTEGER),
@@ -403,3 +409,32 @@ def test_checker_version_changes_with_material_configuration():
     assert first.checker_version is not None
     assert second.checker_version is not None
     assert first.checker_version != second.checker_version
+
+
+def test_attempt_policy_preserves_legacy_defaults_and_explicit_unlimited_mode():
+    assert AttemptPolicy.from_revision({"schemaVersion": 1}) == AttemptPolicy(
+        max_per_hour=3,
+        max_per_day=6,
+    )
+    assert AttemptPolicy.from_revision({"unlimited": True}) == AttemptPolicy(
+        max_per_hour=None,
+        max_per_day=None,
+    )
+    assert AttemptPolicy.from_revision(
+        {"maxPerHour": 5, "maxPerDay": None}
+    ) == AttemptPolicy(max_per_hour=5, max_per_day=None)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    (
+        {"maxPerHour": 0},
+        {"maxPerDay": True},
+        {"maxPerHour": "3"},
+        {"unlimited": 1},
+        {"unlimited": True, "maxPerDay": 6},
+    ),
+)
+def test_attempt_policy_rejects_ambiguous_or_invalid_metadata(payload):
+    with pytest.raises(SubmissionConfigurationError):
+        AttemptPolicy.from_revision(payload)

@@ -14,6 +14,7 @@ characterization tests in ``pwa_tests/domain/test_pwa_test_submissions.py``.
 from __future__ import annotations
 
 import re
+import threading
 from ast import literal_eval
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -78,6 +79,7 @@ class TrustedCheckerExecutor:
 
     def __init__(self) -> None:
         self._cache: dict[str, Callable[[str], object]] = {}
+        self._cache_lock = threading.Lock()
 
     @property
     def cache_size(self) -> int:
@@ -90,27 +92,28 @@ class TrustedCheckerExecutor:
         if not TRUSTED_CHECKER_PATTERN.match(source):
             return _invalid_configuration("not_a_function")
 
-        checker = self._cache.get(source)
-        if checker is None:
-            locals_: dict[str, object] = {}
-            try:
-                exec(source, TRUSTED_CHECKER_GLOBALS, locals_)
-            except BaseException:
-                return _invalid_configuration("compile_or_exec_failed")
-            if not locals_:
-                return _invalid_configuration("no_created_value")
-            # ``dict.popitem`` matches the historical handler: the last value
-            # created by the snippet is selected.  Tests pin this odd but real
-            # compatibility behavior before any future cleanup.
-            _, candidate = locals_.popitem()
-            if not callable(candidate):
-                return _invalid_configuration("created_value_not_callable")
-            checker = candidate
-            self._cache[source] = checker
+        with self._cache_lock:
+            checker = self._cache.get(source)
+            if checker is None:
+                locals_: dict[str, object] = {}
+                try:
+                    exec(source, TRUSTED_CHECKER_GLOBALS, locals_)
+                except Exception:
+                    return _invalid_configuration("compile_or_exec_failed")
+                if not locals_:
+                    return _invalid_configuration("no_created_value")
+                # ``dict.popitem`` matches the historical handler: the last
+                # value created by the snippet is selected. Tests pin this odd
+                # but real behavior before any future cleanup.
+                _, candidate = locals_.popitem()
+                if not callable(candidate):
+                    return _invalid_configuration("created_value_not_callable")
+                checker = candidate
+                self._cache[source] = checker
 
         try:
             result = checker(student_answer)
-        except BaseException:
+        except Exception:
             return _invalid_configuration("call_failed")
         if (
             not isinstance(result, tuple)

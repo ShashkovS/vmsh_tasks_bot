@@ -74,6 +74,8 @@ class TestProblemAnswerConfig:
         answer_type: int,
         answer_config: Mapping[str, object],
     ) -> "TestProblemAnswerConfig":
+        if isinstance(answer_type, bool) or not isinstance(answer_type, int):
+            raise SubmissionConfigurationError("unknown answer type")
         try:
             resolved_type = ANS_TYPE(answer_type)
         except (TypeError, ValueError) as error:
@@ -119,6 +121,38 @@ class SubmissionClockAssessment:
     skew_seconds: int
     suspicious: bool
     timely: bool
+
+
+@dataclass(frozen=True, slots=True)
+class TestAttemptPolicy:
+    max_per_hour: int | None = 3
+    max_per_day: int | None = 6
+
+    @classmethod
+    def from_revision(cls, value: Mapping[str, object]) -> "TestAttemptPolicy":
+        if "unlimited" in value and not isinstance(value["unlimited"], bool):
+            raise SubmissionConfigurationError("unlimited must be a boolean")
+        if value.get("unlimited") is True:
+            if "maxPerHour" in value or "maxPerDay" in value:
+                raise SubmissionConfigurationError(
+                    "unlimited attempt policy cannot define limits"
+                )
+            return cls(max_per_hour=None, max_per_day=None)
+
+        def optional_limit(name: str, default: int) -> int | None:
+            raw = value.get(name, default)
+            if raw is None:
+                return None
+            if isinstance(raw, bool) or not isinstance(raw, int) or raw < 1:
+                raise SubmissionConfigurationError(
+                    f"{name} must be a positive integer or null"
+                )
+            return raw
+
+        return cls(
+            max_per_hour=optional_limit("maxPerHour", 3),
+            max_per_day=optional_limit("maxPerDay", 6),
+        )
 
 
 def _require_aware(value: datetime, *, label: str) -> datetime:
@@ -387,7 +421,7 @@ def evaluate_test_answer(
                 for candidate in config.correct_answer.split(";")
             )
             checker_message = None
-    except BaseException:
+    except Exception:
         return TestAnswerEvaluation(
             display_answer=display_answer,
             normalized_answer=normalized,
@@ -416,6 +450,7 @@ __all__ = [
     "SubmissionConfigurationError",
     "TestAnswerEvaluation",
     "TestAnswerOutcome",
+    "TestAttemptPolicy",
     "TestAttemptCheckStatus",
     "TestAttemptParseStatus",
     "TestProblemAnswerConfig",
