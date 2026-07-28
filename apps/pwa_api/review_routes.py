@@ -8,7 +8,9 @@ integer database IDs and claim ownership never come from the browser.  See
 from __future__ import annotations
 
 import json
+import logging
 import re
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -16,7 +18,13 @@ from aiohttp import web
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.reviews import (
+    CompleteReviewCommand,
     PwaWrittenReviewQueueRepository,
+    ReviewCompletionInvalid,
+    ReviewEvidenceBranchExpectation,
+    ReviewEvidenceEntryExpectation,
+    ReviewEvidenceUnavailable,
+    ReviewIdempotencyConflict,
     ReviewLease,
     ReviewLeaseConflict,
     ReviewLeaseLost,
@@ -24,23 +32,42 @@ from db_methods.pwa.reviews import (
     ReviewQueueForbidden,
     ReviewQueueNotFound,
     ReviewStaffScope,
+    ReviewThreadChanged,
 )
 from helpers.pwa.permissions import Capability
 from models.pwa.auth import AuthAudience
 
 
-REVIEW_BODY_LIMIT_BYTES = 8 * 1024
+REVIEW_BODY_LIMIT_BYTES = 128 * 1024
 REVIEW_PAGE_SIZE = 50
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _CLAIM_TOKEN = _PUBLIC_ID
 _CLAIM_FIELDS = frozenset({"schemaVersion"})
 _LEASE_FIELDS = frozenset({"schemaVersion", "claimToken"})
+_COMPLETE_FIELDS = frozenset(
+    {
+        "schemaVersion",
+        "claimToken",
+        "idempotencyKey",
+        "verdict",
+        "comment",
+        "confirmWithoutComment",
+        "branches",
+    }
+)
 _LIST_QUERY_FIELDS = frozenset({"problemGroup", "sort", "cursor"})
 
 PWA_REVIEW_QUEUE_REPOSITORY = web.AppKey(
     "pwa_review_queue_repository", PwaWrittenReviewQueueRepository
 )
+ReviewCompletionInvalidator = Callable[
+    [tuple[str, ...], tuple[str, ...], str], Awaitable[None]
+]
+PWA_REVIEW_COMPLETION_INVALIDATOR = web.AppKey(
+    "pwa_review_completion_invalidator", ReviewCompletionInvalidator
+)
 review_routes = web.RouteTableDef()
+logger = logging.getLogger(__name__)
 
 
 def _repository(request: web.Request) -> PwaWrittenReviewQueueRepository:
@@ -238,7 +265,144 @@ def _lease_payload(lease: ReviewLease) -> dict[str, object]:
         "claimedAt": _timestamp(lease.claimed_at),
         "expiresAt": _timestamp(lease.expires_at),
         "branches": [_branch_payload(item) for item in lease.items],
+        "evidenceBranches": [
+            {
+                "queueId": branch.queue_public_id,
+                "thread": (
+                    None
+                    if branch.thread_public_id is None
+                    else {
+                        "threadId": branch.thread_public_id,
+                        "threadVersion": branch.thread_version,
+                        "entries": [
+                            {
+                                "entryId": entry.entry_public_id,
+                                "entryVersion": entry.entry_version,
+                                "entryKind": entry.entry_kind,
+                                "text": entry.text,
+                                "submittedAt": _timestamp(entry.server_received_at),
+                                "attachments": [
+                                    {
+                                        "attachmentId": attachment.attachment_public_id,
+                                        "ordinal": attachment.ordinal,
+                                    }
+                                    for attachment in entry.attachments
+                                ],
+                            }
+                            for entry in branch.entries
+                        ],
+                    }
+                ),
+            }
+            for branch in lease.evidence_branches
+        ],
     }
+
+
+def _positive_integer(value: object, *, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте данные проверки",
+            details={"field": field},
+        )
+    return value
+
+
+def _complete_branches(value: object) -> tuple[ReviewEvidenceBranchExpectation, ...]:
+    if not isinstance(value, list) or not value:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте границу проверяемой работы",
+            details={"field": "branches"},
+        )
+    branches: list[ReviewEvidenceBranchExpectation] = []
+    for branch_index, branch in enumerate(value):
+        if not isinstance(branch, dict) or set(branch) != {
+            "queueId",
+            "leaseVersion",
+            "threadId",
+            "threadVersion",
+            "evidence",
+        }:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Проверьте ветви проверяемой работы",
+                details={"field": f"branches.{branch_index}"},
+            )
+        evidence = branch["evidence"]
+        if not isinstance(evidence, list) or not evidence:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="В проверяемой ветви нет посылок",
+                details={"field": f"branches.{branch_index}.evidence"},
+            )
+        entries: list[ReviewEvidenceEntryExpectation] = []
+        for entry_index, entry in enumerate(evidence):
+            if not isinstance(entry, dict) or set(entry) != {
+                "entryId",
+                "entryVersion",
+            }:
+                raise PwaApiError(
+                    status=422,
+                    code="validation_error",
+                    message="Проверьте посылки в границе работы",
+                    details={
+                        "field": (f"branches.{branch_index}.evidence.{entry_index}")
+                    },
+                )
+            entries.append(
+                ReviewEvidenceEntryExpectation(
+                    entry_public_id=_required_public_id(
+                        entry["entryId"],
+                        field=(
+                            f"branches.{branch_index}.evidence.{entry_index}.entryId"
+                        ),
+                    ),
+                    entry_version=_positive_integer(
+                        entry["entryVersion"],
+                        field=(
+                            "branches."
+                            f"{branch_index}.evidence.{entry_index}.entryVersion"
+                        ),
+                    ),
+                )
+            )
+        branches.append(
+            ReviewEvidenceBranchExpectation(
+                queue_public_id=_required_public_id(
+                    branch["queueId"], field=f"branches.{branch_index}.queueId"
+                ),
+                lease_version=_positive_integer(
+                    branch["leaseVersion"],
+                    field=f"branches.{branch_index}.leaseVersion",
+                ),
+                thread_public_id=_required_public_id(
+                    branch["threadId"], field=f"branches.{branch_index}.threadId"
+                ),
+                thread_version=_positive_integer(
+                    branch["threadVersion"],
+                    field=f"branches.{branch_index}.threadVersion",
+                ),
+                entries=tuple(entries),
+            )
+        )
+    return tuple(branches)
+
+
+def _required_public_id(value: object, *, field: str) -> str:
+    if not isinstance(value, str) or _PUBLIC_ID.fullmatch(value) is None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте данные проверки",
+            details={"field": field},
+        )
+    return value
 
 
 def _translate_queue_error(error: Exception) -> PwaApiError:
@@ -265,6 +429,30 @@ def _translate_queue_error(error: Exception) -> PwaApiError:
             status=409,
             code="review_lease_lost",
             message="Блокировка проверки завершилась. Обновите очередь.",
+        )
+    if isinstance(error, ReviewThreadChanged):
+        return PwaApiError(
+            status=409,
+            code="review_thread_changed",
+            message="Работа изменилась. Обновите её перед проверкой.",
+        )
+    if isinstance(error, ReviewEvidenceUnavailable):
+        return PwaApiError(
+            status=409,
+            code="review_evidence_unavailable",
+            message="Для этой работы ещё не подготовлена полная история PWA",
+        )
+    if isinstance(error, ReviewIdempotencyConflict):
+        return PwaApiError(
+            status=409,
+            code="idempotency_payload_mismatch",
+            message="Это действие уже было отправлено с другими данными",
+        )
+    if isinstance(error, ReviewCompletionInvalid):
+        return PwaApiError(
+            status=422,
+            code="review_confirmation_required",
+            message="Подтвердите отправку вердикта без комментария",
         )
     raise error
 
@@ -388,4 +576,103 @@ async def release_review_item(request: web.Request) -> web.Response:
     )
 
 
-__all__ = ["PWA_REVIEW_QUEUE_REPOSITORY", "review_routes"]
+@review_routes.post("/staff/api/v1/review/items/{queue_public_id}/complete")
+async def complete_review_item(request: web.Request) -> web.Response:
+    teacher_user_id, scope = _require_review_write(request)
+    payload = await _json_object(request, required_fields=_COMPLETE_FIELDS)
+    verdict = payload["verdict"]
+    if (
+        isinstance(verdict, bool)
+        or not isinstance(verdict, int)
+        or not 11 <= verdict <= 17
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Выберите корректный вердикт",
+            details={"field": "verdict"},
+        )
+    comment = payload["comment"]
+    if comment is not None and (not isinstance(comment, str) or len(comment) > 100_000):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте комментарий",
+            details={"field": "comment"},
+        )
+    if not isinstance(payload["confirmWithoutComment"], bool):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте подтверждение отправки",
+            details={"field": "confirmWithoutComment"},
+        )
+    try:
+        command = CompleteReviewCommand(
+            queue_public_id=_queue_public_id(request),
+            claim_token=_claim_token(payload["claimToken"]),
+            teacher_user_id=teacher_user_id,
+            scope=scope,
+            idempotency_key=_required_public_id(
+                payload["idempotencyKey"], field="idempotencyKey"
+            ),
+            verdict=verdict,
+            comment=comment,
+            confirm_without_comment=payload["confirmWithoutComment"],
+            branches=_complete_branches(payload["branches"]),
+        )
+        receipt = await _repository(request).complete(command)
+    except (
+        ReviewQueueNotFound,
+        ReviewQueueForbidden,
+        ReviewLeaseLost,
+        ReviewThreadChanged,
+        ReviewEvidenceUnavailable,
+        ReviewIdempotencyConflict,
+        ReviewCompletionInvalid,
+    ) as error:
+        raise _translate_queue_error(error) from error
+    except ValueError as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте данные завершения проверки",
+        ) from error
+    invalidator = request.app.get(PWA_REVIEW_COMPLETION_INVALIDATOR)
+    if invalidator is not None and not receipt.replayed:
+        try:
+            await invalidator(
+                receipt.owner_account_public_ids,
+                receipt.evidence_problem_public_ids,
+                "written-review-completed",
+            )
+        except Exception:
+            logger.warning(
+                "Review completion invalidation failed after commit: review=%s",
+                receipt.review_public_id,
+                exc_info=True,
+            )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "review": {
+                "reviewId": receipt.review_public_id,
+                "targetThreadId": receipt.target_thread_public_id,
+                "targetProblemId": receipt.target_problem_public_id,
+                "targetThreadStatus": receipt.target_thread_status,
+                "verdict": receipt.verdict,
+                "commentEntryId": receipt.comment_entry_public_id,
+                "evidenceEntryIds": list(receipt.evidence_entry_public_ids),
+                "completedAt": _timestamp(receipt.completed_at),
+                "replayed": receipt.replayed,
+            },
+            "requestId": request["request_id"],
+        }
+    )
+
+
+__all__ = [
+    "PWA_REVIEW_COMPLETION_INVALIDATOR",
+    "PWA_REVIEW_QUEUE_REPOSITORY",
+    "review_routes",
+]

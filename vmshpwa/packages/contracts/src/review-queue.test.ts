@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   claimReviewItemRequestSchema,
+  completeReviewRequestSchema,
+  completeReviewResponseSchema,
   mutateReviewLeaseRequestSchema,
   releaseReviewLeaseResponseSchema,
   reviewLeaseResponseSchema,
@@ -30,6 +32,23 @@ const branches = [
   },
 ]
 const firstBranch = branches[0]!
+const evidenceBranches = branches.map((branch, index) => ({
+  queueId: branch.queueId,
+  thread: {
+    threadId: `thread-${index + 1}`,
+    threadVersion: 2,
+    entries: [
+      {
+        entryId: `entry-${index + 1}`,
+        entryVersion: 2,
+        entryKind: 'submission' as const,
+        text: `Решение ${index + 1}`,
+        submittedAt: branch.submittedAt,
+        attachments: [],
+      },
+    ],
+  },
+}))
 
 describe('Phase-6 review queue contracts', () => {
   const principal = { audience: 'staff' as const, accountId: 'staff-reviewer' }
@@ -93,6 +112,7 @@ describe('Phase-6 review queue contracts', () => {
         claimedAt: '2026-10-04T12:05:00.000000Z',
         expiresAt: '2026-10-04T12:35:00.000000Z',
         branches: branches.map((branch) => ({ ...branch, leaseVersion: 1 })),
+        evidenceBranches,
       },
       requestId: 'request-review-claim',
     }
@@ -104,6 +124,67 @@ describe('Phase-6 review queue contracts', () => {
         requestId: 'request-review-release',
       }).releasedItems,
     ).toBe(2)
+  })
+
+  it('validates the exact completion boundary and immutable receipt', () => {
+    const request = {
+      schemaVersion: 1 as const,
+      claimToken: 'review-claim-one',
+      idempotencyKey: 'review-complete-one',
+      verdict: 16,
+      comment: 'Хорошая идея, поправьте обоснование.',
+      confirmWithoutComment: false,
+      branches: branches.map((branch, index) => ({
+        queueId: branch.queueId,
+        leaseVersion: 1,
+        threadId: `thread-${index + 1}`,
+        threadVersion: 2,
+        evidence: [{ entryId: `entry-${index + 1}`, entryVersion: 2 }],
+      })),
+    }
+    expect(completeReviewRequestSchema.parse(request)).toEqual(request)
+    expect(
+      completeReviewRequestSchema.safeParse({
+        ...request,
+        verdict: 11,
+        comment: null,
+      }).success,
+    ).toBe(false)
+    expect(
+      completeReviewResponseSchema.parse({
+        schemaVersion: 1,
+        review: {
+          reviewId: 'review-one',
+          targetThreadId: 'thread-2',
+          targetProblemId: 'problem-two',
+          targetThreadStatus: 'accepted',
+          verdict: 16,
+          commentEntryId: 'comment-one',
+          evidenceEntryIds: ['entry-1', 'entry-2'],
+          completedAt: '2026-10-04T12:10:00.000000Z',
+          replayed: false,
+        },
+        requestId: 'request-review-complete',
+      }).review.targetProblemId,
+    ).toBe('problem-two')
+  })
+
+  it('rejects a lease whose evidence branches do not match the claim', () => {
+    expect(
+      reviewLeaseResponseSchema.safeParse({
+        schemaVersion: 1,
+        lease: {
+          claimToken: 'review-claim-one',
+          logicalCaseId: 'synonym-shared',
+          student: { studentId: 'student-one', displayName: 'Анна Белова' },
+          claimedAt: '2026-10-04T12:05:00.000000Z',
+          expiresAt: '2026-10-04T12:35:00.000000Z',
+          branches,
+          evidenceBranches: evidenceBranches.slice(0, 1),
+        },
+        requestId: 'request-review-claim',
+      }).success,
+    ).toBe(false)
   })
 
   it('keeps list cache keys scoped by filters and cursor', () => {

@@ -41,6 +41,41 @@ export const reviewQueueBranchSchema = z
   .strict()
 export type ReviewQueueBranch = z.infer<typeof reviewQueueBranchSchema>
 
+export const reviewEvidenceAttachmentSchema = z
+  .object({
+    attachmentId: publicIdSchema,
+    ordinal: z.number().int().nonnegative(),
+  })
+  .strict()
+export type ReviewEvidenceAttachment = z.infer<typeof reviewEvidenceAttachmentSchema>
+
+export const reviewEvidenceEntrySchema = z
+  .object({
+    entryId: publicIdSchema,
+    entryVersion: z.number().int().positive(),
+    entryKind: z.enum(['text', 'submission']),
+    text: z.string().max(100_000).nullable(),
+    submittedAt: z.iso.datetime(),
+    attachments: z.array(reviewEvidenceAttachmentSchema).max(10),
+  })
+  .strict()
+export type ReviewEvidenceEntry = z.infer<typeof reviewEvidenceEntrySchema>
+
+export const reviewLeaseEvidenceBranchSchema = z
+  .object({
+    queueId: publicIdSchema,
+    thread: z
+      .object({
+        threadId: publicIdSchema,
+        threadVersion: z.number().int().positive(),
+        entries: z.array(reviewEvidenceEntrySchema),
+      })
+      .strict()
+      .nullable(),
+  })
+  .strict()
+export type ReviewLeaseEvidenceBranch = z.infer<typeof reviewLeaseEvidenceBranchSchema>
+
 const reviewStudentSchema = z
   .object({
     studentId: publicIdSchema.nullable(),
@@ -112,11 +147,28 @@ export const reviewLeaseSchema = z
     claimedAt: z.iso.datetime(),
     expiresAt: z.iso.datetime(),
     branches: z.array(reviewQueueBranchSchema).min(1),
+    evidenceBranches: z.array(reviewLeaseEvidenceBranchSchema).min(1),
   })
   .strict()
   .refine((lease) => lease.expiresAt > lease.claimedAt, {
     message: 'Review lease must expire after it was claimed',
     path: ['expiresAt'],
+  })
+  .superRefine((lease, context) => {
+    const queueIds = lease.branches.map((branch) => branch.queueId)
+    const evidenceQueueIds = lease.evidenceBranches.map((branch) => branch.queueId)
+    if (
+      new Set(queueIds).size !== queueIds.length ||
+      new Set(evidenceQueueIds).size !== evidenceQueueIds.length ||
+      queueIds.length !== evidenceQueueIds.length ||
+      queueIds.some((queueId) => !evidenceQueueIds.includes(queueId))
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Lease evidence must match the claimed queue branches',
+        path: ['evidenceBranches'],
+      })
+    }
   })
 export type ReviewLease = z.infer<typeof reviewLeaseSchema>
 
@@ -137,6 +189,80 @@ export const releaseReviewLeaseResponseSchema = z
   })
   .strict()
 export type ReleaseReviewLeaseResponse = z.infer<typeof releaseReviewLeaseResponseSchema>
+
+export const writtenReviewVerdictSchema = z.number().int().min(11).max(17)
+export type WrittenReviewVerdict = z.infer<typeof writtenReviewVerdictSchema>
+
+export const completeReviewEvidenceEntrySchema = z
+  .object({
+    entryId: publicIdSchema,
+    entryVersion: z.number().int().positive(),
+  })
+  .strict()
+
+export const completeReviewBranchSchema = z
+  .object({
+    queueId: publicIdSchema,
+    leaseVersion: z.number().int().positive(),
+    threadId: publicIdSchema,
+    threadVersion: z.number().int().positive(),
+    evidence: z.array(completeReviewEvidenceEntrySchema).min(1),
+  })
+  .strict()
+
+export const completeReviewRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    claimToken: publicIdSchema,
+    idempotencyKey: publicIdSchema,
+    verdict: writtenReviewVerdictSchema,
+    comment: z.string().max(100_000).nullable(),
+    confirmWithoutComment: z.boolean(),
+    branches: z.array(completeReviewBranchSchema).min(1),
+  })
+  .strict()
+  .superRefine((request, context) => {
+    if (request.verdict !== 17 && !request.comment?.trim() && !request.confirmWithoutComment) {
+      context.addIssue({
+        code: 'custom',
+        message: 'A non-accepted verdict without a comment requires confirmation',
+        path: ['confirmWithoutComment'],
+      })
+    }
+    const queueIds = request.branches.map((branch) => branch.queueId)
+    if (new Set(queueIds).size !== queueIds.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Completion branches must have unique queue IDs',
+        path: ['branches'],
+      })
+    }
+  })
+export type CompleteReviewRequest = z.infer<typeof completeReviewRequestSchema>
+
+export const completedReviewSchema = z
+  .object({
+    reviewId: publicIdSchema,
+    targetThreadId: publicIdSchema,
+    targetProblemId: publicIdSchema,
+    targetThreadStatus: z.enum(['accepted', 'needs_work']),
+    verdict: writtenReviewVerdictSchema,
+    commentEntryId: publicIdSchema.nullable(),
+    evidenceEntryIds: z.array(publicIdSchema).min(1),
+    completedAt: z.iso.datetime(),
+    replayed: z.boolean(),
+  })
+  .strict()
+export type CompletedReview = z.infer<typeof completedReviewSchema>
+
+export const completeReviewResponseSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    review: completedReviewSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type CompleteReviewResponse = z.infer<typeof completeReviewResponseSchema>
 
 export const reviewQueueQueryKeys = {
   all: (principal: PrincipalQueryScope) =>

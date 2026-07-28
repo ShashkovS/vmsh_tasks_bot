@@ -243,6 +243,8 @@ class CompleteReviewReceipt:
     verdict: int
     comment_entry_public_id: str | None
     evidence_entry_public_ids: tuple[str, ...]
+    evidence_problem_public_ids: tuple[str, ...]
+    owner_account_public_ids: tuple[str, ...]
     completed_at: datetime
     replayed: bool = False
 
@@ -888,11 +890,21 @@ class PwaWrittenReviewQueueRepository:
             replayed: bool,
         ) -> CompleteReviewReceipt:
             evidence = connection.execute(
-                "SELECT entry.public_id FROM submission_review_evidence_entries AS evidence "
+                "SELECT entry.public_id, problem.public_id AS problem_public_id "
+                "FROM submission_review_evidence_entries AS evidence "
                 "JOIN submission_entries AS entry ON entry.id = evidence.entry_id "
+                "JOIN problems AS problem ON problem.id = evidence.problem_id "
                 "WHERE evidence.review_id = ? "
                 "ORDER BY evidence.server_received_at, evidence.entry_id",
                 (row["id"],),
+            ).fetchall()
+            owner_accounts = connection.execute(
+                "SELECT account.public_id FROM auth_accounts AS account "
+                "JOIN submission_threads AS thread "
+                "ON thread.student_user_id = account.linked_user_id "
+                "WHERE thread.id = ? AND account.audience = 'student' "
+                "AND account.status = 'active' ORDER BY account.id",
+                (row["thread_id"],),
             ).fetchall()
             return CompleteReviewReceipt(
                 review_public_id=str(row["public_id"]),
@@ -911,6 +923,12 @@ class PwaWrittenReviewQueueRepository:
                 ),
                 evidence_entry_public_ids=tuple(
                     str(item["public_id"]) for item in evidence
+                ),
+                evidence_problem_public_ids=tuple(
+                    dict.fromkeys(str(item["problem_public_id"]) for item in evidence)
+                ),
+                owner_account_public_ids=tuple(
+                    str(account["public_id"]) for account in owner_accounts
                 ),
                 completed_at=_parse_timestamp(row["created_at"], label="review time"),
                 replayed=replayed,
@@ -1237,6 +1255,19 @@ class PwaWrittenReviewQueueRepository:
                 verdict=command.verdict,
                 comment_entry_public_id=comment_public_id,
                 evidence_entry_public_ids=tuple(evidence_public_ids),
+                evidence_problem_public_ids=tuple(
+                    dict.fromkeys(
+                        str(row["problem_public_id"]) for row in evidence_rows
+                    )
+                ),
+                owner_account_public_ids=tuple(
+                    str(account["public_id"])
+                    for account in connection.execute(
+                        "SELECT public_id FROM auth_accounts WHERE linked_user_id = ? "
+                        "AND audience = 'student' AND status = 'active' ORDER BY id",
+                        (target_thread["student_user_id"],),
+                    ).fetchall()
+                ),
                 completed_at=now,
             )
 

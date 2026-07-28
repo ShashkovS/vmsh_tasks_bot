@@ -56,6 +56,25 @@ const leasePayload = {
     claimedAt: '2026-10-04T12:02:00.000000Z',
     expiresAt: '2026-10-04T12:32:00.000000Z',
     branches,
+    evidenceBranches: [
+      {
+        queueId: 'review-queue-one',
+        thread: {
+          threadId: 'thread-one',
+          threadVersion: 2,
+          entries: [
+            {
+              entryId: 'entry-one',
+              entryVersion: 2,
+              entryKind: 'submission',
+              text: 'Решение',
+              submittedAt: '2026-10-04T12:01:00.000000Z',
+              attachments: [],
+            },
+          ],
+        },
+      },
+    ],
   },
   requestId: 'review-lease-request',
 }
@@ -154,6 +173,58 @@ describe('Staff review queue client', () => {
     expect(refreshSession).toHaveBeenCalledOnce()
     expect(fetchImplementation).toHaveBeenCalledTimes(2)
     expect(fetchImplementation.mock.calls[0]?.[1]).toEqual(fetchImplementation.mock.calls[1]?.[1])
+  })
+
+  it('sends an exact review boundary and validates the completion receipt', async () => {
+    const completion = {
+      schemaVersion: 1 as const,
+      review: {
+        reviewId: 'review-one',
+        targetThreadId: 'thread-one',
+        targetProblemId: 'problem-one',
+        targetThreadStatus: 'accepted' as const,
+        verdict: 16,
+        commentEntryId: 'comment-one',
+        evidenceEntryIds: ['entry-one'],
+        completedAt: '2026-10-04T12:03:00.000000Z',
+        replayed: false,
+      },
+      requestId: 'review-complete-request',
+    }
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(jsonResponse(completion)),
+    )
+    const client = createReviewQueueClient(runtime, { fetchImplementation })
+    const request = {
+      schemaVersion: 1 as const,
+      claimToken: 'review-claim-one',
+      idempotencyKey: 'review-complete-one',
+      verdict: 16,
+      comment: 'Проверено.',
+      confirmWithoutComment: false,
+      branches: [
+        {
+          queueId: 'review-queue-one',
+          leaseVersion: 1,
+          threadId: 'thread-one',
+          threadVersion: 2,
+          evidence: [{ entryId: 'entry-one', entryVersion: 2 }],
+        },
+      ],
+    }
+
+    await expect(client.complete('review-queue-one', request)).resolves.toEqual(completion)
+    expect(fetchImplementation).toHaveBeenCalledExactlyOnceWith(
+      '/staff/api/v1/review/items/review-queue-one/complete',
+      {
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        redirect: 'error',
+        body: JSON.stringify(request),
+      },
+    )
   })
 
   it('separates API, malformed-contract and network failures', async () => {

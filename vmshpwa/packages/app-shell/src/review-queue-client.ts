@@ -3,6 +3,8 @@ import {
   ApiResponseError,
   apiErrorSchema,
   claimReviewItemRequestSchema,
+  completeReviewRequestSchema,
+  completeReviewResponseSchema,
   mutateReviewLeaseRequestSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
@@ -11,6 +13,8 @@ import {
   reviewQueueListQuerySchema,
   reviewQueueListResponseSchema,
   reviewQueueQueryKeys,
+  type CompleteReviewRequest,
+  type CompleteReviewResponse,
   type PrincipalQueryScope,
   type ReviewLeaseResponse,
   type ReviewQueueListQuery,
@@ -42,6 +46,11 @@ export interface ReviewQueueClient {
     options?: ReviewQueueRequestOptions,
   ): Promise<ReviewLeaseResponse>
   release(queueId: string, claimToken: string, options?: ReviewQueueRequestOptions): Promise<number>
+  complete(
+    queueId: string,
+    request: CompleteReviewRequest,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<CompleteReviewResponse>
 }
 
 export class ReviewQueueProtocolError extends Error {
@@ -133,6 +142,22 @@ class BrowserReviewQueueClient implements ReviewQueueClient {
       releaseReviewLeaseResponseSchema,
     )
     return response.releasedItems
+  }
+
+  async complete(
+    queueId: string,
+    request: CompleteReviewRequest,
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<CompleteReviewResponse> {
+    const parsedQueueId = publicIdSchema.parse(queueId)
+    const body = JSON.stringify(completeReviewRequestSchema.parse(request))
+    return this.#jsonRequest(
+      `/review/items/${encodeURIComponent(parsedQueueId)}/complete`,
+      'POST',
+      body,
+      options,
+      completeReviewResponseSchema,
+    )
   }
 
   async #leaseMutation(
@@ -307,6 +332,24 @@ export function useReleaseReviewLeaseMutation(
   return useMutation({
     mutationKey: [...reviewQueueQueryKeys.lease(principal, queueId), 'release'],
     mutationFn: (claimToken: string) => client.release(queueId, claimToken),
+    onSuccess: async () => {
+      queryClient.removeQueries({ queryKey: reviewQueueQueryKeys.lease(principal, queueId) })
+      await queryClient.invalidateQueries({
+        queryKey: reviewQueueQueryKeys.all(principal),
+      })
+    },
+  })
+}
+
+export function useCompleteReviewMutation(
+  client: Pick<ReviewQueueClient, 'complete'>,
+  principal: PrincipalQueryScope,
+  queueId: string,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationKey: [...reviewQueueQueryKeys.lease(principal, queueId), 'complete'],
+    mutationFn: (request: CompleteReviewRequest) => client.complete(queueId, request),
     onSuccess: async () => {
       queryClient.removeQueries({ queryKey: reviewQueueQueryKeys.lease(principal, queueId) })
       await queryClient.invalidateQueries({

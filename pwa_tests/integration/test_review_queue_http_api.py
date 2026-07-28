@@ -287,26 +287,62 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 "created_at) VALUES (?, 1, '1', ?, 'manual_match', ?, ?, '[]', ?)",
                 (revision_id, problem_id, ADMIN_ID, now, now),
             )
-            connection.execute(
-                "INSERT INTO problem_revisions "
-                "(problem_id, content_revision_id, source_ordinal, source_item, "
-                "display_number, title, normalized_title, problem_type, answer_type, "
-                "answer_config_json, attempt_policy_json, config_version, created_at) "
-                "VALUES (?, ?, 1, '1', ?, ?, ?, 2, 0, '{}', '{}', 1, ?)",
-                (
-                    problem_id,
-                    revision_id,
-                    f"41{index}",
-                    f"Общая задача, ветка {index}",
-                    f"общая задача ветка {index}",
-                    now,
-                ),
+            problem_revision_id = int(
+                connection.execute(
+                    "INSERT INTO problem_revisions "
+                    "(problem_id, content_revision_id, source_ordinal, source_item, "
+                    "display_number, title, normalized_title, problem_type, answer_type, "
+                    "answer_config_json, attempt_policy_json, config_version, created_at) "
+                    "VALUES (?, ?, 1, '1', ?, ?, ?, 2, 0, '{}', '{}', 1, ?)",
+                    (
+                        problem_id,
+                        revision_id,
+                        f"41{index}",
+                        f"Общая задача, ветка {index}",
+                        f"общая задача ветка {index}",
+                        now,
+                    ),
+                ).lastrowid
             )
             connection.execute(
                 "INSERT INTO problem_synonym_members "
                 "(synonym_group_id, group_lesson_id, problem_id, added_by_user_id, "
                 "added_at, membership_version) VALUES (?, ?, ?, ?, ?, 1)",
                 (synonym_id, group_lesson_id, problem_id, ADMIN_ID, now),
+            )
+            submitted_at = _timestamp(NOW - timedelta(minutes=3 - index))
+            thread_id = int(
+                connection.execute(
+                    "INSERT INTO submission_threads "
+                    "(public_id, student_user_id, problem_id, condition_revision_id, "
+                    "status, latest_entry_at, created_at, updated_at, version) "
+                    "VALUES (?, ?, ?, ?, 'awaiting_review', ?, ?, ?, 2) RETURNING id",
+                    (
+                        f"review-http-thread-{index}",
+                        STUDENT_ID,
+                        problem_id,
+                        revision_id,
+                        submitted_at,
+                        submitted_at,
+                        submitted_at,
+                    ),
+                ).fetchone()["id"]
+            )
+            connection.execute(
+                "INSERT INTO submission_entries "
+                "(public_id, thread_id, problem_revision_id, author_kind, "
+                "author_user_id, channel, entry_kind, state, text, client_created_at, "
+                "server_received_at, version) VALUES (?, ?, ?, 'student', ?, 'pwa', "
+                "'submission', 'submitted', ?, ?, ?, 2)",
+                (
+                    f"review-http-entry-{index}",
+                    thread_id,
+                    problem_revision_id,
+                    STUDENT_ID,
+                    f"Решение HTTP {index}",
+                    submitted_at,
+                    submitted_at,
+                ),
             )
             queue_public_id = f"review-http-queue-{index}"
             connection.execute(
@@ -315,7 +351,7 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 "VALUES (?, ?, ?, ?, 0, ?)",
                 (
                     queue_public_id,
-                    _timestamp(NOW + timedelta(minutes=index)),
+                    submitted_at,
                     STUDENT_ID,
                     problem_id,
                     now,
@@ -349,6 +385,9 @@ async def review_http(tmp_path, aiohttp_client) -> ReviewHttpFixture:
         factory,
         clock=lambda: NOW,
         claim_token_factory=lambda: next(claim_tokens),
+        review_public_id_factory=lambda: "review-http-completed",
+        comment_public_id_factory=lambda: "review-http-comment",
+        event_public_id_factory=lambda: "review-http-event",
     )
     app = web.Application()
     app[RUNTIME_CONFIG] = Config(
@@ -402,6 +441,40 @@ def _headers(*, unsafe: bool = False) -> dict[str, str]:
 
 def _cookie(fixture: ReviewHttpFixture, identity: str) -> dict[str, str]:
     return {COOKIE_POLICY[AuthAudience.STAFF].access_name: fixture.cookies[identity]}
+
+
+def _complete_payload(lease: dict[str, object]) -> dict[str, object]:
+    evidence_by_queue = {
+        branch["queueId"]: branch for branch in lease["evidenceBranches"]
+    }
+    return {
+        "schemaVersion": 1,
+        "claimToken": lease["claimToken"],
+        "idempotencyKey": "review-http-complete-1",
+        "verdict": 16,
+        "comment": "Проверено через Staff PWA.",
+        "confirmWithoutComment": False,
+        "branches": [
+            {
+                "queueId": branch["queueId"],
+                "leaseVersion": branch["leaseVersion"],
+                "threadId": evidence_by_queue[branch["queueId"]]["thread"]["threadId"],
+                "threadVersion": evidence_by_queue[branch["queueId"]]["thread"][
+                    "threadVersion"
+                ],
+                "evidence": [
+                    {
+                        "entryId": entry["entryId"],
+                        "entryVersion": entry["entryVersion"],
+                    }
+                    for entry in evidence_by_queue[branch["queueId"]]["thread"][
+                        "entries"
+                    ]
+                ],
+            }
+            for branch in lease["branches"]
+        ],
+    }
 
 
 @pytest.mark.asyncio
@@ -525,3 +598,105 @@ async def test_review_mutations_reject_non_strict_body(review_http: ReviewHttpFi
     )
     assert response.status == 422
     assert (await response.json())["error"]["code"] == "validation_error"
+
+
+@pytest.mark.asyncio
+async def test_complete_review_is_atomic_and_idempotent_over_http(
+    review_http: ReviewHttpFixture,
+):
+    fixture = review_http
+    queue_id = fixture.queue_public_ids[0]
+    claim = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert claim.status == 200, await claim.text()
+    lease = (await claim.json())["lease"]
+    assert [branch["thread"]["threadId"] for branch in lease["evidenceBranches"]] == [
+        "review-http-thread-1",
+        "review-http-thread-2",
+    ]
+    payload = _complete_payload(lease)
+
+    completed = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=payload,
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert completed.status == 200, await completed.text()
+    result = (await completed.json())["review"]
+    assert result == {
+        "reviewId": "review-http-completed",
+        "targetThreadId": "review-http-thread-2",
+        "targetProblemId": lease["branches"][1]["problemId"],
+        "targetThreadStatus": "accepted",
+        "verdict": 16,
+        "commentEntryId": "review-http-comment",
+        "evidenceEntryIds": ["review-http-entry-1", "review-http-entry-2"],
+        "completedAt": _timestamp(),
+        "replayed": False,
+    }
+
+    replay = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=payload,
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert replay.status == 200, await replay.text()
+    assert (await replay.json())["review"]["replayed"] is True
+    counts = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT (SELECT count(*) FROM results) AS results, "
+            "(SELECT count(*) FROM submission_reviews) AS reviews, "
+            "(SELECT count(*) FROM written_tasks_queue) AS queue"
+        ).fetchone()
+    )
+    assert counts == {"results": 1, "reviews": 1, "queue": 0}
+
+
+@pytest.mark.asyncio
+async def test_complete_review_reports_thread_change_and_confirmation_errors(
+    review_http: ReviewHttpFixture,
+):
+    fixture = review_http
+    queue_id = fixture.queue_public_ids[0]
+    claim = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    lease = (await claim.json())["lease"]
+    payload = _complete_payload(lease)
+    payload.update({"verdict": 11, "comment": None})
+    confirmation = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=payload,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert confirmation.status == 422
+    assert (await confirmation.json())["error"]["code"] == (
+        "review_confirmation_required"
+    )
+
+    payload["confirmWithoutComment"] = True
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE submission_threads SET updated_at = ?, version = version + 1 "
+            "WHERE public_id = 'review-http-thread-1'",
+            (_timestamp(),),
+        )
+    )
+    conflict = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=payload,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert conflict.status == 409
+    assert (await conflict.json())["error"]["code"] == "review_thread_changed"

@@ -34,6 +34,7 @@ from apps.pwa_api.realtime_control import (
     RealtimeSessionController,
 )
 from apps.pwa_api.review_routes import (
+    PWA_REVIEW_COMPLETION_INVALIDATOR,
     PWA_REVIEW_QUEUE_REPOSITORY,
     review_routes,
 )
@@ -812,6 +813,31 @@ async def publish_written_submission_invalidation(
     )
 
 
+async def publish_review_completion_invalidation(
+    app: web.Application,
+    *,
+    account_public_ids: tuple[str, ...],
+    problem_public_ids: tuple[str, ...],
+    reason: str,
+) -> None:
+    """Publish owner-scoped refetch hints for every reviewed synonym branch."""
+
+    resources = [
+        f"problems/{problem_public_id}/thread"
+        for problem_public_id in problem_public_ids
+    ]
+    for account_public_id in account_public_ids:
+        await app[PWA_BROKER].publish(
+            NATS_PWA_INVALIDATE,
+            {
+                "resources": resources,
+                "reason": reason,
+                "audience": AuthAudience.STUDENT.value,
+                "accountId": account_public_id,
+            },
+        )
+
+
 async def activate_due_content_publications(
     app: web.Application,
     *,
@@ -1038,6 +1064,20 @@ def configure(
         if review_queue_enabled:
             if review_queue_repository is not None:
                 app[PWA_REVIEW_QUEUE_REPOSITORY] = review_queue_repository
+
+            async def invalidate_review_completion(
+                account_public_ids: tuple[str, ...],
+                problem_public_ids: tuple[str, ...],
+                reason: str,
+            ) -> None:
+                await publish_review_completion_invalidation(
+                    app,
+                    account_public_ids=account_public_ids,
+                    problem_public_ids=problem_public_ids,
+                    reason=reason,
+                )
+
+            app[PWA_REVIEW_COMPLETION_INVALIDATOR] = invalidate_review_completion
             app.add_routes(review_routes)
             app.on_startup.append(on_review_queue_startup)
         content_enabled = content_repository is not None or PWA_DATABASE in app
