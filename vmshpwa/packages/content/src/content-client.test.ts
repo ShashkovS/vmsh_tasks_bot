@@ -158,6 +158,45 @@ describe('Content API client', () => {
     expect(requests.every((request) => request.init?.credentials === 'include')).toBe(true)
   })
 
+  it('loads only validated sibling group lessons as bulk upload targets', async () => {
+    const payload = {
+      courseLessonId: 'course-lesson-41',
+      courseId: 'course-math',
+      courseName: 'Математика 5–7',
+      lessonNumber: 41,
+      targets: [
+        {
+          groupLessonId: revision.groupLessonId,
+          groupId: revision.groupId,
+          groupName: 'Начинающие',
+          groupShortCode: 'n',
+          colorKey: 'beginner',
+          status: 'active',
+        },
+      ],
+      requestId: 'content-client-upload-targets',
+    }
+    const fetchImplementation = vi.fn(() => Promise.resolve(jsonResponse(payload)))
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    await expect(client.uploadTargets(revision.groupLessonId)).resolves.toEqual(payload)
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      `/staff/api/v1/content/group-lessons/${revision.groupLessonId}/upload-targets`,
+      expect.objectContaining({ credentials: 'include', method: 'GET' }),
+    )
+
+    const invalidClient = createContentApiClient(runtime('staff'), {
+      fetchImplementation: vi.fn(() =>
+        Promise.resolve(
+          jsonResponse({ ...payload, targets: [payload.targets[0], payload.targets[0]] }),
+        ),
+      ),
+    })
+    await expect(invalidClient.uploadTargets(revision.groupLessonId)).rejects.toBeInstanceOf(
+      ContentProtocolError,
+    )
+  })
+
   it('lists exact revision assets and uploads files under the latest revision ETag', async () => {
     const requests: Array<{ url: string; init: RequestInit | undefined }> = []
     const asset = {

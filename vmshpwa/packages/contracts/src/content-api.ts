@@ -378,6 +378,42 @@ export const staffContentAssetUploadSchema = z
   })
 export type StaffContentAssetUpload = z.infer<typeof staffContentAssetUploadSchema>
 
+export const contentUploadTargetSchema = z
+  .object({
+    groupLessonId: publicIdSchema,
+    groupId: publicIdSchema,
+    groupName: z.string().trim().min(1).max(200),
+    groupShortCode: z.string().trim().min(1).max(40),
+    colorKey: z.string().trim().min(1).max(80).nullable(),
+    status: z.enum(['draft', 'active', 'archived']),
+  })
+  .strict()
+export type ContentUploadTarget = z.infer<typeof contentUploadTargetSchema>
+
+export const staffContentUploadTargetsSchema = z
+  .object({
+    courseLessonId: publicIdSchema,
+    courseId: publicIdSchema,
+    courseName: z.string().trim().min(1).max(200),
+    lessonNumber: z.number().int().positive(),
+    targets: z.array(contentUploadTargetSchema).min(1).max(100),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((response, context) => {
+    for (const field of ['groupLessonId', 'groupId'] as const) {
+      const values = response.targets.map((target) => target[field])
+      if (new Set(values).size !== values.length) {
+        context.addIssue({
+          code: 'custom',
+          message: `Bulk upload targets must have unique ${field}`,
+          path: ['targets'],
+        })
+      }
+    }
+  })
+export type StaffContentUploadTargets = z.infer<typeof staffContentUploadTargetsSchema>
+
 export const staffWebContentPreviewSchema = z
   .object({
     revisionId: publicIdSchema,
@@ -924,6 +960,7 @@ export const contentQueryKeys = {
   metadataGrid: (groupLessonId: string, revisionId: string) =>
     ['content', 'metadata-grid', groupLessonId, revisionId] as const,
   history: (groupLessonId: string) => ['content', 'history', groupLessonId] as const,
+  uploadTargets: (groupLessonId: string) => ['content', 'upload-targets', groupLessonId] as const,
   preview: (revisionId: string, kind: 'web' | 'telegram' | 'pdf') =>
     ['content', 'preview', revisionId, kind] as const,
 } as const

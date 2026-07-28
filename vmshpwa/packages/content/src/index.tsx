@@ -14,6 +14,7 @@ export {
   ContentProtocolError,
   createContentApiClient,
   useContentDiagnosticsQuery,
+  useContentUploadTargetsQuery,
   useContentRevisionAssetsQuery,
   useContentPreviewQuery,
   usePublishedContentQuery,

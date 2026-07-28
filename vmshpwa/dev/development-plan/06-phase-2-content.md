@@ -298,6 +298,22 @@ Proof: [`phase2-content-pdf-http.md`](../../../pwa_tests/reports/phase2-content-
 production-build content E2E, production owner-reviewed parity/backfill и
 owner visual approval.
 
+Backend/contract precondition массовой загрузки реализован 28 июля 2026:
+
+- [x] по anchor `group_lesson` сервер возвращает только явные siblings того же
+      `course_lesson`, не угадывая курс/занятие/группу по имени файла;
+- [x] response содержит course/lesson context и bounded unique targets с
+      group name/short code/color/status;
+- [x] admin-only HTTP (`Teacher 403`, missing anchor `404`), strict Zod,
+      same-origin client и query key проверены;
+- [x] 27 real-aiohttp tests, 28 frontend unit tests, Ruff/Prettier/ESLint и два
+      strict package typecheck PASS.
+
+Proof: [`phase2-bulk-upload-targets.md`](../../../pwa_tests/reports/phase2-bulk-upload-targets.md).
+Сам bulk workflow ещё открыт: Staff должен явно сопоставить каждый файл цели и
+виду материала, показать per-file progress/partial failure и ничего не
+публиковать автоматически.
+
 - [x] Revision/migration/upgrade/rollback для Phase 2A:
       [`0041`](../../../migrations/0041.pwa_content_lessons.sql), 48 focused PASS,
       69 PASS вместе со schema inventory; full Phase-2 migration/backfill proof ещё

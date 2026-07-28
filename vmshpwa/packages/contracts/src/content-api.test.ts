@@ -18,6 +18,7 @@ import {
   staffContentPreviewSchema,
   staffContentRevisionAssetsSchema,
   staffContentRevisionSchema,
+  staffContentUploadTargetsSchema,
 } from './content-api'
 
 const document = contentFixture.document
@@ -77,6 +78,47 @@ describe('Phase-2 content HTTP contracts', () => {
         revisionId: document.revisionId,
         kind: 'telegram',
         html: `${boundary}📚`,
+      }),
+    ).toThrow()
+  })
+
+  it('accepts bounded unique group-lesson targets for explicit bulk upload', () => {
+    const targets = staffContentUploadTargetsSchema.parse({
+      courseLessonId: 'course-lesson-41',
+      courseId: 'course-math',
+      courseName: 'Математика 5–7',
+      lessonNumber: 41,
+      targets: [
+        {
+          groupLessonId: 'group-lesson-41-n',
+          groupId: 'group-beginner',
+          groupName: 'Начинающие',
+          groupShortCode: 'n',
+          colorKey: 'beginner',
+          status: 'active',
+        },
+        {
+          groupLessonId: 'group-lesson-41-p',
+          groupId: 'group-continuing',
+          groupName: 'Продолжающие',
+          groupShortCode: 'p',
+          colorKey: null,
+          status: 'draft',
+        },
+      ],
+      requestId: 'contract-upload-targets',
+    })
+
+    expect(targets.targets).toHaveLength(2)
+    expect(contentQueryKeys.uploadTargets('group-lesson-41-n')).toEqual([
+      'content',
+      'upload-targets',
+      'group-lesson-41-n',
+    ])
+    expect(() =>
+      staffContentUploadTargetsSchema.parse({
+        ...targets,
+        targets: [targets.targets[0], targets.targets[0]],
       }),
     ).toThrow()
   })

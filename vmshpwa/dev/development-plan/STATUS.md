@@ -222,6 +222,12 @@
   **26 PASS**, frontend unit — **26 PASS**, targeted Storybook — **11 PASS**,
   строгие проверки и Staff production build — PASS. Proof:
   [`phase2-content-pdf-http.md`](../../../pwa_tests/reports/phase2-content-pdf-http.md).
+- Bulk-upload target discovery больше не зависит от filename conventions:
+  repository/API возвращают только siblings одного `course_lesson`, а strict
+  contract/client требуют уникальные public targets. Real aiohttp — **27
+  PASS**, frontend unit — **28 PASS**, строгие проверки — PASS. UI orchestration
+  остаётся открыта. Proof:
+  [`phase2-bulk-upload-targets.md`](../../../pwa_tests/reports/phase2-bulk-upload-targets.md).
 - Phase 2 всё ещё открыт для bulk upload, production-build content E2E,
   production owner-reviewed parity/backfill и owner visual approval.
   Snapshots не обновлялись. Ранее закрытые HTTP/frontend proof:

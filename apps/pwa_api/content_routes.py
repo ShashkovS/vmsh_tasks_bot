@@ -1499,6 +1499,48 @@ async def read_local_content_asset(request: web.Request) -> web.Response:
     )
 
 
+@content_routes.get(
+    "/staff/api/v1/content/group-lessons/{group_lesson_id}/upload-targets"
+)
+@_translate_content_errors
+async def content_upload_targets(request: web.Request) -> web.Response:
+    """Return explicit same-course-lesson targets for Staff bulk upload."""
+
+    repository = _repository(request)
+    anchor_public_id = request.match_info["group_lesson_id"]
+    anchor_scope = await repository.get_group_lesson_scope(anchor_public_id)
+    _staff_actor(request, anchor_scope)
+    targets = await repository.list_content_upload_targets(anchor_public_id)
+    first = targets[0]
+    if any(
+        target.course_lesson_public_id != first.course_lesson_public_id
+        or target.course_public_id != first.course_public_id
+        or target.lesson_number != first.lesson_number
+        for target in targets
+    ):
+        raise ContentRepositoryError("content upload targets cross lesson scope")
+    return web.json_response(
+        {
+            "courseLessonId": first.course_lesson_public_id,
+            "courseId": first.course_public_id,
+            "courseName": first.course_name,
+            "lessonNumber": first.lesson_number,
+            "targets": [
+                {
+                    "groupLessonId": target.group_lesson_public_id,
+                    "groupId": target.group_public_id,
+                    "groupName": target.group_name,
+                    "groupShortCode": target.group_short_code,
+                    "colorKey": target.group_color_key,
+                    "status": target.status,
+                }
+                for target in targets
+            ],
+            "requestId": _request_id(request),
+        }
+    )
+
+
 @content_routes.post("/staff/api/v1/content/uploads")
 @_translate_content_errors
 async def upload_content_source(request: web.Request) -> web.Response:

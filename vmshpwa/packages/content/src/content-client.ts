@@ -26,6 +26,7 @@ import {
   staffContentPreviewSchema,
   staffContentRevisionAssetsSchema,
   staffContentRevisionSchema,
+  staffContentUploadTargetsSchema,
   type Audience,
   type ContentEtag,
   type ContentAssetUploadKind,
@@ -47,6 +48,7 @@ import {
   type StaffContentPreview,
   type StaffContentRevisionAssets,
   type StaffContentRevision,
+  type StaffContentUploadTargets,
 } from '@vmsh/contracts'
 
 /**
@@ -125,6 +127,10 @@ export interface ContentApiClient {
     input: UploadContentSourceInput,
     options?: ContentRequestOptions,
   ): Promise<VersionedContentResource<StaffContentRevision>>
+  uploadTargets(
+    groupLessonId: string,
+    options?: ContentRequestOptions,
+  ): Promise<StaffContentUploadTargets>
   compileRevision(
     revisionId: string,
     etag: ContentEtag,
@@ -278,6 +284,18 @@ class BrowserContentApiClient implements ContentApiClient {
       '/content/uploads',
       { method: 'POST', body, ...options },
       staffContentRevisionSchema,
+    )
+  }
+
+  async uploadTargets(
+    groupLessonId: string,
+    options: ContentRequestOptions = {},
+  ): Promise<StaffContentUploadTargets> {
+    this.#requireStaff()
+    return this.#json(
+      `/content/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/upload-targets`,
+      { method: 'GET', ...options },
+      staffContentUploadTargetsSchema,
     )
   }
 
@@ -783,6 +801,18 @@ export function useStaffContentHistoryQuery(
   return useQuery({
     queryKey: contentQueryKeys.history(groupLessonId),
     queryFn: ({ signal }) => client.history(groupLessonId, { signal }),
+    enabled: options.enabled ?? true,
+  })
+}
+
+export function useContentUploadTargetsQuery(
+  client: Pick<ContentApiClient, 'uploadTargets'>,
+  groupLessonId: string,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: contentQueryKeys.uploadTargets(groupLessonId),
+    queryFn: ({ signal }) => client.uploadTargets(groupLessonId, { signal }),
     enabled: options.enabled ?? true,
   })
 }

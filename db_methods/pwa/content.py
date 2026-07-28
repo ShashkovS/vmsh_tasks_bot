@@ -102,6 +102,22 @@ class GroupLessonRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class ContentUploadTargetRecord:
+    """One concrete group lesson available in a course-lesson bulk upload."""
+
+    course_lesson_public_id: str
+    lesson_number: int
+    course_public_id: str
+    course_name: str
+    group_lesson_public_id: str
+    group_public_id: str
+    group_name: str
+    group_short_code: str
+    group_color_key: str | None
+    status: str
+
+
+@dataclass(frozen=True, slots=True)
 class ContentSourceRecord:
     id: int
     public_id: str
@@ -583,6 +599,23 @@ def _group_lesson(row: Mapping[str, object]) -> GroupLessonRecord:
         business_timezone=str(row["business_timezone"]),
         status=str(row["status"]),
         version=int(row["version"]),
+    )
+
+
+def _content_upload_target(row: Mapping[str, object]) -> ContentUploadTargetRecord:
+    return ContentUploadTargetRecord(
+        course_lesson_public_id=str(row["course_lesson_public_id"]),
+        lesson_number=int(row["lesson_number"]),
+        course_public_id=str(row["course_public_id"]),
+        course_name=str(row["course_name"]),
+        group_lesson_public_id=str(row["group_lesson_public_id"]),
+        group_public_id=str(row["group_public_id"]),
+        group_name=str(row["group_name"]),
+        group_short_code=str(row["group_short_code"]),
+        group_color_key=(
+            None if row["group_color_key"] is None else str(row["group_color_key"])
+        ),
+        status=str(row["group_lesson_status"]),
     )
 
 
@@ -1269,6 +1302,59 @@ class PwaContentRepository:
             if row is None:
                 raise ContentNotFound("group lesson does not exist")
             return _group_lesson_content_scope(row)
+
+        return await self._factory.run_read_async(read)
+
+    async def list_content_upload_targets(
+        self, anchor_group_lesson_public_id: str
+    ) -> tuple[ContentUploadTargetRecord, ...]:
+        """List sibling group lessons without guessing targets from filenames.
+
+        Phase 2 bulk upload spans the explicit group lessons of one
+        ``course_lesson``.  It never infers another course, lesson number or
+        publication target from a LaTeX filename; see
+        ``vmshpwa/dev/development-plan/06-phase-2-content.md``.
+        """
+
+        _require_public_id(anchor_group_lesson_public_id)
+
+        def read(connection):
+            rows = connection.execute(
+                "SELECT course_lesson.public_id AS course_lesson_public_id, "
+                "course_lesson.lesson_number AS lesson_number, "
+                "course.public_id AS course_public_id, "
+                "course.name AS course_name, "
+                "group_lesson.public_id AS group_lesson_public_id, "
+                "group_record.public_id AS group_public_id, "
+                "group_record.public_name AS group_name, "
+                "group_record.short_code AS group_short_code, "
+                "group_record.color_key AS group_color_key, "
+                "group_lesson.status AS group_lesson_status "
+                "FROM group_lessons AS anchor "
+                "JOIN group_lessons AS group_lesson "
+                "  ON group_lesson.course_lesson_id = anchor.course_lesson_id "
+                "JOIN course_lessons AS course_lesson "
+                "  ON course_lesson.id = group_lesson.course_lesson_id "
+                "JOIN courses AS course ON course.id = group_lesson.course_id "
+                "JOIN groups AS group_record "
+                "  ON group_record.course_id = group_lesson.course_id "
+                " AND group_record.group_id = group_lesson.group_id "
+                "WHERE anchor.public_id = ? "
+                "ORDER BY coalesce(group_record.sort_order, 2147483647), "
+                "group_record.public_name COLLATE NOCASE, group_lesson.id",
+                (anchor_group_lesson_public_id,),
+            ).fetchall()
+            if not rows:
+                raise ContentNotFound("group lesson does not exist")
+            targets = tuple(map(_content_upload_target, rows))
+            if any(
+                not target.group_public_id
+                or not target.group_lesson_public_id
+                or not target.course_lesson_public_id
+                for target in targets
+            ):
+                raise ContentRepositoryError("content upload target identity is invalid")
+            return targets
 
         return await self._factory.run_read_async(read)
 

@@ -662,6 +662,62 @@ async def _create_lesson_window(
     )
 
 
+async def test_staff_lists_explicit_same_lesson_bulk_upload_targets(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    url = (
+        "/staff/api/v1/content/group-lessons/"
+        f"{fixture.group_lesson_a}/upload-targets"
+    )
+
+    forbidden = await fixture.client.get(
+        url,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(),
+    )
+    assert forbidden.status == 403
+
+    response = await fixture.client.get(
+        url,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert response.status == 200, await response.text()
+    assert await response.json() == {
+        "courseLessonId": "course-lesson-content-http",
+        "courseId": "course-content-http",
+        "courseName": "Математика",
+        "lessonNumber": 41,
+        "targets": [
+            {
+                "groupLessonId": fixture.group_lesson_a,
+                "groupId": "group-content-http-a",
+                "groupName": "A",
+                "groupShortCode": "a",
+                "colorKey": None,
+                "status": "active",
+            },
+            {
+                "groupLessonId": fixture.group_lesson_b,
+                "groupId": "group-content-http-b",
+                "groupName": "B",
+                "groupShortCode": "b",
+                "colorKey": None,
+                "status": "active",
+            },
+        ],
+        "requestId": "content.http.test",
+    }
+
+    missing = await fixture.client.get(
+        "/staff/api/v1/content/group-lessons/missing-lesson/upload-targets",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert missing.status == 404
+
+
 async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
     content_http: ContentHttpFixture,
 ):
