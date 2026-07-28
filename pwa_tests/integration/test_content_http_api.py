@@ -20,6 +20,7 @@ from apps.pwa_api.auth_service import PwaAuthService
 from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import PwaContentRepository
+from db_methods.pwa.reviews import PwaWrittenReviewQueueRepository
 from db_methods.pwa.submissions import PwaTestSubmissionRepository
 from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import Config
@@ -336,6 +337,18 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
     written_submission_repository = PwaWrittenSubmissionRepository(
         factory, clock=lambda: NOW
     )
+    review_queue_repository = PwaWrittenReviewQueueRepository(
+        factory,
+        clock=lambda: NOW,
+        claim_token_factory=lambda: "content-http-family-review-claim",
+        review_public_id_factory=lambda: "content-http-family-review",
+        annotation_public_id_factory=lambda: "content-http-family-annotation",
+        comment_public_id_factory=lambda: "content-http-family-comment",
+        event_public_id_factory=lambda: "content-http-family-review-event",
+        internal_reaction_event_public_id_factory=(
+            lambda: "content-http-family-reaction-event"
+        ),
+    )
     course_lesson = await content_repository.create_course_lesson(
         public_id="course-lesson-content-http",
         course_id=course_id,
@@ -405,6 +418,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         content_repository=content_repository,
         test_submission_repository=test_submission_repository,
         written_submission_repository=written_submission_repository,
+        review_queue_repository=review_queue_repository,
         written_attachment_service=written_attachment_service,
         content_asset_service=asset_service,
     )
@@ -1357,6 +1371,238 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
         )
     )
     assert counts == (1, 1, 2)
+
+
+async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_reaction(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    problem_public_id, condition_revision_id = await _prepare_published_test_problem(
+        fixture, problem_type=2
+    )
+    student_thread_route = f"/student/api/v1/problems/{problem_public_id}/thread"
+    family_thread_route = (
+        "/family/api/v1/children/user-content-student/problems/"
+        f"{problem_public_id}/thread"
+    )
+    created_response = await fixture.client.post(
+        f"{student_thread_route}/entries",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "51029bc9-ed0e-4c1d-8a92-9acf954854aa",
+            "problemRevision": {
+                "conditionRevisionId": condition_revision_id,
+                "configVersion": 1,
+            },
+            "text": "Семья увидит этот текст только после отправки.",
+            "clientCreatedAt": _timestamp(),
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert created_response.status == 201, await created_response.text()
+    created = await created_response.json()
+
+    family_draft = await fixture.client.get(
+        family_thread_route,
+        cookies=_cookie(fixture, "family"),
+        headers=_headers(),
+    )
+    assert family_draft.status == 200, await family_draft.text()
+    assert (await family_draft.json())["thread"] is None
+
+    upload_form = FormData()
+    upload_form.add_field("schemaVersion", "1")
+    upload_form.add_field("idempotencyKey", "f909eb0f-3d32-46ef-b001-13e8dfe3f402")
+    upload_form.add_field("expectedEntryVersion", str(created["entry"]["version"]))
+    upload_form.add_field("expectedThreadVersion", str(created["threadVersion"]))
+    upload_form.add_field("ordinal", "0")
+    upload_form.add_field(
+        "asset",
+        b"synthetic-family-visible-photo",
+        filename="семейная-проверка.heic",
+        content_type="image/heic",
+    )
+    uploaded_response = await fixture.client.post(
+        f"/student/api/v1/thread-entries/{created['entry']['entryId']}/attachments",
+        data=upload_form,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert uploaded_response.status == 201, await uploaded_response.text()
+    uploaded = await uploaded_response.json()
+    attachment = uploaded["entry"]["attachments"][0]
+    submitted_response = await fixture.client.post(
+        f"/student/api/v1/thread-entries/{created['entry']['entryId']}/submit",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "03e0d258-49b1-43a0-bad4-2823773c79b6",
+            "expectedEntryVersion": uploaded["entry"]["version"],
+            "expectedThreadVersion": uploaded["threadVersion"],
+            "attachmentIds": [attachment["attachmentId"]],
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert submitted_response.status == 200, await submitted_response.text()
+
+    family_submitted_response = await fixture.client.get(
+        family_thread_route,
+        cookies=_cookie(fixture, "family"),
+        headers=_headers(),
+    )
+    assert family_submitted_response.status == 200, (
+        await family_submitted_response.text()
+    )
+    family_submitted = await family_submitted_response.json()
+    family_attachment = family_submitted["thread"]["entries"][0]["attachments"][0]
+    assert family_submitted["studentId"] == "user-content-student"
+    assert family_attachment["mediaPath"].startswith(
+        "/family/api/v1/children/user-content-student/thread-entries/"
+    )
+    family_media = await fixture.client.get(
+        family_attachment["mediaPath"],
+        cookies=_cookie(fixture, "family"),
+        headers=_headers(),
+    )
+    assert family_media.status == 200
+    assert family_media.content_type == "image/webp"
+
+    forbidden_child = await fixture.client.get(
+        family_thread_route.replace("user-content-student", "user-foreign-student"),
+        cookies=_cookie(fixture, "family"),
+        headers=_headers(),
+    )
+    assert forbidden_child.status == 403
+
+    queue_public_id = "content-http-family-queue"
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "INSERT INTO written_tasks_queue "
+            "(public_id, ts, student_id, problem_id, cur_status, updated_at) "
+            "SELECT ?, ?, ?, problem.id, 0, ? FROM problems AS problem "
+            "WHERE problem.public_id = ?",
+            (
+                queue_public_id,
+                _timestamp(),
+                STUDENT_USER_ID,
+                _timestamp(),
+                problem_public_id,
+            ),
+        )
+    )
+    claimed_response = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_public_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(unsafe=True),
+    )
+    assert claimed_response.status == 200, await claimed_response.text()
+    lease = (await claimed_response.json())["lease"]
+    evidence_by_queue = {
+        branch["queueId"]: branch for branch in lease["evidenceBranches"]
+    }
+    completed_response = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_public_id}/complete",
+        json={
+            "schemaVersion": 1,
+            "claimToken": lease["claimToken"],
+            "idempotencyKey": "content-http-family-review-complete",
+            "verdict": 15,
+            "comment": "Хорошая идея; поясните отмеченный переход.",
+            "confirmWithoutComment": False,
+            "branches": [
+                {
+                    "queueId": branch["queueId"],
+                    "leaseVersion": branch["leaseVersion"],
+                    "threadId": evidence_by_queue[branch["queueId"]]["thread"][
+                        "threadId"
+                    ],
+                    "threadVersion": evidence_by_queue[branch["queueId"]]["thread"][
+                        "threadVersion"
+                    ],
+                    "evidence": [
+                        {
+                            "entryId": entry["entryId"],
+                            "entryVersion": entry["entryVersion"],
+                        }
+                        for entry in evidence_by_queue[branch["queueId"]]["thread"][
+                            "entries"
+                        ]
+                    ],
+                }
+                for branch in lease["branches"]
+            ],
+            "annotations": [
+                {
+                    "attachmentId": attachment["attachmentId"],
+                    "schemaVersion": 1,
+                    "rotation": 90,
+                    "marks": [
+                        {
+                            "markId": "content-http-family-mark",
+                            "kind": "rectangle",
+                            "data": {
+                                "x": 0.1,
+                                "y": 0.2,
+                                "width": 0.4,
+                                "height": 0.2,
+                                "strokeWidth": 0.008,
+                                "color": "red",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "internalReactionId": 100,
+        },
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(unsafe=True),
+    )
+    assert completed_response.status == 200, await completed_response.text()
+
+    reviewed_response = await fixture.client.get(
+        family_thread_route,
+        cookies=_cookie(fixture, "family"),
+        headers=_headers(),
+    )
+    assert reviewed_response.status == 200, await reviewed_response.text()
+    reviewed = await reviewed_response.json()
+    assert reviewed["thread"]["reviews"] == [
+        {
+            "reviewId": "content-http-family-review",
+            "targetProblemId": problem_public_id,
+            "verdict": 15,
+            "commentEntryId": "content-http-family-comment",
+            "comment": "Хорошая идея; поясните отмеченный переход.",
+            "reviewerName": "Учитель Тестовый",
+            "source": "staff",
+            "evidenceEntryIds": [created["entry"]["entryId"]],
+            "annotations": [
+                {
+                    "attachmentId": attachment["attachmentId"],
+                    "schemaVersion": 1,
+                    "rotation": 90,
+                    "marks": [
+                        {
+                            "markId": "content-http-family-mark",
+                            "kind": "rectangle",
+                            "data": {
+                                "x": 0.1,
+                                "y": 0.2,
+                                "width": 0.4,
+                                "height": 0.2,
+                                "strokeWidth": 0.008,
+                                "color": "red",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "completedAt": _timestamp(),
+        }
+    ]
+    assert "internalReaction" not in reviewed["thread"]["reviews"][0]
 
 
 async def test_student_written_replacement_is_one_visible_atomic_commit(

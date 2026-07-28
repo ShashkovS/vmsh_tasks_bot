@@ -9,6 +9,7 @@ import { reactionsForScope } from './reaction'
 import { ReactionPicker } from './reaction-picker'
 import { VerdictPanel } from './verdict-panel'
 import { findVerdict, fullVerdictScale } from './verdict-registry'
+import { WrittenReviewHistory } from './written-review-history'
 
 const meta = { title: 'Product/Feedback', parameters: { layout: 'padded' } } satisfies Meta
 export default meta
@@ -156,5 +157,67 @@ export const Annotations: Story = {
     await expect(canvas.queryByText(/пропущен случай/)).not.toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'Комментарий 1' }))
     await expect(canvas.getByText(/пропущен случай/)).toBeInTheDocument()
+  },
+}
+
+const reviewedPhoto =
+  'data:image/svg+xml;charset=utf-8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420"><rect width="640" height="420" fill="white"/><path d="M70 90h500M70 150h430M70 210h470M70 270h390" stroke="#94a3b8" stroke-width="5"/><text x="70" y="350" font-family="serif" font-size="30">x + 7 = 19, поэтому x = 12</text></svg>',
+  )
+
+export const ReviewedWrittenPhoto: Story = {
+  name: 'Проверенная письменная работа',
+  render: () => (
+    <div className="max-w-xl">
+      <WrittenReviewHistory
+        entries={[
+          {
+            attachments: [{ attachmentId: 'reviewed-page-one', mediaPath: reviewedPhoto }],
+          },
+        ]}
+        reviews={[
+          {
+            reviewId: 'reviewed-result-one',
+            targetProblemId: 'problem-41-n-6',
+            verdict: 15,
+            commentEntryId: 'reviewed-comment-one',
+            comment: 'Идея верная. Допишите обоснование выделенного перехода.',
+            reviewerName: 'И. Соколов',
+            source: 'staff',
+            evidenceEntryIds: ['reviewed-entry-one'],
+            annotations: [
+              {
+                attachmentId: 'reviewed-page-one',
+                schemaVersion: 1,
+                rotation: 0,
+                marks: [
+                  {
+                    markId: 'reviewed-mark-one',
+                    kind: 'rectangle',
+                    data: {
+                      x: 0.08,
+                      y: 0.68,
+                      width: 0.78,
+                      height: 0.17,
+                      strokeWidth: 0.008,
+                      color: 'red',
+                    },
+                  },
+                ],
+              },
+            ],
+            completedAt: '2026-01-26T09:30:00.000Z',
+          },
+        ]}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('region', { name: 'Последняя проверка' })).toBeVisible()
+    await expect(canvas.getByText(/Допишите обоснование/)).toBeVisible()
+    await expect(canvas.getByAltText('Проверенная страница решения 1')).toBeVisible()
+    await expect(canvas.queryByText(/внутренняя пометка/i)).not.toBeInTheDocument()
   },
 }

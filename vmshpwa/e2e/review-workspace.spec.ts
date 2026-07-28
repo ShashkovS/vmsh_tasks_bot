@@ -1,4 +1,8 @@
-import { writtenThreadResponseSchema } from '../packages/contracts/src/written-submissions'
+import { authContextSchema } from '../packages/contracts/src/auth'
+import {
+  familyWrittenThreadResponseSchema,
+  writtenThreadResponseSchema,
+} from '../packages/contracts/src/written-submissions'
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test } from './fixtures'
 
@@ -107,4 +111,74 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     }),
   ])
   expect(studentThread.thread?.reviews[0]).not.toHaveProperty('internalReaction')
+
+  await loginThroughUi(page, AUTH_PERSONAS.family, '/family/')
+  const familyAuth = await page.evaluate(async () => {
+    const authResponse = await fetch('/family/api/v1/auth/me')
+    const authBody: unknown = await authResponse.json()
+    return { status: authResponse.status, body: authBody }
+  })
+  expect(familyAuth.status).toBe(200)
+  const familyContext = authContextSchema.parse(familyAuth.body)
+  if (familyContext.principal.audience !== 'family') {
+    throw new Error('Family auth endpoint returned another audience')
+  }
+  const child = familyContext.principal.linkedChildren.find(
+    (candidate) => candidate.studentId === 'user-student-online-fixture',
+  )
+  if (!child) throw new Error('Review student is not linked to the E2E family')
+  const familyProjection = await page.evaluate(
+    async ({ problemId, studentId }) => {
+      const threadResponse = await fetch(
+        `/family/api/v1/children/${studentId}/problems/${problemId}/thread`,
+      )
+      const threadBody: unknown = await threadResponse.json()
+      return {
+        status: threadResponse.status,
+        body: threadBody,
+      }
+    },
+    { problemId: `e2e-review-problem-${project}`, studentId: child.studentId },
+  )
+  expect(familyProjection.status).toBe(200)
+  const familyThread = familyWrittenThreadResponseSchema.parse(familyProjection.body)
+  expect(familyThread.studentId).toBe('user-student-online-fixture')
+  expect(familyThread.thread?.reviews).toEqual([
+    expect.objectContaining({
+      verdict: 15,
+      comment: `Проверено в ${project}; переход обоснован.`,
+      source: 'staff',
+      evidenceEntryIds: [`e2e-review-student-entry-${project}`],
+      annotations: [
+        expect.objectContaining({
+          attachmentId: `e2e-review-attachment-${project}`,
+          schemaVersion: 1,
+          rotation: 90,
+          marks: [expect.objectContaining({ kind: 'rectangle' })],
+        }),
+      ],
+    }),
+  ])
+  expect(familyThread.thread?.reviews[0]).not.toHaveProperty('internalReaction')
+  const familyAttachment = familyThread.thread?.entries
+    .flatMap((entry) => entry.attachments)
+    .find((attachment) => attachment.attachmentId === `e2e-review-attachment-${project}`)
+  expect(familyAttachment?.mediaPath).toBe(
+    `/family/api/v1/children/user-student-online-fixture/thread-entries/e2e-review-student-entry-${project}/attachments/e2e-review-attachment-${project}/media`,
+  )
+  const familyMedia = await page.evaluate(async (mediaPath) => {
+    if (!mediaPath) throw new Error('Family projection has no submitted photo')
+    const response = await fetch(mediaPath)
+    return {
+      status: response.status,
+      contentType: response.headers.get('content-type'),
+      bodySize: (await response.arrayBuffer()).byteLength,
+    }
+  }, familyAttachment?.mediaPath)
+  expect(familyMedia).toEqual({
+    status: 200,
+    contentType: 'image/webp',
+    bodySize: expect.any(Number),
+  })
+  expect(familyMedia.bodySize).toBeGreaterThan(0)
 })

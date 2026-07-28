@@ -183,6 +183,29 @@ def _student_identity(request: web.Request) -> tuple[int, str]:
     return authenticated.current.session.account_id, principal.account_public_id
 
 
+def _family_student_identity(request: web.Request) -> tuple[int, str]:
+    """Resolve a child only from the revalidated Family session."""
+
+    authenticated = authenticated_session(request)
+    if authenticated.principal.audience is not AuthAudience.FAMILY:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для просмотра решения",
+        )
+    requested_public_id = _public_id(
+        request, "student_public_id", error_code="family_student_not_found"
+    )
+    for child in authenticated.family_children:
+        if child.student_public_id == requested_public_id:
+            return child.student_user_id, child.student_public_id
+    raise PwaApiError(
+        status=403,
+        code="forbidden",
+        message="Недостаточно прав для просмотра этого ученика",
+    )
+
+
 def _public_id(request: web.Request, name: str, *, error_code: str) -> str:
     value = request.match_info[name]
     if _PUBLIC_ID.fullmatch(value) is None:
@@ -843,6 +866,39 @@ async def get_written_attachment_media(request: web.Request) -> web.Response:
 
 
 @written_submission_routes.get(
+    "/family/api/v1/children/{student_public_id}/thread-entries/"
+    "{entry_public_id}/attachments/{attachment_public_id}/media"
+)
+@_translate_repository_errors
+async def get_family_written_attachment_media(request: web.Request) -> web.Response:
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+    student_user_id, _student_public_id = _family_student_identity(request)
+    entry_public_id = _public_id(
+        request, "entry_public_id", error_code="written_entry_not_found"
+    )
+    attachment_public_id = _public_id(
+        request,
+        "attachment_public_id",
+        error_code="written_attachment_not_found",
+    )
+    media = await _repository(request).get_family_attachment_media(
+        student_user_id=student_user_id,
+        entry_public_id=entry_public_id,
+        attachment_public_id=attachment_public_id,
+    )
+    return await _attachment_media_response(
+        request,
+        media=media,
+        attachment_public_id=attachment_public_id,
+    )
+
+
+@written_submission_routes.get(
     "/staff/api/v1/thread-entries/{entry_public_id}/attachments/"
     "{attachment_public_id}/media"
 )
@@ -1213,6 +1269,43 @@ async def get_written_thread(request: web.Request) -> web.Response:
             "schemaVersion": 1,
             "problemId": problem_public_id,
             "thread": None if thread is None else thread.payload(),
+            "requestId": request["request_id"],
+        }
+    )
+
+
+@written_submission_routes.get(
+    "/family/api/v1/children/{student_public_id}/problems/{problem_public_id}/thread"
+)
+@_translate_repository_errors
+async def get_family_written_thread(request: web.Request) -> web.Response:
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+    student_user_id, student_public_id = _family_student_identity(request)
+    problem_public_id = _public_id(
+        request, "problem_public_id", error_code="written_problem_not_found"
+    )
+    thread = await _repository(request).get_family_thread(
+        student_user_id=student_user_id,
+        problem_public_id=problem_public_id,
+    )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "studentId": student_public_id,
+            "problemId": problem_public_id,
+            "thread": (
+                None
+                if thread is None
+                else thread.payload(
+                    media_audience="family",
+                    family_student_public_id=student_public_id,
+                )
+            ),
             "requestId": request["request_id"],
         }
     )

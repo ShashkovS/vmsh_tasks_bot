@@ -53,6 +53,18 @@ export const staffWrittenAttachmentSchema = z
   .strict()
 export type StaffWrittenAttachment = z.infer<typeof staffWrittenAttachmentSchema>
 
+export const familyWrittenAttachmentSchema = z
+  .object({
+    ...writtenAttachmentShape,
+    mediaPath: z
+      .string()
+      .regex(
+        /^\/family\/api\/v1\/children\/[a-z0-9][a-z0-9._:-]*\/thread-entries\/[a-z0-9][a-z0-9._:-]*\/attachments\/[a-z0-9][a-z0-9._:-]*\/media$/,
+      ),
+  })
+  .strict()
+export type FamilyWrittenAttachment = z.infer<typeof familyWrittenAttachmentSchema>
+
 export const writtenMaterialProjectionSchema = z
   .object({
     kind: z.literal('staff_reassignment'),
@@ -126,6 +138,11 @@ export const writtenEntrySchema = z
     }
   })
 export type WrittenEntry = z.infer<typeof writtenEntrySchema>
+
+export const familyWrittenEntrySchema = writtenEntrySchema.safeExtend({
+  attachments: z.array(familyWrittenAttachmentSchema).max(10),
+})
+export type FamilyWrittenEntry = z.infer<typeof familyWrittenEntrySchema>
 
 /** Student-visible immutable review projection. Internal Teacher reactions are excluded. */
 export const writtenReviewProjectionSchema = z
@@ -223,6 +240,11 @@ export const writtenThreadSchema = z
     })
   })
 export type WrittenThread = z.infer<typeof writtenThreadSchema>
+
+export const familyWrittenThreadSchema = writtenThreadSchema.safeExtend({
+  entries: z.array(familyWrittenEntrySchema),
+})
+export type FamilyWrittenThread = z.infer<typeof familyWrittenThreadSchema>
 
 export const createWrittenEntryRequestSchema = z
   .object({
@@ -629,6 +651,26 @@ export const writtenThreadResponseSchema = z
   })
 export type WrittenThreadResponse = z.infer<typeof writtenThreadResponseSchema>
 
+export const familyWrittenThreadResponseSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    studentId: publicIdSchema,
+    problemId: publicIdSchema,
+    thread: familyWrittenThreadSchema.nullable(),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((response, context) => {
+    if (response.thread !== null && response.thread.problemId !== response.problemId) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Family thread must belong to the requested problem',
+        path: ['thread', 'problemId'],
+      })
+    }
+  })
+export type FamilyWrittenThreadResponse = z.infer<typeof familyWrittenThreadResponseSchema>
+
 export const writtenSubmissionQueryKeys = {
   all: (principal: PrincipalQueryScope) =>
     [...principalQueryKey(principal), 'written-submissions'] as const,
@@ -636,6 +678,13 @@ export const writtenSubmissionQueryKeys = {
     [
       ...writtenSubmissionQueryKeys.all(principal),
       'thread',
+      publicIdSchema.parse(problemId),
+    ] as const,
+  familyThread: (principal: PrincipalQueryScope, studentId: string, problemId: string) =>
+    [
+      ...writtenSubmissionQueryKeys.all(principal),
+      'family-thread',
+      publicIdSchema.parse(studentId),
       publicIdSchema.parse(problemId),
     ] as const,
 } as const

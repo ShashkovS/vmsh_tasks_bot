@@ -447,8 +447,13 @@ class WrittenAttachmentRecord:
     width: int
     height: int
 
-    def payload(self, *, media_audience: str = "student") -> dict[str, object]:
-        if media_audience not in {"student", "staff"}:
+    def payload(
+        self,
+        *,
+        media_audience: str = "student",
+        family_student_public_id: str | None = None,
+    ) -> dict[str, object]:
+        if media_audience not in {"student", "family", "staff"}:
             raise ValueError("written attachment media audience is invalid")
         media_path = self.media_path
         if media_audience == "staff":
@@ -459,6 +464,20 @@ class WrittenAttachmentRecord:
             media_path = media_path.replace(
                 "/student/api/v1/thread-entries/",
                 "/staff/api/v1/thread-entries/",
+                1,
+            )
+        elif media_audience == "family":
+            if (
+                family_student_public_id is None
+                or _PUBLIC_ID.fullmatch(family_student_public_id) is None
+                or not media_path.startswith("/student/api/v1/thread-entries/")
+            ):
+                raise WrittenSubmissionRepositoryError(
+                    "stored written attachment Family path is invalid"
+                )
+            media_path = media_path.replace(
+                "/student/api/v1/thread-entries/",
+                f"/family/api/v1/children/{family_student_public_id}/thread-entries/",
                 1,
             )
         return {
@@ -511,7 +530,12 @@ class WrittenEntryRecord:
     attachments: tuple[WrittenAttachmentRecord, ...]
     projection: WrittenMaterialProjection | None = None
 
-    def payload(self) -> dict[str, object]:
+    def payload(
+        self,
+        *,
+        media_audience: str = "student",
+        family_student_public_id: str | None = None,
+    ) -> dict[str, object]:
         payload: dict[str, object] = {
             "entryId": self.public_id,
             "authorKind": self.author_kind,
@@ -526,7 +550,13 @@ class WrittenEntryRecord:
             "version": self.version,
             "clientCreatedAt": self.client_created_at,
             "serverReceivedAt": self.server_received_at,
-            "attachments": [item.payload() for item in self.attachments],
+            "attachments": [
+                item.payload(
+                    media_audience=media_audience,
+                    family_student_public_id=family_student_public_id,
+                )
+                for item in self.attachments
+            ],
         }
         if self.projection is not None:
             payload["projection"] = self.projection.payload()
@@ -588,7 +618,12 @@ class WrittenThreadRecord:
     entries: tuple[WrittenEntryRecord, ...]
     reviews: tuple[WrittenReviewProjection, ...]
 
-    def payload(self) -> dict[str, object]:
+    def payload(
+        self,
+        *,
+        media_audience: str = "student",
+        family_student_public_id: str | None = None,
+    ) -> dict[str, object]:
         return {
             "threadId": self.public_id,
             "problemId": self.problem_public_id,
@@ -596,7 +631,13 @@ class WrittenThreadRecord:
             "conditionRevisionId": self.condition_revision_public_id,
             "version": self.version,
             "latestEntryAt": self.latest_entry_at,
-            "entries": [entry.payload() for entry in self.entries],
+            "entries": [
+                entry.payload(
+                    media_audience=media_audience,
+                    family_student_public_id=family_student_public_id,
+                )
+                for entry in self.entries
+            ],
             "reviews": [review.payload() for review in self.reviews],
         }
 
@@ -3679,6 +3720,52 @@ class PwaWrittenSubmissionRepository:
 
         return await self._factory.run_read_async(read)
 
+    async def get_family_attachment_media(
+        self,
+        *,
+        student_user_id: int,
+        entry_public_id: str,
+        attachment_public_id: str,
+    ) -> WrittenAttachmentMedia:
+        """Resolve submitted evidence owned by one already-authorized child."""
+
+        if (
+            student_user_id < 1
+            or not _PUBLIC_ID.fullmatch(entry_public_id)
+            or not _PUBLIC_ID.fullmatch(attachment_public_id)
+        ):
+            raise ValueError("Family attachment media lookup arguments are invalid")
+
+        def read(connection: sqlite3.Connection) -> WrittenAttachmentMedia:
+            row = connection.execute(
+                "SELECT asset.object_key, asset.sha256, asset.byte_size, "
+                "asset.media_type FROM submission_threads AS thread "
+                "JOIN submission_entries AS entry ON entry.thread_id = thread.id "
+                "JOIN submission_attachments AS attachment "
+                "ON attachment.entry_id = entry.id "
+                "JOIN media_assets AS asset ON asset.id = attachment.asset_id "
+                "WHERE thread.student_user_id = ? AND entry.public_id = ? "
+                "AND entry.state IN ('submitted', 'locked') "
+                "AND attachment.public_id = ? "
+                "AND attachment.upload_status IN ('stored', 'locked') "
+                "AND asset.deleted_at IS NULL",
+                (student_user_id, entry_public_id, attachment_public_id),
+            ).fetchone()
+            if row is None:
+                raise WrittenSubmissionRejected(
+                    code="written_attachment_not_found",
+                    message="Фотография решения не найдена.",
+                    http_status=404,
+                )
+            return WrittenAttachmentMedia(
+                object_key=str(row["object_key"]),
+                sha256=str(row["sha256"]),
+                byte_size=int(row["byte_size"]),
+                media_type=str(row["media_type"]),
+            )
+
+        return await self._factory.run_read_async(read)
+
     async def get_thread(
         self, *, account_id: int, problem_public_id: str
     ) -> WrittenThreadRecord | None:
@@ -3717,6 +3804,53 @@ class PwaWrittenSubmissionRepository:
                 thread_id=int(row["id"]),
                 student_user_id=int(row["student_user_id"]),
             )
+            return WrittenThreadRecord(
+                public_id=str(row["public_id"]),
+                problem_public_id=str(row["problem_public_id"]),
+                status=str(row["status"]),
+                condition_revision_public_id=str(row["condition_revision_public_id"]),
+                version=int(row["version"]),
+                latest_entry_at=str(row["latest_entry_at"]),
+                entries=entries,
+                reviews=_project_thread_reviews(connection, entries=entries),
+            )
+
+        return await self._factory.run_read_async(read)
+
+    async def get_family_thread(
+        self, *, student_user_id: int, problem_public_id: str
+    ) -> WrittenThreadRecord | None:
+        """Project one linked child's submitted history without exposing drafts."""
+
+        if student_user_id < 1 or not _PUBLIC_ID.fullmatch(problem_public_id):
+            raise ValueError("Family thread lookup arguments are invalid")
+
+        def read(connection: sqlite3.Connection) -> WrittenThreadRecord | None:
+            row = connection.execute(
+                "SELECT thread.*, problem.public_id AS problem_public_id, "
+                "revision.public_id AS condition_revision_public_id "
+                "FROM submission_threads AS thread "
+                "JOIN problems AS problem ON problem.id = thread.problem_id "
+                "JOIN content_revisions AS revision "
+                "ON revision.id = thread.condition_revision_id "
+                "WHERE thread.student_user_id = ? AND problem.public_id = ? "
+                "ORDER BY (thread.status = 'closed'), thread.updated_at DESC, "
+                "thread.id DESC LIMIT 1",
+                (student_user_id, problem_public_id),
+            ).fetchone()
+            if row is None:
+                return None
+            entries = tuple(
+                entry
+                for entry in _project_thread_entries(
+                    connection,
+                    thread_id=int(row["id"]),
+                    student_user_id=student_user_id,
+                )
+                if entry.state in {"submitted", "locked"}
+            )
+            if not entries:
+                return None
             return WrittenThreadRecord(
                 public_id=str(row["public_id"]),
                 problem_public_id=str(row["problem_public_id"]),
