@@ -238,7 +238,8 @@ export const completeReviewBranchSchema = z
 
 const annotationCoordinateSchema = z.number().min(0).max(1)
 const annotationStrokeWidthSchema = z.number().min(0.001).max(0.1)
-const annotationColorSchema = z.enum(['red', 'blue', 'graphite', 'amber'])
+export const reviewAnnotationColorSchema = z.enum(['red', 'blue', 'graphite', 'amber'])
+export type ReviewAnnotationColor = z.infer<typeof reviewAnnotationColorSchema>
 const annotationPointSchema = z
   .object({ x: annotationCoordinateSchema, y: annotationCoordinateSchema })
   .strict()
@@ -264,7 +265,7 @@ export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
         .object({
           points: z.array(annotationPointSchema).min(2).max(4096),
           width: annotationStrokeWidthSchema,
-          color: annotationColorSchema,
+          color: reviewAnnotationColorSchema,
         })
         .strict(),
     })
@@ -297,7 +298,7 @@ export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
               message: 'Annotation text must not be blank',
             }),
           size: z.number().min(0.01).max(0.2),
-          color: annotationColorSchema,
+          color: reviewAnnotationColorSchema,
         })
         .strict(),
     })
@@ -311,7 +312,7 @@ export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
           start: annotationPointSchema,
           end: annotationPointSchema,
           width: annotationStrokeWidthSchema,
-          color: annotationColorSchema,
+          color: reviewAnnotationColorSchema,
         })
         .strict()
         .refine((arrow) => arrow.start.x !== arrow.end.x || arrow.start.y !== arrow.end.y, {
@@ -327,7 +328,7 @@ export const reviewAnnotationMarkSchema = z.discriminatedUnion('kind', [
         .object({
           ...annotationBoxShape,
           strokeWidth: annotationStrokeWidthSchema,
-          color: annotationColorSchema,
+          color: reviewAnnotationColorSchema,
         })
         .strict()
         .refine((box) => box.x + box.width <= 1 && box.y + box.height <= 1, {

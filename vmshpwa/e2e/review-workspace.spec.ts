@@ -19,6 +19,18 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     page.getByText('Я дописал объяснение перехода и проверил крайний случай.'),
   ).toBeVisible()
 
+  const drawing = page.getByRole('application', { name: 'Область разметки фотографии' })
+  await expect(drawing).toBeVisible()
+  await page.getByRole('button', { name: 'Прямоугольник' }).click()
+  const bounds = await drawing.boundingBox()
+  if (!bounds) throw new Error('Review annotation canvas has no visible bounds')
+  await page.mouse.move(bounds.x + bounds.width * 0.2, bounds.y + bounds.height * 0.2)
+  await page.mouse.down()
+  await page.mouse.move(bounds.x + bounds.width * 0.65, bounds.y + bounds.height * 0.45)
+  await page.mouse.up()
+  await page.getByRole('button', { name: 'Повернуть по часовой стрелке' }).click()
+  await expect(page.getByText('100% · 90° · 1 пометок')).toBeVisible()
+
   const comment = page.getByLabel('Комментарий')
   await comment.fill(`Проверено в ${project}; переход обоснован.`)
   const verdict = page.getByRole('button', { name: /В целом верно/ })
@@ -38,6 +50,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     'aria-pressed',
     'true',
   )
+  await expect(page.getByText('100% · 90° · 1 пометок')).toBeVisible()
 
   const completed = page.waitForResponse(
     (response) =>
@@ -45,7 +58,26 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
       new URL(response.url()).pathname === `/staff/api/v1/review/items/${queueId}/complete`,
   )
   await page.getByRole('button', { name: 'Отправить вердикт' }).click()
-  expect((await completed).status()).toBe(200)
+  const completedResponse = await completed
+  expect(completedResponse.status()).toBe(200)
+  const receipt = (await completedResponse.json()) as {
+    review: {
+      annotations: Array<{
+        attachmentId: string
+        rotation: number
+        markCount: number
+      }>
+    }
+  }
+  expect(receipt.review.annotations).toEqual([
+    {
+      annotationId: expect.any(String),
+      attachmentId: `e2e-review-attachment-${project}`,
+      schemaVersion: 1,
+      rotation: 90,
+      markCount: 1,
+    },
+  ])
   await expect(page).toHaveURL(/\/staff\/review\/?$/)
   await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(0)
 })

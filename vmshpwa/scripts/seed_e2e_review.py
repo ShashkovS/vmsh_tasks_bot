@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
+import base64
+import hashlib
 import os
 from collections.abc import Sequence
 from pathlib import Path
 
 from db_methods.pwa import PwaConnectionFactory, maintenance_database_lock
+from helpers.object_storage import LocalObjectStorage
 from vmshpwa.scripts.runtime_guard import (
     PwaMaintenanceConfig,
     require_pwa_maintenance_profile,
@@ -16,7 +20,11 @@ from vmshpwa.scripts.runtime_guard import (
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_DATABASE = REPOSITORY_ROOT / "db/vmshpwa_e2e.sqlite3"
+EXPECTED_MEDIA_ROOT = REPOSITORY_ROOT / ".runtime/vmshpwa/e2e"
 TIMESTAMP = "2026-07-28T12:00:00Z"
+REVIEW_WEBP = base64.b64decode(
+    "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEALmk0mk0iIiIiIgBoSywA"
+)
 TARGETS = (
     ("chromium", 9701),
     ("webkit", 9702),
@@ -36,7 +44,22 @@ def _require_e2e_target(runtime_config: PwaMaintenanceConfig) -> Path:
     database_path = database_path.absolute()
     if database_path != EXPECTED_DATABASE:
         raise RuntimeError("Phase-6 review seed refuses an unknown SQLite target")
+    media_root = Path(runtime_config.pwa_media_root)
+    if not media_root.is_absolute():
+        media_root = REPOSITORY_ROOT / media_root
+    if media_root.absolute() != EXPECTED_MEDIA_ROOT:
+        raise RuntimeError("Phase-6 review seed refuses an unknown media target")
     return database_path
+
+
+async def _put_review_media(media_root: Path) -> None:
+    storage = LocalObjectStorage(media_root)
+    for project, _lesson_number in TARGETS:
+        await storage.put(
+            f"submission/e2e-review-{project}.webp",
+            REVIEW_WEBP,
+            "image/webp",
+        )
 
 
 def _required_id(connection, table: str, public_id: str) -> int:
@@ -214,19 +237,51 @@ def _insert_review_cases(connection) -> int:
                 TIMESTAMP,
             ),
         )
+        student_entry_id = int(
+            connection.execute(
+                "INSERT INTO submission_entries "
+                "(public_id, thread_id, problem_revision_id, author_kind, author_user_id, "
+                "channel, entry_kind, state, text, client_created_at, server_received_at, "
+                "version) VALUES (?, ?, ?, 'student', ?, 'pwa', 'submission', 'submitted', "
+                "'Я дописал объяснение перехода и проверил крайний случай.', ?, ?, 2) "
+                "RETURNING id",
+                (
+                    f"e2e-review-student-entry-{project}",
+                    thread_id,
+                    problem_revision_id,
+                    student_id,
+                    "2026-07-28T12:02:00Z",
+                    "2026-07-28T12:02:00Z",
+                ),
+            ).fetchone()["id"]
+        )
+        asset_id = int(
+            connection.execute(
+                "INSERT INTO media_assets "
+                "(public_id, sha256, storage_namespace, object_key, media_type, "
+                "byte_size, width, height, source_filename, conversion_version, "
+                "created_by_user_id, created_at) VALUES (?, ?, 'submission', ?, "
+                "'image/webp', ?, 1, 1, 'e2e-review.webp', "
+                "'pwa-written-image-v1', ?, ?) RETURNING id",
+                (
+                    f"e2e-review-asset-{project}",
+                    hashlib.sha256(REVIEW_WEBP).hexdigest(),
+                    f"submission/e2e-review-{project}.webp",
+                    len(REVIEW_WEBP),
+                    student_id,
+                    TIMESTAMP,
+                ),
+            ).fetchone()["id"]
+        )
         connection.execute(
-            "INSERT INTO submission_entries "
-            "(public_id, thread_id, problem_revision_id, author_kind, author_user_id, "
-            "channel, entry_kind, state, text, client_created_at, server_received_at, "
-            "version) VALUES (?, ?, ?, 'student', ?, 'pwa', 'submission', 'submitted', "
-            "'Я дописал объяснение перехода и проверил крайний случай.', ?, ?, 2)",
+            "INSERT INTO submission_attachments "
+            "(public_id, entry_id, asset_id, ordinal, client_filename, upload_status, "
+            "created_at) VALUES (?, ?, ?, 0, 'e2e-review.webp', 'stored', ?)",
             (
-                f"e2e-review-student-entry-{project}",
-                thread_id,
-                problem_revision_id,
-                student_id,
-                "2026-07-28T12:02:00Z",
-                "2026-07-28T12:02:00Z",
+                f"e2e-review-attachment-{project}",
+                student_entry_id,
+                asset_id,
+                TIMESTAMP,
             ),
         )
         connection.execute(
@@ -242,6 +297,7 @@ def _insert_review_cases(connection) -> int:
 def seed_e2e_review(runtime_config: PwaMaintenanceConfig) -> int:
     database_path = _require_e2e_target(runtime_config)
     with maintenance_database_lock(database_path):
+        asyncio.run(_put_review_media(EXPECTED_MEDIA_ROOT))
         database = PwaConnectionFactory(database_path)
         inserted = database.run_write(_insert_review_cases)
     print(f"Seeded E2E review cases: targets={len(TARGETS)} inserted={inserted}")

@@ -623,6 +623,9 @@ importers:
       '@visx/scale':
         specifier: 'catalog:'
         version: 4.0.0
+      '@vmsh/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@vmsh/ui':
         specifier: workspace:*
         version: link:../ui

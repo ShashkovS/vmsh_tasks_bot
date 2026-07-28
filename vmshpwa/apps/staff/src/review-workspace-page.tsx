@@ -18,11 +18,13 @@ import {
   ApiResponseError,
   createBrowserStorageNamespace,
   writtenTeacherReactionIdSchema,
+  type ReviewAnnotationManifest,
   type ReviewLease,
   type ReviewTimelineEntry,
 } from '@vmsh/contracts'
 import {
   FeedbackThread,
+  ReviewAnnotationEditor,
   ReviewFeedbackForm,
   ThreePaneReview,
   fullVerdictScale,
@@ -197,6 +199,22 @@ function LoadedReviewWorkspace({
     })
   }
 
+  const updateAnnotation = (attachmentId: string, annotation: ReviewAnnotationManifest | null) => {
+    setDraft((current) => {
+      const annotations = current.annotations.filter(
+        (candidate) => candidate.attachmentId !== attachmentId,
+      )
+      if (annotation) annotations.push(annotation)
+      const updated = {
+        ...current,
+        annotations,
+        updatedAt: new Date().toISOString(),
+      }
+      setStorageAvailable(writeReviewDraft(window.localStorage, storageKey, updated))
+      return updated
+    })
+  }
+
   const submit = async (result: ReviewFeedbackResult) => {
     if (complete.isPending || leaseLost) return
     const verdict = verdictToWire[result.verdict.value as keyof typeof verdictToWire]
@@ -253,7 +271,13 @@ function LoadedReviewWorkspace({
     }
   }
 
-  const messages = timelineMessages(currentLease, mediaClient)
+  const messages = timelineMessages(
+    currentLease,
+    mediaClient,
+    draft.annotations,
+    updateAnnotation,
+    complete.isPending || leaseLost,
+  )
   const first = currentLease.branches[0]!
   const errors = complete.error ?? release.error
 
@@ -358,7 +382,22 @@ function BranchSummary({ lease }: { lease: ReviewLease }) {
 function timelineMessages(
   lease: ReviewLease,
   mediaClient: ReturnType<typeof createWrittenMaterialReassignmentClient>,
+  annotations: ReviewAnnotationManifest[],
+  onAnnotationChange: (attachmentId: string, annotation: ReviewAnnotationManifest | null) => void,
+  annotationDisabled: boolean,
 ): ThreadMessageView[] {
+  const editableAttachmentIds = new Set(
+    lease.evidenceBranches.flatMap((branch) =>
+      branch.thread
+        ? branch.thread.entries.flatMap((entry) =>
+            entry.attachments.map((attachment) => attachment.attachmentId),
+          )
+        : [],
+    ),
+  )
+  const annotationByAttachment = new Map(
+    annotations.map((annotation) => [annotation.attachmentId, annotation]),
+  )
   return lease.evidenceBranches
     .flatMap((evidenceBranch) => {
       const branch = lease.branches.find(
@@ -384,7 +423,17 @@ function timelineMessages(
             groupName: branch.groupName,
             taskNumber: branch.problemNumber,
           },
-          body: <TimelineEntryBody entry={entry} key={entry.entryId} mediaClient={mediaClient} />,
+          body: (
+            <TimelineEntryBody
+              annotationByAttachment={annotationByAttachment}
+              annotationDisabled={annotationDisabled}
+              editableAttachmentIds={editableAttachmentIds}
+              entry={entry}
+              key={entry.entryId}
+              mediaClient={mediaClient}
+              onAnnotationChange={onAnnotationChange}
+            />
+          ),
         } satisfies ThreadMessageView,
       }))
     })
@@ -393,11 +442,19 @@ function timelineMessages(
 }
 
 function TimelineEntryBody({
+  annotationByAttachment,
+  annotationDisabled,
+  editableAttachmentIds,
   entry,
   mediaClient,
+  onAnnotationChange,
 }: {
+  annotationByAttachment: Map<string, ReviewAnnotationManifest>
+  annotationDisabled: boolean
+  editableAttachmentIds: Set<string>
   entry: ReviewTimelineEntry
   mediaClient: ReturnType<typeof createWrittenMaterialReassignmentClient>
+  onAnnotationChange: (attachmentId: string, annotation: ReviewAnnotationManifest | null) => void
 }) {
   return (
     <div className="space-y-2">
@@ -407,10 +464,14 @@ function TimelineEntryBody({
           {entry.attachments.map((attachment) => (
             <ReviewAttachmentImage
               attachmentId={attachment.attachmentId}
+              annotation={annotationByAttachment.get(attachment.attachmentId) ?? null}
+              annotationDisabled={annotationDisabled}
+              editable={editableAttachmentIds.has(attachment.attachmentId)}
               entryId={entry.entryId}
               key={attachment.attachmentId}
               mediaClient={mediaClient}
               ordinal={attachment.ordinal}
+              onAnnotationChange={onAnnotationChange}
             />
           ))}
         </div>
@@ -421,14 +482,22 @@ function TimelineEntryBody({
 
 function ReviewAttachmentImage({
   attachmentId,
+  annotation,
+  annotationDisabled,
+  editable,
   entryId,
   mediaClient,
   ordinal,
+  onAnnotationChange,
 }: {
   attachmentId: string
+  annotation: ReviewAnnotationManifest | null
+  annotationDisabled: boolean
+  editable: boolean
   entryId: string
   mediaClient: ReturnType<typeof createWrittenMaterialReassignmentClient>
   ordinal: number
+  onAnnotationChange: (attachmentId: string, annotation: ReviewAnnotationManifest | null) => void
 }) {
   const [source, setSource] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
@@ -459,6 +528,18 @@ function ReviewAttachmentImage({
         className="h-48 animate-pulse rounded-md bg-surface-sunken"
       />
     )
+  if (editable) {
+    return (
+      <ReviewAnnotationEditor
+        attachmentId={attachmentId}
+        disabled={annotationDisabled}
+        imageAlt={`Страница решения ${ordinal + 1}`}
+        imageSource={source}
+        initialManifest={annotation}
+        onChange={(next) => onAnnotationChange(attachmentId, next)}
+      />
+    )
+  }
   return (
     <img
       alt={`Страница решения ${ordinal + 1}`}

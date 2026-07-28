@@ -42,6 +42,12 @@ def test_review_seed_target_guard_is_exact():
             db_filename=str(Path("db") / "another.sqlite3"),
             pwa_media_root=".runtime/vmshpwa/e2e",
         ),
+        SimpleNamespace(
+            runtime_profile="pwa-e2e",
+            pwa_instance="e2e",
+            db_filename="db/vmshpwa_e2e.sqlite3",
+            pwa_media_root=".runtime/vmshpwa/another",
+        ),
     ):
         with pytest.raises(RuntimeError):
             _require_e2e_target(changed)
