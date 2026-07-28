@@ -86,7 +86,7 @@ def test_inventory_is_deterministic_and_does_not_read_rows(tmp_path):
     assert sentinel not in rendered_json
     assert sentinel not in rendered_sql
     assert "insert into" not in rendered_sql.casefold()
-    assert second["product"]["object_count"] == 269
+    assert second["product"]["object_count"] == 274
     assert second["legacy_derived"]["object_count"] == 0
     assert all(
         not record["name"].startswith("sqlite_") and "yoyo" not in record["name"]
@@ -328,6 +328,10 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
             not in {
                 "0039.pwa_auth_accounts_sessions",
                 "0040.pwa_courses_access",
+                # Rebuilding a legacy table makes SQLite reparse every trigger;
+                # this intentionally inconsistent lag fixture omits auth tables,
+                # so it must also stay behind the Phase-6 rebuild.
+                "0051.pwa_review_queue_leases",
             }
         )
     )
@@ -347,6 +351,7 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
     assert report["migration"]["repository_head_status"]["missing"] == [
         "0039.pwa_auth_accounts_sessions",
         "0040.pwa_courses_access",
+        "0051.pwa_review_queue_leases",
     ]
     assert {item["name"] for item in report["missing_product_objects"]} >= {
         "auth_accounts",

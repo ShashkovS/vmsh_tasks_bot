@@ -129,6 +129,10 @@
       {
         "id": "0050.pwa_submission_entry_replacements",
         "sha256": "6b30445ef64b380ea0202edabfa63bcb9a861a2a86d5b0eba3171512df0f23c3"
+      },
+      {
+        "id": "0051.pwa_review_queue_leases",
+        "sha256": "846810ce6662fbb6166e6d9e5656f44d3d8b06d79e8a3f95594fa5bf4d7aa085"
       }
     ],
     "repository_head_status": {
@@ -139,7 +143,7 @@
     }
   },
   "product": {
-    "object_count": 269,
+    "object_count": 274,
     "objects": [
       {
         "columns": [
@@ -14712,6 +14716,15 @@
           },
           {
             "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
             "declared_type": "TIMESTAMP",
             "default_sql": null,
             "hidden": 0,
@@ -14720,7 +14733,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 2,
+            "cid": 3,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -14729,7 +14742,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 3,
+            "cid": 4,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -14738,7 +14751,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 4,
+            "cid": 5,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -14747,7 +14760,7 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 5,
+            "cid": 6,
             "declared_type": "TIMESTAMP",
             "default_sql": null,
             "hidden": 0,
@@ -14756,12 +14769,57 @@
             "primary_key_ordinal": 0
           },
           {
-            "cid": 6,
-            "declared_type": "TIMESTAMP",
+            "cid": 7,
+            "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
             "name": "teacher_id",
             "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "claim_token",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "claimed_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "lease_expires_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "lease_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
             "primary_key_ordinal": 0
           }
         ],
@@ -14831,7 +14889,31 @@
           {
             "columns": [
               {
-                "cid": 2,
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_written_tasks_queue_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -14839,7 +14921,7 @@
                 "seqno": 0
               },
               {
-                "cid": 3,
+                "cid": 4,
                 "collation": "BINARY",
                 "descending": false,
                 "key": true,
@@ -14855,7 +14937,7 @@
                 "seqno": 2
               }
             ],
-            "name": "sqlite_autoindex_written_tasks_queue_2",
+            "name": "sqlite_autoindex_written_tasks_queue_3",
             "origin": "u",
             "partial": false,
             "unique": true
@@ -14863,7 +14945,7 @@
           {
             "columns": [
               {
-                "cid": 1,
+                "cid": 2,
                 "collation": "BINARY",
                 "descending": true,
                 "key": true,
@@ -14883,11 +14965,115 @@
             "origin": "c",
             "partial": false,
             "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 8,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "claim_token",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "written_tasks_queue_claim_token_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lease_expires_at",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "written_tasks_queue_lease_expiry_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ts",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "written_tasks_queue_problem_waiting_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
           }
         ],
         "name": "written_tasks_queue",
-        "object_sha256": "675764d6f7e92ac4bb5838400a038fa16a6d152debab7b749b284b71ae3ebe0c",
-        "sql": "CREATE TABLE written_tasks_queue\n(\n    id         INTEGER primary key unique,\n    ts         timestamp not null,\n    student_id INTEGER   not null references users,\n    problem_id INTEGER   not null references problems,\n    cur_status INTEGER   not null,\n    teacher_ts TIMESTAMP,\n    teacher_id TIMESTAMP references users,\n    unique (student_id, problem_id)\n);",
+        "object_sha256": "1105e0529d0b81e2df5331837003318dfa886c225c8f14cfb8e06aca9495d551",
+        "sql": "CREATE TABLE written_tasks_queue\n(\n    id               integer primary key unique,\n    public_id        text unique\n        check (\n            public_id is null\n            or (\n                length(public_id) between 1 and 128\n                and public_id not glob '*[^a-z0-9._:-]*'\n                and substr(public_id, 1, 1) glob '[a-z0-9]'\n                and substr(public_id, -1, 1) glob '[a-z0-9]'\n            )\n        ),\n    ts               timestamp not null,\n    student_id       integer   not null references users,\n    problem_id       integer   not null references problems,\n    cur_status       integer   not null,\n    teacher_ts       timestamp,\n    teacher_id       integer references users,\n    claim_token      text\n        check (\n            claim_token is null\n            or (\n                length(claim_token) between 1 and 128\n                and claim_token not glob '*[^a-z0-9._:-]*'\n                and substr(claim_token, 1, 1) glob '[a-z0-9]'\n                and substr(claim_token, -1, 1) glob '[a-z0-9]'\n            )\n        ),\n    claimed_at       text,\n    lease_expires_at text,\n    lease_version    integer not null default 0 check (lease_version >= 0),\n    updated_at       text    not null\n        default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),\n    unique (student_id, problem_id),\n    check (\n        claim_token is null\n        or (\n            teacher_id is not null\n            and claimed_at is not null\n            and lease_expires_at is not null\n            and lease_expires_at > claimed_at\n        )\n    ),\n    check (\n        claim_token is not null\n        or (claimed_at is null and lease_expires_at is null)\n    ),\n    check (teacher_id is null or typeof(teacher_id) = 'integer')\n);",
         "table_name": "written_tasks_queue",
         "type": "table"
       },
@@ -15916,6 +16102,27 @@
         "type": "index"
       },
       {
+        "name": "written_tasks_queue_claim_token_idx",
+        "object_sha256": "5204994818007173a2b2710cdedca54aed121a2efac794d94c3101ea1b10d255",
+        "sql": "CREATE INDEX written_tasks_queue_claim_token_idx\n    on written_tasks_queue (claim_token, id)\n    where claim_token is not null;",
+        "table_name": "written_tasks_queue",
+        "type": "index"
+      },
+      {
+        "name": "written_tasks_queue_lease_expiry_idx",
+        "object_sha256": "b0f00f9af0e15c44423a407db7cf90d94128db9bbf977e4e44cd71a8d88f3cd6",
+        "sql": "CREATE INDEX written_tasks_queue_lease_expiry_idx\n    on written_tasks_queue (lease_expires_at, id)\n    where claim_token is not null;",
+        "table_name": "written_tasks_queue",
+        "type": "index"
+      },
+      {
+        "name": "written_tasks_queue_problem_waiting_idx",
+        "object_sha256": "901826415f0026b68f3c8bd3a9d0df44ce38fbefd1c1d6d4f032bb81d8416ecd",
+        "sql": "CREATE INDEX written_tasks_queue_problem_waiting_idx\n    on written_tasks_queue (problem_id, ts, id);",
+        "table_name": "written_tasks_queue",
+        "type": "index"
+      },
+      {
         "name": "zoom_queue_by_ts",
         "object_sha256": "b1224dc97407d8fac7e041777ed03c5b4b268eb25869ba509e7ac6e87785141d",
         "sql": "CREATE INDEX zoom_queue_by_ts\n    on zoom_queue (enter_ts);",
@@ -16663,10 +16870,24 @@
         "sql": "CREATE TRIGGER test_attempts_result_contract_update\nbefore update on test_attempts\nfor each row\nwhen new.result_id is not null and not exists (\n    select 1\n    from results as result\n    where result.id = new.result_id\n      and result.student_id = new.student_user_id\n      and result.problem_id = new.problem_id\n      and result.verdict = new.verdict\n      and result.res_type = 1\n      and result.answer is json_extract(new.answer_payload_json, '$.displayAnswer')\n)\nbegin\n    select raise(abort, 'test attempt result mismatch');\nend;",
         "table_name": "test_attempts",
         "type": "trigger"
+      },
+      {
+        "name": "written_tasks_queue_public_id_fill_after_insert",
+        "object_sha256": "ec72db26600cecc3039d10fb61cbc1c7852398aa74754d2c0d53e3c79607f954",
+        "sql": "CREATE TRIGGER written_tasks_queue_public_id_fill_after_insert\nafter insert on written_tasks_queue\nfor each row\nwhen new.public_id is null\nbegin\n    update written_tasks_queue\n    set public_id = 'review-queue-' || lower(hex(randomblob(16)))\n    where id = new.id;\nend;",
+        "table_name": "written_tasks_queue",
+        "type": "trigger"
+      },
+      {
+        "name": "written_tasks_queue_public_id_immutable",
+        "object_sha256": "765225ed974ac71dfd04d591fda3444b87a56f639d1aa6741ec1ae1a2a88c090",
+        "sql": "CREATE TRIGGER written_tasks_queue_public_id_immutable\nbefore update of public_id on written_tasks_queue\nfor each row\nwhen old.public_id is not null and new.public_id is not old.public_id\nbegin\n    select raise(abort, 'review queue public identity is immutable');\nend;",
+        "table_name": "written_tasks_queue",
+        "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "db2b3bd08d511b93350b14045f27013cf1fb6f6a663383022280a50f22d7193d",
-    "sha256": "5457af9da8f22b27dc765819b0e4afb9a6130c143fa13ca994fd744484212e26"
+    "pragma_structure_sha256": "5c2f95c2a89e58d3c5f663d5cf3678991235504429287a5001a9370ed3b10390",
+    "sha256": "8d74a1ecb208c1bd7665a23b62d99976f3835f9955b07d6e25533031e8b3bc66"
   },
   "source_kind": "repository-migration-head"
 }
