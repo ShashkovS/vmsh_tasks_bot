@@ -16,6 +16,7 @@ import {
 import { Button } from '@vmsh/ui'
 
 import { StaffContentWorkspace } from './content-page'
+import { BulkContentUpload } from './bulk-content-upload'
 import { ProblemReviewWorkflow } from './problem-review-workflow'
 import { RevisionAssetsRecovery } from './revision-assets-recovery'
 
@@ -74,6 +75,33 @@ function storyClient(overrides: Partial<ContentApiClient> = {}): ContentApiClien
           compileAttempt: 0,
         },
         etag: contentEtagSchema.parse(`"${revisionId}:v1"`),
+      })
+    },
+    uploadTargets() {
+      return Promise.resolve({
+        courseLessonId: 'course-lesson-41',
+        courseId: 'course-math-5-7',
+        courseName: 'Математика 5–7',
+        lessonNumber: 41,
+        targets: [
+          {
+            groupLessonId,
+            groupId: 'group-beginner',
+            groupName: 'Начинающие',
+            groupShortCode: 'н',
+            colorKey: 'level-1',
+            status: 'active',
+          },
+          {
+            groupLessonId: 'group-lesson-41-p',
+            groupId: 'group-continuing',
+            groupName: 'Продолжающие',
+            groupShortCode: 'п',
+            colorKey: 'level-2',
+            status: 'active',
+          },
+        ],
+        requestId: 'storybook-upload-targets',
       })
     },
     compileRevision() {
@@ -448,6 +476,81 @@ export const UploadPreviewPublish: Story = {
     await expect(canvas.getByText(/Скрыть опубликованное условие/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Отмена' }))
     await expect(canvas.getByRole('button', { name: 'Скрыть опубликованное' })).toBeVisible()
+  },
+}
+
+export const BulkUploadExplicitMapping: Story = {
+  name: 'Bulk upload → explicit groups and partial result',
+  render: () => {
+    const client = storyClient({
+      uploadSource(input) {
+        const targetRevisionId = `revision-${input.groupLessonId}-${input.kind}`
+        return Promise.resolve({
+          data: {
+            ...readyRevision,
+            revisionId: targetRevisionId,
+            groupLessonId: input.groupLessonId,
+            kind: input.kind,
+            logicalFilename: input.logicalFilename,
+            status: 'uploaded',
+            version: 1,
+            compileAttempt: 0,
+          },
+          etag: contentEtagSchema.parse(`"${targetRevisionId}:v1"`),
+        })
+      },
+      compileRevision(targetRevisionId) {
+        if (targetRevisionId.includes('group-lesson-41-p')) {
+          return Promise.reject(new Error('Не найден рисунок diagrams/angle.svg'))
+        }
+        return Promise.resolve({
+          data: {
+            ...readyRevision,
+            revisionId: targetRevisionId,
+          },
+          etag: contentEtagSchema.parse(`"${targetRevisionId}:v2"`),
+        })
+      },
+    })
+    return (
+      <div className="max-w-6xl p-4">
+        <BulkContentUpload
+          client={client}
+          groupLessonId={groupLessonId}
+          onCompleted={() => Promise.resolve()}
+        />
+      </div>
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(canvasElement.ownerDocument.body)
+    const input = await canvas.findByLabelText('LaTeX-файлы')
+    await userEvent.upload(input, [
+      new File(['\\задача Простая задача \\кзадача'], 'beginners.tex', {
+        type: 'text/plain',
+      }),
+      new File(['\\задача Задача с рисунком \\кзадача'], 'continuing.tex', {
+        type: 'text/plain',
+      }),
+    ])
+
+    await userEvent.click(canvas.getByLabelText('Группа для файла beginners.tex'))
+    await userEvent.click(await body.findByRole('option', { name: /Начинающие/ }))
+    await userEvent.click(canvas.getByLabelText('Вид материала для файла beginners.tex'))
+    await userEvent.click(await body.findByRole('option', { name: 'Условие' }))
+
+    await userEvent.click(canvas.getByLabelText('Группа для файла continuing.tex'))
+    await userEvent.click(await body.findByRole('option', { name: /Продолжающие/ }))
+    await userEvent.click(canvas.getByLabelText('Вид материала для файла continuing.tex'))
+    await userEvent.click(await body.findByRole('option', { name: 'Условие' }))
+
+    await expect(canvas.getByText('Начинающие')).toBeVisible()
+    await expect(canvas.getByText('Продолжающие')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Загрузить набор и проверить' }))
+    await expect(await canvas.findByText('Готово: 1 · требуют внимания: 1')).toBeVisible()
+    await expect(canvas.getByText('Не найден рисунок diagrams/angle.svg')).toBeVisible()
+    await expect(canvas.getByText(/Загрузка не публикует материалы/)).toBeVisible()
   },
 }
 

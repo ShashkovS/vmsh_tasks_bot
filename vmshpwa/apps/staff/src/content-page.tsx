@@ -47,6 +47,7 @@ import {
 
 import { RevisionAssetsRecovery } from './revision-assets-recovery'
 import { ProblemReviewWorkflow } from './problem-review-workflow'
+import { BulkContentUpload } from './bulk-content-upload'
 
 const materialOrder: ContentMaterialKind[] = ['condition', 'hint', 'solution']
 const materialLabels: Record<ContentMaterialKind, string> = {
@@ -1060,6 +1061,11 @@ export function StaffContentWorkspace({
         </AlertContent>
       </Alert>
       <div className="space-y-4">
+        <BulkContentUpload
+          client={client}
+          groupLessonId={groupLessonId}
+          onCompleted={() => history.refetch()}
+        />
         {materialOrder.map((kind) => (
           <MaterialWorkflowCard
             client={client}

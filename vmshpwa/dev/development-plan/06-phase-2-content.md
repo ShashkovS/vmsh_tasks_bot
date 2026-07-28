@@ -61,8 +61,9 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   оставляет явную immutable запись без `problem_id`. Исправление уже
   подтверждённого batch выполняется новой source revision.
 - **MATCH-03.** Готовая `content_revision` и строки review immutable. Поэтому
-  optimistic review version равна `1 + count(content_problem_matches) +
-  count(problem_revisions)` для exact revision. API выдаёт отдельный
+  optimistic review version равна выражению
+  `1 + count(content_problem_matches) + count(problem_revisions)` для exact
+  revision. API выдаёт отдельный
   hash-derived review ETag, который нельзя перепутать с compile ETag. Полные
   batch вставляются одной `BEGIN IMMEDIATE` транзакцией; точный повтор уже
   сохранённого batch идемпотентен.
@@ -88,6 +89,12 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 
 - Routes: `staff/src/routes/lessons.*`, `problems.*`.
 - Upload single/bulk; conditions and solutions separate; per-level selection.
+- Bulk upload never guesses by filename: Staff maps every selected `.tex` to
+  one explicit group lesson and `condition|hint|solution`. The UI validates
+  duplicate slots and file bounds before work, processes the small weekly batch
+  sequentially, keeps successful revisions on partial failure and never
+  publishes them automatically. Implementation and Storybook proof:
+  [`phase2-bulk-upload-ui.md`](../../../pwa_tests/reports/phase2-bulk-upload-ui.md).
 - Diagnostics grouped by errors/warnings with source location and recovery action.
 - Missing asset: search content-addressed library, upload replacement, reuse exact hash, rerun compile.
 - LaTeX в браузере не редактируется. Metadata grid содержит название, task/answer type, validation/wrong/congratulation messages и optional topic tags; поддерживает keyboard edits, TSV paste preview, cell errors и optimistic version conflict.
@@ -189,9 +196,9 @@ Browser renderer increment реализован, но сам этап 2 не з�
 Этот gate сам по себе не означает публикацию контента. Позднейшие изолированные
 proof закрыли live S3 content-asset roundtrip, live Telegram Rich lifecycle,
 safe historical backfill tooling и authenticated HTTP/frontend orchestration.
-Последующие инкременты закрыли problem-matching/metadata flow и открытие
-сохранённого PDF через Staff. Production owner-reviewed backfill/parity, bulk
-upload и production-build content E2E пока остаются открыты.
+Последующие инкременты закрыли problem-matching/metadata flow, открытие
+сохранённого PDF и пакетную загрузку через Staff. Production owner-reviewed
+backfill/parity и production-build content E2E пока остаются открыты.
 
 Промежуточный gate **Phase 2C — authenticated HTTP и audience frontend**
 зафиксирован 28 июля 2026 в revisions [`1aad776`](../../../pwa_tests/reports/phase2-content-api.md)
@@ -233,7 +240,7 @@ upload и production-build content E2E пока остаются открыты.
 
 Полный [proof Phase 2D](../../../pwa_tests/reports/phase2-content-assets-http.md)
 не закрывает Phase 2 целиком. Открыты problem matching/metadata UI+API,
-bulk upload, production-build content E2E и ручное visual approval владельца.
+production-build content E2E и ручное visual approval владельца.
 Snapshots не обновлялись.
 
 Промежуточный backend gate **Phase 2E — problem matching и metadata review**
@@ -294,9 +301,8 @@ Staff persisted-PDF increment реализован 28 июля 2026:
       build PASS.
 
 Proof: [`phase2-content-pdf-http.md`](../../../pwa_tests/reports/phase2-content-pdf-http.md).
-Это не print workflow второй версии. После инкремента открыты bulk upload,
-production-build content E2E, production owner-reviewed parity/backfill и
-owner visual approval.
+Это не print workflow второй версии. После инкремента открыты production-build
+content E2E, production owner-reviewed parity/backfill и owner visual approval.
 
 Backend/contract precondition массовой загрузки реализован 28 июля 2026:
 
@@ -310,9 +316,25 @@ Backend/contract precondition массовой загрузки реализов
       strict package typecheck PASS.
 
 Proof: [`phase2-bulk-upload-targets.md`](../../../pwa_tests/reports/phase2-bulk-upload-targets.md).
-Сам bulk workflow ещё открыт: Staff должен явно сопоставить каждый файл цели и
-виду материала, показать per-file progress/partial failure и ничего не
-публиковать автоматически.
+Полный Staff bulk workflow закрыт отдельным UI-инкрементом:
+[`phase2-bulk-upload-ui.md`](../../../pwa_tests/reports/phase2-bulk-upload-ui.md).
+Каждый файл явно сопоставляется цели и виду материала, имеет per-file progress,
+partial failure не уничтожает готовые revisions, публикации не создаются.
+
+Staff bulk-upload UI реализован и проверен 28 июля 2026:
+
+- [x] explicit file → group lesson → material kind mapping без filename inference;
+- [x] client-side bounds/duplicate validation, archived-target guard и
+      последовательная обработка до 100 файлов;
+- [x] per-file progress/diagnostic, сохранение partial result и отдельная
+      обработка ошибки history refetch;
+- [x] Storybook interaction **12 PASS**, targeted unit **25 PASS**, strict
+      TypeScript/ESLint и Staff production build PASS;
+- [x] mobile light 390×844 и desktop light 1280×720 просмотрены вручную,
+      snapshots не обновлялись.
+
+Proof: [`phase2-bulk-upload-ui.md`](../../../pwa_tests/reports/phase2-bulk-upload-ui.md).
+Production-build content E2E остаётся следующим gate.
 
 - [x] Revision/migration/upgrade/rollback для Phase 2A:
       [`0041`](../../../migrations/0041.pwa_content_lessons.sql), 48 focused PASS,
@@ -340,7 +362,8 @@ Proof: [`phase2-bulk-upload-targets.md`](../../../pwa_tests/reports/phase2-bulk-
 - [x] Contract fixtures and authenticated API tests:
       [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md) и
       [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
-- [ ] Storybook stories и a11y automated (**167 PASS**); owner-approved visuals
+- [ ] Storybook stories и a11y automated (**167 PASS** общего checkpoint;
+      пакетный content workflow дополнительно **12 PASS**); owner-approved visuals
       ещё не получены, snapshots не обновлялись:
       [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
 - [x] Real-corpus Storybook increment: условия начинающих 39–41 связаны с

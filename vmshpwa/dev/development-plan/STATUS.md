@@ -4,18 +4,18 @@
 
 ## Состояние документов
 
-| Документ/этап       | Статус                      | Решение/блокер                                                                                                                                                        |
-| ------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                                                                                            |
-| Решения и границы   | accepted planning input     | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
-| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
-| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
-| Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
-| Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
-| Этап 2              | Phase 2A–2E + PDF implemented   | Matching/metadata Staff workflow и persisted PDF проверены; открыты bulk upload, content E2E, production parity/backfill и owner visual gate                    |
-| Этапы 3–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
-| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
-| Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
+| Документ/этап       | Статус                         | Решение/блокер                                                                                                                                                        |
+| ------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval             | Формат proof описан; фактически заполняется при реализации                                                                                                            |
+| Решения и границы   | accepted planning input        | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
+| Модель данных       | revised planning input         | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
+| API/events/files    | accepted planning input        | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
+| Этап 0              | in progress                    | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
+| Этап 1              | in progress                    | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
+| Этап 2              | Phase 2A–2E + Staff bulk ready | Matching/metadata, PDF и пакетная загрузка проверены; открыты content E2E, production parity/backfill и owner visual gate                                   |
+| Этапы 3–11          | planned with gates             | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
+| Design system       | phases 5–7 ready for review    | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
+| Multi-course model  | schema + verified prototype    | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
 
 ## Журнал решений
 
@@ -226,9 +226,16 @@
   repository/API возвращают только siblings одного `course_lesson`, а strict
   contract/client требуют уникальные public targets. Real aiohttp — **27
   PASS**, frontend unit — **28 PASS**, строгие проверки — PASS. UI orchestration
-  остаётся открыта. Proof:
+  закрыта следующим инкрементом. Proof:
   [`phase2-bulk-upload-targets.md`](../../../pwa_tests/reports/phase2-bulk-upload-targets.md).
-- Phase 2 всё ещё открыт для bulk upload, production-build content E2E,
+- Staff bulk-upload UI требует явное file → group lesson → material kind
+  сопоставление, валидирует границы и duplicate slots, последовательно
+  обрабатывает набор с per-file progress/partial failure и не публикует
+  revisions автоматически. Targeted unit — **25 PASS**, Storybook — **12
+  PASS**, strict checks и Staff production build — PASS; mobile/desktop light
+  просмотрены вручную, snapshots не обновлялись. Proof:
+  [`phase2-bulk-upload-ui.md`](../../../pwa_tests/reports/phase2-bulk-upload-ui.md).
+- Phase 2 всё ещё открыт для production-build content E2E,
   production owner-reviewed parity/backfill и owner visual approval.
   Snapshots не обновлялись. Ранее закрытые HTTP/frontend proof:
   [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md),
@@ -506,10 +513,10 @@
   product schema objects. Подробные команды и остающиеся границы:
   [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md) и
   [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
-- Это промежуточный engineering gate, не завершение Phase 2: HTTP asset
-  resolution, matching/metadata mutation UI+API, stored PDF, bulk upload,
-  production content E2E и owner visual approval ещё не закрыты. Visual
-  snapshots не обновлялись.
+- Этот checkpoint сам по себе не завершал Phase 2: перечисленные
+  здесь asset, matching/metadata, stored PDF и bulk-upload gaps закрыты
+  последующими proof выше. Текущие открытые gate — production
+  content E2E и owner visual approval. Snapshots не обновлялись.
 
 ## Phase 2 real-content Storybook gate — 27 июля 2026
 
