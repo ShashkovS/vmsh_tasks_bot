@@ -2,7 +2,7 @@
 
 Дата: 2026-07-28
 
-Revision: `5acecbb`
+Revisions: `5acecbb`, `c6d6fd8`
 
 ## Проверяемый результат
 
@@ -43,6 +43,14 @@ attachment принимает только окончательный `storage_n
 HEIC/JPEG и progress принадлежат будущему upload/outbox pipeline, а не durable
 evidence graph.
 
+Migration
+[`0048.pwa_submission_entry_revision.sql`](../../migrations/0048.pwa_submission_entry_revision.sql)
+добавляет exact `problem_revision_id` каждой Student entry. Thread остаётся
+единой историей задачи после публикации исправленного условия, но каждое новое
+решение сохраняет собственный condition/problem provenance. Поле nullable для
+teacher/AI/system и будущего честного legacy backfill, где точную исходную
+ревизию восстановить нельзя.
+
 ## Инварианты SQLite
 
 [`test_phase5_written_submission_schema_migration.py`](../integration/test_phase5_written_submission_schema_migration.py)
@@ -66,20 +74,20 @@ evidence graph.
 
 ```text
 Phase 5A migration/invariant suite
-5 PASS
+6 PASS
 
 schema lifecycle regression (Phase 2 + Phase 5A + inventory)
-30 PASS
+31 PASS
 
 fresh migration-derived schema inventory
-261 product objects
-sha256 fcec02abb06c4b8c28f113f872a39c507f790fc95aa35a67da530b279f1cf7db
+263 product objects
+sha256 8032fb8b218df8598d34ba62da538907b03e25b0018038e66f07b1b80019dce8
 
 full frontend unit
 42 files / 323 PASS
 
 full pwa_tests
-1185 PASS / 3 intentional skips / 1 existing SymPy warning
+1186 PASS / 3 intentional skips / 1 existing SymPy warning
 
 Ruff + schema check + git diff --check
 PASS

@@ -100,6 +100,7 @@
 | 2026-07-27 | PLAN-074 | Telegram renderer закреплён на проверенном Bot API 10.2 Rich HTML dialect                                | До send проверяются 32 768 UTF-8 characters, 500 blocks, nesting 16, 50 media и 20 columns; dialect/limits входят в provenance и live corpus                  |
 | 2026-07-28 | PLAN-075 | Publication wall time разрешает только backend в timezone группового занятия                             | Browser передаёт `scheduledLocalTime` + IANA `businessTimezone`; `zoneinfo` переводит в UTC и отклоняет DST gap/fold, `Date.parse()` не используется          |
 | 2026-07-28 | PLAN-076 | Written evidence хранит final WebP, а порядок использует sparse ordinal                                   | Durable attachment принимает submission WebP ≤1920; лимит 10 проверяет trigger, временный высокий ordinal позволяет swap при immediate SQLite UNIQUE        |
+| 2026-07-28 | PLAN-077 | Каждая Student written entry фиксирует exact problem revision                                              | Thread остаётся общей историей после правки условия; новая entry не теряет provenance, legacy teacher/Telegram backfill может оставить revision nullable     |
 
 ## Текущий инкремент этапа 0
 
@@ -371,7 +372,7 @@
 
 ## Текущий инкремент этапа 5
 
-- Phase 5A revision `5acecbb` добавляет migration
+- Phase 5A revisions `5acecbb`, `c6d6fd8` добавляют migrations
   `0047.pwa_submission_threads_entries_assets`: versioned threads/entries,
   максимум 10 final submission WebP ≤1920, review evidence lock и append-only
   material reassignment без изменения legacy Telegram discussions/queue.
@@ -380,9 +381,13 @@
   immediate SQLite UNIQUE; отдельный trigger обеспечивает продуктовый лимит.
 - Exact `up → down → up`, additive row preservation, state/version/owner/result
   scopes, attachment contract/limit/reorder/lock и reassignment audit:
-  **5 PASS**. Schema lifecycle regression: **30 PASS**.
-- Fresh inventory: **261 product objects**, SHA-256 `fcec02ab…`; полный
-  checkpoint: **323 frontend + 1185 Python PASS**, 3 intentional skips и одна
+  **6 PASS**. Schema lifecycle regression: **31 PASS**.
+- Entry-revision hardening migration `0048` фиксирует exact
+  `problem_revision_id` на каждой Student entry; thread остаётся общей историей
+  после новой публикации условия, а старый teacher/Telegram backfill может
+  оставить поле пустым.
+- Fresh inventory: **263 product objects**, SHA-256 `8032fb8b…`; полный
+  checkpoint: **323 frontend + 1186 Python PASS**, 3 intentional skips и одна
   существующая SymPy warning. `make pwa-schema-check`, Ruff и
   `git diff --check` — PASS. Proof:
   [`phase5-written-submission-schema.md`](../../../pwa_tests/reports/phase5-written-submission-schema.md).
@@ -751,7 +756,7 @@
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                          | Browser path принят; этап открыт          |
 |    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                  | Phase 3A–3H приняты; visual открыт        |
 |    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | функционально; visual открыт             |
-|    5 | `5acecbb`             | [Phase 5A proof](../../../pwa_tests/reports/phase5-written-submission-schema.md)                | частично; schema принят                  |
+|    5 | `5acecbb`, `c6d6fd8`  | [Phase 5A proof](../../../pwa_tests/reports/phase5-written-submission-schema.md)                | частично; schema принят                  |
 |    6 | —                    | —                                                                                               | —                                         |
 |    7 | —                    | —                                                                                               | —                                         |
 |    8 | —                    | —                                                                                               | —                                         |
