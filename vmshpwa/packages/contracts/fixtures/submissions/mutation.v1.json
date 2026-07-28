@@ -1,0 +1,37 @@
+{
+  "fixtureVersion": 1,
+  "request": {
+    "schemaVersion": 1,
+    "idempotencyKey": "018f47f6-7668-7c85-a034-c5b8218bac05",
+    "displayAnswer": " 7 ",
+    "clientCreatedAt": "2026-09-20T12:59:55.000Z"
+  },
+  "response": {
+    "schemaVersion": 1,
+    "attemptId": "attempt-fixture-correct",
+    "problemId": "problem-fixture-test",
+    "problemRevision": {
+      "conditionRevisionId": "revision-fixture-condition",
+      "configVersion": 3
+    },
+    "outcome": "correct",
+    "checkStatus": "checked",
+    "displayAnswer": "7",
+    "feedback": "Да, всё верно!",
+    "checkerMessage": null,
+    "verdict": 18,
+    "resultVersion": 1,
+    "clientCreatedAt": "2026-09-20T12:59:55.000000Z",
+    "serverReceivedAt": "2026-09-20T13:00:00.000000Z",
+    "clockSuspicious": false,
+    "threadInvalidationKey": "problems/problem-fixture-test/test-attempts",
+    "attempts": {
+      "usedThisHour": 1,
+      "remainingThisHour": 2,
+      "usedToday": 1,
+      "remainingToday": 5,
+      "unlimited": false
+    },
+    "requestId": "request-fixture-test-attempt"
+  }
+}

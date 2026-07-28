@@ -6,6 +6,7 @@ export * from './auth'
 export * from './content'
 export * from './content-api'
 export * from './courses'
+export * from './submissions'
 
 export const runtimeContractVersionSchema = z.literal(1)
 export const RUNTIME_CONTRACT_VERSION = runtimeContractVersionSchema.value
