@@ -4,18 +4,19 @@
 
 ## Состояние документов
 
-| Документ/этап       | Статус                      | Решение/блокер                                                                                                                                                        |
-| ------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Инженерный контракт | draft for approval          | Формат proof описан; фактически заполняется при реализации                                                                                                            |
-| Решения и границы   | accepted planning input     | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
-| Модель данных       | revised planning input      | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
-| API/events/files    | accepted planning input     | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
-| Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
-| Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
-| Этап 2              | Phase 2A–2E + browser E2E   | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
-| Этапы 3–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
-| Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
-| Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
+| Документ/этап       | Статус                       | Решение/блокер                                                                                                                                                        |
+| ------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval           | Формат proof описан; фактически заполняется при реализации                                                                                                            |
+| Решения и границы   | accepted planning input      | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
+| Модель данных       | revised planning input       | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
+| API/events/files    | accepted planning input      | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
+| Этап 0              | in progress                  | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
+| Этап 1              | in progress                  | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
+| Этап 2              | Phase 2A–2E + browser E2E    | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
+| Этап 3              | Phase 3A course access ready | Student course list/enrollment API и strict browser client проверены; lesson/home/offline gates открыты                                                               |
+| Этапы 4–11          | planned with gates           | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
+| Design system       | phases 5–7 ready for review  | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
+| Multi-course model  | schema + verified prototype  | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
 
 ## Журнал решений
 
@@ -247,6 +248,22 @@
   Snapshots не обновлялись. Ранее закрытые HTTP/frontend proof:
   [`phase2-content-api.md`](../../../pwa_tests/reports/phase2-content-api.md),
   [`phase2-content-frontend.md`](../../../pwa_tests/reports/phase2-content-frontend.md).
+
+## Текущий инкремент этапа 3
+
+- Phase 3A revision `d70b0d9` открывает authenticated Student course list и
+  enrollment detail поверх revalidated session authority. Handler не принимает
+  `studentId`, не выполняет собственный N+1 и возвращает одинаковый `403` для
+  неизвестного либо неразрешённого course context.
+- `@vmsh/app-shell` экспортирует strict same-origin client и principal-scoped
+  TanStack Query hooks. Runtime фиксирует Student audience/API base, unsafe ID
+  отклоняется до сети, `401` допускает один штатный refresh/retry.
+- Real aiohttp/SQLite auth+content regression — **45 PASS**; app-shell/course
+  contracts — **90 PASS**; Ruff, Prettier, ESLint, два strict typecheck и Student
+  production build/injectManifest — PASS. Proof:
+  [`phase3-course-access-api.md`](../../../pwa_tests/reports/phase3-course-access-api.md).
+- Phase 3 остаётся открыт: следующий gate — lesson/home read model и подключение
+  production «Сейчас»/«Задачи», затем focused task/reveal audit и offline Dexie.
 
 ## Текущий инкремент этапа 1
 
@@ -565,17 +582,17 @@
 Таблица различает промежуточный проверенный инкремент и окончательное принятие
 этапа. Наличие revision/proof не закрывает оставшиеся criteria из phase-файла.
 
-| Этап | Revision             | Proof                                                  | Принято                            |
-| ---: | -------------------- | ------------------------------------------------------ | ---------------------------------- |
-|    0 | —                    | —                                                      | —                                  |
-|    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)    | частично; production gates открыты |
-|    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа) | Browser path принят; этап открыт   |
-|    3 | —                    | —                                                      | —                                  |
-|    4 | —                    | —                                                      | —                                  |
-|    5 | —                    | —                                                      | —                                  |
-|    6 | —                    | —                                                      | —                                  |
-|    7 | —                    | —                                                      | —                                  |
-|    8 | —                    | —                                                      | —                                  |
-|    9 | —                    | —                                                      | —                                  |
-|   10 | —                    | —                                                      | —                                  |
-|   11 | —                    | —                                                      | —                                  |
+| Этап | Revision             | Proof                                                          | Принято                            |
+| ---: | -------------------- | -------------------------------------------------------------- | ---------------------------------- |
+|    0 | —                    | —                                                              | —                                  |
+|    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)            | частично; production gates открыты |
+|    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)         | Browser path принят; этап открыт   |
+|    3 | `d70b0d9`            | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A принят; этап открыт       |
+|    4 | —                    | —                                                              | —                                  |
+|    5 | —                    | —                                                              | —                                  |
+|    6 | —                    | —                                                              | —                                  |
+|    7 | —                    | —                                                              | —                                  |
+|    8 | —                    | —                                                              | —                                  |
+|    9 | —                    | —                                                              | —                                  |
+|   10 | —                    | —                                                              | —                                  |
+|   11 | —                    | —                                                              | —                                  |

@@ -184,6 +184,13 @@ Student/Family:
 - `GET /{audience}/api/v1/courses/{courseId}/progress`;
 - course-scoped notification overrides.
 
+Первый Phase 3 Student read slice реализован revision `d70b0d9`: список курсов
+и enrollment detail читают revalidated session authority через
+[`course_routes.py`](../../apps/pwa_api/course_routes.py), а браузер использует
+strict [`course-client.ts`](../packages/app-shell/src/course-client.ts). Lesson,
+home и Family reads остаются в своих последующих вертикальных gate; наличие
+route в этом перечне само по себе не означает готовность endpoint.
+
 Staff:
 
 - CRUD/archive курсов и групп, memberships и scopes;

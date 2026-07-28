@@ -63,6 +63,24 @@ Features: `student/src/features/home`, `tasks`; shared `packages/content` render
 
 ## Пруфы завершения этапа
 
+Промежуточный gate **Phase 3A — Student course/access boundary** реализован
+28 июля 2026, revision `d70b0d9`:
+
+- [x] `GET /student/api/v1/courses` и course-scoped enrollment detail проецируют
+      revalidated session authority без второго repository/N+1 слоя;
+- [x] response использует общий Zod CourseEnrollment contract, один active и
+      несколько allowed groups, per-course attendance и optimistic versions;
+- [x] чужой/неизвестный course context не раскрывается (`403`), произвольный
+      `studentId` и неожиданные query-параметры не принимаются;
+- [x] same-origin browser client фиксирует Student runtime, валидирует ответ,
+      использует principal-scoped query keys и повторяет GET после auth refresh;
+- [x] real aiohttp/SQLite regression **45 PASS**, app-shell/contracts **90 PASS**,
+      strict checks и Student production build PASS.
+
+Proof: [`phase3-course-access-api.md`](../../../pwa_tests/reports/phase3-course-access-api.md).
+Экран «Сейчас» намеренно ещё не подключён: до этого нужен настоящий lesson/home
+read model, чтобы не выдавать фиктивные даты и progress за server state.
+
 - [ ] Revision/migrations: `<sha/paths>`; integrity/index plans `<path>`.
 - [ ] Demo Student Now/list/long/focused/offline: `<seed/routes/evidence>`.
 - [ ] Home query count/plan and response contract: `<path/result>`.
