@@ -15,7 +15,7 @@
 | Этап 2              | Phase 2A–2E + browser E2E      | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
 | Этап 3              | Phase 3A–3H reading slice      | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
 | Этап 4              | Phase 4A–4G functionally ready | Domain/API, draft/outbox, Student submit, Staff recheck и общая PWA/Telegram policy готовы; открыт только visual owner gate                                           |
-| Этап 5              | Phase 5A–5E infrastructure     | Server text/photo vertical и browser durable draft/worker готовы; canonical composer/outbox/E2E и backfill ещё не реализованы                                         |
+| Этап 5              | Phase 5A–5F browser vertical   | Server text/photo vertical, canonical Student composer, durable outbox и production E2E готовы; backfill, replacement, Staff review и visual gate открыты             |
 | Этапы 6–11          | planned with gates             | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review    | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype    | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
@@ -104,7 +104,7 @@
 | 2026-07-28 | PLAN-078 | Written draft синхронизируется отдельно от окончательной отправки                                        | Поздняя offline-доставка не теряет материал; cutoff применяется при submit к immutable client time, server time и suspicious-clock сохраняются                 |
 | 2026-07-28 | PLAN-079 | Submission photo хранится только как уникальный final WebP после server re-encode                        | Source не попадает в durable storage; DB failure компенсирует object delete, filesystem использует owner-only mediaPath, production может отдать public S3 URL |
 | 2026-07-28 | PLAN-080 | До review-lock страницы можно удалить и переупорядочить; после lock evidence неизменяемо                 | Удаление сразу убирает projection и ставит asset deleted_at; final object остаётся под admin-managed retention до отдельной manifest-driven очистки            |
-| 2026-07-28 | PLAN-081 | Written draft делит serializable state и бинарные страницы между localStorage и Dexie                    | Reload сохраняет текст/порядок/server IDs; cross-store сбои компенсируются и сверяются, source хранится только до server fallback receipt                      |
+| 2026-07-28 | PLAN-081 | Written draft делит serializable state и бинарные страницы между localStorage и Dexie                    | Reload сохраняет текст/порядок/server IDs; portable ArrayBuffer обходит WebKit Blob/IDB failure; source хранится только до server fallback receipt             |
 
 ## Текущий инкремент этапа 0
 
@@ -445,19 +445,36 @@
   PASS**; lint, strict typecheck и production build с обоими injectManifest —
   PASS. Proof:
   [`phase5-written-attachment-mutations.md`](../../../pwa_tests/reports/phase5-written-attachment-mutations.md).
-- Phase 5E infrastructure добавляет bounded one-shot image worker и
+- Phase 5E infrastructure revision `d3b29f2` добавляет bounded one-shot image worker и
   `localStorage`/Dexie written draft: текст, порядок, revision и resumable server
   IDs переживают reload, owner/runtime/revision изолированы, а binary orphans и
   quota failure имеют явное восстановление. Client WebP ограничен 1920 px;
   source остаётся только для server fallback. Focused suite — **28 PASS**;
-  полный checkpoint: frontend **45 файлов / 344 PASS**, Python PWA **1215 PASS /
-  3 intentional skips / 1 existing SymPy warning**; lint, strict typecheck и
-  production build с обоими injectManifest — PASS. Proof:
+  исходный infrastructure checkpoint: frontend **45 файлов / 344 PASS**,
+  Python PWA **1215 PASS / 3 intentional skips / 1 existing SymPy warning**.
+- Phase 5F revisions `4e835ec`, `2158398` подключают canonical Student
+  composer к настоящему written/oral task route и durable create → upload →
+  optional reorder → submit outbox. Preview, порядок, максимум 10 страниц,
+  freeze queued evidence, resume после reconnect и очистка только после receipt
+  теперь исполняются production-кодом, а не только infrastructure tests.
+- Реальный WebKit выявил `UnknownError` при записи Blob/File в IndexedDB;
+  бинарный durable format заменён на portable `ArrayBuffer` с read-only legacy
+  Blob compatibility. Одна страница не создаёт лишний reorder request.
+- Актуальный checkpoint: `make pwa-lint`, `make pwa-typecheck`, `make pwa-build`
+  — PASS; frontend unit — **47 файлов / 359 PASS**; Python PWA — **1215 PASS /
+  3 intentional skips / 1 existing SymPy warning**; Storybook browser — **38
+  файлов / 188 PASS**. Story `product-submission--queued` проверяет frozen
+  queued state с addon-a11y `error`.
+- Production-build E2E с настоящими aiohttp, seeded SQLite и filesystem media
+  adapter — **3/3 PASS** в Chromium, WebKit и Firefox: фото переживает reload,
+  offline enqueue не пишет в сеть, reconnect делает ровно один create/upload/
+  submit и сервер хранит submitted WebP evidence. E2E gateway abort regression
+  — **17 PASS**.
+- Объединённый proof:
   [`phase5-written-browser-draft.md`](../../../pwa_tests/reports/phase5-written-browser-draft.md).
-- Следующий gate: canonical composer, thumbnails и resumable multi-step outbox
-  с production-build browser E2E. Post-submit pre-review atomic replacement,
-  live test S3, legacy backfill/reassignment, Staff review, Storybook
-  interaction и visual owner gate остаются открыты; snapshots не обновлялись.
+- Следующий gate: post-submit pre-review atomic replacement и live test S3.
+  Legacy backfill/reassignment, Staff review и visual owner gate также остаются
+  открыты; snapshots не обновлялись.
 
 ## Текущий инкремент этапа 1
 
@@ -820,7 +837,7 @@
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                          | Browser path принят; этап открыт                 |
 |    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                  | Phase 3A–3H приняты; visual открыт               |
 |    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | функционально; visual открыт                     |
-|    5 | `5acecbb`…`d3b29f2`  | [Phase 5A–5E proof](../../../pwa_tests/reports/phase5-written-browser-draft.md)                 | частично; browser draft infrastructure принят    |
+|    5 | `5acecbb`…`2158398`  | [Phase 5A–5F proof](../../../pwa_tests/reports/phase5-written-browser-draft.md)                 | browser submit vertical принят; прочие gates открыты |
 |    6 | —                    | —                                                                                               | —                                                |
 |    7 | —                    | —                                                                                               | —                                                |
 |    8 | —                    | —                                                                                               | —                                                |
