@@ -121,6 +121,10 @@
       {
         "id": "0048.pwa_submission_entry_revision",
         "sha256": "381ff9d3fb859f62a7092301a716e95c9bb2fa77efdc5351188b0e80fb0a4237"
+      },
+      {
+        "id": "0049.pwa_submission_attachment_mutations",
+        "sha256": "35933691295116e834d0d705d680eca3daa071fdc402fe74896da7e76224a361"
       }
     ],
     "repository_head_status": {
@@ -131,7 +135,7 @@
     }
   },
   "product": {
-    "object_count": 263,
+    "object_count": 264,
     "objects": [
       {
         "columns": [
@@ -16142,6 +16146,13 @@
         "type": "trigger"
       },
       {
+        "name": "submission_attachments_submitted_nonempty_delete",
+        "object_sha256": "f545012f582e711a26743a9f041456dd7cf5c087138794580992808469d79c4f",
+        "sql": "CREATE TRIGGER submission_attachments_submitted_nonempty_delete\nbefore delete on submission_attachments\nfor each row\nwhen exists (\n    select 1\n    from submission_entries as entry\n    where entry.id = old.entry_id\n      and entry.state = 'submitted'\n      and trim(coalesce(entry.text, '')) = ''\n      and (\n          select count(*)\n          from submission_attachments as attachment\n          where attachment.entry_id = old.entry_id\n      ) <= 1\n)\nbegin\n    select raise(abort, 'submitted entry must keep text or an attachment');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
         "name": "submission_entries_author_scope_insert",
         "object_sha256": "1e71ab982a4585fd763d1c3481eb06da3b4f68d0cb9e0588173db78d04a0b9a1",
         "sql": "CREATE TRIGGER submission_entries_author_scope_insert\nbefore insert on submission_entries\nfor each row\nwhen new.author_kind = 'student' and not exists (\n    select 1\n    from submission_threads as thread\n    where thread.id = new.thread_id\n      and thread.student_user_id = new.author_user_id\n)\nbegin\n    select raise(abort, 'student submission entry author is outside thread scope');\nend;",
@@ -16345,8 +16356,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "d4dbaa8c95b7a8efbd22249f00401fbce6f1ac0072eb435ad4e736c119ce3666",
-    "sha256": "8032fb8b218df8598d34ba62da538907b03e25b0018038e66f07b1b80019dce8"
+    "pragma_structure_sha256": "ba824e11c1f2520780f397470b6fe67113d7f06523afce6050678603c658ee2e",
+    "sha256": "33f28638117020d1ad111fa047212944c1c3a73aea60cfbf7348e9314b7df465"
   },
   "source_kind": "repository-migration-head"
 }

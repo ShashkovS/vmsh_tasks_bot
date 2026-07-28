@@ -118,6 +118,79 @@
     "clockSuspicious": false,
     "requestId": "request-written-submit-fixture"
   },
+  "reorderRequest": {
+    "schemaVersion": 1,
+    "idempotencyKey": "253de35e-3890-4374-8153-c564b13db3da",
+    "expectedEntryVersion": 3,
+    "expectedThreadVersion": 3,
+    "attachmentIds": ["written-attachment-fixture-1"]
+  },
+  "reorderResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "awaiting_review",
+    "threadVersion": 3,
+    "entry": {
+      "entryId": "written-entry-fixture-1",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "submitted",
+      "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 3,
+      "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
+      "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
+      "attachments": [
+        {
+          "attachmentId": "written-attachment-fixture-1",
+          "ordinal": 0,
+          "uploadStatus": "stored",
+          "mediaId": "submission-media-fixture-1",
+          "publicUrl": "https://assets.example.invalid/sol_imgs/example.webp",
+          "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-1/attachments/written-attachment-fixture-1/media",
+          "mediaType": "image/webp",
+          "width": 1440,
+          "height": 1920
+        }
+      ]
+    },
+    "changed": false,
+    "requestId": "request-written-reorder-fixture"
+  },
+  "deleteRequest": {
+    "schemaVersion": 1,
+    "idempotencyKey": "49c16725-86f1-4dc9-b896-f74164020730",
+    "expectedEntryVersion": 3,
+    "expectedThreadVersion": 3
+  },
+  "deleteResponse": {
+    "schemaVersion": 1,
+    "threadId": "written-thread-fixture-1",
+    "problemId": "problem-written-fixture",
+    "threadStatus": "awaiting_review",
+    "threadVersion": 4,
+    "entry": {
+      "entryId": "written-entry-fixture-1",
+      "authorKind": "student",
+      "entryKind": "submission",
+      "state": "submitted",
+      "text": "Пусть x — число орехов. Тогда x + 7 = 19.",
+      "problemRevision": {
+        "conditionRevisionId": "revision-condition-41-v3",
+        "configVersion": 2
+      },
+      "version": 4,
+      "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
+      "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
+      "attachments": []
+    },
+    "changed": true,
+    "requestId": "request-written-delete-fixture"
+  },
   "threadResponse": {
     "schemaVersion": 1,
     "problemId": "problem-written-fixture",
@@ -126,8 +199,8 @@
       "problemId": "problem-written-fixture",
       "status": "awaiting_review",
       "conditionRevisionId": "revision-condition-41-v3",
-      "version": 3,
-      "latestEntryAt": "2026-09-20T13:05:00.000000Z",
+      "version": 4,
+      "latestEntryAt": "2026-09-20T13:06:00.000000Z",
       "entries": [
         {
           "entryId": "written-entry-fixture-1",
@@ -139,22 +212,10 @@
             "conditionRevisionId": "revision-condition-41-v3",
             "configVersion": 2
           },
-          "version": 3,
+          "version": 4,
           "clientCreatedAt": "2026-09-20T13:04:05.000000Z",
           "serverReceivedAt": "2026-09-20T13:04:07.000000Z",
-          "attachments": [
-            {
-              "attachmentId": "written-attachment-fixture-1",
-              "ordinal": 0,
-              "uploadStatus": "stored",
-              "mediaId": "submission-media-fixture-1",
-              "publicUrl": "https://assets.example.invalid/sol_imgs/example.webp",
-              "mediaPath": "/student/api/v1/thread-entries/written-entry-fixture-1/attachments/written-attachment-fixture-1/media",
-              "mediaType": "image/webp",
-              "width": 1440,
-              "height": 1920
-            }
-          ]
+          "attachments": []
         }
       ]
     },

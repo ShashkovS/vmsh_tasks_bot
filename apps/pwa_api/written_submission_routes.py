@@ -24,8 +24,10 @@ from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.written_submissions import (
     CreateWrittenEntryCommand,
+    DeleteWrittenAttachmentCommand,
     ProblemRevisionRef,
     PwaWrittenSubmissionRepository,
+    ReorderWrittenAttachmentsCommand,
     SubmitWrittenEntryCommand,
     WrittenSubmissionRejected,
     WrittenSubmissionRepositoryError,
@@ -70,6 +72,23 @@ _ATTACHMENT_FIELDS = frozenset(
         "expectedThreadVersion",
         "ordinal",
         "asset",
+    }
+)
+_REORDER_ATTACHMENT_FIELDS = frozenset(
+    {
+        "schemaVersion",
+        "idempotencyKey",
+        "expectedEntryVersion",
+        "expectedThreadVersion",
+        "attachmentIds",
+    }
+)
+_DELETE_ATTACHMENT_FIELDS = frozenset(
+    {
+        "schemaVersion",
+        "idempotencyKey",
+        "expectedEntryVersion",
+        "expectedThreadVersion",
     }
 )
 
@@ -270,6 +289,25 @@ def _positive_version(value: object, *, field: str) -> int:
             details={"field": field},
         )
     return value
+
+
+def _attachment_ids(value: object) -> tuple[str, ...]:
+    if (
+        not isinstance(value, list)
+        or len(value) > 10
+        or any(
+            not isinstance(item, str) or _PUBLIC_ID.fullmatch(item) is None
+            for item in value
+        )
+        or len(set(value)) != len(value)
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте список фотографий",
+            details={"field": "attachmentIds"},
+        )
+    return tuple(value)
 
 
 async def _read_part_bytes(part, *, limit: int) -> bytes:
@@ -634,6 +672,90 @@ async def create_written_attachment(request: web.Request) -> web.Response:
     return web.json_response(response, status=201)
 
 
+@written_submission_routes.patch(
+    "/student/api/v1/thread-entries/{entry_public_id}/attachments/order"
+)
+@_translate_repository_errors
+async def reorder_written_attachments(request: web.Request) -> web.Response:
+    account_id, account_public_id = _student_identity(request)
+    entry_public_id = _public_id(
+        request, "entry_public_id", error_code="written_entry_not_found"
+    )
+    payload = await _json_object(
+        request, required_fields=_REORDER_ATTACHMENT_FIELDS
+    )
+    _schema_version(payload["schemaVersion"])
+    receipt = await _repository(request).reorder_attachments(
+        ReorderWrittenAttachmentsCommand(
+            account_id=account_id,
+            entry_public_id=entry_public_id,
+            expected_entry_version=_positive_version(
+                payload["expectedEntryVersion"], field="expectedEntryVersion"
+            ),
+            expected_thread_version=_positive_version(
+                payload["expectedThreadVersion"], field="expectedThreadVersion"
+            ),
+            attachment_public_ids=_attachment_ids(payload["attachmentIds"]),
+            idempotency_key=_canonical_uuid(payload["idempotencyKey"]),
+        )
+    )
+    if receipt.changed and not receipt.replayed:
+        await _invalidate_after_commit(
+            request,
+            account_public_id=account_public_id,
+            problem_public_id=receipt.problem_public_id,
+            reason="written-attachments-reordered",
+        )
+    response = receipt.response_payload()
+    response["requestId"] = request["request_id"]
+    return web.json_response(response)
+
+
+@written_submission_routes.delete(
+    "/student/api/v1/thread-entries/{entry_public_id}/attachments/"
+    "{attachment_public_id}"
+)
+@_translate_repository_errors
+async def delete_written_attachment(request: web.Request) -> web.Response:
+    account_id, account_public_id = _student_identity(request)
+    entry_public_id = _public_id(
+        request, "entry_public_id", error_code="written_entry_not_found"
+    )
+    attachment_public_id = _public_id(
+        request,
+        "attachment_public_id",
+        error_code="written_attachment_not_found",
+    )
+    payload = await _json_object(
+        request, required_fields=_DELETE_ATTACHMENT_FIELDS
+    )
+    _schema_version(payload["schemaVersion"])
+    receipt = await _repository(request).delete_attachment(
+        DeleteWrittenAttachmentCommand(
+            account_id=account_id,
+            entry_public_id=entry_public_id,
+            attachment_public_id=attachment_public_id,
+            expected_entry_version=_positive_version(
+                payload["expectedEntryVersion"], field="expectedEntryVersion"
+            ),
+            expected_thread_version=_positive_version(
+                payload["expectedThreadVersion"], field="expectedThreadVersion"
+            ),
+            idempotency_key=_canonical_uuid(payload["idempotencyKey"]),
+        )
+    )
+    if not receipt.replayed:
+        await _invalidate_after_commit(
+            request,
+            account_public_id=account_public_id,
+            problem_public_id=receipt.problem_public_id,
+            reason="written-attachment-deleted",
+        )
+    response = receipt.response_payload()
+    response["requestId"] = request["request_id"]
+    return web.json_response(response)
+
+
 @written_submission_routes.post(
     "/student/api/v1/thread-entries/{entry_public_id}/submit"
 )
@@ -645,22 +767,7 @@ async def submit_written_entry(request: web.Request) -> web.Response:
     )
     payload = await _json_object(request, required_fields=_SUBMIT_FIELDS)
     _schema_version(payload["schemaVersion"])
-    attachment_ids = payload["attachmentIds"]
-    if (
-        not isinstance(attachment_ids, list)
-        or len(attachment_ids) > 10
-        or any(
-            not isinstance(item, str) or _PUBLIC_ID.fullmatch(item) is None
-            for item in attachment_ids
-        )
-        or len(set(attachment_ids)) != len(attachment_ids)
-    ):
-        raise PwaApiError(
-            status=422,
-            code="validation_error",
-            message="Проверьте список фотографий",
-            details={"field": "attachmentIds"},
-        )
+    attachment_ids = _attachment_ids(payload["attachmentIds"])
     receipt = await _repository(request).submit_entry(
         SubmitWrittenEntryCommand(
             account_id=account_id,
@@ -671,7 +778,7 @@ async def submit_written_entry(request: web.Request) -> web.Response:
             expected_thread_version=_positive_version(
                 payload["expectedThreadVersion"], field="expectedThreadVersion"
             ),
-            attachment_public_ids=tuple(attachment_ids),
+            attachment_public_ids=attachment_ids,
             idempotency_key=_canonical_uuid(payload["idempotencyKey"]),
         )
     )

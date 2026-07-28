@@ -184,6 +184,61 @@ export const createWrittenAttachmentResponseSchema = z
   })
 export type CreateWrittenAttachmentResponse = z.infer<typeof createWrittenAttachmentResponseSchema>
 
+export const reorderWrittenAttachmentsRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    idempotencyKey: z.uuid(),
+    expectedEntryVersion: z.number().int().positive(),
+    expectedThreadVersion: z.number().int().positive(),
+    attachmentIds: z.array(publicIdSchema).max(10),
+  })
+  .strict()
+  .superRefine((request, context) => {
+    if (new Set(request.attachmentIds).size !== request.attachmentIds.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Attachment IDs must be unique',
+        path: ['attachmentIds'],
+      })
+    }
+  })
+export type ReorderWrittenAttachmentsRequest = z.infer<
+  typeof reorderWrittenAttachmentsRequestSchema
+>
+
+export const deleteWrittenAttachmentRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    idempotencyKey: z.uuid(),
+    expectedEntryVersion: z.number().int().positive(),
+    expectedThreadVersion: z.number().int().positive(),
+  })
+  .strict()
+export type DeleteWrittenAttachmentRequest = z.infer<typeof deleteWrittenAttachmentRequestSchema>
+
+export const mutateWrittenAttachmentsResponseSchema = z
+  .object({
+    ...writtenEntryMutationShape,
+    changed: z.boolean(),
+  })
+  .strict()
+  .superRefine((response, context) => {
+    if (
+      response.entry.attachments.some(
+        (attachment) => !['stored', 'locked'].includes(attachment.uploadStatus),
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Attachment mutations expose only durable evidence',
+        path: ['entry', 'attachments'],
+      })
+    }
+  })
+export type MutateWrittenAttachmentsResponse = z.infer<
+  typeof mutateWrittenAttachmentsResponseSchema
+>
+
 export const submitWrittenEntryRequestSchema = z
   .object({
     schemaVersion: contractVersionSchema,
@@ -258,6 +313,10 @@ export const writtenSubmissionFixtureSchema = z
     createResponse: createWrittenEntryResponseSchema,
     attachmentMetadata: writtenAttachmentUploadMetadataSchema,
     attachmentResponse: createWrittenAttachmentResponseSchema,
+    reorderRequest: reorderWrittenAttachmentsRequestSchema,
+    reorderResponse: mutateWrittenAttachmentsResponseSchema,
+    deleteRequest: deleteWrittenAttachmentRequestSchema,
+    deleteResponse: mutateWrittenAttachmentsResponseSchema,
     submitRequest: submitWrittenEntryRequestSchema,
     submitResponse: submitWrittenEntryResponseSchema,
     threadResponse: writtenThreadResponseSchema,

@@ -25,6 +25,8 @@ from .connection import PwaConnectionFactory
 
 CREATE_ENTRY_OPERATION = "written-entry:create"
 CREATE_ATTACHMENT_OPERATION = "written-attachment:create"
+REORDER_ATTACHMENTS_OPERATION = "written-attachment:reorder"
+DELETE_ATTACHMENT_OPERATION = "written-attachment:delete"
 SUBMIT_ENTRY_OPERATION = "written-entry:submit"
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -211,6 +213,78 @@ class CreateWrittenAttachmentCommand:
             "ordinal": self.ordinal,
             "clientFilename": self.client_filename,
             "sourceSha256": self.source_sha256,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ReorderWrittenAttachmentsCommand:
+    """Complete desired page order for one mutable Student entry."""
+
+    account_id: int
+    entry_public_id: str
+    expected_entry_version: int
+    expected_thread_version: int
+    attachment_public_ids: tuple[str, ...]
+    idempotency_key: str
+
+    def __post_init__(self) -> None:
+        _validate_attachment_mutation_command(
+            account_id=self.account_id,
+            entry_public_id=self.entry_public_id,
+            expected_entry_version=self.expected_entry_version,
+            expected_thread_version=self.expected_thread_version,
+            idempotency_key=self.idempotency_key,
+        )
+        if (
+            len(self.attachment_public_ids) > 10
+            or len(set(self.attachment_public_ids))
+            != len(self.attachment_public_ids)
+            or any(
+                not _PUBLIC_ID.fullmatch(item)
+                for item in self.attachment_public_ids
+            )
+        ):
+            raise ValueError("attachment IDs must be unique and limited to ten")
+
+    def request_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "entryId": self.entry_public_id,
+            "expectedEntryVersion": self.expected_entry_version,
+            "expectedThreadVersion": self.expected_thread_version,
+            "attachmentIds": list(self.attachment_public_ids),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class DeleteWrittenAttachmentCommand:
+    """Remove one page from mutable evidence without trusting browser identity."""
+
+    account_id: int
+    entry_public_id: str
+    attachment_public_id: str
+    expected_entry_version: int
+    expected_thread_version: int
+    idempotency_key: str
+
+    def __post_init__(self) -> None:
+        _validate_attachment_mutation_command(
+            account_id=self.account_id,
+            entry_public_id=self.entry_public_id,
+            expected_entry_version=self.expected_entry_version,
+            expected_thread_version=self.expected_thread_version,
+            idempotency_key=self.idempotency_key,
+        )
+        if not _PUBLIC_ID.fullmatch(self.attachment_public_id):
+            raise ValueError("attachment public ID is invalid")
+
+    def request_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "entryId": self.entry_public_id,
+            "attachmentId": self.attachment_public_id,
+            "expectedEntryVersion": self.expected_entry_version,
+            "expectedThreadVersion": self.expected_thread_version,
         }
 
 
@@ -421,6 +495,50 @@ class CreateWrittenAttachmentReceipt:
 
 
 @dataclass(frozen=True, slots=True)
+class MutateWrittenAttachmentsReceipt:
+    thread_public_id: str
+    problem_public_id: str
+    thread_status: str
+    thread_version: int
+    entry: WrittenEntryRecord
+    changed: bool
+    replayed: bool = field(default=False, compare=False)
+
+    def response_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "threadId": self.thread_public_id,
+            "problemId": self.problem_public_id,
+            "threadStatus": self.thread_status,
+            "threadVersion": self.thread_version,
+            "entry": self.entry.payload(),
+            "changed": self.changed,
+        }
+
+    @classmethod
+    def from_response(
+        cls, payload: Mapping[str, object]
+    ) -> "MutateWrittenAttachmentsReceipt":
+        try:
+            changed = payload["changed"]
+            if type(changed) is not bool:
+                raise TypeError
+            return cls(
+                thread_public_id=str(payload["threadId"]),
+                problem_public_id=str(payload["problemId"]),
+                thread_status=str(payload["threadStatus"]),
+                thread_version=int(payload["threadVersion"]),
+                entry=_entry_from_payload(payload["entry"]),
+                changed=changed,
+                replayed=True,
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise WrittenSubmissionRepositoryError(
+                "stored attachment-mutation response is invalid"
+            ) from error
+
+
+@dataclass(frozen=True, slots=True)
 class SubmitWrittenEntryReceipt:
     thread_public_id: str
     problem_public_id: str
@@ -483,6 +601,28 @@ class _AttachmentTarget:
     thread_public_id: str
     thread_status: str
     context: _WrittenContext
+
+
+@dataclass(frozen=True, slots=True)
+class _MutableAttachment:
+    id: int
+    public_id: str
+    asset_id: int
+    upload_status: str
+
+
+@dataclass(frozen=True, slots=True)
+class _MutableEntryTarget:
+    entry_id: int
+    entry_state: str
+    entry_version: int
+    text: str | None
+    thread_id: int
+    thread_public_id: str
+    thread_status: str
+    thread_version: int
+    problem_public_id: str
+    attachments: tuple[_MutableAttachment, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -605,6 +745,28 @@ def _validate_common_command(
     _validate_idempotency_key(idempotency_key)
     if client_created_at.tzinfo is None or client_created_at.utcoffset() is None:
         raise ValueError("client creation time must be timezone-aware")
+
+
+def _validate_attachment_mutation_command(
+    *,
+    account_id: int,
+    entry_public_id: str,
+    expected_entry_version: int,
+    expected_thread_version: int,
+    idempotency_key: str,
+) -> None:
+    if account_id < 1:
+        raise ValueError("account ID must be positive")
+    if not _PUBLIC_ID.fullmatch(entry_public_id):
+        raise ValueError("entry public ID is invalid")
+    if (
+        type(expected_entry_version) is not int
+        or expected_entry_version < 1
+        or type(expected_thread_version) is not int
+        or expected_thread_version < 1
+    ):
+        raise ValueError("expected versions must be positive")
+    _validate_idempotency_key(idempotency_key)
 
 
 def _resolve_context(
@@ -782,6 +944,119 @@ def _attachment_target(
         thread_status=str(row["thread_status"]),
         context=context,
     )
+
+
+def _mutable_entry_target(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    entry_public_id: str,
+    expected_entry_version: int,
+    expected_thread_version: int,
+) -> _MutableEntryTarget:
+    """Resolve owner-scoped mutable evidence and fail closed after review lock."""
+
+    row = connection.execute(
+        "SELECT entry.id AS entry_id, entry.state AS entry_state, "
+        "entry.version AS entry_version, entry.text, "
+        "thread.id AS thread_id, thread.public_id AS thread_public_id, "
+        "thread.status AS thread_status, thread.version AS thread_version, "
+        "problem.public_id AS problem_public_id "
+        "FROM auth_accounts AS account "
+        "JOIN submission_threads AS thread "
+        "ON thread.student_user_id = account.linked_user_id "
+        "JOIN submission_entries AS entry ON entry.thread_id = thread.id "
+        "JOIN problems AS problem ON problem.id = thread.problem_id "
+        "WHERE account.id = ? AND account.audience = 'student' "
+        "AND account.status = 'active' AND entry.public_id = ?",
+        (account_id, entry_public_id),
+    ).fetchone()
+    if row is None:
+        raise WrittenSubmissionRejected(
+            code="written_entry_not_found",
+            message="Письменное решение не найдено.",
+            http_status=404,
+        )
+    if row["entry_state"] == "locked":
+        raise WrittenSubmissionRejected(
+            code="written_attachment_locked",
+            message="Фотографии уже зафиксированы проверкой.",
+            http_status=409,
+        )
+    if row["entry_state"] not in ("draft", "uploading", "submitted"):
+        raise WrittenSubmissionRejected(
+            code="written_entry_not_editable",
+            message="Эту версию решения уже нельзя изменить.",
+            http_status=409,
+        )
+    if row["entry_state"] == "submitted" and row["thread_status"] != "awaiting_review":
+        raise WrittenSubmissionRejected(
+            code="written_entry_not_editable",
+            message="Эту версию решения уже нельзя изменить.",
+            http_status=409,
+        )
+    if (
+        int(row["entry_version"]) != expected_entry_version
+        or int(row["thread_version"]) != expected_thread_version
+    ):
+        raise WrittenSubmissionRejected(
+            code="written_submission_version_conflict",
+            message="Решение изменилось в другом окне. Обновите страницу.",
+            http_status=409,
+        )
+    attachment_rows = connection.execute(
+        "SELECT id, public_id, asset_id, upload_status "
+        "FROM submission_attachments WHERE entry_id = ? "
+        "ORDER BY ordinal, id",
+        (row["entry_id"],),
+    ).fetchall()
+    if any(item["upload_status"] == "locked" for item in attachment_rows):
+        raise WrittenSubmissionRejected(
+            code="written_attachment_locked",
+            message="Фотографии уже зафиксированы проверкой.",
+            http_status=409,
+        )
+    return _MutableEntryTarget(
+        entry_id=int(row["entry_id"]),
+        entry_state=str(row["entry_state"]),
+        entry_version=int(row["entry_version"]),
+        text=None if row["text"] is None else str(row["text"]),
+        thread_id=int(row["thread_id"]),
+        thread_public_id=str(row["thread_public_id"]),
+        thread_status=str(row["thread_status"]),
+        thread_version=int(row["thread_version"]),
+        problem_public_id=str(row["problem_public_id"]),
+        attachments=tuple(
+            _MutableAttachment(
+                id=int(item["id"]),
+                public_id=str(item["public_id"]),
+                asset_id=int(item["asset_id"]),
+                upload_status=str(item["upload_status"]),
+            )
+            for item in attachment_rows
+        ),
+    )
+
+
+def _renumber_attachments(
+    connection: sqlite3.Connection,
+    *,
+    entry_id: int,
+    ordered_attachment_ids: tuple[int, ...],
+) -> None:
+    """Avoid immediate SQLite UNIQUE collisions while assigning dense ordinals."""
+
+    connection.execute(
+        "UPDATE submission_attachments SET ordinal = ordinal + 1000000 "
+        "WHERE entry_id = ?",
+        (entry_id,),
+    )
+    for ordinal, attachment_id in enumerate(ordered_attachment_ids):
+        connection.execute(
+            "UPDATE submission_attachments SET ordinal = ? "
+            "WHERE id = ? AND entry_id = ?",
+            (ordinal, attachment_id, entry_id),
+        )
 
 
 def _entry_from_payload(value: object) -> WrittenEntryRecord:
@@ -1300,6 +1575,298 @@ class PwaWrittenSubmissionRepository:
         )
         return receipt, None
 
+    async def reorder_attachments(
+        self, command: ReorderWrittenAttachmentsCommand
+    ) -> MutateWrittenAttachmentsReceipt:
+        payload_sha256 = _payload_hash(command.request_payload())
+        replay = await self._factory.run_read_async(
+            lambda connection: _read_idempotency(
+                connection,
+                account_id=command.account_id,
+                operation=REORDER_ATTACHMENTS_OPERATION,
+                idempotency_key=command.idempotency_key,
+                payload_sha256=payload_sha256,
+            )
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return MutateWrittenAttachmentsReceipt.from_response(replay.response)
+        receipt, error = await self._factory.run_write_async(
+            lambda connection: self._write_reorder_attachments(
+                connection,
+                command=command,
+                payload_sha256=payload_sha256,
+                now=self._clock(),
+            )
+        )
+        if error is not None:
+            raise error
+        assert receipt is not None
+        return receipt
+
+    def _write_reorder_attachments(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        command: ReorderWrittenAttachmentsCommand,
+        payload_sha256: str,
+        now: datetime,
+    ) -> tuple[
+        MutateWrittenAttachmentsReceipt | None,
+        WrittenSubmissionRejected | None,
+    ]:
+        replay = _read_idempotency(
+            connection,
+            account_id=command.account_id,
+            operation=REORDER_ATTACHMENTS_OPERATION,
+            idempotency_key=command.idempotency_key,
+            payload_sha256=payload_sha256,
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return MutateWrittenAttachmentsReceipt.from_response(replay.response), None
+        changed_at = _timestamp(now)
+        idempotency_id = int(
+            connection.execute(
+                "INSERT INTO idempotency_records "
+                "(audience, account_id, operation, idempotency_key, payload_sha256, "
+                "state, created_at) VALUES ('student', ?, ?, ?, ?, 'processing', ?) "
+                "RETURNING id",
+                (
+                    command.account_id,
+                    REORDER_ATTACHMENTS_OPERATION,
+                    command.idempotency_key,
+                    payload_sha256,
+                    changed_at,
+                ),
+            ).fetchone()["id"]
+        )
+        try:
+            target = _mutable_entry_target(
+                connection,
+                account_id=command.account_id,
+                entry_public_id=command.entry_public_id,
+                expected_entry_version=command.expected_entry_version,
+                expected_thread_version=command.expected_thread_version,
+            )
+            current_ids = tuple(item.public_id for item in target.attachments)
+            if set(current_ids) != set(command.attachment_public_ids) or len(
+                current_ids
+            ) != len(command.attachment_public_ids):
+                raise WrittenSubmissionRejected(
+                    code="written_attachment_set_changed",
+                    message="Список фотографий изменился. Обновите страницу.",
+                    http_status=409,
+                )
+            changed = current_ids != command.attachment_public_ids
+            entry_version = target.entry_version
+            thread_version = target.thread_version
+            if changed:
+                by_public_id = {item.public_id: item.id for item in target.attachments}
+                _renumber_attachments(
+                    connection,
+                    entry_id=target.entry_id,
+                    ordered_attachment_ids=tuple(
+                        by_public_id[public_id]
+                        for public_id in command.attachment_public_ids
+                    ),
+                )
+                entry_version += 1
+                thread_version += 1
+                connection.execute(
+                    "UPDATE submission_entries SET version = ? WHERE id = ?",
+                    (entry_version, target.entry_id),
+                )
+                connection.execute(
+                    "UPDATE submission_threads SET latest_entry_at = ?, "
+                    "updated_at = ?, version = ? WHERE id = ?",
+                    (changed_at, changed_at, thread_version, target.thread_id),
+                )
+            receipt = MutateWrittenAttachmentsReceipt(
+                thread_public_id=target.thread_public_id,
+                problem_public_id=target.problem_public_id,
+                thread_status=target.thread_status,
+                thread_version=thread_version,
+                entry=_entry_record(connection, entry_id=target.entry_id),
+                changed=changed,
+            )
+        except WrittenSubmissionRejected as error:
+            _complete_idempotency(
+                connection,
+                record_id=idempotency_id,
+                state="failed",
+                http_status=error.http_status,
+                response=error.response_payload(),
+                completed_at=changed_at,
+            )
+            return None, error
+        _complete_idempotency(
+            connection,
+            record_id=idempotency_id,
+            state="completed",
+            http_status=200,
+            response=receipt.response_payload(),
+            completed_at=changed_at,
+        )
+        return receipt, None
+
+    async def delete_attachment(
+        self, command: DeleteWrittenAttachmentCommand
+    ) -> MutateWrittenAttachmentsReceipt:
+        payload_sha256 = _payload_hash(command.request_payload())
+        replay = await self._factory.run_read_async(
+            lambda connection: _read_idempotency(
+                connection,
+                account_id=command.account_id,
+                operation=DELETE_ATTACHMENT_OPERATION,
+                idempotency_key=command.idempotency_key,
+                payload_sha256=payload_sha256,
+            )
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return MutateWrittenAttachmentsReceipt.from_response(replay.response)
+        receipt, error = await self._factory.run_write_async(
+            lambda connection: self._write_delete_attachment(
+                connection,
+                command=command,
+                payload_sha256=payload_sha256,
+                now=self._clock(),
+            )
+        )
+        if error is not None:
+            raise error
+        assert receipt is not None
+        return receipt
+
+    def _write_delete_attachment(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        command: DeleteWrittenAttachmentCommand,
+        payload_sha256: str,
+        now: datetime,
+    ) -> tuple[
+        MutateWrittenAttachmentsReceipt | None,
+        WrittenSubmissionRejected | None,
+    ]:
+        replay = _read_idempotency(
+            connection,
+            account_id=command.account_id,
+            operation=DELETE_ATTACHMENT_OPERATION,
+            idempotency_key=command.idempotency_key,
+            payload_sha256=payload_sha256,
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return MutateWrittenAttachmentsReceipt.from_response(replay.response), None
+        changed_at = _timestamp(now)
+        idempotency_id = int(
+            connection.execute(
+                "INSERT INTO idempotency_records "
+                "(audience, account_id, operation, idempotency_key, payload_sha256, "
+                "state, created_at) VALUES ('student', ?, ?, ?, ?, 'processing', ?) "
+                "RETURNING id",
+                (
+                    command.account_id,
+                    DELETE_ATTACHMENT_OPERATION,
+                    command.idempotency_key,
+                    payload_sha256,
+                    changed_at,
+                ),
+            ).fetchone()["id"]
+        )
+        try:
+            target = _mutable_entry_target(
+                connection,
+                account_id=command.account_id,
+                entry_public_id=command.entry_public_id,
+                expected_entry_version=command.expected_entry_version,
+                expected_thread_version=command.expected_thread_version,
+            )
+            attachment = next(
+                (
+                    item
+                    for item in target.attachments
+                    if item.public_id == command.attachment_public_id
+                ),
+                None,
+            )
+            if attachment is None:
+                raise WrittenSubmissionRejected(
+                    code="written_attachment_not_found",
+                    message="Фотография решения не найдена.",
+                    http_status=404,
+                )
+            if (
+                target.entry_state == "submitted"
+                and not str(target.text or "").strip()
+                and len(target.attachments) == 1
+            ):
+                raise WrittenSubmissionRejected(
+                    code="written_entry_empty",
+                    message="В отправленном решении должна остаться фотография или текст.",
+                    http_status=422,
+                )
+            connection.execute(
+                "UPDATE media_assets SET deleted_at = ? WHERE id = ?",
+                (changed_at, attachment.asset_id),
+            )
+            connection.execute(
+                "DELETE FROM submission_attachments WHERE id = ?",
+                (attachment.id,),
+            )
+            remaining_ids = tuple(
+                item.id for item in target.attachments if item.id != attachment.id
+            )
+            _renumber_attachments(
+                connection,
+                entry_id=target.entry_id,
+                ordered_attachment_ids=remaining_ids,
+            )
+            entry_version = target.entry_version + 1
+            thread_version = target.thread_version + 1
+            connection.execute(
+                "UPDATE submission_entries SET version = ? WHERE id = ?",
+                (entry_version, target.entry_id),
+            )
+            connection.execute(
+                "UPDATE submission_threads SET latest_entry_at = ?, updated_at = ?, "
+                "version = ? WHERE id = ?",
+                (changed_at, changed_at, thread_version, target.thread_id),
+            )
+            receipt = MutateWrittenAttachmentsReceipt(
+                thread_public_id=target.thread_public_id,
+                problem_public_id=target.problem_public_id,
+                thread_status=target.thread_status,
+                thread_version=thread_version,
+                entry=_entry_record(connection, entry_id=target.entry_id),
+                changed=True,
+            )
+        except WrittenSubmissionRejected as error:
+            _complete_idempotency(
+                connection,
+                record_id=idempotency_id,
+                state="failed",
+                http_status=error.http_status,
+                response=error.response_payload(),
+                completed_at=changed_at,
+            )
+            return None, error
+        _complete_idempotency(
+            connection,
+            record_id=idempotency_id,
+            state="completed",
+            http_status=200,
+            response=receipt.response_payload(),
+            completed_at=changed_at,
+        )
+        return receipt, None
+
     async def submit_entry(
         self, command: SubmitWrittenEntryCommand
     ) -> SubmitWrittenEntryReceipt:
@@ -1602,15 +2169,20 @@ class PwaWrittenSubmissionRepository:
 __all__ = [
     "CREATE_ATTACHMENT_OPERATION",
     "CREATE_ENTRY_OPERATION",
+    "DELETE_ATTACHMENT_OPERATION",
+    "REORDER_ATTACHMENTS_OPERATION",
     "SUBMIT_ENTRY_OPERATION",
     "CreateWrittenAttachmentCommand",
     "CreateWrittenAttachmentReceipt",
     "CreateWrittenEntryCommand",
     "CreateWrittenEntryReceipt",
+    "DeleteWrittenAttachmentCommand",
+    "MutateWrittenAttachmentsReceipt",
     "PersistWrittenAttachment",
     "PreparedWrittenAttachmentUpload",
     "ProblemRevisionRef",
     "PwaWrittenSubmissionRepository",
+    "ReorderWrittenAttachmentsCommand",
     "SubmitWrittenEntryCommand",
     "SubmitWrittenEntryReceipt",
     "WrittenAttachmentRecord",

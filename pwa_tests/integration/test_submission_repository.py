@@ -22,10 +22,12 @@ from db_methods.pwa.written_submissions import (
     CreateWrittenAttachmentCommand,
     CreateWrittenAttachmentReceipt,
     CreateWrittenEntryCommand,
+    DeleteWrittenAttachmentCommand,
     PersistWrittenAttachment,
     PreparedWrittenAttachmentUpload,
     ProblemRevisionRef,
     PwaWrittenSubmissionRepository,
+    ReorderWrittenAttachmentsCommand,
     SubmitWrittenEntryCommand,
     WrittenIdempotencyPayloadMismatch,
     WrittenSubmissionRejected,
@@ -1544,6 +1546,32 @@ def persisted_written_attachment(*, suffix: str = "1") -> PersistWrittenAttachme
     )
 
 
+async def add_written_attachment(
+    fixture: SubmissionFixture,
+    *,
+    entry_public_id: str,
+    entry_version: int,
+    thread_version: int,
+    ordinal: int,
+    suffix: str,
+):
+    prepared = await fixture.written_repository.prepare_attachment_upload(
+        written_attachment_command(
+            fixture,
+            entry_public_id=entry_public_id,
+            entry_version=entry_version,
+            thread_version=thread_version,
+            ordinal=ordinal,
+            key=f"written-attachment-key-{suffix}",
+            source_sha256=suffix[-1] * 64,
+        )
+    )
+    assert isinstance(prepared, PreparedWrittenAttachmentUpload)
+    return await fixture.written_repository.complete_attachment_upload(
+        prepared, persisted_written_attachment(suffix=suffix)
+    )
+
+
 async def test_written_draft_keeps_exact_revision_and_replays_without_duplicates(
     submission_fixture: SubmissionFixture,
 ):
@@ -1718,6 +1746,275 @@ async def test_written_photo_only_entry_submits_with_exact_attachment_order(
     assert submitted.entry.state == "submitted"
     assert [item.public_id for item in submitted.entry.attachments] == [attachment_id]
     assert submitted.thread_status == "awaiting_review"
+
+
+async def test_written_attachments_reorder_delete_and_replay_atomically(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text="Пояснение остаётся после удаления фото.")
+    )
+    first = await add_written_attachment(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        entry_version=1,
+        thread_version=1,
+        ordinal=0,
+        suffix="1",
+    )
+    second = await add_written_attachment(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        entry_version=first.entry.version,
+        thread_version=first.thread_version,
+        ordinal=1,
+        suffix="2",
+    )
+    first_id, second_id = (
+        attachment.public_id for attachment in second.entry.attachments
+    )
+    reorder = ReorderWrittenAttachmentsCommand(
+        account_id=fixture.student_account_id,
+        entry_public_id=draft.entry.public_id,
+        expected_entry_version=second.entry.version,
+        expected_thread_version=second.thread_version,
+        attachment_public_ids=(second_id, first_id),
+        idempotency_key="written-reorder-key-1",
+    )
+
+    reordered = await fixture.written_repository.reorder_attachments(reorder)
+    replay = await fixture.written_repository.reorder_attachments(reorder)
+    assert reordered.changed is True
+    assert [item.public_id for item in reordered.entry.attachments] == [
+        second_id,
+        first_id,
+    ]
+    assert [item.ordinal for item in reordered.entry.attachments] == [0, 1]
+    assert reordered.entry.version == second.entry.version + 1
+    assert reordered.thread_version == second.thread_version + 1
+    assert replay == reordered
+    assert replay.replayed is True
+
+    delete = DeleteWrittenAttachmentCommand(
+        account_id=fixture.student_account_id,
+        entry_public_id=draft.entry.public_id,
+        attachment_public_id=second_id,
+        expected_entry_version=reordered.entry.version,
+        expected_thread_version=reordered.thread_version,
+        idempotency_key="written-delete-key-1",
+    )
+    deleted = await fixture.written_repository.delete_attachment(delete)
+    delete_replay = await fixture.written_repository.delete_attachment(delete)
+    assert deleted.changed is True
+    assert [item.public_id for item in deleted.entry.attachments] == [first_id]
+    assert deleted.entry.attachments[0].ordinal == 0
+    assert delete_replay == deleted
+    assert delete_replay.replayed is True
+
+    stored = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT attachment.public_id, attachment.ordinal "
+                "FROM submission_attachments AS attachment"
+            ).fetchall(),
+            connection.execute(
+                "SELECT public_id, deleted_at FROM media_assets ORDER BY id"
+            ).fetchall(),
+            connection.execute(
+                "SELECT operation, state FROM idempotency_records "
+                "WHERE operation IN "
+                "('written-attachment:reorder', 'written-attachment:delete') "
+                "ORDER BY operation"
+            ).fetchall(),
+        )
+    )
+    assert stored[0] == [{"public_id": first_id, "ordinal": 0}]
+    assert stored[1][0]["deleted_at"] is None
+    assert stored[1][1]["deleted_at"] == timestamp(NOW)
+    assert stored[2] == [
+        {"operation": "written-attachment:delete", "state": "completed"},
+        {"operation": "written-attachment:reorder", "state": "completed"},
+    ]
+    with pytest.raises(WrittenSubmissionRejected) as removed_media:
+        await fixture.written_repository.get_attachment_media(
+            account_id=fixture.student_account_id,
+            entry_public_id=draft.entry.public_id,
+            attachment_public_id=second_id,
+        )
+    assert removed_media.value.code == "written_attachment_not_found"
+
+
+async def test_written_attachment_noop_and_changed_set_are_explicit(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture)
+    )
+    uploaded = await add_written_attachment(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        entry_version=1,
+        thread_version=1,
+        ordinal=0,
+        suffix="3",
+    )
+    attachment_id = uploaded.entry.attachments[0].public_id
+
+    unchanged = await fixture.written_repository.reorder_attachments(
+        ReorderWrittenAttachmentsCommand(
+            account_id=fixture.student_account_id,
+            entry_public_id=draft.entry.public_id,
+            expected_entry_version=uploaded.entry.version,
+            expected_thread_version=uploaded.thread_version,
+            attachment_public_ids=(attachment_id,),
+            idempotency_key="written-reorder-key-noop",
+        )
+    )
+    assert unchanged.changed is False
+    assert unchanged.entry.version == uploaded.entry.version
+    assert unchanged.thread_version == uploaded.thread_version
+
+    with pytest.raises(WrittenSubmissionRejected) as changed_set:
+        await fixture.written_repository.reorder_attachments(
+            ReorderWrittenAttachmentsCommand(
+                account_id=fixture.student_account_id,
+                entry_public_id=draft.entry.public_id,
+                expected_entry_version=uploaded.entry.version,
+                expected_thread_version=uploaded.thread_version,
+                attachment_public_ids=(),
+                idempotency_key="written-reorder-key-changed-set",
+            )
+        )
+    assert changed_set.value.code == "written_attachment_set_changed"
+
+
+async def test_submitted_photo_delete_preserves_evidence_and_review_lock(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text=None)
+    )
+    first = await add_written_attachment(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        entry_version=1,
+        thread_version=1,
+        ordinal=0,
+        suffix="4",
+    )
+    second = await add_written_attachment(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        entry_version=first.entry.version,
+        thread_version=first.thread_version,
+        ordinal=1,
+        suffix="5",
+    )
+    first_id, second_id = (
+        attachment.public_id for attachment in second.entry.attachments
+    )
+    submitted = await fixture.written_repository.submit_entry(
+        SubmitWrittenEntryCommand(
+            account_id=fixture.student_account_id,
+            entry_public_id=draft.entry.public_id,
+            expected_entry_version=second.entry.version,
+            expected_thread_version=second.thread_version,
+            attachment_public_ids=(first_id, second_id),
+            idempotency_key="written-submit-before-delete",
+        )
+    )
+    deleted = await fixture.written_repository.delete_attachment(
+        DeleteWrittenAttachmentCommand(
+            account_id=fixture.student_account_id,
+            entry_public_id=draft.entry.public_id,
+            attachment_public_id=first_id,
+            expected_entry_version=submitted.entry.version,
+            expected_thread_version=submitted.thread_version,
+            idempotency_key="written-delete-submitted-one",
+        )
+    )
+    assert deleted.entry.state == "submitted"
+    assert deleted.thread_status == "awaiting_review"
+    assert [item.public_id for item in deleted.entry.attachments] == [second_id]
+
+    command = DeleteWrittenAttachmentCommand(
+        account_id=fixture.student_account_id,
+        entry_public_id=draft.entry.public_id,
+        attachment_public_id=second_id,
+        expected_entry_version=deleted.entry.version,
+        expected_thread_version=deleted.thread_version,
+        idempotency_key="written-delete-submitted-last",
+    )
+    for _ in range(2):
+        with pytest.raises(WrittenSubmissionRejected) as empty:
+            await fixture.written_repository.delete_attachment(command)
+        assert empty.value.code == "written_entry_empty"
+    assert fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT state FROM idempotency_records "
+            "WHERE operation = 'written-attachment:delete' "
+            "AND idempotency_key = 'written-delete-submitted-last'"
+        ).fetchone()["state"]
+    ) == "failed"
+
+    result_id, attachment_db_id, asset_id = fixture.factory.run_write(
+        lambda connection: (
+            int(
+                connection.execute(
+                    "INSERT INTO results "
+                    "(student_id, problem_id, group_id, lesson, ts, verdict, "
+                    "res_type) VALUES (?, ?, 'submission-a', 41, ?, 18, 2) "
+                    "RETURNING id",
+                    (STUDENT_USER_ID, fixture.written_problem_id, timestamp(NOW)),
+                ).fetchone()["id"]
+            ),
+            int(
+                connection.execute(
+                    "SELECT id FROM submission_attachments WHERE public_id = ?",
+                    (second_id,),
+                ).fetchone()["id"]
+            ),
+            int(
+                connection.execute(
+                    "SELECT asset_id FROM submission_attachments WHERE public_id = ?",
+                    (second_id,),
+                ).fetchone()["asset_id"]
+            ),
+        )
+    )
+
+    def lock_evidence(connection):
+        connection.execute(
+            "UPDATE media_assets SET immutable_at = ? WHERE id = ?",
+            (timestamp(NOW), asset_id),
+        )
+        connection.execute(
+            "UPDATE submission_attachments SET upload_status = 'locked', "
+            "locked_at = ?, locked_by_result_id = ? WHERE id = ?",
+            (timestamp(NOW), result_id, attachment_db_id),
+        )
+        connection.execute(
+            "UPDATE submission_entries SET state = 'locked', locked_at = ?, "
+            "version = version + 1 WHERE public_id = ?",
+            (timestamp(NOW), draft.entry.public_id),
+        )
+
+    fixture.factory.run_write(lock_evidence)
+    with pytest.raises(WrittenSubmissionRejected) as locked:
+        await fixture.written_repository.reorder_attachments(
+            ReorderWrittenAttachmentsCommand(
+                account_id=fixture.student_account_id,
+                entry_public_id=draft.entry.public_id,
+                expected_entry_version=deleted.entry.version + 1,
+                expected_thread_version=deleted.thread_version,
+                attachment_public_ids=(second_id,),
+                idempotency_key="written-reorder-after-lock",
+            )
+        )
+    assert locked.value.code == "written_attachment_locked"
 
 
 async def test_written_text_entry_submits_atomically_and_replays(

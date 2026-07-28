@@ -14,6 +14,7 @@ from db_methods.pwa.migrations import MIGRATIONS_ROOT
 
 MIGRATION_ID = "0047.pwa_submission_threads_entries_assets"
 ENTRY_REVISION_MIGRATION_ID = "0048.pwa_submission_entry_revision"
+ATTACHMENT_MUTATION_MIGRATION_ID = "0049.pwa_submission_attachment_mutations"
 NOW = "2026-09-27T13:00:00.000000Z"
 LATER = "2026-09-27T13:01:00.000000Z"
 EXPECTED_OBJECTS = {
@@ -415,7 +416,12 @@ def test_phase5_written_schema_exact_up_down_up_and_additive(tmp_path):
     preceding = {
         item.id
         for item in migrations.values()
-        if item.id not in {MIGRATION_ID, ENTRY_REVISION_MIGRATION_ID}
+        if item.id
+        not in {
+            MIGRATION_ID,
+            ENTRY_REVISION_MIGRATION_ID,
+            ATTACHMENT_MUTATION_MIGRATION_ID,
+        }
     }
     _apply(database_path, preceding)
 
@@ -460,7 +466,10 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
         MIGRATION_ID
     }
     preceding = {
-        item.id for item in migrations.values() if item.id != ENTRY_REVISION_MIGRATION_ID
+        item.id
+        for item in migrations.values()
+        if item.id
+        not in {ENTRY_REVISION_MIGRATION_ID, ATTACHMENT_MUTATION_MIGRATION_ID}
     }
     _apply(database_path, preceding)
     with sqlite3.connect(database_path) as connection:
@@ -544,6 +553,77 @@ def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
         assert "problem_revision_id" in {
             str(row[1]) for row in connection.execute("PRAGMA table_info(submission_entries)")
         }
+        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+
+
+def test_phase5_attachment_mutation_guard_exact_up_down_up(tmp_path):
+    database_path = tmp_path / "phase5-attachment-mutation.sqlite3"
+    migrations = {item.id: item for item in _migrations()}
+    assert {
+        item.id for item in migrations[ATTACHMENT_MUTATION_MIGRATION_ID].depends
+    } == {ENTRY_REVISION_MIGRATION_ID}
+    preceding = {
+        item.id
+        for item in migrations.values()
+        if item.id != ATTACHMENT_MUTATION_MIGRATION_ID
+    }
+    _apply(database_path, preceding)
+    with sqlite3.connect(database_path) as connection:
+        before_schema = _schema(connection)
+        before_counts = _counts(connection)
+
+    _apply(database_path, {ATTACHMENT_MUTATION_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert "submission_attachments_submitted_nonempty_delete" in _objects(
+            connection
+        )
+        context = _insert_context(connection)
+        thread_id = _insert_thread(
+            connection,
+            public_id="thread-delete-evidence",
+            student_id=context["student"],
+            problem_id=context["problem_one"],
+            revision_id=context["revision"],
+        )
+        entry_id = _insert_entry(
+            connection,
+            public_id="entry-delete-evidence",
+            thread_id=thread_id,
+            student_id=context["student"],
+            state="uploading",
+            text=None,
+        )
+        asset_id = _insert_asset(connection, ordinal=95)
+        attachment_id = _insert_attachment(
+            connection,
+            public_id="attachment-delete-evidence",
+            entry_id=entry_id,
+            asset_id=asset_id,
+            ordinal=0,
+        )
+        connection.execute(
+            "UPDATE submission_entries SET state = 'submitted', version = 2 "
+            "WHERE id = ?",
+            (entry_id,),
+        )
+        with pytest.raises(sqlite3.IntegrityError, match="must keep text"):
+            connection.execute(
+                "DELETE FROM submission_attachments WHERE id = ?",
+                (attachment_id,),
+            )
+        connection.rollback()
+
+    _rollback(database_path, {ATTACHMENT_MUTATION_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert _schema(connection) == before_schema
+        assert _counts(connection) == before_counts
+        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+
+    _apply(database_path, {ATTACHMENT_MUTATION_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert "submission_attachments_submitted_nonempty_delete" in _objects(
+            connection
+        )
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
 
 

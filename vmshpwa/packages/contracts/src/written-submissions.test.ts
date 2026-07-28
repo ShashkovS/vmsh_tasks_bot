@@ -5,6 +5,9 @@ import fixture from '../fixtures/submissions/written-thread.v1.json'
 import {
   createWrittenAttachmentResponseSchema,
   createWrittenEntryRequestSchema,
+  deleteWrittenAttachmentRequestSchema,
+  mutateWrittenAttachmentsResponseSchema,
+  reorderWrittenAttachmentsRequestSchema,
   submitWrittenEntryRequestSchema,
   writtenSubmissionFixtureSchema,
   writtenSubmissionQueryKeys,
@@ -49,6 +52,33 @@ describe('Phase-5 written-submission contracts', () => {
       writtenAttachmentUploadMetadataSchema.safeParse({
         ...fixture.attachmentMetadata,
         ordinal: 10,
+      }).success,
+    ).toBe(false)
+  })
+
+  it('validates complete reorder and delete mutation boundaries', () => {
+    expect(reorderWrittenAttachmentsRequestSchema.parse(fixture.reorderRequest)).toEqual(
+      fixture.reorderRequest,
+    )
+    expect(mutateWrittenAttachmentsResponseSchema.parse(fixture.reorderResponse)).toEqual(
+      fixture.reorderResponse,
+    )
+    expect(deleteWrittenAttachmentRequestSchema.parse(fixture.deleteRequest)).toEqual(
+      fixture.deleteRequest,
+    )
+    expect(mutateWrittenAttachmentsResponseSchema.parse(fixture.deleteResponse)).toEqual(
+      fixture.deleteResponse,
+    )
+    expect(
+      reorderWrittenAttachmentsRequestSchema.safeParse({
+        ...fixture.reorderRequest,
+        attachmentIds: ['written-attachment-fixture-1', 'written-attachment-fixture-1'],
+      }).success,
+    ).toBe(false)
+    expect(
+      deleteWrittenAttachmentRequestSchema.safeParse({
+        ...fixture.deleteRequest,
+        attachmentId: 'browser-must-not-control-path-identity',
       }).success,
     ).toBe(false)
   })

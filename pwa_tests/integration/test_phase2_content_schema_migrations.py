@@ -20,6 +20,9 @@ MATERIAL_REVEAL_MATCHES_MIGRATION_ID = "0045.pwa_material_reveal_matches"
 TEST_ATTEMPTS_MIGRATION_ID = "0046.pwa_test_attempts_idempotency"
 WRITTEN_SUBMISSIONS_MIGRATION_ID = "0047.pwa_submission_threads_entries_assets"
 WRITTEN_ENTRY_REVISION_MIGRATION_ID = "0048.pwa_submission_entry_revision"
+WRITTEN_ATTACHMENT_MUTATION_MIGRATION_ID = (
+    "0049.pwa_submission_attachment_mutations"
+)
 CONTENT_TABLES = {
     "course_lessons",
     "group_lessons",
@@ -109,6 +112,7 @@ def _pre_content_ids() -> set[str]:
             TEST_ATTEMPTS_MIGRATION_ID,
             WRITTEN_SUBMISSIONS_MIGRATION_ID,
             WRITTEN_ENTRY_REVISION_MIGRATION_ID,
+            WRITTEN_ATTACHMENT_MUTATION_MIGRATION_ID,
         }
     }
 

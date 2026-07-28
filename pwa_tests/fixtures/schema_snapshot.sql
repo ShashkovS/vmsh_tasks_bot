@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 8032fb8b218df8598d34ba62da538907b03e25b0018038e66f07b1b80019dce8
+-- Product schema SHA-256: 33f28638117020d1ad111fa047212944c1c3a73aea60cfbf7348e9314b7df465
 
 CREATE TABLE auth_accounts
 (
@@ -2983,6 +2983,25 @@ when new.upload_status is not old.upload_status and not (
 )
 begin
     select raise(abort, 'invalid submission attachment state transition');
+end;
+
+CREATE TRIGGER submission_attachments_submitted_nonempty_delete
+before delete on submission_attachments
+for each row
+when exists (
+    select 1
+    from submission_entries as entry
+    where entry.id = old.entry_id
+      and entry.state = 'submitted'
+      and trim(coalesce(entry.text, '')) = ''
+      and (
+          select count(*)
+          from submission_attachments as attachment
+          where attachment.entry_id = old.entry_id
+      ) <= 1
+)
+begin
+    select raise(abort, 'submitted entry must keep text or an attachment');
 end;
 
 CREATE TRIGGER submission_entries_author_scope_insert
