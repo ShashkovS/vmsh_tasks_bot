@@ -21,6 +21,9 @@ from db_methods.pwa.reviews import (
     ReviewEvidenceBranchExpectation,
     ReviewEvidenceEntryExpectation,
     ReviewIdempotencyConflict,
+    ReviewInternalReactionConflict,
+    ReviewInternalReactionInvalid,
+    ReviewInternalReactionWindowClosed,
     ReviewLease,
     ReviewLeaseConflict,
     ReviewLeaseLost,
@@ -71,6 +74,9 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
     factory = PwaConnectionFactory(database_path)
     clock = MutableClock(NOW)
     tokens = (f"review-claim-test-{index}" for index in itertools.count(1))
+    reaction_events = (
+        f"review-reaction-event-test-{index}" for index in itertools.count(1)
+    )
     repository = PwaWrittenReviewQueueRepository(
         factory,
         clock=clock,
@@ -79,6 +85,7 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
         annotation_public_id_factory=lambda: "review-annotation-test",
         comment_public_id_factory=lambda: "review-comment-test",
         event_public_id_factory=lambda: "review-event-test",
+        internal_reaction_event_public_id_factory=lambda: next(reaction_events),
     )
     now = _timestamp(NOW)
 
@@ -386,6 +393,9 @@ def _complete_command(
     idempotency_key: str = "review-completion-idempotency-1",
     verdict: VERDICT = VERDICT.VERDICT_PLUS_DOT,
     annotations: tuple[ReviewAnnotationManifest, ...] = (),
+    internal_reaction_id: int | None = None,
+    comment: str | None = "Точная формулировка проверки.",
+    confirm_without_comment: bool = False,
 ) -> CompleteReviewCommand:
     evidence_by_queue = {
         branch.queue_public_id: branch for branch in lease.evidence_branches
@@ -397,8 +407,8 @@ def _complete_command(
         scope=ALL_GROUPS_SCOPE,
         idempotency_key=idempotency_key,
         verdict=int(verdict),
-        comment="Точная формулировка проверки.",
-        confirm_without_comment=False,
+        comment=comment,
+        confirm_without_comment=confirm_without_comment,
         branches=tuple(
             ReviewEvidenceBranchExpectation(
                 queue_public_id=item.queue_public_id,
@@ -420,6 +430,7 @@ def _complete_command(
             for item in lease.items
         ),
         annotations=annotations,
+        internal_reaction_id=internal_reaction_id,
     )
 
 
@@ -719,6 +730,198 @@ async def test_complete_rejects_a_thread_change_without_partial_writes(
         ).fetchone()
     )
     assert counts == {"reviews": 0, "results": 0, "queue": 2}
+
+
+@pytest.mark.asyncio
+async def test_complete_persists_internal_reaction_atomically_and_replays_it(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    command = _complete_command(lease, internal_reaction_id=100)
+
+    receipt = await fixture.repository.complete(command)
+
+    assert receipt.internal_reaction is not None
+    assert receipt.internal_reaction.reaction_id == 100
+    assert receipt.internal_reaction.version == 1
+    assert receipt.internal_reaction.editable_until == NOW + timedelta(hours=1)
+    stored = fixture.factory.run_read(
+        lambda connection: {
+            "state": connection.execute(
+                "SELECT reaction_id, version, deleted_at "
+                "FROM submission_review_internal_reactions"
+            ).fetchone(),
+            "events": connection.execute(
+                "SELECT event_kind, reaction_id, state_version "
+                "FROM submission_review_internal_reaction_events ORDER BY id"
+            ).fetchall(),
+        }
+    )
+    assert stored == {
+        "state": {"reaction_id": 100, "version": 1, "deleted_at": None},
+        "events": [
+            {"event_kind": "selected", "reaction_id": 100, "state_version": 1}
+        ],
+    }
+    replay = await fixture.repository.complete(command)
+    assert replay.replayed is True
+    assert replay.internal_reaction == receipt.internal_reaction
+
+
+@pytest.mark.asyncio
+async def test_internal_reaction_supports_optimistic_change_delete_and_reselect(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    receipt = await fixture.repository.complete(
+        _complete_command(lease, internal_reaction_id=100)
+    )
+
+    changed = await fixture.repository.set_internal_reaction(
+        review_public_id=receipt.review_public_id,
+        reaction_id=103,
+        expected_version=1,
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    assert (changed.reaction_id, changed.version, changed.deleted) == (103, 2, False)
+    unchanged = await fixture.repository.set_internal_reaction(
+        review_public_id=receipt.review_public_id,
+        reaction_id=103,
+        expected_version=2,
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    assert unchanged == changed
+
+    deleted = await fixture.repository.delete_internal_reaction(
+        review_public_id=receipt.review_public_id,
+        expected_version=2,
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    assert (deleted.reaction_id, deleted.version, deleted.deleted) == (None, 3, True)
+    fixture.clock.value += timedelta(minutes=10)
+    selected = await fixture.repository.set_internal_reaction(
+        review_public_id=receipt.review_public_id,
+        reaction_id=101,
+        expected_version=3,
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    assert (selected.reaction_id, selected.version, selected.deleted) == (101, 4, False)
+    events = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT event_kind, reaction_id, state_version "
+            "FROM submission_review_internal_reaction_events ORDER BY state_version"
+        ).fetchall()
+    )
+    assert events == [
+        {"event_kind": "selected", "reaction_id": 100, "state_version": 1},
+        {"event_kind": "changed", "reaction_id": 103, "state_version": 2},
+        {"event_kind": "deleted", "reaction_id": None, "state_version": 3},
+        {"event_kind": "selected", "reaction_id": 101, "state_version": 4},
+    ]
+    for statement in (
+        "UPDATE submission_review_internal_reaction_events SET event_kind = 'changed'",
+        "DELETE FROM submission_review_internal_reaction_events",
+        "DELETE FROM submission_review_internal_reactions",
+    ):
+        with pytest.raises(sqlite3.IntegrityError, match="reaction"):
+            fixture.factory.run_write(
+                lambda connection, sql=statement: connection.execute(sql)
+            )
+
+
+@pytest.mark.asyncio
+async def test_internal_reaction_fails_closed_on_type_owner_version_and_window(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    with pytest.raises(ReviewInternalReactionInvalid):
+        await fixture.repository.complete(
+            _complete_command(lease, internal_reaction_id=0)
+        )
+    assert fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT count(*) AS count FROM submission_reviews"
+        ).fetchone()["count"]
+    ) == 0
+
+    receipt = await fixture.repository.complete(_complete_command(lease))
+    with pytest.raises(ReviewInternalReactionInvalid, match="written Teacher"):
+        await fixture.repository.set_internal_reaction(
+            review_public_id=receipt.review_public_id,
+            reaction_id=1,
+            expected_version=0,
+            teacher_user_id=TEACHER_ONE_ID,
+            scope=ALL_GROUPS_SCOPE,
+        )
+    with pytest.raises(ReviewQueueForbidden, match="original reviewer"):
+        await fixture.repository.set_internal_reaction(
+            review_public_id=receipt.review_public_id,
+            reaction_id=100,
+            expected_version=0,
+            teacher_user_id=TEACHER_TWO_ID,
+            scope=ALL_GROUPS_SCOPE,
+        )
+    selected = await fixture.repository.set_internal_reaction(
+        review_public_id=receipt.review_public_id,
+        reaction_id=100,
+        expected_version=0,
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    assert selected.version == 1
+    with pytest.raises(ReviewInternalReactionConflict):
+        await fixture.repository.set_internal_reaction(
+            review_public_id=receipt.review_public_id,
+            reaction_id=101,
+            expected_version=0,
+            teacher_user_id=TEACHER_ONE_ID,
+            scope=ALL_GROUPS_SCOPE,
+        )
+    fixture.clock.value += timedelta(hours=1, microseconds=1)
+    with pytest.raises(ReviewInternalReactionWindowClosed):
+        await fixture.repository.delete_internal_reaction(
+            review_public_id=receipt.review_public_id,
+            expected_version=1,
+            teacher_user_id=TEACHER_ONE_ID,
+            scope=ALL_GROUPS_SCOPE,
+        )
+
+
+@pytest.mark.asyncio
+async def test_plus_dot_is_an_accepted_verdict_without_comment(review_queue_fixture):
+    fixture = review_queue_fixture
+    # The domain constructor itself is the policy boundary; no database call is needed.
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    command = _complete_command(
+        lease,
+        verdict=VERDICT.VERDICT_PLUS_DOT,
+        comment=None,
+        confirm_without_comment=False,
+    )
+    assert command.verdict == int(VERDICT.VERDICT_PLUS_DOT)
 
 
 @pytest.mark.asyncio
