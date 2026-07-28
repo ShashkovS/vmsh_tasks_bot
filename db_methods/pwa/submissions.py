@@ -25,6 +25,7 @@ from helpers.pwa.test_checkers import TrustedCheckerExecutor
 from models.pwa.submissions import (
     SubmissionConfigurationError,
     TestAnswerEvaluation,
+    TestAnswerOutcome,
     TestAttemptPolicy,
     TestProblemAnswerConfig,
     assess_submission_clock,
@@ -327,6 +328,34 @@ class TestAnswerInputRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class TestAttemptRecheckPreview:
+    """Current published checker revision and its unresolved attempt count."""
+
+    problem_public_id: str
+    condition_revision_public_id: str
+    config_version: int
+    course_public_id: str
+    group_public_id: str
+    pending_attempts: int
+
+
+@dataclass(frozen=True, slots=True)
+class TestAttemptRecheckReceipt:
+    """Monotonic result of applying the current checker to pending attempts."""
+
+    problem_public_id: str
+    condition_revision_public_id: str
+    config_version: int
+    pending_before: int
+    checked: int
+    correct: int
+    wrong: int
+    still_pending: int
+    skipped_concurrent: int
+    owner_account_public_ids: tuple[str, ...] = field(repr=False)
+
+
+@dataclass(frozen=True, slots=True)
 class _SubmissionContext:
     account_id: int
     student_user_id: int
@@ -341,6 +370,28 @@ class _SubmissionContext:
     submission_closes_at: datetime
     answer_config: TestProblemAnswerConfig
     attempt_policy: TestAttemptPolicy
+
+
+@dataclass(frozen=True, slots=True)
+class _RecheckContext:
+    problem_id: int
+    problem_public_id: str
+    problem_revision_id: int
+    condition_revision_public_id: str
+    config_version: int
+    course_public_id: str
+    group_public_id: str
+    group_id: str
+    lesson_number: int
+    answer_config: TestProblemAnswerConfig
+
+
+@dataclass(frozen=True, slots=True)
+class _PendingAttempt:
+    id: int
+    public_id: str
+    student_user_id: int
+    display_answer: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -464,6 +515,50 @@ WHERE account.id = :account_id
 """
 
 
+_RECHECK_CONTEXT_SELECT = """
+SELECT problem.id AS problem_id,
+       problem.public_id AS problem_public_id,
+       problem_revision.id AS problem_revision_id,
+       condition_revision.public_id AS condition_revision_public_id,
+       problem_revision.config_version,
+       course.public_id AS course_public_id,
+       group_record.public_id AS group_public_id,
+       group_lesson.group_id,
+       course_lesson.lesson_number,
+       problem_revision.answer_type,
+       problem_revision.answer_config_json
+FROM problems AS problem
+JOIN problem_revisions AS problem_revision
+  ON problem_revision.problem_id = problem.id
+ AND problem_revision.problem_type = 1
+ AND problem_revision.answer_type IS NOT NULL
+JOIN content_revisions AS condition_revision
+  ON condition_revision.id = problem_revision.content_revision_id
+ AND condition_revision.status = 'ready'
+JOIN content_sources AS source
+  ON source.id = condition_revision.source_id
+ AND source.kind = 'condition'
+JOIN group_lessons AS group_lesson
+  ON group_lesson.id = source.group_lesson_id
+ AND group_lesson.status = 'active'
+JOIN course_lessons AS course_lesson
+  ON course_lesson.id = group_lesson.course_lesson_id
+JOIN groups AS group_record
+  ON group_record.course_id = group_lesson.course_id
+ AND group_record.group_id = group_lesson.group_id
+ AND group_record.status = 'active'
+JOIN courses AS course
+  ON course.id = group_lesson.course_id
+ AND course.status = 'active'
+JOIN lesson_publications AS publication
+  ON publication.group_lesson_id = group_lesson.id
+ AND publication.kind = 'condition'
+ AND publication.revision_id = condition_revision.id
+ AND publication.state = 'published'
+WHERE problem.public_id = :problem_public_id
+"""
+
+
 def _context_from_row(row: Mapping[str, object]) -> _SubmissionContext:
     try:
         answer_config_raw = json.loads(str(row["answer_config_json"]))
@@ -498,6 +593,85 @@ def _context_from_row(row: Mapping[str, object]) -> _SubmissionContext:
         ),
         attempt_policy=TestAttemptPolicy.from_revision(attempt_policy_raw),
     )
+
+
+def _recheck_context_from_row(row: Mapping[str, object]) -> _RecheckContext:
+    try:
+        answer_config_raw = json.loads(str(row["answer_config_json"]))
+    except (json.JSONDecodeError, KeyError, RecursionError) as error:
+        raise SubmissionConfigurationError(
+            "stored recheck configuration is invalid"
+        ) from error
+    if not isinstance(answer_config_raw, dict):
+        raise SubmissionConfigurationError(
+            "stored recheck configuration must be an object"
+        )
+    return _RecheckContext(
+        problem_id=int(row["problem_id"]),
+        problem_public_id=str(row["problem_public_id"]),
+        problem_revision_id=int(row["problem_revision_id"]),
+        condition_revision_public_id=str(row["condition_revision_public_id"]),
+        config_version=int(row["config_version"]),
+        course_public_id=str(row["course_public_id"]),
+        group_public_id=str(row["group_public_id"]),
+        group_id=str(row["group_id"]),
+        lesson_number=int(row["lesson_number"]),
+        answer_config=TestProblemAnswerConfig.from_revision(
+            answer_type=int(row["answer_type"]),
+            answer_config=answer_config_raw,
+        ),
+    )
+
+
+def _resolve_recheck_context(
+    connection: sqlite3.Connection, *, problem_public_id: str
+) -> _RecheckContext:
+    rows = connection.execute(
+        _RECHECK_CONTEXT_SELECT,
+        {"problem_public_id": problem_public_id},
+    ).fetchall()
+    if len(rows) != 1:
+        raise TestSubmissionRejected(
+            code="test_problem_not_found",
+            message="Тестовая задача недоступна для перепроверки.",
+            http_status=404,
+        )
+    return _recheck_context_from_row(rows[0])
+
+
+def _pending_attempts(
+    connection: sqlite3.Connection, *, problem_id: int
+) -> tuple[_PendingAttempt, ...]:
+    rows = connection.execute(
+        "SELECT id, public_id, student_user_id, answer_payload_json "
+        "FROM test_attempts WHERE problem_id = ? "
+        "AND check_status = 'pending_configuration' "
+        "ORDER BY server_received_at, id",
+        (problem_id,),
+    ).fetchall()
+    attempts: list[_PendingAttempt] = []
+    for row in rows:
+        try:
+            answer_payload = json.loads(str(row["answer_payload_json"]))
+        except (json.JSONDecodeError, RecursionError) as error:
+            raise TestSubmissionRepositoryError(
+                "stored pending attempt payload is invalid"
+            ) from error
+        if not isinstance(answer_payload, dict) or not isinstance(
+            answer_payload.get("displayAnswer"), str
+        ):
+            raise TestSubmissionRepositoryError(
+                "stored pending attempt display answer is invalid"
+            )
+        attempts.append(
+            _PendingAttempt(
+                id=int(row["id"]),
+                public_id=str(row["public_id"]),
+                student_user_id=int(row["student_user_id"]),
+                display_answer=str(answer_payload["displayAnswer"]),
+            )
+        )
+    return tuple(attempts)
 
 
 def _resolve_context(
@@ -1040,6 +1214,221 @@ class PwaTestSubmissionRepository:
             )
         )
 
+    async def get_test_attempt_recheck_preview(
+        self, *, problem_public_id: str
+    ) -> TestAttemptRecheckPreview:
+        """Return the current published checker revision and pending count."""
+
+        if not _PUBLIC_ID.fullmatch(problem_public_id):
+            raise ValueError("problem public ID is invalid")
+
+        def read(connection: sqlite3.Connection) -> TestAttemptRecheckPreview:
+            context = _resolve_recheck_context(
+                connection, problem_public_id=problem_public_id
+            )
+            pending = connection.execute(
+                "SELECT count(*) AS n FROM test_attempts "
+                "WHERE problem_id = ? "
+                "AND check_status = 'pending_configuration'",
+                (context.problem_id,),
+            ).fetchone()
+            return TestAttemptRecheckPreview(
+                problem_public_id=context.problem_public_id,
+                condition_revision_public_id=(context.condition_revision_public_id),
+                config_version=context.config_version,
+                course_public_id=context.course_public_id,
+                group_public_id=context.group_public_id,
+                pending_attempts=int(pending["n"]),
+            )
+
+        return await self._factory.run_read_async(read)
+
+    async def recheck_pending_test_attempts(
+        self,
+        *,
+        problem_public_id: str,
+        expected_condition_revision_public_id: str,
+        expected_config_version: int,
+        actor_user_id: int,
+    ) -> TestAttemptRecheckReceipt:
+        """Check unresolved attempts against one explicitly previewed revision.
+
+        The original answer, timestamps and problem revision remain immutable.
+        Only a successful current evaluation creates a legacy result and moves
+        the attempt to ``checked``. A still-missing or broken checker leaves the
+        attempt retryable as ``pending_configuration``.
+        """
+
+        if not _PUBLIC_ID.fullmatch(problem_public_id):
+            raise ValueError("problem public ID is invalid")
+        if not _PUBLIC_ID.fullmatch(expected_condition_revision_public_id):
+            raise ValueError("expected condition revision public ID is invalid")
+        if type(expected_config_version) is not int or expected_config_version < 1:
+            raise ValueError("expected config version must be positive")
+        if actor_user_id < 1:
+            raise ValueError("actor user ID must be positive")
+
+        def read_recheck(
+            connection: sqlite3.Connection,
+        ) -> tuple[_RecheckContext, tuple[_PendingAttempt, ...]]:
+            current = _resolve_recheck_context(
+                connection, problem_public_id=problem_public_id
+            )
+            return current, _pending_attempts(connection, problem_id=current.problem_id)
+
+        context, pending_attempts = await self._factory.run_read_async(read_recheck)
+        if (
+            context.condition_revision_public_id
+            != expected_condition_revision_public_id
+            or context.config_version != expected_config_version
+        ):
+            raise TestSubmissionRejected(
+                code="test_problem_revision_changed",
+                message="Настройки задачи изменились. Обновите страницу.",
+                http_status=409,
+            )
+
+        evaluations = await asyncio.to_thread(
+            lambda: tuple(
+                (
+                    attempt,
+                    evaluate_test_answer(
+                        context.answer_config,
+                        attempt.display_answer,
+                        trusted_executor=self._trusted_checker_executor,
+                    ),
+                )
+                for attempt in pending_attempts
+            )
+        )
+        checked_at = self._now()
+        return await self._factory.run_write_async(
+            lambda connection: self._write_recheck(
+                connection,
+                initial_context=context,
+                expected_condition_revision_public_id=(
+                    expected_condition_revision_public_id
+                ),
+                expected_config_version=expected_config_version,
+                actor_user_id=actor_user_id,
+                checked_at=checked_at,
+                evaluations=evaluations,
+            )
+        )
+
+    @staticmethod
+    def _write_recheck(
+        connection: sqlite3.Connection,
+        *,
+        initial_context: _RecheckContext,
+        expected_condition_revision_public_id: str,
+        expected_config_version: int,
+        actor_user_id: int,
+        checked_at: datetime,
+        evaluations: tuple[tuple[_PendingAttempt, TestAnswerEvaluation], ...],
+    ) -> TestAttemptRecheckReceipt:
+        context = _resolve_recheck_context(
+            connection,
+            problem_public_id=initial_context.problem_public_id,
+        )
+        if (
+            context != initial_context
+            or context.condition_revision_public_id
+            != expected_condition_revision_public_id
+            or context.config_version != expected_config_version
+        ):
+            raise TestSubmissionRejected(
+                code="test_problem_revision_changed",
+                message="Настройки задачи изменились. Обновите страницу.",
+                http_status=409,
+            )
+
+        checked_timestamp = _timestamp(checked_at)
+        checked = correct = wrong = skipped_concurrent = 0
+        affected_student_user_ids: set[int] = set()
+        for attempt, evaluation in evaluations:
+            if evaluation.outcome not in {
+                TestAnswerOutcome.CORRECT,
+                TestAnswerOutcome.WRONG,
+            }:
+                continue
+            current = connection.execute(
+                "SELECT check_status FROM test_attempts WHERE id = ? "
+                "AND problem_id = ?",
+                (attempt.id, context.problem_id),
+            ).fetchone()
+            if current is None or current["check_status"] != "pending_configuration":
+                skipped_concurrent += 1
+                continue
+            if evaluation.verdict is None or evaluation.checker_version is None:
+                raise TestSubmissionRepositoryError(
+                    "checked re-evaluation has no verdict or checker version"
+                )
+            result_id = int(
+                connection.execute(
+                    "INSERT INTO results "
+                    "(student_id, problem_id, group_id, lesson, teacher_id, ts, "
+                    "verdict, answer, res_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "RETURNING id",
+                    (
+                        attempt.student_user_id,
+                        context.problem_id,
+                        context.group_id,
+                        context.lesson_number,
+                        actor_user_id,
+                        checked_timestamp,
+                        int(evaluation.verdict),
+                        attempt.display_answer,
+                        int(RES_TYPE.TEST),
+                    ),
+                ).fetchone()["id"]
+            )
+            connection.execute(
+                "UPDATE test_attempts SET check_status = 'checked', "
+                "checker_version = ?, verdict = ?, result_id = ?, checked_at = ? "
+                "WHERE id = ? AND check_status = 'pending_configuration'",
+                (
+                    evaluation.checker_version,
+                    int(evaluation.verdict),
+                    result_id,
+                    checked_timestamp,
+                    attempt.id,
+                ),
+            )
+            checked += 1
+            if evaluation.outcome is TestAnswerOutcome.CORRECT:
+                correct += 1
+            else:
+                wrong += 1
+            affected_student_user_ids.add(attempt.student_user_id)
+
+        pending = connection.execute(
+            "SELECT count(*) AS n FROM test_attempts WHERE problem_id = ? "
+            "AND check_status = 'pending_configuration'",
+            (context.problem_id,),
+        ).fetchone()
+        account_public_ids: tuple[str, ...] = ()
+        if affected_student_user_ids:
+            placeholders = ",".join("?" for _ in affected_student_user_ids)
+            rows = connection.execute(
+                "SELECT public_id FROM auth_accounts WHERE audience = 'student' "
+                "AND linked_user_id IN (" + placeholders + ") ORDER BY public_id",
+                tuple(sorted(affected_student_user_ids)),
+            ).fetchall()
+            account_public_ids = tuple(str(row["public_id"]) for row in rows)
+        return TestAttemptRecheckReceipt(
+            problem_public_id=context.problem_public_id,
+            condition_revision_public_id=context.condition_revision_public_id,
+            config_version=context.config_version,
+            pending_before=len(evaluations),
+            checked=checked,
+            correct=correct,
+            wrong=wrong,
+            still_pending=int(pending["n"]),
+            skipped_concurrent=skipped_concurrent,
+            owner_account_public_ids=account_public_ids,
+        )
+
     def _write_submission(
         self,
         connection: sqlite3.Connection,
@@ -1265,6 +1654,8 @@ __all__ = [
     "SubmitTestAnswerCommand",
     "TestAttemptHistoryPage",
     "TestAttemptHistoryRecord",
+    "TestAttemptRecheckPreview",
+    "TestAttemptRecheckReceipt",
     "TestAttemptReceipt",
     "TestSubmissionRejected",
     "TestSubmissionRepositoryError",

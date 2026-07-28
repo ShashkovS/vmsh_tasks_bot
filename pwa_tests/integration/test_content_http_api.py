@@ -722,6 +722,9 @@ async def _create_lesson_window(
 
 async def _prepare_published_test_problem(
     fixture: ContentHttpFixture,
+    *,
+    correct_answer: str | None = "7",
+    correct_answer_checker: str | None = None,
 ) -> tuple[str, str]:
     """Use the real Staff content API to create one submit-ready problem."""
 
@@ -784,8 +787,8 @@ async def _prepare_published_test_problem(
             "answerType": 3,
             "answerValidation": None,
             "validationError": "Введите целое число, например -7",
-            "correctAnswer": "7",
-            "correctAnswerChecker": None,
+            "correctAnswer": correct_answer,
+            "correctAnswerChecker": correct_answer_checker,
             "wrongAnswer": "Нет, это другое число.",
             "congratulation": "Да, всё верно!",
         }
@@ -812,6 +815,114 @@ async def _prepare_published_test_problem(
     )
     assert published.status == 201, await published.text()
     return str(problem_public_id), str(revision["revisionId"])
+
+
+async def _publish_repaired_test_problem(
+    fixture: ContentHttpFixture,
+    *,
+    problem_public_id: str,
+    correct_answer: str | None,
+    correct_answer_checker: str | None = None,
+) -> tuple[str, int]:
+    """Publish a new immutable condition revision for an existing problem."""
+
+    revision, _compile_etag = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="submissions/condition.tex",
+        source="\\задача[title=Целое число] Введите число 179. \\кзадача",
+        review=False,
+    )
+    problem_id = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT id FROM problems WHERE public_id = ?", (problem_public_id,)
+        ).fetchone()["id"]
+    )
+    match_url = (
+        f"/staff/api/v1/content/revisions/{revision['revisionId']}/problem-matches"
+    )
+    initial_response = await fixture.client.get(
+        match_url,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert initial_response.status == 200, await initial_response.text()
+    item = (await initial_response.json())["items"][0]
+    matched = await fixture.client.put(
+        match_url,
+        json={
+            "matches": [
+                {
+                    "sourceOrdinal": item["sourceOrdinal"],
+                    "sourceItem": item["sourceItem"],
+                    "decision": "manual_match",
+                    "problemId": problem_id,
+                }
+            ]
+        },
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial_response.headers["ETag"]),
+    )
+    assert matched.status == 200, await matched.text()
+
+    grid_url = f"/staff/api/v1/group-lessons/{fixture.group_lesson_a}/metadata-grid"
+    grid_response = await fixture.client.get(
+        grid_url,
+        params={"revisionId": revision["revisionId"]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert grid_response.status == 200, await grid_response.text()
+    row = (await grid_response.json())["rows"][0]
+    row.update(
+        {
+            "title": "Целое число",
+            "problemType": 1,
+            "answerType": 3,
+            "answerValidation": None,
+            "validationError": "Введите целое число, например -7",
+            "correctAnswer": correct_answer,
+            "correctAnswerChecker": correct_answer_checker,
+            "wrongAnswer": "Нет, это другое число.",
+            "congratulation": "Да, всё верно!",
+        }
+    )
+    row.pop("reviewed")
+    saved = await fixture.client.put(
+        grid_url,
+        json={"revisionId": revision["revisionId"], "rows": [row]},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=grid_response.headers["ETag"]),
+    )
+    assert saved.status == 200, await saved.text()
+    current = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT public_id, version FROM lesson_publications "
+            "WHERE group_lesson_id = (SELECT id FROM group_lessons WHERE public_id = ?) "
+            "AND kind = 'condition' AND state = 'published'",
+            (fixture.group_lesson_a,),
+        ).fetchone()
+    )
+    published = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=revision["revisionId"],
+        expected_id=current["public_id"],
+        expected_version=current["version"],
+        if_match=f'"{current["public_id"]}:v{current["version"]}"',
+    )
+    assert published.status == 201, await published.text()
+    config_version = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT config_version FROM problem_revisions "
+            "WHERE content_revision_id = (SELECT id FROM content_revisions WHERE public_id = ?) "
+            "AND problem_id = ?",
+            (revision["revisionId"], problem_id),
+        ).fetchone()["config_version"]
+    )
+    return str(revision["revisionId"]), int(config_version)
 
 
 async def test_student_test_submission_http_is_strict_idempotent_and_readable(
@@ -1032,6 +1143,165 @@ async def test_student_test_submission_http_rejects_unauthenticated_and_bad_curs
         headers=_headers(),
     )
     assert invalid_cursor.status == 422
+
+
+async def test_staff_rechecks_pending_attempts_after_publishing_repaired_config(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    problem_public_id, original_revision_id = await _prepare_published_test_problem(
+        fixture,
+        correct_answer=None,
+    )
+    student_route = f"/student/api/v1/problems/{problem_public_id}/test-attempts"
+    submitted = await fixture.client.post(
+        student_route,
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "018f47f6-7668-7c85-a034-c5b8218bac09",
+            "problemRevision": {
+                "conditionRevisionId": original_revision_id,
+                "configVersion": 1,
+            },
+            "displayAnswer": "179",
+            "clientCreatedAt": _timestamp(),
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert submitted.status == 201, await submitted.text()
+    assert (await submitted.json())["outcome"] == "pending_configuration"
+
+    route = f"/staff/api/v1/problems/{problem_public_id}/recheck-test-attempts"
+    unauthenticated = await fixture.client.get(route, headers=_headers())
+    assert unauthenticated.status == 401
+    teacher = await fixture.client.get(
+        route,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(),
+    )
+    assert teacher.status == 403
+    initial_preview_response = await fixture.client.get(
+        route,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert initial_preview_response.status == 200
+    initial_preview = await initial_preview_response.json()
+    assert initial_preview["pendingAttempts"] == 1
+    assert initial_preview["problemRevision"] == {
+        "conditionRevisionId": original_revision_id,
+        "configVersion": 1,
+    }
+
+    (
+        repaired_revision_id,
+        repaired_config_version,
+    ) = await _publish_repaired_test_problem(
+        fixture,
+        problem_public_id=problem_public_id,
+        correct_answer="179",
+    )
+    preview_response = await fixture.client.get(
+        route,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert preview_response.status == 200
+    preview = await preview_response.json()
+    assert preview["problemRevision"] == {
+        "conditionRevisionId": repaired_revision_id,
+        "configVersion": repaired_config_version,
+    }
+    assert preview["pendingAttempts"] == 1
+
+    missing_origin = await fixture.client.post(
+        route,
+        json={
+            "schemaVersion": 1,
+            "problemRevision": preview["problemRevision"],
+        },
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert missing_origin.status == 403
+    stale = await fixture.client.post(
+        route,
+        json={
+            "schemaVersion": 1,
+            "problemRevision": initial_preview["problemRevision"],
+        },
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert stale.status == 409
+    assert (await stale.json())["error"]["code"] == "test_problem_revision_changed"
+
+    cursors_before = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
+    rechecked = await fixture.client.post(
+        route,
+        json={
+            "schemaVersion": 1,
+            "problemRevision": preview["problemRevision"],
+        },
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert rechecked.status == 200, await rechecked.text()
+    receipt = await rechecked.json()
+    assert receipt == {
+        "schemaVersion": 1,
+        "problemId": problem_public_id,
+        "problemRevision": preview["problemRevision"],
+        "pendingBefore": 1,
+        "checked": 1,
+        "correct": 1,
+        "wrong": 0,
+        "stillPending": 0,
+        "skippedConcurrent": 0,
+        "threadInvalidationKey": f"problems/{problem_public_id}/test-attempts",
+        "requestId": "content.http.test",
+    }
+    assert fixture.client.app[pwa_app.PWA_STATE]["cursors"] == {
+        **cursors_before,
+        "student": cursors_before["student"] + 1,
+    }
+
+    history_response = await fixture.client.get(
+        student_route,
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert history_response.status == 200
+    history = await history_response.json()
+    assert history["attempts"][0]["outcome"] == "correct"
+    assert history["attempts"][0]["problemRevision"] == {
+        "conditionRevisionId": original_revision_id,
+        "configVersion": 1,
+    }
+    assert history["attempts"][0]["feedback"] is None
+    stored = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute("SELECT count(*) AS n FROM results").fetchone()["n"],
+            connection.execute("SELECT teacher_id FROM results").fetchone()[
+                "teacher_id"
+            ],
+        )
+    )
+    assert stored == (1, ADMIN_USER_ID)
+
+    repeated = await fixture.client.post(
+        route,
+        json={
+            "schemaVersion": 1,
+            "problemRevision": preview["problemRevision"],
+        },
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert repeated.status == 200
+    repeated_payload = await repeated.json()
+    assert repeated_payload["pendingBefore"] == repeated_payload["checked"] == 0
 
 
 async def test_staff_lists_explicit_same_lesson_bulk_upload_targets(

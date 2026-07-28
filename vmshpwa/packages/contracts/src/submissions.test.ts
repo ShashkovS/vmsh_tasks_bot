@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import historyFixture from '../fixtures/submissions/history.v1.json'
 import inputFixture from '../fixtures/submissions/input.v1.json'
 import mutationFixture from '../fixtures/submissions/mutation.v1.json'
+import recheckFixture from '../fixtures/submissions/recheck.v1.json'
 
 import {
   submitTestAnswerRequestSchema,
@@ -12,6 +13,8 @@ import {
   testSubmissionHistoryFixtureSchema,
   testSubmissionMutationFixtureSchema,
   testSubmissionQueryKeys,
+  testSubmissionRecheckFixtureSchema,
+  testAttemptRecheckResponseSchema,
 } from './submissions'
 
 describe('Phase-4 test-submission contracts', () => {
@@ -21,6 +24,22 @@ describe('Phase-4 test-submission contracts', () => {
 
   it('keeps the versioned history fixture ordered and owner-resource scoped', () => {
     expect(testSubmissionHistoryFixtureSchema.parse(historyFixture)).toEqual(historyFixture)
+  })
+
+  it('keeps the Staff recheck fixture revision-bound and internally consistent', () => {
+    expect(testSubmissionRecheckFixtureSchema.parse(recheckFixture)).toEqual(recheckFixture)
+    expect(
+      testAttemptRecheckResponseSchema.safeParse({
+        ...recheckFixture.response,
+        checked: 3,
+      }).success,
+    ).toBe(false)
+    expect(
+      testAttemptRecheckResponseSchema.safeParse({
+        ...recheckFixture.response,
+        threadInvalidationKey: 'problems/another/test-attempts',
+      }).success,
+    ).toBe(false)
   })
 
   it('exposes input help and visible choices without checker secrets', () => {
@@ -130,5 +149,10 @@ describe('Phase-4 test-submission contracts', () => {
       testSubmissionQueryKeys.history(secondPrincipal, 'problem-fixture-test'),
     )
     expect(() => testSubmissionQueryKeys.history(firstPrincipal, '../unsafe-problem')).toThrow()
+    const staffPrincipal = { audience: 'staff' as const, accountId: 'account-staff' }
+    expect(testSubmissionQueryKeys.recheck(staffPrincipal, 'problem-fixture-test')).toEqual([
+      ...testSubmissionQueryKeys.problem(staffPrincipal, 'problem-fixture-test'),
+      'recheck',
+    ])
   })
 })

@@ -9,6 +9,7 @@ Authoritative requirements:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -25,9 +26,17 @@ from db_methods.pwa.submissions import (
     PwaTestSubmissionRepository,
     SubmitTestAnswerCommand,
     TestAttemptHistoryRecord,
+    TestAttemptRecheckPreview,
+    TestAttemptRecheckReceipt,
     TestAttemptReceipt,
     TestSubmissionRejected,
     TestSubmissionRepositoryError,
+)
+from helpers.pwa.permissions import (
+    AccessForbiddenError,
+    AuthenticationRequiredError,
+    Capability,
+    require_access,
 )
 from models.pwa.auth import AuthAudience
 from models.pwa.submissions import SubmissionConfigurationError
@@ -46,6 +55,7 @@ _REQUEST_FIELDS = frozenset(
         "clientCreatedAt",
     }
 )
+_RECHECK_REQUEST_FIELDS = frozenset({"schemaVersion", "problemRevision"})
 
 PWA_TEST_SUBMISSION_REPOSITORY = web.AppKey(
     "pwa_test_submission_repository", PwaTestSubmissionRepository
@@ -84,6 +94,35 @@ def _student_identity(request: web.Request) -> tuple[int, str]:
     return account_id, principal.account_public_id
 
 
+def _staff_recheck_actor(
+    request: web.Request, preview: TestAttemptRecheckPreview | None = None
+) -> tuple[int, str]:
+    principal = authenticated_session(request).principal
+    try:
+        authorized = require_access(
+            principal,
+            expected_audience=AuthAudience.STAFF,
+            capability=Capability.CHECKER_MANAGE,
+            course_public_id=(None if preview is None else preview.course_public_id),
+            group_public_id=(None if preview is None else preview.group_public_id),
+        )
+    except AuthenticationRequiredError as error:  # middleware invariant
+        raise PwaApiError(
+            status=401,
+            code="authentication_required",
+            message="Для продолжения войдите в кабинет.",
+        ) from error
+    except AccessForbiddenError as error:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для перепроверки задачи",
+        ) from error
+    if authorized.linked_user_id is None:  # pragma: no cover - auth invariant
+        raise TestSubmissionRepositoryError("staff principal has no linked actor")
+    return authorized.linked_user_id, authorized.account_public_id
+
+
 def _request_id(request: web.Request) -> str:
     return request["request_id"]
 
@@ -99,7 +138,9 @@ def _problem_public_id(request: web.Request) -> str:
     return value
 
 
-async def _json_object(request: web.Request) -> dict[str, object]:
+async def _json_object(
+    request: web.Request, *, required_fields: frozenset[str] = _REQUEST_FIELDS
+) -> dict[str, object]:
     if (
         request.content_length is not None
         and request.content_length > TEST_SUBMISSION_BODY_LIMIT_BYTES
@@ -137,14 +178,18 @@ async def _json_object(request: web.Request) -> dict[str, object]:
             code="validation_error",
             message="Тело запроса должно быть корректным JSON-объектом",
         ) from error
-    if not isinstance(payload, dict) or set(payload) != _REQUEST_FIELDS:
+    if not isinstance(payload, dict) or set(payload) != required_fields:
         raise PwaApiError(
             status=422,
             code="validation_error",
             message="Проверьте поля ответа",
-            details={"required": sorted(_REQUEST_FIELDS)},
+            details={"required": sorted(required_fields)},
         )
     return payload
+
+
+async def _recheck_json_object(request: web.Request) -> dict[str, object]:
+    return await _json_object(request, required_fields=_RECHECK_REQUEST_FIELDS)
 
 
 def _canonical_uuid(value: object) -> str:
@@ -307,6 +352,44 @@ def _history_payload(record: TestAttemptHistoryRecord) -> dict[str, object]:
     return record.response_payload()
 
 
+def _recheck_preview_payload(
+    preview: TestAttemptRecheckPreview, *, request_id: str
+) -> dict[str, object]:
+    return {
+        "schemaVersion": 1,
+        "problemId": preview.problem_public_id,
+        "problemRevision": {
+            "conditionRevisionId": preview.condition_revision_public_id,
+            "configVersion": preview.config_version,
+        },
+        "pendingAttempts": preview.pending_attempts,
+        "requestId": request_id,
+    }
+
+
+def _recheck_receipt_payload(
+    receipt: TestAttemptRecheckReceipt, *, request_id: str
+) -> dict[str, object]:
+    return {
+        "schemaVersion": 1,
+        "problemId": receipt.problem_public_id,
+        "problemRevision": {
+            "conditionRevisionId": receipt.condition_revision_public_id,
+            "configVersion": receipt.config_version,
+        },
+        "pendingBefore": receipt.pending_before,
+        "checked": receipt.checked,
+        "correct": receipt.correct,
+        "wrong": receipt.wrong,
+        "stillPending": receipt.still_pending,
+        "skippedConcurrent": receipt.skipped_concurrent,
+        "threadInvalidationKey": (
+            f"problems/{receipt.problem_public_id}/test-attempts"
+        ),
+        "requestId": request_id,
+    }
+
+
 def _translate_submission_errors(handler):
     @wraps(handler)
     async def wrapped(request: web.Request):
@@ -334,6 +417,7 @@ async def _invalidate_after_commit(
     *,
     account_public_id: str,
     problem_public_id: str,
+    reason: str = "test-attempt-created",
 ) -> None:
     invalidator = request.app.get(PWA_TEST_SUBMISSION_INVALIDATOR)
     if invalidator is None:
@@ -342,7 +426,7 @@ async def _invalidate_after_commit(
         await invalidator(
             account_public_id,
             problem_public_id,
-            "test-attempt-created",
+            reason,
         )
     except Exception:
         # SQLite is authoritative; reconnect performs a full refetch. A NATS
@@ -353,6 +437,25 @@ async def _invalidate_after_commit(
             problem_public_id,
             exc_info=True,
         )
+
+
+async def _invalidate_rechecked_owners(
+    request: web.Request, *, receipt: TestAttemptRecheckReceipt
+) -> None:
+    semaphore = asyncio.Semaphore(16)
+
+    async def invalidate(account_public_id: str) -> None:
+        async with semaphore:
+            await _invalidate_after_commit(
+                request,
+                account_public_id=account_public_id,
+                problem_public_id=receipt.problem_public_id,
+                reason="test-attempt-rechecked",
+            )
+
+    await asyncio.gather(
+        *(invalidate(account_id) for account_id in receipt.owner_account_public_ids)
+    )
 
 
 @submission_routes.post("/student/api/v1/problems/{problem_public_id}/test-attempts")
@@ -444,6 +547,62 @@ async def list_test_attempts(request: web.Request) -> web.Response:
             "nextCursor": page.next_cursor,
             "requestId": _request_id(request),
         }
+    )
+
+
+@submission_routes.get(
+    "/staff/api/v1/problems/{problem_public_id}/recheck-test-attempts"
+)
+@_translate_submission_errors
+async def get_test_attempt_recheck_preview(request: web.Request) -> web.Response:
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+    _staff_recheck_actor(request)
+    problem_public_id = _problem_public_id(request)
+    preview = await _repository(request).get_test_attempt_recheck_preview(
+        problem_public_id=problem_public_id
+    )
+    _staff_recheck_actor(request, preview)
+    return web.json_response(
+        _recheck_preview_payload(preview, request_id=_request_id(request))
+    )
+
+
+@submission_routes.post(
+    "/staff/api/v1/problems/{problem_public_id}/recheck-test-attempts"
+)
+@_translate_submission_errors
+async def recheck_test_attempts(request: web.Request) -> web.Response:
+    actor_user_id, _staff_account_public_id = _staff_recheck_actor(request)
+    problem_public_id = _problem_public_id(request)
+    preview = await _repository(request).get_test_attempt_recheck_preview(
+        problem_public_id=problem_public_id
+    )
+    _staff_recheck_actor(request, preview)
+    payload = await _recheck_json_object(request)
+    if type(payload["schemaVersion"]) is not int or payload["schemaVersion"] != 1:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Версия формата перепроверки не поддерживается",
+            details={"field": "schemaVersion"},
+        )
+    condition_revision_id, config_version = _problem_revision(
+        payload["problemRevision"]
+    )
+    receipt = await _repository(request).recheck_pending_test_attempts(
+        problem_public_id=problem_public_id,
+        expected_condition_revision_public_id=condition_revision_id,
+        expected_config_version=config_version,
+        actor_user_id=actor_user_id,
+    )
+    await _invalidate_rechecked_owners(request, receipt=receipt)
+    return web.json_response(
+        _recheck_receipt_payload(receipt, request_id=_request_id(request))
     )
 
 

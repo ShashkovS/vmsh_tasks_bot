@@ -244,6 +244,67 @@ export const testAttemptHistoryResponseSchema = z
   })
 export type TestAttemptHistoryResponse = z.infer<typeof testAttemptHistoryResponseSchema>
 
+export const recheckTestAttemptsRequestSchema = z
+  .object({
+    schemaVersion: testSubmissionContractVersionSchema,
+    problemRevision: testProblemRevisionSchema,
+  })
+  .strict()
+export type RecheckTestAttemptsRequest = z.infer<typeof recheckTestAttemptsRequestSchema>
+
+export const testAttemptRecheckPreviewResponseSchema = z
+  .object({
+    schemaVersion: testSubmissionContractVersionSchema,
+    problemId: publicIdSchema,
+    problemRevision: testProblemRevisionSchema,
+    pendingAttempts: z.number().int().nonnegative(),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+export type TestAttemptRecheckPreviewResponse = z.infer<
+  typeof testAttemptRecheckPreviewResponseSchema
+>
+
+export const testAttemptRecheckResponseSchema = z
+  .object({
+    schemaVersion: testSubmissionContractVersionSchema,
+    problemId: publicIdSchema,
+    problemRevision: testProblemRevisionSchema,
+    pendingBefore: z.number().int().nonnegative(),
+    checked: z.number().int().nonnegative(),
+    correct: z.number().int().nonnegative(),
+    wrong: z.number().int().nonnegative(),
+    stillPending: z.number().int().nonnegative(),
+    skippedConcurrent: z.number().int().nonnegative(),
+    threadInvalidationKey: z.string().min(1).max(256),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((receipt, context) => {
+    if (receipt.checked !== receipt.correct + receipt.wrong) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Checked count must equal correct plus wrong',
+        path: ['checked'],
+      })
+    }
+    if (receipt.checked + receipt.skippedConcurrent > receipt.pendingBefore) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Recheck cannot resolve more previewed attempts than it read',
+        path: ['pendingBefore'],
+      })
+    }
+    if (receipt.threadInvalidationKey !== `problems/${receipt.problemId}/test-attempts`) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Recheck invalidation key must be scoped to its problem',
+        path: ['threadInvalidationKey'],
+      })
+    }
+  })
+export type TestAttemptRecheckResponse = z.infer<typeof testAttemptRecheckResponseSchema>
+
 export const testSubmissionQueryKeys = {
   all: (principal: PrincipalQueryScope) =>
     [...principalQueryKey(principal), 'test-attempts'] as const,
@@ -257,6 +318,8 @@ export const testSubmissionQueryKeys = {
       'history',
       cursor === null ? 'first' : testAttemptCursorSchema.parse(cursor),
     ] as const,
+  recheck: (principal: PrincipalQueryScope, problemId: string) =>
+    [...testSubmissionQueryKeys.problem(principal, problemId), 'recheck'] as const,
 } as const
 
 export const testSubmissionMutationFixtureSchema = z
@@ -271,5 +334,14 @@ export const testSubmissionHistoryFixtureSchema = z
   .object({
     fixtureVersion: testSubmissionContractVersionSchema,
     response: testAttemptHistoryResponseSchema,
+  })
+  .strict()
+
+export const testSubmissionRecheckFixtureSchema = z
+  .object({
+    fixtureVersion: testSubmissionContractVersionSchema,
+    request: recheckTestAttemptsRequestSchema,
+    preview: testAttemptRecheckPreviewResponseSchema,
+    response: testAttemptRecheckResponseSchema,
   })
   .strict()
