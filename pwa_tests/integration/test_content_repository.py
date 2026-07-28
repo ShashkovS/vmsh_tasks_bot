@@ -1316,7 +1316,7 @@ async def test_hint_and_solution_reveals_are_scoped_and_immutable(content_fixtur
         fixture,
         course_lesson_public_id="course-lesson-reveals",
         course_id=fixture.course_id,
-        lesson_number=49,
+        lesson_number=41,
         group_id="content-a",
         group_lesson_public_id="group-lesson-reveals",
     )
@@ -1371,13 +1371,37 @@ async def test_hint_and_solution_reveals_are_scoped_and_immutable(content_fixtur
         group_lesson_id=group_lesson.id,
         suffix="reveals-hint",
         kind=ContentKind.HINT,
+        canonical_document={
+            "problems": [
+                {"ordinal": 1, "source_item": "1", "source_title": "Reveal scope"}
+            ]
+        },
     )
     _, solution_revision = await _create_source_revision(
         fixture,
         group_lesson_id=group_lesson.id,
         suffix="reveals-solution",
         kind=ContentKind.SOLUTION,
+        canonical_document={
+            "problems": [
+                {"ordinal": 1, "source_item": "1", "source_title": "Reveal scope"}
+            ]
+        },
     )
+    for material_revision in (hint_revision, solution_revision):
+        await fixture.repository.resolve_problem_matches(
+            revision_public_id=material_revision.public_id,
+            expected_review_version=1,
+            drafts=(
+                ProblemMatchDraft(
+                    source_ordinal=1,
+                    source_item="1",
+                    decision=ProblemMatchDecision.AUTO_POSITION,
+                    problem_id=fixture.problem_a_id,
+                ),
+            ),
+            actor_user_id=fixture.actor_user_id,
+        )
     hint = await fixture.repository.create_publication(
         public_id="publication-reveals-hint",
         group_lesson_id=group_lesson.id,
@@ -1416,7 +1440,7 @@ async def test_hint_and_solution_reveals_are_scoped_and_immutable(content_fixtur
             ),
         ).fetchone()["id"]
     )
-    with pytest.raises(sqlite3.IntegrityError, match="published hint"):
+    with pytest.raises(sqlite3.IntegrityError, match="published matched hint"):
         fixture.factory.run_write(
             lambda connection: connection.execute(
                 "INSERT INTO hint_reveals "

@@ -15,6 +15,8 @@ from db_methods.pwa.migrations import MIGRATIONS_ROOT
 CONTENT_MIGRATION_ID = "0041.pwa_content_lessons"
 CONTENT_HARDENING_MIGRATION_ID = "0042.pwa_content_concurrency"
 LESSON_WINDOW_AUDIT_MIGRATION_ID = "0043.pwa_lesson_window_audit"
+PROBLEM_IDENTITY_MIGRATION_ID = "0044.pwa_problem_identity"
+MATERIAL_REVEAL_MATCHES_MIGRATION_ID = "0045.pwa_material_reveal_matches"
 CONTENT_TABLES = {
     "course_lessons",
     "group_lessons",
@@ -99,6 +101,8 @@ def _pre_content_ids() -> set[str]:
             CONTENT_MIGRATION_ID,
             CONTENT_HARDENING_MIGRATION_ID,
             LESSON_WINDOW_AUDIT_MIGRATION_ID,
+            PROBLEM_IDENTITY_MIGRATION_ID,
+            MATERIAL_REVEAL_MATCHES_MIGRATION_ID,
         }
     }
 

@@ -1553,6 +1553,99 @@ async def test_hint_requires_matching_but_not_duplicate_metadata_review(
     assert published.status == 201, await published.text()
 
 
+async def test_student_reveal_uses_resolved_material_match_without_duplicate_metadata(
+    content_http: ContentHttpFixture,
+):
+    """The Staff UI does not create problem_revisions for hints/solutions."""
+
+    fixture = content_http
+    condition, _ = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        filename="material-match/condition.tex",
+        source="\\задача[title=Чётность] Условие. \\кзадача",
+    )
+    published_condition = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="condition",
+        revision_id=condition["revisionId"],
+    )
+    assert published_condition.status == 201, await published_condition.text()
+
+    hint, _ = await _upload_and_compile(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="hint",
+        filename="material-match/hint.tex",
+        source=(
+            "\\задача[title=Чётность] Условие. \\кзадача\n"
+            "\\подсказка Посмотрите на чётность. \\кподсказка"
+        ),
+        review=False,
+    )
+    match_url = f"/staff/api/v1/content/revisions/{hint['revisionId']}/problem-matches"
+    initial_response = await fixture.client.get(
+        match_url,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert initial_response.status == 200, await initial_response.text()
+    initial = await initial_response.json()
+    item = initial["items"][0]
+    assert item["suggestedProblemId"] is not None
+    matched = await fixture.client.put(
+        match_url,
+        json={
+            "matches": [
+                {
+                    "sourceOrdinal": item["sourceOrdinal"],
+                    "sourceItem": item["sourceItem"],
+                    "decision": "auto_position",
+                    "problemId": item["suggestedProblemId"],
+                }
+            ]
+        },
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True, if_match=initial_response.headers["ETag"]),
+    )
+    assert matched.status == 200, await matched.text()
+    matched_problem_id = (await matched.json())["items"][0]["match"]["problemId"]
+    assert matched_problem_id == item["suggestedProblemId"]
+
+    published_hint = await _publish(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        kind="hint",
+        revision_id=hint["revisionId"],
+    )
+    assert published_hint.status == 201, await published_hint.text()
+
+    problem_list = await fixture.client.get(
+        "/student/api/v1/courses/course-content-http/lessons/"
+        f"{fixture.group_lesson_a}/problems",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert problem_list.status == 200, await problem_list.text()
+    problems = (await problem_list.json())["problems"]
+    problem_public_id = problems[0]["problemId"]
+    assert problem_public_id.startswith("problem-")
+    assert problems[0]["materials"]["hint"] == {"status": "available"}
+
+    revealed = await _student_reveal(
+        fixture,
+        group_lesson=fixture.group_lesson_a,
+        problem_id=problem_public_id,
+        kind="hint",
+    )
+    assert revealed.status == 200, await revealed.text()
+    payload = await revealed.json()
+    assert payload["problemId"] == problem_public_id
+    assert "Посмотрите на чётность" in json.dumps(payload, ensure_ascii=False)
+
+
 async def test_staff_can_preview_and_stream_exact_persisted_pdf(
     content_http: ContentHttpFixture,
 ):

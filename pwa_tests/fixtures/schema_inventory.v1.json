@@ -105,6 +105,10 @@
       {
         "id": "0044.pwa_problem_identity",
         "sha256": "d9435d0af58bd3da47a00f3fae32ebb33b993a7368366d1b5553ac93a2da6856"
+      },
+      {
+        "id": "0045.pwa_material_reveal_matches",
+        "sha256": "3cf6910e0bf1b052bc6c17d94f47f1216cf125d67d3acbfd51b78b2b19736f57"
       }
     ],
     "repository_head_status": {
@@ -13464,8 +13468,8 @@
       },
       {
         "name": "hint_reveals_publication_kind_insert",
-        "object_sha256": "56da2ed2bd5bfe1cd7c6d1c08eec3fd0829efbfe4b9ecbae55ff7f407979d692",
-        "sql": "CREATE TRIGGER hint_reveals_publication_kind_insert\nbefore insert on hint_reveals\nfor each row\nwhen not exists (\n    select 1\n    from lesson_publications as publication\n    where publication.id = new.publication_id\n      and publication.kind = 'hint'\n      and publication.state = 'published'\n      and exists (\n          select 1\n          from problem_revisions as problem_revision\n          join content_revisions as revision\n            on revision.id = problem_revision.content_revision_id\n          join content_sources as source on source.id = revision.source_id\n          where problem_revision.problem_id = new.problem_id\n            and source.group_lesson_id = publication.group_lesson_id\n      )\n)\nbegin\n    select raise(abort, 'hint reveal requires a published hint');\nend;",
+        "object_sha256": "7034753c5e0260b471934471bca64676bb300e7da6dd23d3cc1e8776b3b7d4b6",
+        "sql": "CREATE TRIGGER hint_reveals_publication_kind_insert\nbefore insert on hint_reveals\nfor each row\nwhen not exists (\n    select 1\n    from lesson_publications as publication\n    join content_problem_matches as problem_match\n      on problem_match.content_revision_id = publication.revision_id\n     and problem_match.problem_id = new.problem_id\n     and problem_match.resolved_at is not null\n     and problem_match.decision <> 'omit'\n    where publication.id = new.publication_id\n      and publication.kind = 'hint'\n      and publication.state = 'published'\n)\nbegin\n    select raise(abort, 'hint reveal requires a published matched hint');\nend;",
         "table_name": "hint_reveals",
         "type": "trigger"
       },
@@ -13646,14 +13650,14 @@
       },
       {
         "name": "solution_reveals_publication_kind_insert",
-        "object_sha256": "56ef5a47ae8d5f586d9f980a88b8f06051af67779ca7509bb37d5e12ac83f8a6",
-        "sql": "CREATE TRIGGER solution_reveals_publication_kind_insert\nbefore insert on solution_reveals\nfor each row\nwhen not exists (\n    select 1\n    from lesson_publications as publication\n    where publication.id = new.publication_id\n      and publication.kind = 'solution'\n      and publication.state = 'published'\n      and exists (\n          select 1\n          from problem_revisions as problem_revision\n          join content_revisions as revision\n            on revision.id = problem_revision.content_revision_id\n          join content_sources as source on source.id = revision.source_id\n          where problem_revision.problem_id = new.problem_id\n            and source.group_lesson_id = publication.group_lesson_id\n      )\n)\nbegin\n    select raise(abort, 'solution reveal requires a published solution');\nend;",
+        "object_sha256": "833b99e8df4dbfd850b233dc829851ebf6cfba05e55e3e53d886a914f7cda800",
+        "sql": "CREATE TRIGGER solution_reveals_publication_kind_insert\nbefore insert on solution_reveals\nfor each row\nwhen not exists (\n    select 1\n    from lesson_publications as publication\n    join content_problem_matches as problem_match\n      on problem_match.content_revision_id = publication.revision_id\n     and problem_match.problem_id = new.problem_id\n     and problem_match.resolved_at is not null\n     and problem_match.decision <> 'omit'\n    where publication.id = new.publication_id\n      and publication.kind = 'solution'\n      and publication.state = 'published'\n)\nbegin\n    select raise(abort, 'solution reveal requires a published matched solution');\nend;",
         "table_name": "solution_reveals",
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "0dbe5e08124485a2a4e7f946c02b12f4f9ad3456e94e6b088389aa0fa10fddb0",
-    "sha256": "d57395fcd5117cabfa4660e9824382b543d502da10ee3a8ea411aa043a655b16"
+    "pragma_structure_sha256": "435ff4bc3570ab2ab784a404c1d239c318c0633d30c687d595f555ffe81b0b0b",
+    "sha256": "0e40ad8bee320d80d8204e677f38cee744544111b969f77ff4cb79b58be1e313"
   },
   "source_kind": "repository-migration-head"
 }

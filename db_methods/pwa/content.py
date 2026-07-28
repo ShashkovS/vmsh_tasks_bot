@@ -1530,9 +1530,11 @@ hint_state AS (
     JOIN content_revisions AS revision
       ON revision.id = publication.revision_id
      AND revision.status = 'ready'
-    JOIN problem_revisions AS problem_revision
-      ON problem_revision.content_revision_id = revision.id
-     AND problem_revision.problem_id = visible.problem_id
+    JOIN content_problem_matches AS problem_match
+      ON problem_match.content_revision_id = revision.id
+     AND problem_match.problem_id = visible.problem_id
+     AND problem_match.resolved_at IS NOT NULL
+     AND problem_match.decision <> 'omit'
     JOIN content_derivatives AS derivative
       ON derivative.revision_id = revision.id
      AND derivative.kind = 'web_ast'
@@ -1555,9 +1557,11 @@ solution_state AS (
     JOIN content_revisions AS revision
       ON revision.id = publication.revision_id
      AND revision.status = 'ready'
-    JOIN problem_revisions AS problem_revision
-      ON problem_revision.content_revision_id = revision.id
-     AND problem_revision.problem_id = visible.problem_id
+    JOIN content_problem_matches AS problem_match
+      ON problem_match.content_revision_id = revision.id
+     AND problem_match.problem_id = visible.problem_id
+     AND problem_match.resolved_at IS NOT NULL
+     AND problem_match.decision <> 'omit'
     JOIN content_derivatives AS derivative
       ON derivative.revision_id = revision.id
      AND derivative.kind = 'web_ast'
@@ -3972,9 +3976,11 @@ class PwaContentRepository:
                 "JOIN content_revisions AS material_revision "
                 "  ON material_revision.id = publication.revision_id "
                 " AND material_revision.status = 'ready' "
-                "JOIN problem_revisions AS material_problem "
+                "JOIN content_problem_matches AS material_problem "
                 "  ON material_problem.content_revision_id = material_revision.id "
                 " AND material_problem.problem_id = problem.id "
+                " AND material_problem.resolved_at IS NOT NULL "
+                " AND material_problem.decision <> 'omit' "
                 "JOIN content_derivatives AS derivative "
                 "  ON derivative.revision_id = material_revision.id "
                 " AND derivative.kind = 'web_ast' "

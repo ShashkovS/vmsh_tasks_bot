@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: d57395fcd5117cabfa4660e9824382b543d502da10ee3a8ea411aa043a655b16
+-- Product schema SHA-256: 0e40ad8bee320d80d8204e677f38cee744544111b969f77ff4cb79b58be1e313
 
 CREATE TABLE auth_accounts
 (
@@ -2024,21 +2024,17 @@ for each row
 when not exists (
     select 1
     from lesson_publications as publication
+    join content_problem_matches as problem_match
+      on problem_match.content_revision_id = publication.revision_id
+     and problem_match.problem_id = new.problem_id
+     and problem_match.resolved_at is not null
+     and problem_match.decision <> 'omit'
     where publication.id = new.publication_id
       and publication.kind = 'hint'
       and publication.state = 'published'
-      and exists (
-          select 1
-          from problem_revisions as problem_revision
-          join content_revisions as revision
-            on revision.id = problem_revision.content_revision_id
-          join content_sources as source on source.id = revision.source_id
-          where problem_revision.problem_id = new.problem_id
-            and source.group_lesson_id = publication.group_lesson_id
-      )
 )
 begin
-    select raise(abort, 'hint reveal requires a published hint');
+    select raise(abort, 'hint reveal requires a published matched hint');
 end;
 
 CREATE TRIGGER lesson_publications_activation_scope_insert
@@ -2405,19 +2401,15 @@ for each row
 when not exists (
     select 1
     from lesson_publications as publication
+    join content_problem_matches as problem_match
+      on problem_match.content_revision_id = publication.revision_id
+     and problem_match.problem_id = new.problem_id
+     and problem_match.resolved_at is not null
+     and problem_match.decision <> 'omit'
     where publication.id = new.publication_id
       and publication.kind = 'solution'
       and publication.state = 'published'
-      and exists (
-          select 1
-          from problem_revisions as problem_revision
-          join content_revisions as revision
-            on revision.id = problem_revision.content_revision_id
-          join content_sources as source on source.id = revision.source_id
-          where problem_revision.problem_id = new.problem_id
-            and source.group_lesson_id = publication.group_lesson_id
-      )
 )
 begin
-    select raise(abort, 'solution reveal requires a published solution');
+    select raise(abort, 'solution reveal requires a published matched solution');
 end;
