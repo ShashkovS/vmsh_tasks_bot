@@ -327,6 +327,7 @@ async def _relay_websocket(request: web.Request) -> web.WebSocketResponse:
         raise web.HTTPBadGateway(text="Isolated PWA WebSocket is unavailable") from exc
 
     downstream: web.WebSocketResponse | None = None
+    downstream_prepared = False
     try:
         downstream_protocols = (upstream.protocol,) if upstream.protocol else ()
         downstream = web.WebSocketResponse(
@@ -334,6 +335,7 @@ async def _relay_websocket(request: web.Request) -> web.WebSocketResponse:
         )
         downstream.headers["X-Request-ID"] = request_id
         await downstream.prepare(request)
+        downstream_prepared = True
 
         async def downstream_to_upstream() -> None:
             assert downstream is not None
@@ -372,7 +374,7 @@ async def _relay_websocket(request: web.Request) -> web.WebSocketResponse:
         # downstream upgrade completes; otherwise repeated aborted E2E probes
         # leak sockets and make later runtime checks misleading.
         await upstream.close()
-        if downstream is not None:
+        if downstream is not None and downstream_prepared:
             await downstream.close()
     assert downstream is not None
     return downstream

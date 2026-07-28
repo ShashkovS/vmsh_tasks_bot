@@ -288,6 +288,8 @@ async def test_gateway_closes_upstream_when_downstream_upgrade_aborts(monkeypatc
             return upstream
 
     class AbortedDownstream:
+        close_called = False
+
         def __init__(self, *_args, **_kwargs):
             self.headers: dict[str, str] = {}
 
@@ -295,7 +297,7 @@ async def test_gateway_closes_upstream_when_downstream_upgrade_aborts(monkeypatc
             raise ConnectionResetError("browser left before the upgrade")
 
         async def close(self) -> None:
-            return None
+            type(self).close_called = True
 
     monkeypatch.setattr(e2e_gateway.web, "WebSocketResponse", AbortedDownstream)
     request = SimpleNamespace(
@@ -311,6 +313,7 @@ async def test_gateway_closes_upstream_when_downstream_upgrade_aborts(monkeypatc
         await e2e_gateway._relay_websocket(request)
 
     assert upstream.closed is True
+    assert AbortedDownstream.close_called is False
 
 
 async def test_gateway_service_worker_control_is_local_capability_gated(gateway_client):

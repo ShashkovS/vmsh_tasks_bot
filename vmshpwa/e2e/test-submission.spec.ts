@@ -41,6 +41,7 @@ async function publishTestProblem(
     sourceTitle?: string
     sourceItem?: string
     correctAnswer?: string | null
+    problemType?: '1' | '2' | '3' | '4'
   } = {},
 ): Promise<void> {
   const title = options.title ?? `Тестовая сдача ${projectName}`
@@ -71,14 +72,17 @@ async function publishTestProblem(
   await workflow.getByRole('button', { name: 'Подтвердить сопоставление' }).click()
 
   await workflow.getByLabel('Название, строка 1').fill(title)
-  await workflow.getByLabel('Тип задачи, строка 1').selectOption('1')
-  await workflow.getByLabel('Тип ответа, строка 1').selectOption('3')
-  await workflow.getByLabel('Ошибка формата, строка 1').fill('Введите целое число, например -7')
-  if (options.correctAnswer !== null) {
-    await workflow.getByLabel('Правильный ответ, строка 1').fill(options.correctAnswer ?? '7')
+  const problemType = options.problemType ?? '1'
+  await workflow.getByLabel('Тип задачи, строка 1').selectOption(problemType)
+  if (problemType === '1') {
+    await workflow.getByLabel('Тип ответа, строка 1').selectOption('3')
+    await workflow.getByLabel('Ошибка формата, строка 1').fill('Введите целое число, например -7')
+    if (options.correctAnswer !== null) {
+      await workflow.getByLabel('Правильный ответ, строка 1').fill(options.correctAnswer ?? '7')
+    }
+    await workflow.getByLabel('Неверный ответ, строка 1').fill('Нет, это другое число.')
+    await workflow.getByLabel('Верный ответ, строка 1', { exact: true }).fill('Да, всё верно!')
   }
-  await workflow.getByLabel('Неверный ответ, строка 1').fill('Нет, это другое число.')
-  await workflow.getByLabel('Верный ответ, строка 1', { exact: true }).fill('Да, всё верно!')
 
   const metadataResponse = page.waitForResponse(
     (response) =>
@@ -335,4 +339,106 @@ test('Phase 4: an admin repairs a published checker and rechecks an immutable pe
   expect((await serverAttempts(page, problemId)).attempts).toEqual([
     expect.objectContaining({ displayAnswer: '7', outcome: 'correct' }),
   ])
+})
+
+test('Phase 5: a written draft with a photo survives reload and resumes exactly once', async ({
+  page,
+}, testInfo) => {
+  const target = targetForProject(testInfo.project.name)
+  const title = `Письменная сдача ${testInfo.project.name}`
+  await loginThroughUi(page, AUTH_PERSONAS.admin, `/staff/lessons/${target.groupLessonPublicId}`)
+  await publishTestProblem(page, target, testInfo.project.name, testInfo.retry, {
+    title,
+    sourceTitle: title,
+    sourceItem: `written-${testInfo.project.name}`,
+    problemType: '2',
+  })
+
+  await loginThroughUi(page, AUTH_PERSONAS.student, '/student/tasks')
+  await page.goto(
+    `/student/tasks?course=${contentFixture.coursePublicId}` +
+      `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
+  )
+  await page.getByRole('button', { name: new RegExp(title) }).click()
+  await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
+  await expect(page.getByText('Сдать решение', { exact: true })).toBeVisible()
+
+  const problemId = new URL(page.url()).pathname.split('/').at(-1)
+  if (!problemId) throw new Error('Student written-task URL has no problem identity')
+
+  const solutionText = 'Провёл дополнительную диагональ и получил два равных треугольника.'
+  await page.getByLabel('Ваше решение').fill(solutionText)
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'page.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      'base64',
+    ),
+  })
+  await expect(page.getByText('Готово к отправке')).toBeVisible({ timeout: 30_000 })
+
+  await page.reload()
+  await expect(page.getByLabel('Ваше решение')).toHaveValue(solutionText)
+  await expect(page.getByText('Готово к отправке')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Страница 1: повернуть' })).toHaveCount(0)
+
+  const writeCounts = { create: 0, upload: 0, reorder: 0, submit: 0 }
+  page.on('request', (request) => {
+    const pathname = new URL(request.url()).pathname
+    if (request.method() === 'POST' && pathname.endsWith('/thread/entries')) {
+      writeCounts.create += 1
+    } else if (request.method() === 'POST' && pathname.endsWith('/attachments')) {
+      writeCounts.upload += 1
+    } else if (request.method() === 'PATCH' && pathname.endsWith('/attachments/order')) {
+      writeCounts.reorder += 1
+    } else if (request.method() === 'POST' && pathname.endsWith('/submit')) {
+      writeCounts.submit += 1
+    }
+  })
+
+  await page.context().setOffline(true)
+  try {
+    await page.getByRole('button', { name: 'Поставить в очередь' }).click()
+    await expect(page.getByText('Решение сохранено в очереди')).toBeVisible()
+    await expect(page.getByLabel('Ваше решение')).toBeDisabled()
+    expect(writeCounts).toEqual({ create: 0, upload: 0, reorder: 0, submit: 0 })
+  } finally {
+    const submitted = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        new URL(response.url()).pathname.endsWith('/submit'),
+    )
+    await page.context().setOffline(false)
+    expect((await submitted).status()).toBe(200)
+  }
+
+  await expect(page.getByText('Решение отправлено')).toBeVisible()
+  await expect(page.getByLabel('Ваше решение')).toHaveValue('')
+  expect(writeCounts).toEqual({ create: 1, upload: 1, reorder: 0, submit: 1 })
+
+  const persisted = await page.evaluate(async (id) => {
+    const response = await fetch(`/student/api/v1/problems/${id}/thread`)
+    if (!response.ok) throw new Error(`Written thread returned ${response.status}`)
+    return (await response.json()) as {
+      thread: null | {
+        status: string
+        entries: Array<{
+          state: string
+          text: string | null
+          attachments: Array<{ mediaType: string; width: number; height: number }>
+        }>
+      }
+    }
+  }, problemId)
+  expect(persisted.thread).toMatchObject({
+    status: 'awaiting_review',
+    entries: [
+      {
+        state: 'submitted',
+        text: solutionText,
+        attachments: [{ mediaType: 'image/webp', width: 1, height: 1 }],
+      },
+    ],
+  })
 })
