@@ -348,6 +348,9 @@ async def test_claim_heartbeat_and_release_cover_one_synonym_case(review_queue_f
     assert lease.claim_token == "review-claim-test-1"
     assert lease.teacher_user_id == TEACHER_ONE_ID
     assert [item.group_id for item in lease.items] == ["review-a", "review-b"]
+    assert [item.problem_number for item in lease.items] == ["41а.1", "41б.2"]
+    assert [item.group_name for item in lease.items] == ["Группа а", "Группа б"]
+    assert {item.course_name for item in lease.items} == {"Математика"}
     assert {item.lease_version for item in lease.items} == {1}
     assert [branch.thread_public_id for branch in lease.evidence_branches] == [
         "review-thread-test-1",
@@ -357,6 +360,11 @@ async def test_claim_heartbeat_and_release_cover_one_synonym_case(review_queue_f
         entry.entry_public_id
         for branch in lease.evidence_branches
         for entry in branch.entries
+    ] == ["review-entry-test-1", "review-entry-test-2"]
+    assert [
+        entry.entry_public_id
+        for branch in lease.evidence_branches
+        for entry in branch.timeline_entries
     ] == ["review-entry-test-1", "review-entry-test-2"]
 
     fixture.clock.value += timedelta(minutes=10)

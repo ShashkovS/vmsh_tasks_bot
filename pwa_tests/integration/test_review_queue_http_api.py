@@ -641,10 +641,20 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
     )
     assert claim.status == 200, await claim.text()
     lease = (await claim.json())["lease"]
+    assert [branch["problemNumber"] for branch in lease["branches"]] == [
+        "41a.1",
+        "41b.2",
+    ]
+    assert {branch["courseName"] for branch in lease["branches"]} == {"Математика"}
     assert [branch["thread"]["threadId"] for branch in lease["evidenceBranches"]] == [
         "review-http-thread-1",
         "review-http-thread-2",
     ]
+    assert [
+        entry["authorKind"]
+        for branch in lease["evidenceBranches"]
+        for entry in branch["thread"]["timelineEntries"]
+    ] == ["student", "student"]
     payload = _complete_payload(lease)
     payload["internalReactionId"] = 100
     payload["annotations"] = [

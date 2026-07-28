@@ -32,9 +32,14 @@ export const reviewQueueBranchSchema = z
   .object({
     queueId: publicIdSchema,
     problemId: publicIdSchema,
+    problemNumber: z.string().trim().min(1).max(64),
     problemTitle: z.string().trim().min(1),
     courseId: publicIdSchema.nullable(),
+    courseName: z.string().trim().min(1).nullable(),
     groupId: publicIdSchema.nullable(),
+    groupName: z.string().trim().min(1),
+    groupShortCode: z.string().trim().min(1).max(16),
+    groupColorKey: z.string().trim().min(1).max(64).nullable(),
     submittedAt: z.iso.datetime(),
     leaseVersion: z.number().int().nonnegative(),
   })
@@ -61,6 +66,18 @@ export const reviewEvidenceEntrySchema = z
   .strict()
 export type ReviewEvidenceEntry = z.infer<typeof reviewEvidenceEntrySchema>
 
+export const reviewTimelineEntrySchema = z
+  .object({
+    entryId: publicIdSchema,
+    authorKind: z.enum(['student', 'teacher', 'admin', 'ai', 'system']),
+    entryKind: z.enum(['text', 'submission', 'teacher_comment', 'ai_comment', 'system_event']),
+    text: z.string().max(100_000).nullable(),
+    submittedAt: z.iso.datetime(),
+    attachments: z.array(reviewEvidenceAttachmentSchema).max(10),
+  })
+  .strict()
+export type ReviewTimelineEntry = z.infer<typeof reviewTimelineEntrySchema>
+
 export const reviewLeaseEvidenceBranchSchema = z
   .object({
     queueId: publicIdSchema,
@@ -69,6 +86,7 @@ export const reviewLeaseEvidenceBranchSchema = z
         threadId: publicIdSchema,
         threadVersion: z.number().int().positive(),
         entries: z.array(reviewEvidenceEntrySchema),
+        timelineEntries: z.array(reviewTimelineEntrySchema),
       })
       .strict()
       .nullable(),

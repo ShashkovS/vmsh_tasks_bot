@@ -244,9 +244,14 @@ def _branch_payload(item) -> dict[str, object]:
     return {
         "queueId": item.queue_public_id,
         "problemId": item.problem_public_id,
+        "problemNumber": item.problem_number,
         "problemTitle": item.problem_title,
         "courseId": item.course_public_id,
+        "courseName": item.course_name,
         "groupId": item.group_public_id,
+        "groupName": item.group_name,
+        "groupShortCode": item.group_short_code,
+        "groupColorKey": item.group_color_key,
         "submittedAt": _timestamp(item.submitted_at),
         "leaseVersion": item.lease_version,
     }
@@ -316,6 +321,23 @@ def _lease_payload(lease: ReviewLease) -> dict[str, object]:
                                 ],
                             }
                             for entry in branch.entries
+                        ],
+                        "timelineEntries": [
+                            {
+                                "entryId": entry.entry_public_id,
+                                "authorKind": entry.author_kind,
+                                "entryKind": entry.entry_kind,
+                                "text": entry.text,
+                                "submittedAt": _timestamp(entry.server_received_at),
+                                "attachments": [
+                                    {
+                                        "attachmentId": attachment.attachment_public_id,
+                                        "ordinal": attachment.ordinal,
+                                    }
+                                    for attachment in entry.attachments
+                                ],
+                            }
+                            for entry in branch.timeline_entries
                         ],
                     }
                 ),

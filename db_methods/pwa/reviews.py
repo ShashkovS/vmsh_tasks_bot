@@ -362,10 +362,15 @@ class ReviewLeaseItem:
     student_name: str
     problem_id: int
     problem_public_id: str
+    problem_number: str
     problem_title: str
     group_id: str
     group_public_id: str | None
+    group_name: str
+    group_short_code: str
+    group_color_key: str | None
     course_public_id: str | None
+    course_name: str | None
     submitted_at: datetime
     lease_version: int
 
@@ -387,11 +392,22 @@ class ReviewEvidenceEntry:
 
 
 @dataclass(frozen=True, slots=True)
+class ReviewTimelineEntry:
+    entry_public_id: str
+    author_kind: str
+    entry_kind: str
+    text: str | None
+    server_received_at: datetime
+    attachments: tuple[ReviewEvidenceAttachment, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class ReviewEvidenceBranch:
     queue_public_id: str
     thread_public_id: str | None
     thread_version: int | None
     entries: tuple[ReviewEvidenceEntry, ...]
+    timeline_entries: tuple[ReviewTimelineEntry, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -628,6 +644,16 @@ def _display_name(row: dict[str, object]) -> str:
     return " ".join(part for part in parts if part) or "Без имени"
 
 
+def _problem_number(row: dict[str, object]) -> str:
+    """Build the compact legacy-compatible task label shown in Staff review."""
+
+    lesson = str(row["lesson"])
+    group_short_code = str(row.get("group_short_code") or row["group_id"])
+    problem = str(row["prob"])
+    item = str(row.get("item") or "")
+    return f"{lesson}{group_short_code}.{problem}{item}"
+
+
 def _teacher_display_name(row: dict[str, object]) -> str:
     parts = [
         str(row.get("teacher_surname") or "").strip(),
@@ -728,9 +754,12 @@ def _case_rows(
 
     base_sql = (
         "SELECT queue.*, problem.public_id AS problem_public_id, "
-        "problem.title AS problem_title, problem.group_id, "
+        "problem.title AS problem_title, problem.group_id, problem.lesson, "
+        "problem.prob, problem.item, "
         "student.public_id AS student_public_id, student.name, student.surname, "
-        "groups.public_id AS group_public_id, course.public_id AS course_public_id "
+        "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+        "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+        "course.public_id AS course_public_id, course.name AS course_name "
         "FROM written_tasks_queue AS queue "
         "JOIN problems AS problem ON problem.id = queue.problem_id "
         "JOIN users AS student ON student.id = queue.student_id "
@@ -760,9 +789,12 @@ def _case_rows(
 
 _QUEUE_ROW_SELECT = (
     "SELECT queue.*, problem.public_id AS problem_public_id, "
-    "problem.title AS problem_title, problem.group_id, "
+    "problem.title AS problem_title, problem.group_id, problem.lesson, "
+    "problem.prob, problem.item, "
     "student.public_id AS student_public_id, student.name, student.surname, "
-    "groups.public_id AS group_public_id, course.public_id AS course_public_id, "
+    "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+    "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+    "course.public_id AS course_public_id, course.name AS course_name, "
     "synonym.id AS synonym_group_id, synonym.public_id AS synonym_public_id, "
     "teacher.public_id AS teacher_public_id, teacher.name AS teacher_name, "
     "teacher.surname AS teacher_surname "
@@ -848,9 +880,32 @@ def _evidence_branches(
                     thread_public_id=None,
                     thread_version=None,
                     entries=(),
+                    timeline_entries=(),
                 )
             )
             continue
+        timeline_rows = connection.execute(
+            "SELECT entry.id, entry.public_id, entry.author_kind, entry.entry_kind, "
+            "entry.text, entry.server_received_at FROM submission_entries AS entry "
+            "WHERE entry.thread_id = ? AND entry.state IN ('submitted', 'locked') "
+            "ORDER BY entry.server_received_at, entry.id",
+            (thread["id"],),
+        ).fetchall()
+        attachments_by_entry_id: dict[int, tuple[ReviewEvidenceAttachment, ...]] = {}
+        for timeline_entry in timeline_rows:
+            attachment_rows = connection.execute(
+                "SELECT public_id, ordinal FROM submission_attachments "
+                "WHERE entry_id = ? AND upload_status IN ('stored', 'locked') "
+                "ORDER BY ordinal, id",
+                (timeline_entry["id"],),
+            ).fetchall()
+            attachments_by_entry_id[int(timeline_entry["id"])] = tuple(
+                ReviewEvidenceAttachment(
+                    attachment_public_id=str(attachment["public_id"]),
+                    ordinal=int(attachment["ordinal"]),
+                )
+                for attachment in attachment_rows
+            )
         entry_rows = connection.execute(
             "SELECT entry.id, entry.public_id, entry.version, entry.entry_kind, "
             "entry.text, entry.server_received_at FROM submission_entries AS entry "
@@ -863,12 +918,6 @@ def _evidence_branches(
         ).fetchall()
         entries: list[ReviewEvidenceEntry] = []
         for entry in entry_rows:
-            attachment_rows = connection.execute(
-                "SELECT public_id, ordinal FROM submission_attachments "
-                "WHERE entry_id = ? AND upload_status = 'stored' "
-                "ORDER BY ordinal, id",
-                (entry["id"],),
-            ).fetchall()
             entries.append(
                 ReviewEvidenceEntry(
                     entry_public_id=str(entry["public_id"]),
@@ -878,13 +927,7 @@ def _evidence_branches(
                     server_received_at=_parse_timestamp(
                         entry["server_received_at"], label="evidence receive time"
                     ),
-                    attachments=tuple(
-                        ReviewEvidenceAttachment(
-                            attachment_public_id=str(attachment["public_id"]),
-                            ordinal=int(attachment["ordinal"]),
-                        )
-                        for attachment in attachment_rows
-                    ),
+                    attachments=attachments_by_entry_id.get(int(entry["id"]), ()),
                 )
             )
         branches.append(
@@ -893,6 +936,19 @@ def _evidence_branches(
                 thread_public_id=str(thread["public_id"]),
                 thread_version=int(thread["version"]),
                 entries=tuple(entries),
+                timeline_entries=tuple(
+                    ReviewTimelineEntry(
+                        entry_public_id=str(entry["public_id"]),
+                        author_kind=str(entry["author_kind"]),
+                        entry_kind=str(entry["entry_kind"]),
+                        text=None if entry["text"] is None else str(entry["text"]),
+                        server_received_at=_parse_timestamp(
+                            entry["server_received_at"], label="timeline entry time"
+                        ),
+                        attachments=attachments_by_entry_id.get(int(entry["id"]), ()),
+                    )
+                    for entry in timeline_rows
+                ),
             )
         )
     return tuple(branches)
@@ -931,15 +987,26 @@ def _lease_from_rows(
             student_name=_display_name(row),
             problem_id=int(row["problem_id"]),
             problem_public_id=str(row["problem_public_id"]),
+            problem_number=_problem_number(row),
             problem_title=str(row["problem_title"]),
             group_id=str(row["group_id"]),
             group_public_id=(
                 None if row["group_public_id"] is None else str(row["group_public_id"])
             ),
+            group_name=str(row["group_name"] or row["group_id"]),
+            group_short_code=str(row["group_short_code"] or row["group_id"]),
+            group_color_key=(
+                None
+                if row["group_color_key"] is None
+                else str(row["group_color_key"])
+            ),
             course_public_id=(
                 None
                 if row["course_public_id"] is None
                 else str(row["course_public_id"])
+            ),
+            course_name=(
+                None if row["course_name"] is None else str(row["course_name"])
             ),
             submitted_at=_parse_timestamp(row["ts"], label="submission time"),
             lease_version=int(row["lease_version"]),
@@ -1052,9 +1119,12 @@ class PwaWrittenReviewQueueRepository:
             )
             refreshed = connection.execute(
                 "SELECT queue.*, problem.public_id AS problem_public_id, "
-                "problem.title AS problem_title, problem.group_id, "
+                "problem.title AS problem_title, problem.group_id, problem.lesson, "
+                "problem.prob, problem.item, "
                 "student.public_id AS student_public_id, student.name, student.surname, "
-                "groups.public_id AS group_public_id, course.public_id AS course_public_id "
+                "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+                "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+                "course.public_id AS course_public_id, course.name AS course_name "
                 "FROM written_tasks_queue AS queue "
                 "JOIN problems AS problem ON problem.id = queue.problem_id "
                 "JOIN users AS student ON student.id = queue.student_id "
@@ -1116,6 +1186,7 @@ class PwaWrittenReviewQueueRepository:
                         student_name=_display_name(row),
                         problem_id=int(row["problem_id"]),
                         problem_public_id=str(row["problem_public_id"]),
+                        problem_number=_problem_number(row),
                         problem_title=str(row["problem_title"]),
                         group_id=str(row["group_id"]),
                         group_public_id=(
@@ -1123,10 +1194,24 @@ class PwaWrittenReviewQueueRepository:
                             if row["group_public_id"] is None
                             else str(row["group_public_id"])
                         ),
+                        group_name=str(row["group_name"] or row["group_id"]),
+                        group_short_code=str(
+                            row["group_short_code"] or row["group_id"]
+                        ),
+                        group_color_key=(
+                            None
+                            if row["group_color_key"] is None
+                            else str(row["group_color_key"])
+                        ),
                         course_public_id=(
                             None
                             if row["course_public_id"] is None
                             else str(row["course_public_id"])
+                        ),
+                        course_name=(
+                            None
+                            if row["course_name"] is None
+                            else str(row["course_name"])
                         ),
                         submitted_at=_parse_timestamp(
                             row["ts"], label="submission time"
@@ -1184,9 +1269,12 @@ class PwaWrittenReviewQueueRepository:
         def operation(connection: sqlite3.Connection) -> ReviewLease:
             rows = connection.execute(
                 "SELECT queue.*, problem.public_id AS problem_public_id, "
-                "problem.title AS problem_title, problem.group_id, "
+                "problem.title AS problem_title, problem.group_id, problem.lesson, "
+                "problem.prob, problem.item, "
                 "student.public_id AS student_public_id, student.name, student.surname, "
-                "groups.public_id AS group_public_id, course.public_id AS course_public_id, "
+                "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+                "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+                "course.public_id AS course_public_id, course.name AS course_name, "
                 "synonym.public_id AS synonym_public_id "
                 "FROM written_tasks_queue AS queue "
                 "JOIN problems AS problem ON problem.id = queue.problem_id "
@@ -1223,9 +1311,12 @@ class PwaWrittenReviewQueueRepository:
             )
             refreshed = connection.execute(
                 "SELECT queue.*, problem.public_id AS problem_public_id, "
-                "problem.title AS problem_title, problem.group_id, "
+                "problem.title AS problem_title, problem.group_id, problem.lesson, "
+                "problem.prob, problem.item, "
                 "student.public_id AS student_public_id, student.name, student.surname, "
-                "groups.public_id AS group_public_id, course.public_id AS course_public_id, "
+                "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+                "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+                "course.public_id AS course_public_id, course.name AS course_name, "
                 "synonym.public_id AS synonym_public_id "
                 "FROM written_tasks_queue AS queue "
                 "JOIN problems AS problem ON problem.id = queue.problem_id "
@@ -2122,6 +2213,7 @@ __all__ = [
     "ReviewEvidenceBranchExpectation",
     "ReviewEvidenceEntry",
     "ReviewEvidenceEntryExpectation",
+    "ReviewTimelineEntry",
     "ReviewEvidenceUnavailable",
     "ReviewIdempotencyConflict",
     "ReviewInternalReactionConflict",

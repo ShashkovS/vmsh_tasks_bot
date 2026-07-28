@@ -23,9 +23,14 @@ const branches = [
   {
     queueId: 'review-queue-one',
     problemId: 'problem-one',
+    problemNumber: '41а.1',
     problemTitle: 'Общая задача',
     courseId: 'course-math',
+    courseName: 'Математика',
     groupId: 'group-a',
+    groupName: 'Группа А',
+    groupShortCode: 'а',
+    groupColorKey: 'level-1',
     submittedAt: '2026-10-04T12:01:00.000000Z',
     leaseVersion: 1,
   },
@@ -66,6 +71,16 @@ const leasePayload = {
             {
               entryId: 'entry-one',
               entryVersion: 2,
+              entryKind: 'submission',
+              text: 'Решение',
+              submittedAt: '2026-10-04T12:01:00.000000Z',
+              attachments: [],
+            },
+          ],
+          timelineEntries: [
+            {
+              entryId: 'entry-one',
+              authorKind: 'student',
               entryKind: 'submission',
               text: 'Решение',
               submittedAt: '2026-10-04T12:01:00.000000Z',
