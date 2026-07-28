@@ -18,6 +18,7 @@ from apps.pwa_api.content_routes import (
     PWA_CONTENT_REPOSITORY,
     content_routes,
 )
+from apps.pwa_api.course_routes import course_routes
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import (
     PWA_AUTH_STATE,
@@ -861,6 +862,7 @@ def configure(
         app.middlewares.append(pwa_auth_request_security_middleware)
         app.middlewares.append(pwa_authentication_middleware)
         app.add_routes(auth_routes)
+        app.add_routes(course_routes)
         app.on_startup.append(on_auth_startup)
         content_enabled = content_repository is not None or PWA_DATABASE in app
         if content_enabled:

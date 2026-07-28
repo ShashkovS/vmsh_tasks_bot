@@ -1,0 +1,175 @@
+import { useQuery } from '@tanstack/react-query'
+import {
+  ApiResponseError,
+  apiErrorSchema,
+  courseEnrollmentSchema,
+  courseQueryKeys,
+  parseRuntimeConfigForAudience,
+  publicIdSchema,
+  studentCourseAccessResponseSchema,
+  type CourseEnrollment,
+  type PrincipalQueryScope,
+  type RuntimeConfig,
+  type StudentCourseAccessResponse,
+} from '@vmsh/contracts'
+
+/**
+ * Same-origin Student course/access transport for Phase 3.
+ * URL context never grants access; the server projects its revalidated session
+ * authority. See `dev/development-plan/07-phase-3-student-reading.md`.
+ */
+
+export interface CourseRequestOptions {
+  signal?: AbortSignal
+}
+
+export interface StudentCourseClientOptions {
+  fetchImplementation?: typeof globalThis.fetch
+  refreshSession?: () => Promise<unknown>
+}
+
+export interface StudentCourseClient {
+  readonly runtime: RuntimeConfig
+  list(options?: CourseRequestOptions): Promise<StudentCourseAccessResponse>
+  enrollment(courseId: string, options?: CourseRequestOptions): Promise<CourseEnrollment>
+}
+
+export class CourseProtocolError extends Error {
+  readonly status?: number
+
+  constructor(message: string, options: { cause?: unknown; status?: number } = {}) {
+    super(message, options.cause === undefined ? undefined : { cause: options.cause })
+    this.name = 'CourseProtocolError'
+    if (options.status !== undefined) this.status = options.status
+  }
+}
+
+export class CourseNetworkError extends Error {
+  constructor(options: { cause: unknown }) {
+    super('Course request could not reach the server', { cause: options.cause })
+    this.name = 'CourseNetworkError'
+  }
+}
+
+interface ResponseParser<T> {
+  parse(payload: unknown): T
+}
+
+class BrowserStudentCourseClient implements StudentCourseClient {
+  readonly runtime: RuntimeConfig
+
+  readonly #fetch: typeof globalThis.fetch
+  readonly #refreshSession: (() => Promise<unknown>) | undefined
+
+  constructor(runtime: RuntimeConfig, options: StudentCourseClientOptions) {
+    this.runtime = parseRuntimeConfigForAudience('student', runtime)
+    const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+    this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
+    this.#refreshSession = options.refreshSession
+  }
+
+  async list(options: CourseRequestOptions = {}): Promise<StudentCourseAccessResponse> {
+    return this.#request('/courses', options, studentCourseAccessResponseSchema)
+  }
+
+  async enrollment(
+    courseId: string,
+    options: CourseRequestOptions = {},
+  ): Promise<CourseEnrollment> {
+    const parsedCourseId = publicIdSchema.parse(courseId)
+    return this.#request(
+      `/courses/${encodeURIComponent(parsedCourseId)}/enrollment`,
+      options,
+      courseEnrollmentSchema,
+    )
+  }
+
+  async #request<T>(
+    path: string,
+    options: CourseRequestOptions,
+    parser: ResponseParser<T>,
+  ): Promise<T> {
+    let response = await this.#send(path, options)
+    if (response.status === 401 && this.#refreshSession) {
+      await response.body?.cancel()
+      await this.#refreshSession()
+      response = await this.#send(path, options)
+    }
+    if (!response.ok) throw await this.#responseError(response)
+
+    let payload: unknown
+    try {
+      payload = await response.json()
+    } catch (error) {
+      throw new CourseProtocolError('Course API returned malformed JSON', {
+        cause: error,
+        status: response.status,
+      })
+    }
+    try {
+      return parser.parse(payload)
+    } catch (error) {
+      throw new CourseProtocolError('Course API response failed contract validation', {
+        cause: error,
+        status: response.status,
+      })
+    }
+  }
+
+  async #send(path: string, options: CourseRequestOptions): Promise<Response> {
+    try {
+      return await this.#fetch(`${this.runtime.apiBase}${path}`, {
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+        redirect: 'error',
+        ...(options.signal === undefined ? {} : { signal: options.signal }),
+      })
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') throw error
+      throw new CourseNetworkError({ cause: error })
+    }
+  }
+
+  async #responseError(response: Response): Promise<Error> {
+    try {
+      const payload: unknown = await response.json()
+      return new ApiResponseError(response.status, apiErrorSchema.parse(payload))
+    } catch (error) {
+      if (error instanceof ApiResponseError) return error
+      return new CourseProtocolError('Course API returned an invalid error envelope', {
+        cause: error,
+        status: response.status,
+      })
+    }
+  }
+}
+
+export function createStudentCourseClient(
+  runtime: RuntimeConfig,
+  options: StudentCourseClientOptions = {},
+): StudentCourseClient {
+  return new BrowserStudentCourseClient(runtime, options)
+}
+
+export function useStudentCoursesQuery(
+  client: Pick<StudentCourseClient, 'list'>,
+  principal: PrincipalQueryScope,
+) {
+  return useQuery({
+    queryKey: courseQueryKeys.list(principal),
+    queryFn: ({ signal }) => client.list({ signal }),
+  })
+}
+
+export function useStudentCourseEnrollmentQuery(
+  client: Pick<StudentCourseClient, 'enrollment'>,
+  principal: PrincipalQueryScope,
+  courseId: string,
+) {
+  return useQuery({
+    queryKey: courseQueryKeys.enrollment(principal, courseId),
+    queryFn: ({ signal }) => client.enrollment(courseId, { signal }),
+  })
+}

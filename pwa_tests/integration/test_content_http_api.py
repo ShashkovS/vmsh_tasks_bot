@@ -2434,3 +2434,89 @@ async def test_hide_commit_succeeds_when_live_invalidation_transport_fails(
         fixture, group_lesson=fixture.group_lesson_a, kind="condition"
     )
     assert student.status == 404
+
+
+async def test_student_course_list_projects_checked_session_authority(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+
+    response = await fixture.client.get(
+        "/student/api/v1/courses",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+
+    assert response.status == 200, await response.text()
+    assert response.headers["Cache-Control"] == "no-store"
+    payload = await response.json()
+    assert payload == {
+        "studentId": "user-content-student",
+        "enrollments": [
+            {
+                "enrollmentId": "enrollment-content-http",
+                "studentId": "user-content-student",
+                "course": {
+                    "courseId": "course-content-http",
+                    "code": "math",
+                    "name": "Математика",
+                    "subjectCode": "math",
+                    "status": "active",
+                    "sortOrder": 1,
+                    "accentKey": "math",
+                    "version": 1,
+                },
+                "activeGroupId": "group-content-http-a",
+                "allowedGroups": [
+                    {
+                        "groupId": "group-content-http-a",
+                        "courseId": "course-content-http",
+                        "code": "a",
+                        "name": "A",
+                        "status": "active",
+                        "sortOrder": 1,
+                        "colorKey": "neutral",
+                        "version": 1,
+                    }
+                ],
+                "attendanceMode": "online",
+                "status": "active",
+                "version": 1,
+            }
+        ],
+    }
+
+
+async def test_student_course_enrollment_is_course_scoped_and_fail_closed(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    allowed = await fixture.client.get(
+        "/student/api/v1/courses/course-content-http/enrollment",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    forbidden = await fixture.client.get(
+        "/student/api/v1/courses/course-not-granted/enrollment",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+
+    assert allowed.status == 200, await allowed.text()
+    assert (await allowed.json())["course"]["courseId"] == "course-content-http"
+    assert forbidden.status == 403
+    assert (await forbidden.json())["error"]["code"] == "forbidden"
+
+
+async def test_student_course_reads_reject_ambiguous_query_parameters(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    response = await fixture.client.get(
+        "/student/api/v1/courses?studentId=user-content-student",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+
+    assert response.status == 422
+    assert (await response.json())["error"]["code"] == "validation_error"
