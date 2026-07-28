@@ -107,8 +107,8 @@ production `runtime-isolation.spec.ts`.
 
 ## Намеренно открыто
 
-- performance proof длинного математического документа и большого числа KaTeX
-  формул остаётся последним инженерным gate Phase 3;
+- performance proof длинного математического документа закрыт следующим
+  инкрементом Phase 3H; см. `phase3-long-math-rendering.md`;
 - visual snapshots не обновлялись; owner visual approval остаётся отдельным;
 - браузер может удалить IndexedDB по своей storage policy, особенно Safari без
   установленного PWA. В cache нет единственной копии критичных данных;
@@ -118,4 +118,5 @@ production `runtime-isolation.spec.ts`.
   изменена только безопасная query-key граница Family.
 
 Phase 3G закрывает authenticated Dexie, cold-reload reading и межаккаунтную
-изоляцию. Весь Phase 3 остаётся открыт до performance и ручного visual gate.
+изоляцию. После Phase 3H весь Phase 3 остаётся открыт только до ручного visual
+owner gate.

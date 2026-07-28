@@ -211,6 +211,24 @@ Proof:
 Proof:
 [`phase3-student-offline-reading.md`](../../../pwa_tests/reports/phase3-student-offline-reading.md).
 
+Промежуточный gate **Phase 3H — длинный реальный листок и KaTeX performance**
+реализован 28 июля 2026, revision `f787a64`:
+
+- [x] stress-fixture состоит из четырёх независимых копий настоящих условий
+      занятий 39–41: 132 задачи и 56 клиентских формул;
+- [x] browser harness измеряет переход от React action до завершения всех
+      `MathExpression`, а не загрузку Storybook;
+- [x] мягкий catastrophic-regression budget 2500 мс прошёл; полный interaction
+      test занял 672 мс на текущем локальном Chromium run;
+- [x] точные counts, отсутствие invalid/pending KaTeX и fallback недоступного
+      SVG с сохранённой подписью проверяются независимо от wall-clock;
+- [x] focused unit **7 PASS**, полный regression **285 TS + 1101 Python PASS**,
+      Storybook browser **183 PASS**, strict checks и production build PASS;
+      snapshots не обновлялись.
+
+Proof:
+[`phase3-long-math-rendering.md`](../../../pwa_tests/reports/phase3-long-math-rendering.md).
+
 - [x] Revision/migrations: `1aeb78d`, `8448a8b`, `fabdf93`, `50cd541`,
       `d4b0b9b`, `89cefb7`, `bb6c6ef`, `d822e2e`; public identity — `0044`,
       exact material-match reveal trigger — `0045`; paths перечислены в proof.
@@ -235,7 +253,9 @@ Proof:
       home→course/group archive→URL-selected lesson→opaque problem URL→focused
       condition→audited hint→cold reload/API failure→online rollback→login
       второго Student→offline cache-isolation **3/3 PASS**.
-- [ ] Performance evidence long math document/KaTeX: `<path/result>`.
+- [x] Performance evidence long math document/KaTeX: 132 реальных corpus-задачи,
+      56 формул, browser budget ≤2500 мс и SVG load-error PASS; proof
+      `phase3-long-math-rendering.md`.
 - [x] Docs/cache policy/known limitations/acceptance:
       `phase3-student-offline-reading.md`, 28 июля 2026.
 

@@ -13,7 +13,7 @@
 | Этап 0              | in progress                 | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
 | Этап 1              | in progress                 | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
 | Этап 2              | Phase 2A–2E + browser E2E   | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
-| Этап 3              | Phase 3A–3G reading slice   | Course/lesson/home, canonical task/reveal и owner-isolated cold-offline reading проверены в 3 браузерах; performance и visual gates открыты                           |
+| Этап 3              | Phase 3A–3H reading slice   | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
 | Этапы 4–11          | planned with gates          | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
 | Design system       | phases 5–7 ready for review | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
 | Multi-course model  | schema + verified prototype | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
@@ -296,8 +296,15 @@
   Python PASS**, Storybook **182 PASS**, production browser checkpoint **3/3
   PASS**. Proof:
   [`phase3-student-offline-reading.md`](../../../pwa_tests/reports/phase3-student-offline-reading.md).
-- Phase 3 остаётся открыт только для performance proof длинного KaTeX-листка и
-  ручного visual owner gate; snapshots не обновлялись.
+- Phase 3H revision `f787a64` добавляет browser stress-fixture из четырёх копий
+  реальных листков 39–41: **132 задачи / 56 KaTeX**, exact structural checks,
+  SVG load-error fallback и мягкий render budget **≤2500 мс**. Полный regression
+  — **285 TS + 1101 Python PASS**, Storybook browser — **183 PASS**, strict
+  checks и production builds PASS; focused story test time текущего запуска —
+  **672 мс**. Proof:
+  [`phase3-long-math-rendering.md`](../../../pwa_tests/reports/phase3-long-math-rendering.md).
+- Phase 3 остаётся открыт только для ручного visual owner gate; snapshots не
+  обновлялись.
 
 ## Текущий инкремент этапа 1
 
@@ -621,7 +628,7 @@
 |    0 | —                    | —                                                              | —                                  |
 |    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)            | частично; production gates открыты |
 |    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)         | Browser path принят; этап открыт   |
-|    3 | `d70b0d9`…`d822e2e`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A–3G приняты; этап открыт   |
+|    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа) | Phase 3A–3H приняты; visual открыт |
 |    4 | —                    | —                                                              | —                                  |
 |    5 | —                    | —                                                              | —                                  |
 |    6 | —                    | —                                                              | —                                  |
