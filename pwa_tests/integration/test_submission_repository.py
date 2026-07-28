@@ -18,6 +18,14 @@ from db_methods.pwa.submissions import (
     SubmitTestAnswerCommand,
     TestSubmissionRejected as SubmissionRejected,
 )
+from db_methods.pwa.written_submissions import (
+    CreateWrittenEntryCommand,
+    ProblemRevisionRef,
+    PwaWrittenSubmissionRepository,
+    SubmitWrittenEntryCommand,
+    WrittenIdempotencyPayloadMismatch,
+    WrittenSubmissionRejected,
+)
 from helpers.consts import ANS_TYPE, RES_TYPE, VERDICT
 
 
@@ -29,6 +37,7 @@ PROBLEM_PUBLIC_ID = "problem-submission-integer"
 PENDING_PROBLEM_PUBLIC_ID = "problem-submission-pending"
 UNLIMITED_PROBLEM_PUBLIC_ID = "problem-submission-unlimited"
 DAILY_LIMIT_PROBLEM_PUBLIC_ID = "problem-submission-daily-limit"
+WRITTEN_PROBLEM_PUBLIC_ID = "problem-submission-written"
 
 
 def timestamp(value: datetime) -> str:
@@ -47,11 +56,14 @@ class MutableClock:
 class SubmissionFixture:
     factory: PwaConnectionFactory
     repository: PwaTestSubmissionRepository
+    written_repository: PwaWrittenSubmissionRepository
     clock: MutableClock
     student_account_id: int
     other_account_id: int
     problem_id: int
     problem_revision_id: int
+    written_problem_id: int
+    written_problem_revision_id: int
     window_id: int
 
 
@@ -66,6 +78,18 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
         factory,
         clock=clock,
         public_id_factory=lambda: next(public_ids),
+    )
+    thread_public_ids = (
+        f"written-thread-repository-{index}" for index in itertools.count(1)
+    )
+    entry_public_ids = (
+        f"written-entry-repository-{index}" for index in itertools.count(1)
+    )
+    written_repository = PwaWrittenSubmissionRepository(
+        factory,
+        clock=clock,
+        thread_public_id_factory=lambda: next(thread_public_ids),
+        entry_public_id_factory=lambda: next(entry_public_ids),
     )
     now = timestamp(NOW)
 
@@ -390,6 +414,36 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
                 '{ "schemaVersion": 1, "maxPerHour": null, "maxPerDay": 2 }'
             ),
         )
+        written_problem_id = int(
+            connection.execute(
+                "INSERT INTO problems "
+                "(group_id, lesson, prob, item, title, prob_text, prob_type, "
+                "ans_type, ans_validation, validation_error, cor_ans, wrong_ans, "
+                "congrat, synonyms, public_id) VALUES "
+                "('submission-a', 41, 5, '', 'Письменная задача', '', 2, NULL, "
+                "'', '', '', '', '', '', ?) RETURNING id",
+                (WRITTEN_PROBLEM_PUBLIC_ID,),
+            ).fetchone()["id"]
+        )
+        connection.execute(
+            "INSERT INTO content_problem_matches "
+            "(content_revision_id, source_ordinal, source_item, problem_id, "
+            "decision, resolved_at, diagnostics_json, created_at) VALUES "
+            "(?, 5, '5', ?, 'manual_match', ?, '[]', ?)",
+            (revision_id, written_problem_id, now, now),
+        )
+        written_problem_revision_id = int(
+            connection.execute(
+                "INSERT INTO problem_revisions "
+                "(problem_id, content_revision_id, source_ordinal, source_item, "
+                "display_number, title, normalized_title, problem_type, "
+                "answer_type, answer_config_json, attempt_policy_json, "
+                "config_version, created_at) VALUES "
+                "(?, ?, 5, '5', '5', 'Письменная задача', 'письменная задача', "
+                "2, NULL, '{}', '{}', 1, ?) RETURNING id",
+                (written_problem_id, revision_id, now),
+            ).fetchone()["id"]
+        )
         connection.execute(
             "INSERT INTO lesson_publications "
             "(public_id, group_lesson_id, kind, revision_id, state, published_at, "
@@ -403,20 +457,31 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
             other_account_id,
             problem_id,
             problem_revision_id,
+            written_problem_id,
+            written_problem_revision_id,
             window_id,
         )
 
-    account_id, other_account_id, problem_id, problem_revision_id, window_id = (
-        factory.run_write(seed)
-    )
+    (
+        account_id,
+        other_account_id,
+        problem_id,
+        problem_revision_id,
+        written_problem_id,
+        written_problem_revision_id,
+        window_id,
+    ) = factory.run_write(seed)
     return SubmissionFixture(
         factory=factory,
         repository=repository,
+        written_repository=written_repository,
         clock=clock,
         student_account_id=account_id,
         other_account_id=other_account_id,
         problem_id=problem_id,
         problem_revision_id=problem_revision_id,
+        written_problem_id=written_problem_id,
+        written_problem_revision_id=written_problem_revision_id,
         window_id=window_id,
     )
 
@@ -1402,3 +1467,353 @@ async def test_history_rejects_foreign_owner_and_foreign_cursor_without_disclosu
             cursor=receipt.attempt_public_id,
         )
     assert foreign_cursor.value.http_status in {404, 422}
+
+
+def written_entry_command(
+    fixture: SubmissionFixture,
+    *,
+    text: str | None = "Решение по шагам.",
+    key: str = "written-create-key-1",
+    client_created_at: datetime = NOW,
+) -> CreateWrittenEntryCommand:
+    return CreateWrittenEntryCommand(
+        account_id=fixture.student_account_id,
+        problem_public_id=WRITTEN_PROBLEM_PUBLIC_ID,
+        problem_revision=ProblemRevisionRef(
+            condition_revision_public_id="revision-submission-condition",
+            config_version=1,
+        ),
+        text=text,
+        client_created_at=client_created_at,
+        idempotency_key=key,
+    )
+
+
+def submit_written_entry_command(
+    fixture: SubmissionFixture,
+    *,
+    entry_public_id: str,
+    thread_version: int,
+    entry_version: int = 1,
+    key: str = "written-submit-key-1",
+) -> SubmitWrittenEntryCommand:
+    return SubmitWrittenEntryCommand(
+        account_id=fixture.student_account_id,
+        entry_public_id=entry_public_id,
+        expected_entry_version=entry_version,
+        expected_thread_version=thread_version,
+        attachment_public_ids=(),
+        idempotency_key=key,
+    )
+
+
+async def test_written_draft_keeps_exact_revision_and_replays_without_duplicates(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    command = written_entry_command(fixture)
+
+    first = await fixture.written_repository.create_entry(command)
+    replay = await fixture.written_repository.create_entry(command)
+    stored = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute("SELECT * FROM submission_threads").fetchall(),
+            connection.execute("SELECT * FROM submission_entries").fetchall(),
+            connection.execute(
+                "SELECT * FROM idempotency_records "
+                "WHERE operation = 'written-entry:create'"
+            ).fetchall(),
+        )
+    )
+
+    assert first.entry.problem_revision == command.problem_revision
+    assert first.entry.text == "Решение по шагам."
+    assert first.entry.state == "draft"
+    assert first.thread_status == "open"
+    assert first.thread_version == 1
+    assert replay == first
+    assert replay.replayed is True
+    assert [len(rows) for rows in stored] == [1, 1, 1]
+    assert stored[1][0]["problem_revision_id"] == fixture.written_problem_revision_id
+
+
+async def test_written_create_key_rejects_a_different_payload(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    await fixture.written_repository.create_entry(written_entry_command(fixture))
+
+    with pytest.raises(WrittenIdempotencyPayloadMismatch):
+        await fixture.written_repository.create_entry(
+            written_entry_command(fixture, text="Другое решение.")
+        )
+
+
+async def test_written_text_entry_submits_atomically_and_replays(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture)
+    )
+    command = submit_written_entry_command(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        thread_version=draft.thread_version,
+    )
+
+    receipt = await fixture.written_repository.submit_entry(command)
+    replay = await fixture.written_repository.submit_entry(command)
+    stored = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute("SELECT * FROM submission_threads").fetchone(),
+            connection.execute("SELECT * FROM submission_entries").fetchone(),
+            connection.execute(
+                "SELECT * FROM idempotency_records "
+                "WHERE operation = 'written-entry:submit'"
+            ).fetchall(),
+        )
+    )
+    thread, entry, idempotency = stored
+
+    assert receipt.thread_status == "awaiting_review"
+    assert receipt.thread_version == 2
+    assert receipt.entry.state == "submitted"
+    assert receipt.entry.version == 2
+    assert replay == receipt
+    assert replay.replayed is True
+    assert thread["status"] == "awaiting_review"
+    assert thread["version"] == 2
+    assert entry["state"] == "submitted"
+    assert entry["version"] == 2
+    assert len(idempotency) == 1
+
+
+async def test_written_blank_submit_failure_is_idempotent_and_non_mutating(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text="   ")
+    )
+    command = submit_written_entry_command(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        thread_version=draft.thread_version,
+    )
+
+    for _ in range(2):
+        with pytest.raises(WrittenSubmissionRejected) as rejected:
+            await fixture.written_repository.submit_entry(command)
+        assert rejected.value.code == "written_entry_empty"
+        assert rejected.value.http_status == 422
+
+    entry, thread, idempotency = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute("SELECT * FROM submission_entries").fetchone(),
+            connection.execute("SELECT * FROM submission_threads").fetchone(),
+            connection.execute(
+                "SELECT * FROM idempotency_records "
+                "WHERE operation = 'written-entry:submit'"
+            ).fetchall(),
+        )
+    )
+    assert entry["state"] == "draft"
+    assert entry["version"] == 1
+    assert thread["status"] == "open"
+    assert thread["version"] == 1
+    assert len(idempotency) == 1
+    assert idempotency[0]["state"] == "failed"
+
+
+async def test_written_submit_rejects_stale_versions_without_partial_update(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture)
+    )
+
+    with pytest.raises(WrittenSubmissionRejected) as rejected:
+        await fixture.written_repository.submit_entry(
+            submit_written_entry_command(
+                fixture,
+                entry_public_id=draft.entry.public_id,
+                thread_version=draft.thread_version + 1,
+            )
+        )
+
+    assert rejected.value.code == "written_submission_version_conflict"
+    entry = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT state, version FROM submission_entries"
+        ).fetchone()
+    )
+    assert entry == {"state": "draft", "version": 1}
+
+
+async def test_written_offline_entry_created_before_cutoff_submits_later(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    cutoff = NOW + timedelta(days=2)
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, client_created_at=cutoff - timedelta(minutes=1))
+    )
+    fixture.clock.value = cutoff + timedelta(days=1)
+
+    receipt = await fixture.written_repository.submit_entry(
+        submit_written_entry_command(
+            fixture,
+            entry_public_id=draft.entry.public_id,
+            thread_version=draft.thread_version,
+        )
+    )
+
+    assert receipt.entry.state == "submitted"
+    assert receipt.clock_suspicious is True
+
+
+async def test_written_thread_history_survives_access_revocation(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture)
+    )
+    fixture.factory.run_write(
+        lambda connection: (
+            connection.execute(
+                "UPDATE submission_threads SET status = 'closed', "
+                "version = version + 1, updated_at = ?",
+                (timestamp(NOW + timedelta(seconds=1)),),
+            ),
+            connection.execute(
+                "UPDATE course_group_access SET valid_to = ?, version = version + 1, "
+                "updated_at = ?",
+                (
+                    timestamp(NOW + timedelta(seconds=1)),
+                    timestamp(NOW + timedelta(seconds=1)),
+                ),
+            ),
+        )
+    )
+    fixture.clock.value = NOW + timedelta(seconds=2)
+
+    thread = await fixture.written_repository.get_thread(
+        account_id=fixture.student_account_id,
+        problem_public_id=WRITTEN_PROBLEM_PUBLIC_ID,
+    )
+
+    assert thread is not None
+    assert thread.public_id == draft.thread_public_id
+    assert [entry.public_id for entry in thread.entries] == [draft.entry.public_id]
+
+
+async def test_written_thread_does_not_disclose_another_students_work(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    await fixture.written_repository.create_entry(written_entry_command(fixture))
+
+    with pytest.raises(WrittenSubmissionRejected) as rejected:
+        await fixture.written_repository.get_thread(
+            account_id=fixture.other_account_id,
+            problem_public_id=WRITTEN_PROBLEM_PUBLIC_ID,
+        )
+
+    assert rejected.value.code == "written_problem_not_found"
+    assert rejected.value.http_status == 404
+
+
+async def test_concurrent_written_create_retries_make_one_draft(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    command = written_entry_command(fixture)
+
+    first, second = await asyncio.gather(
+        fixture.written_repository.create_entry(command),
+        fixture.written_repository.create_entry(command),
+    )
+
+    assert first == second
+    counts = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_threads"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_entries"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT count(*) AS n FROM idempotency_records "
+                "WHERE operation = 'written-entry:create'"
+            ).fetchone()["n"],
+        )
+    )
+    assert counts == (1, 1, 1)
+
+
+async def test_written_create_fault_rolls_back_and_retry_is_clean(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "CREATE TRIGGER fail_written_entry_insert BEFORE INSERT "
+            "ON submission_entries BEGIN SELECT raise(abort, 'synthetic fault'); END"
+        )
+    )
+
+    with pytest.raises(sqlite3.IntegrityError, match="synthetic fault"):
+        await fixture.written_repository.create_entry(written_entry_command(fixture))
+
+    assert fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_threads"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_entries"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT count(*) AS n FROM idempotency_records "
+                "WHERE operation = 'written-entry:create'"
+            ).fetchone()["n"],
+        )
+    ) == (0, 0, 0)
+
+    fixture.factory.run_write(
+        lambda connection: connection.execute("DROP TRIGGER fail_written_entry_insert")
+    )
+    receipt = await fixture.written_repository.create_entry(
+        written_entry_command(fixture)
+    )
+    assert receipt.entry.state == "draft"
+
+
+async def test_written_entry_created_after_cutoff_cannot_be_submitted(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    cutoff = NOW + timedelta(days=2)
+    fixture.clock.value = cutoff + timedelta(minutes=5)
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(
+            fixture,
+            client_created_at=cutoff + timedelta(minutes=1),
+        )
+    )
+
+    with pytest.raises(WrittenSubmissionRejected) as rejected:
+        await fixture.written_repository.submit_entry(
+            submit_written_entry_command(
+                fixture,
+                entry_public_id=draft.entry.public_id,
+                thread_version=draft.thread_version,
+            )
+        )
+
+    assert rejected.value.code == "submission_deadline_passed"
+    assert rejected.value.details == {"submissionClosesAt": timestamp(cutoff)}
