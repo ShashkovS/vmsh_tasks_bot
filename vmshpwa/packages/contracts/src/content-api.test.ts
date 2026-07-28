@@ -209,10 +209,19 @@ describe('Phase-2 content HTTP contracts', () => {
   it('keeps ETags and audience/owner query keys exact', () => {
     expect(contentEtagSchema.parse('"content-revision-1:v3"')).toBe('"content-revision-1:v3"')
     expect(() => contentEtagSchema.parse('content-revision-1:v3')).toThrow()
-    expect(contentQueryKeys.published('family', 'lesson-41', 'hint', 'student-1')).toEqual([
+    expect(
+      contentQueryKeys.published(
+        { audience: 'family', accountId: 'account-family-1' },
+        'lesson-41',
+        'hint',
+        'student-1',
+      ),
+    ).toEqual([
+      'principal',
+      'family',
+      'account-family-1',
       'content',
       'published',
-      'family',
       'lesson-41',
       'hint',
       'student-1',

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { publicIdSchema } from './auth'
+import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
 import { webAssetUrlSchema, webContentDocumentSchema } from './content'
 
 /**
@@ -998,11 +998,19 @@ export type StudentProblemReveal = z.infer<typeof studentProblemRevealSchema>
 
 export const contentQueryKeys = {
   published: (
-    audience: 'student' | 'family',
+    principal: PrincipalQueryScope,
     groupLessonId: string,
     kind: ContentMaterialKind,
     studentPublicId?: string,
-  ) => ['content', 'published', audience, groupLessonId, kind, studentPublicId ?? 'self'] as const,
+  ) =>
+    [
+      ...principalQueryKey(principal),
+      'content',
+      'published',
+      groupLessonId,
+      kind,
+      studentPublicId ?? 'self',
+    ] as const,
   diagnostics: (revisionId: string) => ['content', 'diagnostics', revisionId] as const,
   assets: (revisionId: string) => ['content', 'assets', revisionId] as const,
   problemMatches: (revisionId: string) => ['content', 'problem-matches', revisionId] as const,

@@ -21,6 +21,7 @@ import {
   type PrincipalQueryScope,
   type StudentLessonSummary,
 } from '@vmsh/contracts'
+import { useOfflineDatabase } from '@vmsh/offline'
 import { CourseContext, CourseGroupSwitcher, TaskListItem } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
@@ -32,6 +33,7 @@ import {
   toStudentTaskView,
   type StudentTasksSearch,
 } from './student-tasks-view'
+import { createOfflineStudentCourseClient } from './offline-student-data'
 
 function requestState(error: unknown) {
   return error instanceof CourseNetworkError
@@ -292,20 +294,20 @@ export function StudentTasksArchivePage({ search }: { search: StudentTasksSearch
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   if (principal.audience !== 'student') throw new Error('Student tasks require a Student principal')
-  const client = useMemo(
-    () =>
-      createStudentCourseClient(authentication.client.runtime, {
-        refreshSession: async () => {
-          try {
-            return await authentication.refresh()
-          } catch (error) {
-            authentication.handleApiError(error)
-            throw error
-          }
-        },
-      }),
-    [authentication],
-  )
+  const database = useOfflineDatabase()
+  const client = useMemo(() => {
+    const online = createStudentCourseClient(authentication.client.runtime, {
+      refreshSession: async () => {
+        try {
+          return await authentication.refresh()
+        } catch (error) {
+          authentication.handleApiError(error)
+          throw error
+        }
+      },
+    })
+    return createOfflineStudentCourseClient(online, database, principal.accountId)
+  }, [authentication, database, principal.accountId])
   const accessQuery = useStudentCoursesQuery(client, {
     audience: 'student',
     accountId: principal.accountId,

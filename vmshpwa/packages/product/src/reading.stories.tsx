@@ -3,6 +3,7 @@ import { Lightbulb } from 'lucide-react'
 import { expect, userEvent, within } from 'storybook/test'
 
 import { ConsciousDisclosure, HintDisclosure, SolutionDisclosure } from './conscious-disclosure'
+import { ConnectionBanner } from './connection-banner'
 import { DeadlineNotice } from './deadline-notice'
 import { ProblemHeader } from './problem-header'
 import type { GroupView } from './types'
@@ -258,5 +259,45 @@ export const AuditedRevealRecovery: Story = {
     await userEvent.click(canvas.getByRole('button', { name: /^Решение/ }))
     await expect(canvas.queryByText('Открыть решение?')).not.toBeInTheDocument()
     await expect(canvas.getByText(/Ранее раскрытое решение/)).toBeInTheDocument()
+  },
+}
+
+export const OfflineLastCopy: Story = {
+  name: 'Последняя сохранённая копия без сети',
+  render: () => (
+    <article className="mx-auto max-w-2xl space-y-4">
+      <ConnectionBanner
+        actionImpact="Показана копия от 28 июля, 13:05. Срок свежести истёк; новые публикации появятся после восстановления связи."
+        state="offline"
+      />
+      <ProblemHeader
+        level={beginner}
+        number="21н.6"
+        onShowHistory={() => undefined}
+        title="Расстановка ладей"
+        type="written"
+      />
+      <div className="space-y-3 font-reading text-reading leading-relaxed text-foreground">
+        <p>
+          На доске n×n расставляют ладьи так, чтобы никакие две не били друг друга. Найдите число
+          способов расставить ровно k ладей.
+        </p>
+      </div>
+      <HintDisclosure initiallyRevealed onReveal={() => Promise.resolve()}>
+        Эта подсказка доступна без сети только потому, что школьник уже раскрыл её через
+        подтверждённый запрос.
+      </HintDisclosure>
+      <SolutionDisclosure lockedNote="не было раскрыто на этом устройстве">
+        Не должно отображаться.
+      </SolutionDisclosure>
+    </article>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/Показана копия от 28 июля/)).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: /^Подсказка/ }))
+    await expect(canvas.queryByText('Открыть подсказку?')).not.toBeInTheDocument()
+    await expect(canvas.getByText(/уже раскрыл её/)).toBeInTheDocument()
+    await expect(canvas.queryByText('Не должно отображаться.')).not.toBeInTheDocument()
   },
 }

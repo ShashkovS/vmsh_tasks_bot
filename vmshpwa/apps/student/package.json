@@ -36,5 +36,8 @@
     "workbox-strategies": "catalog:",
     "workbox-window": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "catalog:"
   }
 }

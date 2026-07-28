@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   CourseNetworkError,
@@ -17,9 +17,15 @@ import {
   type StudentProblemSummary,
   type StudentRevealKind,
 } from '@vmsh/contracts'
+import { useOfflineDatabase, type VmshOfflineDatabase } from '@vmsh/offline'
 import { HintDisclosure, SolutionDisclosure } from '@vmsh/product'
 
 import { StudentPublishedContentPage } from './content-page'
+import {
+  createOfflineStudentCourseClient,
+  readCachedStudentProblemReveal,
+  revealStudentProblemMaterialWithOfflineCache,
+} from './offline-student-data'
 
 function problemRequestState(error: unknown) {
   return error instanceof CourseNetworkError || error instanceof ContentNetworkError
@@ -39,6 +45,12 @@ function StudentTaskMaterials({
   groupLessonId: string
 }) {
   const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'student') {
+    throw new Error('Student material reveal requires a Student principal')
+  }
+  const database = useOfflineDatabase()
+  const cacheIdentity = `${principal.accountId}:${groupLessonId}:${problem.problemId}`
   const client = useMemo(
     () =>
       createContentApiClient(authentication.client.runtime, {
@@ -53,15 +65,103 @@ function StudentTaskMaterials({
       }),
     [authentication],
   )
-  const [hint, setHint] = useState<StudentProblemReveal | null>(null)
-  const [solution, setSolution] = useState<StudentProblemReveal | null>(null)
+  const [cachedMaterials, setCachedMaterials] = useState<{
+    identity: string
+    ready: boolean
+    hint: StudentProblemReveal | null
+    solution: StudentProblemReveal | null
+  }>({ identity: '', ready: false, hint: null, solution: null })
+
+  useEffect(() => {
+    let active = true
+    void Promise.all([
+      problem.materials.hint.status === 'revealed'
+        ? readCachedStudentProblemReveal(database, principal.accountId, {
+            groupLessonId,
+            problemId: problem.problemId,
+            kind: 'hint',
+          })
+        : Promise.resolve(null),
+      problem.materials.solution.status === 'revealed'
+        ? readCachedStudentProblemReveal(database, principal.accountId, {
+            groupLessonId,
+            problemId: problem.problemId,
+            kind: 'solution',
+          })
+        : Promise.resolve(null),
+    ]).then(
+      ([hint, solution]) => {
+        if (active) setCachedMaterials({ identity: cacheIdentity, ready: true, hint, solution })
+      },
+      () => {
+        if (active)
+          setCachedMaterials({ identity: cacheIdentity, ready: true, hint: null, solution: null })
+      },
+    )
+    return () => {
+      active = false
+    }
+  }, [
+    cacheIdentity,
+    database,
+    groupLessonId,
+    principal.accountId,
+    problem.materials.hint.status,
+    problem.materials.solution.status,
+    problem.problemId,
+  ])
+
+  if (!cachedMaterials.ready || cachedMaterials.identity !== cacheIdentity) return null
+
+  return (
+    <StudentTaskMaterialsReady
+      key={cacheIdentity}
+      client={client}
+      database={database}
+      groupLessonId={groupLessonId}
+      initialHint={cachedMaterials.hint}
+      initialSolution={cachedMaterials.solution}
+      ownerId={principal.accountId}
+      problem={problem}
+    />
+  )
+}
+
+function StudentTaskMaterialsReady({
+  client,
+  database,
+  groupLessonId,
+  initialHint,
+  initialSolution,
+  ownerId,
+  problem,
+}: {
+  client: ReturnType<typeof createContentApiClient>
+  database: VmshOfflineDatabase
+  groupLessonId: string
+  initialHint: StudentProblemReveal | null
+  initialSolution: StudentProblemReveal | null
+  ownerId: string
+  problem: StudentProblemSummary
+}) {
+  const [hint, setHint] = useState<StudentProblemReveal | null>(initialHint)
+  const [solution, setSolution] = useState<StudentProblemReveal | null>(initialSolution)
 
   const reveal = async (kind: StudentRevealKind) => {
-    const response = await client.revealStudentProblemMaterial({
-      groupLessonId,
-      problemId: problem.problemId,
-      kind,
-    })
+    const existing = kind === 'hint' ? hint : solution
+    const response =
+      existing ??
+      (await revealStudentProblemMaterialWithOfflineCache(
+        client,
+        database,
+        ownerId,
+        {
+          groupLessonId,
+          problemId: problem.problemId,
+          kind,
+        },
+        problem.materials[kind].status === 'revealed',
+      ))
     if (
       response.groupLessonId !== groupLessonId ||
       response.problemId !== problem.problemId ||
@@ -84,7 +184,7 @@ function StudentTaskMaterials({
     <section aria-label="Подсказка и решение" className="mt-5 space-y-2">
       {problem.materials.hint.status === 'unavailable' ? null : (
         <HintDisclosure
-          initiallyRevealed={problem.materials.hint.status === 'revealed'}
+          initiallyRevealed={problem.materials.hint.status === 'revealed' || hint !== null}
           meta={
             hint
               ? `опубликовано ${new Date(hint.publishedAt).toLocaleDateString('ru-RU')}`
@@ -97,7 +197,7 @@ function StudentTaskMaterials({
       )}
       {problem.materials.solution.status === 'unavailable' ? null : (
         <SolutionDisclosure
-          initiallyRevealed={problem.materials.solution.status === 'revealed'}
+          initiallyRevealed={problem.materials.solution.status === 'revealed' || solution !== null}
           meta={
             solution
               ? `опубликовано ${new Date(solution.publishedAt).toLocaleDateString('ru-RU')}`
@@ -126,20 +226,20 @@ function CanonicalStudentTask({
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   if (principal.audience !== 'student') throw new Error('Student task requires a Student principal')
-  const client = useMemo(
-    () =>
-      createStudentCourseClient(authentication.client.runtime, {
-        refreshSession: async () => {
-          try {
-            return await authentication.refresh()
-          } catch (error) {
-            authentication.handleApiError(error)
-            throw error
-          }
-        },
-      }),
-    [authentication],
-  )
+  const database = useOfflineDatabase()
+  const client = useMemo(() => {
+    const online = createStudentCourseClient(authentication.client.runtime, {
+      refreshSession: async () => {
+        try {
+          return await authentication.refresh()
+        } catch (error) {
+          authentication.handleApiError(error)
+          throw error
+        }
+      },
+    })
+    return createOfflineStudentCourseClient(online, database, principal.accountId)
+  }, [authentication, database, principal.accountId])
   const query = useStudentProblemsQuery(
     client,
     { audience: 'student', accountId: principal.accountId },

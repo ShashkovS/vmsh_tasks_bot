@@ -7,7 +7,11 @@ import {
   AuthenticationRedirectBoundary,
   createRouterAuthReturnTo,
   isAuthenticationLoginPath,
+  useAuthentication,
 } from '@vmsh/app-shell'
+import { ConnectionBanner } from '@vmsh/product'
+
+import { useStudentOfflineReadStatus } from '../offline-student-data'
 
 const navigation = [
   { label: 'Сейчас', to: '/', icon: <House className="size-5" aria-hidden="true" /> },
@@ -58,8 +62,40 @@ function StudentProtectedShell({
   return (
     <AuthenticationRedirectBoundary onAuthenticationRequired={redirectToLogin}>
       <AppShell product="student" title="Школьник" navigation={navigation} mobileNavigation>
+        <StudentOfflineSessionNotice />
         <Outlet />
       </AppShell>
     </AuthenticationRedirectBoundary>
+  )
+}
+
+function StudentOfflineSessionNotice() {
+  const authentication = useAuthentication()
+  const offlineRead = useStudentOfflineReadStatus()
+  const principal =
+    authentication.state.status === 'authenticated' ||
+    authentication.state.status === 'offline-unverified'
+      ? authentication.state.principal
+      : null
+  const scopedOfflineRead =
+    principal && offlineRead?.ownerId === principal.accountId ? offlineRead : null
+  if (authentication.state.status !== 'offline-unverified' && scopedOfflineRead === null)
+    return null
+  const savedAt = scopedOfflineRead
+    ? new Intl.DateTimeFormat('ru-RU', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(scopedOfflineRead.fetchedAt))
+    : null
+  return (
+    <ConnectionBanner
+      actionImpact={
+        savedAt
+          ? `Показана последняя сохранённая копия от ${savedAt}.${scopedOfflineRead?.stale ? ' Срок свежести копии истёк.' : ''} Новые публикации и изменения появятся после восстановления связи.`
+          : 'Показана последняя сохранённая копия. Новые публикации и изменения появятся после восстановления связи.'
+      }
+      className="mb-4"
+      state="offline"
+    />
   )
 }

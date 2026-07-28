@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import {
   ApiResponseError,
   fetchRuntime,
+  parseRuntimeConfigForAudience,
   type Audience,
   type FetchRuntimeOptions,
   type RuntimeConfig,
@@ -12,6 +13,36 @@ import { Button, Card, CardContent } from '@vmsh/ui'
 
 const RuntimeConfigContext = createContext<RuntimeConfig | null>(null)
 export const DEFAULT_RUNTIME_BOOTSTRAP_TIMEOUT_MS = 10_000
+const RUNTIME_CACHE_VERSION = 1
+
+export function runtimeCacheStorageKey(audience: Audience): string {
+  return `vmsh-179:runtime:v${RUNTIME_CACHE_VERSION}:${audience}`
+}
+
+function persistRuntime(audience: Audience, runtime: RuntimeConfig): void {
+  try {
+    window.localStorage.setItem(runtimeCacheStorageKey(audience), JSON.stringify(runtime))
+  } catch {
+    // Runtime caching is an offline enhancement; an authoritative online
+    // response must still open when browser storage is denied or full.
+  }
+}
+
+function cachedRuntime(audience: Audience): RuntimeConfig | null {
+  try {
+    const serialized = window.localStorage.getItem(runtimeCacheStorageKey(audience))
+    if (serialized === null) return null
+    return parseRuntimeConfigForAudience(audience, JSON.parse(serialized))
+  } catch {
+    return null
+  }
+}
+
+function isRuntimeNetworkFailure(error: unknown): boolean {
+  return (
+    error instanceof TypeError || (error instanceof DOMException && error.name === 'AbortError')
+  )
+}
 
 export interface RuntimeBootstrapProps {
   audience: Audience
@@ -71,11 +102,17 @@ function RuntimeBootstrapRequest({
     }).then(
       (runtime) => {
         window.clearTimeout(timeout)
+        persistRuntime(audience, runtime)
         if (active) setState({ status: 'ready', runtime })
       },
       (error: unknown) => {
         window.clearTimeout(timeout)
         if (!active) return
+        const offlineRuntime = isRuntimeNetworkFailure(error) ? cachedRuntime(audience) : null
+        if (offlineRuntime) {
+          setState({ status: 'ready', runtime: offlineRuntime })
+          return
+        }
         setState({
           status: 'error',
           ...(error instanceof ApiResponseError ? { requestId: error.requestId } : {}),

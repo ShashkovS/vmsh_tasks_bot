@@ -14,12 +14,19 @@ function targetForProject(projectName: string): ContentTarget {
   return target
 }
 
-function latexSource(title: string, statement: string): string {
+function latexSource(title: string, statement: string, kind: ContentKind = 'condition'): string {
+  const problemStatement = kind === 'condition' ? statement : 'Условие для сопоставления.'
+  const trailingMaterial =
+    kind === 'hint'
+      ? String.raw`
+\hint ${statement} \ehint`
+      : ''
   return String.raw`\documentclass{article}
 \begin{document}
 \problem[name=e2e,title=${title}]
-${statement}
+${problemStatement}
 \eproblem
+${trailingMaterial}
 \end{document}
 `
 }
@@ -144,7 +151,7 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await uploadReviewAndPublish({
     page,
     target,
-    source: latexSource('Первая версия', hintStatement),
+    source: latexSource('Первая версия', hintStatement, 'hint'),
     match: 'suggested',
     kind: 'hint',
   })
@@ -185,6 +192,44 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await page.getByRole('button', { name: /^Подсказка/ }).click()
   await expect(page.getByRole('button', { name: 'Показать подсказку' })).toHaveCount(0)
   await expect(page.getByText(hintStatement)).toBeVisible()
+
+  // Phase 3 cold-offline checkpoint: after a full application reload there is
+  // no in-memory Query cache, and every Student API request is disconnected.
+  // The precached shell still loads under its real Service Worker. The
+  // secret-free auth snapshot unlocks only this account's validated Dexie
+  // records; a reveal is reusable only because the successful audited POST
+  // above was cached. Playwright's context-wide offline mode rejects a cached
+  // navigation in Firefox/WebKit before their Service Worker can answer it,
+  // so the application API boundary returns the browser's native network
+  // failure instead. This is not an HTTP mock: no response is manufactured.
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null)
+  const offlineMarker = 'vmsh-e2e-student-api-offline'
+  await page.addInitScript((marker) => {
+    const nativeFetch = window.fetch.bind(window)
+    window.fetch = (input, init) => {
+      const rawUrl = typeof input === 'string' || input instanceof URL ? String(input) : input.url
+      const url = new URL(rawUrl, window.location.href)
+      if (
+        window.sessionStorage.getItem(marker) === '1' &&
+        url.pathname.startsWith('/student/api/')
+      ) {
+        return Promise.reject(new TypeError('Failed to fetch'))
+      }
+      return nativeFetch(input, init)
+    }
+  }, offlineMarker)
+  await page.evaluate((marker) => window.sessionStorage.setItem(marker, '1'), offlineMarker)
+  try {
+    await page.reload()
+    await expect(page.getByText(/Показана последняя сохранённая копия/)).toBeVisible()
+    await expect(page.getByText(firstStatement)).toBeVisible()
+    await page.getByRole('button', { name: /^Подсказка/ }).click()
+    await expect(page.getByRole('button', { name: 'Показать подсказку' })).toHaveCount(0)
+    await expect(page.getByText(hintStatement)).toBeVisible()
+  } finally {
+    await page.evaluate((marker) => window.sessionStorage.removeItem(marker), offlineMarker)
+  }
+  await page.reload()
 
   await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()

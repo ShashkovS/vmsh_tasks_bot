@@ -13,6 +13,7 @@ import {
   useStudentHomeQuery,
 } from '@vmsh/app-shell'
 import { ApiResponseError, type StudentHomeCourse } from '@vmsh/contracts'
+import { useOfflineDatabase } from '@vmsh/offline'
 import { CourseCard, LevelChip } from '@vmsh/product'
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
@@ -22,6 +23,7 @@ import {
   studentPhaseLabel,
   toCourseEnrollmentView,
 } from './student-home-view'
+import { createOfflineStudentCourseClient } from './offline-student-data'
 
 function EmptyCourseCard({ course }: { course: StudentHomeCourse }) {
   const enrollment = toCourseEnrollmentView(course.enrollment)
@@ -62,20 +64,20 @@ export function StudentHomePage() {
   if (principal.audience !== 'student') {
     throw new Error('Student home requires a Student principal')
   }
-  const client = useMemo(
-    () =>
-      createStudentCourseClient(authentication.client.runtime, {
-        refreshSession: async () => {
-          try {
-            return await authentication.refresh()
-          } catch (error) {
-            authentication.handleApiError(error)
-            throw error
-          }
-        },
-      }),
-    [authentication],
-  )
+  const database = useOfflineDatabase()
+  const client = useMemo(() => {
+    const online = createStudentCourseClient(authentication.client.runtime, {
+      refreshSession: async () => {
+        try {
+          return await authentication.refresh()
+        } catch (error) {
+          authentication.handleApiError(error)
+          throw error
+        }
+      },
+    })
+    return createOfflineStudentCourseClient(online, database, principal.accountId)
+  }, [authentication, database, principal.accountId])
   const query = useStudentHomeQuery(client, {
     audience: 'student',
     accountId: principal.accountId,

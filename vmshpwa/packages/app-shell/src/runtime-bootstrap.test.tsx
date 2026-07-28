@@ -6,7 +6,7 @@ import { createBrowserStorageNamespace } from '@vmsh/contracts'
 import studentRuntimeFixture from '@vmsh/contracts/fixtures/runtime/student.v1.json'
 
 import { AppProviders, ThemeToggle, themeStorageKey } from './providers'
-import { RuntimeBootstrap, useRuntimeConfig } from './runtime-bootstrap'
+import { RuntimeBootstrap, runtimeCacheStorageKey, useRuntimeConfig } from './runtime-bootstrap'
 
 class MemoryStorage implements Storage {
   readonly #values = new Map<string, string>()
@@ -110,6 +110,57 @@ describe('RuntimeBootstrap', () => {
 
     resolveResponse?.(responseWith(studentRuntimeFixture.response))
     expect(await screen.findByText('Открыт student')).not.toBeNull()
+    expect(
+      JSON.parse(window.localStorage.getItem(runtimeCacheStorageKey('student')) ?? 'null'),
+    ).toEqual(studentRuntimeFixture.response)
+  })
+
+  it('uses only a previously validated same-audience runtime after a network failure', async () => {
+    window.localStorage.setItem(
+      runtimeCacheStorageKey('student'),
+      JSON.stringify(studentRuntimeFixture.response),
+    )
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.reject(new TypeError('Network unavailable')),
+    )
+
+    render(
+      <RuntimeBootstrap audience="student" fetchImplementation={fetchImplementation}>
+        {() => <ProtectedRuntimeProbe />}
+      </RuntimeBootstrap>,
+    )
+
+    expect(await screen.findByText('Открыт student')).not.toBeNull()
+  })
+
+  it('does not use a cached runtime for an authoritative API rejection', async () => {
+    window.localStorage.setItem(
+      runtimeCacheStorageKey('student'),
+      JSON.stringify(studentRuntimeFixture.response),
+    )
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(
+        responseWith(
+          {
+            error: {
+              code: 'maintenance',
+              message: 'Maintenance',
+              requestId: 'request-maintenance',
+            },
+          },
+          503,
+        ),
+      ),
+    )
+
+    render(
+      <RuntimeBootstrap audience="student" fetchImplementation={fetchImplementation}>
+        {() => <ProtectedRuntimeProbe />}
+      </RuntimeBootstrap>,
+    )
+
+    expect(await screen.findByRole('alert')).not.toBeNull()
+    expect(screen.queryByText('Открыт student')).toBeNull()
   })
 
   it('fails closed for a cross-audience payload and can retry without a fallback shell', async () => {

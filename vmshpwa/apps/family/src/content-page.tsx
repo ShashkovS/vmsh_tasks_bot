@@ -1,6 +1,11 @@
 import { useMemo } from 'react'
 
-import { PageLayout, PageStatePanel, useAuthentication } from '@vmsh/app-shell'
+import {
+  PageLayout,
+  PageStatePanel,
+  useAuthenticatedPrincipal,
+  useAuthentication,
+} from '@vmsh/app-shell'
 import {
   ContentNetworkError,
   SemanticMathDocument,
@@ -32,12 +37,11 @@ export function FamilyPublishedContentPage({
   problemOrdinal?: number
 }) {
   const authentication = useAuthentication()
-  const principal =
-    authentication.state.status === 'authenticated' ||
-    authentication.state.status === 'offline-unverified'
-      ? authentication.state.principal
-      : undefined
-  const linkedChildren = principal?.audience === 'family' ? principal.linkedChildren : []
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'family') {
+    throw new Error('Family content requires a Family principal')
+  }
+  const linkedChildren = principal.linkedChildren
   const studentPublicId =
     requestedStudentPublicId ??
     linkedChildren.find((child) => child.isPrimary)?.studentId ??
@@ -58,6 +62,7 @@ export function FamilyPublishedContentPage({
   )
   const query = usePublishedContentQuery(
     client,
+    { audience: 'family', accountId: principal.accountId },
     {
       groupLessonId: groupLessonId ?? 'missing',
       kind,

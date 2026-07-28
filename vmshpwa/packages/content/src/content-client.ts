@@ -47,6 +47,7 @@ import {
   type ProblemMatchReview,
   type ProblemMetadataGrid,
   type ProblemMetadataMutationRow,
+  type PrincipalQueryScope,
   type StaffContentHistory,
   type StaffContentAssetUpload,
   type StaffContentPreview,
@@ -767,13 +768,17 @@ export function createContentApiClient(
 }
 
 export function usePublishedContentQuery(
-  client: ContentApiClient,
+  client: Pick<ContentApiClient, 'audience' | 'published'>,
+  principal: PrincipalQueryScope,
   input: PublishedContentInput,
   options: { enabled?: boolean } = {},
 ) {
+  if (principal.audience !== client.audience) {
+    throw new TypeError('Published content query principal must match the client audience')
+  }
   return useQuery({
     queryKey: contentQueryKeys.published(
-      client.audience === 'family' ? 'family' : 'student',
+      principal,
       input.groupLessonId,
       input.kind,
       input.studentPublicId,

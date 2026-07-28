@@ -1,6 +1,11 @@
 import { useMemo, type ReactNode } from 'react'
 
-import { PageLayout, PageStatePanel, useAuthentication } from '@vmsh/app-shell'
+import {
+  PageLayout,
+  PageStatePanel,
+  useAuthenticatedPrincipal,
+  useAuthentication,
+} from '@vmsh/app-shell'
 import {
   ContentNetworkError,
   SemanticMathDocument,
@@ -9,7 +14,10 @@ import {
   usePublishedContentQuery,
 } from '@vmsh/content'
 import { ApiResponseError, type ContentMaterialKind } from '@vmsh/contracts'
+import { useOfflineDatabase } from '@vmsh/offline'
 import { ContentUpdateMarker } from '@vmsh/product'
+
+import { createOfflineStudentPublishedContentClient } from './offline-student-data'
 
 const materialLabels: Record<ContentMaterialKind, string> = {
   condition: 'Условие',
@@ -36,22 +44,27 @@ export function StudentPublishedContentPage({
   afterDocument?: ReactNode
 }) {
   const authentication = useAuthentication()
-  const client = useMemo(
-    () =>
-      createContentApiClient(authentication.client.runtime, {
-        refreshSession: async () => {
-          try {
-            return await authentication.refresh()
-          } catch (error) {
-            authentication.handleApiError(error)
-            throw error
-          }
-        },
-      }),
-    [authentication],
-  )
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'student') {
+    throw new Error('Student content requires a Student principal')
+  }
+  const database = useOfflineDatabase()
+  const client = useMemo(() => {
+    const online = createContentApiClient(authentication.client.runtime, {
+      refreshSession: async () => {
+        try {
+          return await authentication.refresh()
+        } catch (error) {
+          authentication.handleApiError(error)
+          throw error
+        }
+      },
+    })
+    return createOfflineStudentPublishedContentClient(online, database, principal.accountId)
+  }, [authentication, database, principal.accountId])
   const query = usePublishedContentQuery(
     client,
+    { audience: 'student', accountId: principal.accountId },
     { groupLessonId: groupLessonId ?? 'missing', kind },
     { enabled: groupLessonId !== undefined },
   )
