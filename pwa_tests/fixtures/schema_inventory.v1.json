@@ -109,6 +109,10 @@
       {
         "id": "0045.pwa_material_reveal_matches",
         "sha256": "3cf6910e0bf1b052bc6c17d94f47f1216cf125d67d3acbfd51b78b2b19736f57"
+      },
+      {
+        "id": "0046.pwa_test_attempts_idempotency",
+        "sha256": "6db9af4016d61821f6812644a0b50965399962f2e9522ffeefaf7dcbd50c6756"
       }
     ],
     "repository_head_status": {
@@ -119,7 +123,7 @@
     }
   },
   "product": {
-    "object_count": 195,
+    "object_count": 211,
     "objects": [
       {
         "columns": [
@@ -6532,6 +6536,219 @@
         "columns": [
           {
             "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "audience",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "operation",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "http_status",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "response_json",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "completed_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "expires_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "expires_at",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "idempotency_records_expiry_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "audience",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "operation",
+                "seqno": 2
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "sqlite_autoindex_idempotency_records_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "idempotency_records",
+        "object_sha256": "239a4250139014435ee0d29cf86e8412ba89db4a00dae5d3bb464fc9b19e28c6",
+        "sql": "CREATE TABLE idempotency_records\n(\n    id              integer primary key,\n    audience        text    not null\n        check (audience in ('student', 'family', 'staff')),\n    account_id      integer not null references auth_accounts (id),\n    operation       text    not null\n        check (length(operation) between 1 and 200 and operation = trim(operation)),\n    idempotency_key text    not null\n        check (\n            length(idempotency_key) between 1 and 200\n            and idempotency_key = trim(idempotency_key)\n        ),\n    payload_sha256  text    not null\n        check (\n            length(payload_sha256) = 64\n            and payload_sha256 not glob '*[^0-9a-f]*'\n        ),\n    state           text    not null\n        check (state in ('processing', 'completed', 'failed')),\n    http_status     integer\n        check (http_status is null or http_status between 100 and 599),\n    response_json   text\n        check (\n            response_json is null\n            or (json_valid(response_json) = 1 and json_type(response_json) = 'object')\n        ),\n    created_at      text    not null,\n    completed_at    text,\n    expires_at      text,\n    unique (audience, account_id, operation, idempotency_key),\n    check (expires_at is null or expires_at > created_at),\n    check (\n        (\n            state = 'processing'\n            and http_status is null\n            and response_json is null\n            and completed_at is null\n        )\n        or (\n            state in ('completed', 'failed')\n            and http_status is not null\n            and response_json is not null\n            and completed_at is not null\n            and completed_at >= created_at\n        )\n    )\n);",
+        "table_name": "idempotency_records",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -8614,6 +8831,38 @@
           {
             "columns": [
               {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "problem_revisions_id_problem_uq",
+            "origin": "c",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
                 "cid": 7,
                 "collation": "BINARY",
                 "descending": false,
@@ -10110,6 +10359,46 @@
           {
             "columns": [
               {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_id",
+                "seqno": 1
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "results_id_student_problem_uq",
+            "origin": "c",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
                 "cid": 5,
                 "collation": "BINARY",
                 "descending": false,
@@ -11408,6 +11697,454 @@
         "object_sha256": "f7c5874d779aaf3bcd3a9acfd330077c80a45faaf8569d4d715bebc9f487c376",
         "sql": "CREATE TABLE surveys\n(\n    id          INTEGER primary key,\n    survey_type CHAR(1)   not null,\n    is_active   BOOL      not null,\n    question    TEXT      not null,\n    ts          timestamp not null\n);",
         "table_name": "surveys",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_revision_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "answer_payload_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "normalized_answer_json",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "parse_status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "counts_as_attempt",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "check_status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "client_created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "server_received_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "clock_skew_seconds",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "clock_suspicious",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "checker_version",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 17,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "verdict",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 18,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "result_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 19,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 20,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "checked_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "problem_revision_id",
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "problem_id"
+            ],
+            "target_table": "problem_revisions"
+          },
+          {
+            "from_columns": [
+              "result_id",
+              "student_user_id",
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "student_id",
+              "problem_id"
+            ],
+            "target_table": "results"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_test_attempts_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 14,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_test_attempts_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 0
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "server_received_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "test_attempts_pending_configuration_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "server_received_at",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "test_attempts_student_problem_counted_idx",
+            "origin": "c",
+            "partial": true,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "problem_id",
+                "seqno": 1
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "server_received_at",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "test_attempts_student_problem_history_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "test_attempts",
+        "object_sha256": "89bdc54316aa77f095b3900ed4377402e9ab9827143010a38ebedabdb264c4de",
+        "sql": "CREATE TABLE test_attempts\n(\n    id                     integer primary key,\n    public_id              text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    student_user_id        integer not null references users (id),\n    problem_id             integer not null references problems (id),\n    problem_revision_id    integer not null,\n    answer_payload_json    text    not null\n        check (\n            json_valid(answer_payload_json) = 1\n            and json_type(answer_payload_json) = 'object'\n            and json_type(answer_payload_json, '$.displayAnswer') = 'text'\n        ),\n    normalized_answer_json text\n        check (\n            normalized_answer_json is null\n            or json_valid(normalized_answer_json) = 1\n        ),\n    parse_status           text    not null\n        check (parse_status in ('valid', 'invalid_format')),\n    counts_as_attempt      integer not null\n        check (counts_as_attempt in (0, 1)),\n    check_status           text    not null\n        check (check_status in ('pending_configuration', 'pending', 'checked', 'failed')),\n    client_created_at      text    not null,\n    server_received_at     text    not null,\n    clock_skew_seconds     integer,\n    clock_suspicious       integer not null default 0\n        check (clock_suspicious in (0, 1)),\n    idempotency_key        text    not null\n        check (\n            length(idempotency_key) between 1 and 200\n            and idempotency_key = trim(idempotency_key)\n        ),\n    payload_sha256         text    not null\n        check (\n            length(payload_sha256) = 64\n            and payload_sha256 not glob '*[^0-9a-f]*'\n        ),\n    checker_version        text\n        check (checker_version is null or length(trim(checker_version)) > 0),\n    verdict                integer,\n    result_id              integer,\n    created_at             text    not null,\n    checked_at             text,\n    unique (student_user_id, idempotency_key),\n    foreign key (problem_revision_id, problem_id)\n        references problem_revisions (id, problem_id),\n    foreign key (result_id, student_user_id, problem_id)\n        references results (id, student_id, problem_id),\n    check (server_received_at >= created_at),\n    check (\n        (clock_suspicious = 0 and (clock_skew_seconds is null or abs(clock_skew_seconds) <= 3600))\n        or (clock_suspicious = 1 and clock_skew_seconds is not null and abs(clock_skew_seconds) > 3600)\n    ),\n    check ((verdict is null) = (result_id is null)),\n    check (\n        (\n            parse_status = 'invalid_format'\n            and counts_as_attempt = 0\n            and normalized_answer_json is null\n            and check_status = 'checked'\n            and checker_version is null\n            and verdict is null\n            and result_id is null\n            and checked_at is not null\n        )\n        or (\n            parse_status = 'valid'\n            and counts_as_attempt = 1\n            and normalized_answer_json is not null\n            and (\n                (\n                    check_status = 'pending_configuration'\n                    and checker_version is null\n                    and verdict is null\n                    and result_id is null\n                    and checked_at is null\n                )\n                or (\n                    check_status = 'pending'\n                    and checker_version is not null\n                    and verdict is null\n                    and result_id is null\n                    and checked_at is null\n                )\n                or (\n                    check_status = 'checked'\n                    and checker_version is not null\n                    and verdict is not null\n                    and result_id is not null\n                    and checked_at is not null\n                )\n                or (\n                    check_status = 'failed'\n                    and checker_version is not null\n                    and verdict is null\n                    and result_id is null\n                    and checked_at is not null\n                )\n            )\n        )\n    )\n);",
+        "table_name": "test_attempts",
         "type": "table"
       },
       {
@@ -13054,6 +13791,13 @@
         "type": "index"
       },
       {
+        "name": "idempotency_records_expiry_idx",
+        "object_sha256": "288fd13ca4c0ab558c0768eefbd3472030dccfc9b8546757b36479d7b8b7e8ce",
+        "sql": "CREATE INDEX idempotency_records_expiry_idx\n    on idempotency_records (expires_at, id)\n    where expires_at is not null;",
+        "table_name": "idempotency_records",
+        "type": "index"
+      },
+      {
         "name": "lesson_publications_one_published_uq",
         "object_sha256": "3c97222c8174275e840babae22d1578cd481d545b79e82abf642196ee0206602",
         "sql": "CREATE UNIQUE INDEX lesson_publications_one_published_uq\n    on lesson_publications (group_lesson_id, kind)\n    where state = 'published';",
@@ -13107,6 +13851,13 @@
         "object_sha256": "7df8aef87ce8be3df6f2f198e0c6db91ec9e7b5e2e7a1096b5f77e1c8278302f",
         "sql": "CREATE INDEX media_assets_namespace_created_idx\n    on media_assets (storage_namespace, created_at, id);",
         "table_name": "media_assets",
+        "type": "index"
+      },
+      {
+        "name": "problem_revisions_id_problem_uq",
+        "object_sha256": "af65f8555bee2f95495b7019a84f1201d7b6767bf2cc51cf929347bff8a7aa5b",
+        "sql": "CREATE UNIQUE INDEX problem_revisions_id_problem_uq\n    on problem_revisions (id, problem_id);",
+        "table_name": "problem_revisions",
         "type": "index"
       },
       {
@@ -13166,6 +13917,13 @@
         "type": "index"
       },
       {
+        "name": "results_id_student_problem_uq",
+        "object_sha256": "34fbe20674d9269af09ff1567fdac1d2c0ca96b3126f7b5647cd5c2cd709a4ca",
+        "sql": "CREATE UNIQUE INDEX results_id_student_problem_uq\n    on results (id, student_id, problem_id);",
+        "table_name": "results",
+        "type": "index"
+      },
+      {
         "name": "results_teacher_id_lesson_index",
         "object_sha256": "afda6c8f333a608b8e3f018198f1d1ee776ef5706fb6c76cfc921d1490d01a09",
         "sql": "CREATE INDEX results_teacher_id_lesson_index\n    on results (teacher_id, lesson)\n    where res_type = 2;",
@@ -13198,6 +13956,27 @@
         "object_sha256": "d39a3cc2dda3f6a43e5f9693b76c1bc9a3a57370595dfec0cd0ee0cc6e079ca7",
         "sql": "CREATE UNIQUE INDEX staff_scopes_one_active_group_role_uq\n    on staff_scopes (staff_user_id, course_id, group_id, role)\n    where group_id is not null and valid_to is null;",
         "table_name": "staff_scopes",
+        "type": "index"
+      },
+      {
+        "name": "test_attempts_pending_configuration_idx",
+        "object_sha256": "2ccf6a76d82c2bbc0166f60afd614355a9c337c89627e17468c054217a8b19d7",
+        "sql": "CREATE INDEX test_attempts_pending_configuration_idx\n    on test_attempts (problem_id, server_received_at, id)\n    where check_status = 'pending_configuration';",
+        "table_name": "test_attempts",
+        "type": "index"
+      },
+      {
+        "name": "test_attempts_student_problem_counted_idx",
+        "object_sha256": "c3141b356b7f95c01674cb85619d601e5d673750c42b52ff416c5628be47cd97",
+        "sql": "CREATE INDEX test_attempts_student_problem_counted_idx\n    on test_attempts (student_user_id, problem_id, server_received_at, id)\n    where counts_as_attempt = 1;",
+        "table_name": "test_attempts",
+        "type": "index"
+      },
+      {
+        "name": "test_attempts_student_problem_history_idx",
+        "object_sha256": "143f7808e5108e5af2f759c606b23d6a4b4856edd001c5a25de71d332b0bba57",
+        "sql": "CREATE INDEX test_attempts_student_problem_history_idx\n    on test_attempts (student_user_id, problem_id, server_received_at desc, id desc);",
+        "table_name": "test_attempts",
         "type": "index"
       },
       {
@@ -13474,6 +14253,27 @@
         "type": "trigger"
       },
       {
+        "name": "idempotency_records_account_scope_insert",
+        "object_sha256": "23403f229bc433e14df4a608649b7df1f2b0f0d19b38050631c128d3a2ba19a4",
+        "sql": "CREATE TRIGGER idempotency_records_account_scope_insert\nbefore insert on idempotency_records\nfor each row\nwhen not exists (\n    select 1\n    from auth_accounts as account\n    where account.id = new.account_id\n      and account.audience = new.audience\n)\nbegin\n    select raise(abort, 'idempotency account audience mismatch');\nend;",
+        "table_name": "idempotency_records",
+        "type": "trigger"
+      },
+      {
+        "name": "idempotency_records_identity_immutable",
+        "object_sha256": "ccdf4494766dbc9f881dacb1c1e31dafbb5a27d81a64f951f00a8c0b1ea3f55a",
+        "sql": "CREATE TRIGGER idempotency_records_identity_immutable\nbefore update on idempotency_records\nfor each row\nwhen new.audience is not old.audience\n    or new.account_id is not old.account_id\n    or new.operation is not old.operation\n    or new.idempotency_key is not old.idempotency_key\n    or new.payload_sha256 is not old.payload_sha256\n    or new.created_at is not old.created_at\n    or new.expires_at is not old.expires_at\nbegin\n    select raise(abort, 'idempotency record identity is immutable');\nend;",
+        "table_name": "idempotency_records",
+        "type": "trigger"
+      },
+      {
+        "name": "idempotency_records_state_transition_guard",
+        "object_sha256": "c666a2e3dffb8dbf494db3abf4fb1d93171a6eb20312223e4cf18337830064a7",
+        "sql": "CREATE TRIGGER idempotency_records_state_transition_guard\nbefore update on idempotency_records\nfor each row\nwhen not (\n    old.state = 'processing'\n    and new.state in ('completed', 'failed')\n)\nbegin\n    select raise(abort, 'invalid idempotency state transition');\nend;",
+        "table_name": "idempotency_records",
+        "type": "trigger"
+      },
+      {
         "name": "lesson_publications_activation_scope_insert",
         "object_sha256": "f7aa052002b4d6f1f0bb0f74d75b4fba26d0ad6159e16e58189db34d8bb7145d",
         "sql": "CREATE TRIGGER lesson_publications_activation_scope_insert\nbefore insert on lesson_publications\nfor each row\nwhen new.activated_from_schedule_id is not null and not exists (\n    select 1 from lesson_publications as scheduled\n    where scheduled.id = new.activated_from_schedule_id\n      and scheduled.group_lesson_id = new.group_lesson_id\n      and scheduled.kind = new.kind\n      and scheduled.revision_id = new.revision_id\n      and scheduled.state = 'superseded'\n      and scheduled.scheduled_at is not null\n      and scheduled.scheduled_at is new.scheduled_at\n      and scheduled.published_at is null\n)\nbegin\n    select raise(abort, 'activation schedule is outside group lesson or kind');\nend;",
@@ -13654,10 +14454,45 @@
         "sql": "CREATE TRIGGER solution_reveals_publication_kind_insert\nbefore insert on solution_reveals\nfor each row\nwhen not exists (\n    select 1\n    from lesson_publications as publication\n    join content_problem_matches as problem_match\n      on problem_match.content_revision_id = publication.revision_id\n     and problem_match.problem_id = new.problem_id\n     and problem_match.resolved_at is not null\n     and problem_match.decision <> 'omit'\n    where publication.id = new.publication_id\n      and publication.kind = 'solution'\n      and publication.state = 'published'\n)\nbegin\n    select raise(abort, 'solution reveal requires a published matched solution');\nend;",
         "table_name": "solution_reveals",
         "type": "trigger"
+      },
+      {
+        "name": "test_attempts_check_transition_guard",
+        "object_sha256": "0c5fd136f1989529ea3196aeffdb360def067f113ee58da307297346db057b17",
+        "sql": "CREATE TRIGGER test_attempts_check_transition_guard\nbefore update on test_attempts\nfor each row\nwhen not (\n    old.check_status = 'pending_configuration'\n    and new.check_status in ('pending', 'checked', 'failed')\n) and not (\n    old.check_status = 'pending'\n    and new.check_status in ('checked', 'failed')\n)\nbegin\n    select raise(abort, 'invalid test attempt check transition');\nend;",
+        "table_name": "test_attempts",
+        "type": "trigger"
+      },
+      {
+        "name": "test_attempts_delete_forbidden",
+        "object_sha256": "f412c625811989967541ab83acd19fbbb6947571a283991e7693202c61e2aec2",
+        "sql": "CREATE TRIGGER test_attempts_delete_forbidden\nbefore delete on test_attempts\nfor each row\nbegin\n    select raise(abort, 'test attempt deletion is forbidden');\nend;",
+        "table_name": "test_attempts",
+        "type": "trigger"
+      },
+      {
+        "name": "test_attempts_payload_immutable",
+        "object_sha256": "14729654a42cf4993e08423ad5130cc510c12dcb02f168dddb141b799f92249b",
+        "sql": "CREATE TRIGGER test_attempts_payload_immutable\nbefore update on test_attempts\nfor each row\nwhen new.public_id is not old.public_id\n    or new.student_user_id is not old.student_user_id\n    or new.problem_id is not old.problem_id\n    or new.problem_revision_id is not old.problem_revision_id\n    or new.answer_payload_json is not old.answer_payload_json\n    or new.normalized_answer_json is not old.normalized_answer_json\n    or new.parse_status is not old.parse_status\n    or new.counts_as_attempt is not old.counts_as_attempt\n    or new.client_created_at is not old.client_created_at\n    or new.server_received_at is not old.server_received_at\n    or new.clock_skew_seconds is not old.clock_skew_seconds\n    or new.clock_suspicious is not old.clock_suspicious\n    or new.idempotency_key is not old.idempotency_key\n    or new.payload_sha256 is not old.payload_sha256\n    or new.created_at is not old.created_at\nbegin\n    select raise(abort, 'test attempt payload is immutable');\nend;",
+        "table_name": "test_attempts",
+        "type": "trigger"
+      },
+      {
+        "name": "test_attempts_result_contract_insert",
+        "object_sha256": "066c47b01907afe2cc5f7c351fb167a2ecd5af78123f26ba86284f2d1b2384cd",
+        "sql": "CREATE TRIGGER test_attempts_result_contract_insert\nbefore insert on test_attempts\nfor each row\nwhen new.result_id is not null and not exists (\n    select 1\n    from results as result\n    where result.id = new.result_id\n      and result.student_id = new.student_user_id\n      and result.problem_id = new.problem_id\n      and result.verdict = new.verdict\n      and result.res_type = 1\n      and result.answer is json_extract(new.answer_payload_json, '$.displayAnswer')\n)\nbegin\n    select raise(abort, 'test attempt result mismatch');\nend;",
+        "table_name": "test_attempts",
+        "type": "trigger"
+      },
+      {
+        "name": "test_attempts_result_contract_update",
+        "object_sha256": "1e6a9f584480a7a72f9d217025816d3047316440e9b5682a7485658dc670592b",
+        "sql": "CREATE TRIGGER test_attempts_result_contract_update\nbefore update on test_attempts\nfor each row\nwhen new.result_id is not null and not exists (\n    select 1\n    from results as result\n    where result.id = new.result_id\n      and result.student_id = new.student_user_id\n      and result.problem_id = new.problem_id\n      and result.verdict = new.verdict\n      and result.res_type = 1\n      and result.answer is json_extract(new.answer_payload_json, '$.displayAnswer')\n)\nbegin\n    select raise(abort, 'test attempt result mismatch');\nend;",
+        "table_name": "test_attempts",
+        "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "435ff4bc3570ab2ab784a404c1d239c318c0633d30c687d595f555ffe81b0b0b",
-    "sha256": "0e40ad8bee320d80d8204e677f38cee744544111b969f77ff4cb79b58be1e313"
+    "pragma_structure_sha256": "62de5ee479eeae064086c04364e6f3689daa7acbac0627c1314ef17490f07950",
+    "sha256": "309091bbb8ea0672147f7c7536dfc88554f8c336be71db0e5891579f6f845143"
   },
   "source_kind": "repository-migration-head"
 }
