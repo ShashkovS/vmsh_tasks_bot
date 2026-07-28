@@ -4,16 +4,22 @@ from __future__ import annotations
 
 import sqlite3
 import uuid
+import hashlib
+import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Mapping
 
-from helpers.consts import WRITTEN_STATUS
+from helpers.consts import RES_TYPE, USER_TYPE, VERDICT, VERDICTS_SOLVED, WRITTEN_STATUS
 
 from .connection import PwaConnectionFactory
 
 
 REVIEW_LEASE_DURATION = timedelta(minutes=30)
+_PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
+_WRITTEN_REVIEW_VERDICTS = frozenset(range(11, 18))
 
 
 class ReviewQueueError(RuntimeError):
@@ -34,6 +40,22 @@ class ReviewLeaseConflict(ReviewQueueError):
 
 class ReviewLeaseLost(ReviewQueueError):
     """A heartbeat or release no longer owns any current queue rows."""
+
+
+class ReviewThreadChanged(ReviewQueueError):
+    """The reviewed thread/evidence boundary changed after Staff loaded it."""
+
+
+class ReviewEvidenceUnavailable(ReviewQueueError):
+    """A legacy queue branch has no complete modern submission evidence."""
+
+
+class ReviewIdempotencyConflict(ReviewQueueError):
+    """The completion key was reused for a different review payload."""
+
+
+class ReviewCompletionInvalid(ReviewQueueError):
+    """The completion payload violates the written-review policy."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +98,30 @@ class ReviewLeaseItem:
 
 
 @dataclass(frozen=True, slots=True)
+class ReviewEvidenceAttachment:
+    attachment_public_id: str
+    ordinal: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewEvidenceEntry:
+    entry_public_id: str
+    entry_version: int
+    entry_kind: str
+    text: str | None
+    server_received_at: datetime
+    attachments: tuple[ReviewEvidenceAttachment, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewEvidenceBranch:
+    queue_public_id: str
+    thread_public_id: str | None
+    thread_version: int | None
+    entries: tuple[ReviewEvidenceEntry, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class ReviewLease:
     claim_token: str
     teacher_user_id: int
@@ -83,6 +129,122 @@ class ReviewLease:
     expires_at: datetime
     logical_case_public_id: str
     items: tuple[ReviewLeaseItem, ...]
+    evidence_branches: tuple[ReviewEvidenceBranch, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewEvidenceEntryExpectation:
+    entry_public_id: str
+    entry_version: int
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.entry_public_id):
+            raise ValueError("review evidence entry public ID is invalid")
+        if type(self.entry_version) is not int or self.entry_version < 1:
+            raise ValueError("review evidence entry version must be positive")
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewEvidenceBranchExpectation:
+    queue_public_id: str
+    lease_version: int
+    thread_public_id: str
+    thread_version: int
+    entries: tuple[ReviewEvidenceEntryExpectation, ...]
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.queue_public_id) or not _PUBLIC_ID.fullmatch(
+            self.thread_public_id
+        ):
+            raise ValueError("review branch public ID is invalid")
+        if type(self.lease_version) is not int or self.lease_version < 1:
+            raise ValueError("review lease version must be positive")
+        if type(self.thread_version) is not int or self.thread_version < 1:
+            raise ValueError("review thread version must be positive")
+        if not self.entries:
+            raise ValueError("review branch must contain evidence")
+        if len({entry.entry_public_id for entry in self.entries}) != len(self.entries):
+            raise ValueError("review evidence entry IDs must be unique per branch")
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteReviewCommand:
+    queue_public_id: str
+    claim_token: str
+    teacher_user_id: int
+    scope: ReviewStaffScope
+    idempotency_key: str
+    verdict: int
+    comment: str | None
+    confirm_without_comment: bool
+    branches: tuple[ReviewEvidenceBranchExpectation, ...]
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.queue_public_id):
+            raise ValueError("review queue public ID is invalid")
+        if not _PUBLIC_ID.fullmatch(self.claim_token):
+            raise ValueError("review claim token is invalid")
+        if self.teacher_user_id == 0:
+            raise ValueError("reviewer user ID must not be zero")
+        if not 1 <= len(self.idempotency_key) <= 200 or (
+            self.idempotency_key != self.idempotency_key.strip()
+        ):
+            raise ValueError("review idempotency key must be canonical")
+        if self.verdict not in _WRITTEN_REVIEW_VERDICTS:
+            raise ValueError("written review verdict is not supported")
+        if self.comment is not None and len(self.comment) > 100_000:
+            raise ValueError("review comment is too long")
+        if self.verdict != int(VERDICT.VERDICT_PLUS) and not (
+            (self.comment is not None and self.comment.strip())
+            or self.confirm_without_comment
+        ):
+            raise ReviewCompletionInvalid(
+                "a non-accepted verdict without a comment requires confirmation"
+            )
+        if not self.branches:
+            raise ValueError("review completion must contain branches")
+        if len({branch.queue_public_id for branch in self.branches}) != len(
+            self.branches
+        ):
+            raise ValueError("review branch queue IDs must be unique")
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "queueId": self.queue_public_id,
+            "claimToken": self.claim_token,
+            "verdict": self.verdict,
+            "comment": self.comment,
+            "confirmWithoutComment": self.confirm_without_comment,
+            "branches": [
+                {
+                    "queueId": branch.queue_public_id,
+                    "leaseVersion": branch.lease_version,
+                    "threadId": branch.thread_public_id,
+                    "threadVersion": branch.thread_version,
+                    "evidence": [
+                        {
+                            "entryId": entry.entry_public_id,
+                            "entryVersion": entry.entry_version,
+                        }
+                        for entry in branch.entries
+                    ],
+                }
+                for branch in self.branches
+            ],
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class CompleteReviewReceipt:
+    review_public_id: str
+    target_thread_public_id: str
+    target_problem_public_id: str
+    target_thread_status: str
+    verdict: int
+    comment_entry_public_id: str | None
+    evidence_entry_public_ids: tuple[str, ...]
+    completed_at: datetime
+    replayed: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,6 +287,14 @@ def _timestamp(value: datetime) -> str:
     return (
         _normalize_time(value).isoformat(timespec="microseconds").replace("+00:00", "Z")
     )
+
+
+def _canonical_json(value: Mapping[str, object]) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _payload_hash(value: Mapping[str, object]) -> str:
+    return hashlib.sha256(_canonical_json(value).encode()).hexdigest()
 
 
 def _parse_timestamp(value: object, *, label: str) -> datetime:
@@ -293,8 +463,79 @@ def _queue_lock(
     )
 
 
+def _evidence_branches(
+    connection: sqlite3.Connection, rows: list[dict[str, object]]
+) -> tuple[ReviewEvidenceBranch, ...]:
+    branches: list[ReviewEvidenceBranch] = []
+    for queue_row in rows:
+        thread = connection.execute(
+            "SELECT id, public_id, version FROM submission_threads "
+            "WHERE student_user_id = ? AND problem_id = ? AND status <> 'closed' "
+            "ORDER BY id DESC LIMIT 1",
+            (queue_row["student_id"], queue_row["problem_id"]),
+        ).fetchone()
+        if thread is None:
+            branches.append(
+                ReviewEvidenceBranch(
+                    queue_public_id=str(queue_row["public_id"]),
+                    thread_public_id=None,
+                    thread_version=None,
+                    entries=(),
+                )
+            )
+            continue
+        entry_rows = connection.execute(
+            "SELECT entry.id, entry.public_id, entry.version, entry.entry_kind, "
+            "entry.text, entry.server_received_at FROM submission_entries AS entry "
+            "WHERE entry.thread_id = ? AND entry.author_kind = 'student' "
+            "AND entry.state = 'submitted' AND NOT EXISTS ("
+            "SELECT 1 FROM submission_review_evidence_entries AS evidence "
+            "WHERE evidence.entry_id = entry.id"
+            ") ORDER BY entry.server_received_at, entry.id",
+            (thread["id"],),
+        ).fetchall()
+        entries: list[ReviewEvidenceEntry] = []
+        for entry in entry_rows:
+            attachment_rows = connection.execute(
+                "SELECT public_id, ordinal FROM submission_attachments "
+                "WHERE entry_id = ? AND upload_status = 'stored' "
+                "ORDER BY ordinal, id",
+                (entry["id"],),
+            ).fetchall()
+            entries.append(
+                ReviewEvidenceEntry(
+                    entry_public_id=str(entry["public_id"]),
+                    entry_version=int(entry["version"]),
+                    entry_kind=str(entry["entry_kind"]),
+                    text=None if entry["text"] is None else str(entry["text"]),
+                    server_received_at=_parse_timestamp(
+                        entry["server_received_at"], label="evidence receive time"
+                    ),
+                    attachments=tuple(
+                        ReviewEvidenceAttachment(
+                            attachment_public_id=str(attachment["public_id"]),
+                            ordinal=int(attachment["ordinal"]),
+                        )
+                        for attachment in attachment_rows
+                    ),
+                )
+            )
+        branches.append(
+            ReviewEvidenceBranch(
+                queue_public_id=str(queue_row["public_id"]),
+                thread_public_id=str(thread["public_id"]),
+                thread_version=int(thread["version"]),
+                entries=tuple(entries),
+            )
+        )
+    return tuple(branches)
+
+
 def _lease_from_rows(
-    rows: list[dict[str, object]], *, logical_case_public_id: str
+    connection: sqlite3.Connection,
+    rows: list[dict[str, object]],
+    *,
+    logical_case_public_id: str,
 ) -> ReviewLease:
     first = rows[0]
     claim_token = str(first["claim_token"])
@@ -345,6 +586,7 @@ def _lease_from_rows(
         expires_at=expires_at,
         logical_case_public_id=logical_case_public_id,
         items=items,
+        evidence_branches=_evidence_branches(connection, rows),
     )
 
 
@@ -357,10 +599,18 @@ class PwaWrittenReviewQueueRepository:
         *,
         clock: Callable[[], datetime] = _utc_now,
         claim_token_factory: Callable[[], str] = lambda: f"review-claim-{uuid.uuid4()}",
+        review_public_id_factory: Callable[[], str] = lambda: f"review-{uuid.uuid4()}",
+        comment_public_id_factory: Callable[[], str] = lambda: f"entry-{uuid.uuid4()}",
+        event_public_id_factory: Callable[[], str] = lambda: (
+            f"review-event-{uuid.uuid4()}"
+        ),
     ) -> None:
         self._factory = connection_factory
         self._clock = clock
         self._claim_token_factory = claim_token_factory
+        self._review_public_id_factory = review_public_id_factory
+        self._comment_public_id_factory = comment_public_id_factory
+        self._event_public_id_factory = event_public_id_factory
 
     async def claim(
         self,
@@ -437,7 +687,9 @@ class PwaWrittenReviewQueueRepository:
                 row_ids,
             ).fetchall()
             return _lease_from_rows(
-                list(refreshed), logical_case_public_id=logical_case_public_id
+                connection,
+                list(refreshed),
+                logical_case_public_id=logical_case_public_id,
             )
 
         return await self._factory.run_write_async(operation)
@@ -615,7 +867,377 @@ class PwaWrittenReviewQueueRepository:
                 refreshed[0]["synonym_public_id"] or refreshed[0]["problem_public_id"]
             )
             return _lease_from_rows(
-                list(refreshed), logical_case_public_id=logical_case_public_id
+                connection,
+                list(refreshed),
+                logical_case_public_id=logical_case_public_id,
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def complete(self, command: CompleteReviewCommand) -> CompleteReviewReceipt:
+        """Atomically persist one review and freeze every current case entry."""
+
+        now = _normalize_time(self._clock())
+        completed_at = _timestamp(now)
+        payload_sha256 = _payload_hash(command.payload())
+
+        def receipt_from_row(
+            connection: sqlite3.Connection,
+            row: dict[str, object],
+            *,
+            replayed: bool,
+        ) -> CompleteReviewReceipt:
+            evidence = connection.execute(
+                "SELECT entry.public_id FROM submission_review_evidence_entries AS evidence "
+                "JOIN submission_entries AS entry ON entry.id = evidence.entry_id "
+                "WHERE evidence.review_id = ? "
+                "ORDER BY evidence.server_received_at, evidence.entry_id",
+                (row["id"],),
+            ).fetchall()
+            return CompleteReviewReceipt(
+                review_public_id=str(row["public_id"]),
+                target_thread_public_id=str(row["thread_public_id"]),
+                target_problem_public_id=str(row["problem_public_id"]),
+                target_thread_status=(
+                    "accepted"
+                    if VERDICT(int(row["verdict"])) in VERDICTS_SOLVED
+                    else "needs_work"
+                ),
+                verdict=int(row["verdict"]),
+                comment_entry_public_id=(
+                    None
+                    if row["comment_public_id"] is None
+                    else str(row["comment_public_id"])
+                ),
+                evidence_entry_public_ids=tuple(
+                    str(item["public_id"]) for item in evidence
+                ),
+                completed_at=_parse_timestamp(row["created_at"], label="review time"),
+                replayed=replayed,
+            )
+
+        def operation(connection: sqlite3.Connection) -> CompleteReviewReceipt:
+            replay = connection.execute(
+                "SELECT review.*, thread.public_id AS thread_public_id, "
+                "problem.public_id AS problem_public_id, "
+                "comment.public_id AS comment_public_id "
+                "FROM submission_reviews AS review "
+                "JOIN submission_threads AS thread ON thread.id = review.thread_id "
+                "JOIN problems AS problem ON problem.id = thread.problem_id "
+                "LEFT JOIN submission_entries AS comment "
+                "ON comment.id = review.comment_entry_id "
+                "WHERE review.reviewer_user_id = ? AND review.idempotency_key = ?",
+                (command.teacher_user_id, command.idempotency_key),
+            ).fetchone()
+            if replay is not None:
+                if replay["payload_sha256"] != payload_sha256:
+                    raise ReviewIdempotencyConflict(
+                        "review completion key was reused with another payload"
+                    )
+                replay_scopes = connection.execute(
+                    "SELECT groups.public_id AS group_public_id, "
+                    "course.public_id AS course_public_id "
+                    "FROM submission_review_evidence_entries AS evidence "
+                    "JOIN problems AS problem ON problem.id = evidence.problem_id "
+                    "LEFT JOIN groups ON groups.group_id = problem.group_id "
+                    "LEFT JOIN courses AS course ON course.id = groups.course_id "
+                    "WHERE evidence.review_id = ?",
+                    (replay["id"],),
+                ).fetchall()
+                if any(not command.scope.allows(row) for row in replay_scopes):
+                    raise ReviewQueueForbidden("review is outside current Staff scope")
+                return receipt_from_row(connection, replay, replayed=True)
+
+            _logical_case_public_id, queue_rows = _case_rows(
+                connection, queue_public_id=command.queue_public_id
+            )
+            if any(not command.scope.allows(row) for row in queue_rows):
+                raise ReviewQueueForbidden("review case is outside Staff scope")
+            if any(
+                not _active_pwa_claim(row, now=now)
+                or row["claim_token"] != command.claim_token
+                or int(row["teacher_id"]) != command.teacher_user_id
+                for row in queue_rows
+            ):
+                raise ReviewLeaseLost("review lease expired or changed owner")
+
+            actual_branches = _evidence_branches(connection, queue_rows)
+            if any(
+                branch.thread_public_id is None or not branch.entries
+                for branch in actual_branches
+            ):
+                raise ReviewEvidenceUnavailable(
+                    "review case contains a branch without modern evidence"
+                )
+            expected_by_queue = {
+                branch.queue_public_id: branch for branch in command.branches
+            }
+            if set(expected_by_queue) != {str(row["public_id"]) for row in queue_rows}:
+                raise ReviewThreadChanged("review queue branches changed")
+            actual_by_queue = {
+                branch.queue_public_id: branch for branch in actual_branches
+            }
+            queue_by_public_id = {str(row["public_id"]): row for row in queue_rows}
+            for queue_public_id, expected in expected_by_queue.items():
+                actual = actual_by_queue[queue_public_id]
+                queue_row = queue_by_public_id[queue_public_id]
+                actual_entries = tuple(
+                    (entry.entry_public_id, entry.entry_version)
+                    for entry in actual.entries
+                )
+                expected_entries = tuple(
+                    (entry.entry_public_id, entry.entry_version)
+                    for entry in expected.entries
+                )
+                if (
+                    expected.lease_version != int(queue_row["lease_version"])
+                    or expected.thread_public_id != actual.thread_public_id
+                    or expected.thread_version != actual.thread_version
+                    or expected_entries != actual_entries
+                ):
+                    raise ReviewThreadChanged("review evidence changed")
+
+            evidence_rows: list[dict[str, object]] = []
+            thread_rows: dict[int, dict[str, object]] = {}
+            for branch in actual_branches:
+                thread = connection.execute(
+                    "SELECT * FROM submission_threads WHERE public_id = ?",
+                    (branch.thread_public_id,),
+                ).fetchone()
+                if thread is None or thread["status"] != "awaiting_review":
+                    raise ReviewThreadChanged("review thread is no longer waiting")
+                thread_rows[int(thread["id"])] = thread
+                for entry in branch.entries:
+                    stored = connection.execute(
+                        "SELECT entry.*, thread.problem_id, problem.public_id AS problem_public_id "
+                        "FROM submission_entries AS entry "
+                        "JOIN submission_threads AS thread ON thread.id = entry.thread_id "
+                        "JOIN problems AS problem ON problem.id = thread.problem_id "
+                        "WHERE entry.public_id = ? AND entry.thread_id = ? "
+                        "AND entry.state = 'submitted'",
+                        (entry.entry_public_id, thread["id"]),
+                    ).fetchone()
+                    if stored is None:
+                        raise ReviewThreadChanged("review evidence disappeared")
+                    evidence_rows.append(stored)
+
+            target_entry = max(
+                evidence_rows,
+                key=lambda row: (
+                    _parse_timestamp(row["server_received_at"], label="evidence time"),
+                    int(row["id"]),
+                ),
+            )
+            target_thread = thread_rows[int(target_entry["thread_id"])]
+            target_problem = connection.execute(
+                "SELECT id, public_id, lesson, group_id FROM problems WHERE id = ?",
+                (target_entry["problem_id"],),
+            ).fetchone()
+            if target_problem is None:  # pragma: no cover - protected by FK
+                raise ReviewEvidenceUnavailable("target problem disappeared")
+
+            teacher = connection.execute(
+                "SELECT type FROM users WHERE id = ?", (command.teacher_user_id,)
+            ).fetchone()
+            if teacher is None:
+                raise ReviewQueueForbidden("reviewer user no longer exists")
+            author_kind = (
+                "admin" if int(teacher["type"]) & int(USER_TYPE.ADMIN) else "teacher"
+            )
+            comment_text = (
+                None
+                if command.comment is None or not command.comment.strip()
+                else command.comment.strip()
+            )
+
+            if VERDICT(command.verdict) not in VERDICTS_SOLVED:
+                connection.execute(
+                    "UPDATE results SET verdict = ? WHERE student_id = ? "
+                    "AND problem_id = ? AND res_type = ? AND verdict > 0",
+                    (
+                        int(VERDICT.REJECTED_ANSWER),
+                        target_thread["student_user_id"],
+                        target_problem["id"],
+                        int(RES_TYPE.WRITTEN),
+                    ),
+                )
+            result_id = int(
+                connection.execute(
+                    "INSERT INTO results "
+                    "(student_id, problem_id, group_id, lesson, teacher_id, ts, "
+                    "verdict, answer, res_type) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?) "
+                    "RETURNING id",
+                    (
+                        target_thread["student_user_id"],
+                        target_problem["id"],
+                        target_problem["group_id"],
+                        target_problem["lesson"],
+                        command.teacher_user_id,
+                        completed_at,
+                        command.verdict,
+                        int(RES_TYPE.WRITTEN),
+                    ),
+                ).fetchone()["id"]
+            )
+
+            comment_entry_id: int | None = None
+            comment_public_id: str | None = None
+            if comment_text is not None:
+                comment_public_id = self._comment_public_id_factory().strip()
+                if not _PUBLIC_ID.fullmatch(comment_public_id):
+                    raise ValueError(
+                        "comment public ID factory returned an invalid value"
+                    )
+                comment_entry_id = int(
+                    connection.execute(
+                        "INSERT INTO submission_entries "
+                        "(public_id, thread_id, author_kind, author_user_id, channel, "
+                        "entry_kind, state, text, server_received_at, version, locked_at) "
+                        "VALUES (?, ?, ?, ?, 'staff', 'teacher_comment', 'locked', ?, ?, 1, ?) "
+                        "RETURNING id",
+                        (
+                            comment_public_id,
+                            target_thread["id"],
+                            author_kind,
+                            command.teacher_user_id,
+                            comment_text,
+                            completed_at,
+                            completed_at,
+                        ),
+                    ).fetchone()["id"]
+                )
+
+            review_public_id = self._review_public_id_factory().strip()
+            event_public_id = self._event_public_id_factory().strip()
+            if not _PUBLIC_ID.fullmatch(review_public_id) or not _PUBLIC_ID.fullmatch(
+                event_public_id
+            ):
+                raise ValueError("review public ID factory returned an invalid value")
+            anchor_queue = next(
+                row
+                for row in queue_rows
+                if str(row["public_id"]) == command.queue_public_id
+            )
+            review_id = int(
+                connection.execute(
+                    "INSERT INTO submission_reviews "
+                    "(public_id, thread_id, queue_id, queue_public_id, reviewer_user_id, "
+                    "evidence_through_entry_id, expected_thread_version, verdict, "
+                    "comment_entry_id, result_id, source, idempotency_key, payload_sha256, "
+                    "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'staff', ?, ?, ?) "
+                    "RETURNING id",
+                    (
+                        review_public_id,
+                        target_thread["id"],
+                        anchor_queue["id"],
+                        anchor_queue["public_id"],
+                        command.teacher_user_id,
+                        target_entry["id"],
+                        target_thread["version"],
+                        command.verdict,
+                        comment_entry_id,
+                        result_id,
+                        command.idempotency_key,
+                        payload_sha256,
+                        completed_at,
+                    ),
+                ).fetchone()["id"]
+            )
+
+            evidence_public_ids: list[str] = []
+            for entry in sorted(
+                evidence_rows,
+                key=lambda row: (str(row["server_received_at"]), int(row["id"])),
+            ):
+                connection.execute(
+                    "INSERT INTO submission_review_evidence_entries "
+                    "(review_id, entry_id, thread_id, problem_id, entry_version, "
+                    "server_received_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        review_id,
+                        entry["id"],
+                        entry["thread_id"],
+                        entry["problem_id"],
+                        entry["version"],
+                        entry["server_received_at"],
+                    ),
+                )
+                evidence_public_ids.append(str(entry["public_id"]))
+                attachments = connection.execute(
+                    "SELECT id, entry_id, asset_id, ordinal FROM submission_attachments "
+                    "WHERE entry_id = ? AND upload_status = 'stored' "
+                    "ORDER BY ordinal, id",
+                    (entry["id"],),
+                ).fetchall()
+                for attachment in attachments:
+                    connection.execute(
+                        "INSERT INTO submission_review_evidence_attachments "
+                        "(review_id, attachment_id, entry_id, asset_id, ordinal) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (
+                            review_id,
+                            attachment["id"],
+                            attachment["entry_id"],
+                            attachment["asset_id"],
+                            attachment["ordinal"],
+                        ),
+                    )
+
+            target_status = (
+                "accepted"
+                if VERDICT(command.verdict) in VERDICTS_SOLVED
+                else "needs_work"
+            )
+            for thread_id, thread in thread_rows.items():
+                is_target = thread_id == int(target_thread["id"])
+                connection.execute(
+                    "UPDATE submission_threads SET status = ?, latest_result_id = ?, "
+                    "latest_entry_at = ?, updated_at = ?, version = ? WHERE id = ?",
+                    (
+                        target_status if is_target else "closed",
+                        result_id if is_target else None,
+                        completed_at
+                        if is_target and comment_entry_id is not None
+                        else thread["latest_entry_at"],
+                        completed_at,
+                        int(thread["version"]) + 1,
+                        thread_id,
+                    ),
+                )
+
+            queue_ids = [int(row["id"]) for row in queue_rows]
+            placeholders = ",".join("?" for _ in queue_ids)
+            connection.execute(
+                f"DELETE FROM written_tasks_queue WHERE id IN ({placeholders})",
+                queue_ids,
+            )
+            connection.execute(
+                "INSERT INTO submission_review_events "
+                "(public_id, review_id, event_kind, payload_json, created_at) "
+                "VALUES (?, ?, 'completed', ?, ?)",
+                (
+                    event_public_id,
+                    review_id,
+                    _canonical_json(
+                        {
+                            "reviewPublicId": review_public_id,
+                            "studentUserId": target_thread["student_user_id"],
+                            "targetProblemId": target_problem["id"],
+                            "evidenceEntryIds": evidence_public_ids,
+                        }
+                    ),
+                    completed_at,
+                ),
+            )
+            return CompleteReviewReceipt(
+                review_public_id=review_public_id,
+                target_thread_public_id=str(target_thread["public_id"]),
+                target_problem_public_id=str(target_problem["public_id"]),
+                target_thread_status=target_status,
+                verdict=command.verdict,
+                comment_entry_public_id=comment_public_id,
+                evidence_entry_public_ids=tuple(evidence_public_ids),
+                completed_at=now,
             )
 
         return await self._factory.run_write_async(operation)
@@ -670,12 +1292,22 @@ class PwaWrittenReviewQueueRepository:
 
 
 __all__ = [
+    "CompleteReviewCommand",
+    "CompleteReviewReceipt",
     "PwaWrittenReviewQueueRepository",
     "REVIEW_LEASE_DURATION",
     "ReviewLease",
     "ReviewLeaseConflict",
     "ReviewLeaseItem",
     "ReviewLeaseLost",
+    "ReviewCompletionInvalid",
+    "ReviewEvidenceAttachment",
+    "ReviewEvidenceBranch",
+    "ReviewEvidenceBranchExpectation",
+    "ReviewEvidenceEntry",
+    "ReviewEvidenceEntryExpectation",
+    "ReviewEvidenceUnavailable",
+    "ReviewIdempotencyConflict",
     "ReviewQueueCase",
     "ReviewQueueError",
     "ReviewQueueForbidden",
@@ -683,4 +1315,5 @@ __all__ = [
     "ReviewQueueNotFound",
     "ReviewQueuePage",
     "ReviewStaffScope",
+    "ReviewThreadChanged",
 ]

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import itertools
+import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -11,13 +12,19 @@ import pytest
 
 from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.reviews import (
+    CompleteReviewCommand,
     PwaWrittenReviewQueueRepository,
+    ReviewEvidenceBranchExpectation,
+    ReviewEvidenceEntryExpectation,
+    ReviewIdempotencyConflict,
     ReviewLease,
     ReviewLeaseConflict,
     ReviewLeaseLost,
     ReviewQueueForbidden,
     ReviewStaffScope,
+    ReviewThreadChanged,
 )
+from helpers.consts import VERDICT
 
 
 NOW = datetime(2026, 10, 4, 12, tzinfo=UTC)
@@ -61,7 +68,12 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
     clock = MutableClock(NOW)
     tokens = (f"review-claim-test-{index}" for index in itertools.count(1))
     repository = PwaWrittenReviewQueueRepository(
-        factory, clock=clock, claim_token_factory=lambda: next(tokens)
+        factory,
+        clock=clock,
+        claim_token_factory=lambda: next(tokens),
+        review_public_id_factory=lambda: "review-completed-test",
+        comment_public_id_factory=lambda: "review-comment-test",
+        event_public_id_factory=lambda: "review-event-test",
     )
     now = _timestamp(NOW)
 
@@ -197,21 +209,23 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
                 "created_at) VALUES (?, 1, '1', ?, 'manual_match', ?, ?, '[]', ?)",
                 (revision_id, problem_id, TEACHER_ONE_ID, now, now),
             )
-            connection.execute(
-                "INSERT INTO problem_revisions "
-                "(problem_id, content_revision_id, source_ordinal, source_item, "
-                "display_number, title, normalized_title, problem_type, "
-                "answer_type, answer_config_json, attempt_policy_json, "
-                "config_version, created_at) VALUES "
-                "(?, ?, 1, '1', ?, ?, ?, 2, 0, '{}', '{}', 1, ?)",
-                (
-                    problem_id,
-                    revision_id,
-                    f"41{index}",
-                    f"Задача {index}",
-                    f"задача {index}",
-                    now,
-                ),
+            problem_revision_id = int(
+                connection.execute(
+                    "INSERT INTO problem_revisions "
+                    "(problem_id, content_revision_id, source_ordinal, source_item, "
+                    "display_number, title, normalized_title, problem_type, "
+                    "answer_type, answer_config_json, attempt_policy_json, "
+                    "config_version, created_at) VALUES "
+                    "(?, ?, 1, '1', ?, ?, ?, 2, 0, '{}', '{}', 1, ?)",
+                    (
+                        problem_id,
+                        revision_id,
+                        f"41{index}",
+                        f"Задача {index}",
+                        f"задача {index}",
+                        now,
+                    ),
+                ).lastrowid
             )
             connection.execute(
                 "INSERT INTO problem_synonym_members "
@@ -226,6 +240,40 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
                     now,
                 ),
             )
+            submitted_at = _timestamp(NOW - timedelta(minutes=3 - index))
+            thread_id = int(
+                connection.execute(
+                    "INSERT INTO submission_threads "
+                    "(public_id, student_user_id, problem_id, condition_revision_id, "
+                    "status, latest_entry_at, created_at, updated_at, version) "
+                    "VALUES (?, ?, ?, ?, 'awaiting_review', ?, ?, ?, 2) RETURNING id",
+                    (
+                        f"review-thread-test-{index}",
+                        STUDENT_ID,
+                        problem_id,
+                        revision_id,
+                        submitted_at,
+                        submitted_at,
+                        submitted_at,
+                    ),
+                ).fetchone()["id"]
+            )
+            connection.execute(
+                "INSERT INTO submission_entries "
+                "(public_id, thread_id, problem_revision_id, author_kind, "
+                "author_user_id, channel, entry_kind, state, text, client_created_at, "
+                "server_received_at, version) VALUES (?, ?, ?, 'student', ?, 'pwa', "
+                "'submission', 'submitted', ?, ?, ?, 2)",
+                (
+                    f"review-entry-test-{index}",
+                    thread_id,
+                    problem_revision_id,
+                    STUDENT_ID,
+                    f"Решение {index}",
+                    submitted_at,
+                    submitted_at,
+                ),
+            )
             queue_public_id = f"review-queue-test-{index}"
             connection.execute(
                 "INSERT INTO written_tasks_queue "
@@ -233,7 +281,7 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
                 "VALUES (?, ?, ?, ?, 0, ?)",
                 (
                     queue_public_id,
-                    _timestamp(NOW + timedelta(minutes=index)),
+                    submitted_at,
                     STUDENT_ID,
                     problem_id,
                     now,
@@ -265,6 +313,15 @@ async def test_claim_heartbeat_and_release_cover_one_synonym_case(review_queue_f
     assert lease.teacher_user_id == TEACHER_ONE_ID
     assert [item.group_id for item in lease.items] == ["review-a", "review-b"]
     assert {item.lease_version for item in lease.items} == {1}
+    assert [branch.thread_public_id for branch in lease.evidence_branches] == [
+        "review-thread-test-1",
+        "review-thread-test-2",
+    ]
+    assert [
+        entry.entry_public_id
+        for branch in lease.evidence_branches
+        for entry in branch.entries
+    ] == ["review-entry-test-1", "review-entry-test-2"]
 
     fixture.clock.value += timedelta(minutes=10)
     heartbeat = await fixture.repository.heartbeat(
@@ -292,6 +349,161 @@ async def test_claim_heartbeat_and_release_cover_one_synonym_case(review_queue_f
             teacher_user_id=TEACHER_ONE_ID,
             scope=ALL_GROUPS_SCOPE,
         )
+
+
+def _complete_command(
+    lease: ReviewLease,
+    *,
+    idempotency_key: str = "review-completion-idempotency-1",
+    verdict: VERDICT = VERDICT.VERDICT_PLUS_DOT,
+) -> CompleteReviewCommand:
+    evidence_by_queue = {
+        branch.queue_public_id: branch for branch in lease.evidence_branches
+    }
+    return CompleteReviewCommand(
+        queue_public_id=lease.items[0].queue_public_id,
+        claim_token=lease.claim_token,
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+        idempotency_key=idempotency_key,
+        verdict=int(verdict),
+        comment="Точная формулировка проверки.",
+        confirm_without_comment=False,
+        branches=tuple(
+            ReviewEvidenceBranchExpectation(
+                queue_public_id=item.queue_public_id,
+                lease_version=item.lease_version,
+                thread_public_id=str(
+                    evidence_by_queue[item.queue_public_id].thread_public_id
+                ),
+                thread_version=int(
+                    evidence_by_queue[item.queue_public_id].thread_version or 0
+                ),
+                entries=tuple(
+                    ReviewEvidenceEntryExpectation(
+                        entry_public_id=entry.entry_public_id,
+                        entry_version=entry.entry_version,
+                    )
+                    for entry in evidence_by_queue[item.queue_public_id].entries
+                ),
+            )
+            for item in lease.items
+        ),
+    )
+
+
+@pytest.mark.asyncio
+async def test_complete_freezes_synonym_evidence_and_targets_latest_branch(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    command = _complete_command(lease)
+
+    receipt = await fixture.repository.complete(command)
+
+    assert receipt.target_problem_public_id == lease.items[1].problem_public_id
+    assert receipt.target_thread_public_id == "review-thread-test-2"
+    assert receipt.target_thread_status == "accepted"
+    assert receipt.evidence_entry_public_ids == (
+        "review-entry-test-1",
+        "review-entry-test-2",
+    )
+    assert receipt.comment_entry_public_id == "review-comment-test"
+    rows = fixture.factory.run_read(
+        lambda connection: {
+            "queue": connection.execute(
+                "SELECT count(*) AS count FROM written_tasks_queue"
+            ).fetchone()["count"],
+            "results": connection.execute(
+                "SELECT problem_id, verdict, res_type FROM results"
+            ).fetchall(),
+            "reviews": connection.execute(
+                "SELECT count(*) AS count FROM submission_reviews"
+            ).fetchone()["count"],
+            "evidence": connection.execute(
+                "SELECT count(*) AS count FROM submission_review_evidence_entries"
+            ).fetchone()["count"],
+            "threads": connection.execute(
+                "SELECT public_id, status, version FROM submission_threads "
+                "ORDER BY public_id"
+            ).fetchall(),
+        }
+    )
+    assert rows["queue"] == 0
+    assert rows["reviews"] == 1
+    assert rows["evidence"] == 2
+    assert rows["results"] == [
+        {
+            "problem_id": lease.items[1].problem_id,
+            "verdict": int(VERDICT.VERDICT_PLUS_DOT),
+            "res_type": 2,
+        }
+    ]
+    assert rows["threads"] == [
+        {"public_id": "review-thread-test-1", "status": "closed", "version": 3},
+        {
+            "public_id": "review-thread-test-2",
+            "status": "accepted",
+            "version": 3,
+        },
+    ]
+
+    with pytest.raises(sqlite3.IntegrityError, match="reviewed submission entry"):
+        fixture.factory.run_write(
+            lambda connection: connection.execute(
+                "UPDATE submission_entries SET text = 'changed', version = 3 "
+                "WHERE public_id = 'review-entry-test-1'"
+            )
+        )
+
+    replay = await fixture.repository.complete(command)
+    assert replay.replayed is True
+    assert replay.review_public_id == receipt.review_public_id
+    with pytest.raises(ReviewIdempotencyConflict):
+        await fixture.repository.complete(
+            _complete_command(
+                lease,
+                idempotency_key=command.idempotency_key,
+                verdict=VERDICT.VERDICT_PLUS,
+            )
+        )
+
+
+@pytest.mark.asyncio
+async def test_complete_rejects_a_thread_change_without_partial_writes(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    command = _complete_command(lease)
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE submission_threads SET updated_at = ?, version = version + 1 "
+            "WHERE public_id = 'review-thread-test-1'",
+            (_timestamp(NOW + timedelta(minutes=5)),),
+        )
+    )
+
+    with pytest.raises(ReviewThreadChanged):
+        await fixture.repository.complete(command)
+
+    counts = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT (SELECT count(*) FROM submission_reviews) AS reviews, "
+            "(SELECT count(*) FROM results) AS results, "
+            "(SELECT count(*) FROM written_tasks_queue) AS queue"
+        ).fetchone()
+    )
+    assert counts == {"reviews": 0, "results": 0, "queue": 2}
 
 
 @pytest.mark.asyncio

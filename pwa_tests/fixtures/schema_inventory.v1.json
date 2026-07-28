@@ -133,6 +133,10 @@
       {
         "id": "0051.pwa_review_queue_leases",
         "sha256": "846810ce6662fbb6166e6d9e5656f44d3d8b06d79e8a3f95594fa5bf4d7aa085"
+      },
+      {
+        "id": "0052.pwa_submission_reviews_evidence",
+        "sha256": "9b020734d44c2e8a5ec302aeeef81aa40f3d185d823edf77dfdfc70f7b443b61"
       }
     ],
     "repository_head_status": {
@@ -143,7 +147,7 @@
     }
   },
   "product": {
-    "object_count": 274,
+    "object_count": 298,
     "objects": [
       {
         "columns": [
@@ -12897,6 +12901,869 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "review_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "event_kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "review_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_reviews"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_review_events_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "submission_review_events",
+        "object_sha256": "6258bc361e4275822a6bf3dcbe8d6772cef56ca50b352cbc9b0e57016cd2cad8",
+        "sql": "CREATE TABLE submission_review_events\n(\n    id          integer primary key,\n    public_id   text not null unique,\n    review_id   integer not null references submission_reviews (id),\n    event_kind  text not null check (event_kind in ('completed')),\n    payload_json text not null check (json_valid(payload_json) = 1),\n    created_at  text not null\n);",
+        "table_name": "submission_review_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "review_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "attachment_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "asset_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ordinal",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "asset_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "media_assets"
+          },
+          {
+            "from_columns": [
+              "attachment_id",
+              "entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "entry_id"
+            ],
+            "target_table": "submission_attachments"
+          },
+          {
+            "from_columns": [
+              "attachment_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_attachments"
+          },
+          {
+            "from_columns": [
+              "entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          },
+          {
+            "from_columns": [
+              "review_id",
+              "entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "review_id",
+              "entry_id"
+            ],
+            "target_table": "submission_review_evidence_entries"
+          },
+          {
+            "from_columns": [
+              "review_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_reviews"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "attachment_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_review_evidence_attachments_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "asset_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_review_evidence_attachments_asset_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "attachment_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_review_evidence_attachments_attachment_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_review_evidence_attachments",
+        "object_sha256": "68826fb689b445be4815fbdc1c16d8c7ef75c52d21ed048cc92ec7b62ed916d1",
+        "sql": "CREATE TABLE submission_review_evidence_attachments\n(\n    review_id     integer not null references submission_reviews (id),\n    attachment_id integer not null references submission_attachments (id),\n    entry_id      integer not null references submission_entries (id),\n    asset_id      integer not null references media_assets (id),\n    ordinal       integer not null check (ordinal >= 0),\n    primary key (review_id, attachment_id),\n    foreign key (review_id, entry_id)\n        references submission_review_evidence_entries (review_id, entry_id),\n    foreign key (attachment_id, entry_id)\n        references submission_attachments (id, entry_id)\n);",
+        "table_name": "submission_review_evidence_attachments",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "review_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "thread_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "problem_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "entry_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "server_received_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "entry_id",
+              "thread_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "thread_id"
+            ],
+            "target_table": "submission_entries"
+          },
+          {
+            "from_columns": [
+              "entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          },
+          {
+            "from_columns": [
+              "problem_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "problems"
+          },
+          {
+            "from_columns": [
+              "review_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_reviews"
+          },
+          {
+            "from_columns": [
+              "thread_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_threads"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "entry_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_review_evidence_entries_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "entry_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "submission_review_evidence_entries_entry_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_review_evidence_entries",
+        "object_sha256": "e78587d49ad31939ab4138cc48acd9c312e8237ef3cccd8a992b2db6b71c59b6",
+        "sql": "CREATE TABLE submission_review_evidence_entries\n(\n    review_id          integer not null references submission_reviews (id),\n    entry_id           integer not null references submission_entries (id),\n    thread_id          integer not null references submission_threads (id),\n    problem_id         integer not null references problems (id),\n    entry_version      integer not null check (entry_version > 0),\n    server_received_at text    not null,\n    primary key (review_id, entry_id),\n    foreign key (entry_id, thread_id)\n        references submission_entries (id, thread_id)\n);",
+        "table_name": "submission_review_evidence_entries",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "thread_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "queue_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "queue_public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reviewer_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "evidence_through_entry_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "expected_thread_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "verdict",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "comment_entry_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "result_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "review_duration_sec",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "comment_entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          },
+          {
+            "from_columns": [
+              "evidence_through_entry_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_entries"
+          },
+          {
+            "from_columns": [
+              "result_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "results"
+          },
+          {
+            "from_columns": [
+              "reviewer_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "thread_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_threads"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_reviews_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "result_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_reviews_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "reviewer_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 13,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_reviews_3",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "thread_id",
+                "seqno": 0
+              },
+              {
+                "cid": 15,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "created_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "submission_reviews_thread_history_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_reviews",
+        "object_sha256": "fb62a2375a686c000dbfa0ad10d178223ab217dcd0f22f56f64e0edf06dde3d8",
+        "sql": "CREATE TABLE submission_reviews\n(\n    id                        integer primary key,\n    public_id                 text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    thread_id                 integer not null references submission_threads (id),\n    -- Queue rows are deleted by the same transaction.  These are immutable\n    -- provenance snapshots rather than foreign keys to ephemeral work items.\n    queue_id                  integer not null,\n    queue_public_id           text    not null,\n    reviewer_user_id          integer not null references users (id),\n    evidence_through_entry_id integer not null references submission_entries (id),\n    expected_thread_version   integer not null check (expected_thread_version > 0),\n    verdict                   integer not null,\n    comment_entry_id          integer references submission_entries (id),\n    result_id                 integer not null unique references results (id),\n    review_duration_sec       integer check (review_duration_sec is null or review_duration_sec >= 0),\n    source                    text    not null check (source in ('staff', 'telegram', 'ai')),\n    idempotency_key           text    not null\n        check (length(idempotency_key) between 1 and 200 and idempotency_key = trim(idempotency_key)),\n    payload_sha256            text    not null\n        check (length(payload_sha256) = 64 and payload_sha256 not glob '*[^0-9a-f]*'),\n    created_at                text    not null,\n    unique (reviewer_user_id, idempotency_key)\n);",
+        "table_name": "submission_reviews",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "student_user_id",
             "not_null": true,
             "primary_key_ordinal": 0
@@ -16025,6 +16892,34 @@
         "type": "index"
       },
       {
+        "name": "submission_review_evidence_attachments_asset_idx",
+        "object_sha256": "de9b5b7315e61315ed3af8677571807b4c5253c5312004bebe2d2301256a6fa7",
+        "sql": "CREATE INDEX submission_review_evidence_attachments_asset_idx\n    on submission_review_evidence_attachments (asset_id, review_id);",
+        "table_name": "submission_review_evidence_attachments",
+        "type": "index"
+      },
+      {
+        "name": "submission_review_evidence_attachments_attachment_idx",
+        "object_sha256": "f3062defc717b5f5a2fa82d17956018c846181c631c8c405255039e4ceafc2a3",
+        "sql": "CREATE INDEX submission_review_evidence_attachments_attachment_idx\n    on submission_review_evidence_attachments (attachment_id, review_id);",
+        "table_name": "submission_review_evidence_attachments",
+        "type": "index"
+      },
+      {
+        "name": "submission_review_evidence_entries_entry_idx",
+        "object_sha256": "dc002674189bad916072a054670aa390c6a600c102e42416545a03cc0d60364c",
+        "sql": "CREATE INDEX submission_review_evidence_entries_entry_idx\n    on submission_review_evidence_entries (entry_id, review_id);",
+        "table_name": "submission_review_evidence_entries",
+        "type": "index"
+      },
+      {
+        "name": "submission_reviews_thread_history_idx",
+        "object_sha256": "17399ee5385386a7c3324f538a52d4f43efe4b3b44d5931adff461c2d2e28807",
+        "sql": "CREATE INDEX submission_reviews_thread_history_idx\n    on submission_reviews (thread_id, created_at, id);",
+        "table_name": "submission_reviews",
+        "type": "index"
+      },
+      {
         "name": "submission_threads_id_owner_problem_uq",
         "object_sha256": "085072cac03140d6557008dc37fd9aeb4aef65ac626c1ff086c227e8820fe5f4",
         "sql": "CREATE UNIQUE INDEX submission_threads_id_owner_problem_uq\n    on submission_threads (id, student_user_id, problem_id);",
@@ -16494,6 +17389,13 @@
         "type": "trigger"
       },
       {
+        "name": "media_assets_review_evidence_immutable",
+        "object_sha256": "dc3103becbc75d37a3391326ae35ceadf8e3312640647e919fdbddcf345a2ac7",
+        "sql": "CREATE TRIGGER media_assets_review_evidence_immutable\nbefore update on media_assets\nfor each row\nwhen exists (\n    select 1 from submission_review_evidence_attachments as evidence\n    where evidence.asset_id = old.id\n)\nbegin\n    select raise(abort, 'reviewed submission media asset is immutable');\nend;",
+        "table_name": "media_assets",
+        "type": "trigger"
+      },
+      {
         "name": "problem_revisions_delete_forbidden",
         "object_sha256": "c1633df6b6255b5bd7f77caefa03975efa296fab79ea19aa95df630a1a12a4e8",
         "sql": "CREATE TRIGGER problem_revisions_delete_forbidden\nbefore delete on problem_revisions\nfor each row\nbegin\n    select raise(abort, 'problem revision deletion is forbidden');\nend;",
@@ -16634,6 +17536,27 @@
         "type": "trigger"
       },
       {
+        "name": "submission_attachments_review_evidence_delete_forbidden",
+        "object_sha256": "94ba0a984e0ea14b2c15250467d13d27c6c585b8d2467ad3042d2f3c8612c43f",
+        "sql": "CREATE TRIGGER submission_attachments_review_evidence_delete_forbidden\nbefore delete on submission_attachments\nfor each row\nwhen exists (\n    select 1 from submission_review_evidence_attachments as evidence\n    where evidence.attachment_id = old.id\n)\nbegin\n    select raise(abort, 'reviewed submission attachment deletion is forbidden');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_review_evidence_immutable",
+        "object_sha256": "3c7a9e24b40632d857cbe00d3d8d7131bc9009ff9a78c8d3294f4dbcd72d3570",
+        "sql": "CREATE TRIGGER submission_attachments_review_evidence_immutable\nbefore update on submission_attachments\nfor each row\nwhen exists (\n    select 1 from submission_review_evidence_attachments as evidence\n    where evidence.attachment_id = old.id\n)\nbegin\n    select raise(abort, 'reviewed submission attachment is immutable');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_attachments_review_evidence_insert_forbidden",
+        "object_sha256": "aee4468401c953cd9c62aca02610e47fe985cdcd0267e4eddd71faee2a7fe5e2",
+        "sql": "CREATE TRIGGER submission_attachments_review_evidence_insert_forbidden\nbefore insert on submission_attachments\nfor each row\nwhen exists (\n    select 1 from submission_review_evidence_entries as evidence\n    where evidence.entry_id = new.entry_id\n)\nbegin\n    select raise(abort, 'reviewed submission attachment set is immutable');\nend;",
+        "table_name": "submission_attachments",
+        "type": "trigger"
+      },
+      {
         "name": "submission_attachments_state_transition_guard",
         "object_sha256": "33cef93885d1a844fb70aaaae1edbc5534890a56652ad674401437510d67ef8a",
         "sql": "CREATE TRIGGER submission_attachments_state_transition_guard\nbefore update of upload_status on submission_attachments\nfor each row\nwhen new.upload_status is not old.upload_status and not (\n    (old.upload_status = 'pending' and new.upload_status in ('stored', 'failed'))\n    or (old.upload_status = 'failed' and new.upload_status in ('pending', 'stored'))\n    or (old.upload_status = 'stored' and new.upload_status = 'locked')\n)\nbegin\n    select raise(abort, 'invalid submission attachment state transition');\nend;",
@@ -16707,6 +17630,13 @@
         "name": "submission_entries_problem_revision_scope_update",
         "object_sha256": "11ba84efe6c117d194025b8372f2b1b7bbed435a4d0cba3a5ddb49f970066377",
         "sql": "CREATE TRIGGER submission_entries_problem_revision_scope_update\nbefore update on submission_entries\nfor each row\nwhen (\n    new.author_kind = 'student'\n    and new.problem_revision_id is null\n) or (\n    new.problem_revision_id is not null\n    and not exists (\n        select 1\n        from submission_threads as thread\n        join problem_revisions as problem_revision\n          on problem_revision.id = new.problem_revision_id\n         and problem_revision.problem_id = thread.problem_id\n        where thread.id = new.thread_id\n    )\n)\nbegin\n    select raise(abort, 'submission entry problem revision is outside thread scope');\nend;",
+        "table_name": "submission_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_entries_review_evidence_immutable",
+        "object_sha256": "2399fece2aad86d81442ed6eb457583bdf2dc4dc67590e0831ec537b06e5b261",
+        "sql": "CREATE TRIGGER submission_entries_review_evidence_immutable\nbefore update on submission_entries\nfor each row\nwhen exists (\n    select 1 from submission_review_evidence_entries as evidence\n    where evidence.entry_id = old.id\n)\nbegin\n    select raise(abort, 'reviewed submission entry is immutable');\nend;",
         "table_name": "submission_entries",
         "type": "trigger"
       },
@@ -16785,6 +17715,83 @@
         "object_sha256": "0f535291e8849cf3f68de03936392a243eebf25ed4224563f09601ae45364a06",
         "sql": "CREATE TRIGGER submission_material_reassignments_immutable_update\nbefore update on submission_material_reassignments\nfor each row\nbegin\n    select raise(abort, 'submission material reassignment is immutable');\nend;",
         "table_name": "submission_material_reassignments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_events_delete_forbidden",
+        "object_sha256": "91771ae499a113fbe8ee22af7d77fe29e2894b90b7376e153eddf798f4bef984",
+        "sql": "CREATE TRIGGER submission_review_events_delete_forbidden\nbefore delete on submission_review_events\nfor each row\nbegin\n    select raise(abort, 'submission review event deletion is forbidden');\nend;",
+        "table_name": "submission_review_events",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_events_immutable_update",
+        "object_sha256": "3631d761930f5c376d07b4d37e44942827ce5d436fc4519ed8a357ebc349c6b0",
+        "sql": "CREATE TRIGGER submission_review_events_immutable_update\nbefore update on submission_review_events\nfor each row\nbegin\n    select raise(abort, 'submission review event is immutable');\nend;",
+        "table_name": "submission_review_events",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_evidence_attachments_delete_forbidden",
+        "object_sha256": "33a33640b7103e3261edbfdfedef6709c50dc6defec8ba0452078d2485c61214",
+        "sql": "CREATE TRIGGER submission_review_evidence_attachments_delete_forbidden\nbefore delete on submission_review_evidence_attachments\nfor each row\nbegin\n    select raise(abort, 'review evidence attachment deletion is forbidden');\nend;",
+        "table_name": "submission_review_evidence_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_evidence_attachments_immutable_update",
+        "object_sha256": "22c951c9f00e831a04dae5af3c34d91c0e23a7b2b9924da6607d04ce0f66a747",
+        "sql": "CREATE TRIGGER submission_review_evidence_attachments_immutable_update\nbefore update on submission_review_evidence_attachments\nfor each row\nbegin\n    select raise(abort, 'review evidence attachment is immutable');\nend;",
+        "table_name": "submission_review_evidence_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_evidence_attachments_scope_insert",
+        "object_sha256": "3a6bf67cc6eba054ec6c50fb520ef0a7594ecec8dc11dc953066bffea6ebb037",
+        "sql": "CREATE TRIGGER submission_review_evidence_attachments_scope_insert\nbefore insert on submission_review_evidence_attachments\nfor each row\nwhen not exists (\n    select 1\n    from submission_attachments as attachment\n    where attachment.id = new.attachment_id\n      and attachment.entry_id = new.entry_id\n      and attachment.asset_id = new.asset_id\n      and attachment.ordinal = new.ordinal\n      and attachment.upload_status = 'stored'\n)\nbegin\n    select raise(abort, 'review evidence attachment is outside entry scope');\nend;",
+        "table_name": "submission_review_evidence_attachments",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_evidence_entries_delete_forbidden",
+        "object_sha256": "6d769069c984391bb2fba7c69c67914b65ded7ef6030108039dc081637e893be",
+        "sql": "CREATE TRIGGER submission_review_evidence_entries_delete_forbidden\nbefore delete on submission_review_evidence_entries\nfor each row\nbegin\n    select raise(abort, 'review evidence entry deletion is forbidden');\nend;",
+        "table_name": "submission_review_evidence_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_evidence_entries_immutable_update",
+        "object_sha256": "352d2ffc401ba1b396e2e6fcf99fb04c9ccdec988c4b3cad7552bad881940151",
+        "sql": "CREATE TRIGGER submission_review_evidence_entries_immutable_update\nbefore update on submission_review_evidence_entries\nfor each row\nbegin\n    select raise(abort, 'review evidence entry is immutable');\nend;",
+        "table_name": "submission_review_evidence_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_evidence_entries_scope_insert",
+        "object_sha256": "dadfeb89606ff8576e2892452702dd6b7982816efeb02930a305aae02af30328",
+        "sql": "CREATE TRIGGER submission_review_evidence_entries_scope_insert\nbefore insert on submission_review_evidence_entries\nfor each row\nwhen not exists (\n    select 1\n    from submission_reviews as review\n    join submission_threads as target_thread on target_thread.id = review.thread_id\n    join submission_threads as evidence_thread\n      on evidence_thread.id = new.thread_id\n     and evidence_thread.student_user_id = target_thread.student_user_id\n     and evidence_thread.problem_id = new.problem_id\n    join submission_entries as entry\n      on entry.id = new.entry_id\n     and entry.thread_id = evidence_thread.id\n     and entry.author_kind = 'student'\n     and entry.state = 'submitted'\n     and entry.version = new.entry_version\n     and entry.server_received_at = new.server_received_at\n    where review.id = new.review_id\n)\nbegin\n    select raise(abort, 'review evidence entry is outside student/thread scope');\nend;",
+        "table_name": "submission_review_evidence_entries",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_reviews_delete_forbidden",
+        "object_sha256": "33d74f318510a2dbe2b2a194461d493db47f7fc32af5abef80bea3f809c7d629",
+        "sql": "CREATE TRIGGER submission_reviews_delete_forbidden\nbefore delete on submission_reviews\nfor each row\nbegin\n    select raise(abort, 'completed submission review deletion is forbidden');\nend;",
+        "table_name": "submission_reviews",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_reviews_immutable_update",
+        "object_sha256": "336eaa653a483433ac7ef65b9fcd0529a91aca245d76266bbd8f04e917bb53a1",
+        "sql": "CREATE TRIGGER submission_reviews_immutable_update\nbefore update on submission_reviews\nfor each row\nbegin\n    select raise(abort, 'completed submission review is immutable');\nend;",
+        "table_name": "submission_reviews",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_reviews_scope_insert",
+        "object_sha256": "4a6e241b1318fed32bdbb3dcd554d04ead3877a9cdc3a90aaa49f5907bc8027f",
+        "sql": "CREATE TRIGGER submission_reviews_scope_insert\nbefore insert on submission_reviews\nfor each row\nwhen not exists (\n    select 1\n    from submission_threads as thread\n    join submission_entries as evidence\n      on evidence.id = new.evidence_through_entry_id\n     and evidence.thread_id = thread.id\n     and evidence.author_kind = 'student'\n    join results as result\n      on result.id = new.result_id\n     and result.student_id = thread.student_user_id\n     and result.problem_id = thread.problem_id\n     and result.res_type = 2\n    left join submission_entries as comment\n      on comment.id = new.comment_entry_id\n    where thread.id = new.thread_id\n      and (\n          new.comment_entry_id is null\n          or (\n              comment.thread_id = thread.id\n              and comment.author_user_id = new.reviewer_user_id\n              and comment.author_kind in ('teacher', 'admin')\n              and comment.entry_kind = 'teacher_comment'\n              and comment.state = 'locked'\n          )\n      )\n)\nbegin\n    select raise(abort, 'submission review target is outside result/evidence scope');\nend;",
+        "table_name": "submission_reviews",
         "type": "trigger"
       },
       {
@@ -16886,8 +17893,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "5c2f95c2a89e58d3c5f663d5cf3678991235504429287a5001a9370ed3b10390",
-    "sha256": "8d74a1ecb208c1bd7665a23b62d99976f3835f9955b07d6e25533031e8b3bc66"
+    "pragma_structure_sha256": "a9bf6351b19faa753acc3defe52a63386be7890bba695533022d9480719c84f2",
+    "sha256": "d9247cd66b5b23b329936aa7fc144e751193302f31f6f16c4b4d72e50ce6635d"
   },
   "source_kind": "repository-migration-head"
 }
