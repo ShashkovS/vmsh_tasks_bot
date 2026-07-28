@@ -21,6 +21,7 @@ import { type OutboxItem, type VmshOfflineDatabase } from './database'
 import {
   writtenDraftDescriptorSchema,
   writtenDraftServerStateSchema,
+  resolveWrittenDraftPhotoRecordBlob,
   type WrittenDraftDescriptor,
   type WrittenSubmissionDraftStore,
 } from './written-submission-draft'
@@ -323,16 +324,6 @@ function assertResponseIdentity(
   }
 }
 
-function isBlobLike(value: unknown): value is Blob {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as Blob).size === 'number' &&
-    typeof (value as Blob).type === 'string' &&
-    typeof (value as Blob).arrayBuffer === 'function'
-  )
-}
-
 export function createWrittenSubmissionOutbox(
   database: VmshOfflineDatabase,
   ownerId: string,
@@ -548,15 +539,16 @@ export function createWrittenSubmissionOutbox(
           const state = item.payload.serverState
           if (!state) throw new WrittenSubmissionLocalEvidenceError('Server draft is missing')
           const local = await database.writtenDraftPhotos.get(photo.localPhotoId)
+          const asset = local ? resolveWrittenDraftPhotoRecordBlob(local) : null
           if (
             !local ||
+            !asset ||
             local.ownerId !== parsedOwnerId ||
             local.draftKey !== item.payload.draftKey ||
             local.byteSize !== photo.byteSize ||
             local.mediaType !== photo.mediaType ||
-            !isBlobLike(local.blob) ||
-            local.blob.size !== photo.byteSize ||
-            local.blob.type !== photo.mediaType
+            asset.size !== photo.byteSize ||
+            asset.type !== photo.mediaType
           ) {
             throw new WrittenSubmissionLocalEvidenceError(
               `Local written photo ${photo.localPhotoId} is unavailable`,
@@ -570,7 +562,7 @@ export function createWrittenSubmissionOutbox(
               expectedThreadVersion: state.threadVersion,
               ordinal: photo.ordinal,
             },
-            asset: local.blob,
+            asset,
             fileName: photo.fileName,
           })
           assertResponseIdentity(item, response)
@@ -593,7 +585,7 @@ export function createWrittenSubmissionOutbox(
           })
         }
 
-        if (item.payload.photos.length > 0 && !item.payload.reordered) {
+        if (item.payload.photos.length > 1 && !item.payload.reordered) {
           const state = item.payload.serverState
           if (!state) throw new WrittenSubmissionLocalEvidenceError('Server draft is missing')
           const attachmentIds = item.payload.photos.map((photo) => {

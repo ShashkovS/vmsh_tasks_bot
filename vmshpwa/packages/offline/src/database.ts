@@ -72,7 +72,10 @@ export interface WrittenDraftPhotoRecord {
   processing: 'client-webp' | 'server-fallback-source'
   createdAt: string
   updatedAt: string
-  blob: Blob
+  /** Portable IndexedDB representation used by new writers. */
+  bytes?: ArrayBuffer
+  /** Read-only compatibility with drafts created before the WebKit fix. */
+  blob?: Blob
 }
 
 export const offlineAudienceSchema = z.enum(['student', 'family'])

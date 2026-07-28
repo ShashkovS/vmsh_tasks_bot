@@ -40,7 +40,13 @@ const seed: AttachmentView[] = [
   },
 ]
 
-function ComposerHarness({ offline = false }: { offline?: boolean }) {
+function ComposerHarness({
+  offline = false,
+  queued = false,
+}: {
+  offline?: boolean
+  queued?: boolean
+}) {
   const [text, setText] = useState('')
   const [items, setItems] = useState<AttachmentView[]>(seed)
 
@@ -85,6 +91,7 @@ function ComposerHarness({ offline = false }: { offline?: boolean }) {
         }
         onSubmit={() => undefined}
         onTextChange={setText}
+        queued={queued}
         taskType="written"
         text={text}
         totalSizeLabel="3,4 МБ"
@@ -116,6 +123,17 @@ export const Composer: Story = {
 export const Offline: Story = {
   name: 'Офлайн (очередь)',
   render: () => <ComposerHarness offline />,
+}
+
+export const Queued: Story = {
+  name: 'Сохранено в очереди',
+  render: () => <ComposerHarness offline queued />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByLabelText('Ваше решение')).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Добавить фото' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'В очереди' })).toBeDisabled()
+  },
 }
 
 export const OralWritten: Story = {

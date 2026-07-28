@@ -337,19 +337,35 @@ function emptyDraft(
   })
 }
 
+export function resolveWrittenDraftPhotoRecordBlob(record: WrittenDraftPhotoRecord): Blob | null {
+  const bytes = record.bytes as unknown
+  if (
+    Object.prototype.toString.call(bytes) === '[object ArrayBuffer]' &&
+    (bytes as ArrayBuffer).byteLength === record.byteSize &&
+    record.mediaType.length > 0
+  ) {
+    return new Blob([bytes as ArrayBuffer], { type: record.mediaType })
+  }
+  const legacyBlob = record.blob as unknown
+  if (
+    typeof legacyBlob === 'object' &&
+    legacyBlob !== null &&
+    typeof (legacyBlob as Blob).size === 'number' &&
+    typeof (legacyBlob as Blob).type === 'string' &&
+    typeof (legacyBlob as Blob).arrayBuffer === 'function'
+  ) {
+    return legacyBlob as Blob
+  }
+  return null
+}
+
 function photoRecordMatchesMetadata(
   record: WrittenDraftPhotoRecord,
+  blob: Blob,
   photo: WrittenDraftPhoto,
   expected: WrittenDraftDescriptor,
   expectedDraftKey: string,
 ): boolean {
-  const blob = record.blob as unknown
-  const isBlobLike =
-    typeof blob === 'object' &&
-    blob !== null &&
-    typeof (blob as Blob).size === 'number' &&
-    typeof (blob as Blob).type === 'string' &&
-    typeof (blob as Blob).arrayBuffer === 'function'
   return (
     record.id === photo.id &&
     record.draftKey === expectedDraftKey &&
@@ -364,9 +380,8 @@ function photoRecordMatchesMetadata(
     record.height === photo.height &&
     record.processing === photo.processing &&
     record.createdAt === photo.createdAt &&
-    isBlobLike &&
-    record.blob.size === photo.byteSize &&
-    record.blob.type === photo.mediaType
+    blob.size === photo.byteSize &&
+    blob.type === photo.mediaType
   )
 }
 
@@ -462,13 +477,18 @@ export function createWrittenSubmissionDraftStore(
       const discardedPhotoIds: string[] = []
       for (const metadata of parsedDraft.photos) {
         const record = records.get(metadata.id)
-        if (!record || !photoRecordMatchesMetadata(record, metadata, parsedDescriptor, key)) {
+        const blob = record ? resolveWrittenDraftPhotoRecordBlob(record) : null
+        if (
+          !record ||
+          !blob ||
+          !photoRecordMatchesMetadata(record, blob, metadata, parsedDescriptor, key)
+        ) {
           discardedPhotoIds.push(metadata.id)
           records.delete(metadata.id)
           continue
         }
         records.delete(metadata.id)
-        photos.push({ ...metadata, blob: record.blob })
+        photos.push({ ...metadata, blob })
       }
       discardedPhotoIds.push(...records.keys())
       discardedPhotoIds.sort()
@@ -521,12 +541,16 @@ export function createWrittenSubmissionDraftStore(
       }
       const timestamp = now().toISOString()
       const id = z.uuid().parse(input.id ?? randomUUID())
+      // WebKit can reject File/Blob values in IndexedDB. ArrayBuffer is a
+      // portable structured-clone value and is reconstructed as a Blob only
+      // at the UI/upload boundary.
       const mediaType = input.blob.type || 'application/octet-stream'
+      const durableBytes = await input.blob.arrayBuffer()
       const metadata = writtenDraftPhotoSchema.parse({
         id,
         fileName: input.fileName,
         mediaType,
-        byteSize: input.blob.size,
+        byteSize: durableBytes.byteLength,
         width: input.width,
         height: input.height,
         processing: input.processing,
@@ -542,7 +566,7 @@ export function createWrittenSubmissionDraftStore(
         problemId: parsedDescriptor.problemId,
         conditionRevisionId: parsedDescriptor.conditionRevisionId,
         configVersion: parsedDescriptor.configVersion,
-        blob: input.blob,
+        bytes: durableBytes,
       }
       await database.writtenDraftPhotos.add(record)
       try {

@@ -65,10 +65,8 @@ function outbox(ownerId: string): OutboxItem {
   }
 }
 
-async function photo(ownerId: string): Promise<WrittenDraftPhotoRecord> {
-  const blob = await new Response('photo', {
-    headers: { 'content-type': 'image/webp' },
-  }).blob()
+function photo(ownerId: string): WrittenDraftPhotoRecord {
+  const bytes = new TextEncoder().encode('photo')
   return {
     id: `photo-${ownerId}`,
     draftKey: `draft-${ownerId}`,
@@ -77,14 +75,14 @@ async function photo(ownerId: string): Promise<WrittenDraftPhotoRecord> {
     conditionRevisionId: 'condition-revision-one',
     configVersion: 1,
     fileName: 'page.webp',
-    mediaType: blob.type,
-    byteSize: blob.size,
+    mediaType: 'image/webp',
+    byteSize: bytes.byteLength,
     width: 100,
     height: 100,
     processing: 'client-webp',
     createdAt: NOW.toISOString(),
     updatedAt: NOW.toISOString(),
-    blob,
+    bytes: bytes.buffer,
   }
 }
 
@@ -120,7 +118,7 @@ describe('offline authentication store', () => {
     await Promise.all([
       target.documents.put(document(ownerId)),
       target.outbox.put(outbox(ownerId)),
-      target.writtenDraftPhotos.put(await photo(ownerId)),
+      target.writtenDraftPhotos.put(photo(ownerId)),
     ])
 
     const afterExpiry = createOfflineAuthenticationStore(target, 'student', {
@@ -142,7 +140,7 @@ describe('offline authentication store', () => {
     await Promise.all([
       target.documents.put(document(oldOwner)),
       target.outbox.put(outbox(oldOwner)),
-      target.writtenDraftPhotos.put(await photo(oldOwner)),
+      target.writtenDraftPhotos.put(photo(oldOwner)),
       target.documents.put(document(newOwner)),
     ])
 
@@ -163,7 +161,7 @@ describe('offline authentication store', () => {
     await Promise.all([
       target.documents.put(document(ownerId)),
       target.outbox.put(outbox(ownerId)),
-      target.writtenDraftPhotos.put(await photo(ownerId)),
+      target.writtenDraftPhotos.put(photo(ownerId)),
     ])
 
     await store.clear()

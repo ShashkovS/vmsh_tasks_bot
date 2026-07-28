@@ -299,7 +299,7 @@ describe('written-submission outbox', () => {
 
     const result = await outbox.deliverNext(transport)
 
-    expect(result.state).toBe('synced')
+    expect(result.state, 'item' in result ? result.item.lastError : undefined).toBe('synced')
     expect(transport.calls.map(({ operation }) => operation)).toEqual([
       'create',
       'upload-0',
@@ -381,6 +381,22 @@ describe('written-submission outbox', () => {
     expect(result.state).toBe('synced')
     expect(transport.calls.map(({ operation }) => operation)).toEqual(['create', 'submit'])
     expect((transport.calls[1]?.request as SubmitWrittenEntryRequest).attachmentIds).toEqual([])
+  })
+
+  it('does not issue a redundant reorder request for one photo', async () => {
+    const { draft, outbox } = stores('written-one-photo')
+    await addPhoto(draft, PHOTO_ONE, 'first')
+    await outbox.enqueue(descriptor())
+    const transport = new RecordingTransport()
+
+    const result = await outbox.deliverNext(transport)
+
+    expect(result.state).toBe('synced')
+    expect(transport.calls.map(({ operation }) => operation)).toEqual([
+      'create',
+      'upload-0',
+      'submit',
+    ])
   })
 
   it('stops with a recoverable conflict when local photo evidence disappeared', async () => {

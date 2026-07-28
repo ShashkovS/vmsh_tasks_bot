@@ -27,6 +27,7 @@ export interface SubmissionComposerProps {
   totalSizeLabel?: string
   draftSavedAt?: string
   offline?: boolean
+  queued?: boolean
   closed?: boolean
   submitting?: boolean
   className?: string
@@ -48,6 +49,7 @@ export function SubmissionComposer({
   totalSizeLabel,
   draftSavedAt,
   offline,
+  queued,
   closed,
   submitting,
   className,
@@ -58,6 +60,7 @@ export function SubmissionComposer({
 
   const empty = text.trim() === '' && attachments.length === 0
   const atLimit = attachments.length >= maxPhotos
+  const editingDisabled = closed || queued || submitting
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -68,7 +71,7 @@ export function SubmissionComposer({
         <Textarea
           aria-describedby={taskType === 'oral' ? oralNoteId : undefined}
           className="min-h-32"
-          disabled={closed}
+          disabled={editingDisabled}
           id={textId}
           onChange={(event) => onTextChange(event.target.value)}
           placeholder="Опишите решение. Формулы можно приложить фотографией."
@@ -103,7 +106,7 @@ export function SubmissionComposer({
 
         <AttachmentList
           attachments={attachments}
-          disabled={closed}
+          disabled={editingDisabled}
           onMoveDown={onMoveDown}
           onMoveUp={onMoveUp}
           onRemove={onRemove}
@@ -111,7 +114,12 @@ export function SubmissionComposer({
           onRotate={onRotate}
         />
 
-        <Button disabled={closed || atLimit} onClick={onAddPhotos} size="sm" variant="outline">
+        <Button
+          disabled={editingDisabled || atLimit}
+          onClick={onAddPhotos}
+          size="sm"
+          variant="outline"
+        >
           <ImagePlus aria-hidden="true" />
           Добавить фото
         </Button>
@@ -142,8 +150,14 @@ export function SubmissionComposer({
         {closed ? (
           <span className="text-small font-medium text-status-danger">Приём закрыт</span>
         ) : (
-          <Button disabled={submitting || empty} onClick={onSubmit} size="lg">
-            {submitting ? 'Отправка…' : offline ? 'Поставить в очередь' : 'Отправить'}
+          <Button disabled={submitting || queued || empty} onClick={onSubmit} size="lg">
+            {queued
+              ? 'В очереди'
+              : submitting
+                ? 'Отправка…'
+                : offline
+                  ? 'Поставить в очередь'
+                  : 'Отправить'}
           </Button>
         )}
       </div>

@@ -148,15 +148,17 @@ export function AttachmentItem({
           </Button>
         </div>
         <div className="flex gap-1">
-          <Button
-            aria-label={`${pageLabel}: повернуть`}
-            disabled={disabled}
-            onClick={() => onRotate?.(attachment.id)}
-            size="icon-xs"
-            variant="ghost"
-          >
-            <RotateCw aria-hidden="true" />
-          </Button>
+          {onRotate ? (
+            <Button
+              aria-label={`${pageLabel}: повернуть`}
+              disabled={disabled}
+              onClick={() => onRotate(attachment.id)}
+              size="icon-xs"
+              variant="ghost"
+            >
+              <RotateCw aria-hidden="true" />
+            </Button>
+          ) : null}
           <Button
             aria-label={`${pageLabel}: удалить`}
             disabled={disabled}

@@ -120,10 +120,10 @@ describe('written-submission local draft store', () => {
     })
 
     expect(
-      (await target.writtenDraftPhotos.toArray()).map(({ id, blob }) => ({
+      (await target.writtenDraftPhotos.toArray()).map(({ id, bytes, mediaType }) => ({
         id,
-        size: blob.size,
-        type: blob.type,
+        size: bytes?.byteLength,
+        type: mediaType,
       })),
     ).toEqual([
       { id: PHOTO_ONE, size: 10, type: 'image/webp' },
@@ -183,6 +183,29 @@ describe('written-submission local draft store', () => {
       width: null,
       height: null,
     })
+    expect(await restored.compatible?.photos[0]?.blob.text()).toBe('heic-source')
+  })
+
+  it('normalizes a missing browser MIME type before durable fallback storage', async () => {
+    const storage = new MemoryStorage()
+    const target = database('written-empty-mime')
+    const draftStore = store(storage, target, 'written-empty-mime')
+
+    await draftStore.addPhoto(descriptor(), {
+      id: PHOTO_ONE,
+      fileName: 'iphone.heic',
+      blob: new Blob(['heic-source']),
+      width: null,
+      height: null,
+      processing: 'server-fallback-source',
+    })
+
+    const restored = await draftStore.load(descriptor())
+    expect(restored.compatible?.photos[0]).toMatchObject({
+      mediaType: 'application/octet-stream',
+      processing: 'server-fallback-source',
+    })
+    expect(restored.compatible?.photos[0]?.blob.type).toBe('application/octet-stream')
     expect(await restored.compatible?.photos[0]?.blob.text()).toBe('heic-source')
   })
 

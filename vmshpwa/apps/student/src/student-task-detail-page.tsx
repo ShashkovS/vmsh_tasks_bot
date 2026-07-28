@@ -27,6 +27,7 @@ import {
   revealStudentProblemMaterialWithOfflineCache,
 } from './offline-student-data'
 import { StudentTestAnswer } from './student-test-answer'
+import { StudentWrittenSubmission } from './student-written-submission'
 
 function problemRequestState(error: unknown) {
   return error instanceof CourseNetworkError || error instanceof ContentNetworkError
@@ -301,6 +302,14 @@ function CanonicalStudentTask({
         <>
           <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} />
           {problem.type === 'test' ? <StudentTestAnswer problemId={problem.problemId} /> : null}
+          {problem.type === 'written' || problem.type === 'oral' ? (
+            <StudentWrittenSubmission
+              conditionRevisionId={query.data.conditionRevisionId}
+              configVersion={problem.configVersion}
+              problemId={problem.problemId}
+              problemType={problem.type}
+            />
+          ) : null}
         </>
       }
       groupLessonId={groupLessonId}
