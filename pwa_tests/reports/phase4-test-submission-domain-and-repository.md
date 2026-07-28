@@ -1,16 +1,18 @@
-# Phase 4A–4D — правила, хранение, Student API и offline foundation тестовых сдач
+# Phase 4A–4E — правила, хранение, Student UI и E2E тестовых сдач
 
 Дата: 2026-07-28
 
 Revisions: `6409191`, `bd0487f`, `1d5df54`, `7793d0f`, `0475cd0`,
-`6d1909c`, `bab5947`, `5b682d1`, `3d22373`
+`6d1909c`, `bab5947`, `5b682d1`, `3d22373`, `a779493`, `6268092`,
+`9358e76`
 
 ## Проверяемый результат
 
 Каркас Phase 4 теперь содержит доменные правила всех исторических типов
 тестового ответа, атомарный SQLite repository, authenticated Student HTTP
 вертикаль, браузерный transport, local draft и Dexie outbox. Инкремент ещё не
-подключён к production Student page и не считается завершением всего этапа.
+считается завершением всего этапа: production Student page и Playwright path
+готовы, но Telegram consolidation, Staff recheck и visual gate ещё открыты.
 
 Реализовано:
 
@@ -92,6 +94,31 @@ revision возвращается отдельно и не перезаписы�
 - сохраняет валидный server receipt в состоянии `synced` до того, как UI
   очистит точный draft и явно вызовет acknowledge.
 
+## Production Student UI и browser proof
+
+[`student-test-answer.tsx`](../../vmshpwa/apps/student/src/student-test-answer.tsx)
+компонует настоящий same-origin transport, offline input cache, account/problem/
+revision-scoped draft и Dexie outbox на production focused-task route. UI:
+
+- выполняет локальную format validation до POST и показывает server verdict
+  inline;
+- сохраняет набранный ответ при reload и очищает только после валидного
+  server receipt;
+- различает активную отправку и уже сохранённый retryable item: статус очереди
+  не показывается, пока `deliverNext` не зафиксировал retryable failure;
+- после reload восстанавливает pending value и позволяет явно повторить
+  отправку тем же immutable UUID/payload;
+- показывает reverse-chronological историю без правильного ответа и checker
+  source.
+
+Production-build сценарий
+[`test-submission.spec.ts`](../../vmshpwa/e2e/test-submission.spec.ts) для каждого
+из Chromium, WebKit и Firefox использует отдельное seeded занятие. Настоящий
+Admin UI загружает LaTeX, создаёт задачу, задаёт metadata и публикует условие;
+затем Student UI доказывает invalid-without-POST, draft reload, online verdict,
+реальный browser-offline outbox, reload и retry. Финальная история в настоящей
+SQLite содержит ровно две попытки в ожидаемом порядке; MSW не используется.
+
 ## Границы authority и транзакции
 
 Repository разрешает сдачу только через активный Student account, активный
@@ -125,11 +152,11 @@ repository + real aiohttp + app-factory regression
 contracts package
 6 files / 92 PASS; typecheck and ESLint PASS
 
-full pwa_tests (JUnit authority)
-1172 PASS / 3 intentional skips / 5 existing SymPy warnings
+full pwa_tests
+1174 PASS / 3 intentional skips / 1 existing SymPy warning
 
 full frontend unit
-39 files / 311 PASS
+41 files / 318 PASS
 
 offline package focused
 7 files / 34 PASS
@@ -137,7 +164,10 @@ offline package focused
 submission contract + browser transport focused
 2 files / 14 PASS
 
-Ruff format-check + Ruff check
+production-build Playwright test submissions
+3 PASS: Chromium / WebKit / Firefox
+
+ESLint + Stylelint + strict TypeScript + production Vite build
 PASS
 ```
 
@@ -169,11 +199,12 @@ Student-only realtime cursor.
 
 ## Открытые границы Phase 4
 
-- local draft/outbox и transport ещё не скомпонованы с production Student
-  route; нет optimistic/pending UI и полного reload orchestration;
-- нет production page wiring и Storybook interaction с настоящим transport;
-- нет production-build Playwright сценария с настоящим aiohttp/SQLite;
 - legacy Telegram adapter ещё не переведён на общий submission service;
-- нет Staff recheck/configuration-repair flow.
+- исторические Telegram test-submission scenarios ещё не прогнаны поверх общей
+  domain policy;
+- нет Staff recheck/configuration-repair flow;
+- production route не имеет отдельной server-backed Storybook story: матрица
+  input/states живёт в `Product/Test answer`, а реальный transport проверяет
+  Playwright. Ручной visual gate focused Student page остаётся открытым.
 
 Phase 4 остаётся открытым до закрытия этих границ и ручного visual gate.
