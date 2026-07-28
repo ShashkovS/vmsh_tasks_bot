@@ -29,6 +29,7 @@ REORDER_ATTACHMENTS_OPERATION = "written-attachment:reorder"
 DELETE_ATTACHMENT_OPERATION = "written-attachment:delete"
 SUBMIT_ENTRY_OPERATION = "written-entry:submit"
 REPLACE_ENTRY_OPERATION = "written-entry:replace"
+REASSIGN_MATERIAL_OPERATION = "written-material:reassign"
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -215,6 +216,103 @@ class ReplaceWrittenEntryCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class WrittenMaterialItemRef:
+    """One immutable text or photo selected from a physical source entry."""
+
+    entry_public_id: str
+    item_kind: str
+    attachment_public_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(self.entry_public_id):
+            raise ValueError("material entry public ID is invalid")
+        if self.item_kind not in {"entry_text", "attachment"}:
+            raise ValueError("material item kind is invalid")
+        if self.item_kind == "entry_text":
+            if self.attachment_public_id is not None:
+                raise ValueError("text material cannot name an attachment")
+        elif self.attachment_public_id is None or not _PUBLIC_ID.fullmatch(
+            self.attachment_public_id
+        ):
+            raise ValueError("attachment material requires a public ID")
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "entryId": self.entry_public_id,
+            "itemKind": self.item_kind,
+            "attachmentId": self.attachment_public_id,
+        }
+
+
+def _validate_material_item_refs(items: tuple[WrittenMaterialItemRef, ...]) -> None:
+    if not items or len(items) > 100:
+        raise ValueError("material selection must contain between one and 100 items")
+    keys = {
+        (item.entry_public_id, item.item_kind, item.attachment_public_id)
+        for item in items
+    }
+    if len(keys) != len(items):
+        raise ValueError("material selection contains duplicates")
+
+
+@dataclass(frozen=True, slots=True)
+class PreviewWrittenMaterialReassignmentCommand:
+    source_thread_public_id: str
+    target_problem_public_id: str
+    items: tuple[WrittenMaterialItemRef, ...]
+
+    def __post_init__(self) -> None:
+        if not _PUBLIC_ID.fullmatch(
+            self.source_thread_public_id
+        ) or not _PUBLIC_ID.fullmatch(self.target_problem_public_id):
+            raise ValueError("material reassignment target is invalid")
+        _validate_material_item_refs(self.items)
+
+
+@dataclass(frozen=True, slots=True)
+class ReassignWrittenMaterialCommand:
+    staff_account_id: int
+    actor_user_id: int
+    source_thread_public_id: str
+    target_problem_public_id: str
+    expected_source_thread_version: int
+    expected_target_thread_version: int | None
+    items: tuple[WrittenMaterialItemRef, ...]
+    reason: str | None
+    idempotency_key: str
+
+    def __post_init__(self) -> None:
+        if self.staff_account_id < 1 or self.actor_user_id < 1:
+            raise ValueError("staff reassignment identity is invalid")
+        if not _PUBLIC_ID.fullmatch(
+            self.source_thread_public_id
+        ) or not _PUBLIC_ID.fullmatch(self.target_problem_public_id):
+            raise ValueError("material reassignment target is invalid")
+        if self.expected_source_thread_version < 1 or (
+            self.expected_target_thread_version is not None
+            and self.expected_target_thread_version < 1
+        ):
+            raise ValueError("material reassignment versions are invalid")
+        _validate_material_item_refs(self.items)
+        if self.reason is not None and (
+            self.reason != self.reason.strip() or not 1 <= len(self.reason) <= 2_000
+        ):
+            raise ValueError("material reassignment reason is invalid")
+        _validate_idempotency_key(self.idempotency_key)
+
+    def request_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "sourceThreadId": self.source_thread_public_id,
+            "targetProblemId": self.target_problem_public_id,
+            "expectedSourceThreadVersion": self.expected_source_thread_version,
+            "expectedTargetThreadVersion": self.expected_target_thread_version,
+            "items": [item.payload() for item in self.items],
+            "reason": self.reason,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class CreateWrittenAttachmentCommand:
     """Identity and optimistic state of one browser-selected source image."""
 
@@ -364,6 +462,29 @@ class WrittenAttachmentRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class WrittenMaterialProjection:
+    """Student-visible provenance for material projected into another task."""
+
+    reassignment_public_ids: tuple[str, ...]
+    source_thread_public_id: str
+    source_problem_public_id: str
+    target_thread_public_id: str
+    target_problem_public_id: str
+    moved_at: str
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "kind": "staff_reassignment",
+            "reassignmentIds": list(self.reassignment_public_ids),
+            "sourceThreadId": self.source_thread_public_id,
+            "sourceProblemId": self.source_problem_public_id,
+            "targetThreadId": self.target_thread_public_id,
+            "targetProblemId": self.target_problem_public_id,
+            "movedAt": self.moved_at,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class WrittenEntryRecord:
     public_id: str
     author_kind: str
@@ -375,9 +496,10 @@ class WrittenEntryRecord:
     client_created_at: str | None
     server_received_at: str
     attachments: tuple[WrittenAttachmentRecord, ...]
+    projection: WrittenMaterialProjection | None = None
 
     def payload(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "entryId": self.public_id,
             "authorKind": self.author_kind,
             "entryKind": self.entry_kind,
@@ -393,6 +515,9 @@ class WrittenEntryRecord:
             "serverReceivedAt": self.server_received_at,
             "attachments": [item.payload() for item in self.attachments],
         }
+        if self.projection is not None:
+            payload["projection"] = self.projection.payload()
+        return payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -679,6 +804,174 @@ class ReplaceWrittenEntryReceipt:
 
 
 @dataclass(frozen=True, slots=True)
+class WrittenMaterialScope:
+    course_public_id: str
+    group_public_id: str
+    group_lesson_public_id: str
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "courseId": self.course_public_id,
+            "groupId": self.group_public_id,
+            "groupLessonId": self.group_lesson_public_id,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class WrittenMaterialPreviewItem:
+    reference: WrittenMaterialItemRef
+    entry_state: str
+    text: str | None
+    attachment: WrittenAttachmentRecord | None
+    locked: bool
+
+    def payload(self) -> dict[str, object]:
+        return {
+            **self.reference.payload(),
+            "entryState": self.entry_state,
+            "text": self.text,
+            "attachment": (
+                None if self.attachment is None else self.attachment.payload()
+            ),
+            "locked": self.locked,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class WrittenMaterialReassignmentPreview:
+    student_user_id: int
+    student_public_id: str
+    owner_account_public_ids: tuple[str, ...]
+    source_thread_id: int
+    source_thread_public_id: str
+    source_problem_id: int
+    source_problem_public_id: str
+    source_thread_status: str
+    source_thread_version: int
+    source_scope: WrittenMaterialScope
+    target_thread_id: int | None
+    target_thread_public_id: str | None
+    target_problem_id: int
+    target_problem_public_id: str
+    target_thread_version: int | None
+    target_scope: WrittenMaterialScope
+    target_condition_revision_id: int
+    items: tuple[WrittenMaterialPreviewItem, ...]
+    post_review: bool
+
+    def response_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "studentId": self.student_public_id,
+            "source": {
+                "threadId": self.source_thread_public_id,
+                "problemId": self.source_problem_public_id,
+                "threadStatus": self.source_thread_status,
+                "threadVersion": self.source_thread_version,
+                "scope": self.source_scope.payload(),
+            },
+            "target": {
+                "threadId": self.target_thread_public_id,
+                "problemId": self.target_problem_public_id,
+                "threadVersion": self.target_thread_version,
+                "scope": self.target_scope.payload(),
+            },
+            "items": [item.payload() for item in self.items],
+            "impact": {
+                "postReview": self.post_review,
+                "sourceEvidenceUnchanged": True,
+                "sourceVerdictUnchanged": True,
+                "targetRequiresReview": True,
+                "studentLabel": "Перенесено преподавателем",
+            },
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ReassignWrittenMaterialReceipt:
+    reassignment_public_id: str
+    source_thread_public_id: str
+    source_problem_public_id: str
+    source_thread_status: str
+    source_thread_version: int
+    target_thread_public_id: str
+    target_problem_public_id: str
+    target_thread_version: int
+    items: tuple[WrittenMaterialItemRef, ...]
+    moved_at: str
+    owner_account_public_ids: tuple[str, ...] = field(default=(), compare=False)
+    replayed: bool = field(default=False, compare=False)
+
+    def response_payload(self) -> dict[str, object]:
+        return {
+            "schemaVersion": 1,
+            "reassignmentId": self.reassignment_public_id,
+            "source": {
+                "threadId": self.source_thread_public_id,
+                "problemId": self.source_problem_public_id,
+                "threadStatus": self.source_thread_status,
+                "threadVersion": self.source_thread_version,
+            },
+            "target": {
+                "threadId": self.target_thread_public_id,
+                "problemId": self.target_problem_public_id,
+                "threadStatus": "awaiting_review",
+                "threadVersion": self.target_thread_version,
+            },
+            "items": [item.payload() for item in self.items],
+            "movedAt": self.moved_at,
+            "studentLabel": "Перенесено преподавателем",
+        }
+
+    @classmethod
+    def from_response(
+        cls, payload: Mapping[str, object]
+    ) -> "ReassignWrittenMaterialReceipt":
+        try:
+            source = payload["source"]
+            target = payload["target"]
+            item_values = payload["items"]
+            if (
+                not isinstance(source, Mapping)
+                or not isinstance(target, Mapping)
+                or not isinstance(item_values, list)
+            ):
+                raise TypeError
+            items = tuple(
+                WrittenMaterialItemRef(
+                    entry_public_id=str(item["entryId"]),
+                    item_kind=str(item["itemKind"]),
+                    attachment_public_id=(
+                        None
+                        if item.get("attachmentId") is None
+                        else str(item["attachmentId"])
+                    ),
+                )
+                for item in item_values
+                if isinstance(item, Mapping)
+            )
+            if len(items) != len(item_values):
+                raise TypeError
+            return cls(
+                reassignment_public_id=str(payload["reassignmentId"]),
+                source_thread_public_id=str(source["threadId"]),
+                source_problem_public_id=str(source["problemId"]),
+                source_thread_status=str(source["threadStatus"]),
+                source_thread_version=int(source["threadVersion"]),
+                target_thread_public_id=str(target["threadId"]),
+                target_problem_public_id=str(target["problemId"]),
+                target_thread_version=int(target["threadVersion"]),
+                items=items,
+                moved_at=str(payload["movedAt"]),
+                replayed=True,
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise WrittenSubmissionRepositoryError(
+                "stored material-reassignment response is invalid"
+            ) from error
+
+
+@dataclass(frozen=True, slots=True)
 class _WrittenContext:
     account_id: int
     student_user_id: int
@@ -926,12 +1219,13 @@ def _read_idempotency(
     operation: str,
     idempotency_key: str,
     payload_sha256: str,
+    audience: str = "student",
 ) -> _IdempotencyReplay | None:
     row = connection.execute(
         "SELECT payload_sha256, state, http_status, response_json "
-        "FROM idempotency_records WHERE audience = 'student' "
+        "FROM idempotency_records WHERE audience = ? "
         "AND account_id = ? AND operation = ? AND idempotency_key = ?",
-        (account_id, operation, idempotency_key),
+        (audience, account_id, operation, idempotency_key),
     ).fetchone()
     if row is None:
         return None
@@ -1271,6 +1565,371 @@ def _entry_record(
     )
 
 
+def _material_scope(row: Mapping[str, object], *, prefix: str) -> WrittenMaterialScope:
+    return WrittenMaterialScope(
+        course_public_id=str(row[f"{prefix}_course_public_id"]),
+        group_public_id=str(row[f"{prefix}_group_public_id"]),
+        group_lesson_public_id=str(row[f"{prefix}_group_lesson_public_id"]),
+    )
+
+
+def _material_reassignment_preview(
+    connection: sqlite3.Connection,
+    command: PreviewWrittenMaterialReassignmentCommand,
+    *,
+    allow_reassigned: bool = False,
+) -> WrittenMaterialReassignmentPreview:
+    """Resolve every trusted identity used by Staff preview and commit."""
+
+    source = connection.execute(
+        "SELECT thread.id AS source_thread_id, thread.public_id AS source_thread_public_id, "
+        "thread.student_user_id, thread.status AS source_thread_status, "
+        "thread.version AS source_thread_version, "
+        "problem.id AS source_problem_id, problem.public_id AS source_problem_public_id, "
+        "student.public_id AS student_public_id, "
+        "course.public_id AS source_course_public_id, "
+        "group_record.public_id AS source_group_public_id, "
+        "group_lesson.public_id AS source_group_lesson_public_id "
+        "FROM submission_threads AS thread "
+        "JOIN users AS student ON student.id = thread.student_user_id "
+        "JOIN problems AS problem ON problem.id = thread.problem_id "
+        "JOIN problem_revisions AS problem_revision "
+        "ON problem_revision.problem_id = problem.id "
+        "AND problem_revision.content_revision_id = thread.condition_revision_id "
+        "JOIN content_revisions AS revision "
+        "ON revision.id = problem_revision.content_revision_id "
+        "JOIN content_sources AS source ON source.id = revision.source_id "
+        "JOIN group_lessons AS group_lesson "
+        "ON group_lesson.id = source.group_lesson_id "
+        "JOIN groups AS group_record "
+        "ON group_record.course_id = group_lesson.course_id "
+        "AND group_record.group_id = group_lesson.group_id "
+        "JOIN courses AS course ON course.id = group_lesson.course_id "
+        "WHERE thread.public_id = ?",
+        (command.source_thread_public_id,),
+    ).fetchone()
+    if source is None:
+        raise WrittenSubmissionRejected(
+            code="written_source_thread_not_found",
+            message="Исходная переписка не найдена.",
+            http_status=404,
+        )
+    if source["student_public_id"] is None:
+        raise WrittenSubmissionRepositoryError(
+            "material reassignment student has no public identity"
+        )
+    if str(source["source_problem_public_id"]) == command.target_problem_public_id:
+        raise WrittenSubmissionRejected(
+            code="written_material_same_problem",
+            message="Исходная и целевая задачи совпадают.",
+            http_status=422,
+        )
+    target = connection.execute(
+        "SELECT problem.id AS target_problem_id, "
+        "problem.public_id AS target_problem_public_id, "
+        "problem_revision.content_revision_id AS target_condition_revision_id, "
+        "course.public_id AS target_course_public_id, "
+        "group_record.public_id AS target_group_public_id, "
+        "group_lesson.public_id AS target_group_lesson_public_id "
+        "FROM problems AS problem "
+        "JOIN problem_revisions AS problem_revision "
+        "ON problem_revision.problem_id = problem.id "
+        "JOIN content_revisions AS revision "
+        "ON revision.id = problem_revision.content_revision_id "
+        "JOIN content_sources AS content_source "
+        "ON content_source.id = revision.source_id AND content_source.kind = 'condition' "
+        "JOIN group_lessons AS group_lesson "
+        "ON group_lesson.id = content_source.group_lesson_id "
+        "JOIN groups AS group_record "
+        "ON group_record.course_id = group_lesson.course_id "
+        "AND group_record.group_id = group_lesson.group_id "
+        "JOIN courses AS course ON course.id = group_lesson.course_id "
+        "JOIN lesson_publications AS publication "
+        "ON publication.group_lesson_id = group_lesson.id "
+        "AND publication.kind = 'condition' "
+        "AND publication.revision_id = revision.id "
+        "AND publication.state IN ('published', 'superseded', 'hidden') "
+        "WHERE problem.public_id = ? "
+        "AND EXISTS ("
+        "SELECT 1 FROM course_enrollments AS enrollment "
+        "JOIN course_group_access AS access "
+        "ON access.enrollment_id = enrollment.id "
+        "AND access.course_id = enrollment.course_id "
+        "WHERE enrollment.student_user_id = ? "
+        "AND enrollment.course_id = group_lesson.course_id "
+        "AND access.group_id = group_lesson.group_id"
+        ") "
+        "ORDER BY (publication.state = 'published') DESC, "
+        "coalesce(publication.published_at, publication.created_at) DESC, "
+        "problem_revision.config_version DESC, problem_revision.id DESC LIMIT 1",
+        (command.target_problem_public_id, source["student_user_id"]),
+    ).fetchone()
+    if target is None:
+        raise WrittenSubmissionRejected(
+            code="written_target_problem_not_found",
+            message="Целевая задача недоступна этому школьнику.",
+            http_status=404,
+        )
+    target_thread = connection.execute(
+        "SELECT id, public_id, status, version, condition_revision_id "
+        "FROM submission_threads WHERE student_user_id = ? AND problem_id = ? "
+        "AND status <> 'closed' ORDER BY updated_at DESC, id DESC LIMIT 1",
+        (source["student_user_id"], target["target_problem_id"]),
+    ).fetchone()
+    owner_rows = connection.execute(
+        "SELECT public_id FROM auth_accounts WHERE audience = 'student' "
+        "AND linked_user_id = ? AND status = 'active' ORDER BY id",
+        (source["student_user_id"],),
+    ).fetchall()
+    preview_items: list[WrittenMaterialPreviewItem] = []
+    post_review = str(source["source_thread_status"]) in {"needs_work", "accepted"}
+    for reference in command.items:
+        entry = connection.execute(
+            "SELECT id, state, text FROM submission_entries "
+            "WHERE thread_id = ? AND public_id = ?",
+            (source["source_thread_id"], reference.entry_public_id),
+        ).fetchone()
+        if entry is None or entry["state"] not in {"submitted", "locked"}:
+            raise WrittenSubmissionRejected(
+                code="written_material_not_found",
+                message="Выбранный материал не найден или ещё не отправлен.",
+                http_status=404,
+                details={"entryId": reference.entry_public_id},
+            )
+        attachment_id: int | None = None
+        attachment_record: WrittenAttachmentRecord | None = None
+        text: str | None = None
+        locked = entry["state"] == "locked"
+        if reference.item_kind == "entry_text":
+            text = None if entry["text"] is None else str(entry["text"])
+            if not text or not text.strip():
+                raise WrittenSubmissionRejected(
+                    code="written_material_not_found",
+                    message="В выбранном сообщении нет текста.",
+                    http_status=404,
+                    details={"entryId": reference.entry_public_id},
+                )
+        else:
+            attachment_row = connection.execute(
+                "SELECT id, upload_status FROM submission_attachments "
+                "WHERE entry_id = ? AND public_id = ?",
+                (entry["id"], reference.attachment_public_id),
+            ).fetchone()
+            if attachment_row is None or attachment_row["upload_status"] not in {
+                "stored",
+                "locked",
+            }:
+                raise WrittenSubmissionRejected(
+                    code="written_material_not_found",
+                    message="Выбранная фотография не найдена или не готова.",
+                    http_status=404,
+                    details={"attachmentId": reference.attachment_public_id},
+                )
+            attachment_id = int(attachment_row["id"])
+            locked = locked or attachment_row["upload_status"] == "locked"
+            attachment_record = next(
+                item
+                for item in _entry_record(
+                    connection, entry_id=int(entry["id"])
+                ).attachments
+                if item.public_id == reference.attachment_public_id
+            )
+        already_moved = connection.execute(
+            "SELECT reassignment.public_id FROM submission_material_reassignment_items AS item "
+            "JOIN submission_material_reassignments AS reassignment "
+            "ON reassignment.id = item.reassignment_id "
+            "WHERE item.source_entry_id = ? AND item.item_kind = ? "
+            "AND item.attachment_id IS ? ORDER BY reassignment.id DESC LIMIT 1",
+            (entry["id"], reference.item_kind, attachment_id),
+        ).fetchone()
+        if already_moved is not None and not allow_reassigned:
+            raise WrittenSubmissionRejected(
+                code="written_material_already_reassigned",
+                message="Этот материал уже переносили. Обновите переписку.",
+                http_status=409,
+                details={"reassignmentId": already_moved["public_id"]},
+            )
+        preview_items.append(
+            WrittenMaterialPreviewItem(
+                reference=reference,
+                entry_state=str(entry["state"]),
+                text=text,
+                attachment=attachment_record,
+                locked=locked,
+            )
+        )
+        post_review = post_review or locked
+    return WrittenMaterialReassignmentPreview(
+        student_user_id=int(source["student_user_id"]),
+        student_public_id=str(source["student_public_id"]),
+        owner_account_public_ids=tuple(str(row["public_id"]) for row in owner_rows),
+        source_thread_id=int(source["source_thread_id"]),
+        source_thread_public_id=str(source["source_thread_public_id"]),
+        source_problem_id=int(source["source_problem_id"]),
+        source_problem_public_id=str(source["source_problem_public_id"]),
+        source_thread_status=str(source["source_thread_status"]),
+        source_thread_version=int(source["source_thread_version"]),
+        source_scope=_material_scope(source, prefix="source"),
+        target_thread_id=(None if target_thread is None else int(target_thread["id"])),
+        target_thread_public_id=(
+            None if target_thread is None else str(target_thread["public_id"])
+        ),
+        target_problem_id=int(target["target_problem_id"]),
+        target_problem_public_id=str(target["target_problem_public_id"]),
+        target_thread_version=(
+            None if target_thread is None else int(target_thread["version"])
+        ),
+        target_scope=_material_scope(target, prefix="target"),
+        target_condition_revision_id=(
+            int(target["target_condition_revision_id"])
+            if target_thread is None
+            else int(target_thread["condition_revision_id"])
+        ),
+        items=tuple(preview_items),
+        post_review=post_review,
+    )
+
+
+def _project_thread_entries(
+    connection: sqlite3.Connection,
+    *,
+    thread_id: int,
+    student_user_id: int,
+) -> tuple[WrittenEntryRecord, ...]:
+    """Apply the latest append-only material projection without moving bytes."""
+
+    assignment_rows = connection.execute(
+        "SELECT reassignment.id AS reassignment_id, "
+        "reassignment.public_id AS reassignment_public_id, "
+        "reassignment.source_thread_id, reassignment.target_thread_id, "
+        "reassignment.created_at, item.source_entry_id, item.item_kind, "
+        "item.attachment_id, "
+        "source_thread.public_id AS source_thread_public_id, "
+        "source_problem.public_id AS source_problem_public_id, "
+        "target_thread.public_id AS target_thread_public_id, "
+        "target_problem.public_id AS target_problem_public_id "
+        "FROM submission_material_reassignments AS reassignment "
+        "JOIN submission_material_reassignment_items AS item "
+        "ON item.reassignment_id = reassignment.id "
+        "JOIN submission_threads AS source_thread "
+        "ON source_thread.id = reassignment.source_thread_id "
+        "JOIN problems AS source_problem ON source_problem.id = reassignment.source_problem_id "
+        "JOIN submission_threads AS target_thread "
+        "ON target_thread.id = reassignment.target_thread_id "
+        "JOIN problems AS target_problem ON target_problem.id = reassignment.target_problem_id "
+        "WHERE reassignment.student_user_id = ? "
+        "ORDER BY reassignment.created_at, reassignment.id, item.ordinal",
+        (student_user_id,),
+    ).fetchall()
+    latest: dict[tuple[int, str, int | None], Mapping[str, object]] = {}
+    for assignment in assignment_rows:
+        latest[
+            (
+                int(assignment["source_entry_id"]),
+                str(assignment["item_kind"]),
+                (
+                    None
+                    if assignment["attachment_id"] is None
+                    else int(assignment["attachment_id"])
+                ),
+            )
+        ] = assignment
+    entry_rows = connection.execute(
+        "SELECT id, thread_id FROM submission_entries WHERE thread_id = ? "
+        "ORDER BY server_received_at, id",
+        (thread_id,),
+    ).fetchall()
+    entries: dict[int, int] = {
+        int(row["id"]): int(row["thread_id"]) for row in entry_rows
+    }
+    for (entry_id, _kind, _attachment_id), assignment in latest.items():
+        if int(assignment["target_thread_id"]) == thread_id:
+            physical = connection.execute(
+                "SELECT thread_id FROM submission_entries WHERE id = ?", (entry_id,)
+            ).fetchone()
+            if physical is not None:
+                entries[entry_id] = int(physical["thread_id"])
+    projected: list[tuple[str, int, WrittenEntryRecord]] = []
+    for entry_id, physical_thread_id in entries.items():
+        base = _entry_record(connection, entry_id=entry_id)
+        text_assignment = latest.get((entry_id, "entry_text", None))
+        text_target = (
+            physical_thread_id
+            if text_assignment is None
+            else int(text_assignment["target_thread_id"])
+        )
+        visible_text = base.text if text_target == thread_id else None
+        attachment_ids = connection.execute(
+            "SELECT id, public_id FROM submission_attachments "
+            "WHERE entry_id = ? ORDER BY ordinal, id",
+            (entry_id,),
+        ).fetchall()
+        public_to_internal = {
+            str(row["public_id"]): int(row["id"]) for row in attachment_ids
+        }
+        visible_attachments: list[WrittenAttachmentRecord] = []
+        visible_assignments: list[Mapping[str, object]] = []
+        if visible_text is not None and text_assignment is not None:
+            visible_assignments.append(text_assignment)
+        for attachment in base.attachments:
+            internal_id = public_to_internal[attachment.public_id]
+            assignment = latest.get((entry_id, "attachment", internal_id))
+            target = (
+                physical_thread_id
+                if assignment is None
+                else int(assignment["target_thread_id"])
+            )
+            if target == thread_id:
+                visible_attachments.append(attachment)
+                if assignment is not None:
+                    visible_assignments.append(assignment)
+        if visible_text is None and not visible_attachments:
+            if physical_thread_id != thread_id or base.state in {"submitted", "locked"}:
+                continue
+        projection = None
+        if physical_thread_id != thread_id:
+            if not visible_assignments:
+                continue
+            ordered_events = sorted(
+                {
+                    int(item["reassignment_id"]): item for item in visible_assignments
+                }.values(),
+                key=lambda item: int(item["reassignment_id"]),
+            )
+            latest_event = ordered_events[-1]
+            projection = WrittenMaterialProjection(
+                reassignment_public_ids=tuple(
+                    str(item["reassignment_public_id"]) for item in ordered_events
+                ),
+                source_thread_public_id=str(latest_event["source_thread_public_id"]),
+                source_problem_public_id=str(latest_event["source_problem_public_id"]),
+                target_thread_public_id=str(latest_event["target_thread_public_id"]),
+                target_problem_public_id=str(latest_event["target_problem_public_id"]),
+                moved_at=str(latest_event["created_at"]),
+            )
+        projected.append(
+            (
+                base.server_received_at,
+                entry_id,
+                WrittenEntryRecord(
+                    public_id=base.public_id,
+                    author_kind=base.author_kind,
+                    entry_kind=base.entry_kind,
+                    state=base.state,
+                    text=visible_text,
+                    problem_revision=base.problem_revision,
+                    version=base.version,
+                    client_created_at=base.client_created_at,
+                    server_received_at=base.server_received_at,
+                    attachments=tuple(visible_attachments),
+                    projection=projection,
+                ),
+            )
+        )
+    projected.sort(key=lambda item: (item[0], item[1]))
+    return tuple(item[2] for item in projected)
+
+
 def _complete_idempotency(
     connection: sqlite3.Connection,
     *,
@@ -1300,6 +1959,7 @@ class PwaWrittenSubmissionRepository:
         attachment_public_id_factory: Callable[[], str] | None = None,
         media_public_id_factory: Callable[[], str] | None = None,
         replacement_event_public_id_factory: Callable[[], str] | None = None,
+        reassignment_public_id_factory: Callable[[], str] | None = None,
     ) -> None:
         self._factory = factory
         self._clock = clock or (lambda: datetime.now(UTC))
@@ -1318,6 +1978,9 @@ class PwaWrittenSubmissionRepository:
         self._replacement_event_public_id_factory = (
             replacement_event_public_id_factory
             or (lambda: f"written-replacement-{uuid.uuid4()}")
+        )
+        self._reassignment_public_id_factory = reassignment_public_id_factory or (
+            lambda: f"written-reassignment-{uuid.uuid4()}"
         )
 
     async def create_entry(
@@ -2437,6 +3100,298 @@ class PwaWrittenSubmissionRepository:
         )
         return receipt, None
 
+    async def preview_material_reassignment(
+        self, command: PreviewWrittenMaterialReassignmentCommand
+    ) -> WrittenMaterialReassignmentPreview:
+        """Resolve a Staff confirmation preview without mutating projections."""
+
+        return await self._factory.run_read_async(
+            lambda connection: _material_reassignment_preview(connection, command)
+        )
+
+    async def resolve_material_reassignment_scope(
+        self, command: PreviewWrittenMaterialReassignmentCommand
+    ) -> WrittenMaterialReassignmentPreview:
+        """Resolve current source/target scopes before commit or replay auth."""
+
+        return await self._factory.run_read_async(
+            lambda connection: _material_reassignment_preview(
+                connection, command, allow_reassigned=True
+            )
+        )
+
+    async def reassign_material(
+        self, command: ReassignWrittenMaterialCommand
+    ) -> ReassignWrittenMaterialReceipt:
+        """Append one correction and atomically refresh both thread projections."""
+
+        payload_sha256 = _payload_hash(command.request_payload())
+        replay = await self._factory.run_read_async(
+            lambda connection: _read_idempotency(
+                connection,
+                account_id=command.staff_account_id,
+                operation=REASSIGN_MATERIAL_OPERATION,
+                idempotency_key=command.idempotency_key,
+                payload_sha256=payload_sha256,
+                audience="staff",
+            )
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return ReassignWrittenMaterialReceipt.from_response(replay.response)
+        reassignment_public_id = self._reassignment_public_id_factory()
+        target_thread_public_id = self._thread_public_id_factory()
+        if not _PUBLIC_ID.fullmatch(reassignment_public_id) or not _PUBLIC_ID.fullmatch(
+            target_thread_public_id
+        ):
+            raise WrittenSubmissionRepositoryError(
+                "material reassignment public ID factory returned an invalid value"
+            )
+        receipt, error = await self._factory.run_write_async(
+            lambda connection: self._write_reassign_material(
+                connection,
+                command=command,
+                payload_sha256=payload_sha256,
+                reassignment_public_id=reassignment_public_id,
+                target_thread_public_id=target_thread_public_id,
+                now=self._clock(),
+            )
+        )
+        if error is not None:
+            raise error
+        assert receipt is not None
+        return receipt
+
+    def _write_reassign_material(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        command: ReassignWrittenMaterialCommand,
+        payload_sha256: str,
+        reassignment_public_id: str,
+        target_thread_public_id: str,
+        now: datetime,
+    ) -> tuple[ReassignWrittenMaterialReceipt | None, WrittenSubmissionRejected | None]:
+        replay = _read_idempotency(
+            connection,
+            account_id=command.staff_account_id,
+            operation=REASSIGN_MATERIAL_OPERATION,
+            idempotency_key=command.idempotency_key,
+            payload_sha256=payload_sha256,
+            audience="staff",
+        )
+        if replay is not None:
+            if replay.state != "completed":
+                _raise_replay_failure(replay)
+            return ReassignWrittenMaterialReceipt.from_response(replay.response), None
+        moved_at = _timestamp(now)
+        staff_account = connection.execute(
+            "SELECT 1 FROM auth_accounts WHERE id = ? AND audience = 'staff' "
+            "AND linked_user_id = ? AND status = 'active'",
+            (command.staff_account_id, command.actor_user_id),
+        ).fetchone()
+        if staff_account is None:
+            raise WrittenSubmissionRejected(
+                code="forbidden",
+                message="Недостаточно прав для переноса материала.",
+                http_status=403,
+            )
+        idempotency_id = int(
+            connection.execute(
+                "INSERT INTO idempotency_records "
+                "(audience, account_id, operation, idempotency_key, payload_sha256, "
+                "state, created_at) VALUES ('staff', ?, ?, ?, ?, 'processing', ?) "
+                "RETURNING id",
+                (
+                    command.staff_account_id,
+                    REASSIGN_MATERIAL_OPERATION,
+                    command.idempotency_key,
+                    payload_sha256,
+                    moved_at,
+                ),
+            ).fetchone()["id"]
+        )
+        try:
+            preview = _material_reassignment_preview(
+                connection,
+                PreviewWrittenMaterialReassignmentCommand(
+                    source_thread_public_id=command.source_thread_public_id,
+                    target_problem_public_id=command.target_problem_public_id,
+                    items=command.items,
+                ),
+            )
+            if (
+                preview.source_thread_version != command.expected_source_thread_version
+                or preview.target_thread_version
+                != command.expected_target_thread_version
+            ):
+                raise WrittenSubmissionRejected(
+                    code="written_material_version_conflict",
+                    message="Переписка изменилась после предпросмотра. Обновите данные.",
+                    http_status=409,
+                    details={
+                        "sourceThreadVersion": preview.source_thread_version,
+                        "targetThreadVersion": preview.target_thread_version,
+                    },
+                )
+            if preview.target_thread_id is None:
+                target_thread_id = int(
+                    connection.execute(
+                        "INSERT INTO submission_threads "
+                        "(public_id, student_user_id, problem_id, condition_revision_id, "
+                        "status, latest_entry_at, created_at, updated_at, version) "
+                        "VALUES (?, ?, ?, ?, 'awaiting_review', ?, ?, ?, 1) RETURNING id",
+                        (
+                            target_thread_public_id,
+                            preview.student_user_id,
+                            preview.target_problem_id,
+                            preview.target_condition_revision_id,
+                            moved_at,
+                            moved_at,
+                            moved_at,
+                        ),
+                    ).fetchone()["id"]
+                )
+                resolved_target_thread_public_id = target_thread_public_id
+                target_thread_version = 1
+            else:
+                target_thread_id = preview.target_thread_id
+                resolved_target_thread_public_id = str(preview.target_thread_public_id)
+                target_thread_version = int(preview.target_thread_version) + 1
+                connection.execute(
+                    "UPDATE submission_threads SET status = 'awaiting_review', "
+                    "latest_entry_at = ?, updated_at = ?, version = ? WHERE id = ?",
+                    (
+                        moved_at,
+                        moved_at,
+                        target_thread_version,
+                        target_thread_id,
+                    ),
+                )
+            reassignment_id = int(
+                connection.execute(
+                    "INSERT INTO submission_material_reassignments "
+                    "(public_id, student_user_id, source_thread_id, target_thread_id, "
+                    "source_problem_id, target_problem_id, performed_by_user_id, "
+                    "reason, request_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "RETURNING id",
+                    (
+                        reassignment_public_id,
+                        preview.student_user_id,
+                        preview.source_thread_id,
+                        target_thread_id,
+                        preview.source_problem_id,
+                        preview.target_problem_id,
+                        command.actor_user_id,
+                        command.reason,
+                        command.idempotency_key,
+                        moved_at,
+                    ),
+                ).fetchone()["id"]
+            )
+            for ordinal, reference in enumerate(command.items):
+                item_row = connection.execute(
+                    "SELECT entry.id AS entry_id, attachment.id AS attachment_id "
+                    "FROM submission_entries AS entry "
+                    "LEFT JOIN submission_attachments AS attachment "
+                    "ON attachment.entry_id = entry.id AND attachment.public_id = ? "
+                    "WHERE entry.thread_id = ? AND entry.public_id = ?",
+                    (
+                        reference.attachment_public_id,
+                        preview.source_thread_id,
+                        reference.entry_public_id,
+                    ),
+                ).fetchone()
+                if item_row is None:  # pragma: no cover - preview invariant
+                    raise WrittenSubmissionRepositoryError(
+                        "previewed material disappeared during one transaction"
+                    )
+                connection.execute(
+                    "INSERT INTO submission_material_reassignment_items "
+                    "(reassignment_id, source_entry_id, item_kind, attachment_id, ordinal) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (
+                        reassignment_id,
+                        item_row["entry_id"],
+                        reference.item_kind,
+                        (
+                            None
+                            if reference.item_kind == "entry_text"
+                            else item_row["attachment_id"]
+                        ),
+                        ordinal,
+                    ),
+                )
+            remaining = connection.execute(
+                "SELECT 1 FROM submission_entries AS entry "
+                "WHERE entry.thread_id = ? AND entry.state IN ('submitted', 'locked') "
+                "AND ("
+                "(coalesce(length(trim(entry.text)), 0) > 0 AND NOT EXISTS ("
+                "SELECT 1 FROM submission_material_reassignment_items AS item "
+                "WHERE item.source_entry_id = entry.id AND item.item_kind = 'entry_text'"
+                ")) OR EXISTS ("
+                "SELECT 1 FROM submission_attachments AS attachment "
+                "WHERE attachment.entry_id = entry.id "
+                "AND attachment.upload_status IN ('stored', 'locked') "
+                "AND NOT EXISTS ("
+                "SELECT 1 FROM submission_material_reassignment_items AS item "
+                "WHERE item.source_entry_id = entry.id "
+                "AND item.item_kind = 'attachment' "
+                "AND item.attachment_id = attachment.id"
+                ")"
+                ")"
+                ") LIMIT 1",
+                (preview.source_thread_id,),
+            ).fetchone()
+            source_status = preview.source_thread_status
+            if source_status == "awaiting_review" and remaining is None:
+                source_status = "closed"
+            source_thread_version = preview.source_thread_version + 1
+            connection.execute(
+                "UPDATE submission_threads SET status = ?, latest_entry_at = ?, "
+                "updated_at = ?, version = ? WHERE id = ?",
+                (
+                    source_status,
+                    moved_at,
+                    moved_at,
+                    source_thread_version,
+                    preview.source_thread_id,
+                ),
+            )
+            receipt = ReassignWrittenMaterialReceipt(
+                reassignment_public_id=reassignment_public_id,
+                source_thread_public_id=preview.source_thread_public_id,
+                source_problem_public_id=preview.source_problem_public_id,
+                source_thread_status=source_status,
+                source_thread_version=source_thread_version,
+                target_thread_public_id=resolved_target_thread_public_id,
+                target_problem_public_id=preview.target_problem_public_id,
+                target_thread_version=target_thread_version,
+                items=command.items,
+                moved_at=moved_at,
+                owner_account_public_ids=preview.owner_account_public_ids,
+            )
+        except WrittenSubmissionRejected as error:
+            _complete_idempotency(
+                connection,
+                record_id=idempotency_id,
+                state="failed",
+                http_status=error.http_status,
+                response=error.response_payload(),
+                completed_at=moved_at,
+            )
+            return None, error
+        _complete_idempotency(
+            connection,
+            record_id=idempotency_id,
+            state="completed",
+            http_status=200,
+            response=receipt.response_payload(),
+            completed_at=moved_at,
+        )
+        return receipt, None
+
     async def get_attachment_media(
         self,
         *,
@@ -2516,11 +3471,6 @@ class PwaWrittenSubmissionRepository:
                     now=now,
                 )
                 return None
-            entry_rows = connection.execute(
-                "SELECT id FROM submission_entries WHERE thread_id = ? "
-                "ORDER BY server_received_at, id",
-                (row["id"],),
-            ).fetchall()
             return WrittenThreadRecord(
                 public_id=str(row["public_id"]),
                 problem_public_id=str(row["problem_public_id"]),
@@ -2528,9 +3478,10 @@ class PwaWrittenSubmissionRepository:
                 condition_revision_public_id=str(row["condition_revision_public_id"]),
                 version=int(row["version"]),
                 latest_entry_at=str(row["latest_entry_at"]),
-                entries=tuple(
-                    _entry_record(connection, entry_id=int(entry["id"]))
-                    for entry in entry_rows
+                entries=_project_thread_entries(
+                    connection,
+                    thread_id=int(row["id"]),
+                    student_user_id=int(row["student_user_id"]),
                 ),
             )
 
@@ -2542,6 +3493,7 @@ __all__ = [
     "CREATE_ENTRY_OPERATION",
     "DELETE_ATTACHMENT_OPERATION",
     "REORDER_ATTACHMENTS_OPERATION",
+    "REASSIGN_MATERIAL_OPERATION",
     "REPLACE_ENTRY_OPERATION",
     "SUBMIT_ENTRY_OPERATION",
     "CreateWrittenAttachmentCommand",
@@ -2553,10 +3505,13 @@ __all__ = [
     "PersistWrittenAttachment",
     "PreparedWrittenAttachmentUpload",
     "ProblemRevisionRef",
+    "PreviewWrittenMaterialReassignmentCommand",
     "PwaWrittenSubmissionRepository",
     "ReorderWrittenAttachmentsCommand",
     "ReplaceWrittenEntryCommand",
     "ReplaceWrittenEntryReceipt",
+    "ReassignWrittenMaterialCommand",
+    "ReassignWrittenMaterialReceipt",
     "SubmitWrittenEntryCommand",
     "SubmitWrittenEntryReceipt",
     "WrittenAttachmentRecord",
@@ -2566,5 +3521,9 @@ __all__ = [
     "WrittenIdempotencyPayloadMismatch",
     "WrittenSubmissionRejected",
     "WrittenSubmissionRepositoryError",
+    "WrittenMaterialItemRef",
+    "WrittenMaterialProjection",
+    "WrittenMaterialReassignmentPreview",
+    "WrittenMaterialScope",
     "WrittenThreadRecord",
 ]

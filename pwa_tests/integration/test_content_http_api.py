@@ -838,6 +838,54 @@ async def _prepare_published_test_problem(
     return str(problem_public_id), str(revision["revisionId"])
 
 
+def _insert_second_written_problem(
+    fixture: ContentHttpFixture,
+    *,
+    condition_revision_public_id: str,
+) -> str:
+    """Add a second concrete written task to the same published lesson."""
+
+    now = _timestamp()
+
+    def insert(connection):
+        revision = connection.execute(
+            "SELECT id FROM content_revisions WHERE public_id = ?",
+            (condition_revision_public_id,),
+        ).fetchone()
+        problem_public_id = "problem-content-http-written-target"
+        problem_id = int(
+            connection.execute(
+                "INSERT INTO problems "
+                "(group_id, lesson, prob, item, title, prob_text, prob_type, "
+                "ans_type, ans_validation, validation_error, cor_ans, "
+                "cor_ans_checker, wrong_ans, congrat, synonyms, public_id) "
+                "VALUES ('content-a', 41, 2, '', 'Целевая письменная задача', "
+                "'', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', ?) "
+                "RETURNING id",
+                (problem_public_id,),
+            ).fetchone()["id"]
+        )
+        connection.execute(
+            "INSERT INTO content_problem_matches "
+            "(content_revision_id, source_ordinal, source_item, problem_id, "
+            "decision, resolved_at, diagnostics_json, created_at) "
+            "VALUES (?, 2, '2', ?, 'insert_new', ?, '[]', ?)",
+            (revision["id"], problem_id, now, now),
+        )
+        connection.execute(
+            "INSERT INTO problem_revisions "
+            "(problem_id, content_revision_id, source_ordinal, source_item, "
+            "display_number, title, normalized_title, problem_type, answer_type, "
+            "answer_config_json, attempt_policy_json, config_version, created_at) "
+            "VALUES (?, ?, 2, '2', '2', 'Целевая письменная задача', "
+            "'целевая письменная задача', 2, NULL, '{}', '{}', 1, ?)",
+            (problem_id, revision["id"], now),
+        )
+        return problem_public_id
+
+    return str(fixture.factory.run_write(insert))
+
+
 async def _publish_repaired_test_problem(
     fixture: ContentHttpFixture,
     *,
@@ -1427,6 +1475,214 @@ async def test_student_written_replacement_is_one_visible_atomic_commit(
         )
         == 1
     )
+
+
+async def test_staff_written_material_reassignment_previews_commits_and_projects(
+    content_http: ContentHttpFixture,
+):
+    fixture = content_http
+    source_problem_id, condition_revision_id = await _prepare_published_test_problem(
+        fixture, problem_type=2
+    )
+    target_problem_id = _insert_second_written_problem(
+        fixture, condition_revision_public_id=condition_revision_id
+    )
+    created_response = await fixture.client.post(
+        f"/student/api/v1/problems/{source_problem_id}/thread/entries",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "e6d18ca4-a1b6-48e9-aea7-447b7348cb2a",
+            "problemRevision": {
+                "conditionRevisionId": condition_revision_id,
+                "configVersion": 1,
+            },
+            "text": "Эта работа относится ко второй задаче.",
+            "clientCreatedAt": _timestamp(),
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert created_response.status == 201, await created_response.text()
+    created = await created_response.json()
+    submitted_response = await fixture.client.post(
+        f"/student/api/v1/thread-entries/{created['entry']['entryId']}/submit",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "8911a420-bbc8-4a8d-b7da-9d8693b98652",
+            "expectedEntryVersion": created["entry"]["version"],
+            "expectedThreadVersion": created["threadVersion"],
+            "attachmentIds": [],
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert submitted_response.status == 200, await submitted_response.text()
+    submitted = await submitted_response.json()
+    selection = [
+        {
+            "entryId": submitted["entry"]["entryId"],
+            "itemKind": "entry_text",
+            "attachmentId": None,
+        }
+    ]
+    preview_response = await fixture.client.post(
+        "/staff/api/v1/submission-material-reassignments/preview",
+        json={
+            "schemaVersion": 1,
+            "sourceThreadId": submitted["threadId"],
+            "targetProblemId": target_problem_id,
+            "items": selection,
+        },
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(unsafe=True),
+    )
+    assert preview_response.status == 200, await preview_response.text()
+    preview = await preview_response.json()
+    assert preview["studentId"] == "user-content-student"
+    assert preview["source"]["problemId"] == source_problem_id
+    assert preview["target"] == {
+        "threadId": None,
+        "problemId": target_problem_id,
+        "threadVersion": None,
+        "scope": preview["source"]["scope"],
+    }
+    assert preview["items"][0]["text"] == "Эта работа относится ко второй задаче."
+    assert preview["impact"] == {
+        "postReview": False,
+        "sourceEvidenceUnchanged": True,
+        "sourceVerdictUnchanged": True,
+        "targetRequiresReview": True,
+        "studentLabel": "Перенесено преподавателем",
+    }
+    cursor_before = fixture.client.app[pwa_app.PWA_STATE]["cursors"]["student"]
+    commit_payload = {
+        "schemaVersion": 1,
+        "idempotencyKey": "4a838c0b-9fe2-4a07-a78b-a89b9314298a",
+        "sourceThreadId": submitted["threadId"],
+        "targetProblemId": target_problem_id,
+        "expectedSourceThreadVersion": preview["source"]["threadVersion"],
+        "expectedTargetThreadVersion": None,
+        "items": selection,
+        "reason": "Выбрана соседняя задача.",
+    }
+    committed_response = await fixture.client.post(
+        "/staff/api/v1/submission-material-reassignments",
+        json=commit_payload,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(unsafe=True),
+    )
+    assert committed_response.status == 200, await committed_response.text()
+    committed = await committed_response.json()
+    assert committed["source"]["threadStatus"] == "closed"
+    assert committed["target"]["threadStatus"] == "awaiting_review"
+    assert committed["studentLabel"] == "Перенесено преподавателем"
+    assert fixture.client.app[pwa_app.PWA_STATE]["cursors"]["student"] == (
+        cursor_before + 2
+    )
+
+    replay = await fixture.client.post(
+        "/staff/api/v1/submission-material-reassignments",
+        json=commit_payload,
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(unsafe=True),
+    )
+    assert replay.status == 200
+    assert await replay.json() == committed
+    assert fixture.client.app[pwa_app.PWA_STATE]["cursors"]["student"] == (
+        cursor_before + 2
+    )
+
+    source_history = await fixture.client.get(
+        f"/student/api/v1/problems/{source_problem_id}/thread",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    target_history = await fixture.client.get(
+        f"/student/api/v1/problems/{target_problem_id}/thread",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert source_history.status == 200 and target_history.status == 200
+    assert (await source_history.json())["thread"]["entries"] == []
+    target_thread = (await target_history.json())["thread"]
+    assert target_thread["threadId"] == committed["target"]["threadId"]
+    assert target_thread["entries"][0]["entryId"] == submitted["entry"]["entryId"]
+    assert target_thread["entries"][0]["projection"] == {
+        "kind": "staff_reassignment",
+        "reassignmentIds": [committed["reassignmentId"]],
+        "sourceThreadId": committed["source"]["threadId"],
+        "sourceProblemId": source_problem_id,
+        "targetThreadId": committed["target"]["threadId"],
+        "targetProblemId": target_problem_id,
+        "movedAt": committed["movedAt"],
+    }
+
+    second_created_response = await fixture.client.post(
+        f"/student/api/v1/problems/{source_problem_id}/thread/entries",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "268ea380-3048-4272-836a-18da63b7119e",
+            "problemRevision": {
+                "conditionRevisionId": condition_revision_id,
+                "configVersion": 1,
+            },
+            "text": "Новый материал для проверки scope.",
+            "clientCreatedAt": _timestamp(),
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert second_created_response.status == 201
+    second_created = await second_created_response.json()
+    second_submitted_response = await fixture.client.post(
+        f"/student/api/v1/thread-entries/{second_created['entry']['entryId']}/submit",
+        json={
+            "schemaVersion": 1,
+            "idempotencyKey": "43409f66-f6c5-4645-8be7-dfa36692ceda",
+            "expectedEntryVersion": second_created["entry"]["version"],
+            "expectedThreadVersion": second_created["threadVersion"],
+            "attachmentIds": [],
+        },
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(unsafe=True),
+    )
+    assert second_submitted_response.status == 200
+    second_submitted = await second_submitted_response.json()
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "DELETE FROM staff_scopes WHERE staff_user_id = ?", (TEACHER_USER_ID,)
+        )
+    )
+    forbidden = await fixture.client.post(
+        "/staff/api/v1/submission-material-reassignments/preview",
+        json={
+            "schemaVersion": 1,
+            "sourceThreadId": second_submitted["threadId"],
+            "targetProblemId": target_problem_id,
+            "items": [
+                {
+                    "entryId": second_submitted["entry"]["entryId"],
+                    "itemKind": "entry_text",
+                    "attachmentId": None,
+                }
+            ],
+        },
+        cookies=_cookie(fixture, "teacher"),
+        headers=_headers(unsafe=True),
+    )
+    assert forbidden.status == 403
+
+    unauthenticated = await fixture.client.post(
+        "/staff/api/v1/submission-material-reassignments/preview",
+        json={
+            "schemaVersion": 1,
+            "sourceThreadId": submitted["threadId"],
+            "targetProblemId": target_problem_id,
+            "items": selection,
+        },
+        headers=_headers(unsafe=True),
+    )
+    assert unauthenticated.status == 401
 
 
 async def test_student_written_photo_upload_converts_persists_replays_and_submits(

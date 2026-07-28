@@ -25,12 +25,15 @@ from db_methods.pwa.written_submissions import (
     DeleteWrittenAttachmentCommand,
     PersistWrittenAttachment,
     PreparedWrittenAttachmentUpload,
+    PreviewWrittenMaterialReassignmentCommand,
     ProblemRevisionRef,
     PwaWrittenSubmissionRepository,
+    ReassignWrittenMaterialCommand,
     ReorderWrittenAttachmentsCommand,
     ReplaceWrittenEntryCommand,
     SubmitWrittenEntryCommand,
     WrittenIdempotencyPayloadMismatch,
+    WrittenMaterialItemRef,
     WrittenSubmissionRejected,
 )
 from helpers.consts import ANS_TYPE, RES_TYPE, VERDICT
@@ -45,6 +48,7 @@ PENDING_PROBLEM_PUBLIC_ID = "problem-submission-pending"
 UNLIMITED_PROBLEM_PUBLIC_ID = "problem-submission-unlimited"
 DAILY_LIMIT_PROBLEM_PUBLIC_ID = "problem-submission-daily-limit"
 WRITTEN_PROBLEM_PUBLIC_ID = "problem-submission-written"
+WRITTEN_TARGET_PROBLEM_PUBLIC_ID = "problem-submission-written-target"
 
 
 def timestamp(value: datetime) -> str:
@@ -67,10 +71,13 @@ class SubmissionFixture:
     clock: MutableClock
     student_account_id: int
     other_account_id: int
+    staff_account_id: int
     problem_id: int
     problem_revision_id: int
     written_problem_id: int
     written_problem_revision_id: int
+    written_target_problem_id: int
+    written_target_problem_revision_id: int
     window_id: int
 
 
@@ -95,12 +102,16 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
     replacement_public_ids = (
         f"written-replacement-repository-{index}" for index in itertools.count(1)
     )
+    reassignment_public_ids = (
+        f"written-reassignment-repository-{index}" for index in itertools.count(1)
+    )
     written_repository = PwaWrittenSubmissionRepository(
         factory,
         clock=clock,
         thread_public_id_factory=lambda: next(thread_public_ids),
         entry_public_id_factory=lambda: next(entry_public_ids),
         replacement_event_public_id_factory=lambda: next(replacement_public_ids),
+        reassignment_public_id_factory=lambda: next(reassignment_public_ids),
     )
     now = timestamp(NOW)
 
@@ -153,6 +164,18 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
                 "'submission-other', 1, 'synthetic-test', 'telegram_token', "
                 "'hash', ?, 'active', ?, ?) RETURNING id",
                 (OTHER_STUDENT_USER_ID, now, now),
+            ).fetchone()["id"]
+        )
+        staff_account_id = int(
+            connection.execute(
+                "INSERT INTO auth_accounts "
+                "(public_id, audience, username, username_normalized, "
+                "provisioning_source, credential_kind, credential_hash, "
+                "linked_user_id, status, created_at, updated_at) VALUES "
+                "('account-submission-admin', 'staff', 'submission-admin', "
+                "'submission-admin', 'synthetic-test', 'password', 'hash', ?, "
+                "'active', ?, ?) RETURNING id",
+                (ADMIN_USER_ID, now, now),
             ).fetchone()["id"]
         )
         season_id = int(
@@ -455,6 +478,37 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
                 (written_problem_id, revision_id, now),
             ).fetchone()["id"]
         )
+        written_target_problem_id = int(
+            connection.execute(
+                "INSERT INTO problems "
+                "(group_id, lesson, prob, item, title, prob_text, prob_type, "
+                "ans_type, ans_validation, validation_error, cor_ans, wrong_ans, "
+                "congrat, synonyms, public_id) VALUES "
+                "('submission-a', 41, 6, '', 'Другая письменная задача', '', 2, "
+                "NULL, '', '', '', '', '', '', ?) RETURNING id",
+                (WRITTEN_TARGET_PROBLEM_PUBLIC_ID,),
+            ).fetchone()["id"]
+        )
+        connection.execute(
+            "INSERT INTO content_problem_matches "
+            "(content_revision_id, source_ordinal, source_item, problem_id, "
+            "decision, resolved_at, diagnostics_json, created_at) VALUES "
+            "(?, 6, '6', ?, 'manual_match', ?, '[]', ?)",
+            (revision_id, written_target_problem_id, now, now),
+        )
+        written_target_problem_revision_id = int(
+            connection.execute(
+                "INSERT INTO problem_revisions "
+                "(problem_id, content_revision_id, source_ordinal, source_item, "
+                "display_number, title, normalized_title, problem_type, "
+                "answer_type, answer_config_json, attempt_policy_json, "
+                "config_version, created_at) VALUES "
+                "(?, ?, 6, '6', '6', 'Другая письменная задача', "
+                "'другая письменная задача', 2, NULL, '{}', '{}', 1, ?) "
+                "RETURNING id",
+                (written_target_problem_id, revision_id, now),
+            ).fetchone()["id"]
+        )
         connection.execute(
             "INSERT INTO lesson_publications "
             "(public_id, group_lesson_id, kind, revision_id, state, published_at, "
@@ -466,20 +520,26 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
         return (
             student_account_id,
             other_account_id,
+            staff_account_id,
             problem_id,
             problem_revision_id,
             written_problem_id,
             written_problem_revision_id,
+            written_target_problem_id,
+            written_target_problem_revision_id,
             window_id,
         )
 
     (
         account_id,
         other_account_id,
+        staff_account_id,
         problem_id,
         problem_revision_id,
         written_problem_id,
         written_problem_revision_id,
+        written_target_problem_id,
+        written_target_problem_revision_id,
         window_id,
     ) = factory.run_write(seed)
     return SubmissionFixture(
@@ -489,10 +549,13 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
         clock=clock,
         student_account_id=account_id,
         other_account_id=other_account_id,
+        staff_account_id=staff_account_id,
         problem_id=problem_id,
         problem_revision_id=problem_revision_id,
         written_problem_id=written_problem_id,
         written_problem_revision_id=written_problem_revision_id,
+        written_target_problem_id=written_target_problem_id,
+        written_target_problem_revision_id=written_target_problem_revision_id,
         window_id=window_id,
     )
 
@@ -2460,3 +2523,286 @@ async def test_written_entry_created_after_cutoff_cannot_be_submitted(
 
     assert rejected.value.code == "submission_deadline_passed"
     assert rejected.value.details == {"submissionClosesAt": timestamp(cutoff)}
+
+
+async def test_staff_material_reassignment_is_append_only_and_projected(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text="Решение ошибочно отправлено сюда.")
+    )
+    with_photo = await add_written_attachment(
+        fixture,
+        entry_public_id=draft.entry.public_id,
+        entry_version=draft.entry.version,
+        thread_version=draft.thread_version,
+        ordinal=0,
+        suffix="7",
+    )
+    submitted = await fixture.written_repository.submit_entry(
+        SubmitWrittenEntryCommand(
+            account_id=fixture.student_account_id,
+            entry_public_id=draft.entry.public_id,
+            expected_entry_version=with_photo.entry.version,
+            expected_thread_version=with_photo.thread_version,
+            attachment_public_ids=(with_photo.entry.attachments[0].public_id,),
+            idempotency_key="written-reassignment-submit-key-1",
+        )
+    )
+    items = (
+        WrittenMaterialItemRef(
+            entry_public_id=draft.entry.public_id,
+            item_kind="entry_text",
+        ),
+        WrittenMaterialItemRef(
+            entry_public_id=draft.entry.public_id,
+            item_kind="attachment",
+            attachment_public_id=with_photo.entry.attachments[0].public_id,
+        ),
+    )
+    preview_command = PreviewWrittenMaterialReassignmentCommand(
+        source_thread_public_id=draft.thread_public_id,
+        target_problem_public_id=WRITTEN_TARGET_PROBLEM_PUBLIC_ID,
+        items=items,
+    )
+    preview = await fixture.written_repository.preview_material_reassignment(
+        preview_command
+    )
+    assert preview.source_thread_version == submitted.thread_version
+    assert preview.target_thread_public_id is None
+    assert preview.target_thread_version is None
+    assert preview.post_review is False
+    assert [item.reference for item in preview.items] == list(items)
+    assert preview.items[0].text == "Решение ошибочно отправлено сюда."
+    assert preview.items[1].attachment is not None
+
+    command = ReassignWrittenMaterialCommand(
+        staff_account_id=fixture.staff_account_id,
+        actor_user_id=ADMIN_USER_ID,
+        source_thread_public_id=draft.thread_public_id,
+        target_problem_public_id=WRITTEN_TARGET_PROBLEM_PUBLIC_ID,
+        expected_source_thread_version=preview.source_thread_version,
+        expected_target_thread_version=None,
+        items=items,
+        reason="Школьник выбрал соседнюю задачу.",
+        idempotency_key="written-reassignment-key-1",
+    )
+    receipt = await fixture.written_repository.reassign_material(command)
+    replay = await fixture.written_repository.reassign_material(command)
+
+    assert replay == receipt
+    assert replay.replayed is True
+    assert receipt.source_thread_status == "closed"
+    assert receipt.target_thread_version == 1
+    assert receipt.owner_account_public_ids == ("account-submission-student",)
+
+    source = await fixture.written_repository.get_thread(
+        account_id=fixture.student_account_id,
+        problem_public_id=WRITTEN_PROBLEM_PUBLIC_ID,
+    )
+    target = await fixture.written_repository.get_thread(
+        account_id=fixture.student_account_id,
+        problem_public_id=WRITTEN_TARGET_PROBLEM_PUBLIC_ID,
+    )
+    assert source is not None and source.status == "closed" and source.entries == ()
+    assert target is not None and target.status == "awaiting_review"
+    assert len(target.entries) == 1
+    projected = target.entries[0]
+    assert projected.public_id == draft.entry.public_id
+    assert projected.text == "Решение ошибочно отправлено сюда."
+    assert [item.public_id for item in projected.attachments] == [
+        with_photo.entry.attachments[0].public_id
+    ]
+    assert projected.projection is not None
+    assert projected.projection.source_problem_public_id == WRITTEN_PROBLEM_PUBLIC_ID
+    assert (
+        projected.projection.target_problem_public_id
+        == WRITTEN_TARGET_PROBLEM_PUBLIC_ID
+    )
+
+    stored = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT id, state, thread_id FROM submission_entries WHERE public_id = ?",
+                (draft.entry.public_id,),
+            ).fetchone(),
+            connection.execute(
+                "SELECT upload_status, entry_id FROM submission_attachments "
+                "WHERE public_id = ?",
+                (with_photo.entry.attachments[0].public_id,),
+            ).fetchone(),
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_material_reassignments"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_material_reassignment_items"
+            ).fetchone()["n"],
+        )
+    )
+    assert stored[0]["state"] == "submitted"
+    assert stored[1]["upload_status"] == "stored"
+    assert stored[1]["entry_id"] == stored[0]["id"]
+    assert stored[2:] == (1, 2)
+
+    with pytest.raises(WrittenIdempotencyPayloadMismatch):
+        await fixture.written_repository.reassign_material(
+            ReassignWrittenMaterialCommand(
+                staff_account_id=fixture.staff_account_id,
+                actor_user_id=ADMIN_USER_ID,
+                source_thread_public_id=draft.thread_public_id,
+                target_problem_public_id=WRITTEN_TARGET_PROBLEM_PUBLIC_ID,
+                expected_source_thread_version=preview.source_thread_version,
+                expected_target_thread_version=None,
+                items=items,
+                reason="Другая причина.",
+                idempotency_key="written-reassignment-key-1",
+            )
+        )
+
+
+async def test_staff_material_reassignment_conflict_has_no_projection(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text="Материал для конфликта.")
+    )
+    submitted = await fixture.written_repository.submit_entry(
+        submit_written_entry_command(
+            fixture,
+            entry_public_id=draft.entry.public_id,
+            thread_version=draft.thread_version,
+        )
+    )
+    item = WrittenMaterialItemRef(
+        entry_public_id=draft.entry.public_id,
+        item_kind="entry_text",
+    )
+
+    with pytest.raises(WrittenSubmissionRejected) as rejected:
+        await fixture.written_repository.reassign_material(
+            ReassignWrittenMaterialCommand(
+                staff_account_id=fixture.staff_account_id,
+                actor_user_id=ADMIN_USER_ID,
+                source_thread_public_id=draft.thread_public_id,
+                target_problem_public_id=WRITTEN_TARGET_PROBLEM_PUBLIC_ID,
+                expected_source_thread_version=submitted.thread_version + 1,
+                expected_target_thread_version=None,
+                items=(item,),
+                reason=None,
+                idempotency_key="written-reassignment-conflict-key-1",
+            )
+        )
+    assert rejected.value.code == "written_material_version_conflict"
+    assert fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_material_reassignments"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT count(*) AS n FROM submission_threads"
+            ).fetchone()["n"],
+            connection.execute(
+                "SELECT state FROM idempotency_records "
+                "WHERE operation = 'written-material:reassign'"
+            ).fetchone()["state"],
+        )
+    ) == (0, 1, "failed")
+
+
+async def test_staff_material_reassignment_after_review_keeps_verdict_evidence(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text="Проверенное решение не переписывается.")
+    )
+    submitted = await fixture.written_repository.submit_entry(
+        submit_written_entry_command(
+            fixture,
+            entry_public_id=draft.entry.public_id,
+            thread_version=draft.thread_version,
+        )
+    )
+    reviewed_at = timestamp(NOW + timedelta(minutes=1))
+
+    def finish_review(connection):
+        result_id = int(
+            connection.execute(
+                "INSERT INTO results "
+                "(student_id, problem_id, group_id, lesson, teacher_id, ts, "
+                "verdict, res_type) VALUES (?, ?, 'submission-a', 41, ?, ?, 18, 2) "
+                "RETURNING id",
+                (
+                    STUDENT_USER_ID,
+                    fixture.written_problem_id,
+                    ADMIN_USER_ID,
+                    reviewed_at,
+                ),
+            ).fetchone()["id"]
+        )
+        connection.execute(
+            "UPDATE submission_entries SET state = 'locked', locked_at = ?, "
+            "version = version + 1 WHERE public_id = ?",
+            (reviewed_at, draft.entry.public_id),
+        )
+        connection.execute(
+            "UPDATE submission_threads SET status = 'accepted', latest_result_id = ?, "
+            "latest_entry_at = ?, updated_at = ?, version = version + 1 "
+            "WHERE public_id = ?",
+            (result_id, reviewed_at, reviewed_at, draft.thread_public_id),
+        )
+        return result_id
+
+    result_id = fixture.factory.run_write(finish_review)
+    fixture.clock.value = NOW + timedelta(minutes=2)
+    item = WrittenMaterialItemRef(
+        entry_public_id=draft.entry.public_id,
+        item_kind="entry_text",
+    )
+    preview = await fixture.written_repository.preview_material_reassignment(
+        PreviewWrittenMaterialReassignmentCommand(
+            source_thread_public_id=draft.thread_public_id,
+            target_problem_public_id=WRITTEN_TARGET_PROBLEM_PUBLIC_ID,
+            items=(item,),
+        )
+    )
+    assert preview.post_review is True
+    assert preview.items[0].locked is True
+    assert preview.source_thread_status == "accepted"
+    assert preview.source_thread_version == submitted.thread_version + 1
+
+    receipt = await fixture.written_repository.reassign_material(
+        ReassignWrittenMaterialCommand(
+            staff_account_id=fixture.staff_account_id,
+            actor_user_id=ADMIN_USER_ID,
+            source_thread_public_id=draft.thread_public_id,
+            target_problem_public_id=WRITTEN_TARGET_PROBLEM_PUBLIC_ID,
+            expected_source_thread_version=preview.source_thread_version,
+            expected_target_thread_version=None,
+            items=(item,),
+            reason="Ошибка привязки обнаружена после проверки.",
+            idempotency_key="written-reassignment-after-review-key-1",
+        )
+    )
+    assert receipt.source_thread_status == "accepted"
+    source_row, entry_row, result_row = fixture.factory.run_read(
+        lambda connection: (
+            connection.execute(
+                "SELECT status, latest_result_id FROM submission_threads "
+                "WHERE public_id = ?",
+                (draft.thread_public_id,),
+            ).fetchone(),
+            connection.execute(
+                "SELECT state, locked_at FROM submission_entries WHERE public_id = ?",
+                (draft.entry.public_id,),
+            ).fetchone(),
+            connection.execute(
+                "SELECT verdict, problem_id FROM results WHERE id = ?", (result_id,)
+            ).fetchone(),
+        )
+    )
+    assert source_row == {"status": "accepted", "latest_result_id": result_id}
+    assert entry_row == {"state": "locked", "locked_at": reviewed_at}
+    assert result_row == {"verdict": 18, "problem_id": fixture.written_problem_id}

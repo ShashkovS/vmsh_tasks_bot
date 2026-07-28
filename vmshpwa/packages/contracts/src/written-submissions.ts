@@ -36,6 +36,35 @@ export const writtenAttachmentSchema = z
   .strict()
 export type WrittenAttachment = z.infer<typeof writtenAttachmentSchema>
 
+export const writtenMaterialProjectionSchema = z
+  .object({
+    kind: z.literal('staff_reassignment'),
+    reassignmentIds: z.array(publicIdSchema).min(1).max(100),
+    sourceThreadId: publicIdSchema,
+    sourceProblemId: publicIdSchema,
+    targetThreadId: publicIdSchema,
+    targetProblemId: publicIdSchema,
+    movedAt: z.iso.datetime(),
+  })
+  .strict()
+  .superRefine((projection, context) => {
+    if (projection.sourceThreadId === projection.targetThreadId) {
+      context.addIssue({
+        code: 'custom',
+        message: 'A reassignment must change the projected thread',
+        path: ['targetThreadId'],
+      })
+    }
+    if (new Set(projection.reassignmentIds).size !== projection.reassignmentIds.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Reassignment IDs must be unique',
+        path: ['reassignmentIds'],
+      })
+    }
+  })
+export type WrittenMaterialProjection = z.infer<typeof writtenMaterialProjectionSchema>
+
 export const writtenEntrySchema = z
   .object({
     entryId: publicIdSchema,
@@ -48,6 +77,7 @@ export const writtenEntrySchema = z
     clientCreatedAt: z.iso.datetime().nullable(),
     serverReceivedAt: z.iso.datetime(),
     attachments: z.array(writtenAttachmentSchema).max(10),
+    projection: writtenMaterialProjectionSchema.optional(),
   })
   .strict()
   .superRefine((entry, context) => {
@@ -320,6 +350,178 @@ export const replaceWrittenEntryResponseSchema = z
     }
   })
 export type ReplaceWrittenEntryResponse = z.infer<typeof replaceWrittenEntryResponseSchema>
+
+export const writtenMaterialItemRefSchema = z
+  .object({
+    entryId: publicIdSchema,
+    itemKind: z.enum(['entry_text', 'attachment']),
+    attachmentId: publicIdSchema.nullable(),
+  })
+  .strict()
+  .superRefine((item, context) => {
+    const expectedAttachment = item.itemKind === 'attachment'
+    if (expectedAttachment !== (item.attachmentId !== null)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Only attachment items name an attachment',
+        path: ['attachmentId'],
+      })
+    }
+  })
+export type WrittenMaterialItemRef = z.infer<typeof writtenMaterialItemRefSchema>
+
+const writtenMaterialItemListSchema = z
+  .array(writtenMaterialItemRefSchema)
+  .min(1)
+  .max(100)
+  .superRefine((items, context) => {
+    const keys = items.map(
+      (item) => `${item.entryId}\u0000${item.itemKind}\u0000${item.attachmentId ?? ''}`,
+    )
+    if (new Set(keys).size !== keys.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'A material item cannot be selected twice',
+      })
+    }
+  })
+
+export const previewWrittenMaterialReassignmentRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    sourceThreadId: publicIdSchema,
+    targetProblemId: publicIdSchema,
+    items: writtenMaterialItemListSchema,
+  })
+  .strict()
+export type PreviewWrittenMaterialReassignmentRequest = z.infer<
+  typeof previewWrittenMaterialReassignmentRequestSchema
+>
+
+export const writtenMaterialScopeSchema = z
+  .object({
+    courseId: publicIdSchema,
+    groupId: publicIdSchema,
+    groupLessonId: publicIdSchema,
+  })
+  .strict()
+
+const writtenMaterialPreviewItemSchema = writtenMaterialItemRefSchema
+  .safeExtend({
+    entryState: z.enum(['submitted', 'locked']),
+    text: z.string().max(100_000).nullable(),
+    attachment: writtenAttachmentSchema.nullable(),
+    locked: z.boolean(),
+  })
+  .superRefine((item, context) => {
+    if (
+      (item.itemKind === 'entry_text' && (item.text === null || item.attachment !== null)) ||
+      (item.itemKind === 'attachment' && (item.text !== null || item.attachment === null))
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Preview content must match the selected item kind',
+      })
+    }
+  })
+
+const writtenMaterialSourcePreviewSchema = z
+  .object({
+    threadId: publicIdSchema,
+    problemId: publicIdSchema,
+    threadStatus: z.enum(['open', 'awaiting_review', 'needs_work', 'accepted', 'closed']),
+    threadVersion: z.number().int().positive(),
+    scope: writtenMaterialScopeSchema,
+  })
+  .strict()
+
+const writtenMaterialTargetPreviewSchema = z
+  .object({
+    threadId: publicIdSchema.nullable(),
+    problemId: publicIdSchema,
+    threadVersion: z.number().int().positive().nullable(),
+    scope: writtenMaterialScopeSchema,
+  })
+  .strict()
+  .superRefine((target, context) => {
+    if ((target.threadId === null) !== (target.threadVersion === null)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Target thread identity and version must appear together',
+      })
+    }
+  })
+
+export const previewWrittenMaterialReassignmentResponseSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    studentId: publicIdSchema,
+    source: writtenMaterialSourcePreviewSchema,
+    target: writtenMaterialTargetPreviewSchema,
+    items: z.array(writtenMaterialPreviewItemSchema).min(1).max(100),
+    impact: z
+      .object({
+        postReview: z.boolean(),
+        sourceEvidenceUnchanged: z.literal(true),
+        sourceVerdictUnchanged: z.literal(true),
+        targetRequiresReview: z.literal(true),
+        studentLabel: z.literal('Перенесено преподавателем'),
+      })
+      .strict(),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+export type PreviewWrittenMaterialReassignmentResponse = z.infer<
+  typeof previewWrittenMaterialReassignmentResponseSchema
+>
+
+export const reassignWrittenMaterialRequestSchema = z
+  .object({
+    ...previewWrittenMaterialReassignmentRequestSchema.shape,
+    idempotencyKey: z.uuid(),
+    expectedSourceThreadVersion: z.number().int().positive(),
+    expectedTargetThreadVersion: z.number().int().positive().nullable(),
+    reason: z.string().trim().min(1).max(2_000).nullable(),
+  })
+  .strict()
+export type ReassignWrittenMaterialRequest = z.infer<typeof reassignWrittenMaterialRequestSchema>
+
+const writtenMaterialMutationThreadSchema = z
+  .object({
+    threadId: publicIdSchema,
+    problemId: publicIdSchema,
+    threadStatus: z.enum(['awaiting_review', 'closed', 'needs_work', 'accepted']),
+    threadVersion: z.number().int().positive(),
+  })
+  .strict()
+
+export const reassignWrittenMaterialResponseSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    reassignmentId: publicIdSchema,
+    source: writtenMaterialMutationThreadSchema,
+    target: writtenMaterialMutationThreadSchema.extend({
+      threadStatus: z.literal('awaiting_review'),
+    }),
+    items: writtenMaterialItemListSchema,
+    movedAt: z.iso.datetime(),
+    studentLabel: z.literal('Перенесено преподавателем'),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((response, context) => {
+    if (
+      response.source.threadId === response.target.threadId ||
+      response.source.problemId === response.target.problemId
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'A reassignment must target another concrete task',
+        path: ['target'],
+      })
+    }
+  })
+export type ReassignWrittenMaterialResponse = z.infer<typeof reassignWrittenMaterialResponseSchema>
 
 export const writtenSubmissionCompletionResponseSchema = z.union([
   submitWrittenEntryResponseSchema,

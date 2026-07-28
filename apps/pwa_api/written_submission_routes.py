@@ -7,6 +7,7 @@ response mirrors ``packages/contracts/src/written-submissions.ts``.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import hashlib
 import logging
@@ -26,12 +27,16 @@ from db_methods.pwa.written_submissions import (
     CreateWrittenEntryCommand,
     DeleteWrittenAttachmentCommand,
     ProblemRevisionRef,
+    PreviewWrittenMaterialReassignmentCommand,
     PwaWrittenSubmissionRepository,
+    ReassignWrittenMaterialCommand,
     ReorderWrittenAttachmentsCommand,
     ReplaceWrittenEntryCommand,
     SubmitWrittenEntryCommand,
     WrittenSubmissionRejected,
     WrittenSubmissionRepositoryError,
+    WrittenMaterialItemRef,
+    WrittenMaterialReassignmentPreview,
 )
 from helpers.object_storage import ObjectStorageOperationError
 from helpers.pwa.content import AssetConversionError
@@ -39,6 +44,12 @@ from helpers.pwa.written_attachments import (
     MAX_WRITTEN_SOURCE_BYTES,
     WrittenAttachmentService,
     WrittenAttachmentServiceError,
+)
+from helpers.pwa.permissions import (
+    AccessForbiddenError,
+    AuthenticationRequiredError,
+    Capability,
+    require_access,
 )
 from models.pwa.auth import AuthAudience
 
@@ -103,6 +114,22 @@ _DELETE_ATTACHMENT_FIELDS = frozenset(
         "expectedThreadVersion",
     }
 )
+_REASSIGNMENT_PREVIEW_FIELDS = frozenset(
+    {"schemaVersion", "sourceThreadId", "targetProblemId", "items"}
+)
+_REASSIGNMENT_COMMIT_FIELDS = frozenset(
+    {
+        "schemaVersion",
+        "idempotencyKey",
+        "sourceThreadId",
+        "targetProblemId",
+        "expectedSourceThreadVersion",
+        "expectedTargetThreadVersion",
+        "items",
+        "reason",
+    }
+)
+_REASSIGNMENT_ITEM_FIELDS = frozenset({"entryId", "itemKind", "attachmentId"})
 
 PWA_WRITTEN_SUBMISSION_REPOSITORY = web.AppKey(
     "pwa_written_submission_repository", PwaWrittenSubmissionRepository
@@ -320,6 +347,135 @@ def _attachment_ids(value: object) -> tuple[str, ...]:
             details={"field": "attachmentIds"},
         )
     return tuple(value)
+
+
+def _payload_public_id(value: object, *, field: str) -> str:
+    if not isinstance(value, str) or _PUBLIC_ID.fullmatch(value) is None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте выбранную переписку и задачу",
+            details={"field": field},
+        )
+    return value
+
+
+def _material_items(value: object) -> tuple[WrittenMaterialItemRef, ...]:
+    if not isinstance(value, list) or not 1 <= len(value) <= 100:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Выберите от одного до ста сообщений или фотографий",
+            details={"field": "items"},
+        )
+    items: list[WrittenMaterialItemRef] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, dict) or set(item) != _REASSIGNMENT_ITEM_FIELDS:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Проверьте выбранные сообщения и фотографии",
+                details={"field": f"items[{index}]"},
+            )
+        try:
+            items.append(
+                WrittenMaterialItemRef(
+                    entry_public_id=_payload_public_id(
+                        item["entryId"], field=f"items[{index}].entryId"
+                    ),
+                    item_kind=str(item["itemKind"]),
+                    attachment_public_id=(
+                        None
+                        if item["attachmentId"] is None
+                        else _payload_public_id(
+                            item["attachmentId"],
+                            field=f"items[{index}].attachmentId",
+                        )
+                    ),
+                )
+            )
+        except ValueError as error:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Проверьте выбранные сообщения и фотографии",
+                details={"field": f"items[{index}]"},
+            ) from error
+    if len(
+        {
+            (item.entry_public_id, item.item_kind, item.attachment_public_id)
+            for item in items
+        }
+    ) != len(items):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Один материал нельзя выбрать дважды",
+            details={"field": "items"},
+        )
+    return tuple(items)
+
+
+def _optional_positive_version(value: object, *, field: str) -> int | None:
+    if value is None:
+        return None
+    return _positive_version(value, field=field)
+
+
+def _reassignment_reason(value: object) -> str | None:
+    if value is None:
+        return None
+    if (
+        not isinstance(value, str)
+        or value != value.strip()
+        or not 1 <= len(value) <= 2_000
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте причину переноса",
+            details={"field": "reason"},
+        )
+    return value
+
+
+def _staff_reassignment_identity(request: web.Request) -> tuple[int, int]:
+    authenticated = authenticated_session(request)
+    principal = authenticated.principal
+    # A scoped teacher cannot pass a bare ``require_access`` check. Resolve the
+    # trusted source/target scopes first, then authorize both below.
+    if principal.audience is not AuthAudience.STAFF or not principal.has_capability(
+        Capability.REVIEW_WRITE
+    ):
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для переноса материала",
+        )
+    if principal.linked_user_id is None:  # pragma: no cover - principal invariant
+        raise WrittenSubmissionRepositoryError("staff principal has no linked actor")
+    return authenticated.current.session.account_id, principal.linked_user_id
+
+
+def _authorize_reassignment_scope(
+    request: web.Request, preview: WrittenMaterialReassignmentPreview
+) -> None:
+    principal = authenticated_session(request).principal
+    try:
+        for scope in (preview.source_scope, preview.target_scope):
+            require_access(
+                principal,
+                expected_audience=AuthAudience.STAFF,
+                capability=Capability.REVIEW_WRITE,
+                course_public_id=scope.course_public_id,
+                group_public_id=scope.group_public_id,
+            )
+    except (AuthenticationRequiredError, AccessForbiddenError) as error:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для исходной или целевой задачи",
+        ) from error
 
 
 async def _read_part_bytes(part, *, limit: int) -> bytes:
@@ -851,6 +1007,112 @@ async def replace_written_entry(request: web.Request) -> web.Response:
             account_public_id=account_public_id,
             problem_public_id=receipt.problem_public_id,
             reason="written-entry-replaced",
+        )
+    response = receipt.response_payload()
+    response["requestId"] = request["request_id"]
+    return web.json_response(response)
+
+
+async def _invalidate_reassigned_material(
+    request: web.Request,
+    *,
+    account_public_ids: tuple[str, ...],
+    source_problem_public_id: str,
+    target_problem_public_id: str,
+) -> None:
+    semaphore = asyncio.Semaphore(16)
+
+    async def invalidate(account_public_id: str, problem_public_id: str) -> None:
+        async with semaphore:
+            await _invalidate_after_commit(
+                request,
+                account_public_id=account_public_id,
+                problem_public_id=problem_public_id,
+                reason="written-material-reassigned",
+            )
+
+    await asyncio.gather(
+        *(
+            invalidate(account_public_id, problem_public_id)
+            for account_public_id in account_public_ids
+            for problem_public_id in (
+                source_problem_public_id,
+                target_problem_public_id,
+            )
+        )
+    )
+
+
+@written_submission_routes.post(
+    "/staff/api/v1/submission-material-reassignments/preview"
+)
+@_translate_repository_errors
+async def preview_written_material_reassignment(
+    request: web.Request,
+) -> web.Response:
+    _staff_reassignment_identity(request)
+    payload = await _json_object(request, required_fields=_REASSIGNMENT_PREVIEW_FIELDS)
+    _schema_version(payload["schemaVersion"])
+    command = PreviewWrittenMaterialReassignmentCommand(
+        source_thread_public_id=_payload_public_id(
+            payload["sourceThreadId"], field="sourceThreadId"
+        ),
+        target_problem_public_id=_payload_public_id(
+            payload["targetProblemId"], field="targetProblemId"
+        ),
+        items=_material_items(payload["items"]),
+    )
+    preview = await _repository(request).preview_material_reassignment(command)
+    _authorize_reassignment_scope(request, preview)
+    response = preview.response_payload()
+    response["requestId"] = request["request_id"]
+    return web.json_response(response)
+
+
+@written_submission_routes.post("/staff/api/v1/submission-material-reassignments")
+@_translate_repository_errors
+async def reassign_written_material(request: web.Request) -> web.Response:
+    staff_account_id, actor_user_id = _staff_reassignment_identity(request)
+    payload = await _json_object(request, required_fields=_REASSIGNMENT_COMMIT_FIELDS)
+    _schema_version(payload["schemaVersion"])
+    preview_command = PreviewWrittenMaterialReassignmentCommand(
+        source_thread_public_id=_payload_public_id(
+            payload["sourceThreadId"], field="sourceThreadId"
+        ),
+        target_problem_public_id=_payload_public_id(
+            payload["targetProblemId"], field="targetProblemId"
+        ),
+        items=_material_items(payload["items"]),
+    )
+    preview = await _repository(request).resolve_material_reassignment_scope(
+        preview_command
+    )
+    _authorize_reassignment_scope(request, preview)
+    receipt = await _repository(request).reassign_material(
+        ReassignWrittenMaterialCommand(
+            staff_account_id=staff_account_id,
+            actor_user_id=actor_user_id,
+            source_thread_public_id=preview_command.source_thread_public_id,
+            target_problem_public_id=preview_command.target_problem_public_id,
+            expected_source_thread_version=_positive_version(
+                payload["expectedSourceThreadVersion"],
+                field="expectedSourceThreadVersion",
+            ),
+            expected_target_thread_version=_optional_positive_version(
+                payload["expectedTargetThreadVersion"],
+                field="expectedTargetThreadVersion",
+            ),
+            items=preview_command.items,
+            reason=_reassignment_reason(payload["reason"]),
+            idempotency_key=_canonical_uuid(payload["idempotencyKey"]),
+        )
+    )
+    if not receipt.replayed:
+        await _invalidate_reassigned_material(
+            request,
+            account_public_ids=receipt.owner_account_public_ids,
+            source_problem_public_id=receipt.source_problem_public_id,
+            target_problem_public_id=receipt.target_problem_public_id,
         )
     response = receipt.response_payload()
     response["requestId"] = request["request_id"]
