@@ -31,6 +31,7 @@ from db_methods.pwa.reviews import (
     ReviewStaffScope,
     ReviewThreadChanged,
 )
+from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.consts import VERDICT
 
 
@@ -623,6 +624,63 @@ async def test_complete_persists_annotation_manifest_atomically_and_immutably(
 
 
 @pytest.mark.asyncio
+async def test_student_thread_projects_review_and_full_annotation_without_internal_reaction(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    await fixture.repository.complete(
+        _complete_command(
+            lease,
+            annotations=(_annotation_manifest(),),
+            internal_reaction_id=100,
+        )
+    )
+
+    now = _timestamp(fixture.clock.value)
+    account_id = fixture.factory.run_write(
+        lambda connection: int(
+            connection.execute(
+                "INSERT INTO auth_accounts "
+                "(public_id, audience, username, username_normalized, "
+                "username_algorithm_version, provisioning_source, "
+                "credential_kind, credential_hash, "
+                "linked_user_id, status, created_at, updated_at) VALUES "
+                "('review-student-account', 'student', 'review-student', "
+                "'review-student', 1, 'synthetic-test', 'telegram_token', "
+                "'test-only-hash', ?, 'active', ?, ?) RETURNING id",
+                (STUDENT_ID, now, now),
+            ).fetchone()["id"]
+        )
+    )
+    written = PwaWrittenSubmissionRepository(fixture.factory, clock=fixture.clock)
+
+    first = await written.get_thread(
+        account_id=account_id, problem_public_id=lease.items[0].problem_public_id
+    )
+    second = await written.get_thread(
+        account_id=account_id, problem_public_id=lease.items[1].problem_public_id
+    )
+
+    assert first is not None and second is not None
+    first_review = first.payload()["reviews"][0]
+    second_review = second.payload()["reviews"][0]
+    assert first_review["reviewId"] == "review-completed-test"
+    assert first_review["targetProblemId"] == lease.items[1].problem_public_id
+    assert first_review["reviewerName"] == "Первая Мария"
+    assert first_review["comment"] == "Точная формулировка проверки."
+    assert first_review["evidenceEntryIds"] == ["review-entry-test-1"]
+    assert first_review["annotations"] == [_annotation_manifest().payload()]
+    assert "internalReaction" not in first_review
+    assert second_review["evidenceEntryIds"] == ["review-entry-test-2"]
+    assert second_review["annotations"] == []
+
+
+@pytest.mark.asyncio
 async def test_complete_rejects_annotation_outside_current_evidence_without_writes(
     review_queue_fixture,
 ):
@@ -798,9 +856,7 @@ async def test_complete_persists_internal_reaction_atomically_and_replays_it(
     )
     assert stored == {
         "state": {"reaction_id": 100, "version": 1, "deleted_at": None},
-        "events": [
-            {"event_kind": "selected", "reaction_id": 100, "state_version": 1}
-        ],
+        "events": [{"event_kind": "selected", "reaction_id": 100, "state_version": 1}],
     }
     replay = await fixture.repository.complete(command)
     assert replay.replayed is True
@@ -891,11 +947,14 @@ async def test_internal_reaction_fails_closed_on_type_owner_version_and_window(
         await fixture.repository.complete(
             _complete_command(lease, internal_reaction_id=0)
         )
-    assert fixture.factory.run_read(
-        lambda connection: connection.execute(
-            "SELECT count(*) AS count FROM submission_reviews"
-        ).fetchone()["count"]
-    ) == 0
+    assert (
+        fixture.factory.run_read(
+            lambda connection: connection.execute(
+                "SELECT count(*) AS count FROM submission_reviews"
+            ).fetchone()["count"]
+        )
+        == 0
+    )
 
     receipt = await fixture.repository.complete(_complete_command(lease))
     with pytest.raises(ReviewInternalReactionInvalid, match="written Teacher"):

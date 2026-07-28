@@ -1,3 +1,4 @@
+import { writtenThreadResponseSchema } from '../packages/contracts/src/written-submissions'
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
 import { expect, test } from './fixtures'
 
@@ -80,4 +81,30 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   ])
   await expect(page).toHaveURL(/\/staff\/review\/?$/)
   await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(0)
+
+  await loginThroughUi(page, AUTH_PERSONAS.student, '/student/')
+  const studentProjection = await page.evaluate(async (problemId) => {
+    const response = await fetch(`/student/api/v1/problems/${problemId}/thread`)
+    const body: unknown = await response.json()
+    return { status: response.status, body }
+  }, `e2e-review-problem-${project}`)
+  expect(studentProjection.status).toBe(200)
+  const studentThread = writtenThreadResponseSchema.parse(studentProjection.body)
+  expect(studentThread.thread?.reviews).toEqual([
+    expect.objectContaining({
+      verdict: 15,
+      comment: `Проверено в ${project}; переход обоснован.`,
+      source: 'staff',
+      evidenceEntryIds: [`e2e-review-student-entry-${project}`],
+      annotations: [
+        expect.objectContaining({
+          attachmentId: `e2e-review-attachment-${project}`,
+          schemaVersion: 1,
+          rotation: 90,
+          marks: [expect.objectContaining({ kind: 'rectangle' })],
+        }),
+      ],
+    }),
+  ])
+  expect(studentThread.thread?.reviews[0]).not.toHaveProperty('internalReaction')
 })

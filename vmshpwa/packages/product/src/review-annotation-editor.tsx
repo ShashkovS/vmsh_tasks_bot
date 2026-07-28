@@ -16,13 +16,7 @@ import {
   Undo2,
   X,
 } from 'lucide-react'
-import {
-  useId,
-  useRef,
-  useState,
-  type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
-} from 'react'
+import { useId, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 
 import {
   reviewAnnotationManifestSchema,
@@ -31,6 +25,8 @@ import {
   type ReviewAnnotationMark,
 } from '@vmsh/contracts'
 import { Button, Input, Label, cn } from '@vmsh/ui'
+
+import { ReviewAnnotationSurface } from './review-annotation-surface'
 
 /**
  * Normalized, non-destructive photo editor for development-plan Phase 6.
@@ -99,13 +95,6 @@ const colorOptions: Array<{
   { color: 'amber', label: 'Янтарный', className: 'bg-annotation-highlight' },
 ]
 
-const strokeForColor: Record<ReviewAnnotationColor, string> = {
-  red: 'var(--annotation-pen)',
-  blue: 'var(--annotation-comment)',
-  graphite: 'var(--foreground)',
-  amber: 'var(--annotation-highlight)',
-}
-
 function nextMarkId(): string {
   return `annotation-${crypto.randomUUID()}`
 }
@@ -135,10 +124,6 @@ function boxFromPoints(start: Point, end: Point) {
     width: Math.abs(start.x - end.x),
     height: Math.abs(start.y - end.y),
   }
-}
-
-function pathFromPoints(points: Point[]): string {
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
 }
 
 function rotate(rotation: Rotation, direction: -1 | 1): Rotation {
@@ -177,10 +162,8 @@ export function ReviewAnnotationEditor({
   const [gesture, setGesture] = useState<ActiveGesture | null>(null)
   const [pendingText, setPendingText] = useState<PendingText | null>(null)
   const [zoom, setZoom] = useState(1)
-  const [dimensions, setDimensions] = useState({ width: 4, height: 3 })
   const textInputRef = useRef<HTMLInputElement>(null)
-  const maskId = `annotation-mask-${useId().replaceAll(':', '')}`
-  const markerId = `annotation-arrow-${useId().replaceAll(':', '')}`
+  const textControlId = `annotation-text-${useId().replaceAll(':', '')}`
 
   const emit = (next: EditorDocument) => {
     if (next.marks.length === 0) {
@@ -283,14 +266,6 @@ export function ReviewAnnotationEditor({
     setPendingText(null)
   }
 
-  const canvasRatio =
-    document.rotation === 90 || document.rotation === 270
-      ? dimensions.height / dimensions.width
-      : dimensions.width / dimensions.height
-  const innerWidth =
-    document.rotation === 90 || document.rotation === 270
-      ? `${(dimensions.width / dimensions.height) * 100}%`
-      : '100%'
   const previewMark = gesture ? markFromGesture(gesture, color, 'annotation-preview') : null
   const visibleMarks = previewMark ? [...document.marks, previewMark] : document.marks
 
@@ -389,60 +364,24 @@ export function ReviewAnnotationEditor({
         </Button>
       </div>
 
-      <div
-        aria-label="Фотография с разметкой; область можно прокручивать после увеличения"
-        className="max-w-full overflow-auto rounded-md border border-paper-edge bg-surface-sunken p-2"
-        role="region"
-      >
-        <div
-          className="relative mx-auto origin-top-left bg-paper shadow-sm"
-          data-rotation={document.rotation}
-          data-testid="annotation-canvas"
-          data-zoom={zoom}
-          style={{ aspectRatio: canvasRatio, width: `${zoom * 100}%` }}
-        >
-          <div
-            className="absolute left-1/2 top-1/2 aspect-(--evidence-ratio) -translate-x-1/2 -translate-y-1/2"
-            style={
-              {
-                '--evidence-ratio': `${dimensions.width} / ${dimensions.height}`,
-                rotate: `${document.rotation}deg`,
-                width: innerWidth,
-              } as CSSProperties
-            }
-          >
-            <img
-              alt={imageAlt}
-              className="pointer-events-none absolute inset-0 size-full select-none object-contain"
-              draggable={false}
-              onLoad={(event) => {
-                const image = event.currentTarget
-                if (image.naturalWidth && image.naturalHeight) {
-                  setDimensions({ width: image.naturalWidth, height: image.naturalHeight })
-                }
-              }}
-              src={imageSource}
-            />
-            <svg
-              aria-label="Область разметки фотографии"
-              className="absolute inset-0 size-full touch-none"
-              onPointerCancel={finishGesture}
-              onPointerDown={beginGesture}
-              onPointerMove={moveGesture}
-              onPointerUp={finishGesture}
-              role="application"
-              tabIndex={disabled ? -1 : 0}
-              viewBox="0 0 1 1"
-            >
-              <AnnotationMarks
-                arrowMarkerId={markerId}
-                eraserMaskId={maskId}
-                marks={visibleMarks}
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
+      <ReviewAnnotationSurface
+        imageAlt={imageAlt}
+        imageSource={imageSource}
+        marks={visibleMarks}
+        overlayProps={{
+          'aria-label': 'Область разметки фотографии',
+          className: 'touch-none',
+          onPointerCancel: finishGesture,
+          onPointerDown: beginGesture,
+          onPointerMove: moveGesture,
+          onPointerUp: finishGesture,
+          role: 'application',
+          tabIndex: disabled ? -1 : 0,
+        }}
+        rotation={document.rotation}
+        testId="annotation-canvas"
+        zoom={zoom}
+      />
 
       <div className="flex flex-wrap items-center gap-1">
         <Button
@@ -489,9 +428,9 @@ export function ReviewAnnotationEditor({
           }}
         >
           <div className="min-w-0 flex-1 space-y-1">
-            <Label htmlFor={`${maskId}-text`}>Текст пометки</Label>
+            <Label htmlFor={textControlId}>Текст пометки</Label>
             <Input
-              id={`${maskId}-text`}
+              id={textControlId}
               maxLength={500}
               onChange={(event) =>
                 setPendingText((current) =>
@@ -559,122 +498,4 @@ function markFromGesture(
     kind: 'rectangle',
     data: { ...box, strokeWidth: 0.008, color },
   }
-}
-
-function AnnotationMarks({
-  arrowMarkerId,
-  eraserMaskId,
-  marks,
-}: {
-  arrowMarkerId: string
-  eraserMaskId: string
-  marks: ReviewAnnotationMark[]
-}) {
-  const erasers = marks.filter((mark) => mark.kind === 'eraser')
-  return (
-    <>
-      <defs>
-        <mask id={eraserMaskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1" height="1">
-          <rect fill="white" x="0" y="0" width="1" height="1" />
-          {erasers.map((mark) => (
-            <path
-              d={pathFromPoints(mark.data.points)}
-              fill="none"
-              key={mark.markId}
-              stroke="black"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={mark.data.width}
-            />
-          ))}
-        </mask>
-        <marker
-          id={arrowMarkerId}
-          markerHeight="4"
-          markerUnits="strokeWidth"
-          markerWidth="4"
-          orient="auto"
-          refX="3.5"
-          refY="2"
-          viewBox="0 0 4 4"
-        >
-          <path d="M 0 0 L 4 2 L 0 4 z" fill="context-stroke" />
-        </marker>
-      </defs>
-      <g mask={`url(#${eraserMaskId})`}>
-        {marks.map((mark) => {
-          if (mark.kind === 'eraser') return null
-          if (mark.kind === 'pencil') {
-            return (
-              <path
-                d={pathFromPoints(mark.data.points)}
-                fill="none"
-                key={mark.markId}
-                stroke={strokeForColor[mark.data.color]}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={mark.data.width}
-              />
-            )
-          }
-          if (mark.kind === 'arrow') {
-            return (
-              <line
-                key={mark.markId}
-                markerEnd={`url(#${arrowMarkerId})`}
-                stroke={strokeForColor[mark.data.color]}
-                strokeLinecap="round"
-                strokeWidth={mark.data.width}
-                x1={mark.data.start.x}
-                x2={mark.data.end.x}
-                y1={mark.data.start.y}
-                y2={mark.data.end.y}
-              />
-            )
-          }
-          if (mark.kind === 'rectangle') {
-            return (
-              <rect
-                fill="none"
-                height={mark.data.height}
-                key={mark.markId}
-                stroke={strokeForColor[mark.data.color]}
-                strokeWidth={mark.data.strokeWidth}
-                width={mark.data.width}
-                x={mark.data.x}
-                y={mark.data.y}
-              />
-            )
-          }
-          if (mark.kind === 'highlight') {
-            return (
-              <rect
-                fill="var(--annotation-highlight)"
-                fillOpacity="0.35"
-                height={mark.data.height}
-                key={mark.markId}
-                width={mark.data.width}
-                x={mark.data.x}
-                y={mark.data.y}
-              />
-            )
-          }
-          return (
-            <text
-              dominantBaseline="hanging"
-              fill={strokeForColor[mark.data.color]}
-              fontFamily="var(--font-sans)"
-              fontSize={mark.data.size}
-              fontWeight="600"
-              key={mark.markId}
-              x={mark.data.x}
-              y={mark.data.y}
-            >
-              {mark.data.text}
-            </text>
-          )
-        })}
-      </g>
-    </>
-  )
 }

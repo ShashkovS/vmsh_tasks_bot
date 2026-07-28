@@ -5,6 +5,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import { reviewAnnotationManifestSchema, type ReviewAnnotationManifest } from '@vmsh/contracts'
 
 import { ReviewAnnotationEditor } from './review-annotation-editor'
+import { ReviewAnnotationViewer } from './review-annotation-surface'
 
 const meta = {
   title: 'Product/Review annotation',
@@ -127,5 +128,30 @@ export const Editor: Story = {
     await expect(surface).toHaveAttribute('data-zoom', '1')
     await expect(surface).toHaveAttribute('data-rotation', '0')
     await expect(readout).toHaveTextContent('rotation=0; marks=2')
+  },
+}
+
+export const ReadOnlyStudentView: Story = {
+  render: () => (
+    <div className="mx-auto max-w-xl space-y-3">
+      <p className="text-small text-muted-foreground">
+        Исходная фотография сохранена без изменений. Пометки преподавателя показаны отдельным слоем.
+      </p>
+      <ReviewAnnotationViewer
+        imageAlt="Первая страница решения с пометками преподавателя"
+        imageSource={evidenceImage}
+        manifest={restoredManifest}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const surface = canvas.getByTestId('review-annotation-viewer-canvas')
+    await expect(surface).toHaveAttribute('data-rotation', '0')
+    await userEvent.click(canvas.getByRole('button', { name: 'Увеличить масштаб' }))
+    await expect(surface).toHaveAttribute('data-zoom', '1.5')
+    await expect(canvas.getAllByText('Проверьте этот переход')).toHaveLength(2)
+    await userEvent.click(canvas.getByRole('button', { name: 'Сбросить масштаб' }))
+    await expect(surface).toHaveAttribute('data-zoom', '1')
   },
 }

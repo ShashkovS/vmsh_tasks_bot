@@ -37,3 +37,24 @@ export const binaryVerdictScale = buildVerdictRegistry(['rejected', 'plus'])
 export function findVerdict(registry: VerdictView[], value: string): VerdictView | undefined {
   return registry.find((verdict) => verdict.value === value)
 }
+
+const writtenVerdictValueByLegacyCode: Record<number, string> = {
+  11: 'rejected',
+  12: 'minus-dot',
+  13: 'minus-plus',
+  14: 'half',
+  15: 'plus-minus',
+  16: 'plus-dot',
+  17: 'plus',
+}
+
+/** Maps the persisted legacy verdict code onto the canonical product registry. */
+export function writtenReviewVerdict(
+  code: number,
+  provenance: 'human' | 'ai' = 'human',
+): VerdictView {
+  const value = writtenVerdictValueByLegacyCode[code]
+  const verdict = value ? findVerdict(fullVerdictScale, value) : undefined
+  if (!verdict) throw new Error(`Unsupported written review verdict: ${code}`)
+  return { ...verdict, provenance }
+}

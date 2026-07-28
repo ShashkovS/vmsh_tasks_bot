@@ -147,20 +147,22 @@ describe('Phase-5 written-submission contracts', () => {
     }
     expect(staffWrittenAttachmentSchema.parse(staffAttachment)).toEqual(staffAttachment)
     expect(
-      previewWrittenMaterialReassignmentResponseSchema.parse({
-        ...previewResponse,
-        items: [
-          {
-            entryId: item.entryId,
-            itemKind: 'attachment',
-            attachmentId: staffAttachment.attachmentId,
-            entryState: 'submitted',
-            text: null,
-            attachment: staffAttachment,
-            locked: false,
-          },
-        ],
-      }).items.at(0)?.attachment?.mediaPath,
+      previewWrittenMaterialReassignmentResponseSchema
+        .parse({
+          ...previewResponse,
+          items: [
+            {
+              entryId: item.entryId,
+              itemKind: 'attachment',
+              attachmentId: staffAttachment.attachmentId,
+              entryState: 'submitted',
+              text: null,
+              attachment: staffAttachment,
+              locked: false,
+            },
+          ],
+        })
+        .items.at(0)?.attachment?.mediaPath,
     ).toBe(staffAttachment.mediaPath)
     expect(
       staffWrittenAttachmentSchema.safeParse(fixture.attachmentResponse.entry.attachments[0])
@@ -288,6 +290,67 @@ describe('Phase-5 written-submission contracts', () => {
         },
       }).success,
     ).toBe(false)
+  })
+
+  it('validates Student-visible reviews and keeps annotations on concrete evidence', () => {
+    const entry = fixture.submitResponse.entry
+    const annotation = {
+      attachmentId: entry.attachments[0]!.attachmentId,
+      schemaVersion: 1 as const,
+      rotation: 90 as const,
+      marks: [
+        {
+          markId: 'written-review-mark-one',
+          kind: 'rectangle' as const,
+          data: {
+            x: 0.1,
+            y: 0.2,
+            width: 0.3,
+            height: 0.2,
+            strokeWidth: 0.008,
+            color: 'red' as const,
+          },
+        },
+      ],
+    }
+    const response = {
+      ...fixture.threadResponse,
+      thread: {
+        ...fixture.threadResponse.thread,
+        entries: [entry],
+        reviews: [
+          {
+            reviewId: 'written-review-one',
+            targetProblemId: fixture.threadResponse.problemId,
+            verdict: 15,
+            commentEntryId: 'written-review-comment-one',
+            comment: 'Проверьте выделенный переход.',
+            reviewerName: 'Ирина Соколова',
+            source: 'staff' as const,
+            evidenceEntryIds: [entry.entryId],
+            annotations: [annotation],
+            completedAt: '2026-09-21T10:00:00.000000Z',
+          },
+        ],
+      },
+    }
+
+    expect(writtenThreadResponseSchema.parse(response)).toEqual(response)
+    expect(
+      writtenThreadResponseSchema.safeParse({
+        ...response,
+        thread: {
+          ...response.thread,
+          reviews: [
+            {
+              ...response.thread.reviews[0],
+              annotations: [{ ...annotation, attachmentId: 'foreign-attachment' }],
+            },
+          ],
+        },
+      }).success,
+    ).toBe(false)
+    expect('internalReaction' in response.thread.reviews[0]!).toBe(false)
   })
 
   it('scopes query keys by principal and problem', () => {

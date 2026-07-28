@@ -6,7 +6,12 @@ import {
   useAuthentication,
   useWrittenThreadQuery,
 } from '@vmsh/app-shell'
-import { ApiResponseError, type StudentProblemType } from '@vmsh/contracts'
+import {
+  ApiResponseError,
+  type StudentProblemType,
+  type WrittenReviewProjection,
+  type WrittenThread,
+} from '@vmsh/contracts'
 import {
   createWrittenSubmissionDraftStore,
   createWrittenSubmissionOutbox,
@@ -16,7 +21,13 @@ import {
   type WrittenDraftReplacementTarget,
   type WrittenSubmissionOutboxItem,
 } from '@vmsh/offline'
-import { SubmissionComposer, type AttachmentView } from '@vmsh/product'
+import {
+  ReviewAnnotationViewer,
+  SubmissionComposer,
+  VerdictPanel,
+  writtenReviewVerdict,
+  type AttachmentView,
+} from '@vmsh/product'
 import {
   Alert,
   AlertContent,
@@ -91,6 +102,53 @@ function usePhotoPreviewUrls(photos: ResolvedWrittenDraftPhoto[]): Map<string, s
     }
   }, [urls])
   return urls
+}
+
+function reviewDate(value: string): string {
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+function StudentReviewResult({
+  review,
+  thread,
+  latest,
+}: {
+  review: WrittenReviewProjection
+  thread: WrittenThread
+  latest: boolean
+}) {
+  const attachments = new Map(
+    thread.entries.flatMap((entry) =>
+      entry.attachments.map((attachment) => [attachment.attachmentId, attachment] as const),
+    ),
+  )
+  return (
+    <section className="space-y-3" aria-label={latest ? 'Последняя проверка' : 'Прошлая проверка'}>
+      <VerdictPanel
+        at={reviewDate(review.completedAt)}
+        author={review.reviewerName}
+        comment={review.comment}
+        verdict={writtenReviewVerdict(review.verdict, review.source === 'ai' ? 'ai' : 'human')}
+      />
+      {review.annotations.map((annotation, index) => {
+        const attachment = attachments.get(annotation.attachmentId)
+        if (!attachment) return null
+        return (
+          <ReviewAnnotationViewer
+            imageAlt={`Проверенная страница решения ${index + 1}`}
+            imageSource={attachment.mediaPath}
+            key={`${review.reviewId}:${annotation.attachmentId}`}
+            manifest={annotation}
+          />
+        )
+      })}
+    </section>
+  )
 }
 
 export function StudentWrittenSubmission({
@@ -459,8 +517,9 @@ export function StudentWrittenSubmission({
   ]
   const queued = queueItem !== null && ['queued', 'retrying', 'sending'].includes(queueItem.status)
   const totalBytes = photos.reduce((sum, photo) => sum + photo.byteSize, 0)
-  const threadStatus = threadQuery.data?.thread?.status ?? null
-  const replaceableEntry = [...(threadQuery.data?.thread?.entries ?? [])]
+  const thread = threadQuery.data?.thread ?? null
+  const threadStatus = thread?.status ?? null
+  const replaceableEntry = [...(thread?.entries ?? [])]
     .reverse()
     .find(
       (entry) =>
@@ -534,6 +593,18 @@ export function StudentWrittenSubmission({
         <CardTitle>{replacementTarget ? 'Изменить решение' : 'Сдать решение'}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {thread?.reviews.length ? (
+          <div className="space-y-4">
+            {[...thread.reviews].reverse().map((review, index) => (
+              <StudentReviewResult
+                key={review.reviewId}
+                latest={index === 0}
+                review={review}
+                thread={thread}
+              />
+            ))}
+          </div>
+        ) : null}
         {replaceableEntry && !replacementTarget && !queued ? (
           <Button
             disabled={replacementLoading}

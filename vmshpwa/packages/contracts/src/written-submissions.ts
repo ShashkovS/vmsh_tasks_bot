@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
+import { reviewAnnotationManifestSchema, writtenReviewVerdictSchema } from './review-queue'
 
 /** Phase-5 written-thread wire boundary; see development-plan Phase 5. */
 export const WRITTEN_SUBMISSION_CONTRACT_VERSION = 1 as const
@@ -126,6 +127,32 @@ export const writtenEntrySchema = z
   })
 export type WrittenEntry = z.infer<typeof writtenEntrySchema>
 
+/** Student-visible immutable review projection. Internal Teacher reactions are excluded. */
+export const writtenReviewProjectionSchema = z
+  .object({
+    reviewId: publicIdSchema,
+    targetProblemId: publicIdSchema,
+    verdict: writtenReviewVerdictSchema,
+    commentEntryId: publicIdSchema.nullable(),
+    comment: z.string().max(100_000).nullable(),
+    reviewerName: z.string().trim().min(1).max(500),
+    source: z.enum(['staff', 'telegram', 'ai']),
+    evidenceEntryIds: z.array(publicIdSchema).min(1),
+    annotations: z.array(reviewAnnotationManifestSchema).max(10),
+    completedAt: z.iso.datetime(),
+  })
+  .strict()
+  .superRefine((review, context) => {
+    if (new Set(review.evidenceEntryIds).size !== review.evidenceEntryIds.length) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Review evidence entry IDs must be unique',
+        path: ['evidenceEntryIds'],
+      })
+    }
+  })
+export type WrittenReviewProjection = z.infer<typeof writtenReviewProjectionSchema>
+
 export const writtenThreadSchema = z
   .object({
     threadId: publicIdSchema,
@@ -135,6 +162,7 @@ export const writtenThreadSchema = z
     version: z.number().int().positive(),
     latestEntryAt: z.iso.datetime(),
     entries: z.array(writtenEntrySchema),
+    reviews: z.array(writtenReviewProjectionSchema),
   })
   .strict()
   .superRefine((thread, context) => {
@@ -157,6 +185,41 @@ export const writtenThreadSchema = z
       }
       seen.add(entry.entryId)
       previous = entry.serverReceivedAt
+    })
+    const entryIds = new Set(thread.entries.map((entry) => entry.entryId))
+    const attachmentIds = new Set(
+      thread.entries.flatMap((entry) =>
+        entry.attachments.map((attachment) => attachment.attachmentId),
+      ),
+    )
+    const reviewIds = new Set<string>()
+    thread.reviews.forEach((review, reviewIndex) => {
+      if (reviewIds.has(review.reviewId)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Review IDs must be unique',
+          path: ['reviews', reviewIndex, 'reviewId'],
+        })
+      }
+      for (const [evidenceIndex, entryId] of review.evidenceEntryIds.entries()) {
+        if (!entryIds.has(entryId)) {
+          context.addIssue({
+            code: 'custom',
+            message: 'Review evidence must belong to this concrete thread',
+            path: ['reviews', reviewIndex, 'evidenceEntryIds', evidenceIndex],
+          })
+        }
+      }
+      for (const [annotationIndex, annotation] of review.annotations.entries()) {
+        if (!attachmentIds.has(annotation.attachmentId)) {
+          context.addIssue({
+            code: 'custom',
+            message: 'Review annotation must target this concrete thread evidence',
+            path: ['reviews', reviewIndex, 'annotations', annotationIndex, 'attachmentId'],
+          })
+        }
+      }
+      reviewIds.add(review.reviewId)
     })
   })
 export type WrittenThread = z.infer<typeof writtenThreadSchema>

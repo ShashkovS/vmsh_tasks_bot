@@ -534,6 +534,50 @@ class WrittenEntryRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class WrittenReviewAnnotationRecord:
+    attachment_public_id: str
+    schema_version: int
+    rotation: int
+    marks: tuple[dict[str, object], ...]
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "attachmentId": self.attachment_public_id,
+            "schemaVersion": self.schema_version,
+            "rotation": self.rotation,
+            "marks": list(self.marks),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class WrittenReviewProjection:
+    public_id: str
+    target_problem_public_id: str
+    verdict: int
+    comment_entry_public_id: str | None
+    comment: str | None
+    reviewer_name: str
+    source: str
+    evidence_entry_public_ids: tuple[str, ...]
+    annotations: tuple[WrittenReviewAnnotationRecord, ...]
+    completed_at: str
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "reviewId": self.public_id,
+            "targetProblemId": self.target_problem_public_id,
+            "verdict": self.verdict,
+            "commentEntryId": self.comment_entry_public_id,
+            "comment": self.comment,
+            "reviewerName": self.reviewer_name,
+            "source": self.source,
+            "evidenceEntryIds": list(self.evidence_entry_public_ids),
+            "annotations": [annotation.payload() for annotation in self.annotations],
+            "completedAt": self.completed_at,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class WrittenThreadRecord:
     public_id: str
     problem_public_id: str
@@ -542,6 +586,7 @@ class WrittenThreadRecord:
     version: int
     latest_entry_at: str
     entries: tuple[WrittenEntryRecord, ...]
+    reviews: tuple[WrittenReviewProjection, ...]
 
     def payload(self) -> dict[str, object]:
         return {
@@ -552,6 +597,7 @@ class WrittenThreadRecord:
             "version": self.version,
             "latestEntryAt": self.latest_entry_at,
             "entries": [entry.payload() for entry in self.entries],
+            "reviews": [review.payload() for review in self.reviews],
         }
 
 
@@ -1951,6 +1997,115 @@ def _project_thread_entries(
         )
     projected.sort(key=lambda item: (item[0], item[1]))
     return tuple(item[2] for item in projected)
+
+
+def _project_thread_reviews(
+    connection: sqlite3.Connection,
+    *,
+    entries: tuple[WrittenEntryRecord, ...],
+) -> tuple[WrittenReviewProjection, ...]:
+    """Project Student-visible immutable reviews for the visible evidence."""
+
+    visible_entry_ids = {entry.public_id for entry in entries}
+    visible_attachment_ids = {
+        attachment.public_id for entry in entries for attachment in entry.attachments
+    }
+    if not visible_entry_ids:
+        return ()
+    placeholders = ", ".join("?" for _ in visible_entry_ids)
+    review_rows = connection.execute(
+        "SELECT review.id, review.public_id, review.verdict, review.source, "
+        "review.created_at, target_problem.public_id AS target_problem_public_id, "
+        "comment.public_id AS comment_public_id, comment.text AS comment_text, "
+        "reviewer.name AS reviewer_name, reviewer.surname AS reviewer_surname "
+        "FROM submission_reviews AS review "
+        "JOIN submission_threads AS target_thread ON target_thread.id = review.thread_id "
+        "JOIN problems AS target_problem ON target_problem.id = target_thread.problem_id "
+        "JOIN users AS reviewer ON reviewer.id = review.reviewer_user_id "
+        "LEFT JOIN submission_entries AS comment ON comment.id = review.comment_entry_id "
+        "WHERE EXISTS ("
+        "SELECT 1 FROM submission_review_evidence_entries AS evidence "
+        "JOIN submission_entries AS entry ON entry.id = evidence.entry_id "
+        f"WHERE evidence.review_id = review.id AND entry.public_id IN ({placeholders})"
+        ") ORDER BY review.created_at, review.id",
+        tuple(sorted(visible_entry_ids)),
+    ).fetchall()
+    projected: list[WrittenReviewProjection] = []
+    for review in review_rows:
+        evidence_rows = connection.execute(
+            "SELECT entry.public_id FROM submission_review_evidence_entries AS evidence "
+            "JOIN submission_entries AS entry ON entry.id = evidence.entry_id "
+            "WHERE evidence.review_id = ? ORDER BY evidence.server_received_at, evidence.entry_id",
+            (review["id"],),
+        ).fetchall()
+        evidence_entry_ids = tuple(
+            str(row["public_id"])
+            for row in evidence_rows
+            if str(row["public_id"]) in visible_entry_ids
+        )
+        annotation_rows = connection.execute(
+            "SELECT attachment.public_id AS attachment_public_id, "
+            "annotation.schema_version, annotation.rotation, annotation.marks_json "
+            "FROM submission_review_annotations AS annotation "
+            "JOIN submission_attachments AS attachment "
+            "ON attachment.id = annotation.attachment_id "
+            "WHERE annotation.review_id = ? ORDER BY attachment.ordinal, annotation.id",
+            (review["id"],),
+        ).fetchall()
+        annotations: list[WrittenReviewAnnotationRecord] = []
+        for annotation in annotation_rows:
+            attachment_public_id = str(annotation["attachment_public_id"])
+            if attachment_public_id not in visible_attachment_ids:
+                continue
+            marks = json.loads(str(annotation["marks_json"]))
+            if not isinstance(marks, list) or not all(
+                isinstance(mark, dict) for mark in marks
+            ):
+                raise WrittenSubmissionRepositoryError(
+                    "stored review annotation manifest is invalid"
+                )
+            annotations.append(
+                WrittenReviewAnnotationRecord(
+                    attachment_public_id=attachment_public_id,
+                    schema_version=int(annotation["schema_version"]),
+                    rotation=int(annotation["rotation"]),
+                    marks=tuple(dict(mark) for mark in marks),
+                )
+            )
+        reviewer_name = (
+            " ".join(
+                part
+                for part in (
+                    str(review["reviewer_surname"] or "").strip(),
+                    str(review["reviewer_name"] or "").strip(),
+                )
+                if part
+            )
+            or "Преподаватель"
+        )
+        projected.append(
+            WrittenReviewProjection(
+                public_id=str(review["public_id"]),
+                target_problem_public_id=str(review["target_problem_public_id"]),
+                verdict=int(review["verdict"]),
+                comment_entry_public_id=(
+                    None
+                    if review["comment_public_id"] is None
+                    else str(review["comment_public_id"])
+                ),
+                comment=(
+                    None
+                    if review["comment_text"] is None
+                    else str(review["comment_text"])
+                ),
+                reviewer_name=reviewer_name,
+                source=str(review["source"]),
+                evidence_entry_public_ids=evidence_entry_ids,
+                annotations=tuple(annotations),
+                completed_at=str(review["created_at"]),
+            )
+        )
+    return tuple(projected)
 
 
 def _complete_idempotency(
@@ -3557,6 +3712,11 @@ class PwaWrittenSubmissionRepository:
                     now=now,
                 )
                 return None
+            entries = _project_thread_entries(
+                connection,
+                thread_id=int(row["id"]),
+                student_user_id=int(row["student_user_id"]),
+            )
             return WrittenThreadRecord(
                 public_id=str(row["public_id"]),
                 problem_public_id=str(row["problem_public_id"]),
@@ -3564,11 +3724,8 @@ class PwaWrittenSubmissionRepository:
                 condition_revision_public_id=str(row["condition_revision_public_id"]),
                 version=int(row["version"]),
                 latest_entry_at=str(row["latest_entry_at"]),
-                entries=_project_thread_entries(
-                    connection,
-                    thread_id=int(row["id"]),
-                    student_user_id=int(row["student_user_id"]),
-                ),
+                entries=entries,
+                reviews=_project_thread_reviews(connection, entries=entries),
             )
 
         return await self._factory.run_read_async(read)
@@ -3611,5 +3768,7 @@ __all__ = [
     "WrittenMaterialProjection",
     "WrittenMaterialReassignmentPreview",
     "WrittenMaterialScope",
+    "WrittenReviewAnnotationRecord",
+    "WrittenReviewProjection",
     "WrittenThreadRecord",
 ]
