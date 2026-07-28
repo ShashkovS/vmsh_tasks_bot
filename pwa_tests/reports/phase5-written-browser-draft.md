@@ -1,7 +1,8 @@
 # Phase 5E–5F — browser photo pipeline, durable draft and Student delivery
 
 Дата проверки: 2026-07-28.
-Revisions реализации: `d3b29f2`, `4e835ec`, `2158398`, `71e96e6`.
+Revisions реализации: `d3b29f2`, `4e835ec`, `2158398`, `71e96e6`,
+`1fa320b`, `6b30141`, `9d3b821`, `34d371d`.
 
 ## Проверяемый результат
 
@@ -53,8 +54,8 @@ Revisions реализации: `d3b29f2`, `4e835ec`, `2158398`, `71e96e6`.
 - `make pwa-build` — **PASS**; Student и Family `injectManifest` service
   workers собраны, Student содержит отдельный compression-worker chunk,
   production MSW не включался.
-- Полный frontend unit checkpoint — **47 файлов / 359 PASS**.
-- Полный Python PWA checkpoint — **1215 PASS / 3 intentional skips / 1
+- Полный frontend unit checkpoint — **47 файлов / 362 PASS**.
+- Полный Python PWA checkpoint — **1223 PASS / 3 intentional skips / 1
   existing SymPy warning**.
 - Focused E2E gateway regression — **17 PASS**.
 - Storybook browser mode — **38 файлов / 188 PASS**, включая interaction story
@@ -71,13 +72,18 @@ Revisions реализации: `d3b29f2`, `4e835ec`, `2158398`, `71e96e6`.
   настоящий WrittenAttachmentService: server-derived `sol_imgs` key,
   private/public read и delete acknowledgement — **PASS**. Детали и run IDs:
   [`phase5-written-storage-live.md`](phase5-written-storage-live.md).
+- Post-submit pre-review replacement теперь также проходит production-build
+  browser scenario во всех трёх engines: прежний WebP копируется через
+  authenticated GET, replacement draft переживает reload, а одна атомарная
+  операция оставляет в authoritative thread исходную `deleted` и новую
+  `submitted` entry. Полный proof:
+  [`phase5-written-replacement.md`](phase5-written-replacement.md).
 - `git diff --check` для инкремента — **PASS**.
 
 ## Что этот proof ещё не доказывает
 
-- Post-submit pre-review replacement как отдельная атомарная операция,
-  legacy backfill/reassignment и Staff review относятся к следующим
-  инкрементам.
+- Legacy backfill/reassignment и Staff review относятся к следующим
+  инкрементам; post-submit pre-review replacement уже закрыт отдельным proof.
 - Browser E2E намеренно остаётся hermetic на filesystem adapter; live S3
   проверен отдельной opt-in командой и не создавал product submission в SQLite.
 - Owner visual gate для focused Student composer ещё не принят; visual
