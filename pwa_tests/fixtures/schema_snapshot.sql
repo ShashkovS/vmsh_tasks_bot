@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: fcec02abb06c4b8c28f113f872a39c507f790fc95aa35a67da530b279f1cf7db
+-- Product schema SHA-256: 8032fb8b218df8598d34ba62da538907b03e25b0018038e66f07b1b80019dce8
 
 CREATE TABLE auth_accounts
 (
@@ -1355,7 +1355,7 @@ CREATE TABLE submission_entries
     legacy_discussion_id integer unique references written_tasks_discussions (id),
     version              integer not null default 1 check (version > 0),
     locked_at            text,
-    deleted_at           text,
+    deleted_at           text, problem_revision_id integer references problem_revisions (id),
     check ((idempotency_key is null) = (payload_sha256 is null)),
     check (channel_group_key is null or channel = 'telegram'),
     check (
@@ -3023,6 +3023,7 @@ before update on submission_entries
 for each row
 when new.public_id is not old.public_id
     or new.thread_id is not old.thread_id
+    or new.problem_revision_id is not old.problem_revision_id
     or new.author_kind is not old.author_kind
     or new.author_user_id is not old.author_user_id
     or new.channel is not old.channel
@@ -3071,6 +3072,48 @@ when new.state in ('submitted', 'locked')
     )
 begin
     select raise(abort, 'submitted entry requires text or stored attachment');
+end;
+
+CREATE TRIGGER submission_entries_problem_revision_scope_insert
+before insert on submission_entries
+for each row
+when (
+    new.author_kind = 'student'
+    and new.problem_revision_id is null
+) or (
+    new.problem_revision_id is not null
+    and not exists (
+        select 1
+        from submission_threads as thread
+        join problem_revisions as problem_revision
+          on problem_revision.id = new.problem_revision_id
+         and problem_revision.problem_id = thread.problem_id
+        where thread.id = new.thread_id
+    )
+)
+begin
+    select raise(abort, 'submission entry problem revision is outside thread scope');
+end;
+
+CREATE TRIGGER submission_entries_problem_revision_scope_update
+before update on submission_entries
+for each row
+when (
+    new.author_kind = 'student'
+    and new.problem_revision_id is null
+) or (
+    new.problem_revision_id is not null
+    and not exists (
+        select 1
+        from submission_threads as thread
+        join problem_revisions as problem_revision
+          on problem_revision.id = new.problem_revision_id
+         and problem_revision.problem_id = thread.problem_id
+        where thread.id = new.thread_id
+    )
+)
+begin
+    select raise(abort, 'submission entry problem revision is outside thread scope');
 end;
 
 CREATE TRIGGER submission_entries_state_transition_guard

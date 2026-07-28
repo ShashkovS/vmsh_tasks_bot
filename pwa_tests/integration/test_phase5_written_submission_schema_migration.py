@@ -13,6 +13,7 @@ from db_methods.pwa.migrations import MIGRATIONS_ROOT
 
 
 MIGRATION_ID = "0047.pwa_submission_threads_entries_assets"
+ENTRY_REVISION_MIGRATION_ID = "0048.pwa_submission_entry_revision"
 NOW = "2026-09-27T13:00:00.000000Z"
 LATER = "2026-09-27T13:01:00.000000Z"
 EXPECTED_OBJECTS = {
@@ -303,16 +304,28 @@ def _insert_entry(
     text: str | None = None,
     idempotency_key: str | None = None,
 ) -> int:
+    problem_revision_id = int(
+        connection.execute(
+            "SELECT problem_revision.id FROM submission_threads AS thread "
+            "JOIN problem_revisions AS problem_revision "
+            "ON problem_revision.problem_id = thread.problem_id "
+            "AND problem_revision.content_revision_id = thread.condition_revision_id "
+            "WHERE thread.id = ? ORDER BY problem_revision.id DESC LIMIT 1",
+            (thread_id,),
+        ).fetchone()[0]
+    )
     return int(
         connection.execute(
             "INSERT INTO submission_entries "
-            "(public_id, thread_id, author_kind, author_user_id, channel, entry_kind, "
-            "state, text, client_created_at, server_received_at, idempotency_key, "
-            "payload_sha256) VALUES (?, ?, 'student', ?, 'pwa', 'submission', ?, ?, "
-            "?, ?, ?, ?) RETURNING id",
+            "(public_id, thread_id, problem_revision_id, author_kind, author_user_id, "
+            "channel, entry_kind, state, text, client_created_at, server_received_at, "
+            "idempotency_key, payload_sha256) VALUES "
+            "(?, ?, ?, 'student', ?, 'pwa', 'submission', ?, ?, ?, ?, ?, ?) "
+            "RETURNING id",
             (
                 public_id,
                 thread_id,
+                problem_revision_id,
                 student_id,
                 state,
                 text,
@@ -399,7 +412,11 @@ def test_phase5_written_schema_exact_up_down_up_and_additive(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0046.pwa_test_attempts_idempotency"
     }
-    preceding = {item.id for item in migrations.values() if item.id != MIGRATION_ID}
+    preceding = {
+        item.id
+        for item in migrations.values()
+        if item.id not in {MIGRATION_ID, ENTRY_REVISION_MIGRATION_ID}
+    }
     _apply(database_path, preceding)
 
     with sqlite3.connect(database_path) as connection:
@@ -433,6 +450,100 @@ def test_phase5_written_schema_exact_up_down_up_and_additive(tmp_path):
     _apply(database_path, {MIGRATION_ID})
     with sqlite3.connect(database_path) as connection:
         assert EXPECTED_OBJECTS <= _objects(connection)
+        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+
+
+def test_phase5_entry_revision_exact_up_down_up_and_scope(tmp_path):
+    database_path = tmp_path / "phase5-entry-revision.sqlite3"
+    migrations = {item.id: item for item in _migrations()}
+    assert {item.id for item in migrations[ENTRY_REVISION_MIGRATION_ID].depends} == {
+        MIGRATION_ID
+    }
+    preceding = {
+        item.id for item in migrations.values() if item.id != ENTRY_REVISION_MIGRATION_ID
+    }
+    _apply(database_path, preceding)
+    with sqlite3.connect(database_path) as connection:
+        before_schema = _schema(connection)
+        before_counts = _counts(connection)
+
+    _apply(database_path, {ENTRY_REVISION_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            str(row[1]) for row in connection.execute("PRAGMA table_info(submission_entries)")
+        }
+        assert "problem_revision_id" in columns
+        assert {
+            "submission_entries_problem_revision_scope_insert",
+            "submission_entries_problem_revision_scope_update",
+        } <= _objects(connection)
+        context = _insert_context(connection)
+        thread_id = _insert_thread(
+            connection,
+            public_id="thread-entry-revision",
+            student_id=context["student"],
+            problem_id=context["problem_one"],
+            revision_id=context["revision"],
+        )
+        with pytest.raises(sqlite3.IntegrityError, match="outside thread scope"):
+            connection.execute(
+                "INSERT INTO submission_entries "
+                "(public_id, thread_id, problem_revision_id, author_kind, "
+                "author_user_id, channel, entry_kind, state, server_received_at) "
+                "VALUES ('entry-missing-revision', ?, NULL, 'student', ?, 'pwa', "
+                "'submission', 'draft', ?)",
+                (thread_id, context["student"], NOW),
+            )
+        other_problem_revision_id = int(
+            connection.execute(
+                "SELECT id FROM problem_revisions WHERE problem_id = ?",
+                (context["problem_two"],),
+            ).fetchone()[0]
+        )
+        with pytest.raises(sqlite3.IntegrityError, match="outside thread scope"):
+            connection.execute(
+                "INSERT INTO submission_entries "
+                "(public_id, thread_id, problem_revision_id, author_kind, "
+                "author_user_id, channel, entry_kind, state, server_received_at) "
+                "VALUES ('entry-wrong-problem-revision', ?, ?, 'student', ?, 'pwa', "
+                "'submission', 'draft', ?)",
+                (
+                    thread_id,
+                    other_problem_revision_id,
+                    context["student"],
+                    NOW,
+                ),
+            )
+        entry_id = _insert_entry(
+            connection,
+            public_id="entry-exact-revision",
+            thread_id=thread_id,
+            student_id=context["student"],
+        )
+        with pytest.raises(sqlite3.IntegrityError, match="identity is immutable"):
+            connection.execute(
+                "UPDATE submission_entries SET problem_revision_id = ?, version = 2 "
+                "WHERE id = ?",
+                (other_problem_revision_id, entry_id),
+            )
+        assert connection.execute(
+            'PRAGMA foreign_key_check("submission_entries")'
+        ).fetchall() == []
+        # Keep the rollback comparison about migration effects, not synthetic
+        # rows created only to exercise the new provenance triggers.
+        connection.rollback()
+
+    _rollback(database_path, {ENTRY_REVISION_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert _schema(connection) == before_schema
+        assert _counts(connection) == before_counts
+        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+
+    _apply(database_path, {ENTRY_REVISION_MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert "problem_revision_id" in {
+            str(row[1]) for row in connection.execute("PRAGMA table_info(submission_entries)")
+        }
         assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
 
 
