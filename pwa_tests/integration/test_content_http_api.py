@@ -857,6 +857,30 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
     )
     assert invalid_version.status == 422
 
+    input_response = await fixture.client.get(
+        f"/student/api/v1/problems/{problem_public_id}/test-input",
+        cookies=_cookie(fixture, "student"),
+        headers=_headers(),
+    )
+    assert input_response.status == 200, await input_response.text()
+    input_payload = await input_response.json()
+    assert input_payload == {
+        "schemaVersion": 1,
+        "problemId": problem_public_id,
+        "problemRevision": {
+            "conditionRevisionId": condition_revision_id,
+            "configVersion": 1,
+        },
+        "answerType": 3,
+        "validationPattern": None,
+        "validationError": "Введите целое число, например -7",
+        "options": [],
+        "requestId": "content.http.test",
+    }
+    serialized_input = json.dumps(input_payload)
+    assert "correctAnswer" not in serialized_input
+    assert "correctAnswerChecker" not in serialized_input
+
     stale_revision = await fixture.client.post(
         route,
         json={

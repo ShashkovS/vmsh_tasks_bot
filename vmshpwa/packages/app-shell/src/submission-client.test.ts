@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import historyFixture from '@vmsh/contracts/fixtures/submissions/history.v1.json'
+import inputFixture from '@vmsh/contracts/fixtures/submissions/input.v1.json'
 import mutationFixture from '@vmsh/contracts/fixtures/submissions/mutation.v1.json'
 import runtimeFixture from '@vmsh/contracts/fixtures/runtime/student.v1.json'
 import {
@@ -68,6 +69,32 @@ describe('Student test-submission client', () => {
     )
     await expect(client.history('../foreign')).rejects.toThrow()
     expect(fetchImplementation).toHaveBeenCalledTimes(1)
+  })
+
+  it('loads the safe current input configuration without a client-owned scope', async () => {
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(
+        new Response(JSON.stringify(inputFixture.response), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    )
+    const client = createTestSubmissionClient(runtime, { fetchImplementation })
+
+    await expect(client.input(inputFixture.response.problemId)).resolves.toEqual(
+      inputFixture.response,
+    )
+    expect(fetchImplementation).toHaveBeenCalledExactlyOnceWith(
+      `/student/api/v1/problems/${inputFixture.response.problemId}/test-input`,
+      {
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+        redirect: 'error',
+      },
+    )
   })
 
   it('refreshes once and retries the byte-identical idempotent body', async () => {

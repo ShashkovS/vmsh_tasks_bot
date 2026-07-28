@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from helpers.consts import RES_TYPE, VERDICT
+from helpers.consts import ANS_TYPE, RES_TYPE, VERDICT
 from helpers.pwa.test_checkers import TrustedCheckerExecutor
 from models.pwa.submissions import (
     SubmissionConfigurationError,
@@ -311,6 +311,19 @@ class TestAttemptHistoryPage:
     problem_public_id: str
     attempts: tuple[TestAttemptHistoryRecord, ...]
     next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class TestAnswerInputRecord:
+    """Student-safe input configuration without answers or checker source."""
+
+    problem_public_id: str
+    condition_revision_public_id: str
+    config_version: int
+    answer_type: int
+    validation_pattern: str | None
+    validation_error: str | None
+    options: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -903,6 +916,51 @@ class PwaTestSubmissionRepository:
         if now.tzinfo is None or now.utcoffset() is None:
             raise ValueError("submission repository clock must be timezone-aware")
         return now.astimezone(UTC)
+
+    async def get_test_answer_input(
+        self,
+        *,
+        account_id: int,
+        problem_public_id: str,
+    ) -> TestAnswerInputRecord:
+        """Return only the safe input affordance for the current revision."""
+
+        if account_id < 1:
+            raise ValueError("account ID must be positive")
+        if not _PUBLIC_ID.fullmatch(problem_public_id):
+            raise ValueError("problem public ID is invalid")
+        context = await self._factory.run_read_async(
+            lambda connection: _resolve_context(
+                connection,
+                account_id=account_id,
+                problem_public_id=problem_public_id,
+                now=self._now(),
+            )
+        )
+        config = context.answer_config
+        if config.answer_type is ANS_TYPE.SELECT_ONE:
+            options = tuple(
+                option.strip()
+                for option in (config.answer_validation or "").split(";")
+                if option.strip()
+            )
+            if not options:
+                raise SubmissionConfigurationError(
+                    "select-one problem has no visible options"
+                )
+            validation_pattern = None
+        else:
+            options = ()
+            validation_pattern = config.answer_validation
+        return TestAnswerInputRecord(
+            problem_public_id=context.problem_public_id,
+            condition_revision_public_id=context.condition_revision_public_id,
+            config_version=context.config_version,
+            answer_type=int(config.answer_type),
+            validation_pattern=validation_pattern,
+            validation_error=config.validation_error,
+            options=options,
+        )
 
     async def submit_test_answer(
         self, command: SubmitTestAnswerCommand

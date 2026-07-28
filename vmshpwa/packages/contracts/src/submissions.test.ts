@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import historyFixture from '../fixtures/submissions/history.v1.json'
+import inputFixture from '../fixtures/submissions/input.v1.json'
 import mutationFixture from '../fixtures/submissions/mutation.v1.json'
 
 import {
   submitTestAnswerRequestSchema,
   submitTestAnswerResponseSchema,
+  testAnswerInputResponseSchema,
   testAttemptHistoryResponseSchema,
   testSubmissionHistoryFixtureSchema,
   testSubmissionMutationFixtureSchema,
@@ -19,6 +21,25 @@ describe('Phase-4 test-submission contracts', () => {
 
   it('keeps the versioned history fixture ordered and owner-resource scoped', () => {
     expect(testSubmissionHistoryFixtureSchema.parse(historyFixture)).toEqual(historyFixture)
+  })
+
+  it('exposes input help and visible choices without checker secrets', () => {
+    expect(testAnswerInputResponseSchema.parse(inputFixture.response)).toEqual(
+      inputFixture.response,
+    )
+    expect(JSON.stringify(inputFixture.response)).not.toMatch(/correctAnswer|checker/i)
+    expect(
+      testAnswerInputResponseSchema.safeParse({
+        ...inputFixture.response,
+        validationPattern: 'Чётное;Нечётное',
+      }).success,
+    ).toBe(false)
+    expect(
+      testAnswerInputResponseSchema.safeParse({
+        ...inputFixture.response,
+        answerType: 2,
+      }).success,
+    ).toBe(false)
   })
 
   it('rejects request extras, invalid UUIDs and non-UTC client timestamps', () => {

@@ -378,6 +378,38 @@ async def submit_test_answer(request: web.Request) -> web.Response:
     )
 
 
+@submission_routes.get("/student/api/v1/problems/{problem_public_id}/test-input")
+@_translate_submission_errors
+async def get_test_answer_input(request: web.Request) -> web.Response:
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Этот запрос не принимает параметры",
+        )
+    account_id, _account_public_id = _student_identity(request)
+    problem_public_id = _problem_public_id(request)
+    record = await _repository(request).get_test_answer_input(
+        account_id=account_id,
+        problem_public_id=problem_public_id,
+    )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "problemId": record.problem_public_id,
+            "problemRevision": {
+                "conditionRevisionId": record.condition_revision_public_id,
+                "configVersion": record.config_version,
+            },
+            "answerType": record.answer_type,
+            "validationPattern": record.validation_pattern,
+            "validationError": record.validation_error,
+            "options": list(record.options),
+            "requestId": _request_id(request),
+        }
+    )
+
+
 @submission_routes.get("/student/api/v1/problems/{problem_public_id}/test-attempts")
 @_translate_submission_errors
 async def list_test_attempts(request: web.Request) -> web.Response:

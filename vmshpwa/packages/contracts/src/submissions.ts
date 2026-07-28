@@ -13,6 +13,16 @@ import { legacyVerdictIdSchema } from './courses'
 export const TEST_SUBMISSION_CONTRACT_VERSION = 1 as const
 const testSubmissionContractVersionSchema = z.literal(TEST_SUBMISSION_CONTRACT_VERSION)
 
+export const LEGACY_TEST_ANSWER_TYPE_IDS = [
+  1, 2, 3, 4, 5, 6, 19, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 98, 99,
+] as const
+const legacyTestAnswerTypeIds = new Set<number>(LEGACY_TEST_ANSWER_TYPE_IDS)
+export const legacyTestAnswerTypeSchema = z
+  .number()
+  .int()
+  .refine((value) => legacyTestAnswerTypeIds.has(value), 'Unknown legacy test answer type')
+export type LegacyTestAnswerType = z.infer<typeof legacyTestAnswerTypeSchema>
+
 export const testProblemRevisionSchema = z
   .object({
     conditionRevisionId: publicIdSchema,
@@ -20,6 +30,43 @@ export const testProblemRevisionSchema = z
   })
   .strict()
 export type TestProblemRevision = z.infer<typeof testProblemRevisionSchema>
+
+export const testAnswerInputResponseSchema = z
+  .object({
+    schemaVersion: testSubmissionContractVersionSchema,
+    problemId: publicIdSchema,
+    problemRevision: testProblemRevisionSchema,
+    answerType: legacyTestAnswerTypeSchema,
+    validationPattern: z.string().max(4_000).nullable(),
+    validationError: z.string().max(4_000).nullable(),
+    options: z.array(z.string().trim().min(1).max(4_000)).max(100),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+  .superRefine((input, context) => {
+    if (input.answerType === 98 && input.options.length === 0) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Select-one input must expose its visible options',
+        path: ['options'],
+      })
+    }
+    if (input.answerType !== 98 && input.options.length > 0) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Only select-one input may expose options',
+        path: ['options'],
+      })
+    }
+    if (input.answerType === 98 && input.validationPattern !== null) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Select-one options must not be exposed as a regex',
+        path: ['validationPattern'],
+      })
+    }
+  })
+export type TestAnswerInputResponse = z.infer<typeof testAnswerInputResponseSchema>
 
 export const testAttemptOutcomeSchema = z.enum([
   'correct',
@@ -202,6 +249,8 @@ export const testSubmissionQueryKeys = {
     [...principalQueryKey(principal), 'test-attempts'] as const,
   problem: (principal: PrincipalQueryScope, problemId: string) =>
     [...testSubmissionQueryKeys.all(principal), publicIdSchema.parse(problemId)] as const,
+  input: (principal: PrincipalQueryScope, problemId: string) =>
+    [...testSubmissionQueryKeys.problem(principal, problemId), 'input'] as const,
   history: (principal: PrincipalQueryScope, problemId: string, cursor: string | null = null) =>
     [
       ...testSubmissionQueryKeys.problem(principal, problemId),

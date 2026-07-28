@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
   apiErrorSchema,
@@ -6,6 +6,7 @@ import {
   publicIdSchema,
   submitTestAnswerRequestSchema,
   submitTestAnswerResponseSchema,
+  testAnswerInputResponseSchema,
   testAttemptCursorSchema,
   testAttemptHistoryResponseSchema,
   testSubmissionQueryKeys,
@@ -13,6 +14,7 @@ import {
   type RuntimeConfig,
   type SubmitTestAnswerRequest,
   type SubmitTestAnswerResponse,
+  type TestAnswerInputResponse,
   type TestAttemptCursor,
   type TestAttemptHistoryResponse,
 } from '@vmsh/contracts'
@@ -38,6 +40,7 @@ export interface TestSubmissionClientOptions {
 
 export interface TestSubmissionClient {
   readonly runtime: RuntimeConfig
+  input(problemId: string, options?: TestSubmissionRequestOptions): Promise<TestAnswerInputResponse>
   submit(
     problemId: string,
     request: SubmitTestAnswerRequest,
@@ -81,6 +84,20 @@ class BrowserTestSubmissionClient implements TestSubmissionClient {
     const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
     this.#fetch = (...arguments_) => fetchImplementation(...arguments_)
     this.#refreshSession = options.refreshSession
+  }
+
+  async input(
+    problemId: string,
+    options: TestSubmissionRequestOptions = {},
+  ): Promise<TestAnswerInputResponse> {
+    const parsedProblemId = publicIdSchema.parse(problemId)
+    return this.#request(
+      `/problems/${encodeURIComponent(parsedProblemId)}/test-input`,
+      { method: 'GET' },
+      options,
+      200,
+      testAnswerInputResponseSchema,
+    )
   }
 
   async submit(
@@ -218,6 +235,17 @@ export function useTestAttemptHistoryQuery(
         signal,
       }),
     getNextPageParam: (page) => page.nextCursor ?? undefined,
+  })
+}
+
+export function useTestAnswerInputQuery(
+  client: Pick<TestSubmissionClient, 'input'>,
+  principal: PrincipalQueryScope,
+  problemId: string,
+) {
+  return useQuery({
+    queryKey: testSubmissionQueryKeys.input(principal, problemId),
+    queryFn: ({ signal }) => client.input(problemId, { signal }),
   })
 }
 
