@@ -447,7 +447,7 @@ export function createWrittenSubmissionOutbox(
     })
     const stored = await database.outbox.get(item.id)
     if (stored) return validatedItem(stored)
-    const fallback = { ...item, status, updatedAtClient: now().toISOString() }
+    const fallback = { ...item, status: state, updatedAtClient: now().toISOString() }
     delete fallback.deliveryLeaseId
     return writtenSubmissionOutboxItemSchema.parse({
       ...fallback,

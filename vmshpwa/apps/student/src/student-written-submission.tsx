@@ -247,39 +247,50 @@ export function StudentWrittenSubmission({
     if (!outbox || deliveryActive.current) return
     deliveryActive.current = true
     setSendError(null)
+    let result: Awaited<ReturnType<typeof outbox.deliverNext>>
     try {
-      const result = await outbox.deliverNext(client)
-      if (result.state === 'idle') return
-      if (
-        result.item.payload.descriptor.problemId !== descriptor.problemId ||
-        result.item.payload.descriptor.conditionRevisionId !== descriptor.conditionRevisionId ||
-        result.item.payload.descriptor.configVersion !== descriptor.configVersion
-      ) {
-        return
-      }
-      setQueueItem(result.item)
-      if (result.state !== 'synced') {
-        setSendError(deliveryMessage(result.error))
-        return
-      }
-      setSent(true)
-      await outbox.acknowledge(result.item.id)
-      setQueueItem(null)
-      setText('')
-      setPhotos([])
-      setReplacementTarget(null)
-      await refetchThread()
+      result = await outbox.deliverNext(client)
     } catch (error) {
       setSendError(deliveryMessage(error))
+      return
     } finally {
+      // Release the single-flight guard before publishing a retrying queue
+      // item. Its effect may run immediately; keeping the guard until after
+      // setQueueItem would lose that reconnect retry until another event.
       deliveryActive.current = false
     }
+    if (result.state === 'idle') return
+    if (
+      result.item.payload.descriptor.problemId !== descriptor.problemId ||
+      result.item.payload.descriptor.conditionRevisionId !== descriptor.conditionRevisionId ||
+      result.item.payload.descriptor.configVersion !== descriptor.configVersion
+    ) {
+      return
+    }
+    setQueueItem(result.item)
+    if (result.state !== 'synced') {
+      setSendError(deliveryMessage(result.error))
+      return
+    }
+    setSent(true)
+    await outbox.acknowledge(result.item.id)
+    setQueueItem(null)
+    setText('')
+    setPhotos([])
+    setReplacementTarget(null)
+    await refetchThread()
   }, [client, descriptor, outbox, refetchThread])
 
   useEffect(() => {
     if (online && queueItem && ['queued', 'retrying'].includes(queueItem.status)) {
-      void deliver()
+      const delay =
+        queueItem.status === 'queued'
+          ? 0
+          : Math.min(30_000, 1_000 * 2 ** Math.min(queueItem.attempts, 5))
+      const timeout = window.setTimeout(() => void deliver(), delay)
+      return () => window.clearTimeout(timeout)
     }
+    return undefined
   }, [deliver, online, queueItem])
 
   if (!hydrated) {

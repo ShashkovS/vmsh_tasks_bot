@@ -399,6 +399,9 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
 
   await page.context().setOffline(true)
   try {
+    // Wait for the application-level connectivity state, not only the
+    // Playwright network switch, before enqueueing the offline draft.
+    await expect(page.getByText('Нет сети', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Поставить в очередь' }).click()
     await expect(page.getByText('Решение сохранено в очереди')).toBeVisible()
     await expect(page.getByLabel('Ваше решение')).toBeDisabled()
@@ -437,6 +440,66 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
       {
         state: 'submitted',
         text: solutionText,
+        attachments: [{ mediaType: 'image/webp', width: 1, height: 1 }],
+      },
+    ],
+  })
+
+  // Phase 5 permits an atomic pre-review correction: the accepted version is
+  // copied into a durable local draft, then replaced as one server operation.
+  const mediaResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'GET' && new URL(response.url()).pathname.endsWith('/media'),
+  )
+  page.once('dialog', (dialog) => void dialog.accept())
+  await page.getByRole('button', { name: 'Изменить отправленное решение' }).click()
+  expect((await mediaResponse).status()).toBe(200)
+  await expect(page.getByText('Готовится замена', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Ваше решение')).toHaveValue(solutionText)
+  await expect(page.getByText('Страница 1.webp', { exact: true })).toBeVisible()
+
+  const replacementText = `${solutionText} Исправил обоснование равенства углов.`
+  await page.getByLabel('Ваше решение').fill(replacementText)
+  await page.reload()
+  await expect(page.getByText('Готовится замена', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Ваше решение')).toHaveValue(replacementText)
+  await expect(page.getByText('Страница 1.webp', { exact: true })).toBeVisible()
+
+  const replaceResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/replace'),
+  )
+  page.once('dialog', (dialog) => void dialog.accept())
+  await page.getByRole('button', { name: 'Отправить', exact: true }).click()
+  expect((await replaceResponse).status()).toBe(200)
+  await expect(page.getByText('Решение отправлено')).toBeVisible()
+
+  const replaced = await page.evaluate(async (id) => {
+    const response = await fetch(`/student/api/v1/problems/${id}/thread`)
+    if (!response.ok) throw new Error(`Written thread returned ${response.status}`)
+    return (await response.json()) as {
+      thread: null | {
+        status: string
+        entries: Array<{
+          state: string
+          text: string | null
+          attachments: Array<{ mediaType: string; width: number; height: number }>
+        }>
+      }
+    }
+  }, problemId)
+  expect(replaced.thread).toMatchObject({
+    status: 'awaiting_review',
+    entries: [
+      {
+        state: 'deleted',
+        text: solutionText,
+        attachments: [{ mediaType: 'image/webp', width: 1, height: 1 }],
+      },
+      {
+        state: 'submitted',
+        text: replacementText,
         attachments: [{ mediaType: 'image/webp', width: 1, height: 1 }],
       },
     ],
