@@ -32,6 +32,8 @@ const branches = [
 const firstBranch = branches[0]!
 
 describe('Phase-6 review queue contracts', () => {
+  const principal = { audience: 'staff' as const, accountId: 'staff-reviewer' }
+
   it('accepts one chronological synonym case without integer identities', () => {
     const payload = {
       schemaVersion: 1 as const,
@@ -105,13 +107,29 @@ describe('Phase-6 review queue contracts', () => {
   })
 
   it('keeps list cache keys scoped by filters and cursor', () => {
-    expect(reviewQueueQueryKeys.list()).toEqual(['staff', 'review-queue', 'all', 'oldest', 'first'])
+    expect(reviewQueueQueryKeys.list(principal)).toEqual([
+      'principal',
+      'staff',
+      'staff-reviewer',
+      'review-queue',
+      'all',
+      'oldest',
+      'first',
+    ])
     expect(
-      reviewQueueQueryKeys.list({
+      reviewQueueQueryKeys.list(principal, {
         problemGroup: 'synonym-shared',
         sort: 'newest',
         cursor: 'review-queue-one',
       }),
-    ).toEqual(['staff', 'review-queue', 'synonym-shared', 'newest', 'review-queue-one'])
+    ).toEqual([
+      'principal',
+      'staff',
+      'staff-reviewer',
+      'review-queue',
+      'synonym-shared',
+      'newest',
+      'review-queue-one',
+    ])
   })
 })

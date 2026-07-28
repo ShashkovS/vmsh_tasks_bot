@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { publicIdSchema } from './auth'
+import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
 
 /** Phase-6 review queue wire contract; see development-plan Phase 6. */
 export const REVIEW_QUEUE_CONTRACT_VERSION = 1 as const
@@ -139,15 +139,17 @@ export const releaseReviewLeaseResponseSchema = z
 export type ReleaseReviewLeaseResponse = z.infer<typeof releaseReviewLeaseResponseSchema>
 
 export const reviewQueueQueryKeys = {
-  list: (query: ReviewQueueListQuery = {}) => {
+  all: (principal: PrincipalQueryScope) =>
+    [...principalQueryKey(principal), 'review-queue'] as const,
+  list: (principal: PrincipalQueryScope, query: ReviewQueueListQuery = {}) => {
     const parsed = reviewQueueListQuerySchema.parse(query)
     return [
-      'staff',
-      'review-queue',
+      ...reviewQueueQueryKeys.all(principal),
       parsed.problemGroup ?? 'all',
       parsed.sort,
       parsed.cursor ?? 'first',
     ] as const
   },
-  lease: (queueId: string) => ['staff', 'review-lease', publicIdSchema.parse(queueId)] as const,
+  lease: (principal: PrincipalQueryScope, queueId: string) =>
+    [...principalQueryKey(principal), 'review-lease', publicIdSchema.parse(queueId)] as const,
 } as const
