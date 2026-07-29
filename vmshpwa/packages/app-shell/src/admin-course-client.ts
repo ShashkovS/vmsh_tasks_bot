@@ -249,10 +249,12 @@ export function useAdminCourseCatalogQuery(
   client: AdminCourseClient,
   principal: PrincipalQueryScope,
   seasonId?: string,
+  enabled = true,
 ) {
   return useQuery({
     queryKey: adminCourseCatalogQueryKey(principal, seasonId),
     queryFn: ({ signal }) => client.list({ ...(seasonId ? { seasonId } : {}), signal }),
+    enabled,
   })
 }
 

@@ -92,6 +92,8 @@ function courseGroups(
 function EnrollmentEditor({
   accountId,
   allGroups,
+  canEditGroup,
+  canManageEnrollment,
   enrollment,
   saving,
   storageNamespace,
@@ -99,6 +101,8 @@ function EnrollmentEditor({
 }: {
   accountId: string
   allGroups: AdminEnrollmentGroup[]
+  canEditGroup: (groupId: string) => boolean
+  canManageEnrollment: boolean
   enrollment: AdminStudentCourseEnrollment
   saving: boolean
   storageNamespace: string
@@ -155,7 +159,9 @@ function EnrollmentEditor({
             {allGroups
               .filter(
                 (group) =>
-                  draft.allowedGroupIds.includes(group.groupId) && group.status !== 'archived',
+                  draft.allowedGroupIds.includes(group.groupId) &&
+                  group.status !== 'archived' &&
+                  canEditGroup(group.groupId),
               )
               .map((group) => (
                 <option key={group.groupId} value={group.groupId}>
@@ -168,7 +174,7 @@ function EnrollmentEditor({
           Формат занятий
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
-            disabled={saving}
+            disabled={saving || !canManageEnrollment}
             onChange={(event) =>
               update({
                 ...draft,
@@ -185,7 +191,7 @@ function EnrollmentEditor({
           Состояние записи
           <select
             className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
-            disabled={saving}
+            disabled={saving || !canManageEnrollment}
             onChange={(event) =>
               update({
                 ...draft,
@@ -210,7 +216,7 @@ function EnrollmentEditor({
               <Label className="flex items-center gap-2 text-small" key={group.groupId}>
                 <Checkbox
                   checked={draft.allowedGroupIds.includes(group.groupId)}
-                  disabled={saving || active}
+                  disabled={saving || !canManageEnrollment || active}
                   onCheckedChange={(checked) => toggleGroup(group.groupId, checked === true)}
                 />
                 <span>
@@ -245,18 +251,24 @@ function EnrollmentEditor({
 
 export function StudentDirectoryView({
   accountId,
+  canEditGroup = () => true,
+  canManageEnrollment = true,
   courses,
   search,
   saving = false,
+  showPrivateAccounts = true,
   storageNamespace,
   students,
   onSave,
   onSearchChange,
 }: {
   accountId: string
+  canEditGroup?: (courseId: string, groupId: string) => boolean
+  canManageEnrollment?: boolean
   courses: AdminCourse[]
   search: DirectorySearch
   saving?: boolean
+  showPrivateAccounts?: boolean
   storageNamespace: string
   students: AdminStudentDirectoryEntry[]
   onSave: (command: SaveCommand) => void
@@ -330,9 +342,11 @@ export function StudentDirectoryView({
             <CardHeader>
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle>{fullName(selectedStudent)}</CardTitle>
-                <Badge variant={selectedStudent.webAccount ? 'success' : 'warning'}>
-                  {selectedStudent.webAccount ? 'Web-вход активен' : 'Web-вход не создан'}
-                </Badge>
+                {showPrivateAccounts ? (
+                  <Badge variant={selectedStudent.webAccount ? 'success' : 'warning'}>
+                    {selectedStudent.webAccount ? 'Web-вход активен' : 'Web-вход не создан'}
+                  </Badge>
+                ) : null}
               </div>
             </CardHeader>
             <CardContent className="grid gap-3 text-small sm:grid-cols-2 xl:grid-cols-4">
@@ -348,20 +362,26 @@ export function StudentDirectoryView({
                 <p className="text-caption text-muted-foreground">Сила</p>
                 <p>{selectedStudent.strength ?? '—'}</p>
               </div>
-              <div>
-                <p className="text-caption text-muted-foreground">Логин</p>
-                <p>{selectedStudent.webAccount?.username ?? '—'}</p>
-              </div>
-              <div className="sm:col-span-2 xl:col-span-4">
-                <p className="text-caption text-muted-foreground">Семейные аккаунты</p>
-                <p>
-                  {selectedStudent.familyAccounts.length === 0
-                    ? '—'
-                    : selectedStudent.familyAccounts
-                        .map((account) => `${account.displayName} · ${account.relationshipLabel}`)
-                        .join(', ')}
-                </p>
-              </div>
+              {showPrivateAccounts ? (
+                <>
+                  <div>
+                    <p className="text-caption text-muted-foreground">Логин</p>
+                    <p>{selectedStudent.webAccount?.username ?? '—'}</p>
+                  </div>
+                  <div className="sm:col-span-2 xl:col-span-4">
+                    <p className="text-caption text-muted-foreground">Семейные аккаунты</p>
+                    <p>
+                      {selectedStudent.familyAccounts.length === 0
+                        ? '—'
+                        : selectedStudent.familyAccounts
+                            .map(
+                              (account) => `${account.displayName} · ${account.relationshipLabel}`,
+                            )
+                            .join(', ')}
+                    </p>
+                  </div>
+                </>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -407,6 +427,10 @@ export function StudentDirectoryView({
                   <EnrollmentEditor
                     accountId={accountId}
                     allGroups={courseGroups(selectedCourse, selectedEnrollment)}
+                    canEditGroup={(groupId) =>
+                      canEditGroup(selectedEnrollment.course.courseId, groupId)
+                    }
+                    canManageEnrollment={canManageEnrollment}
                     enrollment={selectedEnrollment}
                     key={`${selectedEnrollment.enrollmentId}:${selectedEnrollment.version}`}
                     onSave={onSave}
@@ -434,6 +458,7 @@ export function StaffStudentDirectoryPage({
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
   if (principal.audience !== 'staff') throw new Error('Student directory requires Staff auth')
+  const isAdmin = principal.role === 'admin'
   const client = useMemo(
     () =>
       createAdminCourseClient(authentication.client.runtime, {
@@ -450,7 +475,7 @@ export function StaffStudentDirectoryPage({
   )
   const scope = { audience: 'staff' as const, accountId: principal.accountId }
   const directory = useAdminStudentEnrollmentsQuery(client, scope)
-  const catalog = useAdminCourseCatalogQuery(client, scope)
+  const catalog = useAdminCourseCatalogQuery(client, scope, undefined, isAdmin)
   const queryClient = useQueryClient()
   const mutation = useMutation({
     mutationFn: (command: SaveCommand) =>
@@ -466,26 +491,28 @@ export function StaffStudentDirectoryPage({
     onError: (error) => authentication.handleApiError(error),
   })
 
-  if (directory.isPending || catalog.isPending) {
+  if (directory.isPending || (isAdmin && catalog.isPending)) {
     return (
       <PageLayout title="Участники и группы" width="wide">
         <PageStatePanel state="loading" />
       </PageLayout>
     )
   }
-  const error = directory.error ?? catalog.error
+  const error = directory.error ?? (isAdmin ? catalog.error : null)
   if (error) {
     return (
       <PageLayout title="Участники и группы" width="wide">
         <PageStatePanel
           actionLabel="Повторить"
-          onAction={() => void Promise.all([directory.refetch(), catalog.refetch()])}
+          onAction={() =>
+            void Promise.all([directory.refetch(), ...(isAdmin ? [catalog.refetch()] : [])])
+          }
           state={error instanceof ApiResponseError && error.status === 403 ? 'forbidden' : 'error'}
         />
       </PageLayout>
     )
   }
-  if (!directory.data || !catalog.data) {
+  if (!directory.data || (isAdmin && !catalog.data)) {
     return (
       <PageLayout title="Участники и группы" width="wide">
         <PageStatePanel state="error" />
@@ -496,11 +523,22 @@ export function StaffStudentDirectoryPage({
   return (
     <PageLayout
       description="Поиск школьника, его курсы, активные и доступные группы и формат занятий."
-      eyebrow="Admin"
+      eyebrow={isAdmin ? 'Admin' : 'Teacher'}
       title="Участники и группы"
       width="wide"
     >
       <div className="space-y-4">
+        {!isAdmin ? (
+          <Alert>
+            <AlertContent>
+              <AlertTitle>Показаны только ваши группы</AlertTitle>
+              <AlertDescription>
+                Вы можете сменить активную группу школьника в пределах выданного доступа. Остальные
+                поля изменяет администратор.
+              </AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : null}
         {mutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
@@ -511,13 +549,22 @@ export function StaffStudentDirectoryPage({
         ) : null}
         <StudentDirectoryView
           accountId={principal.accountId}
-          courses={catalog.data.courses}
+          canEditGroup={(courseId, groupId) =>
+            isAdmin ||
+            principal.scopes.some(
+              (item) =>
+                item.courseId === courseId && (item.groupId === null || item.groupId === groupId),
+            )
+          }
+          canManageEnrollment={isAdmin}
+          courses={catalog.data?.courses ?? []}
           onSave={(command) => mutation.mutate(command)}
           onSearchChange={onSearchChange}
           saving={mutation.isPending}
           search={search}
           storageNamespace={createBrowserStorageNamespace(authentication.client.runtime)}
           students={directory.data.students}
+          showPrivateAccounts={isAdmin}
         />
       </div>
     </PageLayout>

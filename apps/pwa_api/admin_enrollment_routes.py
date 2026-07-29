@@ -20,7 +20,6 @@ from db_methods.pwa.admin_enrollments import (
     insert_group_event,
     insert_mode_event,
     insert_status_event,
-    list_active_access_group_ids,
     list_active_group_access,
     list_course_groups,
     list_family_links,
@@ -35,6 +34,7 @@ from db_methods.pwa.family_enrollment import (
 )
 from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.classroom_assignment import classroom_strength
+from helpers.pwa.permissions import AuthorizationPrincipal, Capability
 from models.pwa.admin_enrollment import (
     InvalidAdminEnrollmentChange,
     plan_admin_enrollment_change,
@@ -76,19 +76,21 @@ def _factory(request: web.Request):
     return state.factory
 
 
-def _admin_user_id(request: web.Request) -> int:
+def _staff_principal(
+    request: web.Request, capability: Capability
+) -> AuthorizationPrincipal:
     principal = authenticated_session(request).principal
     if (
         principal.audience is not AuthAudience.STAFF
         or principal.linked_user_id is None
-        or not principal.is_global_admin
+        or not principal.has_capability(capability)
     ):
         raise PwaApiError(
             status=403,
             code="forbidden",
-            message="Управлять доступом школьников может только администратор",
+            message="Недостаточно прав для работы со списком участников",
         )
-    return principal.linked_user_id
+    return principal
 
 
 def _path_public_id(request: web.Request) -> str:
@@ -199,8 +201,13 @@ def _enrollment_payload(
     }
 
 
-def _directory(connection: sqlite3.Connection) -> list[dict[str, object]]:
-    rows = list_students(connection)
+def _directory(
+    connection: sqlite3.Connection,
+    *,
+    staff_scopes: tuple[tuple[str, str | None], ...] | None,
+    include_private_accounts: bool,
+) -> list[dict[str, object]]:
+    rows = list_students(connection, staff_scopes=staff_scopes)
     enrollment_ids = tuple(
         int(row["enrollment_id"]) for row in rows if row["enrollment_id"] is not None
     )
@@ -209,7 +216,12 @@ def _directory(connection: sqlite3.Connection) -> list[dict[str, object]]:
     for access in list_active_group_access(connection, enrollment_ids):
         access_by_enrollment.setdefault(int(access["enrollment_id"]), []).append(access)
     families_by_student: dict[int, list[dict[str, object]]] = {}
-    for family in list_family_links(connection, student_user_ids):
+    family_rows = (
+        list_family_links(connection, student_user_ids)
+        if include_private_accounts
+        else []
+    )
+    for family in family_rows:
         families_by_student.setdefault(int(family["student_user_id"]), []).append(
             family
         )
@@ -229,7 +241,7 @@ def _directory(connection: sqlite3.Connection) -> list[dict[str, object]]:
                 "strength": classroom_strength(row["simple_prob"], row["compl_prob"]),
                 "webAccount": (
                     None
-                    if row["account_public_id"] is None
+                    if not include_private_accounts or row["account_public_id"] is None
                     else {
                         "accountId": row["account_public_id"],
                         "username": row["username"],
@@ -261,14 +273,26 @@ def _directory(connection: sqlite3.Connection) -> list[dict[str, object]]:
 
 @admin_enrollment_routes.get("/staff/api/v1/student-enrollments")
 async def get_student_enrollments(request: web.Request) -> web.Response:
-    _admin_user_id(request)
+    principal = _staff_principal(request, Capability.STUDENT_READ)
     if request.query:
         raise PwaApiError(
             status=422,
             code="validation_error",
             message="Этот запрос не принимает параметры",
         )
-    students = await _factory(request).run_read_async(_directory)
+    staff_scopes = None
+    if not principal.is_global_admin:
+        staff_scopes = tuple(
+            (scope.course_public_id, scope.group_public_id)
+            for scope in principal.staff_scope_grants
+        )
+    students = await _factory(request).run_read_async(
+        lambda connection: _directory(
+            connection,
+            staff_scopes=staff_scopes,
+            include_private_accounts=principal.is_global_admin,
+        )
+    )
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -281,7 +305,9 @@ async def get_student_enrollments(request: web.Request) -> web.Response:
 
 @admin_enrollment_routes.put("/staff/api/v1/course-enrollments/{enrollment_public_id}")
 async def put_student_enrollment(request: web.Request) -> web.Response:
-    actor_user_id = _admin_user_id(request)
+    principal = _staff_principal(request, Capability.STUDENT_ACTIVE_GROUP_WRITE)
+    assert principal.linked_user_id is not None
+    actor_user_id = principal.linked_user_id
     if request.query:
         raise PwaApiError(
             status=422,
@@ -320,9 +346,32 @@ async def put_student_enrollment(request: web.Request) -> web.Response:
             str(groups_by_public_id[group_public_id]["group_id"])
             for group_public_id in requested_public_ids
         }
-        current_access = list_active_access_group_ids(
-            connection, enrollment_id=int(current["enrollment_id"])
+        current_access_rows = list_active_group_access(
+            connection, (int(current["enrollment_id"]),)
         )
+        current_access = {str(row["group_id"]) for row in current_access_rows}
+        current_access_public_ids = {
+            str(row["group_public_id"]) for row in current_access_rows
+        }
+        if not principal.is_global_admin:
+            course_public_id = str(current["course_public_id"])
+            current_group_public_id = str(current["active_group_public_id"])
+            target_group_public_id = str(payload["activeGroupId"])
+            if (
+                not principal.has_staff_group_access(
+                    course_public_id=course_public_id,
+                    group_public_id=current_group_public_id,
+                )
+                or not principal.has_staff_group_access(
+                    course_public_id=course_public_id,
+                    group_public_id=target_group_public_id,
+                )
+                or target_group_public_id not in current_access_public_ids
+                or requested_public_ids != current_access_public_ids
+                or payload["attendanceMode"] != current["attendance_mode"]
+                or payload["status"] != current["enrollment_status"]
+            ):
+                return {"state": "forbidden"}
         try:
             plan = plan_admin_enrollment_change(
                 current_active_group_id=str(current["active_group_id"]),
@@ -446,6 +495,12 @@ async def put_student_enrollment(request: web.Request) -> web.Response:
             status=404,
             code="enrollment_not_found",
             message="Запись на курс не найдена",
+        )
+    if result["state"] == "forbidden":
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Преподаватель может менять только активную группу в своём доступе",
         )
     if result["state"] == "conflict":
         raise PwaApiError(

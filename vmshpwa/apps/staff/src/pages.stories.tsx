@@ -182,6 +182,50 @@ export const StudentCourseAccess: Story = {
   },
 }
 
+function TeacherStudentDirectoryStory() {
+  const [search, setSearch] = useState({ query: '' })
+  const [saved, setSaved] = useState(false)
+  const directory = adminStudentEnrollmentDirectoryResponseSchema.parse(studentDirectoryFixture)
+  const student = directory.students[0]!
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <StudentDirectoryView
+        accountId="storybook-teacher"
+        canEditGroup={() => true}
+        canManageEnrollment={false}
+        courses={[]}
+        onSave={() => setSaved(true)}
+        onSearchChange={setSearch}
+        search={search}
+        showPrivateAccounts={false}
+        storageNamespace="vmsh-179:v1:staff:storybook-teacher"
+        students={[{ ...student, webAccount: null, familyAccounts: [] }]}
+      />
+      {saved ? (
+        <p className="mt-3 text-small" role="status">
+          Новая активная группа подготовлена к отправке.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+export const TeacherScopedStudentAccess: Story = {
+  name: 'Участники · область преподавателя',
+  render: () => <TeacherStudentDirectoryStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByText('Семейные аккаунты')).not.toBeInTheDocument()
+    await expect(canvas.getByLabelText('Формат занятий')).toBeDisabled()
+    await userEvent.selectOptions(
+      canvas.getByLabelText('Активная группа'),
+      'group-fixture-continuing',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить изменения' }))
+    await expect(canvas.getByText('Новая активная группа подготовлена к отправке.')).toBeVisible()
+  },
+}
+
 export const TeacherForbidden: Story = {
   render: () => <StaffGenericPage description="Только admin." forbidden title="Аудит" />,
 }

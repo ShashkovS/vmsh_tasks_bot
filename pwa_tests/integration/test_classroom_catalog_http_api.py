@@ -185,6 +185,12 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
             "VALUES (?, ?, 'layout-beginner', ?, ?, ?)",
             (enrollment_id, course_id, now, now, now),
         )
+        connection.execute(
+            "INSERT INTO staff_scopes "
+            "(staff_user_id, course_id, group_id, role, valid_from, created_at, "
+            "updated_at) VALUES (?, ?, 'layout-beginner', 'teacher', ?, ?, ?)",
+            (TEACHER_ID, course_id, now, now, now),
+        )
 
     factory.run_write(seed)
 

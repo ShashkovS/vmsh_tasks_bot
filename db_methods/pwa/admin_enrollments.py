@@ -7,16 +7,34 @@ import sqlite3
 from helpers.consts import USER_TYPE
 
 
-def list_students(connection: sqlite3.Connection) -> list[dict[str, object]]:
-    """Return one row per Student/enrollment without hiding unprovisioned users.
+def list_students(
+    connection: sqlite3.Connection,
+    *,
+    staff_scopes: tuple[tuple[str, str | None], ...] | None = None,
+) -> list[dict[str, object]]:
+    """Return one row per Student/enrollment, optionally limited by Staff scope.
 
     The product has roughly 1500 students.  A single admin snapshot is simpler
     and faster here than maintaining cursor state while an operator filters and
-    edits the same list.  See Phase 10 in the development plan.
+    edits the same list. Teachers receive only rows in their course/group scope;
+    an admin snapshot also includes unprovisioned users. See Phase 10.
     """
 
+    scope_sql = ""
+    parameters: list[object] = [int(USER_TYPE.STUDENT)]
+    if staff_scopes is not None:
+        clauses: list[str] = []
+        for course_public_id, group_public_id in staff_scopes:
+            if group_public_id is None:
+                clauses.append("course.public_id = ?")
+                parameters.append(course_public_id)
+            else:
+                clauses.append("(course.public_id = ? AND active_group.public_id = ?)")
+                parameters.extend((course_public_id, group_public_id))
+        scope_sql = f" AND ({' OR '.join(clauses)})" if clauses else " AND 0"
+
     rows = connection.execute(
-        """
+        f"""
         SELECT student.id AS student_user_id,
                student.public_id AS student_public_id,
                student.surname,
@@ -53,11 +71,11 @@ def list_students(connection: sqlite3.Connection) -> list[dict[str, object]]:
          AND active_group.group_id = enrollment.active_group_id
         LEFT JOIN student_strength AS strength
           ON strength.student_id = student.id
-        WHERE student.type = ?
+        WHERE student.type = ?{scope_sql}
         ORDER BY student.surname, student.name, student.id,
                  course.sort_order, course.code, enrollment.id
         """,
-        (int(USER_TYPE.STUDENT),),
+        parameters,
     ).fetchall()
     return [dict(row) for row in rows]
 
@@ -71,6 +89,7 @@ def list_active_group_access(
     rows = connection.execute(
         f"""
         SELECT access.enrollment_id,
+               group_record.group_id,
                group_record.public_id AS group_public_id,
                group_record.short_code,
                group_record.public_name,

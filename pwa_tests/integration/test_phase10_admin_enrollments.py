@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pwa_tests.integration.test_classroom_catalog_http_api import (
     ADMIN_ID,
+    TEACHER_ID,
     ClassroomHttpFixture,
     _cookies,
     _headers,
@@ -13,7 +14,7 @@ from pwa_tests.integration.test_classroom_catalog_http_api import (
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
 
-async def test_only_admin_can_list_and_edit_enrollments(
+async def test_teacher_directory_is_scope_filtered_and_hides_account_links(
     classroom_http: ClassroomHttpFixture,
 ) -> None:
     teacher_list = await classroom_http.client.get(
@@ -21,15 +22,21 @@ async def test_only_admin_can_list_and_edit_enrollments(
         headers=_headers(),
         cookies=_cookies(classroom_http, "teacher"),
     )
-    assert teacher_list.status == 403
+    assert teacher_list.status == 200, await teacher_list.text()
+    students = (await teacher_list.json())["students"]
+    assert [student["studentId"] for student in students] == [
+        "classroom-layout-student"
+    ]
+    assert students[0]["webAccount"] is None
+    assert students[0]["familyAccounts"] == []
 
-    teacher_update = await classroom_http.client.put(
+    forbidden_update = await classroom_http.client.put(
         "/staff/api/v1/course-enrollments/classroom-layout-enrollment",
         json={
             "schemaVersion": 1,
             "activeGroupId": "classroom-layout-group",
             "allowedGroupIds": ["classroom-layout-group"],
-            "attendanceMode": "in_person",
+            "attendanceMode": "online",
             "status": "active",
         },
         headers=_headers(
@@ -38,7 +45,8 @@ async def test_only_admin_can_list_and_edit_enrollments(
         ),
         cookies=_cookies(classroom_http, "teacher"),
     )
-    assert teacher_update.status == 403
+    assert forbidden_update.status == 403
+    assert (await forbidden_update.json())["error"]["code"] == "forbidden"
 
 
 async def test_admin_directory_contains_accounts_family_and_course_access(
@@ -130,6 +138,97 @@ def _seed_second_group(classroom_http: ClassroomHttpFixture) -> None:
         )
 
     classroom_http.factory.run_write(seed)
+
+
+def _allow_second_group_for_student(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    now = "2026-01-05T12:00:00.000000Z"
+
+    def seed(connection) -> None:
+        course_id = connection.execute(
+            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+        ).fetchone()["id"]
+        enrollment_id = connection.execute(
+            "SELECT id FROM course_enrollments "
+            "WHERE public_id = 'classroom-layout-enrollment'"
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO course_group_access "
+            "(enrollment_id, course_id, group_id, valid_from, created_at, updated_at) "
+            "VALUES (?, ?, 'layout-advanced', ?, ?, ?)",
+            (enrollment_id, course_id, now, now, now),
+        )
+
+    classroom_http.factory.run_write(seed)
+
+
+def _allow_second_group_for_teacher(classroom_http: ClassroomHttpFixture) -> None:
+    now = "2026-01-05T12:00:00.000000Z"
+
+    def seed(connection) -> None:
+        course_id = connection.execute(
+            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO staff_scopes "
+            "(staff_user_id, course_id, group_id, role, valid_from, created_at, "
+            "updated_at) VALUES (?, ?, 'layout-advanced', 'teacher', ?, ?, ?)",
+            (TEACHER_ID, course_id, now, now, now),
+        )
+
+    classroom_http.factory.run_write(seed)
+
+
+async def test_teacher_changes_only_active_group_inside_scope(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    _seed_second_group(classroom_http)
+    _allow_second_group_for_student(classroom_http)
+
+    body = {
+        "schemaVersion": 1,
+        "activeGroupId": "classroom-layout-group-advanced",
+        "allowedGroupIds": [
+            "classroom-layout-group",
+            "classroom-layout-group-advanced",
+        ],
+        "attendanceMode": "in_person",
+        "status": "active",
+    }
+    forbidden = await classroom_http.client.put(
+        "/staff/api/v1/course-enrollments/classroom-layout-enrollment",
+        json=body,
+        headers=_headers(
+            unsafe=True,
+            if_match='"classroom-layout-enrollment:v1"',
+        ),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert forbidden.status == 403
+
+    _allow_second_group_for_teacher(classroom_http)
+
+    response = await classroom_http.client.put(
+        "/staff/api/v1/course-enrollments/classroom-layout-enrollment",
+        json=body,
+        headers=_headers(
+            unsafe=True,
+            if_match='"classroom-layout-enrollment:v1"',
+        ),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+
+    assert response.status == 200, await response.text()
+    assert (await response.json())["enrollment"]["activeGroupId"] == (
+        "classroom-layout-group-advanced"
+    )
+    event = classroom_http.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT event_type, actor_user_id FROM course_enrollment_events"
+        ).fetchone()
+    )
+    assert tuple(event.values()) == ("active_group_changed", TEACHER_ID)
 
 
 async def test_admin_changes_group_mode_and_allowed_access_atomically(

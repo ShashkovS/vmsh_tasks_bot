@@ -230,6 +230,18 @@ test('Admin finds a student and never loses an unsaved course edit on reload', a
   await expect(page.getByLabel('Формат занятий')).toHaveValue('in_person')
 })
 
+test('Teacher sees only scoped students and cannot edit admin enrollment fields', async ({
+  page,
+}) => {
+  await loginThroughUi(page, AUTH_PERSONAS.teacher, '/staff/users')
+  await expect(page.getByRole('heading', { name: 'Участники и группы', level: 1 })).toBeVisible()
+  await expect(page.getByText('Показаны только ваши группы')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Тестовый-Онлайн Алексей/ })).toBeVisible()
+  await expect(page.getByText('Семейные аккаунты')).toHaveCount(0)
+  await expect(page.getByLabel('Формат занятий')).toBeDisabled()
+  await expect(page.getByLabel('Состояние записи')).toBeDisabled()
+})
+
 test('Admin saves a course enrollment through the real API', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite write')
 
