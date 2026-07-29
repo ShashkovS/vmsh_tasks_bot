@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Sequence
 from datetime import date
 
 from db_methods.pwa.classroom_assignments import (
@@ -16,6 +17,7 @@ from db_methods.pwa.classroom_assignments import (
     replace_assignments,
     supersede_confirmed_plan,
     touch_plan,
+    update_assignment_room,
 )
 from db_methods.pwa.classroom_layouts import (
     find_event_layout,
@@ -260,6 +262,63 @@ def confirm_assignment_plan(
     return read_assignment_plan(connection, event_public_id, today=today)
 
 
+def update_assignment_plan(
+    connection: sqlite3.Connection,
+    *,
+    event_public_id: str,
+    plan_public_id: str,
+    expected_version: int,
+    assignments: Sequence[tuple[str, str]],
+    now: str,
+    today: date | None = None,
+) -> dict[str, object]:
+    event = _event(connection, event_public_id)
+    plan = find_plan_by_public_id(connection, plan_public_id)
+    if plan is None or int(plan["in_person_event_id"]) != int(event["id"]):
+        raise ClassroomAssignmentNotFound
+    if plan["state"] != "draft" or int(plan["version"]) != expected_version:
+        raise ClassroomAssignmentConflict
+    layout = find_event_layout(connection, int(event["id"]), "confirmed")
+    if layout is None or int(plan["layout_version_id"]) != int(layout["id"]):
+        raise InvalidClassroomAssignment("plan layout is no longer current")
+
+    current = {
+        str(row["enrollment_public_id"]): row
+        for row in list_plan_assignments(connection, int(plan["id"]))
+    }
+    rooms = {
+        str(room["classroom_public_id"]): room
+        for room in list_layout_rooms(connection, int(layout["id"]))
+        if room["classroom_status"] == "active"
+    }
+    if len({enrollment_id for enrollment_id, _room_id in assignments}) != len(
+        assignments
+    ):
+        raise InvalidClassroomAssignment("student appears more than once")
+    for enrollment_public_id, classroom_public_id in assignments:
+        assignment = current.get(enrollment_public_id)
+        room = rooms.get(classroom_public_id)
+        if assignment is None or room is None:
+            raise InvalidClassroomAssignment("unknown student or classroom")
+        if int(assignment["group_lesson_id"]) != int(room["group_lesson_id"]):
+            raise InvalidClassroomAssignment("group change requires confirmation")
+        update_assignment_room(
+            connection,
+            plan_id=int(plan["id"]),
+            enrollment_id=int(assignment["course_enrollment_id"]),
+            classroom_id=int(room["classroom_id"]),
+            now=now,
+        )
+    if not touch_plan(
+        connection,
+        plan_id=int(plan["id"]),
+        expected_version=expected_version,
+        now=now,
+    ):
+        raise ClassroomAssignmentConflict
+    return read_assignment_plan(connection, event_public_id, today=today)
+
+
 __all__ = [
     "ClassroomAssignmentConflict",
     "ClassroomAssignmentNotFound",
@@ -267,4 +326,5 @@ __all__ = [
     "confirm_assignment_plan",
     "read_assignment_plan",
     "recalculate_assignment_plan",
+    "update_assignment_plan",
 ]

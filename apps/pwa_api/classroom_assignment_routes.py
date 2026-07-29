@@ -21,6 +21,7 @@ from models.pwa.classroom_assignments import (
     confirm_assignment_plan,
     read_assignment_plan,
     recalculate_assignment_plan,
+    update_assignment_plan,
 )
 
 
@@ -71,7 +72,7 @@ def _public_id(request: web.Request, field: str) -> str:
     return value
 
 
-async def _empty_json(request: web.Request) -> None:
+async def _json(request: web.Request) -> dict[str, object]:
     if request.content_type != "application/json":
         raise PwaApiError(
             status=422,
@@ -86,12 +87,56 @@ async def _empty_json(request: web.Request) -> None:
             code="validation_error",
             message="Тело запроса должно быть корректным JSON-объектом",
         ) from error
-    if payload != {"schemaVersion": 1}:
+    if not isinstance(payload, dict) or payload.get("schemaVersion") != 1:
         raise PwaApiError(
             status=422,
             code="validation_error",
             message="Проверьте поля плана распределения",
         )
+    return payload
+
+
+def _assignment_changes(payload: dict[str, object]) -> list[tuple[str, str]]:
+    if set(payload) != {"schemaVersion", "assignments"} or not isinstance(
+        payload["assignments"], list
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте список школьников",
+        )
+    if len(payload["assignments"]) > 2000:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Слишком много школьников",
+        )
+    changes = []
+    for item in payload["assignments"]:
+        if not isinstance(item, dict) or set(item) != {
+            "enrollmentPublicId",
+            "classroomPublicId",
+        }:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Проверьте список школьников",
+            )
+        enrollment_public_id = item["enrollmentPublicId"]
+        classroom_public_id = item["classroomPublicId"]
+        if (
+            not isinstance(enrollment_public_id, str)
+            or _PUBLIC_ID.fullmatch(enrollment_public_id) is None
+            or not isinstance(classroom_public_id, str)
+            or _PUBLIC_ID.fullmatch(classroom_public_id) is None
+        ):
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Проверьте список школьников",
+            )
+        changes.append((enrollment_public_id, classroom_public_id))
+    return changes
 
 
 def _expected_version(request: web.Request, plan_public_id: str) -> int:
@@ -258,7 +303,13 @@ async def post_recalculate_classroom_assignment_plan(
 ) -> web.Response:
     actor_user_id = _admin_user_id(request)
     event_public_id = _public_id(request, "event_public_id")
-    await _empty_json(request)
+    payload = await _json(request)
+    if set(payload) != {"schemaVersion"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте поля плана распределения",
+        )
     working_plan = _working_plan_version(request)
     plan_public_id, expected_version = (
         (f"classroom-plan.{uuid.uuid4().hex}", None)
@@ -286,6 +337,37 @@ async def post_recalculate_classroom_assignment_plan(
     return _response(request, result)
 
 
+@classroom_assignment_routes.put(
+    "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/"
+    "{plan_public_id}/assignments"
+)
+async def put_classroom_assignments(request: web.Request) -> web.Response:
+    _admin_user_id(request)
+    event_public_id = _public_id(request, "event_public_id")
+    plan_public_id = _public_id(request, "plan_public_id")
+    expected_version = _expected_version(request, plan_public_id)
+    assignments = _assignment_changes(await _json(request))
+    try:
+        result = await _factory(request).run_write_async(
+            lambda connection: update_assignment_plan(
+                connection,
+                event_public_id=event_public_id,
+                plan_public_id=plan_public_id,
+                expected_version=expected_version,
+                assignments=assignments,
+                now=_now(),
+            )
+        )
+    except (
+        ClassroomAssignmentNotFound,
+        ClassroomAssignmentConflict,
+        InvalidClassroomAssignment,
+    ) as error:
+        _raise_domain_error(error)
+        raise AssertionError("unreachable")
+    return _response(request, result)
+
+
 @classroom_assignment_routes.post(
     "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/"
     "{plan_public_id}/confirm"
@@ -295,7 +377,13 @@ async def post_confirm_classroom_assignment_plan(request: web.Request) -> web.Re
     event_public_id = _public_id(request, "event_public_id")
     plan_public_id = _public_id(request, "plan_public_id")
     expected_version = _expected_version(request, plan_public_id)
-    await _empty_json(request)
+    payload = await _json(request)
+    if set(payload) != {"schemaVersion"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте поля плана распределения",
+        )
     try:
         result = await _factory(request).run_write_async(
             lambda connection: confirm_assignment_plan(

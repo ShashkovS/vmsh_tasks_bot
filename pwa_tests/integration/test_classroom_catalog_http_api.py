@@ -518,13 +518,33 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     assert stale.status == 409
     assert (await stale.json())["error"]["code"] == "version_conflict"
 
+    manually_moved = await classroom_http.client.put(
+        f"{assignment_path}/{plan['publicId']}/assignments",
+        json={
+            "schemaVersion": 1,
+            "assignments": [
+                {
+                    "enrollmentPublicId": "classroom-layout-enrollment",
+                    "classroomPublicId": "classroom-layout-202",
+                }
+            ],
+        },
+        headers=_headers(unsafe=True, if_match=plan_etag),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert manually_moved.status == 200, await manually_moved.text()
+    moved_payload = (await manually_moved.json())["assignmentPlan"]
+    assert moved_payload["students"][0]["classroomName"] == "202"
+    assert moved_payload["students"][0]["source"] == "manual"
+    assert moved_payload["plan"]["version"] == 2
+
     confirmed_plan = await classroom_http.client.post(
         f"{assignment_path}/{plan['publicId']}/confirm",
         json={"schemaVersion": 1},
-        headers=_headers(unsafe=True, if_match=plan_etag),
+        headers=_headers(unsafe=True, if_match=manually_moved.headers["ETag"]),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert confirmed_plan.status == 200, await confirmed_plan.text()
     confirmed_assignment = (await confirmed_plan.json())["assignmentPlan"]
     assert confirmed_assignment["plan"]["state"] == "confirmed"
-    assert confirmed_assignment["plan"]["version"] == 2
+    assert confirmed_assignment["plan"]["version"] == 3

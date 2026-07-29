@@ -187,6 +187,22 @@ def touch_plan(
     return cursor.rowcount == 1
 
 
+def update_assignment_room(
+    connection: sqlite3.Connection,
+    *,
+    plan_id: int,
+    enrollment_id: int,
+    classroom_id: int,
+    now: str,
+) -> None:
+    connection.execute(
+        "UPDATE classroom_assignments SET classroom_id = ?, status = 'assigned', "
+        "source = 'manual', updated_at = ? "
+        "WHERE plan_id = ? AND course_enrollment_id = ?",
+        (classroom_id, now, plan_id, enrollment_id),
+    )
+
+
 def supersede_confirmed_plan(
     connection: sqlite3.Connection, *, event_id: int, now: str
 ) -> None:
@@ -227,4 +243,5 @@ __all__ = [
     "replace_assignments",
     "supersede_confirmed_plan",
     "touch_plan",
+    "update_assignment_room",
 ]
