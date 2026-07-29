@@ -204,7 +204,13 @@ const independentSchedules: IndependentScheduleRow[] = [
   },
 ]
 
-export function StaffCoursesPage({ state = 'ready' }: { state?: PageDisplayState }) {
+export function StaffCoursesPage({
+  state = 'ready',
+  telegram,
+}: {
+  state?: PageDisplayState
+  telegram?: ReactNode
+}) {
   return (
     <StatefulPage state={state} title="Курсы и группы">
       <PageLayout
@@ -220,28 +226,30 @@ export function StaffCoursesPage({ state = 'ready' }: { state?: PageDisplayState
             lessonNumber={41}
             rows={independentSchedules}
           />
-          <TelegramBindingsEditor
-            bindings={[
-              {
-                id: 'math-news',
-                owner: 'course',
-                ownerLabel: mathCourse.name,
-                purpose: 'news-source',
-                chatLabel: '@vmsh_math_5_7',
-                status: 'active',
-              },
-              {
-                id: 'beginner-materials',
-                owner: 'group',
-                ownerLabel: beginner.name,
-                purpose: 'materials-target',
-                chatLabel: '-100179000201',
-                topicLabel: 'материалы начинающих',
-                status: 'active',
-              },
-            ]}
-            course={mathCourse}
-          />
+          {telegram ?? (
+            <TelegramBindingsEditor
+              bindings={[
+                {
+                  id: 'math-news',
+                  owner: 'course',
+                  ownerLabel: mathCourse.name,
+                  purpose: 'news-source',
+                  chatLabel: '@vmsh_math_5_7',
+                  status: 'verified',
+                },
+                {
+                  id: 'beginner-materials',
+                  owner: 'group',
+                  ownerLabel: beginner.name,
+                  purpose: 'materials-target',
+                  chatLabel: '-100179000201',
+                  topicLabel: 'материалы начинающих',
+                  status: 'verified',
+                },
+              ]}
+              course={mathCourse}
+            />
+          )}
         </div>
       </PageLayout>
     </StatefulPage>

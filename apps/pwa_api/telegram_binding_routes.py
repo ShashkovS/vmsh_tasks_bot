@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -16,11 +17,13 @@ from db_methods.pwa.telegram_bindings import (
     TelegramBindingNotFound,
     TelegramBindingVersionConflict,
     get_binding,
+    list_binding_owners,
     list_bindings,
     set_binding_status,
 )
 from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.permissions import Capability
+from helpers.pwa.telegram_bindings import TelegramBindingVerificationError
 from models.pwa.auth import AuthAudience
 from models.pwa.telegram_bindings import (
     InvalidTelegramBinding,
@@ -31,6 +34,12 @@ from models.pwa.telegram_bindings import (
 
 
 telegram_binding_routes = web.RouteTableDef()
+TelegramBindingVerifier = Callable[
+    [int, int | None, str], Awaitable[dict[str, object]]
+]
+PWA_TELEGRAM_BINDING_VERIFIER = web.AppKey(
+    "pwa_telegram_binding_verifier", TelegramBindingVerifier
+)
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?")
 _ETAG = re.compile(r'^"([a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?):v([1-9]\d*)"$')
 _FIELDS = frozenset(
@@ -247,6 +256,43 @@ async def get_telegram_bindings(request: web.Request) -> web.Response:
     )
 
 
+@telegram_binding_routes.get("/staff/api/v1/telegram-binding-owners")
+async def get_telegram_binding_owners(request: web.Request) -> web.Response:
+    _admin_user_id(request)
+    if request.query:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Параметры не поддерживаются"
+        )
+    rows = await _factory(request).run_read_async(list_binding_owners)
+    courses: list[dict[str, object]] = []
+    by_id: dict[str, dict[str, object]] = {}
+    for row in rows:
+        course_public_id = str(row["course_public_id"])
+        course = by_id.get(course_public_id)
+        if course is None:
+            course = {
+                "courseId": course_public_id,
+                "courseName": row["course_name"],
+                "status": row["course_status"],
+                "groups": [],
+            }
+            by_id[course_public_id] = course
+            courses.append(course)
+        if row["group_public_id"] is not None:
+            course["groups"].append(
+                {
+                    "groupId": row["group_public_id"],
+                    "groupName": row["group_name"],
+                    "status": row["group_status"],
+                }
+            )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "courses": courses,
+            "requestId": request["request_id"],
+        }
+    )
 @telegram_binding_routes.post("/staff/api/v1/telegram-bindings")
 async def post_telegram_binding(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
@@ -353,4 +399,88 @@ async def restore_telegram_binding_draft(request: web.Request) -> web.Response:
     return await _change_status(request, "draft")
 
 
-__all__ = ["telegram_binding_routes"]
+@telegram_binding_routes.post(
+    "/staff/api/v1/telegram-bindings/{binding_public_id}/verify"
+)
+async def verify_telegram_binding_route(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    public_id = _public_id(request)
+    expected_version = _expected_version(request, public_id)
+    await _json(request, frozenset({"schemaVersion"}))
+    verifier = request.app.get(PWA_TELEGRAM_BINDING_VERIFIER)
+    if verifier is None:
+        raise PwaApiError(
+            status=503,
+            code="telegram_not_configured",
+            message="Telegram не настроен для этого запуска",
+        )
+    current = await _factory(request).run_read_async(
+        lambda connection: get_binding(connection, public_id)
+    )
+    if current is None:
+        raise PwaApiError(
+            status=404,
+            code="telegram_binding_not_found",
+            message="Привязка Telegram не найдена",
+        )
+    if current["version"] != expected_version:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Привязка уже изменилась. Обновите страницу.",
+        )
+    try:
+        verified = await verifier(
+            int(current["chat_id"]),
+            (
+                None
+                if current["message_thread_id"] is None
+                else int(current["message_thread_id"])
+            ),
+            str(current["purpose"]),
+        )
+    except TelegramBindingVerificationError as error:
+        raise PwaApiError(
+            status=503 if error.retryable else 409,
+            code=error.reason,
+            message=(
+                "Telegram временно недоступен"
+                if error.retryable
+                else "Бот не может использовать этот канал или группу"
+            ),
+        ) from error
+    verified_title = verified.get("title")
+    if (
+        verified.get("chat_id") != current["chat_id"]
+        or not isinstance(verified_title, str)
+        or not verified_title.strip()
+    ):
+        raise PwaApiError(
+            status=409,
+            code="telegram_verification_mismatch",
+            message="Telegram вернул другой канал или некорректное название",
+        )
+    try:
+        item = await _factory(request).run_write_async(
+            lambda connection: set_binding_status(
+                connection,
+                public_id=public_id,
+                expected_version=expected_version,
+                status="verified",
+                verified_at=_now(),
+                title_cached=verified_title.strip()[:200],
+                actor_user_id=actor_user_id,
+                now=_now(),
+            )
+        )
+    except (TelegramBindingNotFound, TelegramBindingVersionConflict) as error:
+        _raise_write_error(error)
+        raise AssertionError("unreachable")
+    return _response(request, item)
+
+
+__all__ = [
+    "PWA_TELEGRAM_BINDING_VERIFIER",
+    "TelegramBindingVerifier",
+    "telegram_binding_routes",
+]

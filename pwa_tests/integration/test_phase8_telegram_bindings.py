@@ -70,6 +70,27 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
     )
     assert teacher.status == 403
 
+    owners = await classroom_http.client.get(
+        "/staff/api/v1/telegram-binding-owners",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert owners.status == 200
+    assert (await owners.json())["courses"] == [
+        {
+            "courseId": "classroom-layout-course",
+            "courseName": "Математика",
+            "status": "active",
+            "groups": [
+                {
+                    "groupId": "classroom-layout-group",
+                    "groupName": "Начинающие",
+                    "status": "active",
+                }
+            ],
+        }
+    ]
+
     request = {
         "schemaVersion": 1,
         "ownerType": "course",
@@ -149,6 +170,22 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
     )
     assert disabled.status == 200
     assert (await disabled.json())["binding"]["status"] == "disabled"
+
+    verified = await classroom_http.client.post(
+        f"/staff/api/v1/telegram-bindings/{item['publicId']}/verify",
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True, if_match=f'"{item["publicId"]}:v3"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert verified.status == 200, await verified.text()
+    verified_item = (await verified.json())["binding"]
+    assert (verified_item["status"], verified_item["titleCached"]) == (
+        "verified",
+        "Проверенный канал",
+    )
+    assert classroom_http.telegram_binding_checks == [
+        (-100179000001, None, "news_source")
+    ]
 
 
 @pytest.mark.asyncio

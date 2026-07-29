@@ -232,24 +232,32 @@ export interface TelegramBindingView {
   chatLabel: string
   topicLabel?: string
   inherited?: boolean
-  status: 'active' | 'disabled'
+  status: 'draft' | 'verified' | 'disabled'
 }
 
 export function TelegramBindingsEditor({
   course,
   bindings,
   onAdd,
+  onDisable,
+  onRestore,
+  onVerify,
+  pendingBindingId,
   className,
 }: {
   course: CourseView
   bindings: TelegramBindingView[]
   onAdd?: () => void
+  onDisable?: (bindingId: string) => void
+  onRestore?: (bindingId: string) => void
+  onVerify?: (bindingId: string) => void
+  pendingBindingId?: string | null
   className?: string
 }) {
   return (
     <section className={cn('space-y-3', className)} aria-labelledby="telegram-bindings-title">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
+      <div className="flex flex-col items-stretch gap-2 md:flex-row md:flex-wrap md:items-end md:justify-between">
+        <div className="min-w-0 md:flex-1">
           <h2
             className="inline-flex items-center gap-2 text-section font-semibold text-foreground"
             id="telegram-bindings-title"
@@ -262,7 +270,7 @@ export function TelegramBindingsEditor({
             по умолчанию.
           </p>
         </div>
-        <Button onClick={onAdd} size="sm" variant="outline">
+        <Button className="self-start" onClick={onAdd} size="sm" variant="outline">
           <Plus aria-hidden="true" />
           Добавить привязку
         </Button>
@@ -294,9 +302,53 @@ export function TelegramBindingsEditor({
                   {binding.topicLabel ? ` · ${binding.topicLabel}` : ''}
                 </p>
               </div>
-              <Badge variant={binding.status === 'active' ? 'success' : 'neutral'}>
-                {binding.status === 'active' ? 'Работает' : 'Отключена'}
-              </Badge>
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <Badge
+                  variant={
+                    binding.status === 'verified'
+                      ? 'success'
+                      : binding.status === 'draft'
+                        ? 'warning'
+                        : 'neutral'
+                  }
+                >
+                  {binding.status === 'verified'
+                    ? 'Проверена'
+                    : binding.status === 'draft'
+                      ? 'Черновик'
+                      : 'Отключена'}
+                </Badge>
+                {binding.status === 'draft' && onVerify ? (
+                  <Button
+                    disabled={pendingBindingId === binding.id}
+                    onClick={() => onVerify(binding.id)}
+                    size="xs"
+                    variant="outline"
+                  >
+                    Проверить
+                  </Button>
+                ) : null}
+                {binding.status !== 'disabled' && onDisable ? (
+                  <Button
+                    disabled={pendingBindingId === binding.id}
+                    onClick={() => onDisable(binding.id)}
+                    size="xs"
+                    variant="ghost"
+                  >
+                    Отключить
+                  </Button>
+                ) : null}
+                {binding.status === 'disabled' && onRestore ? (
+                  <Button
+                    disabled={pendingBindingId === binding.id}
+                    onClick={() => onRestore(binding.id)}
+                    size="xs"
+                    variant="outline"
+                  >
+                    Вернуть в черновик
+                  </Button>
+                ) : null}
+              </div>
             </li>
           )
         })}

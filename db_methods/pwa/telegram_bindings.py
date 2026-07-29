@@ -54,6 +54,20 @@ def list_bindings(
     return [dict(row) for row in rows]
 
 
+def list_binding_owners(connection: sqlite3.Connection) -> list[dict[str, object]]:
+    rows = connection.execute(
+        "SELECT course.public_id AS course_public_id, course.name AS course_name, "
+        "course.status AS course_status, course.sort_order AS course_sort_order, "
+        "owner_group.public_id AS group_public_id, "
+        "owner_group.public_name AS group_name, owner_group.status AS group_status, "
+        "owner_group.sort_order AS group_sort_order "
+        "FROM courses course LEFT JOIN groups owner_group "
+        "ON owner_group.course_id = course.id "
+        "ORDER BY course.sort_order, course.id, owner_group.sort_order, owner_group.group_id"
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def get_binding(
     connection: sqlite3.Connection, public_id: str
 ) -> dict[str, object] | None:
@@ -234,6 +248,7 @@ __all__ = [
     "get_binding",
     "insert_binding",
     "list_bindings",
+    "list_binding_owners",
     "list_verified_context_bindings",
     "set_binding_status",
     "update_binding",

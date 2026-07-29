@@ -116,7 +116,7 @@ export const TelegramBindings: Story = {
           ownerLabel: 'Математика 5–7',
           purpose: 'news-source',
           chatLabel: '@vmsh_math_5_7',
-          status: 'active',
+          status: 'verified',
         },
         {
           id: 'math-beginner-target',
@@ -125,7 +125,7 @@ export const TelegramBindings: Story = {
           purpose: 'materials-target',
           chatLabel: '-100179000201',
           topicLabel: 'тема 41',
-          status: 'active',
+          status: 'verified',
         },
         {
           id: 'math-continuing-news',
@@ -133,10 +133,47 @@ export const TelegramBindings: Story = {
           ownerLabel: 'Продолжающие',
           purpose: 'news-source',
           chatLabel: '@vmsh_math_pro',
-          status: 'active',
+          status: 'verified',
         },
       ]}
       course={mathCourse}
     />
   ),
+}
+
+function TelegramBindingLifecycleHarness() {
+  const [status, setStatus] = useState<'draft' | 'verified' | 'disabled'>('draft')
+  return (
+    <TelegramBindingsEditor
+      bindings={[
+        {
+          id: 'math-news-draft',
+          owner: 'course',
+          ownerLabel: 'Математика 5–7',
+          purpose: 'news-source',
+          chatLabel: '-100179000001',
+          status,
+        },
+      ]}
+      course={mathCourse}
+      onDisable={() => setStatus('disabled')}
+      onRestore={() => setStatus('draft')}
+      onVerify={() => setStatus('verified')}
+    />
+  )
+}
+
+export const TelegramBindingLifecycle: Story = {
+  name: 'Telegram binding · проверка и отключение',
+  render: () => <TelegramBindingLifecycleHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Черновик')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Проверить' }))
+    await expect(canvas.getByText('Проверена')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Отключить' }))
+    await expect(canvas.getByText('Отключена')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Вернуть в черновик' }))
+    await expect(canvas.getByText('Черновик')).toBeInTheDocument()
+  },
 }

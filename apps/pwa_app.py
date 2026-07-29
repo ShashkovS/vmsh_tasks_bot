@@ -63,7 +63,11 @@ from apps.pwa_api.support_routes import (
     SupportInvalidator,
     support_routes,
 )
-from apps.pwa_api.telegram_binding_routes import telegram_binding_routes
+from apps.pwa_api.telegram_binding_routes import (
+    PWA_TELEGRAM_BINDING_VERIFIER,
+    TelegramBindingVerifier,
+    telegram_binding_routes,
+)
 from apps.pwa_api.websocket_sessions import (
     SessionRevalidationStatus,
     WebSocketSessionAlreadyClosedError,
@@ -104,6 +108,7 @@ from helpers.pwa.content import (
 from helpers.pwa.push_delivery import PushSender, deliver_web_push_once
 from helpers.pwa.storage_config import load_storage_config
 from helpers.pwa.web_push import send_web_push
+from helpers.pwa.telegram_bindings import verify_telegram_binding
 from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience
 from models.pwa.content import ContentKind
@@ -1245,6 +1250,7 @@ def configure(
     ) = None,
     classroom_telegram_sender: TelegramClassroomSender | None = None,
     push_sender: PushSender | None = None,
+    telegram_binding_verifier: TelegramBindingVerifier | None = None,
 ):
     runtime_config = _runtime_config(app)
     vapid_settings = (
@@ -1294,6 +1300,21 @@ def configure(
         app[PWA_CLASSROOM_TELEGRAM_SENDER] = classroom_telegram_sender
     if push_sender is not None:
         app[PWA_PUSH_SENDER] = push_sender
+    if telegram_binding_verifier is None and runtime_config.telegram_bot_token:
+
+        async def configured_binding_verifier(
+            chat_id: int, message_thread_id: int | None, purpose: str
+        ) -> dict[str, object]:
+            return await verify_telegram_binding(
+                token=runtime_config.telegram_bot_token,
+                chat_id=chat_id,
+                message_thread_id=message_thread_id,
+                purpose=purpose,
+            )
+
+        telegram_binding_verifier = configured_binding_verifier
+    if telegram_binding_verifier is not None:
+        app[PWA_TELEGRAM_BINDING_VERIFIER] = telegram_binding_verifier
     app[PWA_STATE] = _create_pwa_state()
     registry = WebSocketSessionRegistry()
     app[PWA_WEBSOCKET_REGISTRY] = registry

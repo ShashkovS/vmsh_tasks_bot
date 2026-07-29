@@ -197,6 +197,7 @@ class ClassroomHttpFixture:
     student_cookie: str
     family_cookie: str
     telegram_messages: list[tuple[int, str]]
+    telegram_binding_checks: list[tuple[int, int | None, str]]
 
 
 @pytest.fixture()
@@ -226,10 +227,15 @@ async def classroom_http(tmp_path, aiohttp_client) -> ClassroomHttpFixture:
     )
 
     telegram_messages: list[tuple[int, str]] = []
+    telegram_binding_checks: list[tuple[int, int | None, str]] = []
 
     async def send_classroom_telegram(chat_id: int, text: str) -> int:
         telegram_messages.append((chat_id, text))
         return len(telegram_messages)
+
+    async def verify_telegram_binding(chat_id, message_thread_id, purpose):
+        telegram_binding_checks.append((chat_id, message_thread_id, purpose))
+        return {"chat_id": chat_id, "title": "Проверенный канал"}
 
     pwa_app.configure(
         app,
@@ -237,6 +243,7 @@ async def classroom_http(tmp_path, aiohttp_client) -> ClassroomHttpFixture:
         auth_runtime_config=auth_config,
         auth_service=auth_service,
         classroom_telegram_sender=send_classroom_telegram,
+        telegram_binding_verifier=verify_telegram_binding,
     )
     # The route reads the same verified connection boundary as production.
     # Setting it after composition keeps unrelated content/review routes out of
@@ -282,6 +289,7 @@ async def classroom_http(tmp_path, aiohttp_client) -> ClassroomHttpFixture:
             "family-password",
         ),
         telegram_messages=telegram_messages,
+        telegram_binding_checks=telegram_binding_checks,
     )
 
 
