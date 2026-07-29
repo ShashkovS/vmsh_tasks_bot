@@ -108,11 +108,13 @@ function AssignmentEditor({
         assignments[student.enrollmentPublicId] !== undefined,
     ).length,
   }))
-  const rooms: ClassroomPlanRoom[] = plan.rooms.map((room) => ({
-    id: room.publicId,
-    name: room.name,
-    groupId: room.groupLessonPublicId,
-  }))
+  const rooms: ClassroomPlanRoom[] = plan.rooms
+    .filter((room) => room.status === 'active')
+    .map((room) => ({
+      id: room.publicId,
+      name: room.name,
+      groupId: room.groupLessonPublicId,
+    }))
   const students: ClassroomPlanStudent[] = plan.students.map((student) => {
     const classroomId = assignments[student.enrollmentPublicId]
     const selectedRoom = plan.rooms.find((room) => room.publicId === classroomId)
@@ -236,8 +238,8 @@ function AssignmentEditor({
     saveDraft(next, nextGroupChanges)
     setGroupChangeRequested(null)
   }
-  const incidents =
-    currentPlan === null
+  const incidents = [
+    ...(currentPlan === null
       ? [
           {
             id: 'not-calculated',
@@ -246,7 +248,19 @@ function AssignmentEditor({
             blocking: true,
           },
         ]
-      : []
+      : []),
+    ...(currentPlan?.state === 'confirmed' &&
+    plan.students.some((student) => student.status === 'reassigning')
+      ? [
+          {
+            id: 'confirmed-room-unavailable',
+            title: 'Подтверждённая аудитория больше недоступна',
+            description: 'Пересчитайте план и подтвердите новое распределение.',
+            blocking: true,
+          },
+        ]
+      : []),
+  ]
 
   return (
     <div className="space-y-3">
