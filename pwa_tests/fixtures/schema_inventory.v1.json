@@ -153,6 +153,10 @@
       {
         "id": "0056.pwa_support_threads",
         "sha256": "00fa5ae3ce546ad76162bd4d239ed8f0b5f4ac66f4d74fe9043506ee1bc438c9"
+      },
+      {
+        "id": "0057.pwa_classroom_catalog",
+        "sha256": "009a6c0d6c7d8499592d2d8907cf5bd94c9eb0eb65458a6ac0577c93ffea17e3"
       }
     ],
     "repository_head_status": {
@@ -163,7 +167,7 @@
     }
   },
   "product": {
-    "object_count": 338,
+    "object_count": 345,
     "objects": [
       {
         "columns": [
@@ -1350,6 +1354,440 @@
         "object_sha256": "25bf7c5a470f5745e0cac4e4de1cf08c845023cd6dd690f70629407cc05c4e67",
         "sql": "CREATE TABLE auth_throttle_buckets\n(\n    audience        text    not null\n        check (audience in ('student', 'family', 'staff')),\n    bucket_kind     text    not null\n        check (bucket_kind in ('normalized_login', 'account', 'ip')),\n    bucket_key_hmac text    not null\n        check (\n            length(bucket_key_hmac) = 64\n            and bucket_key_hmac not glob '*[^0-9a-f]*'\n        ),\n    key_version     integer not null default 1\n        check (key_version > 0),\n    failure_count   integer not null default 0\n        check (failure_count >= 0),\n    window_started_at text  not null,\n    last_failed_at  text,\n    locked_until    text,\n    created_at      text    not null,\n    updated_at      text    not null,\n    version         integer not null default 1\n        check (version > 0),\n    primary key (audience, bucket_kind, bucket_key_hmac, key_version),\n    check (last_failed_at is null or last_failed_at >= window_started_at),\n    check (locked_until is null or last_failed_at is not null)\n);",
         "table_name": "auth_throttle_buckets",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "classroom_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "action",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "before_name",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "before_normalized_name",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "before_status",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "after_name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "after_normalized_name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "after_status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "version_after",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "classroom_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "classrooms"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "classroom_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "classroom_events_timeline_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_classroom_events_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "classroom_events",
+        "object_sha256": "b8d7714153b5ee4c1e1e8d215b7a503e88bb8acdf74e60b98f87b664a28de065",
+        "sql": "CREATE TABLE classroom_events\n(\n    id                     integer primary key,\n    public_id              text    not null unique,\n    classroom_id           integer not null references classrooms (id),\n    action                 text    not null\n        check (action in ('created', 'renamed', 'archived', 'restored')),\n    before_name            text,\n    before_normalized_name text,\n    before_status          text check (\n        before_status is null or before_status in ('active', 'archived')\n    ),\n    after_name             text    not null,\n    after_normalized_name  text    not null,\n    after_status           text    not null\n        check (after_status in ('active', 'archived')),\n    version_after          integer not null check (version_after > 0),\n    actor_user_id          integer not null references users (id),\n    request_id             text    not null check (length(trim(request_id)) > 0),\n    created_at             text    not null,\n    check (\n        (action = 'created' and before_name is null\n                            and before_normalized_name is null\n                            and before_status is null)\n        or (action <> 'created' and before_name is not null\n                               and before_normalized_name is not null\n                               and before_status is not null)\n    )\n);",
+        "table_name": "classroom_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "normalized_name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": "'active'",
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "created_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "updated_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "status",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "normalized_name",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "classrooms_status_name_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_classrooms_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "normalized_name",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_classrooms_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "classrooms",
+        "object_sha256": "57f5e45347c8a6e288a9cc151f7109c3a0d6563e6a3d184587dadc654bf73519",
+        "sql": "CREATE TABLE classrooms\n(\n    id                 integer primary key,\n    public_id          text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    name               text    not null\n        check (name = trim(name) and length(name) between 1 and 200),\n    normalized_name    text    not null unique\n        check (length(normalized_name) between 1 and 200),\n    status             text    not null default 'active'\n        check (status in ('active', 'archived')),\n    created_by_user_id integer not null references users (id),\n    updated_by_user_id integer not null references users (id),\n    created_at         text    not null,\n    updated_at         text    not null,\n    version            integer not null default 1 check (version > 0),\n    check (updated_at >= created_at)\n);",
+        "table_name": "classrooms",
         "type": "table"
       },
       {
@@ -18007,6 +18445,20 @@
         "type": "index"
       },
       {
+        "name": "classroom_events_timeline_idx",
+        "object_sha256": "16ce1f55af78dd47192dbecd5fbde35e36cce34c82f8133ac13bf6877403b469",
+        "sql": "CREATE INDEX classroom_events_timeline_idx\n    on classroom_events (classroom_id, id);",
+        "table_name": "classroom_events",
+        "type": "index"
+      },
+      {
+        "name": "classrooms_status_name_idx",
+        "object_sha256": "44d4650eb9ea0f1cb241be76d21be748e541dfac50059f8c605598e6577efa9d",
+        "sql": "CREATE INDEX classrooms_status_name_idx\n    on classrooms (status, normalized_name, id);",
+        "table_name": "classrooms",
+        "type": "index"
+      },
+      {
         "name": "content_derivatives_asset_idx",
         "object_sha256": "fad35922a19bc301382350f594f42c3348b4466a10057a96ceaf0f88b65178a1",
         "sql": "CREATE INDEX content_derivatives_asset_idx\n    on content_derivatives (asset_id, revision_id)\n    where asset_id is not null;",
@@ -18683,6 +19135,27 @@
         "object_sha256": "9bb811d15ab291b8762ccb68483a255b5a2b016cca8e213ca3c6ff98a8a96e80",
         "sql": "CREATE TRIGGER auth_sessions_audience_update\nbefore update of account_id, audience on auth_sessions\nfor each row\nwhen not exists (\n    select 1\n    from auth_accounts\n    where id = new.account_id and audience = new.audience\n)\nbegin\n    select raise(abort, 'auth session audience does not match account');\nend;",
         "table_name": "auth_sessions",
+        "type": "trigger"
+      },
+      {
+        "name": "classroom_events_delete_forbidden",
+        "object_sha256": "b64cf32c98629f52cdf306d64aefc6272e82c38ea8a9e16744fea5fa220e7e89",
+        "sql": "CREATE TRIGGER classroom_events_delete_forbidden\nbefore delete on classroom_events\nfor each row\nbegin\n    select raise(abort, 'classroom event deletion is forbidden');\nend;",
+        "table_name": "classroom_events",
+        "type": "trigger"
+      },
+      {
+        "name": "classroom_events_immutable_update",
+        "object_sha256": "84503346432963efaaf474a4f1084ac96523df9ecb03c78da59f6d51201a748f",
+        "sql": "CREATE TRIGGER classroom_events_immutable_update\nbefore update on classroom_events\nfor each row\nbegin\n    select raise(abort, 'classroom event is immutable');\nend;",
+        "table_name": "classroom_events",
+        "type": "trigger"
+      },
+      {
+        "name": "classrooms_delete_forbidden",
+        "object_sha256": "6251cddcd175922e1f00fa9c099603fdde45c1355b37bd1e31e4f8df4bd11407",
+        "sql": "CREATE TRIGGER classrooms_delete_forbidden\nbefore delete on classrooms\nfor each row\nbegin\n    select raise(abort, 'classroom deletion is forbidden');\nend;",
+        "table_name": "classrooms",
         "type": "trigger"
       },
       {
@@ -19673,8 +20146,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "5244e40b3c492b4474f8a3cf0036637bdce377aed06c4ed148af4cfc421f42d8",
-    "sha256": "d968c6a5ec83bbebc695619bc010cba850af335ea50c0698f8198fad9a7baaba"
+    "pragma_structure_sha256": "24e66006f43047076a9e90a782495f02b8d1db54d1945047855fb44e97f6b0a8",
+    "sha256": "6a72fc3f0687a95cc37ec6f02aa68a474deab2dc959069fd59250c33cd02f359"
   },
   "source_kind": "repository-migration-head"
 }
