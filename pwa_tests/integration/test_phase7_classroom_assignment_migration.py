@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Collection
+from datetime import date
 from pathlib import Path
 
 import pytest
 import yoyo
 
 from db_methods.pwa.migrations import MIGRATIONS_ROOT
+from models.pwa.classroom_assignments import (
+    InvalidClassroomAssignment,
+    confirm_assignment_plan,
+    recalculate_assignment_plan,
+)
 
 
 MIGRATION_ID = "0059.pwa_classroom_assignments"
@@ -155,10 +161,21 @@ def _insert_parents(connection: sqlite3.Connection) -> None:
     layout_id = connection.execute(
         "INSERT INTO classroom_layout_versions "
         "(public_id, in_person_event_id, state, created_by_user_id, "
-        "confirmed_by_user_id, created_at, updated_at, confirmed_at) VALUES "
-        "('layout-assignment', ?, 'confirmed', 2, 2, ?, ?, ?) RETURNING id",
-        (event_id, NOW, NOW, NOW),
+        "created_at, updated_at) VALUES "
+        "('layout-assignment', ?, 'draft', 2, ?, ?) RETURNING id",
+        (event_id, NOW, NOW),
     ).fetchone()[0]
+    connection.execute(
+        "INSERT INTO classroom_layout_rooms "
+        "(layout_version_id, classroom_id, group_lesson_id, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (layout_id, room_id, group_lesson_id, NOW, NOW),
+    )
+    connection.execute(
+        "UPDATE classroom_layout_versions SET state = 'confirmed', "
+        "confirmed_by_user_id = 2, confirmed_at = ?, updated_at = ? WHERE id = ?",
+        (NOW, NOW, layout_id),
+    )
     plan_id = connection.execute(
         "INSERT INTO classroom_assignment_plans "
         "(public_id, in_person_event_id, layout_version_id, state, "
@@ -202,4 +219,105 @@ def test_confirmed_assignment_rows_are_immutable_and_status_matches_room(tmp_pat
             connection.execute(
                 "UPDATE classroom_assignments SET source = 'manual' WHERE plan_id = ?",
                 (plan_id,),
+            )
+
+
+def test_assignment_plan_recalculates_and_confirms(tmp_path):
+    database_path = tmp_path / "phase7-assignment-plan.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        _insert_parents(connection)
+        connection.execute("DELETE FROM classroom_assignments")
+        connection.execute("DELETE FROM classroom_assignment_plans")
+        connection.execute(
+            "UPDATE users SET birthday = '2013-01-01', grade = 7 WHERE id = 1"
+        )
+        connection.execute(
+            "INSERT INTO student_strength (student_id, simple_prob, compl_prob) "
+            "VALUES (1, 0.5, 1.0)"
+        )
+
+        preview = recalculate_assignment_plan(
+            connection,
+            event_public_id="event-assignment",
+            plan_public_id="plan-generated",
+            expected_version=None,
+            actor_user_id=2,
+            now=NOW,
+            today=date(2026, 7, 29),
+        )
+
+        assert preview["plan"]["state"] == "draft"
+        assert preview["plan"]["version"] == 1
+        assert len(preview["students"]) == 1
+        assert preview["students"][0]["classroom_name"] == "201"
+        assert preview["students"][0]["age_years"] == 13.6
+        assert preview["students"][0]["grade"] == 7
+        assert preview["students"][0]["strength"] == 8.0
+
+        confirmed = confirm_assignment_plan(
+            connection,
+            event_public_id="event-assignment",
+            plan_public_id="plan-generated",
+            expected_version=1,
+            actor_user_id=2,
+            now="2026-07-29T13:01:00Z",
+            today=date(2026, 7, 29),
+        )
+
+        assert confirmed["plan"]["state"] == "confirmed"
+        assert confirmed["plan"]["version"] == 2
+
+
+def test_assignment_plan_without_room_cannot_be_confirmed(tmp_path):
+    database_path = tmp_path / "phase7-assignment-no-room.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        _insert_parents(connection)
+        connection.execute("DELETE FROM classroom_assignments")
+        connection.execute("DELETE FROM classroom_assignment_plans")
+        layout_id = connection.execute(
+            "SELECT id FROM classroom_layout_versions WHERE state = 'confirmed'"
+        ).fetchone()[0]
+        connection.execute(
+            "UPDATE classroom_layout_versions SET state = 'superseded', "
+            "superseded_at = ?, updated_at = ? WHERE id = ?",
+            (NOW, NOW, layout_id),
+        )
+        empty_layout_id = connection.execute(
+            "INSERT INTO classroom_layout_versions "
+            "(public_id, in_person_event_id, state, created_by_user_id, created_at, updated_at) "
+            "SELECT 'layout-empty', in_person_event_id, 'draft', 2, ?, ? "
+            "FROM classroom_layout_versions WHERE id = ? RETURNING id",
+            (NOW, NOW, layout_id),
+        ).fetchone()[0]
+        connection.execute(
+            "UPDATE classroom_layout_versions SET state = 'confirmed', "
+            "confirmed_by_user_id = 2, confirmed_at = ?, updated_at = ? WHERE id = ?",
+            (NOW, NOW, empty_layout_id),
+        )
+
+        preview = recalculate_assignment_plan(
+            connection,
+            event_public_id="event-assignment",
+            plan_public_id="plan-no-room",
+            expected_version=None,
+            actor_user_id=2,
+            now=NOW,
+        )
+
+        assert preview["students"][0]["status"] == "reassigning"
+        assert preview["students"][0]["classroom_id"] is None
+        with pytest.raises(InvalidClassroomAssignment):
+            confirm_assignment_plan(
+                connection,
+                event_public_id="event-assignment",
+                plan_public_id="plan-no-room",
+                expected_version=1,
+                actor_user_id=2,
+                now=NOW,
             )

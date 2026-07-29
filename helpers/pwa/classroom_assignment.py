@@ -122,10 +122,23 @@ def age_in_years(birthday: str | None, *, today: date) -> float | None:
     return round((today - born).days / 365.25, 1)
 
 
+def classroom_strength(
+    simple_prob: float | None, compl_prob: float | None
+) -> float | None:
+    """Scale the legacy 2:3 best-level score from ``a53`` to 0–10."""
+
+    if simple_prob is None or compl_prob is None:
+        return None
+    if not (0 <= simple_prob <= 1 and 0 <= compl_prob <= 1):
+        return None
+    return round(10 * (2 * simple_prob + 3 * compl_prob) / 5, 1)
+
+
 __all__ = [
     "AssignmentDecision",
     "AssignmentRoom",
     "StudentToAssign",
     "age_in_years",
+    "classroom_strength",
     "distribute_students",
 ]

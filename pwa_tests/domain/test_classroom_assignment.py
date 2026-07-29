@@ -4,6 +4,7 @@ from helpers.pwa.classroom_assignment import (
     AssignmentRoom,
     StudentToAssign,
     age_in_years,
+    classroom_strength,
     distribute_students,
 )
 
@@ -75,3 +76,9 @@ def test_age_uses_today_and_handles_missing_or_invalid_dates():
     assert age_in_years(None, today=today) is None
     assert age_in_years("not-a-date", today=today) is None
     assert age_in_years("2030-01-01", today=today) is None
+
+
+def test_classroom_strength_matches_a53_best_level_weights():
+    assert classroom_strength(0.5, 1.0) == 8.0
+    assert classroom_strength(None, 1.0) is None
+    assert classroom_strength(1.1, 0.5) is None
