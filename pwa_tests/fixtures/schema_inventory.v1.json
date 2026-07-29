@@ -197,6 +197,10 @@
       {
         "id": "0067.pwa_news_mirror",
         "sha256": "02b9f93449f7c793a5e99cfe02561e263ff5db83144725f4374e8260f681898f"
+      },
+      {
+        "id": "0068.pwa_group_banners",
+        "sha256": "64bcacc662f2919945960a1723436768b39e222d15d85659003c8fd6d44d12d8"
       }
     ],
     "repository_head_status": {
@@ -207,7 +211,7 @@
     }
   },
   "product": {
-    "object_count": 397,
+    "object_count": 399,
     "objects": [
       {
         "columns": [
@@ -7732,6 +7736,296 @@
         "object_sha256": "2f78d5447b8766fa6d998a159e664c874c6e7e4c7fd146015b2b49587a5b950f",
         "sql": "CREATE TABLE \"game_students_commands\"\n(\n    id         INTEGER\n        primary key,\n    student_id INTEGER not null\n        unique\n        references users,\n    command_id INTEGER not null,\n    group_id   text\n        references groups\n);",
         "table_name": "game_students_commands",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "audience",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "html_sanitized",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "sanitizer_policy_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "starts_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ends_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "priority",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "dismissible",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": "'active'",
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 15,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "cancelled_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "created_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "updated_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_id",
+                "seqno": 0
+              },
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "status",
+                "seqno": 1
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "starts_at",
+                "seqno": 2
+              },
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ends_at",
+                "seqno": 3
+              },
+              {
+                "cid": 8,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "priority",
+                "seqno": 4
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 5
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 6
+              }
+            ],
+            "name": "group_banners_window_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_group_banners_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "group_banners",
+        "object_sha256": "8cacbc2b93a6e5cbbb276979e90dc888cb7d2a23907c212aee66ba30691c9c4d",
+        "sql": "CREATE TABLE group_banners\n(\n    id                       integer primary key,\n    public_id                text    not null unique,\n    group_id                 text    not null references groups (group_id),\n    audience                 text    not null\n        check (audience in ('student', 'family', 'both')),\n    html_sanitized           text    not null,\n    sanitizer_policy_version integer not null default 1,\n    starts_at                text    not null,\n    ends_at                  text    not null,\n    priority                 integer not null default 0,\n    dismissible              integer not null default 1\n        check (dismissible in (0, 1)),\n    status                   text    not null default 'active'\n        check (status in ('active', 'cancelled')),\n    created_by_user_id       integer not null references users (id),\n    updated_by_user_id       integer not null references users (id),\n    created_at               text    not null,\n    updated_at               text    not null,\n    cancelled_at             text,\n    version                  integer not null default 1 check (version > 0),\n    check (length(trim(public_id)) > 0),\n    check (length(trim(html_sanitized)) > 0),\n    check (sanitizer_policy_version = 1),\n    check (ends_at > starts_at),\n    check (\n        (status = 'active' and cancelled_at is null)\n        or (status = 'cancelled' and cancelled_at is not null)\n    )\n);",
+        "table_name": "group_banners",
         "type": "table"
       },
       {
@@ -23320,6 +23614,13 @@
         "type": "index"
       },
       {
+        "name": "group_banners_window_idx",
+        "object_sha256": "21ea94dbf8f6194761e4c2cad114684c7f93ac46ab651c8fd98821ef8a5e7365",
+        "sql": "CREATE INDEX group_banners_window_idx\n    on group_banners (group_id, status, starts_at, ends_at, priority desc, id);",
+        "table_name": "group_banners",
+        "type": "index"
+      },
+      {
         "name": "group_lessons_course_group_idx",
         "object_sha256": "e4378d591dc002924b6abd925c3b6c8f775e673016f80bfc424cb06175ec2deb",
         "sql": "CREATE INDEX group_lessons_course_group_idx\n    on group_lessons (course_id, group_id, course_lesson_id, id);",
@@ -25021,8 +25322,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "5e361bbf585b1f85726ec6565757d3943593c838729841a5658f262e9418a350",
-    "sha256": "6cb150e1d26d6276f256e04e1bab8be2815bcd1da926e2245e825bc4deee0f06"
+    "pragma_structure_sha256": "207b716286a441c275a5047c0ac030bae0e4173ed1fb409e3c6cdb6c3ba63cca",
+    "sha256": "cd07e5835be9dcb9e544b35d59967530ccc680b563482723f3873ddb690a41d1"
   },
   "source_kind": "repository-migration-head"
 }

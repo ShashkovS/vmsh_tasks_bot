@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 6cb150e1d26d6276f256e04e1bab8be2815bcd1da926e2245e825bc4deee0f06
+-- Product schema SHA-256: cd07e5835be9dcb9e544b35d59967530ccc680b563482723f3873ddb690a41d1
 
 CREATE TABLE auth_accounts
 (
@@ -851,6 +851,38 @@ CREATE TABLE "game_students_commands"
     command_id INTEGER not null,
     group_id   text
         references groups
+);
+
+CREATE TABLE group_banners
+(
+    id                       integer primary key,
+    public_id                text    not null unique,
+    group_id                 text    not null references groups (group_id),
+    audience                 text    not null
+        check (audience in ('student', 'family', 'both')),
+    html_sanitized           text    not null,
+    sanitizer_policy_version integer not null default 1,
+    starts_at                text    not null,
+    ends_at                  text    not null,
+    priority                 integer not null default 0,
+    dismissible              integer not null default 1
+        check (dismissible in (0, 1)),
+    status                   text    not null default 'active'
+        check (status in ('active', 'cancelled')),
+    created_by_user_id       integer not null references users (id),
+    updated_by_user_id       integer not null references users (id),
+    created_at               text    not null,
+    updated_at               text    not null,
+    cancelled_at             text,
+    version                  integer not null default 1 check (version > 0),
+    check (length(trim(public_id)) > 0),
+    check (length(trim(html_sanitized)) > 0),
+    check (sanitizer_policy_version = 1),
+    check (ends_at > starts_at),
+    check (
+        (status = 'active' and cancelled_at is null)
+        or (status = 'cancelled' and cancelled_at is not null)
+    )
 );
 
 CREATE TABLE group_lessons
@@ -2706,6 +2738,9 @@ CREATE INDEX courses_season_status_order_idx
 
 CREATE INDEX family_student_links_student_revoked_idx
     on family_student_links (student_user_id, revoked_at);
+
+CREATE INDEX group_banners_window_idx
+    on group_banners (group_id, status, starts_at, ends_at, priority desc, id);
 
 CREATE INDEX group_lessons_course_group_idx
     on group_lessons (course_id, group_id, course_lesson_id, id);
