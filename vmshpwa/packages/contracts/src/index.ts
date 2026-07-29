@@ -9,6 +9,7 @@ export * from './courses'
 export * from './review-queue'
 export * from './review-reactions'
 export * from './submissions'
+export * from './support'
 export * from './written-submissions'
 
 export const runtimeContractVersionSchema = z.literal(1)

@@ -46,6 +46,7 @@ from apps.pwa_api.submission_routes import (
     PWA_TEST_SUBMISSION_REPOSITORY,
     submission_routes,
 )
+from apps.pwa_api.support_routes import PWA_SUPPORT_REPOSITORY, support_routes
 from apps.pwa_api.websocket_sessions import (
     SessionRevalidationStatus,
     WebSocketSessionAlreadyClosedError,
@@ -62,6 +63,7 @@ from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import GroupLessonContentScope, PwaContentRepository
 from db_methods.pwa.reviews import PwaWrittenReviewQueueRepository
 from db_methods.pwa.submissions import PwaTestSubmissionRepository
+from db_methods.pwa.support import PwaSupportThreadRepository
 from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import logger
 from helpers.nats_brocker import InProcessBroker, JsonBroker, NatsBroker
@@ -729,6 +731,17 @@ async def on_review_queue_startup(app: web.Application) -> None:
     app[PWA_REVIEW_QUEUE_REPOSITORY] = PwaWrittenReviewQueueRepository(factory)
 
 
+async def on_support_startup(app: web.Application) -> None:
+    """Bind Phase-6 private support routes to the verified SQLite factory."""
+
+    if PWA_SUPPORT_REPOSITORY in app:
+        return
+    factory = app[PWA_DATABASE].factory
+    if factory is None:
+        raise RuntimeError("PWA support startup requires a verified database factory")
+    app[PWA_SUPPORT_REPOSITORY] = PwaSupportThreadRepository(factory)
+
+
 async def on_written_attachment_startup(app: web.Application) -> None:
     """Compose Phase-5 uploads from the already verified shared adapters."""
 
@@ -1061,6 +1074,7 @@ def configure(
     test_submission_repository: PwaTestSubmissionRepository | None = None,
     written_submission_repository: PwaWrittenSubmissionRepository | None = None,
     review_queue_repository: PwaWrittenReviewQueueRepository | None = None,
+    support_repository: PwaSupportThreadRepository | None = None,
     written_attachment_service: WrittenAttachmentService | None = None,
     content_asset_service: ContentAssetService | None = None,
     object_storage: ObjectStorage | None = None,
@@ -1226,6 +1240,12 @@ def configure(
             )
             app.add_routes(review_routes)
             app.on_startup.append(on_review_queue_startup)
+        support_enabled = support_repository is not None or PWA_DATABASE in app
+        if support_enabled:
+            if support_repository is not None:
+                app[PWA_SUPPORT_REPOSITORY] = support_repository
+            app.add_routes(support_routes)
+            app.on_startup.append(on_support_startup)
         content_enabled = content_repository is not None or PWA_DATABASE in app
         if content_enabled:
             if content_repository is not None:

@@ -1,0 +1,427 @@
+"""Authenticated HTTP adapter for private Student/Staff support threads."""
+
+from __future__ import annotations
+
+import json
+import re
+from datetime import UTC, datetime
+
+from aiohttp import web
+
+from apps.pwa_api.errors import PwaApiError
+from apps.pwa_api.middleware import authenticated_session
+from db_methods.pwa.support import (
+    AppendStaffSupportEntryCommand,
+    AppendStudentSupportEntryCommand,
+    CreateSupportThreadCommand,
+    PwaSupportThreadRepository,
+    SupportForbidden,
+    SupportIdempotencyConflict,
+    SupportNotFound,
+    SupportStaffScope,
+    SupportThreadRecord,
+)
+from helpers.pwa.permissions import Capability
+from models.pwa.auth import AuthAudience
+
+
+SUPPORT_BODY_LIMIT_BYTES = 128 * 1024
+_PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
+_UTC_DATETIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$")
+_CREATE_FIELDS = frozenset(
+    {
+        "schemaVersion",
+        "idempotencyKey",
+        "kind",
+        "groupLessonId",
+        "problemId",
+        "text",
+        "clientCreatedAt",
+    }
+)
+_APPEND_FIELDS = frozenset(
+    {"schemaVersion", "idempotencyKey", "text", "clientCreatedAt"}
+)
+
+PWA_SUPPORT_REPOSITORY = web.AppKey(
+    "pwa_support_repository", PwaSupportThreadRepository
+)
+support_routes = web.RouteTableDef()
+
+
+def _repository(request: web.Request) -> PwaSupportThreadRepository:
+    repository = request.app.get(PWA_SUPPORT_REPOSITORY)
+    if repository is None:
+        raise PwaApiError(
+            status=503,
+            code="support_unavailable",
+            message="Вопросы временно недоступны",
+        )
+    return repository
+
+
+def _student_user_id(request: web.Request) -> int:
+    principal = authenticated_session(request).principal
+    if (
+        principal.audience is not AuthAudience.STUDENT
+        or principal.linked_user_id is None
+        or not principal.has_capability(Capability.THREAD_MANAGE)
+    ):
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для работы с этим вопросом",
+        )
+    return principal.linked_user_id
+
+
+def _staff_context(
+    request: web.Request, *, write: bool
+) -> tuple[int, str, SupportStaffScope]:
+    principal = authenticated_session(request).principal
+    required = Capability.REVIEW_WRITE if write else Capability.REVIEW_READ
+    if (
+        principal.audience is not AuthAudience.STAFF
+        or principal.linked_user_id is None
+        or not principal.has_capability(required)
+    ):
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для работы с вопросами школьников",
+        )
+    scope = SupportStaffScope(
+        global_access=principal.is_global_admin,
+        course_public_ids=frozenset(
+            grant.course_public_id
+            for grant in principal.staff_scope_grants
+            if grant.group_public_id is None
+        ),
+        group_public_ids=frozenset(
+            grant.group_public_id
+            for grant in principal.staff_scope_grants
+            if grant.group_public_id is not None
+        ),
+    )
+    author_kind = "admin" if principal.is_global_admin else "teacher"
+    return principal.linked_user_id, author_kind, scope
+
+
+def _thread_public_id(request: web.Request) -> str:
+    value = request.match_info["thread_public_id"]
+    if _PUBLIC_ID.fullmatch(value) is None:
+        raise PwaApiError(
+            status=404,
+            code="support_thread_not_found",
+            message="Вопрос не найден",
+        )
+    return value
+
+
+async def _json_object(
+    request: web.Request, *, required_fields: frozenset[str]
+) -> dict[str, object]:
+    if (
+        request.content_length is not None
+        and request.content_length > SUPPORT_BODY_LIMIT_BYTES
+    ):
+        raise PwaApiError(
+            status=413,
+            code="payload_too_large",
+            message="Текст вопроса слишком большой",
+        )
+    if request.content_type != "application/json":
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Тело запроса должно быть JSON",
+        )
+    body = await request.read()
+    if len(body) > SUPPORT_BODY_LIMIT_BYTES:
+        raise PwaApiError(
+            status=413,
+            code="payload_too_large",
+            message="Текст вопроса слишком большой",
+        )
+    try:
+        payload = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Тело запроса должно быть корректным JSON-объектом",
+        ) from error
+    if not isinstance(payload, dict) or set(payload) != required_fields:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте поля вопроса",
+            details={"required": sorted(required_fields)},
+        )
+    if payload["schemaVersion"] != 1 or isinstance(payload["schemaVersion"], bool):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Неподдерживаемая версия запроса",
+            details={"field": "schemaVersion"},
+        )
+    return payload
+
+
+def _public_id(value: object, *, field: str, nullable: bool = False) -> str | None:
+    if value is None and nullable:
+        return None
+    if not isinstance(value, str) or _PUBLIC_ID.fullmatch(value) is None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте контекст вопроса",
+            details={"field": field},
+        )
+    return value
+
+
+def _text(value: object) -> str:
+    if not isinstance(value, str) or not value.strip() or len(value) > 100_000:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Введите текст вопроса",
+            details={"field": "text"},
+        )
+    return value
+
+
+def _idempotency_key(value: object) -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or value != value.strip()
+        or len(value) > 200
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте ключ отправки",
+            details={"field": "idempotencyKey"},
+        )
+    return value
+
+
+def _client_created_at(value: object) -> datetime:
+    if not isinstance(value, str) or _UTC_DATETIME.fullmatch(value) is None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте время создания вопроса",
+            details={"field": "clientCreatedAt"},
+        )
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as error:  # pragma: no cover - regex accepts impossible dates
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте время создания вопроса",
+            details={"field": "clientCreatedAt"},
+        ) from error
+    return parsed.astimezone(UTC)
+
+
+def _timestamp(value: datetime) -> str:
+    return (
+        value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    )
+
+
+def _thread_payload(thread: SupportThreadRecord) -> dict[str, object]:
+    return {
+        "threadId": thread.thread_public_id,
+        "kind": thread.kind,
+        "student": {
+            "studentId": thread.student_public_id,
+            "displayName": thread.student_display_name,
+        },
+        "context": {
+            "courseId": thread.course_public_id,
+            "courseName": thread.course_name,
+            "groupId": thread.group_public_id,
+            "groupName": thread.group_name,
+            "groupLessonId": thread.group_lesson_public_id,
+            "problemId": thread.problem_public_id,
+            "problemTitle": thread.problem_title,
+        },
+        "latestEntryAt": _timestamp(thread.latest_entry_at),
+        "version": thread.version,
+        "entries": [
+            {
+                "entryId": entry.entry_public_id,
+                "author": {
+                    "kind": entry.author_kind,
+                    "userId": entry.author_public_id,
+                    "displayName": entry.author_display_name,
+                },
+                "text": entry.text,
+                "assetId": entry.asset_public_id,
+                "channel": entry.channel,
+                "clientCreatedAt": (
+                    None
+                    if entry.client_created_at is None
+                    else _timestamp(entry.client_created_at)
+                ),
+                "receivedAt": _timestamp(entry.server_received_at),
+            }
+            for entry in thread.entries
+        ],
+    }
+
+
+def _response(request: web.Request, thread: SupportThreadRecord) -> web.Response:
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "thread": _thread_payload(thread),
+            "requestId": request["request_id"],
+        }
+    )
+
+
+def _translate_error(error: Exception) -> PwaApiError:
+    if isinstance(error, SupportNotFound):
+        return PwaApiError(
+            status=404,
+            code="support_thread_not_found",
+            message="Вопрос или его контекст не найден",
+        )
+    if isinstance(error, SupportForbidden):
+        return PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Этот вопрос находится вне доступного контекста",
+        )
+    if isinstance(error, SupportIdempotencyConflict):
+        return PwaApiError(
+            status=409,
+            code="idempotency_payload_mismatch",
+            message="Это действие уже было отправлено с другими данными",
+        )
+    raise error
+
+
+@support_routes.post("/student/api/v1/questions")
+async def create_student_question(request: web.Request) -> web.Response:
+    student_user_id = _student_user_id(request)
+    payload = await _json_object(request, required_fields=_CREATE_FIELDS)
+    kind = payload["kind"]
+    if kind not in {"problem_question", "general"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте тип вопроса",
+            details={"field": "kind"},
+        )
+    problem_public_id = _public_id(
+        payload["problemId"], field="problemId", nullable=True
+    )
+    if (kind == "problem_question") != (problem_public_id is not None):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте задачу, к которой относится вопрос",
+            details={"field": "problemId"},
+        )
+    try:
+        thread = await _repository(request).create_student_thread(
+            CreateSupportThreadCommand(
+                student_user_id=student_user_id,
+                kind=kind,
+                group_lesson_public_id=_public_id(
+                    payload["groupLessonId"], field="groupLessonId"
+                ),
+                problem_public_id=problem_public_id,
+                text=_text(payload["text"]),
+                client_created_at=_client_created_at(payload["clientCreatedAt"]),
+                idempotency_key=_idempotency_key(payload["idempotencyKey"]),
+            )
+        )
+    except (SupportNotFound, SupportForbidden, SupportIdempotencyConflict) as error:
+        raise _translate_error(error) from error
+    return _response(request, thread)
+
+
+@support_routes.get("/student/api/v1/questions/{thread_public_id}")
+async def get_student_question(request: web.Request) -> web.Response:
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="У этого запроса нет параметров",
+        )
+    try:
+        thread = await _repository(request).get_student_thread(
+            student_user_id=_student_user_id(request),
+            thread_public_id=_thread_public_id(request),
+        )
+    except (SupportNotFound, SupportForbidden) as error:
+        raise _translate_error(error) from error
+    return _response(request, thread)
+
+
+@support_routes.post("/student/api/v1/questions/{thread_public_id}/entries")
+async def append_student_question_entry(request: web.Request) -> web.Response:
+    payload = await _json_object(request, required_fields=_APPEND_FIELDS)
+    try:
+        thread = await _repository(request).append_student_entry(
+            AppendStudentSupportEntryCommand(
+                student_user_id=_student_user_id(request),
+                thread_public_id=_thread_public_id(request),
+                text=_text(payload["text"]),
+                client_created_at=_client_created_at(payload["clientCreatedAt"]),
+                idempotency_key=_idempotency_key(payload["idempotencyKey"]),
+            )
+        )
+    except (SupportNotFound, SupportForbidden, SupportIdempotencyConflict) as error:
+        raise _translate_error(error) from error
+    return _response(request, thread)
+
+
+@support_routes.get("/staff/api/v1/questions/{thread_public_id}")
+async def get_staff_question(request: web.Request) -> web.Response:
+    if request.query:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="У этого запроса нет параметров",
+        )
+    _, _, scope = _staff_context(request, write=False)
+    try:
+        thread = await _repository(request).get_staff_thread(
+            thread_public_id=_thread_public_id(request), scope=scope
+        )
+    except (SupportNotFound, SupportForbidden) as error:
+        raise _translate_error(error) from error
+    return _response(request, thread)
+
+
+@support_routes.post("/staff/api/v1/questions/{thread_public_id}/entries")
+async def append_staff_question_entry(request: web.Request) -> web.Response:
+    payload = await _json_object(request, required_fields=_APPEND_FIELDS)
+    staff_user_id, author_kind, scope = _staff_context(request, write=True)
+    try:
+        thread = await _repository(request).append_staff_entry(
+            AppendStaffSupportEntryCommand(
+                staff_user_id=staff_user_id,
+                author_kind=author_kind,
+                thread_public_id=_thread_public_id(request),
+                text=_text(payload["text"]),
+                client_created_at=_client_created_at(payload["clientCreatedAt"]),
+                idempotency_key=_idempotency_key(payload["idempotencyKey"]),
+                scope=scope,
+            )
+        )
+    except (SupportNotFound, SupportForbidden, SupportIdempotencyConflict) as error:
+        raise _translate_error(error) from error
+    return _response(request, thread)
+
+
+__all__ = ["PWA_SUPPORT_REPOSITORY", "support_routes"]
