@@ -15,18 +15,29 @@ from pwa_tests.test_news_media import Converter
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
 
-def _message(*, edited: bool = False, media_group_id: str | None = None):
+def _message(
+    *,
+    message_id: int = 41,
+    text: str | None = "Новая публикация",
+    edited: bool = False,
+    media_group_id: str | None = None,
+    photo: bool = False,
+):
     return SimpleNamespace(
-        message_id=41,
+        message_id=message_id,
         chat=SimpleNamespace(id=-801),
         date=datetime(2026, 7, 29, 16, tzinfo=UTC),
         edit_date=(datetime(2026, 7, 29, 16, 5, tzinfo=UTC) if edited else None),
         media_group_id=media_group_id,
-        text="Новая публикация",
+        text=text,
         caption=None,
         entities=None,
         caption_entities=None,
-        photo=None,
+        photo=(
+            [SimpleNamespace(file_id=f"photo-{message_id}", width=1200, height=900)]
+            if photo
+            else None
+        ),
         video=None,
         animation=None,
         audio=None,
@@ -120,3 +131,99 @@ async def test_partial_edited_album_is_diagnostic_not_replacement(
         )
         == "incomplete_edited_album"
     )
+
+
+@pytest.mark.asyncio
+async def test_live_album_edit_keeps_unmodified_media(classroom_http, tmp_path):
+    def seed(connection):
+        binding = create_binding(
+            connection,
+            public_id="live-album-source",
+            owner_type="course",
+            owner_public_id="classroom-layout-course",
+            purpose="news_source",
+            chat_id=-801,
+            message_thread_id=None,
+            title_cached="Live channel",
+            actor_user_id=958_001,
+            now="2026-07-29T15:00:00Z",
+        )
+        set_binding_status(
+            connection,
+            public_id=str(binding["public_id"]),
+            expected_version=1,
+            status="verified",
+            verified_at="2026-07-29T15:00:00Z",
+            title_cached=None,
+            actor_user_id=958_001,
+            now="2026-07-29T15:00:00Z",
+        )
+
+    classroom_http.factory.run_write(seed)
+    storage = LocalObjectStorage(tmp_path / "media")
+    invalidations: list[str] = []
+
+    async def download(file_id: str) -> bytes:
+        return file_id.encode()
+
+    created = await ingest_live_news(
+        [
+            _message(media_group_id="album-41", photo=True),
+            _message(
+                message_id=42,
+                text=None,
+                media_group_id="album-41",
+                photo=True,
+            ),
+        ],
+        factory=classroom_http.factory,
+        storage=storage,
+        converter=Converter(),
+        download=download,
+        invalidate=lambda reason: _append(invalidations, reason),
+    )
+    classroom_http.factory.run_write(
+        lambda connection: set_binding_status(
+            connection,
+            public_id="live-album-source",
+            expected_version=2,
+            status="disabled",
+            verified_at=None,
+            title_cached=None,
+            actor_user_id=958_001,
+            now="2026-07-29T16:04:00Z",
+        )
+    )
+    updated = await ingest_live_news(
+        [
+            _message(
+                text="Исправленная подпись",
+                edited=True,
+                media_group_id="album-41",
+                photo=True,
+            )
+        ],
+        factory=classroom_http.factory,
+        storage=storage,
+        converter=Converter(),
+        download=download,
+        invalidate=lambda reason: _append(invalidations, reason),
+    )
+    assert (created["status"], updated["status"]) == ("created", "updated")
+
+    def revision(connection):
+        row = connection.execute(
+            "SELECT id, text_plain FROM news_revisions ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        media = connection.execute(
+            "SELECT source_message_id FROM news_media WHERE revision_id = ? "
+            "ORDER BY ordinal",
+            (row["id"],),
+        ).fetchall()
+        return row["text_plain"], [item["source_message_id"] for item in media]
+
+    assert classroom_http.factory.run_read(revision) == (
+        "Исправленная подпись",
+        [41, 42],
+    )
+    assert invalidations == ["telegram-news-changed", "telegram-news-changed"]
