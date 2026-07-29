@@ -235,6 +235,33 @@ def list_media(
     return [dict(row) for row in rows]
 
 
+def list_news_recipient_accounts(
+    connection: sqlite3.Connection,
+    *,
+    owner_course_id: int | None,
+    owner_group_id: str | None,
+) -> list[dict[str, object]]:
+    rows = connection.execute(
+        "WITH recipient_students AS ("
+        "SELECT DISTINCT enrollment.student_user_id FROM course_enrollments enrollment "
+        "WHERE enrollment.status = 'active' AND ("
+        "(? IS NOT NULL AND enrollment.course_id = ?) OR "
+        "(? IS NOT NULL AND EXISTS (SELECT 1 FROM course_group_access access "
+        "WHERE access.enrollment_id = enrollment.id AND access.group_id = ? "
+        "AND access.valid_to IS NULL)))) "
+        "SELECT account.id, account.audience FROM auth_accounts account "
+        "WHERE account.status = 'active' AND ("
+        "(account.audience = 'student' AND account.linked_user_id IN "
+        "(SELECT student_user_id FROM recipient_students)) OR "
+        "(account.audience = 'family' AND EXISTS (SELECT 1 FROM family_student_links link "
+        "WHERE link.family_account_id = account.id AND link.revoked_at IS NULL "
+        "AND link.student_user_id IN (SELECT student_user_id FROM recipient_students)))) "
+        "ORDER BY account.id",
+        (owner_course_id, owner_course_id, owner_group_id, owner_group_id),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def list_visible_posts(
     connection: sqlite3.Connection,
     *,
@@ -357,6 +384,7 @@ __all__ = [
     "insert_revision",
     "insert_telegram_post",
     "list_media",
+    "list_news_recipient_accounts",
     "list_media_for_revisions",
     "list_visible_posts",
     "mark_source_deleted",

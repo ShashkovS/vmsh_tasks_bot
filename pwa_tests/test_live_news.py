@@ -88,7 +88,17 @@ async def test_live_news_writes_verified_source_and_invalidates(
         download=download,
         invalidate=lambda reason: _append(invalidations, reason),
     )
+    duplicate = await ingest_live_news(
+        [_message()],
+        factory=classroom_http.factory,
+        storage=LocalObjectStorage(tmp_path / "media"),
+        converter=Converter(),
+        download=download,
+        invalidate=lambda reason: _append(invalidations, reason),
+    )
     assert result["status"] == "created"
+    assert result["notification_count"] == 2
+    assert duplicate["status"] == "duplicate"
     assert invalidations == ["telegram-news-changed"]
     assert (
         classroom_http.factory.run_read(
@@ -98,10 +108,27 @@ async def test_live_news_writes_verified_source_and_invalidates(
         )
         == 1
     )
+    assert classroom_http.factory.run_read(
+        lambda connection: [
+            (item["audience"], item["category"], item["payload_json"])
+            for item in connection.execute(
+                "SELECT account.audience, event.category, event.payload_json "
+                "FROM notification_events event JOIN auth_accounts account "
+                "ON account.id = event.account_id ORDER BY account.audience DESC"
+            ).fetchall()
+        ]
+    ) == [
+        ("student", "news", result_payload(result)),
+        ("family", "news", result_payload(result)),
+    ]
 
 
 async def _append(values: list[str], value: str) -> None:
     values.append(value)
+
+
+def result_payload(result: dict[str, object]) -> str:
+    return f'{{"postId":"{result["public_id"]}"}}'
 
 
 @pytest.mark.asyncio

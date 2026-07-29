@@ -859,7 +859,7 @@ async def publish_news_invalidation(
                 app[PWA_BROKER].publish(
                     NATS_PWA_INVALIDATE,
                     {
-                        "resources": ["news"],
+                        "resources": ["news", "notification-events"],
                         "reason": reason,
                         "audience": audience,
                     },

@@ -22,6 +22,7 @@ from helpers.pwa.content.assets import (
 from helpers.pwa.news_media import NewsFileDownloader, mirror_news_media
 from helpers.pwa.telegram_news import update_from_aiogram_messages
 from models.pwa.news import ingest_telegram_news
+from models.pwa.news_notifications import create_news_notifications
 
 
 NewsInvalidator = Callable[[str], Awaitable[None]]
@@ -165,9 +166,16 @@ async def ingest_live_news(
             storage=storage,
             converter=converter,
         )
-    result = await factory.run_write_async(
-        lambda connection: ingest_telegram_news(connection, update=update, now=now)
-    )
+
+    def write(connection):
+        result = ingest_telegram_news(connection, update=update, now=now)
+        if result["status"] == "created":
+            result["notification_count"] = create_news_notifications(
+                connection, post_id=int(result["post_id"]), now=now
+            )
+        return result
+
+    result = await factory.run_write_async(write)
     if result["status"] in {"created", "updated", "deleted"}:
         await invalidate("telegram-news-changed")
     return result
