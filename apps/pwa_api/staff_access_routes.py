@@ -1,0 +1,338 @@
+"""Admin-only HTTP boundary for teacher course/group access."""
+
+from __future__ import annotations
+
+import json
+import re
+import sqlite3
+from datetime import UTC, datetime
+
+from aiohttp import web
+
+from apps.pwa_api.errors import PwaApiError
+from apps.pwa_api.middleware import authenticated_session
+from db_methods.pwa.staff_access import (
+    find_scope_target,
+    find_staff_member,
+    insert_teacher_scope,
+    list_staff_members,
+    list_teacher_scopes,
+    revoke_teacher_scope,
+)
+from helpers.consts import USER_TYPE
+from helpers.pwa.app_keys import PWA_DATABASE
+from models.pwa.auth import AuthAudience
+from models.pwa.staff_access import InvalidTeacherScopes, teacher_scope_changes
+
+
+staff_access_routes = web.RouteTableDef()
+_PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?")
+_FIELDS = {"schemaVersion", "expectedScopes", "scopes"}
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def _factory(request: web.Request):
+    state = request.app.get(PWA_DATABASE)
+    if state is None or state.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="staff_access_unavailable",
+            message="Доступы преподавателей временно недоступны",
+        )
+    return state.factory
+
+
+def _admin_user_id(request: web.Request) -> int:
+    principal = authenticated_session(request).principal
+    if (
+        principal.audience is not AuthAudience.STAFF
+        or principal.linked_user_id is None
+        or not principal.is_global_admin
+    ):
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Управлять доступами преподавателей может только администратор",
+        )
+    return principal.linked_user_id
+
+
+def _path_id(request: web.Request) -> str:
+    value = request.match_info["staff_public_id"]
+    if _PUBLIC_ID.fullmatch(value) is None:
+        raise PwaApiError(
+            status=404, code="staff_member_not_found", message="Сотрудник не найден"
+        )
+    return value
+
+
+def _scope_input(
+    value: object, *, with_version: bool
+) -> tuple[str, str | None, int | None]:
+    fields = (
+        {"courseId", "groupId", "version"} if with_version else {"courseId", "groupId"}
+    )
+    if not isinstance(value, dict) or set(value) != fields:
+        raise ValueError
+    course_id = value["courseId"]
+    group_id = value["groupId"]
+    version = value.get("version")
+    if (
+        not isinstance(course_id, str)
+        or _PUBLIC_ID.fullmatch(course_id) is None
+        or (
+            group_id is not None
+            and (
+                not isinstance(group_id, str) or _PUBLIC_ID.fullmatch(group_id) is None
+            )
+        )
+        or (
+            with_version
+            and (
+                not isinstance(version, int)
+                or isinstance(version, bool)
+                or version <= 0
+            )
+        )
+    ):
+        raise ValueError
+    return course_id, group_id, version if with_version else None
+
+
+async def _payload(
+    request: web.Request,
+) -> tuple[list[tuple[str, str | None, int]], list[tuple[str, str | None]]]:
+    if request.content_type != "application/json":
+        raise PwaApiError(
+            status=422, code="validation_error", message="Тело запроса должно быть JSON"
+        )
+    try:
+        body = json.loads(await request.read())
+        if (
+            not isinstance(body, dict)
+            or set(body) != _FIELDS
+            or body.get("schemaVersion") != 1
+            or not isinstance(body["expectedScopes"], list)
+            or not isinstance(body["scopes"], list)
+            or len(body["expectedScopes"]) > 100
+            or len(body["scopes"]) > 100
+        ):
+            raise ValueError
+        expected = [
+            _scope_input(item, with_version=True) for item in body["expectedScopes"]
+        ]
+        desired_raw = [
+            _scope_input(item, with_version=False) for item in body["scopes"]
+        ]
+    except (
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        RecursionError,
+        ValueError,
+        KeyError,
+        TypeError,
+    ) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте выбранные курсы и группы",
+        ) from error
+    if len(expected) != len(
+        {(course_id, group_id) for course_id, group_id, _ in expected}
+    ):
+        raise PwaApiError(
+            status=422,
+            code="duplicate_scope",
+            message="Одна область доступа указана несколько раз",
+        )
+    return (
+        [
+            (course_id, group_id, int(version))
+            for course_id, group_id, version in expected
+        ],
+        [(course_id, group_id) for course_id, group_id, _ in desired_raw],
+    )
+
+
+def _scope_payload(row: dict[str, object]) -> dict[str, object]:
+    group_id = row["group_public_id"]
+    return {
+        "courseId": row["course_public_id"],
+        "courseCode": row["course_code"],
+        "courseName": row["course_name"],
+        "courseStatus": row["course_status"],
+        "groupId": group_id,
+        "groupCode": row["group_code"] if group_id is not None else None,
+        "groupName": row["group_name"] if group_id is not None else None,
+        "groupStatus": row["group_status"] if group_id is not None else None,
+        "version": row["version"],
+    }
+
+
+def _member_payload(
+    row: dict[str, object], scopes: list[dict[str, object]]
+) -> dict[str, object]:
+    return {
+        "staffUserId": row["public_id"],
+        "name": row["name"],
+        "surname": row["surname"],
+        "middleName": row["middlename"],
+        "role": "admin" if int(row["type"]) == int(USER_TYPE.ADMIN) else "teacher",
+        "account": None
+        if row.get("account_public_id") is None
+        else {
+            "accountId": row["account_public_id"],
+            "username": row["username"],
+            "status": row["account_status"],
+        },
+        "scopes": [_scope_payload(scope) for scope in scopes],
+    }
+
+
+def _directory(connection) -> list[dict[str, object]]:
+    members = list_staff_members(connection)
+    scope_rows = list_teacher_scopes(
+        connection,
+        staff_user_ids=tuple(
+            int(member["id"])
+            for member in members
+            if int(member["type"]) == int(USER_TYPE.TEACHER)
+        ),
+    )
+    scopes_by_user: dict[int, list[dict[str, object]]] = {}
+    for scope in scope_rows:
+        scopes_by_user.setdefault(int(scope["staff_user_id"]), []).append(scope)
+    return [
+        _member_payload(member, scopes_by_user.get(int(member["id"]), []))
+        for member in members
+    ]
+
+
+@staff_access_routes.get("/staff/api/v1/staff-access")
+async def get_staff_access(request: web.Request) -> web.Response:
+    _admin_user_id(request)
+    if request.query:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Этот запрос без параметров"
+        )
+    members = await _factory(request).run_read_async(_directory)
+    return web.json_response(
+        {"schemaVersion": 1, "members": members, "requestId": request["request_id"]},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@staff_access_routes.put("/staff/api/v1/staff-members/{staff_public_id}/scopes")
+async def replace_staff_scopes(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    if request.query:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Этот запрос без параметров"
+        )
+    staff_public_id = _path_id(request)
+    expected, desired = await _payload(request)
+
+    def write(connection):
+        member = find_staff_member(connection, public_id=staff_public_id)
+        if member is None:
+            return "not_found", None
+        if int(member["type"]) != int(USER_TYPE.TEACHER):
+            return "admin", None
+        current = list_teacher_scopes(connection, staff_user_ids=(int(member["id"]),))
+        current_versions = {
+            (str(row["course_public_id"]), row["group_public_id"], int(row["version"]))
+            for row in current
+        }
+        if current_versions != set(expected):
+            return "conflict", None
+        try:
+            additions, removals = teacher_scope_changes(
+                (
+                    (str(row["course_public_id"]), row["group_public_id"])
+                    for row in current
+                ),
+                desired,
+            )
+        except InvalidTeacherScopes as error:
+            return str(error), None
+
+        targets: dict[tuple[str, str | None], dict[str, object]] = {}
+        for course_id, group_id in additions:
+            target = find_scope_target(
+                connection, course_public_id=course_id, group_public_id=group_id
+            )
+            if (
+                target is None
+                or target["course_status"] != "active"
+                or (group_id is not None and target["group_status"] != "active")
+            ):
+                return "invalid_target", None
+            targets[(course_id, group_id)] = target
+
+        now = _now()
+        current_by_key = {
+            (str(row["course_public_id"]), row["group_public_id"]): row
+            for row in current
+        }
+        for key in removals:
+            row = current_by_key[key]
+            if not revoke_teacher_scope(
+                connection,
+                scope_id=int(row["id"]),
+                expected_version=int(row["version"]),
+                actor_user_id=actor_user_id,
+                now=now,
+            ):
+                raise RuntimeError("Locked teacher scope changed inside transaction")
+        for key in additions:
+            target = targets[key]
+            insert_teacher_scope(
+                connection,
+                staff_user_id=int(member["id"]),
+                course_id=int(target["course_id"]),
+                group_id=target.get("group_id"),
+                actor_user_id=actor_user_id,
+                now=now,
+            )
+        updated = list_teacher_scopes(connection, staff_user_ids=(int(member["id"]),))
+        return "ok", _member_payload(member, updated)
+
+    try:
+        outcome, member = await _factory(request).run_write_async(write)
+    except sqlite3.IntegrityError as error:
+        raise PwaApiError(
+            status=409,
+            code="staff_scope_conflict",
+            message="Доступы уже изменились. Обновите страницу.",
+        ) from error
+    if outcome == "not_found":
+        raise PwaApiError(
+            status=404, code="staff_member_not_found", message="Сотрудник не найден"
+        )
+    if outcome == "admin":
+        raise PwaApiError(
+            status=422,
+            code="admin_scope_fixed",
+            message="Администратор имеет доступ ко всем курсам",
+        )
+    if outcome == "conflict":
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Доступы уже изменились. Обновите страницу.",
+        )
+    if outcome in {"duplicate_scope", "redundant_group_scope", "invalid_target"}:
+        raise PwaApiError(
+            status=422, code=outcome, message="Проверьте выбранные курсы и группы"
+        )
+    assert member is not None
+    return web.json_response(
+        {"schemaVersion": 1, "member": member, "requestId": request["request_id"]},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+__all__ = ["staff_access_routes"]

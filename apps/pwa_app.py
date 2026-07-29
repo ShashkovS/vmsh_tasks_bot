@@ -17,6 +17,7 @@ from apps.pwa_api.admin_enrollment_routes import (
     PWA_ENROLLMENT_INVALIDATOR,
     admin_enrollment_routes,
 )
+from apps.pwa_api.staff_access_routes import staff_access_routes
 from apps.pwa_api.auth_service import PwaAuthService
 from apps.pwa_api.classroom_assignment_routes import (
     PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR,
@@ -1540,6 +1541,7 @@ def configure(
         app.add_routes(admin_course_routes)
         app.add_routes(admin_schedule_routes)
         app.add_routes(admin_enrollment_routes)
+        app.add_routes(staff_access_routes)
         app.add_routes(course_routes)
         app.add_routes(family_course_routes)
         app.add_routes(classroom_routes)
