@@ -11,7 +11,10 @@ from aiohttp import WSCloseCode, WSMsgType, web
 
 from apps.pwa_api.auth_routes import auth_routes
 from apps.pwa_api.auth_service import PwaAuthService
-from apps.pwa_api.classroom_assignment_routes import classroom_assignment_routes
+from apps.pwa_api.classroom_assignment_routes import (
+    PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR,
+    classroom_assignment_routes,
+)
 from apps.pwa_api.classroom_routes import classroom_routes
 from apps.pwa_api.classroom_layout_routes import classroom_layout_routes
 from apps.pwa_api.content_routes import (
@@ -820,6 +823,31 @@ async def publish_test_submission_invalidation(
     )
 
 
+async def publish_classroom_assignment_invalidation(
+    app: web.Application,
+    *,
+    student_account_public_ids: tuple[str, ...],
+    family_account_public_ids: tuple[str, ...],
+    reason: str,
+) -> None:
+    """Tell only affected Student and Family accounts to refetch room state."""
+
+    for audience, account_public_ids in (
+        (AuthAudience.STUDENT, student_account_public_ids),
+        (AuthAudience.FAMILY, family_account_public_ids),
+    ):
+        for account_public_id in account_public_ids:
+            await app[PWA_BROKER].publish(
+                NATS_PWA_INVALIDATE,
+                {
+                    "resources": ["classroom-assignments"],
+                    "reason": reason,
+                    "audience": audience.value,
+                    "accountId": account_public_id,
+                },
+            )
+
+
 async def publish_written_submission_invalidation(
     app: web.Application,
     *,
@@ -1184,6 +1212,20 @@ def configure(
         app.add_routes(classroom_routes)
         app.add_routes(classroom_layout_routes)
         app.add_routes(classroom_assignment_routes)
+
+        async def invalidate_classroom_assignments(
+            student_account_public_ids: tuple[str, ...],
+            family_account_public_ids: tuple[str, ...],
+            reason: str,
+        ) -> None:
+            await publish_classroom_assignment_invalidation(
+                app,
+                student_account_public_ids=student_account_public_ids,
+                family_account_public_ids=family_account_public_ids,
+                reason=reason,
+            )
+
+        app[PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR] = invalidate_classroom_assignments
         app.on_startup.append(on_auth_startup)
         test_submissions_enabled = (
             test_submission_repository is not None or PWA_DATABASE in app

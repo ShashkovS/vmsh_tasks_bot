@@ -53,6 +53,29 @@ def list_student_classroom_events(
     return [dict(row) for row in rows]
 
 
+def list_assignment_owner_accounts(
+    connection: sqlite3.Connection, student_user_ids: tuple[int, ...]
+) -> list[dict[str, object]]:
+    """Return active Student and Family account IDs for assignment invalidation."""
+
+    if not student_user_ids:
+        return []
+    placeholders = ", ".join("?" for _student_id in student_user_ids)
+    rows = connection.execute(
+        "SELECT public_id, audience FROM auth_accounts "
+        f"WHERE audience = 'student' AND linked_user_id IN ({placeholders}) "
+        "AND status = 'active' "
+        "UNION ALL "
+        "SELECT account.public_id, account.audience FROM family_student_links link "
+        "JOIN auth_accounts account ON account.id = link.family_account_id "
+        f"WHERE link.student_user_id IN ({placeholders}) "
+        "AND link.revoked_at IS NULL AND account.status = 'active' "
+        "ORDER BY audience, public_id",
+        (*student_user_ids, *student_user_ids),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def find_plan(
     connection: sqlite3.Connection, event_id: int, states: tuple[str, ...]
 ) -> dict[str, object] | None:

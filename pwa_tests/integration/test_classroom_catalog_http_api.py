@@ -608,6 +608,9 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     assert moved_payload["students"][0]["source"] == "manual"
     assert moved_payload["plan"]["version"] == 2
 
+    cursors_before_confirm = dict(
+        classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]
+    )
     confirmed_plan = await classroom_http.client.post(
         f"{assignment_path}/{plan['publicId']}/confirm",
         json={"schemaVersion": 1},
@@ -618,6 +621,11 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     confirmed_assignment = (await confirmed_plan.json())["assignmentPlan"]
     assert confirmed_assignment["plan"]["state"] == "confirmed"
     assert confirmed_assignment["plan"]["version"] == 3
+    assert dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+        **cursors_before_confirm,
+        "student": cursors_before_confirm["student"] + 1,
+        "family": cursors_before_confirm["family"] + 1,
+    }
 
     history = await classroom_http.client.get(
         f"{assignment_path}/{plan['publicId']}/students/"

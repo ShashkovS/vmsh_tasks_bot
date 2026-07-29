@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 from aiohttp import web
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
+from db_methods.pwa.classroom_assignments import list_assignment_owner_accounts
 from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.permissions import Capability
 from models.pwa.auth import AuthAudience
@@ -28,6 +31,13 @@ from models.pwa.classroom_public import read_student_classroom_assignments
 
 
 classroom_assignment_routes = web.RouteTableDef()
+ClassroomAssignmentInvalidator = Callable[
+    [tuple[str, ...], tuple[str, ...], str], Awaitable[None]
+]
+PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR = web.AppKey(
+    "pwa_classroom_assignment_invalidator", ClassroomAssignmentInvalidator
+)
+logger = logging.getLogger(__name__)
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _ETAG = re.compile(r'^"([a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?):v([1-9]\d*)"$')
 
@@ -365,6 +375,38 @@ def _raise_domain_error(error: Exception) -> None:
     raise error
 
 
+async def _invalidate_confirmed_assignments(
+    request: web.Request, result: dict[str, object]
+) -> None:
+    invalidator = request.app.get(PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR)
+    if invalidator is None:
+        return
+    student_user_ids = tuple(
+        sorted({int(student["student_user_id"]) for student in result["students"]})
+    )
+    owners = await _factory(request).run_read_async(
+        lambda connection: list_assignment_owner_accounts(connection, student_user_ids)
+    )
+    try:
+        await invalidator(
+            tuple(
+                str(owner["public_id"])
+                for owner in owners
+                if owner["audience"] == AuthAudience.STUDENT.value
+            ),
+            tuple(
+                str(owner["public_id"])
+                for owner in owners
+                if owner["audience"] == AuthAudience.FAMILY.value
+            ),
+            "classroom-assignment-confirmed",
+        )
+    except Exception:
+        logger.warning(
+            "Classroom assignment invalidation failed after commit", exc_info=True
+        )
+
+
 @classroom_assignment_routes.get(
     "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan"
 )
@@ -536,7 +578,11 @@ async def post_confirm_classroom_assignment_plan(request: web.Request) -> web.Re
     ) as error:
         _raise_domain_error(error)
         raise AssertionError("unreachable")
+    await _invalidate_confirmed_assignments(request, result)
     return _response(request, result)
 
 
-__all__ = ["classroom_assignment_routes"]
+__all__ = [
+    "PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR",
+    "classroom_assignment_routes",
+]

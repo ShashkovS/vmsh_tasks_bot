@@ -133,5 +133,6 @@ export function usePublishedClassroomAssignmentsQuery(
     queryKey: classroomQueryKeys.publishedAssignments(principal, studentPublicId),
     queryFn: ({ signal }) => client.list({ signal }),
     enabled,
+    meta: { realtimeResources: ['classroom-assignments'] },
   })
 }
