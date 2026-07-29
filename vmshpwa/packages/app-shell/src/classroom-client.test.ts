@@ -169,6 +169,10 @@ describe('classroom client', () => {
     await client.getAssignmentPlan('event-41')
     await client.recalculateAssignmentPlan('event-41', null, { schemaVersion: 1 })
     await client.recalculateAssignmentPlan('event-41', plan, { schemaVersion: 1 })
+    await client.updateAssignmentPlan('event-41', plan, {
+      schemaVersion: 1,
+      assignments: [{ enrollmentPublicId: 'enrollment-anna', classroomPublicId: 'room-201' }],
+    })
     await client.confirmAssignmentPlan('event-41', plan, { schemaVersion: 1 })
 
     expect(fetchImplementation).toHaveBeenNthCalledWith(
@@ -192,6 +196,14 @@ describe('classroom client', () => {
     )
     expect(fetchImplementation).toHaveBeenNthCalledWith(
       4,
+      '/staff/api/v1/in-person-events/event-41/classroom-assignment-plan/classroom-plan.41/assignments',
+      expect.objectContaining({
+        method: 'PUT',
+        headers: expect.objectContaining({ 'If-Match': '"classroom-plan.41:v2"' }),
+      }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      5,
       '/staff/api/v1/in-person-events/event-41/classroom-assignment-plan/classroom-plan.41/confirm',
       expect.objectContaining({
         headers: expect.objectContaining({ 'If-Match': '"classroom-plan.41:v2"' }),

@@ -260,6 +260,25 @@ export type RecalculateClassroomAssignmentPlanRequest = z.infer<
   typeof recalculateClassroomAssignmentPlanRequestSchema
 >
 
+export const updateClassroomAssignmentPlanRequestSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    assignments: z
+      .array(
+        z
+          .object({
+            enrollmentPublicId: publicIdSchema,
+            classroomPublicId: publicIdSchema,
+          })
+          .strict(),
+      )
+      .max(2000),
+  })
+  .strict()
+export type UpdateClassroomAssignmentPlanRequest = z.infer<
+  typeof updateClassroomAssignmentPlanRequestSchema
+>
+
 export const confirmClassroomAssignmentPlanRequestSchema = materializeClassroomLayoutRequestSchema
 export type ConfirmClassroomAssignmentPlanRequest = z.infer<
   typeof confirmClassroomAssignmentPlanRequestSchema

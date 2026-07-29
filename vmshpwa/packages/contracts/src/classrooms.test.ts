@@ -14,6 +14,7 @@ import {
   classroomQueryKeys,
   createClassroomRequestSchema,
   replaceClassroomLayoutRequestSchema,
+  updateClassroomAssignmentPlanRequestSchema,
 } from './classrooms'
 
 describe('classroom catalog contracts', () => {
@@ -138,6 +139,21 @@ describe('classroom assignment contracts', () => {
       },
     })
     expect(response.assignmentPlan.plan).toBeNull()
+  })
+
+  it('rejects duplicate fields and malformed manual assignments', () => {
+    expect(() =>
+      updateClassroomAssignmentPlanRequestSchema.parse({
+        schemaVersion: 1,
+        assignments: [
+          {
+            enrollmentPublicId: 'enrollment-anna',
+            classroomPublicId: 'room-201',
+            hidden: true,
+          },
+        ],
+      }),
+    ).toThrow()
   })
 
   it('isolates assignment query keys by event and principal', () => {

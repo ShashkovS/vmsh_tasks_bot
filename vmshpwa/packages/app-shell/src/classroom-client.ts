@@ -19,6 +19,7 @@ import {
   recalculateClassroomAssignmentPlanRequestSchema,
   renameClassroomRequestSchema,
   replaceClassroomLayoutRequestSchema,
+  updateClassroomAssignmentPlanRequestSchema,
   type ChangeClassroomStatusRequest,
   type Classroom,
   type ClassroomAssignmentPlanResponse,
@@ -34,6 +35,7 @@ import {
   type RecalculateClassroomAssignmentPlanRequest,
   type ReplaceClassroomLayoutRequest,
   type RuntimeConfig,
+  type UpdateClassroomAssignmentPlanRequest,
 } from '@vmsh/contracts'
 
 export interface ClassroomRequestOptions {
@@ -98,6 +100,12 @@ export interface ClassroomClient {
     eventPublicId: string,
     plan: { publicId: string; version: number } | null,
     request: RecalculateClassroomAssignmentPlanRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomAssignmentPlanResponse>
+  updateAssignmentPlan(
+    eventPublicId: string,
+    plan: { publicId: string; version: number },
+    request: UpdateClassroomAssignmentPlanRequest,
     options?: ClassroomRequestOptions,
   ): Promise<ClassroomAssignmentPlanResponse>
   confirmAssignmentPlan(
@@ -309,6 +317,27 @@ class BrowserClassroomClient implements ClassroomClient {
         method: 'POST',
         body: JSON.stringify(recalculateClassroomAssignmentPlanRequestSchema.parse(request)),
         ...(plan === null ? {} : { headers: { 'If-Match': classroomAssignmentPlanEtag(plan) } }),
+      },
+      options,
+      200,
+      (payload) => classroomAssignmentPlanResponseSchema.parse(payload),
+    )
+  }
+
+  async updateAssignmentPlan(
+    eventPublicId: string,
+    plan: { publicId: string; version: number },
+    request: UpdateClassroomAssignmentPlanRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomAssignmentPlanResponse> {
+    const eventId = publicIdSchema.parse(eventPublicId)
+    const publicId = publicIdSchema.parse(plan.publicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(eventId)}/classroom-assignment-plan/${encodeURIComponent(publicId)}/assignments`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(updateClassroomAssignmentPlanRequestSchema.parse(request)),
+        headers: { 'If-Match': classroomAssignmentPlanEtag({ ...plan, publicId }) },
       },
       options,
       200,
