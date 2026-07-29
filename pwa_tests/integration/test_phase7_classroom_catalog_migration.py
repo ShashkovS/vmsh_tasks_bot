@@ -59,7 +59,11 @@ def test_classroom_catalog_migration_up_down_up_is_exact(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0056.pwa_support_threads"
     }
-    preceding = {item.id for item in migrations.values() if item.id != MIGRATION_ID}
+    preceding = {
+        item.id
+        for item in migrations.values()
+        if int(item.id.partition(".")[0]) < 57
+    }
     _apply(database_path, preceding)
     assert _catalog_objects(database_path) == set()
 

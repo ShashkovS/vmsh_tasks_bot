@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 6a72fc3f0687a95cc37ec6f02aa68a474deab2dc959069fd59250c33cd02f359
+-- Product schema SHA-256: 688fddcf69533bfcbdd6bc15f5494adcb23b448c925948bfcca08c7b63031f77
 
 CREATE TABLE auth_accounts
 (
@@ -177,6 +177,54 @@ CREATE TABLE classroom_events
         or (action <> 'created' and before_name is not null
                                and before_normalized_name is not null
                                and before_status is not null)
+    )
+);
+
+CREATE TABLE classroom_layout_rooms
+(
+    layout_version_id       integer not null references classroom_layout_versions (id),
+    classroom_id            integer not null references classrooms (id),
+    group_lesson_id         integer not null references group_lessons (id),
+    source_layout_version_id integer references classroom_layout_versions (id),
+    created_at              text    not null,
+    updated_at              text    not null,
+    primary key (layout_version_id, classroom_id),
+    check (updated_at >= created_at)
+);
+
+CREATE TABLE classroom_layout_versions
+(
+    id                   integer primary key,
+    public_id            text    not null unique
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
+    in_person_event_id   integer not null references in_person_events (id),
+    base_version_id      integer references classroom_layout_versions (id),
+    state                text    not null
+        check (state in ('draft', 'confirmed', 'superseded')),
+    created_by_user_id   integer not null references users (id),
+    confirmed_by_user_id integer references users (id),
+    created_at           text    not null,
+    updated_at           text    not null,
+    confirmed_at         text,
+    superseded_at        text,
+    version              integer not null default 1 check (version > 0),
+    unique (id, in_person_event_id),
+    check (updated_at >= created_at),
+    check (
+        (state = 'draft' and confirmed_by_user_id is null
+                         and confirmed_at is null
+                         and superseded_at is null)
+        or (state = 'confirmed' and confirmed_by_user_id is not null
+                             and confirmed_at is not null
+                             and superseded_at is null)
+        or (state = 'superseded' and confirmed_by_user_id is not null
+                              and confirmed_at is not null
+                              and superseded_at is not null)
     )
 );
 
@@ -830,6 +878,40 @@ CREATE TABLE idempotency_records
             and completed_at >= created_at
         )
     )
+);
+
+CREATE TABLE in_person_event_group_lessons
+(
+    in_person_event_id integer not null references in_person_events (id),
+    group_lesson_id    integer not null references group_lessons (id),
+    added_by_user_id   integer not null references users (id),
+    created_at         text    not null,
+    primary key (in_person_event_id, group_lesson_id)
+);
+
+CREATE TABLE in_person_events
+(
+    id                 integer primary key,
+    public_id          text    not null unique
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
+    season_id          integer not null references seasons (id),
+    name               text    not null check (length(trim(name)) > 0),
+    starts_at          text    not null,
+    ends_at            text    not null,
+    status             text    not null default 'draft'
+        check (status in ('draft', 'scheduled', 'completed', 'cancelled')),
+    created_by_user_id integer not null references users (id),
+    updated_by_user_id integer not null references users (id),
+    created_at         text    not null,
+    updated_at         text    not null,
+    version            integer not null default 1 check (version > 0),
+    check (ends_at > starts_at),
+    check (updated_at >= created_at)
 );
 
 CREATE TABLE kv
@@ -2149,6 +2231,20 @@ CREATE INDEX auth_throttle_buckets_updated_idx
 CREATE INDEX classroom_events_timeline_idx
     on classroom_events (classroom_id, id);
 
+CREATE INDEX classroom_layout_rooms_group_idx
+    on classroom_layout_rooms (layout_version_id, group_lesson_id, classroom_id);
+
+CREATE INDEX classroom_layout_versions_event_timeline_idx
+    on classroom_layout_versions (in_person_event_id, id);
+
+CREATE UNIQUE INDEX classroom_layout_versions_one_confirmed_uq
+    on classroom_layout_versions (in_person_event_id)
+    where state = 'confirmed';
+
+CREATE UNIQUE INDEX classroom_layout_versions_one_draft_uq
+    on classroom_layout_versions (in_person_event_id)
+    where state = 'draft';
+
 CREATE INDEX classrooms_status_name_idx
     on classrooms (status, normalized_name, id);
 
@@ -2251,6 +2347,12 @@ CREATE INDEX hint_reveals_student_timeline_idx
 CREATE INDEX idempotency_records_expiry_idx
     on idempotency_records (expires_at, id)
     where expires_at is not null;
+
+CREATE INDEX in_person_event_group_lessons_lesson_idx
+    on in_person_event_group_lessons (group_lesson_id, in_person_event_id);
+
+CREATE INDEX in_person_events_season_time_idx
+    on in_person_events (season_id, starts_at, id);
 
 CREATE UNIQUE INDEX lesson_publications_one_published_uq
     on lesson_publications (group_lesson_id, kind)
@@ -2545,6 +2647,30 @@ before update on classroom_events
 for each row
 begin
     select raise(abort, 'classroom event is immutable');
+end;
+
+CREATE TRIGGER classroom_layout_rooms_delete_draft_only
+before delete on classroom_layout_rooms
+for each row
+when (select state from classroom_layout_versions where id = old.layout_version_id) <> 'draft'
+begin
+    select raise(abort, 'only a draft classroom layout can be edited');
+end;
+
+CREATE TRIGGER classroom_layout_rooms_insert_draft_only
+before insert on classroom_layout_rooms
+for each row
+when (select state from classroom_layout_versions where id = new.layout_version_id) <> 'draft'
+begin
+    select raise(abort, 'only a draft classroom layout can be edited');
+end;
+
+CREATE TRIGGER classroom_layout_rooms_update_draft_only
+before update on classroom_layout_rooms
+for each row
+when (select state from classroom_layout_versions where id = old.layout_version_id) <> 'draft'
+begin
+    select raise(abort, 'only a draft classroom layout can be edited');
 end;
 
 CREATE TRIGGER classrooms_delete_forbidden
