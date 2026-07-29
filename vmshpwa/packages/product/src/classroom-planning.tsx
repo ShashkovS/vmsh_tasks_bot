@@ -1077,6 +1077,8 @@ export interface ClassroomAssignmentStatusProps {
   status: ClassroomAssignmentPublicStatus
   classroomName?: string
   publishedAt?: string
+  confirmedAt?: string
+  announcedAt?: string
   studentName?: string
   onOpenNotificationSettings?: () => void
   className?: string
@@ -1087,6 +1089,8 @@ export function ClassroomAssignmentStatus({
   status,
   classroomName,
   publishedAt,
+  confirmedAt,
+  announcedAt,
   studentName,
   onOpenNotificationSettings,
   className,
@@ -1157,6 +1161,12 @@ export function ClassroomAssignmentStatus({
           </p>
           {publishedAt ? (
             <p className="mt-1 text-caption text-muted-foreground">Опубликовано {publishedAt}</p>
+          ) : null}
+          {confirmedAt ? (
+            <p className="mt-1 text-caption text-muted-foreground">Подтверждено {confirmedAt}</p>
+          ) : null}
+          {announcedAt ? (
+            <p className="mt-1 text-caption text-muted-foreground">Разослано {announcedAt}</p>
           ) : null}
         </div>
         <Badge variant="success">Назначена</Badge>

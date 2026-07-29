@@ -4,17 +4,20 @@ import { useMemo } from 'react'
 
 import {
   CourseNetworkError,
+  PublishedClassroomNetworkError,
   PageLayout,
   PageSection,
   PageStatePanel,
   createStudentCourseClient,
+  createStudentClassroomAssignmentClient,
   useAuthenticatedPrincipal,
   useAuthentication,
   useStudentHomeQuery,
+  usePublishedClassroomAssignmentsQuery,
 } from '@vmsh/app-shell'
 import { ApiResponseError, type StudentHomeCourse } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
-import { CourseCard, LevelChip } from '@vmsh/product'
+import { ClassroomAssignmentStatus, CourseCard, LevelChip } from '@vmsh/product'
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
 import {
@@ -24,6 +27,17 @@ import {
   toCourseEnrollmentView,
 } from './student-home-view'
 import { createOfflineStudentCourseClient } from './offline-student-data'
+
+function formatMoment(value: string | null): string | undefined {
+  if (value === null) return undefined
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Moscow',
+  }).format(new Date(value))
+}
 
 function EmptyCourseCard({ course }: { course: StudentHomeCourse }) {
   const enrollment = toCourseEnrollmentView(course.enrollment)
@@ -82,6 +96,24 @@ export function StudentHomePage() {
     audience: 'student',
     accountId: principal.accountId,
   })
+  const classroomClient = useMemo(
+    () =>
+      createStudentClassroomAssignmentClient(authentication.client.runtime, {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const classroomQuery = usePublishedClassroomAssignmentsQuery(classroomClient, {
+    audience: 'student',
+    accountId: principal.accountId,
+  })
   const navigate = useNavigate()
 
   if (query.isPending) {
@@ -129,12 +161,18 @@ export function StudentHomePage() {
         ) : (
           <div className="grid gap-3 lg:grid-cols-2">
             {query.data.courses.map((course) => {
+              const classroom = classroomQuery.data?.items.find(
+                (item) => item.coursePublicId === course.enrollment.course.courseId,
+              )
               if (course.phase === 'no_lesson') {
                 return <EmptyCourseCard course={course} key={course.enrollment.enrollmentId} />
               }
               const lesson = course.currentLesson
               return (
                 <CourseCard
+                  {...(classroom?.status === 'assigned' && classroom.classroomName
+                    ? { classroomName: classroom.classroomName }
+                    : {})}
                   enrollment={toCourseEnrollmentView(course.enrollment)}
                   key={course.enrollment.enrollmentId}
                   lessonDate={formatCalendarDate(lesson.cycleAnchorDate)}
@@ -156,6 +194,46 @@ export function StudentHomePage() {
             })}
           </div>
         )}
+      </PageSection>
+      <PageSection
+        description="Показываем только подтверждённое распределение. Рассылка выполняется отдельно."
+        title="Очные занятия"
+      >
+        {classroomQuery.isPending ? <PageStatePanel state="loading" /> : null}
+        {classroomQuery.error ? (
+          <PageStatePanel
+            actionLabel="Повторить"
+            onAction={() => void classroomQuery.refetch()}
+            state={
+              classroomQuery.error instanceof PublishedClassroomNetworkError ? 'offline' : 'error'
+            }
+          />
+        ) : null}
+        {classroomQuery.data?.items.length === 0 ? (
+          <p className="text-small text-muted-foreground">
+            Для ваших групп пока нет запланированных очных занятий.
+          </p>
+        ) : null}
+        <div className="grid gap-3 lg:grid-cols-2">
+          {classroomQuery.data?.items.map((item) => {
+            const announcedAt = formatMoment(item.announcedAt)
+            const confirmedAt = formatMoment(item.confirmedAt)
+            return (
+              <div className="space-y-2" key={`${item.eventPublicId}:${item.coursePublicId}`}>
+                <p className="text-small font-medium text-foreground">
+                  {item.courseName} · {item.eventName}
+                </p>
+                <ClassroomAssignmentStatus
+                  {...(announcedAt ? { announcedAt } : {})}
+                  audience="student"
+                  {...(item.classroomName ? { classroomName: item.classroomName } : {})}
+                  {...(confirmedAt ? { confirmedAt } : {})}
+                  status={item.status}
+                />
+              </div>
+            )
+          })}
+        </div>
       </PageSection>
     </PageLayout>
   )

@@ -628,10 +628,11 @@ export const PublicAssignmentStates: Story = {
       <div className="space-y-2">
         <p className="text-label font-medium text-foreground">Школьник</p>
         <ClassroomAssignmentStatus
+          announcedAt="26 января, 18:00"
           audience="student"
           classroomName="201"
+          confirmedAt="26 января, 15:40"
           onOpenNotificationSettings={() => undefined}
-          publishedAt="26 января, 15:40"
           status="assigned"
         />
         <ClassroomAssignmentStatus
@@ -646,7 +647,7 @@ export const PublicAssignmentStates: Story = {
         <ClassroomAssignmentStatus
           audience="family"
           classroomName="201"
-          publishedAt="26 января, 15:40"
+          confirmedAt="26 января, 15:40"
           status="assigned"
           studentName="Анна"
         />

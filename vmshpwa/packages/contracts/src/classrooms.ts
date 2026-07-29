@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
+import { attendanceModeSchema } from './courses'
 
 /** Phase-7 Staff classroom-catalog wire contract. */
 export const CLASSROOM_CONTRACT_VERSION = 1 as const
@@ -283,6 +284,74 @@ export type ClassroomAssignmentHistoryResponse = z.infer<
   typeof classroomAssignmentHistoryResponseSchema
 >
 
+export const publishedClassroomAssignmentStatusSchema = z.enum([
+  'not_applicable',
+  'reassigning',
+  'assigned',
+])
+export type PublishedClassroomAssignmentStatus = z.infer<
+  typeof publishedClassroomAssignmentStatusSchema
+>
+
+export const publishedClassroomAssignmentSchema = z
+  .object({
+    eventPublicId: publicIdSchema,
+    eventName: z.string().trim().min(1),
+    startsAt: z.iso.datetime(),
+    endsAt: z.iso.datetime(),
+    coursePublicId: publicIdSchema,
+    courseName: z.string().trim().min(1),
+    groupPublicId: publicIdSchema,
+    groupName: z.string().trim().min(1),
+    groupLessonPublicId: publicIdSchema,
+    attendanceMode: attendanceModeSchema,
+    status: publishedClassroomAssignmentStatusSchema,
+    classroomPublicId: publicIdSchema.nullable(),
+    classroomName: z.string().trim().min(1).max(200).nullable(),
+    confirmedAt: z.iso.datetime().nullable(),
+    announcedAt: z.iso.datetime().nullable(),
+  })
+  .strict()
+  .superRefine((item, context) => {
+    const hasClassroom = item.classroomPublicId !== null && item.classroomName !== null
+    if ((item.status === 'assigned') !== hasClassroom) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Only an assigned classroom state may contain a classroom',
+      })
+    }
+    if (item.status === 'assigned' && item.confirmedAt === null) {
+      context.addIssue({
+        code: 'custom',
+        message: 'An assigned classroom state must identify its confirmation time',
+      })
+    }
+    if (item.status !== 'assigned' && item.announcedAt !== null) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Only an assigned classroom state may be announced',
+      })
+    }
+    if (item.status === 'not_applicable' && item.attendanceMode !== 'online') {
+      context.addIssue({
+        code: 'custom',
+        message: 'Only an online enrollment may be not applicable',
+      })
+    }
+  })
+export type PublishedClassroomAssignment = z.infer<typeof publishedClassroomAssignmentSchema>
+
+export const publishedClassroomAssignmentListResponseSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    items: z.array(publishedClassroomAssignmentSchema),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type PublishedClassroomAssignmentListResponse = z.infer<
+  typeof publishedClassroomAssignmentListResponseSchema
+>
+
 export const recalculateClassroomAssignmentPlanRequestSchema =
   materializeClassroomLayoutRequestSchema
 export type RecalculateClassroomAssignmentPlanRequest = z.infer<
@@ -348,5 +417,10 @@ export const classroomQueryKeys = {
     ...classroomQueryKeys.assignmentPlan(principal, eventPublicId),
     'history',
     publicIdSchema.parse(enrollmentPublicId),
+  ],
+  publishedAssignments: (principal: PrincipalQueryScope, studentPublicId?: string) => [
+    ...classroomQueryKeys.all(principal),
+    'published-assignments',
+    studentPublicId === undefined ? 'self' : publicIdSchema.parse(studentPublicId),
   ],
 } as const

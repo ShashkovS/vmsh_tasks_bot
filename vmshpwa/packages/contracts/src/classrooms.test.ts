@@ -4,6 +4,7 @@ import fixture from '../fixtures/classrooms/catalog.v1.json'
 import assignmentFixture from '../fixtures/classrooms/assignment-plan.v1.json'
 import assignmentHistoryFixture from '../fixtures/classrooms/assignment-history.v1.json'
 import layoutFixture from '../fixtures/classrooms/layout.v1.json'
+import publishedAssignmentsFixture from '../fixtures/classrooms/published-assignments.v1.json'
 import {
   classroomAssignmentPlanEtag,
   classroomAssignmentPlanResponseSchema,
@@ -14,6 +15,7 @@ import {
   classroomListQuerySchema,
   classroomListResponseSchema,
   classroomQueryKeys,
+  publishedClassroomAssignmentListResponseSchema,
   createClassroomRequestSchema,
   replaceClassroomLayoutRequestSchema,
   updateClassroomAssignmentPlanRequestSchema,
@@ -191,6 +193,32 @@ describe('classroom assignment contracts', () => {
     )
     expect(classroomQueryKeys.assignmentPlan(admin, 'event-41')).not.toEqual(
       classroomQueryKeys.assignmentPlan({ audience: 'staff', accountId: 'admin.two' }, 'event-41'),
+    )
+  })
+})
+
+describe('published classroom assignment contracts', () => {
+  it('accepts the Student and Family projection fixture', () => {
+    const response = publishedClassroomAssignmentListResponseSchema.parse(
+      publishedAssignmentsFixture,
+    )
+    expect(response.items[0]?.classroomName).toBe('202')
+  })
+
+  it('rejects a room on a reassigning state', () => {
+    const item = publishedAssignmentsFixture.items[0]!
+    expect(() =>
+      publishedClassroomAssignmentListResponseSchema.parse({
+        ...publishedAssignmentsFixture,
+        items: [{ ...item, status: 'reassigning' }],
+      }),
+    ).toThrow()
+  })
+
+  it('scopes query keys by account and selected child', () => {
+    const family = { audience: 'family' as const, accountId: 'family.one' }
+    expect(classroomQueryKeys.publishedAssignments(family, 'student.one')).not.toEqual(
+      classroomQueryKeys.publishedAssignments(family, 'student.two'),
     )
   })
 })
