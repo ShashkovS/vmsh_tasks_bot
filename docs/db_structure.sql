@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: c9cf6c7049769975d32a5c5ad0ea958837b96ba260f4cfe5e53459f3485b60d3
+-- Product schema SHA-256: d4466e4eef4fb82f3c0b360d962c2c3b16ebee5e2cbecb4b5373feeddf2406f3
 
 CREATE TABLE auth_accounts
 (
@@ -2609,7 +2609,7 @@ CREATE TABLE "zoom_conversation"
         references groups,
     lesson               INTEGER not null,
     check_time_spent_sec INTEGER
-);
+, pwa_idempotency_key text);
 
 CREATE TABLE zoom_events
 (
@@ -3075,6 +3075,10 @@ CREATE INDEX written_tasks_queue_lease_expiry_idx
 
 CREATE INDEX written_tasks_queue_problem_waiting_idx
     on written_tasks_queue (problem_id, ts, id);
+
+CREATE UNIQUE INDEX zoom_conversation_pwa_idempotency_uq
+    on zoom_conversation (pwa_idempotency_key)
+    where pwa_idempotency_key is not null;
 
 CREATE INDEX zoom_queue_by_ts
     on zoom_queue (enter_ts);

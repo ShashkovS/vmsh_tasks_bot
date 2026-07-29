@@ -21,6 +21,7 @@ from apps.pwa_api.classroom_delivery_routes import PWA_CLASSROOM_TELEGRAM_SENDER
 from apps.pwa_api.classroom_delivery_transport import TelegramClassroomSender
 from apps.pwa_api.notification_routes import notification_routes
 from apps.pwa_api.oral_window_routes import oral_window_routes
+from apps.pwa_api.oral_result_routes import oral_result_routes
 from apps.pwa_api.news_routes import news_routes
 from apps.pwa_api.group_banner_routes import (
     PWA_BANNER_INVALIDATOR,
@@ -1502,6 +1503,7 @@ def configure(
         app.add_routes(classroom_delivery_routes)
         app.add_routes(notification_routes)
         app.add_routes(oral_window_routes)
+        app.add_routes(oral_result_routes)
         app.add_routes(news_routes)
         app.add_routes(news_moderation_routes)
         app.add_routes(group_banner_routes)

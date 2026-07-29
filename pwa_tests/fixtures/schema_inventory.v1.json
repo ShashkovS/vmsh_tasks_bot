@@ -209,6 +209,10 @@
       {
         "id": "0070.pwa_oral_windows",
         "sha256": "b541de378904577324d9ba6f7648112de7feb9b634db9506d6b1de7a6c071e07"
+      },
+      {
+        "id": "0071.pwa_oral_results_idempotency",
+        "sha256": "f45e1c7f340467f86a27da9ff111ac2b7f601fab6161f5ff2d7c8835b3a5230e"
       }
     ],
     "repository_head_status": {
@@ -219,7 +223,7 @@
     }
   },
   "product": {
-    "object_count": 402,
+    "object_count": 403,
     "objects": [
       {
         "columns": [
@@ -23494,6 +23498,15 @@
             "name": "check_time_spent_sec",
             "not_null": false,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "pwa_idempotency_key",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -23534,10 +23547,35 @@
             "target_table": "users"
           }
         ],
-        "indexes": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "pwa_idempotency_key",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "zoom_conversation_pwa_idempotency_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          }
+        ],
         "name": "zoom_conversation",
-        "object_sha256": "e612e3688f8f5b8078a5018b18c337f166465f5127a44529a44d7e97cc5beb92",
-        "sql": "CREATE TABLE \"zoom_conversation\"\n(\n    id                   INTEGER\n        primary key,\n    ts                   TEXT    not null,\n    student_id           INTEGER not null\n        references users,\n    teacher_id           INTEGER not null\n        references users,\n    group_id             text\n        references groups,\n    lesson               INTEGER not null,\n    check_time_spent_sec INTEGER\n);",
+        "object_sha256": "2554fa5cf50b1065a3267983154c12640c91d9cf201b9500d71709c06812a37e",
+        "sql": "CREATE TABLE \"zoom_conversation\"\n(\n    id                   INTEGER\n        primary key,\n    ts                   TEXT    not null,\n    student_id           INTEGER not null\n        references users,\n    teacher_id           INTEGER not null\n        references users,\n    group_id             text\n        references groups,\n    lesson               INTEGER not null,\n    check_time_spent_sec INTEGER\n, pwa_idempotency_key text);",
         "table_name": "zoom_conversation",
         "type": "table"
       },
@@ -24640,6 +24678,13 @@
         "type": "index"
       },
       {
+        "name": "zoom_conversation_pwa_idempotency_uq",
+        "object_sha256": "1bf503e9bf38653bbd5444fcfe14b74ef9ca5cd6e06cb777dee9af4e920b894b",
+        "sql": "CREATE UNIQUE INDEX zoom_conversation_pwa_idempotency_uq\n    on zoom_conversation (pwa_idempotency_key)\n    where pwa_idempotency_key is not null;",
+        "table_name": "zoom_conversation",
+        "type": "index"
+      },
+      {
         "name": "zoom_queue_by_ts",
         "object_sha256": "b1224dc97407d8fac7e041777ed03c5b4b268eb25869ba509e7ac6e87785141d",
         "sql": "CREATE INDEX zoom_queue_by_ts\n    on zoom_queue (enter_ts);",
@@ -25739,8 +25784,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "73489bae77943f981b6e9cc348d72b14f7696eb5ccb940a7c71064a1a31a5f45",
-    "sha256": "c9cf6c7049769975d32a5c5ad0ea958837b96ba260f4cfe5e53459f3485b60d3"
+    "pragma_structure_sha256": "2dec54397df8909bbaed7734d1fbdef403a69d49ac2adb3113353609d29633c5",
+    "sha256": "d4466e4eef4fb82f3c0b360d962c2c3b16ebee5e2cbecb4b5373feeddf2406f3"
   },
   "source_kind": "repository-migration-head"
 }
