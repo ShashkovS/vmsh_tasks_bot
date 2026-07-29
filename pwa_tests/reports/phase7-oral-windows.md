@@ -44,3 +44,5 @@
 - Staff `/oral?groupLesson=…` даёт admin форму добавления, изменения и отмены,
   сохраняет незавершённый черновик в `localStorage`; Staff production build
   прошёл. Teacher видит forbidden и не запускает запрос списка.
+- Полный `make pwa-test`: **496 frontend tests passed** и **1384 Python tests
+  passed / 3 intentional skips**.
