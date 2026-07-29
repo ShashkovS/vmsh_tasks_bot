@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
 import { ConnectionBanner, type ConnectionState } from './connection-banner'
+import { NotificationEventCard } from './notification-event-card'
 import { PushPermissionCard } from './push-permission-card'
 import { SyncIndicator } from './sync-indicator'
 import { UpdatePrompt } from './update-prompt'
@@ -125,4 +126,26 @@ export const Push: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Включить уведомления' }))
     await expect(canvas.getByTestId('readout')).toHaveTextContent('Запросим разрешение у браузера')
   },
+}
+
+export const InAppEvents: Story = {
+  name: 'In-app события · новое и прочитанное',
+  render: () => (
+    <div className="max-w-lg space-y-2">
+      <NotificationEventCard
+        description="Математика · Начинающие · аудитория 202"
+        href="/student/"
+        occurredAt="5 октября, 15:00"
+        occurredAtDateTime="2026-10-05T12:00:00Z"
+        title="Назначена аудитория"
+        unread
+      />
+      <NotificationEventCard
+        description="Проверены три письменные задачи"
+        occurredAt="4 октября, 18:30"
+        occurredAtDateTime="2026-10-04T15:30:00Z"
+        title="Проверка завершена"
+      />
+    </div>
+  ),
 }

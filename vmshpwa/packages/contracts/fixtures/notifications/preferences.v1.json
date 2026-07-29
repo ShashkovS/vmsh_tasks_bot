@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "category": "lesson_published",
+      "inAppEnabled": true,
+      "pushEnabled": true,
+      "soundEnabled": true,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
+    },
+    {
+      "category": "hint_published",
+      "inAppEnabled": true,
+      "pushEnabled": true,
+      "soundEnabled": true,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
+    },
+    {
+      "category": "solution_published",
+      "inAppEnabled": true,
+      "pushEnabled": true,
+      "soundEnabled": true,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
+    },
+    {
+      "category": "review_completed",
+      "inAppEnabled": true,
+      "pushEnabled": true,
+      "soundEnabled": true,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
+    },
+    {
+      "category": "thread_updated",
+      "inAppEnabled": true,
+      "pushEnabled": true,
+      "soundEnabled": true,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
+    },
+    {
+      "category": "oral_window",
+      "inAppEnabled": false,
+      "pushEnabled": false,
+      "soundEnabled": false,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
+    },
+    {
+      "category": "classroom_assignment",
+      "inAppEnabled": true,
+      "pushEnabled": true,
+      "soundEnabled": true,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
+    },
+    {
+      "category": "deadline",
+      "inAppEnabled": true,
+      "pushEnabled": true,
+      "soundEnabled": true,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
+    },
+    {
+      "category": "news",
+      "inAppEnabled": true,
+      "pushEnabled": true,
+      "soundEnabled": true,
+      "quietStartsLocal": "21:00",
+      "quietEndsLocal": "09:00",
+      "timezone": "Europe/Moscow",
+      "updatedAt": null
+    }
+  ],
+  "requestId": "request-notification-preferences-1"
+}
