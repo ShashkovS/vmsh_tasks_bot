@@ -3,20 +3,29 @@ import {
   apiErrorSchema,
   changeClassroomStatusRequestSchema,
   classroomEtag,
+  classroomLayoutEtag,
+  classroomLayoutResponseSchema,
   classroomListQuerySchema,
   classroomListResponseSchema,
   classroomResponseSchema,
   createClassroomRequestSchema,
+  confirmClassroomLayoutRequestSchema,
+  materializeClassroomLayoutRequestSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
   renameClassroomRequestSchema,
+  replaceClassroomLayoutRequestSchema,
   type ChangeClassroomStatusRequest,
   type Classroom,
   type ClassroomListQuery,
   type ClassroomListResponse,
+  type ClassroomLayoutResponse,
   type ClassroomResponse,
   type CreateClassroomRequest,
+  type ConfirmClassroomLayoutRequest,
+  type MaterializeClassroomLayoutRequest,
   type RenameClassroomRequest,
+  type ReplaceClassroomLayoutRequest,
   type RuntimeConfig,
 } from '@vmsh/contracts'
 
@@ -53,6 +62,27 @@ export interface ClassroomClient {
     request: ChangeClassroomStatusRequest,
     options?: ClassroomRequestOptions,
   ): Promise<ClassroomResponse>
+  getLayout(
+    eventPublicId: string,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomLayoutResponse>
+  materializeLayout(
+    eventPublicId: string,
+    request: MaterializeClassroomLayoutRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomLayoutResponse>
+  replaceLayout(
+    eventPublicId: string,
+    layout: { publicId: string; version: number },
+    request: ReplaceClassroomLayoutRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomLayoutResponse>
+  confirmLayout(
+    eventPublicId: string,
+    layout: { publicId: string; version: number },
+    request: ConfirmClassroomLayoutRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomLayoutResponse>
 }
 
 export class ClassroomProtocolError extends Error {
@@ -155,6 +185,80 @@ class BrowserClassroomClient implements ClassroomClient {
     )
   }
 
+  async getLayout(
+    eventPublicId: string,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomLayoutResponse> {
+    const eventId = publicIdSchema.parse(eventPublicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(eventId)}/classroom-layout`,
+      { method: 'GET' },
+      options,
+      200,
+      (payload) => classroomLayoutResponseSchema.parse(payload),
+    )
+  }
+
+  async materializeLayout(
+    eventPublicId: string,
+    request: MaterializeClassroomLayoutRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomLayoutResponse> {
+    const eventId = publicIdSchema.parse(eventPublicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(eventId)}/classroom-layout/materialize`,
+      {
+        method: 'POST',
+        body: JSON.stringify(materializeClassroomLayoutRequestSchema.parse(request)),
+      },
+      options,
+      200,
+      (payload) => classroomLayoutResponseSchema.parse(payload),
+    )
+  }
+
+  async replaceLayout(
+    eventPublicId: string,
+    layout: { publicId: string; version: number },
+    request: ReplaceClassroomLayoutRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomLayoutResponse> {
+    const eventId = publicIdSchema.parse(eventPublicId)
+    const publicId = publicIdSchema.parse(layout.publicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(eventId)}/classroom-layout/${encodeURIComponent(publicId)}/rooms`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(replaceClassroomLayoutRequestSchema.parse(request)),
+        headers: { 'If-Match': classroomLayoutEtag({ ...layout, publicId }) },
+      },
+      options,
+      200,
+      (payload) => classroomLayoutResponseSchema.parse(payload),
+    )
+  }
+
+  async confirmLayout(
+    eventPublicId: string,
+    layout: { publicId: string; version: number },
+    request: ConfirmClassroomLayoutRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomLayoutResponse> {
+    const eventId = publicIdSchema.parse(eventPublicId)
+    const publicId = publicIdSchema.parse(layout.publicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(eventId)}/classroom-layout/${encodeURIComponent(publicId)}/confirm`,
+      {
+        method: 'POST',
+        body: JSON.stringify(confirmClassroomLayoutRequestSchema.parse(request)),
+        headers: { 'If-Match': classroomLayoutEtag({ ...layout, publicId }) },
+      },
+      options,
+      200,
+      (payload) => classroomLayoutResponseSchema.parse(payload),
+    )
+  }
+
   async #mutate(
     classroom: Classroom,
     suffix: string,
@@ -178,7 +282,11 @@ class BrowserClassroomClient implements ClassroomClient {
 
   async #request<T>(
     path: string,
-    init: { method: 'GET' | 'POST' | 'PATCH'; body?: string; headers?: Record<string, string> },
+    init: {
+      method: 'GET' | 'POST' | 'PATCH' | 'PUT'
+      body?: string
+      headers?: Record<string, string>
+    },
     options: ClassroomRequestOptions,
     expectedStatus: number,
     parse: (payload: unknown) => T,
@@ -218,7 +326,11 @@ class BrowserClassroomClient implements ClassroomClient {
 
   async #send(
     path: string,
-    init: { method: 'GET' | 'POST' | 'PATCH'; body?: string; headers?: Record<string, string> },
+    init: {
+      method: 'GET' | 'POST' | 'PATCH' | 'PUT'
+      body?: string
+      headers?: Record<string, string>
+    },
     options: ClassroomRequestOptions,
   ): Promise<Response> {
     const headers = {

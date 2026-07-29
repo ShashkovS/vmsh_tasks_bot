@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
 import fixture from '../fixtures/classrooms/catalog.v1.json'
+import layoutFixture from '../fixtures/classrooms/layout.v1.json'
 import {
   classroomEtag,
+  classroomLayoutEtag,
+  classroomLayoutResponseSchema,
   classroomListQuerySchema,
   classroomListResponseSchema,
   classroomQueryKeys,
   createClassroomRequestSchema,
+  replaceClassroomLayoutRequestSchema,
 } from './classrooms'
 
 describe('classroom catalog contracts', () => {
@@ -42,5 +46,71 @@ describe('classroom catalog contracts', () => {
       }),
     ).toThrow()
     expect(() => classroomListResponseSchema.parse({ ...fixture, unexpected: true })).toThrow()
+  })
+})
+
+describe('classroom layout contracts', () => {
+  it('validates the committed event-scoped layout fixture', () => {
+    const response = classroomLayoutResponseSchema.parse(layoutFixture)
+    expect(response.layout.groups[0]?.inPersonCount).toBe(84)
+    expect(response.layout.rooms[0]?.sourceLayoutPublicId).toBe('layout-40')
+    if (response.layout.publicId === null || response.layout.version === null) {
+      throw new Error('Fixture must contain a persisted layout')
+    }
+    expect(
+      classroomLayoutEtag({
+        ...response.layout,
+        publicId: response.layout.publicId,
+        version: response.layout.version,
+      }),
+    ).toBe('"layout-41:v3"')
+  })
+
+  it('requires virtual identity only for inherited layouts', () => {
+    expect(() =>
+      classroomLayoutResponseSchema.parse({
+        ...layoutFixture,
+        layout: { ...layoutFixture.layout, state: 'inherited' },
+      }),
+    ).toThrow()
+    expect(
+      classroomLayoutResponseSchema.parse({
+        ...layoutFixture,
+        layout: {
+          ...layoutFixture.layout,
+          state: 'inherited',
+          publicId: null,
+          version: null,
+        },
+      }).layout.state,
+    ).toBe('inherited')
+  })
+
+  it('rejects unknown and oversized room mappings', () => {
+    expect(() =>
+      replaceClassroomLayoutRequestSchema.parse({
+        schemaVersion: 1,
+        mappings: [{ classroomPublicId: 'room-201', groupLessonPublicId: 'lesson-41', raw: 1 }],
+      }),
+    ).toThrow()
+    expect(() =>
+      replaceClassroomLayoutRequestSchema.parse({
+        schemaVersion: 1,
+        mappings: Array.from({ length: 501 }, () => ({
+          classroomPublicId: 'room-201',
+          groupLessonPublicId: 'lesson-41',
+        })),
+      }),
+    ).toThrow()
+  })
+
+  it('isolates layout query keys by event and principal', () => {
+    const admin = { audience: 'staff' as const, accountId: 'admin.one' }
+    expect(classroomQueryKeys.layout(admin, 'event-41')).not.toEqual(
+      classroomQueryKeys.layout(admin, 'event-42'),
+    )
+    expect(classroomQueryKeys.layout(admin, 'event-41')).not.toEqual(
+      classroomQueryKeys.layout({ audience: 'staff', accountId: 'admin.two' }, 'event-41'),
+    )
   })
 })

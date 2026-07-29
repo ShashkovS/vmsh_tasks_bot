@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { StaffClassroomCatalog } from '../classroom-catalog-page'
+import { StaffClassroomLayout } from '../classroom-layout-page'
 import { StaffClassroomsPage } from '../pages'
 
 const searchSchema = z.object({
@@ -30,6 +31,7 @@ function ClassroomsRoute() {
           statusFilter={search.roomStatus}
         />
       }
+      layout={<StaffClassroomLayout eventPublicId={search.event} />}
       onTabChange={(tab) => void navigate({ search: (current) => ({ ...current, tab }) })}
       tab={search.tab}
     />

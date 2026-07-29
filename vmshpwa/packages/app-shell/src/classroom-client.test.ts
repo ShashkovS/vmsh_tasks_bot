@@ -25,6 +25,23 @@ const classroom = {
   version: 1,
 }
 
+const layout = {
+  event: {
+    publicId: 'event-41',
+    name: 'Очное занятие',
+    startsAt: '2026-10-11T10:00:00Z',
+    endsAt: '2026-10-11T13:00:00Z',
+    status: 'scheduled' as const,
+    version: 1,
+  },
+  state: 'draft' as const,
+  publicId: 'layout-41',
+  version: 2,
+  groups: [],
+  rooms: [],
+  conflicts: [],
+}
+
 function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -97,6 +114,48 @@ describe('classroom client', () => {
     })
     await expect(malformed.create({ schemaVersion: 1, name: '201' })).rejects.toBeInstanceOf(
       ClassroomProtocolError,
+    )
+  })
+
+  it('reads and mutates one event layout with the current ETag', async () => {
+    const fetchImplementation = vi.fn(() =>
+      Promise.resolve(response({ schemaVersion: 1, layout, requestId: 'layout-request' })),
+    )
+    const client = createClassroomClient(runtime, { fetchImplementation })
+
+    await client.getLayout('event-41')
+    await client.materializeLayout('event-41', { schemaVersion: 1 })
+    await client.replaceLayout('event-41', layout, {
+      schemaVersion: 1,
+      mappings: [{ classroomPublicId: 'room-201', groupLessonPublicId: 'group-lesson-41' }],
+    })
+    await client.confirmLayout('event-41', layout, { schemaVersion: 1 })
+
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      1,
+      '/staff/api/v1/in-person-events/event-41/classroom-layout',
+      expect.objectContaining({ method: 'GET' }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      2,
+      '/staff/api/v1/in-person-events/event-41/classroom-layout/materialize',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      3,
+      '/staff/api/v1/in-person-events/event-41/classroom-layout/layout-41/rooms',
+      expect.objectContaining({
+        method: 'PUT',
+        headers: expect.objectContaining({ 'If-Match': '"layout-41:v2"' }),
+      }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      4,
+      '/staff/api/v1/in-person-events/event-41/classroom-layout/layout-41/confirm',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ 'If-Match': '"layout-41:v2"' }),
+      }),
     )
   })
 })

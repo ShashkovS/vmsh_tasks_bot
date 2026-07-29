@@ -350,7 +350,7 @@ export interface ClassroomGroupLayoutProps {
   rooms: ClassroomLayoutRoom[]
   groups: ClassroomGroupOption[]
   sourceLabel?: string
-  version: number
+  version?: number | null
   optimisticConflict?: string | null
   pending?: boolean
   onMaterialize?: () => void
@@ -394,14 +394,17 @@ export function ClassroomGroupLayout({
             </Badge>
           </div>
           <p className="text-small text-muted-foreground">
-            {lessonLabel} · версия {version}
+            {lessonLabel} ·{' '}
+            {version === null || version === undefined
+              ? 'без отдельной версии'
+              : `версия ${version}`}
             {sourceLabel ? ` · ${sourceLabel}` : ''}
           </p>
         </div>
-        {state === 'inherited' ? (
+        {state !== 'draft' ? (
           <Button onClick={onMaterialize} size="sm" variant="outline">
             <Pencil aria-hidden="true" />
-            Изменить для занятия
+            {state === 'inherited' ? 'Изменить для занятия' : 'Изменить схему'}
           </Button>
         ) : null}
       </header>

@@ -70,8 +70,120 @@ export const classroomListResponseSchema = z
   .strict()
 export type ClassroomListResponse = z.infer<typeof classroomListResponseSchema>
 
+export const inPersonEventStatusSchema = z.enum(['draft', 'scheduled', 'completed', 'cancelled'])
+export const classroomLayoutStateSchema = z.enum(['inherited', 'draft', 'confirmed'])
+
+export const classroomLayoutGroupSchema = z
+  .object({
+    groupLessonPublicId: publicIdSchema,
+    coursePublicId: publicIdSchema,
+    courseName: z.string().trim().min(1),
+    groupPublicId: publicIdSchema,
+    groupName: z.string().trim().min(1),
+    shortCode: z.string().trim().min(1),
+    colorKey: z.string().trim().min(1).nullable(),
+    lessonNumber: z.number().int().positive(),
+    inPersonCount: z.number().int().nonnegative(),
+    assignedCount: z.number().int().nonnegative(),
+  })
+  .strict()
+export type ClassroomLayoutGroup = z.infer<typeof classroomLayoutGroupSchema>
+
+export const classroomLayoutRoomSchema = z
+  .object({
+    classroomPublicId: publicIdSchema,
+    classroomName: z.string().trim().min(1).max(200),
+    classroomStatus: classroomStatusSchema,
+    groupLessonPublicId: publicIdSchema,
+    coursePublicId: publicIdSchema,
+    groupPublicId: publicIdSchema,
+    groupName: z.string().trim().min(1),
+    sourceLayoutPublicId: publicIdSchema.nullable(),
+  })
+  .strict()
+export type ClassroomLayoutRoom = z.infer<typeof classroomLayoutRoomSchema>
+
+export const classroomLayoutSchema = z
+  .object({
+    event: z
+      .object({
+        publicId: publicIdSchema,
+        name: z.string().trim().min(1),
+        startsAt: z.iso.datetime(),
+        endsAt: z.iso.datetime(),
+        status: inPersonEventStatusSchema,
+        version: z.number().int().positive(),
+      })
+      .strict(),
+    state: classroomLayoutStateSchema,
+    publicId: publicIdSchema.nullable(),
+    version: z.number().int().positive().nullable(),
+    groups: z.array(classroomLayoutGroupSchema),
+    rooms: z.array(classroomLayoutRoomSchema),
+    conflicts: z.array(
+      z
+        .object({
+          classroomPublicId: publicIdSchema,
+          classroomName: z.string().trim().min(1).max(200),
+        })
+        .strict(),
+    ),
+  })
+  .strict()
+  .superRefine((layout, context) => {
+    const virtual = layout.state === 'inherited'
+    if (virtual !== (layout.publicId === null && layout.version === null)) {
+      context.addIssue({
+        code: 'custom',
+        message:
+          'Inherited layout must be virtual; persisted layout must have identity and version',
+      })
+    }
+  })
+export type ClassroomLayout = z.infer<typeof classroomLayoutSchema>
+
+export const classroomLayoutResponseSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    layout: classroomLayoutSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type ClassroomLayoutResponse = z.infer<typeof classroomLayoutResponseSchema>
+
+export const materializeClassroomLayoutRequestSchema = z
+  .object({ schemaVersion: classroomContractVersionSchema })
+  .strict()
+export type MaterializeClassroomLayoutRequest = z.infer<
+  typeof materializeClassroomLayoutRequestSchema
+>
+
+export const replaceClassroomLayoutRequestSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    mappings: z
+      .array(
+        z
+          .object({
+            classroomPublicId: publicIdSchema,
+            groupLessonPublicId: publicIdSchema,
+          })
+          .strict(),
+      )
+      .max(500),
+  })
+  .strict()
+export type ReplaceClassroomLayoutRequest = z.infer<typeof replaceClassroomLayoutRequestSchema>
+
+export const confirmClassroomLayoutRequestSchema = materializeClassroomLayoutRequestSchema
+export type ConfirmClassroomLayoutRequest = z.infer<typeof confirmClassroomLayoutRequestSchema>
+
 export function classroomEtag(classroom: Pick<Classroom, 'publicId' | 'version'>): string {
   return `"${publicIdSchema.parse(classroom.publicId)}:v${z.number().int().positive().parse(classroom.version)}"`
+}
+
+export function classroomLayoutEtag(layout: { publicId: string; version: number }): string {
+  return `"${publicIdSchema.parse(layout.publicId)}:v${z.number().int().positive().parse(layout.version)}"`
 }
 
 export const classroomQueryKeys = {
@@ -80,4 +192,9 @@ export const classroomQueryKeys = {
     const parsed = classroomListQuerySchema.parse(query)
     return [...classroomQueryKeys.all(principal), 'list', parsed.status, parsed.search] as const
   },
+  layout: (principal: PrincipalQueryScope, eventPublicId: string) => [
+    ...classroomQueryKeys.all(principal),
+    'layout',
+    publicIdSchema.parse(eventPublicId),
+  ],
 } as const

@@ -249,6 +249,7 @@ export const LayoutMaterializedAndConfirm: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить схему' }))
     await expect(canvas.getByTestId('layout-readout')).toHaveTextContent('Схема подтверждена')
     await expect(canvas.getByText('Подтверждено')).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'Изменить схему' })).toBeInTheDocument()
   },
 }
 

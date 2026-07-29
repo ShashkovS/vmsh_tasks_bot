@@ -643,11 +643,13 @@ export function StaffClassroomsPage({
   tab: controlledTab,
   onTabChange,
   catalog,
+  layout,
 }: {
   state?: PageDisplayState
   tab?: ClassroomPageTab
   onTabChange?: (tab: ClassroomPageTab) => void
   catalog?: ReactNode
+  layout?: ReactNode
 }) {
   const [localTab, setLocalTab] = useState<ClassroomPageTab>('catalog')
   const [eventGroupLessons, setEventGroupLessons] = useState(initialInPersonGroupLessons)
@@ -698,14 +700,16 @@ export function StaffClassroomsPage({
               )}
             </TabsContent>
             <TabsContent value="groups">
-              <ClassroomGroupLayout
-                groups={classroomGroups}
-                lessonLabel="Очное событие 1 февраля · Математика, занятие 41"
-                rooms={layoutRooms}
-                sourceLabel="наследуется с прошлого события этих групп"
-                state="inherited"
-                version={7}
-              />
+              {layout ?? (
+                <ClassroomGroupLayout
+                  groups={classroomGroups}
+                  lessonLabel="Очное событие 1 февраля · Математика, занятие 41"
+                  rooms={layoutRooms}
+                  sourceLabel="наследуется с прошлого события этих групп"
+                  state="inherited"
+                  version={7}
+                />
+              )}
             </TabsContent>
             <TabsContent value="students">
               <ClassroomStudentPlanner
