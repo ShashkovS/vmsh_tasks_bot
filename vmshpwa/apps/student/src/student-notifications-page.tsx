@@ -50,6 +50,12 @@ const categoryCopy: Record<NotificationCategory, { title: string; description: s
 }
 
 function eventDescription(event: NotificationEvent): string {
+  if (event.category === 'review_completed') {
+    const count = event.payload.count
+    if (typeof count === 'number' && Number.isInteger(count) && count > 1) {
+      return `Проверено задач: ${count}`
+    }
+  }
   if (event.category !== 'classroom_assignment') return categoryCopy[event.category].description
   const values = ['courseName', 'groupName', 'classroomName'].map((key) => event.payload[key])
   return values.filter((value): value is string => typeof value === 'string').join(' · ')

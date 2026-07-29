@@ -972,6 +972,7 @@ async def publish_review_completion_invalidation(
         family_account_public_ids=family_account_public_ids,
         problem_public_ids=problem_public_ids,
         reason=reason,
+        include_notification_events=True,
     )
     await publish_review_queue_invalidation(app, reason=reason)
 
@@ -983,6 +984,7 @@ async def publish_review_owner_invalidation(
     family_account_public_ids: tuple[str, ...],
     problem_public_ids: tuple[str, ...],
     reason: str,
+    include_notification_events: bool = False,
 ) -> None:
     """Refetch only the reviewed Student's thread and linked Family views."""
 
@@ -990,11 +992,16 @@ async def publish_review_owner_invalidation(
         f"problems/{problem_public_id}/thread"
         for problem_public_id in problem_public_ids
     ]
+    student_resources = (
+        [*resources, "notification-events"]
+        if include_notification_events
+        else resources
+    )
     for account_public_id in account_public_ids:
         await app[PWA_BROKER].publish(
             NATS_PWA_INVALIDATE,
             {
-                "resources": resources,
+                "resources": student_resources,
                 "reason": reason,
                 "audience": AuthAudience.STUDENT.value,
                 "accountId": account_public_id,

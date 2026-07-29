@@ -1,4 +1,4 @@
-import { act, render } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { NotificationEvent } from '@vmsh/contracts'
@@ -51,6 +51,22 @@ afterEach(() => {
 })
 
 describe('notification visibility acknowledgement', () => {
+  it('shows the number of reviews collected in one batch', () => {
+    installIntersectionObserver()
+    render(
+      <VisibleNotification
+        event={{
+          ...event,
+          category: 'review_completed',
+          payload: { count: 3 },
+        }}
+        onRead={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Проверено задач: 3')).toBeTruthy()
+  })
+
   it('acknowledges only after three continuous visible seconds', () => {
     vi.useFakeTimers()
     const setVisible = installIntersectionObserver()

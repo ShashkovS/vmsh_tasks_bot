@@ -613,12 +613,12 @@ async def test_review_completion_invalidates_linked_student_family_and_staff_que
     ]
     assert broker.messages == [
         (
-            "pwa_invalidate",
-            {
-                "resources": thread_resources,
-                "reason": "written-review-completed",
-                "audience": "student",
-                "accountId": "account-student-review",
+                "pwa_invalidate",
+                {
+                    "resources": [*thread_resources, "notification-events"],
+                    "reason": "written-review-completed",
+                    "audience": "student",
+                    "accountId": "account-student-review",
             },
         ),
         (

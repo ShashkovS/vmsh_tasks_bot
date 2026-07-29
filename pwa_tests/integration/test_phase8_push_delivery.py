@@ -178,6 +178,26 @@ async def test_delivery_is_idempotent_and_quiet_hours_only_silence(tmp_path):
     assert row["delivered_at"] is not None
 
 
+async def test_review_batch_push_uses_the_aggregated_count(tmp_path):
+    _database_path, factory = _prepare_database(tmp_path)
+    factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE notification_events SET category = 'review_completed', "
+            "route = '/student/notifications', payload_json = ?, deliver_after = ?",
+            (json.dumps({"count": 3}), DELIVERY_TIME.isoformat()),
+        )
+    )
+    sent = []
+
+    async def sender(_subscription, payload):
+        sent.append(payload)
+
+    result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
+
+    assert result["sent"] == 1
+    assert sent[0]["body"] == "Проверено задач: 3. Результаты уже в кабинете."
+
+
 async def test_temporary_failure_retries_without_duplicate_row(tmp_path):
     _database_path, factory = _prepare_database(tmp_path)
     calls = 0

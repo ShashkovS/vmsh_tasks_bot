@@ -49,7 +49,9 @@ from db_methods.pwa.reviews import (
     ReviewThreadChanged,
 )
 from helpers.pwa.permissions import Capability
+from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.review_notifications import record_review_notifications
 
 
 # Keep the route below aiohttp's default one-megabyte application limit while
@@ -1092,6 +1094,25 @@ async def complete_review_item(request: web.Request) -> web.Response:
             code="validation_error",
             message="Проверьте данные завершения проверки",
         ) from error
+    if not receipt.replayed:
+        database = request.app.get(PWA_DATABASE)
+        if database is not None and database.factory is not None:
+            try:
+                await database.factory.run_write_async(
+                    lambda connection: record_review_notifications(
+                        connection,
+                        account_public_ids=receipt.owner_account_public_ids,
+                        review_public_id=receipt.review_public_id,
+                        problem_public_ids=receipt.evidence_problem_public_ids,
+                        completed_at=receipt.completed_at,
+                    )
+                )
+            except Exception:
+                logger.warning(
+                    "Review notification failed after commit: review=%s",
+                    receipt.review_public_id,
+                    exc_info=True,
+                )
     invalidator = request.app.get(PWA_REVIEW_COMPLETION_INVALIDATOR)
     if invalidator is not None and not receipt.replayed:
         try:

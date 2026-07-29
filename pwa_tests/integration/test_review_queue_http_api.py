@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from types import MappingProxyType
@@ -20,7 +21,7 @@ from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import Config
 from helpers.consts import USER_TYPE
 from helpers.nats_brocker import InProcessBroker
-from helpers.pwa.app_keys import RUNTIME_CONFIG
+from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG, PwaDatabaseState
 from helpers.pwa.auth_config import AuthRuntimeConfig, COOKIE_POLICY
 from models.pwa.auth import AuthAudience, CredentialHasher
 
@@ -466,6 +467,7 @@ async def review_http(tmp_path, aiohttp_client) -> ReviewHttpFixture:
             factory, clock=lambda: NOW
         ),
     )
+    app[PWA_DATABASE] = PwaDatabaseState(factory=factory)
     client = await aiohttp_client(app)
 
     async def login(audience: AuthAudience, username: str, password: str) -> str:
@@ -816,6 +818,24 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
         ).fetchone()
     )
     assert counts == {"results": 1, "reviews": 1, "queue": 0}
+    notifications = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT account.public_id AS account_public_id, event.category, "
+            "event.route, event.payload_json, event.deliver_after "
+            "FROM notification_events AS event "
+            "JOIN auth_accounts AS account ON account.id = event.account_id"
+        ).fetchall()
+    )
+    assert len(notifications) == 1
+    assert notifications[0]["account_public_id"] == "review-http-account-student"
+    assert notifications[0]["category"] == "review_completed"
+    assert notifications[0]["route"] == "/student/notifications"
+    assert notifications[0]["deliver_after"] == _timestamp(NOW + timedelta(minutes=30))
+    assert json.loads(notifications[0]["payload_json"]) == {
+        "count": 1,
+        "reviewIds": ["review-http-completed"],
+        "problemIds": [branch["problemId"] for branch in lease["branches"]],
+    }
 
 
 @pytest.mark.asyncio

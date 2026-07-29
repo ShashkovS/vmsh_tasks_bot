@@ -131,3 +131,55 @@ def insert_event(
         ),
     )
     return cursor.rowcount == 1
+
+
+def active_student_accounts(
+    connection: sqlite3.Connection,
+    *,
+    public_ids: tuple[str, ...],
+) -> list[dict[str, object]]:
+    """Return active Student accounts named by the review receipt."""
+
+    if not public_ids:
+        return []
+    placeholders = ", ".join("?" for _ in public_ids)
+    rows = connection.execute(
+        f"SELECT id, public_id FROM auth_accounts "
+        f"WHERE audience = 'student' AND status = 'active' "
+        f"AND public_id IN ({placeholders}) ORDER BY id",
+        public_ids,
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def pending_review_batch(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    occurred_at: str,
+) -> dict[str, object] | None:
+    """Find the account's still-open 30-minute review batch."""
+
+    row = connection.execute(
+        "SELECT id, payload_json FROM notification_events "
+        "WHERE account_id = ? AND category = 'review_completed' "
+        "AND deliver_after > ? "
+        "ORDER BY deliver_after DESC, id DESC LIMIT 1",
+        (account_id, occurred_at),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def update_review_batch(
+    connection: sqlite3.Connection,
+    *,
+    event_id: int,
+    payload_json: str,
+    occurred_at: str,
+) -> None:
+    connection.execute(
+        "UPDATE notification_events SET payload_json = ?, occurred_at = ?, "
+        "read_at = NULL, read_by_session_id = NULL "
+        "WHERE id = ?",
+        (payload_json, occurred_at, event_id),
+    )

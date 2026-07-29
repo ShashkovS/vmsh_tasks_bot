@@ -83,6 +83,10 @@ def _payload(item: dict[str, object], now: datetime) -> dict[str, object]:
             names[-1] = f"аудитория {names[-1]}"
         if names:
             body = " · ".join(names)
+    elif category == "review_completed":
+        count = values.get("count")
+        if isinstance(count, int) and not isinstance(count, bool) and count > 1:
+            body = f"Проверено задач: {count}. Результаты уже в кабинете."
     audience = str(item["audience"])
     route = str(item["route"])
     if not route.startswith(f"/{audience}/"):
