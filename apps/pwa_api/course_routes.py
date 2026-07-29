@@ -34,6 +34,7 @@ from db_methods.pwa.progress import (
 )
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.family_enrollment import change_family_enrollment
 from models.pwa.progress import summarize_course_results
 
 
@@ -326,6 +327,86 @@ async def get_student_course_enrollment(request: web.Request) -> web.Response:
     authenticated = _student_session(request)
     enrollment = _course_enrollment(authenticated, request.match_info["course_id"])
     return web.json_response(course_enrollment_payload(enrollment))
+
+
+@course_routes.patch("/student/api/v1/courses/{course_id}/enrollment")
+async def update_student_course_enrollment(request: web.Request) -> web.Response:
+    _reject_query(request)
+    authenticated = _student_session(request)
+    enrollment = _course_enrollment(authenticated, request.match_info["course_id"])
+    try:
+        payload = await request.json()
+    except (TypeError, ValueError) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте выбранную группу и режим",
+        ) from error
+    if not isinstance(payload, dict) or set(payload) != {
+        "activeGroupId",
+        "attendanceMode",
+        "version",
+    }:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте выбранную группу и режим",
+        )
+    active_group_id = payload["activeGroupId"]
+    attendance_mode = payload["attendanceMode"]
+    version = payload["version"]
+    if (
+        not isinstance(active_group_id, str)
+        or _PUBLIC_ID.fullmatch(active_group_id) is None
+        or attendance_mode not in {"online", "in_person"}
+        or not isinstance(version, int)
+        or isinstance(version, bool)
+        or version < 1
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте выбранную группу и режим",
+        )
+    group = _allowed_group(enrollment, active_group_id)
+    student_user_id = authenticated.principal.linked_user_id
+    assert student_user_id is not None
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="service_unavailable",
+            message="Настройки курса временно недоступны",
+        )
+    now = datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+    def write(connection):
+        return change_family_enrollment(
+            connection,
+            enrollment_id=enrollment.enrollment_id,
+            course_id=enrollment.course_id,
+            student_user_id=student_user_id,
+            expected_version=version,
+            previous_group_id=enrollment.active_group_id,
+            active_group_id=group.group_id,
+            previous_attendance_mode=enrollment.attendance_mode,
+            attendance_mode=attendance_mode,
+            request_id=request["request_id"],
+            now=now,
+        )
+
+    new_version = await database.factory.run_write_async(write)
+    if new_version is None:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Настройки уже изменились. Обновите страницу.",
+        )
+    response = course_enrollment_payload(enrollment)
+    response["activeGroupId"] = group.group_public_id
+    response["attendanceMode"] = attendance_mode
+    response["version"] = new_version
+    return web.json_response(response, headers={"Cache-Control": "no-store"})
 
 
 @course_routes.get("/student/api/v1/courses/{course_id}/progress")

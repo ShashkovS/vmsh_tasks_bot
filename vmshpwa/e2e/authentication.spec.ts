@@ -168,6 +168,17 @@ for (const { name, persona, expectedRole } of loginMatrix) {
   })
 }
 
+test('Student profile uses the authenticated course enrollment instead of prototype data', async ({
+  page,
+}) => {
+  await loginThroughUi(page, AUTH_PERSONAS.student, '/student/profile')
+  await expect(page.getByRole('heading', { name: 'Алексей Тестовый-Онлайн' })).toBeVisible()
+  await expect(page.getByText('Математика 5–7', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Активная группа')).toHaveValue('group-fixture-beginner')
+  await expect(page.getByLabel('Формат занятий')).toHaveValue('online')
+  await expect(page.getByText('Василий Петров')).toHaveCount(0)
+})
+
 for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONAS.teacher]) {
   test(`${persona.audience}: a wrong credential yields the same safe visible error`, async ({
     page,

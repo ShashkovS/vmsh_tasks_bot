@@ -346,3 +346,58 @@ async def test_family_enrollment_change_rejects_unlinked_or_unavailable_data(
         cookies=content_support._cookie(fixture, "family"),
     )
     assert unexpected_query.status == 422
+
+
+async def test_student_changes_own_allowed_group_and_attendance(content_http):
+    fixture = content_http
+
+    def grant_second_group(connection):
+        enrollment = connection.execute(
+            "SELECT id, course_id FROM course_enrollments "
+            "WHERE public_id = 'enrollment-content-http'"
+        ).fetchone()
+        connection.execute(
+            "INSERT INTO course_group_access "
+            "(enrollment_id, course_id, group_id, valid_from, created_at, updated_at) "
+            "VALUES (?, ?, 'content-b', '2026-09-01T00:00:00Z', "
+            "'2026-09-01T00:00:00Z', '2026-09-01T00:00:00Z')",
+            (enrollment["id"], enrollment["course_id"]),
+        )
+
+    fixture.factory.run_write(grant_second_group)
+    path = "/student/api/v1/courses/course-content-http/enrollment"
+    changed = await fixture.client.patch(
+        path,
+        json={
+            "activeGroupId": "group-content-http-b",
+            "attendanceMode": "in_person",
+            "version": 1,
+        },
+        headers=content_support._headers(unsafe=True),
+        cookies=content_support._cookie(fixture, "student"),
+    )
+    assert changed.status == 200, await changed.text()
+    changed_body = await changed.json()
+    assert changed_body["activeGroupId"] == "group-content-http-b"
+    assert changed_body["attendanceMode"] == "in_person"
+    assert changed_body["version"] == 2
+
+    refreshed = await fixture.client.get(
+        path,
+        headers=content_support._headers(),
+        cookies=content_support._cookie(fixture, "student"),
+    )
+    assert refreshed.status == 200
+    assert await refreshed.json() == changed_body
+
+    unavailable = await fixture.client.patch(
+        path,
+        json={
+            "activeGroupId": "unknown-group",
+            "attendanceMode": "online",
+            "version": 2,
+        },
+        headers=content_support._headers(unsafe=True),
+        cookies=content_support._cookie(fixture, "student"),
+    )
+    assert unavailable.status == 403

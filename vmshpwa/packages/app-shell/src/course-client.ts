@@ -1,10 +1,11 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
   apiErrorSchema,
   courseEnrollmentSchema,
   courseProgressResponseSchema,
   courseQueryKeys,
+  familyEnrollmentUpdateRequestSchema,
   lessonCursorSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
@@ -16,6 +17,7 @@ import {
   studentCourseAccessResponseSchema,
   type CourseEnrollment,
   type CourseProgressResponse,
+  type FamilyEnrollmentUpdateRequest,
   type LessonCursor,
   type PrincipalQueryScope,
   type RuntimeConfig,
@@ -51,6 +53,10 @@ export interface StudentCourseClient {
   home(options?: CourseRequestOptions): Promise<StudentHomeResponse>
   list(options?: CourseRequestOptions): Promise<StudentCourseAccessResponse>
   enrollment(courseId: string, options?: CourseRequestOptions): Promise<CourseEnrollment>
+  updateEnrollment(
+    courseId: string,
+    input: FamilyEnrollmentUpdateRequest,
+  ): Promise<CourseEnrollment>
   progress(courseId: string, options?: CourseRequestOptions): Promise<CourseProgressResponse>
   lessons(courseId: string, options?: StudentLessonListOptions): Promise<StudentLessonListResponse>
   lesson(
@@ -117,6 +123,31 @@ class BrowserStudentCourseClient implements StudentCourseClient {
       options,
       courseEnrollmentSchema,
     )
+  }
+
+  async updateEnrollment(
+    courseId: string,
+    input: FamilyEnrollmentUpdateRequest,
+  ): Promise<CourseEnrollment> {
+    const parsedCourseId = publicIdSchema.parse(courseId)
+    const parsedInput = familyEnrollmentUpdateRequestSchema.parse(input)
+    const path = `/courses/${encodeURIComponent(parsedCourseId)}/enrollment`
+    const send = () => this.#sendUpdate(path, parsedInput)
+    let response = await send()
+    if (response.status === 401 && this.#refreshSession) {
+      await response.body?.cancel()
+      await this.#refreshSession()
+      response = await send()
+    }
+    if (!response.ok) throw await this.#responseError(response)
+    try {
+      return courseEnrollmentSchema.parse(await response.json())
+    } catch (error) {
+      throw new CourseProtocolError('Course API response failed contract validation', {
+        cause: error,
+        status: response.status,
+      })
+    }
   }
 
   async progress(
@@ -227,6 +258,20 @@ class BrowserStudentCourseClient implements StudentCourseClient {
     }
   }
 
+  async #sendUpdate(path: string, input: FamilyEnrollmentUpdateRequest): Promise<Response> {
+    try {
+      return await this.#fetch(`${this.runtime.apiBase}${path}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        redirect: 'error',
+        body: JSON.stringify(input),
+      })
+    } catch (error) {
+      throw new CourseNetworkError({ cause: error })
+    }
+  }
+
   async #responseError(response: Response): Promise<Error> {
     try {
       const payload: unknown = await response.json()
@@ -276,6 +321,26 @@ export function useStudentCourseEnrollmentQuery(
   return useQuery({
     queryKey: courseQueryKeys.enrollment(principal, courseId),
     queryFn: ({ signal }) => client.enrollment(courseId, { signal }),
+  })
+}
+
+export function useStudentEnrollmentMutation(
+  client: Pick<StudentCourseClient, 'updateEnrollment'>,
+  principal: PrincipalQueryScope,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ courseId, input }: { courseId: string; input: FamilyEnrollmentUpdateRequest }) =>
+      client.updateEnrollment(courseId, input),
+    onSuccess: async (_enrollment, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: courseQueryKeys.list(principal) }),
+        queryClient.invalidateQueries({ queryKey: courseQueryKeys.home(principal) }),
+        queryClient.invalidateQueries({
+          queryKey: courseQueryKeys.enrollment(principal, variables.courseId),
+        }),
+      ])
+    },
   })
 }
 

@@ -73,6 +73,39 @@ describe('Phase-3 Student course client', () => {
     )
   })
 
+  it('updates one enrollment through the Student boundary', async () => {
+    const enrollment = {
+      ...studentAccessFixture.response.enrollments[0]!,
+      activeGroupId: 'group-fixture-alpha-two',
+      attendanceMode: 'in_person' as const,
+      version: 2,
+    }
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(jsonResponse(enrollment)),
+    )
+    const client = createStudentCourseClient(runtime(), { fetchImplementation })
+
+    await expect(
+      client.updateEnrollment(enrollment.course.courseId, {
+        activeGroupId: enrollment.activeGroupId,
+        attendanceMode: enrollment.attendanceMode,
+        version: 1,
+      }),
+    ).resolves.toEqual(enrollment)
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      `/student/api/v1/courses/${enrollment.course.courseId}/enrollment`,
+      expect.objectContaining({
+        method: 'PATCH',
+        credentials: 'include',
+        body: JSON.stringify({
+          activeGroupId: enrollment.activeGroupId,
+          attendanceMode: enrollment.attendanceMode,
+          version: 1,
+        }),
+      }),
+    )
+  })
+
   it('loads personal progress for one explicit course', async () => {
     const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(jsonResponse(courseProgressFixture.response)),

@@ -194,6 +194,10 @@ export function createOfflineStudentCourseClient(
       })
     },
 
+    updateEnrollment(courseId, input) {
+      return online.updateEnrollment(courseId, input)
+    },
+
     progress(
       courseId: string,
       options: CourseRequestOptions = {},
