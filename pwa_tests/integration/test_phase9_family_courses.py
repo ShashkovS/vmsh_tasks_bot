@@ -98,3 +98,74 @@ async def test_family_home_returns_only_browser_ready_current_lessons(content_ht
         cookies=content_support._cookie(fixture, "family"),
     )
     assert hidden.status == 403
+
+
+async def test_student_progress_is_course_scoped_and_collapses_retries(content_http):
+    fixture = content_http
+    (
+        problem_public_id,
+        _revision_id,
+    ) = await content_support._prepare_published_test_problem(fixture, problem_type=1)
+
+    def seed_results(connection):
+        problem_id = connection.execute(
+            "SELECT id FROM problems WHERE public_id = ?", (problem_public_id,)
+        ).fetchone()["id"]
+        connection.executemany(
+            "INSERT INTO results "
+            "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, res_type) "
+            "VALUES (?, ?, 'content-a', 41, NULL, ?, ?, 1)",
+            (
+                (
+                    content_support.STUDENT_USER_ID,
+                    problem_id,
+                    "2026-09-15T10:00:00",
+                    14,
+                ),
+                (
+                    content_support.STUDENT_USER_ID,
+                    problem_id,
+                    "2026-09-16T10:00:00",
+                    17,
+                ),
+            ),
+        )
+
+    fixture.factory.run_write(seed_results)
+    response = await fixture.client.get(
+        "/student/api/v1/courses/course-content-http/progress",
+        headers=content_support._headers(),
+        cookies=content_support._cookie(fixture, "student"),
+    )
+    assert response.status == 200, await response.text()
+    assert await response.json() == {
+        "courseId": "course-content-http",
+        "summary": {"attempted": 1, "accepted": 1, "partial": 0, "needsWork": 0},
+        "lessons": [
+            {
+                "lessonNumber": 41,
+                "attempted": 1,
+                "accepted": 1,
+                "partial": 0,
+                "needsWork": 0,
+            }
+        ],
+        "activity": [
+            {"date": "2026-09-15", "problemCount": 1},
+            {"date": "2026-09-16", "problemCount": 1},
+        ],
+    }
+
+    forbidden = await fixture.client.get(
+        "/student/api/v1/courses/not-allowed/progress",
+        headers=content_support._headers(),
+        cookies=content_support._cookie(fixture, "student"),
+    )
+    assert forbidden.status == 403
+
+    invalid_query = await fixture.client.get(
+        "/student/api/v1/courses/course-content-http/progress?group=anything",
+        headers=content_support._headers(),
+        cookies=content_support._cookie(fixture, "student"),
+    )
+    assert invalid_query.status == 422

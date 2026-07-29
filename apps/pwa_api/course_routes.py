@@ -26,7 +26,10 @@ from db_methods.pwa.content import (
     StudentLessonMaterialRecord,
     StudentLessonSummaryRecord,
 )
+from db_methods.pwa.progress import list_course_result_rows
+from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.progress import summarize_course_results
 
 
 course_routes = web.RouteTableDef()
@@ -288,6 +291,36 @@ async def get_student_course_enrollment(request: web.Request) -> web.Response:
     authenticated = _student_session(request)
     enrollment = _course_enrollment(authenticated, request.match_info["course_id"])
     return web.json_response(course_enrollment_payload(enrollment))
+
+
+@course_routes.get("/student/api/v1/courses/{course_id}/progress")
+async def get_student_course_progress(request: web.Request) -> web.Response:
+    _reject_query(request)
+    authenticated = _student_session(request)
+    enrollment = _course_enrollment(authenticated, request.match_info["course_id"])
+    student_user_id = authenticated.principal.linked_user_id
+    assert student_user_id is not None
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="progress_unavailable",
+            message="Прогресс временно недоступен",
+        )
+
+    rows = await database.factory.run_read_async(
+        lambda connection: list_course_result_rows(
+            connection,
+            student_user_id=student_user_id,
+            course_id=enrollment.course_id,
+        )
+    )
+    return web.json_response(
+        {
+            "courseId": enrollment.course_public_id,
+            **summarize_course_results(rows),
+        }
+    )
 
 
 @course_routes.get("/student/api/v1/home")
