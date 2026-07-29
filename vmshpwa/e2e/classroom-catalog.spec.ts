@@ -74,3 +74,51 @@ test('Phase 7: admin maintains the durable classroom catalog', async ({ page }, 
   expect((await restoreResponse).status()).toBe(200)
   await expect(archivedRow).toHaveCount(0)
 })
+
+test('Phase 7: an event layout survives reload and is confirmed explicitly', async ({
+  page,
+}, testInfo) => {
+  const project = testInfo.project.name
+  const eventPublicId = `in-person-classrooms-e2e-${project}`
+  const roomNameByProject: Record<string, string> = {
+    chromium: '201 E2E chromium',
+    webkit: '202 E2E webkit',
+    firefox: '203 E2E firefox',
+  }
+  const roomName = roomNameByProject[project]
+  if (roomName === undefined) throw new Error(`Unknown Playwright project: ${project}`)
+
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.admin,
+    `/staff/classrooms?tab=groups&event=${eventPublicId}&roomStatus=active`,
+  )
+  await expect(page.getByRole('heading', { name: 'Аудитории по группам' })).toBeVisible()
+  await expect(page.getByText('Унаследовано')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Изменить для занятия' }).click()
+  await expect(page.getByText('Черновик')).toBeVisible()
+  const roomSelect = page.getByLabel(`Группа для аудитории ${roomName}`)
+  await roomSelect.selectOption({ label: 'Математика 5–7 · Начинающие' })
+
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Аудитории по группам' })).toBeVisible()
+  await expect(page.getByLabel(`Группа для аудитории ${roomName}`)).toHaveValue(
+    `group-lesson-content-e2e-${project}`,
+  )
+
+  const saveResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' && new URL(response.url()).pathname.endsWith('/rooms'),
+  )
+  const confirmResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/confirm'),
+  )
+  await page.getByRole('button', { name: 'Подтвердить схему' }).click()
+  expect((await saveResponse).status()).toBe(200)
+  expect((await confirmResponse).status()).toBe(200)
+  await expect(page.getByText('Подтверждено')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Изменить схему' })).toBeVisible()
+})
