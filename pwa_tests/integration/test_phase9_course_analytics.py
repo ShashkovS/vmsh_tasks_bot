@@ -88,3 +88,16 @@ async def test_course_analytics_reads_calculates_and_publishes_one_snapshot(
     assert stored[0]["lesson_number"] == 41
     assert stored[0]["solved_items"] == 1
     assert stored[0]["total_items"] == 1
+
+    response = await fixture.client.get(
+        "/student/api/v1/courses/course-content-http/progress",
+        headers=content_support._headers(),
+        cookies=content_support._cookie(fixture, "student"),
+    )
+    assert response.status == 200, await response.text()
+    analytics = (await response.json())["analytics"]
+    assert analytics["runId"] == "analytics-course-content-http-v1"
+    assert analytics["algorithmVersion"] == "1"
+    assert analytics["lessons"][0]["lessonNumber"] == 41
+    assert analytics["lessons"][0]["groupId"] == "group-content-http-a"
+    assert analytics["lessons"][0]["solvedItems"] == 1

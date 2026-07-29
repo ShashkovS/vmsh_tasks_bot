@@ -18,6 +18,24 @@ const progressCountsSchema = z
     { message: 'Progress counters cannot exceed attempted' },
   )
 
+const courseAnalyticsLessonSchema = z
+  .object({
+    lessonNumber: z.number().int().positive(),
+    groupId: publicIdSchema,
+    groupCode: z.string().trim().min(1).max(20),
+    simpleStrength: z.number().min(0).max(10),
+    complexStrength: z.number().min(0).max(10),
+    maxComplexStrength: z.number().min(0).max(10),
+    solvedItems: z.number().int().nonnegative(),
+    totalItems: z.number().int().nonnegative(),
+  })
+  .strip()
+  .refine(
+    (value) =>
+      value.complexStrength <= value.maxComplexStrength && value.solvedItems <= value.totalItems,
+    { message: 'Course analytics counters or strengths are inconsistent' },
+  )
+
 export const courseProgressResponseSchema = z
   .object({
     courseId: publicIdSchema,
@@ -33,6 +51,15 @@ export const courseProgressResponseSchema = z
         })
         .strip(),
     ),
+    analytics: z
+      .object({
+        runId: publicIdSchema,
+        algorithmVersion: z.string().trim().min(1).max(100),
+        calculatedAt: z.iso.datetime({ offset: true }),
+        lessons: z.array(courseAnalyticsLessonSchema),
+      })
+      .strip()
+      .nullable(),
   })
   .strip()
   .superRefine((response, context) => {
@@ -57,6 +84,17 @@ export const courseProgressResponseSchema = z
         })
       }
       dates.add(day.date)
+    })
+    const analyticsLessons = new Set<number>()
+    response.analytics?.lessons.forEach((lesson, index) => {
+      if (analyticsLessons.has(lesson.lessonNumber)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Course analytics lesson rows must be unique',
+          path: ['analytics', 'lessons', index, 'lessonNumber'],
+        })
+      }
+      analyticsLessons.add(lesson.lessonNumber)
     })
   })
 export type CourseProgressResponse = z.infer<typeof courseProgressResponseSchema>

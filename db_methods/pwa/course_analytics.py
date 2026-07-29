@@ -162,7 +162,8 @@ def latest_student_course_metrics(
                run.algorithm_version,
                run.completed_at,
                metric.lesson_number,
-               metric.group_id,
+               group_record.public_id AS group_public_id,
+               group_record.short_code AS group_short_code,
                metric.simple_strength,
                metric.complex_strength,
                metric.max_complex_strength,
@@ -170,6 +171,7 @@ def latest_student_course_metrics(
                metric.total_items
         FROM student_lesson_metrics AS metric
         JOIN analytics_runs AS run ON run.id = metric.run_id
+        JOIN groups AS group_record ON group_record.group_id = metric.group_id
         WHERE metric.student_user_id = ?
           AND run.id = (
               SELECT id FROM analytics_runs

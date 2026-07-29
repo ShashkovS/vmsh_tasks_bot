@@ -18,6 +18,7 @@ from apps.pwa_api.content_routes import PWA_CONTENT_REPOSITORY
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.auth import CourseEnrollmentRecord, CourseGroupAccessRecord
+from db_methods.pwa.course_analytics import latest_student_course_metrics
 from db_methods.pwa.content import (
     ContentNotFound,
     ContentRepositoryError,
@@ -166,6 +167,30 @@ def _iso(value: datetime | None) -> str | None:
     return (
         value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
     )
+
+
+def course_analytics_payload(rows: list[dict[str, object]]) -> dict[str, object] | None:
+    if not rows:
+        return None
+    first = rows[0]
+    return {
+        "runId": first["run_public_id"],
+        "algorithmVersion": first["algorithm_version"],
+        "calculatedAt": first["completed_at"],
+        "lessons": [
+            {
+                "lessonNumber": row["lesson_number"],
+                "groupId": row["group_public_id"],
+                "groupCode": row["group_short_code"],
+                "simpleStrength": row["simple_strength"],
+                "complexStrength": row["complex_strength"],
+                "maxComplexStrength": row["max_complex_strength"],
+                "solvedItems": row["solved_items"],
+                "totalItems": row["total_items"],
+            }
+            for row in rows
+        ],
+    }
 
 
 def _material_payload(
@@ -323,13 +348,21 @@ async def get_student_course_progress(request: web.Request) -> web.Response:
                 student_user_id=student_user_id,
                 course_id=enrollment.course_id,
             ),
+            latest_student_course_metrics(
+                connection,
+                course_id=enrollment.course_id,
+                student_user_id=student_user_id,
+            ),
         )
 
-    rows, pending_review_rows = await database.factory.run_read_async(read)
+    rows, pending_review_rows, analytics_rows = await database.factory.run_read_async(
+        read
+    )
     return web.json_response(
         {
             "courseId": enrollment.course_public_id,
             **summarize_course_results(rows, pending_review_rows),
+            "analytics": course_analytics_payload(analytics_rows),
         }
     )
 

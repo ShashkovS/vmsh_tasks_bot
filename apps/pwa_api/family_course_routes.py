@@ -13,10 +13,14 @@ import re
 from aiohttp import web
 
 from apps.pwa_api.auth_service import AuthenticatedSession
-from apps.pwa_api.course_routes import course_enrollment_payload
+from apps.pwa_api.course_routes import (
+    course_analytics_payload,
+    course_enrollment_payload,
+)
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.family import latest_published_lesson
+from db_methods.pwa.course_analytics import latest_student_course_metrics
 from db_methods.pwa.progress import (
     list_course_pending_review_rows,
     list_course_result_rows,
@@ -156,19 +160,27 @@ async def get_family_child_home(request: web.Request) -> web.Response:
                         course_id=enrollment.course_id,
                     ),
                 ),
+                latest_student_course_metrics(
+                    connection,
+                    course_id=enrollment.course_id,
+                    student_user_id=child.student_user_id,
+                ),
             )
             for enrollment in enrollments
         ]
 
     course_reads = await _factory(request).run_read_async(read)
     courses = []
-    for enrollment, (lesson, progress) in zip(enrollments, course_reads, strict=True):
+    for enrollment, (lesson, progress, analytics_rows) in zip(
+        enrollments, course_reads, strict=True
+    ):
         courses.append(
             {
                 "enrollment": course_enrollment_payload(enrollment),
                 "progress": {
                     "courseId": enrollment.course_public_id,
                     **progress,
+                    "analytics": course_analytics_payload(analytics_rows),
                 },
                 "currentLesson": (
                     None

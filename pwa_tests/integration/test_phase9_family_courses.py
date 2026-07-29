@@ -190,6 +190,7 @@ async def test_student_progress_is_course_scoped_and_collapses_retries(content_h
             {"date": "2026-09-15", "problemCount": 1},
             {"date": "2026-09-16", "problemCount": 1},
         ],
+        "analytics": None,
     }
 
     forbidden = await fixture.client.get(

@@ -91,6 +91,7 @@ describe('Family child course contract', () => {
             },
             lessons: [],
             activity: [],
+            analytics: null,
           },
           currentLesson: {
             groupLessonId: 'group-lesson.41',

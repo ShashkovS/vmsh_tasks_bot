@@ -30,6 +30,23 @@
     "activity": [
       { "date": "2026-09-15", "problemCount": 2 },
       { "date": "2026-09-16", "problemCount": 3 }
-    ]
+    ],
+    "analytics": {
+      "runId": "analytics-course-fixture-alpha-v1",
+      "algorithmVersion": "1",
+      "calculatedAt": "2026-09-16T12:00:00Z",
+      "lessons": [
+        {
+          "lessonNumber": 40,
+          "groupId": "group-fixture-alpha",
+          "groupCode": "п",
+          "simpleStrength": 7.5,
+          "complexStrength": 4.25,
+          "maxComplexStrength": 8.0,
+          "solvedItems": 6,
+          "totalItems": 12
+        }
+      ]
+    }
   }
 }

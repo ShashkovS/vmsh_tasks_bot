@@ -12,7 +12,7 @@ import {
   useStudentCoursesQuery,
 } from '@vmsh/app-shell'
 import { ApiResponseError } from '@vmsh/contracts'
-import { CourseContext, StudentProgress } from '@vmsh/product'
+import { CourseContext, StrengthTrend, StudentProgress } from '@vmsh/product'
 import { Card, CardContent } from '@vmsh/ui'
 
 import { toCourseEnrollmentView } from './student-home-view'
@@ -161,6 +161,21 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
             </ul>
           )}
         </PageSection>
+        {progress.data.analytics?.lessons.length ? (
+          <PageSection title="Как получается решать задачи">
+            <StrengthTrend
+              caption="Ваша личная динамика по занятиям. С другими школьниками здесь не сравниваем."
+              points={progress.data.analytics.lessons.map((lesson) => ({
+                lesson: String(lesson.lessonNumber),
+                simple: lesson.simpleStrength,
+                complex: lesson.complexStrength,
+                difficulty: lesson.maxComplexStrength,
+                solved: `${lesson.solvedItems}/${lesson.totalItems}`,
+                group: lesson.groupCode,
+              }))}
+            />
+          </PageSection>
+        ) : null}
         <PageSection title="Дни работы">
           {progress.data.activity.length === 0 ? (
             <p className="text-small text-muted-foreground">Отправок пока нет.</p>
