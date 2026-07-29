@@ -1,0 +1,133 @@
+"""Direct SQLite operations for account-scoped notifications."""
+
+from __future__ import annotations
+
+import sqlite3
+
+
+def list_events(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    limit: int,
+    unread_only: bool,
+) -> list[dict[str, object]]:
+    unread_clause = "AND read_at IS NULL" if unread_only else ""
+    rows = connection.execute(
+        f"SELECT public_id, category, route, payload_json, occurred_at, "
+        f"deliver_after, read_at FROM notification_events "
+        f"WHERE account_id = ? {unread_clause} "
+        f"ORDER BY occurred_at DESC, id DESC LIMIT ?",
+        (account_id, limit),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def mark_event_read(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    event_public_id: str,
+    session_id: int,
+    read_at: str,
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT id, public_id, read_at FROM notification_events "
+        "WHERE account_id = ? AND public_id = ?",
+        (account_id, event_public_id),
+    ).fetchone()
+    if row is None:
+        return None
+    if row["read_at"] is None:
+        connection.execute(
+            "UPDATE notification_events SET read_at = ?, read_by_session_id = ? "
+            "WHERE id = ? AND read_at IS NULL",
+            (read_at, session_id, row["id"]),
+        )
+        return {"public_id": row["public_id"], "read_at": read_at}
+    return {"public_id": row["public_id"], "read_at": row["read_at"]}
+
+
+def list_preferences(
+    connection: sqlite3.Connection, account_id: int
+) -> list[dict[str, object]]:
+    rows = connection.execute(
+        "SELECT category, in_app_enabled, push_enabled, sound_enabled, "
+        "quiet_starts_local, quiet_ends_local, timezone, updated_at "
+        "FROM notification_preferences WHERE account_id = ? ORDER BY category",
+        (account_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def save_preference(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    category: str,
+    in_app_enabled: bool,
+    push_enabled: bool,
+    sound_enabled: bool,
+    quiet_starts_local: str,
+    quiet_ends_local: str,
+    timezone: str,
+    updated_at: str,
+) -> None:
+    connection.execute(
+        "INSERT INTO notification_preferences "
+        "(account_id, category, in_app_enabled, push_enabled, sound_enabled, "
+        "quiet_starts_local, quiet_ends_local, timezone, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        "ON CONFLICT(account_id, category) DO UPDATE SET "
+        "in_app_enabled = excluded.in_app_enabled, "
+        "push_enabled = excluded.push_enabled, "
+        "sound_enabled = excluded.sound_enabled, "
+        "quiet_starts_local = excluded.quiet_starts_local, "
+        "quiet_ends_local = excluded.quiet_ends_local, "
+        "timezone = excluded.timezone, updated_at = excluded.updated_at",
+        (
+            account_id,
+            category,
+            int(in_app_enabled),
+            int(push_enabled),
+            int(sound_enabled),
+            quiet_starts_local,
+            quiet_ends_local,
+            timezone,
+            updated_at,
+        ),
+    )
+
+
+def insert_event(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    account_id: int,
+    category: str,
+    dedupe_key: str,
+    route: str,
+    payload_json: str,
+    occurred_at: str,
+    deliver_after: str,
+    created_at: str,
+) -> bool:
+    cursor = connection.execute(
+        "INSERT INTO notification_events "
+        "(public_id, account_id, category, dedupe_key, route, payload_json, "
+        "occurred_at, deliver_after, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        "ON CONFLICT(account_id, category, dedupe_key) DO NOTHING",
+        (
+            public_id,
+            account_id,
+            category,
+            dedupe_key,
+            route,
+            payload_json,
+            occurred_at,
+            deliver_after,
+            created_at,
+        ),
+    )
+    return cursor.rowcount == 1

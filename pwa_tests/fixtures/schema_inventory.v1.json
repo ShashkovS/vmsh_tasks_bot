@@ -177,6 +177,10 @@
       {
         "id": "0062.pwa_classroom_delivery_retries",
         "sha256": "baff136cf19baceb7a74a81f72eb91e80adac23836dfa8f30dfd77d6016177e8"
+      },
+      {
+        "id": "0063.pwa_notification_core",
+        "sha256": "9c9ca99e22bd682a68901e47ca1f03fe54180e3a5a4f1c33620b2ad3359131e8"
       }
     ],
     "repository_head_status": {
@@ -187,7 +191,7 @@
     }
   },
   "product": {
-    "object_count": 374,
+    "object_count": 377,
     "objects": [
       {
         "columns": [
@@ -11517,6 +11521,401 @@
         "columns": [
           {
             "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "category",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "dedupe_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "route",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "payload_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "occurred_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "deliver_after",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "read_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "read_by_session_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          },
+          {
+            "from_columns": [
+              "read_by_session_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_sessions"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "read_at",
+                "seqno": 1
+              },
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "occurred_at",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "notification_events_account_unread_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_notification_events_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "category",
+                "seqno": 1
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "dedupe_key",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_notification_events_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "notification_events",
+        "object_sha256": "9dfc00d7e001c3c6b258bee39f6e0feb0176b067087fa5d29175c94357c8a280",
+        "sql": "CREATE TABLE notification_events\n(\n    id                 integer primary key,\n    public_id          text    not null unique,\n    account_id         integer not null references auth_accounts (id),\n    category           text    not null,\n    dedupe_key         text    not null,\n    route              text    not null,\n    payload_json       text    not null\n        check (json_valid(payload_json) = 1 and json_type(payload_json) = 'object'),\n    occurred_at        text    not null,\n    deliver_after      text    not null,\n    read_at            text,\n    read_by_session_id integer references auth_sessions (id),\n    created_at         text    not null,\n    unique (account_id, category, dedupe_key),\n    check (length(trim(category)) > 0),\n    check (length(trim(dedupe_key)) > 0),\n    check (substr(route, 1, 1) = '/'),\n    check (deliver_after >= occurred_at),\n    check (read_at is null or read_at >= occurred_at),\n    check (\n        (read_at is null and read_by_session_id is null)\n        or read_at is not null\n    )\n);",
+        "table_name": "notification_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "account_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "category",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "in_app_enabled",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "push_enabled",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "sound_enabled",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "quiet_starts_local",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "quiet_ends_local",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "timezone",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "category",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_notification_preferences_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "notification_preferences",
+        "object_sha256": "fa8ec473289c8145d94c0ba09734782c089fd09464a112a1f6fd2676dbd4a373",
+        "sql": "CREATE TABLE notification_preferences\n(\n    account_id        integer not null references auth_accounts (id),\n    category          text    not null,\n    in_app_enabled    integer not null check (in_app_enabled in (0, 1)),\n    push_enabled      integer not null check (push_enabled in (0, 1)),\n    sound_enabled     integer not null check (sound_enabled in (0, 1)),\n    quiet_starts_local text   not null,\n    quiet_ends_local   text   not null,\n    timezone          text    not null,\n    updated_at        text    not null,\n    primary key (account_id, category),\n    check (length(trim(category)) > 0),\n    check (length(quiet_starts_local) = 5),\n    check (length(quiet_ends_local) = 5),\n    check (length(trim(timezone)) > 0)\n);",
+        "table_name": "notification_preferences",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -21256,6 +21655,13 @@
         "type": "index"
       },
       {
+        "name": "notification_events_account_unread_idx",
+        "object_sha256": "ef9e7a203c98590384487c09e3db5c1021af0039c158b6d0c72e09077001da64",
+        "sql": "CREATE INDEX notification_events_account_unread_idx\n    on notification_events (account_id, read_at, occurred_at desc, id desc);",
+        "table_name": "notification_events",
+        "type": "index"
+      },
+      {
         "name": "problem_revisions_id_problem_uq",
         "object_sha256": "af65f8555bee2f95495b7019a84f1201d7b6767bf2cc51cf929347bff8a7aa5b",
         "sql": "CREATE UNIQUE INDEX problem_revisions_id_problem_uq\n    on problem_revisions (id, problem_id);",
@@ -22726,8 +23132,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "d55efbec39e0d7459effb21c892dde5a18a083a3c33ecaf0703f66b9b273de95",
-    "sha256": "64034b21c5b50f78f98c7261ef38f865b1c1907d7f7a3a5b2f3d465ab43db956"
+    "pragma_structure_sha256": "ced9317f929d573005cf180dba1e97bfdec09f975655964c49778762c33ee1a1",
+    "sha256": "5d0aeabf96f0616645717dd174c08ea7ebfa4bf3eaa326f69a8ea3777dd4bcbb"
   },
   "source_kind": "repository-migration-head"
 }

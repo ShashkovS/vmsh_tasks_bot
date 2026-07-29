@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from collections.abc import Collection
 from pathlib import Path
@@ -169,6 +170,13 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
         assert created["recipients"][0]["pwa_state"] == "sent"
         assert created["recipients"][0]["telegram_state"] == "queued"
         assert "telegram_chat_id" not in created["recipients"][0]
+        notification = connection.execute(
+            "SELECT category, payload_json FROM notification_events "
+            "WHERE account_id = (SELECT id FROM auth_accounts "
+            "WHERE public_id = 'student-delivery-account')"
+        ).fetchone()
+        assert notification["category"] == "classroom_assignment"
+        assert json.loads(notification["payload_json"])["classroomName"] == "201"
 
         public = read_student_classroom_assignments(connection, 1)[0]
         assert public["announced_at"] == "2026-07-29T13:02:00Z"

@@ -763,6 +763,98 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
         "publicId"
     ]
 
+    student_notifications = await classroom_http.client.get(
+        "/student/api/v1/notification-events?unreadOnly=true",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                classroom_http.student_cookie
+            )
+        },
+    )
+    assert student_notifications.status == 200, await student_notifications.text()
+    notification = (await student_notifications.json())["items"][0]
+    assert notification["category"] == "classroom_assignment"
+    assert notification["payload"]["classroomName"] == "202"
+
+    family_notifications = await classroom_http.client.get(
+        "/family/api/v1/notification-events",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.FAMILY].access_name: classroom_http.family_cookie
+        },
+    )
+    assert family_notifications.status == 200
+    assert (await family_notifications.json())["items"] == []
+
+    notification_read_path = (
+        f"/student/api/v1/notification-events/{notification['eventId']}/read"
+    )
+    read_notification = await classroom_http.client.post(
+        notification_read_path,
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                classroom_http.student_cookie
+            )
+        },
+    )
+    assert read_notification.status == 200, await read_notification.text()
+    first_read_at = (await read_notification.json())["readAt"]
+    repeated_read = await classroom_http.client.post(
+        notification_read_path,
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                classroom_http.student_cookie
+            )
+        },
+    )
+    assert (await repeated_read.json())["readAt"] == first_read_at
+
+    preferences = await classroom_http.client.get(
+        "/student/api/v1/notifications/preferences",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                classroom_http.student_cookie
+            )
+        },
+    )
+    assert preferences.status == 200
+    preference_items = (await preferences.json())["items"]
+    assert len(preference_items) == 9
+    assert (
+        next(item for item in preference_items if item["category"] == "oral_window")[
+            "pushEnabled"
+        ]
+        is False
+    )
+
+    updated_preference = await classroom_http.client.put(
+        "/student/api/v1/notifications/preferences",
+        json={
+            "schemaVersion": 1,
+            "category": "news",
+            "inAppEnabled": True,
+            "pushEnabled": False,
+            "soundEnabled": False,
+            "quietStartsLocal": "22:00",
+            "quietEndsLocal": "08:00",
+            "timezone": "Europe/Moscow",
+        },
+        headers=_headers(unsafe=True),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                classroom_http.student_cookie
+            )
+        },
+    )
+    assert updated_preference.status == 200, await updated_preference.text()
+    assert (await updated_preference.json())["preference"]["pushEnabled"] is False
+
     classroom_http.factory.run_write(
         lambda connection: (
             connection.execute(

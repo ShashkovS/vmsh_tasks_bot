@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 64034b21c5b50f78f98c7261ef38f865b1c1907d7f7a3a5b2f3d465ab43db956
+-- Product schema SHA-256: 5d0aeabf96f0616645717dd174c08ea7ebfa4bf3eaa326f69a8ea3777dd4bcbb
 
 CREATE TABLE auth_accounts
 (
@@ -1309,6 +1309,51 @@ CREATE TABLE messages_log
     attach_path TEXT
 );
 
+CREATE TABLE notification_events
+(
+    id                 integer primary key,
+    public_id          text    not null unique,
+    account_id         integer not null references auth_accounts (id),
+    category           text    not null,
+    dedupe_key         text    not null,
+    route              text    not null,
+    payload_json       text    not null
+        check (json_valid(payload_json) = 1 and json_type(payload_json) = 'object'),
+    occurred_at        text    not null,
+    deliver_after      text    not null,
+    read_at            text,
+    read_by_session_id integer references auth_sessions (id),
+    created_at         text    not null,
+    unique (account_id, category, dedupe_key),
+    check (length(trim(category)) > 0),
+    check (length(trim(dedupe_key)) > 0),
+    check (substr(route, 1, 1) = '/'),
+    check (deliver_after >= occurred_at),
+    check (read_at is null or read_at >= occurred_at),
+    check (
+        (read_at is null and read_by_session_id is null)
+        or read_at is not null
+    )
+);
+
+CREATE TABLE notification_preferences
+(
+    account_id        integer not null references auth_accounts (id),
+    category          text    not null,
+    in_app_enabled    integer not null check (in_app_enabled in (0, 1)),
+    push_enabled      integer not null check (push_enabled in (0, 1)),
+    sound_enabled     integer not null check (sound_enabled in (0, 1)),
+    quiet_starts_local text   not null,
+    quiet_ends_local   text   not null,
+    timezone          text    not null,
+    updated_at        text    not null,
+    primary key (account_id, category),
+    check (length(trim(category)) > 0),
+    check (length(quiet_starts_local) = 5),
+    check (length(quiet_ends_local) = 5),
+    check (length(trim(timezone)) > 0)
+);
+
 CREATE TABLE problem_complexity
 (
     synonyms   TEXT   not null primary key,
@@ -2564,6 +2609,9 @@ CREATE UNIQUE INDEX media_assets_content_hash_version_uq
 
 CREATE INDEX media_assets_namespace_created_idx
     on media_assets (storage_namespace, created_at, id);
+
+CREATE INDEX notification_events_account_unread_idx
+    on notification_events (account_id, read_at, occurred_at desc, id desc);
 
 CREATE UNIQUE INDEX problem_revisions_id_problem_uq
     on problem_revisions (id, problem_id);

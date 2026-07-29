@@ -21,6 +21,7 @@ from db_methods.pwa.classroom_delivery import (
     queue_failed_telegram_recipients,
     reopen_delivery_batch,
 )
+from db_methods.pwa.notifications import insert_event
 
 
 class ClassroomDeliveryNotFound(Exception):
@@ -292,6 +293,41 @@ def create_classroom_delivery_batch(
             for item in recipients
         ),
     )
+    if pwa_selected:
+        for item in recipients:
+            account_id = item["student_account_id"]
+            if account_id is None:
+                continue
+            event_key = (
+                f"classroom-assignment:{public_id}:{item['course_enrollment_id']}"
+            )
+            event_hash = hashlib.sha256(event_key.encode()).hexdigest()
+            insert_event(
+                connection,
+                public_id=f"notification.{event_hash}",
+                account_id=int(account_id),
+                category="classroom_assignment",
+                dedupe_key=event_key,
+                route="/student/",
+                payload_json=json.dumps(
+                    {
+                        "eventPublicId": item["event_public_id"],
+                        "eventName": item["event_name"],
+                        "coursePublicId": item["course_public_id"],
+                        "courseName": item["course_name"],
+                        "groupPublicId": item["group_public_id"],
+                        "groupName": item["group_name"],
+                        "classroomPublicId": item["classroom_public_id"],
+                        "classroomName": item["classroom_name"],
+                    },
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ),
+                occurred_at=now,
+                deliver_after=now,
+                created_at=now,
+            )
     result = read_classroom_delivery_batch(connection, public_id)
     result["student_user_ids"] = tuple(
         int(item["student_user_id"])
