@@ -85,8 +85,16 @@ test('Phase 7: an event layout survives reload and is confirmed explicitly', asy
     webkit: '202 E2E webkit',
     firefox: '203 E2E firefox',
   }
+  const secondRoomNameByProject: Record<string, string> = {
+    chromium: '202 E2E webkit',
+    webkit: '203 E2E firefox',
+    firefox: '201 E2E chromium',
+  }
   const roomName = roomNameByProject[project]
-  if (roomName === undefined) throw new Error(`Unknown Playwright project: ${project}`)
+  const secondRoomName = secondRoomNameByProject[project]
+  if (roomName === undefined || secondRoomName === undefined) {
+    throw new Error(`Unknown Playwright project: ${project}`)
+  }
 
   await loginThroughUi(
     page,
@@ -100,10 +108,16 @@ test('Phase 7: an event layout survives reload and is confirmed explicitly', asy
   await expect(page.getByText('Черновик')).toBeVisible()
   const roomSelect = page.getByLabel(`Группа для аудитории ${roomName}`)
   await roomSelect.selectOption({ label: 'Математика 5–7 · Начинающие' })
+  await page
+    .getByLabel(`Группа для аудитории ${secondRoomName}`)
+    .selectOption({ label: 'Математика 5–7 · Начинающие' })
 
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Аудитории по группам' })).toBeVisible()
   await expect(page.getByLabel(`Группа для аудитории ${roomName}`)).toHaveValue(
+    `group-lesson-content-e2e-${project}`,
+  )
+  await expect(page.getByLabel(`Группа для аудитории ${secondRoomName}`)).toHaveValue(
     `group-lesson-content-e2e-${project}`,
   )
 
@@ -121,4 +135,60 @@ test('Phase 7: an event layout survives reload and is confirmed explicitly', asy
   expect((await confirmResponse).status()).toBe(200)
   await expect(page.getByText('Подтверждено')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Изменить схему' })).toBeVisible()
+})
+
+test('Phase 7: classroom student edits survive reload until explicit confirmation', async ({
+  page,
+}, testInfo) => {
+  const project = testInfo.project.name
+  const eventPublicId = `in-person-classrooms-e2e-${project}`
+  const targetRoomByProject: Record<string, string> = {
+    chromium: 'classroom-e2e-webkit',
+    webkit: 'classroom-e2e-firefox',
+    firefox: 'classroom-e2e-firefox',
+  }
+  const targetRoom = targetRoomByProject[project]
+  if (targetRoom === undefined) throw new Error(`Unknown Playwright project: ${project}`)
+  const studentName = `Тестов ${project} Ученик`
+
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.admin,
+    `/staff/classrooms?tab=students&event=${eventPublicId}&roomStatus=active`,
+  )
+  await expect(page.getByRole('heading', { name: 'Школьники по аудиториям' })).toBeVisible()
+
+  const recalculateResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/classroom-assignment-plan/recalculate'),
+  )
+  await page.getByRole('button', { name: 'Пересчитать' }).click()
+  expect((await recalculateResponse).status()).toBe(200)
+  await expect(page.getByText(studentName, { exact: true })).toBeVisible()
+
+  const roomSelect = page.getByLabel(`Аудитория для ${studentName}`)
+  const studentRow = roomSelect.locator('xpath=ancestor::li[1]')
+  await expect(studentRow.getByText('возраст 13.6', { exact: true })).toBeVisible()
+  await expect(studentRow.getByText('класс 7', { exact: true })).toBeVisible()
+  await expect(studentRow.getByText('сила 8.0', { exact: true })).toBeVisible()
+  await roomSelect.selectOption(targetRoom)
+  await page.reload()
+  await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom)
+
+  const saveResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' &&
+      new URL(response.url()).pathname.endsWith('/assignments'),
+  )
+  const confirmResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/confirm'),
+  )
+  await page.getByRole('button', { name: 'Подтвердить план' }).click()
+  expect((await saveResponse).status()).toBe(200)
+  expect((await confirmResponse).status()).toBe(200)
+  await expect(page.getByText('Подтверждено')).toBeVisible()
+  await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom)
 })

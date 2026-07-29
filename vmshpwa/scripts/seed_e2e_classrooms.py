@@ -47,9 +47,10 @@ def _seed(connection: sqlite3.Connection) -> int:
         "SELECT id FROM seasons WHERE public_id = 'season-fixture-2025-26'"
     ).fetchone()
     group_lessons = {
-        row["public_id"]: int(row["id"])
+        row["public_id"]: row
         for row in connection.execute(
-            "SELECT id, public_id FROM group_lessons WHERE public_id IN (?, ?, ?)",
+            "SELECT id, public_id, course_id, group_id FROM group_lessons "
+            "WHERE public_id IN (?, ?, ?)",
             tuple(group_lesson for _project, group_lesson in TARGETS),
         )
     }
@@ -80,6 +81,7 @@ def _seed(connection: sqlite3.Connection) -> int:
     actor_id = int(actor["id"])
     season_id = int(season["id"])
     for ordinal, (project, group_lesson_public_id) in enumerate(TARGETS, start=1):
+        group_lesson = group_lessons[group_lesson_public_id]
         room_public_id = f"classroom-e2e-{project}"
         room_name = f"20{ordinal} E2E {project}"
         room_id = int(
@@ -137,7 +139,34 @@ def _seed(connection: sqlite3.Connection) -> int:
             "INSERT INTO in_person_event_group_lessons "
             "(in_person_event_id, group_lesson_id, added_by_user_id, created_at) "
             "VALUES (?, ?, ?, ?)",
-            (event_id, group_lessons[group_lesson_public_id], actor_id, TIMESTAMP),
+            (event_id, int(group_lesson["id"]), actor_id, TIMESTAMP),
+        )
+        student_id = int(
+            connection.execute(
+                "INSERT INTO users "
+                "(public_id, type, name, surname, grade, birthday) "
+                "VALUES (?, 1, 'Ученик', ?, 7, '2013-01-01') RETURNING id",
+                (f"student-classroom-e2e-{project}", f"Тестов {project}"),
+            ).fetchone()["id"]
+        )
+        connection.execute(
+            "INSERT INTO course_enrollments "
+            "(public_id, student_user_id, course_id, active_group_id, "
+            "attendance_mode, status, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, 'in_person', 'active', ?, ?)",
+            (
+                f"enrollment-classroom-e2e-{project}",
+                student_id,
+                int(group_lesson["course_id"]),
+                str(group_lesson["group_id"]),
+                TIMESTAMP,
+                TIMESTAMP,
+            ),
+        )
+        connection.execute(
+            "INSERT INTO student_strength (student_id, simple_prob, compl_prob) "
+            "VALUES (?, 0.5, 1.0)",
+            (student_id,),
         )
     return len(TARGETS)
 

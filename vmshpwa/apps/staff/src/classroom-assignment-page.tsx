@@ -110,7 +110,7 @@ function AssignmentEditor({
       if (kind === 'recalculate') {
         return client.recalculateAssignmentPlan(
           eventPublicId,
-          currentPlan === null
+          currentPlan === null || currentPlan.state === 'confirmed'
             ? null
             : { publicId: currentPlan.publicId, version: currentPlan.version },
           { schemaVersion: 1 },
