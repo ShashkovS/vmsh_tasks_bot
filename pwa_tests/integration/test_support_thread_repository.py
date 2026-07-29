@@ -21,6 +21,7 @@ from db_methods.pwa.support import (
     SupportNotFound,
     SupportStaffScope,
 )
+from helpers.consts import USER_TYPE
 
 
 NOW = datetime(2026, 10, 5, 12, tzinfo=UTC)
@@ -28,6 +29,7 @@ STUDENT_ID = -956_001
 OTHER_STUDENT_ID = -956_002
 TEACHER_ID = -956_003
 ADMIN_ID = -956_004
+GLOBAL_ADMIN_ID = -956_005
 
 
 def _timestamp(value: datetime) -> str:
@@ -560,6 +562,112 @@ async def test_staff_inbox_derives_reply_state_and_enforces_scope_and_filters(
             scope=GROUP_B_SCOPE, state="awaiting_staff"
         )
     ).items == ()
+
+
+@pytest.mark.asyncio
+async def test_invalidation_targets_use_active_owner_accounts_and_current_staff_scope(
+    support_fixture,
+):
+    fixture = support_fixture
+    created = await fixture.repository.create_student_thread(_create_problem_command())
+    now = _timestamp(fixture.clock.value)
+    valid_from = _timestamp(fixture.clock.value - timedelta(days=1))
+
+    def seed_accounts(connection: sqlite3.Connection) -> None:
+        connection.execute(
+            "INSERT INTO users (id, public_id, type, name, surname) "
+            "VALUES (?, 'support-global-admin', ?, 'Галина', 'Администратор')",
+            (GLOBAL_ADMIN_ID, int(USER_TYPE.ADMIN)),
+        )
+        connection.executemany(
+            "INSERT INTO auth_accounts "
+            "(public_id, audience, username, username_normalized, "
+            "username_algorithm_version, provisioning_source, credential_kind, "
+            "credential_hash, linked_user_id, status, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, 'synthetic-test', ?, 'test-hash', ?, 'active', ?, ?)",
+            (
+                (
+                    "support-account-student",
+                    "student",
+                    "support-student",
+                    "support-student",
+                    1,
+                    "telegram_token",
+                    STUDENT_ID,
+                    now,
+                    now,
+                ),
+                (
+                    "support-account-teacher-a",
+                    "staff",
+                    "support-teacher",
+                    "support-teacher",
+                    None,
+                    "password",
+                    TEACHER_ID,
+                    now,
+                    now,
+                ),
+                (
+                    "support-account-teacher-b",
+                    "staff",
+                    "support-admin",
+                    "support-admin",
+                    None,
+                    "password",
+                    ADMIN_ID,
+                    now,
+                    now,
+                ),
+                (
+                    "support-account-global-admin",
+                    "staff",
+                    "support-global-admin",
+                    "support-global-admin",
+                    None,
+                    "password",
+                    GLOBAL_ADMIN_ID,
+                    now,
+                    now,
+                ),
+            ),
+        )
+        course_id = int(
+            connection.execute(
+                "SELECT id FROM courses WHERE public_id = 'support-course'"
+            ).fetchone()["id"]
+        )
+        connection.executemany(
+            "INSERT INTO staff_scopes "
+            "(staff_user_id, course_id, group_id, role, valid_from, created_at, updated_at) "
+            "VALUES (?, ?, ?, 'teacher', ?, ?, ?)",
+            (
+                (TEACHER_ID, course_id, "support-a", valid_from, now, now),
+                (ADMIN_ID, course_id, "support-b", valid_from, now, now),
+            ),
+        )
+
+    fixture.factory.run_write(seed_accounts)
+    targets = await fixture.repository.invalidation_targets(
+        thread_public_id=created.thread_public_id
+    )
+    assert targets.student_account_public_ids == ("support-account-student",)
+    assert targets.staff_account_public_ids == (
+        "support-account-teacher-a",
+        "support-account-global-admin",
+    )
+
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE staff_scopes SET valid_to = ?, updated_at = ?, version = version + 1 "
+            "WHERE staff_user_id = ? AND valid_to IS NULL",
+            (now, now, TEACHER_ID),
+        )
+    )
+    after_revoke = await fixture.repository.invalidation_targets(
+        thread_public_id=created.thread_public_id
+    )
+    assert after_revoke.staff_account_public_ids == ("support-account-global-admin",)
 
 
 @pytest.mark.asyncio

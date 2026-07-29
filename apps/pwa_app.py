@@ -46,7 +46,12 @@ from apps.pwa_api.submission_routes import (
     PWA_TEST_SUBMISSION_REPOSITORY,
     submission_routes,
 )
-from apps.pwa_api.support_routes import PWA_SUPPORT_REPOSITORY, support_routes
+from apps.pwa_api.support_routes import (
+    PWA_SUPPORT_INVALIDATOR,
+    PWA_SUPPORT_REPOSITORY,
+    SupportInvalidator,
+    support_routes,
+)
 from apps.pwa_api.websocket_sessions import (
     SessionRevalidationStatus,
     WebSocketSessionAlreadyClosedError,
@@ -63,7 +68,10 @@ from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import GroupLessonContentScope, PwaContentRepository
 from db_methods.pwa.reviews import PwaWrittenReviewQueueRepository
 from db_methods.pwa.submissions import PwaTestSubmissionRepository
-from db_methods.pwa.support import PwaSupportThreadRepository
+from db_methods.pwa.support import (
+    PwaSupportThreadRepository,
+    SupportInvalidationTargets,
+)
 from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import logger
 from helpers.nats_brocker import InProcessBroker, JsonBroker, NatsBroker
@@ -956,6 +964,47 @@ async def publish_review_queue_invalidation(
     )
 
 
+async def publish_support_invalidation(
+    app: web.Application,
+    *,
+    targets: SupportInvalidationTargets,
+    reason: str,
+) -> None:
+    """Refresh one private dialogue and matching owner/scope inboxes only."""
+
+    resources = ["questions", f"questions/{targets.thread_public_id}"]
+    # WebSocket subscriptions are authenticated per account. Resolve the small
+    # recipient set from SQLite instead of broadening a private thread into a
+    # course/group broadcast or exposing internal scope identifiers to clients.
+    messages = [
+        (
+            AuthAudience.STUDENT.value,
+            account_public_id,
+        )
+        for account_public_id in targets.student_account_public_ids
+    ] + [
+        (
+            AuthAudience.STAFF.value,
+            account_public_id,
+        )
+        for account_public_id in targets.staff_account_public_ids
+    ]
+    await asyncio.gather(
+        *(
+            app[PWA_BROKER].publish(
+                NATS_PWA_INVALIDATE,
+                {
+                    "resources": resources,
+                    "reason": reason,
+                    "audience": audience,
+                    "accountId": account_public_id,
+                },
+            )
+            for audience, account_public_id in messages
+        )
+    )
+
+
 async def activate_due_content_publications(
     app: web.Application,
     *,
@@ -1075,6 +1124,7 @@ def configure(
     written_submission_repository: PwaWrittenSubmissionRepository | None = None,
     review_queue_repository: PwaWrittenReviewQueueRepository | None = None,
     support_repository: PwaSupportThreadRepository | None = None,
+    support_invalidator: SupportInvalidator | None = None,
     written_attachment_service: WrittenAttachmentService | None = None,
     content_asset_service: ContentAssetService | None = None,
     object_storage: ObjectStorage | None = None,
@@ -1244,6 +1294,18 @@ def configure(
         if support_enabled:
             if support_repository is not None:
                 app[PWA_SUPPORT_REPOSITORY] = support_repository
+            if support_invalidator is not None:
+                app[PWA_SUPPORT_INVALIDATOR] = support_invalidator
+            else:
+
+                async def invalidate_support(
+                    targets: SupportInvalidationTargets, reason: str
+                ) -> None:
+                    await publish_support_invalidation(
+                        app, targets=targets, reason=reason
+                    )
+
+                app[PWA_SUPPORT_INVALIDATOR] = invalidate_support
             app.add_routes(support_routes)
             app.on_startup.append(on_support_startup)
         content_enabled = content_repository is not None or PWA_DATABASE in app

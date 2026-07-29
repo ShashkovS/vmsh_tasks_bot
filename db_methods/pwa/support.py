@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
 
+from helpers.consts import USER_TYPE
+
 from .connection import PwaConnectionFactory
 
 
@@ -181,6 +183,13 @@ class SupportThreadSummaryRecord:
 class SupportThreadPage:
     items: tuple[SupportThreadSummaryRecord, ...]
     next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class SupportInvalidationTargets:
+    thread_public_id: str
+    student_account_public_ids: tuple[str, ...]
+    staff_account_public_ids: tuple[str, ...]
 
 
 def _validate_user_id(value: int) -> None:
@@ -577,6 +586,59 @@ class PwaSupportThreadRepository:
 
         return await self._factory.run_read_async(operation)
 
+    async def invalidation_targets(
+        self, *, thread_public_id: str
+    ) -> SupportInvalidationTargets:
+        """Resolve current account recipients after an authoritative commit."""
+
+        _validate_public_id(thread_public_id, "support thread")
+        now = self._clock()
+        if now.tzinfo is None:
+            raise SupportRepositoryError("repository clock must be timezone-aware")
+        current_time = _timestamp(now)
+
+        def operation(connection: sqlite3.Connection) -> SupportInvalidationTargets:
+            row = self._thread_row(connection, thread_public_id=thread_public_id)
+            if row is None:
+                raise SupportNotFound("support thread was not found")
+            student_accounts = connection.execute(
+                "SELECT public_id FROM auth_accounts WHERE linked_user_id = ? "
+                "AND audience = 'student' AND status = 'active' ORDER BY id",
+                (row["student_user_id"],),
+            ).fetchall()
+            staff_accounts = connection.execute(
+                "SELECT DISTINCT account.id, account.public_id "
+                "FROM auth_accounts AS account "
+                "JOIN users AS staff_user ON staff_user.id = account.linked_user_id "
+                "WHERE account.audience = 'staff' AND account.status = 'active' AND ("
+                "staff_user.type = ? OR EXISTS ("
+                "SELECT 1 FROM staff_scopes AS staff_scope "
+                "WHERE staff_scope.staff_user_id = staff_user.id "
+                "AND staff_scope.course_id = ? "
+                "AND (staff_scope.group_id IS NULL OR staff_scope.group_id = ?) "
+                "AND staff_scope.valid_from <= ? "
+                "AND (staff_scope.valid_to IS NULL OR staff_scope.valid_to > ?)"
+                ")) ORDER BY account.id",
+                (
+                    int(USER_TYPE.ADMIN),
+                    row["course_internal_id"],
+                    row["group_internal_id"],
+                    current_time,
+                    current_time,
+                ),
+            ).fetchall()
+            return SupportInvalidationTargets(
+                thread_public_id=thread_public_id,
+                student_account_public_ids=tuple(
+                    str(account["public_id"]) for account in student_accounts
+                ),
+                staff_account_public_ids=tuple(
+                    str(account["public_id"]) for account in staff_accounts
+                ),
+            )
+
+        return await self._factory.run_read_async(operation)
+
     async def _append_entry(
         self,
         *,
@@ -725,6 +787,8 @@ class PwaSupportThreadRepository:
             "SELECT thread.*, student.public_id AS student_public_id, "
             "student.name AS student_name, student.surname AS student_surname, "
             "group_lesson.public_id AS group_lesson_public_id, "
+            "group_lesson.course_id AS course_internal_id, "
+            "group_lesson.group_id AS group_internal_id, "
             "course.public_id AS course_public_id, course.name AS course_name, "
             "group_row.public_id AS group_public_id, "
             "group_row.public_name AS group_name, problem.public_id AS problem_public_id, "
@@ -989,6 +1053,7 @@ __all__ = [
     "SupportEntryRecord",
     "SupportForbidden",
     "SupportIdempotencyConflict",
+    "SupportInvalidationTargets",
     "SupportNotFound",
     "SupportRepositoryError",
     "SupportReplyState",

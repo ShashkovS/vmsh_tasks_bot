@@ -11,6 +11,7 @@ from aiohttp import web
 from argon2 import PasswordHasher
 
 from apps import pwa_app
+from apps.pwa_api import support_routes as support_routes_module
 from apps.pwa_api.auth_service import PwaAuthService
 from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.auth import PwaAuthRepository
@@ -18,6 +19,7 @@ from db_methods.pwa.support import (
     SupportEntryRecord,
     SupportForbidden,
     SupportIdempotencyConflict,
+    SupportInvalidationTargets,
     SupportNotFound,
     SupportThreadPage,
     SupportThreadRecord,
@@ -177,12 +179,20 @@ class FakeSupportRepository:
             raise SupportNotFound("missing cursor")
         return SupportThreadPage(items=(self.summary,), next_cursor=None)
 
+    async def invalidation_targets(self, *, thread_public_id):
+        return SupportInvalidationTargets(
+            thread_public_id=thread_public_id,
+            student_account_public_ids=("support-http-account-student",),
+            staff_account_public_ids=("support-http-account-teacher",),
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class SupportHttpFixture:
     client: object
     repository: FakeSupportRepository
     cookies: MappingProxyType
+    invalidations: list[tuple[SupportInvalidationTargets, str]]
 
 
 def _seed_auth(factory: PwaConnectionFactory) -> None:
@@ -367,6 +377,11 @@ async def support_http(tmp_path, aiohttp_client) -> SupportHttpFixture:
         clock=lambda: NOW,
     )
     repository = FakeSupportRepository()
+    invalidations: list[tuple[SupportInvalidationTargets, str]] = []
+
+    async def capture_invalidation(targets, reason):
+        invalidations.append((targets, reason))
+
     app = web.Application()
     app[RUNTIME_CONFIG] = Config(
         runtime_profile="pwa-e2e",
@@ -381,6 +396,7 @@ async def support_http(tmp_path, aiohttp_client) -> SupportHttpFixture:
         auth_runtime_config=auth_config,
         auth_service=auth_service,
         support_repository=repository,
+        support_invalidator=capture_invalidation,
     )
     client = await aiohttp_client(app)
 
@@ -416,7 +432,12 @@ async def support_http(tmp_path, aiohttp_client) -> SupportHttpFixture:
             ),
         }
     )
-    return SupportHttpFixture(client=client, repository=repository, cookies=cookies)
+    return SupportHttpFixture(
+        client=client,
+        repository=repository,
+        cookies=cookies,
+        invalidations=invalidations,
+    )
 
 
 def _headers(*, unsafe: bool = False) -> dict[str, str]:
@@ -491,6 +512,10 @@ async def test_student_create_get_and_append_use_authenticated_owner(support_htt
     )
     assert appended.status == 200
     assert fixture.repository.calls[-1].student_user_id == STUDENT_ID
+    assert [reason for _, reason in fixture.invalidations] == [
+        "support-thread-created",
+        "support-student-entry-appended",
+    ]
 
 
 @pytest.mark.asyncio
@@ -529,6 +554,10 @@ async def test_staff_scope_and_server_owned_author_kind_are_enforced(support_htt
     assert admin_reply.status == 200
     assert fixture.repository.calls[-1].staff_user_id == ADMIN_ID
     assert fixture.repository.calls[-1].author_kind == "admin"
+    assert [reason for _, reason in fixture.invalidations] == [
+        "support-staff-entry-appended",
+        "support-staff-entry-appended",
+    ]
 
 
 @pytest.mark.asyncio
@@ -657,3 +686,27 @@ async def test_support_idempotency_conflict_uses_versioned_error_envelope(suppor
         "message": "Это действие уже было отправлено с другими данными",
         "requestId": "support.http.test",
     }
+
+
+@pytest.mark.asyncio
+async def test_committed_support_entry_survives_invalidation_failure(
+    support_http, caplog
+):
+    fixture = support_http
+
+    async def fail_invalidation(_targets, _reason):
+        raise RuntimeError("synthetic support invalidation outage")
+
+    with pytest.warns(DeprecationWarning):
+        fixture.client.server.app[support_routes_module.PWA_SUPPORT_INVALIDATOR] = (
+            fail_invalidation
+        )
+    response = await fixture.client.post(
+        "/student/api/v1/questions/support-http-thread/entries",
+        json=_append_payload(idempotencyKey="support-after-live-failure"),
+        cookies=_cookie(fixture, "student", AuthAudience.STUDENT),
+        headers=_headers(unsafe=True),
+    )
+
+    assert response.status == 200, await response.text()
+    assert "Support invalidation failed after commit" in caplog.text

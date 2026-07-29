@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -17,6 +19,7 @@ from db_methods.pwa.support import (
     PwaSupportThreadRepository,
     SupportForbidden,
     SupportIdempotencyConflict,
+    SupportInvalidationTargets,
     SupportNotFound,
     SupportStaffScope,
     SupportThreadPage,
@@ -49,7 +52,10 @@ _STAFF_LIST_QUERY_FIELDS = frozenset({"state", "kind", "course", "group", "curso
 PWA_SUPPORT_REPOSITORY = web.AppKey(
     "pwa_support_repository", PwaSupportThreadRepository
 )
+SupportInvalidator = Callable[[SupportInvalidationTargets, str], Awaitable[None]]
+PWA_SUPPORT_INVALIDATOR = web.AppKey("pwa_support_invalidator", SupportInvalidator)
 support_routes = web.RouteTableDef()
+logger = logging.getLogger(__name__)
 
 
 def _repository(request: web.Request) -> PwaSupportThreadRepository:
@@ -61,6 +67,28 @@ def _repository(request: web.Request) -> PwaSupportThreadRepository:
             message="Вопросы временно недоступны",
         )
     return repository
+
+
+async def _invalidate_after_commit(
+    request: web.Request, *, thread_public_id: str, reason: str
+) -> None:
+    invalidator = request.app.get(PWA_SUPPORT_INVALIDATOR)
+    if invalidator is None:
+        return
+    try:
+        targets = await _repository(request).invalidation_targets(
+            thread_public_id=thread_public_id
+        )
+        await invalidator(targets, reason)
+    except Exception:
+        # SQLite is authoritative; a transient target lookup or NATS failure
+        # must not turn a committed private message into an unsafe retry.
+        logger.warning(
+            "Support invalidation failed after commit: thread=%s reason=%s",
+            thread_public_id,
+            reason,
+            exc_info=True,
+        )
 
 
 def _student_user_id(request: web.Request) -> int:
@@ -410,6 +438,11 @@ async def create_student_question(request: web.Request) -> web.Response:
         )
     except (SupportNotFound, SupportForbidden, SupportIdempotencyConflict) as error:
         raise _translate_error(error) from error
+    await _invalidate_after_commit(
+        request,
+        thread_public_id=thread.thread_public_id,
+        reason="support-thread-created",
+    )
     return _response(request, thread)
 
 
@@ -471,6 +504,11 @@ async def append_student_question_entry(request: web.Request) -> web.Response:
         )
     except (SupportNotFound, SupportForbidden, SupportIdempotencyConflict) as error:
         raise _translate_error(error) from error
+    await _invalidate_after_commit(
+        request,
+        thread_public_id=thread.thread_public_id,
+        reason="support-student-entry-appended",
+    )
     return _response(request, thread)
 
 
@@ -554,7 +592,12 @@ async def append_staff_question_entry(request: web.Request) -> web.Response:
         )
     except (SupportNotFound, SupportForbidden, SupportIdempotencyConflict) as error:
         raise _translate_error(error) from error
+    await _invalidate_after_commit(
+        request,
+        thread_public_id=thread.thread_public_id,
+        reason="support-staff-entry-appended",
+    )
     return _response(request, thread)
 
 
-__all__ = ["PWA_SUPPORT_REPOSITORY", "support_routes"]
+__all__ = ["PWA_SUPPORT_INVALIDATOR", "PWA_SUPPORT_REPOSITORY", "support_routes"]

@@ -6,6 +6,7 @@ import pytest
 from aiohttp import ClientPayloadError, web
 
 from apps import pwa_app
+from db_methods.pwa.support import SupportInvalidationTargets
 from helpers.config import config
 from helpers.nats_brocker import InProcessBroker
 from helpers.object_storage import LocalObjectStorage
@@ -762,6 +763,63 @@ async def test_review_queue_mutation_invalidation_is_staff_scoped():
                 "audience": "staff",
             },
         )
+    ]
+
+
+@pytest.mark.asyncio
+async def test_support_invalidation_targets_only_owner_and_current_staff_accounts():
+    class RecordingBroker:
+        def __init__(self):
+            self.messages = []
+
+        async def publish(self, topic, payload):
+            self.messages.append((topic, payload))
+
+    app = web.Application()
+    broker = RecordingBroker()
+    app[pwa_app.PWA_BROKER] = broker
+
+    await pwa_app.publish_support_invalidation(
+        app,
+        targets=SupportInvalidationTargets(
+            thread_public_id="support-thread-live",
+            student_account_public_ids=("account-student-live",),
+            staff_account_public_ids=(
+                "account-teacher-live",
+                "account-admin-live",
+            ),
+        ),
+        reason="support-student-entry-appended",
+    )
+
+    assert sorted(broker.messages, key=lambda item: item[1]["accountId"]) == [
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["questions", "questions/support-thread-live"],
+                "reason": "support-student-entry-appended",
+                "audience": "staff",
+                "accountId": "account-admin-live",
+            },
+        ),
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["questions", "questions/support-thread-live"],
+                "reason": "support-student-entry-appended",
+                "audience": "student",
+                "accountId": "account-student-live",
+            },
+        ),
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["questions", "questions/support-thread-live"],
+                "reason": "support-student-entry-appended",
+                "audience": "staff",
+                "accountId": "account-teacher-live",
+            },
+        ),
     ]
 
 
