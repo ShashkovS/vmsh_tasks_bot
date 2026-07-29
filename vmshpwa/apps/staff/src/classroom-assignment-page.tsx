@@ -15,7 +15,7 @@ import {
   type ClassroomPlanRoom,
   type ClassroomPlanStudent,
 } from '@vmsh/product'
-import { Alert, AlertContent, AlertDescription, AlertTitle } from '@vmsh/ui'
+import { Alert, AlertContent, AlertDescription, AlertTitle, Button } from '@vmsh/ui'
 
 function colorIndex(colorKey: string | null): 0 | 1 | 2 | 3 | 4 {
   const match = /^level-([1-4])$/.exec(colorKey ?? '')
@@ -28,7 +28,12 @@ function describeError(error: Error): string {
   return 'Обновите страницу и повторите попытку.'
 }
 
-function savedAssignments(storageKey: string): Record<string, string> | null {
+interface SavedAssignmentDraft {
+  assignments: Record<string, string>
+  groupChanges: string[]
+}
+
+function savedAssignments(storageKey: string): SavedAssignmentDraft | null {
   try {
     const raw = globalThis.localStorage.getItem(storageKey)
     if (raw === null) return null
@@ -36,11 +41,18 @@ function savedAssignments(storageKey: string): Record<string, string> | null {
     if (typeof parsed !== 'object' || parsed === null || !('assignments' in parsed)) return null
     const value = (parsed as { assignments?: unknown }).assignments
     if (typeof value !== 'object' || value === null) return null
-    return Object.fromEntries(
-      Object.entries(value).filter(
-        (entry): entry is [string, string] => typeof entry[1] === 'string',
+    const groupChanges =
+      'groupChanges' in parsed && Array.isArray(parsed.groupChanges)
+        ? parsed.groupChanges.filter((item): item is string => typeof item === 'string')
+        : []
+    return {
+      assignments: Object.fromEntries(
+        Object.entries(value).filter(
+          (entry): entry is [string, string] => typeof entry[1] === 'string',
+        ),
       ),
-    )
+      groupChanges,
+    }
   } catch {
     return null
   }
@@ -71,12 +83,20 @@ function AssignmentEditor({
 }) {
   const authentication = useAuthentication()
   const saved = useMemo(() => savedAssignments(storageKey), [storageKey])
-  const [assignments, setAssignments] = useState(saved ?? serverAssignments(plan))
+  const [assignments, setAssignments] = useState(saved?.assignments ?? serverAssignments(plan))
+  const [groupChanges, setGroupChanges] = useState<ReadonlySet<string>>(
+    () => new Set(saved?.groupChanges ?? []),
+  )
   const [storageFailed, setStorageFailed] = useState(false)
-  const [groupChangeRequested, setGroupChangeRequested] = useState(false)
+  const [groupChangeRequested, setGroupChangeRequested] = useState<{
+    studentId: string
+    groupId: string
+    classroomId: string
+  } | null>(null)
 
   const groups: ClassroomGroupOption[] = plan.groups.map((group) => ({
     id: group.groupLessonPublicId,
+    courseId: group.coursePublicId,
     name: `${group.courseName} · ${group.groupName}`,
     shortCode: group.shortCode,
     colorIndex: colorIndex(group.colorKey),
@@ -92,17 +112,28 @@ function AssignmentEditor({
     name: room.name,
     groupId: room.groupLessonPublicId,
   }))
-  const students: ClassroomPlanStudent[] = plan.students.map((student) => ({
-    id: student.enrollmentPublicId,
-    name: `${student.surname} ${student.name}`,
-    groupId: student.groupLessonPublicId,
-    classroomId: assignments[student.enrollmentPublicId] ?? null,
-    status: assignments[student.enrollmentPublicId] === undefined ? 'reassigning' : 'assigned',
-    source: student.source,
-    age: student.age,
-    schoolClass: student.grade,
-    strength: student.strength,
-  }))
+  const students: ClassroomPlanStudent[] = plan.students.map((student) => {
+    const classroomId = assignments[student.enrollmentPublicId]
+    const selectedRoom = plan.rooms.find((room) => room.publicId === classroomId)
+    const originalGroup = plan.groups.find(
+      (group) => group.groupLessonPublicId === student.groupLessonPublicId,
+    )
+    return {
+      id: student.enrollmentPublicId,
+      name: `${student.surname} ${student.name}`,
+      ...(originalGroup === undefined ? {} : { courseId: originalGroup.coursePublicId }),
+      groupId:
+        groupChanges.has(student.enrollmentPublicId) && selectedRoom
+          ? selectedRoom.groupLessonPublicId
+          : student.groupLessonPublicId,
+      classroomId: classroomId ?? null,
+      status: classroomId === undefined ? 'reassigning' : 'assigned',
+      source: student.source,
+      age: student.age,
+      schoolClass: student.grade,
+      strength: student.strength,
+    }
+  })
   const currentPlan = plan.plan
 
   const mutation = useMutation({
@@ -123,7 +154,13 @@ function AssignmentEditor({
         const classroomPublicId = assignments[student.enrollmentPublicId]
         return classroomPublicId === undefined || classroomPublicId === student.classroomPublicId
           ? []
-          : [{ enrollmentPublicId: student.enrollmentPublicId, classroomPublicId }]
+          : [
+              {
+                enrollmentPublicId: student.enrollmentPublicId,
+                classroomPublicId,
+                confirmGroupChange: groupChanges.has(student.enrollmentPublicId),
+              },
+            ]
       })
       const savedPlan =
         changed.length === 0
@@ -158,15 +195,38 @@ function AssignmentEditor({
     },
   })
 
-  const move = (studentId: string, classroomId: string) => {
-    const next = { ...assignments, [studentId]: classroomId }
-    setAssignments(next)
+  const saveDraft = (next: Record<string, string>, nextGroupChanges: ReadonlySet<string>) => {
     try {
-      globalThis.localStorage.setItem(storageKey, JSON.stringify({ assignments: next }))
+      globalThis.localStorage.setItem(
+        storageKey,
+        JSON.stringify({ assignments: next, groupChanges: [...nextGroupChanges] }),
+      )
       setStorageFailed(false)
     } catch {
       setStorageFailed(true)
     }
+  }
+
+  const move = (studentId: string, classroomId: string) => {
+    const next = { ...assignments, [studentId]: classroomId }
+    const nextGroupChanges = new Set(groupChanges)
+    nextGroupChanges.delete(studentId)
+    setAssignments(next)
+    setGroupChanges(nextGroupChanges)
+    saveDraft(next, nextGroupChanges)
+  }
+
+  const confirmGroupChange = () => {
+    if (groupChangeRequested === null) return
+    const next = {
+      ...assignments,
+      [groupChangeRequested.studentId]: groupChangeRequested.classroomId,
+    }
+    const nextGroupChanges = new Set(groupChanges).add(groupChangeRequested.studentId)
+    setAssignments(next)
+    setGroupChanges(nextGroupChanges)
+    saveDraft(next, nextGroupChanges)
+    setGroupChangeRequested(null)
   }
   const incidents =
     currentPlan === null
@@ -193,11 +253,24 @@ function AssignmentEditor({
       {groupChangeRequested ? (
         <Alert role="status" tone="warning">
           <AlertContent>
-            <AlertTitle>Смена группы требует отдельного подтверждения</AlertTitle>
+            <AlertTitle>Сменить учебную группу школьника?</AlertTitle>
             <AlertDescription>
-              Обычное перемещение не меняет учебную группу школьника. Этот сценарий будет оформлен
-              отдельным действием с записью в историю.
+              Вместе с аудиторией изменится активная группа в этом курсе. Изменение попадёт в
+              историю после подтверждения всего плана.
             </AlertDescription>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button onClick={confirmGroupChange} size="sm" type="button" variant="outline">
+                Сменить группу и аудиторию
+              </Button>
+              <Button
+                onClick={() => setGroupChangeRequested(null)}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                Отмена
+              </Button>
+            </div>
           </AlertContent>
         </Alert>
       ) : null}
@@ -216,7 +289,9 @@ function AssignmentEditor({
         onConfirm={() => mutation.mutate('confirm')}
         onMove={move}
         onRecalculate={() => mutation.mutate('recalculate')}
-        onRequestGroupChange={() => setGroupChangeRequested(true)}
+        onRequestGroupChange={(studentId, groupId, classroomId) =>
+          setGroupChangeRequested({ studentId, groupId, classroomId })
+        }
         pending={mutation.isPending}
         rooms={rooms}
         state={currentPlan?.state ?? 'draft'}

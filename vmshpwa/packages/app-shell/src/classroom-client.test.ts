@@ -171,7 +171,13 @@ describe('classroom client', () => {
     await client.recalculateAssignmentPlan('event-41', plan, { schemaVersion: 1 })
     await client.updateAssignmentPlan('event-41', plan, {
       schemaVersion: 1,
-      assignments: [{ enrollmentPublicId: 'enrollment-anna', classroomPublicId: 'room-201' }],
+      assignments: [
+        {
+          enrollmentPublicId: 'enrollment-anna',
+          classroomPublicId: 'room-201',
+          confirmGroupChange: false,
+        },
+      ],
     })
     await client.confirmAssignmentPlan('event-41', plan, { schemaVersion: 1 })
 

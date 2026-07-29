@@ -269,6 +269,7 @@ export const updateClassroomAssignmentPlanRequestSchema = z
           .object({
             enrollmentPublicId: publicIdSchema,
             classroomPublicId: publicIdSchema,
+            confirmGroupChange: z.boolean(),
           })
           .strict(),
       )

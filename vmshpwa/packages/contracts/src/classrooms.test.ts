@@ -142,6 +142,27 @@ describe('classroom assignment contracts', () => {
   })
 
   it('rejects duplicate fields and malformed manual assignments', () => {
+    expect(
+      updateClassroomAssignmentPlanRequestSchema.parse({
+        schemaVersion: 1,
+        assignments: [
+          {
+            enrollmentPublicId: 'enrollment-anna',
+            classroomPublicId: 'room-201',
+            confirmGroupChange: false,
+          },
+        ],
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      assignments: [
+        {
+          enrollmentPublicId: 'enrollment-anna',
+          classroomPublicId: 'room-201',
+          confirmGroupChange: false,
+        },
+      ],
+    })
     expect(() =>
       updateClassroomAssignmentPlanRequestSchema.parse({
         schemaVersion: 1,

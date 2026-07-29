@@ -35,6 +35,7 @@ const selectClass =
 
 export interface ClassroomGroupOption {
   id: string
+  courseId?: string
   name: string
   shortCode: string
   colorIndex?: 0 | 1 | 2 | 3 | 4
@@ -559,6 +560,7 @@ export interface ClassroomPlanStudent {
   id: string
   name: string
   groupId: string
+  courseId?: string
   classroomId: string | null
   status: ClassroomStudentStatus
   source: ClassroomAssignmentSource
@@ -688,18 +690,22 @@ function StudentMoveSelect({
       value={student.classroomId ?? ''}
     >
       <option value="">Не назначена</option>
-      {groups.map((group) => (
-        <optgroup key={group.id} label={group.name}>
-          {rooms
-            .filter((room) => room.groupId === group.id)
-            .map((room) => (
-              <option key={room.id} value={room.id}>
-                {room.name}
-                {group.id === student.groupId ? '' : ' · сменить группу'}
-              </option>
-            ))}
-        </optgroup>
-      ))}
+      {groups
+        .filter(
+          (group) => !student.courseId || !group.courseId || group.courseId === student.courseId,
+        )
+        .map((group) => (
+          <optgroup key={group.id} label={group.name}>
+            {rooms
+              .filter((room) => room.groupId === group.id)
+              .map((room) => (
+                <option key={room.id} value={room.id}>
+                  {room.name}
+                  {group.id === student.groupId ? '' : ' · сменить группу'}
+                </option>
+              ))}
+          </optgroup>
+        ))}
     </select>
   )
 }
