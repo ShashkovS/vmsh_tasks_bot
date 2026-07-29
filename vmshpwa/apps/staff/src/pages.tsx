@@ -644,12 +644,14 @@ export function StaffClassroomsPage({
   onTabChange,
   catalog,
   layout,
+  students,
 }: {
   state?: PageDisplayState
   tab?: ClassroomPageTab
   onTabChange?: (tab: ClassroomPageTab) => void
   catalog?: ReactNode
   layout?: ReactNode
+  students?: ReactNode
 }) {
   const [localTab, setLocalTab] = useState<ClassroomPageTab>('catalog')
   const [eventGroupLessons, setEventGroupLessons] = useState(initialInPersonGroupLessons)
@@ -712,25 +714,27 @@ export function StaffClassroomsPage({
               )}
             </TabsContent>
             <TabsContent value="students">
-              <ClassroomStudentPlanner
-                groups={classroomGroups}
-                incidents={[
-                  {
-                    id: 'no-room',
-                    title: 'У группы экспертов нет свободной аудитории',
-                    description: 'Григорий Яшин остаётся в разделе переназначения.',
-                    blocking: true,
-                  },
-                ]}
-                lessonLabel="Очное событие 1 февраля · черновик наследованного плана"
-                onMove={() => undefined}
-                onRequestGroupChange={() => undefined}
-                onShowHistory={() => undefined}
-                rooms={planRooms}
-                state="draft"
-                students={planStudents}
-                version={13}
-              />
+              {students ?? (
+                <ClassroomStudentPlanner
+                  groups={classroomGroups}
+                  incidents={[
+                    {
+                      id: 'no-room',
+                      title: 'У группы экспертов нет свободной аудитории',
+                      description: 'Григорий Яшин остаётся в разделе переназначения.',
+                      blocking: true,
+                    },
+                  ]}
+                  lessonLabel="Очное событие 1 февраля · черновик наследованного плана"
+                  onMove={() => undefined}
+                  onRequestGroupChange={() => undefined}
+                  onShowHistory={() => undefined}
+                  rooms={planRooms}
+                  state="draft"
+                  students={planStudents}
+                  version={13}
+                />
+              )}
             </TabsContent>
           </Tabs>
         </div>

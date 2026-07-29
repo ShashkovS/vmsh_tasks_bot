@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { StaffClassroomCatalog } from '../classroom-catalog-page'
+import { StaffClassroomAssignments } from '../classroom-assignment-page'
 import { StaffClassroomLayout } from '../classroom-layout-page'
 import { StaffClassroomsPage } from '../pages'
 
@@ -33,6 +34,7 @@ function ClassroomsRoute() {
       }
       layout={<StaffClassroomLayout eventPublicId={search.event} />}
       onTabChange={(tab) => void navigate({ search: (current) => ({ ...current, tab }) })}
+      students={<StaffClassroomAssignments eventPublicId={search.event} />}
       tab={search.tab}
     />
   )
