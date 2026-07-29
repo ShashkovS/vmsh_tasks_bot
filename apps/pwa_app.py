@@ -124,6 +124,7 @@ from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience
 from models.pwa.content_notifications import create_content_publication_notifications
 from models.pwa.content import ContentKind
+from models.pwa.support_notifications import create_staff_reply_notifications
 
 __all__ = ["PwaApiError", "pwa_routes"]
 
@@ -1112,6 +1113,28 @@ async def publish_support_invalidation(
     """Refresh one private dialogue and matching owner/scope inboxes only."""
 
     resources = ["questions", f"questions/{targets.thread_public_id}"]
+    notification_created = False
+    if reason == "support-staff-entry-appended":
+        database = app.get(PWA_DATABASE)
+        if database is not None and database.factory is not None:
+            try:
+                notification_created = bool(
+                    await database.factory.run_write_async(
+                        lambda connection: create_staff_reply_notifications(
+                            connection,
+                            student_account_public_ids=(
+                                targets.student_account_public_ids
+                            ),
+                            thread_public_id=targets.thread_public_id,
+                        )
+                    )
+                )
+            except Exception:
+                logger.warning(
+                    "Support notification failed after commit: thread=%s",
+                    targets.thread_public_id,
+                    exc_info=True,
+                )
     # WebSocket subscriptions are authenticated per account. Resolve the small
     # recipient set from SQLite instead of broadening a private thread into a
     # course/group broadcast or exposing internal scope identifiers to clients.
@@ -1133,7 +1156,12 @@ async def publish_support_invalidation(
             app[PWA_BROKER].publish(
                 NATS_PWA_INVALIDATE,
                 {
-                    "resources": resources,
+                    "resources": (
+                        [*resources, "notification-events"]
+                        if audience == AuthAudience.STUDENT.value
+                        and notification_created
+                        else resources
+                    ),
                     "reason": reason,
                     "audience": audience,
                     "accountId": account_public_id,

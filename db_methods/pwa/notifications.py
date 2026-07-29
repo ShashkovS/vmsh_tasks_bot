@@ -158,6 +158,25 @@ def active_student_accounts(
     return [dict(row) for row in rows]
 
 
+def latest_staff_support_entry(
+    connection: sqlite3.Connection,
+    *,
+    thread_public_id: str,
+) -> dict[str, object] | None:
+    """Return the newest committed teacher/admin entry in one thread."""
+
+    row = connection.execute(
+        "SELECT entry.public_id, entry.server_received_at "
+        "FROM support_threads AS thread "
+        "JOIN support_entries AS entry ON entry.thread_id = thread.id "
+        "WHERE thread.public_id = ? "
+        "AND entry.author_kind IN ('teacher', 'admin') "
+        "ORDER BY entry.server_received_at DESC, entry.id DESC LIMIT 1",
+        (thread_public_id,),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
 def pending_review_batch(
     connection: sqlite3.Connection,
     *,

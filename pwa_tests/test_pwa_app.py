@@ -10,7 +10,7 @@ from db_methods.pwa.support import SupportInvalidationTargets
 from helpers.config import config
 from helpers.nats_brocker import InProcessBroker
 from helpers.object_storage import LocalObjectStorage
-from helpers.pwa.app_keys import RUNTIME_CONFIG
+from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG, PwaDatabaseState
 from helpers.pwa.auth_config import COOKIE_POLICY, load_auth_runtime_config
 from main import create_app
 from models.pwa.auth import AuthAudience
@@ -820,6 +820,51 @@ async def test_support_invalidation_targets_only_owner_and_current_staff_account
                 "accountId": "account-teacher-live",
             },
         ),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_staff_support_reply_refreshes_only_student_notifications(monkeypatch):
+    class RecordingBroker:
+        def __init__(self):
+            self.messages = []
+
+        async def publish(self, topic, payload):
+            self.messages.append((topic, payload))
+
+    class Factory:
+        async def run_write_async(self, operation):
+            return operation(None)
+
+    monkeypatch.setattr(
+        pwa_app,
+        "create_staff_reply_notifications",
+        lambda _connection, **_kwargs: 1,
+    )
+    app = web.Application()
+    broker = RecordingBroker()
+    app[pwa_app.PWA_BROKER] = broker
+    app[PWA_DATABASE] = PwaDatabaseState(factory=Factory())
+
+    await pwa_app.publish_support_invalidation(
+        app,
+        targets=SupportInvalidationTargets(
+            thread_public_id="support-thread-replied",
+            student_account_public_ids=("account-student-live",),
+            staff_account_public_ids=("account-teacher-live",),
+        ),
+        reason="support-staff-entry-appended",
+    )
+
+    messages = {payload["audience"]: payload for _, payload in broker.messages}
+    assert messages["student"]["resources"] == [
+        "questions",
+        "questions/support-thread-replied",
+        "notification-events",
+    ]
+    assert messages["staff"]["resources"] == [
+        "questions",
+        "questions/support-thread-replied",
     ]
 
 
