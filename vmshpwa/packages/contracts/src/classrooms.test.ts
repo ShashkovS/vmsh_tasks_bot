@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import fixture from '../fixtures/classrooms/catalog.v1.json'
+import assignmentFixture from '../fixtures/classrooms/assignment-plan.v1.json'
 import layoutFixture from '../fixtures/classrooms/layout.v1.json'
 import {
+  classroomAssignmentPlanEtag,
+  classroomAssignmentPlanResponseSchema,
   classroomEtag,
   classroomLayoutEtag,
   classroomLayoutResponseSchema,
@@ -111,6 +114,39 @@ describe('classroom layout contracts', () => {
     )
     expect(classroomQueryKeys.layout(admin, 'event-41')).not.toEqual(
       classroomQueryKeys.layout({ audience: 'staff', accountId: 'admin.two' }, 'event-41'),
+    )
+  })
+})
+
+describe('classroom assignment contracts', () => {
+  it('validates the committed assignment-plan fixture', () => {
+    const response = classroomAssignmentPlanResponseSchema.parse(assignmentFixture)
+    expect(response.assignmentPlan.students[0]?.age).toBe(13.6)
+    expect(response.assignmentPlan.students[0]?.strength).toBe(8)
+    const plan = response.assignmentPlan.plan
+    if (plan === null) throw new Error('Fixture must contain a draft plan')
+    expect(classroomAssignmentPlanEtag(plan)).toBe('"classroom-plan.41:v2"')
+  })
+
+  it('accepts an event with no generated plan', () => {
+    const response = classroomAssignmentPlanResponseSchema.parse({
+      ...assignmentFixture,
+      assignmentPlan: {
+        ...assignmentFixture.assignmentPlan,
+        plan: null,
+        students: [],
+      },
+    })
+    expect(response.assignmentPlan.plan).toBeNull()
+  })
+
+  it('isolates assignment query keys by event and principal', () => {
+    const admin = { audience: 'staff' as const, accountId: 'admin.one' }
+    expect(classroomQueryKeys.assignmentPlan(admin, 'event-41')).not.toEqual(
+      classroomQueryKeys.assignmentPlan(admin, 'event-42'),
+    )
+    expect(classroomQueryKeys.assignmentPlan(admin, 'event-41')).not.toEqual(
+      classroomQueryKeys.assignmentPlan({ audience: 'staff', accountId: 'admin.two' }, 'event-41'),
     )
   })
 })

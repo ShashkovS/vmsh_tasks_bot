@@ -2,6 +2,8 @@ import {
   ApiResponseError,
   apiErrorSchema,
   changeClassroomStatusRequestSchema,
+  classroomAssignmentPlanEtag,
+  classroomAssignmentPlanResponseSchema,
   classroomEtag,
   classroomLayoutEtag,
   classroomLayoutResponseSchema,
@@ -10,21 +12,26 @@ import {
   classroomResponseSchema,
   createClassroomRequestSchema,
   confirmClassroomLayoutRequestSchema,
+  confirmClassroomAssignmentPlanRequestSchema,
   materializeClassroomLayoutRequestSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
+  recalculateClassroomAssignmentPlanRequestSchema,
   renameClassroomRequestSchema,
   replaceClassroomLayoutRequestSchema,
   type ChangeClassroomStatusRequest,
   type Classroom,
+  type ClassroomAssignmentPlanResponse,
   type ClassroomListQuery,
   type ClassroomListResponse,
   type ClassroomLayoutResponse,
   type ClassroomResponse,
   type CreateClassroomRequest,
   type ConfirmClassroomLayoutRequest,
+  type ConfirmClassroomAssignmentPlanRequest,
   type MaterializeClassroomLayoutRequest,
   type RenameClassroomRequest,
+  type RecalculateClassroomAssignmentPlanRequest,
   type ReplaceClassroomLayoutRequest,
   type RuntimeConfig,
 } from '@vmsh/contracts'
@@ -83,6 +90,22 @@ export interface ClassroomClient {
     request: ConfirmClassroomLayoutRequest,
     options?: ClassroomRequestOptions,
   ): Promise<ClassroomLayoutResponse>
+  getAssignmentPlan(
+    eventPublicId: string,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomAssignmentPlanResponse>
+  recalculateAssignmentPlan(
+    eventPublicId: string,
+    plan: { publicId: string; version: number } | null,
+    request: RecalculateClassroomAssignmentPlanRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomAssignmentPlanResponse>
+  confirmAssignmentPlan(
+    eventPublicId: string,
+    plan: { publicId: string; version: number },
+    request: ConfirmClassroomAssignmentPlanRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomAssignmentPlanResponse>
 }
 
 export class ClassroomProtocolError extends Error {
@@ -256,6 +279,61 @@ class BrowserClassroomClient implements ClassroomClient {
       options,
       200,
       (payload) => classroomLayoutResponseSchema.parse(payload),
+    )
+  }
+
+  async getAssignmentPlan(
+    eventPublicId: string,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomAssignmentPlanResponse> {
+    const eventId = publicIdSchema.parse(eventPublicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(eventId)}/classroom-assignment-plan`,
+      { method: 'GET' },
+      options,
+      200,
+      (payload) => classroomAssignmentPlanResponseSchema.parse(payload),
+    )
+  }
+
+  async recalculateAssignmentPlan(
+    eventPublicId: string,
+    plan: { publicId: string; version: number } | null,
+    request: RecalculateClassroomAssignmentPlanRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomAssignmentPlanResponse> {
+    const eventId = publicIdSchema.parse(eventPublicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(eventId)}/classroom-assignment-plan/recalculate`,
+      {
+        method: 'POST',
+        body: JSON.stringify(recalculateClassroomAssignmentPlanRequestSchema.parse(request)),
+        ...(plan === null ? {} : { headers: { 'If-Match': classroomAssignmentPlanEtag(plan) } }),
+      },
+      options,
+      200,
+      (payload) => classroomAssignmentPlanResponseSchema.parse(payload),
+    )
+  }
+
+  async confirmAssignmentPlan(
+    eventPublicId: string,
+    plan: { publicId: string; version: number },
+    request: ConfirmClassroomAssignmentPlanRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomAssignmentPlanResponse> {
+    const eventId = publicIdSchema.parse(eventPublicId)
+    const publicId = publicIdSchema.parse(plan.publicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(eventId)}/classroom-assignment-plan/${encodeURIComponent(publicId)}/confirm`,
+      {
+        method: 'POST',
+        body: JSON.stringify(confirmClassroomAssignmentPlanRequestSchema.parse(request)),
+        headers: { 'If-Match': classroomAssignmentPlanEtag({ ...plan, publicId }) },
+      },
+      options,
+      200,
+      (payload) => classroomAssignmentPlanResponseSchema.parse(payload),
     )
   }
 

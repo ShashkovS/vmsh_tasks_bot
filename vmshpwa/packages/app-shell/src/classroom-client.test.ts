@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { RuntimeConfig } from '@vmsh/contracts'
+import assignmentFixture from '@vmsh/contracts/fixtures/classrooms/assignment-plan.v1.json'
 
 import { ClassroomProtocolError, createClassroomClient } from './classroom-client'
 
@@ -155,6 +156,45 @@ describe('classroom client', () => {
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({ 'If-Match': '"layout-41:v2"' }),
+      }),
+    )
+  })
+
+  it('reads, recalculates and confirms one classroom assignment plan', async () => {
+    const fetchImplementation = vi.fn(() => Promise.resolve(response(assignmentFixture)))
+    const client = createClassroomClient(runtime, { fetchImplementation })
+    const plan = assignmentFixture.assignmentPlan.plan
+    if (plan === null) throw new Error('Fixture must contain a plan')
+
+    await client.getAssignmentPlan('event-41')
+    await client.recalculateAssignmentPlan('event-41', null, { schemaVersion: 1 })
+    await client.recalculateAssignmentPlan('event-41', plan, { schemaVersion: 1 })
+    await client.confirmAssignmentPlan('event-41', plan, { schemaVersion: 1 })
+
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      1,
+      '/staff/api/v1/in-person-events/event-41/classroom-assignment-plan',
+      expect.objectContaining({ method: 'GET' }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      2,
+      '/staff/api/v1/in-person-events/event-41/classroom-assignment-plan/recalculate',
+      expect.not.objectContaining({
+        headers: expect.objectContaining({ 'If-Match': expect.anything() }),
+      }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      3,
+      '/staff/api/v1/in-person-events/event-41/classroom-assignment-plan/recalculate',
+      expect.objectContaining({
+        headers: expect.objectContaining({ 'If-Match': '"classroom-plan.41:v2"' }),
+      }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      4,
+      '/staff/api/v1/in-person-events/event-41/classroom-assignment-plan/classroom-plan.41/confirm',
+      expect.objectContaining({
+        headers: expect.objectContaining({ 'If-Match': '"classroom-plan.41:v2"' }),
       }),
     )
   })
