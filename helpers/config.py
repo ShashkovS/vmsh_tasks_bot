@@ -67,6 +67,9 @@ class Config:
     exceptions_channel: Union[str, int] = ""
     sentry_dsn: Optional[str] = field(default="", repr=False)
     nats_server: Optional[str] = "nats://127.0.0.1:4222"
+    pwa_vapid_public_key: str = ""
+    pwa_vapid_private_key: str = field(default="", repr=False)
+    pwa_vapid_subject: str = ""
     logging_level = logging.WARNING
     verdict_mode: str = "verdict_plus_minus_half"
     result_mode: str = "res_immed"
@@ -141,9 +144,7 @@ def _setup(*, force_production=False):
             or os.environ.get("PROD") == "true"
             or runtime_profile == "pwa-production"
         )
-        pwa_prototype = (
-            os.environ.get("VMSH_PWA_PROTOTYPE", "false").lower() == "true"
-        )
+        pwa_prototype = os.environ.get("VMSH_PWA_PROTOTYPE", "false").lower() == "true"
         if production_mode and pwa_prototype:
             raise RuntimeError(
                 "Production PWA runtime cannot enable VMSH_PWA_PROTOTYPE"
@@ -177,6 +178,9 @@ def _setup(*, force_production=False):
             nats_server=os.environ.get("VMSH_NATS_SERVER") or None,
             trace_enabled=False,
             sentry_dsn="",
+            pwa_vapid_public_key=os.environ.get("VMSH_VAPID_PUBLIC_KEY", "").strip(),
+            pwa_vapid_private_key=os.environ.get("VMSH_VAPID_PRIVATE_KEY", "").strip(),
+            pwa_vapid_subject=os.environ.get("VMSH_VAPID_SUBJECT", "").strip(),
             pdf2svg_path=_optional_executable_from_env("VMSH_PDF2SVG_PATH", "pdf2svg"),
             cwebp_path=_optional_executable_from_env("VMSH_CWEBP_PATH", "cwebp"),
             pdflatex_path=_optional_executable_from_env(

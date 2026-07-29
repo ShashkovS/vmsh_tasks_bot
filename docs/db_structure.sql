@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 5d0aeabf96f0616645717dd174c08ea7ebfa4bf3eaa326f69a8ea3777dd4bcbb
+-- Product schema SHA-256: cda08a14972a3167b0961491f38e7481d7a4e3fea6fc15945473c8aee085f818
 
 CREATE TABLE auth_accounts
 (
@@ -1459,6 +1459,25 @@ CREATE TABLE "problems"
     unique (group_id, lesson, prob, item)
 );
 
+CREATE TABLE push_subscriptions
+(
+    id              integer primary key,
+    public_id       text    not null unique,
+    account_id      integer not null references auth_accounts (id),
+    session_id      integer not null references auth_sessions (id),
+    endpoint        text    not null unique,
+    p256dh          text    not null,
+    auth_secret     text    not null,
+    expiration_time integer,
+    user_agent      text,
+    created_at      text    not null,
+    updated_at      text    not null,
+    check (length(trim(endpoint)) > 0),
+    check (length(trim(p256dh)) > 0),
+    check (length(trim(auth_secret)) > 0),
+    check (expiration_time is null or expiration_time > 0)
+);
+
 CREATE TABLE questions
 (
     id                   INTEGER primary key,
@@ -2639,6 +2658,9 @@ CREATE INDEX problems_by_synonyms
 CREATE UNIQUE INDEX problems_public_id_uq
     on problems (public_id)
     where public_id is not null;
+
+CREATE INDEX push_subscriptions_account_idx
+    on push_subscriptions (account_id, updated_at desc);
 
 CREATE INDEX results_by_student_problem
     on results (student_id, problem_id);

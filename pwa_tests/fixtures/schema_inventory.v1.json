@@ -181,6 +181,10 @@
       {
         "id": "0063.pwa_notification_core",
         "sha256": "9c9ca99e22bd682a68901e47ca1f03fe54180e3a5a4f1c33620b2ad3359131e8"
+      },
+      {
+        "id": "0064.pwa_push_subscriptions",
+        "sha256": "f54895df39f6ea2cc247ce028f1507e01e6dd7ece68c6cdb4a839a5095cc45d1"
       }
     ],
     "repository_head_status": {
@@ -191,7 +195,7 @@
     }
   },
   "product": {
-    "object_count": 377,
+    "object_count": 379,
     "objects": [
       {
         "columns": [
@@ -13112,6 +13116,222 @@
           },
           {
             "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "account_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "session_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "endpoint",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "p256dh",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "auth_secret",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "expiration_time",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_agent",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          },
+          {
+            "from_columns": [
+              "session_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_sessions"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "updated_at",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "push_subscriptions_account_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_push_subscriptions_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "endpoint",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_push_subscriptions_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "push_subscriptions",
+        "object_sha256": "c9ffc0ee3ecb583ed0f45330ba3c8b7a22dae7f7ac663de2db6497746b5f0c41",
+        "sql": "CREATE TABLE push_subscriptions\n(\n    id              integer primary key,\n    public_id       text    not null unique,\n    account_id      integer not null references auth_accounts (id),\n    session_id      integer not null references auth_sessions (id),\n    endpoint        text    not null unique,\n    p256dh          text    not null,\n    auth_secret     text    not null,\n    expiration_time integer,\n    user_agent      text,\n    created_at      text    not null,\n    updated_at      text    not null,\n    check (length(trim(endpoint)) > 0),\n    check (length(trim(p256dh)) > 0),\n    check (length(trim(auth_secret)) > 0),\n    check (expiration_time is null or expiration_time > 0)\n);",
+        "table_name": "push_subscriptions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
             "declared_type": "TIMESTAMP",
             "default_sql": null,
             "hidden": 0,
@@ -21718,6 +21938,13 @@
         "type": "index"
       },
       {
+        "name": "push_subscriptions_account_idx",
+        "object_sha256": "fa06c16a778b01d6d0080e29b210c161db155ff7fea14c985e722906b7efdc92",
+        "sql": "CREATE INDEX push_subscriptions_account_idx\n    on push_subscriptions (account_id, updated_at desc);",
+        "table_name": "push_subscriptions",
+        "type": "index"
+      },
+      {
         "name": "results_by_student_problem",
         "object_sha256": "362c3ddad4e8595680d39d8eb4b1d3e3310ec27a47bf3992028f538f99200924",
         "sql": "CREATE INDEX results_by_student_problem\n    on results (student_id, problem_id);",
@@ -23132,8 +23359,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "ced9317f929d573005cf180dba1e97bfdec09f975655964c49778762c33ee1a1",
-    "sha256": "5d0aeabf96f0616645717dd174c08ea7ebfa4bf3eaa326f69a8ea3777dd4bcbb"
+    "pragma_structure_sha256": "abd20cc18eef347765a8cd4c2698907cc132db220ecf61aa978200b5fd7bd918",
+    "sha256": "cda08a14972a3167b0961491f38e7481d7a4e3fea6fc15945473c8aee085f818"
   },
   "source_kind": "repository-migration-head"
 }
