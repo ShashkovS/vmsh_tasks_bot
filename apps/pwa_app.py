@@ -13,6 +13,10 @@ from aiohttp import WSCloseCode, WSMsgType, web
 from apps.pwa_api.auth_routes import auth_routes
 from apps.pwa_api.admin_course_routes import admin_course_routes
 from apps.pwa_api.admin_schedule_routes import admin_schedule_routes
+from apps.pwa_api.admin_enrollment_routes import (
+    PWA_ENROLLMENT_INVALIDATOR,
+    admin_enrollment_routes,
+)
 from apps.pwa_api.auth_service import PwaAuthService
 from apps.pwa_api.classroom_assignment_routes import (
     PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR,
@@ -955,6 +959,40 @@ async def publish_classroom_assignment_invalidation(
             )
 
 
+async def publish_enrollment_invalidation(
+    app: web.Application,
+    *,
+    student_account_public_ids: tuple[str, ...],
+    family_account_public_ids: tuple[str, ...],
+    reason: str,
+) -> None:
+    """Refetch course authority for affected owners and open Staff lists."""
+
+    messages = [
+        {
+            "resources": ["courses", "home", "classroom-assignments"],
+            "reason": reason,
+            "audience": audience.value,
+            "accountId": account_public_id,
+        }
+        for audience, account_public_ids in (
+            (AuthAudience.STUDENT, student_account_public_ids),
+            (AuthAudience.FAMILY, family_account_public_ids),
+        )
+        for account_public_id in account_public_ids
+    ]
+    messages.append(
+        {
+            "resources": ["admin-student-enrollments"],
+            "reason": reason,
+            "audience": AuthAudience.STAFF.value,
+        }
+    )
+    await asyncio.gather(
+        *(app[PWA_BROKER].publish(NATS_PWA_INVALIDATE, message) for message in messages)
+    )
+
+
 async def publish_written_submission_invalidation(
     app: web.Application,
     *,
@@ -1501,6 +1539,7 @@ def configure(
         app.add_routes(auth_routes)
         app.add_routes(admin_course_routes)
         app.add_routes(admin_schedule_routes)
+        app.add_routes(admin_enrollment_routes)
         app.add_routes(course_routes)
         app.add_routes(family_course_routes)
         app.add_routes(classroom_routes)
@@ -1539,6 +1578,20 @@ def configure(
             )
 
         app[PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR] = invalidate_classroom_assignments
+
+        async def invalidate_enrollments(
+            student_account_public_ids: tuple[str, ...],
+            family_account_public_ids: tuple[str, ...],
+            reason: str,
+        ) -> None:
+            await publish_enrollment_invalidation(
+                app,
+                student_account_public_ids=student_account_public_ids,
+                family_account_public_ids=family_account_public_ids,
+                reason=reason,
+            )
+
+        app[PWA_ENROLLMENT_INVALIDATOR] = invalidate_enrollments
         app.on_startup.append(on_auth_startup)
         test_submissions_enabled = (
             test_submission_repository is not None or PWA_DATABASE in app
