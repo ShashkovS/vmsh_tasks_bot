@@ -23,5 +23,6 @@
 - Ruff on the new route, direct SQL reads and tests: passed.
 - No migration or schema snapshot changed.
 
-Frontend editing, lesson-window materialization preview and production E2E are
-separate Phase-10 increments. No visual baseline was updated.
+The connected Staff editor and production E2E evidence are recorded in
+`phase10-course-schedule-frontend.md`. Lesson-window materialization remains a
+separate Phase-10 increment. No visual baseline was updated.

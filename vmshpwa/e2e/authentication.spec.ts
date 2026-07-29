@@ -179,7 +179,9 @@ test('Student profile uses the authenticated course enrollment instead of protot
   await expect(page.getByText('Василий Петров')).toHaveCount(0)
 })
 
-test('Admin creates a course through the real Staff catalog', async ({ page }, testInfo) => {
+test('Admin creates a course and confirms its schedule through real Staff APIs', async ({
+  page,
+}, testInfo) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/courses?tab=catalog')
   await expect(page.getByRole('heading', { name: 'Курсы и группы', level: 1 })).toBeVisible()
   await expect(page.getByText('Математика 5–7', { exact: true })).toBeVisible()
@@ -195,6 +197,20 @@ test('Admin creates a course through the real Staff catalog', async ({ page }, t
 
   await expect(dialog).toBeHidden()
   await expect(page.getByText(name, { exact: true })).toBeVisible()
+
+  await page.goto('/staff/courses?tab=schedule')
+  await page.getByLabel('Курс').selectOption({ label: name })
+  await page.getByRole('button', { name: 'Изменить' }).first().click()
+  const scheduleDialog = page.getByRole('dialog', { name: 'Публикация условия' })
+  await scheduleDialog.getByLabel('Смещение в днях').fill('0')
+  await scheduleDialog.getByLabel('Время').fill('18:15')
+  await scheduleDialog.getByRole('button', { name: 'Показать изменения' }).click()
+
+  await expect(scheduleDialog).toBeHidden()
+  await expect(page.getByText(/Черновик: в день цикла · 18:15/)).toBeVisible()
+  await page.getByRole('button', { name: 'Подтвердить' }).first().click()
+  await expect(page.getByText(/Черновик: в день цикла · 18:15/)).toHaveCount(0)
+  await expect(page.getByText('в день цикла · 18:15', { exact: true })).toBeVisible()
 })
 
 for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONAS.teacher]) {

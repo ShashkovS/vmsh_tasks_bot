@@ -4,6 +4,7 @@ import { audienceSchema, type Audience } from './auth'
 
 export * from './auth'
 export * from './admin-course-catalog'
+export * from './admin-course-schedule'
 export * from './classrooms'
 export * from './content'
 export * from './content-api'

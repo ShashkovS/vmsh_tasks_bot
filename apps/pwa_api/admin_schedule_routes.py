@@ -219,11 +219,26 @@ async def get_course_schedule(request: web.Request) -> web.Response:
     rows = await _factory(request).run_read_async(read)
     if rows is None:
         raise PwaApiError(status=404, code="course_not_found", message="Курс не найден")
+    impacts = []
+    for row in rows:
+        if row["state"] != "draft":
+            continue
+        impact = await _repository(request).preview_course_schedule_rule_change(
+            draft_public_id=str(row["public_id"])
+        )
+        impacts.append(
+            {
+                "ruleId": row["public_id"],
+                "groupLessons": impact.group_lesson_count,
+                "materializedWindows": impact.materialized_window_count,
+            }
+        )
     return web.json_response(
         {
             "schemaVersion": 1,
             "courseId": course_public_id,
             "rules": [_rule_payload(row) for row in rows],
+            "draftImpacts": impacts,
             "requestId": request["request_id"],
         },
         headers={"Cache-Control": "no-store"},

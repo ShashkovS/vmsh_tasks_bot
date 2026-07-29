@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { StaffCoursesPage } from '../pages'
 import { StaffCourseCatalogPage } from '../staff-course-catalog-page'
+import { StaffCourseSchedulePage } from '../staff-course-schedule-page'
 import { StaffTelegramBindings } from '../telegram-bindings-page'
 
 const searchSchema = z.object({
@@ -17,9 +18,23 @@ export const Route = createFileRoute('/courses')({
 })
 
 function CoursesRoute() {
-  const { tab } = Route.useSearch()
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
 
-  if (tab === 'catalog') return <StaffCourseCatalogPage />
+  if (search.tab === 'catalog') return <StaffCourseCatalogPage />
+
+  if (search.tab === 'schedule') {
+    return (
+      <StaffCourseSchedulePage
+        onCourseChange={(course) =>
+          void navigate({ search: { ...search, course, group: undefined }, replace: true })
+        }
+        onGroupChange={(group) => void navigate({ search: { ...search, group }, replace: true })}
+        {...(search.course === undefined ? {} : { requestedCourseId: search.course })}
+        {...(search.group === undefined ? {} : { requestedGroupId: search.group })}
+      />
+    )
+  }
 
   return <StaffCoursesPage telegram={<StaffTelegramBindings />} />
 }

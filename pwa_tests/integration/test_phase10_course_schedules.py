@@ -52,7 +52,9 @@ async def test_admin_confirms_course_schedule_rule_after_impact_preview(content_
         headers=_headers(),
     )
     assert empty.status == 200
-    assert (await empty.json())["rules"] == []
+    empty_body = await empty.json()
+    assert empty_body["rules"] == []
+    assert empty_body["draftImpacts"] == []
 
     created = await content_http.client.put(
         "/staff/api/v1/courses/course-content-http/schedule-rules",
@@ -75,6 +77,14 @@ async def test_admin_confirms_course_schedule_rule_after_impact_preview(content_
     }
 
     rule_id = body["rule"]["ruleId"]
+    resumed = await content_http.client.get(
+        "/staff/api/v1/courses/course-content-http/schedule-rules",
+        cookies=_cookie(content_http, "admin"),
+        headers=_headers(),
+    )
+    assert (await resumed.json())["draftImpacts"] == [
+        {"ruleId": rule_id, "groupLessons": 2, "materializedWindows": 0}
+    ]
     stale = await content_http.client.post(
         f"/staff/api/v1/course-schedule-rules/{rule_id}/confirm",
         json={"schemaVersion": 1},

@@ -101,4 +101,50 @@ describe('admin course client', () => {
       expect.objectContaining({ 'If-Match': '"group-beginner:v1"' }),
     )
   })
+
+  it('creates and confirms versioned course schedule drafts', async () => {
+    const rule = {
+      ruleId: 'schedule-rule.1',
+      field: 'opens_at' as const,
+      ruleVersion: 1,
+      dayOffset: 0,
+      localTime: '16:30:00',
+      timezone: 'Europe/Moscow',
+      state: 'draft' as const,
+      version: 1,
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          rule,
+          impact: { groupLessons: 3, materializedWindows: 1 },
+          requestId: 'draft',
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          rule: { ...rule, state: 'active', version: 2 },
+          requestId: 'confirm',
+        }),
+      )
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+    await client.createCourseScheduleDraft('course-math', {
+      schemaVersion: 1,
+      field: 'opens_at',
+      dayOffset: 0,
+      localTime: '16:30',
+      timezone: 'Europe/Moscow',
+    })
+    await client.confirmCourseScheduleRule(rule.ruleId, rule.version)
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/staff/api/v1/courses/course-math/schedule-rules',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[1]?.headers).toEqual(
+      expect.objectContaining({ 'If-Match': '"schedule-rule.1:v1"' }),
+    )
+  })
 })
