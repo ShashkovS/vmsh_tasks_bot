@@ -230,3 +230,64 @@ def test_event_read_is_idempotent_and_account_scoped(tmp_path):
                 session_id=session_id,
                 now=NOW,
             )
+
+
+def test_event_list_applies_in_app_preference_and_oral_default(tmp_path):
+    database_path = tmp_path / "notification-visibility.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        account_id, _session_id = _seed_account(connection)
+        for category in ("news", "oral_window"):
+            assert insert_event(
+                connection,
+                public_id=f"notification.{category}",
+                account_id=account_id,
+                category=category,
+                dedupe_key=f"{category}:one",
+                route="/student/",
+                payload_json="{}",
+                occurred_at=NOW,
+                deliver_after=NOW,
+                created_at=NOW,
+            )
+
+        # News is on and oral-window events are off by default.
+        assert [
+            item["category"]
+            for item in read_events(
+                connection, account_id=account_id, limit=10, unread_only=False
+            )
+        ] == ["news"]
+
+        update_preference(
+            connection,
+            account_id=account_id,
+            category="news",
+            in_app_enabled=False,
+            push_enabled=True,
+            sound_enabled=True,
+            quiet_starts_local="21:00",
+            quiet_ends_local="09:00",
+            timezone="Europe/Moscow",
+            now=NOW,
+        )
+        update_preference(
+            connection,
+            account_id=account_id,
+            category="oral_window",
+            in_app_enabled=True,
+            push_enabled=False,
+            sound_enabled=False,
+            quiet_starts_local="21:00",
+            quiet_ends_local="09:00",
+            timezone="Europe/Moscow",
+            now=NOW,
+        )
+        assert [
+            item["category"]
+            for item in read_events(
+                connection, account_id=account_id, limit=10, unread_only=False
+            )
+        ] == ["oral_window"]

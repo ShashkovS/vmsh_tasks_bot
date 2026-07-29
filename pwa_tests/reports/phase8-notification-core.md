@@ -16,6 +16,7 @@
 - migration проходит up/down/up и `PRAGMA integrity_check`;
 - defaults включены для всех категорий кроме `oral_window`;
 - одна категория сохраняется независимо от остальных;
+- список событий применяет `in_app_enabled`; без сохранённой настройки все категории видимы, кроме выключенного по умолчанию `oral_window`;
 - неизвестные категории, timezone и quiet-hours отклоняются;
 - dedupe не создаёт второе событие;
 - read acknowledgement сохраняет server timestamp, повтор безопасен;
@@ -28,6 +29,7 @@
 
 - Ruff: passed.
 - Notification/classroom model and migration tests: 9 passed.
+- Preference visibility regression: passed вместе с notification/push/review-набором (15 passed).
 - Authenticated classroom/notification HTTP tests: 4 passed.
 - PWA app, schema inventory and notification/classroom tests: 66 passed.
 - Schema inventory: 377 objects, SHA-256 `5d0aeabf96f0616645717dd174c08ea7ebfa4bf3eaa326f69a8ea3777dd4bcbb`.

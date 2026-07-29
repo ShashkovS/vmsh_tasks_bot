@@ -14,10 +14,16 @@ def list_events(
 ) -> list[dict[str, object]]:
     unread_clause = "AND read_at IS NULL" if unread_only else ""
     rows = connection.execute(
-        f"SELECT public_id, category, route, payload_json, occurred_at, "
-        f"deliver_after, read_at FROM notification_events "
-        f"WHERE account_id = ? {unread_clause} "
-        f"ORDER BY occurred_at DESC, id DESC LIMIT ?",
+        f"SELECT event.public_id, event.category, event.route, event.payload_json, "
+        f"event.occurred_at, event.deliver_after, event.read_at "
+        f"FROM notification_events AS event "
+        f"LEFT JOIN notification_preferences AS preference "
+        f"ON preference.account_id = event.account_id "
+        f"AND preference.category = event.category "
+        f"WHERE event.account_id = ? {unread_clause} "
+        f"AND coalesce(preference.in_app_enabled, "
+        f"CASE WHEN event.category = 'oral_window' THEN 0 ELSE 1 END) = 1 "
+        f"ORDER BY event.occurred_at DESC, event.id DESC LIMIT ?",
         (account_id, limit),
     ).fetchall()
     return [dict(row) for row in rows]
