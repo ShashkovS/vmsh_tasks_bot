@@ -127,7 +127,9 @@ def _expected_version(request: web.Request, public_id: str) -> int:
     return int(match.group(2))
 
 
-def _response(item: dict[str, object], *, status: int = 200) -> web.Response:
+def _response(
+    request: web.Request, item: dict[str, object], *, status: int = 200
+) -> web.Response:
     payload = {
         "schemaVersion": 1,
         "classroom": {
@@ -138,6 +140,7 @@ def _response(item: dict[str, object], *, status: int = 200) -> web.Response:
             "updatedAt": item["updated_at"],
             "version": item["version"],
         },
+        "requestId": request["request_id"],
     }
     response = web.json_response(payload, status=status)
     response.headers["ETag"] = f'"{item["public_id"]}:v{item["version"]}"'
@@ -155,7 +158,8 @@ async def _raise_name_conflict(request: web.Request, normalized_name: str) -> No
         code="classroom_name_conflict",
         message="Аудитория с таким названием уже есть",
         details={
-            "existingPublicId": None if existing is None else existing["public_id"]
+            "existingPublicId": None if existing is None else existing["public_id"],
+            "existingName": None if existing is None else existing["name"],
         },
     )
 
@@ -206,6 +210,7 @@ async def get_classrooms(request: web.Request) -> web.Response:
                 }
                 for row in rows
             ],
+            "requestId": request["request_id"],
         }
     )
 
@@ -240,7 +245,7 @@ async def post_classroom(request: web.Request) -> web.Response:
     except ClassroomNameConflict:
         await _raise_name_conflict(request, normalized_name)
         raise AssertionError("unreachable")
-    return _response(item, status=201)
+    return _response(request, item, status=201)
 
 
 @classroom_routes.patch("/staff/api/v1/classrooms/{classroom_public_id}")
@@ -287,7 +292,7 @@ async def patch_classroom(request: web.Request) -> web.Response:
             code="version_conflict",
             message="Аудитория уже изменилась. Обновите страницу.",
         ) from error
-    return _response(item)
+    return _response(request, item)
 
 
 async def _change_status(request: web.Request, status: str) -> web.Response:
@@ -320,7 +325,7 @@ async def _change_status(request: web.Request, status: str) -> web.Response:
             code="version_conflict",
             message="Аудитория уже изменилась. Обновите страницу.",
         ) from error
-    return _response(item)
+    return _response(request, item)
 
 
 @classroom_routes.post("/staff/api/v1/classrooms/{classroom_public_id}/archive")

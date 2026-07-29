@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { audienceSchema, type Audience } from './auth'
 
 export * from './auth'
+export * from './classrooms'
 export * from './content'
 export * from './content-api'
 export * from './courses'

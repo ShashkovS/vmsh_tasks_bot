@@ -216,6 +216,7 @@ async def test_admin_catalog_round_trip_duplicate_search_and_stale_version(
     )
     assert created.status == 201, await created.text()
     created_payload = await created.json()
+    assert created_payload["requestId"] == "classroom.http.test"
     room = created_payload["classroom"]
     assert room["name"] == "Актовый зал"
     assert room["status"] == "active"
@@ -232,7 +233,8 @@ async def test_admin_catalog_round_trip_duplicate_search_and_stale_version(
     duplicate_payload = await duplicate.json()
     assert duplicate_payload["error"]["code"] == "classroom_name_conflict"
     assert duplicate_payload["error"]["details"] == {
-        "existingPublicId": room["publicId"]
+        "existingPublicId": room["publicId"],
+        "existingName": "Актовый зал",
     }
 
     searched = await classroom_http.client.get(
@@ -241,7 +243,9 @@ async def test_admin_catalog_round_trip_duplicate_search_and_stale_version(
         cookies=_cookies(classroom_http, "admin"),
     )
     assert searched.status == 200
-    assert [item["publicId"] for item in (await searched.json())["items"]] == [
+    searched_payload = await searched.json()
+    assert searched_payload["requestId"] == "classroom.http.test"
+    assert [item["publicId"] for item in searched_payload["items"]] == [
         room["publicId"]
     ]
 
