@@ -26,7 +26,15 @@ def list_event_group_lessons(
                gl.course_id, gl.group_id, c.public_id AS course_public_id,
                c.name AS course_name, g.public_id AS group_public_id,
                g.public_name AS group_name, g.short_code, g.color_key,
-               cl.lesson_number
+               cl.lesson_number,
+               (
+                   SELECT count(*)
+                   FROM course_enrollments enrollment
+                   WHERE enrollment.course_id = gl.course_id
+                     AND enrollment.active_group_id = gl.group_id
+                     AND enrollment.status = 'active'
+                     AND enrollment.attendance_mode = 'in_person'
+               ) AS in_person_count
         FROM in_person_event_group_lessons ep
         JOIN group_lessons gl ON gl.id = ep.group_lesson_id
         JOIN course_lessons cl ON cl.id = gl.course_lesson_id

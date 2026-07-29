@@ -188,6 +188,90 @@ def _cookies(fixture: ClassroomHttpFixture, identity: str):
     return {COOKIE_POLICY[AuthAudience.STAFF].access_name: fixture.cookies[identity]}
 
 
+def _seed_layout_scope(factory: PwaConnectionFactory) -> None:
+    now = NOW.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+    def seed(connection) -> None:
+        student_id = connection.execute(
+            "INSERT INTO users (public_id, type, name, surname) "
+            "VALUES ('classroom-layout-student', 0, 'Анна', 'Белова') RETURNING id"
+        ).fetchone()["id"]
+        season_id = connection.execute(
+            "INSERT INTO seasons "
+            "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+            "status, created_at, updated_at) VALUES "
+            "('classroom-layout-season', 'layout-season', 'Layout season', "
+            "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) RETURNING id",
+            (now, now),
+        ).fetchone()["id"]
+        course_id = connection.execute(
+            "INSERT INTO courses "
+            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "accent_key, created_at, updated_at) VALUES "
+            "('classroom-layout-course', ?, 'math-layout', 'Математика', 'math', "
+            "'active', 1, 'math', ?, ?) RETURNING id",
+            (season_id, now, now),
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO groups "
+            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
+            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "status, color_key, created_at, updated_at) VALUES "
+            "('layout-beginner', 'н', 'Начинающие', 1, 1, 0, 0, 0, 1.0, "
+            "'classroom-layout-group', ?, 'active', 'beginner', ?, ?)",
+            (course_id, now, now),
+        )
+        connection.execute(
+            "INSERT INTO course_enrollments "
+            "(public_id, student_user_id, course_id, active_group_id, "
+            "attendance_mode, status, created_at, updated_at) VALUES "
+            "('classroom-layout-enrollment', ?, ?, 'layout-beginner', "
+            "'in_person', 'active', ?, ?)",
+            (student_id, course_id, now, now),
+        )
+        course_lesson_id = connection.execute(
+            "INSERT INTO course_lessons "
+            "(public_id, course_id, lesson_number, created_at, updated_at) "
+            "VALUES ('classroom-layout-course-lesson', ?, 41, ?, ?) RETURNING id",
+            (course_id, now, now),
+        ).fetchone()["id"]
+        group_lesson_id = connection.execute(
+            "INSERT INTO group_lessons "
+            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "business_timezone, status, created_at, updated_at) VALUES "
+            "('classroom-layout-group-lesson', ?, ?, 'layout-beginner', "
+            "'2026-10-01', 'Europe/Moscow', 'active', ?, ?) RETURNING id",
+            (course_lesson_id, course_id, now, now),
+        ).fetchone()["id"]
+        event_id = connection.execute(
+            "INSERT INTO in_person_events "
+            "(public_id, season_id, name, starts_at, ends_at, status, "
+            "created_by_user_id, updated_by_user_id, created_at, updated_at) VALUES "
+            "('classroom-layout-event', ?, 'Очное занятие', "
+            "'2026-10-11T10:00:00Z', '2026-10-11T13:00:00Z', 'scheduled', "
+            "?, ?, ?, ?) RETURNING id",
+            (season_id, ADMIN_ID, ADMIN_ID, now, now),
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO in_person_event_group_lessons "
+            "(in_person_event_id, group_lesson_id, added_by_user_id, created_at) "
+            "VALUES (?, ?, ?, ?)",
+            (event_id, group_lesson_id, ADMIN_ID, now),
+        )
+        connection.executemany(
+            "INSERT INTO classrooms "
+            "(public_id, name, normalized_name, status, created_by_user_id, "
+            "updated_by_user_id, created_at, updated_at) "
+            "VALUES (?, ?, ?, 'active', ?, ?, ?, ?)",
+            (
+                ("classroom-layout-201", "201", "201", ADMIN_ID, ADMIN_ID, now, now),
+                ("classroom-layout-202", "202", "202", ADMIN_ID, ADMIN_ID, now, now),
+            ),
+        )
+
+    factory.run_write(seed)
+
+
 @pytest.mark.asyncio
 async def test_only_admin_can_manage_classroom_catalog(classroom_http):
     unauthenticated = await classroom_http.client.get(
@@ -304,3 +388,85 @@ async def test_admin_catalog_round_trip_duplicate_search_and_stale_version(
         ("archived", "classroom.http.test"),
         ("restored", "classroom.http.test"),
     ]
+
+
+@pytest.mark.asyncio
+async def test_admin_materializes_updates_and_confirms_classroom_layout(classroom_http):
+    _seed_layout_scope(classroom_http.factory)
+    path = "/staff/api/v1/in-person-events/classroom-layout-event/classroom-layout"
+
+    teacher = await classroom_http.client.get(
+        path,
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    inherited = await classroom_http.client.get(
+        path,
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert inherited.status == 200
+    inherited_layout = (await inherited.json())["layout"]
+    assert inherited_layout["state"] == "inherited"
+    assert inherited_layout["publicId"] is None
+    assert inherited_layout["groups"][0]["inPersonCount"] == 1
+
+    materialized = await classroom_http.client.post(
+        f"{path}/materialize",
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert materialized.status == 200, await materialized.text()
+    draft = (await materialized.json())["layout"]
+    assert (draft["state"], draft["version"]) == ("draft", 1)
+    layout_id = draft["publicId"]
+
+    updated = await classroom_http.client.put(
+        f"{path}/{layout_id}/rooms",
+        json={
+            "schemaVersion": 1,
+            "mappings": [
+                {
+                    "classroomPublicId": "classroom-layout-201",
+                    "groupLessonPublicId": "classroom-layout-group-lesson",
+                },
+                {
+                    "classroomPublicId": "classroom-layout-202",
+                    "groupLessonPublicId": "classroom-layout-group-lesson",
+                },
+            ],
+        },
+        headers=_headers(unsafe=True, if_match=f'"{layout_id}:v1"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert updated.status == 200, await updated.text()
+    updated_layout = (await updated.json())["layout"]
+    assert updated_layout["version"] == 2
+    assert [room["classroomName"] for room in updated_layout["rooms"]] == [
+        "201",
+        "202",
+    ]
+
+    stale = await classroom_http.client.put(
+        f"{path}/{layout_id}/rooms",
+        json={"schemaVersion": 1, "mappings": []},
+        headers=_headers(unsafe=True, if_match=f'"{layout_id}:v1"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert stale.status == 409
+    assert (await stale.json())["error"]["code"] == "version_conflict"
+
+    confirmed = await classroom_http.client.post(
+        f"{path}/{layout_id}/confirm",
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True, if_match=f'"{layout_id}:v2"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert confirmed.status == 200, await confirmed.text()
+    confirmed_payload = await confirmed.json()
+    assert confirmed_payload["layout"]["state"] == "confirmed"
+    assert confirmed_payload["layout"]["version"] == 3
+    assert confirmed.headers["ETag"] == f'"{layout_id}:v3"'
