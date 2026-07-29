@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
-import { courseEnrollmentSchema } from './courses'
+import { attendanceModeSchema, courseEnrollmentSchema } from './courses'
 import { courseProgressResponseSchema } from './progress'
 
 /** Phase-9 read model for one child already linked to the Family account. */
@@ -100,6 +100,15 @@ export const familyChildHomeResponseSchema = z
     })
   })
 export type FamilyChildHomeResponse = z.infer<typeof familyChildHomeResponseSchema>
+
+export const familyEnrollmentUpdateRequestSchema = z
+  .object({
+    activeGroupId: publicIdSchema,
+    attendanceMode: attendanceModeSchema,
+    version: z.number().int().positive(),
+  })
+  .strict()
+export type FamilyEnrollmentUpdateRequest = z.infer<typeof familyEnrollmentUpdateRequestSchema>
 
 export const familyCourseQueryKeys = {
   child: (principal: PrincipalQueryScope, studentId: string) =>

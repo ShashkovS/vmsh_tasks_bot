@@ -1,12 +1,16 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
   apiErrorSchema,
   familyChildCoursesResponseSchema,
   familyChildHomeResponseSchema,
   familyCourseQueryKeys,
+  familyEnrollmentUpdateRequestSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
+  courseEnrollmentSchema,
+  type CourseEnrollment,
+  type FamilyEnrollmentUpdateRequest,
   type FamilyChildCoursesResponse,
   type FamilyChildHomeResponse,
   type PrincipalQueryScope,
@@ -21,6 +25,11 @@ export interface FamilyCourseClientOptions {
 export interface FamilyCourseClient {
   childCourses(studentId: string, signal?: AbortSignal): Promise<FamilyChildCoursesResponse>
   childHome(studentId: string, signal?: AbortSignal): Promise<FamilyChildHomeResponse>
+  updateEnrollment(
+    studentId: string,
+    courseId: string,
+    input: FamilyEnrollmentUpdateRequest,
+  ): Promise<CourseEnrollment>
 }
 
 interface Parser<T> {
@@ -85,6 +94,38 @@ export function createFamilyCourseClient(
     childHome(studentId, signal) {
       return request(studentId, 'home', familyChildHomeResponseSchema, signal)
     },
+    async updateEnrollment(studentId, courseId, input) {
+      const parsedStudentId = publicIdSchema.parse(studentId)
+      const parsedCourseId = publicIdSchema.parse(courseId)
+      const parsedInput = familyEnrollmentUpdateRequestSchema.parse(input)
+      const send = () =>
+        fetchImplementation(
+          `${familyRuntime.apiBase}/children/${encodeURIComponent(parsedStudentId)}/courses/${encodeURIComponent(parsedCourseId)}/enrollment`,
+          {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            redirect: 'error',
+            body: JSON.stringify(parsedInput),
+          },
+        )
+      let response = await send()
+      if (response.status === 401 && options.refreshSession) {
+        await response.body?.cancel()
+        await options.refreshSession()
+        response = await send()
+      }
+      if (!response.ok) {
+        let payload: unknown
+        try {
+          payload = await response.json()
+        } catch {
+          throw new Error('Family course API returned an invalid error response')
+        }
+        throw new ApiResponseError(response.status, apiErrorSchema.parse(payload))
+      }
+      return courseEnrollmentSchema.parse(await response.json())
+    },
   }
 }
 
@@ -111,5 +152,22 @@ export function useFamilyChildHomeQuery(
     queryKey: familyCourseQueryKeys.home(principal, studentId),
     queryFn: ({ signal }) => client.childHome(studentId, signal),
     enabled,
+  })
+}
+
+export function useFamilyEnrollmentMutation(
+  client: FamilyCourseClient,
+  principal: PrincipalQueryScope,
+  studentId: string,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ courseId, input }: { courseId: string; input: FamilyEnrollmentUpdateRequest }) =>
+      client.updateEnrollment(studentId, courseId, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: familyCourseQueryKeys.home(principal, studentId),
+      })
+    },
   })
 }

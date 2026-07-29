@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { MapPin, Radio } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   PageLayout,
@@ -9,8 +9,14 @@ import {
   useAuthenticatedPrincipal,
   useAuthentication,
   useFamilyChildHomeQuery,
+  useFamilyEnrollmentMutation,
 } from '@vmsh/app-shell'
-import { ApiResponseError, type CourseEnrollment } from '@vmsh/contracts'
+import {
+  ApiResponseError,
+  type AttendanceMode,
+  type CourseEnrollment,
+  type FamilyEnrollmentUpdateRequest,
+} from '@vmsh/contracts'
 import { LevelChip, type GroupView } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
@@ -34,6 +40,97 @@ function activeGroup(enrollment: CourseEnrollment): GroupView | undefined {
     name: group.name,
     colorIndex: presentationIndex(group.colorKey, group.sortOrder),
   }
+}
+
+export function FamilyEnrollmentSettings({
+  enrollment,
+  error,
+  saving,
+  onSave,
+}: {
+  enrollment: CourseEnrollment
+  error: boolean
+  saving: boolean
+  onSave: (input: FamilyEnrollmentUpdateRequest) => Promise<unknown>
+}) {
+  const [groupId, setGroupId] = useState(enrollment.activeGroupId)
+  const [mode, setMode] = useState<AttendanceMode>(enrollment.attendanceMode)
+  const [reviewing, setReviewing] = useState(false)
+  useEffect(() => {
+    setGroupId(enrollment.activeGroupId)
+    setMode(enrollment.attendanceMode)
+    setReviewing(false)
+  }, [enrollment.activeGroupId, enrollment.attendanceMode, enrollment.version])
+  const changed = groupId !== enrollment.activeGroupId || mode !== enrollment.attendanceMode
+
+  return (
+    <div className="space-y-3 rounded-md border border-border bg-surface-subtle p-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="space-y-1 text-small font-medium">
+          <span>Группа</span>
+          <select
+            className="min-h-9 w-full rounded-md border border-input bg-surface px-3"
+            disabled={saving}
+            onChange={(event) => {
+              setGroupId(event.target.value)
+              setReviewing(false)
+            }}
+            value={groupId}
+          >
+            {enrollment.allowedGroups.map((group) => (
+              <option key={group.groupId} value={group.groupId}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="space-y-1 text-small font-medium">
+          <span>Формат занятий</span>
+          <select
+            className="min-h-9 w-full rounded-md border border-input bg-surface px-3"
+            disabled={saving}
+            onChange={(event) => {
+              setMode(event.target.value as AttendanceMode)
+              setReviewing(false)
+            }}
+            value={mode}
+          >
+            <option value="online">Онлайн</option>
+            <option value="in_person">Очно в школе</option>
+          </select>
+        </label>
+      </div>
+      {reviewing ? (
+        <p className="text-small text-muted-foreground">
+          При очном формате организаторы резервируют место, печатают условия и распределяют
+          преподавателей. Если ребёнок не придёт, выберите онлайн.
+        </p>
+      ) : null}
+      {error ? (
+        <p className="text-small text-status-error" role="alert">
+          Не удалось сохранить. Обновите страницу и попробуйте ещё раз.
+        </p>
+      ) : null}
+      <Button
+        disabled={!changed || saving}
+        onClick={() => {
+          if (!reviewing) {
+            setReviewing(true)
+            return
+          }
+          void onSave({
+            activeGroupId: groupId,
+            attendanceMode: mode,
+            version: enrollment.version,
+          }).catch(() => undefined)
+        }}
+        size="sm"
+        variant={reviewing ? 'default' : 'outline'}
+      >
+        {saving ? 'Сохраняем…' : reviewing ? 'Подтвердить изменения' : 'Изменить'}
+      </Button>
+    </div>
+  )
 }
 
 /** Production list of children from the revalidated Family principal. */
@@ -120,6 +217,11 @@ export function FamilyChildPage({ childId }: { childId: string }) {
     { audience: 'family', accountId: principal.accountId },
     requestedChildId,
     linkedChild !== undefined,
+  )
+  const enrollmentMutation = useFamilyEnrollmentMutation(
+    client,
+    { audience: 'family', accountId: principal.accountId },
+    requestedChildId,
   )
 
   if (!linkedChild) {
@@ -209,6 +311,23 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       ? ` · ждут проверки: ${progress.summary.awaitingReview}`
                       : ''}
                   </p>
+                  <FamilyEnrollmentSettings
+                    enrollment={enrollment}
+                    error={
+                      enrollmentMutation.isError &&
+                      enrollmentMutation.variables?.courseId === enrollment.course.courseId
+                    }
+                    onSave={(input) =>
+                      enrollmentMutation.mutateAsync({
+                        courseId: enrollment.course.courseId,
+                        input,
+                      })
+                    }
+                    saving={
+                      enrollmentMutation.isPending &&
+                      enrollmentMutation.variables?.courseId === enrollment.course.courseId
+                    }
+                  />
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-caption text-muted-foreground">
                       Доступно групп: {enrollment.allowedGroups.length}

@@ -9,6 +9,7 @@ authority; they do not perform a second database read.  See Phase 9 in
 from __future__ import annotations
 
 import re
+from datetime import UTC, datetime
 
 from aiohttp import web
 
@@ -29,6 +30,7 @@ from db_methods.pwa.progress import (
 )
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.family_enrollment import change_family_enrollment
 from models.pwa.progress import summarize_course_results
 
 
@@ -96,6 +98,41 @@ def _child_payload(child) -> dict[str, object]:
     }
 
 
+async def _enrollment_change_payload(request: web.Request) -> dict[str, object]:
+    try:
+        payload = await request.json()
+    except (ValueError, TypeError) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте выбранную группу и режим",
+        ) from error
+    if not isinstance(payload, dict) or set(payload) != {
+        "activeGroupId",
+        "attendanceMode",
+        "version",
+    }:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте выбранную группу и режим",
+        )
+    if (
+        not isinstance(payload["activeGroupId"], str)
+        or _PUBLIC_ID.fullmatch(payload["activeGroupId"]) is None
+        or payload["attendanceMode"] not in {"online", "in_person"}
+        or not isinstance(payload["version"], int)
+        or isinstance(payload["version"], bool)
+        or payload["version"] < 1
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте выбранную группу и режим",
+        )
+    return payload
+
+
 @family_course_routes.get("/family/api/v1/children/{student_public_id}/courses")
 async def get_family_child_courses(request: web.Request) -> web.Response:
     _reject_query(request)
@@ -122,6 +159,82 @@ async def get_family_child_courses(request: web.Request) -> web.Response:
         },
         headers={"Cache-Control": "no-store"},
     )
+
+
+@family_course_routes.patch(
+    "/family/api/v1/children/{student_public_id}/courses/{course_public_id}/enrollment"
+)
+async def update_family_child_enrollment(request: web.Request) -> web.Response:
+    _reject_query(request)
+    authenticated = _family_session(request)
+    student_public_id = request.match_info["student_public_id"]
+    if _PUBLIC_ID.fullmatch(student_public_id) is None:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Профиль ребёнка недоступен",
+        )
+    child = _linked_child(authenticated, student_public_id)
+    course_public_id = request.match_info["course_public_id"]
+    enrollment = next(
+        (
+            candidate
+            for candidate in authenticated.course_enrollments
+            if candidate.student_public_id == student_public_id
+            and candidate.course_public_id == course_public_id
+        ),
+        None,
+    )
+    if enrollment is None:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Курс ребёнка недоступен",
+        )
+    payload = await _enrollment_change_payload(request)
+    group = next(
+        (
+            candidate
+            for candidate in enrollment.allowed_groups
+            if candidate.group_public_id == payload["activeGroupId"]
+        ),
+        None,
+    )
+    if group is None:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Группа недоступна ребёнку",
+        )
+    now = datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+    def write(connection):
+        return change_family_enrollment(
+            connection,
+            enrollment_id=enrollment.enrollment_id,
+            course_id=enrollment.course_id,
+            student_user_id=child.student_user_id,
+            expected_version=payload["version"],
+            previous_group_id=enrollment.active_group_id,
+            active_group_id=group.group_id,
+            previous_attendance_mode=enrollment.attendance_mode,
+            attendance_mode=payload["attendanceMode"],
+            request_id=request["request_id"],
+            now=now,
+        )
+
+    new_version = await _factory(request).run_write_async(write)
+    if new_version is None:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Настройки уже изменились. Обновите страницу.",
+        )
+    response = course_enrollment_payload(enrollment)
+    response["activeGroupId"] = group.group_public_id
+    response["attendanceMode"] = payload["attendanceMode"]
+    response["version"] = new_version
+    return web.json_response(response, headers={"Cache-Control": "no-store"})
 
 
 @family_course_routes.get("/family/api/v1/children/{student_public_id}/home")
