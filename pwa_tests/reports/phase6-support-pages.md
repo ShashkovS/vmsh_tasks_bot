@@ -2,8 +2,8 @@
 
 Date: 2026-07-29
 
-Revision: `892646f` — production Student and Staff routes for private questions,
-replies and reload-safe text drafts.
+Revisions: `892646f`, `a7970d8` — production Student and Staff routes for
+private questions, replies, reload-safe text drafts and three-browser E2E.
 
 Authoritative plan:
 [`vmshpwa/dev/development-plan/10-phase-6-review-and-feedback.md`](../../vmshpwa/dev/development-plan/10-phase-6-review-and-feedback.md).
@@ -47,6 +47,13 @@ Implementation and executable specification:
 - `make pwa-storybook-test`: **41 files / 199 tests passed** with the a11y gate.
 - `make pwa-build`: **PASS** for Student, Family and Staff production builds;
   Student and Family produced `injectManifest` service workers.
+- `make pwa-e2e-support`: **3/3 PASS** in Chromium, WebKit and Firefox against
+  production bundles, real aiohttp and freshly seeded SQLite. The scenario
+  proves Student draft reload, Student → Staff → Student realtime delivery,
+  server receipt cleanup and another Student's empty private inbox. MSW and
+  external services are not used.
+- Focused E2E runner specification: **8 tests passed**; the support target keeps
+  the same exclusive build/seed/port lock as the complete suite.
 - Focused React/store specification: **8 tests passed** across the persistent
   store and hook.
 - Prettier and `git diff --check`: **PASS**.
@@ -56,10 +63,10 @@ Implementation and executable specification:
 - support image attachments and their media-proxy flow;
 - a discoverable general-lesson question entry point after the current lesson
   selector is connected to real course context;
-- production-build Playwright coverage for Student create/reload/reply and
-  Staff scoped reply, including a forbidden teacher scope;
 - owner visual review of the real application routes; snapshots were not
   updated;
+- a separate direct-URL forbidden Staff-scope browser assertion (repository and
+  aiohttp scope tests are already present);
 - Telegram continuation of the same logical support thread.
 
 This proof accepts the text-only application flow. It does not close Phase 6.
