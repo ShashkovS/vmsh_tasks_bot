@@ -20,7 +20,10 @@ from apps.pwa_api.classroom_delivery_routes import PWA_CLASSROOM_TELEGRAM_SENDER
 from apps.pwa_api.classroom_delivery_transport import TelegramClassroomSender
 from apps.pwa_api.notification_routes import notification_routes
 from apps.pwa_api.news_routes import news_routes
-from apps.pwa_api.news_moderation_routes import news_moderation_routes
+from apps.pwa_api.news_moderation_routes import (
+    PWA_NEWS_INVALIDATOR,
+    news_moderation_routes,
+)
 from apps.pwa_api.push_subscription_routes import push_subscription_routes
 from apps.pwa_api.classroom_routes import classroom_routes
 from apps.pwa_api.classroom_layout_routes import classroom_layout_routes
@@ -841,6 +844,39 @@ async def publish_test_submission_invalidation(
     )
 
 
+async def publish_news_invalidation(
+    app: web.Application,
+    *,
+    reason: str,
+) -> None:
+    """Best-effort refetch hint for the three authenticated news views."""
+
+    try:
+        await asyncio.gather(
+            *(
+                app[PWA_BROKER].publish(
+                    NATS_PWA_INVALIDATE,
+                    {
+                        "resources": ["news"],
+                        "reason": reason,
+                        "audience": audience,
+                    },
+                )
+                for audience in AUDIENCES
+            )
+        )
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        # SQLite is authoritative. A transient fan-out failure must not turn a
+        # completed moderation action into an unsafe browser retry.
+        logger.warning(
+            "News invalidation failed after commit: reason=%s",
+            reason,
+            exc_info=True,
+        )
+
+
 async def publish_classroom_assignment_invalidation(
     app: web.Application,
     *,
@@ -1359,6 +1395,11 @@ def configure(
         app.add_routes(news_moderation_routes)
         app.add_routes(push_subscription_routes)
         app.add_routes(telegram_binding_routes)
+
+        async def invalidate_news(reason: str) -> None:
+            await publish_news_invalidation(app, reason=reason)
+
+        app[PWA_NEWS_INVALIDATOR] = invalidate_news
 
         async def invalidate_classroom_assignments(
             student_account_public_ids: tuple[str, ...],

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from apps import pwa_app
 from db_methods.pwa.telegram_bindings import set_binding_status
 from helpers.pwa.auth_config import COOKIE_POLICY
 from models.pwa.auth import AuthAudience
@@ -91,6 +92,7 @@ async def test_admin_hides_and_restores_news_without_changing_telegram(classroom
         "visibilityUpdatedAt": NOW,
         "version": 1,
     }
+    cursors_before = dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"])
 
     hidden = await classroom_http.client.patch(
         f"/staff/api/v1/news/{item['postId']}/visibility",
@@ -104,6 +106,9 @@ async def test_admin_hides_and_restores_news_without_changing_telegram(classroom
         "manual_hidden",
         "Дубль",
     )
+    assert dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+        audience: cursor + 1 for audience, cursor in cursors_before.items()
+    }
 
     student = await classroom_http.client.get(
         "/student/api/v1/news",
@@ -124,6 +129,7 @@ async def test_admin_hides_and_restores_news_without_changing_telegram(classroom
         cookies=_cookies(classroom_http, "admin"),
     )
     assert stale.status == 409
+    cursors_after_hide = dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"])
 
     restored = await classroom_http.client.patch(
         f"/staff/api/v1/news/{item['postId']}/visibility",
@@ -133,6 +139,9 @@ async def test_admin_hides_and_restores_news_without_changing_telegram(classroom
     )
     assert restored.status == 200
     assert (await restored.json())["item"]["visibility"] == "visible"
+    assert dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+        audience: cursor + 1 for audience, cursor in cursors_after_hide.items()
+    }
 
     visible = await classroom_http.client.get(
         "/student/api/v1/news",

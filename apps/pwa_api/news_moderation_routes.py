@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -22,6 +23,8 @@ from models.pwa.news_moderation import (
 
 
 news_moderation_routes = web.RouteTableDef()
+NewsInvalidator = Callable[[str], Awaitable[None]]
+PWA_NEWS_INVALIDATOR = web.AppKey("pwa_news_invalidator", NewsInvalidator)
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?")
 _ETAG = re.compile(r'^"([a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?):v([1-9]\d*)"$')
 _STATES = frozenset({"visible", "manual_hidden", "source_deleted"})
@@ -178,6 +181,7 @@ async def change_visibility(request: web.Request) -> web.Response:
             code="news_visibility_not_allowed",
             message="Это состояние публикации нельзя изменить вручную",
         ) from error
+    await request.app[PWA_NEWS_INVALIDATOR]("news-visibility-changed")
     response = web.json_response(
         {
             "schemaVersion": 1,
@@ -189,4 +193,4 @@ async def change_visibility(request: web.Request) -> web.Response:
     return response
 
 
-__all__ = ["news_moderation_routes"]
+__all__ = ["PWA_NEWS_INVALIDATOR", "news_moderation_routes"]
