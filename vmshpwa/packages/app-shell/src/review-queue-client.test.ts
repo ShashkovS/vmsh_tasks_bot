@@ -52,6 +52,40 @@ const listPayload = {
   requestId: 'review-list-request',
 }
 
+const reactionInboxPayload = {
+  schemaVersion: 1 as const,
+  items: [
+    {
+      itemId: 'review-reaction-one',
+      reviewId: 'review-one',
+      kind: 'student' as const,
+      reactionId: 2 as const,
+      reactionLabel: '🙋 Не могу согласиться с проверкой!',
+      reactionVersion: 1,
+      updatedAt: '2026-10-04T12:10:00.000000Z',
+      editableUntil: '2026-10-04T13:00:00.000000Z',
+      student: { studentId: 'student-one', displayName: 'Анна Белова' },
+      reviewer: { staffId: 'teacher-one', displayName: 'Ирина Соколова' },
+      problem: {
+        problemId: 'problem-one',
+        problemNumber: '41а.1',
+        problemTitle: 'Общая задача',
+        courseId: 'course-math',
+        courseName: 'Математика',
+        groupId: 'group-a',
+        groupName: 'Группа А',
+        groupShortCode: 'а',
+        groupColorKey: 'level-1',
+      },
+      verdict: 15,
+      comment: 'Нужно дописать обоснование.',
+      completedAt: '2026-10-04T12:00:00.000000Z',
+    },
+  ],
+  nextCursor: null,
+  requestId: 'review-reaction-list-request',
+}
+
 const leasePayload = {
   schemaVersion: 1 as const,
   lease: {
@@ -117,6 +151,31 @@ describe('Staff review queue client', () => {
     ).resolves.toEqual(listPayload)
     expect(fetchImplementation).toHaveBeenCalledExactlyOnceWith(
       '/staff/api/v1/review/items?problemGroup=problem-one&sort=newest&cursor=review-queue-before',
+      {
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+        redirect: 'error',
+      },
+    )
+  })
+
+  it('serializes the admin reaction inbox filters and validates its rows', async () => {
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(jsonResponse(reactionInboxPayload)),
+    )
+    const client = createReviewQueueClient(runtime, { fetchImplementation })
+
+    await expect(
+      client.listReactions({
+        kind: 'student',
+        reactionId: 2,
+        cursor: 'review-reaction-before',
+      }),
+    ).resolves.toEqual(reactionInboxPayload)
+    expect(fetchImplementation).toHaveBeenCalledExactlyOnceWith(
+      '/staff/api/v1/review/reactions?kind=student&reactionId=2&cursor=review-reaction-before',
       {
         method: 'GET',
         cache: 'no-store',

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
   apiErrorSchema,
@@ -12,6 +12,9 @@ import {
   releaseReviewLeaseResponseSchema,
   reviewLeaseResponseSchema,
   reviewInternalReactionResponseSchema,
+  reviewReactionInboxQueryKeys,
+  reviewReactionInboxQuerySchema,
+  reviewReactionInboxResponseSchema,
   reviewQueueListQuerySchema,
   reviewQueueListResponseSchema,
   reviewQueueQueryKeys,
@@ -20,6 +23,8 @@ import {
   type CompleteReviewResponse,
   type PrincipalQueryScope,
   type ReviewInternalReactionResponse,
+  type ReviewReactionInboxQuery,
+  type ReviewReactionInboxResponse,
   type ReviewLeaseResponse,
   type ReviewQueueListQuery,
   type ReviewQueueListResponse,
@@ -44,6 +49,10 @@ export interface ReviewQueueClient {
     query?: ReviewQueueListQuery,
     options?: ReviewQueueRequestOptions,
   ): Promise<ReviewQueueListResponse>
+  listReactions(
+    query?: ReviewReactionInboxQuery,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<ReviewReactionInboxResponse>
   claim(queueId: string, options?: ReviewQueueRequestOptions): Promise<ReviewLeaseResponse>
   heartbeat(
     queueId: string,
@@ -119,6 +128,25 @@ class BrowserReviewQueueClient implements ReviewQueueClient {
       undefined,
       options,
       reviewQueueListResponseSchema,
+    )
+  }
+
+  async listReactions(
+    query: ReviewReactionInboxQuery = {},
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<ReviewReactionInboxResponse> {
+    const parsed = reviewReactionInboxQuerySchema.parse(query)
+    const search = new URLSearchParams()
+    if (parsed.kind !== 'all') search.set('kind', parsed.kind)
+    if (parsed.reactionId !== undefined) search.set('reactionId', String(parsed.reactionId))
+    if (parsed.cursor) search.set('cursor', parsed.cursor)
+    const suffix = search.size === 0 ? '' : `?${search.toString()}`
+    return this.#jsonRequest(
+      `/review/reactions${suffix}`,
+      'GET',
+      undefined,
+      options,
+      reviewReactionInboxResponseSchema,
     )
   }
 
@@ -348,6 +376,36 @@ export function useReviewQueueQuery(
   return useQuery({
     queryKey: reviewQueueQueryKeys.list(principal, query),
     queryFn: ({ signal }) => client.list(query, { signal }),
+  })
+}
+
+export function useReviewReactionInboxQuery(
+  client: Pick<ReviewQueueClient, 'listReactions'>,
+  principal: PrincipalQueryScope,
+  query: ReviewReactionInboxQuery = {},
+) {
+  return useQuery({
+    queryKey: reviewReactionInboxQueryKeys.list(principal, query),
+    queryFn: ({ signal }) => client.listReactions(query, { signal }),
+    meta: { realtimeResources: ['review-reactions'] },
+  })
+}
+
+export function useInfiniteReviewReactionInboxQuery(
+  client: Pick<ReviewQueueClient, 'listReactions'>,
+  principal: PrincipalQueryScope,
+  query: Omit<ReviewReactionInboxQuery, 'cursor'> = {},
+) {
+  return useInfiniteQuery({
+    queryKey: reviewReactionInboxQueryKeys.list(principal, query),
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ signal, pageParam }) =>
+      client.listReactions(
+        { ...query, ...(pageParam === undefined ? {} : { cursor: pageParam }) },
+        { signal },
+      ),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    meta: { realtimeResources: ['review-reactions'] },
   })
 }
 

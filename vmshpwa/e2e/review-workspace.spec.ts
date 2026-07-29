@@ -130,15 +130,31 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   await expect(page).toHaveURL(/\/staff\/review\/?$/)
   await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(0)
   await expect(adminRow).toHaveCount(0)
+  const teacherReactionInboxStatus = await page.evaluate(async () => {
+    const response = await fetch('/staff/api/v1/review/reactions')
+    return response.status
+  })
+  expect(teacherReactionInboxStatus).toBe(403)
+  await adminPage.goto('/staff/reactions')
+  await expect(adminPage.getByRole('heading', { name: 'Реакции и разногласия' })).toBeVisible()
+  const teacherReactionItem = adminPage
+    .getByRole('article')
+    .filter({ hasText: title })
+    .filter({ hasText: '🔥 Суперское решение.' })
+  await expect(teacherReactionItem).toContainText(title)
+  await expect(teacherReactionItem).toContainText('🔥 Суперское решение.')
   await expect
     .poll(() =>
-      familyPage.evaluate(() => {
+      familyPage.evaluate((expectedResource) => {
         const state = globalThis as typeof globalThis & {
           __reviewRealtimeEvents?: Array<Record<string, unknown>>
         }
         const event = state.__reviewRealtimeEvents?.find(
           (candidate) =>
-            candidate.type === 'invalidate' && candidate.reason === 'written-review-completed',
+            candidate.type === 'invalidate' &&
+            candidate.reason === 'written-review-completed' &&
+            Array.isArray(candidate.resources) &&
+            candidate.resources.includes(expectedResource),
         )
         if (!event) return null
         return {
@@ -146,7 +162,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
           resources: event.resources,
           accountId: event.accountId ?? null,
         }
-      }),
+      }, `problems/e2e-review-problem-${project}/thread`),
     )
     .toEqual({
       audience: 'family',
@@ -209,18 +225,20 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   ).toEqual(expect.objectContaining({ reactionId: 2, version: 1, deleted: false }))
   await expect
     .poll(() =>
-      familyPage.evaluate(() => {
+      familyPage.evaluate((expectedResource) => {
         const state = globalThis as typeof globalThis & {
           __reviewRealtimeEvents?: Array<Record<string, unknown>>
         }
         const event = state.__reviewRealtimeEvents?.find(
           (candidate) =>
             candidate.type === 'invalidate' &&
-            candidate.reason === 'written-review-student-reaction-changed',
+            candidate.reason === 'written-review-student-reaction-changed' &&
+            Array.isArray(candidate.resources) &&
+            candidate.resources.includes(expectedResource),
         )
         if (!event) return null
         return { audience: event.audience, resources: event.resources }
-      }),
+      }, `problems/e2e-review-problem-${project}/thread`),
     )
     .toEqual({
       audience: 'family',
@@ -300,6 +318,16 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     bodySize: expect.any(Number),
   })
   expect(familyMedia.bodySize).toBeGreaterThan(0)
+
+  const studentReactionItem = adminPage
+    .getByRole('article')
+    .filter({ hasText: title })
+    .filter({ hasText: '🙋 Не могу согласиться с проверкой!' })
+  await expect(studentReactionItem).toContainText(title)
+  await expect(studentReactionItem).toContainText('🙋 Не могу согласиться с проверкой!')
+  await expect(teacherReactionItem).toContainText(title)
+  await expect(teacherReactionItem).toContainText('🔥 Суперское решение.')
+
   await familyPage.evaluate(() => {
     const state = globalThis as typeof globalThis & { __reviewRealtimeSocket?: WebSocket }
     state.__reviewRealtimeSocket?.close()

@@ -38,6 +38,7 @@ from db_methods.pwa.reviews import (
     ReviewQueueCase,
     ReviewQueueForbidden,
     ReviewQueueNotFound,
+    ReviewReactionInboxItem,
     ReviewStaffScope,
     ReviewStudentReactionConflict,
     ReviewStudentReactionInvalid,
@@ -75,6 +76,7 @@ _COMPLETE_FIELDS = frozenset(
 _REACTION_SET_FIELDS = frozenset({"schemaVersion", "reactionId", "expectedVersion"})
 _REACTION_DELETE_FIELDS = frozenset({"schemaVersion", "expectedVersion"})
 _LIST_QUERY_FIELDS = frozenset({"problemGroup", "sort", "cursor"})
+_REACTION_INBOX_QUERY_FIELDS = frozenset({"kind", "reactionId", "cursor"})
 
 PWA_REVIEW_QUEUE_REPOSITORY = web.AppKey(
     "pwa_review_queue_repository", PwaWrittenReviewQueueRepository
@@ -101,6 +103,10 @@ ReviewStudentReactionInvalidator = Callable[
 ]
 PWA_REVIEW_STUDENT_REACTION_INVALIDATOR = web.AppKey(
     "pwa_review_student_reaction_invalidator", ReviewStudentReactionInvalidator
+)
+ReviewReactionInboxInvalidator = Callable[[tuple[str, ...], str], Awaitable[None]]
+PWA_REVIEW_REACTION_INBOX_INVALIDATOR = web.AppKey(
+    "pwa_review_reaction_inbox_invalidator", ReviewReactionInboxInvalidator
 )
 review_routes = web.RouteTableDef()
 logger = logging.getLogger(__name__)
@@ -175,6 +181,20 @@ def _require_review_write(request: web.Request) -> tuple[int, ReviewStaffScope]:
     return teacher_user_id, scope
 
 
+def _require_reaction_admin(request: web.Request) -> None:
+    principal = authenticated_session(request).principal
+    if (
+        principal.audience is not AuthAudience.STAFF
+        or not principal.is_global_admin
+        or not principal.has_capability(Capability.AUDIT_READ)
+    ):
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Реакции учеников и преподавателей доступны только администратору",
+        )
+
+
 def _student_user_id(request: web.Request) -> int:
     principal = authenticated_session(request).principal
     if (
@@ -222,6 +242,19 @@ def _optional_public_id(value: str | None, *, field: str) -> str | None:
             details={"field": field},
         )
     return value
+
+
+def _optional_reaction_id(value: str | None) -> int | None:
+    if value is None:
+        return None
+    if re.fullmatch(r"\d{1,3}", value) is None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте фильтр реакции",
+            details={"field": "reactionId"},
+        )
+    return int(value)
 
 
 async def _json_object(
@@ -332,6 +365,41 @@ def _case_payload(case: ReviewQueueCase, *, teacher_user_id: int) -> dict[str, o
                 "isOwnedByCurrentStaff": lock.teacher_user_id == teacher_user_id,
             }
         ),
+    }
+
+
+def _reaction_inbox_payload(item: ReviewReactionInboxItem) -> dict[str, object]:
+    return {
+        "itemId": item.item_public_id,
+        "reviewId": item.review_public_id,
+        "kind": item.kind,
+        "reactionId": item.reaction_id,
+        "reactionLabel": item.reaction_label,
+        "reactionVersion": item.reaction_version,
+        "updatedAt": _timestamp(item.updated_at),
+        "editableUntil": _timestamp(item.editable_until),
+        "student": {
+            "studentId": item.student_public_id,
+            "displayName": item.student_name,
+        },
+        "reviewer": {
+            "staffId": item.reviewer_public_id,
+            "displayName": item.reviewer_name,
+        },
+        "problem": {
+            "problemId": item.target_problem_public_id,
+            "problemNumber": item.problem_number,
+            "problemTitle": item.problem_title,
+            "courseId": item.course_public_id,
+            "courseName": item.course_name,
+            "groupId": item.group_public_id,
+            "groupName": item.group_name,
+            "groupShortCode": item.group_short_code,
+            "groupColorKey": item.group_color_key,
+        },
+        "verdict": item.verdict,
+        "comment": item.comment,
+        "completedAt": _timestamp(item.completed_at),
     }
 
 
@@ -467,6 +535,29 @@ async def _invalidate_student_reaction(
         logger.warning(
             "Student reaction invalidation failed after commit: review=%s",
             receipt.state.review_public_id,
+            exc_info=True,
+        )
+
+
+async def _invalidate_reaction_inbox(
+    request: web.Request,
+    *,
+    reason: str,
+) -> None:
+    """Best-effort refresh for global admins after hidden reaction changes."""
+
+    invalidator = request.app.get(PWA_REVIEW_REACTION_INBOX_INVALIDATOR)
+    if invalidator is None:
+        return
+    try:
+        account_public_ids = await _repository(
+            request
+        ).active_admin_account_public_ids()
+        await invalidator(account_public_ids, reason)
+    except Exception:
+        logger.warning(
+            "Review reaction inbox invalidation failed after commit: reason=%s",
+            reason,
             exc_info=True,
         )
 
@@ -762,6 +853,53 @@ def _translate_queue_error(error: Exception) -> PwaApiError:
     raise error
 
 
+@review_routes.get("/staff/api/v1/review/reactions")
+async def list_review_reactions(request: web.Request) -> web.Response:
+    _require_reaction_admin(request)
+    if set(request.query) - _REACTION_INBOX_QUERY_FIELDS:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры списка реакций",
+        )
+    kind = request.query.get("kind", "all")
+    if kind not in {"all", "student", "teacher"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Неизвестный тип реакции",
+            details={"field": "kind"},
+        )
+    try:
+        page = await _repository(request).list_reaction_inbox(
+            kind=kind,
+            reaction_id=_optional_reaction_id(request.query.get("reactionId")),
+            cursor=_optional_public_id(request.query.get("cursor"), field="cursor"),
+            page_size=REVIEW_PAGE_SIZE,
+        )
+    except ReviewQueueNotFound as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Курсор списка реакций устарел",
+            details={"field": "cursor"},
+        ) from error
+    except ValueError as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте фильтры списка реакций",
+        ) from error
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "items": [_reaction_inbox_payload(item) for item in page.items],
+            "nextCursor": page.next_cursor,
+            "requestId": request["request_id"],
+        }
+    )
+
+
 @review_routes.get("/staff/api/v1/review/items")
 async def list_review_items(request: web.Request) -> web.Response:
     teacher_user_id, scope = _staff_context(request)
@@ -969,6 +1107,11 @@ async def complete_review_item(request: web.Request) -> web.Response:
                 receipt.review_public_id,
                 exc_info=True,
             )
+    if receipt.internal_reaction is not None and not receipt.replayed:
+        await _invalidate_reaction_inbox(
+            request,
+            reason="written-review-internal-reaction-created",
+        )
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -1023,6 +1166,10 @@ async def set_review_internal_reaction(request: web.Request) -> web.Response:
         ReviewQueueForbidden,
     ) as error:
         raise _translate_queue_error(error) from error
+    await _invalidate_reaction_inbox(
+        request,
+        reason="written-review-internal-reaction-changed",
+    )
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -1052,6 +1199,10 @@ async def delete_review_internal_reaction(request: web.Request) -> web.Response:
         ReviewQueueForbidden,
     ) as error:
         raise _translate_queue_error(error) from error
+    await _invalidate_reaction_inbox(
+        request,
+        reason="written-review-internal-reaction-deleted",
+    )
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -1125,6 +1276,7 @@ __all__ = [
     "PWA_REVIEW_COMPLETION_INVALIDATOR",
     "PWA_REVIEW_QUEUE_INVALIDATOR",
     "PWA_REVIEW_QUEUE_REPOSITORY",
+    "PWA_REVIEW_REACTION_INBOX_INVALIDATOR",
     "PWA_REVIEW_STUDENT_REACTION_INVALIDATOR",
     "review_routes",
 ]

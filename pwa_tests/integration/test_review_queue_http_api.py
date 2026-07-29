@@ -907,9 +907,11 @@ async def test_student_reaction_http_updates_owner_and_family_projection(
         headers=_headers(unsafe=True),
     )
     lease = (await claim.json())["lease"]
+    complete_payload = _complete_payload(lease)
+    complete_payload["internalReactionId"] = 103
     completed = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/complete",
-        json=_complete_payload(lease),
+        json=complete_payload,
         cookies=_cookie(fixture, "full"),
         headers=_headers(unsafe=True),
     )
@@ -982,6 +984,67 @@ async def test_student_reaction_http_updates_owner_and_family_projection(
     family_review = (await family_thread.json())["thread"]["reviews"][0]
     assert family_review["studentReaction"] == selected_payload["studentReaction"]
     assert "internalReaction" not in family_review
+
+    teacher_inbox = await fixture.client.get(
+        "/staff/api/v1/review/reactions",
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(),
+    )
+    assert teacher_inbox.status == 403
+
+    admin_inbox = await fixture.client.get(
+        "/staff/api/v1/review/reactions",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert admin_inbox.status == 200, await admin_inbox.text()
+    inbox_payload = await admin_inbox.json()
+    assert inbox_payload["schemaVersion"] == 1
+    assert inbox_payload["nextCursor"] is None
+    assert len(inbox_payload["items"]) == 2
+    inbox_by_kind = {item["kind"]: item for item in inbox_payload["items"]}
+    assert set(inbox_by_kind) == {"student", "teacher"}
+    assert inbox_by_kind["student"]["reactionId"] == 0
+    assert inbox_by_kind["student"]["student"] == {
+        "studentId": "review-http-student",
+        "displayName": "Белова Анна",
+    }
+    assert inbox_by_kind["teacher"]["reactionId"] == 103
+    assert inbox_by_kind["teacher"]["reviewer"] == {
+        "staffId": "review-http-teacher-full",
+        "displayName": "Полная Мария",
+    }
+    assert inbox_by_kind["teacher"]["comment"] == "Проверено через Staff PWA."
+
+    inbox_repository = PwaWrittenReviewQueueRepository(
+        fixture.factory,
+        clock=lambda: NOW,
+    )
+    first_page = await inbox_repository.list_reaction_inbox(page_size=1)
+    assert len(first_page.items) == 1
+    assert first_page.next_cursor == first_page.items[0].item_public_id
+    second_page = await inbox_repository.list_reaction_inbox(
+        cursor=first_page.next_cursor,
+        page_size=1,
+    )
+    assert len(second_page.items) == 1
+    assert second_page.items[0].item_public_id != first_page.items[0].item_public_id
+    assert second_page.next_cursor is None
+
+    disagreement_filter = await fixture.client.get(
+        "/staff/api/v1/review/reactions?kind=student&reactionId=2",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert disagreement_filter.status == 200
+    assert (await disagreement_filter.json())["items"] == []
+
+    cross_kind_filter = await fixture.client.get(
+        "/staff/api/v1/review/reactions?kind=student&reactionId=103",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert cross_kind_filter.status == 422
 
     deleted = await fixture.client.delete(
         f"/student/api/v1/reviews/{review_id}/reaction",

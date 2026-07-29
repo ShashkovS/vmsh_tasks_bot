@@ -1562,7 +1562,9 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
         **cursors_before_review_complete,
         "student": cursors_before_review_complete["student"] + 1,
         "family": cursors_before_review_complete["family"] + 1,
-        "staff": cursors_before_review_complete["staff"] + 1,
+        # The queue update is Staff-wide; the hidden-reaction inbox update is
+        # separately account-scoped to admins. Both advance the audience cursor.
+        "staff": cursors_before_review_complete["staff"] + 2,
     }
 
     reviewed_response = await fixture.client.get(

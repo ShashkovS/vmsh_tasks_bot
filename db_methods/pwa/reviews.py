@@ -23,6 +23,8 @@ REVIEW_INTERNAL_REACTION_EDIT_WINDOW = timedelta(hours=1)
 REVIEW_STUDENT_REACTION_EDIT_WINDOW = timedelta(hours=1)
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _WRITTEN_REVIEW_VERDICTS = frozenset(range(11, 18))
+_WRITTEN_STUDENT_REACTION_IDS = frozenset({0, 1, 2})
+_WRITTEN_TEACHER_REACTION_IDS = frozenset({100, 101, 102, 103})
 _ANNOTATION_KINDS = frozenset(
     {"pencil", "eraser", "text", "arrow", "rectangle", "highlight"}
 )
@@ -644,6 +646,40 @@ class ReviewQueuePage:
     next_cursor: str | None
 
 
+@dataclass(frozen=True, slots=True)
+class ReviewReactionInboxItem:
+    item_public_id: str
+    review_public_id: str
+    kind: str
+    reaction_id: int
+    reaction_label: str
+    reaction_version: int
+    updated_at: datetime
+    editable_until: datetime
+    student_public_id: str | None
+    student_name: str
+    reviewer_public_id: str | None
+    reviewer_name: str
+    target_problem_public_id: str
+    problem_number: str
+    problem_title: str
+    group_public_id: str | None
+    group_name: str
+    group_short_code: str
+    group_color_key: str | None
+    course_public_id: str | None
+    course_name: str | None
+    verdict: int
+    comment: str | None
+    completed_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewReactionInboxPage:
+    items: tuple[ReviewReactionInboxItem, ...]
+    next_cursor: str | None
+
+
 def _utc_now() -> datetime:
     return datetime.now(tz=UTC)
 
@@ -699,6 +735,11 @@ def _review_admin_account_public_ids(
         (int(USER_TYPE.ADMIN),),
     ).fetchall()
     return tuple(str(account["public_id"]) for account in accounts)
+
+
+def _review_reaction_item_public_id(*, review_public_id: str, kind: str) -> str:
+    digest = hashlib.sha256(f"{review_public_id}:{kind}".encode()).hexdigest()[:32]
+    return f"review-reaction-{digest}"
 
 
 def _canonical_json(value: object) -> str:
@@ -1399,6 +1440,171 @@ class PwaWrittenReviewQueueRepository:
             )
 
         return await self._factory.run_read_async(operation)
+
+    async def list_reaction_inbox(
+        self,
+        *,
+        kind: str = "all",
+        reaction_id: int | None = None,
+        cursor: str | None = None,
+        page_size: int = 50,
+    ) -> ReviewReactionInboxPage:
+        """Return current written-review reactions for the global-admin inbox."""
+
+        if kind not in {"all", "student", "teacher"}:
+            raise ValueError("reaction inbox kind is invalid")
+        if reaction_id is not None:
+            if type(reaction_id) is not int:
+                raise ValueError("reaction inbox reaction ID must be an integer")
+            allowed_ids = (
+                _WRITTEN_STUDENT_REACTION_IDS
+                if kind == "student"
+                else _WRITTEN_TEACHER_REACTION_IDS
+                if kind == "teacher"
+                else _WRITTEN_STUDENT_REACTION_IDS | _WRITTEN_TEACHER_REACTION_IDS
+            )
+            if reaction_id not in allowed_ids:
+                raise ValueError(
+                    "reaction inbox reaction ID is outside the selected kind"
+                )
+        if cursor is not None and not _PUBLIC_ID.fullmatch(cursor):
+            raise ValueError("reaction inbox cursor is invalid")
+        if not 1 <= page_size <= 100:
+            raise ValueError("page_size must be between 1 and 100")
+
+        def operation(connection: sqlite3.Connection) -> ReviewReactionInboxPage:
+            rows = connection.execute(
+                "SELECT state.kind, state.reaction_id, state.version, "
+                "state.updated_at, state.editable_until, reaction.reaction AS reaction_label, "
+                "review.public_id AS review_public_id, review.verdict, review.created_at, "
+                "student.public_id AS student_public_id, student.name, student.surname, "
+                "reviewer.public_id AS teacher_public_id, "
+                "reviewer.name AS teacher_name, reviewer.surname AS teacher_surname, "
+                "problem.public_id AS problem_public_id, problem.title AS problem_title, "
+                "problem.lesson, problem.prob, problem.item, problem.group_id, "
+                "groups.public_id AS group_public_id, groups.public_name AS group_name, "
+                "groups.short_code AS group_short_code, groups.color_key AS group_color_key, "
+                "course.public_id AS course_public_id, course.name AS course_name, "
+                "comment.text AS comment "
+                "FROM ("
+                "SELECT review_id, 'student' AS kind, reaction_id, version, "
+                "updated_at, editable_until FROM submission_review_student_reactions "
+                "WHERE reaction_id IS NOT NULL "
+                "UNION ALL "
+                "SELECT review_id, 'teacher' AS kind, reaction_id, version, "
+                "updated_at, editable_until FROM submission_review_internal_reactions "
+                "WHERE reaction_id IS NOT NULL"
+                ") AS state "
+                "JOIN submission_reviews AS review ON review.id = state.review_id "
+                "JOIN submission_threads AS thread ON thread.id = review.thread_id "
+                "JOIN users AS student ON student.id = thread.student_user_id "
+                "JOIN users AS reviewer ON reviewer.id = review.reviewer_user_id "
+                "JOIN problems AS problem ON problem.id = thread.problem_id "
+                "JOIN reaction_enum AS reaction ON reaction.reaction_id = state.reaction_id "
+                "LEFT JOIN groups ON groups.group_id = problem.group_id "
+                "LEFT JOIN courses AS course ON course.id = groups.course_id "
+                "LEFT JOIN submission_entries AS comment ON comment.id = review.comment_entry_id"
+            ).fetchall()
+            items: list[ReviewReactionInboxItem] = []
+            for row in rows:
+                row_kind = str(row["kind"])
+                row_reaction_id = int(row["reaction_id"])
+                if kind != "all" and row_kind != kind:
+                    continue
+                if reaction_id is not None and row_reaction_id != reaction_id:
+                    continue
+                review_public_id = str(row["review_public_id"])
+                items.append(
+                    ReviewReactionInboxItem(
+                        item_public_id=_review_reaction_item_public_id(
+                            review_public_id=review_public_id,
+                            kind=row_kind,
+                        ),
+                        review_public_id=review_public_id,
+                        kind=row_kind,
+                        reaction_id=row_reaction_id,
+                        reaction_label=str(row["reaction_label"]),
+                        reaction_version=int(row["version"]),
+                        updated_at=_parse_timestamp(
+                            row["updated_at"], label="reaction update time"
+                        ),
+                        editable_until=_parse_timestamp(
+                            row["editable_until"], label="reaction edit window"
+                        ),
+                        student_public_id=(
+                            None
+                            if row["student_public_id"] is None
+                            else str(row["student_public_id"])
+                        ),
+                        student_name=_display_name(row),
+                        reviewer_public_id=(
+                            None
+                            if row["teacher_public_id"] is None
+                            else str(row["teacher_public_id"])
+                        ),
+                        reviewer_name=_teacher_display_name(row),
+                        target_problem_public_id=str(row["problem_public_id"]),
+                        problem_number=_problem_number(row),
+                        problem_title=str(row["problem_title"]),
+                        group_public_id=(
+                            None
+                            if row["group_public_id"] is None
+                            else str(row["group_public_id"])
+                        ),
+                        group_name=str(row["group_name"] or row["group_id"]),
+                        group_short_code=str(
+                            row["group_short_code"] or row["group_id"]
+                        ),
+                        group_color_key=(
+                            None
+                            if row["group_color_key"] is None
+                            else str(row["group_color_key"])
+                        ),
+                        course_public_id=(
+                            None
+                            if row["course_public_id"] is None
+                            else str(row["course_public_id"])
+                        ),
+                        course_name=(
+                            None
+                            if row["course_name"] is None
+                            else str(row["course_name"])
+                        ),
+                        verdict=int(row["verdict"]),
+                        comment=(
+                            None if row["comment"] is None else str(row["comment"])
+                        ),
+                        completed_at=_parse_timestamp(
+                            row["created_at"], label="review completion time"
+                        ),
+                    )
+                )
+            items.sort(
+                key=lambda item: (item.updated_at, item.item_public_id), reverse=True
+            )
+            if cursor is not None:
+                for index, item in enumerate(items):
+                    if item.item_public_id == cursor:
+                        items = items[index + 1 :]
+                        break
+                else:
+                    raise ReviewQueueNotFound("reaction inbox cursor was not found")
+            page = items[: page_size + 1]
+            return ReviewReactionInboxPage(
+                items=tuple(page[:page_size]),
+                next_cursor=(
+                    page[page_size - 1].item_public_id
+                    if len(page) > page_size
+                    else None
+                ),
+            )
+
+        return await self._factory.run_read_async(operation)
+
+    async def active_admin_account_public_ids(self) -> tuple[str, ...]:
+        """Resolve the current admin recipients of hidden review oversight."""
+
+        return await self._factory.run_read_async(_review_admin_account_public_ids)
 
     async def heartbeat(
         self,
@@ -2627,6 +2833,8 @@ __all__ = [
     "ReviewQueueLock",
     "ReviewQueueNotFound",
     "ReviewQueuePage",
+    "ReviewReactionInboxItem",
+    "ReviewReactionInboxPage",
     "ReviewStaffScope",
     "ReviewThreadChanged",
 ]

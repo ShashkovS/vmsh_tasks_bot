@@ -685,7 +685,7 @@ async def test_student_reaction_invalidation_is_owner_and_admin_scoped():
         (
             "pwa_invalidate",
             {
-                "resources": ["review-student-reactions"],
+                "resources": ["review-reactions"],
                 "reason": "written-review-student-reaction-changed",
                 "audience": "staff",
                 "accountId": "account-admin-a",
@@ -694,12 +694,44 @@ async def test_student_reaction_invalidation_is_owner_and_admin_scoped():
         (
             "pwa_invalidate",
             {
-                "resources": ["review-student-reactions"],
+                "resources": ["review-reactions"],
                 "reason": "written-review-student-reaction-changed",
                 "audience": "staff",
                 "accountId": "account-admin-b",
             },
         ),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_review_reaction_inbox_invalidation_is_admin_account_scoped():
+    class RecordingBroker:
+        def __init__(self):
+            self.messages = []
+
+        async def publish(self, topic, payload):
+            self.messages.append((topic, payload))
+
+    app = web.Application()
+    broker = RecordingBroker()
+    app[pwa_app.PWA_BROKER] = broker
+
+    await pwa_app.publish_review_reaction_inbox_invalidation(
+        app,
+        account_public_ids=("account-admin-review",),
+        reason="written-review-internal-reaction-changed",
+    )
+
+    assert broker.messages == [
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["review-reactions"],
+                "reason": "written-review-internal-reaction-changed",
+                "audience": "staff",
+                "accountId": "account-admin-review",
+            },
+        )
     ]
 
 

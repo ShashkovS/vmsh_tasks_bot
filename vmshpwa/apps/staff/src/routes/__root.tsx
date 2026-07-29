@@ -9,6 +9,7 @@ import {
   House,
   Mail,
   MessageCircleQuestion,
+  MessageSquareWarning,
   Mic2,
   Newspaper,
   ScrollText,
@@ -40,6 +41,12 @@ const navigation: StaffNavigationItem[] = [
     to: '/review',
     icon: <ClipboardCheck className="size-4" aria-hidden="true" />,
     capability: 'review.write',
+  },
+  {
+    label: 'Реакции',
+    to: '/reactions',
+    icon: <MessageSquareWarning className="size-4" aria-hidden="true" />,
+    capability: 'audit.read',
   },
   {
     label: 'Вопросы',

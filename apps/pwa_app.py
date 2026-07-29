@@ -37,6 +37,7 @@ from apps.pwa_api.review_routes import (
     PWA_REVIEW_COMPLETION_INVALIDATOR,
     PWA_REVIEW_QUEUE_INVALIDATOR,
     PWA_REVIEW_QUEUE_REPOSITORY,
+    PWA_REVIEW_REACTION_INBOX_INVALIDATOR,
     PWA_REVIEW_STUDENT_REACTION_INVALIDATOR,
     review_routes,
 )
@@ -898,11 +899,26 @@ async def publish_review_student_reaction_invalidation(
         problem_public_ids=problem_public_ids,
         reason=reason,
     )
-    for account_public_id in admin_account_public_ids:
+    await publish_review_reaction_inbox_invalidation(
+        app,
+        account_public_ids=admin_account_public_ids,
+        reason=reason,
+    )
+
+
+async def publish_review_reaction_inbox_invalidation(
+    app: web.Application,
+    *,
+    account_public_ids: tuple[str, ...],
+    reason: str,
+) -> None:
+    """Refresh the hidden-reaction inbox only for explicit admin accounts."""
+
+    for account_public_id in account_public_ids:
         await app[PWA_BROKER].publish(
             NATS_PWA_INVALIDATE,
             {
-                "resources": ["review-student-reactions"],
+                "resources": ["review-reactions"],
                 "reason": reason,
                 "audience": AuthAudience.STAFF.value,
                 "accountId": account_public_id,
@@ -1193,6 +1209,20 @@ def configure(
 
             app[PWA_REVIEW_STUDENT_REACTION_INVALIDATOR] = (
                 invalidate_review_student_reaction
+            )
+
+            async def invalidate_review_reaction_inbox(
+                account_public_ids: tuple[str, ...],
+                reason: str,
+            ) -> None:
+                await publish_review_reaction_inbox_invalidation(
+                    app,
+                    account_public_ids=account_public_ids,
+                    reason=reason,
+                )
+
+            app[PWA_REVIEW_REACTION_INBOX_INVALIDATOR] = (
+                invalidate_review_reaction_inbox
             )
             app.add_routes(review_routes)
             app.on_startup.append(on_review_queue_startup)
