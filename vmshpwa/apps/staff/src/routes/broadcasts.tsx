@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { BroadcastComposerPage } from '../pages'
+import { StaffGroupBannersPage } from '../staff-group-banners-page'
 
-export const Route = createFileRoute('/broadcasts')({ component: BroadcastComposerPage })
+export const Route = createFileRoute('/broadcasts')({ component: StaffGroupBannersPage })

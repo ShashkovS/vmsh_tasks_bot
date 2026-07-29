@@ -5,12 +5,16 @@ import {
   PageSection,
   PageStatePanel,
   PublishedClassroomNetworkError,
+  bannerDismissalId,
+  createGroupBannerClient,
   createFamilyClassroomAssignmentClient,
+  useActiveGroupBannersQuery,
   useAuthenticatedPrincipal,
   useAuthentication,
+  useBannerDismissals,
   usePublishedClassroomAssignmentsQuery,
 } from '@vmsh/app-shell'
-import { ClassroomAssignmentStatus } from '@vmsh/product'
+import { ClassroomAssignmentStatus, GroupBanner } from '@vmsh/product'
 
 function formatMoment(value: string | null): string | undefined {
   if (value === null) return undefined
@@ -62,6 +66,23 @@ export function FamilyHomePage() {
     selectedChildId || undefined,
     selectedChildId.length > 0,
   )
+  const principalScope = { audience: 'family' as const, accountId: principal.accountId }
+  const bannerClient = useMemo(
+    () =>
+      createGroupBannerClient(authentication.client.runtime, 'family', {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const bannerQuery = useActiveGroupBannersQuery(bannerClient, principalScope)
+  const bannerDismissals = useBannerDismissals(principalScope)
 
   return (
     <PageLayout
@@ -87,6 +108,19 @@ export function FamilyHomePage() {
       eyebrow={selectedChild?.displayName ?? 'Семейный кабинет'}
       title="Текущие занятия"
     >
+      {bannerQuery.data ? (
+        <div className="space-y-2" aria-label="Объявления">
+          {bannerQuery.data.items
+            .filter((banner) => !bannerDismissals.dismissed.has(bannerDismissalId(banner)))
+            .map((banner) => (
+              <GroupBanner
+                banner={banner}
+                key={banner.bannerId}
+                onDismiss={() => bannerDismissals.dismiss(banner)}
+              />
+            ))}
+        </div>
+      ) : null}
       <PageSection
         description="Черновики распределения и данные других школьников здесь не показываются."
         title="Очные занятия"

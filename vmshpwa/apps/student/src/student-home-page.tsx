@@ -8,16 +8,20 @@ import {
   PageLayout,
   PageSection,
   PageStatePanel,
+  bannerDismissalId,
+  createGroupBannerClient,
   createStudentCourseClient,
   createStudentClassroomAssignmentClient,
   useAuthenticatedPrincipal,
   useAuthentication,
+  useActiveGroupBannersQuery,
+  useBannerDismissals,
   useStudentHomeQuery,
   usePublishedClassroomAssignmentsQuery,
 } from '@vmsh/app-shell'
 import { ApiResponseError, type StudentHomeCourse } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
-import { ClassroomAssignmentStatus, CourseCard, LevelChip } from '@vmsh/product'
+import { ClassroomAssignmentStatus, CourseCard, GroupBanner, LevelChip } from '@vmsh/product'
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
 import {
@@ -96,6 +100,23 @@ export function StudentHomePage() {
     audience: 'student',
     accountId: principal.accountId,
   })
+  const principalScope = { audience: 'student' as const, accountId: principal.accountId }
+  const bannerClient = useMemo(
+    () =>
+      createGroupBannerClient(authentication.client.runtime, 'student', {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const bannerQuery = useActiveGroupBannersQuery(bannerClient, principalScope)
+  const bannerDismissals = useBannerDismissals(principalScope)
   const classroomClient = useMemo(
     () =>
       createStudentClassroomAssignmentClient(authentication.client.runtime, {
@@ -148,6 +169,19 @@ export function StudentHomePage() {
       eyebrow="Ваши курсы"
       title="Сейчас"
     >
+      {bannerQuery.data ? (
+        <div className="space-y-2" aria-label="Объявления">
+          {bannerQuery.data.items
+            .filter((banner) => !bannerDismissals.dismissed.has(bannerDismissalId(banner)))
+            .map((banner) => (
+              <GroupBanner
+                banner={banner}
+                key={banner.bannerId}
+                onDismiss={() => bannerDismissals.dismiss(banner)}
+              />
+            ))}
+        </div>
+      ) : null}
       <PageSection
         description="Показываем последнее опубликованное занятие активной группы каждого курса."
         title="Сейчас по курсам"

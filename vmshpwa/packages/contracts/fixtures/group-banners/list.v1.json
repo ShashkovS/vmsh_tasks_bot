@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "bannerId": "banner.review",
+      "group": {
+        "groupId": "group-beginner",
+        "name": "Начинающие",
+        "courseId": "course-math",
+        "courseName": "Математика 5–7"
+      },
+      "audience": "both",
+      "html": "<b>Разбор сегодня в 17:00</b> · <a href=\"https://example.test\">Подключиться</a>",
+      "startsAt": "2026-10-05T09:00:00Z",
+      "endsAt": "2026-10-05T18:00:00Z",
+      "priority": 10,
+      "dismissible": true,
+      "status": "active",
+      "version": 1
+    },
+    {
+      "bannerId": "banner.reminder",
+      "group": {
+        "groupId": "group-continuing",
+        "name": "Продолжающие",
+        "courseId": "course-math",
+        "courseName": "Математика 5–7"
+      },
+      "audience": "student",
+      "html": "Проверьте режим участия до пятницы.",
+      "startsAt": "2026-10-05T09:00:00Z",
+      "endsAt": "2026-10-09T18:00:00Z",
+      "priority": 0,
+      "dismissible": false,
+      "status": "active",
+      "version": 2
+    }
+  ],
+  "requestId": "fixture.group-banners"
+}
