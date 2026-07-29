@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { FamilyNewsDetailPage } from '../pages'
+import { FamilyNewsPostPage } from '../family-news-page'
 
 export const Route = createFileRoute('/news/$postId')({
   component: FamilyNewsDetailRoute,
 })
 
 function FamilyNewsDetailRoute() {
-  return <FamilyNewsDetailPage postId={Route.useParams().postId} />
+  return <FamilyNewsPostPage postId={Route.useParams().postId} />
 }

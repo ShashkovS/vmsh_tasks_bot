@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { StudentNewsPage } from '../pages'
+import { StudentNewsFeedPage } from '../student-news-page'
 
-export const Route = createFileRoute('/news/')({ component: StudentNewsPage })
+export const Route = createFileRoute('/news/')({ component: StudentNewsFeedPage })

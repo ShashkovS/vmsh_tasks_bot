@@ -235,15 +235,130 @@ def list_media(
     return [dict(row) for row in rows]
 
 
+def list_visible_posts(
+    connection: sqlite3.Connection,
+    *,
+    course_ids: tuple[int, ...],
+    group_ids: tuple[str, ...],
+    cursor_public_id: str | None,
+    limit: int,
+) -> list[dict[str, object]]:
+    if not course_ids and not group_ids:
+        return []
+    scope_parts: list[str] = []
+    values: list[object] = []
+    if course_ids:
+        scope_parts.append(
+            f"post.owner_course_id IN ({','.join('?' for _ in course_ids)})"
+        )
+        values.extend(course_ids)
+    if group_ids:
+        scope_parts.append(
+            f"post.owner_group_id IN ({','.join('?' for _ in group_ids)})"
+        )
+        values.extend(group_ids)
+    cursor_clause = ""
+    if cursor_public_id is not None:
+        cursor_clause = (
+            "AND (post.published_at, post.id) < ("
+            "SELECT cursor.published_at, cursor.id FROM news_posts cursor "
+            "WHERE cursor.public_id = ?) "
+        )
+        values.append(cursor_public_id)
+    values.append(limit)
+    rows = connection.execute(
+        "SELECT post.id, post.public_id, post.source_type, post.source_chat_id, "
+        "post.source_message_id, post.published_at, post.last_source_edited_at, "
+        "revision.id AS revision_id, revision.revision_number, revision.text_plain, "
+        "revision.content_json, binding.title_cached AS channel_title "
+        "FROM news_posts post "
+        "JOIN news_visibility visibility ON visibility.post_id = post.id "
+        "LEFT JOIN telegram_bindings binding "
+        "ON binding.public_id = post.source_binding_public_id "
+        "JOIN news_revisions revision ON revision.id = ("
+        "SELECT latest.id FROM news_revisions latest WHERE latest.post_id = post.id "
+        "ORDER BY latest.revision_number DESC LIMIT 1) "
+        "WHERE visibility.state = 'visible' AND ("
+        + " OR ".join(scope_parts)
+        + ") "
+        + cursor_clause
+        + "AND NOT EXISTS (SELECT 1 FROM news_media media "
+        "WHERE media.revision_id = revision.id AND media.storage_status <> 'stored') "
+        "ORDER BY post.published_at DESC, post.id DESC LIMIT ?",
+        tuple(values),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_visible_post_by_public_id(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    course_ids: tuple[int, ...],
+    group_ids: tuple[str, ...],
+) -> dict[str, object] | None:
+    if not course_ids and not group_ids:
+        return None
+    scope_parts: list[str] = []
+    values: list[object] = [public_id]
+    if course_ids:
+        scope_parts.append(
+            f"post.owner_course_id IN ({','.join('?' for _ in course_ids)})"
+        )
+        values.extend(course_ids)
+    if group_ids:
+        scope_parts.append(
+            f"post.owner_group_id IN ({','.join('?' for _ in group_ids)})"
+        )
+        values.extend(group_ids)
+    row = connection.execute(
+        "SELECT post.id, post.public_id, post.source_type, post.source_chat_id, "
+        "post.source_message_id, post.published_at, post.last_source_edited_at, "
+        "revision.id AS revision_id, revision.revision_number, revision.text_plain, "
+        "revision.content_json, binding.title_cached AS channel_title "
+        "FROM news_posts post "
+        "JOIN news_visibility visibility ON visibility.post_id = post.id "
+        "LEFT JOIN telegram_bindings binding "
+        "ON binding.public_id = post.source_binding_public_id "
+        "JOIN news_revisions revision ON revision.id = ("
+        "SELECT latest.id FROM news_revisions latest WHERE latest.post_id = post.id "
+        "ORDER BY latest.revision_number DESC LIMIT 1) "
+        "WHERE post.public_id = ? AND visibility.state = 'visible' AND ("
+        + " OR ".join(scope_parts)
+        + ") AND NOT EXISTS (SELECT 1 FROM news_media media "
+        "WHERE media.revision_id = revision.id AND media.storage_status <> 'stored')",
+        tuple(values),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def list_media_for_revisions(
+    connection: sqlite3.Connection, revision_ids: tuple[int, ...]
+) -> list[dict[str, object]]:
+    if not revision_ids:
+        return []
+    rows = connection.execute(
+        "SELECT id, revision_id, ordinal, media_kind, public_url, mime_type, "
+        "width, height FROM news_media WHERE revision_id IN ("
+        + ",".join("?" for _ in revision_ids)
+        + ") AND storage_status = 'stored' ORDER BY revision_id, ordinal",
+        revision_ids,
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 __all__ = [
     "find_news_source_bindings",
     "find_telegram_post",
     "get_post",
+    "get_visible_post_by_public_id",
     "insert_diagnostic",
     "insert_media",
     "insert_revision",
     "insert_telegram_post",
     "list_media",
+    "list_media_for_revisions",
+    "list_visible_posts",
     "mark_source_deleted",
     "revision_exists",
     "touch_post",

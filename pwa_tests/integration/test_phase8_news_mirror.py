@@ -6,11 +6,16 @@ import json
 import sqlite3
 from pathlib import Path
 
+import pytest
+
 from db_methods.pwa.news import get_post, list_media
 from db_methods.pwa.telegram_bindings import set_binding_status
 from helpers.pwa.telegram_news import iter_export_updates
+from helpers.pwa.auth_config import COOKIE_POLICY
 from models.pwa.news import ingest_telegram_news
+from models.pwa.auth import AuthAudience
 from models.pwa.telegram_bindings import create_binding
+from pwa_tests.integration.test_classroom_catalog_http_api import _headers
 from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
     NOW,
     _insert_parents,
@@ -24,6 +29,7 @@ from pwa_tests.integration.test_phase8_notification_core import (
 
 MIGRATION_ID = "0067.pwa_news_mirror"
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
 
 def _objects(database_path: Path) -> set[str]:
@@ -216,3 +222,108 @@ def test_historical_export_is_fully_partitioned_without_copying_content():
         for update in updates
         for node in update["content"]
     )
+
+
+@pytest.mark.asyncio
+async def test_student_and_family_read_course_and_group_news(classroom_http):
+    def seed(connection):
+        for public_id, owner_type, owner_id, chat_id in (
+            ("feed-course", "course", "classroom-layout-course", -501),
+            ("feed-group", "group", "classroom-layout-group", -502),
+        ):
+            binding = create_binding(
+                connection,
+                public_id=public_id,
+                owner_type=owner_type,
+                owner_public_id=owner_id,
+                purpose="news_source",
+                chat_id=chat_id,
+                message_thread_id=None,
+                title_cached=public_id,
+                actor_user_id=958_001,
+                now=NOW,
+            )
+            set_binding_status(
+                connection,
+                public_id=str(binding["public_id"]),
+                expected_version=1,
+                status="verified",
+                verified_at=NOW,
+                title_cached=None,
+                actor_user_id=958_001,
+                now=NOW,
+            )
+
+        course_update = {
+            **_update(),
+            "chat_id": -501,
+            "message_id": 1,
+            "media_group_id": None,
+            "published_at": "2026-10-05T10:00:00Z",
+            "content": [
+                {"type": "plain", "text": "A😀"},
+                {"type": "bold", "text": "Б"},
+            ],
+            "media": [],
+        }
+        group_update = {
+            **_update(),
+            "chat_id": -502,
+            "message_id": 2,
+            "media_group_id": None,
+            "published_at": "2026-10-05T11:00:00Z",
+        }
+        return (
+            ingest_telegram_news(connection, update=course_update, now=NOW),
+            ingest_telegram_news(connection, update=group_update, now=NOW),
+        )
+
+    classroom_http.factory.run_write(seed)
+    student_cookies = {
+        COOKIE_POLICY[AuthAudience.STUDENT].access_name: classroom_http.student_cookie
+    }
+    first = await classroom_http.client.get(
+        "/student/api/v1/news?limit=1",
+        headers=_headers(),
+        cookies=student_cookies,
+    )
+    assert first.status == 200, await first.text()
+    first_payload = await first.json()
+    assert len(first_payload["items"]) == 1
+    assert first_payload["items"][0]["media"][0]["kind"] == "photo"
+    assert first_payload["items"][0]["attribution"] == {"channel": "feed-group"}
+    assert first_payload["nextCursor"] is not None
+
+    detail = await classroom_http.client.get(
+        f"/student/api/v1/news/{first_payload['items'][0]['postId']}",
+        headers=_headers(),
+        cookies=student_cookies,
+    )
+    assert detail.status == 200
+    assert (await detail.json())["item"] == first_payload["items"][0]
+
+    second = await classroom_http.client.get(
+        f"/student/api/v1/news?limit=1&cursor={first_payload['nextCursor']}",
+        headers=_headers(),
+        cookies=student_cookies,
+    )
+    assert second.status == 200
+    second_payload = await second.json()
+    assert second_payload["nextCursor"] is None
+    assert second_payload["items"][0]["blocks"] == [
+        {
+            "kind": "text",
+            "text": "A😀Б",
+            "entities": [{"type": "bold", "offset": 3, "length": 1}],
+        }
+    ]
+
+    family = await classroom_http.client.get(
+        "/family/api/v1/news",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.FAMILY].access_name: classroom_http.family_cookie
+        },
+    )
+    assert family.status == 200
+    assert len((await family.json())["items"]) == 2

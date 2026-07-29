@@ -98,6 +98,7 @@ export interface TelegramDocument {
   kind: 'document'
   name: string
   sizeLabel?: string
+  url?: string
 }
 
 export type TelegramMedia = TelegramPhoto | TelegramVideo | TelegramDocument

@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { StudentNewsDetailPage } from '../pages'
+import { StudentNewsPostPage } from '../student-news-page'
 
 export const Route = createFileRoute('/news/$postId')({
   component: StudentNewsDetailRoute,
 })
 
 function StudentNewsDetailRoute() {
-  return <StudentNewsDetailPage postId={Route.useParams().postId} />
+  return <StudentNewsPostPage postId={Route.useParams().postId} />
 }

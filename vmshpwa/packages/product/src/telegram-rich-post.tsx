@@ -192,8 +192,8 @@ function Block({
 
 function MediaTile({ media }: { media: TelegramMedia }) {
   if (media.kind === 'document') {
-    return (
-      <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
+    const content = (
+      <>
         <FileText aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate text-small text-foreground">{media.name}</span>
         {media.sizeLabel ? (
@@ -201,6 +201,20 @@ function MediaTile({ media }: { media: TelegramMedia }) {
             {media.sizeLabel}
           </span>
         ) : null}
+      </>
+    )
+    return media.url ? (
+      <a
+        className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 hover:bg-surface-subtle"
+        href={media.url}
+        rel="noreferrer noopener"
+        target="_blank"
+      >
+        {content}
+      </a>
+    ) : (
+      <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
+        {content}
       </div>
     )
   }

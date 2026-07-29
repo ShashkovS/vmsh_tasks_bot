@@ -19,6 +19,7 @@ from apps.pwa_api.classroom_delivery_routes import classroom_delivery_routes
 from apps.pwa_api.classroom_delivery_routes import PWA_CLASSROOM_TELEGRAM_SENDER
 from apps.pwa_api.classroom_delivery_transport import TelegramClassroomSender
 from apps.pwa_api.notification_routes import notification_routes
+from apps.pwa_api.news_routes import news_routes
 from apps.pwa_api.push_subscription_routes import push_subscription_routes
 from apps.pwa_api.classroom_routes import classroom_routes
 from apps.pwa_api.classroom_layout_routes import classroom_layout_routes
@@ -1353,6 +1354,7 @@ def configure(
         app.add_routes(classroom_assignment_routes)
         app.add_routes(classroom_delivery_routes)
         app.add_routes(notification_routes)
+        app.add_routes(news_routes)
         app.add_routes(push_subscription_routes)
         app.add_routes(telegram_binding_routes)
 
