@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import feedFixture from '../fixtures/news/feed.v1.json'
-import { newsFeedResponseSchema, newsQueryKeys } from './news'
+import moderationFixture from '../fixtures/news/moderation.v1.json'
+import {
+  changeNewsVisibilityRequestSchema,
+  newsFeedResponseSchema,
+  newsQueryKeys,
+  staffNewsListResponseSchema,
+} from './news'
 
 describe('news contracts', () => {
   it('validates a paginated rich-text feed', () => {
@@ -31,5 +37,21 @@ describe('news contracts', () => {
     expect(newsQueryKeys.feed({ audience: 'student', accountId: 'student.one' })).not.toEqual(
       newsQueryKeys.feed({ audience: 'student', accountId: 'student.two' }),
     )
+  })
+
+  it('validates Staff moderation rows and visibility commands', () => {
+    const list = staffNewsListResponseSchema.parse(moderationFixture)
+    expect(list.items.map((item) => item.visibility)).toEqual([
+      'visible',
+      'manual_hidden',
+      'source_deleted',
+    ])
+    expect(() =>
+      changeNewsVisibilityRequestSchema.parse({
+        schemaVersion: 1,
+        state: 'visible',
+        reason: 'old reason',
+      }),
+    ).toThrow()
   })
 })

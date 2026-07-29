@@ -1,0 +1,102 @@
+import { useQuery } from '@tanstack/react-query'
+
+import {
+  ApiResponseError,
+  apiErrorSchema,
+  changeNewsVisibilityRequestSchema,
+  newsQueryKeys,
+  parseRuntimeConfigForAudience,
+  publicIdSchema,
+  staffNewsItemResponseSchema,
+  staffNewsListResponseSchema,
+  staffNewsVisibilityFilterSchema,
+  type ChangeNewsVisibilityRequest,
+  type PrincipalQueryScope,
+  type RuntimeConfig,
+  type StaffNewsItemResponse,
+  type StaffNewsListResponse,
+  type StaffNewsVisibilityFilter,
+} from '@vmsh/contracts'
+
+export interface NewsModerationClient {
+  list(
+    state: StaffNewsVisibilityFilter,
+    options?: { signal?: AbortSignal },
+  ): Promise<StaffNewsListResponse>
+  changeVisibility(
+    postId: string,
+    version: number,
+    request: ChangeNewsVisibilityRequest,
+  ): Promise<StaffNewsItemResponse>
+}
+
+/** Admin-only transport for the narrow PWA news moderation workflow. */
+export function createNewsModerationClient(
+  runtime: RuntimeConfig,
+  options: {
+    fetchImplementation?: typeof globalThis.fetch
+    refreshSession?: () => Promise<unknown>
+  } = {},
+): NewsModerationClient {
+  const configured = parseRuntimeConfigForAudience('staff', runtime)
+  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+
+  async function request(path: string, init: RequestInit): Promise<unknown> {
+    const send = () =>
+      fetchImplementation(`${configured.apiBase}${path}`, {
+        cache: 'no-store',
+        credentials: 'include',
+        redirect: 'error',
+        ...init,
+        headers: {
+          Accept: 'application/json',
+          ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+          ...init.headers,
+        },
+      })
+    let response = await send()
+    if (response.status === 401 && options.refreshSession) {
+      await response.body?.cancel()
+      await options.refreshSession()
+      response = await send()
+    }
+    const payload: unknown = await response.json()
+    if (!response.ok) throw new ApiResponseError(response.status, apiErrorSchema.parse(payload))
+    return payload
+  }
+
+  return {
+    async list(rawState, { signal } = {}) {
+      const state = staffNewsVisibilityFilterSchema.parse(rawState)
+      return staffNewsListResponseSchema.parse(
+        await request(`/news?state=${state}&limit=100`, {
+          method: 'GET',
+          ...(signal === undefined ? {} : { signal }),
+        }),
+      )
+    },
+    async changeVisibility(rawPostId, version, input) {
+      const postId = publicIdSchema.parse(rawPostId)
+      const body = changeNewsVisibilityRequestSchema.parse(input)
+      return staffNewsItemResponseSchema.parse(
+        await request(`/news/${encodeURIComponent(postId)}/visibility`, {
+          method: 'PATCH',
+          headers: { 'If-Match': `"${postId}:v${version}"` },
+          body: JSON.stringify(body),
+        }),
+      )
+    },
+  }
+}
+
+export function useNewsModerationQuery(
+  client: NewsModerationClient,
+  principal: PrincipalQueryScope,
+  state: StaffNewsVisibilityFilter,
+) {
+  return useQuery({
+    queryKey: newsQueryKeys.moderation(principal, state),
+    queryFn: ({ signal }) => client.list(state, { signal }),
+    meta: { realtimeResources: ['news'] },
+  })
+}

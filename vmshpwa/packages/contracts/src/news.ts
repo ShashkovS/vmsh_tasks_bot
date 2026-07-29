@@ -101,4 +101,68 @@ export const newsQueryKeys = {
     ['news', ...principalQueryKey(principal), 'feed'] as const,
   post: (principal: PrincipalQueryScope, postId: string) =>
     ['news', ...principalQueryKey(principal), 'post', publicIdSchema.parse(postId)] as const,
+  moderation: (principal: PrincipalQueryScope, state: StaffNewsVisibilityFilter) =>
+    ['news', ...principalQueryKey(principal), 'moderation', state] as const,
 } as const
+
+export const staffNewsVisibilitySchema = z.enum(['visible', 'manual_hidden', 'source_deleted'])
+export type StaffNewsVisibility = z.infer<typeof staffNewsVisibilitySchema>
+export const staffNewsVisibilityFilterSchema = z.enum(['all', ...staffNewsVisibilitySchema.options])
+export type StaffNewsVisibilityFilter = z.infer<typeof staffNewsVisibilityFilterSchema>
+
+export const staffNewsItemSchema = z
+  .object({
+    postId: publicIdSchema,
+    source: z.enum(['telegram', 'local']),
+    channelTitle: z.string().trim().min(1).max(200).nullable(),
+    ownerType: z.enum(['course', 'group']),
+    ownerId: publicIdSchema,
+    ownerName: z.string().trim().min(1).max(200),
+    publishedAt: z.iso.datetime(),
+    editedAt: z.iso.datetime().nullable(),
+    revision: z.number().int().positive(),
+    textExcerpt: z.string().max(500),
+    mediaCount: z.number().int().nonnegative(),
+    visibility: staffNewsVisibilitySchema,
+    moderationReason: z.string().trim().min(1).max(500).nullable(),
+    visibilityUpdatedAt: z.iso.datetime(),
+    version: z.number().int().positive(),
+  })
+  .strict()
+export type StaffNewsItem = z.infer<typeof staffNewsItemSchema>
+
+export const staffNewsListResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    items: z.array(staffNewsItemSchema),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type StaffNewsListResponse = z.infer<typeof staffNewsListResponseSchema>
+
+export const changeNewsVisibilityRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    state: z.enum(['visible', 'manual_hidden']),
+    reason: z.string().trim().min(1).max(500).nullable(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.state === 'visible' && value.reason !== null) {
+      context.addIssue({
+        code: 'custom',
+        path: ['reason'],
+        message: 'A visible post cannot keep a moderation reason',
+      })
+    }
+  })
+export type ChangeNewsVisibilityRequest = z.infer<typeof changeNewsVisibilityRequestSchema>
+
+export const staffNewsItemResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    item: staffNewsItemSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type StaffNewsItemResponse = z.infer<typeof staffNewsItemResponseSchema>
