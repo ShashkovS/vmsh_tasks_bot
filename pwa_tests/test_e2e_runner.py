@@ -64,6 +64,10 @@ def test_diagnostic_modes_keep_the_same_exclusive_build_boundary():
         ("pnpm", "build"),
         ("pnpm", "exec", "playwright", "test", "e2e/support-dialogue.spec.ts"),
     )
+    assert commands_for_mode("classrooms") == (
+        ("pnpm", "build"),
+        ("pnpm", "exec", "playwright", "test", "e2e/classroom-catalog.spec.ts"),
+    )
     assert commands_for_mode("realtime") == (
         ("pnpm", "build"),
         (

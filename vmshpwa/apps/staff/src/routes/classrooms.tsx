@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
+import { StaffClassroomCatalog } from '../classroom-catalog-page'
 import { StaffClassroomsPage } from '../pages'
 
 const searchSchema = z.object({
@@ -21,6 +22,14 @@ function ClassroomsRoute() {
   const navigate = Route.useNavigate()
   return (
     <StaffClassroomsPage
+      catalog={
+        <StaffClassroomCatalog
+          onStatusFilterChange={(roomStatus) =>
+            void navigate({ search: (current) => ({ ...current, roomStatus }) })
+          }
+          statusFilter={search.roomStatus}
+        />
+      }
       onTabChange={(tab) => void navigate({ search: (current) => ({ ...current, tab }) })}
       tab={search.tab}
     />

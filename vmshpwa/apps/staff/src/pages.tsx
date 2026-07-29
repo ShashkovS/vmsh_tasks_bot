@@ -642,10 +642,12 @@ export function StaffClassroomsPage({
   state = 'ready',
   tab: controlledTab,
   onTabChange,
+  catalog,
 }: {
   state?: PageDisplayState
   tab?: ClassroomPageTab
   onTabChange?: (tab: ClassroomPageTab) => void
+  catalog?: ReactNode
 }) {
   const [localTab, setLocalTab] = useState<ClassroomPageTab>('catalog')
   const [eventGroupLessons, setEventGroupLessons] = useState(initialInPersonGroupLessons)
@@ -682,16 +684,18 @@ export function StaffClassroomsPage({
               <TabsTrigger value="students">Школьники</TabsTrigger>
             </TabsList>
             <TabsContent value="catalog">
-              <ClassroomCatalog
-                newRoomName=""
-                onCreate={() => undefined}
-                onNewRoomNameChange={() => undefined}
-                onQueryChange={() => undefined}
-                onStatusFilterChange={() => undefined}
-                query=""
-                rooms={catalogRooms}
-                statusFilter="active"
-              />
+              {catalog ?? (
+                <ClassroomCatalog
+                  newRoomName=""
+                  onCreate={() => undefined}
+                  onNewRoomNameChange={() => undefined}
+                  onQueryChange={() => undefined}
+                  onStatusFilterChange={() => undefined}
+                  query=""
+                  rooms={catalogRooms}
+                  statusFilter="active"
+                />
+              )}
             </TabsContent>
             <TabsContent value="groups">
               <ClassroomGroupLayout
