@@ -80,4 +80,46 @@ describe('notification client', () => {
     expect(refreshSession).toHaveBeenCalledOnce()
     expect(fetchImplementation).toHaveBeenCalledTimes(2)
   })
+
+  it('registers and removes the current browser push endpoint', async () => {
+    const p256dh = `B${'a'.repeat(86)}`
+    const auth = 'b'.repeat(22)
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          enabled: true,
+          applicationServerKey: p256dh,
+          requestId: 'request-config',
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          subscriptionId: 'push.device-one',
+          requestId: 'request-save',
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ schemaVersion: 1, deleted: true, requestId: 'request-delete' }),
+      )
+    const client = createNotificationClient(runtime, 'student', { fetchImplementation })
+    const endpoint = 'https://push.example.test/device-one'
+
+    expect((await client.pushConfig()).enabled).toBe(true)
+    await client.savePushSubscription({
+      schemaVersion: 1,
+      endpoint,
+      expirationTime: null,
+      keys: { p256dh, auth },
+    })
+    expect((await client.deletePushSubscription(endpoint)).deleted).toBe(true)
+
+    expect(fetchImplementation.mock.calls.map((call) => call[1]?.method)).toEqual([
+      'GET',
+      'POST',
+      'DELETE',
+    ])
+  })
 })

@@ -10,6 +10,8 @@ import { CacheFirst } from 'workbox-strategies'
 
 import {
   immutableContentAssetNavigationPattern,
+  isAudienceRoute,
+  parseAudiencePushPayload,
   shouldCacheRecentMediaRequest,
 } from '@vmsh/offline'
 
@@ -102,4 +104,45 @@ self.addEventListener('message', (event) => {
   ) {
     event.waitUntil(self.skipWaiting())
   }
+})
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+  const payload = parseAudiencePushPayload(event.data.text(), 'student')
+  if (!payload) return
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      if (windows.some((client) => client.visibilityState === 'visible')) return
+      await self.registration.showNotification(payload.title, {
+        body: payload.body,
+        data: { route: payload.route },
+        icon: '/student/icon-192.png',
+        tag: payload.eventId,
+        silent: payload.silent,
+      })
+    })(),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const notificationData = event.notification.data as unknown
+  const route =
+    typeof notificationData === 'object' && notificationData !== null && 'route' in notificationData
+      ? notificationData.route
+      : null
+  if (!isAudienceRoute(route, 'student')) return
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      const owned = windows.find((client) => new URL(client.url).pathname.startsWith('/student/'))
+      if (owned) {
+        await owned.navigate(route)
+        await owned.focus()
+        return
+      }
+      await self.clients.openWindow(route)
+    })(),
+  )
 })

@@ -5,19 +5,28 @@ import {
   acknowledgeNotificationRequestSchema,
   acknowledgeNotificationResponseSchema,
   apiErrorSchema,
+  deletePushSubscriptionRequestSchema,
+  deletePushSubscriptionResponseSchema,
   notificationEventListResponseSchema,
   notificationPreferenceListResponseSchema,
   notificationPreferenceResponseSchema,
   notificationQueryKeys,
   parseRuntimeConfigForAudience,
   publicIdSchema,
+  pushSubscriptionConfigResponseSchema,
+  savePushSubscriptionRequestSchema,
+  savePushSubscriptionResponseSchema,
   updateNotificationPreferenceRequestSchema,
   type AcknowledgeNotificationResponse,
+  type DeletePushSubscriptionResponse,
   type NotificationEventListResponse,
   type NotificationPreferenceListResponse,
   type NotificationPreferenceResponse,
   type PrincipalQueryScope,
+  type PushSubscriptionConfigResponse,
   type RuntimeConfig,
+  type SavePushSubscriptionRequest,
+  type SavePushSubscriptionResponse,
   type UpdateNotificationPreferenceRequest,
 } from '@vmsh/contracts'
 
@@ -34,6 +43,9 @@ export interface NotificationClient {
     request: UpdateNotificationPreferenceRequest,
   ): Promise<NotificationPreferenceResponse>
   acknowledge(eventId: string): Promise<AcknowledgeNotificationResponse>
+  pushConfig(options?: { signal?: AbortSignal }): Promise<PushSubscriptionConfigResponse>
+  savePushSubscription(request: SavePushSubscriptionRequest): Promise<SavePushSubscriptionResponse>
+  deletePushSubscription(endpoint: string): Promise<DeletePushSubscriptionResponse>
 }
 
 export function createNotificationClient(
@@ -107,6 +119,32 @@ export function createNotificationClient(
         }),
       )
     },
+    async pushConfig({ signal } = {}) {
+      return pushSubscriptionConfigResponseSchema.parse(
+        await request('/push-subscriptions/config', {
+          method: 'GET',
+          ...(signal === undefined ? {} : { signal }),
+        }),
+      )
+    },
+    async savePushSubscription(input) {
+      const body = savePushSubscriptionRequestSchema.parse(input)
+      return savePushSubscriptionResponseSchema.parse(
+        await request('/push-subscriptions', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      )
+    },
+    async deletePushSubscription(endpoint) {
+      const body = deletePushSubscriptionRequestSchema.parse({ schemaVersion: 1, endpoint })
+      return deletePushSubscriptionResponseSchema.parse(
+        await request('/push-subscriptions', {
+          method: 'DELETE',
+          body: JSON.stringify(body),
+        }),
+      )
+    },
   }
 }
 
@@ -130,5 +168,15 @@ export function useNotificationPreferencesQuery(
     queryKey: notificationQueryKeys.preferences(principal),
     queryFn: ({ signal }) => client.preferences({ signal }),
     meta: { realtimeResources: ['notification-preferences'] },
+  })
+}
+
+export function usePushSubscriptionConfigQuery(
+  client: NotificationClient,
+  principal: PrincipalQueryScope,
+) {
+  return useQuery({
+    queryKey: notificationQueryKeys.pushConfig(principal),
+    queryFn: ({ signal }) => client.pushConfig({ signal }),
   })
 }

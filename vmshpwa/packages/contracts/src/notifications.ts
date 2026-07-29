@@ -95,9 +95,91 @@ export const acknowledgeNotificationResponseSchema = z
   .strict()
 export type AcknowledgeNotificationResponse = z.infer<typeof acknowledgeNotificationResponseSchema>
 
+const pushKeySchema = z
+  .string()
+  .min(20)
+  .max(256)
+  .regex(/^[A-Za-z0-9_-]+$/)
+
+export const pushSubscriptionConfigResponseSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    enabled: z.boolean(),
+    applicationServerKey: pushKeySchema.nullable(),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.enabled !== (value.applicationServerKey !== null)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Enabled Web Push requires an application server key',
+        path: ['applicationServerKey'],
+      })
+    }
+  })
+export type PushSubscriptionConfigResponse = z.infer<typeof pushSubscriptionConfigResponseSchema>
+
+export const savePushSubscriptionRequestSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    endpoint: z.url().refine((value) => new URL(value).protocol === 'https:'),
+    expirationTime: z.number().int().positive().safe().nullable(),
+    keys: z
+      .object({
+        p256dh: pushKeySchema,
+        auth: pushKeySchema,
+      })
+      .strict(),
+  })
+  .strict()
+export type SavePushSubscriptionRequest = z.infer<typeof savePushSubscriptionRequestSchema>
+
+export const savePushSubscriptionResponseSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    subscriptionId: publicIdSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type SavePushSubscriptionResponse = z.infer<typeof savePushSubscriptionResponseSchema>
+
+export const deletePushSubscriptionRequestSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    endpoint: z.url().refine((value) => new URL(value).protocol === 'https:'),
+  })
+  .strict()
+export type DeletePushSubscriptionRequest = z.infer<typeof deletePushSubscriptionRequestSchema>
+
+export const deletePushSubscriptionResponseSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    deleted: z.boolean(),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type DeletePushSubscriptionResponse = z.infer<typeof deletePushSubscriptionResponseSchema>
+
+export const nativePushPayloadSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    eventId: publicIdSchema,
+    category: notificationCategorySchema,
+    title: z.string().trim().min(1).max(120),
+    body: z.string().trim().min(1).max(500),
+    route: z.string().startsWith('/'),
+    silent: z.boolean(),
+    occurredAt: z.iso.datetime(),
+  })
+  .strict()
+export type NativePushPayload = z.infer<typeof nativePushPayloadSchema>
+
 export const notificationQueryKeys = {
   events: (principal: PrincipalQueryScope, unreadOnly = false) =>
     ['notifications', ...principalQueryKey(principal), 'events', { unreadOnly }] as const,
   preferences: (principal: PrincipalQueryScope) =>
     ['notifications', ...principalQueryKey(principal), 'preferences'] as const,
+  pushConfig: (principal: PrincipalQueryScope) =>
+    ['notifications', ...principalQueryKey(principal), 'push-config'] as const,
 } as const

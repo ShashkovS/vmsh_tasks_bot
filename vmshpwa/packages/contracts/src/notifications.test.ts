@@ -3,9 +3,13 @@ import { describe, expect, it } from 'vitest'
 import eventsFixture from '../fixtures/notifications/events.v1.json'
 import preferencesFixture from '../fixtures/notifications/preferences.v1.json'
 import {
+  deletePushSubscriptionRequestSchema,
+  nativePushPayloadSchema,
   notificationEventListResponseSchema,
   notificationPreferenceListResponseSchema,
   notificationQueryKeys,
+  pushSubscriptionConfigResponseSchema,
+  savePushSubscriptionRequestSchema,
   updateNotificationPreferenceRequestSchema,
 } from './notifications'
 
@@ -43,5 +47,44 @@ describe('notification contracts', () => {
     expect(notificationQueryKeys.events(first)).not.toEqual(
       notificationQueryKeys.events(first, true),
     )
+  })
+
+  it('validates browser subscription and native payload boundaries', () => {
+    const p256dh = `B${'a'.repeat(86)}`
+    const auth = 'b'.repeat(22)
+    expect(
+      savePushSubscriptionRequestSchema.parse({
+        schemaVersion: 1,
+        endpoint: 'https://push.example.test/device',
+        expirationTime: null,
+        keys: { p256dh, auth },
+      }).endpoint,
+    ).toBe('https://push.example.test/device')
+    expect(() =>
+      deletePushSubscriptionRequestSchema.parse({
+        schemaVersion: 1,
+        endpoint: 'http://push.example.test/device',
+      }),
+    ).toThrow()
+    expect(() =>
+      pushSubscriptionConfigResponseSchema.parse({
+        schemaVersion: 1,
+        enabled: true,
+        applicationServerKey: null,
+        requestId: 'request.push',
+      }),
+    ).toThrow()
+    expect(
+      nativePushPayloadSchema.parse({
+        schemaVersion: 1,
+        eventId: 'notification.review-one',
+        category: 'review_completed',
+        title: 'Проверка завершена',
+        body: 'Проверены три задачи',
+        route: '/student/tasks/problem-one',
+        silent: true,
+        occurredAt: '2026-10-05T12:00:00Z',
+      }).silent,
+    ).toBe(true)
   })
 })

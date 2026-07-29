@@ -1,16 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell, Volume2 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { Bell, BellOff, Volume2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   PageLayout,
   PageSection,
   PageStatePanel,
+  browserPushSubscriptionRequest,
   createNotificationClient,
+  decodeApplicationServerKey,
   useAuthenticatedPrincipal,
   useAuthentication,
   useNotificationEventsQuery,
   useNotificationPreferencesQuery,
+  usePushSubscriptionConfigQuery,
 } from '@vmsh/app-shell'
 import {
   notificationQueryKeys,
@@ -19,7 +22,7 @@ import {
   type NotificationEventListResponse,
   type NotificationPreference,
 } from '@vmsh/contracts'
-import { NotificationEventCard } from '@vmsh/product'
+import { NotificationEventCard, PushPermissionCard } from '@vmsh/product'
 import {
   Alert,
   AlertContent,
@@ -27,6 +30,7 @@ import {
   AlertTitle,
   Card,
   CardContent,
+  Button,
   Switch,
 } from '@vmsh/ui'
 
@@ -118,6 +122,140 @@ export function VisibleNotification({
   )
 }
 
+type PushDeviceState =
+  'loading' | 'available' | 'enabled' | 'dismissed' | 'denied' | 'unsupported' | 'error'
+
+function browserPushSupported(): boolean {
+  return (
+    typeof Notification !== 'undefined' &&
+    typeof navigator !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    typeof PushManager !== 'undefined'
+  )
+}
+
+export function PushDeviceSettings({
+  client,
+  applicationServerKey,
+}: {
+  client: ReturnType<typeof createNotificationClient>
+  applicationServerKey: string
+}) {
+  const [state, setState] = useState<PushDeviceState>(() =>
+    browserPushSupported() ? 'loading' : 'unsupported',
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    if (!browserPushSupported()) return
+    void navigator.serviceWorker.ready
+      .then((registration) => registration.pushManager.getSubscription())
+      .then(async (subscription) => {
+        if (cancelled) return
+        if (subscription) {
+          await client.savePushSubscription(browserPushSubscriptionRequest(subscription))
+          if (!cancelled) setState('enabled')
+          return
+        }
+        setState(Notification.permission === 'denied' ? 'denied' : 'available')
+      })
+      .catch(() => {
+        if (!cancelled) setState('error')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [client])
+
+  const enable = async () => {
+    try {
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        setState(permission === 'denied' ? 'denied' : 'available')
+        return
+      }
+      const registration = await navigator.serviceWorker.ready
+      const existing = await registration.pushManager.getSubscription()
+      const subscription =
+        existing ??
+        (await registration.pushManager.subscribe({
+          applicationServerKey: decodeApplicationServerKey(applicationServerKey),
+          userVisibleOnly: true,
+        }))
+      await client.savePushSubscription(browserPushSubscriptionRequest(subscription))
+      setState('enabled')
+    } catch {
+      setState('error')
+    }
+  }
+
+  const disable = async () => {
+    try {
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+      if (subscription) {
+        await client.deletePushSubscription(subscription.endpoint)
+        await subscription.unsubscribe()
+      }
+      setState('available')
+    } catch {
+      setState('error')
+    }
+  }
+
+  if (state === 'loading') return <PageStatePanel state="loading" />
+  if (state === 'available') {
+    return (
+      <PushPermissionCard
+        categories={[
+          { id: 'review', label: 'Результат проверки' },
+          { id: 'deadline', label: 'Дедлайн и новые материалы' },
+          { id: 'news', label: 'Новости кружка' },
+        ]}
+        onEnable={() => void enable()}
+        onDismiss={() => setState('dismissed')}
+      />
+    )
+  }
+  if (state === 'dismissed') return null
+  if (state === 'enabled') {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-between gap-4 py-4">
+          <div>
+            <p className="text-small font-medium">Push включены на этом устройстве</p>
+            <p className="text-caption text-muted-foreground">Категории можно настроить ниже.</p>
+          </div>
+          <Button onClick={() => void disable()} size="sm" variant="outline">
+            Отключить
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+  return (
+    <Alert tone={state === 'denied' ? 'neutral' : 'warning'}>
+      <BellOff aria-hidden="true" />
+      <AlertContent>
+        <AlertTitle>
+          {state === 'denied'
+            ? 'Push запрещены в браузере'
+            : state === 'unsupported'
+              ? 'Push не поддерживаются'
+              : 'Не удалось настроить push'}
+        </AlertTitle>
+        <AlertDescription>
+          {state === 'denied'
+            ? 'Разрешение можно вернуть в настройках сайта.'
+            : state === 'unsupported'
+              ? 'Все события всё равно останутся в приложении.'
+              : 'Проверьте соединение и попробуйте ещё раз.'}
+        </AlertDescription>
+      </AlertContent>
+    </Alert>
+  )
+}
+
 /** Real Student notification settings and account-scoped in-app event list. */
 export function StudentNotificationsPage() {
   const authentication = useAuthentication()
@@ -141,6 +279,7 @@ export function StudentNotificationsPage() {
   )
   const preferences = useNotificationPreferencesQuery(client, scope)
   const events = useNotificationEventsQuery(client, scope)
+  const pushConfig = usePushSubscriptionConfigQuery(client, scope)
   const queryClient = useQueryClient()
   const preferenceMutation = useMutation({
     mutationFn: (preference: NotificationPreference) =>
@@ -181,6 +320,14 @@ export function StudentNotificationsPage() {
       eyebrow="Профиль"
       title="Уведомления"
     >
+      {pushConfig.data?.enabled && pushConfig.data.applicationServerKey ? (
+        <PageSection title="На этом устройстве">
+          <PushDeviceSettings
+            applicationServerKey={pushConfig.data.applicationServerKey}
+            client={client}
+          />
+        </PageSection>
+      ) : null}
       <PageSection title="Категории">
         {preferences.isPending ? <PageStatePanel state="loading" /> : null}
         {preferences.error ? (
