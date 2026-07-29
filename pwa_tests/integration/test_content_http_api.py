@@ -1497,6 +1497,9 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
     evidence_by_queue = {
         branch["queueId"]: branch for branch in lease["evidenceBranches"]
     }
+    cursors_before_review_complete = dict(
+        fixture.client.app[pwa_app.PWA_STATE]["cursors"]
+    )
     completed_response = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_public_id}/complete",
         json={
@@ -1555,6 +1558,12 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
         headers=_headers(unsafe=True),
     )
     assert completed_response.status == 200, await completed_response.text()
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+        **cursors_before_review_complete,
+        "student": cursors_before_review_complete["student"] + 1,
+        "family": cursors_before_review_complete["family"] + 1,
+        "staff": cursors_before_review_complete["staff"] + 1,
+    }
 
     reviewed_response = await fixture.client.get(
         family_thread_route,

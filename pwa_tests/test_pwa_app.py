@@ -586,6 +586,61 @@ async def test_written_submission_handoff_invalidates_student_thread_and_staff_q
 
 
 @pytest.mark.asyncio
+async def test_review_completion_invalidates_linked_student_family_and_staff_queue():
+    class RecordingBroker:
+        def __init__(self):
+            self.messages = []
+
+        async def publish(self, topic, payload):
+            self.messages.append((topic, payload))
+
+    app = web.Application()
+    broker = RecordingBroker()
+    app[pwa_app.PWA_BROKER] = broker
+
+    await pwa_app.publish_review_completion_invalidation(
+        app,
+        account_public_ids=("account-student-review",),
+        family_account_public_ids=("account-family-review",),
+        problem_public_ids=("problem-review-a", "problem-review-b"),
+        reason="written-review-completed",
+    )
+
+    thread_resources = [
+        "problems/problem-review-a/thread",
+        "problems/problem-review-b/thread",
+    ]
+    assert broker.messages == [
+        (
+            "pwa_invalidate",
+            {
+                "resources": thread_resources,
+                "reason": "written-review-completed",
+                "audience": "student",
+                "accountId": "account-student-review",
+            },
+        ),
+        (
+            "pwa_invalidate",
+            {
+                "resources": thread_resources,
+                "reason": "written-review-completed",
+                "audience": "family",
+                "accountId": "account-family-review",
+            },
+        ),
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["review-queue"],
+                "reason": "written-review-completed",
+                "audience": "staff",
+            },
+        ),
+    ]
+
+
+@pytest.mark.asyncio
 async def test_concurrent_invalidations_are_ordered_per_socket(client):
     class BackpressuredSocket:
         closed = False

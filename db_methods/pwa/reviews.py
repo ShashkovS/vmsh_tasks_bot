@@ -573,6 +573,7 @@ class CompleteReviewReceipt:
     evidence_entry_public_ids: tuple[str, ...]
     evidence_problem_public_ids: tuple[str, ...]
     owner_account_public_ids: tuple[str, ...]
+    family_account_public_ids: tuple[str, ...]
     annotations: tuple[ReviewAnnotationReceipt, ...]
     internal_reaction: ReviewInternalReactionState | None
     completed_at: datetime
@@ -618,6 +619,32 @@ def _normalize_time(value: datetime) -> datetime:
 def _timestamp(value: datetime) -> str:
     return (
         _normalize_time(value).isoformat(timespec="microseconds").replace("+00:00", "Z")
+    )
+
+
+def _review_recipient_account_public_ids(
+    connection: sqlite3.Connection,
+    *,
+    student_user_id: int,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Resolve current Student owners and linked Family readers in one snapshot."""
+
+    student_accounts = connection.execute(
+        "SELECT public_id FROM auth_accounts WHERE linked_user_id = ? "
+        "AND audience = 'student' AND status = 'active' ORDER BY id",
+        (student_user_id,),
+    ).fetchall()
+    family_accounts = connection.execute(
+        "SELECT account.public_id FROM family_student_links AS link "
+        "JOIN auth_accounts AS account ON account.id = link.family_account_id "
+        "WHERE link.student_user_id = ? AND link.revoked_at IS NULL "
+        "AND account.audience = 'family' AND account.status = 'active' "
+        "ORDER BY account.id",
+        (student_user_id,),
+    ).fetchall()
+    return (
+        tuple(str(account["public_id"]) for account in student_accounts),
+        tuple(str(account["public_id"]) for account in family_accounts),
     )
 
 
@@ -1364,14 +1391,18 @@ class PwaWrittenReviewQueueRepository:
                 "ORDER BY evidence.server_received_at, evidence.entry_id",
                 (row["id"],),
             ).fetchall()
-            owner_accounts = connection.execute(
-                "SELECT account.public_id FROM auth_accounts AS account "
-                "JOIN submission_threads AS thread "
-                "ON thread.student_user_id = account.linked_user_id "
-                "WHERE thread.id = ? AND account.audience = 'student' "
-                "AND account.status = 'active' ORDER BY account.id",
-                (row["thread_id"],),
-            ).fetchall()
+            student_user_id = int(
+                connection.execute(
+                    "SELECT student_user_id FROM submission_threads WHERE id = ?",
+                    (row["thread_id"],),
+                ).fetchone()["student_user_id"]
+            )
+            owner_account_public_ids, family_account_public_ids = (
+                _review_recipient_account_public_ids(
+                    connection,
+                    student_user_id=student_user_id,
+                )
+            )
             annotations = connection.execute(
                 "SELECT annotation.public_id, attachment.public_id AS attachment_public_id, "
                 "annotation.schema_version, annotation.rotation, "
@@ -1408,9 +1439,8 @@ class PwaWrittenReviewQueueRepository:
                 evidence_problem_public_ids=tuple(
                     dict.fromkeys(str(item["problem_public_id"]) for item in evidence)
                 ),
-                owner_account_public_ids=tuple(
-                    str(account["public_id"]) for account in owner_accounts
-                ),
+                owner_account_public_ids=owner_account_public_ids,
+                family_account_public_ids=family_account_public_ids,
                 annotations=tuple(
                     ReviewAnnotationReceipt(
                         annotation_public_id=str(item["public_id"]),
@@ -1871,6 +1901,12 @@ class PwaWrittenReviewQueueRepository:
                     completed_at,
                 ),
             )
+            owner_account_public_ids, family_account_public_ids = (
+                _review_recipient_account_public_ids(
+                    connection,
+                    student_user_id=int(target_thread["student_user_id"]),
+                )
+            )
             return CompleteReviewReceipt(
                 review_public_id=review_public_id,
                 target_thread_public_id=str(target_thread["public_id"]),
@@ -1884,14 +1920,8 @@ class PwaWrittenReviewQueueRepository:
                         str(row["problem_public_id"]) for row in evidence_rows
                     )
                 ),
-                owner_account_public_ids=tuple(
-                    str(account["public_id"])
-                    for account in connection.execute(
-                        "SELECT public_id FROM auth_accounts WHERE linked_user_id = ? "
-                        "AND audience = 'student' AND status = 'active' ORDER BY id",
-                        (target_thread["student_user_id"],),
-                    ).fetchall()
-                ),
+                owner_account_public_ids=owner_account_public_ids,
+                family_account_public_ids=family_account_public_ids,
                 annotations=tuple(annotation_receipts),
                 internal_reaction=internal_reaction_state,
                 completed_at=now,

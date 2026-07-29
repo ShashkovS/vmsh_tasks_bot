@@ -76,7 +76,7 @@ PWA_REVIEW_QUEUE_REPOSITORY = web.AppKey(
     "pwa_review_queue_repository", PwaWrittenReviewQueueRepository
 )
 ReviewCompletionInvalidator = Callable[
-    [tuple[str, ...], tuple[str, ...], str], Awaitable[None]
+    [tuple[str, ...], tuple[str, ...], tuple[str, ...], str], Awaitable[None]
 ]
 PWA_REVIEW_COMPLETION_INVALIDATOR = web.AppKey(
     "pwa_review_completion_invalidator", ReviewCompletionInvalidator
@@ -846,6 +846,7 @@ async def complete_review_item(request: web.Request) -> web.Response:
         try:
             await invalidator(
                 receipt.owner_account_public_ids,
+                receipt.family_account_public_ids,
                 receipt.evidence_problem_public_ids,
                 "written-review-completed",
             )

@@ -826,10 +826,11 @@ async def publish_review_completion_invalidation(
     app: web.Application,
     *,
     account_public_ids: tuple[str, ...],
+    family_account_public_ids: tuple[str, ...],
     problem_public_ids: tuple[str, ...],
     reason: str,
 ) -> None:
-    """Publish owner-scoped refetch hints for every reviewed synonym branch."""
+    """Refetch reviewed branches for Student/Family and the shared Staff queue."""
 
     resources = [
         f"problems/{problem_public_id}/thread"
@@ -845,6 +846,24 @@ async def publish_review_completion_invalidation(
                 "accountId": account_public_id,
             },
         )
+    for account_public_id in family_account_public_ids:
+        await app[PWA_BROKER].publish(
+            NATS_PWA_INVALIDATE,
+            {
+                "resources": resources,
+                "reason": reason,
+                "audience": AuthAudience.FAMILY.value,
+                "accountId": account_public_id,
+            },
+        )
+    await app[PWA_BROKER].publish(
+        NATS_PWA_INVALIDATE,
+        {
+            "resources": ["review-queue"],
+            "reason": reason,
+            "audience": AuthAudience.STAFF.value,
+        },
+    )
 
 
 async def activate_due_content_publications(
@@ -1076,12 +1095,14 @@ def configure(
 
             async def invalidate_review_completion(
                 account_public_ids: tuple[str, ...],
+                family_account_public_ids: tuple[str, ...],
                 problem_public_ids: tuple[str, ...],
                 reason: str,
             ) -> None:
                 await publish_review_completion_invalidation(
                     app,
                     account_public_ids=account_public_ids,
+                    family_account_public_ids=family_account_public_ids,
                     problem_public_ids=problem_public_ids,
                     reason=reason,
                 )

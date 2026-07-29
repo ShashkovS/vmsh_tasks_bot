@@ -793,6 +793,71 @@ async def test_complete_freezes_synonym_evidence_and_targets_latest_branch(
 
 
 @pytest.mark.asyncio
+async def test_complete_resolves_only_current_student_and_family_recipients(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    now = _timestamp(NOW)
+    revoked_at = _timestamp(NOW + timedelta(minutes=1))
+
+    def seed_recipients(connection):
+        connection.execute(
+            "INSERT INTO auth_accounts "
+            "(public_id, audience, username, username_normalized, "
+            "username_algorithm_version, provisioning_source, credential_kind, "
+            "credential_hash, linked_user_id, status, created_at, updated_at) VALUES "
+            "('review-student-account', 'student', 'review-student', "
+            "'review-student', 1, 'synthetic-test', 'telegram_token', "
+            "'test-only-student-hash', ?, 'active', ?, ?)",
+            (STUDENT_ID, now, now),
+        )
+        family_ids: dict[str, int] = {}
+        for public_id, status in (
+            ("review-family-active", "active"),
+            ("review-family-blocked", "blocked"),
+            ("review-family-revoked-link", "active"),
+        ):
+            family_ids[public_id] = int(
+                connection.execute(
+                    "INSERT INTO auth_accounts "
+                    "(public_id, audience, username, username_normalized, "
+                    "provisioning_source, display_name, credential_kind, "
+                    "credential_hash, status, created_at, updated_at) VALUES "
+                    "(?, 'family', ?, ?, 'synthetic-test', 'Семья', 'password', "
+                    "'test-only-family-hash', ?, ?, ?) RETURNING id",
+                    (public_id, public_id, public_id, status, now, now),
+                ).fetchone()["id"]
+            )
+        connection.executemany(
+            "INSERT INTO family_student_links "
+            "(family_account_id, student_user_id, is_primary, created_at, "
+            "updated_at, revoked_at) VALUES (?, ?, 1, ?, ?, ?)",
+            (
+                (family_ids["review-family-active"], STUDENT_ID, now, now, None),
+                (family_ids["review-family-blocked"], STUDENT_ID, now, now, None),
+                (
+                    family_ids["review-family-revoked-link"],
+                    STUDENT_ID,
+                    now,
+                    revoked_at,
+                    revoked_at,
+                ),
+            ),
+        )
+
+    fixture.factory.run_write(seed_recipients)
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    receipt = await fixture.repository.complete(_complete_command(lease))
+
+    assert receipt.owner_account_public_ids == ("review-student-account",)
+    assert receipt.family_account_public_ids == ("review-family-active",)
+
+
+@pytest.mark.asyncio
 async def test_complete_rejects_a_thread_change_without_partial_writes(
     review_queue_fixture,
 ):

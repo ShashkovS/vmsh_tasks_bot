@@ -57,6 +57,39 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   )
   await expect(page.getByText('100% · 90° · 1 пометок')).toBeVisible()
 
+  // Keep a linked Family session and an independently observable socket live
+  // before completion. The product provider uses the same event to refetch
+  // active TanStack queries; this socket makes owner routing explicit in E2E.
+  const familyPage = await page.context().newPage()
+  await loginThroughUi(familyPage, AUTH_PERSONAS.family, '/family/')
+  await familyPage.evaluate(() => {
+    const state = globalThis as typeof globalThis & {
+      __reviewRealtimeEvents?: Array<Record<string, unknown>>
+      __reviewRealtimeSocket?: WebSocket
+    }
+    state.__reviewRealtimeEvents = []
+    const url = new URL('/family/ws', window.location.origin)
+    url.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const socket = new WebSocket(url)
+    socket.addEventListener('message', (event) => {
+      const payload: unknown = JSON.parse(String(event.data))
+      if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+        state.__reviewRealtimeEvents?.push(payload as Record<string, unknown>)
+      }
+    })
+    state.__reviewRealtimeSocket = socket
+  })
+  await expect
+    .poll(() =>
+      familyPage.evaluate(() => {
+        const state = globalThis as typeof globalThis & {
+          __reviewRealtimeEvents?: Array<Record<string, unknown>>
+        }
+        return state.__reviewRealtimeEvents?.some((event) => event.type === 'connected') ?? false
+      }),
+    )
+    .toBe(true)
+
   const completed = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
@@ -85,6 +118,29 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   ])
   await expect(page).toHaveURL(/\/staff\/review\/?$/)
   await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(0)
+  await expect
+    .poll(() =>
+      familyPage.evaluate(() => {
+        const state = globalThis as typeof globalThis & {
+          __reviewRealtimeEvents?: Array<Record<string, unknown>>
+        }
+        const event = state.__reviewRealtimeEvents?.find(
+          (candidate) =>
+            candidate.type === 'invalidate' && candidate.reason === 'written-review-completed',
+        )
+        if (!event) return null
+        return {
+          audience: event.audience,
+          resources: event.resources,
+          accountId: event.accountId ?? null,
+        }
+      }),
+    )
+    .toEqual({
+      audience: 'family',
+      resources: [`problems/e2e-review-problem-${project}/thread`],
+      accountId: null,
+    })
 
   await loginThroughUi(page, AUTH_PERSONAS.student, '/student/')
   const studentProjection = await page.evaluate(async (problemId) => {
@@ -112,8 +168,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   ])
   expect(studentThread.thread?.reviews[0]).not.toHaveProperty('internalReaction')
 
-  await loginThroughUi(page, AUTH_PERSONAS.family, '/family/')
-  const familyAuth = await page.evaluate(async () => {
+  const familyAuth = await familyPage.evaluate(async () => {
     const authResponse = await fetch('/family/api/v1/auth/me')
     const authBody: unknown = await authResponse.json()
     return { status: authResponse.status, body: authBody }
@@ -127,7 +182,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     (candidate) => candidate.studentId === 'user-student-online-fixture',
   )
   if (!child) throw new Error('Review student is not linked to the E2E family')
-  const familyProjection = await page.evaluate(
+  const familyProjection = await familyPage.evaluate(
     async ({ problemId, studentId }) => {
       const threadResponse = await fetch(
         `/family/api/v1/children/${studentId}/problems/${problemId}/thread`,
@@ -166,7 +221,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   expect(familyAttachment?.mediaPath).toBe(
     `/family/api/v1/children/user-student-online-fixture/thread-entries/e2e-review-student-entry-${project}/attachments/e2e-review-attachment-${project}/media`,
   )
-  const familyMedia = await page.evaluate(async (mediaPath) => {
+  const familyMedia = await familyPage.evaluate(async (mediaPath) => {
     if (!mediaPath) throw new Error('Family projection has no submitted photo')
     const response = await fetch(mediaPath)
     return {
@@ -181,4 +236,9 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     bodySize: expect.any(Number),
   })
   expect(familyMedia.bodySize).toBeGreaterThan(0)
+  await familyPage.evaluate(() => {
+    const state = globalThis as typeof globalThis & { __reviewRealtimeSocket?: WebSocket }
+    state.__reviewRealtimeSocket?.close()
+  })
+  await familyPage.close()
 })
