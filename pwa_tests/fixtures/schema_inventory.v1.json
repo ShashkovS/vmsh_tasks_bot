@@ -193,6 +193,10 @@
       {
         "id": "0066.pwa_telegram_bindings",
         "sha256": "09421021c6fed2436e12965813deb8c75298097613d08503207b72eb7c64dfad"
+      },
+      {
+        "id": "0067.pwa_news_mirror",
+        "sha256": "02b9f93449f7c793a5e99cfe02561e263ff5db83144725f4374e8260f681898f"
       }
     ],
     "repository_head_status": {
@@ -203,7 +207,7 @@
     }
   },
   "product": {
-    "object_count": 385,
+    "object_count": 397,
     "objects": [
       {
         "columns": [
@@ -11542,6 +11546,952 @@
           },
           {
             "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_chat_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_message_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "code",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "detail",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "created_at",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "news_ingest_diagnostics_created_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "news_ingest_diagnostics",
+        "object_sha256": "0ae30d12afba3105fb33f6018327d75525dee97a1f8bc5807d6ba4c803a15154",
+        "sql": "CREATE TABLE news_ingest_diagnostics\n(\n    id                integer primary key,\n    source_chat_id    integer,\n    source_message_id integer,\n    code              text not null,\n    detail            text,\n    created_at        text not null\n);",
+        "table_name": "news_ingest_diagnostics",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "revision_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ordinal",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "media_kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_message_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_file_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "storage_key",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_url",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "mime_type",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "width",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "height",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "storage_status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "revision_id"
+            ],
+            "match": "NONE",
+            "on_delete": "CASCADE",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "news_revisions"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "revision_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ordinal",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_news_media_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "news_media",
+        "object_sha256": "6562030184b6274bd0568fa040e42acff46577e44a8e00ae016cb02c14059000",
+        "sql": "CREATE TABLE news_media\n(\n    id                integer primary key,\n    revision_id       integer not null references news_revisions (id) on delete cascade,\n    ordinal           integer not null check (ordinal >= 0),\n    media_kind        text    not null check (media_kind in ('image', 'video', 'audio', 'document')),\n    source_message_id integer,\n    source_file_id    text,\n    storage_key       text,\n    public_url        text,\n    mime_type         text,\n    width             integer check (width is null or width > 0),\n    height            integer check (height is null or height > 0),\n    storage_status    text    not null check (storage_status in ('pending', 'stored', 'failed')),\n    created_at        text    not null,\n    updated_at        text    not null,\n    unique (revision_id, ordinal)\n);",
+        "table_name": "news_media",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_binding_public_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "owner_course_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "owner_group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_chat_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_message_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_media_group_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "published_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "last_source_edited_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_deleted_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "owner_course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
+              "owner_group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "owner_course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "published_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "news_posts_course_feed_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "owner_group_id",
+                "seqno": 0
+              },
+              {
+                "cid": 9,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "published_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "news_posts_group_feed_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "source_chat_id",
+                "seqno": 0
+              },
+              {
+                "cid": 8,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "source_media_group_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "news_posts_telegram_album_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "source_chat_id",
+                "seqno": 0
+              },
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "source_message_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "news_posts_telegram_message_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_news_posts_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "news_posts",
+        "object_sha256": "5236f44a1f2716296df692b50c39c9a91b6d6752ec27544c435e736d7bcd63c1",
+        "sql": "CREATE TABLE news_posts\n(\n    id                       integer primary key,\n    public_id                text    not null unique,\n    source_type              text    not null check (source_type in ('telegram', 'local')),\n    source_binding_public_id text,\n    owner_course_id          integer references courses (id),\n    owner_group_id           text references groups (group_id),\n    source_chat_id           integer,\n    source_message_id        integer,\n    source_media_group_id    text,\n    published_at             text    not null,\n    last_source_edited_at    text,\n    source_deleted_at        text,\n    created_at               text    not null,\n    updated_at               text    not null,\n    version                  integer not null default 1 check (version > 0),\n    check (\n        (source_type = 'telegram'\n            and source_binding_public_id is not null\n            and source_chat_id is not null\n            and source_message_id is not null)\n        or\n        (source_type = 'local'\n            and source_binding_public_id is null\n            and source_chat_id is null\n            and source_message_id is null\n            and source_media_group_id is null)\n    ),\n    check (\n        (owner_course_id is not null and owner_group_id is null)\n        or (owner_course_id is null and owner_group_id is not null)\n    )\n);",
+        "table_name": "news_posts",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "post_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "revision_number",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_hash",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_edited_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "text_plain",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "content_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_payload_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "post_id"
+            ],
+            "match": "NONE",
+            "on_delete": "CASCADE",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "news_posts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "post_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "revision_number",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "news_revisions_latest_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "post_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "revision_number",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_news_revisions_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "post_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "source_hash",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_news_revisions_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "news_revisions",
+        "object_sha256": "5386767c5ac045fe0a59967c14acfd95b2f4eaf34242313ec9b81519fea4200e",
+        "sql": "CREATE TABLE news_revisions\n(\n    id                  integer primary key,\n    post_id             integer not null references news_posts (id) on delete cascade,\n    revision_number     integer not null check (revision_number > 0),\n    source_hash         text    not null check (length(source_hash) = 64),\n    source_edited_at    text,\n    text_plain          text    not null,\n    content_json        text    not null,\n    source_payload_json text    not null,\n    created_at          text    not null,\n    unique (post_id, revision_number),\n    unique (post_id, source_hash)\n);",
+        "table_name": "news_revisions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "post_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "moderation_reason",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_by_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "post_id"
+            ],
+            "match": "NONE",
+            "on_delete": "CASCADE",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "news_posts"
+          },
+          {
+            "from_columns": [
+              "updated_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "state",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "post_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "news_visibility_state_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "news_visibility",
+        "object_sha256": "8be20f6ac850612bd966333ff95122f7bfd7755ffbed50beb1371b41db94e9f3",
+        "sql": "CREATE TABLE news_visibility\n(\n    post_id            integer primary key references news_posts (id) on delete cascade,\n    state              text    not null check (state in ('visible', 'manual_hidden', 'source_deleted')),\n    moderation_reason  text,\n    updated_by_user_id integer references users (id),\n    updated_at         text    not null,\n    version            integer not null default 1 check (version > 0)\n);",
+        "table_name": "news_visibility",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
             "declared_type": "TEXT",
             "default_sql": null,
             "hidden": 0,
@@ -22510,6 +23460,55 @@
         "type": "index"
       },
       {
+        "name": "news_ingest_diagnostics_created_idx",
+        "object_sha256": "d03744ef9f6483b425b3b3405b57c3b0ae304561e66acd6ab43f94a356a753b5",
+        "sql": "CREATE INDEX news_ingest_diagnostics_created_idx\n    on news_ingest_diagnostics (created_at desc, id desc);",
+        "table_name": "news_ingest_diagnostics",
+        "type": "index"
+      },
+      {
+        "name": "news_posts_course_feed_idx",
+        "object_sha256": "2656bfaa98439661124a729eaf9288abae79e542ce81a97e3c845e3b03b3f7da",
+        "sql": "CREATE INDEX news_posts_course_feed_idx\n    on news_posts (owner_course_id, published_at desc, id desc);",
+        "table_name": "news_posts",
+        "type": "index"
+      },
+      {
+        "name": "news_posts_group_feed_idx",
+        "object_sha256": "4b263954d13378c622bd37633d511905f913e109508ee3d06afcb1477042c708",
+        "sql": "CREATE INDEX news_posts_group_feed_idx\n    on news_posts (owner_group_id, published_at desc, id desc);",
+        "table_name": "news_posts",
+        "type": "index"
+      },
+      {
+        "name": "news_posts_telegram_album_uq",
+        "object_sha256": "d0b06ca033bb22f7d3a087a23eec85e29e4262a69c302a3bf408bb7a6c2f37be",
+        "sql": "CREATE UNIQUE INDEX news_posts_telegram_album_uq\n    on news_posts (source_chat_id, source_media_group_id)\n    where source_type = 'telegram' and source_media_group_id is not null;",
+        "table_name": "news_posts",
+        "type": "index"
+      },
+      {
+        "name": "news_posts_telegram_message_uq",
+        "object_sha256": "2732b526eda57141df681f380921995ef54c59ad737aac48d5138403bf076619",
+        "sql": "CREATE UNIQUE INDEX news_posts_telegram_message_uq\n    on news_posts (source_chat_id, source_message_id)\n    where source_type = 'telegram' and source_media_group_id is null;",
+        "table_name": "news_posts",
+        "type": "index"
+      },
+      {
+        "name": "news_revisions_latest_idx",
+        "object_sha256": "386c7e819f3c536ec0b3641512c386dffd028c92428437a52bcef8725840385d",
+        "sql": "CREATE INDEX news_revisions_latest_idx\n    on news_revisions (post_id, revision_number desc);",
+        "table_name": "news_revisions",
+        "type": "index"
+      },
+      {
+        "name": "news_visibility_state_idx",
+        "object_sha256": "fdaa61cbd682857cb28bf9d956bf3b2f112787aab7e0a1860ba0b912697b3b8d",
+        "sql": "CREATE INDEX news_visibility_state_idx on news_visibility (state, post_id);",
+        "table_name": "news_visibility",
+        "type": "index"
+      },
+      {
         "name": "notification_deliveries_due_idx",
         "object_sha256": "6bb703351950d0acd0de320323bd5f2332cfae1de87a23f40950622bdff106c4",
         "sql": "CREATE INDEX notification_deliveries_due_idx\n    on notification_deliveries (state, next_attempt_at, id);",
@@ -24022,8 +25021,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "e8cb5ca18984d3e04cc8c0e50d486607d9fd8927dfaff6ae04292a2c75fc212d",
-    "sha256": "4c977a5d76db476101a4d8fe5f9416188efb9940adfb13b3e787c12f9b473714"
+    "pragma_structure_sha256": "5e361bbf585b1f85726ec6565757d3943593c838729841a5658f262e9418a350",
+    "sha256": "6cb150e1d26d6276f256e04e1bab8be2815bcd1da926e2245e825bc4deee0f06"
   },
   "source_kind": "repository-migration-head"
 }
