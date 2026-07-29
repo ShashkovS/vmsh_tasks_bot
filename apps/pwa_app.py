@@ -11,6 +11,7 @@ from pathlib import Path
 from aiohttp import WSCloseCode, WSMsgType, web
 
 from apps.pwa_api.auth_routes import auth_routes
+from apps.pwa_api.admin_course_routes import admin_course_routes
 from apps.pwa_api.auth_service import PwaAuthService
 from apps.pwa_api.classroom_assignment_routes import (
     PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR,
@@ -1497,6 +1498,7 @@ def configure(
         app.middlewares.append(pwa_auth_request_security_middleware)
         app.middlewares.append(pwa_authentication_middleware)
         app.add_routes(auth_routes)
+        app.add_routes(admin_course_routes)
         app.add_routes(course_routes)
         app.add_routes(family_course_routes)
         app.add_routes(classroom_routes)
