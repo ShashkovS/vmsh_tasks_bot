@@ -73,4 +73,11 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
       `&group=${contentFixture.groupPublicId}&lesson=${target.lessonNumber}`,
   )
   await expect(page.getByRole('button', { name: new RegExp(title) })).toContainText('Зачтено')
+
+  await page.goto(`/student/progress?course=${contentFixture.coursePublicId}`)
+  await expect(page.getByRole('heading', { name: 'Прогресс' })).toBeVisible()
+  const lessonProgress = page
+    .getByText(`Занятие ${target.lessonNumber}`, { exact: true })
+    .locator('xpath=..')
+  await expect(lessonProgress).toContainText('1 зачтено из 1')
 })
