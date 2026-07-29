@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import io
 import json
 import re
 import uuid
@@ -111,6 +112,7 @@ from helpers.pwa.content import (
     ContentAssetService,
 )
 from helpers.pwa.push_delivery import PushSender, deliver_web_push_once
+from helpers.pwa.live_news import ingest_live_news
 from helpers.pwa.storage_config import load_storage_config
 from helpers.pwa.web_push import send_web_push
 from helpers.pwa.telegram_bindings import verify_telegram_binding
@@ -1353,6 +1355,33 @@ def configure(
         telegram_binding_verifier = configured_binding_verifier
     if telegram_binding_verifier is not None:
         app[PWA_TELEGRAM_BINDING_VERIFIER] = telegram_binding_verifier
+    if any(
+        getattr(adapter, "__name__", "") == "apps.tg_bot"
+        for adapter in app.get(ENABLED_ADAPTERS, ())
+    ):
+        from helpers.bot import bot, dispatcher
+
+        async def download_news_file(file_id: str) -> bytes:
+            destination = io.BytesIO()
+            await bot.download(file_id, destination=destination)
+            return destination.getvalue()
+
+        async def ingest_news_messages(messages: list[object]) -> dict[str, object]:
+            database = app[PWA_DATABASE]
+            storage = app.get(PWA_CONTENT_OBJECT_STORAGE)
+            converter = app.get(PWA_CONTENT_ASSET_CONVERTER)
+            if database.factory is None or storage is None or converter is None:
+                raise RuntimeError("PWA news ingest is not ready")
+            return await ingest_live_news(
+                messages,
+                factory=database.factory,
+                storage=storage,
+                converter=converter,
+                download=download_news_file,
+                invalidate=lambda reason: publish_news_invalidation(app, reason=reason),
+            )
+
+        dispatcher.workflow_data["pwa_news_ingestor"] = ingest_news_messages
     app[PWA_STATE] = _create_pwa_state()
     registry = WebSocketSessionRegistry()
     app[PWA_WEBSOCKET_REGISTRY] = registry
