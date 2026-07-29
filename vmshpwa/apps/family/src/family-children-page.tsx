@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { MapPin, Radio } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import {
   PageLayout,
@@ -17,7 +17,7 @@ import {
   type CourseEnrollment,
   type FamilyEnrollmentUpdateRequest,
 } from '@vmsh/contracts'
-import { LevelChip, type GroupView } from '@vmsh/product'
+import { ActivityCalendar, LevelChip, type GroupView } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
 type ColorIndex = 0 | 1 | 2 | 3 | 4
@@ -56,11 +56,6 @@ export function FamilyEnrollmentSettings({
   const [groupId, setGroupId] = useState(enrollment.activeGroupId)
   const [mode, setMode] = useState<AttendanceMode>(enrollment.attendanceMode)
   const [reviewing, setReviewing] = useState(false)
-  useEffect(() => {
-    setGroupId(enrollment.activeGroupId)
-    setMode(enrollment.attendanceMode)
-    setReviewing(false)
-  }, [enrollment.activeGroupId, enrollment.attendanceMode, enrollment.version])
   const changed = groupId !== enrollment.activeGroupId || mode !== enrollment.attendanceMode
 
   return (
@@ -188,7 +183,7 @@ export function FamilyChildrenPage() {
   )
 }
 
-/** Production per-child course context; mutations arrive in the next Phase-9 slice. */
+/** Production per-child course context for Phase 9. */
 export function FamilyChildPage({ childId }: { childId: string }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -311,6 +306,31 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       ? ` · ждут проверки: ${progress.summary.awaitingReview}`
                       : ''}
                   </p>
+                  {progress.lessons.length || progress.activity.length ? (
+                    <details className="rounded-md border border-border bg-surface px-3 py-2">
+                      <summary className="cursor-pointer text-small font-medium">
+                        История курса
+                      </summary>
+                      <div className="mt-3 space-y-4">
+                        {progress.lessons.length ? (
+                          <ul className="divide-y divide-border text-small">
+                            {progress.lessons.map((lesson) => (
+                              <li
+                                className="flex items-center justify-between gap-3 py-2"
+                                key={lesson.lessonNumber}
+                              >
+                                <span>Занятие {lesson.lessonNumber}</span>
+                                <span className="text-muted-foreground">
+                                  {lesson.accepted} из {lesson.attempted} зачтено
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        <ActivityCalendar days={progress.activity} />
+                      </div>
+                    </details>
+                  ) : null}
                   <FamilyEnrollmentSettings
                     enrollment={enrollment}
                     error={
@@ -327,6 +347,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       enrollmentMutation.isPending &&
                       enrollmentMutation.variables?.courseId === enrollment.course.courseId
                     }
+                    key={`${enrollment.enrollmentId}:${enrollment.version}`}
                   />
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-caption text-muted-foreground">

@@ -12,7 +12,7 @@ import {
   useStudentCoursesQuery,
 } from '@vmsh/app-shell'
 import { ApiResponseError } from '@vmsh/contracts'
-import { CourseContext, StrengthTrend, StudentProgress } from '@vmsh/product'
+import { ActivityCalendar, CourseContext, StrengthTrend, StudentProgress } from '@vmsh/product'
 import { Card, CardContent } from '@vmsh/ui'
 
 import { toCourseEnrollmentView } from './student-home-view'
@@ -20,14 +20,6 @@ import { toCourseEnrollmentView } from './student-home-view'
 export interface StudentProgressPageProps {
   courseId?: string
   onCourseChange: (courseId: string) => void
-}
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(`${value}T12:00:00Z`))
 }
 
 const achievementLabels: Record<string, string> = {
@@ -190,16 +182,7 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
           {progress.data.activity.length === 0 ? (
             <p className="text-small text-muted-foreground">Отправок пока нет.</p>
           ) : (
-            <ul className="flex flex-wrap gap-2">
-              {progress.data.activity.map((day) => (
-                <li
-                  className="rounded-md border border-border bg-surface px-3 py-2 text-small"
-                  key={day.date}
-                >
-                  {formatDate(day.date)} · {day.problemCount} задач
-                </li>
-              ))}
-            </ul>
+            <ActivityCalendar days={progress.data.activity} />
           )}
         </PageSection>
       </div>

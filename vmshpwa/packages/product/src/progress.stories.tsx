@@ -8,6 +8,7 @@ import {
   type StrengthLessonPoint,
   type TrendPoint,
 } from './progress-charts'
+import { ActivityCalendar } from './activity-calendar'
 import { StudentProgress } from './student-progress'
 
 const meta = { title: 'Product/Progress', parameters: { layout: 'padded' } } satisfies Meta
@@ -174,4 +175,27 @@ export const EmptyState: Story = {
       <StudentProgress solvedCount={0} />
     </div>
   ),
+}
+
+export const Activity: Story = {
+  name: 'Календарь личной активности',
+  render: () => (
+    <div className="max-w-xl">
+      <ActivityCalendar
+        days={[
+          { date: '2026-01-12', problemCount: 1 },
+          { date: '2026-01-13', problemCount: 2 },
+          { date: '2026-01-17', problemCount: 5 },
+          { date: '2026-01-22', problemCount: 3 },
+          { date: '2026-01-29', problemCount: 1 },
+        ]}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('5 дней работы · 12 задач')).toBeInTheDocument()
+    await userEvent.click(canvas.getByText('Показать по датам'))
+    await expect(canvas.getByText(/12 янв/)).toBeInTheDocument()
+  },
 }
