@@ -11,6 +11,7 @@ import {
   useNewsPostQuery,
 } from '@vmsh/app-shell'
 import { ApiResponseError } from '@vmsh/contracts'
+import { createOfflineNewsClient, useOfflineDatabase } from '@vmsh/offline'
 import { TelegramRichPost, toTelegramPostView } from '@vmsh/product'
 import { Button, buttonVariants } from '@vmsh/ui'
 
@@ -26,20 +27,22 @@ function formatMoment(value: string): string {
 
 function useStudentNewsClient() {
   const authentication = useAuthentication()
-  return useMemo(
-    () =>
-      createNewsClient(authentication.client.runtime, 'student', {
-        refreshSession: async () => {
-          try {
-            return await authentication.refresh()
-          } catch (error) {
-            authentication.handleApiError(error)
-            throw error
-          }
-        },
-      }),
-    [authentication],
-  )
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'student') throw new Error('Student news requires Student auth')
+  const database = useOfflineDatabase()
+  return useMemo(() => {
+    const online = createNewsClient(authentication.client.runtime, 'student', {
+      refreshSession: async () => {
+        try {
+          return await authentication.refresh()
+        } catch (error) {
+          authentication.handleApiError(error)
+          throw error
+        }
+      },
+    })
+    return createOfflineNewsClient(online, database, principal.accountId)
+  }, [authentication, database, principal.accountId])
 }
 
 /** Production Student news feed. Prototype states remain in `pages.tsx` for Storybook. */

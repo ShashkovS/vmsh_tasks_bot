@@ -1,6 +1,7 @@
 export * from './authentication-store'
 export * from './database'
 export * from './document-cache'
+export * from './news-cache'
 export * from './provider'
 export * from './push-notification'
 export * from './recent-media-policy'
