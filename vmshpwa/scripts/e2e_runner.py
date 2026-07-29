@@ -77,6 +77,8 @@ def commands_for_mode(mode: str) -> tuple[tuple[str, ...], ...]:
         playwright.append("e2e/authentication.spec.ts")
     elif mode == "content":
         playwright.append("e2e/content-publication.spec.ts")
+    elif mode == "family":
+        playwright.append("e2e/family-context.spec.ts")
     elif mode == "submissions":
         playwright.append("e2e/test-submission.spec.ts")
     elif mode == "review":
@@ -159,6 +161,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "authentication",
             "classrooms",
             "content",
+            "family",
             "nonvisual",
             "oral",
             "runtime-isolation",
