@@ -86,7 +86,7 @@ def test_inventory_is_deterministic_and_does_not_read_rows(tmp_path):
     assert sentinel not in rendered_json
     assert sentinel not in rendered_sql
     assert "insert into" not in rendered_sql.casefold()
-    assert second["product"]["object_count"] == 321
+    assert second["product"]["object_count"] == 338
     assert second["legacy_derived"]["object_count"] == 0
     assert all(
         not record["name"].startswith("sqlite_") and "yoyo" not in record["name"]
