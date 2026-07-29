@@ -526,6 +526,7 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
                 {
                     "enrollmentPublicId": "classroom-layout-enrollment",
                     "classroomPublicId": "classroom-layout-202",
+                    "confirmGroupChange": False,
                 }
             ],
         },
@@ -548,3 +549,175 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     confirmed_assignment = (await confirmed_plan.json())["assignmentPlan"]
     assert confirmed_assignment["plan"]["state"] == "confirmed"
     assert confirmed_assignment["plan"]["version"] == 3
+
+
+@pytest.mark.asyncio
+async def test_admin_confirms_group_change_with_classroom_move(classroom_http):
+    _seed_layout_scope(classroom_http.factory)
+    now = NOW.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+    def seed_second_group(connection):
+        course = connection.execute(
+            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+        ).fetchone()
+        course_lesson = connection.execute(
+            "SELECT id FROM course_lessons "
+            "WHERE public_id = 'classroom-layout-course-lesson'"
+        ).fetchone()
+        event = connection.execute(
+            "SELECT id FROM in_person_events WHERE public_id = 'classroom-layout-event'"
+        ).fetchone()
+        connection.execute(
+            "UPDATE users SET group_id = 'layout-beginner' "
+            "WHERE public_id = 'classroom-layout-student'"
+        )
+        connection.execute(
+            "INSERT INTO groups "
+            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
+            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "status, color_key, created_at, updated_at) VALUES "
+            "('layout-advanced', 'п', 'Продолжающие', 2, 1, 0, 0, 0, 1.0, "
+            "'classroom-layout-group-advanced', ?, 'active', 'advanced', ?, ?)",
+            (course["id"], now, now),
+        )
+        group_lesson_id = connection.execute(
+            "INSERT INTO group_lessons "
+            "(public_id, course_lesson_id, course_id, group_id, cycle_anchor_date, "
+            "business_timezone, status, created_at, updated_at) VALUES "
+            "('classroom-layout-group-lesson-advanced', ?, ?, 'layout-advanced', "
+            "'2026-10-01', 'Europe/Moscow', 'active', ?, ?) RETURNING id",
+            (course_lesson["id"], course["id"], now, now),
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO in_person_event_group_lessons "
+            "(in_person_event_id, group_lesson_id, added_by_user_id, created_at) "
+            "VALUES (?, ?, ?, ?)",
+            (event["id"], group_lesson_id, ADMIN_ID, now),
+        )
+        room_id = connection.execute(
+            "INSERT INTO classrooms "
+            "(public_id, name, normalized_name, status, created_by_user_id, "
+            "updated_by_user_id, created_at, updated_at) VALUES "
+            "('classroom-layout-301', '301', '301', 'active', ?, ?, ?, ?) "
+            "RETURNING id",
+            (ADMIN_ID, ADMIN_ID, now, now),
+        ).fetchone()["id"]
+        first_group_lesson = connection.execute(
+            "SELECT id FROM group_lessons "
+            "WHERE public_id = 'classroom-layout-group-lesson'"
+        ).fetchone()["id"]
+        first_rooms = connection.execute(
+            "SELECT id FROM classrooms WHERE public_id IN "
+            "('classroom-layout-201', 'classroom-layout-202') ORDER BY public_id"
+        ).fetchall()
+        layout_id = connection.execute(
+            "INSERT INTO classroom_layout_versions "
+            "(public_id, in_person_event_id, state, created_by_user_id, "
+            "created_at, updated_at) VALUES "
+            "('classroom-layout-cross-group', ?, 'draft', ?, ?, ?) RETURNING id",
+            (event["id"], ADMIN_ID, now, now),
+        ).fetchone()["id"]
+        connection.executemany(
+            "INSERT INTO classroom_layout_rooms "
+            "(layout_version_id, classroom_id, group_lesson_id, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                (layout_id, first_rooms[0]["id"], first_group_lesson, now, now),
+                (layout_id, first_rooms[1]["id"], first_group_lesson, now, now),
+                (layout_id, room_id, group_lesson_id, now, now),
+            ),
+        )
+        connection.execute(
+            "UPDATE classroom_layout_versions SET state = 'confirmed', "
+            "confirmed_by_user_id = ?, confirmed_at = ?, updated_at = ? "
+            "WHERE id = ?",
+            (ADMIN_ID, now, now, layout_id),
+        )
+
+    classroom_http.factory.run_write(seed_second_group)
+    path = (
+        "/staff/api/v1/in-person-events/classroom-layout-event/"
+        "classroom-assignment-plan"
+    )
+    recalculated = await classroom_http.client.post(
+        f"{path}/recalculate",
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert recalculated.status == 200, await recalculated.text()
+    plan = (await recalculated.json())["assignmentPlan"]["plan"]
+    assignment_path = f"{path}/{plan['publicId']}/assignments"
+
+    rejected = await classroom_http.client.put(
+        assignment_path,
+        json={
+            "schemaVersion": 1,
+            "assignments": [
+                {
+                    "enrollmentPublicId": "classroom-layout-enrollment",
+                    "classroomPublicId": "classroom-layout-301",
+                    "confirmGroupChange": False,
+                }
+            ],
+        },
+        headers=_headers(unsafe=True, if_match=recalculated.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert rejected.status == 422
+
+    moved = await classroom_http.client.put(
+        assignment_path,
+        json={
+            "schemaVersion": 1,
+            "assignments": [
+                {
+                    "enrollmentPublicId": "classroom-layout-enrollment",
+                    "classroomPublicId": "classroom-layout-301",
+                    "confirmGroupChange": True,
+                }
+            ],
+        },
+        headers=_headers(unsafe=True, if_match=recalculated.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert moved.status == 200, await moved.text()
+    student = (await moved.json())["assignmentPlan"]["students"][0]
+    assert (student["groupPublicId"], student["classroomName"], student["source"]) == (
+        "classroom-layout-group-advanced",
+        "301",
+        "group-change",
+    )
+
+    def changed_rows(connection):
+        enrollment = connection.execute(
+            "SELECT active_group_id FROM course_enrollments "
+            "WHERE public_id = 'classroom-layout-enrollment'"
+        ).fetchone()["active_group_id"]
+        access = connection.execute(
+            "SELECT group_id FROM course_group_access WHERE valid_to IS NULL"
+        ).fetchall()
+        event = connection.execute(
+            "SELECT previous_group_id, new_group_id, source "
+            "FROM course_enrollment_events"
+        ).fetchone()
+        user_group = connection.execute(
+            "SELECT group_id FROM users WHERE public_id = 'classroom-layout-student'"
+        ).fetchone()["group_id"]
+        legacy_event = connection.execute(
+            "SELECT change_type, new_value FROM user_changes_log"
+        ).fetchone()
+        return enrollment, access, event, user_group, legacy_event
+
+    enrollment, access, event, user_group, legacy_event = (
+        classroom_http.factory.run_read(changed_rows)
+    )
+    assert enrollment == "layout-advanced"
+    assert [row["group_id"] for row in access] == ["layout-advanced"]
+    assert tuple(event.values()) == (
+        "layout-beginner",
+        "layout-advanced",
+        "staff",
+    )
+    assert user_group == "layout-advanced"
+    assert tuple(legacy_event.values()) == ("G", "layout-advanced")

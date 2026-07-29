@@ -96,7 +96,7 @@ async def _json(request: web.Request) -> dict[str, object]:
     return payload
 
 
-def _assignment_changes(payload: dict[str, object]) -> list[tuple[str, str]]:
+def _assignment_changes(payload: dict[str, object]) -> list[tuple[str, str, bool]]:
     if set(payload) != {"schemaVersion", "assignments"} or not isinstance(
         payload["assignments"], list
     ):
@@ -116,6 +116,7 @@ def _assignment_changes(payload: dict[str, object]) -> list[tuple[str, str]]:
         if not isinstance(item, dict) or set(item) != {
             "enrollmentPublicId",
             "classroomPublicId",
+            "confirmGroupChange",
         }:
             raise PwaApiError(
                 status=422,
@@ -124,18 +125,22 @@ def _assignment_changes(payload: dict[str, object]) -> list[tuple[str, str]]:
             )
         enrollment_public_id = item["enrollmentPublicId"]
         classroom_public_id = item["classroomPublicId"]
+        confirm_group_change = item["confirmGroupChange"]
         if (
             not isinstance(enrollment_public_id, str)
             or _PUBLIC_ID.fullmatch(enrollment_public_id) is None
             or not isinstance(classroom_public_id, str)
             or _PUBLIC_ID.fullmatch(classroom_public_id) is None
+            or not isinstance(confirm_group_change, bool)
         ):
             raise PwaApiError(
                 status=422,
                 code="validation_error",
                 message="Проверьте список школьников",
             )
-        changes.append((enrollment_public_id, classroom_public_id))
+        changes.append(
+            (enrollment_public_id, classroom_public_id, confirm_group_change)
+        )
     return changes
 
 
@@ -342,7 +347,7 @@ async def post_recalculate_classroom_assignment_plan(
     "{plan_public_id}/assignments"
 )
 async def put_classroom_assignments(request: web.Request) -> web.Response:
-    _admin_user_id(request)
+    actor_user_id = _admin_user_id(request)
     event_public_id = _public_id(request, "event_public_id")
     plan_public_id = _public_id(request, "plan_public_id")
     expected_version = _expected_version(request, plan_public_id)
@@ -355,6 +360,8 @@ async def put_classroom_assignments(request: web.Request) -> web.Response:
                 plan_public_id=plan_public_id,
                 expected_version=expected_version,
                 assignments=assignments,
+                actor_user_id=actor_user_id,
+                request_id=request["request_id"],
                 now=_now(),
             )
         )

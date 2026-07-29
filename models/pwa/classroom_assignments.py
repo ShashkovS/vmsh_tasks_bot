@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+import uuid
 from collections.abc import Sequence
 from datetime import date
 
@@ -11,13 +12,19 @@ from db_methods.pwa.classroom_assignments import (
     find_plan,
     find_plan_by_public_id,
     find_previous_classroom,
+    grant_group_access,
     insert_plan,
+    insert_group_change_event,
+    insert_legacy_group_change,
     list_eligible_students,
     list_plan_assignments,
     replace_assignments,
     supersede_confirmed_plan,
     touch_plan,
+    update_assignment_group_and_room,
     update_assignment_room,
+    update_enrollment_group,
+    update_legacy_group_if_current,
 )
 from db_methods.pwa.classroom_layouts import (
     find_event_layout,
@@ -268,7 +275,9 @@ def update_assignment_plan(
     event_public_id: str,
     plan_public_id: str,
     expected_version: int,
-    assignments: Sequence[tuple[str, str]],
+    assignments: Sequence[tuple[str, str, bool]],
+    actor_user_id: int,
+    request_id: str,
     now: str,
     today: date | None = None,
 ) -> dict[str, object]:
@@ -291,21 +300,83 @@ def update_assignment_plan(
         for room in list_layout_rooms(connection, int(layout["id"]))
         if room["classroom_status"] == "active"
     }
-    if len({enrollment_id for enrollment_id, _room_id in assignments}) != len(
-        assignments
-    ):
+    event_groups = {
+        int(group["group_lesson_id"]): group
+        for group in list_event_group_lessons(connection, int(event["id"]))
+    }
+    if len(
+        {enrollment_id for enrollment_id, _room_id, _confirmed in assignments}
+    ) != len(assignments):
         raise InvalidClassroomAssignment("student appears more than once")
-    for enrollment_public_id, classroom_public_id in assignments:
+    for enrollment_public_id, classroom_public_id, confirm_group_change in assignments:
         assignment = current.get(enrollment_public_id)
         room = rooms.get(classroom_public_id)
         if assignment is None or room is None:
             raise InvalidClassroomAssignment("unknown student or classroom")
-        if int(assignment["group_lesson_id"]) != int(room["group_lesson_id"]):
+        target_group = event_groups[int(room["group_lesson_id"])]
+        if int(assignment["group_lesson_id"]) == int(room["group_lesson_id"]):
+            update_assignment_room(
+                connection,
+                plan_id=int(plan["id"]),
+                enrollment_id=int(assignment["course_enrollment_id"]),
+                classroom_id=int(room["classroom_id"]),
+                now=now,
+            )
+            continue
+        if not confirm_group_change:
             raise InvalidClassroomAssignment("group change requires confirmation")
-        update_assignment_room(
+        if int(assignment["course_id"]) != int(target_group["course_id"]):
+            raise InvalidClassroomAssignment("classroom belongs to another course")
+        previous_group_id = str(assignment["group_id"])
+        new_group_id = str(target_group["group_id"])
+        enrollment_id = int(assignment["course_enrollment_id"])
+        if not update_enrollment_group(
+            connection,
+            enrollment_id=enrollment_id,
+            course_id=int(assignment["course_id"]),
+            previous_group_id=previous_group_id,
+            new_group_id=new_group_id,
+            actor_user_id=actor_user_id,
+            now=now,
+        ):
+            raise ClassroomAssignmentConflict
+        grant_group_access(
+            connection,
+            enrollment_id=enrollment_id,
+            course_id=int(assignment["course_id"]),
+            group_id=new_group_id,
+            actor_user_id=actor_user_id,
+            now=now,
+        )
+        insert_group_change_event(
+            connection,
+            public_id=f"course-enrollment-event.{uuid.uuid4().hex}",
+            enrollment_id=enrollment_id,
+            course_id=int(assignment["course_id"]),
+            previous_group_id=previous_group_id,
+            new_group_id=new_group_id,
+            actor_user_id=actor_user_id,
+            request_id=request_id,
+            now=now,
+        )
+        if update_legacy_group_if_current(
+            connection,
+            student_user_id=int(assignment["student_user_id"]),
+            previous_group_id=previous_group_id,
+            new_group_id=new_group_id,
+        ):
+            insert_legacy_group_change(
+                connection,
+                student_user_id=int(assignment["student_user_id"]),
+                new_group_id=new_group_id,
+                now=now,
+            )
+        update_assignment_group_and_room(
             connection,
             plan_id=int(plan["id"]),
-            enrollment_id=int(assignment["course_enrollment_id"]),
+            enrollment_id=enrollment_id,
+            group_lesson_id=int(room["group_lesson_id"]),
+            group_id=new_group_id,
             classroom_id=int(room["classroom_id"]),
             now=now,
         )

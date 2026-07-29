@@ -150,7 +150,8 @@ def list_plan_assignments(
                assignment.group_id, assignment.classroom_id,
                assignment.status, assignment.source,
                enrollment.public_id AS enrollment_public_id,
-               enrollment.student_user_id, user.public_id AS student_public_id,
+               enrollment.student_user_id, enrollment.course_id,
+               user.public_id AS student_public_id,
                user.surname, user.name, user.grade, user.birthday,
                strength.simple_prob, strength.compl_prob,
                lesson.public_id AS group_lesson_public_id,
@@ -203,6 +204,146 @@ def update_assignment_room(
     )
 
 
+def update_assignment_group_and_room(
+    connection: sqlite3.Connection,
+    *,
+    plan_id: int,
+    enrollment_id: int,
+    group_lesson_id: int,
+    group_id: str,
+    classroom_id: int,
+    now: str,
+) -> None:
+    connection.execute(
+        "UPDATE classroom_assignments SET group_lesson_id = ?, group_id = ?, "
+        "classroom_id = ?, status = 'assigned', source = 'group-change', "
+        "updated_at = ? WHERE plan_id = ? AND course_enrollment_id = ?",
+        (
+            group_lesson_id,
+            group_id,
+            classroom_id,
+            now,
+            plan_id,
+            enrollment_id,
+        ),
+    )
+
+
+def update_enrollment_group(
+    connection: sqlite3.Connection,
+    *,
+    enrollment_id: int,
+    course_id: int,
+    previous_group_id: str,
+    new_group_id: str,
+    actor_user_id: int,
+    now: str,
+) -> bool:
+    cursor = connection.execute(
+        "UPDATE course_enrollments SET active_group_id = ?, updated_by = ?, "
+        "updated_at = ?, version = version + 1 WHERE id = ? AND course_id = ? "
+        "AND active_group_id = ?",
+        (
+            new_group_id,
+            actor_user_id,
+            now,
+            enrollment_id,
+            course_id,
+            previous_group_id,
+        ),
+    )
+    return cursor.rowcount == 1
+
+
+def grant_group_access(
+    connection: sqlite3.Connection,
+    *,
+    enrollment_id: int,
+    course_id: int,
+    group_id: str,
+    actor_user_id: int,
+    now: str,
+) -> None:
+    connection.execute(
+        "INSERT INTO course_group_access "
+        "(enrollment_id, course_id, group_id, valid_from, granted_by, reason, "
+        "created_at, updated_at) "
+        "SELECT ?, ?, ?, ?, ?, 'staff classroom assignment', ?, ? "
+        "WHERE NOT EXISTS (SELECT 1 FROM course_group_access "
+        "WHERE enrollment_id = ? AND group_id = ? AND valid_to IS NULL)",
+        (
+            enrollment_id,
+            course_id,
+            group_id,
+            now,
+            actor_user_id,
+            now,
+            now,
+            enrollment_id,
+            group_id,
+        ),
+    )
+
+
+def insert_group_change_event(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    enrollment_id: int,
+    course_id: int,
+    previous_group_id: str,
+    new_group_id: str,
+    actor_user_id: int,
+    request_id: str,
+    now: str,
+) -> None:
+    connection.execute(
+        "INSERT INTO course_enrollment_events "
+        "(public_id, enrollment_id, course_id, event_type, previous_group_id, "
+        "new_group_id, actor_user_id, source, request_id, occurred_at, created_at) "
+        "VALUES (?, ?, ?, 'active_group_changed', ?, ?, ?, 'staff', ?, ?, ?)",
+        (
+            public_id,
+            enrollment_id,
+            course_id,
+            previous_group_id,
+            new_group_id,
+            actor_user_id,
+            request_id,
+            now,
+            now,
+        ),
+    )
+
+
+def update_legacy_group_if_current(
+    connection: sqlite3.Connection,
+    *,
+    student_user_id: int,
+    previous_group_id: str,
+    new_group_id: str,
+) -> bool:
+    cursor = connection.execute(
+        "UPDATE users SET group_id = ? WHERE id = ? AND group_id = ?",
+        (new_group_id, student_user_id, previous_group_id),
+    )
+    return cursor.rowcount == 1
+
+
+def insert_legacy_group_change(
+    connection: sqlite3.Connection,
+    *,
+    student_user_id: int,
+    new_group_id: str,
+    now: str,
+) -> None:
+    connection.execute(
+        "INSERT INTO user_changes_log (ts, user_id, change_type, new_value) "
+        "VALUES (?, ?, 'G', ?)",
+        (now, student_user_id, new_group_id),
+    )
+
+
 def supersede_confirmed_plan(
     connection: sqlite3.Connection, *, event_id: int, now: str
 ) -> None:
@@ -238,10 +379,16 @@ __all__ = [
     "find_plan_by_public_id",
     "find_previous_classroom",
     "insert_plan",
+    "insert_group_change_event",
+    "insert_legacy_group_change",
+    "grant_group_access",
     "list_eligible_students",
     "list_plan_assignments",
     "replace_assignments",
     "supersede_confirmed_plan",
     "touch_plan",
+    "update_assignment_group_and_room",
     "update_assignment_room",
+    "update_enrollment_group",
+    "update_legacy_group_if_current",
 ]
