@@ -2,6 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
+import deliveryPreviewFixture from '@vmsh/contracts/fixtures/classrooms/delivery-preview.v1.json'
+import { classroomDeliveryPreviewResponseSchema } from '@vmsh/contracts'
+import { ClassroomDeliveryPanel } from '@vmsh/product'
+
 import {
   BroadcastComposerPage,
   ReviewQueuePage,
@@ -66,6 +70,25 @@ export const MultiCourseClassroomEvent: Story = {
       canvas.getByRole('checkbox', { name: 'Включить Физика: эксперимент, Вводная' }),
     )
     await expect(canvas.getByRole('status')).toHaveTextContent('13 аудиторий и 173 назначения')
+  },
+}
+export const ClassroomDelivery: Story = {
+  name: 'Аудитории · явная рассылка после подтверждения',
+  render: () => (
+    <StaffClassroomsPage
+      students={
+        <ClassroomDeliveryPanel
+          onSend={() => undefined}
+          preview={classroomDeliveryPreviewResponseSchema.parse(deliveryPreviewFixture).preview}
+        />
+      }
+      tab="students"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Разослать аудитории' })).toBeEnabled()
+    await expect(canvas.getByText(/Семье уведомление не отправляется/)).toBeInTheDocument()
   },
 }
 export const BroadcastPhaseTwo: Story = { render: () => <BroadcastComposerPage /> }

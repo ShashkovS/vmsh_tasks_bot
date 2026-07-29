@@ -8,8 +8,14 @@ import {
   useAuthenticatedPrincipal,
   useAuthentication,
 } from '@vmsh/app-shell'
-import { ApiResponseError, classroomQueryKeys, type ClassroomAssignmentPlan } from '@vmsh/contracts'
 import {
+  ApiResponseError,
+  classroomQueryKeys,
+  type ClassroomAssignmentPlan,
+  type ClassroomDeliveryChannel,
+} from '@vmsh/contracts'
+import {
+  ClassroomDeliveryPanel,
   ClassroomStudentPlanner,
   type ClassroomGroupOption,
   type ClassroomPlanRoom,
@@ -20,6 +26,63 @@ import { Alert, AlertContent, AlertDescription, AlertTitle, Button } from '@vmsh
 function colorIndex(colorKey: string | null): 0 | 1 | 2 | 3 | 4 {
   const match = /^level-([1-4])$/.exec(colorKey ?? '')
   return match ? (Number(match[1]) as 1 | 2 | 3 | 4) : 0
+}
+
+function AssignmentDelivery({
+  plan,
+  client,
+}: {
+  plan: NonNullable<ClassroomAssignmentPlan['plan']>
+  client: ReturnType<typeof createClassroomClient>
+}) {
+  const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  const queryClient = useQueryClient()
+  const latestQueryKey = classroomQueryKeys.latestDelivery(principal, plan.publicId)
+  const latestDelivery = useQuery({
+    queryKey: latestQueryKey,
+    queryFn: ({ signal }) => client.getLatestAssignmentDelivery(plan.publicId, { signal }),
+  })
+  const previewMutation = useMutation({
+    mutationFn: () => client.previewAssignmentDelivery(plan.publicId),
+    onError: (error) => authentication.handleApiError(error),
+  })
+  const sendMutation = useMutation({
+    mutationFn: (channels: ClassroomDeliveryChannel[]) => {
+      const preview = previewMutation.data?.preview
+      if (preview === undefined) throw new Error('Delivery preview is not available')
+      return client.createAssignmentDelivery(plan.publicId, {
+        schemaVersion: 1,
+        channels,
+        expectedPlanVersion: preview.planVersion,
+        previewHash: preview.previewHash,
+        idempotencyKey: globalThis.crypto.randomUUID(),
+      })
+    },
+    onError: (error) => authentication.handleApiError(error),
+    onSuccess: (response) => {
+      queryClient.setQueryData(latestQueryKey, response)
+    },
+  })
+  const batch = sendMutation.data?.batch ?? latestDelivery.data?.batch ?? null
+  const changedAfterSend =
+    batch !== null && (batch.planPublicId !== plan.publicId || batch.planVersion !== plan.version)
+  const error = previewMutation.error ?? sendMutation.error ?? latestDelivery.error
+
+  return (
+    <ClassroomDeliveryPanel
+      batch={batch}
+      changedAfterSend={changedAfterSend}
+      error={error ? describeError(error) : null}
+      onPreview={() => {
+        sendMutation.reset()
+        previewMutation.mutate()
+      }}
+      onSend={(channels) => sendMutation.mutate(channels)}
+      pending={previewMutation.isPending || sendMutation.isPending || latestDelivery.isPending}
+      preview={sendMutation.data ? null : (previewMutation.data?.preview ?? null)}
+    />
+  )
 }
 
 function describeError(error: Error): string {
@@ -380,6 +443,9 @@ function AssignmentEditor({
           ? {}
           : { staleReason: currentPlan.staleReason })}
       />
+      {currentPlan?.state === 'confirmed' ? (
+        <AssignmentDelivery client={client} plan={currentPlan} />
+      ) : null}
     </div>
   )
 }

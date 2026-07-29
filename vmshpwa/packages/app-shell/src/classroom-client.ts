@@ -5,6 +5,8 @@ import {
   classroomAssignmentHistoryResponseSchema,
   classroomAssignmentPlanEtag,
   classroomAssignmentPlanResponseSchema,
+  classroomDeliveryBatchResponseSchema,
+  classroomDeliveryPreviewResponseSchema,
   classroomEtag,
   classroomLayoutEtag,
   classroomLayoutResponseSchema,
@@ -12,9 +14,11 @@ import {
   classroomListResponseSchema,
   classroomResponseSchema,
   createClassroomRequestSchema,
+  createClassroomDeliveryBatchRequestSchema,
   confirmClassroomLayoutRequestSchema,
   confirmClassroomAssignmentPlanRequestSchema,
   materializeClassroomLayoutRequestSchema,
+  latestClassroomDeliveryBatchResponseSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
   recalculateClassroomAssignmentPlanRequestSchema,
@@ -25,14 +29,18 @@ import {
   type Classroom,
   type ClassroomAssignmentHistoryResponse,
   type ClassroomAssignmentPlanResponse,
+  type ClassroomDeliveryBatchResponse,
+  type ClassroomDeliveryPreviewResponse,
   type ClassroomListQuery,
   type ClassroomListResponse,
   type ClassroomLayoutResponse,
   type ClassroomResponse,
   type CreateClassroomRequest,
+  type CreateClassroomDeliveryBatchRequest,
   type ConfirmClassroomLayoutRequest,
   type ConfirmClassroomAssignmentPlanRequest,
   type MaterializeClassroomLayoutRequest,
+  type LatestClassroomDeliveryBatchResponse,
   type RenameClassroomRequest,
   type RecalculateClassroomAssignmentPlanRequest,
   type ReplaceClassroomLayoutRequest,
@@ -122,6 +130,23 @@ export interface ClassroomClient {
     request: ConfirmClassroomAssignmentPlanRequest,
     options?: ClassroomRequestOptions,
   ): Promise<ClassroomAssignmentPlanResponse>
+  previewAssignmentDelivery(
+    planPublicId: string,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomDeliveryPreviewResponse>
+  createAssignmentDelivery(
+    planPublicId: string,
+    request: CreateClassroomDeliveryBatchRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomDeliveryBatchResponse>
+  getAssignmentDelivery(
+    batchPublicId: string,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomDeliveryBatchResponse>
+  getLatestAssignmentDelivery(
+    planPublicId: string,
+    options?: ClassroomRequestOptions,
+  ): Promise<LatestClassroomDeliveryBatchResponse>
 }
 
 export class ClassroomProtocolError extends Error {
@@ -389,6 +414,66 @@ class BrowserClassroomClient implements ClassroomClient {
       options,
       200,
       (payload) => classroomAssignmentPlanResponseSchema.parse(payload),
+    )
+  }
+
+  async previewAssignmentDelivery(
+    planPublicId: string,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomDeliveryPreviewResponse> {
+    const planId = publicIdSchema.parse(planPublicId)
+    return this.#request(
+      `/classroom-assignment-plans/${encodeURIComponent(planId)}/delivery-preview`,
+      { method: 'POST', body: JSON.stringify({ schemaVersion: 1 }) },
+      options,
+      200,
+      (payload) => classroomDeliveryPreviewResponseSchema.parse(payload),
+    )
+  }
+
+  async createAssignmentDelivery(
+    planPublicId: string,
+    request: CreateClassroomDeliveryBatchRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomDeliveryBatchResponse> {
+    const planId = publicIdSchema.parse(planPublicId)
+    return this.#request(
+      `/classroom-assignment-plans/${encodeURIComponent(planId)}/delivery-batches`,
+      {
+        method: 'POST',
+        body: JSON.stringify(createClassroomDeliveryBatchRequestSchema.parse(request)),
+      },
+      options,
+      201,
+      (payload) => classroomDeliveryBatchResponseSchema.parse(payload),
+    )
+  }
+
+  async getAssignmentDelivery(
+    batchPublicId: string,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomDeliveryBatchResponse> {
+    const batchId = publicIdSchema.parse(batchPublicId)
+    return this.#request(
+      `/classroom-assignment-delivery-batches/${encodeURIComponent(batchId)}`,
+      { method: 'GET' },
+      options,
+      200,
+      (payload) => classroomDeliveryBatchResponseSchema.parse(payload),
+    )
+  }
+
+  async getLatestAssignmentDelivery(
+    planPublicId: string,
+    options: ClassroomRequestOptions = {},
+  ): Promise<LatestClassroomDeliveryBatchResponse> {
+    const planId = publicIdSchema.parse(planPublicId)
+    return this.#request(
+      `/classroom-assignment-plans/${encodeURIComponent(planId)}/delivery-latest`,
+      { method: 'GET' },
+      options,
+      200,
+      (payload) => latestClassroomDeliveryBatchResponseSchema.parse(payload),
     )
   }
 

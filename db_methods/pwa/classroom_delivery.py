@@ -168,6 +168,22 @@ def find_batch(
     return None if row is None else dict(row)
 
 
+def find_latest_batch_for_event(
+    connection: sqlite3.Connection, plan_public_id: str
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT batch.*, sent_plan.public_id AS plan_public_id "
+        "FROM classroom_assignment_plans current_plan "
+        "JOIN classroom_assignment_plans sent_plan "
+        "ON sent_plan.in_person_event_id = current_plan.in_person_event_id "
+        "JOIN classroom_assignment_delivery_batches batch "
+        "ON batch.assignment_plan_id = sent_plan.id "
+        "WHERE current_plan.public_id = ? ORDER BY batch.id DESC LIMIT 1",
+        (plan_public_id,),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
 def list_batch_recipients(
     connection: sqlite3.Connection, batch_id: int
 ) -> list[dict[str, object]]:
@@ -187,6 +203,7 @@ __all__ = [
     "find_batch",
     "find_batch_by_idempotency_key",
     "find_confirmed_plan",
+    "find_latest_batch_for_event",
     "insert_batch",
     "insert_recipients",
     "list_batch_recipients",

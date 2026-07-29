@@ -3,22 +3,28 @@ import { describe, expect, it } from 'vitest'
 import fixture from '../fixtures/classrooms/catalog.v1.json'
 import assignmentFixture from '../fixtures/classrooms/assignment-plan.v1.json'
 import assignmentHistoryFixture from '../fixtures/classrooms/assignment-history.v1.json'
+import deliveryBatchFixture from '../fixtures/classrooms/delivery-batch.v1.json'
+import deliveryPreviewFixture from '../fixtures/classrooms/delivery-preview.v1.json'
 import layoutFixture from '../fixtures/classrooms/layout.v1.json'
 import publishedAssignmentsFixture from '../fixtures/classrooms/published-assignments.v1.json'
 import {
   classroomAssignmentPlanEtag,
   classroomAssignmentPlanResponseSchema,
   classroomAssignmentHistoryResponseSchema,
+  classroomDeliveryBatchResponseSchema,
+  classroomDeliveryPreviewResponseSchema,
   classroomEtag,
   classroomLayoutEtag,
   classroomLayoutResponseSchema,
   classroomListQuerySchema,
   classroomListResponseSchema,
   classroomQueryKeys,
+  latestClassroomDeliveryBatchResponseSchema,
   publishedClassroomAssignmentListResponseSchema,
   createClassroomRequestSchema,
   replaceClassroomLayoutRequestSchema,
   updateClassroomAssignmentPlanRequestSchema,
+  createClassroomDeliveryBatchRequestSchema,
 } from './classrooms'
 
 describe('classroom catalog contracts', () => {
@@ -220,5 +226,44 @@ describe('published classroom assignment contracts', () => {
     expect(classroomQueryKeys.publishedAssignments(family, 'student.one')).not.toEqual(
       classroomQueryKeys.publishedAssignments(family, 'student.two'),
     )
+  })
+})
+
+describe('classroom delivery contracts', () => {
+  it('validates safe preview and immutable batch fixtures', () => {
+    const preview = classroomDeliveryPreviewResponseSchema.parse(deliveryPreviewFixture)
+    const batch = classroomDeliveryBatchResponseSchema.parse(deliveryBatchFixture)
+    const latest = latestClassroomDeliveryBatchResponseSchema.parse({
+      ...deliveryBatchFixture,
+      batch: deliveryBatchFixture.batch,
+    })
+    expect(preview.preview.telegramUnavailableCount).toBe(1)
+    expect(batch.batch.channelCounts.telegram).toEqual({ queued: 2, suppressed: 1 })
+    expect(latest.batch?.publicId).toBe(batch.batch.publicId)
+    expect(
+      latestClassroomDeliveryBatchResponseSchema.parse({
+        schemaVersion: 1,
+        batch: null,
+        requestId: 'request-empty',
+      }).batch,
+    ).toBeNull()
+    expect(JSON.stringify({ preview, batch, latest })).not.toContain('chatId')
+  })
+
+  it('requires one or two unique delivery channels', () => {
+    const valid = {
+      schemaVersion: 1,
+      channels: ['pwa'] as const,
+      expectedPlanVersion: 3,
+      previewHash: 'a'.repeat(64),
+      idempotencyKey: 'delivery-request-1',
+    }
+    expect(createClassroomDeliveryBatchRequestSchema.parse(valid).channels).toEqual(['pwa'])
+    expect(() =>
+      createClassroomDeliveryBatchRequestSchema.parse({
+        ...valid,
+        channels: ['pwa', 'pwa'],
+      }),
+    ).toThrow()
   })
 })

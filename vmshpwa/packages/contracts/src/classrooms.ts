@@ -352,6 +352,157 @@ export type PublishedClassroomAssignmentListResponse = z.infer<
   typeof publishedClassroomAssignmentListResponseSchema
 >
 
+/** Phase-7 explicit Student-only classroom announcement contract. */
+export const classroomDeliveryPreviewRecipientSchema = z
+  .object({
+    studentPublicId: publicIdSchema,
+    studentName: z.string().trim().min(1),
+    coursePublicId: publicIdSchema,
+    courseName: z.string().trim().min(1),
+    groupPublicId: publicIdSchema,
+    groupName: z.string().trim().min(1),
+    classroomPublicId: publicIdSchema,
+    classroomName: z.string().trim().min(1).max(200),
+    changed: z.boolean(),
+    pwaAvailable: z.boolean(),
+    telegramAvailable: z.boolean(),
+  })
+  .strict()
+
+export const classroomDeliveryPreviewSchema = z
+  .object({
+    planPublicId: publicIdSchema,
+    planVersion: z.number().int().positive(),
+    previewHash: z.string().regex(/^[a-f0-9]{64}$/),
+    recipientCount: z.number().int().nonnegative(),
+    changedCount: z.number().int().nonnegative(),
+    pwaUnavailableCount: z.number().int().nonnegative(),
+    telegramUnavailableCount: z.number().int().nonnegative(),
+    recipients: z.array(classroomDeliveryPreviewRecipientSchema),
+  })
+  .strict()
+  .superRefine((preview, context) => {
+    if (preview.recipientCount !== preview.recipients.length) {
+      context.addIssue({ code: 'custom', message: 'Recipient count must match the preview rows' })
+    }
+    if (preview.changedCount > preview.recipientCount) {
+      context.addIssue({ code: 'custom', message: 'Changed count cannot exceed recipients' })
+    }
+  })
+export type ClassroomDeliveryPreview = z.infer<typeof classroomDeliveryPreviewSchema>
+
+export const classroomDeliveryPreviewResponseSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    preview: classroomDeliveryPreviewSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type ClassroomDeliveryPreviewResponse = z.infer<
+  typeof classroomDeliveryPreviewResponseSchema
+>
+
+export const classroomDeliveryChannelSchema = z.enum(['pwa', 'telegram'])
+export type ClassroomDeliveryChannel = z.infer<typeof classroomDeliveryChannelSchema>
+export const classroomDeliveryChannelStateSchema = z.enum([
+  'not_requested',
+  'queued',
+  'sent',
+  'suppressed',
+  'failed',
+])
+export const classroomDeliveryBatchStateSchema = z.enum([
+  'queued',
+  'completed',
+  'completed_with_errors',
+])
+
+const classroomDeliveryResultSchema = z
+  .object({
+    state: classroomDeliveryChannelStateSchema,
+    errorCode: z.string().trim().min(1).nullable(),
+    sentAt: z.iso.datetime().nullable(),
+  })
+  .strict()
+
+export const classroomDeliveryBatchSchema = z
+  .object({
+    publicId: publicIdSchema,
+    planPublicId: publicIdSchema,
+    planVersion: z.number().int().positive(),
+    previewHash: z.string().regex(/^[a-f0-9]{64}$/),
+    channels: z.array(classroomDeliveryChannelSchema).min(1).max(2),
+    recipientCount: z.number().int().nonnegative(),
+    changedCount: z.number().int().nonnegative(),
+    state: classroomDeliveryBatchStateSchema,
+    createdAt: z.iso.datetime(),
+    completedAt: z.iso.datetime().nullable(),
+    version: z.number().int().positive(),
+    channelCounts: z
+      .object({
+        pwa: z.partialRecord(classroomDeliveryChannelStateSchema, z.number().int().nonnegative()),
+        telegram: z.partialRecord(
+          classroomDeliveryChannelStateSchema,
+          z.number().int().nonnegative(),
+        ),
+      })
+      .strict(),
+    recipients: z.array(
+      z
+        .object({
+          studentPublicId: publicIdSchema,
+          studentName: z.string().trim().min(1),
+          coursePublicId: publicIdSchema,
+          courseName: z.string().trim().min(1),
+          groupPublicId: publicIdSchema,
+          groupName: z.string().trim().min(1),
+          classroomPublicId: publicIdSchema,
+          classroomName: z.string().trim().min(1).max(200),
+          pwa: classroomDeliveryResultSchema,
+          telegram: classroomDeliveryResultSchema,
+        })
+        .strict(),
+    ),
+  })
+  .strict()
+export type ClassroomDeliveryBatch = z.infer<typeof classroomDeliveryBatchSchema>
+
+export const classroomDeliveryBatchResponseSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    batch: classroomDeliveryBatchSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type ClassroomDeliveryBatchResponse = z.infer<typeof classroomDeliveryBatchResponseSchema>
+
+export const latestClassroomDeliveryBatchResponseSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    batch: classroomDeliveryBatchSchema.nullable(),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type LatestClassroomDeliveryBatchResponse = z.infer<
+  typeof latestClassroomDeliveryBatchResponseSchema
+>
+
+export const createClassroomDeliveryBatchRequestSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    channels: z.array(classroomDeliveryChannelSchema).min(1).max(2),
+    expectedPlanVersion: z.number().int().positive(),
+    previewHash: z.string().regex(/^[a-f0-9]{64}$/),
+    idempotencyKey: z.string().trim().min(1).max(128),
+  })
+  .strict()
+  .refine((request) => new Set(request.channels).size === request.channels.length, {
+    message: 'Delivery channels must be unique',
+  })
+export type CreateClassroomDeliveryBatchRequest = z.infer<
+  typeof createClassroomDeliveryBatchRequestSchema
+>
+
 export const recalculateClassroomAssignmentPlanRequestSchema =
   materializeClassroomLayoutRequestSchema
 export type RecalculateClassroomAssignmentPlanRequest = z.infer<
@@ -417,6 +568,21 @@ export const classroomQueryKeys = {
     ...classroomQueryKeys.assignmentPlan(principal, eventPublicId),
     'history',
     publicIdSchema.parse(enrollmentPublicId),
+  ],
+  deliveryPreview: (principal: PrincipalQueryScope, planPublicId: string) => [
+    ...classroomQueryKeys.all(principal),
+    'delivery-preview',
+    publicIdSchema.parse(planPublicId),
+  ],
+  deliveryBatch: (principal: PrincipalQueryScope, batchPublicId: string) => [
+    ...classroomQueryKeys.all(principal),
+    'delivery-batch',
+    publicIdSchema.parse(batchPublicId),
+  ],
+  latestDelivery: (principal: PrincipalQueryScope, planPublicId: string) => [
+    ...classroomQueryKeys.all(principal),
+    'delivery-latest',
+    publicIdSchema.parse(planPublicId),
   ],
   publishedAssignments: (principal: PrincipalQueryScope, studentPublicId?: string) => [
     ...classroomQueryKeys.all(principal),

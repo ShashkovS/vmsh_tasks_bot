@@ -25,6 +25,7 @@ from models.pwa.classroom_delivery import (
     create_classroom_delivery_batch,
     preview_classroom_delivery,
     read_classroom_delivery_batch,
+    read_latest_classroom_delivery_batch,
 )
 
 
@@ -337,6 +338,26 @@ async def post_classroom_delivery_batch(request: web.Request) -> web.Response:
             "requestId": request["request_id"],
         },
         status=201,
+    )
+
+
+@classroom_delivery_routes.get(
+    "/staff/api/v1/classroom-assignment-plans/{plan_public_id}/delivery-latest"
+)
+async def get_latest_classroom_delivery_batch(request: web.Request) -> web.Response:
+    _admin_user_id(request)
+    plan_public_id = _public_id(request, "plan_public_id")
+    result = await _factory(request).run_read_async(
+        lambda connection: read_latest_classroom_delivery_batch(
+            connection, plan_public_id
+        )
+    )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "batch": None if result is None else _batch_payload(result),
+            "requestId": request["request_id"],
+        }
     )
 
 

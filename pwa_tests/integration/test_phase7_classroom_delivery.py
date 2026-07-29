@@ -15,6 +15,7 @@ from models.pwa.classroom_delivery import (
     InvalidClassroomDelivery,
     create_classroom_delivery_batch,
     preview_classroom_delivery,
+    read_latest_classroom_delivery_batch,
 )
 from models.pwa.classroom_public import read_student_classroom_assignments
 from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
@@ -151,11 +152,29 @@ def test_preview_and_batch_keep_private_destination_server_side(tmp_path):
             now="2026-07-29T13:03:00Z",
         )
         assert repeated["batch"]["public_id"] == "delivery-first"
+        assert (
+            read_latest_classroom_delivery_batch(connection, "plan-assignment")[
+                "batch"
+            ]["public_id"]
+            == "delivery-first"
+        )
 
         next_preview = preview_classroom_delivery(
             connection, plan_public_id="plan-assignment"
         )
         assert next_preview["changed_count"] == 0
+
+
+def test_latest_delivery_is_empty_before_first_send(tmp_path):
+    database_path = tmp_path / "phase7-delivery-empty.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        _seed_delivery(connection)
+        assert (
+            read_latest_classroom_delivery_batch(connection, "plan-assignment") is None
+        )
 
 
 def test_delivery_rejects_stale_preview_and_unconfirmed_plan(tmp_path):

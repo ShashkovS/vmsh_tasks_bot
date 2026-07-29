@@ -734,6 +734,15 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
         "telegram": {"queued": 1},
     }
     assert "chatId" not in delivery["recipients"][0]
+    latest_delivery_response = await classroom_http.client.get(
+        delivery_preview_path.removesuffix("/delivery-preview") + "/delivery-latest",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert latest_delivery_response.status == 200
+    assert (await latest_delivery_response.json())["batch"]["publicId"] == delivery[
+        "publicId"
+    ]
     assert dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]) == {
         **cursors_before_delivery,
         "student": cursors_before_delivery["student"] + 1,

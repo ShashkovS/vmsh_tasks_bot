@@ -10,6 +10,7 @@ from db_methods.pwa.classroom_delivery import (
     find_batch,
     find_batch_by_idempotency_key,
     find_confirmed_plan,
+    find_latest_batch_for_event,
     insert_batch,
     insert_recipients,
     list_batch_recipients,
@@ -156,6 +157,16 @@ def read_classroom_delivery_batch(
     return {"batch": batch, "recipients": recipients}
 
 
+def read_latest_classroom_delivery_batch(
+    connection: sqlite3.Connection, plan_public_id: str
+) -> dict[str, object] | None:
+    batch = find_latest_batch_for_event(connection, plan_public_id)
+    if batch is None:
+        return None
+    recipients = list_batch_recipients(connection, int(batch["id"]))
+    return {"batch": batch, "recipients": recipients}
+
+
 def create_classroom_delivery_batch(
     connection: sqlite3.Connection,
     *,
@@ -293,4 +304,5 @@ __all__ = [
     "create_classroom_delivery_batch",
     "preview_classroom_delivery",
     "read_classroom_delivery_batch",
+    "read_latest_classroom_delivery_batch",
 ]

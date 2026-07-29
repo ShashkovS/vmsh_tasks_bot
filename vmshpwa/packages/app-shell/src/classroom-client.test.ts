@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { RuntimeConfig } from '@vmsh/contracts'
 import assignmentFixture from '@vmsh/contracts/fixtures/classrooms/assignment-plan.v1.json'
 import assignmentHistoryFixture from '@vmsh/contracts/fixtures/classrooms/assignment-history.v1.json'
+import deliveryBatchFixture from '@vmsh/contracts/fixtures/classrooms/delivery-batch.v1.json'
+import deliveryPreviewFixture from '@vmsh/contracts/fixtures/classrooms/delivery-preview.v1.json'
 
 import { ClassroomProtocolError, createClassroomClient } from './classroom-client'
 
@@ -231,6 +233,48 @@ describe('classroom client', () => {
     expect(result.items[0]?.classroomName).toBe('202')
     expect(fetchImplementation).toHaveBeenCalledWith(
       '/staff/api/v1/in-person-events/event-41/classroom-assignment-plan/classroom-plan.41/students/enrollment-anna/history',
+      expect.objectContaining({ method: 'GET' }),
+    )
+  })
+
+  it('previews, creates and reads an explicit classroom delivery', async () => {
+    const fetchImplementation = vi
+      .fn()
+      .mockResolvedValueOnce(response(deliveryPreviewFixture))
+      .mockResolvedValueOnce(response(deliveryBatchFixture, 201))
+      .mockResolvedValueOnce(response(deliveryBatchFixture))
+      .mockResolvedValueOnce(response(deliveryBatchFixture))
+    const client = createClassroomClient(runtime, { fetchImplementation })
+
+    const preview = await client.previewAssignmentDelivery('classroom-plan.41')
+    await client.createAssignmentDelivery('classroom-plan.41', {
+      schemaVersion: 1,
+      channels: ['pwa', 'telegram'],
+      expectedPlanVersion: preview.preview.planVersion,
+      previewHash: preview.preview.previewHash,
+      idempotencyKey: 'classroom-delivery-request-1',
+    })
+    await client.getAssignmentDelivery('classroom-delivery.41')
+    await client.getLatestAssignmentDelivery('classroom-plan.41')
+
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      1,
+      '/staff/api/v1/classroom-assignment-plans/classroom-plan.41/delivery-preview',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      2,
+      '/staff/api/v1/classroom-assignment-plans/classroom-plan.41/delivery-batches',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      3,
+      '/staff/api/v1/classroom-assignment-delivery-batches/classroom-delivery.41',
+      expect.objectContaining({ method: 'GET' }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      4,
+      '/staff/api/v1/classroom-assignment-plans/classroom-plan.41/delivery-latest',
       expect.objectContaining({ method: 'GET' }),
     )
   })
