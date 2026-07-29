@@ -11,6 +11,7 @@ from aiohttp import WSCloseCode, WSMsgType, web
 
 from apps.pwa_api.auth_routes import auth_routes
 from apps.pwa_api.auth_service import PwaAuthService
+from apps.pwa_api.classroom_assignment_routes import classroom_assignment_routes
 from apps.pwa_api.classroom_routes import classroom_routes
 from apps.pwa_api.classroom_layout_routes import classroom_layout_routes
 from apps.pwa_api.content_routes import (
@@ -1182,6 +1183,7 @@ def configure(
         app.add_routes(course_routes)
         app.add_routes(classroom_routes)
         app.add_routes(classroom_layout_routes)
+        app.add_routes(classroom_assignment_routes)
         app.on_startup.append(on_auth_startup)
         test_submissions_enabled = (
             test_submission_repository is not None or PWA_DATABASE in app

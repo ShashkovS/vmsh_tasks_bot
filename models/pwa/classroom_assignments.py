@@ -59,13 +59,23 @@ def read_assignment_plan(
 ) -> dict[str, object]:
     event = _event(connection, event_public_id)
     event_id = int(event["id"])
+    groups = list_event_group_lessons(connection, event_id)
     plan = find_plan(connection, event_id, ("draft", "stale"))
     if plan is None:
         plan = find_plan(connection, event_id, ("confirmed",))
     if plan is None:
-        return {"event": event, "plan": None, "groups": [], "rooms": [], "students": []}
+        layout = find_event_layout(connection, event_id, "confirmed")
+        rooms = (
+            [] if layout is None else list_layout_rooms(connection, int(layout["id"]))
+        )
+        return {
+            "event": event,
+            "plan": None,
+            "groups": groups,
+            "rooms": rooms,
+            "students": [],
+        }
 
-    groups = list_event_group_lessons(connection, event_id)
     rooms = list_layout_rooms(connection, int(plan["layout_version_id"]))
     current_day = date.today() if today is None else today
     students = []
