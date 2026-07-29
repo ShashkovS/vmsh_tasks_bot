@@ -277,17 +277,80 @@ def finish_telegram_batch(
     )
 
 
+def find_retry_by_idempotency_key(
+    connection: sqlite3.Connection, *, actor_user_id: int, idempotency_key: str
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT retry.*, batch.public_id AS batch_public_id "
+        "FROM classroom_assignment_delivery_retries retry "
+        "JOIN classroom_assignment_delivery_batches batch ON batch.id = retry.batch_id "
+        "WHERE retry.requested_by_user_id = ? AND retry.idempotency_key = ?",
+        (actor_user_id, idempotency_key),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def queue_failed_telegram_recipients(
+    connection: sqlite3.Connection, batch_id: int
+) -> int:
+    return connection.execute(
+        "UPDATE classroom_assignment_delivery_recipients "
+        "SET telegram_state = 'queued', telegram_error_code = NULL, "
+        "telegram_sent_at = NULL WHERE batch_id = ? AND telegram_state = 'failed'",
+        (batch_id,),
+    ).rowcount
+
+
+def insert_delivery_retry(
+    connection: sqlite3.Connection,
+    *,
+    batch_id: int,
+    actor_user_id: int,
+    idempotency_key: str,
+    expected_batch_version: int,
+    recipient_count: int,
+    now: str,
+) -> None:
+    connection.execute(
+        "INSERT INTO classroom_assignment_delivery_retries "
+        "(batch_id, requested_by_user_id, idempotency_key, "
+        "expected_batch_version, recipient_count, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            batch_id,
+            actor_user_id,
+            idempotency_key,
+            expected_batch_version,
+            recipient_count,
+            now,
+        ),
+    )
+
+
+def reopen_delivery_batch(connection: sqlite3.Connection, batch_id: int) -> None:
+    connection.execute(
+        "UPDATE classroom_assignment_delivery_batches "
+        "SET state = 'queued', completed_at = NULL, version = version + 1 "
+        "WHERE id = ?",
+        (batch_id,),
+    )
+
+
 __all__ = [
     "claim_next_telegram_recipient",
     "find_batch",
     "find_batch_by_idempotency_key",
     "find_confirmed_plan",
     "find_latest_batch_for_event",
+    "find_retry_by_idempotency_key",
     "finish_telegram_batch",
     "finish_telegram_recipient",
     "insert_batch",
     "insert_recipients",
+    "insert_delivery_retry",
     "list_batch_recipients",
     "list_previous_recipient_rooms",
     "list_recipients",
+    "queue_failed_telegram_recipients",
+    "reopen_delivery_batch",
 ]

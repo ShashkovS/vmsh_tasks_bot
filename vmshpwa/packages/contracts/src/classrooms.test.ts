@@ -23,6 +23,7 @@ import {
   publishedClassroomAssignmentListResponseSchema,
   createClassroomRequestSchema,
   replaceClassroomLayoutRequestSchema,
+  retryClassroomDeliveryBatchRequestSchema,
   updateClassroomAssignmentPlanRequestSchema,
   createClassroomDeliveryBatchRequestSchema,
 } from './classrooms'
@@ -265,5 +266,12 @@ describe('classroom delivery contracts', () => {
         channels: ['pwa', 'pwa'],
       }),
     ).toThrow()
+    expect(
+      retryClassroomDeliveryBatchRequestSchema.parse({
+        schemaVersion: 1,
+        expectedBatchVersion: 3,
+        idempotencyKey: 'delivery-retry-1',
+      }).expectedBatchVersion,
+    ).toBe(3)
   })
 })

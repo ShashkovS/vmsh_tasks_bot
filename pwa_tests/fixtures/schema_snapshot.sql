@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 3dc81c8300d1eb82cbc159a45c899469629a3599d4f1b39d61f1ba0ccc24cc77
+-- Product schema SHA-256: 64034b21c5b50f78f98c7261ef38f865b1c1907d7f7a3a5b2f3d465ab43db956
 
 CREATE TABLE auth_accounts
 (
@@ -211,6 +211,19 @@ CREATE TABLE classroom_assignment_delivery_recipients
                                   and telegram_error_code is null)
         or (telegram_state <> 'sent' and telegram_sent_at is null)
     )
+);
+
+CREATE TABLE classroom_assignment_delivery_retries
+(
+    id                     integer primary key,
+    batch_id               integer not null
+        references classroom_assignment_delivery_batches (id),
+    requested_by_user_id   integer not null references users (id),
+    idempotency_key        text    not null check (length(idempotency_key) between 1 and 128),
+    expected_batch_version integer not null check (expected_batch_version > 0),
+    recipient_count        integer not null check (recipient_count > 0),
+    created_at             text    not null,
+    unique (requested_by_user_id, idempotency_key)
 );
 
 CREATE TABLE classroom_assignment_plans

@@ -24,6 +24,7 @@ import {
   recalculateClassroomAssignmentPlanRequestSchema,
   renameClassroomRequestSchema,
   replaceClassroomLayoutRequestSchema,
+  retryClassroomDeliveryBatchRequestSchema,
   updateClassroomAssignmentPlanRequestSchema,
   type ChangeClassroomStatusRequest,
   type Classroom,
@@ -44,6 +45,7 @@ import {
   type RenameClassroomRequest,
   type RecalculateClassroomAssignmentPlanRequest,
   type ReplaceClassroomLayoutRequest,
+  type RetryClassroomDeliveryBatchRequest,
   type RuntimeConfig,
   type UpdateClassroomAssignmentPlanRequest,
 } from '@vmsh/contracts'
@@ -147,6 +149,11 @@ export interface ClassroomClient {
     planPublicId: string,
     options?: ClassroomRequestOptions,
   ): Promise<LatestClassroomDeliveryBatchResponse>
+  retryFailedAssignmentDelivery(
+    batchPublicId: string,
+    request: RetryClassroomDeliveryBatchRequest,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomDeliveryBatchResponse>
 }
 
 export class ClassroomProtocolError extends Error {
@@ -474,6 +481,24 @@ class BrowserClassroomClient implements ClassroomClient {
       options,
       200,
       (payload) => latestClassroomDeliveryBatchResponseSchema.parse(payload),
+    )
+  }
+
+  async retryFailedAssignmentDelivery(
+    batchPublicId: string,
+    request: RetryClassroomDeliveryBatchRequest,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomDeliveryBatchResponse> {
+    const batchId = publicIdSchema.parse(batchPublicId)
+    return this.#request(
+      `/classroom-assignment-delivery-batches/${encodeURIComponent(batchId)}/retry-failed`,
+      {
+        method: 'POST',
+        body: JSON.stringify(retryClassroomDeliveryBatchRequestSchema.parse(request)),
+      },
+      options,
+      200,
+      (payload) => classroomDeliveryBatchResponseSchema.parse(payload),
     )
   }
 

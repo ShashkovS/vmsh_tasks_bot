@@ -11,11 +11,15 @@ from db_methods.pwa.classroom_delivery import (
     find_batch_by_idempotency_key,
     find_confirmed_plan,
     find_latest_batch_for_event,
+    find_retry_by_idempotency_key,
     insert_batch,
     insert_recipients,
+    insert_delivery_retry,
     list_batch_recipients,
     list_previous_recipient_rooms,
     list_recipients,
+    queue_failed_telegram_recipients,
+    reopen_delivery_batch,
 )
 
 
@@ -297,6 +301,47 @@ def create_classroom_delivery_batch(
     return result
 
 
+def retry_failed_classroom_delivery(
+    connection: sqlite3.Connection,
+    *,
+    batch_public_id: str,
+    expected_batch_version: int,
+    actor_user_id: int,
+    idempotency_key: str,
+    now: str,
+) -> dict[str, object]:
+    existing = find_retry_by_idempotency_key(
+        connection,
+        actor_user_id=actor_user_id,
+        idempotency_key=idempotency_key,
+    )
+    if existing is not None:
+        if existing["batch_public_id"] != batch_public_id:
+            raise ClassroomDeliveryConflict("idempotency_key_reused")
+        return read_classroom_delivery_batch(connection, batch_public_id)
+
+    batch = find_batch(connection, batch_public_id)
+    if batch is None:
+        raise ClassroomDeliveryNotFound
+    if int(batch["version"]) != expected_batch_version:
+        raise ClassroomDeliveryConflict("batch_version_changed")
+
+    recipient_count = queue_failed_telegram_recipients(connection, int(batch["id"]))
+    if recipient_count == 0:
+        raise InvalidClassroomDelivery("no_failed_recipients")
+    insert_delivery_retry(
+        connection,
+        batch_id=int(batch["id"]),
+        actor_user_id=actor_user_id,
+        idempotency_key=idempotency_key,
+        expected_batch_version=expected_batch_version,
+        recipient_count=recipient_count,
+        now=now,
+    )
+    reopen_delivery_batch(connection, int(batch["id"]))
+    return read_classroom_delivery_batch(connection, batch_public_id)
+
+
 __all__ = [
     "ClassroomDeliveryConflict",
     "ClassroomDeliveryNotFound",
@@ -305,4 +350,5 @@ __all__ = [
     "preview_classroom_delivery",
     "read_classroom_delivery_batch",
     "read_latest_classroom_delivery_batch",
+    "retry_failed_classroom_delivery",
 ]

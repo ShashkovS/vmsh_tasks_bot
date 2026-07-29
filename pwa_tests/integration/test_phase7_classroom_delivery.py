@@ -22,6 +22,7 @@ from models.pwa.classroom_delivery import (
     preview_classroom_delivery,
     read_classroom_delivery_batch,
     read_latest_classroom_delivery_batch,
+    retry_failed_classroom_delivery,
 )
 from models.pwa.classroom_public import read_student_classroom_assignments
 from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
@@ -31,6 +32,7 @@ from pwa_tests.integration.test_phase7_classroom_assignment_migration import (
 
 
 MIGRATION_ID = "0061.pwa_classroom_assignment_delivery"
+RETRY_MIGRATION_ID = "0062.pwa_classroom_delivery_retries"
 
 
 def _migrations():
@@ -69,7 +71,10 @@ def test_delivery_migration_up_down_up_is_exact(tmp_path):
     assert {item.id for item in migrations[MIGRATION_ID].depends} == {
         "0060.pwa_classroom_import_receipts"
     }
-    _apply(database_path, {item.id for item in migrations.values()} - {MIGRATION_ID})
+    _apply(
+        database_path,
+        {item.id for item in migrations.values()} - {MIGRATION_ID, RETRY_MIGRATION_ID},
+    )
     assert _objects(database_path) == set()
 
     expected = {
@@ -87,6 +92,29 @@ def test_delivery_migration_up_down_up_is_exact(tmp_path):
     assert _objects(database_path) == set()
     _apply(database_path, {MIGRATION_ID})
     assert _objects(database_path) == expected
+
+
+def test_delivery_retry_migration_up_down_up_is_exact(tmp_path):
+    database_path = tmp_path / "phase8-delivery-retry-schema.sqlite3"
+    migrations = {item.id: item for item in _migrations()}
+    assert {item.id for item in migrations[RETRY_MIGRATION_ID].depends} == {
+        MIGRATION_ID
+    }
+    _apply(
+        database_path,
+        {item.id for item in migrations.values()} - {RETRY_MIGRATION_ID},
+    )
+    assert "classroom_assignment_delivery_retries" not in _objects(database_path)
+
+    _apply(database_path, {RETRY_MIGRATION_ID})
+    assert "classroom_assignment_delivery_retries" in _objects(database_path)
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+
+    _rollback(database_path, {RETRY_MIGRATION_ID})
+    assert "classroom_assignment_delivery_retries" not in _objects(database_path)
+    _apply(database_path, {RETRY_MIGRATION_ID})
+    assert "classroom_assignment_delivery_retries" in _objects(database_path)
 
 
 def _seed_delivery(connection: sqlite3.Connection) -> None:
@@ -222,6 +250,35 @@ def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path)
         result = read_classroom_delivery_batch(connection, "delivery-claim")
         assert result["batch"]["state"] == "completed_with_errors"
         assert result["recipients"][0]["telegram_error_code"] == ("telegram_forbidden")
+
+        retried = retry_failed_classroom_delivery(
+            connection,
+            batch_public_id="delivery-claim",
+            expected_batch_version=int(result["batch"]["version"]),
+            actor_user_id=2,
+            idempotency_key="delivery-retry-key",
+            now=NOW,
+        )
+        assert retried["batch"]["state"] == "queued"
+        assert retried["recipients"][0]["telegram_state"] == "queued"
+        repeated = retry_failed_classroom_delivery(
+            connection,
+            batch_public_id="delivery-claim",
+            expected_batch_version=int(result["batch"]["version"]),
+            actor_user_id=2,
+            idempotency_key="delivery-retry-key",
+            now=NOW,
+        )
+        assert repeated["batch"]["public_id"] == "delivery-claim"
+        with pytest.raises(ClassroomDeliveryConflict, match="batch_version_changed"):
+            retry_failed_classroom_delivery(
+                connection,
+                batch_public_id="delivery-claim",
+                expected_batch_version=int(result["batch"]["version"]),
+                actor_user_id=2,
+                idempotency_key="delivery-retry-stale",
+                now=NOW,
+            )
 
 
 def test_delivery_rejects_stale_preview_and_unconfirmed_plan(tmp_path):

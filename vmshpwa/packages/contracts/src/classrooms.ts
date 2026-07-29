@@ -503,6 +503,17 @@ export type CreateClassroomDeliveryBatchRequest = z.infer<
   typeof createClassroomDeliveryBatchRequestSchema
 >
 
+export const retryClassroomDeliveryBatchRequestSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    expectedBatchVersion: z.number().int().positive(),
+    idempotencyKey: z.string().trim().min(1).max(128),
+  })
+  .strict()
+export type RetryClassroomDeliveryBatchRequest = z.infer<
+  typeof retryClassroomDeliveryBatchRequestSchema
+>
+
 export const recalculateClassroomAssignmentPlanRequestSchema =
   materializeClassroomLayoutRequestSchema
 export type RecalculateClassroomAssignmentPlanRequest = z.infer<

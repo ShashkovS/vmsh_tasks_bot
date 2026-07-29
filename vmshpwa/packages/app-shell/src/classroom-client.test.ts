@@ -244,6 +244,7 @@ describe('classroom client', () => {
       .mockResolvedValueOnce(response(deliveryBatchFixture, 201))
       .mockResolvedValueOnce(response(deliveryBatchFixture))
       .mockResolvedValueOnce(response(deliveryBatchFixture))
+      .mockResolvedValueOnce(response(deliveryBatchFixture))
     const client = createClassroomClient(runtime, { fetchImplementation })
 
     const preview = await client.previewAssignmentDelivery('classroom-plan.41')
@@ -256,6 +257,11 @@ describe('classroom client', () => {
     })
     await client.getAssignmentDelivery('classroom-delivery.41')
     await client.getLatestAssignmentDelivery('classroom-plan.41')
+    await client.retryFailedAssignmentDelivery('classroom-delivery.41', {
+      schemaVersion: 1,
+      expectedBatchVersion: 3,
+      idempotencyKey: 'classroom-delivery-retry-1',
+    })
 
     expect(fetchImplementation).toHaveBeenNthCalledWith(
       1,
@@ -276,6 +282,11 @@ describe('classroom client', () => {
       4,
       '/staff/api/v1/classroom-assignment-plans/classroom-plan.41/delivery-latest',
       expect.objectContaining({ method: 'GET' }),
+    )
+    expect(fetchImplementation).toHaveBeenNthCalledWith(
+      5,
+      '/staff/api/v1/classroom-assignment-delivery-batches/classroom-delivery.41/retry-failed',
+      expect.objectContaining({ method: 'POST' }),
     )
   })
 })

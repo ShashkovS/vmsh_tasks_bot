@@ -173,6 +173,10 @@
       {
         "id": "0061.pwa_classroom_assignment_delivery",
         "sha256": "78ad394117960e40852295e91755626258f949fca981810c01d5bd67e2b15925"
+      },
+      {
+        "id": "0062.pwa_classroom_delivery_retries",
+        "sha256": "baff136cf19baceb7a74a81f72eb91e80adac23836dfa8f30dfd77d6016177e8"
       }
     ],
     "repository_head_status": {
@@ -183,7 +187,7 @@
     }
   },
   "product": {
-    "object_count": 373,
+    "object_count": 374,
     "objects": [
       {
         "columns": [
@@ -1994,6 +1998,138 @@
         "object_sha256": "1f9adfb81155c23f3ca14bbcd3398fc6d97b09b9a612b47488606a26399dfc7b",
         "sql": "CREATE TABLE classroom_assignment_delivery_recipients\n(\n    batch_id                    integer not null\n        references classroom_assignment_delivery_batches (id),\n    student_user_id             integer not null references users (id),\n    course_enrollment_id        integer not null references course_enrollments (id),\n    group_lesson_id             integer not null references group_lessons (id),\n    classroom_id                integer not null references classrooms (id),\n    student_public_id           text    not null,\n    student_display_name        text    not null,\n    event_public_id             text    not null,\n    event_name                  text    not null,\n    course_public_id            text    not null,\n    course_name                 text    not null,\n    group_public_id             text    not null,\n    group_name                  text    not null,\n    classroom_public_id         text    not null,\n    classroom_name              text    not null,\n    student_account_id          integer references auth_accounts (id),\n    telegram_chat_id            integer,\n    pwa_state                   text    not null\n        check (pwa_state in ('not_requested', 'sent', 'suppressed', 'failed')),\n    pwa_error_code              text,\n    pwa_sent_at                 text,\n    telegram_state              text    not null\n        check (telegram_state in ('not_requested', 'queued', 'sent', 'suppressed', 'failed')),\n    telegram_error_code         text,\n    telegram_sent_at            text,\n    primary key (batch_id, course_enrollment_id),\n    check (\n        (pwa_state = 'sent' and pwa_sent_at is not null and pwa_error_code is null)\n        or (pwa_state <> 'sent' and pwa_sent_at is null)\n    ),\n    check (\n        (telegram_state = 'sent' and telegram_sent_at is not null\n                                  and telegram_error_code is null)\n        or (telegram_state <> 'sent' and telegram_sent_at is null)\n    )\n);",
         "table_name": "classroom_assignment_delivery_recipients",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "batch_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "requested_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "idempotency_key",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "expected_batch_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "recipient_count",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "batch_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "classroom_assignment_delivery_batches"
+          },
+          {
+            "from_columns": [
+              "requested_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "requested_by_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "idempotency_key",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_classroom_assignment_delivery_retries_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "classroom_assignment_delivery_retries",
+        "object_sha256": "f757f8f46aee17902c822b2d5792a0d8a644c5db82e65dcec84c33eadc867d5f",
+        "sql": "CREATE TABLE classroom_assignment_delivery_retries\n(\n    id                     integer primary key,\n    batch_id               integer not null\n        references classroom_assignment_delivery_batches (id),\n    requested_by_user_id   integer not null references users (id),\n    idempotency_key        text    not null check (length(idempotency_key) between 1 and 128),\n    expected_batch_version integer not null check (expected_batch_version > 0),\n    recipient_count        integer not null check (recipient_count > 0),\n    created_at             text    not null,\n    unique (requested_by_user_id, idempotency_key)\n);",
+        "table_name": "classroom_assignment_delivery_retries",
         "type": "table"
       },
       {
@@ -22590,8 +22726,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "c5b16dee5a9dda0afb622e5c09fcc6fd2efe813109d78dcc8ffb3db36c8a6d7d",
-    "sha256": "3dc81c8300d1eb82cbc159a45c899469629a3599d4f1b39d61f1ba0ccc24cc77"
+    "pragma_structure_sha256": "d55efbec39e0d7459effb21c892dde5a18a083a3c33ecaf0703f66b9b273de95",
+    "sha256": "64034b21c5b50f78f98c7261ef38f865b1c1907d7f7a3a5b2f3d465ab43db956"
   },
   "source_kind": "repository-migration-head"
 }

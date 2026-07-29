@@ -30,6 +30,7 @@ from models.pwa.classroom_delivery import (
     preview_classroom_delivery,
     read_classroom_delivery_batch,
     read_latest_classroom_delivery_batch,
+    retry_failed_classroom_delivery,
 )
 
 
@@ -372,6 +373,73 @@ async def get_latest_classroom_delivery_batch(request: web.Request) -> web.Respo
         {
             "schemaVersion": 1,
             "batch": None if result is None else _batch_payload(result),
+            "requestId": request["request_id"],
+        }
+    )
+
+
+@classroom_delivery_routes.post(
+    "/staff/api/v1/classroom-assignment-delivery-batches/{batch_public_id}/retry-failed"
+)
+async def post_classroom_delivery_retry(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    batch_public_id = _public_id(request, "batch_public_id")
+    payload = await _json(request)
+    if set(payload) != {
+        "schemaVersion",
+        "expectedBatchVersion",
+        "idempotencyKey",
+    }:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры повтора рассылки",
+        )
+    version = payload["expectedBatchVersion"]
+    idempotency_key = payload["idempotencyKey"]
+    if (
+        not isinstance(version, int)
+        or isinstance(version, bool)
+        or version < 1
+        or not isinstance(idempotency_key, str)
+        or not 1 <= len(idempotency_key) <= 128
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры повтора рассылки",
+        )
+    try:
+        result = await _factory(request).run_write_async(
+            lambda connection: retry_failed_classroom_delivery(
+                connection,
+                batch_public_id=batch_public_id,
+                expected_batch_version=version,
+                actor_user_id=actor_user_id,
+                idempotency_key=idempotency_key,
+                now=_now(),
+            )
+        )
+    except (
+        ClassroomDeliveryNotFound,
+        ClassroomDeliveryConflict,
+        InvalidClassroomDelivery,
+    ) as error:
+        _raise_domain_error(error)
+        raise AssertionError("unreachable")
+
+    sender = request.app.get(PWA_CLASSROOM_TELEGRAM_SENDER)
+    if sender is not None and result["batch"]["state"] == "queued":
+        result = await deliver_classroom_telegram_batch(
+            _factory(request),
+            batch_public_id=batch_public_id,
+            sender=sender,
+            now=_now,
+        )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "batch": _batch_payload(result),
             "requestId": request["request_id"],
         }
     )

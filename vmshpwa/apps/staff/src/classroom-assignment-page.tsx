@@ -65,9 +65,24 @@ function AssignmentDelivery({
     },
   })
   const batch = sendMutation.data?.batch ?? latestDelivery.data?.batch ?? null
+  const retryMutation = useMutation({
+    mutationFn: () => {
+      if (batch === null) throw new Error('Delivery batch is not available')
+      return client.retryFailedAssignmentDelivery(batch.publicId, {
+        schemaVersion: 1,
+        expectedBatchVersion: batch.version,
+        idempotencyKey: globalThis.crypto.randomUUID(),
+      })
+    },
+    onError: (error) => authentication.handleApiError(error),
+    onSuccess: (response) => {
+      queryClient.setQueryData(latestQueryKey, response)
+    },
+  })
   const changedAfterSend =
     batch !== null && (batch.planPublicId !== plan.publicId || batch.planVersion !== plan.version)
-  const error = previewMutation.error ?? sendMutation.error ?? latestDelivery.error
+  const error =
+    previewMutation.error ?? sendMutation.error ?? retryMutation.error ?? latestDelivery.error
 
   return (
     <ClassroomDeliveryPanel
@@ -78,8 +93,14 @@ function AssignmentDelivery({
         sendMutation.reset()
         previewMutation.mutate()
       }}
+      onRetryFailed={() => retryMutation.mutate()}
       onSend={(channels) => sendMutation.mutate(channels)}
-      pending={previewMutation.isPending || sendMutation.isPending || latestDelivery.isPending}
+      pending={
+        previewMutation.isPending ||
+        sendMutation.isPending ||
+        retryMutation.isPending ||
+        latestDelivery.isPending
+      }
       preview={sendMutation.data ? null : (previewMutation.data?.preview ?? null)}
     />
   )

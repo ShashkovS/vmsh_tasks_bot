@@ -762,6 +762,54 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     assert (await latest_delivery_response.json())["batch"]["publicId"] == delivery[
         "publicId"
     ]
+
+    classroom_http.factory.run_write(
+        lambda connection: (
+            connection.execute(
+                "UPDATE classroom_assignment_delivery_recipients "
+                "SET telegram_state = 'failed', "
+                "telegram_error_code = 'telegram_temporary', telegram_sent_at = NULL "
+                "WHERE batch_id = (SELECT id FROM "
+                "classroom_assignment_delivery_batches WHERE public_id = ?)",
+                (delivery["publicId"],),
+            ),
+            connection.execute(
+                "UPDATE classroom_assignment_delivery_batches "
+                "SET state = 'completed_with_errors', version = version + 1 "
+                "WHERE public_id = ?",
+                (delivery["publicId"],),
+            ),
+        )
+    )
+    retry_path = (
+        f"/staff/api/v1/classroom-assignment-delivery-batches/"
+        f"{delivery['publicId']}/retry-failed"
+    )
+    retry_request = {
+        "schemaVersion": 1,
+        "expectedBatchVersion": delivery["version"] + 1,
+        "idempotencyKey": "classroom-http-delivery-retry-1",
+    }
+    retry_response = await classroom_http.client.post(
+        retry_path,
+        json=retry_request,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert retry_response.status == 200, await retry_response.text()
+    retried_delivery = (await retry_response.json())["batch"]
+    assert retried_delivery["state"] == "completed"
+    assert retried_delivery["channelCounts"]["telegram"] == {"sent": 1}
+    assert len(classroom_http.telegram_messages) == 2
+
+    repeated_retry = await classroom_http.client.post(
+        retry_path,
+        json=retry_request,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert repeated_retry.status == 200
+    assert len(classroom_http.telegram_messages) == 2
     assert dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]) == {
         **cursors_before_delivery,
         "student": cursors_before_delivery["student"] + 1,
