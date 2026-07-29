@@ -189,3 +189,63 @@ def update_review_batch(
         "WHERE id = ?",
         (payload_json, occurred_at, event_id),
     )
+
+
+def published_content_event_source(
+    connection: sqlite3.Connection,
+    *,
+    group_lesson_id: int,
+    kind: str,
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT publication.public_id AS publication_public_id, "
+        "publication.published_at, course.public_id AS course_public_id, "
+        "group_record.public_id AS group_public_id, "
+        "group_lesson.public_id AS group_lesson_public_id, "
+        "course_lesson.lesson_number "
+        "FROM lesson_publications AS publication "
+        "JOIN group_lessons AS group_lesson "
+        "ON group_lesson.id = publication.group_lesson_id "
+        "JOIN course_lessons AS course_lesson "
+        "ON course_lesson.id = group_lesson.course_lesson_id "
+        "JOIN courses AS course ON course.id = group_lesson.course_id "
+        "JOIN groups AS group_record "
+        "ON group_record.course_id = group_lesson.course_id "
+        "AND group_record.group_id = group_lesson.group_id "
+        "WHERE publication.group_lesson_id = ? AND publication.kind = ? "
+        "AND publication.state = 'published' LIMIT 1",
+        (group_lesson_id, kind),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def active_group_notification_accounts(
+    connection: sqlite3.Connection,
+    *,
+    course_id: int,
+    group_id: str,
+) -> list[dict[str, object]]:
+    rows = connection.execute(
+        "WITH recipient_students AS ("
+        "SELECT enrollment.student_user_id, student.public_id AS student_public_id "
+        "FROM course_enrollments AS enrollment "
+        "JOIN users AS student ON student.id = enrollment.student_user_id "
+        "WHERE enrollment.course_id = ? AND enrollment.active_group_id = ? "
+        "AND enrollment.status = 'active') "
+        "SELECT account.id AS account_id, account.public_id AS account_public_id, "
+        "account.audience, student.student_public_id "
+        "FROM recipient_students AS student "
+        "JOIN auth_accounts AS account "
+        "ON account.linked_user_id = student.student_user_id "
+        "AND account.audience = 'student' AND account.status = 'active' "
+        "UNION ALL "
+        "SELECT account.id, account.public_id, account.audience, "
+        "student.student_public_id FROM recipient_students AS student "
+        "JOIN family_student_links AS link "
+        "ON link.student_user_id = student.student_user_id AND link.revoked_at IS NULL "
+        "JOIN auth_accounts AS account ON account.id = link.family_account_id "
+        "AND account.audience = 'family' AND account.status = 'active' "
+        "ORDER BY account_id, student_public_id",
+        (course_id, group_id),
+    ).fetchall()
+    return [dict(row) for row in rows]

@@ -27,7 +27,7 @@ from helpers.config import Config
 from helpers.consts import USER_TYPE
 from helpers.nats_brocker import InProcessBroker
 from helpers.object_storage import content_addressed_key
-from helpers.pwa.app_keys import RUNTIME_CONFIG
+from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG, PwaDatabaseState
 from helpers.pwa.auth_config import AuthRuntimeConfig, COOKIE_POLICY
 from helpers.pwa.content import (
     ContentAssetConverter,
@@ -422,6 +422,7 @@ async def content_http(tmp_path, aiohttp_client) -> ContentHttpFixture:
         written_attachment_service=written_attachment_service,
         content_asset_service=asset_service,
     )
+    app[PWA_DATABASE] = PwaDatabaseState(factory=factory)
     client = await aiohttp_client(app)
 
     async def login(audience: AuthAudience, username: str, credential: str) -> str:

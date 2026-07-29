@@ -122,6 +122,7 @@ from helpers.pwa.web_push import send_web_push
 from helpers.pwa.telegram_bindings import verify_telegram_binding
 from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience
+from models.pwa.content_notifications import create_content_publication_notifications
 from models.pwa.content import ContentKind
 
 __all__ = ["PwaApiError", "pwa_routes"]
@@ -810,11 +811,32 @@ async def publish_content_invalidation(
 ) -> None:
     """Best-effort realtime fan-out after an authoritative content commit."""
 
-    resource = f"group-lessons/{scope.group_lesson_public_id}/content/{kind.value}"
+    resources = [f"group-lessons/{scope.group_lesson_public_id}/content/{kind.value}"]
+    if reason in {"content-published", "content-schedule-activated"}:
+        database = app.get(PWA_DATABASE)
+        if database is not None and database.factory is not None:
+            try:
+                await database.factory.run_write_async(
+                    lambda connection: create_content_publication_notifications(
+                        connection,
+                        group_lesson_id=scope.group_lesson_id,
+                        course_id=scope.course_id,
+                        group_id=scope.group_id,
+                        kind=kind.value,
+                    )
+                )
+                resources.append("notification-events")
+            except Exception:
+                logger.warning(
+                    "Content notification failed after commit: lesson=%s kind=%s",
+                    scope.group_lesson_public_id,
+                    kind.value,
+                    exc_info=True,
+                )
     try:
         await app[PWA_BROKER].publish(
             NATS_PWA_INVALIDATE,
-            {"resources": [resource], "reason": reason},
+            {"resources": resources, "reason": reason},
         )
     except asyncio.CancelledError:
         raise
@@ -824,7 +846,7 @@ async def publish_content_invalidation(
         # into an HTTP error or invite an unsafe client retry.
         logger.warning(
             "Content invalidation failed after commit: resource=%s reason=%s",
-            resource,
+            resources[0],
             reason,
             exc_info=True,
         )
