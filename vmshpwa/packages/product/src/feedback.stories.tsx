@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
+import type { WrittenStudentReaction } from '@vmsh/contracts'
+
 import { AnnotationOverlay, type AnnotationView } from './annotation-overlay'
 import { AttemptTimeline, type TimelineEntry } from './attempt-timeline'
 import { FeedbackAttention, FeedbackThread, type ThreadMessageView } from './feedback-thread'
@@ -207,6 +209,7 @@ export const ReviewedWrittenPhoto: Story = {
                 ],
               },
             ],
+            studentReaction: null,
             completedAt: '2026-01-26T09:30:00.000Z',
           },
         ]}
@@ -219,5 +222,95 @@ export const ReviewedWrittenPhoto: Story = {
     await expect(canvas.getByText(/Допишите обоснование/)).toBeVisible()
     await expect(canvas.getByAltText('Проверенная страница решения 1')).toBeVisible()
     await expect(canvas.queryByText(/внутренняя пометка/i)).not.toBeInTheDocument()
+  },
+}
+
+function ReviewedStudentReactionHarness() {
+  const [studentReaction, setStudentReaction] = useState<WrittenStudentReaction | null>(null)
+  return (
+    <div className="max-w-xl">
+      <WrittenReviewHistory
+        entries={[]}
+        onStudentReactionChange={(_reviewId, reactionId, expectedVersion) => {
+          setStudentReaction({
+            reactionId,
+            version: expectedVersion + 1,
+            editableUntil: '2026-01-26T10:30:00.000Z',
+            updatedAt: '2026-01-26T09:45:00.000Z',
+            deleted: reactionId === null,
+          })
+        }}
+        reactionNow="2026-01-26T09:40:00.000Z"
+        reviews={[
+          {
+            reviewId: 'reviewed-reaction-one',
+            targetProblemId: 'problem-41-n-6',
+            verdict: 16,
+            commentEntryId: 'reviewed-reaction-comment',
+            comment: 'Теперь всё обосновано аккуратно.',
+            reviewerName: 'И. Соколов',
+            source: 'staff',
+            evidenceEntryIds: ['reviewed-reaction-entry'],
+            annotations: [],
+            studentReaction,
+            completedAt: '2026-01-26T09:30:00.000Z',
+          },
+        ]}
+      />
+    </div>
+  )
+}
+
+export const ReviewedStudentReaction: Story = {
+  name: 'Реакция ученика на конкретную проверку',
+  render: () => <ReviewedStudentReactionHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const disagreement = canvas.getByRole('button', {
+      name: 'Не могу согласиться с проверкой!',
+    })
+    await userEvent.click(disagreement)
+    await expect(disagreement).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(disagreement)
+    await expect(disagreement).toHaveAttribute('aria-pressed', 'false')
+  },
+}
+
+export const FamilyStudentReaction: Story = {
+  name: 'Реакция ребёнка для семьи',
+  render: () => (
+    <div className="max-w-xl">
+      <WrittenReviewHistory
+        entries={[]}
+        reactionNow="2026-01-26T09:40:00.000Z"
+        reviews={[
+          {
+            reviewId: 'family-reviewed-reaction-one',
+            targetProblemId: 'problem-41-n-6',
+            verdict: 15,
+            commentEntryId: 'family-reviewed-reaction-comment',
+            comment: 'Нужно дописать последний переход.',
+            reviewerName: 'И. Соколов',
+            source: 'staff',
+            evidenceEntryIds: ['family-reviewed-reaction-entry'],
+            annotations: [],
+            studentReaction: {
+              reactionId: 1,
+              version: 1,
+              editableUntil: '2026-01-26T10:30:00.000Z',
+              updatedAt: '2026-01-26T09:35:00.000Z',
+              deleted: false,
+            },
+            completedAt: '2026-01-26T09:30:00.000Z',
+          },
+        ]}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Реакция ученика')).toBeVisible()
+    await expect(canvas.getByText('Непонятно, что не так…')).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: 'Непонятно, что не так…' })).toBeNull()
   },
 }

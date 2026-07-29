@@ -145,6 +145,10 @@
       {
         "id": "0054.pwa_submission_review_internal_reactions",
         "sha256": "f543d3d45f3310c7af89d884420d7277a0bfb0f2f306c99bb8c0b606cd0f3b70"
+      },
+      {
+        "id": "0055.pwa_submission_review_student_reactions",
+        "sha256": "6afd8026578c4082ab658c454240dbf0ff32f09775f4291e5f9134f3d1e158d7"
       }
     ],
     "repository_head_status": {
@@ -155,7 +159,7 @@
     }
   },
   "product": {
-    "object_count": 312,
+    "object_count": 321,
     "objects": [
       {
         "columns": [
@@ -13992,6 +13996,343 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "review_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "event_kind",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reaction_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "reaction_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_id"
+            ],
+            "target_table": "reaction_enum"
+          },
+          {
+            "from_columns": [
+              "review_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_reviews"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_submission_review_student_reaction_events_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "state_version",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_submission_review_student_reaction_events_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "review_id",
+                "seqno": 0
+              },
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "created_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "submission_review_student_reaction_events_review_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "submission_review_student_reaction_events",
+        "object_sha256": "62b596dfa7d7ca15eacf4e2ae5e2bba21ac48b2c612058ec16f30b99fcd4a124",
+        "sql": "CREATE TABLE submission_review_student_reaction_events\n(\n    id            integer primary key,\n    public_id     text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    review_id     integer not null references submission_reviews (id),\n    actor_user_id integer not null references users (id),\n    event_kind    text    not null check (event_kind in ('selected', 'changed', 'deleted')),\n    reaction_id   integer references reaction_enum (reaction_id),\n    state_version integer not null check (state_version > 0),\n    created_at    text    not null,\n    unique (review_id, state_version),\n    check (\n        (event_kind = 'deleted' and reaction_id is null)\n        or (event_kind in ('selected', 'changed') and reaction_id is not null)\n    )\n);",
+        "table_name": "submission_review_student_reaction_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "review_id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "reaction_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "editable_until",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "deleted_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "reaction_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "reaction_id"
+            ],
+            "target_table": "reaction_enum"
+          },
+          {
+            "from_columns": [
+              "review_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "submission_reviews"
+          }
+        ],
+        "indexes": [],
+        "name": "submission_review_student_reactions",
+        "object_sha256": "789c4efd6c1bef5440eec397c0a39bdc119e3fa312c098dd506bb68466e914b6",
+        "sql": "CREATE TABLE submission_review_student_reactions\n(\n    review_id       integer primary key references submission_reviews (id),\n    actor_user_id   integer not null references users (id),\n    reaction_id     integer references reaction_enum (reaction_id),\n    created_at      text    not null,\n    editable_until  text    not null,\n    updated_at      text    not null,\n    deleted_at      text,\n    version         integer not null check (version > 0),\n    check (editable_until >= created_at),\n    check (updated_at between created_at and editable_until),\n    check (\n        (reaction_id is not null and deleted_at is null)\n        or (reaction_id is null and deleted_at is not null)\n    ),\n    check (deleted_at is null or deleted_at = updated_at)\n);",
+        "table_name": "submission_review_student_reactions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "thread_id",
             "not_null": true,
             "primary_key_ordinal": 0
@@ -17492,6 +17833,13 @@
         "type": "index"
       },
       {
+        "name": "submission_review_student_reaction_events_review_idx",
+        "object_sha256": "9da3917806b6308e53e864fdd52b32dd929bb7b6085ff99a9e8f2ae763b4c2af",
+        "sql": "CREATE INDEX submission_review_student_reaction_events_review_idx\n    on submission_review_student_reaction_events (review_id, created_at, id);",
+        "table_name": "submission_review_student_reaction_events",
+        "type": "index"
+      },
+      {
         "name": "submission_reviews_thread_history_idx",
         "object_sha256": "17399ee5385386a7c3324f538a52d4f43efe4b3b44d5931adff461c2d2e28807",
         "sql": "CREATE INDEX submission_reviews_thread_history_idx\n    on submission_reviews (thread_id, created_at, id);",
@@ -18416,6 +18764,48 @@
         "type": "trigger"
       },
       {
+        "name": "submission_review_student_reaction_events_delete_forbidden",
+        "object_sha256": "4e4415dc8fd3b98cc52a87a567fa2b5d74a8e0d19b4dabe4ab71b829fd59117b",
+        "sql": "CREATE TRIGGER submission_review_student_reaction_events_delete_forbidden\nbefore delete on submission_review_student_reaction_events\nfor each row\nbegin\n    select raise(abort, 'student review reaction event deletion is forbidden');\nend;",
+        "table_name": "submission_review_student_reaction_events",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_student_reaction_events_immutable_update",
+        "object_sha256": "ea2a8a2e5429ae39226a50f39d83b1eb0f64fd8b35bb2ea73656fb34a9077249",
+        "sql": "CREATE TRIGGER submission_review_student_reaction_events_immutable_update\nbefore update on submission_review_student_reaction_events\nfor each row\nbegin\n    select raise(abort, 'student review reaction event is immutable');\nend;",
+        "table_name": "submission_review_student_reaction_events",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_student_reaction_events_scope_insert",
+        "object_sha256": "dcddc0e4d1d625cb541a2e80a9f468a4543a0b7f55e643f252be9ac8f2cb0cff",
+        "sql": "CREATE TRIGGER submission_review_student_reaction_events_scope_insert\nbefore insert on submission_review_student_reaction_events\nfor each row\nwhen not exists (\n    select 1\n    from submission_review_student_reactions as state\n    where state.review_id = new.review_id\n      and state.actor_user_id = new.actor_user_id\n      and state.version = new.state_version\n      and (\n          (new.event_kind = 'deleted' and state.reaction_id is null)\n          or (\n              new.event_kind in ('selected', 'changed')\n              and state.reaction_id = new.reaction_id\n          )\n      )\n)\nbegin\n    select raise(abort, 'student review reaction event does not match current state');\nend;",
+        "table_name": "submission_review_student_reaction_events",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_student_reactions_delete_forbidden",
+        "object_sha256": "694af89baabcd20169fbd07deef0ef97e038539b159cb1630658fd25bf72e2b9",
+        "sql": "CREATE TRIGGER submission_review_student_reactions_delete_forbidden\nbefore delete on submission_review_student_reactions\nfor each row\nbegin\n    select raise(abort, 'student review reaction deletion is forbidden');\nend;",
+        "table_name": "submission_review_student_reactions",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_student_reactions_scope_insert",
+        "object_sha256": "caabe0a6cffc013996099c64fa764fac3d47b3d63cb1ff43b4831039288927d3",
+        "sql": "CREATE TRIGGER submission_review_student_reactions_scope_insert\nbefore insert on submission_review_student_reactions\nfor each row\nwhen not exists (\n    select 1\n    from submission_reviews as review\n    join submission_threads as thread on thread.id = review.thread_id\n    left join reaction_enum as reaction\n      on reaction.reaction_id = new.reaction_id\n     and reaction.reaction_type_id = 0\n    where review.id = new.review_id\n      and thread.student_user_id = new.actor_user_id\n      and (new.reaction_id is null or reaction.reaction_id is not null)\n)\nbegin\n    select raise(abort, 'student review reaction is outside owner/type scope');\nend;",
+        "table_name": "submission_review_student_reactions",
+        "type": "trigger"
+      },
+      {
+        "name": "submission_review_student_reactions_update_guard",
+        "object_sha256": "ef5fdc2d23a78689ef2987ac59bdca14856080b9d02857b778befeb4b529b217",
+        "sql": "CREATE TRIGGER submission_review_student_reactions_update_guard\nbefore update on submission_review_student_reactions\nfor each row\nwhen new.review_id is not old.review_id\n    or new.actor_user_id is not old.actor_user_id\n    or new.created_at is not old.created_at\n    or new.editable_until is not old.editable_until\n    or new.version <> old.version + 1\n    or new.updated_at <= old.updated_at\n    or new.updated_at > old.editable_until\n    or (\n        new.reaction_id is not null\n        and not exists (\n            select 1 from reaction_enum\n            where reaction_id = new.reaction_id and reaction_type_id = 0\n        )\n    )\nbegin\n    select raise(abort, 'invalid student review reaction update');\nend;",
+        "table_name": "submission_review_student_reactions",
+        "type": "trigger"
+      },
+      {
         "name": "submission_reviews_delete_forbidden",
         "object_sha256": "33d74f318510a2dbe2b2a194461d493db47f7fc32af5abef80bea3f809c7d629",
         "sql": "CREATE TRIGGER submission_reviews_delete_forbidden\nbefore delete on submission_reviews\nfor each row\nbegin\n    select raise(abort, 'completed submission review deletion is forbidden');\nend;",
@@ -18535,8 +18925,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "3c0b8aeb3e757049f623137dc0d415ea77403c81f8c69f9173343f7c24a4aecd",
-    "sha256": "22d818de32641ee4c5b724067b71a1d54b3af55ca6d2447e8c881e2e6a29ad74"
+    "pragma_structure_sha256": "bab3831134dfe06c22569a974f9aa2db1e3567d282ea574e5122e97770b49b5f",
+    "sha256": "fda50039d639acec06428b17685b63196322a85e5c0504682ef4aa4cb10e787b"
   },
   "source_kind": "repository-migration-head"
 }

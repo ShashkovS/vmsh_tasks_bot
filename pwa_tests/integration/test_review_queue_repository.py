@@ -24,6 +24,10 @@ from db_methods.pwa.reviews import (
     ReviewInternalReactionConflict,
     ReviewInternalReactionInvalid,
     ReviewInternalReactionWindowClosed,
+    ReviewStudentReactionConflict,
+    ReviewStudentReactionInvalid,
+    ReviewStudentReactionNotFound,
+    ReviewStudentReactionWindowClosed,
     ReviewLease,
     ReviewLeaseConflict,
     ReviewLeaseLost,
@@ -78,6 +82,9 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
     reaction_events = (
         f"review-reaction-event-test-{index}" for index in itertools.count(1)
     )
+    student_reaction_events = (
+        f"review-student-reaction-event-test-{index}" for index in itertools.count(1)
+    )
     repository = PwaWrittenReviewQueueRepository(
         factory,
         clock=clock,
@@ -87,6 +94,7 @@ def review_queue_fixture(tmp_path) -> ReviewQueueFixture:
         comment_public_id_factory=lambda: "review-comment-test",
         event_public_id_factory=lambda: "review-event-test",
         internal_reaction_event_public_id_factory=lambda: next(reaction_events),
+        student_reaction_event_public_id_factory=lambda: next(student_reaction_events),
     )
     now = _timestamp(NOW)
 
@@ -624,7 +632,7 @@ async def test_complete_persists_annotation_manifest_atomically_and_immutably(
 
 
 @pytest.mark.asyncio
-async def test_student_thread_projects_review_and_full_annotation_without_internal_reaction(
+async def test_student_thread_projects_review_annotation_and_student_reaction(
     review_queue_fixture,
 ):
     fixture = review_queue_fixture
@@ -633,12 +641,18 @@ async def test_student_thread_projects_review_and_full_annotation_without_intern
         teacher_user_id=TEACHER_ONE_ID,
         scope=ALL_GROUPS_SCOPE,
     )
-    await fixture.repository.complete(
+    completed = await fixture.repository.complete(
         _complete_command(
             lease,
             annotations=(_annotation_manifest(),),
             internal_reaction_id=100,
         )
+    )
+    reaction = await fixture.repository.set_student_reaction(
+        review_public_id=completed.review_public_id,
+        reaction_id=2,
+        expected_version=0,
+        student_user_id=STUDENT_ID,
     )
 
     now = _timestamp(fixture.clock.value)
@@ -675,9 +689,17 @@ async def test_student_thread_projects_review_and_full_annotation_without_intern
     assert first_review["comment"] == "Точная формулировка проверки."
     assert first_review["evidenceEntryIds"] == ["review-entry-test-1"]
     assert first_review["annotations"] == [_annotation_manifest().payload()]
+    assert first_review["studentReaction"] == {
+        "reactionId": 2,
+        "version": 1,
+        "editableUntil": _timestamp(reaction.state.editable_until),
+        "updatedAt": _timestamp(reaction.state.updated_at),
+        "deleted": False,
+    }
     assert "internalReaction" not in first_review
     assert second_review["evidenceEntryIds"] == ["review-entry-test-2"]
     assert second_review["annotations"] == []
+    assert second_review["studentReaction"] == first_review["studentReaction"]
 
 
 @pytest.mark.asyncio
@@ -1061,6 +1083,128 @@ async def test_internal_reaction_fails_closed_on_type_owner_version_and_window(
             expected_version=1,
             teacher_user_id=TEACHER_ONE_ID,
             scope=ALL_GROUPS_SCOPE,
+        )
+
+
+@pytest.mark.asyncio
+async def test_student_reaction_is_owner_scoped_optimistic_and_append_only(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    review = await fixture.repository.complete(_complete_command(lease))
+
+    with pytest.raises(ReviewStudentReactionNotFound):
+        await fixture.repository.set_student_reaction(
+            review_public_id=review.review_public_id,
+            reaction_id=0,
+            expected_version=0,
+            student_user_id=TEACHER_TWO_ID,
+        )
+    with pytest.raises(ReviewStudentReactionInvalid, match="written Student"):
+        await fixture.repository.set_student_reaction(
+            review_public_id=review.review_public_id,
+            reaction_id=100,
+            expected_version=0,
+            student_user_id=STUDENT_ID,
+        )
+
+    selected = await fixture.repository.set_student_reaction(
+        review_public_id=review.review_public_id,
+        reaction_id=0,
+        expected_version=0,
+        student_user_id=STUDENT_ID,
+    )
+    assert (
+        selected.state.reaction_id,
+        selected.state.version,
+        selected.state.deleted,
+        selected.state.editable_until,
+    ) == (0, 1, False, NOW + timedelta(hours=1))
+    assert selected.evidence_problem_public_ids == tuple(
+        item.problem_public_id for item in lease.items
+    )
+    assert selected.owner_account_public_ids == ()
+    assert selected.family_account_public_ids == ()
+    assert selected.admin_account_public_ids == ()
+
+    unchanged = await fixture.repository.set_student_reaction(
+        review_public_id=review.review_public_id,
+        reaction_id=0,
+        expected_version=1,
+        student_user_id=STUDENT_ID,
+    )
+    assert unchanged.state == selected.state
+    changed = await fixture.repository.set_student_reaction(
+        review_public_id=review.review_public_id,
+        reaction_id=2,
+        expected_version=1,
+        student_user_id=STUDENT_ID,
+    )
+    assert (changed.state.reaction_id, changed.state.version) == (2, 2)
+    with pytest.raises(ReviewStudentReactionConflict):
+        await fixture.repository.set_student_reaction(
+            review_public_id=review.review_public_id,
+            reaction_id=1,
+            expected_version=1,
+            student_user_id=STUDENT_ID,
+        )
+
+    deleted = await fixture.repository.delete_student_reaction(
+        review_public_id=review.review_public_id,
+        expected_version=2,
+        student_user_id=STUDENT_ID,
+    )
+    assert (
+        deleted.state.reaction_id,
+        deleted.state.version,
+        deleted.state.deleted,
+    ) == (
+        None,
+        3,
+        True,
+    )
+    fixture.clock.value += timedelta(minutes=10)
+    reselected = await fixture.repository.set_student_reaction(
+        review_public_id=review.review_public_id,
+        reaction_id=1,
+        expected_version=3,
+        student_user_id=STUDENT_ID,
+    )
+    assert (reselected.state.reaction_id, reselected.state.version) == (1, 4)
+
+    events = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT event_kind, reaction_id, state_version "
+            "FROM submission_review_student_reaction_events ORDER BY state_version"
+        ).fetchall()
+    )
+    assert events == [
+        {"event_kind": "selected", "reaction_id": 0, "state_version": 1},
+        {"event_kind": "changed", "reaction_id": 2, "state_version": 2},
+        {"event_kind": "deleted", "reaction_id": None, "state_version": 3},
+        {"event_kind": "selected", "reaction_id": 1, "state_version": 4},
+    ]
+    for statement in (
+        "UPDATE submission_review_student_reaction_events SET event_kind = 'changed'",
+        "DELETE FROM submission_review_student_reaction_events",
+        "DELETE FROM submission_review_student_reactions",
+    ):
+        with pytest.raises(sqlite3.IntegrityError, match="reaction"):
+            fixture.factory.run_write(
+                lambda connection, sql=statement: connection.execute(sql)
+            )
+
+    fixture.clock.value = NOW + timedelta(hours=1, microseconds=1)
+    with pytest.raises(ReviewStudentReactionWindowClosed):
+        await fixture.repository.delete_student_reaction(
+            review_public_id=review.review_public_id,
+            expected_version=4,
+            student_user_id=STUDENT_ID,
         )
 
 

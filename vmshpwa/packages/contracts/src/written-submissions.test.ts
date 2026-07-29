@@ -5,6 +5,7 @@ import fixture from '../fixtures/submissions/written-thread.v1.json'
 import {
   createWrittenAttachmentResponseSchema,
   createWrittenEntryRequestSchema,
+  deleteWrittenStudentReactionRequestSchema,
   deleteWrittenAttachmentRequestSchema,
   mutateWrittenAttachmentsResponseSchema,
   previewWrittenMaterialReassignmentRequestSchema,
@@ -14,12 +15,14 @@ import {
   reorderWrittenAttachmentsRequestSchema,
   replaceWrittenEntryRequestSchema,
   replaceWrittenEntryResponseSchema,
+  setWrittenStudentReactionRequestSchema,
   staffWrittenAttachmentSchema,
   submitWrittenEntryRequestSchema,
   writtenSubmissionFixtureSchema,
   writtenSubmissionQueryKeys,
   writtenAttachmentUploadMetadataSchema,
   writtenThreadResponseSchema,
+  writtenStudentReactionResponseSchema,
 } from './written-submissions'
 
 describe('Phase-5 written-submission contracts', () => {
@@ -329,6 +332,13 @@ describe('Phase-5 written-submission contracts', () => {
             source: 'staff' as const,
             evidenceEntryIds: [entry.entryId],
             annotations: [annotation],
+            studentReaction: {
+              reactionId: 2,
+              version: 1,
+              editableUntil: '2026-09-21T11:00:00.000000Z',
+              updatedAt: '2026-09-21T10:10:00.000000Z',
+              deleted: false,
+            },
             completedAt: '2026-09-21T10:00:00.000000Z',
           },
         ],
@@ -351,6 +361,55 @@ describe('Phase-5 written-submission contracts', () => {
       }).success,
     ).toBe(false)
     expect('internalReaction' in response.thread.reviews[0]!).toBe(false)
+  })
+
+  it('keeps Student review reactions strict, optimistic and tombstone-safe', () => {
+    const setRequest = {
+      schemaVersion: 1 as const,
+      reactionId: 0 as const,
+      expectedVersion: 0,
+    }
+    expect(setWrittenStudentReactionRequestSchema.parse(setRequest)).toEqual(setRequest)
+    expect(
+      deleteWrittenStudentReactionRequestSchema.parse({
+        schemaVersion: 1,
+        expectedVersion: 1,
+      }),
+    ).toEqual({ schemaVersion: 1, expectedVersion: 1 })
+    expect(
+      writtenStudentReactionResponseSchema.parse({
+        schemaVersion: 1,
+        reviewId: 'written-review-one',
+        studentReaction: {
+          reactionId: null,
+          version: 2,
+          editableUntil: '2026-09-21T11:00:00.000000Z',
+          updatedAt: '2026-09-21T10:20:00.000000Z',
+          deleted: true,
+        },
+        requestId: 'request-written-reaction',
+      }).studentReaction.deleted,
+    ).toBe(true)
+    expect(
+      setWrittenStudentReactionRequestSchema.safeParse({
+        ...setRequest,
+        reactionId: 100,
+      }).success,
+    ).toBe(false)
+    expect(
+      writtenStudentReactionResponseSchema.safeParse({
+        schemaVersion: 1,
+        reviewId: 'written-review-one',
+        studentReaction: {
+          reactionId: null,
+          version: 2,
+          editableUntil: '2026-09-21T11:00:00.000000Z',
+          updatedAt: '2026-09-21T10:20:00.000000Z',
+          deleted: false,
+        },
+        requestId: 'request-written-reaction',
+      }).success,
+    ).toBe(false)
   })
 
   it('scopes query keys by principal and problem', () => {

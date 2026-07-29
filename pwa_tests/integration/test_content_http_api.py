@@ -1603,6 +1603,7 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
                     ],
                 }
             ],
+            "studentReaction": None,
             "completedAt": _timestamp(),
         }
     ]

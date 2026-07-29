@@ -16,6 +16,7 @@ from apps.pwa_api.auth_service import PwaAuthService
 from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.reviews import PwaWrittenReviewQueueRepository
+from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import Config
 from helpers.consts import USER_TYPE
 from helpers.nats_brocker import InProcessBroker
@@ -46,6 +47,8 @@ class ReviewHttpFixture:
     factory: PwaConnectionFactory
     queue_public_ids: tuple[str, str]
     cookies: MappingProxyType
+    student_cookie: str
+    family_cookie: str
 
 
 def _timestamp(value: datetime = NOW) -> str:
@@ -106,6 +109,37 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                     "Администратор",
                 ),
             ),
+        )
+        student_account_id = int(
+            connection.execute(
+                "INSERT INTO auth_accounts "
+                "(public_id, audience, username, username_normalized, "
+                "username_algorithm_version, provisioning_source, credential_kind, "
+                "credential_hash, linked_user_id, status, created_at, updated_at) "
+                "VALUES ('review-http-account-student', 'student', "
+                "'review-http-student', 'review-http-student', 1, 'synthetic-test', "
+                "'telegram_token', ?, ?, 'active', ?, ?) RETURNING id",
+                (TEST_HASHER.hash("student-token"), STUDENT_ID, now, now),
+            ).fetchone()["id"]
+        )
+        assert student_account_id > 0
+        family_account_id = int(
+            connection.execute(
+                "INSERT INTO auth_accounts "
+                "(public_id, audience, username, username_normalized, "
+                "provisioning_source, display_name, credential_kind, credential_hash, "
+                "status, created_at, updated_at) VALUES "
+                "('review-http-account-family', 'family', 'review-http-family', "
+                "'review-http-family', 'synthetic-test', 'Семья Беловых', 'password', "
+                "?, 'active', ?, ?) RETURNING id",
+                (TEST_HASHER.hash("family-password"), now, now),
+            ).fetchone()["id"]
+        )
+        connection.execute(
+            "INSERT INTO family_student_links "
+            "(family_account_id, student_user_id, is_primary, created_at, updated_at) "
+            "VALUES (?, ?, 1, ?, ?)",
+            (family_account_id, STUDENT_ID, now, now),
         )
         season_id = int(
             connection.execute(
@@ -428,25 +462,39 @@ async def review_http(tmp_path, aiohttp_client) -> ReviewHttpFixture:
         auth_runtime_config=auth_config,
         auth_service=auth_service,
         review_queue_repository=review_repository,
+        written_submission_repository=PwaWrittenSubmissionRepository(
+            factory, clock=lambda: NOW
+        ),
     )
     client = await aiohttp_client(app)
 
-    async def login(username: str, password: str) -> str:
+    async def login(audience: AuthAudience, username: str, password: str) -> str:
         response = await client.post(
-            "/staff/api/v1/auth/login",
-            json={"username": username, "password": password},
+            f"/{audience.value}/api/v1/auth/login",
+            json={
+                "username": username,
+                (
+                    "telegramToken" if audience is AuthAudience.STUDENT else "password"
+                ): password,
+            },
             headers=_headers(unsafe=True),
         )
         assert response.status == 200, await response.text()
-        cookie = response.cookies[COOKIE_POLICY[AuthAudience.STAFF].access_name].value
+        cookie = response.cookies[COOKIE_POLICY[audience].access_name].value
         client.session.cookie_jar.clear()
         return cookie
 
     cookies = MappingProxyType(
         {
-            "full": await login("review-http-full", "full-password"),
-            "partial": await login("review-http-partial", "partial-password"),
-            "admin": await login("review-http-admin", "admin-password"),
+            "full": await login(
+                AuthAudience.STAFF, "review-http-full", "full-password"
+            ),
+            "partial": await login(
+                AuthAudience.STAFF, "review-http-partial", "partial-password"
+            ),
+            "admin": await login(
+                AuthAudience.STAFF, "review-http-admin", "admin-password"
+            ),
         }
     )
     return ReviewHttpFixture(
@@ -454,6 +502,12 @@ async def review_http(tmp_path, aiohttp_client) -> ReviewHttpFixture:
         factory=factory,
         queue_public_ids=queue_public_ids,
         cookies=cookies,
+        student_cookie=await login(
+            AuthAudience.STUDENT, "review-http-student", "student-token"
+        ),
+        family_cookie=await login(
+            AuthAudience.FAMILY, "review-http-family", "family-password"
+        ),
     )
 
 
@@ -466,6 +520,14 @@ def _headers(*, unsafe: bool = False) -> dict[str, str]:
 
 def _cookie(fixture: ReviewHttpFixture, identity: str) -> dict[str, str]:
     return {COOKIE_POLICY[AuthAudience.STAFF].access_name: fixture.cookies[identity]}
+
+
+def _student_cookie(fixture: ReviewHttpFixture) -> dict[str, str]:
+    return {COOKIE_POLICY[AuthAudience.STUDENT].access_name: fixture.student_cookie}
+
+
+def _family_cookie(fixture: ReviewHttpFixture) -> dict[str, str]:
+    return {COOKIE_POLICY[AuthAudience.FAMILY].access_name: fixture.family_cookie}
 
 
 def _complete_payload(lease: dict[str, object]) -> dict[str, object]:
@@ -797,9 +859,7 @@ async def test_internal_reaction_http_is_strict_optimistic_and_reviewer_owned(
         headers=_headers(unsafe=True),
     )
     assert stale.status == 409
-    assert (await stale.json())["error"]["code"] == (
-        "review_internal_reaction_changed"
-    )
+    assert (await stale.json())["error"]["code"] == ("review_internal_reaction_changed")
 
     foreign = await fixture.client.put(
         f"/staff/api/v1/reviews/{review_id}/internal-reaction",
@@ -829,6 +889,108 @@ async def test_internal_reaction_http_is_strict_optimistic_and_reviewer_owned(
     )
     assert deleted.status == 200, await deleted.text()
     deleted_payload = (await deleted.json())["internalReaction"]
+    assert deleted_payload["reactionId"] is None
+    assert deleted_payload["version"] == 2
+    assert deleted_payload["deleted"] is True
+
+
+@pytest.mark.asyncio
+async def test_student_reaction_http_updates_owner_and_family_projection(
+    review_http: ReviewHttpFixture,
+):
+    fixture = review_http
+    queue_id = fixture.queue_public_ids[0]
+    claim = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    lease = (await claim.json())["lease"]
+    completed = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=_complete_payload(lease),
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert completed.status == 200, await completed.text()
+    review = (await completed.json())["review"]
+    review_id = review["reviewId"]
+    problem_id = review["targetProblemId"]
+
+    cursors_before = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
+    invalid = await fixture.client.put(
+        f"/student/api/v1/reviews/{review_id}/reaction",
+        json={"schemaVersion": 1, "reactionId": 100, "expectedVersion": 0},
+        cookies=_student_cookie(fixture),
+        headers=_headers(unsafe=True),
+    )
+    assert invalid.status == 422
+    assert (await invalid.json())["error"]["code"] == (
+        "review_student_reaction_invalid"
+    )
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == cursors_before
+
+    selected = await fixture.client.put(
+        f"/student/api/v1/reviews/{review_id}/reaction",
+        json={"schemaVersion": 1, "reactionId": 0, "expectedVersion": 0},
+        cookies=_student_cookie(fixture),
+        headers=_headers(unsafe=True),
+    )
+    assert selected.status == 200, await selected.text()
+    selected_payload = await selected.json()
+    assert selected_payload["reviewId"] == review_id
+    assert selected_payload["studentReaction"] == {
+        "reactionId": 0,
+        "version": 1,
+        "editableUntil": _timestamp(NOW + timedelta(hours=1)),
+        "updatedAt": _timestamp(NOW),
+        "deleted": False,
+    }
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+        **cursors_before,
+        "student": cursors_before["student"] + 1,
+        "family": cursors_before["family"] + 1,
+        "staff": cursors_before["staff"] + 1,
+    }
+
+    stale = await fixture.client.put(
+        f"/student/api/v1/reviews/{review_id}/reaction",
+        json={"schemaVersion": 1, "reactionId": 2, "expectedVersion": 0},
+        cookies=_student_cookie(fixture),
+        headers=_headers(unsafe=True),
+    )
+    assert stale.status == 409
+    assert (await stale.json())["error"]["code"] == ("review_student_reaction_changed")
+
+    student_thread = await fixture.client.get(
+        f"/student/api/v1/problems/{problem_id}/thread",
+        cookies=_student_cookie(fixture),
+        headers=_headers(),
+    )
+    assert student_thread.status == 200, await student_thread.text()
+    student_review = (await student_thread.json())["thread"]["reviews"][0]
+    assert student_review["studentReaction"] == selected_payload["studentReaction"]
+    assert "internalReaction" not in student_review
+
+    family_thread = await fixture.client.get(
+        f"/family/api/v1/children/review-http-student/problems/{problem_id}/thread",
+        cookies=_family_cookie(fixture),
+        headers=_headers(),
+    )
+    assert family_thread.status == 200, await family_thread.text()
+    family_review = (await family_thread.json())["thread"]["reviews"][0]
+    assert family_review["studentReaction"] == selected_payload["studentReaction"]
+    assert "internalReaction" not in family_review
+
+    deleted = await fixture.client.delete(
+        f"/student/api/v1/reviews/{review_id}/reaction",
+        json={"schemaVersion": 1, "expectedVersion": 1},
+        cookies=_student_cookie(fixture),
+        headers=_headers(unsafe=True),
+    )
+    assert deleted.status == 200, await deleted.text()
+    deleted_payload = (await deleted.json())["studentReaction"]
     assert deleted_payload["reactionId"] is None
     assert deleted_payload["version"] == 2
     assert deleted_payload["deleted"] is True

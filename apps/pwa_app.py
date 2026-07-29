@@ -37,6 +37,7 @@ from apps.pwa_api.review_routes import (
     PWA_REVIEW_COMPLETION_INVALIDATOR,
     PWA_REVIEW_QUEUE_INVALIDATOR,
     PWA_REVIEW_QUEUE_REPOSITORY,
+    PWA_REVIEW_STUDENT_REACTION_INVALIDATOR,
     review_routes,
 )
 from apps.pwa_api.submission_routes import (
@@ -833,6 +834,26 @@ async def publish_review_completion_invalidation(
 ) -> None:
     """Refetch reviewed branches for Student/Family and the shared Staff queue."""
 
+    await publish_review_owner_invalidation(
+        app,
+        account_public_ids=account_public_ids,
+        family_account_public_ids=family_account_public_ids,
+        problem_public_ids=problem_public_ids,
+        reason=reason,
+    )
+    await publish_review_queue_invalidation(app, reason=reason)
+
+
+async def publish_review_owner_invalidation(
+    app: web.Application,
+    *,
+    account_public_ids: tuple[str, ...],
+    family_account_public_ids: tuple[str, ...],
+    problem_public_ids: tuple[str, ...],
+    reason: str,
+) -> None:
+    """Refetch only the reviewed Student's thread and linked Family views."""
+
     resources = [
         f"problems/{problem_public_id}/thread"
         for problem_public_id in problem_public_ids
@@ -857,7 +878,36 @@ async def publish_review_completion_invalidation(
                 "accountId": account_public_id,
             },
         )
-    await publish_review_queue_invalidation(app, reason=reason)
+
+
+async def publish_review_student_reaction_invalidation(
+    app: web.Application,
+    *,
+    account_public_ids: tuple[str, ...],
+    family_account_public_ids: tuple[str, ...],
+    admin_account_public_ids: tuple[str, ...],
+    problem_public_ids: tuple[str, ...],
+    reason: str,
+) -> None:
+    """Refresh owner projections and the future admin-only reaction inbox."""
+
+    await publish_review_owner_invalidation(
+        app,
+        account_public_ids=account_public_ids,
+        family_account_public_ids=family_account_public_ids,
+        problem_public_ids=problem_public_ids,
+        reason=reason,
+    )
+    for account_public_id in admin_account_public_ids:
+        await app[PWA_BROKER].publish(
+            NATS_PWA_INVALIDATE,
+            {
+                "resources": ["review-student-reactions"],
+                "reason": reason,
+                "audience": AuthAudience.STAFF.value,
+                "accountId": account_public_id,
+            },
+        )
 
 
 async def publish_review_queue_invalidation(
@@ -1124,6 +1174,26 @@ def configure(
                 )
 
             app[PWA_REVIEW_COMPLETION_INVALIDATOR] = invalidate_review_completion
+
+            async def invalidate_review_student_reaction(
+                account_public_ids: tuple[str, ...],
+                family_account_public_ids: tuple[str, ...],
+                admin_account_public_ids: tuple[str, ...],
+                problem_public_ids: tuple[str, ...],
+                reason: str,
+            ) -> None:
+                await publish_review_student_reaction_invalidation(
+                    app,
+                    account_public_ids=account_public_ids,
+                    family_account_public_ids=family_account_public_ids,
+                    admin_account_public_ids=admin_account_public_ids,
+                    problem_public_ids=problem_public_ids,
+                    reason=reason,
+                )
+
+            app[PWA_REVIEW_STUDENT_REACTION_INVALIDATOR] = (
+                invalidate_review_student_reaction
+            )
             app.add_routes(review_routes)
             app.on_startup.append(on_review_queue_startup)
         content_enabled = content_repository is not None or PWA_DATABASE in app

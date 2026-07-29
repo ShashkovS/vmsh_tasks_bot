@@ -641,6 +641,69 @@ async def test_review_completion_invalidates_linked_student_family_and_staff_que
 
 
 @pytest.mark.asyncio
+async def test_student_reaction_invalidation_is_owner_and_admin_scoped():
+    class RecordingBroker:
+        def __init__(self):
+            self.messages = []
+
+        async def publish(self, topic, payload):
+            self.messages.append((topic, payload))
+
+    app = web.Application()
+    broker = RecordingBroker()
+    app[pwa_app.PWA_BROKER] = broker
+
+    await pwa_app.publish_review_student_reaction_invalidation(
+        app,
+        account_public_ids=("account-student-review",),
+        family_account_public_ids=("account-family-review",),
+        admin_account_public_ids=("account-admin-a", "account-admin-b"),
+        problem_public_ids=("problem-review",),
+        reason="written-review-student-reaction-changed",
+    )
+
+    thread_resources = ["problems/problem-review/thread"]
+    assert broker.messages == [
+        (
+            "pwa_invalidate",
+            {
+                "resources": thread_resources,
+                "reason": "written-review-student-reaction-changed",
+                "audience": "student",
+                "accountId": "account-student-review",
+            },
+        ),
+        (
+            "pwa_invalidate",
+            {
+                "resources": thread_resources,
+                "reason": "written-review-student-reaction-changed",
+                "audience": "family",
+                "accountId": "account-family-review",
+            },
+        ),
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["review-student-reactions"],
+                "reason": "written-review-student-reaction-changed",
+                "audience": "staff",
+                "accountId": "account-admin-a",
+            },
+        ),
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["review-student-reactions"],
+                "reason": "written-review-student-reaction-changed",
+                "audience": "staff",
+                "accountId": "account-admin-b",
+            },
+        ),
+    ]
+
+
+@pytest.mark.asyncio
 async def test_review_queue_mutation_invalidation_is_staff_scoped():
     class RecordingBroker:
         def __init__(self):

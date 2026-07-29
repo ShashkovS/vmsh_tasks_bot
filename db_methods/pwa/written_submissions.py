@@ -581,6 +581,23 @@ class WrittenReviewAnnotationRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class WrittenStudentReactionRecord:
+    reaction_id: int | None
+    version: int
+    editable_until: str
+    updated_at: str
+
+    def payload(self) -> dict[str, object]:
+        return {
+            "reactionId": self.reaction_id,
+            "version": self.version,
+            "editableUntil": self.editable_until,
+            "updatedAt": self.updated_at,
+            "deleted": self.reaction_id is None,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class WrittenReviewProjection:
     public_id: str
     target_problem_public_id: str
@@ -591,6 +608,7 @@ class WrittenReviewProjection:
     source: str
     evidence_entry_public_ids: tuple[str, ...]
     annotations: tuple[WrittenReviewAnnotationRecord, ...]
+    student_reaction: WrittenStudentReactionRecord | None
     completed_at: str
 
     def payload(self) -> dict[str, object]:
@@ -604,6 +622,11 @@ class WrittenReviewProjection:
             "source": self.source,
             "evidenceEntryIds": list(self.evidence_entry_public_ids),
             "annotations": [annotation.payload() for annotation in self.annotations],
+            "studentReaction": (
+                None
+                if self.student_reaction is None
+                else self.student_reaction.payload()
+            ),
             "completedAt": self.completed_at,
         }
 
@@ -2059,12 +2082,18 @@ def _project_thread_reviews(
         "SELECT review.id, review.public_id, review.verdict, review.source, "
         "review.created_at, target_problem.public_id AS target_problem_public_id, "
         "comment.public_id AS comment_public_id, comment.text AS comment_text, "
-        "reviewer.name AS reviewer_name, reviewer.surname AS reviewer_surname "
+        "reviewer.name AS reviewer_name, reviewer.surname AS reviewer_surname, "
+        "student_reaction.reaction_id AS student_reaction_id, "
+        "student_reaction.version AS student_reaction_version, "
+        "student_reaction.editable_until AS student_reaction_editable_until, "
+        "student_reaction.updated_at AS student_reaction_updated_at "
         "FROM submission_reviews AS review "
         "JOIN submission_threads AS target_thread ON target_thread.id = review.thread_id "
         "JOIN problems AS target_problem ON target_problem.id = target_thread.problem_id "
         "JOIN users AS reviewer ON reviewer.id = review.reviewer_user_id "
         "LEFT JOIN submission_entries AS comment ON comment.id = review.comment_entry_id "
+        "LEFT JOIN submission_review_student_reactions AS student_reaction "
+        "ON student_reaction.review_id = review.id "
         "WHERE EXISTS ("
         "SELECT 1 FROM submission_review_evidence_entries AS evidence "
         "JOIN submission_entries AS entry ON entry.id = evidence.entry_id "
@@ -2144,6 +2173,20 @@ def _project_thread_reviews(
                 source=str(review["source"]),
                 evidence_entry_public_ids=evidence_entry_ids,
                 annotations=tuple(annotations),
+                student_reaction=(
+                    None
+                    if review["student_reaction_version"] is None
+                    else WrittenStudentReactionRecord(
+                        reaction_id=(
+                            None
+                            if review["student_reaction_id"] is None
+                            else int(review["student_reaction_id"])
+                        ),
+                        version=int(review["student_reaction_version"]),
+                        editable_until=str(review["student_reaction_editable_until"]),
+                        updated_at=str(review["student_reaction_updated_at"]),
+                    )
+                ),
                 completed_at=str(review["created_at"]),
             )
         )
@@ -3924,5 +3967,6 @@ __all__ = [
     "WrittenMaterialScope",
     "WrittenReviewAnnotationRecord",
     "WrittenReviewProjection",
+    "WrittenStudentReactionRecord",
     "WrittenThreadRecord",
 ]

@@ -164,6 +164,66 @@ describe('Student written-submission client', () => {
     ])
   })
 
+  it('sets and deletes one optimistic Student reaction on a concrete review', async () => {
+    const selected = {
+      schemaVersion: 1 as const,
+      reviewId: 'written-review-one',
+      studentReaction: {
+        reactionId: 0 as const,
+        version: 1,
+        editableUntil: '2026-09-21T11:00:00.000000Z',
+        updatedAt: '2026-09-21T10:10:00.000000Z',
+        deleted: false,
+      },
+      requestId: 'request-written-reaction-set',
+    }
+    const deleted = {
+      ...selected,
+      studentReaction: {
+        ...selected.studentReaction,
+        reactionId: null,
+        version: 2,
+        updatedAt: '2026-09-21T10:20:00.000000Z',
+        deleted: true,
+      },
+      requestId: 'request-written-reaction-delete',
+    }
+    const fetchImplementation = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(jsonResponse(selected, 200))
+      .mockResolvedValueOnce(jsonResponse(deleted, 200))
+    const client = createWrittenSubmissionClient(runtime, { fetchImplementation })
+
+    await expect(
+      client.setStudentReaction('written-review-one', {
+        schemaVersion: 1,
+        reactionId: 0,
+        expectedVersion: 0,
+      }),
+    ).resolves.toEqual(selected)
+    await expect(
+      client.deleteStudentReaction('written-review-one', {
+        schemaVersion: 1,
+        expectedVersion: 1,
+      }),
+    ).resolves.toEqual(deleted)
+
+    expect(
+      fetchImplementation.mock.calls.map(([path, init]) => [path, init?.method, init?.body]),
+    ).toEqual([
+      [
+        '/student/api/v1/reviews/written-review-one/reaction',
+        'PUT',
+        JSON.stringify({ schemaVersion: 1, reactionId: 0, expectedVersion: 0 }),
+      ],
+      [
+        '/student/api/v1/reviews/written-review-one/reaction',
+        'DELETE',
+        JSON.stringify({ schemaVersion: 1, expectedVersion: 1 }),
+      ],
+    ])
+  })
+
   it('loads one owner-scoped thread and rejects an unsafe resource before fetch', async () => {
     const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
       Promise.resolve(jsonResponse(writtenFixture.threadResponse, 200)),

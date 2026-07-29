@@ -1,6 +1,7 @@
 import { authContextSchema } from '../packages/contracts/src/auth'
 import {
   familyWrittenThreadResponseSchema,
+  writtenStudentReactionResponseSchema,
   writtenThreadResponseSchema,
 } from '../packages/contracts/src/written-submissions'
 import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
@@ -178,6 +179,53 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     }),
   ])
   expect(studentThread.thread?.reviews[0]).not.toHaveProperty('internalReaction')
+  expect(studentThread.thread?.reviews[0]?.studentReaction).toBeNull()
+
+  const reviewId = studentThread.thread?.reviews[0]?.reviewId
+  if (!reviewId) throw new Error('Student review projection has no public review ID')
+  const studentReactionMutation = await page.evaluate(async (reviewPublicId) => {
+    const response = await fetch(`/student/api/v1/reviews/${reviewPublicId}/reaction`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ schemaVersion: 1, reactionId: 2, expectedVersion: 0 }),
+    })
+    const body: unknown = await response.json()
+    return { status: response.status, body }
+  }, reviewId)
+  expect(studentReactionMutation.status).toBe(200)
+  const studentReaction = writtenStudentReactionResponseSchema.parse(studentReactionMutation.body)
+  expect(studentReaction.studentReaction).toEqual(
+    expect.objectContaining({ reactionId: 2, version: 1, deleted: false }),
+  )
+  const updatedStudentProjection = await page.evaluate(async (problemId) => {
+    const response = await fetch(`/student/api/v1/problems/${problemId}/thread`)
+    const body: unknown = await response.json()
+    return { status: response.status, body }
+  }, `e2e-review-problem-${project}`)
+  expect(updatedStudentProjection.status).toBe(200)
+  expect(
+    writtenThreadResponseSchema.parse(updatedStudentProjection.body).thread?.reviews[0]
+      ?.studentReaction,
+  ).toEqual(expect.objectContaining({ reactionId: 2, version: 1, deleted: false }))
+  await expect
+    .poll(() =>
+      familyPage.evaluate(() => {
+        const state = globalThis as typeof globalThis & {
+          __reviewRealtimeEvents?: Array<Record<string, unknown>>
+        }
+        const event = state.__reviewRealtimeEvents?.find(
+          (candidate) =>
+            candidate.type === 'invalidate' &&
+            candidate.reason === 'written-review-student-reaction-changed',
+        )
+        if (!event) return null
+        return { audience: event.audience, resources: event.resources }
+      }),
+    )
+    .toEqual({
+      audience: 'family',
+      resources: [`problems/e2e-review-problem-${project}/thread`],
+    })
 
   const familyAuth = await familyPage.evaluate(async () => {
     const authResponse = await fetch('/family/api/v1/auth/me')
@@ -223,6 +271,11 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
           marks: [expect.objectContaining({ kind: 'rectangle' })],
         }),
       ],
+      studentReaction: expect.objectContaining({
+        reactionId: 2,
+        version: 1,
+        deleted: false,
+      }),
     }),
   ])
   expect(familyThread.thread?.reviews[0]).not.toHaveProperty('internalReaction')

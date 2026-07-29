@@ -20,6 +20,7 @@ from .connection import PwaConnectionFactory
 
 REVIEW_LEASE_DURATION = timedelta(minutes=30)
 REVIEW_INTERNAL_REACTION_EDIT_WINDOW = timedelta(hours=1)
+REVIEW_STUDENT_REACTION_EDIT_WINDOW = timedelta(hours=1)
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _WRITTEN_REVIEW_VERDICTS = frozenset(range(11, 18))
 _ANNOTATION_KINDS = frozenset(
@@ -81,6 +82,22 @@ class ReviewInternalReactionConflict(ReviewQueueError):
 
 class ReviewInternalReactionWindowClosed(ReviewQueueError):
     """The one-hour internal-reaction edit window has closed."""
+
+
+class ReviewStudentReactionInvalid(ReviewQueueError):
+    """The selected reaction is not a written Student reaction."""
+
+
+class ReviewStudentReactionNotFound(ReviewQueueError):
+    """The review is not visible to this Student or has no reaction state."""
+
+
+class ReviewStudentReactionConflict(ReviewQueueError):
+    """The expected Student-reaction version is stale."""
+
+
+class ReviewStudentReactionWindowClosed(ReviewQueueError):
+    """The one-hour Student-reaction edit window has closed."""
 
 
 def _annotation_number(
@@ -493,8 +510,7 @@ class CompleteReviewCommand:
                 "a non-accepted verdict without a comment requires confirmation"
             )
         if self.internal_reaction_id is not None and (
-            type(self.internal_reaction_id) is not int
-            or self.internal_reaction_id < 1
+            type(self.internal_reaction_id) is not int or self.internal_reaction_id < 1
         ):
             raise ReviewInternalReactionInvalid(
                 "internal reaction ID must be a positive integer"
@@ -560,6 +576,28 @@ class ReviewInternalReactionState:
     @property
     def deleted(self) -> bool:
         return self.reaction_id is None
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewStudentReactionState:
+    review_public_id: str
+    reaction_id: int | None
+    version: int
+    editable_until: datetime
+    updated_at: datetime
+
+    @property
+    def deleted(self) -> bool:
+        return self.reaction_id is None
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewStudentReactionReceipt:
+    state: ReviewStudentReactionState
+    owner_account_public_ids: tuple[str, ...]
+    family_account_public_ids: tuple[str, ...]
+    admin_account_public_ids: tuple[str, ...]
+    evidence_problem_public_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -648,6 +686,21 @@ def _review_recipient_account_public_ids(
     )
 
 
+def _review_admin_account_public_ids(
+    connection: sqlite3.Connection,
+) -> tuple[str, ...]:
+    """Resolve active global-admin Staff accounts for hidden reaction oversight."""
+
+    accounts = connection.execute(
+        "SELECT account.public_id FROM auth_accounts AS account "
+        "JOIN users AS user ON user.id = account.linked_user_id "
+        "WHERE account.audience = 'staff' AND account.status = 'active' "
+        "AND user.type = ? ORDER BY account.id",
+        (int(USER_TYPE.ADMIN),),
+    ).fetchall()
+    return tuple(str(account["public_id"]) for account in accounts)
+
+
 def _canonical_json(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
@@ -727,15 +780,79 @@ def _internal_reaction_state(
 ) -> ReviewInternalReactionState:
     return ReviewInternalReactionState(
         review_public_id=review_public_id,
-        reaction_id=(
-            None if row["reaction_id"] is None else int(row["reaction_id"])
-        ),
+        reaction_id=(None if row["reaction_id"] is None else int(row["reaction_id"])),
         version=int(row["version"]),
         editable_until=_parse_timestamp(
             row["editable_until"], label="internal reaction edit window"
         ),
         updated_at=_parse_timestamp(
             row["updated_at"], label="internal reaction update time"
+        ),
+    )
+
+
+def _student_reaction_review(
+    connection: sqlite3.Connection,
+    *,
+    review_public_id: str,
+    student_user_id: int,
+) -> dict[str, object]:
+    """Resolve one completed review without revealing foreign review IDs."""
+
+    review = connection.execute(
+        "SELECT review.id, review.public_id, review.created_at, "
+        "thread.student_user_id "
+        "FROM submission_reviews AS review "
+        "JOIN submission_threads AS thread ON thread.id = review.thread_id "
+        "WHERE review.public_id = ? AND thread.student_user_id = ?",
+        (review_public_id, student_user_id),
+    ).fetchone()
+    if review is None:
+        raise ReviewStudentReactionNotFound("review does not exist for this Student")
+    return review
+
+
+def _student_reaction_state(
+    *, review_public_id: str, row: dict[str, object]
+) -> ReviewStudentReactionState:
+    return ReviewStudentReactionState(
+        review_public_id=review_public_id,
+        reaction_id=(None if row["reaction_id"] is None else int(row["reaction_id"])),
+        version=int(row["version"]),
+        editable_until=_parse_timestamp(
+            row["editable_until"], label="Student reaction edit window"
+        ),
+        updated_at=_parse_timestamp(
+            row["updated_at"], label="Student reaction update time"
+        ),
+    )
+
+
+def _student_reaction_receipt(
+    connection: sqlite3.Connection,
+    *,
+    review: dict[str, object],
+    state: ReviewStudentReactionState,
+) -> ReviewStudentReactionReceipt:
+    student_user_id = int(review["student_user_id"])
+    owner_accounts, family_accounts = _review_recipient_account_public_ids(
+        connection,
+        student_user_id=student_user_id,
+    )
+    problem_rows = connection.execute(
+        "SELECT problem.public_id FROM submission_review_evidence_entries AS evidence "
+        "JOIN problems AS problem ON problem.id = evidence.problem_id "
+        "WHERE evidence.review_id = ? "
+        "ORDER BY evidence.server_received_at, evidence.entry_id",
+        (review["id"],),
+    ).fetchall()
+    return ReviewStudentReactionReceipt(
+        state=state,
+        owner_account_public_ids=owner_accounts,
+        family_account_public_ids=family_accounts,
+        admin_account_public_ids=_review_admin_account_public_ids(connection),
+        evidence_problem_public_ids=tuple(
+            dict.fromkeys(str(row["public_id"]) for row in problem_rows)
         ),
     )
 
@@ -1023,9 +1140,7 @@ def _lease_from_rows(
             group_name=str(row["group_name"] or row["group_id"]),
             group_short_code=str(row["group_short_code"] or row["group_id"]),
             group_color_key=(
-                None
-                if row["group_color_key"] is None
-                else str(row["group_color_key"])
+                None if row["group_color_key"] is None else str(row["group_color_key"])
             ),
             course_public_id=(
                 None
@@ -1071,6 +1186,9 @@ class PwaWrittenReviewQueueRepository:
         internal_reaction_event_public_id_factory: Callable[[], str] = lambda: (
             f"review-reaction-event-{uuid.uuid4()}"
         ),
+        student_reaction_event_public_id_factory: Callable[[], str] = lambda: (
+            f"review-student-reaction-event-{uuid.uuid4()}"
+        ),
     ) -> None:
         self._factory = connection_factory
         self._clock = clock
@@ -1081,6 +1199,9 @@ class PwaWrittenReviewQueueRepository:
         self._event_public_id_factory = event_public_id_factory
         self._internal_reaction_event_public_id_factory = (
             internal_reaction_event_public_id_factory
+        )
+        self._student_reaction_event_public_id_factory = (
+            student_reaction_event_public_id_factory
         )
 
     async def claim(
@@ -1995,9 +2116,7 @@ class PwaWrittenReviewQueueRepository:
                     review_public_id=review_public_id, row=state
                 )
 
-            event_public_id = (
-                self._internal_reaction_event_public_id_factory().strip()
-            )
+            event_public_id = self._internal_reaction_event_public_id_factory().strip()
             if not _PUBLIC_ID.fullmatch(event_public_id):
                 raise ValueError(
                     "internal reaction event public ID factory returned an invalid value"
@@ -2029,9 +2148,7 @@ class PwaWrittenReviewQueueRepository:
                         "internal reaction edit window has closed"
                     )
                 next_version = current_version + 1
-                event_kind = (
-                    "selected" if state["reaction_id"] is None else "changed"
-                )
+                event_kind = "selected" if state["reaction_id"] is None else "changed"
                 cursor = connection.execute(
                     "UPDATE submission_review_internal_reactions "
                     "SET reaction_id = ?, updated_at = ?, deleted_at = NULL, "
@@ -2103,9 +2220,7 @@ class PwaWrittenReviewQueueRepository:
                 (review["id"],),
             ).fetchone()
             if state is None:
-                raise ReviewInternalReactionNotFound(
-                    "review has no internal reaction"
-                )
+                raise ReviewInternalReactionNotFound("review has no internal reaction")
             if expected_version != int(state["version"]):
                 raise ReviewInternalReactionConflict(
                     "internal reaction version has changed"
@@ -2129,9 +2244,7 @@ class PwaWrittenReviewQueueRepository:
                 raise ReviewInternalReactionWindowClosed(
                     "internal reaction edit window has closed"
                 )
-            event_public_id = (
-                self._internal_reaction_event_public_id_factory().strip()
-            )
+            event_public_id = self._internal_reaction_event_public_id_factory().strip()
             if not _PUBLIC_ID.fullmatch(event_public_id):
                 raise ValueError(
                     "internal reaction event public ID factory returned an invalid value"
@@ -2171,6 +2284,256 @@ class PwaWrittenReviewQueueRepository:
             ).fetchone()
             return _internal_reaction_state(
                 review_public_id=review_public_id, row=stored
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def set_student_reaction(
+        self,
+        *,
+        review_public_id: str,
+        reaction_id: int,
+        expected_version: int,
+        student_user_id: int,
+    ) -> ReviewStudentReactionReceipt:
+        """Select or replace the reviewed Student's reaction within one hour."""
+
+        if not _PUBLIC_ID.fullmatch(review_public_id):
+            raise ValueError("review public ID is invalid")
+        if type(reaction_id) is not int or reaction_id < 0:
+            raise ReviewStudentReactionInvalid(
+                "Student reaction ID must not be negative"
+            )
+        if type(expected_version) is not int or expected_version < 0:
+            raise ValueError("expected reaction version must not be negative")
+        if student_user_id == 0:
+            raise ValueError("Student user ID must not be zero")
+        now = _normalize_time(self._clock())
+
+        def operation(connection: sqlite3.Connection) -> ReviewStudentReactionReceipt:
+            review = _student_reaction_review(
+                connection,
+                review_public_id=review_public_id,
+                student_user_id=student_user_id,
+            )
+            allowed = connection.execute(
+                "SELECT reaction_id FROM reaction_enum "
+                "WHERE reaction_id = ? AND reaction_type_id = 0",
+                (reaction_id,),
+            ).fetchone()
+            if allowed is None:
+                raise ReviewStudentReactionInvalid(
+                    "reaction is not a written Student reaction"
+                )
+            state = connection.execute(
+                "SELECT * FROM submission_review_student_reactions WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            editable_until = (
+                _parse_timestamp(review["created_at"], label="review time")
+                + REVIEW_STUDENT_REACTION_EDIT_WINDOW
+                if state is None
+                else _parse_timestamp(
+                    state["editable_until"], label="Student reaction edit window"
+                )
+            )
+            if now > editable_until:
+                raise ReviewStudentReactionWindowClosed(
+                    "Student reaction edit window has closed"
+                )
+            current_version = 0 if state is None else int(state["version"])
+            if expected_version != current_version:
+                raise ReviewStudentReactionConflict(
+                    "Student reaction version has changed"
+                )
+            if state is not None and state["reaction_id"] == reaction_id:
+                return _student_reaction_receipt(
+                    connection,
+                    review=review,
+                    state=_student_reaction_state(
+                        review_public_id=review_public_id,
+                        row=state,
+                    ),
+                )
+
+            event_public_id = self._student_reaction_event_public_id_factory().strip()
+            if not _PUBLIC_ID.fullmatch(event_public_id):
+                raise ValueError(
+                    "Student reaction event public ID factory returned an invalid value"
+                )
+            if state is None:
+                updated_at = now
+                next_version = 1
+                event_kind = "selected"
+                connection.execute(
+                    "INSERT INTO submission_review_student_reactions "
+                    "(review_id, actor_user_id, reaction_id, created_at, editable_until, "
+                    "updated_at, deleted_at, version) VALUES (?, ?, ?, ?, ?, ?, NULL, 1)",
+                    (
+                        review["id"],
+                        student_user_id,
+                        reaction_id,
+                        _timestamp(now),
+                        _timestamp(editable_until),
+                        _timestamp(now),
+                    ),
+                )
+            else:
+                previous_updated_at = _parse_timestamp(
+                    state["updated_at"], label="Student reaction update time"
+                )
+                updated_at = max(now, previous_updated_at + timedelta(microseconds=1))
+                if updated_at > editable_until:
+                    raise ReviewStudentReactionWindowClosed(
+                        "Student reaction edit window has closed"
+                    )
+                next_version = current_version + 1
+                event_kind = "selected" if state["reaction_id"] is None else "changed"
+                cursor = connection.execute(
+                    "UPDATE submission_review_student_reactions "
+                    "SET reaction_id = ?, updated_at = ?, deleted_at = NULL, "
+                    "version = version + 1 WHERE review_id = ? AND version = ?",
+                    (
+                        reaction_id,
+                        _timestamp(updated_at),
+                        review["id"],
+                        expected_version,
+                    ),
+                )
+                if cursor.rowcount != 1:  # pragma: no cover - transaction serialized
+                    raise ReviewStudentReactionConflict(
+                        "Student reaction version has changed"
+                    )
+            connection.execute(
+                "INSERT INTO submission_review_student_reaction_events "
+                "(public_id, review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    event_public_id,
+                    review["id"],
+                    student_user_id,
+                    event_kind,
+                    reaction_id,
+                    next_version,
+                    _timestamp(updated_at),
+                ),
+            )
+            stored = connection.execute(
+                "SELECT * FROM submission_review_student_reactions WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            return _student_reaction_receipt(
+                connection,
+                review=review,
+                state=_student_reaction_state(
+                    review_public_id=review_public_id,
+                    row=stored,
+                ),
+            )
+
+        return await self._factory.run_write_async(operation)
+
+    async def delete_student_reaction(
+        self,
+        *,
+        review_public_id: str,
+        expected_version: int,
+        student_user_id: int,
+    ) -> ReviewStudentReactionReceipt:
+        """Clear the Student reaction while retaining its immutable history."""
+
+        if not _PUBLIC_ID.fullmatch(review_public_id):
+            raise ValueError("review public ID is invalid")
+        if type(expected_version) is not int or expected_version < 1:
+            raise ValueError("expected reaction version must be positive")
+        if student_user_id == 0:
+            raise ValueError("Student user ID must not be zero")
+        now = _normalize_time(self._clock())
+
+        def operation(connection: sqlite3.Connection) -> ReviewStudentReactionReceipt:
+            review = _student_reaction_review(
+                connection,
+                review_public_id=review_public_id,
+                student_user_id=student_user_id,
+            )
+            state = connection.execute(
+                "SELECT * FROM submission_review_student_reactions WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            if state is None:
+                raise ReviewStudentReactionNotFound("review has no Student reaction")
+            if expected_version != int(state["version"]):
+                raise ReviewStudentReactionConflict(
+                    "Student reaction version has changed"
+                )
+            editable_until = _parse_timestamp(
+                state["editable_until"], label="Student reaction edit window"
+            )
+            if now > editable_until:
+                raise ReviewStudentReactionWindowClosed(
+                    "Student reaction edit window has closed"
+                )
+            if state["reaction_id"] is None:
+                return _student_reaction_receipt(
+                    connection,
+                    review=review,
+                    state=_student_reaction_state(
+                        review_public_id=review_public_id,
+                        row=state,
+                    ),
+                )
+            previous_updated_at = _parse_timestamp(
+                state["updated_at"], label="Student reaction update time"
+            )
+            updated_at = max(now, previous_updated_at + timedelta(microseconds=1))
+            if updated_at > editable_until:
+                raise ReviewStudentReactionWindowClosed(
+                    "Student reaction edit window has closed"
+                )
+            event_public_id = self._student_reaction_event_public_id_factory().strip()
+            if not _PUBLIC_ID.fullmatch(event_public_id):
+                raise ValueError(
+                    "Student reaction event public ID factory returned an invalid value"
+                )
+            next_version = int(state["version"]) + 1
+            cursor = connection.execute(
+                "UPDATE submission_review_student_reactions "
+                "SET reaction_id = NULL, updated_at = ?, deleted_at = ?, "
+                "version = version + 1 WHERE review_id = ? AND version = ?",
+                (
+                    _timestamp(updated_at),
+                    _timestamp(updated_at),
+                    review["id"],
+                    expected_version,
+                ),
+            )
+            if cursor.rowcount != 1:  # pragma: no cover - transaction serialized
+                raise ReviewStudentReactionConflict(
+                    "Student reaction version has changed"
+                )
+            connection.execute(
+                "INSERT INTO submission_review_student_reaction_events "
+                "(public_id, review_id, actor_user_id, event_kind, reaction_id, "
+                "state_version, created_at) VALUES (?, ?, ?, 'deleted', NULL, ?, ?)",
+                (
+                    event_public_id,
+                    review["id"],
+                    student_user_id,
+                    next_version,
+                    _timestamp(updated_at),
+                ),
+            )
+            stored = connection.execute(
+                "SELECT * FROM submission_review_student_reactions WHERE review_id = ?",
+                (review["id"],),
+            ).fetchone()
+            return _student_reaction_receipt(
+                connection,
+                review=review,
+                state=_student_reaction_state(
+                    review_public_id=review_public_id,
+                    row=stored,
+                ),
             )
 
         return await self._factory.run_write_async(operation)
@@ -2230,6 +2593,7 @@ __all__ = [
     "PwaWrittenReviewQueueRepository",
     "REVIEW_INTERNAL_REACTION_EDIT_WINDOW",
     "REVIEW_LEASE_DURATION",
+    "REVIEW_STUDENT_REACTION_EDIT_WINDOW",
     "ReviewLease",
     "ReviewLeaseConflict",
     "ReviewLeaseItem",
@@ -2251,6 +2615,12 @@ __all__ = [
     "ReviewInternalReactionNotFound",
     "ReviewInternalReactionState",
     "ReviewInternalReactionWindowClosed",
+    "ReviewStudentReactionConflict",
+    "ReviewStudentReactionInvalid",
+    "ReviewStudentReactionNotFound",
+    "ReviewStudentReactionReceipt",
+    "ReviewStudentReactionState",
+    "ReviewStudentReactionWindowClosed",
     "ReviewQueueCase",
     "ReviewQueueError",
     "ReviewQueueForbidden",

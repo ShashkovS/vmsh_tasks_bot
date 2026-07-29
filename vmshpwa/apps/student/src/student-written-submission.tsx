@@ -4,6 +4,7 @@ import { CheckCircle2, CloudOff, Pencil, TriangleAlert } from 'lucide-react'
 import {
   createWrittenSubmissionClient,
   useAuthentication,
+  useWrittenStudentReactionMutation,
   useWrittenThreadQuery,
 } from '@vmsh/app-shell'
 import { ApiResponseError, type StudentProblemType } from '@vmsh/contracts'
@@ -152,6 +153,11 @@ export function StudentWrittenSubmission({
     [ownerId],
   )
   const threadQuery = useWrittenThreadQuery(client, principalScope, problemId)
+  const studentReactionMutation = useWrittenStudentReactionMutation(
+    client,
+    principalScope,
+    problemId,
+  )
   const refetchThread = threadQuery.refetch
   const inputRef = useRef<HTMLInputElement>(null)
   const deliveryActive = useRef(false)
@@ -167,10 +173,35 @@ export function StudentWrittenSubmission({
   const [replacementLoading, setReplacementLoading] = useState(false)
   const [storageError, setStorageError] = useState<unknown>(draftStore.error)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [studentReactionError, setStudentReactionError] = useState<{
+    reviewId: string
+    message: string
+  } | null>(null)
   const [savedAt, setSavedAt] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
   const [online, setOnline] = useState(() => navigator.onLine)
   const previewUrls = usePhotoPreviewUrls(photos)
+
+  const changeStudentReaction = async (
+    reviewId: string,
+    reactionId: 0 | 1 | 2 | null,
+    expectedVersion: number,
+  ) => {
+    setStudentReactionError(null)
+    try {
+      await studentReactionMutation.mutateAsync({ reviewId, reactionId, expectedVersion })
+    } catch (error) {
+      authentication.handleApiError(error)
+      setStudentReactionError({
+        reviewId,
+        message:
+          error instanceof ApiResponseError
+            ? error.message
+            : 'Не удалось сохранить реакцию. Обновите проверку и попробуйте ещё раз.',
+      })
+      await refetchThread().catch(() => undefined)
+    }
+  }
 
   const reloadDraft = useCallback(async () => {
     if (!draftStore.value) return
@@ -536,7 +567,17 @@ export function StudentWrittenSubmission({
       </CardHeader>
       <CardContent className="space-y-4">
         {thread?.reviews.length ? (
-          <WrittenReviewHistory entries={thread.entries} reviews={thread.reviews} />
+          <WrittenReviewHistory
+            entries={thread.entries}
+            onStudentReactionChange={(reviewId, reactionId, expectedVersion) =>
+              void changeStudentReaction(reviewId, reactionId, expectedVersion)
+            }
+            pendingStudentReactionReviewId={
+              studentReactionMutation.isPending ? studentReactionMutation.variables?.reviewId : null
+            }
+            reviews={thread.reviews}
+            studentReactionError={studentReactionError}
+          />
         ) : null}
         {replaceableEntry && !replacementTarget && !queued ? (
           <Button

@@ -144,7 +144,65 @@ export const familyWrittenEntrySchema = writtenEntrySchema.safeExtend({
 })
 export type FamilyWrittenEntry = z.infer<typeof familyWrittenEntrySchema>
 
-/** Student-visible immutable review projection. Internal Teacher reactions are excluded. */
+export const writtenStudentReactionSchema = z
+  .object({
+    reactionId: z.union([z.literal(0), z.literal(1), z.literal(2)]).nullable(),
+    version: z.number().int().positive(),
+    editableUntil: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    deleted: z.boolean(),
+  })
+  .strict()
+  .superRefine((reaction, context) => {
+    if ((reaction.reactionId === null) !== reaction.deleted) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Deleted Student reaction state must use a null reaction ID',
+        path: ['deleted'],
+      })
+    }
+    if (reaction.updatedAt > reaction.editableUntil) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Student reaction update must be inside its edit window',
+        path: ['updatedAt'],
+      })
+    }
+  })
+export type WrittenStudentReaction = z.infer<typeof writtenStudentReactionSchema>
+
+export const setWrittenStudentReactionRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    reactionId: z.union([z.literal(0), z.literal(1), z.literal(2)]),
+    expectedVersion: z.number().int().nonnegative(),
+  })
+  .strict()
+export type SetWrittenStudentReactionRequest = z.infer<
+  typeof setWrittenStudentReactionRequestSchema
+>
+
+export const deleteWrittenStudentReactionRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    expectedVersion: z.number().int().positive(),
+  })
+  .strict()
+export type DeleteWrittenStudentReactionRequest = z.infer<
+  typeof deleteWrittenStudentReactionRequestSchema
+>
+
+export const writtenStudentReactionResponseSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    reviewId: publicIdSchema,
+    studentReaction: writtenStudentReactionSchema,
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+export type WrittenStudentReactionResponse = z.infer<typeof writtenStudentReactionResponseSchema>
+
+/** Student/Family review projection. Internal Teacher reactions are excluded. */
 export const writtenReviewProjectionSchema = z
   .object({
     reviewId: publicIdSchema,
@@ -156,6 +214,7 @@ export const writtenReviewProjectionSchema = z
     source: z.enum(['staff', 'telegram', 'ai']),
     evidenceEntryIds: z.array(publicIdSchema).min(1),
     annotations: z.array(reviewAnnotationManifestSchema).max(10),
+    studentReaction: writtenStudentReactionSchema.nullable(),
     completedAt: z.iso.datetime(),
   })
   .strict()

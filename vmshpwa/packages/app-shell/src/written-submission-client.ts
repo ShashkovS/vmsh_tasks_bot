@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ApiResponseError,
   apiErrorSchema,
   createWrittenAttachmentResponseSchema,
   createWrittenEntryRequestSchema,
   createWrittenEntryResponseSchema,
+  deleteWrittenStudentReactionRequestSchema,
   deleteWrittenAttachmentRequestSchema,
   mutateWrittenAttachmentsResponseSchema,
   parseRuntimeConfigForAudience,
@@ -12,25 +13,30 @@ import {
   reorderWrittenAttachmentsRequestSchema,
   replaceWrittenEntryRequestSchema,
   replaceWrittenEntryResponseSchema,
+  setWrittenStudentReactionRequestSchema,
   submitWrittenEntryRequestSchema,
   submitWrittenEntryResponseSchema,
   writtenAttachmentUploadMetadataSchema,
   writtenSubmissionQueryKeys,
   writtenThreadResponseSchema,
+  writtenStudentReactionResponseSchema,
   type CreateWrittenAttachmentResponse,
   type CreateWrittenEntryRequest,
   type CreateWrittenEntryResponse,
   type DeleteWrittenAttachmentRequest,
+  type DeleteWrittenStudentReactionRequest,
   type MutateWrittenAttachmentsResponse,
   type PrincipalQueryScope,
   type ReorderWrittenAttachmentsRequest,
   type ReplaceWrittenEntryRequest,
   type ReplaceWrittenEntryResponse,
   type RuntimeConfig,
+  type SetWrittenStudentReactionRequest,
   type SubmitWrittenEntryRequest,
   type SubmitWrittenEntryResponse,
   type WrittenAttachmentUploadMetadata,
   type WrittenThreadResponse,
+  type WrittenStudentReactionResponse,
 } from '@vmsh/contracts'
 
 /**
@@ -96,6 +102,16 @@ export interface WrittenSubmissionClient {
     request: ReplaceWrittenEntryRequest,
     options?: WrittenSubmissionRequestOptions,
   ): Promise<ReplaceWrittenEntryResponse>
+  setStudentReaction(
+    reviewId: string,
+    request: SetWrittenStudentReactionRequest,
+    options?: WrittenSubmissionRequestOptions,
+  ): Promise<WrittenStudentReactionResponse>
+  deleteStudentReaction(
+    reviewId: string,
+    request: DeleteWrittenStudentReactionRequest,
+    options?: WrittenSubmissionRequestOptions,
+  ): Promise<WrittenStudentReactionResponse>
 }
 
 export class WrittenSubmissionProtocolError extends Error {
@@ -120,7 +136,7 @@ interface ResponseParser<T> {
 }
 
 interface WrittenRequest {
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: BodyInit
   contentType?: string
   accept?: string
@@ -293,6 +309,38 @@ class BrowserWrittenSubmissionClient implements WrittenSubmissionClient {
     )
   }
 
+  async setStudentReaction(
+    reviewId: string,
+    request: SetWrittenStudentReactionRequest,
+    options: WrittenSubmissionRequestOptions = {},
+  ): Promise<WrittenStudentReactionResponse> {
+    const parsedReviewId = publicIdSchema.parse(reviewId)
+    const body = JSON.stringify(setWrittenStudentReactionRequestSchema.parse(request))
+    return this.#request(
+      `/reviews/${encodeURIComponent(parsedReviewId)}/reaction`,
+      { method: 'PUT', body, contentType: 'application/json' },
+      options,
+      200,
+      writtenStudentReactionResponseSchema,
+    )
+  }
+
+  async deleteStudentReaction(
+    reviewId: string,
+    request: DeleteWrittenStudentReactionRequest,
+    options: WrittenSubmissionRequestOptions = {},
+  ): Promise<WrittenStudentReactionResponse> {
+    const parsedReviewId = publicIdSchema.parse(reviewId)
+    const body = JSON.stringify(deleteWrittenStudentReactionRequestSchema.parse(request))
+    return this.#request(
+      `/reviews/${encodeURIComponent(parsedReviewId)}/reaction`,
+      { method: 'DELETE', body, contentType: 'application/json' },
+      options,
+      200,
+      writtenStudentReactionResponseSchema,
+    )
+  }
+
   async #request<T>(
     path: string,
     input: WrittenRequest,
@@ -386,5 +434,37 @@ export function useWrittenThreadQuery(
   return useQuery({
     queryKey: writtenSubmissionQueryKeys.thread(principal, problemId),
     queryFn: ({ signal }) => client.thread(problemId, { signal }),
+  })
+}
+
+export function useWrittenStudentReactionMutation(
+  client: Pick<WrittenSubmissionClient, 'setStudentReaction' | 'deleteStudentReaction'>,
+  principal: PrincipalQueryScope,
+  problemId: string,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationKey: [...writtenSubmissionQueryKeys.thread(principal, problemId), 'student-reaction'],
+    mutationFn: ({
+      reviewId,
+      reactionId,
+      expectedVersion,
+    }: {
+      reviewId: string
+      reactionId: SetWrittenStudentReactionRequest['reactionId'] | null
+      expectedVersion: number
+    }) =>
+      reactionId === null
+        ? client.deleteStudentReaction(reviewId, { schemaVersion: 1, expectedVersion })
+        : client.setStudentReaction(reviewId, {
+            schemaVersion: 1,
+            reactionId,
+            expectedVersion,
+          }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: writtenSubmissionQueryKeys.thread(principal, problemId),
+      })
+    },
   })
 }

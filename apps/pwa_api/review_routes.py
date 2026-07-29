@@ -39,6 +39,12 @@ from db_methods.pwa.reviews import (
     ReviewQueueForbidden,
     ReviewQueueNotFound,
     ReviewStaffScope,
+    ReviewStudentReactionConflict,
+    ReviewStudentReactionInvalid,
+    ReviewStudentReactionNotFound,
+    ReviewStudentReactionReceipt,
+    ReviewStudentReactionState,
+    ReviewStudentReactionWindowClosed,
     ReviewThreadChanged,
 )
 from helpers.pwa.permissions import Capability
@@ -66,9 +72,7 @@ _COMPLETE_FIELDS = frozenset(
         "internalReactionId",
     }
 )
-_REACTION_SET_FIELDS = frozenset(
-    {"schemaVersion", "reactionId", "expectedVersion"}
-)
+_REACTION_SET_FIELDS = frozenset({"schemaVersion", "reactionId", "expectedVersion"})
 _REACTION_DELETE_FIELDS = frozenset({"schemaVersion", "expectedVersion"})
 _LIST_QUERY_FIELDS = frozenset({"problemGroup", "sort", "cursor"})
 
@@ -84,6 +88,19 @@ ReviewCompletionInvalidator = Callable[
 ]
 PWA_REVIEW_COMPLETION_INVALIDATOR = web.AppKey(
     "pwa_review_completion_invalidator", ReviewCompletionInvalidator
+)
+ReviewStudentReactionInvalidator = Callable[
+    [
+        tuple[str, ...],
+        tuple[str, ...],
+        tuple[str, ...],
+        tuple[str, ...],
+        str,
+    ],
+    Awaitable[None],
+]
+PWA_REVIEW_STUDENT_REACTION_INVALIDATOR = web.AppKey(
+    "pwa_review_student_reaction_invalidator", ReviewStudentReactionInvalidator
 )
 review_routes = web.RouteTableDef()
 logger = logging.getLogger(__name__)
@@ -156,6 +173,20 @@ def _require_review_write(request: web.Request) -> tuple[int, ReviewStaffScope]:
             message="Недостаточно прав для проверки работы",
         )
     return teacher_user_id, scope
+
+
+def _student_user_id(request: web.Request) -> int:
+    principal = authenticated_session(request).principal
+    if (
+        principal.audience is not AuthAudience.STUDENT
+        or principal.linked_user_id is None
+    ):
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для реакции на эту проверку",
+        )
+    return principal.linked_user_id
 
 
 def _queue_public_id(request: web.Request) -> str:
@@ -402,6 +433,42 @@ def _internal_reaction_payload(
         "updatedAt": _timestamp(state.updated_at),
         "deleted": state.deleted,
     }
+
+
+def _student_reaction_payload(
+    state: ReviewStudentReactionState,
+) -> dict[str, object]:
+    return {
+        "reactionId": state.reaction_id,
+        "version": state.version,
+        "editableUntil": _timestamp(state.editable_until),
+        "updatedAt": _timestamp(state.updated_at),
+        "deleted": state.deleted,
+    }
+
+
+async def _invalidate_student_reaction(
+    request: web.Request,
+    *,
+    receipt: ReviewStudentReactionReceipt,
+) -> None:
+    invalidator = request.app.get(PWA_REVIEW_STUDENT_REACTION_INVALIDATOR)
+    if invalidator is None:
+        return
+    try:
+        await invalidator(
+            receipt.owner_account_public_ids,
+            receipt.family_account_public_ids,
+            receipt.admin_account_public_ids,
+            receipt.evidence_problem_public_ids,
+            "written-review-student-reaction-changed",
+        )
+    except Exception:
+        logger.warning(
+            "Student reaction invalidation failed after commit: review=%s",
+            receipt.state.review_public_id,
+            exc_info=True,
+        )
 
 
 def _complete_branches(value: object) -> tuple[ReviewEvidenceBranchExpectation, ...]:
@@ -655,6 +722,30 @@ def _translate_queue_error(error: Exception) -> PwaApiError:
             status=409,
             code="review_internal_reaction_window_closed",
             message="Время изменения внутренней пометки закончилось",
+        )
+    if isinstance(error, ReviewStudentReactionNotFound):
+        return PwaApiError(
+            status=404,
+            code="review_not_found",
+            message="Проверка не найдена",
+        )
+    if isinstance(error, ReviewStudentReactionInvalid):
+        return PwaApiError(
+            status=422,
+            code="review_student_reaction_invalid",
+            message="Выберите доступную реакцию",
+        )
+    if isinstance(error, ReviewStudentReactionConflict):
+        return PwaApiError(
+            status=409,
+            code="review_student_reaction_changed",
+            message="Реакция уже изменилась. Обновите проверку.",
+        )
+    if isinstance(error, ReviewStudentReactionWindowClosed):
+        return PwaApiError(
+            status=409,
+            code="review_student_reaction_window_closed",
+            message="Время изменения реакции закончилось",
         )
     if isinstance(error, ReviewCompletionInvalid):
         if "annotation" in str(error):
@@ -910,18 +1001,14 @@ async def complete_review_item(request: web.Request) -> web.Response:
     )
 
 
-@review_routes.put(
-    "/staff/api/v1/reviews/{review_public_id}/internal-reaction"
-)
+@review_routes.put("/staff/api/v1/reviews/{review_public_id}/internal-reaction")
 async def set_review_internal_reaction(request: web.Request) -> web.Response:
     teacher_user_id, scope = _require_review_write(request)
     payload = await _json_object(request, required_fields=_REACTION_SET_FIELDS)
     try:
         state = await _repository(request).set_internal_reaction(
             review_public_id=_review_public_id(request),
-            reaction_id=_positive_integer(
-                payload["reactionId"], field="reactionId"
-            ),
+            reaction_id=_positive_integer(payload["reactionId"], field="reactionId"),
             expected_version=_nonnegative_integer(
                 payload["expectedVersion"], field="expectedVersion"
             ),
@@ -945,9 +1032,7 @@ async def set_review_internal_reaction(request: web.Request) -> web.Response:
     )
 
 
-@review_routes.delete(
-    "/staff/api/v1/reviews/{review_public_id}/internal-reaction"
-)
+@review_routes.delete("/staff/api/v1/reviews/{review_public_id}/internal-reaction")
 async def delete_review_internal_reaction(request: web.Request) -> web.Response:
     teacher_user_id, scope = _require_review_write(request)
     payload = await _json_object(request, required_fields=_REACTION_DELETE_FIELDS)
@@ -976,9 +1061,70 @@ async def delete_review_internal_reaction(request: web.Request) -> web.Response:
     )
 
 
+@review_routes.put("/student/api/v1/reviews/{review_public_id}/reaction")
+async def set_review_student_reaction(request: web.Request) -> web.Response:
+    student_user_id = _student_user_id(request)
+    payload = await _json_object(request, required_fields=_REACTION_SET_FIELDS)
+    try:
+        receipt = await _repository(request).set_student_reaction(
+            review_public_id=_review_public_id(request),
+            reaction_id=_nonnegative_integer(payload["reactionId"], field="reactionId"),
+            expected_version=_nonnegative_integer(
+                payload["expectedVersion"], field="expectedVersion"
+            ),
+            student_user_id=student_user_id,
+        )
+    except (
+        ReviewStudentReactionNotFound,
+        ReviewStudentReactionInvalid,
+        ReviewStudentReactionConflict,
+        ReviewStudentReactionWindowClosed,
+    ) as error:
+        raise _translate_queue_error(error) from error
+    await _invalidate_student_reaction(request, receipt=receipt)
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "reviewId": receipt.state.review_public_id,
+            "studentReaction": _student_reaction_payload(receipt.state),
+            "requestId": request["request_id"],
+        }
+    )
+
+
+@review_routes.delete("/student/api/v1/reviews/{review_public_id}/reaction")
+async def delete_review_student_reaction(request: web.Request) -> web.Response:
+    student_user_id = _student_user_id(request)
+    payload = await _json_object(request, required_fields=_REACTION_DELETE_FIELDS)
+    try:
+        receipt = await _repository(request).delete_student_reaction(
+            review_public_id=_review_public_id(request),
+            expected_version=_positive_integer(
+                payload["expectedVersion"], field="expectedVersion"
+            ),
+            student_user_id=student_user_id,
+        )
+    except (
+        ReviewStudentReactionNotFound,
+        ReviewStudentReactionConflict,
+        ReviewStudentReactionWindowClosed,
+    ) as error:
+        raise _translate_queue_error(error) from error
+    await _invalidate_student_reaction(request, receipt=receipt)
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "reviewId": receipt.state.review_public_id,
+            "studentReaction": _student_reaction_payload(receipt.state),
+            "requestId": request["request_id"],
+        }
+    )
+
+
 __all__ = [
     "PWA_REVIEW_COMPLETION_INVALIDATOR",
     "PWA_REVIEW_QUEUE_INVALIDATOR",
     "PWA_REVIEW_QUEUE_REPOSITORY",
+    "PWA_REVIEW_STUDENT_REACTION_INVALIDATOR",
     "review_routes",
 ]
