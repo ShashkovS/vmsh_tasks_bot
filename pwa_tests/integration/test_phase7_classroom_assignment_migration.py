@@ -16,6 +16,7 @@ from models.pwa.classroom_assignments import (
     confirm_assignment_plan,
     recalculate_assignment_plan,
 )
+from models.pwa.classroom_layouts import confirm_layout, materialize_layout
 
 
 MIGRATION_ID = "0059.pwa_classroom_assignments"
@@ -321,3 +322,61 @@ def test_assignment_plan_without_room_cannot_be_confirmed(tmp_path):
                 actor_user_id=2,
                 now=NOW,
             )
+
+
+def test_confirming_new_layout_marks_and_rebases_working_assignment_plan(tmp_path):
+    database_path = tmp_path / "phase7-assignment-layout-rebase.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        _insert_parents(connection)
+        connection.execute("DELETE FROM classroom_assignments")
+        connection.execute("DELETE FROM classroom_assignment_plans")
+
+        initial = recalculate_assignment_plan(
+            connection,
+            event_public_id="event-assignment",
+            plan_public_id="plan-to-rebase",
+            expected_version=None,
+            actor_user_id=2,
+            now=NOW,
+        )
+        assert initial["plan"]["version"] == 1
+
+        materialized = materialize_layout(
+            connection,
+            event_public_id="event-assignment",
+            layout_public_id="layout-assignment-next",
+            actor_user_id=2,
+            now="2026-07-29T13:01:00Z",
+        )
+        assert materialized["state"] == "draft"
+        confirm_layout(
+            connection,
+            event_public_id="event-assignment",
+            layout_public_id="layout-assignment-next",
+            expected_version=1,
+            actor_user_id=2,
+            now="2026-07-29T13:02:00Z",
+        )
+        stale = connection.execute(
+            "SELECT state, stale_reason, version FROM classroom_assignment_plans "
+            "WHERE public_id = 'plan-to-rebase'"
+        ).fetchone()
+        assert tuple(stale) == ("stale", "layout_changed", 2)
+
+        recalculated = recalculate_assignment_plan(
+            connection,
+            event_public_id="event-assignment",
+            plan_public_id="ignored-for-existing-working-plan",
+            expected_version=2,
+            actor_user_id=2,
+            now="2026-07-29T13:03:00Z",
+        )
+        assert recalculated["plan"]["public_id"] == "plan-to-rebase"
+        assert (recalculated["plan"]["state"], recalculated["plan"]["version"]) == (
+            "draft",
+            3,
+        )
+        assert recalculated["students"][0]["classroom_name"] == "201"

@@ -19,6 +19,7 @@ from db_methods.pwa.classroom_assignments import (
     list_eligible_students,
     list_assignment_history,
     list_plan_assignments,
+    rebase_working_plan_layout,
     replace_assignments,
     supersede_confirmed_plan,
     touch_plan,
@@ -86,13 +87,24 @@ def read_assignment_plan(
             "students": [],
         }
 
+    current_layout = find_event_layout(connection, event_id, "confirmed")
+    layout_changed = current_layout is None or int(current_layout["id"]) != int(
+        plan["layout_version_id"]
+    )
     rooms = list_layout_rooms(connection, int(plan["layout_version_id"]))
     current_day = date.today() if today is None else today
     students = []
     for row in list_plan_assignments(connection, int(plan["id"])):
+        unavailable = layout_changed or row["classroom_status"] != "active"
         students.append(
             {
                 **row,
+                "classroom_id": None if unavailable else row["classroom_id"],
+                "classroom_public_id": (
+                    None if unavailable else row["classroom_public_id"]
+                ),
+                "classroom_name": None if unavailable else row["classroom_name"],
+                "status": "reassigning" if unavailable else row["status"],
                 "age_years": age_in_years(
                     None if row["birthday"] is None else str(row["birthday"]),
                     today=current_day,
@@ -145,8 +157,15 @@ def recalculate_assignment_plan(
     else:
         if expected_version != int(working["version"]):
             raise ClassroomAssignmentConflict
-        if int(working["layout_version_id"]) != int(layout["id"]):
-            raise InvalidClassroomAssignment("working plan uses another layout")
+        rebased = int(working["layout_version_id"]) != int(layout["id"])
+        if rebased and not rebase_working_plan_layout(
+            connection,
+            plan_id=int(working["id"]),
+            layout_id=int(layout["id"]),
+            expected_version=int(working["version"]),
+            now=now,
+        ):
+            raise ClassroomAssignmentConflict
         plan_id = int(working["id"])
 
     students = list_eligible_students(connection, event_id)
@@ -202,13 +221,14 @@ def recalculate_assignment_plan(
         ),
         now=now,
     )
-    if working is not None and not touch_plan(
-        connection,
-        plan_id=plan_id,
-        expected_version=int(working["version"]),
-        now=now,
-    ):
-        raise ClassroomAssignmentConflict
+    if working is not None and not rebased:
+        if not touch_plan(
+            connection,
+            plan_id=plan_id,
+            expected_version=int(working["version"]),
+            now=now,
+        ):
+            raise ClassroomAssignmentConflict
     return read_assignment_plan(connection, event_public_id, today=today)
 
 

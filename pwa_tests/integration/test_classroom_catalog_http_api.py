@@ -189,7 +189,7 @@ def _cookies(fixture: ClassroomHttpFixture, identity: str):
 
 
 def _seed_layout_scope(factory: PwaConnectionFactory) -> None:
-    now = NOW.isoformat(timespec="microseconds").replace("+00:00", "Z")
+    now = "2026-07-01T12:00:00.000000Z"
 
     def seed(connection) -> None:
         student_id = connection.execute(
@@ -564,6 +564,49 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
         history_items[0]["classroomName"],
         history_items[0]["groupName"],
     ) == ("Очное занятие", "202", "Начинающие")
+
+    archived_room = await classroom_http.client.post(
+        "/staff/api/v1/classrooms/classroom-layout-202/archive",
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True, if_match='"classroom-layout-202:v1"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert archived_room.status == 200, await archived_room.text()
+    unavailable = await classroom_http.client.get(
+        assignment_path,
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    unavailable_plan = (await unavailable.json())["assignmentPlan"]
+    assert unavailable_plan["plan"]["state"] == "confirmed"
+    assert unavailable_plan["students"][0]["status"] == "reassigning"
+    assert unavailable_plan["students"][0]["classroomName"] is None
+
+    recalculated_after_archive = await classroom_http.client.post(
+        f"{assignment_path}/recalculate",
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert recalculated_after_archive.status == 200
+    recalculated_payload = (await recalculated_after_archive.json())["assignmentPlan"]
+    assert recalculated_payload["students"][0]["classroomName"] == "201"
+
+    restored_room = await classroom_http.client.post(
+        "/staff/api/v1/classrooms/classroom-layout-202/restore",
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True, if_match='"classroom-layout-202:v2"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert restored_room.status == 200
+    after_restore = await classroom_http.client.get(
+        assignment_path,
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert (await after_restore.json())["assignmentPlan"]["students"][0][
+        "classroomName"
+    ] == "201"
 
 
 @pytest.mark.asyncio

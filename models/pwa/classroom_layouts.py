@@ -24,6 +24,7 @@ from db_methods.pwa.classroom_layouts import (
     supersede_confirmed_layout,
     touch_layout_version,
 )
+from db_methods.pwa.classroom_assignments import mark_event_working_plan_stale
 
 
 class ClassroomLayoutNotFound(LookupError):
@@ -307,6 +308,9 @@ def confirm_layout(
         now=now,
     ):
         raise ClassroomLayoutConflict
+    mark_event_working_plan_stale(
+        connection, event_id=event_id, reason="layout_changed", now=now
+    )
     return read_effective_layout(connection, event_public_id)
 
 

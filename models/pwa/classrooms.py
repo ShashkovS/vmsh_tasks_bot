@@ -3,6 +3,12 @@
 from __future__ import annotations
 
 import unicodedata
+import sqlite3
+
+from db_methods.pwa.classroom_assignments import (
+    mark_working_plans_using_classroom_stale,
+)
+from db_methods.pwa.classrooms import set_classroom_status
 
 
 MAX_CLASSROOM_NAME_LENGTH = 200
@@ -32,9 +38,38 @@ def normalize_classroom_search(value: str) -> str:
     return unicodedata.normalize("NFKC", value.strip()).casefold()
 
 
+def change_classroom_status(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    expected_version: int,
+    event_public_id: str,
+    status: str,
+    actor_user_id: int,
+    request_id: str,
+    now: str,
+) -> dict[str, object]:
+    item = set_classroom_status(
+        connection,
+        public_id=public_id,
+        expected_version=expected_version,
+        event_public_id=event_public_id,
+        status=status,
+        actor_user_id=actor_user_id,
+        request_id=request_id,
+        now=now,
+    )
+    if status == "archived":
+        mark_working_plans_using_classroom_stale(
+            connection, classroom_public_id=public_id, now=now
+        )
+    return item
+
+
 __all__ = [
     "InvalidClassroomName",
     "MAX_CLASSROOM_NAME_LENGTH",
+    "change_classroom_status",
     "normalize_classroom_search",
     "prepare_classroom_name",
 ]

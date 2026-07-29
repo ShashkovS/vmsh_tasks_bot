@@ -156,7 +156,7 @@ def list_plan_assignments(
                strength.simple_prob, strength.compl_prob,
                lesson.public_id AS group_lesson_public_id,
                room.public_id AS classroom_public_id,
-               room.name AS classroom_name
+               room.name AS classroom_name, room.status AS classroom_status
         FROM classroom_assignments assignment
         JOIN course_enrollments enrollment
           ON enrollment.id = assignment.course_enrollment_id
@@ -216,6 +216,50 @@ def touch_plan(
         (now, plan_id, expected_version),
     )
     return cursor.rowcount == 1
+
+
+def rebase_working_plan_layout(
+    connection: sqlite3.Connection,
+    *,
+    plan_id: int,
+    layout_id: int,
+    expected_version: int,
+    now: str,
+) -> bool:
+    cursor = connection.execute(
+        "UPDATE classroom_assignment_plans SET layout_version_id = ?, "
+        "state = 'draft', stale_reason = NULL, updated_at = ?, "
+        "version = version + 1 WHERE id = ? AND state IN ('draft', 'stale') "
+        "AND version = ?",
+        (layout_id, now, plan_id, expected_version),
+    )
+    return cursor.rowcount == 1
+
+
+def mark_event_working_plan_stale(
+    connection: sqlite3.Connection, *, event_id: int, reason: str, now: str
+) -> None:
+    connection.execute(
+        "UPDATE classroom_assignment_plans SET state = 'stale', stale_reason = ?, "
+        "updated_at = ?, version = version + 1 WHERE in_person_event_id = ? "
+        "AND state IN ('draft', 'stale')",
+        (reason, now, event_id),
+    )
+
+
+def mark_working_plans_using_classroom_stale(
+    connection: sqlite3.Connection, *, classroom_public_id: str, now: str
+) -> None:
+    connection.execute(
+        "UPDATE classroom_assignment_plans SET state = 'stale', "
+        "stale_reason = 'classroom_archived', updated_at = ?, "
+        "version = version + 1 WHERE state IN ('draft', 'stale') "
+        "AND EXISTS (SELECT 1 FROM classroom_assignments assignment "
+        "JOIN classrooms room ON room.id = assignment.classroom_id "
+        "WHERE assignment.plan_id = classroom_assignment_plans.id "
+        "AND room.public_id = ?)",
+        (now, classroom_public_id),
+    )
 
 
 def update_assignment_room(
@@ -415,6 +459,9 @@ __all__ = [
     "list_eligible_students",
     "list_assignment_history",
     "list_plan_assignments",
+    "mark_event_working_plan_stale",
+    "mark_working_plans_using_classroom_stale",
+    "rebase_working_plan_layout",
     "replace_assignments",
     "supersede_confirmed_plan",
     "touch_plan",

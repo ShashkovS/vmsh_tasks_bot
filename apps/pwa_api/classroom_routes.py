@@ -19,13 +19,13 @@ from db_methods.pwa.classrooms import (
     find_classroom_by_normalized_name,
     list_classrooms,
     rename_classroom,
-    set_classroom_status,
 )
 from helpers.pwa.app_keys import PWA_DATABASE
 from helpers.pwa.permissions import Capability
 from models.pwa.auth import AuthAudience
 from models.pwa.classrooms import (
     InvalidClassroomName,
+    change_classroom_status,
     normalize_classroom_search,
     prepare_classroom_name,
 )
@@ -302,7 +302,7 @@ async def _change_status(request: web.Request, status: str) -> web.Response:
     await _json(request, frozenset({"schemaVersion"}))
     try:
         item = await _factory(request).run_write_async(
-            lambda connection: set_classroom_status(
+            lambda connection: change_classroom_status(
                 connection,
                 public_id=public_id,
                 expected_version=expected_version,
