@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: cd07e5835be9dcb9e544b35d59967530ccc680b563482723f3873ddb690a41d1
+-- Product schema SHA-256: c9cf6c7049769975d32a5c5ad0ea958837b96ba260f4cfe5e53459f3485b60d3
 
 CREATE TABLE auth_accounts
 (
@@ -1430,6 +1430,17 @@ CREATE TABLE news_visibility
     version            integer not null default 1 check (version > 0)
 );
 
+CREATE TABLE notification_course_preferences
+(
+    account_id   integer not null references auth_accounts (id),
+    course_id    integer not null references courses (id),
+    category     text    not null,
+    push_enabled integer not null check (push_enabled in (0, 1)),
+    updated_at   text    not null,
+    primary key (account_id, course_id, category),
+    check (length(trim(category)) > 0)
+);
+
 CREATE TABLE notification_deliveries
 (
     id                     integer primary key,
@@ -1500,6 +1511,30 @@ CREATE TABLE notification_preferences
     check (length(quiet_starts_local) = 5),
     check (length(quiet_ends_local) = 5),
     check (length(trim(timezone)) > 0)
+);
+
+CREATE TABLE oral_windows
+(
+    id                 integer primary key,
+    public_id          text    not null unique,
+    group_lesson_id    integer not null references group_lessons (id),
+    sequence_number    integer not null check (sequence_number > 0),
+    opens_at           text    not null,
+    closes_at          text    not null,
+    join_label         text    not null,
+    join_url           text    not null,
+    join_code          text,
+    status             text    not null check (status in ('active', 'cancelled')),
+    created_by_user_id integer not null references users (id),
+    updated_by_user_id integer not null references users (id),
+    created_at         text    not null,
+    updated_at         text    not null,
+    version            integer not null default 1 check (version > 0),
+    unique (group_lesson_id, sequence_number),
+    check (opens_at < closes_at),
+    check (length(trim(join_label)) > 0),
+    check (length(trim(join_url)) > 0),
+    check (join_code is null or length(trim(join_code)) > 0)
 );
 
 CREATE TABLE problem_complexity
@@ -2839,6 +2874,9 @@ CREATE INDEX notification_deliveries_due_idx
 
 CREATE INDEX notification_events_account_unread_idx
     on notification_events (account_id, read_at, occurred_at desc, id desc);
+
+CREATE INDEX oral_windows_group_time_idx
+    on oral_windows (group_lesson_id, opens_at, sequence_number);
 
 CREATE UNIQUE INDEX problem_revisions_id_problem_uq
     on problem_revisions (id, problem_id);

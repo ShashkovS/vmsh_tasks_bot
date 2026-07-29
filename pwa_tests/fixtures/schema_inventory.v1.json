@@ -201,6 +201,14 @@
       {
         "id": "0068.pwa_group_banners",
         "sha256": "64bcacc662f2919945960a1723436768b39e222d15d85659003c8fd6d44d12d8"
+      },
+      {
+        "id": "0069.pwa_course_notification_preferences",
+        "sha256": "3c55e147702cfb5b4469614a8ae40e8987bc6c57371b4e6f2724f2f56f952ec7"
+      },
+      {
+        "id": "0070.pwa_oral_windows",
+        "sha256": "b541de378904577324d9ba6f7648112de7feb9b634db9506d6b1de7a6c071e07"
       }
     ],
     "repository_head_status": {
@@ -211,7 +219,7 @@
     }
   },
   "product": {
-    "object_count": 399,
+    "object_count": 402,
     "objects": [
       {
         "columns": [
@@ -12780,6 +12788,128 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "account_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "category",
+            "not_null": true,
+            "primary_key_ordinal": 3
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "push_enabled",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          },
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 1
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "category",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_notification_course_preferences_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "notification_course_preferences",
+        "object_sha256": "4f31f934470f46e7f32542a22bad43ad7b7d2dca8d15654f8ef46a31459c6973",
+        "sql": "CREATE TABLE notification_course_preferences\n(\n    account_id   integer not null references auth_accounts (id),\n    course_id    integer not null references courses (id),\n    category     text    not null,\n    push_enabled integer not null check (push_enabled in (0, 1)),\n    updated_at   text    not null,\n    primary key (account_id, course_id, category),\n    check (length(trim(category)) > 0)\n);",
+        "table_name": "notification_course_preferences",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "id",
             "not_null": false,
             "primary_key_ordinal": 1
@@ -13404,6 +13534,286 @@
         "object_sha256": "fa8ec473289c8145d94c0ba09734782c089fd09464a112a1f6fd2676dbd4a373",
         "sql": "CREATE TABLE notification_preferences\n(\n    account_id        integer not null references auth_accounts (id),\n    category          text    not null,\n    in_app_enabled    integer not null check (in_app_enabled in (0, 1)),\n    push_enabled      integer not null check (push_enabled in (0, 1)),\n    sound_enabled     integer not null check (sound_enabled in (0, 1)),\n    quiet_starts_local text   not null,\n    quiet_ends_local   text   not null,\n    timezone          text    not null,\n    updated_at        text    not null,\n    primary key (account_id, category),\n    check (length(trim(category)) > 0),\n    check (length(quiet_starts_local) = 5),\n    check (length(quiet_ends_local) = 5),\n    check (length(trim(timezone)) > 0)\n);",
         "table_name": "notification_preferences",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_lesson_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "sequence_number",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "opens_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "closes_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "join_label",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "join_url",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "join_code",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 14,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "created_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "group_lesson_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "group_lessons"
+          },
+          {
+            "from_columns": [
+              "updated_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_lesson_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "opens_at",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "sequence_number",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "oral_windows_group_time_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_oral_windows_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "group_lesson_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "sequence_number",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_oral_windows_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "oral_windows",
+        "object_sha256": "e3a86707c1a61470216ffe55cdea4457d0c3124d12f2dad6444723a5e73017cd",
+        "sql": "CREATE TABLE oral_windows\n(\n    id                 integer primary key,\n    public_id          text    not null unique,\n    group_lesson_id    integer not null references group_lessons (id),\n    sequence_number    integer not null check (sequence_number > 0),\n    opens_at           text    not null,\n    closes_at          text    not null,\n    join_label         text    not null,\n    join_url           text    not null,\n    join_code          text,\n    status             text    not null check (status in ('active', 'cancelled')),\n    created_by_user_id integer not null references users (id),\n    updated_by_user_id integer not null references users (id),\n    created_at         text    not null,\n    updated_at         text    not null,\n    version            integer not null default 1 check (version > 0),\n    unique (group_lesson_id, sequence_number),\n    check (opens_at < closes_at),\n    check (length(trim(join_label)) > 0),\n    check (length(trim(join_url)) > 0),\n    check (join_code is null or length(trim(join_code)) > 0)\n);",
+        "table_name": "oral_windows",
         "type": "table"
       },
       {
@@ -23824,6 +24234,13 @@
         "type": "index"
       },
       {
+        "name": "oral_windows_group_time_idx",
+        "object_sha256": "61a9389f42cf35ff37aaa6571fc275ada535c775fe9bd7f611b18495ff87bc3e",
+        "sql": "CREATE INDEX oral_windows_group_time_idx\n    on oral_windows (group_lesson_id, opens_at, sequence_number);",
+        "table_name": "oral_windows",
+        "type": "index"
+      },
+      {
         "name": "problem_revisions_id_problem_uq",
         "object_sha256": "af65f8555bee2f95495b7019a84f1201d7b6767bf2cc51cf929347bff8a7aa5b",
         "sql": "CREATE UNIQUE INDEX problem_revisions_id_problem_uq\n    on problem_revisions (id, problem_id);",
@@ -25322,8 +25739,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "207b716286a441c275a5047c0ac030bae0e4173ed1fb409e3c6cdb6c3ba63cca",
-    "sha256": "cd07e5835be9dcb9e544b35d59967530ccc680b563482723f3873ddb690a41d1"
+    "pragma_structure_sha256": "73489bae77943f981b6e9cc348d72b14f7696eb5ccb940a7c71064a1a31a5f45",
+    "sha256": "c9cf6c7049769975d32a5c5ad0ea958837b96ba260f4cfe5e53459f3485b60d3"
   },
   "source_kind": "repository-migration-head"
 }
