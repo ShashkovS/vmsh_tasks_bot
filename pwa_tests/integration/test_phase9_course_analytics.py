@@ -9,6 +9,7 @@ from db_methods.pwa.course_analytics import (
     list_course_result_rows,
     save_completed_course_metrics,
 )
+from db_methods.pwa.course_achievements import list_student_course_achievements
 from models.pwa.course_analytics import calculate_course_lesson_metrics
 from pwa_tests.integration import test_content_http_api as content_support
 from vmshpwa.scripts.course_analytics import calculate_active_courses
@@ -128,3 +129,22 @@ async def test_analytics_command_calculates_every_active_course(content_http):
         )
 
     assert fixture.factory.run_write(seed_and_calculate) == [("course-content-http", 1)]
+
+    def read_achievements(connection):
+        course_id = connection.execute(
+            "SELECT id FROM courses WHERE public_id = 'course-content-http'"
+        ).fetchone()["id"]
+        return list_student_course_achievements(
+            connection,
+            student_user_id=content_support.STUDENT_USER_ID,
+            course_id=course_id,
+        )
+
+    assert fixture.factory.run_read(read_achievements) == [
+        {"code": "first_submission", "earned_at": "2026-09-17T10:00:00"},
+        {"code": "first_accepted", "earned_at": "2026-09-17T10:00:00"},
+        {
+            "code": "first_written_submission",
+            "earned_at": "2026-09-17T10:00:00",
+        },
+    ]

@@ -60,6 +60,14 @@ export const courseProgressResponseSchema = z
       })
       .strip()
       .nullable(),
+    achievements: z.array(
+      z
+        .object({
+          code: z.string().regex(/^[a-z][a-z0-9_]{0,63}$/),
+          earnedAt: z.iso.datetime({ offset: true }),
+        })
+        .strip(),
+    ),
   })
   .strip()
   .superRefine((response, context) => {
@@ -95,6 +103,17 @@ export const courseProgressResponseSchema = z
         })
       }
       analyticsLessons.add(lesson.lessonNumber)
+    })
+    const achievementCodes = new Set<string>()
+    response.achievements.forEach((achievement, index) => {
+      if (achievementCodes.has(achievement.code)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Course achievements must be unique',
+          path: ['achievements', index, 'code'],
+        })
+      }
+      achievementCodes.add(achievement.code)
     })
   })
 export type CourseProgressResponse = z.infer<typeof courseProgressResponseSchema>

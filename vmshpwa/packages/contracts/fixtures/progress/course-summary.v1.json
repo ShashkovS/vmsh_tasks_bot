@@ -47,6 +47,10 @@
           "totalItems": 12
         }
       ]
-    }
+    },
+    "achievements": [
+      { "code": "first_submission", "earnedAt": "2026-09-15T10:00:00Z" },
+      { "code": "first_accepted", "earnedAt": "2026-09-16T10:00:00Z" }
+    ]
   }
 }

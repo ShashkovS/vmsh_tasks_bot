@@ -30,6 +30,12 @@ function formatDate(value: string): string {
   }).format(new Date(`${value}T12:00:00Z`))
 }
 
+const achievementLabels: Record<string, string> = {
+  first_submission: 'Первая задача отправлена',
+  first_accepted: 'Первая задача зачтена',
+  first_written_submission: 'Первая письменная работа',
+}
+
 /** Production personal progress; cohort comparisons are deliberately absent. */
 export function StudentProgressPage({ courseId, onCourseChange }: StudentProgressPageProps) {
   const authentication = useAuthentication()
@@ -129,6 +135,10 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
         <Card>
           <CardContent className="pt-5">
             <StudentProgress
+              achievements={progress.data.achievements.flatMap((achievement) => {
+                const label = achievementLabels[achievement.code]
+                return label === undefined ? [] : [label]
+              })}
               attemptedCount={progress.data.summary.attempted}
               empty={progress.data.summary.attempted === 0}
               solvedCount={progress.data.summary.accepted}

@@ -18,6 +18,7 @@ from apps.pwa_api.content_routes import PWA_CONTENT_REPOSITORY
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.auth import CourseEnrollmentRecord, CourseGroupAccessRecord
+from db_methods.pwa.course_achievements import list_student_course_achievements
 from db_methods.pwa.course_analytics import latest_student_course_metrics
 from db_methods.pwa.content import (
     ContentNotFound,
@@ -193,6 +194,12 @@ def course_analytics_payload(rows: list[dict[str, object]]) -> dict[str, object]
     }
 
 
+def course_achievements_payload(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    return [{"code": row["code"], "earnedAt": row["earned_at"]} for row in rows]
+
+
 def _material_payload(
     material: StudentLessonMaterialRecord | None,
 ) -> dict[str, object]:
@@ -353,16 +360,25 @@ async def get_student_course_progress(request: web.Request) -> web.Response:
                 course_id=enrollment.course_id,
                 student_user_id=student_user_id,
             ),
+            list_student_course_achievements(
+                connection,
+                course_id=enrollment.course_id,
+                student_user_id=student_user_id,
+            ),
         )
 
-    rows, pending_review_rows, analytics_rows = await database.factory.run_read_async(
-        read
-    )
+    (
+        rows,
+        pending_review_rows,
+        analytics_rows,
+        achievement_rows,
+    ) = await database.factory.run_read_async(read)
     return web.json_response(
         {
             "courseId": enrollment.course_public_id,
             **summarize_course_results(rows, pending_review_rows),
             "analytics": course_analytics_payload(analytics_rows),
+            "achievements": course_achievements_payload(achievement_rows),
         }
     )
 

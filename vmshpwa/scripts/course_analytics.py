@@ -12,8 +12,14 @@ from db_methods.pwa.course_analytics import (
     list_course_result_rows,
     save_completed_course_metrics,
 )
+from db_methods.pwa.course_achievements import (
+    list_course_achievement_facts,
+    list_course_student_ids,
+    save_course_achievements,
+)
 from db_methods.pwa.migrations import require_current_schema
 from models.pwa.course_analytics import calculate_course_lesson_metrics
+from models.pwa.course_achievements import calculate_initial_course_achievements
 from vmshpwa.scripts.runtime_guard import (
     PwaMaintenanceConfig,
     require_pwa_maintenance_profile,
@@ -60,6 +66,18 @@ def calculate_active_courses(
             completed_at=completed_at,
             metrics=metrics,
         )
+        for student_user_id in list_course_student_ids(connection, course_id=course_id):
+            facts = list_course_achievement_facts(
+                connection,
+                student_user_id=student_user_id,
+                course_id=course_id,
+            )
+            save_course_achievements(
+                connection,
+                student_user_id=student_user_id,
+                course_id=course_id,
+                achievements=calculate_initial_course_achievements(facts),
+            )
         calculated.append((course_public_id, len(metrics)))
 
     return calculated
