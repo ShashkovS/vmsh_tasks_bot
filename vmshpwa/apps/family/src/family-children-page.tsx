@@ -8,7 +8,7 @@ import {
   createFamilyCourseClient,
   useAuthenticatedPrincipal,
   useAuthentication,
-  useFamilyChildCoursesQuery,
+  useFamilyChildHomeQuery,
 } from '@vmsh/app-shell'
 import { ApiResponseError, type CourseEnrollment } from '@vmsh/contracts'
 import { LevelChip, type GroupView } from '@vmsh/product'
@@ -95,6 +95,7 @@ export function FamilyChildrenPage() {
 export function FamilyChildPage({ childId }: { childId: string }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
+  const navigate = useNavigate()
   if (principal.audience !== 'family') {
     throw new Error('Family child page requires a Family principal')
   }
@@ -114,7 +115,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
       }),
     [authentication],
   )
-  const query = useFamilyChildCoursesQuery(
+  const query = useFamilyChildHomeQuery(
     client,
     { audience: 'family', accountId: principal.accountId },
     requestedChildId,
@@ -159,7 +160,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
       eyebrow={student.grade === null ? undefined : `${student.grade} класс`}
       title={student.displayName}
     >
-      {query.data.enrollments.length === 0 ? (
+      {query.data.courses.length === 0 ? (
         <PageStatePanel
           description="Когда ребёнка добавят на курс, он появится здесь."
           state="empty"
@@ -167,7 +168,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
         />
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
-          {query.data.enrollments.map((enrollment) => {
+          {query.data.courses.map(({ enrollment, currentLesson }) => {
             const group = activeGroup(enrollment)
             const inPerson = enrollment.attendanceMode === 'in_person'
             return (
@@ -187,10 +188,44 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                   </div>
                   {group ? <LevelChip level={group} /> : null}
                 </CardHeader>
-                <CardContent>
-                  <p className="text-small text-muted-foreground">
-                    Доступно групп: {enrollment.allowedGroups.length}
-                  </p>
+                <CardContent className="space-y-3">
+                  {currentLesson ? (
+                    <div className="space-y-1">
+                      <p className="text-small font-medium text-foreground">
+                        Занятие {currentLesson.lessonNumber} · {currentLesson.title}
+                      </p>
+                      <p className="text-caption text-muted-foreground">
+                        {currentLesson.problemCount} задач в листке
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-small text-muted-foreground">
+                      Новое занятие пока не опубликовано
+                    </p>
+                  )}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-caption text-muted-foreground">
+                      Доступно групп: {enrollment.allowedGroups.length}
+                    </p>
+                    {currentLesson ? (
+                      <Button
+                        onClick={() =>
+                          void navigate({
+                            to: '/tasks/$taskId',
+                            params: { taskId: `lesson-${currentLesson.lessonNumber}` },
+                            search: {
+                              groupLesson: currentLesson.groupLessonId,
+                              student: student.studentId,
+                            },
+                          })
+                        }
+                        size="sm"
+                        variant="outline"
+                      >
+                        Открыть листок
+                      </Button>
+                    ) : null}
+                  </div>
                 </CardContent>
               </Card>
             )

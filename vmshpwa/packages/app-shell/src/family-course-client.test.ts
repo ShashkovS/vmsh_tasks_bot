@@ -69,4 +69,20 @@ describe('Family course client', () => {
     await expect(client.childCourses('../other')).rejects.toThrow()
     expect(fetchImplementation).not.toHaveBeenCalled()
   })
+
+  it('loads the selected child home from its own route', async () => {
+    const home = { student: payload.student, courses: [] }
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify(home), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    const client = createFamilyCourseClient(runtime, { fetchImplementation })
+    await expect(client.childHome('student.one')).resolves.toEqual(home)
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      '/family/api/v1/children/student.one/home',
+      expect.objectContaining({ credentials: 'include', method: 'GET' }),
+    )
+  })
 })

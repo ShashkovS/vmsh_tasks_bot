@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { familyChildCoursesResponseSchema, familyCourseQueryKeys } from './family-courses'
+import {
+  familyChildCoursesResponseSchema,
+  familyChildHomeResponseSchema,
+  familyCourseQueryKeys,
+} from './family-courses'
 
 const response = {
   student: {
@@ -68,5 +72,31 @@ describe('Family child course contract', () => {
         'student.two',
       ),
     )
+  })
+
+  it('accepts a current published lesson or an empty course', () => {
+    const home = {
+      student: response.student,
+      courses: [
+        {
+          enrollment: response.enrollments[0],
+          currentLesson: {
+            groupLessonId: 'group-lesson.41',
+            courseLessonId: 'course-lesson.41',
+            lessonNumber: 41,
+            title: 'Занятие 41',
+            cycleAnchorDate: '2026-09-14',
+            businessTimezone: 'Europe/Moscow',
+            problemCount: 12,
+          },
+        },
+      ],
+    }
+    expect(familyChildHomeResponseSchema.parse(home)).toEqual(home)
+    const withoutLesson = {
+      ...home,
+      courses: [{ enrollment: response.enrollments[0], currentLesson: null }],
+    }
+    expect(familyChildHomeResponseSchema.parse(withoutLesson)).toEqual(withoutLesson)
   })
 })

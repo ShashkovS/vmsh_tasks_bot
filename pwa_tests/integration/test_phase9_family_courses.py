@@ -60,3 +60,41 @@ async def test_family_child_courses_hide_unlinked_and_reject_other_audiences(
         cookies=content_support._cookie(fixture, "family"),
     )
     assert with_query.status == 422
+
+
+async def test_family_home_returns_only_browser_ready_current_lessons(content_http):
+    fixture = content_http
+    empty = await fixture.client.get(
+        "/family/api/v1/children/user-content-student/home",
+        headers=content_support._headers(),
+        cookies=content_support._cookie(fixture, "family"),
+    )
+    assert empty.status == 200
+    assert (await empty.json())["courses"][0]["currentLesson"] is None
+
+    await content_support._prepare_published_test_problem(fixture, problem_type=1)
+    response = await fixture.client.get(
+        "/family/api/v1/children/user-content-student/home",
+        headers=content_support._headers(),
+        cookies=content_support._cookie(fixture, "family"),
+    )
+    assert response.status == 200, await response.text()
+    body = await response.json()
+    assert body["student"]["studentId"] == "user-content-student"
+    assert body["courses"][0]["enrollment"]["activeGroupId"] == "group-content-http-a"
+    assert body["courses"][0]["currentLesson"] == {
+        "groupLessonId": fixture.group_lesson_a,
+        "courseLessonId": "course-lesson-content-http",
+        "lessonNumber": 41,
+        "title": "Занятие 41",
+        "cycleAnchorDate": "2026-09-14",
+        "businessTimezone": "Europe/Moscow",
+        "problemCount": 1,
+    }
+
+    hidden = await fixture.client.get(
+        "/family/api/v1/children/unlinked-student/home",
+        headers=content_support._headers(),
+        cookies=content_support._cookie(fixture, "family"),
+    )
+    assert hidden.status == 403
