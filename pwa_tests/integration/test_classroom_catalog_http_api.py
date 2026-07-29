@@ -679,6 +679,102 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     )
     assert forbidden_child.status == 403
 
+    delivery_preview_path = (
+        f"/staff/api/v1/classroom-assignment-plans/{plan['publicId']}/delivery-preview"
+    )
+    teacher_delivery = await classroom_http.client.post(
+        delivery_preview_path,
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher_delivery.status == 403
+
+    classroom_http.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE users SET chat_id = 179179 WHERE id = ?", (STUDENT_ID,)
+        )
+    )
+    preview_response = await classroom_http.client.post(
+        delivery_preview_path,
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert preview_response.status == 200, await preview_response.text()
+    preview = (await preview_response.json())["preview"]
+    assert (
+        preview["recipientCount"],
+        preview["changedCount"],
+        preview["telegramUnavailableCount"],
+    ) == (1, 1, 0)
+    assert preview["recipients"][0]["telegramAvailable"] is True
+    assert "chatId" not in preview["recipients"][0]
+
+    cursors_before_delivery = dict(
+        classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]
+    )
+    delivery_response = await classroom_http.client.post(
+        delivery_preview_path.removesuffix("/delivery-preview") + "/delivery-batches",
+        json={
+            "schemaVersion": 1,
+            "channels": ["pwa", "telegram"],
+            "expectedPlanVersion": preview["planVersion"],
+            "previewHash": preview["previewHash"],
+            "idempotencyKey": "classroom-http-delivery-1",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert delivery_response.status == 201, await delivery_response.text()
+    delivery = (await delivery_response.json())["batch"]
+    assert delivery["state"] == "queued"
+    assert delivery["channelCounts"] == {
+        "pwa": {"sent": 1},
+        "telegram": {"queued": 1},
+    }
+    assert "chatId" not in delivery["recipients"][0]
+    assert dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+        **cursors_before_delivery,
+        "student": cursors_before_delivery["student"] + 1,
+    }
+
+    announced_student = await classroom_http.client.get(
+        "/student/api/v1/classroom-assignments",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                classroom_http.student_cookie
+            )
+        },
+    )
+    announced_at = (await announced_student.json())["items"][0]["announcedAt"]
+    assert announced_at is not None
+    announced_family = await classroom_http.client.get(
+        "/family/api/v1/children/classroom-layout-student/classroom-assignments",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.FAMILY].access_name: (
+                classroom_http.family_cookie
+            )
+        },
+    )
+    assert (await announced_family.json())["items"][0]["announcedAt"] == announced_at
+
+    stale_delivery = await classroom_http.client.post(
+        delivery_preview_path.removesuffix("/delivery-preview") + "/delivery-batches",
+        json={
+            "schemaVersion": 1,
+            "channels": ["pwa"],
+            "expectedPlanVersion": preview["planVersion"],
+            "previewHash": "0" * 64,
+            "idempotencyKey": "classroom-http-delivery-stale",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert stale_delivery.status == 409
+
     archived_room = await classroom_http.client.post(
         "/staff/api/v1/classrooms/classroom-layout-202/archive",
         json={"schemaVersion": 1},

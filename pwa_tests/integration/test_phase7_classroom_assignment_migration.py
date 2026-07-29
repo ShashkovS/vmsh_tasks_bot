@@ -48,6 +48,7 @@ def _assignment_objects(database_path: Path) -> set[str]:
             str(row[0])
             for row in connection.execute(
                 "SELECT name FROM sqlite_schema WHERE name LIKE 'classroom_assignment%' "
+                "AND name NOT LIKE 'classroom_assignment_delivery%' "
                 "AND name NOT LIKE 'sqlite_%'"
             )
         }

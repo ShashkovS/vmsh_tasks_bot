@@ -21,7 +21,8 @@ def list_student_classroom_events(
                lesson.public_id AS group_lesson_public_id,
                lesson.id AS group_lesson_id,
                enrollment.attendance_mode, enrollment.active_group_id,
-               plan.confirmed_at, layout.state AS layout_state,
+               plan.confirmed_at, delivery.announced_at,
+               layout.state AS layout_state,
                assignment.status AS assignment_status,
                assignment.group_lesson_id AS assigned_group_lesson_id,
                assignment.group_id AS assigned_group_id,
@@ -43,6 +44,17 @@ def list_student_classroom_events(
           ON assignment.plan_id = plan.id
          AND assignment.course_enrollment_id = enrollment.id
         LEFT JOIN classrooms room ON room.id = assignment.classroom_id
+        LEFT JOIN (
+            SELECT batch.assignment_plan_id, recipient.course_enrollment_id,
+                   MAX(COALESCE(recipient.telegram_sent_at, recipient.pwa_sent_at))
+                       AS announced_at
+            FROM classroom_assignment_delivery_recipients recipient
+            JOIN classroom_assignment_delivery_batches batch
+              ON batch.id = recipient.batch_id
+            GROUP BY batch.assignment_plan_id, recipient.course_enrollment_id
+        ) delivery
+          ON delivery.assignment_plan_id = plan.id
+         AND delivery.course_enrollment_id = enrollment.id
         WHERE enrollment.student_user_id = ?
           AND enrollment.status = 'active'
           AND event.status = 'scheduled'

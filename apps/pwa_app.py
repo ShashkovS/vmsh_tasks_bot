@@ -15,6 +15,7 @@ from apps.pwa_api.classroom_assignment_routes import (
     PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR,
     classroom_assignment_routes,
 )
+from apps.pwa_api.classroom_delivery_routes import classroom_delivery_routes
 from apps.pwa_api.classroom_routes import classroom_routes
 from apps.pwa_api.classroom_layout_routes import classroom_layout_routes
 from apps.pwa_api.content_routes import (
@@ -1212,6 +1213,7 @@ def configure(
         app.add_routes(classroom_routes)
         app.add_routes(classroom_layout_routes)
         app.add_routes(classroom_assignment_routes)
+        app.add_routes(classroom_delivery_routes)
 
         async def invalidate_classroom_assignments(
             student_account_public_ids: tuple[str, ...],
