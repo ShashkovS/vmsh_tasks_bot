@@ -28,6 +28,7 @@ import {
 } from './offline-student-data'
 import { StudentTestAnswer } from './student-test-answer'
 import { StudentWrittenSubmission } from './student-written-submission'
+import { StudentProblemQuestionLink } from './student-support-pages'
 
 function problemRequestState(error: unknown) {
   return error instanceof CourseNetworkError || error instanceof ContentNetworkError
@@ -310,6 +311,7 @@ function CanonicalStudentTask({
               problemType={problem.type}
             />
           ) : null}
+          <StudentProblemQuestionLink groupLessonId={groupLessonId} problemId={problem.problemId} />
         </>
       }
       groupLessonId={groupLessonId}

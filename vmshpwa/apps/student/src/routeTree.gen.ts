@@ -14,11 +14,15 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as QuestionsRouteImport } from './routes/questions'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as NewsIndexRouteImport } from './routes/news.index'
 import { Route as NewsPostIdRouteImport } from './routes/news.$postId'
 import { Route as ProfileIndexRouteImport } from './routes/profile.index'
 import { Route as ProfileNotificationsRouteImport } from './routes/profile.notifications'
+import { Route as QuestionsIndexRouteImport } from './routes/questions.index'
+import { Route as QuestionsThreadIdRouteImport } from './routes/questions.$threadId'
+import { Route as QuestionsNewRouteImport } from './routes/questions.new'
 import { Route as SubmissionsSubmissionIdRouteImport } from './routes/submissions.$submissionId'
 import { Route as TasksIndexRouteImport } from './routes/tasks.index'
 import { Route as TasksTaskIdRouteImport } from './routes/tasks.$taskId'
@@ -48,6 +52,11 @@ const ProgressRoute = ProgressRouteImport.update({
   path: '/progress',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuestionsRoute = QuestionsRouteImport.update({
+  id: '/questions',
+  path: '/questions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -73,6 +82,21 @@ const ProfileNotificationsRoute = ProfileNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => ProfileRoute,
 } as any)
+const QuestionsIndexRoute = QuestionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => QuestionsRoute,
+} as any)
+const QuestionsThreadIdRoute = QuestionsThreadIdRouteImport.update({
+  id: '/$threadId',
+  path: '/$threadId',
+  getParentRoute: () => QuestionsRoute,
+} as any)
+const QuestionsNewRoute = QuestionsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => QuestionsRoute,
+} as any)
 const SubmissionsSubmissionIdRoute = SubmissionsSubmissionIdRouteImport.update({
   id: '/submissions/$submissionId',
   path: '/submissions/$submissionId',
@@ -95,13 +119,17 @@ export interface FileRoutesByFullPath {
   '/news': typeof NewsRouteWithChildren
   '/profile': typeof ProfileRouteWithChildren
   '/progress': typeof ProgressRoute
+  '/questions': typeof QuestionsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
   '/news/$postId': typeof NewsPostIdRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
+  '/questions/$threadId': typeof QuestionsThreadIdRoute
+  '/questions/new': typeof QuestionsNewRoute
   '/submissions/$submissionId': typeof SubmissionsSubmissionIdRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
+  '/questions/': typeof QuestionsIndexRoute
   '/tasks/': typeof TasksIndexRoute
 }
 export interface FileRoutesByTo {
@@ -110,10 +138,13 @@ export interface FileRoutesByTo {
   '/progress': typeof ProgressRoute
   '/news/$postId': typeof NewsPostIdRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
+  '/questions/$threadId': typeof QuestionsThreadIdRoute
+  '/questions/new': typeof QuestionsNewRoute
   '/submissions/$submissionId': typeof SubmissionsSubmissionIdRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/news': typeof NewsIndexRoute
   '/profile': typeof ProfileIndexRoute
+  '/questions': typeof QuestionsIndexRoute
   '/tasks': typeof TasksIndexRoute
 }
 export interface FileRoutesById {
@@ -123,13 +154,17 @@ export interface FileRoutesById {
   '/news': typeof NewsRouteWithChildren
   '/profile': typeof ProfileRouteWithChildren
   '/progress': typeof ProgressRoute
+  '/questions': typeof QuestionsRouteWithChildren
   '/tasks': typeof TasksRouteWithChildren
   '/news/$postId': typeof NewsPostIdRoute
   '/profile/notifications': typeof ProfileNotificationsRoute
+  '/questions/$threadId': typeof QuestionsThreadIdRoute
+  '/questions/new': typeof QuestionsNewRoute
   '/submissions/$submissionId': typeof SubmissionsSubmissionIdRoute
   '/tasks/$taskId': typeof TasksTaskIdRoute
   '/news/': typeof NewsIndexRoute
   '/profile/': typeof ProfileIndexRoute
+  '/questions/': typeof QuestionsIndexRoute
   '/tasks/': typeof TasksIndexRoute
 }
 export interface FileRouteTypes {
@@ -140,13 +175,17 @@ export interface FileRouteTypes {
     | '/news'
     | '/profile'
     | '/progress'
+    | '/questions'
     | '/tasks'
     | '/news/$postId'
     | '/profile/notifications'
+    | '/questions/$threadId'
+    | '/questions/new'
     | '/submissions/$submissionId'
     | '/tasks/$taskId'
     | '/news/'
     | '/profile/'
+    | '/questions/'
     | '/tasks/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -155,10 +194,13 @@ export interface FileRouteTypes {
     | '/progress'
     | '/news/$postId'
     | '/profile/notifications'
+    | '/questions/$threadId'
+    | '/questions/new'
     | '/submissions/$submissionId'
     | '/tasks/$taskId'
     | '/news'
     | '/profile'
+    | '/questions'
     | '/tasks'
   id:
     | '__root__'
@@ -167,13 +209,17 @@ export interface FileRouteTypes {
     | '/news'
     | '/profile'
     | '/progress'
+    | '/questions'
     | '/tasks'
     | '/news/$postId'
     | '/profile/notifications'
+    | '/questions/$threadId'
+    | '/questions/new'
     | '/submissions/$submissionId'
     | '/tasks/$taskId'
     | '/news/'
     | '/profile/'
+    | '/questions/'
     | '/tasks/'
   fileRoutesById: FileRoutesById
 }
@@ -183,6 +229,7 @@ export interface RootRouteChildren {
   NewsRoute: typeof NewsRouteWithChildren
   ProfileRoute: typeof ProfileRouteWithChildren
   ProgressRoute: typeof ProgressRoute
+  QuestionsRoute: typeof QuestionsRouteWithChildren
   TasksRoute: typeof TasksRouteWithChildren
   SubmissionsSubmissionIdRoute: typeof SubmissionsSubmissionIdRoute
 }
@@ -224,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgressRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/questions': {
+      id: '/questions'
+      path: '/questions'
+      fullPath: '/questions'
+      preLoaderRoute: typeof QuestionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tasks': {
       id: '/tasks'
       path: '/tasks'
@@ -258,6 +312,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/profile/notifications'
       preLoaderRoute: typeof ProfileNotificationsRouteImport
       parentRoute: typeof ProfileRoute
+    }
+    '/questions/': {
+      id: '/questions/'
+      path: '/'
+      fullPath: '/questions/'
+      preLoaderRoute: typeof QuestionsIndexRouteImport
+      parentRoute: typeof QuestionsRoute
+    }
+    '/questions/$threadId': {
+      id: '/questions/$threadId'
+      path: '/$threadId'
+      fullPath: '/questions/$threadId'
+      preLoaderRoute: typeof QuestionsThreadIdRouteImport
+      parentRoute: typeof QuestionsRoute
+    }
+    '/questions/new': {
+      id: '/questions/new'
+      path: '/new'
+      fullPath: '/questions/new'
+      preLoaderRoute: typeof QuestionsNewRouteImport
+      parentRoute: typeof QuestionsRoute
     }
     '/submissions/$submissionId': {
       id: '/submissions/$submissionId'
@@ -308,6 +383,22 @@ const ProfileRouteChildren: ProfileRouteChildren = {
 const ProfileRouteWithChildren =
   ProfileRoute._addFileChildren(ProfileRouteChildren)
 
+interface QuestionsRouteChildren {
+  QuestionsThreadIdRoute: typeof QuestionsThreadIdRoute
+  QuestionsNewRoute: typeof QuestionsNewRoute
+  QuestionsIndexRoute: typeof QuestionsIndexRoute
+}
+
+const QuestionsRouteChildren: QuestionsRouteChildren = {
+  QuestionsThreadIdRoute: QuestionsThreadIdRoute,
+  QuestionsNewRoute: QuestionsNewRoute,
+  QuestionsIndexRoute: QuestionsIndexRoute,
+}
+
+const QuestionsRouteWithChildren = QuestionsRoute._addFileChildren(
+  QuestionsRouteChildren,
+)
+
 interface TasksRouteChildren {
   TasksTaskIdRoute: typeof TasksTaskIdRoute
   TasksIndexRoute: typeof TasksIndexRoute
@@ -326,6 +417,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRoute: NewsRouteWithChildren,
   ProfileRoute: ProfileRouteWithChildren,
   ProgressRoute: ProgressRoute,
+  QuestionsRoute: QuestionsRouteWithChildren,
   TasksRoute: TasksRouteWithChildren,
   SubmissionsSubmissionIdRoute: SubmissionsSubmissionIdRoute,
 }

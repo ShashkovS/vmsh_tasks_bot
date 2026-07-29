@@ -70,6 +70,7 @@ import {
   Label,
   Separator,
   Switch,
+  buttonVariants,
 } from '@vmsh/ui'
 
 /*
@@ -766,9 +767,12 @@ export function StudentProfilePage({
               <CardTitle>Помощь</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-small">
-              <Button size="sm" variant="outline">
-                <MessageCircleQuestion aria-hidden="true" /> Задать общий вопрос
-              </Button>
+              <a
+                className={buttonVariants({ size: 'sm', variant: 'outline' })}
+                href="/student/questions"
+              >
+                <MessageCircleQuestion aria-hidden="true" /> Мои вопросы
+              </a>
               <a
                 className="inline-flex items-center gap-2 text-link underline-offset-2 hover:underline"
                 href="mailto:vmsh@179.ru"

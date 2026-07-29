@@ -28,6 +28,8 @@ import { Route as LessonsIndexRouteImport } from './routes/lessons.index'
 import { Route as LessonsLessonIdRouteImport } from './routes/lessons.$lessonId'
 import { Route as ProblemsIndexRouteImport } from './routes/problems.index'
 import { Route as ProblemsProblemIdRouteImport } from './routes/problems.$problemId'
+import { Route as QuestionsIndexRouteImport } from './routes/questions.index'
+import { Route as QuestionsThreadIdRouteImport } from './routes/questions.$threadId'
 import { Route as ReviewIndexRouteImport } from './routes/review.index'
 import { Route as ReviewSubmissionIdRouteImport } from './routes/review.$submissionId'
 
@@ -126,6 +128,16 @@ const ProblemsProblemIdRoute = ProblemsProblemIdRouteImport.update({
   path: '/$problemId',
   getParentRoute: () => ProblemsRoute,
 } as any)
+const QuestionsIndexRoute = QuestionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => QuestionsRoute,
+} as any)
+const QuestionsThreadIdRoute = QuestionsThreadIdRouteImport.update({
+  id: '/$threadId',
+  path: '/$threadId',
+  getParentRoute: () => QuestionsRoute,
+} as any)
 const ReviewIndexRoute = ReviewIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -148,16 +160,18 @@ export interface FileRoutesByFullPath {
   '/news': typeof NewsRoute
   '/oral': typeof OralRoute
   '/problems': typeof ProblemsRouteWithChildren
-  '/questions': typeof QuestionsRoute
+  '/questions': typeof QuestionsRouteWithChildren
   '/reactions': typeof ReactionsRoute
   '/review': typeof ReviewRouteWithChildren
   '/statistics': typeof StatisticsRoute
   '/users': typeof UsersRoute
   '/lessons/$lessonId': typeof LessonsLessonIdRoute
   '/problems/$problemId': typeof ProblemsProblemIdRoute
+  '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/lessons/': typeof LessonsIndexRoute
   '/problems/': typeof ProblemsIndexRoute
+  '/questions/': typeof QuestionsIndexRoute
   '/review/': typeof ReviewIndexRoute
 }
 export interface FileRoutesByTo {
@@ -169,15 +183,16 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/news': typeof NewsRoute
   '/oral': typeof OralRoute
-  '/questions': typeof QuestionsRoute
   '/reactions': typeof ReactionsRoute
   '/statistics': typeof StatisticsRoute
   '/users': typeof UsersRoute
   '/lessons/$lessonId': typeof LessonsLessonIdRoute
   '/problems/$problemId': typeof ProblemsProblemIdRoute
+  '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/lessons': typeof LessonsIndexRoute
   '/problems': typeof ProblemsIndexRoute
+  '/questions': typeof QuestionsIndexRoute
   '/review': typeof ReviewIndexRoute
 }
 export interface FileRoutesById {
@@ -192,16 +207,18 @@ export interface FileRoutesById {
   '/news': typeof NewsRoute
   '/oral': typeof OralRoute
   '/problems': typeof ProblemsRouteWithChildren
-  '/questions': typeof QuestionsRoute
+  '/questions': typeof QuestionsRouteWithChildren
   '/reactions': typeof ReactionsRoute
   '/review': typeof ReviewRouteWithChildren
   '/statistics': typeof StatisticsRoute
   '/users': typeof UsersRoute
   '/lessons/$lessonId': typeof LessonsLessonIdRoute
   '/problems/$problemId': typeof ProblemsProblemIdRoute
+  '/questions/$threadId': typeof QuestionsThreadIdRoute
   '/review/$submissionId': typeof ReviewSubmissionIdRoute
   '/lessons/': typeof LessonsIndexRoute
   '/problems/': typeof ProblemsIndexRoute
+  '/questions/': typeof QuestionsIndexRoute
   '/review/': typeof ReviewIndexRoute
 }
 export interface FileRouteTypes {
@@ -224,9 +241,11 @@ export interface FileRouteTypes {
     | '/users'
     | '/lessons/$lessonId'
     | '/problems/$problemId'
+    | '/questions/$threadId'
     | '/review/$submissionId'
     | '/lessons/'
     | '/problems/'
+    | '/questions/'
     | '/review/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -238,15 +257,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/news'
     | '/oral'
-    | '/questions'
     | '/reactions'
     | '/statistics'
     | '/users'
     | '/lessons/$lessonId'
     | '/problems/$problemId'
+    | '/questions/$threadId'
     | '/review/$submissionId'
     | '/lessons'
     | '/problems'
+    | '/questions'
     | '/review'
   id:
     | '__root__'
@@ -267,9 +287,11 @@ export interface FileRouteTypes {
     | '/users'
     | '/lessons/$lessonId'
     | '/problems/$problemId'
+    | '/questions/$threadId'
     | '/review/$submissionId'
     | '/lessons/'
     | '/problems/'
+    | '/questions/'
     | '/review/'
   fileRoutesById: FileRoutesById
 }
@@ -284,7 +306,7 @@ export interface RootRouteChildren {
   NewsRoute: typeof NewsRoute
   OralRoute: typeof OralRoute
   ProblemsRoute: typeof ProblemsRouteWithChildren
-  QuestionsRoute: typeof QuestionsRoute
+  QuestionsRoute: typeof QuestionsRouteWithChildren
   ReactionsRoute: typeof ReactionsRoute
   ReviewRoute: typeof ReviewRouteWithChildren
   StatisticsRoute: typeof StatisticsRoute
@@ -426,6 +448,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProblemsProblemIdRouteImport
       parentRoute: typeof ProblemsRoute
     }
+    '/questions/': {
+      id: '/questions/'
+      path: '/'
+      fullPath: '/questions/'
+      preLoaderRoute: typeof QuestionsIndexRouteImport
+      parentRoute: typeof QuestionsRoute
+    }
+    '/questions/$threadId': {
+      id: '/questions/$threadId'
+      path: '/$threadId'
+      fullPath: '/questions/$threadId'
+      preLoaderRoute: typeof QuestionsThreadIdRouteImport
+      parentRoute: typeof QuestionsRoute
+    }
     '/review/': {
       id: '/review/'
       path: '/'
@@ -470,6 +506,20 @@ const ProblemsRouteWithChildren = ProblemsRoute._addFileChildren(
   ProblemsRouteChildren,
 )
 
+interface QuestionsRouteChildren {
+  QuestionsThreadIdRoute: typeof QuestionsThreadIdRoute
+  QuestionsIndexRoute: typeof QuestionsIndexRoute
+}
+
+const QuestionsRouteChildren: QuestionsRouteChildren = {
+  QuestionsThreadIdRoute: QuestionsThreadIdRoute,
+  QuestionsIndexRoute: QuestionsIndexRoute,
+}
+
+const QuestionsRouteWithChildren = QuestionsRoute._addFileChildren(
+  QuestionsRouteChildren,
+)
+
 interface ReviewRouteChildren {
   ReviewSubmissionIdRoute: typeof ReviewSubmissionIdRoute
   ReviewIndexRoute: typeof ReviewIndexRoute
@@ -494,7 +544,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewsRoute: NewsRoute,
   OralRoute: OralRoute,
   ProblemsRoute: ProblemsRouteWithChildren,
-  QuestionsRoute: QuestionsRoute,
+  QuestionsRoute: QuestionsRouteWithChildren,
   ReactionsRoute: ReactionsRoute,
   ReviewRoute: ReviewRouteWithChildren,
   StatisticsRoute: StatisticsRoute,

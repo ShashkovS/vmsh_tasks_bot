@@ -21,6 +21,7 @@
     "@vmsh/app-shell": "workspace:*",
     "@vmsh/content": "workspace:*",
     "@vmsh/contracts": "workspace:*",
+    "@vmsh/offline": "workspace:*",
     "@vmsh/product": "workspace:*",
     "@vmsh/ui": "workspace:*",
     "d3-array": "catalog:",

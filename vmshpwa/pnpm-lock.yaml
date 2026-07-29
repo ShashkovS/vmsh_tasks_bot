@@ -437,6 +437,9 @@ importers:
       '@vmsh/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@vmsh/offline':
+        specifier: workspace:*
+        version: link:../../packages/offline
       '@vmsh/product':
         specifier: workspace:*
         version: link:../../packages/product
