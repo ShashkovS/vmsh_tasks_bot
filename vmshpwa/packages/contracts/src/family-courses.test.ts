@@ -80,6 +80,18 @@ describe('Family child course contract', () => {
       courses: [
         {
           enrollment: response.enrollments[0],
+          progress: {
+            courseId: 'course.math',
+            summary: {
+              attempted: 1,
+              accepted: 1,
+              partial: 0,
+              needsWork: 0,
+              awaitingReview: 0,
+            },
+            lessons: [],
+            activity: [],
+          },
           currentLesson: {
             groupLessonId: 'group-lesson.41',
             courseLessonId: 'course-lesson.41',
@@ -95,7 +107,13 @@ describe('Family child course contract', () => {
     expect(familyChildHomeResponseSchema.parse(home)).toEqual(home)
     const withoutLesson = {
       ...home,
-      courses: [{ enrollment: response.enrollments[0], currentLesson: null }],
+      courses: [
+        {
+          enrollment: response.enrollments[0],
+          progress: home.courses[0]!.progress,
+          currentLesson: null,
+        },
+      ],
     }
     expect(familyChildHomeResponseSchema.parse(withoutLesson)).toEqual(withoutLesson)
   })

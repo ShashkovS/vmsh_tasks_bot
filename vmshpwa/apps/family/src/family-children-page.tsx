@@ -168,7 +168,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
         />
       ) : (
         <div className="grid gap-3 lg:grid-cols-2">
-          {query.data.courses.map(({ enrollment, currentLesson }) => {
+          {query.data.courses.map(({ enrollment, currentLesson, progress }) => {
             const group = activeGroup(enrollment)
             const inPerson = enrollment.attendanceMode === 'in_person'
             return (
@@ -203,6 +203,12 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       Новое занятие пока не опубликовано
                     </p>
                   )}
+                  <p className="text-small text-muted-foreground">
+                    {progress.summary.accepted} зачтено из {progress.summary.attempted} задач
+                    {progress.summary.awaitingReview > 0
+                      ? ` · ждут проверки: ${progress.summary.awaitingReview}`
+                      : ''}
+                  </p>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-caption text-muted-foreground">
                       Доступно групп: {enrollment.allowedGroups.length}

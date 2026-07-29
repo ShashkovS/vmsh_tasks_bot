@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
 import { courseEnrollmentSchema } from './courses'
+import { courseProgressResponseSchema } from './progress'
 
 /** Phase-9 read model for one child already linked to the Family account. */
 export const familyChildSummarySchema = z
@@ -64,6 +65,7 @@ export const familyChildHomeResponseSchema = z
       z
         .object({
           enrollment: courseEnrollmentSchema,
+          progress: courseProgressResponseSchema,
           currentLesson: familyCurrentLessonSchema.nullable(),
         })
         .strip(),
@@ -85,6 +87,13 @@ export const familyChildHomeResponseSchema = z
           code: 'custom',
           message: 'Family home contains a duplicate course',
           path: ['courses', index, 'enrollment', 'course', 'courseId'],
+        })
+      }
+      if (course.progress.courseId !== course.enrollment.course.courseId) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Progress must belong to the selected course',
+          path: ['courses', index, 'progress', 'courseId'],
         })
       }
       courseIds.add(course.enrollment.course.courseId)

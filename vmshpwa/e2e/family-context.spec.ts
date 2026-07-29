@@ -17,6 +17,7 @@ test('Phase 9: Family switches children and opens only their current course cont
   await expect(page).toHaveURL(/\/family\/children\/user-student-online-fixture$/)
   await expect(page.getByRole('heading', { name: 'Алексей Тестовый-Онлайн' })).toBeVisible()
   await expect(page.getByText('Занятие 923 · Устная E2E firefox')).toBeVisible()
+  await expect(page.getByText(/\d+ зачтено из \d+ задач/).first()).toBeVisible()
   await page.getByRole('button', { name: 'Открыть листок' }).click()
   await expect(page.getByText('Устная E2E firefox', { exact: true })).toBeVisible()
 

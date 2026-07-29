@@ -72,7 +72,23 @@ async def test_family_home_returns_only_browser_ready_current_lessons(content_ht
     assert empty.status == 200
     assert (await empty.json())["courses"][0]["currentLesson"] is None
 
-    await content_support._prepare_published_test_problem(fixture, problem_type=1)
+    (
+        problem_public_id,
+        _revision_id,
+    ) = await content_support._prepare_published_test_problem(fixture, problem_type=1)
+
+    def seed_result(connection):
+        problem_id = connection.execute(
+            "SELECT id FROM problems WHERE public_id = ?", (problem_public_id,)
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO results "
+            "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, res_type) "
+            "VALUES (?, ?, 'content-a', 41, NULL, '2026-09-15T10:00:00', 17, 1)",
+            (content_support.STUDENT_USER_ID, problem_id),
+        )
+
+    fixture.factory.run_write(seed_result)
     response = await fixture.client.get(
         "/family/api/v1/children/user-content-student/home",
         headers=content_support._headers(),
@@ -90,6 +106,14 @@ async def test_family_home_returns_only_browser_ready_current_lessons(content_ht
         "cycleAnchorDate": "2026-09-14",
         "businessTimezone": "Europe/Moscow",
         "problemCount": 1,
+    }
+    assert body["courses"][0]["progress"]["courseId"] == "course-content-http"
+    assert body["courses"][0]["progress"]["summary"] == {
+        "attempted": 1,
+        "accepted": 1,
+        "partial": 0,
+        "needsWork": 0,
+        "awaitingReview": 0,
     }
 
     hidden = await fixture.client.get(

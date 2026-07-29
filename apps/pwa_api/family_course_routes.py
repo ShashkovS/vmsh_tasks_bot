@@ -17,8 +17,13 @@ from apps.pwa_api.course_routes import course_enrollment_payload
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.family import latest_published_lesson
+from db_methods.pwa.progress import (
+    list_course_pending_review_rows,
+    list_course_result_rows,
+)
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.progress import summarize_course_results
 
 
 family_course_routes = web.RouteTableDef()
@@ -133,20 +138,38 @@ async def get_family_child_home(request: web.Request) -> web.Response:
 
     def read(connection):
         return [
-            latest_published_lesson(
-                connection,
-                course_public_id=enrollment.course_public_id,
-                group_public_id=enrollment.active_group_public_id,
+            (
+                latest_published_lesson(
+                    connection,
+                    course_public_id=enrollment.course_public_id,
+                    group_public_id=enrollment.active_group_public_id,
+                ),
+                summarize_course_results(
+                    list_course_result_rows(
+                        connection,
+                        student_user_id=child.student_user_id,
+                        course_id=enrollment.course_id,
+                    ),
+                    list_course_pending_review_rows(
+                        connection,
+                        student_user_id=child.student_user_id,
+                        course_id=enrollment.course_id,
+                    ),
+                ),
             )
             for enrollment in enrollments
         ]
 
-    lessons = await _factory(request).run_read_async(read)
+    course_reads = await _factory(request).run_read_async(read)
     courses = []
-    for enrollment, lesson in zip(enrollments, lessons, strict=True):
+    for enrollment, (lesson, progress) in zip(enrollments, course_reads, strict=True):
         courses.append(
             {
                 "enrollment": course_enrollment_payload(enrollment),
+                "progress": {
+                    "courseId": enrollment.course_public_id,
+                    **progress,
+                },
                 "currentLesson": (
                     None
                     if lesson is None
