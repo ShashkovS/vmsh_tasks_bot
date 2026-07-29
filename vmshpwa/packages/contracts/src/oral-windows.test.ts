@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { oralWindowJoinResponseSchema, studentOralWindowListResponseSchema } from './oral-windows'
+import {
+  oralWindowJoinResponseSchema,
+  saveOralWindowRequestSchema,
+  studentOralWindowListResponseSchema,
+} from './oral-windows'
 
 describe('oral-window contracts', () => {
   it('keeps connection secrets out of the Student list', () => {
@@ -39,5 +43,20 @@ describe('oral-window contracts', () => {
         requestId: 'request.2',
       }).join.joinCode,
     ).toBe('179179')
+  })
+
+  it('rejects an invalid Staff interval or non-HTTPS join URL', () => {
+    expect(
+      saveOralWindowRequestSchema.safeParse({
+        schemaVersion: 1,
+        sequenceNumber: 1,
+        opensAt: '2026-10-05T13:00:00Z',
+        closesAt: '2026-10-05T12:00:00Z',
+        joinLabel: 'Подключиться',
+        joinUrl: 'http://zoom.example.test/j/179',
+        joinCode: null,
+        status: 'active',
+      }).success,
+    ).toBe(false)
   })
 })

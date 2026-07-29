@@ -48,6 +48,54 @@ export const oralWindowJoinResponseSchema = z
   .strip()
 export type OralWindowJoinResponse = z.infer<typeof oralWindowJoinResponseSchema>
 
+export const staffOralWindowSchema = studentOralWindowSchema.extend({
+  joinUrl: z.url().refine((value) => new URL(value).protocol === 'https:'),
+  joinCode: z.string().trim().min(1).nullable(),
+  status: z.enum(['active', 'cancelled']),
+})
+export type StaffOralWindow = z.infer<typeof staffOralWindowSchema>
+
+export const staffOralWindowListResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    items: z.array(staffOralWindowSchema),
+    requestId: z.string().min(1),
+  })
+  .strip()
+export type StaffOralWindowListResponse = z.infer<typeof staffOralWindowListResponseSchema>
+
+export const staffOralWindowResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    window: staffOralWindowSchema,
+    requestId: z.string().min(1),
+  })
+  .strip()
+export type StaffOralWindowResponse = z.infer<typeof staffOralWindowResponseSchema>
+
+export const saveOralWindowRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    sequenceNumber: z.number().int().positive(),
+    opensAt: z.iso.datetime(),
+    closesAt: z.iso.datetime(),
+    joinLabel: z.string().trim().min(1).max(200),
+    joinUrl: z.url().refine((value) => new URL(value).protocol === 'https:'),
+    joinCode: z.string().trim().min(1).nullable(),
+    status: z.enum(['active', 'cancelled']),
+  })
+  .strict()
+  .superRefine((window, context) => {
+    if (window.closesAt <= window.opensAt) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Closing time must follow opening time',
+        path: ['closesAt'],
+      })
+    }
+  })
+export type SaveOralWindowRequest = z.infer<typeof saveOralWindowRequestSchema>
+
 export const oralWindowQueryKeys = {
   student: (principal: PrincipalQueryScope, courseId: string, groupLessonId: string) =>
     [
@@ -55,6 +103,13 @@ export const oralWindowQueryKeys = {
       'student',
       ...principalQueryKey(principal),
       publicIdSchema.parse(courseId),
+      publicIdSchema.parse(groupLessonId),
+    ] as const,
+  staff: (principal: PrincipalQueryScope, groupLessonId: string) =>
+    [
+      'oral-windows',
+      'staff',
+      ...principalQueryKey(principal),
       publicIdSchema.parse(groupLessonId),
     ] as const,
 }

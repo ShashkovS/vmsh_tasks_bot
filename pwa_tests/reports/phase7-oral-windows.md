@@ -24,6 +24,7 @@
 - `vmshpwa/packages/app-shell/src/oral-window-client.ts`;
 - `vmshpwa/packages/product/src/oral-admission.tsx`;
 - `vmshpwa/apps/student/src/student-oral-admission.tsx`;
+- `vmshpwa/apps/staff/src/staff-oral-windows-page.tsx`;
 - `pwa_tests/integration/test_phase7_oral_windows.py`.
 
 ## Автоматические доказательства
@@ -38,5 +39,8 @@
 - Storybook: `Product/Oral admission--schedule`,
   `Product/Oral admission--reveal-join-details` и
   `Product/Oral admission--no-windows`; 3 browser-mode теста прошли.
-- Контракты и browser client: 3 Vitest-теста прошли; Student production build
+- Контракты и browser clients: 5 Vitest-тестов прошли; Student production build
   и `injectManifest` service worker собраны.
+- Staff `/oral?groupLesson=…` даёт admin форму добавления, изменения и отмены,
+  сохраняет незавершённый черновик в `localStorage`; Staff production build
+  прошёл. Teacher видит forbidden и не запускает запрос списка.
