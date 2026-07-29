@@ -1,0 +1,83 @@
+import { Send } from 'lucide-react'
+import type { FormEvent } from 'react'
+
+import { Alert, AlertContent, AlertDescription, Button, Label, Textarea, cn } from '@vmsh/ui'
+
+/**
+ * Text-only private dialogue composer for Phase 6. Persistence and submission
+ * remain application concerns; this component makes the true saved/failed
+ * state visible and never implies that an unsaved browser value is durable.
+ */
+export interface SupportComposerProps {
+  value: string
+  onValueChange: (value: string) => void
+  onSubmit: () => void
+  busy?: boolean
+  disabled?: boolean
+  density?: 'comfortable' | 'compact'
+  saveState?: 'idle' | 'saved' | 'unavailable'
+  error?: string | null
+  submitLabel?: string
+  className?: string
+}
+
+export function SupportComposer({
+  value,
+  onValueChange,
+  onSubmit,
+  busy = false,
+  disabled = false,
+  density = 'comfortable',
+  saveState = 'idle',
+  error,
+  submitLabel = 'Отправить',
+  className,
+}: SupportComposerProps) {
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!busy && !disabled && value.trim()) onSubmit()
+  }
+  const status =
+    saveState === 'saved'
+      ? 'Черновик сохранён на этом устройстве.'
+      : saveState === 'unavailable'
+        ? 'Черновик не сохраняется. Не закрывайте страницу до отправки.'
+        : 'Текст сохранится на этом устройстве после ввода.'
+
+  return (
+    <form className={cn('space-y-2', className)} onSubmit={submit}>
+      <Label htmlFor="support-message">Сообщение</Label>
+      <Textarea
+        disabled={disabled || busy}
+        id="support-message"
+        maxLength={100_000}
+        onChange={(event) => onValueChange(event.target.value)}
+        placeholder="Опишите, что именно осталось непонятно…"
+        rows={density === 'compact' ? 3 : 5}
+        value={value}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p
+          className={cn(
+            'text-caption',
+            saveState === 'unavailable' ? 'text-danger' : 'text-muted-foreground',
+          )}
+          role="status"
+        >
+          {status}
+        </p>
+        <Button disabled={disabled || busy || !value.trim()} size="sm" type="submit">
+          <Send aria-hidden="true" />
+          {busy ? 'Отправляем…' : submitLabel}
+        </Button>
+      </div>
+      {error ? (
+        <Alert role="alert" tone="danger">
+          <AlertContent>
+            <AlertDescription>{error}</AlertDescription>
+          </AlertContent>
+        </Alert>
+      ) : null}
+    </form>
+  )
+}

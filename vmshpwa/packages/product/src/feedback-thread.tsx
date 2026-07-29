@@ -1,4 +1,4 @@
-import { Bot, Send, Smartphone } from 'lucide-react'
+import { Bot, BriefcaseBusiness, Cog, Send, Smartphone } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { cn } from '@vmsh/ui'
@@ -9,13 +9,14 @@ import { cn } from '@vmsh/ui'
  * never be confused with a live teacher. Asymmetric visibility is a permission
  * concern — a Student/Family view-model simply never contains hidden messages.
  */
-export type ThreadAuthorKind = 'student' | 'teacher' | 'admin' | 'ai'
+export type ThreadAuthorKind = 'student' | 'teacher' | 'admin' | 'ai' | 'system'
+export type ThreadChannel = 'pwa' | 'telegram' | 'staff' | 'system'
 
 export interface ThreadMessageView {
   id: string
   author: { kind: ThreadAuthorKind; name?: string }
   at: string
-  channel?: 'pwa' | 'telegram'
+  channel?: ThreadChannel
   /** Concrete source retained when synonymous task branches are shown together. */
   origin?: { courseName: string; groupName: string; taskNumber: string }
   body: ReactNode
@@ -28,11 +29,18 @@ const authorName: Record<ThreadAuthorKind, string> = {
   teacher: 'Преподаватель',
   admin: 'Администратор',
   ai: 'ИИ',
+  system: 'Система',
 }
 
-function ChannelBadge({ channel }: { channel: 'pwa' | 'telegram' }) {
-  const Icon = channel === 'telegram' ? Send : Smartphone
-  const label = channel === 'telegram' ? 'через Telegram' : 'в приложении'
+const channelView = {
+  pwa: { icon: Smartphone, label: 'в приложении' },
+  telegram: { icon: Send, label: 'через Telegram' },
+  staff: { icon: BriefcaseBusiness, label: 'в кабинете преподавателя' },
+  system: { icon: Cog, label: 'системное событие' },
+} as const satisfies Record<ThreadChannel, { icon: typeof Smartphone; label: string }>
+
+function ChannelBadge({ channel }: { channel: ThreadChannel }) {
+  const { icon: Icon, label } = channelView[channel]
   return (
     <span className="inline-flex items-center gap-1 text-caption text-muted-foreground">
       <Icon aria-hidden="true" className="size-3.5" />
@@ -43,6 +51,7 @@ function ChannelBadge({ channel }: { channel: 'pwa' | 'telegram' }) {
 
 export function ThreadMessage({ message }: { message: ThreadMessageView }) {
   const ai = message.author.kind === 'ai'
+  const system = message.author.kind === 'system'
   const name = message.author.name ?? authorName[message.author.kind]
   return (
     <li className={cn('flex', message.own && 'justify-end')}>
@@ -51,9 +60,11 @@ export function ThreadMessage({ message }: { message: ThreadMessageView }) {
           'max-w-[85%] space-y-1 rounded-lg border px-3 py-2',
           ai
             ? 'border-dashed border-provenance-ai-border bg-provenance-ai-surface'
-            : message.own
-              ? 'border-border bg-surface-subtle'
-              : 'border-border bg-surface',
+            : system
+              ? 'border-dashed border-border bg-surface-subtle'
+              : message.own
+                ? 'border-border bg-surface-subtle'
+                : 'border-border bg-surface',
         )}
       >
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">

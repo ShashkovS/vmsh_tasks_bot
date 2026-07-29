@@ -9,6 +9,7 @@ import { AttemptTimeline, type TimelineEntry } from './attempt-timeline'
 import { FeedbackAttention, FeedbackThread, type ThreadMessageView } from './feedback-thread'
 import { reactionsForScope } from './reaction'
 import { ReactionPicker } from './reaction-picker'
+import { SupportComposer } from './support-dialogue'
 import { VerdictPanel } from './verdict-panel'
 import { findVerdict, fullVerdictScale } from './verdict-registry'
 import { WrittenReviewHistory } from './written-review-history'
@@ -126,6 +127,65 @@ export const TeacherReaction: Story = {
       />
     </div>
   ),
+}
+
+function PrivateSupportDialogueHarness() {
+  const [value, setValue] = useState('')
+  const [sent, setSent] = useState('')
+  return (
+    <div className="max-w-xl space-y-4">
+      <FeedbackThread
+        messages={[
+          {
+            id: 'support-student',
+            author: { kind: 'student', name: 'Анна Белова' },
+            at: '12:08',
+            channel: 'pwa',
+            body: 'Не понимаю переход после второй формулы.',
+            own: true,
+          },
+          {
+            id: 'support-teacher',
+            author: { kind: 'teacher', name: 'И. Соколов' },
+            at: '12:15',
+            channel: 'staff',
+            body: 'Посмотрите на остатки по модулю 7 — там используется только их равенство.',
+          },
+          {
+            id: 'support-system',
+            author: { kind: 'system' },
+            at: '12:15',
+            channel: 'system',
+            body: 'Ответ преподавателя доставлен.',
+          },
+        ]}
+      />
+      <SupportComposer
+        onSubmit={() => setSent(value)}
+        onValueChange={setValue}
+        saveState={value ? 'saved' : 'idle'}
+        value={value}
+      />
+      <output className="sr-only" data-testid="support-sent">
+        {sent}
+      </output>
+    </div>
+  )
+}
+
+export const PrivateSupportDialogue: Story = {
+  name: 'Приватный вопрос и сохранённый ответ',
+  render: () => <PrivateSupportDialogueHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('в кабинете преподавателя')).toBeVisible()
+    await expect(canvas.getByText('системное событие')).toBeVisible()
+    const message = canvas.getByLabelText('Сообщение')
+    await userEvent.type(message, 'Теперь понятно, спасибо!')
+    await expect(canvas.getByText('Черновик сохранён на этом устройстве.')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Отправить' }))
+    await expect(canvas.getByTestId('support-sent')).toHaveTextContent('Теперь понятно, спасибо!')
+  },
 }
 
 const annotations: AnnotationView[] = [
