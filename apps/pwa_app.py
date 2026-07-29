@@ -42,6 +42,7 @@ from apps.pwa_api.content_routes import (
     content_routes,
 )
 from apps.pwa_api.course_routes import course_routes
+from apps.pwa_api.family_course_routes import family_course_routes
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import (
     PWA_AUTH_STATE,
@@ -1497,6 +1498,7 @@ def configure(
         app.middlewares.append(pwa_authentication_middleware)
         app.add_routes(auth_routes)
         app.add_routes(course_routes)
+        app.add_routes(family_course_routes)
         app.add_routes(classroom_routes)
         app.add_routes(classroom_layout_routes)
         app.add_routes(classroom_assignment_routes)
