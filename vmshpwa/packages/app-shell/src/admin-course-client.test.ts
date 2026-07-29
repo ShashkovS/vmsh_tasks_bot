@@ -147,4 +147,71 @@ describe('admin course client', () => {
       expect.objectContaining({ 'If-Match': '"schedule-rule.1:v1"' }),
     )
   })
+
+  it('loads the Student directory and sends one complete enrollment update', async () => {
+    const enrollment = {
+      enrollmentId: 'enrollment-student',
+      course: {
+        courseId: 'course-math',
+        code: 'math-57',
+        name: 'Математика 5–7',
+        subjectCode: 'math',
+      },
+      activeGroupId: 'group-beginner',
+      allowedGroups: [
+        {
+          groupId: 'group-beginner',
+          code: 'н',
+          name: 'Начинающие',
+          status: 'active' as const,
+          colorKey: 'level-1',
+          sortOrder: 1,
+        },
+      ],
+      attendanceMode: 'online' as const,
+      status: 'active' as const,
+      version: 1,
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          students: [
+            {
+              studentId: 'student-one',
+              surname: 'Иванов',
+              name: 'Иван',
+              middleName: null,
+              grade: 6,
+              birthday: null,
+              strength: null,
+              webAccount: null,
+              familyAccounts: [],
+              enrollments: [enrollment],
+            },
+          ],
+          requestId: 'directory',
+        }),
+      )
+      .mockResolvedValueOnce(Response.json({ schemaVersion: 1, enrollment, requestId: 'updated' }))
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+
+    await client.listStudentEnrollments()
+    await client.updateStudentEnrollment(enrollment.enrollmentId, 1, {
+      schemaVersion: 1,
+      activeGroupId: enrollment.activeGroupId,
+      allowedGroupIds: [enrollment.activeGroupId],
+      attendanceMode: enrollment.attendanceMode,
+      status: enrollment.status,
+    })
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/student-enrollments')
+    expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+      '/staff/api/v1/course-enrollments/enrollment-student',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[1]?.headers).toEqual(
+      expect.objectContaining({ 'If-Match': '"enrollment-student:v1"' }),
+    )
+  })
 })

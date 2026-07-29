@@ -149,16 +149,33 @@ def _seed(connection: sqlite3.Connection) -> int:
                 (f"student-classroom-e2e-{project}", f"Тестов {project}"),
             ).fetchone()["id"]
         )
+        enrollment_id = int(
+            connection.execute(
+                "INSERT INTO course_enrollments "
+                "(public_id, student_user_id, course_id, active_group_id, "
+                "attendance_mode, status, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, 'in_person', 'active', ?, ?) RETURNING id",
+                (
+                    f"enrollment-classroom-e2e-{project}",
+                    student_id,
+                    int(group_lesson["course_id"]),
+                    str(group_lesson["group_id"]),
+                    TIMESTAMP,
+                    TIMESTAMP,
+                ),
+            ).fetchone()["id"]
+        )
         connection.execute(
-            "INSERT INTO course_enrollments "
-            "(public_id, student_user_id, course_id, active_group_id, "
-            "attendance_mode, status, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, 'in_person', 'active', ?, ?)",
+            "INSERT INTO course_group_access "
+            "(enrollment_id, course_id, group_id, valid_from, granted_by, "
+            "reason, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                f"enrollment-classroom-e2e-{project}",
-                student_id,
+                enrollment_id,
                 int(group_lesson["course_id"]),
                 str(group_lesson["group_id"]),
+                TIMESTAMP,
+                actor_id,
+                "e2e_classroom_seed",
                 TIMESTAMP,
                 TIMESTAMP,
             ),

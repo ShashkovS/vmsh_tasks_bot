@@ -3,7 +3,12 @@ import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
 import deliveryPreviewFixture from '@vmsh/contracts/fixtures/classrooms/delivery-preview.v1.json'
-import { classroomDeliveryPreviewResponseSchema } from '@vmsh/contracts'
+import studentDirectoryFixture from '@vmsh/contracts/fixtures/admin-enrollments/directory.v1.json'
+import {
+  adminStudentEnrollmentDirectoryResponseSchema,
+  classroomDeliveryPreviewResponseSchema,
+  type AdminCourse,
+} from '@vmsh/contracts'
 import { ClassroomDeliveryPanel } from '@vmsh/product'
 
 import {
@@ -19,6 +24,7 @@ import {
   StaffLoginPage,
   type StaffLoginState,
 } from './pages'
+import { StudentDirectoryView } from './staff-student-directory-page'
 
 /* Page evidence for dev/design-system/05-pages-and-flows.md (“Staff SPA”). */
 const meta = {
@@ -92,6 +98,90 @@ export const ClassroomDelivery: Story = {
   },
 }
 export const BroadcastPhaseTwo: Story = { render: () => <BroadcastComposerPage /> }
+
+const directoryCourse: AdminCourse = {
+  courseId: 'course-math-5-7-fixture',
+  code: 'math-5-7',
+  name: 'Математика 5–7',
+  subjectCode: 'math',
+  status: 'active',
+  sortOrder: 1,
+  accentKey: 'math',
+  activeStudents: 2,
+  groups: [
+    {
+      groupId: 'group-fixture-beginner',
+      shortCode: 'н',
+      name: 'Начинающие',
+      status: 'active',
+      colorKey: 'level-1',
+      sortOrder: 10,
+      allowSelfSwitch: true,
+      isDefault: true,
+      isSystem: false,
+      scoreWeight: 1,
+      activeStudents: 1,
+      version: 1,
+    },
+    {
+      groupId: 'group-fixture-continuing',
+      shortCode: 'п',
+      name: 'Продолжающие',
+      status: 'active',
+      colorKey: 'level-2',
+      sortOrder: 20,
+      allowSelfSwitch: true,
+      isDefault: false,
+      isSystem: false,
+      scoreWeight: 1,
+      activeStudents: 1,
+      version: 1,
+    },
+  ],
+  version: 1,
+}
+
+function StudentDirectoryStory() {
+  const [search, setSearch] = useState({ query: '' })
+  const [saved, setSaved] = useState(false)
+  const directory = adminStudentEnrollmentDirectoryResponseSchema.parse(studentDirectoryFixture)
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <StudentDirectoryView
+        accountId="storybook-admin"
+        courses={[directoryCourse]}
+        onSave={() => setSaved(true)}
+        onSearchChange={setSearch}
+        search={search}
+        storageNamespace="vmsh-179:v1:staff:storybook"
+        students={directory.students}
+      />
+      {saved ? (
+        <p className="mt-3 text-small" role="status">
+          Изменение подготовлено к отправке.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+export const StudentCourseAccess: Story = {
+  name: 'Участники · курсы и группы',
+  render: () => <StudentDirectoryStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.type(canvas.getByLabelText('Поиск по имени'), 'алексеи')
+    await expect(canvas.getAllByText('Тестовый-Онлайн Алексей Петрович')).toHaveLength(2)
+    await userEvent.selectOptions(
+      canvas.getByLabelText('Активная группа'),
+      'group-fixture-continuing',
+    )
+    await expect(canvas.getByText(/Несохранённые изменения хранятся/)).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить изменения' }))
+    await expect(canvas.getByText('Изменение подготовлено к отправке.')).toBeInTheDocument()
+  },
+}
+
 export const TeacherForbidden: Story = {
   render: () => <StaffGenericPage description="Только admin." forbidden title="Аудит" />,
 }

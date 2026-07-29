@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "students": [
+    {
+      "studentId": "user-student-online-fixture",
+      "surname": "Тестовый-Онлайн",
+      "name": "Алексей",
+      "middleName": "Петрович",
+      "grade": 6,
+      "birthday": "2013-03-14",
+      "strength": 7.4,
+      "webAccount": {
+        "accountId": "account-student-fixture",
+        "username": "testovyi-14",
+        "status": "active"
+      },
+      "familyAccounts": [
+        {
+          "accountId": "account-family-fixture",
+          "displayName": "Семья Тестовых",
+          "status": "active",
+          "relationshipLabel": "родитель",
+          "isPrimary": true
+        }
+      ],
+      "enrollments": [
+        {
+          "enrollmentId": "enrollment-student-online-fixture",
+          "course": {
+            "courseId": "course-math-5-7-fixture",
+            "code": "math-5-7",
+            "name": "Математика 5–7",
+            "subjectCode": "math"
+          },
+          "activeGroupId": "group-fixture-beginner",
+          "allowedGroups": [
+            {
+              "groupId": "group-fixture-beginner",
+              "code": "н",
+              "name": "Начинающие",
+              "status": "active",
+              "colorKey": "level-1",
+              "sortOrder": 10
+            },
+            {
+              "groupId": "group-fixture-continuing",
+              "code": "п",
+              "name": "Продолжающие",
+              "status": "active",
+              "colorKey": "level-2",
+              "sortOrder": 20
+            }
+          ],
+          "attendanceMode": "online",
+          "status": "active",
+          "version": 1
+        }
+      ]
+    },
+    {
+      "studentId": "user-student-unprovisioned",
+      "surname": "Новый",
+      "name": "Школьник",
+      "middleName": null,
+      "grade": null,
+      "birthday": null,
+      "strength": null,
+      "webAccount": null,
+      "familyAccounts": [],
+      "enrollments": []
+    }
+  ],
+  "requestId": "admin-enrollments-fixture"
+}

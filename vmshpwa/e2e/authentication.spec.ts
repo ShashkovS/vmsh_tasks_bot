@@ -213,6 +213,53 @@ test('Admin creates a course and confirms its schedule through real Staff APIs',
   await expect(page.getByText('в день цикла · 18:15', { exact: true })).toBeVisible()
 })
 
+test('Admin finds a student and never loses an unsaved course edit on reload', async ({ page }) => {
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users')
+  await expect(page.getByRole('heading', { name: 'Участники и группы', level: 1 })).toBeVisible()
+
+  await page.getByLabel('Поиск по имени').fill('алексеи')
+  await expect(page.getByRole('button', { name: /Тестовый-Онлайн Алексей/ })).toBeVisible()
+  await expect(page).toHaveURL((url) => url.searchParams.get('q') === 'алексеи')
+
+  await page.getByLabel('Активная группа').selectOption('group-fixture-continuing')
+  await page.getByLabel('Формат занятий').selectOption('in_person')
+  await expect(page.getByText(/Несохранённые изменения хранятся/)).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByLabel('Активная группа')).toHaveValue('group-fixture-continuing')
+  await expect(page.getByLabel('Формат занятий')).toHaveValue('in_person')
+})
+
+test('Admin saves a course enrollment through the real API', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite write')
+
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users')
+  await page.getByLabel('Поиск по имени').fill('тестов chromium')
+  await expect(page.getByRole('button', { name: /Тестов chromium Ученик/ })).toBeVisible()
+  await page.getByLabel('Формат занятий').selectOption('online')
+
+  const changed = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' &&
+      new URL(response.url()).pathname ===
+        '/staff/api/v1/course-enrollments/enrollment-classroom-e2e-chromium',
+  )
+  await page.getByRole('button', { name: 'Сохранить изменения' }).click()
+  expect((await changed).status()).toBe(200)
+  await expect(page.getByLabel('Формат занятий')).toHaveValue('online')
+
+  // Restore the shared baseline for later browser scenarios.
+  await page.getByLabel('Формат занятий').selectOption('in_person')
+  const restored = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' &&
+      new URL(response.url()).pathname ===
+        '/staff/api/v1/course-enrollments/enrollment-classroom-e2e-chromium',
+  )
+  await page.getByRole('button', { name: 'Сохранить изменения' }).click()
+  expect((await restored).status()).toBe(200)
+})
+
 for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONAS.teacher]) {
   test(`${persona.audience}: a wrong credential yields the same safe visible error`, async ({
     page,

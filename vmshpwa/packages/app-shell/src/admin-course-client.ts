@@ -13,6 +13,9 @@ import {
   adminGroupScheduleQueryKey,
   adminGroupScheduleResponseSchema,
   adminGroupResponseSchema,
+  adminStudentEnrollmentDirectoryResponseSchema,
+  adminStudentEnrollmentResponseSchema,
+  adminStudentEnrollmentsQueryKey,
   apiErrorSchema,
   createAdminCourseRequestSchema,
   parseRuntimeConfigForAudience,
@@ -21,6 +24,7 @@ import {
   saveAdminGroupScheduleOverrideSchema,
   saveAdminCourseScheduleRuleSchema,
   updateAdminCourseRequestSchema,
+  updateAdminStudentEnrollmentRequestSchema,
   type AdminCourseCatalogResponse,
   type AdminCourseResponse,
   type AdminCourseScheduleDraftResponse,
@@ -29,6 +33,8 @@ import {
   type AdminGroupScheduleOverrideResponse,
   type AdminGroupScheduleResponse,
   type AdminGroupResponse,
+  type AdminStudentEnrollmentDirectoryResponse,
+  type AdminStudentEnrollmentResponse,
   type CreateAdminCourseRequest,
   type PrincipalQueryScope,
   type RuntimeConfig,
@@ -36,6 +42,7 @@ import {
   type SaveAdminGroupScheduleOverride,
   type SaveAdminCourseScheduleRule,
   type UpdateAdminCourseRequest,
+  type UpdateAdminStudentEnrollmentRequest,
 } from '@vmsh/contracts'
 
 export interface AdminCourseClient {
@@ -70,6 +77,12 @@ export interface AdminCourseClient {
     overrideId: string,
     version: number,
   ): Promise<AdminGroupScheduleOverrideResponse>
+  listStudentEnrollments(signal?: AbortSignal): Promise<AdminStudentEnrollmentDirectoryResponse>
+  updateStudentEnrollment(
+    enrollmentId: string,
+    version: number,
+    input: UpdateAdminStudentEnrollmentRequest,
+  ): Promise<AdminStudentEnrollmentResponse>
 }
 
 export function createAdminCourseClient(
@@ -211,6 +224,24 @@ export function createAdminCourseClient(
         }),
       )
     },
+    async listStudentEnrollments(signal) {
+      return adminStudentEnrollmentDirectoryResponseSchema.parse(
+        await request('/student-enrollments', {
+          method: 'GET',
+          ...(signal === undefined ? {} : { signal }),
+        }),
+      )
+    },
+    async updateStudentEnrollment(rawEnrollmentId, version, input) {
+      const enrollmentId = publicIdSchema.parse(rawEnrollmentId)
+      return adminStudentEnrollmentResponseSchema.parse(
+        await request(`/course-enrollments/${encodeURIComponent(enrollmentId)}`, {
+          method: 'PUT',
+          headers: { 'If-Match': `"${enrollmentId}:v${version}"` },
+          body: JSON.stringify(updateAdminStudentEnrollmentRequestSchema.parse(input)),
+        }),
+      )
+    },
   }
 }
 
@@ -252,5 +283,15 @@ export function useAdminGroupScheduleQuery(
         : adminGroupScheduleQueryKey(principal, groupId),
     queryFn: ({ signal }) => client.getGroupSchedule(groupId!, signal),
     enabled: groupId !== null,
+  })
+}
+
+export function useAdminStudentEnrollmentsQuery(
+  client: AdminCourseClient,
+  principal: PrincipalQueryScope,
+) {
+  return useQuery({
+    queryKey: adminStudentEnrollmentsQueryKey(principal),
+    queryFn: ({ signal }) => client.listStudentEnrollments(signal),
   })
 }

@@ -1,0 +1,525 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState, type FormEvent } from 'react'
+
+import {
+  PageLayout,
+  PageStatePanel,
+  createAdminCourseClient,
+  useAdminCourseCatalogQuery,
+  useAdminStudentEnrollmentsQuery,
+  useAuthenticatedPrincipal,
+  useAuthentication,
+} from '@vmsh/app-shell'
+import {
+  ApiResponseError,
+  adminStudentEnrollmentsQueryKey,
+  createBrowserStorageNamespace,
+  type AdminCourse,
+  type AdminEnrollmentGroup,
+  type AdminStudentCourseEnrollment,
+  type AdminStudentDirectoryEntry,
+  type UpdateAdminStudentEnrollmentRequest,
+} from '@vmsh/contracts'
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Checkbox,
+  Input,
+  Label,
+} from '@vmsh/ui'
+
+import {
+  clearEnrollmentDraft,
+  enrollmentDraftKey,
+  readEnrollmentDraft,
+  writeEnrollmentDraft,
+} from './student-enrollment-draft'
+import { filterStudents } from './student-directory-search'
+
+interface DirectorySearch {
+  query: string
+  studentId?: string
+  courseId?: string
+}
+
+interface SaveCommand {
+  enrollment: AdminStudentCourseEnrollment
+  input: UpdateAdminStudentEnrollmentRequest
+  draftKey: string
+}
+
+function errorMessage(error: Error): string {
+  return error instanceof ApiResponseError
+    ? error.message
+    : 'Проверьте соединение и повторите попытку.'
+}
+
+function fullName(student: AdminStudentDirectoryEntry): string {
+  return [student.surname, student.name, student.middleName].filter(Boolean).join(' ')
+}
+
+function courseGroups(
+  course: AdminCourse | undefined,
+  enrollment: AdminStudentCourseEnrollment,
+): AdminEnrollmentGroup[] {
+  const groups = new Map(
+    (course?.groups ?? []).map((group) => [
+      group.groupId,
+      {
+        groupId: group.groupId,
+        code: group.shortCode,
+        name: group.name,
+        status: group.status,
+        colorKey: group.colorKey ?? 'neutral',
+        sortOrder: group.sortOrder,
+      } satisfies AdminEnrollmentGroup,
+    ]),
+  )
+  for (const group of enrollment.allowedGroups) groups.set(group.groupId, group)
+  return [...groups.values()].sort(
+    (left, right) => left.sortOrder - right.sortOrder || left.code.localeCompare(right.code, 'ru'),
+  )
+}
+
+function EnrollmentEditor({
+  accountId,
+  allGroups,
+  enrollment,
+  saving,
+  storageNamespace,
+  onSave,
+}: {
+  accountId: string
+  allGroups: AdminEnrollmentGroup[]
+  enrollment: AdminStudentCourseEnrollment
+  saving: boolean
+  storageNamespace: string
+  onSave: (command: SaveCommand) => void
+}) {
+  const fallback = {
+    schemaVersion: 1 as const,
+    activeGroupId: enrollment.activeGroupId,
+    allowedGroupIds: enrollment.allowedGroups.map((group) => group.groupId),
+    attendanceMode: enrollment.attendanceMode,
+    status: enrollment.status,
+  }
+  const draftKey = enrollmentDraftKey(
+    storageNamespace,
+    accountId,
+    enrollment.enrollmentId,
+    enrollment.version,
+  )
+  const [draft, setDraft] = useState(() =>
+    readEnrollmentDraft(globalThis.localStorage, draftKey, fallback),
+  )
+  const [storageAvailable, setStorageAvailable] = useState(true)
+  const changed = JSON.stringify(draft) !== JSON.stringify(fallback)
+
+  function update(next: UpdateAdminStudentEnrollmentRequest) {
+    setDraft(next)
+    setStorageAvailable(writeEnrollmentDraft(globalThis.localStorage, draftKey, next))
+  }
+
+  function toggleGroup(groupId: string, checked: boolean) {
+    if (!checked && groupId === draft.activeGroupId) return
+    const allowed = new Set(draft.allowedGroupIds)
+    if (checked) allowed.add(groupId)
+    else allowed.delete(groupId)
+    update({ ...draft, allowedGroupIds: [...allowed] })
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    onSave({ enrollment, input: draft, draftKey })
+  }
+
+  return (
+    <form className="space-y-4" onSubmit={submit}>
+      <div className="grid gap-3 md:grid-cols-3">
+        <Label className="grid gap-1">
+          Активная группа
+          <select
+            className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+            disabled={saving}
+            onChange={(event) => update({ ...draft, activeGroupId: event.target.value })}
+            value={draft.activeGroupId}
+          >
+            {allGroups
+              .filter(
+                (group) =>
+                  draft.allowedGroupIds.includes(group.groupId) && group.status !== 'archived',
+              )
+              .map((group) => (
+                <option key={group.groupId} value={group.groupId}>
+                  {group.code} · {group.name}
+                </option>
+              ))}
+          </select>
+        </Label>
+        <Label className="grid gap-1">
+          Формат занятий
+          <select
+            className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+            disabled={saving}
+            onChange={(event) =>
+              update({
+                ...draft,
+                attendanceMode: event.target.value as 'online' | 'in_person',
+              })
+            }
+            value={draft.attendanceMode}
+          >
+            <option value="online">Онлайн</option>
+            <option value="in_person">Очно</option>
+          </select>
+        </Label>
+        <Label className="grid gap-1">
+          Состояние записи
+          <select
+            className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+            disabled={saving}
+            onChange={(event) =>
+              update({
+                ...draft,
+                status: event.target.value as 'active' | 'paused' | 'archived',
+              })
+            }
+            value={draft.status}
+          >
+            <option value="active">Активна</option>
+            <option value="paused">Приостановлена</option>
+            <option value="archived">В архиве</option>
+          </select>
+        </Label>
+      </div>
+
+      <fieldset className="space-y-2">
+        <legend className="text-small font-medium">Доступные группы</legend>
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          {allGroups.map((group) => {
+            const active = group.groupId === draft.activeGroupId
+            return (
+              <Label className="flex items-center gap-2 text-small" key={group.groupId}>
+                <Checkbox
+                  checked={draft.allowedGroupIds.includes(group.groupId)}
+                  disabled={saving || active}
+                  onCheckedChange={(checked) => toggleGroup(group.groupId, checked === true)}
+                />
+                <span>
+                  {group.code} · {group.name}
+                  {group.status === 'archived' ? ' (архив)' : ''}
+                </span>
+              </Label>
+            )
+          })}
+        </div>
+        <p className="text-caption text-muted-foreground">
+          Активную группу нельзя убрать из доступных. Сначала выберите другую активную группу.
+        </p>
+      </fieldset>
+
+      {!storageAvailable ? (
+        <p className="text-small text-status-error" role="alert">
+          Черновик не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
+        </p>
+      ) : changed ? (
+        <p className="text-caption text-muted-foreground" role="status">
+          Несохранённые изменения хранятся на этом устройстве.
+        </p>
+      ) : null}
+
+      <Button disabled={saving || !changed} type="submit">
+        {saving ? 'Сохраняем…' : 'Сохранить изменения'}
+      </Button>
+    </form>
+  )
+}
+
+export function StudentDirectoryView({
+  accountId,
+  courses,
+  search,
+  saving = false,
+  storageNamespace,
+  students,
+  onSave,
+  onSearchChange,
+}: {
+  accountId: string
+  courses: AdminCourse[]
+  search: DirectorySearch
+  saving?: boolean
+  storageNamespace: string
+  students: AdminStudentDirectoryEntry[]
+  onSave: (command: SaveCommand) => void
+  onSearchChange: (search: DirectorySearch) => void
+}) {
+  const matches = filterStudents(students, search.query)
+  const selectedStudent =
+    matches.find((student) => student.studentId === search.studentId) ?? matches[0]
+  const selectedEnrollment =
+    selectedStudent?.enrollments.find(
+      (enrollment) => enrollment.course.courseId === search.courseId,
+    ) ?? selectedStudent?.enrollments[0]
+  const selectedCourse = courses.find(
+    (course) => course.courseId === selectedEnrollment?.course.courseId,
+  )
+
+  return (
+    <div className="grid min-h-[34rem] gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
+      <Card className="min-w-0">
+        <CardHeader className="gap-3">
+          <CardTitle>Школьники</CardTitle>
+          <Label className="grid gap-1 text-small">
+            Поиск по имени
+            <Input
+              onChange={(event) => onSearchChange({ query: event.target.value })}
+              placeholder="Фамилия, имя или часть с опечаткой"
+              type="search"
+              value={search.query}
+            />
+          </Label>
+          <p className="text-caption text-muted-foreground">Найдено: {matches.length}</p>
+        </CardHeader>
+        <CardContent className="max-h-[48rem] overflow-y-auto px-2 pb-2">
+          {matches.length === 0 ? (
+            <p className="p-3 text-small text-muted-foreground">Никого не нашли.</p>
+          ) : (
+            <ol className="space-y-1">
+              {matches.map((student) => {
+                const selected = selectedStudent?.studentId === student.studentId
+                return (
+                  <li key={student.studentId}>
+                    <button
+                      aria-current={selected ? 'true' : undefined}
+                      className="w-full rounded-md border border-transparent px-3 py-2 text-left hover:bg-muted aria-current:border-border aria-current:bg-muted"
+                      onClick={() =>
+                        onSearchChange({ query: search.query, studentId: student.studentId })
+                      }
+                      type="button"
+                    >
+                      <span className="block text-small font-medium">{fullName(student)}</span>
+                      <span className="mt-1 flex flex-wrap gap-1 text-caption text-muted-foreground">
+                        <span>{student.grade === null ? 'класс —' : `${student.grade} класс`}</span>
+                        <span>·</span>
+                        <span>
+                          {student.strength === null ? 'сила —' : `сила ${student.strength}`}
+                        </span>
+                        {student.enrollments.length === 0 ? <span>· нет курса</span> : null}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedStudent ? (
+        <div className="min-w-0 space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle>{fullName(selectedStudent)}</CardTitle>
+                <Badge variant={selectedStudent.webAccount ? 'success' : 'warning'}>
+                  {selectedStudent.webAccount ? 'Web-вход активен' : 'Web-вход не создан'}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-3 text-small sm:grid-cols-2 xl:grid-cols-4">
+              <div>
+                <p className="text-caption text-muted-foreground">Класс</p>
+                <p>{selectedStudent.grade ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-caption text-muted-foreground">Дата рождения</p>
+                <p>{selectedStudent.birthday ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-caption text-muted-foreground">Сила</p>
+                <p>{selectedStudent.strength ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-caption text-muted-foreground">Логин</p>
+                <p>{selectedStudent.webAccount?.username ?? '—'}</p>
+              </div>
+              <div className="sm:col-span-2 xl:col-span-4">
+                <p className="text-caption text-muted-foreground">Семейные аккаунты</p>
+                <p>
+                  {selectedStudent.familyAccounts.length === 0
+                    ? '—'
+                    : selectedStudent.familyAccounts
+                        .map((account) => `${account.displayName} · ${account.relationshipLabel}`)
+                        .join(', ')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {selectedStudent.enrollments.length === 0 ? (
+            <Card>
+              <CardContent className="pt-5 text-small text-muted-foreground">
+                Школьник пока не записан ни на один курс.
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader className="gap-3">
+                <CardTitle>Курс и доступ</CardTitle>
+                {selectedStudent.enrollments.length > 1 ? (
+                  <Label className="grid max-w-sm gap-1 text-small">
+                    Курс
+                    <select
+                      className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+                      onChange={(event) =>
+                        onSearchChange({
+                          ...search,
+                          studentId: selectedStudent.studentId,
+                          courseId: event.target.value,
+                        })
+                      }
+                      value={selectedEnrollment?.course.courseId}
+                    >
+                      {selectedStudent.enrollments.map((enrollment) => (
+                        <option key={enrollment.enrollmentId} value={enrollment.course.courseId}>
+                          {enrollment.course.name}
+                        </option>
+                      ))}
+                    </select>
+                  </Label>
+                ) : (
+                  <p className="text-small text-muted-foreground">
+                    {selectedEnrollment?.course.name}
+                  </p>
+                )}
+              </CardHeader>
+              <CardContent>
+                {selectedEnrollment ? (
+                  <EnrollmentEditor
+                    accountId={accountId}
+                    allGroups={courseGroups(selectedCourse, selectedEnrollment)}
+                    enrollment={selectedEnrollment}
+                    key={`${selectedEnrollment.enrollmentId}:${selectedEnrollment.version}`}
+                    onSave={onSave}
+                    saving={saving}
+                    storageNamespace={storageNamespace}
+                  />
+                ) : null}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/** Staff user/access flow from design-system page 5 and development Phase 10. */
+export function StaffStudentDirectoryPage({
+  search,
+  onSearchChange,
+}: {
+  search: DirectorySearch
+  onSearchChange: (search: DirectorySearch) => void
+}) {
+  const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'staff') throw new Error('Student directory requires Staff auth')
+  const client = useMemo(
+    () =>
+      createAdminCourseClient(authentication.client.runtime, {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const scope = { audience: 'staff' as const, accountId: principal.accountId }
+  const directory = useAdminStudentEnrollmentsQuery(client, scope)
+  const catalog = useAdminCourseCatalogQuery(client, scope)
+  const queryClient = useQueryClient()
+  const mutation = useMutation({
+    mutationFn: (command: SaveCommand) =>
+      client.updateStudentEnrollment(
+        command.enrollment.enrollmentId,
+        command.enrollment.version,
+        command.input,
+      ),
+    onSuccess: async (_, command) => {
+      clearEnrollmentDraft(globalThis.localStorage, command.draftKey)
+      await queryClient.invalidateQueries({ queryKey: adminStudentEnrollmentsQueryKey(scope) })
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
+
+  if (directory.isPending || catalog.isPending) {
+    return (
+      <PageLayout title="Участники и группы" width="wide">
+        <PageStatePanel state="loading" />
+      </PageLayout>
+    )
+  }
+  const error = directory.error ?? catalog.error
+  if (error) {
+    return (
+      <PageLayout title="Участники и группы" width="wide">
+        <PageStatePanel
+          actionLabel="Повторить"
+          onAction={() => void Promise.all([directory.refetch(), catalog.refetch()])}
+          state={error instanceof ApiResponseError && error.status === 403 ? 'forbidden' : 'error'}
+        />
+      </PageLayout>
+    )
+  }
+  if (!directory.data || !catalog.data) {
+    return (
+      <PageLayout title="Участники и группы" width="wide">
+        <PageStatePanel state="error" />
+      </PageLayout>
+    )
+  }
+
+  return (
+    <PageLayout
+      description="Поиск школьника, его курсы, активные и доступные группы и формат занятий."
+      eyebrow="Admin"
+      title="Участники и группы"
+      width="wide"
+    >
+      <div className="space-y-4">
+        {mutation.error ? (
+          <Alert role="alert" tone="danger">
+            <AlertContent>
+              <AlertTitle>Изменение не сохранено</AlertTitle>
+              <AlertDescription>{errorMessage(mutation.error)}</AlertDescription>
+            </AlertContent>
+          </Alert>
+        ) : null}
+        <StudentDirectoryView
+          accountId={principal.accountId}
+          courses={catalog.data.courses}
+          onSave={(command) => mutation.mutate(command)}
+          onSearchChange={onSearchChange}
+          saving={mutation.isPending}
+          search={search}
+          storageNamespace={createBrowserStorageNamespace(authentication.client.runtime)}
+          students={directory.data.students}
+        />
+      </div>
+    </PageLayout>
+  )
+}
