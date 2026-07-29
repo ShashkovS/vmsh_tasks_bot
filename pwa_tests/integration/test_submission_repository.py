@@ -2141,12 +2141,16 @@ async def test_written_text_entry_submits_atomically_and_replays(
             connection.execute("SELECT * FROM submission_threads").fetchone(),
             connection.execute("SELECT * FROM submission_entries").fetchone(),
             connection.execute(
+                "SELECT public_id, ts, student_id, problem_id, cur_status, "
+                "claim_token, lease_version, updated_at FROM written_tasks_queue"
+            ).fetchall(),
+            connection.execute(
                 "SELECT * FROM idempotency_records "
                 "WHERE operation = 'written-entry:submit'"
             ).fetchall(),
         )
     )
-    thread, entry, idempotency = stored
+    thread, entry, queue, idempotency = stored
 
     assert receipt.thread_status == "awaiting_review"
     assert receipt.thread_version == 2
@@ -2158,7 +2162,84 @@ async def test_written_text_entry_submits_atomically_and_replays(
     assert thread["version"] == 2
     assert entry["state"] == "submitted"
     assert entry["version"] == 2
+    assert len(queue) == 1
+    assert queue[0]["public_id"].startswith("review-queue-")
+    assert queue[0]["ts"] == timestamp(NOW)
+    assert queue[0]["student_id"] == STUDENT_USER_ID
+    assert queue[0]["problem_id"] == fixture.written_problem_id
+    assert queue[0]["cur_status"] == 0
+    assert queue[0]["claim_token"] is None
+    assert queue[0]["lease_version"] == 0
+    assert queue[0]["updated_at"] == timestamp(NOW)
     assert len(idempotency) == 1
+
+
+async def test_later_written_entry_keeps_existing_review_lease_and_wait_age(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    first_draft = await fixture.written_repository.create_entry(
+        written_entry_command(fixture, text="Первое объяснение.")
+    )
+    await fixture.written_repository.submit_entry(
+        submit_written_entry_command(
+            fixture,
+            entry_public_id=first_draft.entry.public_id,
+            thread_version=first_draft.thread_version,
+        )
+    )
+    first_queue = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT public_id, ts FROM written_tasks_queue"
+        ).fetchone()
+    )
+    claimed_at = timestamp(NOW + timedelta(minutes=1))
+    lease_expires_at = timestamp(NOW + timedelta(minutes=31))
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE written_tasks_queue SET cur_status = 1, teacher_ts = ?, "
+            "teacher_id = ?, claim_token = 'active-review-claim', claimed_at = ?, "
+            "lease_expires_at = ?, lease_version = 3, updated_at = ?",
+            (claimed_at, ADMIN_USER_ID, claimed_at, lease_expires_at, claimed_at),
+        )
+    )
+
+    fixture.clock.value = NOW + timedelta(minutes=5)
+    later_draft = await fixture.written_repository.create_entry(
+        written_entry_command(
+            fixture,
+            text="Досланное объяснение.",
+            key="written-create-later-review-evidence",
+        )
+    )
+    await fixture.written_repository.submit_entry(
+        submit_written_entry_command(
+            fixture,
+            entry_public_id=later_draft.entry.public_id,
+            thread_version=later_draft.thread_version,
+            key="written-submit-later-review-evidence",
+        )
+    )
+
+    queue = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT public_id, ts, cur_status, teacher_id, claim_token, claimed_at, "
+            "lease_expires_at, lease_version, updated_at FROM written_tasks_queue"
+        ).fetchall()
+    )
+    assert queue == [
+        {
+            "public_id": first_queue["public_id"],
+            "ts": first_queue["ts"],
+            "cur_status": 1,
+            "teacher_id": ADMIN_USER_ID,
+            "claim_token": "active-review-claim",
+            "claimed_at": claimed_at,
+            "lease_expires_at": lease_expires_at,
+            "lease_version": 3,
+            "updated_at": timestamp(fixture.clock.value),
+        }
+    ]
 
 
 async def test_written_entry_replacement_swaps_visibility_and_audits_once(

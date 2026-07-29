@@ -504,4 +504,11 @@ test('Phase 5: a written draft with a photo survives reload and resumes exactly 
       },
     ],
   })
+
+  // Phase 6 handoff is part of the submission commit: the existing Staff
+  // session sees one review case without a compatibility import or page seed.
+  await page.goto('/staff/review')
+  const reviewRow = page.getByRole('row').filter({ hasText: title })
+  await expect(reviewRow).toHaveCount(1)
+  await expect(reviewRow.getByRole('button', { name: 'Открыть' })).toBeVisible()
 })

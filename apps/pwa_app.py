@@ -800,7 +800,7 @@ async def publish_written_submission_invalidation(
     problem_public_id: str,
     reason: str,
 ) -> None:
-    """Publish one owner-scoped written-thread refetch hint after commit."""
+    """Publish owner-thread and, for queue handoff, Staff refetch hints."""
 
     await app[PWA_BROKER].publish(
         NATS_PWA_INVALIDATE,
@@ -811,6 +811,15 @@ async def publish_written_submission_invalidation(
             "accountId": account_public_id,
         },
     )
+    if reason in {"written-entry-submitted", "written-entry-replaced"}:
+        await app[PWA_BROKER].publish(
+            NATS_PWA_INVALIDATE,
+            {
+                "resources": ["review-queue"],
+                "reason": reason,
+                "audience": AuthAudience.STAFF.value,
+            },
+        )
 
 
 async def publish_review_completion_invalidation(

@@ -18,6 +18,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
+from helpers.consts import WRITTEN_STATUS
 from models.pwa.submissions import assess_submission_clock
 
 from .connection import PwaConnectionFactory
@@ -2932,6 +2933,7 @@ class PwaWrittenSubmissionRepository:
                 "entry.text, entry.client_created_at, entry.problem_revision_id, "
                 "thread.id AS thread_id, thread.public_id AS thread_public_id, "
                 "thread.version AS thread_version, thread.problem_id, "
+                "thread.student_user_id, "
                 "problem.public_id AS problem_public_id "
                 "FROM auth_accounts AS account "
                 "JOIN submission_threads AS thread "
@@ -3023,6 +3025,24 @@ class PwaWrittenSubmissionRepository:
                 "UPDATE submission_threads SET status = 'awaiting_review', "
                 "latest_entry_at = ?, updated_at = ?, version = ? WHERE id = ?",
                 (received_at, received_at, thread_version, row["thread_id"]),
+            )
+            # Phase 6 queue handoff is part of the same commit as the immutable
+            # submission state; see development-plan/10-phase-6-review-and-feedback.md.
+            # A later entry keeps an active lease intact so completion detects
+            # the thread-version change and the reviewer refetches all evidence.
+            connection.execute(
+                "INSERT INTO written_tasks_queue "
+                "(ts, student_id, problem_id, cur_status, updated_at) "
+                "VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT (student_id, problem_id) DO UPDATE SET "
+                "updated_at = excluded.updated_at",
+                (
+                    received_at,
+                    int(row["student_user_id"]),
+                    int(row["problem_id"]),
+                    int(WRITTEN_STATUS.NEW),
+                    received_at,
+                ),
             )
             receipt = SubmitWrittenEntryReceipt(
                 thread_public_id=str(row["thread_public_id"]),

@@ -545,6 +545,47 @@ async def test_invalidation_can_be_scoped_to_one_authenticated_account(client):
 
 
 @pytest.mark.asyncio
+async def test_written_submission_handoff_invalidates_student_thread_and_staff_queue():
+    class RecordingBroker:
+        def __init__(self):
+            self.messages = []
+
+        async def publish(self, topic, payload):
+            self.messages.append((topic, payload))
+
+    app = web.Application()
+    broker = RecordingBroker()
+    app[pwa_app.PWA_BROKER] = broker
+
+    await pwa_app.publish_written_submission_invalidation(
+        app,
+        account_public_id="account-student-review",
+        problem_public_id="problem-written-review",
+        reason="written-entry-submitted",
+    )
+
+    assert broker.messages == [
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["problems/problem-written-review/thread"],
+                "reason": "written-entry-submitted",
+                "audience": "student",
+                "accountId": "account-student-review",
+            },
+        ),
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["review-queue"],
+                "reason": "written-entry-submitted",
+                "audience": "staff",
+            },
+        ),
+    ]
+
+
+@pytest.mark.asyncio
 async def test_concurrent_invalidations_are_ordered_per_socket(client):
     class BackpressuredSocket:
         closed = False

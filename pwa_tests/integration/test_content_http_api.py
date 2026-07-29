@@ -1329,6 +1329,7 @@ async def test_student_written_submission_http_is_strict_idempotent_and_readable
     assert cursors_after_submit == {
         **cursors_after_create,
         "student": cursors_after_create["student"] + 1,
+        "staff": cursors_after_create["staff"] + 1,
     }
 
     submit_replay = await fixture.client.post(
@@ -1475,20 +1476,14 @@ async def test_family_written_thread_is_read_only_child_scoped_and_hides_staff_r
     )
     assert forbidden_child.status == 403
 
-    queue_public_id = "content-http-family-queue"
-    fixture.factory.run_write(
-        lambda connection: connection.execute(
-            "INSERT INTO written_tasks_queue "
-            "(public_id, ts, student_id, problem_id, cur_status, updated_at) "
-            "SELECT ?, ?, ?, problem.id, 0, ? FROM problems AS problem "
-            "WHERE problem.public_id = ?",
-            (
-                queue_public_id,
-                _timestamp(),
-                STUDENT_USER_ID,
-                _timestamp(),
-                problem_public_id,
-            ),
+    queue_public_id = fixture.factory.run_read(
+        lambda connection: str(
+            connection.execute(
+                "SELECT queue.public_id FROM written_tasks_queue AS queue "
+                "JOIN problems AS problem ON problem.id = queue.problem_id "
+                "WHERE queue.student_id = ? AND problem.public_id = ?",
+                (STUDENT_USER_ID, problem_public_id),
+            ).fetchone()["public_id"]
         )
     )
     claimed_response = await fixture.client.post(
