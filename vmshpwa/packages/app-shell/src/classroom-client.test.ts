@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { RuntimeConfig } from '@vmsh/contracts'
 import assignmentFixture from '@vmsh/contracts/fixtures/classrooms/assignment-plan.v1.json'
+import assignmentHistoryFixture from '@vmsh/contracts/fixtures/classrooms/assignment-history.v1.json'
 
 import { ClassroomProtocolError, createClassroomClient } from './classroom-client'
 
@@ -214,6 +215,23 @@ describe('classroom client', () => {
       expect.objectContaining({
         headers: expect.objectContaining({ 'If-Match': '"classroom-plan.41:v2"' }),
       }),
+    )
+  })
+
+  it('reads confirmed classroom history for one enrollment', async () => {
+    const fetchImplementation = vi.fn(() => Promise.resolve(response(assignmentHistoryFixture)))
+    const client = createClassroomClient(runtime, { fetchImplementation })
+
+    const result = await client.getAssignmentHistory(
+      'event-41',
+      'classroom-plan.41',
+      'enrollment-anna',
+    )
+
+    expect(result.items[0]?.classroomName).toBe('202')
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      '/staff/api/v1/in-person-events/event-41/classroom-assignment-plan/classroom-plan.41/students/enrollment-anna/history',
+      expect.objectContaining({ method: 'GET' }),
     )
   })
 })

@@ -93,6 +93,7 @@ function AssignmentEditor({
     groupId: string
     classroomId: string
   } | null>(null)
+  const [historyStudentName, setHistoryStudentName] = useState<string | null>(null)
 
   const groups: ClassroomGroupOption[] = plan.groups.map((group) => ({
     id: group.groupLessonPublicId,
@@ -194,6 +195,13 @@ function AssignmentEditor({
       await onChanged()
     },
   })
+  const historyMutation = useMutation({
+    mutationFn: (enrollmentPublicId: string) => {
+      if (currentPlan === null) throw new Error('Assignment plan is not available')
+      return client.getAssignmentHistory(eventPublicId, currentPlan.publicId, enrollmentPublicId)
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
 
   const saveDraft = (next: Record<string, string>, nextGroupChanges: ReadonlySet<string>) => {
     try {
@@ -282,6 +290,57 @@ function AssignmentEditor({
           </AlertContent>
         </Alert>
       ) : null}
+      {historyStudentName ? (
+        <section className="space-y-2 rounded-md border border-border bg-surface p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="text-label font-semibold text-foreground">
+                История аудиторий: {historyStudentName}
+              </h3>
+              <p className="text-caption text-muted-foreground">
+                Только подтверждённые планы прошлых и текущего очных занятий.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setHistoryStudentName(null)
+                historyMutation.reset()
+              }}
+              size="xs"
+              type="button"
+              variant="ghost"
+            >
+              Закрыть
+            </Button>
+          </div>
+          {historyMutation.isPending ? (
+            <p className="text-small text-muted-foreground">Загружаем историю…</p>
+          ) : historyMutation.error ? (
+            <p className="text-small text-status-danger-foreground">
+              {describeError(historyMutation.error)}
+            </p>
+          ) : historyMutation.data?.items.length ? (
+            <ul className="divide-y divide-border">
+              {historyMutation.data.items.map((item) => (
+                <li
+                  className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-1.5 text-small"
+                  key={item.planPublicId}
+                >
+                  <span className="font-medium text-foreground">
+                    {item.eventName} · {item.classroomName}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {item.courseName} · {item.groupName} ·{' '}
+                    {new Date(item.startsAt).toLocaleDateString('ru-RU')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-small text-muted-foreground">Подтверждённых назначений пока нет.</p>
+          )}
+        </section>
+      ) : null}
       <ClassroomStudentPlanner
         groups={groups}
         incidents={incidents}
@@ -292,6 +351,12 @@ function AssignmentEditor({
         onRequestGroupChange={(studentId, groupId, classroomId) =>
           setGroupChangeRequested({ studentId, groupId, classroomId })
         }
+        onShowHistory={(studentId) => {
+          const student = students.find((item) => item.id === studentId)
+          if (student === undefined || currentPlan === null) return
+          setHistoryStudentName(student.name)
+          historyMutation.mutate(studentId)
+        }}
         pending={mutation.isPending}
         rooms={rooms}
         state={currentPlan?.state ?? 'draft'}

@@ -254,6 +254,35 @@ export const classroomAssignmentPlanResponseSchema = z
   .strict()
 export type ClassroomAssignmentPlanResponse = z.infer<typeof classroomAssignmentPlanResponseSchema>
 
+export const classroomAssignmentHistoryItemSchema = z
+  .object({
+    eventPublicId: publicIdSchema,
+    eventName: z.string().trim().min(1),
+    startsAt: z.iso.datetime(),
+    planPublicId: publicIdSchema,
+    confirmedAt: z.iso.datetime(),
+    classroomPublicId: publicIdSchema,
+    classroomName: z.string().trim().min(1).max(200),
+    coursePublicId: publicIdSchema,
+    courseName: z.string().trim().min(1),
+    groupPublicId: publicIdSchema,
+    groupName: z.string().trim().min(1),
+    groupLessonPublicId: publicIdSchema,
+  })
+  .strict()
+export type ClassroomAssignmentHistoryItem = z.infer<typeof classroomAssignmentHistoryItemSchema>
+
+export const classroomAssignmentHistoryResponseSchema = z
+  .object({
+    schemaVersion: classroomContractVersionSchema,
+    items: z.array(classroomAssignmentHistoryItemSchema),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type ClassroomAssignmentHistoryResponse = z.infer<
+  typeof classroomAssignmentHistoryResponseSchema
+>
+
 export const recalculateClassroomAssignmentPlanRequestSchema =
   materializeClassroomLayoutRequestSchema
 export type RecalculateClassroomAssignmentPlanRequest = z.infer<
@@ -310,5 +339,14 @@ export const classroomQueryKeys = {
     ...classroomQueryKeys.all(principal),
     'assignment-plan',
     publicIdSchema.parse(eventPublicId),
+  ],
+  assignmentHistory: (
+    principal: PrincipalQueryScope,
+    eventPublicId: string,
+    enrollmentPublicId: string,
+  ) => [
+    ...classroomQueryKeys.assignmentPlan(principal, eventPublicId),
+    'history',
+    publicIdSchema.parse(enrollmentPublicId),
   ],
 } as const

@@ -2,6 +2,7 @@ import {
   ApiResponseError,
   apiErrorSchema,
   changeClassroomStatusRequestSchema,
+  classroomAssignmentHistoryResponseSchema,
   classroomAssignmentPlanEtag,
   classroomAssignmentPlanResponseSchema,
   classroomEtag,
@@ -22,6 +23,7 @@ import {
   updateClassroomAssignmentPlanRequestSchema,
   type ChangeClassroomStatusRequest,
   type Classroom,
+  type ClassroomAssignmentHistoryResponse,
   type ClassroomAssignmentPlanResponse,
   type ClassroomListQuery,
   type ClassroomListResponse,
@@ -96,6 +98,12 @@ export interface ClassroomClient {
     eventPublicId: string,
     options?: ClassroomRequestOptions,
   ): Promise<ClassroomAssignmentPlanResponse>
+  getAssignmentHistory(
+    eventPublicId: string,
+    planPublicId: string,
+    enrollmentPublicId: string,
+    options?: ClassroomRequestOptions,
+  ): Promise<ClassroomAssignmentHistoryResponse>
   recalculateAssignmentPlan(
     eventPublicId: string,
     plan: { publicId: string; version: number } | null,
@@ -301,6 +309,24 @@ class BrowserClassroomClient implements ClassroomClient {
       options,
       200,
       (payload) => classroomAssignmentPlanResponseSchema.parse(payload),
+    )
+  }
+
+  async getAssignmentHistory(
+    eventPublicId: string,
+    planPublicId: string,
+    enrollmentPublicId: string,
+    options: ClassroomRequestOptions = {},
+  ): Promise<ClassroomAssignmentHistoryResponse> {
+    const eventId = publicIdSchema.parse(eventPublicId)
+    const planId = publicIdSchema.parse(planPublicId)
+    const enrollmentId = publicIdSchema.parse(enrollmentPublicId)
+    return this.#request(
+      `/in-person-events/${encodeURIComponent(eventId)}/classroom-assignment-plan/${encodeURIComponent(planId)}/students/${encodeURIComponent(enrollmentId)}/history`,
+      { method: 'GET' },
+      options,
+      200,
+      (payload) => classroomAssignmentHistoryResponseSchema.parse(payload),
     )
   }
 

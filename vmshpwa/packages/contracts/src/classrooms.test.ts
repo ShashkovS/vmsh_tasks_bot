@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import fixture from '../fixtures/classrooms/catalog.v1.json'
 import assignmentFixture from '../fixtures/classrooms/assignment-plan.v1.json'
+import assignmentHistoryFixture from '../fixtures/classrooms/assignment-history.v1.json'
 import layoutFixture from '../fixtures/classrooms/layout.v1.json'
 import {
   classroomAssignmentPlanEtag,
   classroomAssignmentPlanResponseSchema,
+  classroomAssignmentHistoryResponseSchema,
   classroomEtag,
   classroomLayoutEtag,
   classroomLayoutResponseSchema,
@@ -127,6 +129,11 @@ describe('classroom assignment contracts', () => {
     const plan = response.assignmentPlan.plan
     if (plan === null) throw new Error('Fixture must contain a draft plan')
     expect(classroomAssignmentPlanEtag(plan)).toBe('"classroom-plan.41:v2"')
+  })
+
+  it('validates the confirmed assignment-history fixture', () => {
+    const response = classroomAssignmentHistoryResponseSchema.parse(assignmentHistoryFixture)
+    expect(response.items[0]?.classroomName).toBe('202')
   })
 
   it('accepts an event with no generated plan', () => {

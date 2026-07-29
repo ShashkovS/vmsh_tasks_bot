@@ -147,8 +147,16 @@ test('Phase 7: classroom student edits survive reload until explicit confirmatio
     webkit: 'classroom-e2e-firefox',
     firefox: 'classroom-e2e-firefox',
   }
+  const targetRoomNameByProject: Record<string, string> = {
+    chromium: '202 E2E webkit',
+    webkit: '203 E2E firefox',
+    firefox: '203 E2E firefox',
+  }
   const targetRoom = targetRoomByProject[project]
-  if (targetRoom === undefined) throw new Error(`Unknown Playwright project: ${project}`)
+  const targetRoomName = targetRoomNameByProject[project]
+  if (targetRoom === undefined || targetRoomName === undefined) {
+    throw new Error(`Unknown Playwright project: ${project}`)
+  }
   const studentName = `Тестов ${project} Ученик`
 
   await loginThroughUi(
@@ -191,4 +199,14 @@ test('Phase 7: classroom student edits survive reload until explicit confirmatio
   expect((await confirmResponse).status()).toBe(200)
   await expect(page.getByText('Подтверждено')).toBeVisible()
   await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom)
+
+  const historyResponse = page.waitForResponse((response) =>
+    new URL(response.url()).pathname.endsWith('/history'),
+  )
+  await page.getByRole('button', { name: `История аудиторий: ${studentName}` }).click()
+  expect((await historyResponse).status()).toBe(200)
+  const history = page
+    .getByRole('heading', { name: `История аудиторий: ${studentName}` })
+    .locator('xpath=ancestor::section[1]')
+  await expect(history).toContainText(targetRoomName)
 })
