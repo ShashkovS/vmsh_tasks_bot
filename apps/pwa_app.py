@@ -63,6 +63,7 @@ from apps.pwa_api.support_routes import (
     SupportInvalidator,
     support_routes,
 )
+from apps.pwa_api.telegram_binding_routes import telegram_binding_routes
 from apps.pwa_api.websocket_sessions import (
     SessionRevalidationStatus,
     WebSocketSessionAlreadyClosedError,
@@ -1332,6 +1333,7 @@ def configure(
         app.add_routes(classroom_delivery_routes)
         app.add_routes(notification_routes)
         app.add_routes(push_subscription_routes)
+        app.add_routes(telegram_binding_routes)
 
         async def invalidate_classroom_assignments(
             student_account_public_ids: tuple[str, ...],

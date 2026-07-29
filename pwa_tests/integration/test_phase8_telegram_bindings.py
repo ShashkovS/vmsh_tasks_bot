@@ -1,0 +1,223 @@
+"""Phase-8 proof for course/group Telegram binding ownership."""
+
+from __future__ import annotations
+
+import sqlite3
+
+import pytest
+
+from db_methods.pwa.telegram_bindings import set_binding_status
+from models.pwa.telegram_bindings import create_binding, effective_bindings
+from pwa_tests.integration.test_classroom_catalog_http_api import (
+    _cookies,
+    _headers,
+)
+from pwa_tests.integration.test_phase8_notification_core import (
+    _apply,
+    _migrations,
+    _rollback,
+)
+
+
+MIGRATION_ID = "0066.pwa_telegram_bindings"
+NOW = "2026-10-05T12:00:00.000000Z"
+pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
+
+
+def test_telegram_binding_migration_up_down_up(tmp_path):
+    database_path = tmp_path / "telegram-bindings.sqlite3"
+    migrations = {item.id: item for item in _migrations()}
+    assert {item.id for item in migrations[MIGRATION_ID].depends} == {
+        "0065.pwa_notification_deliveries"
+    }
+    _apply(database_path, set(migrations) - {MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM sqlite_schema "
+                "WHERE name LIKE 'telegram_bindings%'"
+            ).fetchone()[0]
+            == 0
+        )
+    _apply(database_path, {MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM sqlite_schema "
+                "WHERE name LIKE 'telegram_bindings%'"
+            ).fetchone()[0]
+            == 4
+        )
+    _rollback(database_path, {MIGRATION_ID})
+    with sqlite3.connect(database_path) as connection:
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM sqlite_schema "
+                "WHERE name LIKE 'telegram_bindings%'"
+            ).fetchone()[0]
+            == 0
+        )
+    _apply(database_path, {MIGRATION_ID})
+
+
+@pytest.mark.asyncio
+async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
+    teacher = await classroom_http.client.get(
+        "/staff/api/v1/telegram-bindings",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    request = {
+        "schemaVersion": 1,
+        "ownerType": "course",
+        "ownerId": "classroom-layout-course",
+        "purpose": "news_source",
+        "chatId": -100179000001,
+        "messageThreadId": None,
+        "titleCached": "Новости математики",
+    }
+    created = await classroom_http.client.post(
+        "/staff/api/v1/telegram-bindings",
+        json=request,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    item = (await created.json())["binding"]
+    assert item == {
+        "publicId": item["publicId"],
+        "ownerType": "course",
+        "ownerId": "classroom-layout-course",
+        "ownerName": "Математика",
+        "courseId": "classroom-layout-course",
+        "courseName": "Математика",
+        "purpose": "news_source",
+        "chatId": -100179000001,
+        "messageThreadId": None,
+        "titleCached": "Новости математики",
+        "status": "draft",
+        "verifiedAt": None,
+        "createdAt": item["createdAt"],
+        "updatedAt": item["updatedAt"],
+        "version": 1,
+    }
+
+    duplicate = await classroom_http.client.post(
+        "/staff/api/v1/telegram-bindings",
+        json=request,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert duplicate.status == 409, await duplicate.text()
+    assert (await duplicate.json())["error"]["code"] == "telegram_binding_duplicate"
+
+    listed = await classroom_http.client.get(
+        "/staff/api/v1/telegram-bindings?courseId=classroom-layout-course",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert listed.status == 200
+    assert [row["publicId"] for row in (await listed.json())["items"]] == [
+        item["publicId"]
+    ]
+
+    stale = await classroom_http.client.put(
+        f"/staff/api/v1/telegram-bindings/{item['publicId']}",
+        json={**request, "titleCached": "Другое название"},
+        headers=_headers(unsafe=True, if_match=f'"{item["publicId"]}:v2"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert stale.status == 409
+
+    updated = await classroom_http.client.put(
+        f"/staff/api/v1/telegram-bindings/{item['publicId']}",
+        json={**request, "titleCached": "  Канал курса  "},
+        headers=_headers(unsafe=True, if_match=f'"{item["publicId"]}:v1"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert updated.status == 200, await updated.text()
+    assert (await updated.json())["binding"]["titleCached"] == "Канал курса"
+
+    disabled = await classroom_http.client.post(
+        f"/staff/api/v1/telegram-bindings/{item['publicId']}/disable",
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True, if_match=f'"{item["publicId"]}:v2"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert disabled.status == 200
+    assert (await disabled.json())["binding"]["status"] == "disabled"
+
+
+@pytest.mark.asyncio
+async def test_news_adds_course_and_group_while_material_target_overrides(
+    classroom_http,
+):
+    def seed(connection):
+        course_id = connection.execute(
+            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+        ).fetchone()["id"]
+        group_id = connection.execute(
+            "SELECT group_id FROM groups WHERE public_id = 'classroom-layout-group'"
+        ).fetchone()["group_id"]
+        rows = []
+        for suffix, owner_type, owner_id, purpose, chat_id in (
+            ("course-news", "course", "classroom-layout-course", "news_source", -101),
+            ("group-news", "group", "classroom-layout-group", "news_source", -102),
+            (
+                "course-materials",
+                "course",
+                "classroom-layout-course",
+                "materials_target",
+                -103,
+            ),
+            (
+                "group-materials",
+                "group",
+                "classroom-layout-group",
+                "materials_target",
+                -104,
+            ),
+        ):
+            row = create_binding(
+                connection,
+                public_id=f"telegram-binding.{suffix}",
+                owner_type=owner_type,
+                owner_public_id=owner_id,
+                purpose=purpose,
+                chat_id=chat_id,
+                message_thread_id=None,
+                title_cached=suffix,
+                actor_user_id=958_001,
+                now=NOW,
+            )
+            rows.append(row)
+            set_binding_status(
+                connection,
+                public_id=str(row["public_id"]),
+                expected_version=1,
+                status="verified",
+                verified_at=NOW,
+                title_cached=None,
+                actor_user_id=958_001,
+                now=NOW,
+            )
+        news = effective_bindings(
+            connection,
+            course_id=course_id,
+            group_id=group_id,
+            purpose="news_source",
+        )
+        materials = effective_bindings(
+            connection,
+            course_id=course_id,
+            group_id=group_id,
+            purpose="materials_target",
+        )
+        return news, materials
+
+    news, materials = classroom_http.factory.run_write(seed)
+    assert [item["chat_id"] for item in news] == [-101, -102]
+    assert [item["chat_id"] for item in materials] == [-104]
