@@ -1230,6 +1230,7 @@ class PwaWrittenReviewQueueRepository:
         student_reaction_event_public_id_factory: Callable[[], str] = lambda: (
             f"review-student-reaction-event-{uuid.uuid4()}"
         ),
+        completion_checkpoint: Callable[[str], None] | None = None,
     ) -> None:
         self._factory = connection_factory
         self._clock = clock
@@ -1244,6 +1245,9 @@ class PwaWrittenReviewQueueRepository:
         self._student_reaction_event_public_id_factory = (
             student_reaction_event_public_id_factory
         )
+        # A no-op in production. Tests inject a raising observer to prove that
+        # every authoritative completion write remains inside one transaction.
+        self._completion_checkpoint = completion_checkpoint or (lambda _name: None)
 
     async def claim(
         self,
@@ -1989,6 +1993,7 @@ class PwaWrittenReviewQueueRepository:
                     ),
                 ).fetchone()["id"]
             )
+            self._completion_checkpoint("result")
 
             comment_entry_id: int | None = None
             comment_public_id: str | None = None
@@ -2016,6 +2021,7 @@ class PwaWrittenReviewQueueRepository:
                         ),
                     ).fetchone()["id"]
                 )
+            self._completion_checkpoint("comment")
 
             review_public_id = self._review_public_id_factory().strip()
             event_public_id = self._event_public_id_factory().strip()
@@ -2053,6 +2059,7 @@ class PwaWrittenReviewQueueRepository:
                     ),
                 ).fetchone()["id"]
             )
+            self._completion_checkpoint("review")
 
             internal_reaction_state: ReviewInternalReactionState | None = None
             if command.internal_reaction_id is not None:
@@ -2096,6 +2103,7 @@ class PwaWrittenReviewQueueRepository:
                     editable_until=editable_until,
                     updated_at=now,
                 )
+            self._completion_checkpoint("internal-reaction")
 
             evidence_public_ids: list[str] = []
             evidence_attachments_by_public_id: dict[str, int] = {}
@@ -2140,6 +2148,7 @@ class PwaWrittenReviewQueueRepository:
                     evidence_attachments_by_public_id[str(attachment["public_id"])] = (
                         int(attachment["id"])
                     )
+            self._completion_checkpoint("evidence")
 
             annotation_receipts: list[ReviewAnnotationReceipt] = []
             for annotation in command.annotations:
@@ -2176,6 +2185,7 @@ class PwaWrittenReviewQueueRepository:
                         mark_count=len(annotation.marks),
                     )
                 )
+            self._completion_checkpoint("annotations")
 
             target_status = (
                 "accepted"
@@ -2198,6 +2208,7 @@ class PwaWrittenReviewQueueRepository:
                         thread_id,
                     ),
                 )
+            self._completion_checkpoint("threads")
 
             queue_ids = [int(row["id"]) for row in queue_rows]
             placeholders = ",".join("?" for _ in queue_ids)
@@ -2205,6 +2216,7 @@ class PwaWrittenReviewQueueRepository:
                 f"DELETE FROM written_tasks_queue WHERE id IN ({placeholders})",
                 queue_ids,
             )
+            self._completion_checkpoint("queue")
             connection.execute(
                 "INSERT INTO submission_review_events "
                 "(public_id, review_id, event_kind, payload_json, created_at) "
@@ -2228,6 +2240,7 @@ class PwaWrittenReviewQueueRepository:
                     completed_at,
                 ),
             )
+            self._completion_checkpoint("event")
             owner_account_public_ids, family_account_public_ids = (
                 _review_recipient_account_public_ids(
                     connection,

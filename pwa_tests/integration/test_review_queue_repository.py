@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import itertools
+import multiprocessing
+import os
 import sqlite3
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -13,6 +16,7 @@ import pytest
 from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.reviews import (
     CompleteReviewCommand,
+    CompleteReviewReceipt,
     PwaWrittenReviewQueueRepository,
     ReviewAnnotationManifest,
     ReviewAnnotationMark,
@@ -32,6 +36,7 @@ from db_methods.pwa.reviews import (
     ReviewLeaseConflict,
     ReviewLeaseLost,
     ReviewQueueForbidden,
+    ReviewQueueNotFound,
     ReviewStaffScope,
     ReviewThreadChanged,
 )
@@ -70,6 +75,35 @@ class ReviewQueueFixture:
 ALL_GROUPS_SCOPE = ReviewStaffScope(
     group_public_ids=frozenset({"review-group-a", "review-group-b"})
 )
+
+
+class _SyntheticCompletionFailure(RuntimeError):
+    pass
+
+
+def _claim_review_in_subprocess(
+    database_path: str,
+    queue_public_id: str,
+    teacher_user_id: int,
+) -> str:
+    """Exercise a real independent interpreter against the shared WAL file."""
+
+    repository = PwaWrittenReviewQueueRepository(
+        PwaConnectionFactory(database_path),
+        clock=lambda: NOW,
+        claim_token_factory=lambda: f"process-claim-{os.getpid()}",
+    )
+    try:
+        asyncio.run(
+            repository.claim(
+                queue_public_id=queue_public_id,
+                teacher_user_id=teacher_user_id,
+                scope=ALL_GROUPS_SCOPE,
+            )
+        )
+    except ReviewLeaseConflict:
+        return "conflict"
+    return "claimed"
 
 
 @pytest.fixture()
@@ -1268,6 +1302,216 @@ async def test_concurrent_staff_claims_have_exactly_one_winner(review_queue_fixt
     assert (
         len([result for result in outcomes if isinstance(result, ReviewLeaseConflict)])
         == 1
+    )
+
+
+def test_separate_processes_have_exactly_one_claim_winner(review_queue_fixture):
+    fixture = review_queue_fixture
+    context = multiprocessing.get_context("spawn")
+    with ProcessPoolExecutor(max_workers=2, mp_context=context) as executor:
+        futures = [
+            executor.submit(
+                _claim_review_in_subprocess,
+                str(fixture.factory.database_path),
+                fixture.queue_public_ids[0],
+                teacher_user_id,
+            )
+            for teacher_user_id in (TEACHER_ONE_ID, TEACHER_TWO_ID)
+        ]
+        outcomes = [future.result(timeout=20) for future in futures]
+
+    assert sorted(outcomes) == ["claimed", "conflict"]
+    stored = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT count(distinct claim_token) AS tokens, "
+            "count(distinct teacher_id) AS teachers, min(cur_status) AS status "
+            "FROM written_tasks_queue"
+        ).fetchone()
+    )
+    assert stored == {"tokens": 1, "teachers": 1, "status": 1}
+
+
+@pytest.mark.asyncio
+async def test_expired_lease_cannot_complete_and_another_teacher_recovers(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    fixture.clock.value += timedelta(minutes=31)
+
+    with pytest.raises(ReviewLeaseLost):
+        await fixture.repository.complete(_complete_command(lease))
+
+    counts = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT (SELECT count(*) FROM submission_reviews) AS reviews, "
+            "(SELECT count(*) FROM results) AS results, "
+            "(SELECT count(*) FROM written_tasks_queue) AS queued"
+        ).fetchone()
+    )
+    assert counts == {"reviews": 0, "results": 0, "queued": 2}
+
+    recovered = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_TWO_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    assert recovered.teacher_user_id == TEACHER_TWO_ID
+    assert recovered.claim_token != lease.claim_token
+
+
+@pytest.mark.asyncio
+async def test_concurrent_completion_has_one_commit_and_no_duplicate_result(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    outcomes = await asyncio.gather(
+        fixture.repository.complete(
+            _complete_command(lease, idempotency_key="review-race-a")
+        ),
+        fixture.repository.complete(
+            _complete_command(lease, idempotency_key="review-race-b")
+        ),
+        return_exceptions=True,
+    )
+
+    assert (
+        len(
+            [result for result in outcomes if isinstance(result, CompleteReviewReceipt)]
+        )
+        == 1
+    )
+    assert (
+        len([result for result in outcomes if isinstance(result, ReviewQueueNotFound)])
+        == 1
+    )
+    counts = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT (SELECT count(*) FROM submission_reviews) AS reviews, "
+            "(SELECT count(*) FROM results) AS results, "
+            "(SELECT count(*) FROM submission_review_evidence_entries) AS evidence, "
+            "(SELECT count(*) FROM submission_review_events) AS events, "
+            "(SELECT count(*) FROM written_tasks_queue) AS queued"
+        ).fetchone()
+    )
+    assert counts == {
+        "reviews": 1,
+        "results": 1,
+        "evidence": 2,
+        "events": 1,
+        "queued": 0,
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "failed_checkpoint",
+    (
+        "result",
+        "comment",
+        "review",
+        "internal-reaction",
+        "evidence",
+        "annotations",
+        "threads",
+        "queue",
+        "event",
+    ),
+)
+async def test_completion_fault_at_every_write_boundary_rolls_back_atomically(
+    review_queue_fixture,
+    failed_checkpoint,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+
+    def checkpoint(name: str) -> None:
+        if name == failed_checkpoint:
+            raise _SyntheticCompletionFailure(name)
+
+    repository = PwaWrittenReviewQueueRepository(
+        fixture.factory,
+        clock=fixture.clock,
+        review_public_id_factory=lambda: "review-fault-completed",
+        annotation_public_id_factory=lambda: "review-fault-annotation",
+        comment_public_id_factory=lambda: "review-fault-comment",
+        event_public_id_factory=lambda: "review-fault-event",
+        internal_reaction_event_public_id_factory=lambda: (
+            "review-fault-internal-reaction-event"
+        ),
+        completion_checkpoint=checkpoint,
+    )
+
+    with pytest.raises(_SyntheticCompletionFailure, match=failed_checkpoint):
+        await repository.complete(
+            _complete_command(
+                lease,
+                annotations=(_annotation_manifest(),),
+                internal_reaction_id=100,
+            )
+        )
+
+    state = fixture.factory.run_read(
+        lambda connection: {
+            "counts": connection.execute(
+                "SELECT (SELECT count(*) FROM results) AS results, "
+                "(SELECT count(*) FROM submission_reviews) AS reviews, "
+                "(SELECT count(*) FROM submission_review_evidence_entries) AS evidence, "
+                "(SELECT count(*) FROM submission_review_evidence_attachments) AS attachments, "
+                "(SELECT count(*) FROM submission_review_annotations) AS annotations, "
+                "(SELECT count(*) FROM submission_review_internal_reactions) AS reactions, "
+                "(SELECT count(*) FROM submission_review_internal_reaction_events) "
+                "AS reaction_events, "
+                "(SELECT count(*) FROM submission_review_events) AS events, "
+                "(SELECT count(*) FROM submission_entries "
+                "WHERE public_id = 'review-fault-comment') AS comments"
+            ).fetchone(),
+            "queue": connection.execute(
+                "SELECT cur_status, claim_token, lease_version "
+                "FROM written_tasks_queue ORDER BY public_id"
+            ).fetchall(),
+            "threads": connection.execute(
+                "SELECT status, version FROM submission_threads ORDER BY public_id"
+            ).fetchall(),
+        }
+    )
+    assert state["counts"] == {
+        "results": 0,
+        "reviews": 0,
+        "evidence": 0,
+        "attachments": 0,
+        "annotations": 0,
+        "reactions": 0,
+        "reaction_events": 0,
+        "events": 0,
+        "comments": 0,
+    }
+    assert state["queue"] == [
+        {"cur_status": 1, "claim_token": lease.claim_token, "lease_version": 1},
+        {"cur_status": 1, "claim_token": lease.claim_token, "lease_version": 1},
+    ]
+    assert state["threads"] == [
+        {"status": "awaiting_review", "version": 2},
+        {"status": "awaiting_review", "version": 2},
+    ]
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE media_assets SET source_filename = 'after-rollback.webp' "
+            "WHERE public_id = 'review-asset-test-1'"
+        )
     )
 
 
