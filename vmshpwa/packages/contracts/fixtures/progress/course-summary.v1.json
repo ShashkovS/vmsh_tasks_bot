@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "response": {
+    "courseId": "course-fixture-alpha",
+    "summary": {
+      "attempted": 5,
+      "accepted": 3,
+      "partial": 1,
+      "needsWork": 1
+    },
+    "lessons": [
+      {
+        "lessonNumber": 40,
+        "attempted": 2,
+        "accepted": 1,
+        "partial": 1,
+        "needsWork": 0
+      },
+      {
+        "lessonNumber": 41,
+        "attempted": 3,
+        "accepted": 2,
+        "partial": 0,
+        "needsWork": 1
+      }
+    ],
+    "activity": [
+      { "date": "2026-09-15", "problemCount": 2 },
+      { "date": "2026-09-16", "problemCount": 3 }
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
-import { StudentProgressPage } from '../pages'
+import { StudentProgressPage } from '../student-progress-page'
 
 const searchSchema = z.object({
   course: z.string().trim().min(1).optional(),
@@ -10,5 +10,18 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/progress')({
   validateSearch: searchSchema,
-  component: StudentProgressPage,
+  component: StudentProgressRoute,
 })
+
+function StudentProgressRoute() {
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
+  return (
+    <StudentProgressPage
+      {...(search.course === undefined ? {} : { courseId: search.course })}
+      onCourseChange={(course) =>
+        void navigate({ search: (previous) => ({ ...previous, course }), replace: true })
+      }
+    />
+  )
+}

@@ -84,6 +84,7 @@ function courseClient(problemsRequest: StudentCourseClient['problems']): Student
     home: unavailable,
     list: unavailable,
     enrollment: unavailable,
+    progress: unavailable,
     lessons: unavailable,
     lesson: unavailable,
     problems: problemsRequest,

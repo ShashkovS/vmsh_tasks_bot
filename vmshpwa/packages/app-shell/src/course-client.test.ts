@@ -4,6 +4,7 @@ import studentAccessFixture from '../../contracts/fixtures/courses/student-acces
 import studentHomeFixture from '../../contracts/fixtures/courses/student-home.v1.json'
 import studentLessonsFixture from '../../contracts/fixtures/courses/student-lessons.v1.json'
 import studentProblemsFixture from '../../contracts/fixtures/courses/student-problems.v1.json'
+import courseProgressFixture from '../../contracts/fixtures/progress/course-summary.v1.json'
 import { runtimeBoundaryByAudience, type RuntimeConfig } from '@vmsh/contracts'
 
 import { CourseProtocolError, createStudentCourseClient } from './course-client'
@@ -69,6 +70,20 @@ describe('Phase-3 Student course client', () => {
     await expect(client.enrollment(enrollment.course.courseId)).resolves.toEqual(enrollment)
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
       `/student/api/v1/courses/${enrollment.course.courseId}/enrollment`,
+    )
+  })
+
+  it('loads personal progress for one explicit course', async () => {
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(jsonResponse(courseProgressFixture.response)),
+    )
+    const client = createStudentCourseClient(runtime(), { fetchImplementation })
+
+    await expect(client.progress('course-fixture-alpha')).resolves.toEqual(
+      courseProgressFixture.response,
+    )
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/student/api/v1/courses/course-fixture-alpha/progress',
     )
   })
 
@@ -151,6 +166,7 @@ describe('Phase-3 Student course client', () => {
     const client = createStudentCourseClient(runtime(), { fetchImplementation })
 
     await expect(client.enrollment('../another-course')).rejects.toThrow()
+    await expect(client.progress('../another-course')).rejects.toThrow()
     await expect(
       client.lessons('course-fixture-alpha', { cursor: '../unsafe-cursor' }),
     ).rejects.toThrow()

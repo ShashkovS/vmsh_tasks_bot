@@ -26,6 +26,7 @@ import {
   studentProblemRevealSchema,
   testAnswerInputResponseSchema,
   type CourseEnrollment,
+  type CourseProgressResponse,
   type PublishedContent,
   type StudentCourseAccessResponse,
   type StudentHomeResponse,
@@ -191,6 +192,13 @@ export function createOfflineStudentCourseClient(
         version: (payload) => String(payload.version),
         isNetworkError: (error) => error instanceof CourseNetworkError,
       })
+    },
+
+    progress(
+      courseId: string,
+      options: CourseRequestOptions = {},
+    ): Promise<CourseProgressResponse> {
+      return online.progress(courseId, options)
     },
 
     lessons(

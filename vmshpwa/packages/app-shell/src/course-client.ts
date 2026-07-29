@@ -3,16 +3,19 @@ import {
   ApiResponseError,
   apiErrorSchema,
   courseEnrollmentSchema,
+  courseProgressResponseSchema,
   courseQueryKeys,
   lessonCursorSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
+  progressQueryKey,
   studentHomeResponseSchema,
   studentLessonListResponseSchema,
   studentProblemListResponseSchema,
   studentLessonSummarySchema,
   studentCourseAccessResponseSchema,
   type CourseEnrollment,
+  type CourseProgressResponse,
   type LessonCursor,
   type PrincipalQueryScope,
   type RuntimeConfig,
@@ -48,6 +51,7 @@ export interface StudentCourseClient {
   home(options?: CourseRequestOptions): Promise<StudentHomeResponse>
   list(options?: CourseRequestOptions): Promise<StudentCourseAccessResponse>
   enrollment(courseId: string, options?: CourseRequestOptions): Promise<CourseEnrollment>
+  progress(courseId: string, options?: CourseRequestOptions): Promise<CourseProgressResponse>
   lessons(courseId: string, options?: StudentLessonListOptions): Promise<StudentLessonListResponse>
   lesson(
     courseId: string,
@@ -112,6 +116,18 @@ class BrowserStudentCourseClient implements StudentCourseClient {
       `/courses/${encodeURIComponent(parsedCourseId)}/enrollment`,
       options,
       courseEnrollmentSchema,
+    )
+  }
+
+  async progress(
+    courseId: string,
+    options: CourseRequestOptions = {},
+  ): Promise<CourseProgressResponse> {
+    const parsedCourseId = publicIdSchema.parse(courseId)
+    return this.#request(
+      `/courses/${encodeURIComponent(parsedCourseId)}/progress`,
+      options,
+      courseProgressResponseSchema,
     )
   }
 
@@ -260,6 +276,19 @@ export function useStudentCourseEnrollmentQuery(
   return useQuery({
     queryKey: courseQueryKeys.enrollment(principal, courseId),
     queryFn: ({ signal }) => client.enrollment(courseId, { signal }),
+  })
+}
+
+export function useStudentCourseProgressQuery(
+  client: Pick<StudentCourseClient, 'progress'>,
+  principal: PrincipalQueryScope,
+  courseId: string,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: progressQueryKey(principal, courseId),
+    queryFn: ({ signal }) => client.progress(courseId, { signal }),
+    enabled,
   })
 }
 
