@@ -18,7 +18,10 @@ from db_methods.pwa.support import (
     SupportEntryRecord,
     SupportForbidden,
     SupportIdempotencyConflict,
+    SupportNotFound,
+    SupportThreadPage,
     SupportThreadRecord,
+    SupportThreadSummaryRecord,
 )
 from helpers.config import Config
 from helpers.consts import USER_TYPE
@@ -95,6 +98,25 @@ class FakeSupportRepository:
                 ),
             ),
         )
+        self.summary = SupportThreadSummaryRecord(
+            thread_public_id=self.record.thread_public_id,
+            kind=self.record.kind,
+            student_public_id=self.record.student_public_id,
+            student_display_name=self.record.student_display_name,
+            course_public_id=self.record.course_public_id,
+            course_name=self.record.course_name,
+            group_public_id=self.record.group_public_id,
+            group_name=self.record.group_name,
+            group_lesson_public_id=self.record.group_lesson_public_id,
+            problem_public_id=self.record.problem_public_id,
+            problem_title=self.record.problem_title,
+            latest_entry_at=self.record.latest_entry_at,
+            latest_author_kind="student",
+            latest_text_excerpt="Почему эти случаи одинаковые?",
+            reply_state="awaiting_staff",
+            entry_count=1,
+            version=self.record.version,
+        )
 
     async def create_student_thread(self, command):
         self.calls.append(command)
@@ -133,6 +155,27 @@ class FakeSupportRepository:
         ):
             raise SupportForbidden("outside scope")
         return self.record
+
+    async def list_student_threads(self, *, student_user_id, cursor=None, page_size=50):
+        self.calls.append(("student-list", student_user_id, cursor, page_size))
+        if student_user_id != STUDENT_ID:
+            raise SupportForbidden("wrong owner")
+        if cursor == "missing-cursor":
+            raise SupportNotFound("missing cursor")
+        return SupportThreadPage(items=(self.summary,), next_cursor="support-http-next")
+
+    async def list_staff_threads(self, **query):
+        self.calls.append(("staff-list", query))
+        if not query["scope"].allows(
+            {
+                "course_public_id": self.record.course_public_id,
+                "group_public_id": self.record.group_public_id,
+            }
+        ):
+            return SupportThreadPage(items=(), next_cursor=None)
+        if query["cursor"] == "missing-cursor":
+            raise SupportNotFound("missing cursor")
+        return SupportThreadPage(items=(self.summary,), next_cursor=None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -486,6 +529,76 @@ async def test_staff_scope_and_server_owned_author_kind_are_enforced(support_htt
     assert admin_reply.status == 200
     assert fixture.repository.calls[-1].staff_user_id == ADMIN_ID
     assert fixture.repository.calls[-1].author_kind == "admin"
+
+
+@pytest.mark.asyncio
+async def test_student_list_is_owner_derived_cursor_backed_and_public_id_only(
+    support_http,
+):
+    fixture = support_http
+    response = await fixture.client.get(
+        "/student/api/v1/questions?cursor=support-http-before",
+        cookies=_cookie(fixture, "student", AuthAudience.STUDENT),
+        headers=_headers(),
+    )
+    assert response.status == 200, await response.text()
+    payload = await response.json()
+    assert payload["nextCursor"] == "support-http-next"
+    assert payload["items"][0]["replyState"] == "awaiting_staff"
+    assert payload["items"][0]["latestEntry"] == {
+        "authorKind": "student",
+        "textExcerpt": "Почему эти случаи одинаковые?",
+        "receivedAt": "2026-10-05T12:00:00.000000Z",
+    }
+    assert str(STUDENT_ID) not in str(payload)
+    assert fixture.repository.calls[-1] == (
+        "student-list",
+        STUDENT_ID,
+        "support-http-before",
+        50,
+    )
+
+    invalid = await fixture.client.get(
+        "/student/api/v1/questions?cursor=../unsafe",
+        cookies=_cookie(fixture, "student", AuthAudience.STUDENT),
+        headers=_headers(),
+    )
+    assert invalid.status == 422
+
+
+@pytest.mark.asyncio
+async def test_staff_list_passes_server_scope_and_strict_inbox_filters(support_http):
+    fixture = support_http
+    response = await fixture.client.get(
+        "/staff/api/v1/questions"
+        "?state=awaiting_student&kind=general&course=support-http-course"
+        "&group=support-http-group-a&cursor=support-http-before",
+        cookies=_cookie(fixture, "teacher", AuthAudience.STAFF),
+        headers=_headers(),
+    )
+    assert response.status == 200, await response.text()
+    query = fixture.repository.calls[-1][1]
+    assert query["state"] == "awaiting_student"
+    assert query["kind"] == "general"
+    assert query["course_public_id"] == "support-http-course"
+    assert query["group_public_id"] == "support-http-group-a"
+    assert query["cursor"] == "support-http-before"
+    assert query["scope"].group_public_ids == frozenset({"support-http-group-a"})
+
+    forbidden_scope = await fixture.client.get(
+        "/staff/api/v1/questions",
+        cookies=_cookie(fixture, "partial", AuthAudience.STAFF),
+        headers=_headers(),
+    )
+    assert forbidden_scope.status == 200
+    assert (await forbidden_scope.json())["items"] == []
+
+    duplicated = await fixture.client.get(
+        "/staff/api/v1/questions?state=all&state=awaiting_staff",
+        cookies=_cookie(fixture, "teacher", AuthAudience.STAFF),
+        headers=_headers(),
+    )
+    assert duplicated.status == 422
 
 
 @pytest.mark.asyncio

@@ -25,6 +25,8 @@ from .connection import PwaConnectionFactory
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?\Z")
 SupportThreadKind = Literal["problem_question", "general", "sos"]
 SupportAuthorKind = Literal["student", "teacher", "admin", "system"]
+SupportReplyState = Literal["awaiting_staff", "awaiting_student", "activity"]
+SupportStaffListState = Literal["all", "awaiting_staff", "awaiting_student"]
 
 
 class SupportRepositoryError(RuntimeError):
@@ -154,6 +156,33 @@ class SupportThreadRecord:
     entries: tuple[SupportEntryRecord, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class SupportThreadSummaryRecord:
+    thread_public_id: str
+    kind: SupportThreadKind
+    student_public_id: str
+    student_display_name: str
+    course_public_id: str | None
+    course_name: str | None
+    group_public_id: str | None
+    group_name: str | None
+    group_lesson_public_id: str | None
+    problem_public_id: str | None
+    problem_title: str | None
+    latest_entry_at: datetime
+    latest_author_kind: SupportAuthorKind
+    latest_text_excerpt: str | None
+    reply_state: SupportReplyState
+    entry_count: int
+    version: int
+
+
+@dataclass(frozen=True, slots=True)
+class SupportThreadPage:
+    items: tuple[SupportThreadSummaryRecord, ...]
+    next_cursor: str | None
+
+
 def _validate_user_id(value: int) -> None:
     if type(value) is not int or value == 0:
         raise ValueError("user ID must be a non-zero integer")
@@ -182,6 +211,13 @@ def _validate_idempotency_key(value: str) -> None:
         or len(value) > 200
     ):
         raise ValueError("idempotency key is invalid")
+
+
+def _validate_list_page(*, cursor: str | None, page_size: int) -> None:
+    if cursor is not None:
+        _validate_public_id(cursor, "support list cursor")
+    if type(page_size) is not int or not 1 <= page_size <= 100:
+        raise ValueError("support page size must be between 1 and 100")
 
 
 def _timestamp(value: datetime) -> str:
@@ -221,6 +257,61 @@ def _payload_hash(payload: dict[str, object]) -> str:
         separators=(",", ":"),
     ).encode("utf-8")
     return hashlib.sha256(canonical).hexdigest()
+
+
+def _reply_state(author_kind: object) -> SupportReplyState:
+    if author_kind == "student":
+        return "awaiting_staff"
+    if author_kind in {"teacher", "admin"}:
+        return "awaiting_student"
+    return "activity"
+
+
+def _summary_record(row: dict[str, object]) -> SupportThreadSummaryRecord:
+    student_public_id = row["student_public_id"]
+    if not isinstance(student_public_id, str) or not student_public_id:
+        raise SupportRepositoryError("support Student has no public identity")
+    latest_author_kind = str(row["latest_author_kind"])
+    entry_count = int(row["entry_count"])
+    if entry_count < 1:
+        raise SupportRepositoryError("support thread summary has no entries")
+    return SupportThreadSummaryRecord(
+        thread_public_id=str(row["public_id"]),
+        kind=str(row["kind"]),  # type: ignore[arg-type]
+        student_public_id=student_public_id,
+        student_display_name=_display_name(row, prefix="student"),
+        course_public_id=(
+            None if row["course_public_id"] is None else str(row["course_public_id"])
+        ),
+        course_name=None if row["course_name"] is None else str(row["course_name"]),
+        group_public_id=(
+            None if row["group_public_id"] is None else str(row["group_public_id"])
+        ),
+        group_name=None if row["group_name"] is None else str(row["group_name"]),
+        group_lesson_public_id=(
+            None
+            if row["group_lesson_public_id"] is None
+            else str(row["group_lesson_public_id"])
+        ),
+        problem_public_id=(
+            None if row["problem_public_id"] is None else str(row["problem_public_id"])
+        ),
+        problem_title=(
+            None if row["problem_title"] is None else str(row["problem_title"])
+        ),
+        latest_entry_at=_parse_timestamp(
+            row["latest_entry_at"], label="support latest entry time"
+        ),
+        latest_author_kind=latest_author_kind,  # type: ignore[arg-type]
+        latest_text_excerpt=(
+            None
+            if row["latest_text_excerpt"] is None
+            else str(row["latest_text_excerpt"])
+        ),
+        reply_state=_reply_state(latest_author_kind),
+        entry_count=entry_count,
+        version=int(row["version"]),
+    )
 
 
 class PwaSupportThreadRepository:
@@ -396,6 +487,93 @@ class PwaSupportThreadRepository:
             if not scope.allows(row):
                 raise SupportForbidden("support thread is outside Staff scope")
             return self._load_thread(connection, thread_id=int(row["id"]), row=row)
+
+        return await self._factory.run_read_async(operation)
+
+    async def list_student_threads(
+        self,
+        *,
+        student_user_id: int,
+        cursor: str | None = None,
+        page_size: int = 50,
+    ) -> SupportThreadPage:
+        """Return one Student's historical threads, newest activity first."""
+
+        _validate_user_id(student_user_id)
+        _validate_list_page(cursor=cursor, page_size=page_size)
+
+        def operation(connection: sqlite3.Connection) -> SupportThreadPage:
+            rows = self._summary_rows(
+                connection,
+                where_sql="thread.student_user_id = ?",
+                parameters=(student_user_id,),
+            )
+            return self._summary_page(rows, cursor=cursor, page_size=page_size)
+
+        return await self._factory.run_read_async(operation)
+
+    async def list_staff_threads(
+        self,
+        *,
+        scope: SupportStaffScope,
+        state: SupportStaffListState = "awaiting_staff",
+        kind: SupportThreadKind | None = None,
+        course_public_id: str | None = None,
+        group_public_id: str | None = None,
+        cursor: str | None = None,
+        page_size: int = 50,
+    ) -> SupportThreadPage:
+        """Return the current Staff inbox projection without assigning threads."""
+
+        if state not in {"all", "awaiting_staff", "awaiting_student"}:
+            raise ValueError("support list state is invalid")
+        if kind is not None and kind not in {"problem_question", "general", "sos"}:
+            raise ValueError("support thread kind is invalid")
+        if course_public_id is not None:
+            _validate_public_id(course_public_id, "course")
+        if group_public_id is not None:
+            _validate_public_id(group_public_id, "group")
+        _validate_list_page(cursor=cursor, page_size=page_size)
+
+        def operation(connection: sqlite3.Connection) -> SupportThreadPage:
+            conditions: list[str] = []
+            parameters: list[object] = []
+            if not scope.global_access:
+                scope_conditions: list[str] = []
+                course_ids = sorted(scope.course_public_ids)
+                if course_ids:
+                    scope_conditions.append(
+                        f"course.public_id IN ({','.join('?' for _ in course_ids)})"
+                    )
+                    parameters.extend(course_ids)
+                group_ids = sorted(scope.group_public_ids)
+                if group_ids:
+                    scope_conditions.append(
+                        f"group_row.public_id IN ({','.join('?' for _ in group_ids)})"
+                    )
+                    parameters.extend(group_ids)
+                if not scope_conditions:
+                    return SupportThreadPage(items=(), next_cursor=None)
+                conditions.append(f"({' OR '.join(scope_conditions)})")
+            if state == "awaiting_staff":
+                conditions.append("latest_entry.author_kind = 'student'")
+            elif state == "awaiting_student":
+                conditions.append("latest_entry.author_kind IN ('teacher', 'admin')")
+            if kind is not None:
+                conditions.append("thread.kind = ?")
+                parameters.append(kind)
+            if course_public_id is not None:
+                conditions.append("course.public_id = ?")
+                parameters.append(course_public_id)
+            if group_public_id is not None:
+                conditions.append("group_row.public_id = ?")
+                parameters.append(group_public_id)
+            rows = self._summary_rows(
+                connection,
+                where_sql=" AND ".join(conditions),
+                parameters=tuple(parameters),
+            )
+            return self._summary_page(rows, cursor=cursor, page_size=page_size)
 
         return await self._factory.run_read_async(operation)
 
@@ -664,6 +842,68 @@ class PwaSupportThreadRepository:
         )
 
     @staticmethod
+    def _summary_rows(
+        connection: sqlite3.Connection,
+        *,
+        where_sql: str,
+        parameters: tuple[object, ...],
+    ) -> list[dict[str, object]]:
+        return connection.execute(
+            "SELECT thread.*, student.public_id AS student_public_id, "
+            "student.name AS student_name, student.surname AS student_surname, "
+            "group_lesson.public_id AS group_lesson_public_id, "
+            "course.public_id AS course_public_id, course.name AS course_name, "
+            "group_row.public_id AS group_public_id, "
+            "group_row.public_name AS group_name, "
+            "problem.public_id AS problem_public_id, problem.title AS problem_title, "
+            "latest_entry.author_kind AS latest_author_kind, "
+            "substr(latest_entry.text, 1, 280) AS latest_text_excerpt, "
+            "(SELECT count(*) FROM support_entries AS counted_entry "
+            "WHERE counted_entry.thread_id = thread.id) AS entry_count "
+            "FROM support_threads AS thread "
+            "JOIN users AS student ON student.id = thread.student_user_id "
+            "LEFT JOIN group_lessons AS group_lesson "
+            "ON group_lesson.id = thread.group_lesson_id "
+            "LEFT JOIN courses AS course ON course.id = group_lesson.course_id "
+            "LEFT JOIN groups AS group_row "
+            "ON group_row.course_id = group_lesson.course_id "
+            "AND group_row.group_id = group_lesson.group_id "
+            "LEFT JOIN problems AS problem ON problem.id = thread.problem_id "
+            "JOIN support_entries AS latest_entry ON latest_entry.id = ("
+            "SELECT candidate.id FROM support_entries AS candidate "
+            "WHERE candidate.thread_id = thread.id "
+            "ORDER BY candidate.server_received_at DESC, candidate.id DESC LIMIT 1"
+            ") WHERE "
+            + (where_sql or "1 = 1")
+            + " ORDER BY thread.latest_entry_at DESC, thread.id DESC",
+            parameters,
+        ).fetchall()
+
+    @staticmethod
+    def _summary_page(
+        rows: list[dict[str, object]], *, cursor: str | None, page_size: int
+    ) -> SupportThreadPage:
+        start = 0
+        if cursor is not None:
+            for index, row in enumerate(rows):
+                if row["public_id"] == cursor:
+                    start = index + 1
+                    break
+            else:
+                raise SupportNotFound("support list cursor was not found")
+        selected = rows[start : start + page_size + 1]
+        visible = selected[:page_size]
+        items = tuple(_summary_record(row) for row in visible)
+        return SupportThreadPage(
+            items=items,
+            next_cursor=(
+                items[-1].thread_public_id
+                if len(selected) > page_size and items
+                else None
+            ),
+        )
+
+    @staticmethod
     def _idempotent_entry(
         connection: sqlite3.Connection,
         *,
@@ -751,6 +991,10 @@ __all__ = [
     "SupportIdempotencyConflict",
     "SupportNotFound",
     "SupportRepositoryError",
+    "SupportReplyState",
     "SupportStaffScope",
+    "SupportStaffListState",
+    "SupportThreadPage",
     "SupportThreadRecord",
+    "SupportThreadSummaryRecord",
 ]

@@ -430,6 +430,139 @@ async def test_general_and_problem_targets_require_current_access_and_exact_scop
 
 
 @pytest.mark.asyncio
+async def test_student_thread_list_is_newest_first_cursor_backed_and_historical(
+    support_fixture,
+):
+    fixture = support_fixture
+    problem = await fixture.repository.create_student_thread(_create_problem_command())
+    fixture.clock.value += timedelta(minutes=1)
+    general = await fixture.repository.create_student_thread(
+        CreateSupportThreadCommand(
+            student_user_id=STUDENT_ID,
+            kind="general",
+            group_lesson_public_id="support-group-lesson-2",
+            problem_public_id=None,
+            text="Когда следующий разбор?",
+            client_created_at=fixture.clock.value,
+            idempotency_key="support-list-general",
+        )
+    )
+    fixture.clock.value += timedelta(minutes=1)
+    await fixture.repository.append_staff_entry(
+        AppendStaffSupportEntryCommand(
+            staff_user_id=TEACHER_ID,
+            author_kind="teacher",
+            thread_public_id=general.thread_public_id,
+            text="В воскресенье в 17:00.",
+            client_created_at=fixture.clock.value,
+            idempotency_key="support-list-answer",
+            scope=GROUP_B_SCOPE,
+        )
+    )
+
+    first = await fixture.repository.list_student_threads(
+        student_user_id=STUDENT_ID, page_size=1
+    )
+    assert [item.thread_public_id for item in first.items] == [general.thread_public_id]
+    assert first.items[0].reply_state == "awaiting_student"
+    assert first.items[0].entry_count == 2
+    assert first.items[0].latest_text_excerpt == "В воскресенье в 17:00."
+    assert first.next_cursor == general.thread_public_id
+
+    second = await fixture.repository.list_student_threads(
+        student_user_id=STUDENT_ID,
+        cursor=first.next_cursor,
+        page_size=1,
+    )
+    assert [item.thread_public_id for item in second.items] == [
+        problem.thread_public_id
+    ]
+    assert second.items[0].reply_state == "awaiting_staff"
+    assert second.next_cursor is None
+
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE course_group_access SET valid_to = ?, updated_at = ?, version = version + 1 "
+            "WHERE group_id = 'support-b' AND valid_to IS NULL",
+            (_timestamp(fixture.clock.value), _timestamp(fixture.clock.value)),
+        )
+    )
+    historical = await fixture.repository.list_student_threads(
+        student_user_id=STUDENT_ID
+    )
+    assert [item.thread_public_id for item in historical.items] == [
+        general.thread_public_id,
+        problem.thread_public_id,
+    ]
+    with pytest.raises(SupportNotFound):
+        await fixture.repository.list_student_threads(
+            student_user_id=OTHER_STUDENT_ID,
+            cursor=general.thread_public_id,
+        )
+
+
+@pytest.mark.asyncio
+async def test_staff_inbox_derives_reply_state_and_enforces_scope_and_filters(
+    support_fixture,
+):
+    fixture = support_fixture
+    problem = await fixture.repository.create_student_thread(_create_problem_command())
+    fixture.clock.value += timedelta(minutes=1)
+    general = await fixture.repository.create_student_thread(
+        CreateSupportThreadCommand(
+            student_user_id=STUDENT_ID,
+            kind="general",
+            group_lesson_public_id="support-group-lesson-2",
+            problem_public_id=None,
+            text="Когда следующий разбор?",
+            client_created_at=fixture.clock.value,
+            idempotency_key="support-inbox-general",
+        )
+    )
+    fixture.clock.value += timedelta(minutes=1)
+    await fixture.repository.append_staff_entry(
+        AppendStaffSupportEntryCommand(
+            staff_user_id=TEACHER_ID,
+            author_kind="teacher",
+            thread_public_id=general.thread_public_id,
+            text="В воскресенье в 17:00.",
+            client_created_at=fixture.clock.value,
+            idempotency_key="support-inbox-answer",
+            scope=GROUP_B_SCOPE,
+        )
+    )
+
+    group_a_inbox = await fixture.repository.list_staff_threads(scope=GROUP_A_SCOPE)
+    assert [item.thread_public_id for item in group_a_inbox.items] == [
+        problem.thread_public_id
+    ]
+    assert group_a_inbox.items[0].reply_state == "awaiting_staff"
+
+    course_scope = SupportStaffScope(course_public_ids=frozenset({"support-course"}))
+    all_threads = await fixture.repository.list_staff_threads(
+        scope=course_scope, state="all"
+    )
+    assert [item.thread_public_id for item in all_threads.items] == [
+        general.thread_public_id,
+        problem.thread_public_id,
+    ]
+    awaiting_student = await fixture.repository.list_staff_threads(
+        scope=course_scope,
+        state="awaiting_student",
+        kind="general",
+        group_public_id="support-group-b",
+    )
+    assert [item.thread_public_id for item in awaiting_student.items] == [
+        general.thread_public_id
+    ]
+    assert (
+        await fixture.repository.list_staff_threads(
+            scope=GROUP_B_SCOPE, state="awaiting_staff"
+        )
+    ).items == ()
+
+
+@pytest.mark.asyncio
 async def test_idempotency_key_rejects_changed_payload_and_concurrent_replay(
     support_fixture,
 ):

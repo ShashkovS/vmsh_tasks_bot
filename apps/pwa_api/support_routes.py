@@ -19,7 +19,9 @@ from db_methods.pwa.support import (
     SupportIdempotencyConflict,
     SupportNotFound,
     SupportStaffScope,
+    SupportThreadPage,
     SupportThreadRecord,
+    SupportThreadSummaryRecord,
 )
 from helpers.pwa.permissions import Capability
 from models.pwa.auth import AuthAudience
@@ -42,6 +44,7 @@ _CREATE_FIELDS = frozenset(
 _APPEND_FIELDS = frozenset(
     {"schemaVersion", "idempotencyKey", "text", "clientCreatedAt"}
 )
+_STAFF_LIST_QUERY_FIELDS = frozenset({"state", "kind", "course", "group", "cursor"})
 
 PWA_SUPPORT_REPOSITORY = web.AppKey(
     "pwa_support_repository", PwaSupportThreadRepository
@@ -276,6 +279,67 @@ def _thread_payload(thread: SupportThreadRecord) -> dict[str, object]:
     }
 
 
+def _summary_payload(summary: SupportThreadSummaryRecord) -> dict[str, object]:
+    return {
+        "threadId": summary.thread_public_id,
+        "kind": summary.kind,
+        "student": {
+            "studentId": summary.student_public_id,
+            "displayName": summary.student_display_name,
+        },
+        "context": {
+            "courseId": summary.course_public_id,
+            "courseName": summary.course_name,
+            "groupId": summary.group_public_id,
+            "groupName": summary.group_name,
+            "groupLessonId": summary.group_lesson_public_id,
+            "problemId": summary.problem_public_id,
+            "problemTitle": summary.problem_title,
+        },
+        "latestEntry": {
+            "authorKind": summary.latest_author_kind,
+            "textExcerpt": summary.latest_text_excerpt,
+            "receivedAt": _timestamp(summary.latest_entry_at),
+        },
+        "replyState": summary.reply_state,
+        "entryCount": summary.entry_count,
+        "version": summary.version,
+    }
+
+
+def _page_response(request: web.Request, page: SupportThreadPage) -> web.Response:
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "items": [_summary_payload(item) for item in page.items],
+            "nextCursor": page.next_cursor,
+            "requestId": request["request_id"],
+        }
+    )
+
+
+def _query_value(
+    request: web.Request, field: str, *, allowed: frozenset[str] | None = None
+) -> str | None:
+    values = request.query.getall(field, [])
+    if len(values) > 1:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры списка вопросов",
+            details={"field": field},
+        )
+    value = values[0] if values else None
+    if value is not None and allowed is not None and value not in allowed:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры списка вопросов",
+            details={"field": field},
+        )
+    return value
+
+
 def _response(request: web.Request, thread: SupportThreadRecord) -> web.Response:
     return web.json_response(
         {
@@ -349,6 +413,31 @@ async def create_student_question(request: web.Request) -> web.Response:
     return _response(request, thread)
 
 
+@support_routes.get("/student/api/v1/questions")
+async def list_student_questions(request: web.Request) -> web.Response:
+    if set(request.query) - {"cursor"}:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры списка вопросов",
+        )
+    cursor = _query_value(request, "cursor")
+    if cursor is not None and _PUBLIC_ID.fullmatch(cursor) is None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры списка вопросов",
+            details={"field": "cursor"},
+        )
+    try:
+        page = await _repository(request).list_student_threads(
+            student_user_id=_student_user_id(request), cursor=cursor
+        )
+    except SupportNotFound as error:
+        raise _translate_error(error) from error
+    return _page_response(request, page)
+
+
 @support_routes.get("/student/api/v1/questions/{thread_public_id}")
 async def get_student_question(request: web.Request) -> web.Response:
     if request.query:
@@ -401,6 +490,50 @@ async def get_staff_question(request: web.Request) -> web.Response:
     except (SupportNotFound, SupportForbidden) as error:
         raise _translate_error(error) from error
     return _response(request, thread)
+
+
+@support_routes.get("/staff/api/v1/questions")
+async def list_staff_questions(request: web.Request) -> web.Response:
+    if set(request.query) - _STAFF_LIST_QUERY_FIELDS:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте параметры списка вопросов",
+        )
+    state = _query_value(
+        request,
+        "state",
+        allowed=frozenset({"all", "awaiting_staff", "awaiting_student"}),
+    )
+    kind = _query_value(
+        request,
+        "kind",
+        allowed=frozenset({"problem_question", "general", "sos"}),
+    )
+    course = _query_value(request, "course")
+    group = _query_value(request, "group")
+    cursor = _query_value(request, "cursor")
+    for field, value in (("course", course), ("group", group), ("cursor", cursor)):
+        if value is not None and _PUBLIC_ID.fullmatch(value) is None:
+            raise PwaApiError(
+                status=422,
+                code="validation_error",
+                message="Проверьте параметры списка вопросов",
+                details={"field": field},
+            )
+    _, _, scope = _staff_context(request, write=False)
+    try:
+        page = await _repository(request).list_staff_threads(
+            scope=scope,
+            state="awaiting_staff" if state is None else state,
+            kind=kind,
+            course_public_id=course,
+            group_public_id=group,
+            cursor=cursor,
+        )
+    except SupportNotFound as error:
+        raise _translate_error(error) from error
+    return _page_response(request, page)
 
 
 @support_routes.post("/staff/api/v1/questions/{thread_public_id}/entries")

@@ -15,6 +15,14 @@ const studentRuntime = runtimeConfigSchema.parse({
   features: { telegram: false, google: false, nats: false, prototype: false },
 })
 
+const staffRuntime = runtimeConfigSchema.parse({
+  ...studentRuntime,
+  audience: 'staff',
+  appBase: '/staff',
+  apiBase: '/staff/api/v1',
+  websocketPath: '/staff/ws',
+})
+
 const response = {
   schemaVersion: 1 as const,
   thread: {
@@ -45,6 +53,28 @@ const response = {
     ],
   },
   requestId: 'support-response',
+}
+
+const pageResponse = {
+  schemaVersion: 1 as const,
+  items: [
+    {
+      threadId: response.thread.threadId,
+      kind: response.thread.kind,
+      student: response.thread.student,
+      context: response.thread.context,
+      latestEntry: {
+        authorKind: 'student' as const,
+        textExcerpt: 'Когда следующий разбор?',
+        receivedAt: response.thread.latestEntryAt,
+      },
+      replyState: 'awaiting_staff' as const,
+      entryCount: 1,
+      version: 1,
+    },
+  ],
+  nextCursor: null,
+  requestId: 'support-list-response',
 }
 
 function jsonResponse(payload: unknown, status = 200): Response {
@@ -103,5 +133,34 @@ describe('support client', () => {
       fetchImplementation: () => Promise.resolve(jsonResponse({ schemaVersion: 1 })),
     })
     await expect(client.get('support-thread-one')).rejects.toThrow('contract validation')
+  })
+
+  it('serializes Student history and Staff inbox filters independently', async () => {
+    const studentFetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(jsonResponse(pageResponse)),
+    )
+    const staffFetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(jsonResponse(pageResponse)),
+    )
+    const student = createSupportClient(studentRuntime, { fetchImplementation: studentFetch })
+    const staff = createSupportClient(staffRuntime, { fetchImplementation: staffFetch })
+
+    await student.listStudent({ cursor: 'support-thread-before' })
+    await staff.listStaff({
+      state: 'awaiting_student',
+      kind: 'general',
+      courseId: 'course-math',
+      groupId: 'group-a',
+      cursor: 'support-thread-before',
+    })
+
+    expect(studentFetch.mock.calls[0]?.[0]).toBe(
+      '/student/api/v1/questions?cursor=support-thread-before',
+    )
+    expect(staffFetch.mock.calls[0]?.[0]).toBe(
+      '/staff/api/v1/questions?state=awaiting_student&kind=general&course=course-math&group=group-a&cursor=support-thread-before',
+    )
+    await expect(student.listStaff()).rejects.toThrow('Only Staff')
+    await expect(staff.listStudent()).rejects.toThrow('Only Student')
   })
 })

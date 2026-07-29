@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   createSupportThreadRequestSchema,
+  staffSupportListQuerySchema,
   supportQueryKeys,
+  supportThreadPageSchema,
   supportThreadResponseSchema,
 } from './support'
 
@@ -87,6 +89,70 @@ describe('support contracts', () => {
         { audience: 'staff', accountId: 'account-teacher' },
         'support-thread-one',
       ),
+    )
+  })
+
+  it('validates inbox derivation and strict list filters', () => {
+    expect(
+      supportThreadPageSchema.parse({
+        schemaVersion: 1,
+        items: [
+          {
+            threadId: response.thread.threadId,
+            kind: response.thread.kind,
+            student: response.thread.student,
+            context: response.thread.context,
+            latestEntry: {
+              authorKind: 'student',
+              textExcerpt: 'Почему эти случаи одинаковые?',
+              receivedAt: response.thread.latestEntryAt,
+            },
+            replyState: 'awaiting_staff',
+            entryCount: 2,
+            version: response.thread.version,
+          },
+        ],
+        nextCursor: null,
+        requestId: 'support-list-test',
+      }).items[0]?.replyState,
+    ).toBe('awaiting_staff')
+    expect(() =>
+      supportThreadPageSchema.parse({
+        schemaVersion: 1,
+        items: [
+          {
+            threadId: response.thread.threadId,
+            kind: response.thread.kind,
+            student: response.thread.student,
+            context: response.thread.context,
+            latestEntry: {
+              authorKind: 'student',
+              textExcerpt: null,
+              receivedAt: response.thread.latestEntryAt,
+            },
+            replyState: 'awaiting_student',
+            entryCount: 1,
+            version: 1,
+          },
+        ],
+        nextCursor: null,
+        requestId: 'support-list-invalid',
+      }),
+    ).toThrow()
+    expect(staffSupportListQuerySchema.parse({})).toEqual({ state: 'awaiting_staff' })
+    expect(() => staffSupportListQuerySchema.parse({ unexpected: true })).toThrow()
+  })
+
+  it('includes normalized Staff filters and cursor in list cache identity', () => {
+    const principal = { audience: 'staff' as const, accountId: 'account-teacher' }
+    expect(supportQueryKeys.staffList(principal)).not.toEqual(
+      supportQueryKeys.staffList(principal, {
+        state: 'all',
+        kind: 'general',
+        courseId: 'course-math',
+        groupId: 'group-a',
+        cursor: 'support-thread-one',
+      }),
     )
   })
 })

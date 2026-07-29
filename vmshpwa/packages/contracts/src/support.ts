@@ -14,6 +14,8 @@ const idempotencyKeySchema = z.string().trim().min(1).max(200)
 
 export const supportThreadKindSchema = z.enum(['problem_question', 'general', 'sos'])
 export type SupportThreadKind = z.infer<typeof supportThreadKindSchema>
+export const supportAuthorKindSchema = z.enum(['student', 'teacher', 'admin', 'system'])
+export const supportReplyStateSchema = z.enum(['awaiting_staff', 'awaiting_student', 'activity'])
 
 export const createSupportThreadRequestSchema = z
   .object({
@@ -59,7 +61,7 @@ export const supportEntrySchema = z
     entryId: publicIdSchema,
     author: z
       .object({
-        kind: z.enum(['student', 'teacher', 'admin', 'system']),
+        kind: supportAuthorKindSchema,
         userId: publicIdSchema.nullable(),
         displayName: z.string().trim().min(1).max(200),
       })
@@ -164,8 +166,112 @@ export const supportThreadResponseSchema = z
   .strict()
 export type SupportThreadResponse = z.infer<typeof supportThreadResponseSchema>
 
+export const supportThreadSummarySchema = z
+  .object({
+    threadId: publicIdSchema,
+    kind: supportThreadKindSchema,
+    student: z
+      .object({
+        studentId: publicIdSchema,
+        displayName: z.string().trim().min(1).max(200),
+      })
+      .strict(),
+    context: z
+      .object({
+        courseId: publicIdSchema.nullable(),
+        courseName: z.string().trim().min(1).max(200).nullable(),
+        groupId: publicIdSchema.nullable(),
+        groupName: z.string().trim().min(1).max(200).nullable(),
+        groupLessonId: publicIdSchema.nullable(),
+        problemId: publicIdSchema.nullable(),
+        problemTitle: z.string().trim().min(1).max(500).nullable(),
+      })
+      .strict(),
+    latestEntry: z
+      .object({
+        authorKind: supportAuthorKindSchema,
+        textExcerpt: z.string().max(280).nullable(),
+        receivedAt: z.iso.datetime(),
+      })
+      .strict(),
+    replyState: supportReplyStateSchema,
+    entryCount: z.number().int().positive(),
+    version: z.number().int().positive(),
+  })
+  .strict()
+  .superRefine((summary, context) => {
+    const expectedReplyState =
+      summary.latestEntry.authorKind === 'student'
+        ? 'awaiting_staff'
+        : summary.latestEntry.authorKind === 'teacher' || summary.latestEntry.authorKind === 'admin'
+          ? 'awaiting_student'
+          : 'activity'
+    if (summary.replyState !== expectedReplyState) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Reply state must be derived from the latest author',
+        path: ['replyState'],
+      })
+    }
+    const hasProblem = summary.context.problemId !== null && summary.context.problemTitle !== null
+    if ((summary.kind === 'problem_question') !== hasProblem) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Problem context must match the thread kind',
+        path: ['context', 'problemId'],
+      })
+    }
+  })
+export type SupportThreadSummary = z.infer<typeof supportThreadSummarySchema>
+
+export const supportThreadPageSchema = z
+  .object({
+    schemaVersion: supportContractVersionSchema,
+    items: z.array(supportThreadSummarySchema),
+    nextCursor: publicIdSchema.nullable(),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type SupportThreadPage = z.infer<typeof supportThreadPageSchema>
+
+export const studentSupportListQuerySchema = z
+  .object({ cursor: publicIdSchema.optional() })
+  .strict()
+export type StudentSupportListQuery = z.infer<typeof studentSupportListQuerySchema>
+
+export const staffSupportListQuerySchema = z
+  .object({
+    state: z.enum(['all', 'awaiting_staff', 'awaiting_student']).default('awaiting_staff'),
+    kind: supportThreadKindSchema.optional(),
+    courseId: publicIdSchema.optional(),
+    groupId: publicIdSchema.optional(),
+    cursor: publicIdSchema.optional(),
+  })
+  .strict()
+export type StaffSupportListQuery = z.input<typeof staffSupportListQuerySchema>
+
 export const supportQueryKeys = {
   all: (principal: PrincipalQueryScope) => [...principalQueryKey(principal), 'support'] as const,
+  studentLists: (principal: PrincipalQueryScope) =>
+    [...supportQueryKeys.all(principal), 'student-list'] as const,
+  studentList: (principal: PrincipalQueryScope, cursor: string | null = null) =>
+    [
+      ...supportQueryKeys.studentLists(principal),
+      cursor === null ? 'first' : publicIdSchema.parse(cursor),
+    ] as const,
+  staffLists: (principal: PrincipalQueryScope) =>
+    [...supportQueryKeys.all(principal), 'staff-list'] as const,
+  staffList: (principal: PrincipalQueryScope, query: StaffSupportListQuery = {}) => {
+    const parsed = staffSupportListQuerySchema.parse(query)
+    return [
+      ...supportQueryKeys.staffLists(principal),
+      parsed.state,
+      parsed.kind ?? 'all-kinds',
+      parsed.courseId ?? 'all-courses',
+      parsed.groupId ?? 'all-groups',
+      parsed.cursor ?? 'first',
+    ] as const
+  },
   thread: (principal: PrincipalQueryScope, threadId: string) =>
     [...supportQueryKeys.all(principal), 'thread', publicIdSchema.parse(threadId)] as const,
 } as const
