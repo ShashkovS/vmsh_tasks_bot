@@ -6,6 +6,53 @@ import sqlite3
 from collections.abc import Iterable
 
 
+def list_student_classroom_events(
+    connection: sqlite3.Connection, student_user_id: int
+) -> list[dict[str, object]]:
+    """Return scheduled in-person events for the student's active course groups."""
+
+    rows = connection.execute(
+        """
+        SELECT event.public_id AS event_public_id, event.name AS event_name,
+               event.starts_at, event.ends_at,
+               course.public_id AS course_public_id, course.name AS course_name,
+               groups.public_id AS group_public_id,
+               groups.public_name AS group_name,
+               lesson.public_id AS group_lesson_public_id,
+               lesson.id AS group_lesson_id,
+               enrollment.attendance_mode, enrollment.active_group_id,
+               plan.confirmed_at, layout.state AS layout_state,
+               assignment.status AS assignment_status,
+               assignment.group_lesson_id AS assigned_group_lesson_id,
+               assignment.group_id AS assigned_group_id,
+               room.public_id AS classroom_public_id,
+               room.name AS classroom_name, room.status AS classroom_status
+        FROM course_enrollments enrollment
+        JOIN courses course ON course.id = enrollment.course_id
+        JOIN groups ON groups.course_id = enrollment.course_id
+                   AND groups.group_id = enrollment.active_group_id
+        JOIN group_lessons lesson ON lesson.course_id = enrollment.course_id
+                                 AND lesson.group_id = enrollment.active_group_id
+        JOIN in_person_event_group_lessons event_lesson
+          ON event_lesson.group_lesson_id = lesson.id
+        JOIN in_person_events event ON event.id = event_lesson.in_person_event_id
+        LEFT JOIN classroom_assignment_plans plan
+          ON plan.in_person_event_id = event.id AND plan.state = 'confirmed'
+        LEFT JOIN classroom_layout_versions layout ON layout.id = plan.layout_version_id
+        LEFT JOIN classroom_assignments assignment
+          ON assignment.plan_id = plan.id
+         AND assignment.course_enrollment_id = enrollment.id
+        LEFT JOIN classrooms room ON room.id = assignment.classroom_id
+        WHERE enrollment.student_user_id = ?
+          AND enrollment.status = 'active'
+          AND event.status = 'scheduled'
+        ORDER BY event.starts_at, course.sort_order, course.id, lesson.id
+        """,
+        (student_user_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def find_plan(
     connection: sqlite3.Connection, event_id: int, states: tuple[str, ...]
 ) -> dict[str, object] | None:

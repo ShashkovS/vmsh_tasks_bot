@@ -24,6 +24,7 @@ from models.pwa.classroom_assignments import (
     recalculate_assignment_plan,
     update_assignment_plan,
 )
+from models.pwa.classroom_public import read_student_classroom_assignments
 
 
 classroom_assignment_routes = web.RouteTableDef()
@@ -60,6 +61,39 @@ def _admin_user_id(request: web.Request) -> int:
             message="Распределять школьников может только администратор",
         )
     return principal.linked_user_id
+
+
+def _student_user_id(request: web.Request) -> int:
+    principal = authenticated_session(request).principal
+    if (
+        principal.audience is not AuthAudience.STUDENT
+        or principal.linked_user_id is None
+    ):
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для просмотра аудиторий",
+        )
+    return principal.linked_user_id
+
+
+def _family_student_user_id(request: web.Request) -> int:
+    authenticated = authenticated_session(request)
+    if authenticated.principal.audience is not AuthAudience.FAMILY:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Недостаточно прав для просмотра аудиторий",
+        )
+    requested_public_id = request.match_info["student_public_id"]
+    for child in authenticated.family_children:
+        if child.student_public_id == requested_public_id:
+            return child.student_user_id
+    raise PwaApiError(
+        status=403,
+        code="forbidden",
+        message="Недостаточно прав для просмотра этого ученика",
+    )
 
 
 def _public_id(request: web.Request, field: str) -> str:
@@ -261,6 +295,52 @@ def _response(request: web.Request, result: dict[str, object]) -> web.Response:
     if plan is not None:
         response.headers["ETag"] = f'"{plan["public_id"]}:v{plan["version"]}"'
     return response
+
+
+async def _public_response(request: web.Request, student_user_id: int) -> web.Response:
+    items = await _factory(request).run_read_async(
+        lambda connection: read_student_classroom_assignments(
+            connection, student_user_id
+        )
+    )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "items": [
+                {
+                    "eventPublicId": item["event_public_id"],
+                    "eventName": item["event_name"],
+                    "startsAt": item["starts_at"],
+                    "endsAt": item["ends_at"],
+                    "coursePublicId": item["course_public_id"],
+                    "courseName": item["course_name"],
+                    "groupPublicId": item["group_public_id"],
+                    "groupName": item["group_name"],
+                    "groupLessonPublicId": item["group_lesson_public_id"],
+                    "attendanceMode": item["attendance_mode"],
+                    "status": item["status"],
+                    "classroomPublicId": item["classroom_public_id"],
+                    "classroomName": item["classroom_name"],
+                    "confirmedAt": item["confirmed_at"],
+                    "announcedAt": item["announced_at"],
+                }
+                for item in items
+            ],
+            "requestId": request["request_id"],
+        }
+    )
+
+
+@classroom_assignment_routes.get("/student/api/v1/classroom-assignments")
+async def get_student_classroom_assignments(request: web.Request) -> web.Response:
+    return await _public_response(request, _student_user_id(request))
+
+
+@classroom_assignment_routes.get(
+    "/family/api/v1/children/{student_public_id}/classroom-assignments"
+)
+async def get_family_classroom_assignments(request: web.Request) -> web.Response:
+    return await _public_response(request, _family_student_user_id(request))
 
 
 def _raise_domain_error(error: Exception) -> None:

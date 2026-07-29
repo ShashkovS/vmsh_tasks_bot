@@ -17,6 +17,7 @@ from models.pwa.classroom_assignments import (
     recalculate_assignment_plan,
 )
 from models.pwa.classroom_layouts import confirm_layout, materialize_layout
+from models.pwa.classroom_public import read_student_classroom_assignments
 
 
 MIGRATION_ID = "0059.pwa_classroom_assignments"
@@ -270,6 +271,48 @@ def test_assignment_plan_recalculates_and_confirms(tmp_path):
 
         assert confirmed["plan"]["state"] == "confirmed"
         assert confirmed["plan"]["version"] == 2
+
+
+def test_student_projection_uses_only_current_confirmed_assignment(tmp_path):
+    database_path = tmp_path / "phase7-public-assignment.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        _insert_parents(connection)
+
+        assert read_student_classroom_assignments(connection, 1)[0]["status"] == (
+            "reassigning"
+        )
+
+        connection.execute(
+            "UPDATE course_enrollments SET attendance_mode = 'online' WHERE id = 1"
+        )
+        online = read_student_classroom_assignments(connection, 1)[0]
+        assert online["status"] == "not_applicable"
+        assert online["classroom_name"] is None
+
+        connection.execute(
+            "UPDATE course_enrollments SET attendance_mode = 'in_person' WHERE id = 1"
+        )
+        connection.execute(
+            "UPDATE classroom_assignment_plans SET state = 'confirmed', "
+            "confirmed_by_user_id = 2, confirmed_at = ?, updated_at = ?",
+            (NOW, NOW),
+        )
+        assigned = read_student_classroom_assignments(connection, 1)[0]
+        assert assigned["status"] == "assigned"
+        assert assigned["classroom_name"] == "201"
+        assert assigned["confirmed_at"] == NOW
+        assert assigned["announced_at"] is None
+
+        connection.execute(
+            "UPDATE classrooms SET status = 'archived' "
+            "WHERE public_id = 'classroom-assignment'"
+        )
+        unavailable = read_student_classroom_assignments(connection, 1)[0]
+        assert unavailable["status"] == "reassigning"
+        assert unavailable["classroom_name"] is None
 
 
 def test_assignment_plan_without_room_cannot_be_confirmed(tmp_path):

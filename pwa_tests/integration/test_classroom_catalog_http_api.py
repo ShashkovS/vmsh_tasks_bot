@@ -27,6 +27,7 @@ HOST = "127.0.0.1:5380"
 NOW = datetime(2026, 10, 5, 12, tzinfo=UTC)
 ADMIN_ID = 958_001
 TEACHER_ID = 958_002
+STUDENT_ID = 958_003
 TEST_HASHER = PasswordHasher(
     time_cost=1,
     memory_cost=8,
@@ -74,6 +75,13 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
                     "Мария",
                     "Учитель",
                 ),
+                (
+                    STUDENT_ID,
+                    "classroom-layout-student",
+                    int(USER_TYPE.STUDENT),
+                    "Анна",
+                    "Белова",
+                ),
             ),
         )
         connection.executemany(
@@ -81,13 +89,16 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
             "(public_id, audience, username, username_normalized, "
             "username_algorithm_version, provisioning_source, credential_kind, "
             "credential_hash, linked_user_id, status, created_at, updated_at) "
-            "VALUES (?, 'staff', ?, ?, NULL, 'synthetic-test', 'password', ?, ?, "
+            "VALUES (?, ?, ?, ?, ?, 'synthetic-test', ?, ?, ?, "
             "'active', ?, ?)",
             (
                 (
                     "classroom-http-account-admin",
+                    "staff",
                     "classroom-http-admin",
                     "classroom-http-admin",
+                    None,
+                    "password",
                     TEST_HASHER.hash("admin-password"),
                     ADMIN_ID,
                     now,
@@ -95,14 +106,84 @@ def _seed_auth(factory: PwaConnectionFactory) -> None:
                 ),
                 (
                     "classroom-http-account-teacher",
+                    "staff",
                     "classroom-http-teacher",
                     "classroom-http-teacher",
+                    None,
+                    "password",
                     TEST_HASHER.hash("teacher-password"),
                     TEACHER_ID,
                     now,
                     now,
                 ),
+                (
+                    "classroom-http-account-student",
+                    "student",
+                    "classroom-http-student",
+                    "classroom-http-student",
+                    1,
+                    "telegram_token",
+                    TEST_HASHER.hash("student-password"),
+                    STUDENT_ID,
+                    now,
+                    now,
+                ),
             ),
+        )
+        family_account_id = connection.execute(
+            "INSERT INTO auth_accounts "
+            "(public_id, audience, username, username_normalized, display_name, "
+            "provisioning_source, credential_kind, credential_hash, status, "
+            "created_at, updated_at) VALUES "
+            "('classroom-http-account-family', 'family', 'classroom-http-family', "
+            "'classroom-http-family', 'Семья Беловой', 'synthetic-test', "
+            "'password', ?, 'active', ?, ?) RETURNING id",
+            (TEST_HASHER.hash("family-password"), now, now),
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO family_student_links "
+            "(family_account_id, student_user_id, relationship_label, is_primary, "
+            "created_at, updated_at) VALUES (?, ?, 'родитель', 1, ?, ?)",
+            (family_account_id, STUDENT_ID, now, now),
+        )
+        season_id = connection.execute(
+            "INSERT INTO seasons "
+            "(public_id, code, title, starts_on, ends_on, session_expires_on, "
+            "status, created_at, updated_at) VALUES "
+            "('classroom-layout-season', 'layout-season', 'Layout season', "
+            "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) RETURNING id",
+            (now, now),
+        ).fetchone()["id"]
+        course_id = connection.execute(
+            "INSERT INTO courses "
+            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "accent_key, created_at, updated_at) VALUES "
+            "('classroom-layout-course', ?, 'math-layout', 'Математика', 'math', "
+            "'active', 1, 'math', ?, ?) RETURNING id",
+            (season_id, now, now),
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO groups "
+            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
+            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "status, color_key, created_at, updated_at) VALUES "
+            "('layout-beginner', 'н', 'Начинающие', 1, 1, 0, 0, 0, 1.0, "
+            "'classroom-layout-group', ?, 'active', 'beginner', ?, ?)",
+            (course_id, now, now),
+        )
+        enrollment_id = connection.execute(
+            "INSERT INTO course_enrollments "
+            "(public_id, student_user_id, course_id, active_group_id, "
+            "attendance_mode, status, created_at, updated_at) VALUES "
+            "('classroom-layout-enrollment', ?, ?, 'layout-beginner', "
+            "'in_person', 'active', ?, ?) RETURNING id",
+            (STUDENT_ID, course_id, now, now),
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO course_group_access "
+            "(enrollment_id, course_id, group_id, valid_from, created_at, updated_at) "
+            "VALUES (?, ?, 'layout-beginner', ?, ?, ?)",
+            (enrollment_id, course_id, now, now, now),
         )
 
     factory.run_write(seed)
@@ -113,6 +194,8 @@ class ClassroomHttpFixture:
     client: object
     factory: PwaConnectionFactory
     cookies: MappingProxyType
+    student_cookie: str
+    family_cookie: str
 
 
 @pytest.fixture()
@@ -152,14 +235,17 @@ async def classroom_http(tmp_path, aiohttp_client) -> ClassroomHttpFixture:
     app[PWA_DATABASE] = PwaDatabaseState(factory=factory)
     client = await aiohttp_client(app)
 
-    async def login(username: str, password: str) -> str:
+    async def login(audience: AuthAudience, username: str, password: str) -> str:
+        credential_field = (
+            "telegramToken" if audience is AuthAudience.STUDENT else "password"
+        )
         response = await client.post(
-            "/staff/api/v1/auth/login",
-            json={"username": username, "password": password},
+            f"/{audience.value}/api/v1/auth/login",
+            json={"username": username, credential_field: password},
             headers=_headers(unsafe=True),
         )
         assert response.status == 200, await response.text()
-        cookie = response.cookies[COOKIE_POLICY[AuthAudience.STAFF].access_name].value
+        cookie = response.cookies[COOKIE_POLICY[audience].access_name].value
         client.session.cookie_jar.clear()
         return cookie
 
@@ -168,9 +254,23 @@ async def classroom_http(tmp_path, aiohttp_client) -> ClassroomHttpFixture:
         factory=factory,
         cookies=MappingProxyType(
             {
-                "admin": await login("classroom-http-admin", "admin-password"),
-                "teacher": await login("classroom-http-teacher", "teacher-password"),
+                "admin": await login(
+                    AuthAudience.STAFF, "classroom-http-admin", "admin-password"
+                ),
+                "teacher": await login(
+                    AuthAudience.STAFF, "classroom-http-teacher", "teacher-password"
+                ),
             }
+        ),
+        student_cookie=await login(
+            AuthAudience.STUDENT,
+            "classroom-http-student",
+            "student-password",
+        ),
+        family_cookie=await login(
+            AuthAudience.FAMILY,
+            "classroom-http-family",
+            "family-password",
         ),
     )
 
@@ -192,43 +292,12 @@ def _seed_layout_scope(factory: PwaConnectionFactory) -> None:
     now = "2026-07-01T12:00:00.000000Z"
 
     def seed(connection) -> None:
-        student_id = connection.execute(
-            "INSERT INTO users (public_id, type, name, surname) "
-            "VALUES ('classroom-layout-student', 0, 'Анна', 'Белова') RETURNING id"
-        ).fetchone()["id"]
         season_id = connection.execute(
-            "INSERT INTO seasons "
-            "(public_id, code, title, starts_on, ends_on, session_expires_on, "
-            "status, created_at, updated_at) VALUES "
-            "('classroom-layout-season', 'layout-season', 'Layout season', "
-            "'2026-09-01', '2027-05-31', '2027-08-10', 'active', ?, ?) RETURNING id",
-            (now, now),
+            "SELECT id FROM seasons WHERE public_id = 'classroom-layout-season'"
         ).fetchone()["id"]
         course_id = connection.execute(
-            "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
-            "accent_key, created_at, updated_at) VALUES "
-            "('classroom-layout-course', ?, 'math-layout', 'Математика', 'math', "
-            "'active', 1, 'math', ?, ?) RETURNING id",
-            (season_id, now, now),
+            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
         ).fetchone()["id"]
-        connection.execute(
-            "INSERT INTO groups "
-            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, "
-            "status, color_key, created_at, updated_at) VALUES "
-            "('layout-beginner', 'н', 'Начинающие', 1, 1, 0, 0, 0, 1.0, "
-            "'classroom-layout-group', ?, 'active', 'beginner', ?, ?)",
-            (course_id, now, now),
-        )
-        connection.execute(
-            "INSERT INTO course_enrollments "
-            "(public_id, student_user_id, course_id, active_group_id, "
-            "attendance_mode, status, created_at, updated_at) VALUES "
-            "('classroom-layout-enrollment', ?, ?, 'layout-beginner', "
-            "'in_person', 'active', ?, ?)",
-            (student_id, course_id, now, now),
-        )
         course_lesson_id = connection.execute(
             "INSERT INTO course_lessons "
             "(public_id, course_id, lesson_number, created_at, updated_at) "
@@ -565,6 +634,43 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
         history_items[0]["groupName"],
     ) == ("Очное занятие", "202", "Начинающие")
 
+    student_response = await classroom_http.client.get(
+        "/student/api/v1/classroom-assignments",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                classroom_http.student_cookie
+            )
+        },
+    )
+    assert student_response.status == 200, await student_response.text()
+    student_item = (await student_response.json())["items"][0]
+    assert (
+        student_item["status"],
+        student_item["classroomName"],
+        student_item["announcedAt"],
+    ) == ("assigned", "202", None)
+
+    family_response = await classroom_http.client.get(
+        "/family/api/v1/children/classroom-layout-student/classroom-assignments",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.FAMILY].access_name: classroom_http.family_cookie
+        },
+    )
+    assert family_response.status == 200, await family_response.text()
+    family_item = (await family_response.json())["items"][0]
+    assert family_item == student_item
+
+    forbidden_child = await classroom_http.client.get(
+        "/family/api/v1/children/someone-else/classroom-assignments",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.FAMILY].access_name: classroom_http.family_cookie
+        },
+    )
+    assert forbidden_child.status == 403
+
     archived_room = await classroom_http.client.post(
         "/staff/api/v1/classrooms/classroom-layout-202/archive",
         json={"schemaVersion": 1},
@@ -771,7 +877,10 @@ async def test_admin_confirms_group_change_with_classroom_move(classroom_http):
         classroom_http.factory.run_read(changed_rows)
     )
     assert enrollment == "layout-advanced"
-    assert [row["group_id"] for row in access] == ["layout-advanced"]
+    assert {row["group_id"] for row in access} == {
+        "layout-beginner",
+        "layout-advanced",
+    }
     assert tuple(event.values()) == (
         "layout-beginner",
         "layout-advanced",
