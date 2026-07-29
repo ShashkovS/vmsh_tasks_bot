@@ -103,6 +103,17 @@ def get_classroom(
     return None if row is None else dict(row)
 
 
+def find_classroom_by_normalized_name(
+    connection: sqlite3.Connection, normalized_name: str
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT public_id, name, status, version FROM classrooms "
+        "WHERE normalized_name = ?",
+        (normalized_name,),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
 def create_classroom(
     connection: sqlite3.Connection,
     *,
@@ -262,6 +273,7 @@ __all__ = [
     "ClassroomNotFound",
     "ClassroomVersionConflict",
     "create_classroom",
+    "find_classroom_by_normalized_name",
     "get_classroom",
     "list_classrooms",
     "rename_classroom",
