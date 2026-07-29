@@ -161,6 +161,10 @@
       {
         "id": "0058.pwa_classroom_layouts",
         "sha256": "7f66e5c966aa2bb18f3274e61d698f943d88bea7cf1b45fdcdf171fc3cd630aa"
+      },
+      {
+        "id": "0059.pwa_classroom_assignments",
+        "sha256": "a71853d0e5fc9c9fcd4f8177fad9beb5a49f9a0ad7f4a9c92900868ac19909bb"
       }
     ],
     "repository_head_status": {
@@ -171,7 +175,7 @@
     }
   },
   "product": {
-    "object_count": 358,
+    "object_count": 368,
     "objects": [
       {
         "columns": [
@@ -1358,6 +1362,589 @@
         "object_sha256": "25bf7c5a470f5745e0cac4e4de1cf08c845023cd6dd690f70629407cc05c4e67",
         "sql": "CREATE TABLE auth_throttle_buckets\n(\n    audience        text    not null\n        check (audience in ('student', 'family', 'staff')),\n    bucket_kind     text    not null\n        check (bucket_kind in ('normalized_login', 'account', 'ip')),\n    bucket_key_hmac text    not null\n        check (\n            length(bucket_key_hmac) = 64\n            and bucket_key_hmac not glob '*[^0-9a-f]*'\n        ),\n    key_version     integer not null default 1\n        check (key_version > 0),\n    failure_count   integer not null default 0\n        check (failure_count >= 0),\n    window_started_at text  not null,\n    last_failed_at  text,\n    locked_until    text,\n    created_at      text    not null,\n    updated_at      text    not null,\n    version         integer not null default 1\n        check (version > 0),\n    primary key (audience, bucket_kind, bucket_key_hmac, key_version),\n    check (last_failed_at is null or last_failed_at >= window_started_at),\n    check (locked_until is null or last_failed_at is not null)\n);",
         "table_name": "auth_throttle_buckets",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "in_person_event_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "layout_version_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "base_plan_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "stale_reason",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "confirmed_by_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "confirmed_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "superseded_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "base_plan_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "classroom_assignment_plans"
+          },
+          {
+            "from_columns": [
+              "confirmed_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "created_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "in_person_event_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "in_person_events"
+          },
+          {
+            "from_columns": [
+              "layout_version_id",
+              "in_person_event_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id",
+              "in_person_event_id"
+            ],
+            "target_table": "classroom_layout_versions"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "in_person_event_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "classroom_assignment_plans_event_timeline_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "in_person_event_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "classroom_assignment_plans_one_confirmed_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "in_person_event_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "classroom_assignment_plans_one_working_uq",
+            "origin": "c",
+            "partial": true,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_classroom_assignment_plans_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "in_person_event_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_classroom_assignment_plans_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "classroom_assignment_plans",
+        "object_sha256": "0f1fa8529df9562b7f1e44e64728e4b76ef681c0d0d4c5c779cbd78ffea987c6",
+        "sql": "CREATE TABLE classroom_assignment_plans\n(\n    id                   integer primary key,\n    public_id            text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    in_person_event_id   integer not null references in_person_events (id),\n    layout_version_id    integer not null,\n    base_plan_id         integer references classroom_assignment_plans (id),\n    state                text    not null\n        check (state in ('draft', 'confirmed', 'stale', 'superseded')),\n    stale_reason         text,\n    created_by_user_id   integer not null references users (id),\n    confirmed_by_user_id integer references users (id),\n    created_at           text    not null,\n    updated_at           text    not null,\n    confirmed_at         text,\n    superseded_at        text,\n    version              integer not null default 1 check (version > 0),\n    unique (id, in_person_event_id),\n    foreign key (layout_version_id, in_person_event_id)\n        references classroom_layout_versions (id, in_person_event_id),\n    check (updated_at >= created_at),\n    check (\n        (state in ('draft', 'stale')\n            and confirmed_by_user_id is null\n            and confirmed_at is null\n            and superseded_at is null)\n        or (state = 'confirmed'\n            and confirmed_by_user_id is not null\n            and confirmed_at is not null\n            and superseded_at is null)\n        or (state = 'superseded'\n            and confirmed_by_user_id is not null\n            and confirmed_at is not null\n            and superseded_at is not null)\n    )\n);",
+        "table_name": "classroom_assignment_plans",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "plan_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_enrollment_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_lesson_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "classroom_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "status",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "classroom_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "classrooms"
+          },
+          {
+            "from_columns": [
+              "course_enrollment_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "course_enrollments"
+          },
+          {
+            "from_columns": [
+              "group_lesson_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "group_lessons"
+          },
+          {
+            "from_columns": [
+              "plan_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "classroom_assignment_plans"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_enrollment_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "plan_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "classroom_assignments_enrollment_history_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "plan_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "classroom_id",
+                "seqno": 1
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_enrollment_id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "classroom_assignments_room_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "plan_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_enrollment_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_classroom_assignments_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "classroom_assignments",
+        "object_sha256": "ca2fddd1d61fa027ead9c35cd4863a55815f32156f84a5e076fd32afd0f2d842",
+        "sql": "CREATE TABLE classroom_assignments\n(\n    plan_id              integer not null references classroom_assignment_plans (id),\n    course_enrollment_id integer not null references course_enrollments (id),\n    group_lesson_id      integer not null references group_lessons (id),\n    group_id             text    not null,\n    classroom_id         integer references classrooms (id),\n    status               text    not null\n        check (status in ('assigned', 'reassigning')),\n    source               text    not null\n        check (source in (\n            'previous-room', 'least-loaded', 'manual',\n            'group-change', 'mode-change', 'import'\n        )),\n    created_at           text    not null,\n    updated_at           text    not null,\n    primary key (plan_id, course_enrollment_id),\n    check (updated_at >= created_at),\n    check (\n        (status = 'assigned' and classroom_id is not null)\n        or (status = 'reassigning' and classroom_id is null)\n    )\n);",
+        "table_name": "classroom_assignments",
         "type": "table"
       },
       {
@@ -19311,6 +19898,41 @@
         "type": "index"
       },
       {
+        "name": "classroom_assignment_plans_event_timeline_idx",
+        "object_sha256": "4c0af1026a42dc8b87bb0a4215075b9515c77ca782003602aa08f95fbfa2ef0f",
+        "sql": "CREATE INDEX classroom_assignment_plans_event_timeline_idx\n    on classroom_assignment_plans (in_person_event_id, id);",
+        "table_name": "classroom_assignment_plans",
+        "type": "index"
+      },
+      {
+        "name": "classroom_assignment_plans_one_confirmed_uq",
+        "object_sha256": "e1a8a2e63ffa30f8160a0262d1180475e115f83264c0392d91c77d476a8e9d82",
+        "sql": "CREATE UNIQUE INDEX classroom_assignment_plans_one_confirmed_uq\n    on classroom_assignment_plans (in_person_event_id)\n    where state = 'confirmed';",
+        "table_name": "classroom_assignment_plans",
+        "type": "index"
+      },
+      {
+        "name": "classroom_assignment_plans_one_working_uq",
+        "object_sha256": "f832055ee99b6e258b77f483facd4ec9a670d46ba2bba2a31e396f3a636db493",
+        "sql": "CREATE UNIQUE INDEX classroom_assignment_plans_one_working_uq\n    on classroom_assignment_plans (in_person_event_id)\n    where state in ('draft', 'stale');",
+        "table_name": "classroom_assignment_plans",
+        "type": "index"
+      },
+      {
+        "name": "classroom_assignments_enrollment_history_idx",
+        "object_sha256": "eadc2cfce3c0c2bc0940623612bdab6062cd75fd4a87b120e18171c21ac9eec2",
+        "sql": "CREATE INDEX classroom_assignments_enrollment_history_idx\n    on classroom_assignments (course_enrollment_id, plan_id);",
+        "table_name": "classroom_assignments",
+        "type": "index"
+      },
+      {
+        "name": "classroom_assignments_room_idx",
+        "object_sha256": "ba1a91b6d7bf3a83479eb88bc081e5cd9f2b837bc8ba78633cb98564a66f8328",
+        "sql": "CREATE INDEX classroom_assignments_room_idx\n    on classroom_assignments (plan_id, classroom_id, course_enrollment_id);",
+        "table_name": "classroom_assignments",
+        "type": "index"
+      },
+      {
         "name": "classroom_events_timeline_idx",
         "object_sha256": "16ce1f55af78dd47192dbecd5fbde35e36cce34c82f8133ac13bf6877403b469",
         "sql": "CREATE INDEX classroom_events_timeline_idx\n    on classroom_events (classroom_id, id);",
@@ -20043,6 +20665,27 @@
         "object_sha256": "9bb811d15ab291b8762ccb68483a255b5a2b016cca8e213ca3c6ff98a8a96e80",
         "sql": "CREATE TRIGGER auth_sessions_audience_update\nbefore update of account_id, audience on auth_sessions\nfor each row\nwhen not exists (\n    select 1\n    from auth_accounts\n    where id = new.account_id and audience = new.audience\n)\nbegin\n    select raise(abort, 'auth session audience does not match account');\nend;",
         "table_name": "auth_sessions",
+        "type": "trigger"
+      },
+      {
+        "name": "classroom_assignments_delete_working_only",
+        "object_sha256": "1eb569d912243f0710d4d71f173036a57ca3b3bda0d00b871e77bc07b115e977",
+        "sql": "CREATE TRIGGER classroom_assignments_delete_working_only\nbefore delete on classroom_assignments\nfor each row\nwhen (select state from classroom_assignment_plans where id = old.plan_id)\n    not in ('draft', 'stale')\nbegin\n    select raise(abort, 'only a working classroom assignment plan can be edited');\nend;",
+        "table_name": "classroom_assignments",
+        "type": "trigger"
+      },
+      {
+        "name": "classroom_assignments_insert_working_only",
+        "object_sha256": "5802f2f2e3e271cc17693adac63450f6de615457a2957f33fe8d5a8bce06847e",
+        "sql": "CREATE TRIGGER classroom_assignments_insert_working_only\nbefore insert on classroom_assignments\nfor each row\nwhen (select state from classroom_assignment_plans where id = new.plan_id)\n    not in ('draft', 'stale')\nbegin\n    select raise(abort, 'only a working classroom assignment plan can be edited');\nend;",
+        "table_name": "classroom_assignments",
+        "type": "trigger"
+      },
+      {
+        "name": "classroom_assignments_update_working_only",
+        "object_sha256": "b03d9ce0958ab3c561dba43f8643d46f283a15d16c5a3b31d4b0ccd0cea11e5d",
+        "sql": "CREATE TRIGGER classroom_assignments_update_working_only\nbefore update on classroom_assignments\nfor each row\nwhen (select state from classroom_assignment_plans where id = old.plan_id)\n    not in ('draft', 'stale')\nbegin\n    select raise(abort, 'only a working classroom assignment plan can be edited');\nend;",
+        "table_name": "classroom_assignments",
         "type": "trigger"
       },
       {
@@ -21075,8 +21718,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "7d5d358e038c3c2448769abb5e40e7ab474b5b0cf293f2a3f97fb81da6136e95",
-    "sha256": "688fddcf69533bfcbdd6bc15f5494adcb23b448c925948bfcca08c7b63031f77"
+    "pragma_structure_sha256": "ee393f24d16a02ac3a3079ccd92f018db5572ebf98ae5c49a984cf78121ea118",
+    "sha256": "aadc197566c00e93220ee69fb4c022350466df905832d1fadbc758671d525ac1"
   },
   "source_kind": "repository-migration-head"
 }
