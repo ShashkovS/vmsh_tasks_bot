@@ -179,6 +179,24 @@ test('Student profile uses the authenticated course enrollment instead of protot
   await expect(page.getByText('Василий Петров')).toHaveCount(0)
 })
 
+test('Admin creates a course through the real Staff catalog', async ({ page }, testInfo) => {
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/courses?tab=catalog')
+  await expect(page.getByRole('heading', { name: 'Курсы и группы', level: 1 })).toBeVisible()
+  await expect(page.getByText('Математика 5–7', { exact: true })).toBeVisible()
+
+  const suffix = testInfo.project.name.replace(/[^a-z0-9]/g, '')
+  const name = `Физика · ${testInfo.project.name}`
+  await page.getByRole('button', { name: 'Добавить курс' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Новый курс' })
+  await dialog.getByLabel('Код').fill(`physics-${suffix}`)
+  await dialog.getByLabel('Предмет').fill('physics')
+  await dialog.getByLabel('Название').fill(name)
+  await dialog.getByRole('button', { name: 'Сохранить' }).click()
+
+  await expect(dialog).toBeHidden()
+  await expect(page.getByText(name, { exact: true })).toBeVisible()
+})
+
 for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONAS.teacher]) {
   test(`${persona.audience}: a wrong credential yields the same safe visible error`, async ({
     page,

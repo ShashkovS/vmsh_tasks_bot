@@ -1,4 +1,5 @@
 export * from './app-shell'
+export * from './admin-course-client'
 export * from './auth-boundary'
 export * from './auth-client'
 export * from './auth-context'

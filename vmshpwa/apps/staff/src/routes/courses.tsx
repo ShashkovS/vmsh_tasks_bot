@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { StaffCoursesPage } from '../pages'
+import { StaffCourseCatalogPage } from '../staff-course-catalog-page'
 import { StaffTelegramBindings } from '../telegram-bindings-page'
 
 const searchSchema = z.object({
@@ -12,5 +13,13 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/courses')({
   validateSearch: searchSchema,
-  component: () => <StaffCoursesPage telegram={<StaffTelegramBindings />} />,
+  component: CoursesRoute,
 })
+
+function CoursesRoute() {
+  const { tab } = Route.useSearch()
+
+  if (tab === 'catalog') return <StaffCourseCatalogPage />
+
+  return <StaffCoursesPage telegram={<StaffTelegramBindings />} />
+}

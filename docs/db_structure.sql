@@ -2,7 +2,36 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: d4466e4eef4fb82f3c0b360d962c2c3b16ebee5e2cbecb4b5373feeddf2406f3
+-- Product schema SHA-256: c871e29968a8d136ee961feb4a6fbd53ab038d8a414c2d8ea05d5d486d01ef6d
+
+CREATE TABLE achievement_definitions
+(
+    id           integer primary key,
+    code         text    not null unique,
+    rule_version integer not null check (rule_version > 0),
+    is_active    integer not null default 1 check (is_active in (0, 1)),
+    created_at   text    not null,
+    updated_at   text    not null
+);
+
+CREATE TABLE analytics_runs
+(
+    id                      integer primary key,
+    public_id               text    not null unique,
+    course_id               integer not null references courses (id),
+    algorithm               text    not null,
+    algorithm_version       text    not null,
+    input_through_result_id integer not null check (input_through_result_id >= 0),
+    state                   text    not null check (state in ('running', 'completed', 'failed')),
+    started_at              text    not null,
+    completed_at            text,
+    diagnostics_json        text    not null default '[]'
+        check (json_valid(diagnostics_json) = 1 and json_type(diagnostics_json) = 'array'),
+    check (
+        (state = 'running' and completed_at is null)
+        or (state in ('completed', 'failed') and completed_at is not null)
+    )
+);
 
 CREATE TABLE auth_accounts
 (
@@ -1811,6 +1840,22 @@ CREATE TABLE states
     info            blob default null
 );
 
+CREATE TABLE student_lesson_metrics
+(
+    run_id               integer not null references analytics_runs (id) on delete cascade,
+    student_user_id      integer not null references users (id),
+    lesson_number        integer not null check (lesson_number > 0),
+    group_id             text    not null references groups (group_id),
+    simple_strength      real    not null check (simple_strength between 0 and 10),
+    complex_strength     real    not null check (complex_strength between 0 and 10),
+    max_complex_strength real    not null check (max_complex_strength between 0 and 10),
+    solved_items         integer not null check (solved_items >= 0),
+    total_items          integer not null check (total_items >= 0),
+    primary key (run_id, student_user_id, lesson_number),
+    check (complex_strength <= max_complex_strength),
+    check (solved_items <= total_items)
+);
+
 CREATE TABLE student_strength
 (
     student_id  integer not null primary key,
@@ -2458,6 +2503,19 @@ CREATE TABLE test_attempts
     )
 );
 
+CREATE TABLE user_achievements
+(
+    id            integer primary key,
+    definition_id integer not null references achievement_definitions (id),
+    user_id       integer not null references users (id),
+    course_id     integer not null references courses (id),
+    earned_at     text    not null,
+    evidence_json text    not null default '{}'
+        check (json_valid(evidence_json) = 1 and json_type(evidence_json) = 'object'),
+    notified_at   text,
+    unique (definition_id, user_id, course_id)
+);
+
 CREATE TABLE user_changes_log
 (
     ts          timestamp not null,
@@ -2628,6 +2686,9 @@ CREATE TABLE zoom_queue
     enter_ts       timestamp not null,
     status         INTEGER   not null
 );
+
+CREATE INDEX analytics_runs_course_latest_idx
+    on analytics_runs (course_id, state, completed_at desc, id desc);
 
 CREATE INDEX auth_accounts_audience_status_idx
     on auth_accounts (audience, status);
@@ -2932,6 +2993,9 @@ CREATE UNIQUE INDEX staff_scopes_one_active_group_role_uq
     on staff_scopes (staff_user_id, course_id, group_id, role)
     where group_id is not null and valid_to is null;
 
+CREATE INDEX student_lesson_metrics_student_run_idx
+    on student_lesson_metrics (student_user_id, run_id, lesson_number);
+
 CREATE INDEX submission_attachments_asset_idx
     on submission_attachments (asset_id, id);
 
@@ -3051,6 +3115,9 @@ CREATE INDEX test_attempts_student_problem_counted_idx
 
 CREATE INDEX test_attempts_student_problem_history_idx
     on test_attempts (student_user_id, problem_id, server_received_at desc, id desc);
+
+CREATE INDEX user_achievements_user_course_idx
+    on user_achievements (user_id, course_id, earned_at, id);
 
 CREATE UNIQUE INDEX users_public_id_uq
     on users (public_id)

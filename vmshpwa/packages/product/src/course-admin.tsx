@@ -32,14 +32,14 @@ import type { CourseView, GroupView } from './types'
  */
 
 export interface ManagedGroup extends GroupView {
-  status: 'active' | 'archived'
+  status: 'draft' | 'active' | 'archived'
   activeStudents: number
   scheduleLabel: string
 }
 
 export interface ManagedCourse {
   course: CourseView
-  status: 'active' | 'archived'
+  status: 'draft' | 'active' | 'archived'
   groups: ManagedGroup[]
 }
 
@@ -48,6 +48,7 @@ export function CourseGroupCatalog({
   onAddCourse,
   onAddGroup,
   onEditCourse,
+  onEditGroup,
   onArchiveCourse,
   className,
 }: {
@@ -55,6 +56,7 @@ export function CourseGroupCatalog({
   onAddCourse?: () => void
   onAddGroup?: (courseId: string) => void
   onEditCourse?: (courseId: string) => void
+  onEditGroup?: (groupId: string) => void
   onArchiveCourse?: (courseId: string) => void
   className?: string
 }) {
@@ -85,8 +87,12 @@ export function CourseGroupCatalog({
                   <CardTitle>{course.name}</CardTitle>
                   <p className="text-caption text-muted-foreground">{course.subjectCode}</p>
                 </div>
-                <Badge variant={status === 'active' ? 'success' : 'neutral'}>
-                  {status === 'active' ? 'Активен' : 'В архиве'}
+                <Badge
+                  variant={
+                    status === 'active' ? 'success' : status === 'draft' ? 'warning' : 'neutral'
+                  }
+                >
+                  {status === 'active' ? 'Активен' : status === 'draft' ? 'Черновик' : 'В архиве'}
                 </Badge>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -99,7 +105,8 @@ export function CourseGroupCatalog({
                   Группа
                 </Button>
                 <Button onClick={() => onArchiveCourse?.(course.id)} size="xs" variant="ghost">
-                  <Archive aria-hidden="true" />В архив
+                  <Archive aria-hidden="true" />
+                  {status === 'archived' ? 'Восстановить' : 'В архив'}
                 </Button>
               </div>
             </CardHeader>
@@ -116,9 +123,25 @@ export function CourseGroupCatalog({
                         {group.activeStudents} учеников · {group.scheduleLabel}
                       </p>
                     </div>
-                    <Badge variant={group.status === 'active' ? 'neutral' : 'warning'}>
-                      {group.status === 'active' ? 'Активна' : 'Скрыта'}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant={group.status === 'active' ? 'neutral' : 'warning'}>
+                        {group.status === 'active'
+                          ? 'Активна'
+                          : group.status === 'draft'
+                            ? 'Черновик'
+                            : 'Скрыта'}
+                      </Badge>
+                      {onEditGroup ? (
+                        <Button
+                          aria-label={`Изменить группу ${group.name}`}
+                          onClick={() => onEditGroup(group.id)}
+                          size="icon-xs"
+                          variant="ghost"
+                        >
+                          <Settings2 aria-hidden="true" />
+                        </Button>
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>

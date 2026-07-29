@@ -213,6 +213,14 @@
       {
         "id": "0071.pwa_oral_results_idempotency",
         "sha256": "f45e1c7f340467f86a27da9ff111ac2b7f601fab6161f5ff2d7c8835b3a5230e"
+      },
+      {
+        "id": "0072.pwa_course_analytics",
+        "sha256": "815dd8d112fcfd7a5020caa597cba0acca3aa595e90d68f106368f3d140949bc"
+      },
+      {
+        "id": "0073.pwa_course_achievements",
+        "sha256": "3981d9c3f8418543f33baddcd46c59a6c1ed46f0e09299a37a014800b6186752"
       }
     ],
     "repository_head_status": {
@@ -223,8 +231,285 @@
     }
   },
   "product": {
-    "object_count": 403,
+    "object_count": 410,
     "objects": [
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "code",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "rule_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "is_active",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "code",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_achievement_definitions_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "achievement_definitions",
+        "object_sha256": "b010e3912549ab7f57109afa8e122dd4540a4cfc5cb06cd5b2c22e79133453c2",
+        "sql": "CREATE TABLE achievement_definitions\n(\n    id           integer primary key,\n    code         text    not null unique,\n    rule_version integer not null check (rule_version > 0),\n    is_active    integer not null default 1 check (is_active in (0, 1)),\n    created_at   text    not null,\n    updated_at   text    not null\n);",
+        "table_name": "achievement_definitions",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "algorithm",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "algorithm_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "input_through_result_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "started_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "completed_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": "'[]'",
+            "hidden": 0,
+            "name": "diagnostics_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "state",
+                "seqno": 1
+              },
+              {
+                "cid": 8,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "completed_at",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "analytics_runs_course_latest_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_analytics_runs_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "analytics_runs",
+        "object_sha256": "d9d120c7a0ae73ae14ed3015206c4a52215c147d30e242e2e958fba2b47517a7",
+        "sql": "CREATE TABLE analytics_runs\n(\n    id                      integer primary key,\n    public_id               text    not null unique,\n    course_id               integer not null references courses (id),\n    algorithm               text    not null,\n    algorithm_version       text    not null,\n    input_through_result_id integer not null check (input_through_result_id >= 0),\n    state                   text    not null check (state in ('running', 'completed', 'failed')),\n    started_at              text    not null,\n    completed_at            text,\n    diagnostics_json        text    not null default '[]'\n        check (json_valid(diagnostics_json) = 1 and json_type(diagnostics_json) = 'array'),\n    check (\n        (state = 'running' and completed_at is null)\n        or (state in ('completed', 'failed') and completed_at is not null)\n    )\n);",
+        "table_name": "analytics_runs",
+        "type": "table"
+      },
       {
         "columns": [
           {
@@ -16807,6 +17092,216 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "run_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "student_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "lesson_number",
+            "not_null": true,
+            "primary_key_ordinal": 3
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "group_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "simple_strength",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "complex_strength",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "REAL",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "max_complex_strength",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "solved_items",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "total_items",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "group_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "group_id"
+            ],
+            "target_table": "groups"
+          },
+          {
+            "from_columns": [
+              "run_id"
+            ],
+            "match": "NONE",
+            "on_delete": "CASCADE",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "analytics_runs"
+          },
+          {
+            "from_columns": [
+              "student_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "run_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 1
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson_number",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_student_lesson_metrics_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "student_user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "run_id",
+                "seqno": 1
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "lesson_number",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "student_lesson_metrics_student_run_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "student_lesson_metrics",
+        "object_sha256": "67bc1a40ba490e156aba1d9049281ef616e3d08cd5d12d636c14bc8d33d8d89c",
+        "sql": "CREATE TABLE student_lesson_metrics\n(\n    run_id               integer not null references analytics_runs (id) on delete cascade,\n    student_user_id      integer not null references users (id),\n    lesson_number        integer not null check (lesson_number > 0),\n    group_id             text    not null references groups (group_id),\n    simple_strength      real    not null check (simple_strength between 0 and 10),\n    complex_strength     real    not null check (complex_strength between 0 and 10),\n    max_complex_strength real    not null check (max_complex_strength between 0 and 10),\n    solved_items         integer not null check (solved_items >= 0),\n    total_items          integer not null check (total_items >= 0),\n    primary key (run_id, student_user_id, lesson_number),\n    check (complex_strength <= max_complex_strength),\n    check (solved_items <= total_items)\n);",
+        "table_name": "student_lesson_metrics",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "student_id",
             "not_null": true,
             "primary_key_ordinal": 1
@@ -22178,6 +22673,206 @@
         "columns": [
           {
             "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "definition_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "earned_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": "'{}'",
+            "hidden": 0,
+            "name": "evidence_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "notified_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
+              "definition_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "achievement_definitions"
+          },
+          {
+            "from_columns": [
+              "user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "definition_id",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "user_id",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_user_achievements_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "user_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 1
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "earned_at",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "user_achievements_user_course_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          }
+        ],
+        "name": "user_achievements",
+        "object_sha256": "a0fd385a9096c81fe9fa998ff216a9784b32868d89d6f7066eb001e54c39b3da",
+        "sql": "CREATE TABLE user_achievements\n(\n    id            integer primary key,\n    definition_id integer not null references achievement_definitions (id),\n    user_id       integer not null references users (id),\n    course_id     integer not null references courses (id),\n    earned_at     text    not null,\n    evidence_json text    not null default '{}'\n        check (json_valid(evidence_json) = 1 and json_type(evidence_json) = 'object'),\n    notified_at   text,\n    unique (definition_id, user_id, course_id)\n);",
+        "table_name": "user_achievements",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
             "declared_type": "TIMESTAMP",
             "default_sql": null,
             "hidden": 0,
@@ -23754,6 +24449,13 @@
         "type": "table"
       },
       {
+        "name": "analytics_runs_course_latest_idx",
+        "object_sha256": "b96fb48d9236a54a3fcb9bfeb28abf8b36751f2a4a696c36e7e2a3630202bc9b",
+        "sql": "CREATE INDEX analytics_runs_course_latest_idx\n    on analytics_runs (course_id, state, completed_at desc, id desc);",
+        "table_name": "analytics_runs",
+        "type": "index"
+      },
+      {
         "name": "auth_accounts_audience_status_idx",
         "object_sha256": "b67c4795b68dfb8d65305743d741f29c1eea141876b5a6e3e7e3d7318f67f8e2",
         "sql": "CREATE INDEX auth_accounts_audience_status_idx\n    on auth_accounts (audience, status);",
@@ -24391,6 +25093,13 @@
         "type": "index"
       },
       {
+        "name": "student_lesson_metrics_student_run_idx",
+        "object_sha256": "6c29f81a120961e5dcf15080c6edc95915450dfa167598e5c12b095ebec11f59",
+        "sql": "CREATE INDEX student_lesson_metrics_student_run_idx\n    on student_lesson_metrics (student_user_id, run_id, lesson_number);",
+        "table_name": "student_lesson_metrics",
+        "type": "index"
+      },
+      {
         "name": "submission_attachments_asset_idx",
         "object_sha256": "6bb6ebbf1d3bf258e97554db896520a46efdd61213c886dc674fc7de19112124",
         "sql": "CREATE INDEX submission_attachments_asset_idx\n    on submission_attachments (asset_id, id);",
@@ -24626,6 +25335,13 @@
         "object_sha256": "143f7808e5108e5af2f759c606b23d6a4b4856edd001c5a25de71d332b0bba57",
         "sql": "CREATE INDEX test_attempts_student_problem_history_idx\n    on test_attempts (student_user_id, problem_id, server_received_at desc, id desc);",
         "table_name": "test_attempts",
+        "type": "index"
+      },
+      {
+        "name": "user_achievements_user_course_idx",
+        "object_sha256": "7e0162b86acb8e44fbfcbc9f8be4bb3625fb0d613f3fd15a01b93157dfc6dc5e",
+        "sql": "CREATE INDEX user_achievements_user_course_idx\n    on user_achievements (user_id, course_id, earned_at, id);",
+        "table_name": "user_achievements",
         "type": "index"
       },
       {
@@ -25784,8 +26500,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "2dec54397df8909bbaed7734d1fbdef403a69d49ac2adb3113353609d29633c5",
-    "sha256": "d4466e4eef4fb82f3c0b360d962c2c3b16ebee5e2cbecb4b5373feeddf2406f3"
+    "pragma_structure_sha256": "bdb65eb7ea4646264f90da1bc83c082e8c13d10d1df1f3baf0a69b7670fbcd38",
+    "sha256": "c871e29968a8d136ee961feb4a6fbd53ab038d8a414c2d8ea05d5d486d01ef6d"
   },
   "source_kind": "repository-migration-head"
 }

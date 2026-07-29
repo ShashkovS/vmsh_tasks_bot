@@ -50,6 +50,7 @@ function CatalogHarness() {
         onAddCourse={() => setStatus('Открыта форма нового курса')}
         onAddGroup={(courseId) => setStatus(`Новая группа для ${courseId}`)}
         onEditCourse={(courseId) => setStatus(`Настройки ${courseId}`)}
+        onEditGroup={(groupId) => setStatus(`Настройки группы ${groupId}`)}
       />
       <p className="text-small text-muted-foreground" role="status">
         {status}
@@ -65,6 +66,8 @@ export const CourseAndGroupCatalog: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Добавить курс' }))
     await expect(canvas.getByRole('status')).toHaveTextContent('Открыта форма нового курса')
+    await userEvent.click(canvas.getByRole('button', { name: /Изменить группу Начинающие/ }))
+    await expect(canvas.getByRole('status')).toHaveTextContent('Настройки группы math-beginner')
   },
 }
 
