@@ -852,3 +852,15 @@
 |    9 | —                    | —                                                                                               | —                                                |
 |   10 | —                    | —                                                                                               | —                                                |
 |   11 | —                    | —                                                                                               | —                                                |
+
+## Phase 7C checkpoint — 29 июля 2026
+
+- Revisions `9aa3e20`…`70ad902` закрывают versioned assignment plan,
+  deterministic distribution, compact reload-safe Staff editor, confirmed group
+  change, history и stale/reassigning semantics.
+- Revision `e0246e1` добавляет reviewed-hash Excel dry-run/apply и idempotent
+  receipt. Proof: [assignment plan](../../../pwa_tests/reports/phase7-classroom-assignments.md)
+  и [Excel import](../../../pwa_tests/reports/phase7-classroom-import.md).
+- Актуальный gate: frontend unit **439 PASS**, Python PWA **1324 PASS / 3
+  intentional skips**, lint/typecheck/production builds **PASS**. Delivery,
+  oral, production rehearsal и owner visual approval остаются открыты.

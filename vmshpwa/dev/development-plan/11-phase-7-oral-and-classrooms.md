@@ -188,6 +188,13 @@ vmshpwa/e2e/classrooms.spec.ts
 
 ## Пруфы завершения этапа
 
+Промежуточные принятые вертикальные срезы:
+
+- [Phase 7A: постоянный каталог аудиторий](../../../pwa_tests/reports/phase7-classroom-catalog.md);
+- [Phase 7B: наследуемая схема аудиторий очного события](../../../pwa_tests/reports/phase7-classroom-layout.md);
+- [Phase 7C: распределение школьников](../../../pwa_tests/reports/phase7-classroom-assignments.md);
+- [Phase 7C: одноразовый Excel dry-run/import](../../../pwa_tests/reports/phase7-classroom-import.md).
+
 - [ ] Revision, migration up/down и rehearsal на копии production-size SQLite: `<sha/paths/results>`.
 - [ ] One-time Excel dry-run/import report с анонимизированными `IDd`, найденными конфликтами и итоговыми counts: `<path/result>`.
 - [ ] Demo online oral + written fallback + Staff result: `<routes/video/evidence>`.
