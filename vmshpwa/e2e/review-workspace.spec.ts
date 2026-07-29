@@ -8,6 +8,7 @@ import { expect, test } from './fixtures'
 
 test('Phase 6: Staff review restores its draft and completes one leased case', async ({
   page,
+  secondaryContext,
 }, testInfo) => {
   const project = testInfo.project.name
   const queueId = `e2e-review-queue-${project}`
@@ -16,8 +17,17 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   await loginThroughUi(page, AUTH_PERSONAS.teacher, '/staff/review')
   const row = page.getByRole('row').filter({ hasText: title })
   await expect(row).toBeVisible()
+
+  // A second Staff account keeps the queue open. Claim and completion must
+  // update it through the audience-scoped queue invalidations, not polling.
+  const adminPage = await secondaryContext.newPage()
+  await loginThroughUi(adminPage, AUTH_PERSONAS.admin, '/staff/review')
+  const adminRow = adminPage.getByRole('row').filter({ hasText: title })
+  await expect(adminRow.getByRole('button', { name: 'Открыть' })).toBeVisible()
+
   await row.getByRole('button', { name: 'Открыть' }).click()
   await expect(page).toHaveURL(new RegExp(`/staff/review/${queueId}$`))
+  await expect(adminRow).toContainText('Проверяет Преподаватель Тестовый')
 
   await expect(page.getByText('Поясните, почему этот переход верен.')).toBeVisible()
   await expect(
@@ -118,6 +128,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   ])
   await expect(page).toHaveURL(/\/staff\/review\/?$/)
   await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(0)
+  await expect(adminRow).toHaveCount(0)
   await expect
     .poll(() =>
       familyPage.evaluate(() => {
@@ -241,4 +252,5 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
     state.__reviewRealtimeSocket?.close()
   })
   await familyPage.close()
+  await adminPage.close()
 })

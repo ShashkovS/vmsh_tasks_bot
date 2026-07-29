@@ -64,6 +64,7 @@ class NetworkGuard {
 type E2eFixtures = {
   networkGuard: NetworkGuard
   networkIsolation: void
+  secondaryContext: BrowserContext
 }
 
 async function installNetworkIsolation(
@@ -106,6 +107,12 @@ export const test = base.extend<E2eFixtures>({
     },
     { auto: true },
   ],
+  secondaryContext: async ({ browser, networkGuard }, provide) => {
+    const context = await browser.newContext({ baseURL: gatewayHttpOrigin })
+    await installNetworkIsolation(context, networkGuard)
+    await provide(context)
+    await context.close()
+  },
 })
 
 export { expect }

@@ -75,6 +75,10 @@ _LIST_QUERY_FIELDS = frozenset({"problemGroup", "sort", "cursor"})
 PWA_REVIEW_QUEUE_REPOSITORY = web.AppKey(
     "pwa_review_queue_repository", PwaWrittenReviewQueueRepository
 )
+ReviewQueueInvalidator = Callable[[str], Awaitable[None]]
+PWA_REVIEW_QUEUE_INVALIDATOR = web.AppKey(
+    "pwa_review_queue_invalidator", ReviewQueueInvalidator
+)
 ReviewCompletionInvalidator = Callable[
     [tuple[str, ...], tuple[str, ...], tuple[str, ...], str], Awaitable[None]
 ]
@@ -94,6 +98,22 @@ def _repository(request: web.Request) -> PwaWrittenReviewQueueRepository:
             message="Очередь проверки временно недоступна",
         )
     return repository
+
+
+async def _invalidate_review_queue(request: web.Request, *, reason: str) -> None:
+    """Best-effort Staff refetch after an authoritative queue mutation."""
+
+    invalidator = request.app.get(PWA_REVIEW_QUEUE_INVALIDATOR)
+    if invalidator is None:
+        return
+    try:
+        await invalidator(reason)
+    except Exception:
+        logger.warning(
+            "Review queue invalidation failed after commit: reason=%s",
+            reason,
+            exc_info=True,
+        )
 
 
 def _staff_context(request: web.Request) -> tuple[int, ReviewStaffScope]:
@@ -709,6 +729,7 @@ async def claim_review_item(request: web.Request) -> web.Response:
         ReviewLeaseConflict,
     ) as error:
         raise _translate_queue_error(error) from error
+    await _invalidate_review_queue(request, reason="review-queue-claimed")
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -761,6 +782,7 @@ async def release_review_item(request: web.Request) -> web.Response:
         ReviewLeaseLost,
     ) as error:
         raise _translate_queue_error(error) from error
+    await _invalidate_review_queue(request, reason="review-queue-released")
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -956,6 +978,7 @@ async def delete_review_internal_reaction(request: web.Request) -> web.Response:
 
 __all__ = [
     "PWA_REVIEW_COMPLETION_INVALIDATOR",
+    "PWA_REVIEW_QUEUE_INVALIDATOR",
     "PWA_REVIEW_QUEUE_REPOSITORY",
     "review_routes",
 ]

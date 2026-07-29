@@ -90,7 +90,7 @@ export interface RealtimeEnvironment {
 
 export interface RealtimeQueryOperations {
   refetchActiveQueries(): Promise<void>
-  invalidateActiveQueries(): Promise<void>
+  invalidateActiveQueries(resources: readonly string[]): Promise<void>
   refetchAuthentication(): Promise<'authenticated' | 'unauthenticated' | 'unavailable'>
 }
 
@@ -102,6 +102,23 @@ export interface RealtimeConnectionOptions {
   socketFactory?: RealtimeSocketFactory
   environment?: RealtimeEnvironment
   timing?: Partial<RealtimeTiming>
+}
+
+/**
+ * Unlabelled queries retain the conservative Phase-1 behaviour. Queries that
+ * opt into resource routing are invalidated only by matching live resources;
+ * an empty list deliberately means reconnect-only refetching.
+ */
+export function shouldInvalidateRealtimeQuery(
+  meta: Record<string, unknown> | undefined,
+  resources: readonly string[],
+): boolean {
+  const configured = meta?.realtimeResources
+  if (!Array.isArray(configured) || !configured.every((resource) => typeof resource === 'string')) {
+    return true
+  }
+  const changed = new Set(resources)
+  return configured.some((resource) => changed.has(resource))
 }
 
 const RealtimeConnectionContext = createContext<RealtimeConnectionValue | null>(null)
@@ -163,6 +180,7 @@ export class RealtimeConnection {
   #invalidationTimer: number | null = null
   #invalidationInFlight = false
   #invalidationPending = false
+  readonly #invalidationResources = new Set<string>()
   #authorityCheckInFlight = false
 
   constructor(options: RealtimeConnectionOptions) {
@@ -374,7 +392,7 @@ export class RealtimeConnection {
         return
       case 'invalidate':
         this.#publishReadyState()
-        this.#scheduleInvalidation()
+        this.#scheduleInvalidation(event.resources)
         return
       case 'connected':
       case 'resync-required':
@@ -416,7 +434,8 @@ export class RealtimeConnection {
     }, this.#timing.heartbeatIntervalMilliseconds)
   }
 
-  #scheduleInvalidation(): void {
+  #scheduleInvalidation(resources: readonly string[] = []): void {
+    for (const resource of resources) this.#invalidationResources.add(resource)
     if (this.#invalidationTimer !== null || this.#invalidationInFlight) {
       this.#invalidationPending = true
       return
@@ -424,9 +443,11 @@ export class RealtimeConnection {
     this.#invalidationTimer = this.#environment.setTimeout(() => {
       this.#invalidationTimer = null
       if (!this.#running) return
+      const pendingResources = [...this.#invalidationResources]
+      this.#invalidationResources.clear()
       this.#invalidationInFlight = true
       void this.#queries
-        .invalidateActiveQueries()
+        .invalidateActiveQueries(pendingResources)
         .catch(() => undefined)
         .finally(() => {
           this.#invalidationInFlight = false
@@ -602,6 +623,7 @@ export class RealtimeConnection {
       this.#invalidationTimer = null
     }
     this.#invalidationPending = false
+    this.#invalidationResources.clear()
   }
 
   #detachAndCloseSocket(code: number, reason: string): void {
@@ -667,8 +689,12 @@ export function RealtimeProvider({
         refetchActiveQueries: async () => {
           await queryClient.refetchQueries({ type: 'active' })
         },
-        invalidateActiveQueries: async () => {
-          await queryClient.invalidateQueries({ refetchType: 'active', type: 'active' })
+        invalidateActiveQueries: async (resources) => {
+          await queryClient.invalidateQueries({
+            predicate: (query) => shouldInvalidateRealtimeQuery(query.meta, resources),
+            refetchType: 'active',
+            type: 'active',
+          })
         },
         refetchAuthentication: async () => {
           try {

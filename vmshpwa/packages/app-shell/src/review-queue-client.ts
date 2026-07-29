@@ -377,6 +377,7 @@ export function useReviewLeaseQuery(
   return useQuery({
     queryKey: reviewQueueQueryKeys.lease(principal, queueId),
     queryFn: ({ signal }) => client.claim(queueId, { signal }),
+    meta: { realtimeResources: [] },
     staleTime: Number.POSITIVE_INFINITY,
     retry: false,
   })

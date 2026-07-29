@@ -553,6 +553,7 @@ async def test_claim_heartbeat_owner_and_release_are_enforced(
 ):
     fixture = review_http
     queue_id = fixture.queue_public_ids[0]
+    cursors_before_claim = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
     claim = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/claim",
         json={"schemaVersion": 1},
@@ -564,6 +565,11 @@ async def test_claim_heartbeat_owner_and_release_are_enforced(
     claim_token = claim_payload["lease"]["claimToken"]
     assert claim_token == "review-http-claim-1"
     assert len(claim_payload["lease"]["branches"]) == 2
+    cursors_after_claim = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
+    assert cursors_after_claim == {
+        **cursors_before_claim,
+        "staff": cursors_before_claim["staff"] + 1,
+    }
 
     conflict = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/claim",
@@ -573,6 +579,9 @@ async def test_claim_heartbeat_owner_and_release_are_enforced(
     )
     assert conflict.status == 409
     assert (await conflict.json())["error"]["code"] == "review_already_claimed"
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == (
+        cursors_after_claim
+    )
 
     foreign_release = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/release",
@@ -582,6 +591,9 @@ async def test_claim_heartbeat_owner_and_release_are_enforced(
     )
     assert foreign_release.status == 409
     assert (await foreign_release.json())["error"]["code"] == "review_lease_lost"
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == (
+        cursors_after_claim
+    )
 
     heartbeat = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/heartbeat",
@@ -594,6 +606,9 @@ async def test_claim_heartbeat_owner_and_release_are_enforced(
         branch["leaseVersion"]
         for branch in (await heartbeat.json())["lease"]["branches"]
     } == {2}
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == (
+        cursors_after_claim
+    )
 
     released = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/release",
@@ -603,6 +618,11 @@ async def test_claim_heartbeat_owner_and_release_are_enforced(
     )
     assert released.status == 200, await released.text()
     assert (await released.json())["releasedItems"] == 2
+    cursors_after_release = dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"])
+    assert cursors_after_release == {
+        **cursors_after_claim,
+        "staff": cursors_after_claim["staff"] + 1,
+    }
 
     reclaimed = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/claim",
@@ -612,6 +632,10 @@ async def test_claim_heartbeat_owner_and_release_are_enforced(
     )
     assert reclaimed.status == 200, await reclaimed.text()
     assert (await reclaimed.json())["lease"]["claimToken"] == "review-http-claim-2"
+    assert dict(fixture.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+        **cursors_after_release,
+        "staff": cursors_after_release["staff"] + 1,
+    }
 
 
 @pytest.mark.asyncio

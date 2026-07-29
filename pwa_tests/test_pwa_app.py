@@ -641,6 +641,36 @@ async def test_review_completion_invalidates_linked_student_family_and_staff_que
 
 
 @pytest.mark.asyncio
+async def test_review_queue_mutation_invalidation_is_staff_scoped():
+    class RecordingBroker:
+        def __init__(self):
+            self.messages = []
+
+        async def publish(self, topic, payload):
+            self.messages.append((topic, payload))
+
+    app = web.Application()
+    broker = RecordingBroker()
+    app[pwa_app.PWA_BROKER] = broker
+
+    await pwa_app.publish_review_queue_invalidation(
+        app,
+        reason="review-queue-claimed",
+    )
+
+    assert broker.messages == [
+        (
+            "pwa_invalidate",
+            {
+                "resources": ["review-queue"],
+                "reason": "review-queue-claimed",
+                "audience": "staff",
+            },
+        )
+    ]
+
+
+@pytest.mark.asyncio
 async def test_concurrent_invalidations_are_ordered_per_socket(client):
     class BackpressuredSocket:
         closed = False

@@ -35,6 +35,7 @@ from apps.pwa_api.realtime_control import (
 )
 from apps.pwa_api.review_routes import (
     PWA_REVIEW_COMPLETION_INVALIDATOR,
+    PWA_REVIEW_QUEUE_INVALIDATOR,
     PWA_REVIEW_QUEUE_REPOSITORY,
     review_routes,
 )
@@ -856,6 +857,16 @@ async def publish_review_completion_invalidation(
                 "accountId": account_public_id,
             },
         )
+    await publish_review_queue_invalidation(app, reason=reason)
+
+
+async def publish_review_queue_invalidation(
+    app: web.Application,
+    *,
+    reason: str,
+) -> None:
+    """Publish one Staff-wide refetch hint after a queue mutation commits."""
+
     await app[PWA_BROKER].publish(
         NATS_PWA_INVALIDATE,
         {
@@ -1092,6 +1103,11 @@ def configure(
         if review_queue_enabled:
             if review_queue_repository is not None:
                 app[PWA_REVIEW_QUEUE_REPOSITORY] = review_queue_repository
+
+            async def invalidate_review_queue(reason: str) -> None:
+                await publish_review_queue_invalidation(app, reason=reason)
+
+            app[PWA_REVIEW_QUEUE_INVALIDATOR] = invalidate_review_queue
 
             async def invalidate_review_completion(
                 account_public_ids: tuple[str, ...],

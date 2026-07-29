@@ -5,6 +5,7 @@ import { runtimeBoundaryByAudience, type Audience, type RuntimeConfig } from '@v
 import {
   DEFAULT_REALTIME_TIMING,
   RealtimeConnection,
+  shouldInvalidateRealtimeQuery,
   type RealtimeConnectionState,
   type RealtimeEnvironment,
   type RealtimeQueryOperations,
@@ -135,13 +136,13 @@ function pong(cursor = 1) {
   return { type: 'pong', cursor, serverTime: '2026-07-27T12:00:02Z' }
 }
 
-function invalidate(cursor: number) {
+function invalidate(cursor: number, resources: string[] = ['lesson.current']) {
   return {
     type: 'invalidate',
     audience: 'student',
     cursor,
     serverTime: '2026-07-27T12:00:03Z',
-    resources: ['lesson.current'],
+    resources,
     reason: 'unit-proof',
   }
 }
@@ -152,7 +153,9 @@ function harness(audience: Audience = 'student') {
   const urls: string[] = []
   const states: RealtimeConnectionState[] = []
   const refetchActiveQueries = vi.fn(() => Promise.resolve())
-  const invalidateActiveQueries = vi.fn(() => Promise.resolve())
+  const invalidateActiveQueries = vi.fn<RealtimeQueryOperations['invalidateActiveQueries']>(() =>
+    Promise.resolve(),
+  )
   const refetchAuthentication = vi.fn<RealtimeQueryOperations['refetchAuthentication']>(() =>
     Promise.resolve('unauthenticated'),
   )
@@ -230,13 +233,25 @@ describe('RealtimeConnection', () => {
     socket.open()
     socket.message(connected('student'))
     socket.message(invalidate(2))
-    socket.message(invalidate(3))
+    socket.message(invalidate(3, ['news']))
 
     environment.advance(DEFAULT_REALTIME_TIMING.invalidationCoalesceMilliseconds - 1)
     expect(querySpies.invalidateActiveQueries).not.toHaveBeenCalled()
     environment.advance(1)
     await flushPromises()
     expect(querySpies.invalidateActiveQueries).toHaveBeenCalledTimes(1)
+    expect(querySpies.invalidateActiveQueries).toHaveBeenCalledWith(['lesson.current', 'news'])
+  })
+
+  it('routes ordinary invalidations by resource while preserving conservative queries', () => {
+    expect(shouldInvalidateRealtimeQuery(undefined, ['review-queue'])).toBe(true)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['review-queue'] }, ['review-queue']),
+    ).toBe(true)
+    expect(
+      shouldInvalidateRealtimeQuery({ realtimeResources: ['review-lease'] }, ['review-queue']),
+    ).toBe(false)
+    expect(shouldInvalidateRealtimeQuery({ realtimeResources: [] }, ['review-queue'])).toBe(false)
   })
 
   it('fails closed on malformed frames and reconnects with only the in-memory cursor', async () => {
