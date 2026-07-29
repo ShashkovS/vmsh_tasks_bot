@@ -165,6 +165,10 @@
       {
         "id": "0059.pwa_classroom_assignments",
         "sha256": "a71853d0e5fc9c9fcd4f8177fad9beb5a49f9a0ad7f4a9c92900868ac19909bb"
+      },
+      {
+        "id": "0060.pwa_classroom_import_receipts",
+        "sha256": "cc126dd2498c3fbb2c27f8834ec3623ae352f107ca362bba7aa477ee87bcc7ef"
       }
     ],
     "repository_head_status": {
@@ -175,7 +179,7 @@
     }
   },
   "product": {
-    "object_count": 368,
+    "object_count": 369,
     "objects": [
       {
         "columns": [
@@ -2164,6 +2168,232 @@
         "object_sha256": "b8d7714153b5ee4c1e1e8d215b7a503e88bb8acdf74e60b98f87b664a28de065",
         "sql": "CREATE TABLE classroom_events\n(\n    id                     integer primary key,\n    public_id              text    not null unique,\n    classroom_id           integer not null references classrooms (id),\n    action                 text    not null\n        check (action in ('created', 'renamed', 'archived', 'restored')),\n    before_name            text,\n    before_normalized_name text,\n    before_status          text check (\n        before_status is null or before_status in ('active', 'archived')\n    ),\n    after_name             text    not null,\n    after_normalized_name  text    not null,\n    after_status           text    not null\n        check (after_status in ('active', 'archived')),\n    version_after          integer not null check (version_after > 0),\n    actor_user_id          integer not null references users (id),\n    request_id             text    not null check (length(trim(request_id)) > 0),\n    created_at             text    not null,\n    check (\n        (action = 'created' and before_name is null\n                            and before_normalized_name is null\n                            and before_status is null)\n        or (action <> 'created' and before_name is not null\n                               and before_normalized_name is not null\n                               and before_status is not null)\n    )\n);",
         "table_name": "classroom_events",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "in_person_event_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "preview_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_sheet",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_row_count",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "classroom_count",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "assignment_count",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "layout_version_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "assignment_plan_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "applied_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "assignment_plan_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "classroom_assignment_plans"
+          },
+          {
+            "from_columns": [
+              "in_person_event_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "in_person_events"
+          },
+          {
+            "from_columns": [
+              "layout_version_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "classroom_layout_versions"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_classroom_import_receipts_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "in_person_event_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_classroom_import_receipts_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "classroom_import_receipts",
+        "object_sha256": "8daf6149a12cf5ff749a1169f1e3def5fc4a3aac5be4a0fc4cdfbf93caaa74f0",
+        "sql": "CREATE TABLE classroom_import_receipts\n(\n    id                    integer primary key,\n    public_id             text    not null unique,\n    in_person_event_id    integer not null unique references in_person_events (id),\n    source_sha256         text    not null check (length(source_sha256) = 64),\n    preview_sha256        text    not null check (length(preview_sha256) = 64),\n    source_sheet          text    not null check (length(trim(source_sheet)) > 0),\n    source_row_count      integer not null check (source_row_count >= 0),\n    classroom_count       integer not null check (classroom_count >= 0),\n    assignment_count      integer not null check (assignment_count >= 0),\n    layout_version_id     integer not null references classroom_layout_versions (id),\n    assignment_plan_id    integer not null references classroom_assignment_plans (id),\n    actor_user_id         integer not null references users (id),\n    applied_at            text    not null\n);",
+        "table_name": "classroom_import_receipts",
         "type": "table"
       },
       {
@@ -21718,8 +21948,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "ee393f24d16a02ac3a3079ccd92f018db5572ebf98ae5c49a984cf78121ea118",
-    "sha256": "aadc197566c00e93220ee69fb4c022350466df905832d1fadbc758671d525ac1"
+    "pragma_structure_sha256": "84b82bf99934e23fea162d92427d01355a8ae5e2a1ba30a7a318095f4630efea",
+    "sha256": "ff265773f3ec44ebc2e9f3c3de9b4654856570a6cbe51658a38c65dba7de5239"
   },
   "source_kind": "repository-migration-head"
 }

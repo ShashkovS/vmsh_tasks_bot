@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: aadc197566c00e93220ee69fb4c022350466df905832d1fadbc758671d525ac1
+-- Product schema SHA-256: ff265773f3ec44ebc2e9f3c3de9b4654856570a6cbe51658a38c65dba7de5239
 
 CREATE TABLE auth_accounts
 (
@@ -245,6 +245,23 @@ CREATE TABLE classroom_events
                                and before_normalized_name is not null
                                and before_status is not null)
     )
+);
+
+CREATE TABLE classroom_import_receipts
+(
+    id                    integer primary key,
+    public_id             text    not null unique,
+    in_person_event_id    integer not null unique references in_person_events (id),
+    source_sha256         text    not null check (length(source_sha256) = 64),
+    preview_sha256        text    not null check (length(preview_sha256) = 64),
+    source_sheet          text    not null check (length(trim(source_sheet)) > 0),
+    source_row_count      integer not null check (source_row_count >= 0),
+    classroom_count       integer not null check (classroom_count >= 0),
+    assignment_count      integer not null check (assignment_count >= 0),
+    layout_version_id     integer not null references classroom_layout_versions (id),
+    assignment_plan_id    integer not null references classroom_assignment_plans (id),
+    actor_user_id         integer not null references users (id),
+    applied_at            text    not null
 );
 
 CREATE TABLE classroom_layout_rooms

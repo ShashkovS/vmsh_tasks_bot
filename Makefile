@@ -142,6 +142,23 @@ pwa-auth-import-apply:
 	@test -n "$(PWA_AUTH_IMPORT_REPORT)" || (echo "Set PWA_AUTH_IMPORT_REPORT"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.auth_import apply --database "$(PWA_AUTH_IMPORT_DATABASE)" --confirm-database "$(PWA_AUTH_IMPORT_CONFIRM_DATABASE)" --decisions "$(PWA_AUTH_IMPORT_DECISIONS)" --report "$(PWA_AUTH_IMPORT_REPORT)"
 
+.PHONY: pwa-classroom-import-preview pwa-classroom-import-apply
+pwa-classroom-import-preview:
+	@test -n "$(PWA_CLASSROOM_IMPORT_DATABASE)" || (echo "Set PWA_CLASSROOM_IMPORT_DATABASE"; exit 2)
+	@test -n "$(PWA_CLASSROOM_IMPORT_XLSX)" || (echo "Set PWA_CLASSROOM_IMPORT_XLSX"; exit 2)
+	@test -n "$(PWA_CLASSROOM_IMPORT_EVENT)" || (echo "Set PWA_CLASSROOM_IMPORT_EVENT"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.classroom_import preview --database "$(PWA_CLASSROOM_IMPORT_DATABASE)" --xlsx "$(PWA_CLASSROOM_IMPORT_XLSX)" --sheet "$(or $(PWA_CLASSROOM_IMPORT_SHEET),Итог)" --event "$(PWA_CLASSROOM_IMPORT_EVENT)" $(if $(PWA_CLASSROOM_IMPORT_REPORT),--report "$(PWA_CLASSROOM_IMPORT_REPORT)",)
+
+pwa-classroom-import-apply:
+	@test -n "$(PWA_CLASSROOM_IMPORT_DATABASE)" || (echo "Set PWA_CLASSROOM_IMPORT_DATABASE"; exit 2)
+	@test -n "$(PWA_CLASSROOM_IMPORT_CONFIRM_DATABASE)" || (echo "Set PWA_CLASSROOM_IMPORT_CONFIRM_DATABASE to the same exact path"; exit 2)
+	@test -n "$(PWA_CLASSROOM_IMPORT_XLSX)" || (echo "Set PWA_CLASSROOM_IMPORT_XLSX"; exit 2)
+	@test -n "$(PWA_CLASSROOM_IMPORT_EVENT)" || (echo "Set PWA_CLASSROOM_IMPORT_EVENT"; exit 2)
+	@test -n "$(PWA_CLASSROOM_IMPORT_SOURCE_SHA256)" || (echo "Set the reviewed PWA_CLASSROOM_IMPORT_SOURCE_SHA256"; exit 2)
+	@test -n "$(PWA_CLASSROOM_IMPORT_PREVIEW_SHA256)" || (echo "Set the reviewed PWA_CLASSROOM_IMPORT_PREVIEW_SHA256"; exit 2)
+	@test -n "$(PWA_CLASSROOM_IMPORT_ACTOR_USER_ID)" || (echo "Set PWA_CLASSROOM_IMPORT_ACTOR_USER_ID"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.classroom_import apply --database "$(PWA_CLASSROOM_IMPORT_DATABASE)" --confirm-database "$(PWA_CLASSROOM_IMPORT_CONFIRM_DATABASE)" --xlsx "$(PWA_CLASSROOM_IMPORT_XLSX)" --sheet "$(or $(PWA_CLASSROOM_IMPORT_SHEET),Итог)" --event "$(PWA_CLASSROOM_IMPORT_EVENT)" --confirm-source-sha256 "$(PWA_CLASSROOM_IMPORT_SOURCE_SHA256)" --confirm-preview-sha256 "$(PWA_CLASSROOM_IMPORT_PREVIEW_SHA256)" --actor-user-id "$(PWA_CLASSROOM_IMPORT_ACTOR_USER_ID)" $(if $(PWA_CLASSROOM_IMPORT_REPORT),--report "$(PWA_CLASSROOM_IMPORT_REPORT)",)
+
 pwa-workload-profile-check:
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.workload_profile check
 
