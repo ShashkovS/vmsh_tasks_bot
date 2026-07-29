@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: cda08a14972a3167b0961491f38e7481d7a4e3fea6fc15945473c8aee085f818
+-- Product schema SHA-256: 969cdc995ee2aef95de009aabf923932e1ce838328984047949ac72017236455
 
 CREATE TABLE auth_accounts
 (
@@ -1307,6 +1307,33 @@ CREATE TABLE messages_log
     ts          timestamp not null,
     msg_text    TEXT,
     attach_path TEXT
+);
+
+CREATE TABLE notification_deliveries
+(
+    id                     integer primary key,
+    public_id              text    not null unique,
+    event_id               integer not null references notification_events (id),
+    subscription_public_id text    not null,
+    state                  text    not null
+        check (state in ('pending', 'sending', 'retry', 'sent', 'failed', 'suppressed')),
+    attempt_count          integer not null default 0 check (attempt_count >= 0),
+    next_attempt_at        text    not null,
+    claim_token            text,
+    claim_until            text,
+    delivered_at           text,
+    last_error_code        text,
+    created_at             text    not null,
+    updated_at             text    not null,
+    unique (event_id, subscription_public_id),
+    check (
+        (state = 'sending' and claim_token is not null and claim_until is not null)
+        or (state <> 'sending' and claim_token is null and claim_until is null)
+    ),
+    check (
+        (state = 'sent' and delivered_at is not null)
+        or (state <> 'sent' and delivered_at is null)
+    )
 );
 
 CREATE TABLE notification_events
@@ -2628,6 +2655,9 @@ CREATE UNIQUE INDEX media_assets_content_hash_version_uq
 
 CREATE INDEX media_assets_namespace_created_idx
     on media_assets (storage_namespace, created_at, id);
+
+CREATE INDEX notification_deliveries_due_idx
+    on notification_deliveries (state, next_attempt_at, id);
 
 CREATE INDEX notification_events_account_unread_idx
     on notification_events (account_id, read_at, occurred_at desc, id desc);

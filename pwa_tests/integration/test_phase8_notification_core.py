@@ -52,8 +52,9 @@ def _notification_objects(database_path: Path) -> set[str]:
         return {
             str(row[0])
             for row in connection.execute(
-                "SELECT name FROM sqlite_schema WHERE name LIKE 'notification_%' "
-                "AND name NOT LIKE 'sqlite_%'"
+                "SELECT name FROM sqlite_schema WHERE name IN ("
+                "'notification_events', 'notification_events_account_unread_idx', "
+                "'notification_preferences')"
             )
         }
 

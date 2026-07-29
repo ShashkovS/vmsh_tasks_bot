@@ -185,6 +185,10 @@
       {
         "id": "0064.pwa_push_subscriptions",
         "sha256": "f54895df39f6ea2cc247ce028f1507e01e6dd7ece68c6cdb4a839a5095cc45d1"
+      },
+      {
+        "id": "0065.pwa_notification_deliveries",
+        "sha256": "b2b80214c5d87e1142bd6ee2d8d1cb1ff4b080efc9cc57f9b9c2a9c734d988ab"
       }
     ],
     "repository_head_status": {
@@ -195,7 +199,7 @@
     }
   },
   "product": {
-    "object_count": 379,
+    "object_count": 381,
     "objects": [
       {
         "columns": [
@@ -11546,6 +11550,244 @@
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
+            "name": "event_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "subscription_public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": "0",
+            "hidden": 0,
+            "name": "attempt_count",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "next_attempt_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "claim_token",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "claim_until",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "delivered_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "last_error_code",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "updated_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "event_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "notification_events"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "state",
+                "seqno": 0
+              },
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "next_attempt_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "notification_deliveries_due_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_notification_deliveries_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "event_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "subscription_public_id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_notification_deliveries_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "notification_deliveries",
+        "object_sha256": "a35ca6bf629b8660e059aacdbbc309e4ac366a334d3813dae4125106a83b7274",
+        "sql": "CREATE TABLE notification_deliveries\n(\n    id                     integer primary key,\n    public_id              text    not null unique,\n    event_id               integer not null references notification_events (id),\n    subscription_public_id text    not null,\n    state                  text    not null\n        check (state in ('pending', 'sending', 'retry', 'sent', 'failed', 'suppressed')),\n    attempt_count          integer not null default 0 check (attempt_count >= 0),\n    next_attempt_at        text    not null,\n    claim_token            text,\n    claim_until            text,\n    delivered_at           text,\n    last_error_code        text,\n    created_at             text    not null,\n    updated_at             text    not null,\n    unique (event_id, subscription_public_id),\n    check (\n        (state = 'sending' and claim_token is not null and claim_until is not null)\n        or (state <> 'sending' and claim_token is null and claim_until is null)\n    ),\n    check (\n        (state = 'sent' and delivered_at is not null)\n        or (state <> 'sent' and delivered_at is null)\n    )\n);",
+        "table_name": "notification_deliveries",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
             "name": "account_id",
             "not_null": true,
             "primary_key_ordinal": 0
@@ -21875,6 +22117,13 @@
         "type": "index"
       },
       {
+        "name": "notification_deliveries_due_idx",
+        "object_sha256": "6bb703351950d0acd0de320323bd5f2332cfae1de87a23f40950622bdff106c4",
+        "sql": "CREATE INDEX notification_deliveries_due_idx\n    on notification_deliveries (state, next_attempt_at, id);",
+        "table_name": "notification_deliveries",
+        "type": "index"
+      },
+      {
         "name": "notification_events_account_unread_idx",
         "object_sha256": "ef9e7a203c98590384487c09e3db5c1021af0039c158b6d0c72e09077001da64",
         "sql": "CREATE INDEX notification_events_account_unread_idx\n    on notification_events (account_id, read_at, occurred_at desc, id desc);",
@@ -23359,8 +23608,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "abd20cc18eef347765a8cd4c2698907cc132db220ecf61aa978200b5fd7bd918",
-    "sha256": "cda08a14972a3167b0961491f38e7481d7a4e3fea6fc15945473c8aee085f818"
+    "pragma_structure_sha256": "87d46cd8f9bfcb514449a1136029e594d8ddd3622209a7ec3257d6dc9ce6eb35",
+    "sha256": "969cdc995ee2aef95de009aabf923932e1ce838328984047949ac72017236455"
   },
   "source_kind": "repository-migration-head"
 }

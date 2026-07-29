@@ -100,7 +100,9 @@ from helpers.pwa.content import (
     ContentAssetConverter,
     ContentAssetService,
 )
+from helpers.pwa.push_delivery import PushSender, deliver_web_push_once
 from helpers.pwa.storage_config import load_storage_config
+from helpers.pwa.web_push import send_web_push
 from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience
 from models.pwa.content import ContentKind
@@ -126,6 +128,9 @@ PWA_CONTENT_SCHEDULER_STOP = web.AppKey("pwa_content_scheduler_stop", asyncio.Ev
 PWA_CONTENT_SCHEDULER_TASK = web.AppKey(
     "pwa_content_scheduler_task", asyncio.Task[None]
 )
+PWA_PUSH_DELIVERY_STOP = web.AppKey("pwa_push_delivery_stop", asyncio.Event)
+PWA_PUSH_DELIVERY_TASK = web.AppKey("pwa_push_delivery_task", asyncio.Task[None])
+PWA_PUSH_SENDER = web.AppKey("pwa_push_sender", PushSender)
 PWA_RESPONSE_PREPARED = web.AppKey("pwa_response_prepared", bool)
 PWA_CONTENT_ASSET_CONVERTER = web.AppKey(
     "pwa_content_asset_converter",
@@ -1133,6 +1138,10 @@ async def on_content_scheduler_shutdown(app: web.Application) -> None:
 async def on_shutdown(app: web.Application):
     shutdown_errors: list[BaseException] = []
     try:
+        await on_push_delivery_shutdown(app)
+    except BaseException as error:
+        shutdown_errors.append(error)
+    try:
         await on_content_scheduler_shutdown(app)
     except BaseException as error:
         shutdown_errors.append(error)
@@ -1147,6 +1156,72 @@ async def on_shutdown(app: web.Application):
     if shutdown_errors:
         raise BaseExceptionGroup("PWA realtime shutdown failed", shutdown_errors)
     logger.info("PWA app shutdown")
+
+
+async def on_push_delivery_startup(app: web.Application) -> None:
+    runtime_config = _runtime_config(app)
+    if not all(
+        (
+            runtime_config.pwa_vapid_public_key,
+            runtime_config.pwa_vapid_private_key,
+            runtime_config.pwa_vapid_subject,
+        )
+    ):
+        return
+    database = app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        return
+    sender = app.get(PWA_PUSH_SENDER)
+    if sender is None:
+
+        async def configured_sender(
+            subscription: dict[str, object], payload: dict[str, object]
+        ) -> None:
+            await send_web_push(
+                subscription,
+                payload,
+                private_key=runtime_config.pwa_vapid_private_key,
+                subject=runtime_config.pwa_vapid_subject,
+            )
+
+        sender = configured_sender
+    stop = asyncio.Event()
+    app[PWA_PUSH_DELIVERY_STOP] = stop
+
+    async def run() -> None:
+        while not stop.is_set():
+            try:
+                await deliver_web_push_once(database.factory, sender)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.exception("Web Push delivery iteration failed")
+            try:
+                await asyncio.wait_for(stop.wait(), timeout=5)
+            except TimeoutError:
+                pass
+
+    app[PWA_PUSH_DELIVERY_TASK] = asyncio.create_task(
+        run(), name="pwa-web-push-delivery"
+    )
+
+
+async def on_push_delivery_shutdown(app: web.Application) -> None:
+    task = app.get(PWA_PUSH_DELIVERY_TASK)
+    stop = app.get(PWA_PUSH_DELIVERY_STOP)
+    if task is None or stop is None:
+        return
+    stop.set()
+    try:
+        async with asyncio.timeout(5):
+            await asyncio.shield(task)
+    except TimeoutError:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+    except asyncio.CancelledError:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+        raise
 
 
 def configure(
@@ -1168,8 +1243,25 @@ def configure(
         ContentAssetConverter | ConfiguredContentAssetConverter | None
     ) = None,
     classroom_telegram_sender: TelegramClassroomSender | None = None,
+    push_sender: PushSender | None = None,
 ):
     runtime_config = _runtime_config(app)
+    vapid_settings = (
+        runtime_config.pwa_vapid_public_key,
+        runtime_config.pwa_vapid_private_key,
+        runtime_config.pwa_vapid_subject,
+    )
+    if (
+        runtime_config.production_mode
+        and any(vapid_settings)
+        and not all(vapid_settings)
+    ):
+        raise RuntimeError("Production Web Push requires all VAPID settings")
+    if (
+        runtime_config.pwa_vapid_subject
+        and not runtime_config.pwa_vapid_subject.startswith(("mailto:", "https://"))
+    ):
+        raise RuntimeError("VAPID subject must use mailto: or https://")
     # Browser storage uses this server-owned value verbatim. Rejecting an
     # unsafe namespace during composition prevents a partially working process
     # whose frontend would fail closed only after the first request.
@@ -1199,6 +1291,8 @@ def configure(
         classroom_telegram_sender = send_classroom_telegram
     if classroom_telegram_sender is not None:
         app[PWA_CLASSROOM_TELEGRAM_SENDER] = classroom_telegram_sender
+    if push_sender is not None:
+        app[PWA_PUSH_SENDER] = push_sender
     app[PWA_STATE] = _create_pwa_state()
     registry = WebSocketSessionRegistry()
     app[PWA_WEBSOCKET_REGISTRY] = registry
@@ -1419,6 +1513,8 @@ def configure(
             app.on_startup.append(on_written_attachment_startup)
     app.add_routes(pwa_routes)
     app.on_startup.append(on_startup)
+    if auth_enabled:
+        app.on_startup.append(on_push_delivery_startup)
     if content_enabled:
         # Registration order is deliberate: SQLite binding happens first,
         # realtime/NATS second, and only then can the scheduler commit and fan

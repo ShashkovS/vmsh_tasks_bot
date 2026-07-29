@@ -66,4 +66,17 @@ def list_active_subscriptions(
     return [dict(row) for row in rows]
 
 
-__all__ = ["delete_subscription", "list_active_subscriptions", "save_subscription"]
+def delete_subscription_by_id(
+    connection: sqlite3.Connection, *, subscription_id: int
+) -> None:
+    connection.execute(
+        "DELETE FROM push_subscriptions WHERE id = ?", (subscription_id,)
+    )
+
+
+__all__ = [
+    "delete_subscription",
+    "delete_subscription_by_id",
+    "list_active_subscriptions",
+    "save_subscription",
+]
