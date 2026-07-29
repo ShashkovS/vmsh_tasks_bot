@@ -136,7 +136,8 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
             {progress.data.summary.attempted > 0 ? (
               <p className="mt-3 text-small text-muted-foreground">
                 Частично решено: {progress.data.summary.partial} · нужно вернуться:{' '}
-                {progress.data.summary.needsWork}
+                {progress.data.summary.needsWork} · ждут проверки:{' '}
+                {progress.data.summary.awaitingReview}
               </p>
             ) : null}
           </CardContent>

@@ -8,11 +8,15 @@ const progressCountsSchema = z
     accepted: z.number().int().nonnegative(),
     partial: z.number().int().nonnegative(),
     needsWork: z.number().int().nonnegative(),
+    awaitingReview: z.number().int().nonnegative(),
   })
   .strip()
-  .refine((value) => value.accepted + value.partial + value.needsWork === value.attempted, {
-    message: 'Progress categories must add up to attempted',
-  })
+  .refine(
+    (value) =>
+      value.accepted + value.partial + value.needsWork <= value.attempted &&
+      value.awaitingReview <= value.attempted,
+    { message: 'Progress counters cannot exceed attempted' },
+  )
 
 export const courseProgressResponseSchema = z
   .object({

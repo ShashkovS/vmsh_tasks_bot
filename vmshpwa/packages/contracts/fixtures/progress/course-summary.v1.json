@@ -6,7 +6,8 @@
       "attempted": 5,
       "accepted": 3,
       "partial": 1,
-      "needsWork": 1
+      "needsWork": 1,
+      "awaitingReview": 1
     },
     "lessons": [
       {
@@ -14,14 +15,16 @@
         "attempted": 2,
         "accepted": 1,
         "partial": 1,
-        "needsWork": 0
+        "needsWork": 0,
+        "awaitingReview": 0
       },
       {
         "lessonNumber": 41,
         "attempted": 3,
         "accepted": 2,
         "partial": 0,
-        "needsWork": 1
+        "needsWork": 1,
+        "awaitingReview": 1
       }
     ],
     "activity": [

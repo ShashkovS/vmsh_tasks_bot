@@ -16,7 +16,7 @@ describe('personal course progress contract', () => {
     expect(
       courseProgressResponseSchema.safeParse({
         ...fixture.response,
-        summary: { ...fixture.response.summary, attempted: 99 },
+        summary: { ...fixture.response.summary, attempted: 1 },
       }).success,
     ).toBe(false)
   })

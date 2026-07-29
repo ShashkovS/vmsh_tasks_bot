@@ -55,4 +55,42 @@ def list_course_result_rows(
     return [dict(row) for row in rows]
 
 
-__all__ = ["list_course_result_rows"]
+def list_course_pending_review_rows(
+    connection: sqlite3.Connection,
+    *,
+    student_user_id: int,
+    course_id: int,
+) -> list[dict[str, object]]:
+    """Return the student's current written-review queue within one course."""
+
+    rows = connection.execute(
+        """
+        SELECT queue.problem_id,
+               queue.ts,
+               problem.lesson AS lesson_number,
+               CASE
+                   WHEN synonym_group.id IS NULL
+                   THEN 'problem:' || queue.problem_id
+                   ELSE 'synonym:' || synonym_group.id
+               END AS logical_problem_key
+        FROM written_tasks_queue AS queue
+        JOIN problems AS problem ON problem.id = queue.problem_id
+        JOIN groups AS group_record
+          ON group_record.group_id = problem.group_id
+         AND group_record.course_id = ?
+        LEFT JOIN problem_synonym_members AS synonym_member
+          ON synonym_member.problem_id = queue.problem_id
+         AND synonym_member.removed_at IS NULL
+        LEFT JOIN problem_synonym_groups AS synonym_group
+          ON synonym_group.id = synonym_member.synonym_group_id
+         AND synonym_group.status = 'active'
+        WHERE queue.student_id = ?
+          AND queue.problem_id > 0
+        ORDER BY queue.ts, queue.id
+        """,
+        (course_id, student_user_id),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+__all__ = ["list_course_pending_review_rows", "list_course_result_rows"]

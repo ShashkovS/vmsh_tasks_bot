@@ -130,6 +130,11 @@ async def test_student_progress_is_course_scoped_and_collapses_retries(content_h
                 ),
             ),
         )
+        connection.execute(
+            "INSERT INTO written_tasks_queue "
+            "(ts, student_id, problem_id, cur_status) VALUES (?, ?, ?, 0)",
+            ("2026-09-16T11:00:00", content_support.STUDENT_USER_ID, problem_id),
+        )
 
     fixture.factory.run_write(seed_results)
     response = await fixture.client.get(
@@ -140,7 +145,13 @@ async def test_student_progress_is_course_scoped_and_collapses_retries(content_h
     assert response.status == 200, await response.text()
     assert await response.json() == {
         "courseId": "course-content-http",
-        "summary": {"attempted": 1, "accepted": 1, "partial": 0, "needsWork": 0},
+        "summary": {
+            "attempted": 1,
+            "accepted": 1,
+            "partial": 0,
+            "needsWork": 0,
+            "awaitingReview": 1,
+        },
         "lessons": [
             {
                 "lessonNumber": 41,
@@ -148,6 +159,7 @@ async def test_student_progress_is_course_scoped_and_collapses_retries(content_h
                 "accepted": 1,
                 "partial": 0,
                 "needsWork": 0,
+                "awaitingReview": 1,
             }
         ],
         "activity": [

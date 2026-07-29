@@ -26,7 +26,10 @@ from db_methods.pwa.content import (
     StudentLessonMaterialRecord,
     StudentLessonSummaryRecord,
 )
-from db_methods.pwa.progress import list_course_result_rows
+from db_methods.pwa.progress import (
+    list_course_pending_review_rows,
+    list_course_result_rows,
+)
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.progress import summarize_course_results
@@ -308,17 +311,25 @@ async def get_student_course_progress(request: web.Request) -> web.Response:
             message="Прогресс временно недоступен",
         )
 
-    rows = await database.factory.run_read_async(
-        lambda connection: list_course_result_rows(
-            connection,
-            student_user_id=student_user_id,
-            course_id=enrollment.course_id,
+    def read(connection):
+        return (
+            list_course_result_rows(
+                connection,
+                student_user_id=student_user_id,
+                course_id=enrollment.course_id,
+            ),
+            list_course_pending_review_rows(
+                connection,
+                student_user_id=student_user_id,
+                course_id=enrollment.course_id,
+            ),
         )
-    )
+
+    rows, pending_review_rows = await database.factory.run_read_async(read)
     return web.json_response(
         {
             "courseId": enrollment.course_public_id,
-            **summarize_course_results(rows),
+            **summarize_course_results(rows, pending_review_rows),
         }
     )
 
