@@ -20,6 +20,10 @@
 - `db_methods/pwa/oral_windows.py` — только прямые SQLite-запросы;
 - `models/pwa/oral_windows.py` — проверка времени, URL и состояния окна;
 - `apps/pwa_api/oral_window_routes.py` — права, HTTP-ошибки и русские тексты;
+- `vmshpwa/packages/contracts/src/oral-windows.ts`;
+- `vmshpwa/packages/app-shell/src/oral-window-client.ts`;
+- `vmshpwa/packages/product/src/oral-admission.tsx`;
+- `vmshpwa/apps/student/src/student-oral-admission.tsx`;
 - `pwa_tests/integration/test_phase7_oral_windows.py`.
 
 ## Автоматические доказательства
@@ -31,3 +35,8 @@
 - 43 соседних Phase-7/API теста прошли вместе с новым сценарием;
 - `pwa_tests/test_schema_inventory.py` и canonical schema artifacts обновлены
   на migration head.
+- Storybook: `Product/Oral admission--schedule`,
+  `Product/Oral admission--reveal-join-details` и
+  `Product/Oral admission--no-windows`; 3 browser-mode теста прошли.
+- Контракты и browser client: 3 Vitest-теста прошли; Student production build
+  и `injectManifest` service worker собраны.

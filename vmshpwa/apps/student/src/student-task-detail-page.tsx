@@ -29,6 +29,7 @@ import {
 import { StudentTestAnswer } from './student-test-answer'
 import { StudentWrittenSubmission } from './student-written-submission'
 import { StudentProblemQuestionLink } from './student-support-pages'
+import { StudentOralAdmission } from './student-oral-admission'
 
 function problemRequestState(error: unknown) {
   return error instanceof CourseNetworkError || error instanceof ContentNetworkError
@@ -303,6 +304,9 @@ function CanonicalStudentTask({
         <>
           <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} />
           {problem.type === 'test' ? <StudentTestAnswer problemId={problem.problemId} /> : null}
+          {problem.type === 'oral' ? (
+            <StudentOralAdmission courseId={courseId} groupLessonId={groupLessonId} />
+          ) : null}
           {problem.type === 'written' || problem.type === 'oral' ? (
             <StudentWrittenSubmission
               conditionRevisionId={query.data.conditionRevisionId}
