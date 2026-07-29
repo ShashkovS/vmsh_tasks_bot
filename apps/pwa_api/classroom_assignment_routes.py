@@ -20,6 +20,7 @@ from models.pwa.classroom_assignments import (
     InvalidClassroomAssignment,
     confirm_assignment_plan,
     read_assignment_plan,
+    read_assignment_history,
     recalculate_assignment_plan,
     update_assignment_plan,
 )
@@ -340,6 +341,52 @@ async def post_recalculate_classroom_assignment_plan(
         _raise_domain_error(error)
         raise AssertionError("unreachable")
     return _response(request, result)
+
+
+@classroom_assignment_routes.get(
+    "/staff/api/v1/in-person-events/{event_public_id}/classroom-assignment-plan/"
+    "{plan_public_id}/students/{enrollment_public_id}/history"
+)
+async def get_classroom_assignment_history(request: web.Request) -> web.Response:
+    _admin_user_id(request)
+    event_public_id = _public_id(request, "event_public_id")
+    plan_public_id = _public_id(request, "plan_public_id")
+    enrollment_public_id = _public_id(request, "enrollment_public_id")
+    try:
+        items = await _factory(request).run_read_async(
+            lambda connection: read_assignment_history(
+                connection,
+                event_public_id=event_public_id,
+                plan_public_id=plan_public_id,
+                enrollment_public_id=enrollment_public_id,
+            )
+        )
+    except ClassroomAssignmentNotFound as error:
+        _raise_domain_error(error)
+        raise AssertionError("unreachable")
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "items": [
+                {
+                    "eventPublicId": item["event_public_id"],
+                    "eventName": item["event_name"],
+                    "startsAt": item["starts_at"],
+                    "planPublicId": item["plan_public_id"],
+                    "confirmedAt": item["confirmed_at"],
+                    "classroomPublicId": item["classroom_public_id"],
+                    "classroomName": item["classroom_name"],
+                    "coursePublicId": item["course_public_id"],
+                    "courseName": item["course_name"],
+                    "groupPublicId": item["group_public_id"],
+                    "groupName": item["group_name"],
+                    "groupLessonPublicId": item["group_lesson_public_id"],
+                }
+                for item in items
+            ],
+            "requestId": request["request_id"],
+        }
+    )
 
 
 @classroom_assignment_routes.put(

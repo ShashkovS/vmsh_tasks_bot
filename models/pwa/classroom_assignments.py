@@ -17,6 +17,7 @@ from db_methods.pwa.classroom_assignments import (
     insert_group_change_event,
     insert_legacy_group_change,
     list_eligible_students,
+    list_assignment_history,
     list_plan_assignments,
     replace_assignments,
     supersede_confirmed_plan,
@@ -390,12 +391,37 @@ def update_assignment_plan(
     return read_assignment_plan(connection, event_public_id, today=today)
 
 
+def read_assignment_history(
+    connection: sqlite3.Connection,
+    *,
+    event_public_id: str,
+    plan_public_id: str,
+    enrollment_public_id: str,
+) -> list[dict[str, object]]:
+    event = _event(connection, event_public_id)
+    plan = find_plan_by_public_id(connection, plan_public_id)
+    if plan is None or int(plan["in_person_event_id"]) != int(event["id"]):
+        raise ClassroomAssignmentNotFound
+    assignment = next(
+        (
+            row
+            for row in list_plan_assignments(connection, int(plan["id"]))
+            if row["enrollment_public_id"] == enrollment_public_id
+        ),
+        None,
+    )
+    if assignment is None:
+        raise ClassroomAssignmentNotFound
+    return list_assignment_history(connection, int(assignment["course_enrollment_id"]))
+
+
 __all__ = [
     "ClassroomAssignmentConflict",
     "ClassroomAssignmentNotFound",
     "InvalidClassroomAssignment",
     "confirm_assignment_plan",
     "read_assignment_plan",
+    "read_assignment_history",
     "recalculate_assignment_plan",
     "update_assignment_plan",
 ]

@@ -550,6 +550,21 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     assert confirmed_assignment["plan"]["state"] == "confirmed"
     assert confirmed_assignment["plan"]["version"] == 3
 
+    history = await classroom_http.client.get(
+        f"{assignment_path}/{plan['publicId']}/students/"
+        "classroom-layout-enrollment/history",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert history.status == 200, await history.text()
+    history_items = (await history.json())["items"]
+    assert len(history_items) == 1
+    assert (
+        history_items[0]["eventName"],
+        history_items[0]["classroomName"],
+        history_items[0]["groupName"],
+    ) == ("Очное занятие", "202", "Начинающие")
+
 
 @pytest.mark.asyncio
 async def test_admin_confirms_group_change_with_classroom_move(classroom_http):

@@ -172,6 +172,36 @@ def list_plan_assignments(
     return [dict(row) for row in rows]
 
 
+def list_assignment_history(
+    connection: sqlite3.Connection, enrollment_id: int
+) -> list[dict[str, object]]:
+    rows = connection.execute(
+        """
+        SELECT event.public_id AS event_public_id, event.name AS event_name,
+               event.starts_at, plan.public_id AS plan_public_id,
+               plan.confirmed_at, room.public_id AS classroom_public_id,
+               room.name AS classroom_name, course.public_id AS course_public_id,
+               course.name AS course_name, groups.public_id AS group_public_id,
+               groups.public_name AS group_name,
+               lesson.public_id AS group_lesson_public_id
+        FROM classroom_assignments assignment
+        JOIN classroom_assignment_plans plan ON plan.id = assignment.plan_id
+        JOIN in_person_events event ON event.id = plan.in_person_event_id
+        JOIN classrooms room ON room.id = assignment.classroom_id
+        JOIN group_lessons lesson ON lesson.id = assignment.group_lesson_id
+        JOIN courses course ON course.id = lesson.course_id
+        JOIN groups ON groups.course_id = lesson.course_id
+                   AND groups.group_id = lesson.group_id
+        WHERE assignment.course_enrollment_id = ?
+          AND assignment.status = 'assigned'
+          AND plan.state IN ('confirmed', 'superseded')
+        ORDER BY event.starts_at DESC, plan.confirmed_at DESC, plan.id DESC
+        """,
+        (enrollment_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def touch_plan(
     connection: sqlite3.Connection,
     *,
@@ -383,6 +413,7 @@ __all__ = [
     "insert_legacy_group_change",
     "grant_group_access",
     "list_eligible_students",
+    "list_assignment_history",
     "list_plan_assignments",
     "replace_assignments",
     "supersede_confirmed_plan",
