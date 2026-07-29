@@ -262,7 +262,14 @@ async def test_student_and_family_read_course_and_group_news(classroom_http):
             "published_at": "2026-10-05T10:00:00Z",
             "content": [
                 {"type": "plain", "text": "A😀"},
-                {"type": "bold", "text": "Б"},
+                {
+                    "type": "plain",
+                    "text": "Б",
+                    "marks": [
+                        {"type": "bold"},
+                        {"type": "link", "href": "https://example.test/live"},
+                    ],
+                },
             ],
             "media": [],
         }
@@ -314,7 +321,15 @@ async def test_student_and_family_read_course_and_group_news(classroom_http):
         {
             "kind": "text",
             "text": "A😀Б",
-            "entities": [{"type": "bold", "offset": 3, "length": 1}],
+            "entities": [
+                {"type": "bold", "offset": 3, "length": 1},
+                {
+                    "type": "link",
+                    "offset": 3,
+                    "length": 1,
+                    "href": "https://example.test/live",
+                },
+            ],
         }
     ]
 

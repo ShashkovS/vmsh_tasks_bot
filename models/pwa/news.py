@@ -65,6 +65,27 @@ def _content(update: dict[str, object]) -> tuple[list[dict[str, object]], str]:
                 if not isinstance(value, str):
                     raise InvalidNewsUpdate("content")
                 clean[key] = value
+        marks = node.get("marks")
+        if marks is not None:
+            if not isinstance(marks, list):
+                raise InvalidNewsUpdate("content")
+            clean_marks: list[dict[str, str]] = []
+            for mark in marks:
+                if not isinstance(mark, dict) or not isinstance(mark.get("type"), str):
+                    raise InvalidNewsUpdate("content")
+                clean_mark = {"type": mark["type"]}
+                href = mark.get("href")
+                if href is not None:
+                    if not isinstance(href, str):
+                        raise InvalidNewsUpdate("content")
+                    clean_mark["href"] = href
+                unsupported_type = mark.get("unsupportedType")
+                if unsupported_type is not None:
+                    if not isinstance(unsupported_type, str):
+                        raise InvalidNewsUpdate("content")
+                    clean_mark["unsupportedType"] = unsupported_type
+                clean_marks.append(clean_mark)
+            clean["marks"] = clean_marks
         normalized.append(clean)
         plain_parts.append(text)
     return normalized, "".join(plain_parts)

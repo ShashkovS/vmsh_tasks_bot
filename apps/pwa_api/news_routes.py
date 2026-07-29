@@ -91,16 +91,21 @@ def _blocks(content_json: object) -> list[dict[str, object]]:
         if not isinstance(node, dict) or not isinstance(node.get("text"), str):
             raise RuntimeError("Stored news content is invalid")
         text = node["text"]
-        node_type = node.get("type")
-        if node_type in _ENTITY_TYPES and text:
-            entity: dict[str, object] = {
-                "type": node_type,
-                "offset": offset,
-                "length": _utf16_length(text),
-            }
-            if node_type == "link" and isinstance(node.get("href"), str):
-                entity["href"] = node["href"]
-            entities.append(entity)
+        raw_marks = node.get("marks")
+        marks = raw_marks if isinstance(raw_marks, list) else [node]
+        for mark in marks:
+            if not isinstance(mark, dict):
+                raise RuntimeError("Stored news content is invalid")
+            node_type = mark.get("type")
+            if node_type in _ENTITY_TYPES and text:
+                entity: dict[str, object] = {
+                    "type": node_type,
+                    "offset": offset,
+                    "length": _utf16_length(text),
+                }
+                if node_type == "link" and isinstance(mark.get("href"), str):
+                    entity["href"] = mark["href"]
+                entities.append(entity)
         text_parts.append(text)
         offset += _utf16_length(text)
     block: dict[str, object] = {"kind": "text", "text": "".join(text_parts)}
