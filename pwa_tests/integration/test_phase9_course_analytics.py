@@ -11,6 +11,7 @@ from db_methods.pwa.course_analytics import (
 )
 from models.pwa.course_analytics import calculate_course_lesson_metrics
 from pwa_tests.integration import test_content_http_api as content_support
+from vmshpwa.scripts.course_analytics import calculate_active_courses
 
 
 content_http = content_support.content_http
@@ -101,3 +102,29 @@ async def test_course_analytics_reads_calculates_and_publishes_one_snapshot(
     assert analytics["lessons"][0]["lessonNumber"] == 41
     assert analytics["lessons"][0]["groupId"] == "group-content-http-a"
     assert analytics["lessons"][0]["solvedItems"] == 1
+
+
+async def test_analytics_command_calculates_every_active_course(content_http):
+    fixture = content_http
+    (
+        problem_public_id,
+        _revision_id,
+    ) = await content_support._prepare_published_test_problem(fixture, problem_type=2)
+
+    def seed_and_calculate(connection):
+        problem_id = connection.execute(
+            "SELECT id FROM problems WHERE public_id = ?", (problem_public_id,)
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO results "
+            "(student_id, problem_id, group_id, lesson, teacher_id, ts, verdict, res_type) "
+            "VALUES (?, ?, 'content-a', 41, NULL, '2026-09-17T10:00:00', 17, 2)",
+            (content_support.STUDENT_USER_ID, problem_id),
+        )
+        return calculate_active_courses(
+            connection,
+            completed_at="2026-09-17T12:00:00Z",
+            run_token="integration",
+        )
+
+    assert fixture.factory.run_write(seed_and_calculate) == [("course-content-http", 1)]

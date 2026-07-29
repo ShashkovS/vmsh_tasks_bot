@@ -60,7 +60,7 @@ pwa-agent-staff:
 pwa-agent-storybook:
 	cd $(PWA_DIR) && CI=true STORYBOOK_PORT=6106 pnpm storybook
 
-.PHONY: pwa-migrate pwa-agent-migrate pwa-e2e-migrate pwa-seed pwa-agent-seed pwa-toolchain-check pwa-agent-toolchain-check pwa-toolchain-smoke pwa-agent-toolchain-smoke
+.PHONY: pwa-migrate pwa-agent-migrate pwa-e2e-migrate pwa-seed pwa-agent-seed pwa-analytics pwa-agent-analytics pwa-toolchain-check pwa-agent-toolchain-check pwa-toolchain-smoke pwa-agent-toolchain-smoke
 pwa-migrate:
 	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.migrate_runtime
 
@@ -75,6 +75,12 @@ pwa-seed:
 
 pwa-agent-seed:
 	$(PWA_UV_ENV) $(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.seed_runtime
+
+pwa-analytics:
+	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.course_analytics
+
+pwa-agent-analytics:
+	$(PWA_UV_ENV) $(PWA_AGENT_ENV) uv run python -m vmshpwa.scripts.course_analytics
 
 pwa-toolchain-check:
 	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) uv run python -m vmshpwa.scripts.toolchain_preflight

@@ -29,5 +29,8 @@ rolling window and achievements remain separate Phase-9 increments.
 - Contracts and Student TypeScript checks: passed.
 - Student and Family production builds: passed; both `injectManifest` service
   workers were generated.
+- Agent-profile maintenance smoke: `make pwa-agent-migrate &&
+  make pwa-agent-analytics` completed 43 migrations and wrote 2 lesson points
+  for `course-fixture-math-5-7`.
 
 No visual baseline was updated.
