@@ -199,11 +199,92 @@ def list_batch_recipients(
     return [dict(row) for row in rows]
 
 
+def claim_next_telegram_recipient(
+    connection: sqlite3.Connection, batch_public_id: str
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT recipient.batch_id, recipient.course_enrollment_id, "
+        "recipient.telegram_chat_id, recipient.student_display_name, "
+        "recipient.event_name, recipient.course_name, recipient.group_name, "
+        "recipient.classroom_name "
+        "FROM classroom_assignment_delivery_recipients recipient "
+        "JOIN classroom_assignment_delivery_batches batch "
+        "ON batch.id = recipient.batch_id "
+        "WHERE batch.public_id = ? AND recipient.telegram_state = 'queued' "
+        "AND recipient.telegram_error_code IS NULL "
+        "ORDER BY recipient.student_display_name, recipient.course_enrollment_id "
+        "LIMIT 1",
+        (batch_public_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    claimed = connection.execute(
+        "UPDATE classroom_assignment_delivery_recipients "
+        "SET telegram_error_code = 'processing' "
+        "WHERE batch_id = ? AND course_enrollment_id = ? "
+        "AND telegram_state = 'queued' AND telegram_error_code IS NULL",
+        (row["batch_id"], row["course_enrollment_id"]),
+    ).rowcount
+    return dict(row) if claimed == 1 else None
+
+
+def finish_telegram_recipient(
+    connection: sqlite3.Connection,
+    *,
+    batch_id: int,
+    course_enrollment_id: int,
+    state: str,
+    error_code: str | None,
+    sent_at: str | None,
+) -> bool:
+    changed = connection.execute(
+        "UPDATE classroom_assignment_delivery_recipients "
+        "SET telegram_state = ?, telegram_error_code = ?, telegram_sent_at = ? "
+        "WHERE batch_id = ? AND course_enrollment_id = ? "
+        "AND telegram_error_code = 'processing'",
+        (state, error_code, sent_at, batch_id, course_enrollment_id),
+    ).rowcount
+    return changed == 1
+
+
+def finish_telegram_batch(
+    connection: sqlite3.Connection, batch_public_id: str, now: str
+) -> None:
+    states = connection.execute(
+        "SELECT recipient.telegram_state, recipient.pwa_state "
+        "FROM classroom_assignment_delivery_recipients recipient "
+        "JOIN classroom_assignment_delivery_batches batch "
+        "ON batch.id = recipient.batch_id WHERE batch.public_id = ?",
+        (batch_public_id,),
+    ).fetchall()
+    if any(row["telegram_state"] == "queued" for row in states):
+        state = "queued"
+        completed_at = None
+    elif any(
+        row["telegram_state"] == "failed" or row["pwa_state"] == "failed"
+        for row in states
+    ):
+        state = "completed_with_errors"
+        completed_at = now
+    else:
+        state = "completed"
+        completed_at = now
+    connection.execute(
+        "UPDATE classroom_assignment_delivery_batches "
+        "SET state = ?, completed_at = ?, version = version + 1 "
+        "WHERE public_id = ?",
+        (state, completed_at, batch_public_id),
+    )
+
+
 __all__ = [
+    "claim_next_telegram_recipient",
     "find_batch",
     "find_batch_by_idempotency_key",
     "find_confirmed_plan",
     "find_latest_batch_for_event",
+    "finish_telegram_batch",
+    "finish_telegram_recipient",
     "insert_batch",
     "insert_recipients",
     "list_batch_recipients",

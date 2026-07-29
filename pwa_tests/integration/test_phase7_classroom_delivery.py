@@ -9,12 +9,18 @@ from pathlib import Path
 import pytest
 import yoyo
 
+from db_methods.pwa.classroom_delivery import (
+    claim_next_telegram_recipient,
+    finish_telegram_batch,
+    finish_telegram_recipient,
+)
 from db_methods.pwa.migrations import MIGRATIONS_ROOT
 from models.pwa.classroom_delivery import (
     ClassroomDeliveryConflict,
     InvalidClassroomDelivery,
     create_classroom_delivery_batch,
     preview_classroom_delivery,
+    read_classroom_delivery_batch,
     read_latest_classroom_delivery_batch,
 )
 from models.pwa.classroom_public import read_student_classroom_assignments
@@ -175,6 +181,47 @@ def test_latest_delivery_is_empty_before_first_send(tmp_path):
         assert (
             read_latest_classroom_delivery_batch(connection, "plan-assignment") is None
         )
+
+
+def test_telegram_recipient_is_claimed_once_and_failure_finishes_batch(tmp_path):
+    database_path = tmp_path / "phase7-delivery-claim.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        _seed_delivery(connection)
+        preview = preview_classroom_delivery(
+            connection, plan_public_id="plan-assignment"
+        )
+        create_classroom_delivery_batch(
+            connection,
+            public_id="delivery-claim",
+            plan_public_id="plan-assignment",
+            expected_plan_version=2,
+            expected_snapshot_hash=str(preview["snapshot_hash"]),
+            actor_user_id=2,
+            pwa_selected=False,
+            telegram_selected=True,
+            idempotency_key="delivery-claim-key",
+            now=NOW,
+        )
+
+        claimed = claim_next_telegram_recipient(connection, "delivery-claim")
+        assert claimed is not None
+        assert claim_next_telegram_recipient(connection, "delivery-claim") is None
+        assert finish_telegram_recipient(
+            connection,
+            batch_id=int(claimed["batch_id"]),
+            course_enrollment_id=int(claimed["course_enrollment_id"]),
+            state="failed",
+            error_code="telegram_forbidden",
+            sent_at=None,
+        )
+        finish_telegram_batch(connection, "delivery-claim", NOW)
+
+        result = read_classroom_delivery_batch(connection, "delivery-claim")
+        assert result["batch"]["state"] == "completed_with_errors"
+        assert result["recipients"][0]["telegram_error_code"] == ("telegram_forbidden")
 
 
 def test_delivery_rejects_stale_preview_and_unconfirmed_plan(tmp_path):

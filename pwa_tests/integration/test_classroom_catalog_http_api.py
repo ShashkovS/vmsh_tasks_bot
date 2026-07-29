@@ -196,6 +196,7 @@ class ClassroomHttpFixture:
     cookies: MappingProxyType
     student_cookie: str
     family_cookie: str
+    telegram_messages: list[tuple[int, str]]
 
 
 @pytest.fixture()
@@ -223,11 +224,19 @@ async def classroom_http(tmp_path, aiohttp_client) -> ClassroomHttpFixture:
         pwa_prototype=True,
         nats_server=None,
     )
+
+    telegram_messages: list[tuple[int, str]] = []
+
+    async def send_classroom_telegram(chat_id: int, text: str) -> int:
+        telegram_messages.append((chat_id, text))
+        return len(telegram_messages)
+
     pwa_app.configure(
         app,
         broker=InProcessBroker("classroom_http_test"),
         auth_runtime_config=auth_config,
         auth_service=auth_service,
+        classroom_telegram_sender=send_classroom_telegram,
     )
     # The route reads the same verified connection boundary as production.
     # Setting it after composition keeps unrelated content/review routes out of
@@ -272,6 +281,7 @@ async def classroom_http(tmp_path, aiohttp_client) -> ClassroomHttpFixture:
             "classroom-http-family",
             "family-password",
         ),
+        telegram_messages=telegram_messages,
     )
 
 
@@ -728,11 +738,20 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     )
     assert delivery_response.status == 201, await delivery_response.text()
     delivery = (await delivery_response.json())["batch"]
-    assert delivery["state"] == "queued"
+    assert delivery["state"] == "completed"
     assert delivery["channelCounts"] == {
         "pwa": {"sent": 1},
-        "telegram": {"queued": 1},
+        "telegram": {"sent": 1},
     }
+    assert classroom_http.telegram_messages == [
+        (
+            179179,
+            "Очное занятие\nМатематика · Начинающие\n\n"
+            "Ваша аудитория: 202.\n\n"
+            "Если вы не планируете прийти очно, пожалуйста, заранее измените "
+            "режим занятия в личном кабинете.",
+        )
+    ]
     assert "chatId" not in delivery["recipients"][0]
     latest_delivery_response = await classroom_http.client.get(
         delivery_preview_path.removesuffix("/delivery-preview") + "/delivery-latest",

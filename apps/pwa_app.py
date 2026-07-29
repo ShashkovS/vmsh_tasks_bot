@@ -16,6 +16,8 @@ from apps.pwa_api.classroom_assignment_routes import (
     classroom_assignment_routes,
 )
 from apps.pwa_api.classroom_delivery_routes import classroom_delivery_routes
+from apps.pwa_api.classroom_delivery_routes import PWA_CLASSROOM_TELEGRAM_SENDER
+from apps.pwa_api.classroom_delivery_transport import TelegramClassroomSender
 from apps.pwa_api.classroom_routes import classroom_routes
 from apps.pwa_api.classroom_layout_routes import classroom_layout_routes
 from apps.pwa_api.content_routes import (
@@ -89,7 +91,7 @@ from helpers.pwa.api_contracts import (
     build_runtime_payload,
     validate_runtime_instance,
 )
-from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG
+from helpers.pwa.app_keys import ENABLED_ADAPTERS, PWA_DATABASE, RUNTIME_CONFIG
 from helpers.pwa.auth_config import AuthRuntimeConfig, load_auth_runtime_config
 from helpers.pwa.content import (
     ConfiguredContentAssetConverter,
@@ -1163,6 +1165,7 @@ def configure(
     content_asset_converter: (
         ContentAssetConverter | ConfiguredContentAssetConverter | None
     ) = None,
+    classroom_telegram_sender: TelegramClassroomSender | None = None,
 ):
     runtime_config = _runtime_config(app)
     # Browser storage uses this server-owned value verbatim. Rejecting an
@@ -1177,6 +1180,23 @@ def configure(
     app.middlewares.append(pwa_error_middleware)
     app.on_response_prepare.append(on_pwa_response_prepare)
     app[PWA_BROKER] = broker
+    if classroom_telegram_sender is None and any(
+        getattr(adapter, "__name__", "") == "apps.tg_bot"
+        for adapter in app.get(ENABLED_ADAPTERS, ())
+    ):
+        from helpers.bot import bot
+
+        async def send_classroom_telegram(chat_id: int, text: str) -> int:
+            message = await bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                parse_mode=None,
+            )
+            return message.message_id
+
+        classroom_telegram_sender = send_classroom_telegram
+    if classroom_telegram_sender is not None:
+        app[PWA_CLASSROOM_TELEGRAM_SENDER] = classroom_telegram_sender
     app[PWA_STATE] = _create_pwa_state()
     registry = WebSocketSessionRegistry()
     app[PWA_WEBSOCKET_REGISTRY] = registry

@@ -12,6 +12,10 @@ from aiohttp import web
 from apps.pwa_api.classroom_assignment_routes import (
     PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR,
 )
+from apps.pwa_api.classroom_delivery_transport import (
+    TelegramClassroomSender,
+    deliver_classroom_telegram_batch,
+)
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
 from db_methods.pwa.classroom_assignments import list_assignment_owner_accounts
@@ -30,6 +34,9 @@ from models.pwa.classroom_delivery import (
 
 
 classroom_delivery_routes = web.RouteTableDef()
+PWA_CLASSROOM_TELEGRAM_SENDER = web.AppKey(
+    "pwa_classroom_telegram_sender", TelegramClassroomSender
+)
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
 _HASH = re.compile(r"^[a-f0-9]{64}$")
 
@@ -314,6 +321,15 @@ async def post_classroom_delivery_batch(request: web.Request) -> web.Response:
         raise AssertionError("unreachable")
 
     student_user_ids = tuple(result.get("student_user_ids", ()))
+    sender = request.app.get(PWA_CLASSROOM_TELEGRAM_SENDER)
+    if sender is not None and result["batch"]["state"] == "queued":
+        result = await deliver_classroom_telegram_batch(
+            _factory(request),
+            batch_public_id=str(result["batch"]["public_id"]),
+            sender=sender,
+            now=_now,
+        )
+
     if student_user_ids:
         owners = await _factory(request).run_read_async(
             lambda connection: list_assignment_owner_accounts(
@@ -385,4 +401,4 @@ async def get_classroom_delivery_batch(request: web.Request) -> web.Response:
     )
 
 
-__all__ = ["classroom_delivery_routes"]
+__all__ = ["PWA_CLASSROOM_TELEGRAM_SENDER", "classroom_delivery_routes"]
