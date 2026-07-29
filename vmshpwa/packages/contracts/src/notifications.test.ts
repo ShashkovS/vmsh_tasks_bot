@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import eventsFixture from '../fixtures/notifications/events.v1.json'
 import preferencesFixture from '../fixtures/notifications/preferences.v1.json'
 import {
+  courseNotificationPreferenceListResponseSchema,
   deletePushSubscriptionRequestSchema,
   nativePushPayloadSchema,
   notificationEventListResponseSchema,
@@ -11,6 +12,7 @@ import {
   pushSubscriptionConfigResponseSchema,
   savePushSubscriptionRequestSchema,
   updateNotificationPreferenceRequestSchema,
+  updateCourseNotificationPreferenceRequestSchema,
 } from './notifications'
 
 describe('notification contracts', () => {
@@ -38,6 +40,30 @@ describe('notification contracts', () => {
         timezone: 'Europe/Moscow',
       }),
     ).toThrow()
+  })
+
+  it('validates inherited and explicit course push preferences', () => {
+    const items = preferencesFixture.items.map((item) => ({
+      category: item.category,
+      pushEnabled: item.pushEnabled,
+      inherited: true,
+      updatedAt: null,
+    }))
+    expect(
+      courseNotificationPreferenceListResponseSchema.parse({
+        schemaVersion: 1,
+        courseId: 'course.math',
+        items,
+        requestId: 'request-course-preferences',
+      }).items,
+    ).toHaveLength(9)
+    expect(
+      updateCourseNotificationPreferenceRequestSchema.parse({
+        schemaVersion: 1,
+        category: 'news',
+        pushEnabled: null,
+      }).pushEnabled,
+    ).toBeNull()
   })
 
   it('isolates query keys by account and unread filter', () => {

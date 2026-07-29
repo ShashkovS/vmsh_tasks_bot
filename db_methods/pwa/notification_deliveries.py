@@ -10,7 +10,8 @@ def list_due_candidates(
 ) -> list[dict[str, object]]:
     rows = connection.execute(
         "SELECT e.id AS event_id, e.category, e.deliver_after, "
-        "s.public_id AS subscription_public_id, p.push_enabled "
+        "s.public_id AS subscription_public_id, "
+        "coalesce(cp.push_enabled, p.push_enabled) AS push_enabled "
         "FROM notification_events e "
         "JOIN auth_accounts a ON a.id = e.account_id AND a.status = 'active' "
         "JOIN push_subscriptions s ON s.account_id = e.account_id "
@@ -18,6 +19,10 @@ def list_due_candidates(
         "AND ses.revoked_at IS NULL AND ses.expires_at > ? "
         "LEFT JOIN notification_preferences p "
         "ON p.account_id = e.account_id AND p.category = e.category "
+        "LEFT JOIN courses c ON c.public_id = json_extract(e.payload_json, '$.courseId') "
+        "LEFT JOIN notification_course_preferences cp "
+        "ON cp.account_id = e.account_id AND cp.course_id = c.id "
+        "AND cp.category = e.category "
         "WHERE e.deliver_after <= ? AND e.read_at IS NULL "
         "AND (s.expiration_time IS NULL OR s.expiration_time > ?) "
         "AND NOT EXISTS (SELECT 1 FROM notification_deliveries d "
@@ -95,7 +100,8 @@ def claim_deliveries(
         "SELECT d.id, d.public_id, d.attempt_count, e.public_id AS event_public_id, "
         "e.category, e.route, e.payload_json, e.occurred_at, a.audience, "
         "s.id AS subscription_id, s.endpoint, s.p256dh, s.auth_secret, "
-        "p.push_enabled, p.sound_enabled, p.quiet_starts_local, "
+        "coalesce(cp.push_enabled, p.push_enabled) AS push_enabled, "
+        "p.sound_enabled, p.quiet_starts_local, "
         "p.quiet_ends_local, p.timezone "
         "FROM notification_deliveries d "
         "JOIN notification_events e ON e.id = d.event_id "
@@ -104,6 +110,10 @@ def claim_deliveries(
         "JOIN auth_sessions ses ON ses.id = s.session_id "
         "LEFT JOIN notification_preferences p "
         "ON p.account_id = e.account_id AND p.category = e.category "
+        "LEFT JOIN courses c ON c.public_id = json_extract(e.payload_json, '$.courseId') "
+        "LEFT JOIN notification_course_preferences cp "
+        "ON cp.account_id = e.account_id AND cp.course_id = c.id "
+        "AND cp.category = e.category "
         "WHERE d.claim_token = ? AND ses.revoked_at IS NULL AND ses.expires_at > ? "
         "ORDER BY d.id",
         (claim_token, now),

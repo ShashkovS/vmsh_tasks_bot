@@ -2,7 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
-import { CourseCard, CourseGroupSwitcher } from './course-context'
+import {
+  CourseCard,
+  CourseGroupSwitcher,
+  CourseNotificationSettings,
+  type CourseNotificationPreference,
+} from './course-context'
 import { mathCourse, mathGroups, physicsCourse, physicsGroups } from './course-fixtures'
 import type { CourseEnrollmentView } from './types'
 
@@ -96,5 +101,64 @@ export const AllowedGroupReadingContext: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/Активная группа курса от этого не меняется/)).toBeVisible()
+  },
+}
+
+function CourseNotificationsHarness() {
+  const [preferences, setPreferences] = useState<CourseNotificationPreference[]>([
+    {
+      course: mathCourse,
+      category: 'news',
+      label: 'Новые публикации',
+      enabled: true,
+      inherited: true,
+    },
+    {
+      course: physicsCourse,
+      category: 'review_completed',
+      label: 'Проверка завершена',
+      enabled: false,
+      inherited: false,
+    },
+  ])
+  return (
+    <div className="max-w-xl">
+      <CourseNotificationSettings
+        onReset={(courseId, category) =>
+          setPreferences((current) =>
+            current.map((preference) =>
+              preference.course.id === courseId && preference.category === category
+                ? { ...preference, enabled: true, inherited: true }
+                : preference,
+            ),
+          )
+        }
+        onToggle={(courseId, category, enabled) =>
+          setPreferences((current) =>
+            current.map((preference) =>
+              preference.course.id === courseId && preference.category === category
+                ? { ...preference, enabled, inherited: false }
+                : preference,
+            ),
+          )
+        }
+        preferences={preferences}
+      />
+    </div>
+  )
+}
+
+export const CourseNotificationOverrides: Story = {
+  name: 'Course notification overrides',
+  render: () => <CourseNotificationsHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const mathNews = canvas.getByRole('switch', {
+      name: 'Новые публикации, Математика 5–7',
+    })
+    await userEvent.click(mathNews)
+    await expect(mathNews).not.toBeChecked()
+    await userEvent.click(canvas.getAllByRole('button', { name: 'Общая' })[0]!)
+    await expect(mathNews).toBeChecked()
   },
 }

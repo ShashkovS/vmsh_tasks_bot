@@ -182,6 +182,7 @@ export function CourseCard({
 export interface CourseNotificationPreference {
   course: CourseView
   category: string
+  label?: string
   enabled: boolean
   inherited: boolean
 }
@@ -189,10 +190,12 @@ export interface CourseNotificationPreference {
 export function CourseNotificationSettings({
   preferences,
   onToggle,
+  onReset,
   className,
 }: {
   preferences: CourseNotificationPreference[]
   onToggle?: (courseId: string, category: string, enabled: boolean) => void
+  onReset?: (courseId: string, category: string) => void
   className?: string
 }) {
   return (
@@ -218,17 +221,28 @@ export function CourseNotificationSettings({
             <div>
               <p className="text-small font-medium text-foreground">{preference.course.name}</p>
               <p className="text-caption text-muted-foreground">
-                {preference.category} ·{' '}
+                {preference.label ?? preference.category} ·{' '}
                 {preference.inherited ? 'общая настройка' : 'настройка курса'}
               </p>
             </div>
-            <Switch
-              aria-label={`${preference.category}, ${preference.course.name}`}
-              checked={preference.enabled}
-              onCheckedChange={(enabled) =>
-                onToggle?.(preference.course.id, preference.category, enabled)
-              }
-            />
+            <div className="flex items-center gap-2">
+              {!preference.inherited && onReset ? (
+                <Button
+                  onClick={() => onReset(preference.course.id, preference.category)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  Общая
+                </Button>
+              ) : null}
+              <Switch
+                aria-label={`${preference.label ?? preference.category}, ${preference.course.name}`}
+                checked={preference.enabled}
+                onCheckedChange={(enabled) =>
+                  onToggle?.(preference.course.id, preference.category, enabled)
+                }
+              />
+            </div>
           </li>
         ))}
       </ul>

@@ -5,6 +5,8 @@ import {
   acknowledgeNotificationRequestSchema,
   acknowledgeNotificationResponseSchema,
   apiErrorSchema,
+  courseNotificationPreferenceListResponseSchema,
+  courseNotificationPreferenceResponseSchema,
   deletePushSubscriptionRequestSchema,
   deletePushSubscriptionResponseSchema,
   notificationEventListResponseSchema,
@@ -17,8 +19,11 @@ import {
   savePushSubscriptionRequestSchema,
   savePushSubscriptionResponseSchema,
   updateNotificationPreferenceRequestSchema,
+  updateCourseNotificationPreferenceRequestSchema,
   type AcknowledgeNotificationResponse,
   type DeletePushSubscriptionResponse,
+  type CourseNotificationPreferenceListResponse,
+  type CourseNotificationPreferenceResponse,
   type NotificationEventListResponse,
   type NotificationPreferenceListResponse,
   type NotificationPreferenceResponse,
@@ -28,6 +33,7 @@ import {
   type SavePushSubscriptionRequest,
   type SavePushSubscriptionResponse,
   type UpdateNotificationPreferenceRequest,
+  type UpdateCourseNotificationPreferenceRequest,
 } from '@vmsh/contracts'
 
 type NotificationAudience = 'student' | 'family'
@@ -42,6 +48,14 @@ export interface NotificationClient {
   updatePreference(
     request: UpdateNotificationPreferenceRequest,
   ): Promise<NotificationPreferenceResponse>
+  coursePreferences(
+    courseId: string,
+    options?: { signal?: AbortSignal },
+  ): Promise<CourseNotificationPreferenceListResponse>
+  updateCoursePreference(
+    courseId: string,
+    request: UpdateCourseNotificationPreferenceRequest,
+  ): Promise<CourseNotificationPreferenceResponse>
   acknowledge(eventId: string): Promise<AcknowledgeNotificationResponse>
   pushConfig(options?: { signal?: AbortSignal }): Promise<PushSubscriptionConfigResponse>
   savePushSubscription(request: SavePushSubscriptionRequest): Promise<SavePushSubscriptionResponse>
@@ -109,6 +123,25 @@ export function createNotificationClient(
         }),
       )
     },
+    async coursePreferences(rawCourseId, { signal } = {}) {
+      const courseId = publicIdSchema.parse(rawCourseId)
+      return courseNotificationPreferenceListResponseSchema.parse(
+        await request(`/courses/${encodeURIComponent(courseId)}/notifications/preferences`, {
+          method: 'GET',
+          ...(signal === undefined ? {} : { signal }),
+        }),
+      )
+    },
+    async updateCoursePreference(rawCourseId, input) {
+      const courseId = publicIdSchema.parse(rawCourseId)
+      const body = updateCourseNotificationPreferenceRequestSchema.parse(input)
+      return courseNotificationPreferenceResponseSchema.parse(
+        await request(`/courses/${encodeURIComponent(courseId)}/notifications/preferences`, {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        }),
+      )
+    },
     async acknowledge(rawEventId) {
       const eventId = publicIdSchema.parse(rawEventId)
       const body = acknowledgeNotificationRequestSchema.parse({ schemaVersion: 1 })
@@ -167,6 +200,19 @@ export function useNotificationPreferencesQuery(
   return useQuery({
     queryKey: notificationQueryKeys.preferences(principal),
     queryFn: ({ signal }) => client.preferences({ signal }),
+    meta: { realtimeResources: ['notification-preferences'] },
+  })
+}
+
+export function useCourseNotificationPreferencesQuery(
+  client: NotificationClient,
+  principal: PrincipalQueryScope,
+  courseId: string | undefined,
+) {
+  return useQuery({
+    queryKey: notificationQueryKeys.coursePreferences(principal, courseId ?? 'none'),
+    queryFn: ({ signal }) => client.coursePreferences(courseId!, { signal }),
+    enabled: courseId !== undefined,
     meta: { realtimeResources: ['notification-preferences'] },
   })
 }

@@ -64,6 +64,7 @@ def _prepare_database(tmp_path, *, endpoint: str = "https://push.example.test/de
             route="/student/",
             payload_json=json.dumps(
                 {
+                    "courseId": "course-assignment",
                     "courseName": "Математика",
                     "groupName": "Начинающие",
                     "classroomName": "202",
@@ -268,6 +269,33 @@ async def test_disabled_preference_creates_auditable_suppression(tmp_path):
 
     async def sender(_subscription, _payload):
         pytest.fail("disabled preference reached the transport")
+
+    result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
+    assert result["claimed"] == 0
+    row = factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT state, last_error_code FROM notification_deliveries"
+        ).fetchone()
+    )
+    assert row == {
+        "state": "suppressed",
+        "last_error_code": "preference_disabled",
+    }
+
+
+async def test_course_override_wins_over_enabled_global_preference(tmp_path):
+    _database_path, factory = _prepare_database(tmp_path)
+    factory.run_write(
+        lambda connection: connection.execute(
+            "INSERT INTO notification_course_preferences "
+            "(account_id, course_id, category, push_enabled, updated_at) "
+            "SELECT account_id, 1, category, 0, ? FROM notification_events LIMIT 1",
+            (NOW,),
+        )
+    )
+
+    async def sender(_subscription, _payload):
+        pytest.fail("course-disabled event reached the transport")
 
     result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
     assert result["claimed"] == 0

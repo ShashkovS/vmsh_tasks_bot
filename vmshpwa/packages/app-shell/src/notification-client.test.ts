@@ -65,6 +65,48 @@ describe('notification client', () => {
     expect(fetchImplementation.mock.calls[1]?.[0]).toContain('/notification-events/')
   })
 
+  it('loads, overrides and restores one course category', async () => {
+    const items = preferencesFixture.items.map((item) => ({
+      category: item.category,
+      pushEnabled: item.pushEnabled,
+      inherited: true,
+      updatedAt: null,
+    }))
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          courseId: 'course.math',
+          items,
+          requestId: 'request-course-list',
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          courseId: 'course.math',
+          preference: { ...items.at(-1), pushEnabled: false, inherited: false },
+          requestId: 'request-course-update',
+        }),
+      )
+    const client = createNotificationClient(runtime, 'student', { fetchImplementation })
+
+    expect((await client.coursePreferences('course.math')).items).toHaveLength(9)
+    await client.updateCoursePreference('course.math', {
+      schemaVersion: 1,
+      category: 'news',
+      pushEnabled: false,
+    })
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/student/api/v1/courses/course.math/notifications/preferences',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[1]?.body).toBe(
+      JSON.stringify({ schemaVersion: 1, category: 'news', pushEnabled: false }),
+    )
+  })
+
   it('refreshes once after a 401', async () => {
     const fetchImplementation = vi
       .fn<typeof fetch>()

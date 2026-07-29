@@ -15,11 +15,14 @@ from helpers.pwa.permissions import Capability
 from models.pwa.auth import AuthAudience
 from models.pwa.notifications import (
     InvalidNotificationPreference,
+    NotificationCourseNotFound,
     NotificationNotFound,
     acknowledge_event,
     read_events,
+    read_course_preferences,
     read_preferences,
     update_preference,
+    update_course_preference,
 )
 
 
@@ -96,6 +99,37 @@ def _preference_payload(item: dict[str, object]) -> dict[str, object]:
         "timezone": item["timezone"],
         "updatedAt": item["updated_at"],
     }
+
+
+def _course_preference_payload(item: dict[str, object]) -> dict[str, object]:
+    return {
+        "category": item["category"],
+        "pushEnabled": bool(item["push_enabled"]),
+        "inherited": bool(item["inherited"]),
+        "updatedAt": item["updated_at"],
+    }
+
+
+def _student_account_id(request: web.Request) -> int:
+    account_id, _session_id, audience = _identity(request)
+    if audience is not AuthAudience.STUDENT:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Настройки курса доступны только школьнику",
+        )
+    return account_id
+
+
+def _course_public_id(request: web.Request) -> str:
+    value = request.match_info["course_public_id"]
+    if _PUBLIC_ID.fullmatch(value) is None:
+        raise PwaApiError(
+            status=404,
+            code="course_not_found",
+            message="Курс не найден",
+        )
+    return value
 
 
 async def _get_events(request: web.Request) -> web.Response:
@@ -214,6 +248,83 @@ async def _put_preferences(request: web.Request) -> web.Response:
     )
 
 
+async def _get_course_preferences(request: web.Request) -> web.Response:
+    account_id = _student_account_id(request)
+    course_public_id = _course_public_id(request)
+    try:
+        course, items = await _factory(request).run_read_async(
+            lambda connection: read_course_preferences(
+                connection,
+                account_id=account_id,
+                course_public_id=course_public_id,
+            )
+        )
+    except NotificationCourseNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="course_not_found",
+            message="Курс не найден",
+        ) from error
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "courseId": course["public_id"],
+            "items": [_course_preference_payload(item) for item in items],
+            "requestId": request["request_id"],
+        }
+    )
+
+
+async def _put_course_preference(request: web.Request) -> web.Response:
+    account_id = _student_account_id(request)
+    course_public_id = _course_public_id(request)
+    payload = await _json(request)
+    if (
+        set(payload) != {"schemaVersion", "category", "pushEnabled"}
+        or not isinstance(payload["category"], str)
+        or (
+            payload["pushEnabled"] is not None
+            and not isinstance(payload["pushEnabled"], bool)
+        )
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте настройку курса",
+        )
+    try:
+        item = await _factory(request).run_write_async(
+            lambda connection: update_course_preference(
+                connection,
+                account_id=account_id,
+                course_public_id=course_public_id,
+                category=str(payload["category"]),
+                push_enabled=payload["pushEnabled"],
+                now=_now(),
+            )
+        )
+    except NotificationCourseNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="course_not_found",
+            message="Курс не найден",
+        ) from error
+    except InvalidNotificationPreference as error:
+        raise PwaApiError(
+            status=422,
+            code="invalid_notification_preference",
+            message="Проверьте настройку курса",
+        ) from error
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "courseId": course_public_id,
+            "preference": _course_preference_payload(item),
+            "requestId": request["request_id"],
+        }
+    )
+
+
 async def _post_read(request: web.Request) -> web.Response:
     account_id, session_id, _audience = _identity(request)
     event_public_id = request.match_info["event_public_id"]
@@ -267,6 +378,13 @@ for audience in ("student", "family"):
     notification_routes.post(
         f"/{audience}/api/v1/notification-events/{{event_public_id}}/read"
     )(_post_read)
+
+notification_routes.get(
+    "/student/api/v1/courses/{course_public_id}/notifications/preferences"
+)(_get_course_preferences)
+notification_routes.put(
+    "/student/api/v1/courses/{course_public_id}/notifications/preferences"
+)(_put_course_preference)
 
 
 __all__ = ["notification_routes"]

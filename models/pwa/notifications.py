@@ -8,10 +8,13 @@ import sqlite3
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from db_methods.pwa.notifications import (
+    list_course_preferences,
     list_events,
     list_preferences,
     mark_event_read,
+    save_course_preference,
     save_preference,
+    student_notification_course,
 )
 
 
@@ -34,6 +37,10 @@ class NotificationNotFound(Exception):
 
 
 class InvalidNotificationPreference(Exception):
+    pass
+
+
+class NotificationCourseNotFound(Exception):
     pass
 
 
@@ -103,6 +110,78 @@ def update_preference(
     )
 
 
+def read_course_preferences(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    course_public_id: str,
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    course = student_notification_course(
+        connection,
+        account_id=account_id,
+        course_public_id=course_public_id,
+    )
+    if course is None:
+        raise NotificationCourseNotFound
+    stored = {
+        str(item["category"]): item
+        for item in list_course_preferences(
+            connection,
+            account_id=account_id,
+            course_id=int(course["id"]),
+        )
+    }
+    items = []
+    for global_preference in read_preferences(connection, account_id):
+        category = str(global_preference["category"])
+        override = stored.get(category)
+        items.append(
+            {
+                "category": category,
+                "push_enabled": (
+                    global_preference["push_enabled"]
+                    if override is None
+                    else override["push_enabled"]
+                ),
+                "inherited": override is None,
+                "updated_at": None if override is None else override["updated_at"],
+            }
+        )
+    return course, items
+
+
+def update_course_preference(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    course_public_id: str,
+    category: str,
+    push_enabled: bool | None,
+    now: str,
+) -> dict[str, object]:
+    if category not in NOTIFICATION_CATEGORIES:
+        raise InvalidNotificationPreference("unknown_category")
+    course, _items = read_course_preferences(
+        connection,
+        account_id=account_id,
+        course_public_id=course_public_id,
+    )
+    save_course_preference(
+        connection,
+        account_id=account_id,
+        course_id=int(course["id"]),
+        category=category,
+        push_enabled=push_enabled,
+        updated_at=now,
+    )
+    _course, items = read_course_preferences(
+        connection,
+        account_id=account_id,
+        course_public_id=course_public_id,
+    )
+    return next(item for item in items if item["category"] == category)
+
+
 def read_events(
     connection: sqlite3.Connection,
     *,
@@ -145,8 +224,11 @@ __all__ = [
     "InvalidNotificationPreference",
     "NOTIFICATION_CATEGORIES",
     "NotificationNotFound",
+    "NotificationCourseNotFound",
     "acknowledge_event",
     "read_events",
+    "read_course_preferences",
     "read_preferences",
     "update_preference",
+    "update_course_preference",
 ]

@@ -8,12 +8,15 @@ import {
   PageStatePanel,
   browserPushSubscriptionRequest,
   createNotificationClient,
+  createStudentCourseClient,
   decodeApplicationServerKey,
   useAuthenticatedPrincipal,
   useAuthentication,
+  useCourseNotificationPreferencesQuery,
   useNotificationEventsQuery,
   useNotificationPreferencesQuery,
   usePushSubscriptionConfigQuery,
+  useStudentCoursesQuery,
 } from '@vmsh/app-shell'
 import {
   notificationQueryKeys,
@@ -22,7 +25,13 @@ import {
   type NotificationEventListResponse,
   type NotificationPreference,
 } from '@vmsh/contracts'
-import { NotificationEventCard, PushPermissionCard } from '@vmsh/product'
+import {
+  CourseContext,
+  CourseNotificationSettings,
+  NotificationEventCard,
+  PushPermissionCard,
+  type CourseView,
+} from '@vmsh/product'
 import {
   Alert,
   AlertContent,
@@ -283,7 +292,28 @@ export function StudentNotificationsPage() {
       }),
     [authentication],
   )
+  const courseClient = useMemo(
+    () =>
+      createStudentCourseClient(authentication.client.runtime, {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const courses = useStudentCoursesQuery(courseClient, scope)
+  const [requestedCourseId, setRequestedCourseId] = useState<string>()
+  const availableCourses = courses.data?.enrollments ?? []
+  const courseId = availableCourses.some((item) => item.course.courseId === requestedCourseId)
+    ? requestedCourseId
+    : availableCourses[0]?.course.courseId
   const preferences = useNotificationPreferencesQuery(client, scope)
+  const coursePreferences = useCourseNotificationPreferencesQuery(client, scope, courseId)
   const events = useNotificationEventsQuery(client, scope)
   const pushConfig = usePushSubscriptionConfigQuery(client, scope)
   const queryClient = useQueryClient()
@@ -302,6 +332,26 @@ export function StudentNotificationsPage() {
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: notificationQueryKeys.preferences(scope) }),
   })
+  const coursePreferenceMutation = useMutation({
+    mutationFn: ({
+      selectedCourseId,
+      category,
+      pushEnabled,
+    }: {
+      selectedCourseId: string
+      category: NotificationCategory
+      pushEnabled: boolean | null
+    }) =>
+      client.updateCoursePreference(selectedCourseId, {
+        schemaVersion: 1,
+        category,
+        pushEnabled,
+      }),
+    onSuccess: (_response, variables) =>
+      queryClient.invalidateQueries({
+        queryKey: notificationQueryKeys.coursePreferences(scope, variables.selectedCourseId),
+      }),
+  })
   const readMutation = useMutation({
     mutationFn: (eventId: string) => client.acknowledge(eventId),
     onSuccess: (receipt) => {
@@ -319,6 +369,14 @@ export function StudentNotificationsPage() {
   })
   const markRead = readMutation.mutate
   const onRead = useCallback((eventId: string) => markRead(eventId), [markRead])
+  const courseViews: CourseView[] = (courses.data?.enrollments ?? []).map(({ course }, index) => ({
+    id: course.courseId,
+    code: course.code,
+    name: course.name,
+    subjectCode: course.subjectCode,
+    accentIndex: Math.min(4, index + 1) as CourseView['accentIndex'],
+  }))
+  const selectedCourse = courseViews.find((course) => course.id === courseId)
 
   return (
     <PageLayout
@@ -391,6 +449,60 @@ export function StudentNotificationsPage() {
           </AlertContent>
         </Alert>
       </PageSection>
+
+      {selectedCourse ? (
+        <PageSection title="По курсам">
+          {courseViews.length > 1 ? (
+            <CourseContext
+              activeCourseId={selectedCourse.id}
+              courses={courseViews}
+              onCourseChange={setRequestedCourseId}
+            />
+          ) : null}
+          {coursePreferences.isPending ? <PageStatePanel state="loading" /> : null}
+          {coursePreferences.error ? (
+            <PageStatePanel
+              actionLabel="Повторить"
+              onAction={() => void coursePreferences.refetch()}
+              state="error"
+            />
+          ) : null}
+          {coursePreferences.data ? (
+            <CourseNotificationSettings
+              onReset={(selectedCourseId, category) =>
+                coursePreferenceMutation.mutate({
+                  selectedCourseId,
+                  category: category as NotificationCategory,
+                  pushEnabled: null,
+                })
+              }
+              onToggle={(selectedCourseId, category, pushEnabled) =>
+                coursePreferenceMutation.mutate({
+                  selectedCourseId,
+                  category: category as NotificationCategory,
+                  pushEnabled,
+                })
+              }
+              preferences={coursePreferences.data.items.map((preference) => ({
+                course: selectedCourse,
+                category: preference.category,
+                label: categoryCopy[preference.category].title,
+                enabled: preference.pushEnabled,
+                inherited: preference.inherited,
+              }))}
+            />
+          ) : null}
+          {coursePreferenceMutation.error ? (
+            <Alert tone="danger">
+              <Bell aria-hidden="true" />
+              <AlertContent>
+                <AlertTitle>Настройка курса не сохранена</AlertTitle>
+                <AlertDescription>Проверьте соединение и попробуйте ещё раз.</AlertDescription>
+              </AlertContent>
+            </Alert>
+          ) : null}
+        </PageSection>
+      ) : null}
 
       <PageSection title="Последние события">
         {events.isPending ? <PageStatePanel state="loading" /> : null}

@@ -105,6 +105,67 @@ def save_preference(
     )
 
 
+def student_notification_course(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    course_public_id: str,
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT course.id, course.public_id, course.name "
+        "FROM auth_accounts AS account "
+        "JOIN course_enrollments AS enrollment "
+        "ON enrollment.student_user_id = account.linked_user_id "
+        "JOIN courses AS course ON course.id = enrollment.course_id "
+        "WHERE account.id = ? AND account.audience = 'student' "
+        "AND account.status = 'active' AND enrollment.status = 'active' "
+        "AND course.public_id = ? LIMIT 1",
+        (account_id, course_public_id),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def list_course_preferences(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    course_id: int,
+) -> list[dict[str, object]]:
+    rows = connection.execute(
+        "SELECT category, push_enabled, updated_at "
+        "FROM notification_course_preferences "
+        "WHERE account_id = ? AND course_id = ? ORDER BY category",
+        (account_id, course_id),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def save_course_preference(
+    connection: sqlite3.Connection,
+    *,
+    account_id: int,
+    course_id: int,
+    category: str,
+    push_enabled: bool | None,
+    updated_at: str,
+) -> None:
+    if push_enabled is None:
+        connection.execute(
+            "DELETE FROM notification_course_preferences "
+            "WHERE account_id = ? AND course_id = ? AND category = ?",
+            (account_id, course_id, category),
+        )
+        return
+    connection.execute(
+        "INSERT INTO notification_course_preferences "
+        "(account_id, course_id, category, push_enabled, updated_at) "
+        "VALUES (?, ?, ?, ?, ?) "
+        "ON CONFLICT(account_id, course_id, category) DO UPDATE SET "
+        "push_enabled = excluded.push_enabled, updated_at = excluded.updated_at",
+        (account_id, course_id, category, int(push_enabled), updated_at),
+    )
+
+
 def insert_event(
     connection: sqlite3.Connection,
     *,

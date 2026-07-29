@@ -82,6 +82,53 @@ export const notificationPreferenceResponseSchema = z
   .strict()
 export type NotificationPreferenceResponse = z.infer<typeof notificationPreferenceResponseSchema>
 
+export const courseNotificationPreferenceSchema = z
+  .object({
+    category: notificationCategorySchema,
+    pushEnabled: z.boolean(),
+    inherited: z.boolean(),
+    updatedAt: z.iso.datetime().nullable(),
+  })
+  .strict()
+export type CourseNotificationPreference = z.infer<typeof courseNotificationPreferenceSchema>
+
+export const courseNotificationPreferenceListResponseSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    courseId: publicIdSchema,
+    items: z
+      .array(courseNotificationPreferenceSchema)
+      .length(notificationCategorySchema.options.length),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type CourseNotificationPreferenceListResponse = z.infer<
+  typeof courseNotificationPreferenceListResponseSchema
+>
+
+export const updateCourseNotificationPreferenceRequestSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    category: notificationCategorySchema,
+    pushEnabled: z.boolean().nullable(),
+  })
+  .strict()
+export type UpdateCourseNotificationPreferenceRequest = z.infer<
+  typeof updateCourseNotificationPreferenceRequestSchema
+>
+
+export const courseNotificationPreferenceResponseSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    courseId: publicIdSchema,
+    preference: courseNotificationPreferenceSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type CourseNotificationPreferenceResponse = z.infer<
+  typeof courseNotificationPreferenceResponseSchema
+>
+
 export const acknowledgeNotificationRequestSchema = z
   .object({ schemaVersion: versionSchema })
   .strict()
@@ -180,6 +227,8 @@ export const notificationQueryKeys = {
     ['notifications', ...principalQueryKey(principal), 'events', { unreadOnly }] as const,
   preferences: (principal: PrincipalQueryScope) =>
     ['notifications', ...principalQueryKey(principal), 'preferences'] as const,
+  coursePreferences: (principal: PrincipalQueryScope, courseId: string) =>
+    ['notifications', ...principalQueryKey(principal), 'course', courseId, 'preferences'] as const,
   pushConfig: (principal: PrincipalQueryScope) =>
     ['notifications', ...principalQueryKey(principal), 'push-config'] as const,
 } as const
