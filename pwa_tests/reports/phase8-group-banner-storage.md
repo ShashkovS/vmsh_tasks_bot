@@ -26,3 +26,14 @@
 - `git diff --check` — passed.
 
 No browser or external service is involved in this storage slice.
+
+## Authenticated HTTP increment
+
+- Student and Family read `GET /{audience}/api/v1/banners/active`; scope comes
+  only from authenticated active course enrollments and their allowed groups.
+- Admin lists, creates, edits and cancels scheduled banners under
+  `/staff/api/v1/group-banners`. Teacher access is rejected with `403`.
+- Mutations require optimistic `If-Match` after creation and publish a
+  best-effort `banners` refetch hint after the SQLite commit.
+- `uv run pytest -q -n0 pwa_tests/integration/test_phase8_group_banner_http_api.py pwa_tests/integration/test_phase8_group_banners.py`
+  — 4 passed.

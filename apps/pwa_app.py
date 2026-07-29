@@ -21,6 +21,10 @@ from apps.pwa_api.classroom_delivery_routes import PWA_CLASSROOM_TELEGRAM_SENDER
 from apps.pwa_api.classroom_delivery_transport import TelegramClassroomSender
 from apps.pwa_api.notification_routes import notification_routes
 from apps.pwa_api.news_routes import news_routes
+from apps.pwa_api.group_banner_routes import (
+    PWA_BANNER_INVALIDATOR,
+    group_banner_routes,
+)
 from apps.pwa_api.news_moderation_routes import (
     PWA_NEWS_INVALIDATOR,
     news_moderation_routes,
@@ -879,6 +883,25 @@ async def publish_news_invalidation(
         )
 
 
+async def publish_banner_invalidation(app: web.Application, *, reason: str) -> None:
+    """Best-effort refetch hint; banner reads remain authoritative in SQLite."""
+
+    try:
+        await asyncio.gather(
+            *(
+                app[PWA_BROKER].publish(
+                    NATS_PWA_INVALIDATE,
+                    {"resources": ["banners"], "reason": reason, "audience": audience},
+                )
+                for audience in AUDIENCES
+            )
+        )
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        logger.warning("Banner invalidation failed: reason=%s", reason, exc_info=True)
+
+
 async def publish_classroom_assignment_invalidation(
     app: web.Application,
     *,
@@ -1422,6 +1445,7 @@ def configure(
         app.add_routes(notification_routes)
         app.add_routes(news_routes)
         app.add_routes(news_moderation_routes)
+        app.add_routes(group_banner_routes)
         app.add_routes(push_subscription_routes)
         app.add_routes(telegram_binding_routes)
 
@@ -1429,6 +1453,11 @@ def configure(
             await publish_news_invalidation(app, reason=reason)
 
         app[PWA_NEWS_INVALIDATOR] = invalidate_news
+
+        async def invalidate_banners(reason: str) -> None:
+            await publish_banner_invalidation(app, reason=reason)
+
+        app[PWA_BANNER_INVALIDATOR] = invalidate_banners
 
         async def invalidate_classroom_assignments(
             student_account_public_ids: tuple[str, ...],

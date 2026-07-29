@@ -9,7 +9,13 @@ def get_group_banner(
     connection: sqlite3.Connection, public_id: str
 ) -> dict[str, object] | None:
     row = connection.execute(
-        "SELECT * FROM group_banners WHERE public_id = ?", (public_id,)
+        "SELECT banner.*, owner_group.public_id AS group_public_id, "
+        "owner_group.public_name AS group_name, course.public_id AS course_public_id, "
+        "course.name AS course_name FROM group_banners banner "
+        "JOIN groups owner_group ON owner_group.group_id = banner.group_id "
+        "JOIN courses course ON course.id = owner_group.course_id "
+        "WHERE banner.public_id = ?",
+        (public_id,),
     ).fetchone()
     return None if row is None else dict(row)
 
@@ -130,10 +136,49 @@ def list_current_group_banners(
     return [dict(row) for row in rows]
 
 
+def find_group_id(connection: sqlite3.Connection, public_id: str) -> str | None:
+    row = connection.execute(
+        "SELECT group_id FROM groups WHERE public_id = ? AND status = 'active'",
+        (public_id,),
+    ).fetchone()
+    return None if row is None else str(row["group_id"])
+
+
+def list_group_banners(
+    connection: sqlite3.Connection,
+    *,
+    group_public_id: str | None,
+    status: str | None,
+    limit: int,
+) -> list[dict[str, object]]:
+    filters: list[str] = []
+    parameters: list[object] = []
+    if group_public_id is not None:
+        filters.append("owner_group.public_id = ?")
+        parameters.append(group_public_id)
+    if status is not None:
+        filters.append("banner.status = ?")
+        parameters.append(status)
+    where = " WHERE " + " AND ".join(filters) if filters else ""
+    rows = connection.execute(
+        "SELECT banner.*, owner_group.public_id AS group_public_id, "
+        "owner_group.public_name AS group_name, course.public_id AS course_public_id, "
+        "course.name AS course_name FROM group_banners banner "
+        "JOIN groups owner_group ON owner_group.group_id = banner.group_id "
+        "JOIN courses course ON course.id = owner_group.course_id"
+        + where
+        + " ORDER BY banner.starts_at DESC, banner.id DESC LIMIT ?",
+        (*parameters, limit),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 __all__ = [
     "cancel_group_banner",
     "get_group_banner",
+    "find_group_id",
     "insert_group_banner",
     "list_current_group_banners",
+    "list_group_banners",
     "update_group_banner",
 ]
