@@ -37,6 +37,31 @@ make pwa-phase11-restore-rehearsal
 Target обязан быть новым файлом внутри фиксированного каталога. Команда не
 удаляет и не заменяет существующие базы.
 
+## Запуск PWA API на восстановленной копии
+
+После restore проверки настоящий `main.py` был запущен поверх этой копии на
+отдельном loopback-порту `8381` с профилем `pwa-agent`, instance
+`phase11-restore` и синтетическими локальными auth-ключами. Prototype mode был
+выключен. Telegram, Google и NATS не подключались.
+
+Student, Family и Staff health endpoints вернули `200` и сохранили заданные
+request IDs. Runtime contract подтвердил:
+
+```json
+{
+  "instance": "phase11-restore",
+  "features": {
+    "telegram": false,
+    "google": false,
+    "nats": false,
+    "prototype": false
+  }
+}
+```
+
+Процесс завершён штатным shutdown; lifecycle lock и SQLite connections были
+освобождены.
+
 ## Проверки
 
 - focused suite: `2 passed`;
@@ -52,7 +77,8 @@ Target обязан быть новым файлом внутри фиксиро
 
 - RPO текущего внешнего cron-backup не измерен: для этого нужны расписание и
   timestamp реального backup artifact;
-- API/WS/static bundles ещё не запускались именно на этой restore-копии;
+- authenticated historical reads, WebSocket и static bundles ещё не проверены
+  именно на этой restore-копии; health/runtime и полный app startup проверены;
 - согласованность SQLite с S3 media и pending notification outbox ещё не
   проверена;
 - production service user, systemd/nginx и atomic release rollback этой
