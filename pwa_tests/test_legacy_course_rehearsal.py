@@ -66,6 +66,16 @@ def _seed_source(path: Path) -> Path:
             "INSERT INTO lessons (id, group_id, lesson) VALUES (?, ?, ?)",
             ((201, "н", 0), (202, "н", 1), (203, "п", 1), (204, "э", 2)),
         )
+        connection.executemany(
+            "INSERT INTO problems "
+            "(id, group_id, lesson, prob, item, title, prob_text, prob_type, synonyms) "
+            "VALUES (?, ?, ?, ?, '', ?, '', 2, ?)",
+            (
+                (301, "н", 1, 1, "Общая задача", "301;302"),
+                (302, "п", 1, 1, "Общая задача", "301;302"),
+                (303, "э", 2, 1, "Своя задача", "303"),
+            ),
+        )
     path.chmod(0o600)
     return path
 
@@ -250,6 +260,53 @@ def test_lessons_share_course_identity_and_keep_group_rows(
             (1, "п", "2025-09-01"),
             (2, "э", "2025-09-08"),
         ]
+
+
+def test_problem_synonym_reconciliation_keeps_source_rows_separate(
+    tmp_path: Path, rehearsal_root: Path
+) -> None:
+    source = _seed_source(tmp_path / "source.sqlite3")
+    target = rehearsal_root / "copy.sqlite3"
+    rehearsal.prepare_copy(source, target)
+
+    report = rehearsal.reconcile_problem_synonyms(target)
+
+    assert report == {
+        "legacyProblems": 3,
+        "legacySynonymReferences": 5,
+        "logicalProblemComponents": 2,
+        "linkedSynonymComponents": 1,
+        "singletonProblemComponents": 1,
+        "largestSynonymComponent": 2,
+        "duplicateNormalizedTitleGroups": 1,
+        "duplicateTitlesAlreadyLinked": 1,
+        "duplicateTitlesNotLinked": 0,
+        "linkedComponentsWithSameTitle": 1,
+        "linkedComponentsWithDifferentTitles": 0,
+        "legacyProblemRowsUpdated": 0,
+        "synonymDataMoved": False,
+    }
+    with sqlite3.connect(target) as connection:
+        assert connection.execute(
+            "SELECT id, synonyms FROM problems ORDER BY id"
+        ).fetchall() == [(301, "301;302"), (302, "301;302"), (303, "303")]
+        assert connection.execute(
+            "SELECT count(*) FROM problem_synonym_groups"
+        ).fetchone()[0] == 0
+
+
+def test_problem_synonym_reconciliation_rejects_a_cross_lesson_reference(
+    tmp_path: Path, rehearsal_root: Path
+) -> None:
+    source = _seed_source(tmp_path / "source.sqlite3")
+    with sqlite3.connect(source, autocommit=True) as connection:
+        connection.execute("UPDATE problems SET synonyms = '301;303' WHERE id = 301")
+        connection.execute("UPDATE problems SET synonyms = '301;303' WHERE id = 303")
+    target = rehearsal_root / "copy.sqlite3"
+    rehearsal.prepare_copy(source, target)
+
+    with pytest.raises(RuntimeError, match="crosses lesson"):
+        rehearsal.reconcile_problem_synonyms(target)
 
 
 def test_copy_refuses_an_existing_or_out_of_scope_target(

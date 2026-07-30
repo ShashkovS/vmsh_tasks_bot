@@ -14,6 +14,7 @@ import argparse
 import hashlib
 import json
 import sqlite3
+import unicodedata
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid5
@@ -622,6 +623,94 @@ def backfill_lessons(database: Path, recorded_at: str) -> dict[str, object]:
     }
 
 
+def _normalized_title(title: str) -> str:
+    return " ".join(unicodedata.normalize("NFKC", title).split()).casefold()
+
+
+def reconcile_problem_synonyms(database: Path) -> dict[str, object]:
+    """Validate legacy logical synonym sets without moving problem data."""
+
+    if not _inside(database, REHEARSAL_ROOT):
+        raise ValueError("Synonym target must be below .runtime/phase11-rehearsal")
+    with sqlite3.connect(database) as connection:
+        rows = connection.execute(
+            "SELECT id, group_id, lesson, title, synonyms FROM problems "
+            "WHERE lesson > 0 ORDER BY id"
+        ).fetchall()
+
+    problems = {
+        int(problem_id): {
+            "group": str(group_id),
+            "lesson": int(lesson),
+            "title": _normalized_title(str(title)),
+            "synonyms": str(synonyms),
+        }
+        for problem_id, group_id, lesson, title, synonyms in rows
+    }
+    references: dict[int, frozenset[int]] = {}
+    for problem_id, problem in problems.items():
+        tokens = [token.strip() for token in problem["synonyms"].split(";")]
+        if not tokens or any(not token.isdecimal() for token in tokens):
+            raise RuntimeError("A legacy problem has an invalid synonym list")
+        members = frozenset(int(token) for token in tokens)
+        if len(members) != len(tokens) or problem_id not in members:
+            raise RuntimeError("A legacy synonym list is duplicated or omits itself")
+        references[problem_id] = members
+
+    for problem_id, members in references.items():
+        problem = problems[problem_id]
+        member_groups: set[str] = set()
+        for member_id in members:
+            member = problems.get(member_id)
+            if member is None:
+                raise RuntimeError("A legacy synonym refers to an unknown problem")
+            if member["lesson"] != problem["lesson"]:
+                raise RuntimeError("A legacy synonym crosses lesson boundaries")
+            if references[member_id] != members:
+                raise RuntimeError("A legacy synonym set is not reciprocal and complete")
+            if member["group"] in member_groups:
+                raise RuntimeError("A legacy synonym set repeats one group lesson")
+            member_groups.add(member["group"])
+
+    components = {min(members): members for members in references.values()}
+    linked_components = {
+        root: members for root, members in components.items() if len(members) > 1
+    }
+    title_groups: dict[tuple[int, str], set[int]] = {}
+    for problem_id, problem in problems.items():
+        title_groups.setdefault(
+            (int(problem["lesson"]), str(problem["title"])), set()
+        ).add(problem_id)
+    duplicate_titles = [members for members in title_groups.values() if len(members) > 1]
+    linked_duplicate_titles = sum(
+        1
+        for members in duplicate_titles
+        if references[min(members)] == frozenset(members)
+    )
+    same_title_components = sum(
+        1
+        for members in linked_components.values()
+        if len({problems[member_id]["title"] for member_id in members}) == 1
+    )
+
+    return {
+        "legacyProblems": len(problems),
+        "legacySynonymReferences": sum(len(members) for members in references.values()),
+        "logicalProblemComponents": len(components),
+        "linkedSynonymComponents": len(linked_components),
+        "singletonProblemComponents": len(components) - len(linked_components),
+        "largestSynonymComponent": max(map(len, components.values()), default=0),
+        "duplicateNormalizedTitleGroups": len(duplicate_titles),
+        "duplicateTitlesAlreadyLinked": linked_duplicate_titles,
+        "duplicateTitlesNotLinked": len(duplicate_titles) - linked_duplicate_titles,
+        "linkedComponentsWithSameTitle": same_title_components,
+        "linkedComponentsWithDifferentTitles": len(linked_components)
+        - same_title_components,
+        "legacyProblemRowsUpdated": 0,
+        "synonymDataMoved": False,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
@@ -636,6 +725,7 @@ def main() -> int:
     report = backfill_course(arguments.target, arguments.recorded_at)
     report.update(backfill_enrollment_history(arguments.target, arguments.recorded_at))
     report.update(backfill_lessons(arguments.target, arguments.recorded_at))
+    report.update(reconcile_problem_synonyms(arguments.target))
     report["sourceSha256"] = source_sha256
     atomic_write_text(
         arguments.report,
