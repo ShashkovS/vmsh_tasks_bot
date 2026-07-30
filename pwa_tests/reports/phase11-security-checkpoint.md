@@ -24,8 +24,33 @@
 - raster/HEIC/TikZ conversion boundaries, WebP metadata removal, размер,
   timeout и очистку временных файлов;
 - fail-closed answer checker, redacted failures и совместимость Telegram/PWA;
+- серверную admin-only границу для редактируемого
+  `cor_ans_checker`: content metadata требует `content.manage`, повторная
+  проверка попыток — `checker.manage`; оба capability выдаются только
+  legacy-admin и не появляются у teacher через staff scope;
 - public/private object-storage URL validation и отсутствие credentials в
   безопасном `repr`/ошибках.
+
+Граница checker проверена на том же пути, который использует production
+API, а не только скрытием UI:
+
+- `apps/pwa_api/content_routes.py`: `GET/PUT .../metadata-grid` вызывают
+  `_staff_actor`, требующий `Capability.CONTENT_MANAGE`;
+- `apps/pwa_api/submission_routes.py`: preview/apply повторной проверки
+  требуют `Capability.CHECKER_MANAGE`;
+- `helpers/pwa/permissions.py`: оба capability входят в
+  `_ADMIN_ONLY_CAPABILITIES`;
+- `pwa_tests/test_permissions.py` проверяет матрицу и то, что admin-scope
+  не повышает legacy-teacher;
+- `pwa_tests/integration/test_content_http_api.py::test_staff_problem_matching_and_metadata_grid_http_workflow`
+  проверяет `403` для teacher в том же content workflow;
+- `pwa_tests/integration/test_phase10_problem_import_preview.py` проверяет
+  `403` для teacher на preview/apply XLSX-import.
+
+Узкие прогоны 30 июля 2026 года: `79 passed` для permissions +
+content HTTP workflow и `3 passed` для admin-only import/rollback. Единственное
+предупреждение в обоих запусках — уже известная deprecation-warning из
+зависимости `mathsolvers`; тесты завершились успешно.
 
 Дополнительные сквозные доказательства на том же tree:
 
@@ -60,8 +85,6 @@
 - выполнить dependency vulnerability review по итоговым lock-файлам;
 - проверить Sentry redaction реальным синтетическим событием без приватного
   содержимого;
-- провести ручной review IDOR для окончательного списка маршрутов и ролей;
-- подтвердить, что production admin-доступ к checker editor защищён именно
-  серверным permission check, а не только скрытием UI.
+- провести ручной review IDOR для окончательного списка маршрутов и ролей.
 
 До этих действий checkpoint не обозначается как финальный security sign-off.
