@@ -334,7 +334,12 @@ async def _relay_websocket(request: web.Request) -> web.WebSocketResponse:
             protocols=downstream_protocols, autoping=True
         )
         downstream.headers["X-Request-ID"] = request_id
-        await downstream.prepare(request)
+        try:
+            await downstream.prepare(request)
+        except AssertionError as error:
+            if request.transport is None:
+                raise asyncio.CancelledError from error
+            raise
         downstream_prepared = True
 
         async def downstream_to_upstream() -> None:

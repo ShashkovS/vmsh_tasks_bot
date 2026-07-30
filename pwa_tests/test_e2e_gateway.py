@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import shutil
 from pathlib import Path
@@ -314,6 +315,44 @@ async def test_gateway_closes_upstream_when_downstream_upgrade_aborts(monkeypatc
 
     assert upstream.closed is True
     assert AbortedDownstream.close_called is False
+
+
+async def test_gateway_treats_a_missing_downstream_transport_as_disconnect(monkeypatch):
+    class UpstreamSocket:
+        protocol = None
+        closed = False
+
+        async def close(self) -> None:
+            self.closed = True
+
+    upstream = UpstreamSocket()
+
+    class HttpClient:
+        async def ws_connect(self, *_args, **_kwargs):
+            return upstream
+
+    class AbortedDownstream:
+        def __init__(self, *_args, **_kwargs):
+            self.headers: dict[str, str] = {}
+
+        async def prepare(self, _request) -> None:
+            raise AssertionError("aiohttp transport disappeared")
+
+    monkeypatch.setattr(e2e_gateway.web, "WebSocketResponse", AbortedDownstream)
+    request = SimpleNamespace(
+        app={
+            e2e_gateway.API_ORIGIN: "http://127.0.0.1:8380",
+            e2e_gateway.HTTP_CLIENT: HttpClient(),
+        },
+        headers=CIMultiDictProxy(CIMultiDict()),
+        rel_url=SimpleNamespace(raw_path_qs="/student/ws"),
+        transport=None,
+    )
+
+    with pytest.raises(asyncio.CancelledError):
+        await e2e_gateway._relay_websocket(request)
+
+    assert upstream.closed is True
 
 
 async def test_gateway_service_worker_control_is_local_capability_gated(gateway_client):
