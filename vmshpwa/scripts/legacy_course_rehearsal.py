@@ -304,6 +304,179 @@ def backfill_course(database: Path, recorded_at: str) -> dict[str, object]:
     }
 
 
+def _history_value(change_type: str, value: str) -> str:
+    if change_type == "G":
+        if value not in GROUPS:
+            raise RuntimeError(f"Unknown group in user_changes_log: {value!r}")
+        return value
+    if value not in {"1", "2"}:
+        raise RuntimeError(f"Unknown attendance mode in user_changes_log: {value!r}")
+    return "online" if value == "1" else "in_person"
+
+
+def _insert_history_event(
+    connection: sqlite3.Connection,
+    *,
+    enrollment_id: int,
+    course_id: int,
+    change_type: str,
+    previous: str,
+    new: str,
+    request_id: str,
+    occurred_at: str,
+) -> bool:
+    fields = {
+        "G": (
+            "active_group_changed",
+            "previous_group_id",
+            "new_group_id",
+        ),
+        "O": (
+            "attendance_mode_changed",
+            "previous_attendance_mode",
+            "new_attendance_mode",
+        ),
+    }
+    event_type, previous_column, new_column = fields[change_type]
+    before = connection.total_changes
+    connection.execute(
+        f"INSERT OR IGNORE INTO course_enrollment_events "
+        f"(public_id, enrollment_id, course_id, event_type, "
+        f"{previous_column}, {new_column}, source, request_id, occurred_at, created_at) "
+        f"VALUES (?, ?, ?, ?, ?, ?, 'import', ?, ?, ?)",
+        (
+            _public_id("enrollment-history", request_id),
+            enrollment_id,
+            course_id,
+            event_type,
+            previous,
+            new,
+            request_id,
+            occurred_at,
+            occurred_at,
+        ),
+    )
+    return connection.total_changes > before
+
+
+def backfill_enrollment_history(database: Path, recorded_at: str) -> dict[str, object]:
+    """Convert recoverable G/O transitions without rewriting the legacy log."""
+
+    if not _inside(database, REHEARSAL_ROOT):
+        raise ValueError("History target must be below .runtime/phase11-rehearsal")
+    with sqlite3.connect(database, autocommit=False) as connection:
+        connection.execute("PRAGMA foreign_keys = ON")
+        course = connection.execute(
+            "SELECT id FROM courses WHERE public_id = ?", (COURSE_PUBLIC_ID,)
+        ).fetchone()
+        if course is None:
+            raise RuntimeError("Course enrollment backfill must run first")
+        course_id = int(course[0])
+        enrollments = {
+            int(row[0]): {
+                "id": int(row[1]),
+                "group": str(row[2]),
+                "mode": str(row[3]),
+            }
+            for row in connection.execute(
+                "SELECT student_user_id, id, active_group_id, attendance_mode "
+                "FROM course_enrollments WHERE course_id = ?",
+                (course_id,),
+            )
+        }
+        sequences: dict[tuple[int, str], list[tuple[int, str, str]]] = {}
+        source_rows = connection.execute(
+            "SELECT changes.rowid, changes.user_id, changes.change_type, "
+            "changes.new_value, changes.ts "
+            "FROM user_changes_log AS changes "
+            "JOIN users AS student ON student.id = changes.user_id "
+            "WHERE student.type = 1 AND changes.change_type IN ('G', 'O') "
+            "ORDER BY changes.user_id, changes.change_type, changes.ts, changes.rowid"
+        ).fetchall()
+        for rowid, student_id, change_type, new_value, timestamp in source_rows:
+            if int(student_id) not in enrollments:
+                raise RuntimeError("A legacy history row has no course enrollment")
+            normalized = _history_value(str(change_type), str(new_value))
+            sequences.setdefault((int(student_id), str(change_type)), []).append(
+                (int(rowid), normalized, str(timestamp))
+            )
+
+        baseline_rows = 0
+        no_op_rows = 0
+        transition_events = 0
+        correction_events = 0
+        inserted_events = 0
+        for student_id, enrollment in enrollments.items():
+            group_rows = sequences.get((student_id, "G"), [])
+            mode_rows = sequences.get((student_id, "O"), [])
+            baseline_group = group_rows[0][1] if group_rows else enrollment["group"]
+            baseline_mode = mode_rows[0][1] if mode_rows else enrollment["mode"]
+            baseline_rows += bool(group_rows) + bool(mode_rows)
+            request_id = f"phase11-import:{student_id}"
+            connection.execute(
+                "UPDATE course_enrollment_events SET new_group_id = ?, "
+                "new_attendance_mode = ? WHERE enrollment_id = ? "
+                "AND event_type = 'created' AND request_id = ?",
+                (baseline_group, baseline_mode, enrollment["id"], request_id),
+            )
+
+            for change_type, rows, current_value in (
+                ("G", group_rows, enrollment["group"]),
+                ("O", mode_rows, enrollment["mode"]),
+            ):
+                previous = rows[0][1] if rows else current_value
+                for rowid, new, timestamp in rows[1:]:
+                    if new == previous:
+                        no_op_rows += 1
+                        continue
+                    history_request_id = f"phase11-history:{change_type}:{rowid}"
+                    inserted_events += _insert_history_event(
+                        connection,
+                        enrollment_id=int(enrollment["id"]),
+                        course_id=course_id,
+                        change_type=change_type,
+                        previous=previous,
+                        new=new,
+                        request_id=history_request_id,
+                        occurred_at=timestamp,
+                    )
+                    transition_events += 1
+                    previous = new
+                if previous != current_value:
+                    correction_request_id = (
+                        f"phase11-history-current:{change_type}:{student_id}"
+                    )
+                    inserted_events += _insert_history_event(
+                        connection,
+                        enrollment_id=int(enrollment["id"]),
+                        course_id=course_id,
+                        change_type=change_type,
+                        previous=previous,
+                        new=str(current_value),
+                        request_id=correction_request_id,
+                        occurred_at=recorded_at,
+                    )
+                    correction_events += 1
+        connection.commit()
+        stored_events = connection.execute(
+            "SELECT count(*) FROM course_enrollment_events "
+            "WHERE course_id = ? AND event_type <> 'created'",
+            (course_id,),
+        ).fetchone()[0]
+
+    return {
+        "legacyHistoryRows": len(source_rows),
+        "baselineRows": baseline_rows,
+        "coalescedNoOpRows": no_op_rows,
+        "transitionEvents": transition_events,
+        "currentStateCorrectionEvents": correction_events,
+        "storedHistoryEvents": stored_events,
+        "insertedHistoryEvents": inserted_events,
+        "legacyHistoryRowsUpdated": 0,
+        "legacyTimestampSemantics": "preserved-naive",
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
@@ -316,6 +489,7 @@ def main() -> int:
     arguments = parser.parse_args()
     source_sha256 = prepare_copy(arguments.source, arguments.target)
     report = backfill_course(arguments.target, arguments.recorded_at)
+    report.update(backfill_enrollment_history(arguments.target, arguments.recorded_at))
     report["sourceSha256"] = source_sha256
     atomic_write_text(
         arguments.report,

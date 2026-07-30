@@ -51,6 +51,17 @@ def _seed_source(path: Path) -> Path:
                 ),
             ),
         )
+        connection.executemany(
+            "INSERT INTO user_changes_log (ts, user_id, change_type, new_value) "
+            "VALUES (?, ?, ?, ?)",
+            (
+                ("2025-09-01T10:00:00", 101, "G", "н"),
+                ("2025-09-02T10:00:00", 101, "G", "н"),
+                ("2025-10-01T10:00:00", 101, "G", "п"),
+                ("2025-09-01T11:00:00", 101, "O", "1"),
+                ("2025-10-01T11:00:00", 101, "O", "2"),
+            ),
+        )
     path.chmod(0o600)
     return path
 
@@ -157,6 +168,49 @@ def test_backfill_is_repeatable(tmp_path: Path, rehearsal_root: Path) -> None:
         )
 
 
+def test_history_coalesces_no_ops_and_reconciles_current_state(
+    tmp_path: Path, rehearsal_root: Path
+) -> None:
+    source = _seed_source(tmp_path / "source.sqlite3")
+    target = rehearsal_root / "copy.sqlite3"
+    rehearsal.prepare_copy(source, target)
+    rehearsal.backfill_course(target, RECORDED_AT)
+
+    first = rehearsal.backfill_enrollment_history(target, RECORDED_AT)
+    second = rehearsal.backfill_enrollment_history(target, RECORDED_AT)
+
+    assert first == {
+        "legacyHistoryRows": 5,
+        "baselineRows": 2,
+        "coalescedNoOpRows": 1,
+        "transitionEvents": 2,
+        "currentStateCorrectionEvents": 2,
+        "storedHistoryEvents": 4,
+        "insertedHistoryEvents": 4,
+        "legacyHistoryRowsUpdated": 0,
+        "legacyTimestampSemantics": "preserved-naive",
+    }
+    assert second["insertedHistoryEvents"] == 0
+    assert second["storedHistoryEvents"] == 4
+    with sqlite3.connect(target) as connection:
+        assert connection.execute(
+            "SELECT event_type, previous_group_id, new_group_id, "
+            "previous_attendance_mode, new_attendance_mode "
+            "FROM course_enrollment_events WHERE event_type <> 'created' "
+            "ORDER BY occurred_at, id"
+        ).fetchall() == [
+            ("active_group_changed", "н", "п", None, None),
+            ("attendance_mode_changed", None, None, "online", "in_person"),
+            ("active_group_changed", "п", "н", None, None),
+            ("attendance_mode_changed", None, None, "in_person", "online"),
+        ]
+        assert connection.execute(
+            "SELECT new_group_id, new_attendance_mode "
+            "FROM course_enrollment_events WHERE enrollment_id = 1 "
+            "AND event_type = 'created'"
+        ).fetchone() == ("н", "online")
+
+
 def test_copy_refuses_an_existing_or_out_of_scope_target(
     tmp_path: Path, rehearsal_root: Path
 ) -> None:
@@ -189,3 +243,28 @@ def test_backfill_rejects_an_unmapped_group(
         rehearsal.backfill_course(target, RECORDED_AT)
     with sqlite3.connect(target) as connection:
         assert connection.execute("SELECT count(*) FROM courses").fetchone()[0] == 0
+
+
+def test_history_rejects_an_unknown_value_without_partial_events(
+    tmp_path: Path, rehearsal_root: Path
+) -> None:
+    source = _seed_source(tmp_path / "source.sqlite3")
+    with sqlite3.connect(source, autocommit=True) as connection:
+        connection.execute(
+            "INSERT INTO user_changes_log (ts, user_id, change_type, new_value) "
+            "VALUES ('2026-01-01T10:00:00', 101, 'G', 'future')"
+        )
+    target = rehearsal_root / "copy.sqlite3"
+    rehearsal.prepare_copy(source, target)
+    rehearsal.backfill_course(target, RECORDED_AT)
+
+    with pytest.raises(RuntimeError, match="Unknown group"):
+        rehearsal.backfill_enrollment_history(target, RECORDED_AT)
+    with sqlite3.connect(target) as connection:
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM course_enrollment_events "
+                "WHERE event_type <> 'created'"
+            ).fetchone()[0]
+            == 0
+        )
