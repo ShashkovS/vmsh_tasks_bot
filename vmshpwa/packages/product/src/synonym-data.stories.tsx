@@ -82,3 +82,12 @@ export const SynonymMergeAndSplit: Story = {
     await expect(canvas.getByText('Разделить задачи')).toBeInTheDocument()
   },
 }
+
+export const SplitConfirmationDisabled: Story = {
+  name: 'Split confirmation disabled',
+  render: () => <SynonymMergeSplitPreview confirmDisabled mode="split" problems={problems} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Разделить' })).toBeDisabled()
+  },
+}

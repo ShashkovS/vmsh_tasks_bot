@@ -114,6 +114,27 @@ def synonym_candidates(
     return candidates
 
 
+def active_synonym_groups(
+    connection: sqlite3.Connection, *, course_lesson_public_id: str
+) -> list[dict[str, object]]:
+    rows = list_course_lesson_problems(
+        connection, course_lesson_public_id=course_lesson_public_id
+    )
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for row in rows:
+        if row["synonym_status"] == "active":
+            grouped.setdefault(str(row["synonym_public_id"]), []).append(row)
+    return [
+        {
+            "synonym_public_id": synonym_id,
+            "display_title": members[0]["synonym_display_title"],
+            "version": members[0]["synonym_version"],
+            "problems": members,
+        }
+        for synonym_id, members in sorted(grouped.items())
+    ]
+
+
 def preview_synonym_merge(
     connection: sqlite3.Connection, *, problem_public_ids: tuple[str, ...]
 ) -> dict[str, object]:
@@ -324,6 +345,7 @@ def split_problem_synonyms(
 
 __all__ = [
     "ProblemSynonymError",
+    "active_synonym_groups",
     "merge_problem_synonyms",
     "preview_synonym_merge",
     "preview_synonym_split",

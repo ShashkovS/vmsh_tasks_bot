@@ -16,6 +16,8 @@ def _problem_rows(
         WITH latest AS (
             SELECT problem.id AS problem_id,
                    problem.public_id AS problem_public_id,
+                   problem.prob AS problem_number,
+                   problem.item AS problem_item,
                    revision.title,
                    revision.normalized_title,
                    revision.problem_type,
@@ -51,6 +53,7 @@ def _problem_rows(
         )
         SELECT latest.*,
                synonym.public_id AS synonym_public_id,
+               synonym.display_title AS synonym_display_title,
                synonym.status AS synonym_status,
                synonym.version AS synonym_version,
                member.id AS synonym_member_id,

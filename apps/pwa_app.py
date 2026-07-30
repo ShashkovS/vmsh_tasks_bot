@@ -19,7 +19,10 @@ from apps.pwa_api.admin_enrollment_routes import (
 )
 from apps.pwa_api.staff_access_routes import staff_access_routes
 from apps.pwa_api.problem_import_routes import problem_import_routes
-from apps.pwa_api.problem_synonym_routes import problem_synonym_routes
+from apps.pwa_api.problem_synonym_routes import (
+    PWA_PROBLEM_SYNONYM_INVALIDATOR,
+    problem_synonym_routes,
+)
 from apps.pwa_api.auth_service import PwaAuthService
 from apps.pwa_api.classroom_assignment_routes import (
     PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR,
@@ -996,6 +999,58 @@ async def publish_enrollment_invalidation(
     )
 
 
+async def publish_problem_synonym_invalidation(
+    app: web.Application,
+    *,
+    course_public_id: str,
+    course_lesson_public_id: str,
+    reason: str,
+) -> None:
+    """Tell affected audiences to refetch SQLite-backed synonym projections."""
+
+    messages = (
+        {
+            "resources": [
+                f"course-lessons/{course_lesson_public_id}/problem-synonyms",
+                "review-queue",
+            ],
+            "reason": reason,
+            "audience": AuthAudience.STAFF.value,
+        },
+        {
+            "resources": [
+                f"courses/{course_public_id}/lessons/{course_lesson_public_id}/problems",
+                f"courses/{course_public_id}/progress",
+            ],
+            "reason": reason,
+            "audience": AuthAudience.STUDENT.value,
+        },
+        {
+            "resources": [
+                f"courses/{course_public_id}/lessons/{course_lesson_public_id}/problems",
+                f"courses/{course_public_id}/progress",
+            ],
+            "reason": reason,
+            "audience": AuthAudience.FAMILY.value,
+        },
+    )
+    try:
+        await asyncio.gather(
+            *(
+                app[PWA_BROKER].publish(NATS_PWA_INVALIDATE, message)
+                for message in messages
+            )
+        )
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        logger.warning(
+            "Problem-synonym invalidation failed after commit: course_lesson=%s",
+            course_lesson_public_id,
+            exc_info=True,
+        )
+
+
 async def publish_written_submission_invalidation(
     app: web.Application,
     *,
@@ -1598,6 +1653,20 @@ def configure(
             )
 
         app[PWA_ENROLLMENT_INVALIDATOR] = invalidate_enrollments
+
+        async def invalidate_problem_synonyms(
+            course_public_id: str,
+            course_lesson_public_id: str,
+            reason: str,
+        ) -> None:
+            await publish_problem_synonym_invalidation(
+                app,
+                course_public_id=course_public_id,
+                course_lesson_public_id=course_lesson_public_id,
+                reason=reason,
+            )
+
+        app[PWA_PROBLEM_SYNONYM_INVALIDATOR] = invalidate_problem_synonyms
         app.on_startup.append(on_auth_startup)
         test_submissions_enabled = (
             test_submission_repository is not None or PWA_DATABASE in app

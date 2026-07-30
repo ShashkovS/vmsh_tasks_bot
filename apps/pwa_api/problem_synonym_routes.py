@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 from aiohttp import web
@@ -18,6 +19,7 @@ from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.problem_synonyms import (
     ProblemSynonymError,
+    active_synonym_groups,
     merge_problem_synonyms,
     preview_synonym_merge,
     preview_synonym_split,
@@ -27,6 +29,10 @@ from models.pwa.problem_synonyms import (
 
 
 problem_synonym_routes = web.RouteTableDef()
+ProblemSynonymInvalidator = Callable[[str, str, str], Awaitable[None]]
+PWA_PROBLEM_SYNONYM_INVALIDATOR = web.AppKey(
+    "pwa_problem_synonym_invalidator", ProblemSynonymInvalidator
+)
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?")
 _SHA256 = re.compile(r"[a-f0-9]{64}")
 
@@ -129,6 +135,8 @@ def _problem_payload(row: dict[str, object]) -> dict[str, object]:
         "groupName": row["group_name"],
         "groupCode": row["group_code"],
         "groupLessonId": row["group_lesson_public_id"],
+        "problemNumber": row["problem_number"],
+        "problemItem": row["problem_item"],
         "title": row["title"],
         "problemType": row["problem_type"],
         "answerType": row["answer_type"],
@@ -180,6 +188,21 @@ def _impact_payload(plan: dict[str, object], request_id: str) -> dict[str, objec
     return payload
 
 
+async def _invalidate(
+    request: web.Request, plan: dict[str, object], *, reason: str
+) -> None:
+    invalidator = request.app.get(PWA_PROBLEM_SYNONYM_INVALIDATOR)
+    if invalidator is None:
+        return
+    problems = plan["problems"]
+    assert isinstance(problems, list) and problems
+    await invalidator(
+        str(problems[0]["course_public_id"]),
+        str(problems[0]["course_lesson_public_id"]),
+        reason,
+    )
+
+
 def _domain_error(error: ProblemSynonymError) -> PwaApiError:
     code = str(error)
     messages = {
@@ -221,9 +244,14 @@ async def get_synonym_candidates(request: web.Request) -> web.Response:
         message="Занятие не найдено",
     )
     try:
-        candidates = await _factory(request).run_read_async(
-            lambda connection: synonym_candidates(
-                connection, course_lesson_public_id=course_lesson_public_id
+        candidates, active_groups = await _factory(request).run_read_async(
+            lambda connection: (
+                synonym_candidates(
+                    connection, course_lesson_public_id=course_lesson_public_id
+                ),
+                active_synonym_groups(
+                    connection, course_lesson_public_id=course_lesson_public_id
+                ),
             )
         )
     except ProblemSynonymError as error:
@@ -242,6 +270,15 @@ async def get_synonym_candidates(request: web.Request) -> web.Response:
                     ],
                 }
                 for candidate in candidates
+            ],
+            "synonymGroups": [
+                {
+                    "synonymId": group["synonym_public_id"],
+                    "displayTitle": group["display_title"],
+                    "version": group["version"],
+                    "problems": [_problem_payload(row) for row in group["problems"]],
+                }
+                for group in active_groups
             ],
             "requestId": request["request_id"],
         },
@@ -318,6 +355,7 @@ async def merge_problem_synonyms_route(request: web.Request) -> web.Response:
             code="problem_synonym_conflict",
             message="Эти задачи уже изменились",
         ) from error
+    await _invalidate(request, plan, reason="problem-synonyms-changed")
     return web.json_response(
         _impact_payload(plan, request["request_id"]),
         headers={"Cache-Control": "no-store"},
@@ -359,10 +397,11 @@ async def split_problem_synonyms_route(request: web.Request) -> web.Response:
         )
     except ProblemSynonymError as error:
         raise _domain_error(error) from error
+    await _invalidate(request, plan, reason="problem-synonyms-changed")
     return web.json_response(
         _impact_payload(plan, request["request_id"]),
         headers={"Cache-Control": "no-store"},
     )
 
 
-__all__ = ["problem_synonym_routes"]
+__all__ = ["PWA_PROBLEM_SYNONYM_INVALIDATOR", "problem_synonym_routes"]

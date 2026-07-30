@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { useMemo, useState, type FormEvent } from 'react'
 
 import {
@@ -35,6 +36,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  buttonVariants,
 } from '@vmsh/ui'
 
 const actionLabels: Record<ProblemImportAction, string> = {
@@ -475,6 +477,11 @@ export function ProblemImportPage() {
 
   return (
     <PageLayout
+      actions={
+        <Link className={buttonVariants({ variant: 'outline' })} to="/problems/synonyms">
+          Синонимы задач
+        </Link>
+      }
       description="Проверка XLSX из текущего процесса перед управляемым отказом от Google-листов."
       eyebrow="Admin"
       title="Настройки задач"

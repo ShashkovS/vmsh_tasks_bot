@@ -35,17 +35,31 @@ export interface SynonymProblemView {
   reviewCount: number
 }
 
+function countLabel(count: number, one: string, few: string, many: string): string {
+  const lastTwo = count % 100
+  const last = count % 10
+  const word =
+    last === 1 && lastTwo !== 11
+      ? one
+      : last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)
+        ? few
+        : many
+  return `${count} ${word}`
+}
+
 export function SynonymMergeSplitPreview({
   problems,
   mode,
   onConfirm,
   onCancel,
+  confirmDisabled = false,
   className,
 }: {
   problems: SynonymProblemView[]
   mode: 'merge' | 'split'
   onConfirm?: () => void
   onCancel?: () => void
+  confirmDisabled?: boolean
   className?: string
 }) {
   const submissions = problems.reduce((total, problem) => total + problem.submissionCount, 0)
@@ -84,7 +98,9 @@ export function SynonymMergeSplitPreview({
               <div className="flex flex-wrap gap-1.5">
                 <Badge variant="neutral">{problem.taskType}</Badge>
                 {problem.answerType ? <Badge variant="neutral">{problem.answerType}</Badge> : null}
-                <Badge variant="info">{problem.submissionCount} посылки</Badge>
+                <Badge variant="info">
+                  {countLabel(problem.submissionCount, 'посылка', 'посылки', 'посылок')}
+                </Badge>
               </div>
             </CardContent>
           </Card>
@@ -95,7 +111,8 @@ export function SynonymMergeSplitPreview({
         <GitPullRequest aria-hidden="true" />
         <AlertContent>
           <AlertTitle>
-            Исходные записи не изменятся: {submissions} посылки, {reviews} проверки
+            Исходные записи не изменятся: {countLabel(submissions, 'посылка', 'посылки', 'посылок')}
+            , {countLabel(reviews, 'проверка', 'проверки', 'проверок')}
           </AlertTitle>
           <AlertDescription>
             {mode === 'merge'
@@ -106,7 +123,9 @@ export function SynonymMergeSplitPreview({
       </Alert>
 
       <div className="flex flex-wrap gap-2">
-        <Button onClick={onConfirm}>{mode === 'merge' ? 'Объединить' : 'Разделить'}</Button>
+        <Button disabled={confirmDisabled} onClick={onConfirm}>
+          {mode === 'merge' ? 'Объединить' : 'Разделить'}
+        </Button>
         <Button onClick={onCancel} variant="ghost">
           Отмена
         </Button>

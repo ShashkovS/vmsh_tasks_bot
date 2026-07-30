@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from apps import pwa_app
 from pwa_tests.integration.test_classroom_catalog_http_api import (
     ADMIN_ID,
     STUDENT_ID,
@@ -178,6 +179,7 @@ async def test_synonym_candidates_are_admin_only_and_do_not_require_matching_typ
     assert response.status == 200, await response.text()
     body = await response.json()
     assert len(body["candidates"]) == 1
+    assert body["synonymGroups"] == []
     assert [item["problemId"] for item in body["candidates"][0]["problems"]] == [
         first,
         second,
@@ -212,6 +214,7 @@ async def test_synonym_merge_and_split_preserve_original_problem_and_result_rows
     preview = await preview_response.json()
     assert preview["addProblemIds"] == [first, second]
     assert preview["submissionCount"] == 0
+    cursors_before_merge = dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"])
 
     merge_response = await classroom_http.client.post(
         "/staff/api/v1/problem-synonyms/merge",
@@ -232,6 +235,18 @@ async def test_synonym_merge_and_split_preserve_original_problem_and_result_rows
         "version": 1,
         "changed": True,
     }
+    assert dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"]) == {
+        audience: cursor + 1 for audience, cursor in cursors_before_merge.items()
+    }
+
+    current_response = await classroom_http.client.get(
+        "/staff/api/v1/course-lessons/classroom-layout-course-lesson/synonym-candidates",
+        headers=_headers(),
+        cookies=cookies,
+    )
+    current = await current_response.json()
+    assert current["candidates"] == []
+    assert current["synonymGroups"][0]["synonymId"] == synonym_id
 
     stale = await classroom_http.client.post(
         "/staff/api/v1/problem-synonyms/merge",
