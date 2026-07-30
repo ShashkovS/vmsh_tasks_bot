@@ -54,8 +54,9 @@ content HTTP workflow и `3 passed` для admin-only import/rollback. Един�
 
 Дополнительные сквозные доказательства на том же tree:
 
-- полный PWA regression: `559` frontend unit и `1 463` Python tests passed,
-  `3` Python tests intentionally skipped;
+- полный PWA regression после two-worker load smoke: `561` frontend
+  unit и `1 474` Python tests passed, `5` opt-in Python tests intentionally
+  skipped;
 - production-build functional E2E: `194 passed`, `6` intentional skips во всех
   трёх browser engines; один WebKit reconnect assertion был исправлен после
   обнаруженной ложной нестабильности;
