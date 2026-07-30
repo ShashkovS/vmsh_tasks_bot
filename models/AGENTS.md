@@ -4,6 +4,10 @@
 This folder is the domain layer between handlers and `db_methods`.  
 Models encapsulate entity behavior and convert DB rows into application objects.
 
+New PWA behavior follows the same boundary: domain invariants and decisions
+live here (or in an equally small domain service), while `db_methods/*` remains
+focused on SQLite reads/writes and HTTP/Telegram/UI owns localized copy.
+
 ## Design Conventions
 - Keep models thin and explicit: domain operations plus small invariants.
 - Most constructors are write-through:

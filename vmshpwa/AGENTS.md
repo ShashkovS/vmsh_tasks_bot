@@ -2,7 +2,7 @@
 
 ## Scope
 
-This workspace contains frontend adapters and test tooling. The existing Python project remains the only backend. Put domain behavior in existing `models/`/`db_methods/` APIs and expose it through the aiohttp PWA adapter; do not create a second Python service, database schema manager, or duplicate source of truth here.
+This workspace contains frontend adapters and test tooling. The existing Python project remains the only backend. Put domain behavior in existing `models/` or a small domain service, keep `db_methods/` limited to focused SQLite reads/writes, and expose the result through the aiohttp PWA adapter. Localized product text belongs at the HTTP/Telegram/UI boundary. Do not create a second Python service, database schema manager, speculative repository/factory stack, or duplicate source of truth here.
 
 ## Commands and isolation
 
