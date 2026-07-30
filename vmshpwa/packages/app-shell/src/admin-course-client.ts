@@ -19,6 +19,7 @@ import {
   apiErrorSchema,
   createAdminCourseRequestSchema,
   parseRuntimeConfigForAudience,
+  problemImportPreviewResponseSchema,
   publicIdSchema,
   replaceStaffScopesRequestSchema,
   saveAdminGroupRequestSchema,
@@ -41,6 +42,7 @@ import {
   type AdminStudentEnrollmentResponse,
   type CreateAdminCourseRequest,
   type PrincipalQueryScope,
+  type ProblemImportPreviewResponse,
   type RuntimeConfig,
   type ReplaceStaffScopesRequest,
   type SaveAdminGroupRequest,
@@ -95,6 +97,7 @@ export interface AdminCourseClient {
     staffUserId: string,
     input: ReplaceStaffScopesRequest,
   ): Promise<StaffAccessMemberResponse>
+  previewProblemImport(courseId: string, workbook: File): Promise<ProblemImportPreviewResponse>
 }
 
 export function createAdminCourseClient(
@@ -116,7 +119,9 @@ export function createAdminCourseClient(
         ...init,
         headers: {
           Accept: 'application/json',
-          ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+          ...(init.body === undefined || init.body instanceof FormData
+            ? {}
+            : { 'Content-Type': 'application/json' }),
           ...init.headers,
         },
       })
@@ -269,6 +274,18 @@ export function createAdminCourseClient(
           method: 'PUT',
           body: JSON.stringify(replaceStaffScopesRequestSchema.parse(input)),
         }),
+      )
+    },
+    async previewProblemImport(rawCourseId, workbook) {
+      const courseId = publicIdSchema.parse(rawCourseId)
+      if (!(workbook instanceof File) || workbook.size < 1 || workbook.size > 10 * 1024 * 1024) {
+        throw new TypeError('Problem workbook must be a non-empty XLSX file up to 10 MiB')
+      }
+      const body = new FormData()
+      body.set('courseId', courseId)
+      body.set('workbook', workbook, workbook.name)
+      return problemImportPreviewResponseSchema.parse(
+        await request('/problem-imports/preview', { method: 'POST', body }),
       )
     },
   }

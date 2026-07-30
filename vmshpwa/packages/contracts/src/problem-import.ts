@@ -1,0 +1,86 @@
+import { z } from 'zod'
+
+import { publicIdSchema } from './auth'
+
+export const problemImportActionSchema = z.enum(['create', 'update', 'unchanged', 'invalid'])
+
+export const problemImportDiagnosticSchema = z
+  .object({
+    sheet: z.enum(['Задачи', 'Старые']),
+    row: z.number().int().positive(),
+    field: z.string().min(1),
+    code: z.string().min(1),
+    message: z.string().min(1),
+  })
+  .strict()
+
+export const problemImportRowSchema = z
+  .object({
+    sheet: z.enum(['Задачи', 'Старые']),
+    row: z.number().int().positive(),
+    groupCode: z.string().min(1).nullable(),
+    groupId: publicIdSchema.nullable(),
+    lessonNumber: z.number().int().nonnegative().nullable(),
+    problemNumber: z.number().int().positive().nullable(),
+    item: z.string(),
+    title: z.string().min(1).nullable(),
+    problemText: z.string(),
+    problemType: z.number().int().min(1).max(4).nullable(),
+    answerType: z.number().int().positive().nullable(),
+    answerValidation: z.string().nullable(),
+    validationError: z.string().nullable(),
+    correctAnswer: z.string().nullable(),
+    correctAnswerChecker: z.string().nullable(),
+    wrongAnswer: z.string().nullable(),
+    congratulation: z.string().nullable(),
+    action: problemImportActionSchema,
+    problemId: publicIdSchema.nullable(),
+    diagnostics: z.array(problemImportDiagnosticSchema),
+  })
+  .strict()
+
+const problemImportSummarySchema = z
+  .object({
+    rows: z.number().int().nonnegative(),
+    create: z.number().int().nonnegative(),
+    update: z.number().int().nonnegative(),
+    unchanged: z.number().int().nonnegative(),
+    invalid: z.number().int().nonnegative(),
+  })
+  .strict()
+  .superRefine((summary, context) => {
+    if (summary.create + summary.update + summary.unchanged + summary.invalid !== summary.rows) {
+      context.addIssue({ code: 'custom', message: 'Problem import summary does not add up' })
+    }
+  })
+
+export const problemImportPreviewResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    course: z
+      .object({
+        courseId: publicIdSchema,
+        code: z.string().min(1),
+        name: z.string().min(1),
+      })
+      .strict(),
+    source: z
+      .object({
+        filename: z.string().min(1),
+        sha256: z.string().regex(/^[a-f0-9]{64}$/),
+      })
+      .strict(),
+    summary: problemImportSummarySchema,
+    rows: z.array(problemImportRowSchema).max(5_000),
+    requestId: z.string().min(1),
+  })
+  .strict()
+  .superRefine((preview, context) => {
+    if (preview.rows.length !== preview.summary.rows) {
+      context.addIssue({ code: 'custom', message: 'Problem import row count does not match' })
+    }
+  })
+
+export type ProblemImportAction = z.infer<typeof problemImportActionSchema>
+export type ProblemImportPreviewResponse = z.infer<typeof problemImportPreviewResponseSchema>
+export type ProblemImportRow = z.infer<typeof problemImportRowSchema>

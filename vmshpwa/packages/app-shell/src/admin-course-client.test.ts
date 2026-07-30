@@ -262,4 +262,27 @@ describe('admin course client', () => {
     )
     expect(fetchImplementation.mock.calls[1]?.[1]?.body).toContain('"groupId":null')
   })
+
+  it('uploads a problem workbook without overriding the multipart boundary', async () => {
+    const response = {
+      schemaVersion: 1,
+      course: { courseId: 'course-math', code: 'math', name: 'Математика' },
+      source: { filename: 'tasks.xlsx', sha256: 'a'.repeat(64) },
+      summary: { rows: 0, create: 0, update: 0, unchanged: 0, invalid: 0 },
+      rows: [],
+      requestId: 'preview',
+    }
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(Response.json(response))
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+    const workbook = new File(['xlsx'], 'tasks.xlsx')
+
+    await expect(client.previewProblemImport('course-math', workbook)).resolves.toEqual(response)
+
+    const [url, init] = fetchImplementation.mock.calls[0]!
+    expect(url).toBe('/staff/api/v1/problem-imports/preview')
+    expect(init?.headers).toEqual({ Accept: 'application/json' })
+    expect(init?.body).toBeInstanceOf(FormData)
+    expect((init?.body as FormData).get('courseId')).toBe('course-math')
+    expect(((init?.body as FormData).get('workbook') as File).name).toBe('tasks.xlsx')
+  })
 })

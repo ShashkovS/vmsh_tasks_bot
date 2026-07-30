@@ -7,6 +7,7 @@ import studentDirectoryFixture from '@vmsh/contracts/fixtures/admin-enrollments/
 import {
   adminStudentEnrollmentDirectoryResponseSchema,
   classroomDeliveryPreviewResponseSchema,
+  problemImportPreviewResponseSchema,
   type AdminCourse,
   type StaffAccessMember,
 } from '@vmsh/contracts'
@@ -27,6 +28,7 @@ import {
 } from './pages'
 import { StudentDirectoryView } from './staff-student-directory-page'
 import { StaffAccessView } from './staff-access-page'
+import { ProblemImportView } from './problem-import-page'
 
 /* Page evidence for dev/design-system/05-pages-and-flows.md (“Staff SPA”). */
 const meta = {
@@ -58,48 +60,6 @@ export const CourseAndGroupAdministration: Story = {
     await expect(canvas.getByText('@vmsh_math_5_7')).toBeInTheDocument()
   },
 }
-export const LessonImport: Story = { render: () => <StaffLessonDetailPage lessonId="41" /> }
-export const Classrooms: Story = {
-  render: () => <StaffClassroomsPage />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('tab', { name: 'Школьники' }))
-    await expect(canvas.getByText('Григорий Яшин')).toBeInTheDocument()
-    await expect(canvas.getByText('сила 8.1')).toBeInTheDocument()
-  },
-}
-export const MultiCourseClassroomEvent: Story = {
-  name: 'Очное событие · несколько курсов',
-  render: () => <StaffClassroomsPage />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByText('Очное воскресенье')).toBeInTheDocument()
-    await userEvent.click(
-      canvas.getByRole('checkbox', { name: 'Включить Физика: эксперимент, Вводная' }),
-    )
-    await expect(canvas.getByRole('status')).toHaveTextContent('13 аудиторий и 173 назначения')
-  },
-}
-export const ClassroomDelivery: Story = {
-  name: 'Аудитории · явная рассылка после подтверждения',
-  render: () => (
-    <StaffClassroomsPage
-      students={
-        <ClassroomDeliveryPanel
-          onSend={() => undefined}
-          preview={classroomDeliveryPreviewResponseSchema.parse(deliveryPreviewFixture).preview}
-        />
-      }
-      tab="students"
-    />
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: 'Разослать аудитории' })).toBeEnabled()
-    await expect(canvas.getByText(/Семье уведомление не отправляется/)).toBeInTheDocument()
-  },
-}
-export const BroadcastPhaseTwo: Story = { render: () => <BroadcastComposerPage /> }
 
 const directoryCourse: AdminCourse = {
   courseId: 'course-math-5-7-fixture',
@@ -142,6 +102,146 @@ const directoryCourse: AdminCourse = {
   ],
   version: 1,
 }
+
+export const LessonImport: Story = { render: () => <StaffLessonDetailPage lessonId="41" /> }
+
+const problemImportPreview = problemImportPreviewResponseSchema.parse({
+  schemaVersion: 1,
+  course: {
+    courseId: directoryCourse.courseId,
+    code: directoryCourse.code,
+    name: directoryCourse.name,
+  },
+  source: { filename: 'ВМШ — задачи.xlsx', sha256: 'a'.repeat(64) },
+  summary: { rows: 2, create: 1, update: 0, unchanged: 0, invalid: 1 },
+  rows: [
+    {
+      sheet: 'Задачи',
+      row: 24,
+      groupCode: 'н',
+      groupId: directoryCourse.groups[0]!.groupId,
+      lessonNumber: 41,
+      problemNumber: 3,
+      item: '',
+      title: 'Орехи и клетки',
+      problemText: '',
+      problemType: 1,
+      answerType: 2,
+      answerValidation: null,
+      validationError: 'Введите ответ — сколько орехов',
+      correctAnswer: '29',
+      correctAnswerChecker: null,
+      wrongAnswer: 'Нет, не столько орехов',
+      congratulation: 'Да, всё верно!',
+      action: 'create',
+      problemId: null,
+      diagnostics: [],
+    },
+    {
+      sheet: 'Старые',
+      row: 812,
+      groupCode: 'i9a',
+      groupId: null,
+      lessonNumber: 14,
+      problemNumber: 7,
+      item: 'б',
+      title: 'Старая задача',
+      problemText: '',
+      problemType: 2,
+      answerType: null,
+      answerValidation: null,
+      validationError: null,
+      correctAnswer: null,
+      correctAnswerChecker: null,
+      wrongAnswer: null,
+      congratulation: null,
+      action: 'invalid',
+      problemId: null,
+      diagnostics: [
+        {
+          sheet: 'Старые',
+          row: 812,
+          field: 'level',
+          code: 'group_unknown',
+          message: 'Такой группы нет в выбранном курсе.',
+        },
+      ],
+    },
+  ],
+  requestId: 'storybook-problem-import',
+})
+
+function ProblemImportStory() {
+  const [preview, setPreview] = useState<typeof problemImportPreview>()
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <ProblemImportView
+        courses={[directoryCourse]}
+        onPreview={() => setPreview(problemImportPreview)}
+        pending={false}
+        {...(preview ? { preview } : {})}
+      />
+    </div>
+  )
+}
+
+export const ProblemWorkbookPreview: Story = {
+  name: 'Настройки задач · dry-run XLSX',
+  render: () => <ProblemImportStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.upload(
+      canvas.getByLabelText('XLSX-файл'),
+      new File(['xlsx'], 'tasks.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Проверить файл' }))
+    await expect(canvas.getByRole('heading', { name: 'Результат проверки' })).toBeVisible()
+    await expect(canvas.getByText('Такой группы нет в выбранном курсе.')).toBeVisible()
+  },
+}
+export const Classrooms: Story = {
+  render: () => <StaffClassroomsPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('tab', { name: 'Школьники' }))
+    await expect(canvas.getByText('Григорий Яшин')).toBeInTheDocument()
+    await expect(canvas.getByText('сила 8.1')).toBeInTheDocument()
+  },
+}
+export const MultiCourseClassroomEvent: Story = {
+  name: 'Очное событие · несколько курсов',
+  render: () => <StaffClassroomsPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Очное воскресенье')).toBeInTheDocument()
+    await userEvent.click(
+      canvas.getByRole('checkbox', { name: 'Включить Физика: эксперимент, Вводная' }),
+    )
+    await expect(canvas.getByRole('status')).toHaveTextContent('13 аудиторий и 173 назначения')
+  },
+}
+export const ClassroomDelivery: Story = {
+  name: 'Аудитории · явная рассылка после подтверждения',
+  render: () => (
+    <StaffClassroomsPage
+      students={
+        <ClassroomDeliveryPanel
+          onSend={() => undefined}
+          preview={classroomDeliveryPreviewResponseSchema.parse(deliveryPreviewFixture).preview}
+        />
+      }
+      tab="students"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Разослать аудитории' })).toBeEnabled()
+    await expect(canvas.getByText(/Семье уведомление не отправляется/)).toBeInTheDocument()
+  },
+}
+export const BroadcastPhaseTwo: Story = { render: () => <BroadcastComposerPage /> }
 
 function StudentDirectoryStory() {
   const [search, setSearch] = useState({ query: '' })

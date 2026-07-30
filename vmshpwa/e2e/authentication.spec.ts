@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 import {
   AUTH_PERSONAS,
   credentialLabel,
@@ -9,6 +11,12 @@ import {
 import { expect, test, type Page } from './fixtures'
 
 const gatewayOrigin = 'http://127.0.0.1:5380'
+const problemWorkbook = fileURLToPath(
+  new URL(
+    '../../_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx',
+    import.meta.url,
+  ),
+)
 
 const audienceCookieNames: Record<AuthAudience, [string, string]> = {
   student: ['vmsh_student_access', 'vmsh_student_refresh'],
@@ -278,6 +286,19 @@ test('Admin edits teacher scopes without losing the local draft', async ({ page 
   )
   await page.getByRole('button', { name: 'Сохранить доступы' }).click()
   expect((await restored).status()).toBe(200)
+})
+
+test('Admin previews the reference problem workbook without applying it', async ({ page }) => {
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/problems')
+  await expect(page.getByRole('heading', { name: 'Настройки задач' })).toBeVisible()
+  await page.getByLabel('XLSX-файл').setInputFiles(problemWorkbook)
+  await page.getByRole('button', { name: 'Проверить файл' }).click()
+
+  await expect(page.getByRole('heading', { name: 'Результат проверки' })).toBeVisible()
+  await expect(
+    page.getByText('Строк', { exact: true }).locator('..').getByText('1813', { exact: true }),
+  ).toBeVisible()
+  await expect(page.getByText(/Применение и откат появятся/)).toBeVisible()
 })
 
 test('Admin saves a course enrollment through the real API', async ({ page }, testInfo) => {
