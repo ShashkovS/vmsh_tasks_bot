@@ -71,10 +71,28 @@ def _seed_source(path: Path) -> Path:
             "(id, group_id, lesson, prob, item, title, prob_text, prob_type, synonyms) "
             "VALUES (?, ?, ?, ?, '', ?, '', 2, ?)",
             (
+                (304, "н", 0, 1, "Техническая задача", "304"),
                 (301, "н", 1, 1, "Общая задача", "301;302"),
                 (302, "п", 1, 1, "Общая задача", "301;302"),
                 (303, "э", 2, 1, "Своя задача", "303"),
             ),
+        )
+        connection.executemany(
+            "INSERT INTO written_tasks_discussions "
+            "(id, ts, student_id, problem_id, teacher_id, text, attach_path, "
+            "chat_id, tg_msg_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                (401, RECORDED_AT, 101, 301, None, "Решение", None, 700_101, 11),
+                (402, RECORDED_AT, 101, 301, 102, None, None, 700_101, 12),
+                (403, RECORDED_AT, 101, -1, None, "Вопрос", None, 700_101, 13),
+                (404, RECORDED_AT, 101, 304, None, None, None, 700_101, 14),
+            ),
+        )
+        connection.execute(
+            "INSERT INTO messages_log "
+            "(id, from_bot, tg_msg_id, chat_id, student_id, teacher_id, ts) "
+            "VALUES (501, 0, 12, 700101, 101, NULL, ?)",
+            (RECORDED_AT,),
         )
     path.chmod(0o600)
     return path
@@ -289,7 +307,12 @@ def test_problem_synonym_reconciliation_keeps_source_rows_separate(
     with sqlite3.connect(target) as connection:
         assert connection.execute(
             "SELECT id, synonyms FROM problems ORDER BY id"
-        ).fetchall() == [(301, "301;302"), (302, "301;302"), (303, "303")]
+        ).fetchall() == [
+            (301, "301;302"),
+            (302, "301;302"),
+            (303, "303"),
+            (304, "304"),
+        ]
         assert connection.execute(
             "SELECT count(*) FROM problem_synonym_groups"
         ).fetchone()[0] == 0
@@ -307,6 +330,37 @@ def test_problem_synonym_reconciliation_rejects_a_cross_lesson_reference(
 
     with pytest.raises(RuntimeError, match="crosses lesson"):
         rehearsal.reconcile_problem_synonyms(target)
+
+
+def test_written_discussion_audit_reports_recoverable_data_without_content(
+    tmp_path: Path,
+) -> None:
+    source = _seed_source(tmp_path / "source.sqlite3")
+
+    report = rehearsal.audit_written_discussions(source)
+
+    assert report == {
+        "legacyDiscussionRows": 4,
+        "submissionDiscussionRows": 3,
+        "questionRowsExcluded": 1,
+        "zeroProblemRows": 0,
+        "lessonZeroDiscussionRowsExcluded": 1,
+        "productDiscussionRows": 2,
+        "productDiscussionThreads": 1,
+        "productTextRows": 1,
+        "productLocalAttachmentRows": 0,
+        "productTelegramReferenceOnlyRows": 1,
+        "telegramReferencesRecoverableFromMessagesLog": 1,
+        "missingStudentReferences": 0,
+        "missingProblemReferences": 0,
+        "missingTeacherReferences": 0,
+        "legacyDiscussionRowsUpdated": 0,
+        "discussionMigrationReady": False,
+        "discussionMigrationBlockers": [
+            "owner-reviewed-problem-revisions-required",
+            "telegram-media-recovery-required",
+        ],
+    }
 
 
 def test_copy_refuses_an_existing_or_out_of_scope_target(

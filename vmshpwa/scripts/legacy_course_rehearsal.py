@@ -711,6 +711,115 @@ def reconcile_problem_synonyms(database: Path) -> dict[str, object]:
     }
 
 
+def audit_written_discussions(database: Path) -> dict[str, object]:
+    """Count recoverable legacy written-thread data without reading message bodies."""
+
+    if not database.is_file():
+        raise ValueError("Discussion audit database does not exist")
+    database_uri = f"{database.resolve().as_uri()}?mode=ro"
+    with sqlite3.connect(database_uri, uri=True) as connection:
+        legacy_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions"
+        ).fetchone()[0]
+        submission_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions WHERE problem_id > 0"
+        ).fetchone()[0]
+        question_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions WHERE problem_id < 0"
+        ).fetchone()[0]
+        zero_problem_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions WHERE problem_id = 0"
+        ).fetchone()[0]
+        lesson_zero_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions AS discussion "
+            "JOIN problems AS problem ON problem.id = discussion.problem_id "
+            "WHERE discussion.problem_id > 0 AND problem.lesson = 0"
+        ).fetchone()[0]
+        product_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions AS discussion "
+            "JOIN problems AS problem ON problem.id = discussion.problem_id "
+            "WHERE problem.lesson > 0"
+        ).fetchone()[0]
+        product_threads = connection.execute(
+            "SELECT count(*) FROM ("
+            "SELECT 1 FROM written_tasks_discussions AS discussion "
+            "JOIN problems AS problem ON problem.id = discussion.problem_id "
+            "WHERE problem.lesson > 0 "
+            "GROUP BY discussion.student_id, discussion.problem_id)"
+        ).fetchone()[0]
+        product_text_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions AS discussion "
+            "JOIN problems AS problem ON problem.id = discussion.problem_id "
+            "WHERE problem.lesson > 0 "
+            "AND trim(coalesce(discussion.text, '')) <> ''"
+        ).fetchone()[0]
+        product_attachment_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions AS discussion "
+            "JOIN problems AS problem ON problem.id = discussion.problem_id "
+            "WHERE problem.lesson > 0 "
+            "AND trim(coalesce(discussion.attach_path, '')) <> ''"
+        ).fetchone()[0]
+        telegram_reference_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions AS discussion "
+            "JOIN problems AS problem ON problem.id = discussion.problem_id "
+            "WHERE problem.lesson > 0 "
+            "AND trim(coalesce(discussion.text, '')) = '' "
+            "AND trim(coalesce(discussion.attach_path, '')) = '' "
+            "AND discussion.chat_id IS NOT NULL "
+            "AND discussion.tg_msg_id IS NOT NULL"
+        ).fetchone()[0]
+        recoverable_telegram_rows = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions AS discussion "
+            "JOIN problems AS problem ON problem.id = discussion.problem_id "
+            "WHERE problem.lesson > 0 "
+            "AND trim(coalesce(discussion.text, '')) = '' "
+            "AND trim(coalesce(discussion.attach_path, '')) = '' "
+            "AND EXISTS (SELECT 1 FROM messages_log AS message "
+            "WHERE message.chat_id = discussion.chat_id "
+            "AND message.tg_msg_id = discussion.tg_msg_id)"
+        ).fetchone()[0]
+        missing_students = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions AS discussion "
+            "LEFT JOIN users AS student ON student.id = discussion.student_id "
+            "WHERE student.id IS NULL"
+        ).fetchone()[0]
+        missing_problems = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions AS discussion "
+            "LEFT JOIN problems AS problem ON problem.id = discussion.problem_id "
+            "WHERE discussion.problem_id > 0 AND problem.id IS NULL"
+        ).fetchone()[0]
+        missing_teachers = connection.execute(
+            "SELECT count(*) FROM written_tasks_discussions AS discussion "
+            "LEFT JOIN users AS teacher ON teacher.id = discussion.teacher_id "
+            "WHERE discussion.teacher_id IS NOT NULL AND teacher.id IS NULL"
+        ).fetchone()[0]
+
+    if legacy_rows != submission_rows + question_rows + zero_problem_rows:
+        raise RuntimeError("Legacy written discussion scope is inconsistent")
+    return {
+        "legacyDiscussionRows": legacy_rows,
+        "submissionDiscussionRows": submission_rows,
+        "questionRowsExcluded": question_rows,
+        "zeroProblemRows": zero_problem_rows,
+        "lessonZeroDiscussionRowsExcluded": lesson_zero_rows,
+        "productDiscussionRows": product_rows,
+        "productDiscussionThreads": product_threads,
+        "productTextRows": product_text_rows,
+        "productLocalAttachmentRows": product_attachment_rows,
+        "productTelegramReferenceOnlyRows": telegram_reference_rows,
+        "telegramReferencesRecoverableFromMessagesLog": recoverable_telegram_rows,
+        "missingStudentReferences": missing_students,
+        "missingProblemReferences": missing_problems,
+        "missingTeacherReferences": missing_teachers,
+        "legacyDiscussionRowsUpdated": 0,
+        "discussionMigrationReady": False,
+        "discussionMigrationBlockers": [
+            "owner-reviewed-problem-revisions-required",
+            "telegram-media-recovery-required",
+        ],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
@@ -721,11 +830,13 @@ def main() -> int:
         default=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     )
     arguments = parser.parse_args()
+    discussion_report = audit_written_discussions(arguments.source)
     source_sha256 = prepare_copy(arguments.source, arguments.target)
     report = backfill_course(arguments.target, arguments.recorded_at)
     report.update(backfill_enrollment_history(arguments.target, arguments.recorded_at))
     report.update(backfill_lessons(arguments.target, arguments.recorded_at))
     report.update(reconcile_problem_synonyms(arguments.target))
+    report.update(discussion_report)
     report["sourceSha256"] = source_sha256
     atomic_write_text(
         arguments.report,
