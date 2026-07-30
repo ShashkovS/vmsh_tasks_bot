@@ -218,6 +218,17 @@ class ContentAssetTools:
         )
 
 
+def _configured_tool(config: object, field: str) -> str:
+    executable = resolve_executable(getattr(config, field, None))
+    if executable is None:
+        raise AssetConversionError(
+            "asset.tool_unavailable",
+            field,
+            "configured executable is disabled, missing or not executable",
+        )
+    return executable
+
+
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -731,22 +742,29 @@ class ConfiguredContentAssetConverter:
 
     def __init__(self, config: object) -> None:
         self._config = config
-        self._resolved: ContentAssetConverter | None = None
-
-    def _converter(self) -> ContentAssetConverter:
-        if self._resolved is None:
-            self._resolved = ContentAssetConverter(
-                ContentAssetTools.from_config(self._config)
-            )
-        return self._resolved
 
     async def tikz_to_svg(self, source: str) -> ConvertedAsset:
-        return await self._converter().tikz_to_svg(source)
+        converter = ContentAssetConverter(
+            ContentAssetTools(
+                pdflatex=_configured_tool(self._config, "pdflatex_path"),
+                pdf2svg=_configured_tool(self._config, "pdf2svg_path"),
+                magick="",
+                cwebp="",
+            )
+        )
+        return await converter.tikz_to_svg(source)
 
     async def svg_to_svg(self, payload: bytes) -> ConvertedAsset:
-        # Sanitizing direct SVG is in-process, but one capability boundary for
-        # all upload kinds keeps deployment diagnostics deterministic.
-        return await self._converter().svg_to_svg(payload)
+        converter = ContentAssetConverter(ContentAssetTools("", "", "", ""))
+        return await converter.svg_to_svg(payload)
 
     async def raster_to_webp(self, payload: bytes) -> ConvertedAsset:
-        return await self._converter().raster_to_webp(payload)
+        converter = ContentAssetConverter(
+            ContentAssetTools(
+                pdflatex="",
+                pdf2svg="",
+                magick=_configured_tool(self._config, "magick_path"),
+                cwebp=_configured_tool(self._config, "cwebp_path"),
+            )
+        )
+        return await converter.raster_to_webp(payload)

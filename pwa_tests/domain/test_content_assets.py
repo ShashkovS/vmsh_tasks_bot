@@ -9,6 +9,7 @@ import pytest
 
 from helpers.pwa.content.assets import (
     AssetConversionError,
+    ConfiguredContentAssetConverter,
     ContentAssetConverter,
     ContentAssetTools,
     sanitize_svg,
@@ -208,6 +209,55 @@ pathlib.Path(sys.argv[sys.argv.index('-o') + 1]).write_bytes({webp_literal})""",
     arguments = args_record.read_text()
     assert "-metadata\nnone" in arguments
     assert "-q\n82" in arguments
+
+
+@pytest.mark.asyncio
+async def test_configured_raster_conversion_does_not_require_latex_tools(
+    tmp_path: Path,
+) -> None:
+    magick = _executable(
+        tmp_path,
+        "magick",
+        """import pathlib, sys
+pathlib.Path(sys.argv[-1]).write_bytes(b'normalized-png')""",
+    )
+    webp_literal = repr(_vp8x(640, 480))
+    cwebp = _executable(
+        tmp_path,
+        "cwebp",
+        f"""import pathlib, sys
+pathlib.Path(sys.argv[sys.argv.index('-o') + 1]).write_bytes({webp_literal})""",
+    )
+    converter = ConfiguredContentAssetConverter(
+        SimpleNamespace(
+            pdflatex_path=None,
+            pdf2svg_path=None,
+            magick_path=str(magick),
+            cwebp_path=str(cwebp),
+        )
+    )
+
+    result = await converter.raster_to_webp(b"synthetic jpeg")
+
+    assert result.media_type == "image/webp"
+    assert (result.width, result.height) == (640, 480)
+
+
+@pytest.mark.asyncio
+async def test_configured_svg_sanitization_does_not_require_external_tools() -> None:
+    converter = ConfiguredContentAssetConverter(
+        SimpleNamespace(
+            pdflatex_path=None,
+            pdf2svg_path=None,
+            magick_path=None,
+            cwebp_path=None,
+        )
+    )
+
+    result = await converter.svg_to_svg(_safe_svg())
+
+    assert result.media_type == "image/svg+xml"
+    assert (result.width, result.height) == (640, 480)
 
 
 @pytest.mark.asyncio

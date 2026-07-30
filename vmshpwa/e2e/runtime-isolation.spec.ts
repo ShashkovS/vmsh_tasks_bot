@@ -832,6 +832,7 @@ test('localStorage theme state stays audience-scoped on the shared origin', asyn
       const themePrefix = 'vmsh-179:v1:'
       const themeSuffix = ':e2e:theme'
       const authMarkerPrefix = 'vmshpwa:auth-refresh-complete:v1:'
+      const runtimeCachePrefix = 'vmsh-179:runtime:v1:'
       const entries = Object.entries(localStorage).sort(([left], [right]) =>
         left.localeCompare(right),
       )
@@ -842,12 +843,16 @@ test('localStorage theme state stays audience-scoped on the shared origin', asyn
         authMarkers: Object.fromEntries(
           entries.filter(([key]) => key.startsWith(authMarkerPrefix)),
         ),
+        runtimeCacheKeys: entries
+          .map(([key]) => key)
+          .filter((key) => key.startsWith(runtimeCachePrefix)),
         otherKeys: entries
           .map(([key]) => key)
           .filter(
             (key) =>
               !(key.startsWith(themePrefix) && key.endsWith(themeSuffix)) &&
-              !key.startsWith(authMarkerPrefix),
+              !key.startsWith(authMarkerPrefix) &&
+              !key.startsWith(runtimeCachePrefix),
           ),
       }
     })
@@ -877,6 +882,10 @@ test('localStorage theme state stays audience-scoped on the shared origin', asyn
     expect.stringMatching(/^\d{13}$/),
     expect.stringMatching(/^\d{13}$/),
   ])
+  expect(initialStorage.runtimeCacheKeys).toEqual([
+    'vmsh-179:runtime:v1:family',
+    'vmsh-179:runtime:v1:student',
+  ])
   expect(initialStorage.otherKeys).toEqual([])
 
   await page.getByRole('button', { name: 'Переключить на тёмную тему' }).click()
@@ -894,6 +903,10 @@ test('localStorage theme state stays audience-scoped on the shared origin', asyn
   expect(Object.values(finalStorage.authMarkers)).toEqual([
     expect.stringMatching(/^\d{13}$/),
     expect.stringMatching(/^\d{13}$/),
+  ])
+  expect(finalStorage.runtimeCacheKeys).toEqual([
+    'vmsh-179:runtime:v1:family',
+    'vmsh-179:runtime:v1:student',
   ])
   expect(finalStorage.otherKeys).toEqual([])
 })
