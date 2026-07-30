@@ -207,6 +207,49 @@ export function ProblemImportView({
               </Card>
             ))}
           </div>
+          {preview.synonymCandidates.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Возможные синонимы · {preview.synonymCandidates.length}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-small text-muted-foreground">
+                  Одинаковые названия найдены в разных группах одного занятия. Импорт не объединяет
+                  задачи автоматически: каждую связь нужно подтвердить отдельно.
+                </p>
+                <ul className="grid gap-2 lg:grid-cols-2">
+                  {preview.synonymCandidates.slice(0, 50).map((candidate) => (
+                    <li
+                      className="rounded-md border border-border bg-surface-subtle p-3"
+                      key={`${candidate.lessonNumber}:${candidate.normalizedTitle}`}
+                    >
+                      <p className="font-medium text-foreground">
+                        Занятие {candidate.lessonNumber} · {candidate.displayTitle}
+                      </p>
+                      <p className="text-caption text-muted-foreground">
+                        {candidate.members
+                          .map(
+                            (member) => `${member.groupCode} ${member.problemNumber}${member.item}`,
+                          )
+                          .join(' · ')}
+                      </p>
+                      {candidate.hasGroupConflict ? (
+                        <p className="mt-1 text-caption text-status-warning">
+                          В одной группе совпали несколько названий — перед объединением выберите
+                          одну задачу.
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+                {preview.synonymCandidates.length > 50 ? (
+                  <p className="text-caption text-muted-foreground">
+                    Показаны первые 50 кандидатов.
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
           {preview.summary.invalid > 0 ? (
             <Alert tone="warning">
               <AlertContent>

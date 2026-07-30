@@ -15,7 +15,7 @@ from pwa_tests.integration.test_classroom_catalog_http_api import _cookies, _hea
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
 
-def _workbook(*, lesson: int = 41) -> bytes:
+def _workbook(*, lesson: int = 41, synonym_candidate: bool = False) -> bytes:
     workbook = Workbook()
     current = workbook.active
     current.title = "Задачи"
@@ -41,6 +41,25 @@ def _workbook(*, lesson: int = 41) -> bytes:
             "Да",
         )
     )
+    if synonym_candidate:
+        current.append(
+            (
+                "п",
+                lesson,
+                4,
+                "",
+                "Орехи",
+                None,
+                "Письменно",
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+        )
     current.append(
         (
             "н",
@@ -80,6 +99,25 @@ def _workbook(*, lesson: int = 41) -> bytes:
     output = BytesIO()
     workbook.save(output)
     return output.getvalue()
+
+
+def _seed_second_group(factory) -> None:
+    def write(connection):
+        course_id = connection.execute(
+            "SELECT id FROM courses WHERE public_id = 'classroom-layout-course'"
+        ).fetchone()["id"]
+        connection.execute(
+            "INSERT INTO groups "
+            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
+            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "status, color_key, created_at, updated_at) VALUES "
+            "('layout-continuing', 'п', 'Продолжающие', 2, 1, 0, 0, 0, 1.0, "
+            "'classroom-layout-group-continuing', ?, 'active', 'continuing', "
+            "'2026-07-30T10:00:00Z', '2026-07-30T10:00:00Z')",
+            (course_id,),
+        )
+
+    factory.run_write(write)
 
 
 def _form(
@@ -155,6 +193,7 @@ async def test_problem_import_preview_compares_real_sqlite_without_writing(
         "invalid": 1,
     }
     assert len(body["previewSha256"]) == 64
+    assert body["synonymCandidates"] == []
     assert body["rows"][0]["problemId"] == f"problem-import-existing-{lesson}"
     assert body["rows"][2]["diagnostics"][0]["code"] == "group_unknown"
 
@@ -164,6 +203,62 @@ async def test_problem_import_preview_compares_real_sqlite_without_writing(
         ).fetchone()["value"]
 
     assert classroom_http.factory.run_read(count) == 1
+
+
+@pytest.mark.asyncio
+async def test_problem_import_preview_reports_synonym_candidate_without_merging(
+    classroom_http,
+):
+    _seed_second_group(classroom_http.factory)
+    response = await classroom_http.client.post(
+        "/staff/api/v1/problem-imports/preview",
+        data=_form(source=_workbook(synonym_candidate=True)),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+
+    assert response.status == 200, await response.text()
+    body = await response.json()
+    assert body["summary"]["rows"] == 4
+    assert body["synonymCandidates"] == [
+        {
+            "lessonNumber": 41,
+            "normalizedTitle": "орехи",
+            "displayTitle": "Орехи",
+            "hasGroupConflict": False,
+            "members": [
+                {
+                    "sheet": "Задачи",
+                    "row": 3,
+                    "groupCode": "н",
+                    "groupId": "classroom-layout-group",
+                    "problemNumber": 1,
+                    "item": "",
+                    "problemId": None,
+                    "problemType": 1,
+                    "answerType": 2,
+                },
+                {
+                    "sheet": "Задачи",
+                    "row": 4,
+                    "groupCode": "п",
+                    "groupId": "classroom-layout-group-continuing",
+                    "problemNumber": 4,
+                    "item": "",
+                    "problemId": None,
+                    "problemType": 2,
+                    "answerType": None,
+                },
+            ],
+        }
+    ]
+
+    def count(connection):
+        return connection.execute(
+            "SELECT count(*) AS value FROM problem_synonym_groups"
+        ).fetchone()["value"]
+
+    assert classroom_http.factory.run_read(count) == 0
 
 
 @pytest.mark.asyncio

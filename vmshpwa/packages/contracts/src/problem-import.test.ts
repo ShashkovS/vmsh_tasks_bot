@@ -40,6 +40,7 @@ const preview = {
       ],
     },
   ],
+  synonymCandidates: [],
   requestId: 'request-one',
 }
 

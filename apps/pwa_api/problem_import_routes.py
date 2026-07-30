@@ -21,6 +21,7 @@ from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.problem_import import (
     compare_problem_rows,
+    find_problem_import_synonym_candidates,
     parse_problem_workbook,
     problem_import_preview_hash,
 )
@@ -219,6 +220,31 @@ def _row_payload(row: dict[str, object]) -> dict[str, object]:
     }
 
 
+def _synonym_candidate_payload(candidate: dict[str, object]) -> dict[str, object]:
+    members = candidate["members"]
+    assert isinstance(members, list)
+    return {
+        "lessonNumber": candidate["lesson"],
+        "normalizedTitle": candidate["normalized_title"],
+        "displayTitle": candidate["display_title"],
+        "hasGroupConflict": candidate["has_group_conflict"],
+        "members": [
+            {
+                "sheet": member["sheet"],
+                "row": member["row"],
+                "groupCode": member["group_code"],
+                "groupId": member["group_public_id"],
+                "problemNumber": member["problem"],
+                "item": member["item"],
+                "problemId": member["problem_public_id"],
+                "problemType": member["problem_type"],
+                "answerType": member["answer_type"],
+            }
+            for member in members
+        ],
+    }
+
+
 @problem_import_routes.post("/staff/api/v1/problem-imports/preview")
 async def preview_problem_import(request: web.Request) -> web.Response:
     _require_admin(request)
@@ -260,6 +286,7 @@ async def preview_problem_import(request: web.Request) -> web.Response:
             message=messages.get(code, "Не удалось проверить XLSX-файл"),
         ) from error
     compared = compare_problem_rows(parsed, groups, current)
+    synonym_candidates = find_problem_import_synonym_candidates(compared)
     counts = Counter(str(row["action"]) for row in compared)
     source_sha256 = hashlib.sha256(source).hexdigest()
     return web.json_response(
@@ -285,6 +312,10 @@ async def preview_problem_import(request: web.Request) -> web.Response:
                 "invalid": counts["invalid"],
             },
             "rows": [_row_payload(row) for row in compared],
+            "synonymCandidates": [
+                _synonym_candidate_payload(candidate)
+                for candidate in synonym_candidates
+            ],
             "requestId": request["request_id"],
         },
         headers={"Cache-Control": "no-store"},

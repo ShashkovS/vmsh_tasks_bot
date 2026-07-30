@@ -39,6 +39,32 @@ export const problemImportRowSchema = z
   })
   .strict()
 
+export const problemImportSynonymCandidateSchema = z
+  .object({
+    lessonNumber: z.number().int().nonnegative(),
+    normalizedTitle: z.string().min(1),
+    displayTitle: z.string().min(1),
+    hasGroupConflict: z.boolean(),
+    members: z
+      .array(
+        z
+          .object({
+            sheet: z.enum(['Задачи', 'Старые']),
+            row: z.number().int().positive(),
+            groupCode: z.string().min(1),
+            groupId: publicIdSchema,
+            problemNumber: z.number().int().positive(),
+            item: z.string(),
+            problemId: publicIdSchema.nullable(),
+            problemType: z.number().int().min(1).max(4),
+            answerType: z.number().int().positive().nullable(),
+          })
+          .strict(),
+      )
+      .min(2),
+  })
+  .strict()
+
 const problemImportSummarySchema = z
   .object({
     rows: z.number().int().nonnegative(),
@@ -73,6 +99,7 @@ export const problemImportPreviewResponseSchema = z
     previewSha256: z.string().regex(/^[a-f0-9]{64}$/),
     summary: problemImportSummarySchema,
     rows: z.array(problemImportRowSchema).max(5_000),
+    synonymCandidates: z.array(problemImportSynonymCandidateSchema),
     requestId: z.string().min(1),
   })
   .strict()
@@ -128,3 +155,4 @@ export type ProblemImportAction = z.infer<typeof problemImportActionSchema>
 export type ProblemImportPreviewResponse = z.infer<typeof problemImportPreviewResponseSchema>
 export type ProblemImportReceipt = z.infer<typeof problemImportReceiptSchema>
 export type ProblemImportRow = z.infer<typeof problemImportRowSchema>
+export type ProblemImportSynonymCandidate = z.infer<typeof problemImportSynonymCandidateSchema>

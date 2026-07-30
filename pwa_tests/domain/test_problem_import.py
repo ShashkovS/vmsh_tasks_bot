@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from models.pwa.problem_import import (
     COLUMNS,
     compare_problem_rows,
+    find_problem_import_synonym_candidates,
     parse_problem_workbook,
     problem_import_preview_hash,
 )
@@ -222,6 +223,62 @@ def test_comparison_ignores_legacy_blank_answer_type_and_line_endings():
     ]
 
     assert compare_problem_rows(rows, groups, current)[0]["action"] == "unchanged"
+
+
+def test_synonym_candidates_require_equal_titles_in_different_groups():
+    rows, _ = parse_problem_workbook(
+        _workbook(
+            current_rows=(
+                _row(group="н", problem=1, title="  Орехи   и клетки "),
+                _row(group="п", problem=4, title="ОРЕХИ И КЛЕТКИ"),
+                _row(group="н", problem=2, title="Другая задача"),
+            )
+        )
+    )
+    groups = [
+        {"group_id": "beginner", "public_id": "group-beginner", "short_code": "н"},
+        {
+            "group_id": "continuing",
+            "public_id": "group-continuing",
+            "short_code": "п",
+        },
+    ]
+
+    candidates = find_problem_import_synonym_candidates(
+        compare_problem_rows(rows, groups, [])
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0]["lesson"] == 41
+    assert candidates[0]["normalized_title"] == "орехи и клетки"
+    assert candidates[0]["has_group_conflict"] is False
+    assert [member["problem"] for member in candidates[0]["members"]] == [1, 4]
+
+
+def test_synonym_candidate_marks_ambiguous_duplicate_inside_one_group():
+    rows, _ = parse_problem_workbook(
+        _workbook(
+            current_rows=(
+                _row(group="н", problem=1, title="Метрик"),
+                _row(group="н", problem=2, title="Метрик"),
+                _row(group="п", problem=3, title="Метрик"),
+            )
+        )
+    )
+    groups = [
+        {"group_id": "beginner", "public_id": "group-beginner", "short_code": "н"},
+        {
+            "group_id": "continuing",
+            "public_id": "group-continuing",
+            "short_code": "п",
+        },
+    ]
+
+    candidates = find_problem_import_synonym_candidates(
+        compare_problem_rows(rows, groups, [])
+    )
+
+    assert candidates[0]["has_group_conflict"] is True
 
 
 def test_reference_workbook_remains_a_clean_characterization_input():

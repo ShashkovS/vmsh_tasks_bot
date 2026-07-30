@@ -115,7 +115,7 @@ const problemImportPreview = problemImportPreviewResponseSchema.parse({
   },
   source: { filename: 'ВМШ — задачи.xlsx', sha256: 'a'.repeat(64) },
   previewSha256: 'b'.repeat(64),
-  summary: { rows: 2, create: 1, update: 0, unchanged: 0, invalid: 1 },
+  summary: { rows: 3, create: 2, update: 0, unchanged: 0, invalid: 1 },
   rows: [
     {
       sheet: 'Задачи',
@@ -135,6 +135,28 @@ const problemImportPreview = problemImportPreviewResponseSchema.parse({
       correctAnswerChecker: null,
       wrongAnswer: 'Нет, не столько орехов',
       congratulation: 'Да, всё верно!',
+      action: 'create',
+      problemId: null,
+      diagnostics: [],
+    },
+    {
+      sheet: 'Задачи',
+      row: 31,
+      groupCode: 'п',
+      groupId: directoryCourse.groups[1]!.groupId,
+      lessonNumber: 41,
+      problemNumber: 5,
+      item: '',
+      title: 'Орехи и клетки',
+      problemText: '',
+      problemType: 2,
+      answerType: null,
+      answerValidation: null,
+      validationError: null,
+      correctAnswer: null,
+      correctAnswerChecker: null,
+      wrongAnswer: null,
+      congratulation: null,
       action: 'create',
       problemId: null,
       diagnostics: [],
@@ -170,6 +192,38 @@ const problemImportPreview = problemImportPreviewResponseSchema.parse({
       ],
     },
   ],
+  synonymCandidates: [
+    {
+      lessonNumber: 41,
+      normalizedTitle: 'орехи и клетки',
+      displayTitle: 'Орехи и клетки',
+      hasGroupConflict: false,
+      members: [
+        {
+          sheet: 'Задачи',
+          row: 24,
+          groupCode: 'н',
+          groupId: directoryCourse.groups[0]!.groupId,
+          problemNumber: 3,
+          item: '',
+          problemId: null,
+          problemType: 1,
+          answerType: 2,
+        },
+        {
+          sheet: 'Задачи',
+          row: 31,
+          groupCode: 'п',
+          groupId: directoryCourse.groups[1]!.groupId,
+          problemNumber: 5,
+          item: '',
+          problemId: null,
+          problemType: 2,
+          answerType: null,
+        },
+      ],
+    },
+  ],
   requestId: 'storybook-problem-import',
 })
 const problemImportReceipt = problemImportReceiptSchema.parse({
@@ -178,7 +232,7 @@ const problemImportReceipt = problemImportReceiptSchema.parse({
   state: 'applied',
   source: problemImportPreview.source,
   previewSha256: problemImportPreview.previewSha256,
-  summary: { rows: 2, created: 1, updated: 0, unchanged: 0, skippedInvalid: 1 },
+  summary: { rows: 3, created: 2, updated: 0, unchanged: 0, skippedInvalid: 1 },
   appliedAt: '2026-07-30T10:00:00+00:00',
   rolledBackAt: null,
   version: 1,
@@ -231,7 +285,9 @@ export const ProblemWorkbookPreview: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Проверить файл' }))
     await expect(canvas.getByRole('heading', { name: 'Результат проверки' })).toBeVisible()
     await expect(canvas.getByText('Такой группы нет в выбранном курсе.')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Применить изменения · 1' }))
+    await expect(canvas.getByText('Возможные синонимы · 1')).toBeVisible()
+    await expect(canvas.getByText('н 3 · п 5')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Применить изменения · 2' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить применение' }))
     await expect(canvas.getByText('Изменения применены')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Откатить импорт' }))

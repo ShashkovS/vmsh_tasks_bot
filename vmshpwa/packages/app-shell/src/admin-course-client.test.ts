@@ -271,6 +271,7 @@ describe('admin course client', () => {
       previewSha256: 'b'.repeat(64),
       summary: { rows: 0, create: 0, update: 0, unchanged: 0, invalid: 0 },
       rows: [],
+      synonymCandidates: [],
       requestId: 'preview',
     }
     const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(Response.json(response))

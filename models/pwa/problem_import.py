@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 import re
+import unicodedata
 import zipfile
 from collections import Counter
 from datetime import date, datetime, time
@@ -397,6 +398,52 @@ def compare_problem_rows(
     return compared
 
 
+def find_problem_import_synonym_candidates(
+    rows: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Find equal titles in different groups without changing any problem."""
+
+    grouped: dict[tuple[int, str], list[dict[str, object]]] = {}
+    for row in rows:
+        if row.get("action") == "invalid":
+            continue
+        lesson = row.get("lesson")
+        title = row.get("title")
+        group_id = row.get("group_public_id")
+        if not isinstance(lesson, int) or not isinstance(title, str) or not group_id:
+            continue
+        normalized_title = " ".join(
+            unicodedata.normalize("NFKC", title).casefold().split()
+        )
+        grouped.setdefault((lesson, normalized_title), []).append(row)
+
+    candidates: list[dict[str, object]] = []
+    for (lesson, normalized_title), members in sorted(grouped.items()):
+        group_ids = {str(member["group_public_id"]) for member in members}
+        if len(group_ids) < 2:
+            continue
+        ordered = sorted(
+            members,
+            key=lambda member: (
+                str(member["group_public_id"]),
+                int(member["problem"]),
+                str(member["item"]),
+                str(member["sheet"]),
+                int(member["row"]),
+            ),
+        )
+        candidates.append(
+            {
+                "lesson": lesson,
+                "normalized_title": normalized_title,
+                "display_title": ordered[0]["title"],
+                "has_group_conflict": len(group_ids) != len(ordered),
+                "members": ordered,
+            }
+        )
+    return candidates
+
+
 def problem_import_preview_hash(
     course_public_id: str,
     source_sha256: str,
@@ -441,6 +488,7 @@ def problem_import_preview_hash(
 
 __all__ = [
     "compare_problem_rows",
+    "find_problem_import_synonym_candidates",
     "parse_problem_workbook",
     "problem_import_preview_hash",
 ]
