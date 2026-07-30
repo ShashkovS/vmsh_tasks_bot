@@ -44,6 +44,8 @@ vmshpwa/**/*.tsbuildinfo
 .pnpm-store/
 .runtime/vmshpwa/
 .runtime/auth-import/
+.runtime/phase11-rehearsal/
+.runtime/uv-cache/
 db/vmshpwa_*.sqlite3
 db/vmshpwa_*.sqlite3-wal
 db/vmshpwa_*.sqlite3-shm

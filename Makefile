@@ -148,6 +148,12 @@ pwa-auth-import-apply:
 	@test -n "$(PWA_AUTH_IMPORT_REPORT)" || (echo "Set PWA_AUTH_IMPORT_REPORT"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.auth_import apply --database "$(PWA_AUTH_IMPORT_DATABASE)" --confirm-database "$(PWA_AUTH_IMPORT_CONFIRM_DATABASE)" --decisions "$(PWA_AUTH_IMPORT_DECISIONS)" --report "$(PWA_AUTH_IMPORT_REPORT)"
 
+.PHONY: pwa-phase11-course-rehearsal
+pwa-phase11-course-rehearsal:
+	@test -n "$(PWA_REHEARSAL_TARGET)" || (echo "Set a new PWA_REHEARSAL_TARGET below .runtime/phase11-rehearsal"; exit 2)
+	@test -n "$(PWA_REHEARSAL_REPORT)" || (echo "Set PWA_REHEARSAL_REPORT"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.legacy_course_rehearsal --source db/vmsh.db --target "$(PWA_REHEARSAL_TARGET)" --report "$(PWA_REHEARSAL_REPORT)"
+
 .PHONY: pwa-classroom-import-preview pwa-classroom-import-apply
 pwa-classroom-import-preview:
 	@test -n "$(PWA_CLASSROOM_IMPORT_DATABASE)" || (echo "Set PWA_CLASSROOM_IMPORT_DATABASE"; exit 2)
