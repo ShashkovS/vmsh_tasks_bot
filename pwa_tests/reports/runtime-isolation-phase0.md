@@ -213,6 +213,12 @@ uv run pytest -q -n0 \
 
 Production-like browser результаты:
 
+- follow-up 30 июля 2026: product-realtime assertion допускает последующие
+  валидные `invalidate` после обязательного `resync-required`, поэтому
+  параллельные product flows больше не делают reconnect proof ложнокрасным.
+  Повторный `make pwa-e2e-runtime` подтвердил этот сценарий во всех трёх
+  движках: 71 PASS и один успешный retry несвязанного WebKit service-worker
+  navigation race;
 - follow-up 27 июля 2026: после обнаруженного regression test mismatch кнопка
   обновления напрямую отправляет `SKIP_WAITING` browser-owned waiting worker,
   а navigation assertion сохраняет фактический текущий audience-local URL

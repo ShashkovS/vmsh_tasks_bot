@@ -717,7 +717,9 @@ for (const audience of audiences) {
           url: expect.stringMatching(
             new RegExp(`^ws://127\\.0\\.0\\.1:5380/${audience}/ws\\?cursor=\\d+$`),
           ),
-          receivedTypes: ['resync-required'],
+          // Other parallel product flows may publish valid invalidations after
+          // reconnect. The required recovery signal must still be present.
+          receivedTypes: expect.arrayContaining(['resync-required']),
           closeCode: null,
         },
       ])
