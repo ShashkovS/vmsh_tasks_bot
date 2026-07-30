@@ -56,6 +56,16 @@ def _seed(connection: sqlite3.Connection) -> int:
     }
     if actor is None or season is None or len(group_lessons) != len(TARGETS):
         raise RuntimeError("Classroom E2E seed requires the baseline and content seeds")
+    student_credential = connection.execute(
+        "SELECT credential_hash FROM auth_accounts "
+        "WHERE public_id = 'account-student-fixture'"
+    ).fetchone()
+    family_credential = connection.execute(
+        "SELECT credential_hash FROM auth_accounts "
+        "WHERE public_id = 'account-family-fixture'"
+    ).fetchone()
+    if student_credential is None or family_credential is None:
+        raise RuntimeError("Classroom E2E seed requires the baseline auth accounts")
 
     event_ids = [f"in-person-classrooms-e2e-{project}" for project, _lesson in TARGETS]
     room_ids = [f"classroom-e2e-{project}" for project, _lesson in TARGETS]
@@ -148,6 +158,51 @@ def _seed(connection: sqlite3.Connection) -> int:
                 "VALUES (?, 1, 'Ученик', ?, 7, '2013-01-01') RETURNING id",
                 (f"student-classroom-e2e-{project}", f"Тестов {project}"),
             ).fetchone()["id"]
+        )
+        connection.execute(
+            "INSERT INTO auth_accounts "
+            "(public_id, audience, username, username_normalized, "
+            "username_algorithm_version, provisioning_source, display_name, "
+            "credential_kind, credential_hash, linked_user_id, status, "
+            "credential_version, created_at, updated_at) "
+            "VALUES (?, 'student', ?, ?, 1, 'synthetic_e2e_classroom', ?, "
+            "'telegram_token', ?, ?, 'active', 1, ?, ?)",
+            (
+                f"account-classroom-e2e-{project}",
+                f"classroom-e2e-{project}",
+                f"classroom-e2e-{project}",
+                f"Тестов {project} Ученик",
+                str(student_credential["credential_hash"]),
+                student_id,
+                TIMESTAMP,
+                TIMESTAMP,
+            ),
+        )
+        family_account_id = int(
+            connection.execute(
+                "INSERT INTO auth_accounts "
+                "(public_id, audience, username, username_normalized, "
+                "username_algorithm_version, provisioning_source, display_name, "
+                "credential_kind, credential_hash, linked_user_id, status, "
+                "credential_version, created_at, updated_at) "
+                "VALUES (?, 'family', ?, ?, NULL, 'synthetic_e2e_classroom', ?, "
+                "'password', ?, NULL, 'active', 1, ?, ?) RETURNING id",
+                (
+                    f"account-classroom-family-e2e-{project}",
+                    f"classroom-family-e2e-{project}",
+                    f"classroom-family-e2e-{project}",
+                    f"Семья classroom E2E {project}",
+                    str(family_credential["credential_hash"]),
+                    TIMESTAMP,
+                    TIMESTAMP,
+                ),
+            ).fetchone()["id"]
+        )
+        connection.execute(
+            "INSERT INTO family_student_links "
+            "(family_account_id, student_user_id, relationship_label, is_primary, "
+            "created_at, updated_at) VALUES (?, ?, 'родитель', 1, ?, ?)",
+            (family_account_id, student_id, TIMESTAMP, TIMESTAMP),
         )
         enrollment_id = int(
             connection.execute(

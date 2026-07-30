@@ -149,17 +149,22 @@ draft, private text questions и production-build E2E в трёх браузер
 [reaction inbox](phase6-review-reaction-inbox.md),
 [support pages/E2E](phase6-support-pages.md).
 
-### Phase 7 — oral/classrooms: функциональное ядро готово, полный browser proof открыт
+### Phase 7 — oral/classrooms: функциональное ядро и browser flow готовы
 
 Работают oral windows/result flow, catalog, inherited layout, deterministic
 assignment, local draft, history, Excel preview/apply, explicit delivery
 preview/batch, Student/Family projection и Telegram retry transport. Устный
 путь проходит Chromium/WebKit/Firefox.
 
+Production-build E2E теперь проверяет в трёх браузерах local draft/reload,
+confirm, историю, отдельный PWA delivery preview/send, Student notification,
+одинаковый Student/Family read model и отсутствие Family notification.
+Telegram transport остаётся в отдельном recording/live-test proof и не
+подключается к E2E.
+
 Осталось:
 
-- единый browser-сценарий classroom delivery: confirm → Student/Family refetch
-  → explicit PWA/Telegram send → archive/reassigning → repeat send;
+- browser-продолжение archive → reassigning → новый confirm/send;
 - production-size обезличенный assignment rehearsal и временная граница с
   legacy print;
 - visual acceptance полного planner.
@@ -167,7 +172,8 @@ preview/batch, Student/Family projection и Telegram retry transport. Устны
 Доказательства: [assignments](phase7-classroom-assignments.md),
 [delivery](phase7-classroom-delivery.md),
 [Telegram transport](phase8-classroom-telegram-transport.md),
-[oral E2E](phase7-oral-e2e.md).
+[oral E2E](phase7-oral-e2e.md),
+[classroom delivery E2E](phase7-classroom-delivery-e2e.md).
 
 ### Phase 8 — news/notifications: backend и страницы готовы, phase-level E2E открыт
 

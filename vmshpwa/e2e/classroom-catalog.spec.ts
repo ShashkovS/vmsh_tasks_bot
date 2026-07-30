@@ -1,9 +1,30 @@
 import { randomUUID } from 'node:crypto'
 
-import { AUTH_PERSONAS, loginThroughUi } from './auth-personas'
+import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas'
 import { expect, test } from './fixtures'
 
 test.setTimeout(90_000)
+
+function classroomPersona(project: string, audience: 'student' | 'family'): AuthPersona {
+  if (audience === 'student') {
+    return {
+      persona: 'student',
+      accountPublicId: `account-classroom-e2e-${project}`,
+      audience,
+      username: `classroom-e2e-${project}`,
+      credentialField: 'telegramToken',
+      credential: AUTH_PERSONAS.student.credential,
+    }
+  }
+  return {
+    persona: 'family',
+    accountPublicId: `account-classroom-family-e2e-${project}`,
+    audience,
+    username: `classroom-family-e2e-${project}`,
+    credentialField: 'password',
+    credential: AUTH_PERSONAS.family.credential,
+  }
+}
 
 test('Phase 7: admin maintains the durable classroom catalog', async ({ page }, testInfo) => {
   const suffix = `${testInfo.project.name}-${randomUUID().slice(0, 8)}`
@@ -137,26 +158,11 @@ test('Phase 7: an event layout survives reload and is confirmed explicitly', asy
   await expect(page.getByRole('button', { name: 'Изменить схему' })).toBeVisible()
 })
 
-test('Phase 7: classroom student edits survive reload until explicit confirmation', async ({
+test('Phase 7: classroom edits survive reload and are explicitly announced', async ({
   page,
 }, testInfo) => {
   const project = testInfo.project.name
   const eventPublicId = `in-person-classrooms-e2e-${project}`
-  const targetRoomByProject: Record<string, string> = {
-    chromium: 'classroom-e2e-webkit',
-    webkit: 'classroom-e2e-firefox',
-    firefox: 'classroom-e2e-firefox',
-  }
-  const targetRoomNameByProject: Record<string, string> = {
-    chromium: '202 E2E webkit',
-    webkit: '203 E2E firefox',
-    firefox: '203 E2E firefox',
-  }
-  const targetRoom = targetRoomByProject[project]
-  const targetRoomName = targetRoomNameByProject[project]
-  if (targetRoom === undefined || targetRoomName === undefined) {
-    throw new Error(`Unknown Playwright project: ${project}`)
-  }
   const studentName = `Тестов ${project} Ученик`
 
   await loginThroughUi(
@@ -180,9 +186,19 @@ test('Phase 7: classroom student edits survive reload until explicit confirmatio
   await expect(studentRow.getByText('возраст 13.6', { exact: true })).toBeVisible()
   await expect(studentRow.getByText('класс 7', { exact: true })).toBeVisible()
   await expect(studentRow.getByText('сила 8.0', { exact: true })).toBeVisible()
-  await roomSelect.selectOption(targetRoom)
+  const currentRoom = await roomSelect.inputValue()
+  const targetRoom = (
+    await roomSelect.locator('option').evaluateAll((options) =>
+      options.map((option) => ({
+        value: (option as HTMLOptionElement).value,
+        label: option.textContent?.trim() ?? '',
+      })),
+    )
+  ).find((option) => option.value !== '' && option.value !== currentRoom)
+  if (targetRoom === undefined) throw new Error(`No alternate classroom for ${project}`)
+  await roomSelect.selectOption(targetRoom.value)
   await page.reload()
-  await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom)
+  await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom.value)
 
   const saveResponse = page.waitForResponse(
     (response) =>
@@ -198,7 +214,7 @@ test('Phase 7: classroom student edits survive reload until explicit confirmatio
   expect((await saveResponse).status()).toBe(200)
   expect((await confirmResponse).status()).toBe(200)
   await expect(page.getByText('Подтверждено')).toBeVisible()
-  await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom)
+  await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom.value)
 
   const historyResponse = page.waitForResponse((response) =>
     new URL(response.url()).pathname.endsWith('/history'),
@@ -208,5 +224,53 @@ test('Phase 7: classroom student edits survive reload until explicit confirmatio
   const history = page
     .getByRole('heading', { name: `История аудиторий: ${studentName}` })
     .locator('xpath=ancestor::section[1]')
-  await expect(history).toContainText(targetRoomName)
+  await expect(history).toContainText(targetRoom.label)
+
+  // Phase 7 requires a separate explicit action after confirmation. The E2E
+  // harness has no Telegram adapter, so this browser proof deliberately sends
+  // only the PWA channel; Telegram transport has its own recording-adapter test.
+  const previewResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/delivery-preview'),
+  )
+  await page.getByRole('button', { name: 'Подготовить предпросмотр' }).click()
+  expect((await previewResponse).status()).toBe(200)
+  await expect(page.getByText('Получателей: 3', { exact: true })).toBeVisible()
+  await expect(page.getByText('Без Telegram: 3', { exact: true })).toBeVisible()
+  const telegram = page.getByRole('checkbox', { name: /Telegram/ })
+  await expect(telegram).toBeChecked()
+  await telegram.click()
+
+  const deliveryResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/delivery-batches'),
+  )
+  await page.getByRole('button', { name: 'Разослать аудитории' }).click()
+  expect((await deliveryResponse).status()).toBe(201)
+  await expect(page.getByTestId('classroom-delivery-report')).toContainText('доставлено 3')
+
+  const eventName = `E2E схема аудиторий ${project}`
+  await loginThroughUi(page, classroomPersona(project, 'student'), '/student/')
+  const studentEvent = page.getByText(eventName, { exact: false }).locator('xpath=..')
+  await expect(studentEvent).toContainText(targetRoom.label)
+  await expect(studentEvent).toContainText('Разослано')
+  await page.goto('/student/profile/notifications')
+  const classroomNotification = page
+    .getByRole('link', { name: new RegExp(targetRoom.label) })
+    .first()
+  await expect(classroomNotification).toContainText('Назначена аудитория')
+  await expect(classroomNotification).toContainText(targetRoom.label)
+
+  await loginThroughUi(page, classroomPersona(project, 'family'), '/family/')
+  const familyEvent = page.getByText(eventName, { exact: false }).locator('xpath=..')
+  await expect(familyEvent).toContainText(targetRoom.label)
+  await expect(familyEvent).toContainText('Разослано')
+  const familyNotifications = await page.evaluate(async () => {
+    const response = await fetch('/family/api/v1/notification-events')
+    return { status: response.status, payload: (await response.json()) as { items: unknown[] } }
+  })
+  expect(familyNotifications.status).toBe(200)
+  expect(familyNotifications.payload.items).toEqual([])
 })
