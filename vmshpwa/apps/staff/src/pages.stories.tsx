@@ -340,12 +340,17 @@ export const BroadcastPhaseTwo: Story = { render: () => <BroadcastComposerPage /
 function StudentDirectoryStory() {
   const [search, setSearch] = useState({ query: '' })
   const [saved, setSaved] = useState(false)
+  const [accountSaved, setAccountSaved] = useState(false)
   const directory = adminStudentEnrollmentDirectoryResponseSchema.parse(studentDirectoryFixture)
   return (
     <div className="min-h-screen bg-background p-4">
       <StudentDirectoryView
         accountId="storybook-admin"
         courses={[directoryCourse]}
+        onAccountChange={() => {
+          setAccountSaved(true)
+          return Promise.resolve()
+        }}
         onSave={() => setSaved(true)}
         onSearchChange={setSearch}
         search={search}
@@ -355,6 +360,11 @@ function StudentDirectoryStory() {
       {saved ? (
         <p className="mt-3 text-small" role="status">
           Изменение подготовлено к отправке.
+        </p>
+      ) : null}
+      {accountSaved ? (
+        <p className="mt-3 text-small" role="status">
+          Изменение аккаунта подготовлено к отправке.
         </p>
       ) : null}
     </div>
@@ -375,6 +385,17 @@ export const StudentCourseAccess: Story = {
     await expect(canvas.getByText(/Несохранённые изменения хранятся/)).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить изменения' }))
     await expect(canvas.getByText('Изменение подготовлено к отправке.')).toBeInTheDocument()
+  },
+}
+
+export const StudentAccountLifecycle: Story = {
+  name: 'Участники · блокировка и смена токена',
+  render: () => <StudentDirectoryStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.selectOptions(canvas.getAllByLabelText('Состояние')[0]!, 'blocked')
+    await userEvent.click(canvas.getAllByRole('button', { name: 'Сохранить состояние' })[0]!)
+    await expect(canvas.getByText('Изменение аккаунта подготовлено к отправке.')).toBeVisible()
   },
 }
 

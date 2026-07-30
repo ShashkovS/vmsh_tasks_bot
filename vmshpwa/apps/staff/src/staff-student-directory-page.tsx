@@ -43,6 +43,7 @@ import {
   writeEnrollmentDraft,
 } from './student-enrollment-draft'
 import { filterStudents } from './student-directory-search'
+import { StudentAccountControls, type AccountLifecycleCommand } from './student-account-controls'
 import { UsersSectionTabs, type UsersSection } from './users-section-tabs'
 
 interface DirectorySearch {
@@ -257,10 +258,12 @@ export function StudentDirectoryView({
   courses,
   search,
   saving = false,
+  accountSaving = false,
   showPrivateAccounts = true,
   storageNamespace,
   students,
   onSave,
+  onAccountChange,
   onSearchChange,
 }: {
   accountId: string
@@ -269,10 +272,12 @@ export function StudentDirectoryView({
   courses: AdminCourse[]
   search: DirectorySearch
   saving?: boolean
+  accountSaving?: boolean
   showPrivateAccounts?: boolean
   storageNamespace: string
   students: AdminStudentDirectoryEntry[]
   onSave: (command: SaveCommand) => void
+  onAccountChange?: (command: AccountLifecycleCommand) => Promise<void>
   onSearchChange: (search: DirectorySearch) => void
 }) {
   const matches = filterStudents(students, search.query)
@@ -344,8 +349,16 @@ export function StudentDirectoryView({
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle>{fullName(selectedStudent)}</CardTitle>
                 {showPrivateAccounts ? (
-                  <Badge variant={selectedStudent.webAccount ? 'success' : 'warning'}>
-                    {selectedStudent.webAccount ? 'Web-вход активен' : 'Web-вход не создан'}
+                  <Badge
+                    variant={
+                      selectedStudent.webAccount?.status === 'active' ? 'success' : 'warning'
+                    }
+                  >
+                    {selectedStudent.webAccount === null
+                      ? 'Web-вход не создан'
+                      : selectedStudent.webAccount.status === 'active'
+                        ? 'Web-вход активен'
+                        : 'Web-вход отключён'}
                   </Badge>
                 ) : null}
               </div>
@@ -385,6 +398,43 @@ export function StudentDirectoryView({
               ) : null}
             </CardContent>
           </Card>
+
+          {showPrivateAccounts && onAccountChange ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Доступ в кабинеты</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {selectedStudent.webAccount ? (
+                  <StudentAccountControls
+                    account={selectedStudent.webAccount}
+                    audience="student"
+                    key={`${selectedStudent.webAccount.accountId}:${selectedStudent.webAccount.credentialVersion}`}
+                    onChange={onAccountChange}
+                    pending={accountSaving}
+                  />
+                ) : (
+                  <p className="text-small text-muted-foreground">
+                    Аккаунт школьника ещё не создан.
+                  </p>
+                )}
+                {selectedStudent.familyAccounts.map((account) => (
+                  <div className="space-y-2" key={account.accountId}>
+                    <p className="text-small text-muted-foreground">
+                      {account.displayName} · {account.relationshipLabel}
+                    </p>
+                    <StudentAccountControls
+                      account={account}
+                      audience="family"
+                      key={`${account.accountId}:${account.credentialVersion}`}
+                      onChange={onAccountChange}
+                      pending={accountSaving}
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
 
           {selectedStudent.enrollments.length === 0 ? (
             <Card>
@@ -493,6 +543,16 @@ export function StaffStudentDirectoryPage({
     },
     onError: (error) => authentication.handleApiError(error),
   })
+  const accountMutation = useMutation({
+    mutationFn: (command: AccountLifecycleCommand) =>
+      command.kind === 'status'
+        ? client.updateAccountStatus(command.accountId, command.version, command.status)
+        : client.replaceAccountCredential(command.accountId, command.version, command.credential),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: adminStudentEnrollmentsQueryKey(scope) })
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
 
   if (directory.isPending || (isAdmin && catalog.isPending)) {
     return (
@@ -543,11 +603,13 @@ export function StaffStudentDirectoryPage({
             </AlertContent>
           </Alert>
         ) : null}
-        {mutation.error ? (
+        {mutation.error || accountMutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
               <AlertTitle>Изменение не сохранено</AlertTitle>
-              <AlertDescription>{errorMessage(mutation.error)}</AlertDescription>
+              <AlertDescription>
+                {errorMessage((mutation.error ?? accountMutation.error)!)}
+              </AlertDescription>
             </AlertContent>
           </Alert>
         ) : null}
@@ -561,7 +623,11 @@ export function StaffStudentDirectoryPage({
             )
           }
           canManageEnrollment={isAdmin}
+          accountSaving={accountMutation.isPending}
           courses={catalog.data?.courses ?? []}
+          onAccountChange={async (command) => {
+            await accountMutation.mutateAsync(command)
+          }}
           onSave={(command) => mutation.mutate(command)}
           onSearchChange={onSearchChange}
           saving={mutation.isPending}

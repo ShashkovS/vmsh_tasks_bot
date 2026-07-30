@@ -246,6 +246,7 @@ def _directory(
                         "accountId": row["account_public_id"],
                         "username": row["username"],
                         "status": row["account_status"],
+                        "credentialVersion": row["account_credential_version"],
                     }
                 ),
                 "familyAccounts": [
@@ -253,6 +254,7 @@ def _directory(
                         "accountId": family["account_public_id"],
                         "displayName": family["display_name"],
                         "status": family["status"],
+                        "credentialVersion": family["credential_version"],
                         "relationshipLabel": family["relationship_label"],
                         "isPrimary": bool(family["is_primary"]),
                     }

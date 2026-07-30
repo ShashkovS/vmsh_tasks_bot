@@ -215,6 +215,52 @@ describe('admin course client', () => {
     )
   })
 
+  it('changes account status and credential with the current account version', async () => {
+    const account = {
+      accountId: 'account-student',
+      audience: 'student' as const,
+      status: 'blocked' as const,
+      credentialVersion: 2,
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({ schemaVersion: 1, account, requestId: 'status-change' }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          account: { ...account, status: 'active', credentialVersion: 3 },
+          requestId: 'credential-change',
+        }),
+      )
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+
+    await client.updateAccountStatus(account.accountId, 1, 'blocked')
+    await client.replaceAccountCredential(account.accountId, 2, 'replacement-token')
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/staff/api/v1/accounts/account-student/status',
+    )
+    expect(fetchImplementation.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: expect.objectContaining({ 'If-Match': '"account-student:v1"' }),
+        body: JSON.stringify({ schemaVersion: 1, status: 'blocked' }),
+      }),
+    )
+    expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+      '/staff/api/v1/accounts/account-student/credential',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[1]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ 'If-Match': '"account-student:v2"' }),
+        body: JSON.stringify({ schemaVersion: 1, credential: 'replacement-token' }),
+      }),
+    )
+  })
+
   it('loads Staff access and replaces the complete optimistic scope set', async () => {
     const member = {
       staffUserId: 'teacher-one',

@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
 
-const accountStatusSchema = z.enum(['pending', 'active', 'blocked', 'revoked'])
+export const managedAccountStatusSchema = z.enum(['active', 'blocked', 'disabled', 'archived'])
+export type ManagedAccountStatus = z.infer<typeof managedAccountStatusSchema>
 const groupStatusSchema = z.enum(['draft', 'active', 'archived'])
 const attendanceModeSchema = z.enum(['online', 'in_person'])
 const enrollmentStatusSchema = z.enum(['active', 'paused', 'archived'])
@@ -72,7 +73,8 @@ export const adminStudentDirectoryEntrySchema = z
       .object({
         accountId: publicIdSchema,
         username: z.string().trim().min(1),
-        status: accountStatusSchema,
+        status: managedAccountStatusSchema,
+        credentialVersion: z.number().int().positive(),
       })
       .strict()
       .nullable(),
@@ -81,7 +83,8 @@ export const adminStudentDirectoryEntrySchema = z
         .object({
           accountId: publicIdSchema,
           displayName: z.string().trim().min(1),
-          status: accountStatusSchema,
+          status: managedAccountStatusSchema,
+          credentialVersion: z.number().int().positive(),
           relationshipLabel: z.string().trim().min(1),
           isPrimary: z.boolean(),
         })
@@ -141,6 +144,42 @@ export const adminStudentEnrollmentResponseSchema = z
   })
   .strict()
 export type AdminStudentEnrollmentResponse = z.infer<typeof adminStudentEnrollmentResponseSchema>
+
+export const updateManagedAccountStatusRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    status: managedAccountStatusSchema,
+  })
+  .strict()
+export type UpdateManagedAccountStatusRequest = z.infer<
+  typeof updateManagedAccountStatusRequestSchema
+>
+
+export const replaceManagedAccountCredentialRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    credential: z.string().min(1).max(256),
+  })
+  .strict()
+export type ReplaceManagedAccountCredentialRequest = z.infer<
+  typeof replaceManagedAccountCredentialRequestSchema
+>
+
+export const managedAccountResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    account: z
+      .object({
+        accountId: publicIdSchema,
+        audience: z.enum(['student', 'family']),
+        status: managedAccountStatusSchema,
+        credentialVersion: z.number().int().positive(),
+      })
+      .strict(),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type ManagedAccountResponse = z.infer<typeof managedAccountResponseSchema>
 
 export const adminStudentEnrollmentsQueryKey = (principal: PrincipalQueryScope) =>
   ['admin-student-enrollments', ...principalQueryKey(principal)] as const

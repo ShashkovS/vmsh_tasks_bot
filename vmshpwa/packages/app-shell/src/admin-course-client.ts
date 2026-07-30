@@ -18,11 +18,13 @@ import {
   adminStudentEnrollmentsQueryKey,
   apiErrorSchema,
   createAdminCourseRequestSchema,
+  managedAccountResponseSchema,
   parseRuntimeConfigForAudience,
   problemImportPreviewResponseSchema,
   problemImportReceiptSchema,
   publicIdSchema,
   replaceStaffScopesRequestSchema,
+  replaceManagedAccountCredentialRequestSchema,
   saveAdminGroupRequestSchema,
   saveAdminGroupScheduleOverrideSchema,
   saveAdminCourseScheduleRuleSchema,
@@ -31,6 +33,7 @@ import {
   staffAccessQueryKey,
   updateAdminCourseRequestSchema,
   updateAdminStudentEnrollmentRequestSchema,
+  updateManagedAccountStatusRequestSchema,
   type AdminCourseCatalogResponse,
   type AdminCourseResponse,
   type AdminCourseScheduleDraftResponse,
@@ -42,6 +45,8 @@ import {
   type AdminStudentEnrollmentDirectoryResponse,
   type AdminStudentEnrollmentResponse,
   type CreateAdminCourseRequest,
+  type ManagedAccountResponse,
+  type ManagedAccountStatus,
   type PrincipalQueryScope,
   type ProblemImportPreviewResponse,
   type ProblemImportReceipt,
@@ -94,6 +99,16 @@ export interface AdminCourseClient {
     version: number,
     input: UpdateAdminStudentEnrollmentRequest,
   ): Promise<AdminStudentEnrollmentResponse>
+  updateAccountStatus(
+    accountId: string,
+    version: number,
+    status: ManagedAccountStatus,
+  ): Promise<ManagedAccountResponse>
+  replaceAccountCredential(
+    accountId: string,
+    version: number,
+    credential: string,
+  ): Promise<ManagedAccountResponse>
   listStaffAccess(signal?: AbortSignal): Promise<StaffAccessDirectoryResponse>
   replaceStaffScopes(
     staffUserId: string,
@@ -265,6 +280,33 @@ export function createAdminCourseClient(
           method: 'PUT',
           headers: { 'If-Match': `"${enrollmentId}:v${version}"` },
           body: JSON.stringify(updateAdminStudentEnrollmentRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async updateAccountStatus(rawAccountId, version, status) {
+      const accountId = publicIdSchema.parse(rawAccountId)
+      return managedAccountResponseSchema.parse(
+        await request(`/accounts/${encodeURIComponent(accountId)}/status`, {
+          method: 'PATCH',
+          headers: { 'If-Match': `"${accountId}:v${version}"` },
+          body: JSON.stringify(
+            updateManagedAccountStatusRequestSchema.parse({ schemaVersion: 1, status }),
+          ),
+        }),
+      )
+    },
+    async replaceAccountCredential(rawAccountId, version, credential) {
+      const accountId = publicIdSchema.parse(rawAccountId)
+      return managedAccountResponseSchema.parse(
+        await request(`/accounts/${encodeURIComponent(accountId)}/credential`, {
+          method: 'POST',
+          headers: { 'If-Match': `"${accountId}:v${version}"` },
+          body: JSON.stringify(
+            replaceManagedAccountCredentialRequestSchema.parse({
+              schemaVersion: 1,
+              credential,
+            }),
+          ),
         }),
       )
     },

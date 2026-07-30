@@ -45,6 +45,7 @@ def list_students(
                account.public_id AS account_public_id,
                account.username,
                account.status AS account_status,
+               account.credential_version AS account_credential_version,
                enrollment.id AS enrollment_id,
                enrollment.public_id AS enrollment_public_id,
                enrollment.course_id,
@@ -122,6 +123,7 @@ def list_family_links(
                account.public_id AS account_public_id,
                account.display_name,
                account.status,
+               account.credential_version,
                link.relationship_label,
                link.is_primary
         FROM family_student_links AS link

@@ -12,13 +12,15 @@
       "webAccount": {
         "accountId": "account-student-fixture",
         "username": "testovyi-14",
-        "status": "active"
+        "status": "active",
+        "credentialVersion": 1
       },
       "familyAccounts": [
         {
           "accountId": "account-family-fixture",
           "displayName": "Семья Тестовых",
           "status": "active",
+          "credentialVersion": 1,
           "relationshipLabel": "родитель",
           "isPrimary": true
         }

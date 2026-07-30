@@ -83,6 +83,10 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 
 ## Пруфы завершения этапа
 
+Промежуточный proof управления уже существующими Student/Family-аккаунтами:
+[`pwa_tests/reports/phase10-account-lifecycle-2026-07-30.md`](../../../pwa_tests/reports/phase10-account-lifecycle-2026-07-30.md).
+Он не закрывает создание/привязку семейного аккаунта, bulk import и остальные gates этапа.
+
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.
 - [ ] Google replacement matrix with every current loader: `<path>`.
 - [ ] Protected production-copy parallel-run/parity reports: `<paths/results>`.

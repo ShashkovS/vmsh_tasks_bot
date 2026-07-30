@@ -77,12 +77,14 @@ async def test_admin_directory_contains_accounts_family_and_course_access(
             "accountId": "classroom-http-account-student",
             "username": "classroom-http-student",
             "status": "active",
+            "credentialVersion": 1,
         },
         "familyAccounts": [
             {
                 "accountId": "classroom-http-account-family",
                 "displayName": "Семья Беловой",
                 "status": "active",
+                "credentialVersion": 1,
                 "relationshipLabel": "родитель",
                 "isPrimary": True,
             }
