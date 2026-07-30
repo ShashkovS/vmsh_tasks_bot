@@ -154,6 +154,12 @@ pwa-phase11-course-rehearsal:
 	@test -n "$(PWA_REHEARSAL_REPORT)" || (echo "Set PWA_REHEARSAL_REPORT"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.legacy_course_rehearsal --source db/vmsh.db --target "$(PWA_REHEARSAL_TARGET)" --report "$(PWA_REHEARSAL_REPORT)"
 
+.PHONY: pwa-phase11-restore-rehearsal
+pwa-phase11-restore-rehearsal:
+	@test -n "$(PWA_RESTORE_TARGET)" || (echo "Set a new PWA_RESTORE_TARGET below .runtime/phase11-rehearsal/restores"; exit 2)
+	@test -n "$(PWA_RESTORE_REPORT)" || (echo "Set PWA_RESTORE_REPORT"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.sqlite_restore_rehearsal --source db/vmsh.db --target "$(PWA_RESTORE_TARGET)" --report "$(PWA_RESTORE_REPORT)"
+
 .PHONY: pwa-classroom-import-preview pwa-classroom-import-apply
 pwa-classroom-import-preview:
 	@test -n "$(PWA_CLASSROOM_IMPORT_DATABASE)" || (echo "Set PWA_CLASSROOM_IMPORT_DATABASE"; exit 2)
