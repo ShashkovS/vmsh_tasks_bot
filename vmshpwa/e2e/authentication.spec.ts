@@ -240,6 +240,44 @@ test('Teacher sees only scoped students and cannot edit admin enrollment fields'
   await expect(page.getByText('Семейные аккаунты')).toHaveCount(0)
   await expect(page.getByLabel('Формат занятий')).toBeDisabled()
   await expect(page.getByLabel('Состояние записи')).toBeDisabled()
+  await expect(page.getByRole('tab', { name: 'Преподаватели' })).toHaveCount(0)
+})
+
+test('Admin edits teacher scopes without losing the local draft', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite write')
+
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users?tab=teachers')
+  await expect(page.getByRole('heading', { name: 'Преподаватели и доступы' })).toBeVisible()
+  await page.getByRole('button', { name: /Преподаватель Тестовый/ }).click()
+
+  let course = page.getByRole('group', { name: 'Доступ к курсу «Математика 5–7»' })
+  const wholeCourse = course.getByRole('checkbox', { name: 'Весь курс' })
+  await expect(wholeCourse).not.toBeChecked()
+  await wholeCourse.click()
+  await expect(page.getByText(/Несохранённые изменения хранятся/)).toBeVisible()
+
+  await page.reload()
+  await page.getByRole('button', { name: /Преподаватель Тестовый/ }).click()
+  course = page.getByRole('group', { name: 'Доступ к курсу «Математика 5–7»' })
+  await expect(course.getByRole('checkbox', { name: 'Весь курс' })).toBeChecked()
+  const changed = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' &&
+      new URL(response.url()).pathname === '/staff/api/v1/staff-members/user-staff-fixture/scopes',
+  )
+  await page.getByRole('button', { name: 'Сохранить доступы' }).click()
+  expect((await changed).status()).toBe(200)
+
+  // Restore the group-specific baseline for the remaining browser scenarios.
+  await course.getByRole('checkbox', { name: 'Весь курс' }).click()
+  await course.getByRole('checkbox', { name: 'н · Начинающие' }).click()
+  const restored = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' &&
+      new URL(response.url()).pathname === '/staff/api/v1/staff-members/user-staff-fixture/scopes',
+  )
+  await page.getByRole('button', { name: 'Сохранить доступы' }).click()
+  expect((await restored).status()).toBe(200)
 })
 
 test('Admin saves a course enrollment through the real API', async ({ page }, testInfo) => {

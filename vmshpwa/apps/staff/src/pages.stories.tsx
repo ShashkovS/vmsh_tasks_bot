@@ -8,6 +8,7 @@ import {
   adminStudentEnrollmentDirectoryResponseSchema,
   classroomDeliveryPreviewResponseSchema,
   type AdminCourse,
+  type StaffAccessMember,
 } from '@vmsh/contracts'
 import { ClassroomDeliveryPanel } from '@vmsh/product'
 
@@ -25,6 +26,7 @@ import {
   type StaffLoginState,
 } from './pages'
 import { StudentDirectoryView } from './staff-student-directory-page'
+import { StaffAccessView } from './staff-access-page'
 
 /* Page evidence for dev/design-system/05-pages-and-flows.md (“Staff SPA”). */
 const meta = {
@@ -223,6 +225,68 @@ export const TeacherScopedStudentAccess: Story = {
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить изменения' }))
     await expect(canvas.getByText('Новая активная группа подготовлена к отправке.')).toBeVisible()
+  },
+}
+
+const teacherAccessFixture: StaffAccessMember = {
+  staffUserId: 'teacher-storybook',
+  name: 'Мария',
+  surname: 'Учитель',
+  middleName: null,
+  role: 'teacher',
+  account: {
+    accountId: 'account-teacher-storybook',
+    username: 'm.teacher',
+    status: 'active',
+  },
+  scopes: [
+    {
+      courseId: directoryCourse.courseId,
+      courseCode: directoryCourse.code,
+      courseName: directoryCourse.name,
+      courseStatus: directoryCourse.status,
+      groupId: directoryCourse.groups[0]!.groupId,
+      groupCode: directoryCourse.groups[0]!.shortCode,
+      groupName: directoryCourse.groups[0]!.name,
+      groupStatus: directoryCourse.groups[0]!.status,
+      version: 2,
+    },
+  ],
+}
+
+function StaffAccessStory() {
+  const [saved, setSaved] = useState(false)
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <StaffAccessView
+        accountId="storybook-admin"
+        courses={[directoryCourse]}
+        members={[teacherAccessFixture]}
+        onSave={() => setSaved(true)}
+        storageNamespace="vmsh-179:v1:staff:storybook-access"
+      />
+      {saved ? (
+        <p className="mt-3 text-small" role="status">
+          Доступы подготовлены к отправке.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+export const TeacherCourseScopes: Story = {
+  name: 'Участники · доступы преподавателя',
+  render: () => <StaffAccessStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByText('Учитель Мария')).toHaveLength(2)
+    const course = within(
+      canvas.getByRole('group', { name: `Доступ к курсу «${directoryCourse.name}»` }),
+    )
+    await userEvent.click(course.getByRole('checkbox', { name: 'Весь курс' }))
+    await expect(canvas.getByText(/Несохранённые изменения хранятся/)).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить доступы' }))
+    await expect(canvas.getByText('Доступы подготовлены к отправке.')).toBeVisible()
   },
 }
 

@@ -43,6 +43,7 @@ import {
   writeEnrollmentDraft,
 } from './student-enrollment-draft'
 import { filterStudents } from './student-directory-search'
+import { UsersSectionTabs, type UsersSection } from './users-section-tabs'
 
 interface DirectorySearch {
   query: string
@@ -450,9 +451,11 @@ export function StudentDirectoryView({
 /** Staff user/access flow from design-system page 5 and development Phase 10. */
 export function StaffStudentDirectoryPage({
   search,
+  onSectionChange,
   onSearchChange,
 }: {
   search: DirectorySearch
+  onSectionChange: (section: UsersSection) => void
   onSearchChange: (search: DirectorySearch) => void
 }) {
   const authentication = useAuthentication()
@@ -528,6 +531,7 @@ export function StaffStudentDirectoryPage({
       width="wide"
     >
       <div className="space-y-4">
+        <UsersSectionTabs onChange={onSectionChange} section="students" showTeachers={isAdmin} />
         {!isAdmin ? (
           <Alert>
             <AlertContent>

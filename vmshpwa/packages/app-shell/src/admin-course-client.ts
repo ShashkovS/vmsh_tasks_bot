@@ -20,9 +20,13 @@ import {
   createAdminCourseRequestSchema,
   parseRuntimeConfigForAudience,
   publicIdSchema,
+  replaceStaffScopesRequestSchema,
   saveAdminGroupRequestSchema,
   saveAdminGroupScheduleOverrideSchema,
   saveAdminCourseScheduleRuleSchema,
+  staffAccessDirectoryResponseSchema,
+  staffAccessMemberResponseSchema,
+  staffAccessQueryKey,
   updateAdminCourseRequestSchema,
   updateAdminStudentEnrollmentRequestSchema,
   type AdminCourseCatalogResponse,
@@ -38,9 +42,12 @@ import {
   type CreateAdminCourseRequest,
   type PrincipalQueryScope,
   type RuntimeConfig,
+  type ReplaceStaffScopesRequest,
   type SaveAdminGroupRequest,
   type SaveAdminGroupScheduleOverride,
   type SaveAdminCourseScheduleRule,
+  type StaffAccessDirectoryResponse,
+  type StaffAccessMemberResponse,
   type UpdateAdminCourseRequest,
   type UpdateAdminStudentEnrollmentRequest,
 } from '@vmsh/contracts'
@@ -83,6 +90,11 @@ export interface AdminCourseClient {
     version: number,
     input: UpdateAdminStudentEnrollmentRequest,
   ): Promise<AdminStudentEnrollmentResponse>
+  listStaffAccess(signal?: AbortSignal): Promise<StaffAccessDirectoryResponse>
+  replaceStaffScopes(
+    staffUserId: string,
+    input: ReplaceStaffScopesRequest,
+  ): Promise<StaffAccessMemberResponse>
 }
 
 export function createAdminCourseClient(
@@ -242,6 +254,23 @@ export function createAdminCourseClient(
         }),
       )
     },
+    async listStaffAccess(signal) {
+      return staffAccessDirectoryResponseSchema.parse(
+        await request('/staff-access', {
+          method: 'GET',
+          ...(signal === undefined ? {} : { signal }),
+        }),
+      )
+    },
+    async replaceStaffScopes(rawStaffUserId, input) {
+      const staffUserId = publicIdSchema.parse(rawStaffUserId)
+      return staffAccessMemberResponseSchema.parse(
+        await request(`/staff-members/${encodeURIComponent(staffUserId)}/scopes`, {
+          method: 'PUT',
+          body: JSON.stringify(replaceStaffScopesRequestSchema.parse(input)),
+        }),
+      )
+    },
   }
 }
 
@@ -295,5 +324,17 @@ export function useAdminStudentEnrollmentsQuery(
   return useQuery({
     queryKey: adminStudentEnrollmentsQueryKey(principal),
     queryFn: ({ signal }) => client.listStudentEnrollments(signal),
+  })
+}
+
+export function useStaffAccessQuery(
+  client: AdminCourseClient,
+  principal: PrincipalQueryScope,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: staffAccessQueryKey(principal),
+    queryFn: ({ signal }) => client.listStaffAccess(signal),
+    enabled,
   })
 }

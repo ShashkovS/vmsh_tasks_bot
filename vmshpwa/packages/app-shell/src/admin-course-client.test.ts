@@ -214,4 +214,52 @@ describe('admin course client', () => {
       expect.objectContaining({ 'If-Match': '"enrollment-student:v1"' }),
     )
   })
+
+  it('loads Staff access and replaces the complete optimistic scope set', async () => {
+    const member = {
+      staffUserId: 'teacher-one',
+      name: 'Мария',
+      surname: 'Учитель',
+      middleName: null,
+      role: 'teacher' as const,
+      account: null,
+      scopes: [
+        {
+          courseId: 'course-math',
+          courseCode: 'math-57',
+          courseName: 'Математика 5–7',
+          courseStatus: 'active' as const,
+          groupId: 'group-beginner',
+          groupCode: 'н',
+          groupName: 'Начинающие',
+          groupStatus: 'active' as const,
+          version: 2,
+        },
+      ],
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({ schemaVersion: 1, members: [member], requestId: 'list' }),
+      )
+      .mockResolvedValueOnce(Response.json({ schemaVersion: 1, member, requestId: 'replace' }))
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+
+    await client.listStaffAccess()
+    await client.replaceStaffScopes(member.staffUserId, {
+      schemaVersion: 1,
+      expectedScopes: member.scopes.map(({ courseId, groupId, version }) => ({
+        courseId,
+        groupId,
+        version,
+      })),
+      scopes: [{ courseId: 'course-math', groupId: null }],
+    })
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/staff-access')
+    expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+      '/staff/api/v1/staff-members/teacher-one/scopes',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[1]?.body).toContain('"groupId":null')
+  })
 })
