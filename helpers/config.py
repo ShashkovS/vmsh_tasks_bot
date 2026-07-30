@@ -66,6 +66,7 @@ class Config:
     sos_channel: Union[str, int] = ""
     exceptions_channel: Union[str, int] = ""
     sentry_dsn: Optional[str] = field(default="", repr=False)
+    sentry_release: str = ""
     nats_server: Optional[str] = "nats://127.0.0.1:4222"
     pwa_vapid_public_key: str = ""
     pwa_vapid_private_key: str = field(default="", repr=False)
@@ -177,7 +178,8 @@ def _setup(*, force_production=False):
             telegram_bot_token="",
             nats_server=os.environ.get("VMSH_NATS_SERVER") or None,
             trace_enabled=False,
-            sentry_dsn="",
+            sentry_dsn=os.environ.get("VMSH_SENTRY_DSN", "").strip(),
+            sentry_release=os.environ.get("VMSH_SENTRY_RELEASE", "").strip(),
             pwa_vapid_public_key=os.environ.get("VMSH_VAPID_PUBLIC_KEY", "").strip(),
             pwa_vapid_private_key=os.environ.get("VMSH_VAPID_PRIVATE_KEY", "").strip(),
             pwa_vapid_subject=os.environ.get("VMSH_VAPID_SUBJECT", "").strip(),
@@ -239,7 +241,7 @@ def _setup(*, force_production=False):
     return config
 
 
-def _init_sentry(dsn: str, environment: str):
+def _init_sentry(dsn: str, environment: str, release: str = ""):
     # Добавляем отправку в sentry, если задан ключи
     global sentry_sdk
     if dsn:
@@ -248,6 +250,11 @@ def _init_sentry(dsn: str, environment: str):
             from sentry_sdk.integrations.aiohttp import AioHttpIntegration
             from sentry_sdk.integrations.asyncio import AsyncioIntegration
             from sentry_sdk.integrations.logging import LoggingIntegration
+
+            from helpers.pwa.sentry_safety import (
+                sanitize_sentry_breadcrumb,
+                sanitize_sentry_event,
+            )
 
             logging_integration = LoggingIntegration(
                 level=logging.INFO,
@@ -262,7 +269,11 @@ def _init_sentry(dsn: str, environment: str):
                 ],
                 traces_sample_rate=1.0,
                 environment=environment,
-                send_default_pii=True,
+                release=release or None,
+                send_default_pii=False,
+                before_send=sanitize_sentry_event,
+                before_send_transaction=sanitize_sentry_event,
+                before_breadcrumb=sanitize_sentry_breadcrumb,
             )
             logging.info("Sentry started")
 
@@ -275,7 +286,7 @@ def _init_sentry(dsn: str, environment: str):
 logger = _create_logger()
 DEBUG = logging.DEBUG
 config = _setup()
-_init_sentry(config.sentry_dsn, config.config_name)
+_init_sentry(config.sentry_dsn, config.config_name, config.sentry_release)
 from helpers.trace import init_trace  # noqa: E402
 
 init_trace(config)
