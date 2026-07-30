@@ -39,8 +39,38 @@ make pwa-two-worker-local-smoke
 ## Граница доказательства
 
 Проверены реальная межпроцессная видимость SQLite session и fan-out через NATS.
-Это не численный load/failure gate: не измерялись write latency,
-`SQLITE_BUSY`, 200 одновременных browser sessions, photo bytes и outbox depth.
-Наблюдаемый production baseline из event logs значительно меньше — максимум
-13 submission и 11 review-completion events в минуту — но отдельный небольшой
-нагрузочный прогон всё равно остаётся Phase 11 gate.
+Проверка не измеряет production network, systemd и nginx; эти границы
+остаются deployment gate.
+
+## Небольшой численный прогон
+
+Отдельная команда:
+
+```shell
+make pwa-two-worker-load-local-smoke
+```
+
+Те же два процесса получили одновременно 40 успешных Student login.
+Каждый запрос выполняет реальную транзакцию: создаёт session, пишет
+auth event и обновляет account timestamp. Это больше наблюдаемых за
+минуту 38 ingress, 13 submission и 11 review-completion events.
+
+Измерение на текущем Mac:
+
+- 40/40 HTTP responses — `200`;
+- вся вспышка — `1.490s`, 26.8 request/s;
+- p50 `1.355s`, p95 `1.484s`, max `1.487s`;
+- в SQLite появилось ровно 40 новых session и 40 `session.created`
+  events; journal остался WAL;
+- в логах обоих worker нет `database is locked` и exhausted busy.
+
+Тест ставит только широкие smoke-пороги (30s на burst, 20s p95), а не
+выдуманный production SLA. Дополнительно прошли `6` узких проверок:
+откат целой транзакции при ошибке, явный busy outcome без half-write,
+один победитель при двух одновременных teacher claims в coroutine и в
+отдельных процессах.
+
+Этот smoke не грузит в одном burst 10 фотографий на каждую сдачу и
+226 работ в очереди. Размер/конверсия/лимит 10 фотографий и
+queue pagination проверяются отдельными domain/API/browser тестами. Для
+масштаба кружка создавать ради этого отдельный load framework не нужно.
