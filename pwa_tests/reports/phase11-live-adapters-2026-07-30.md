@@ -55,6 +55,13 @@ Safe provider identity: endpoint host `s3.ru1.storage.beget.cloud`, region
 owner-only каталоге `.runtime/vmshpwa/telegram-smoke/`; token, текст ответа Bot
 API, chat title и message IDs не коммитятся. Polling/webhook не запускались.
 
+## Исторические Telegram-сценарии
+
+Отдельная команда `make telegram-history-test` выполнила 44 сценария legacy
+бота: правила тестовых ответов, пользовательские handler flows и недельные
+admin-операции. Результат: `44 passed`. Набор использует test wiring и не
+запускает polling/webhook и не обращается к Telegram API.
+
 ## Граница доказательства
 
 Этот proof подтверждает локальный toolchain, текущий Beget test bucket,
