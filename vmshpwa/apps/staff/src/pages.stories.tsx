@@ -399,6 +399,50 @@ export const StudentAccountLifecycle: Story = {
   },
 }
 
+function DenseStudentDirectoryStory() {
+  const [search, setSearch] = useState({ query: '' })
+  const [students] = useState(() => {
+    const source =
+      adminStudentEnrollmentDirectoryResponseSchema.parse(studentDirectoryFixture).students[0]!
+    return Array.from({ length: 1_500 }, (_, index) => ({
+      ...source,
+      studentId: `storybook-student-${index + 1}`,
+      surname: `Школьник${String(index + 1).padStart(4, '0')}`,
+      name: 'Тестовый',
+      middleName: index === 1_498 ? 'Совершенноуникальныймаркер' : null,
+      webAccount: null,
+      familyAccounts: [],
+    }))
+  })
+  return (
+    <div className="min-h-screen bg-background p-4">
+      <StudentDirectoryView
+        accountId="storybook-admin"
+        courses={[directoryCourse]}
+        onSave={() => undefined}
+        onSearchChange={setSearch}
+        search={search}
+        storageNamespace="vmsh-179:v1:staff:storybook-dense-directory"
+        students={students}
+      />
+    </div>
+  )
+}
+
+export const StudentDirectory1500: Story = {
+  name: 'Участники · 1500 школьников',
+  render: () => <DenseStudentDirectoryStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const list = within(canvas.getByRole('region', { name: 'Список школьников' }))
+    await expect(canvas.getByText('Найдено: 1500')).toBeVisible()
+    await expect(list.getAllByRole('button').length).toBeLessThan(50)
+    await userEvent.type(canvas.getByLabelText('Поиск по имени'), 'Совершенноуникальныймаркер')
+    await expect(canvas.getByText('Найдено: 1')).toBeVisible()
+    await expect(list.getByRole('button', { name: /Школьник1499 Тестовый/ })).toBeVisible()
+  },
+}
+
 function TeacherStudentDirectoryStory() {
   const [search, setSearch] = useState({ query: '' })
   const [saved, setSaved] = useState(false)

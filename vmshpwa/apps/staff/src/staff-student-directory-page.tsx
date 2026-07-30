@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 import {
   PageLayout,
@@ -290,6 +291,15 @@ export function StudentDirectoryView({
   const selectedCourse = courses.find(
     (course) => course.courseId === selectedEnrollment?.course.courseId,
   )
+  const studentList = useRef<HTMLDivElement>(null)
+  // React Compiler is intentionally disabled; this is TanStack Virtual's supported hook.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const studentRows = useVirtualizer({
+    count: matches.length,
+    estimateSize: () => 60,
+    getScrollElement: () => studentList.current,
+    overscan: 8,
+  })
 
   return (
     <div className="grid min-h-[34rem] gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
@@ -307,18 +317,31 @@ export function StudentDirectoryView({
           </Label>
           <p className="text-caption text-muted-foreground">Найдено: {matches.length}</p>
         </CardHeader>
-        <CardContent className="max-h-[48rem] overflow-y-auto px-2 pb-2">
+        <CardContent
+          aria-label="Список школьников"
+          className="max-h-[48rem] overflow-y-auto px-2 pb-2"
+          ref={studentList}
+          role="region"
+        >
           {matches.length === 0 ? (
             <p className="p-3 text-small text-muted-foreground">Никого не нашли.</p>
           ) : (
-            <ol className="space-y-1">
-              {matches.map((student) => {
+            <ol className="relative w-full" style={{ height: `${studentRows.getTotalSize()}px` }}>
+              {studentRows.getVirtualItems().map((virtualRow) => {
+                const student = matches[virtualRow.index]!
                 const selected = selectedStudent?.studentId === student.studentId
                 return (
-                  <li key={student.studentId}>
+                  <li
+                    className="absolute left-0 top-0 w-full pr-1"
+                    key={student.studentId}
+                    style={{
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
                     <button
                       aria-current={selected ? 'true' : undefined}
-                      className="w-full rounded-md border border-transparent px-3 py-2 text-left hover:bg-muted aria-current:border-border aria-current:bg-muted"
+                      className="h-[3.5rem] w-full rounded-md border border-transparent px-3 py-2 text-left hover:bg-muted aria-current:border-border aria-current:bg-muted"
                       onClick={() =>
                         onSearchChange({ query: search.query, studentId: student.studentId })
                       }

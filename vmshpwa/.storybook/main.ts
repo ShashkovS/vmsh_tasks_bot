@@ -15,6 +15,11 @@ const config: StorybookConfig = {
   viteFinal(viteConfig) {
     viteConfig.plugins ??= []
     viteConfig.plugins.push(tailwindcss())
+    viteConfig.optimizeDeps ??= {}
+    viteConfig.optimizeDeps.include = [
+      ...(viteConfig.optimizeDeps.include ?? []),
+      '@tanstack/react-virtual',
+    ]
     return viteConfig
   },
 }

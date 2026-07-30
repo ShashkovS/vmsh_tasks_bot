@@ -232,7 +232,6 @@ preview/apply/rollback и synonym merge/split impact flow.
 - нет полного Student account CRUD, block/archive и credential reset;
 - нет управления Family accounts/links из Staff;
 - `/staff/audit` и `/staff/statistics` остаются информационными заглушками;
-- нет 1500-row performance/SQL-plan proof;
 - Google replacement matrix и production-copy cutover закрывают только problem
   workbook, а не все перечисленные admin workflows;
 - нет единого three-browser upload → preview → apply → Student-use сценария;
@@ -243,7 +242,8 @@ preview/apply/rollback и synonym merge/split impact flow.
 [enrollments](phase10-admin-enrollments-frontend.md),
 [staff scopes](phase10-staff-access-frontend.md),
 [problem import](phase10-problem-import-apply.md),
-[synonyms](phase10-problem-synonym-frontend.md).
+[synonyms](phase10-problem-synonym-frontend.md),
+[каталог 1500 школьников](phase10-directory-performance.md).
 
 ### Phase 11 — hardening/rollout: сильный локальный checkpoint, production gates открыты
 
