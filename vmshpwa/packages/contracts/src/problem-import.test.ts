@@ -6,6 +6,7 @@ const preview = {
   schemaVersion: 1,
   course: { courseId: 'course-math', code: 'math', name: 'Математика' },
   source: { filename: 'tasks.xlsx', sha256: 'a'.repeat(64) },
+  previewSha256: 'b'.repeat(64),
   summary: { rows: 1, create: 0, update: 0, unchanged: 0, invalid: 1 },
   rows: [
     {

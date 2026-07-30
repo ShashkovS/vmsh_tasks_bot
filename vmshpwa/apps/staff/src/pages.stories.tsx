@@ -113,6 +113,7 @@ const problemImportPreview = problemImportPreviewResponseSchema.parse({
     name: directoryCourse.name,
   },
   source: { filename: 'ВМШ — задачи.xlsx', sha256: 'a'.repeat(64) },
+  previewSha256: 'b'.repeat(64),
   summary: { rows: 2, create: 1, update: 0, unchanged: 0, invalid: 1 },
   rows: [
     {

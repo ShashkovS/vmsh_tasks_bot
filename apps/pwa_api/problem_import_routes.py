@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import re
 from collections import Counter
+from datetime import UTC, datetime
 
 from aiohttp import web
 
@@ -18,12 +19,22 @@ from db_methods.pwa.problem_imports import (
 )
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
-from models.pwa.problem_import import compare_problem_rows, parse_problem_workbook
+from models.pwa.problem_import import (
+    compare_problem_rows,
+    parse_problem_workbook,
+    problem_import_preview_hash,
+)
+from models.pwa.problem_import_apply import (
+    apply_problem_import,
+    rollback_problem_import,
+)
 
 
 problem_import_routes = web.RouteTableDef()
-_FIELDS = {"courseId", "workbook"}
+_PREVIEW_FIELDS = {"courseId", "workbook"}
+_APPLY_FIELDS = {"courseId", "workbook", "sourceSha256", "previewSha256"}
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?")
+_SHA256 = re.compile(r"[a-f0-9]{64}")
 _REQUEST_LIMIT = 12 * 1024 * 1024
 _WORKBOOK_LIMIT = 10 * 1024 * 1024
 _MESSAGES = {
@@ -52,7 +63,7 @@ def _factory(request: web.Request):
     return state.factory
 
 
-def _require_admin(request: web.Request) -> None:
+def _require_admin(request: web.Request) -> int:
     principal = authenticated_session(request).principal
     if (
         principal.audience is not AuthAudience.STAFF
@@ -64,6 +75,7 @@ def _require_admin(request: web.Request) -> None:
             code="forbidden",
             message="Импортировать задачи может только администратор",
         )
+    return principal.linked_user_id
 
 
 async def _part_bytes(part, *, limit: int) -> bytes:
@@ -81,7 +93,9 @@ async def _part_bytes(part, *, limit: int) -> bytes:
     return b"".join(chunks)
 
 
-async def _multipart(request: web.Request) -> tuple[str, str, bytes]:
+async def _multipart(
+    request: web.Request, *, fields: set[str]
+) -> tuple[str, dict[str, bytes]]:
     if request.content_length is not None and request.content_length > _REQUEST_LIMIT:
         raise PwaApiError(
             status=413, code="payload_too_large", message="Файл слишком большой"
@@ -103,7 +117,7 @@ async def _multipart(request: web.Request) -> tuple[str, str, bytes]:
     values: dict[str, bytes] = {}
     filename: str | None = None
     while part := await reader.next():
-        if part.name not in _FIELDS or part.name in values:
+        if part.name not in fields or part.name in values:
             raise PwaApiError(
                 status=422,
                 code="validation_error",
@@ -127,23 +141,42 @@ async def _multipart(request: web.Request) -> tuple[str, str, bytes]:
                 )
             limit = 256
         values[part.name] = await _part_bytes(part, limit=limit)
-    if set(values) != _FIELDS or filename is None or not values["workbook"]:
+    if set(values) != fields or filename is None or not values["workbook"]:
         raise PwaApiError(
             status=422,
             code="validation_error",
             message="Выберите курс и XLSX-файл",
         )
+    return filename, values
+
+
+def _text_field(values: dict[str, bytes], name: str) -> str:
     try:
-        course_id = values["courseId"].decode("utf-8", errors="strict")
+        return values[name].decode("utf-8", errors="strict")
     except UnicodeDecodeError as error:
         raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте выбранный курс"
+            status=422, code="validation_error", message="Проверьте данные формы"
         ) from error
+
+
+def _course_id(values: dict[str, bytes]) -> str:
+    course_id = _text_field(values, "courseId")
     if _PUBLIC_ID.fullmatch(course_id) is None:
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте выбранный курс"
         )
-    return course_id, filename, values["workbook"]
+    return course_id
+
+
+def _sha256_field(values: dict[str, bytes], name: str) -> str:
+    value = _text_field(values, name)
+    if _SHA256.fullmatch(value) is None:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте подтверждение импорта",
+        )
+    return value
 
 
 def _diagnostics(items: object) -> list[dict[str, object]]:
@@ -192,7 +225,9 @@ async def preview_problem_import(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
         )
-    course_public_id, filename, source = await _multipart(request)
+    filename, values = await _multipart(request, fields=_PREVIEW_FIELDS)
+    course_public_id = _course_id(values)
+    source = values["workbook"]
 
     def read(connection):
         course = find_course(connection, public_id=course_public_id)
@@ -225,6 +260,7 @@ async def preview_problem_import(request: web.Request) -> web.Response:
         ) from error
     compared = compare_problem_rows(parsed, groups, current)
     counts = Counter(str(row["action"]) for row in compared)
+    source_sha256 = hashlib.sha256(source).hexdigest()
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -235,8 +271,11 @@ async def preview_problem_import(request: web.Request) -> web.Response:
             },
             "source": {
                 "filename": filename,
-                "sha256": hashlib.sha256(source).hexdigest(),
+                "sha256": source_sha256,
             },
+            "previewSha256": problem_import_preview_hash(
+                course_public_id, source_sha256, compared
+            ),
             "summary": {
                 "rows": len(compared),
                 "create": counts["create"],
@@ -247,6 +286,131 @@ async def preview_problem_import(request: web.Request) -> web.Response:
             "rows": [_row_payload(row) for row in compared],
             "requestId": request["request_id"],
         },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+def _import_error(error: ValueError) -> PwaApiError:
+    code = str(error)
+    messages = {
+        "course_not_found": (404, "Курс не найден"),
+        "source_changed": (409, "Файл изменился после предпросмотра"),
+        "preview_changed": (409, "Данные изменились после предпросмотра"),
+        "import_already_rolled_back": (409, "Этот импорт уже был отменён"),
+        "import_not_found": (404, "Импорт не найден"),
+        "import_version_changed": (409, "Состояние импорта уже изменилось"),
+        "invalid_import_receipt": (409, "Квитанция импорта повреждена"),
+        "import_result_changed": (409, "Задачи изменились после импорта"),
+        "import_result_in_use": (409, "Новые задачи уже используются"),
+    }
+    status, message = messages.get(code, (409, "Импорт нельзя выполнить"))
+    return PwaApiError(status=status, code=f"problem_{code}", message=message)
+
+
+def _receipt_payload(receipt: dict[str, object], request_id: str) -> dict[str, object]:
+    return {
+        "schemaVersion": 1,
+        "importId": receipt["public_id"],
+        "state": receipt["state"],
+        "source": {
+            "filename": receipt["source_filename"],
+            "sha256": receipt["source_sha256"],
+        },
+        "previewSha256": receipt["preview_sha256"],
+        "summary": receipt["summary"],
+        "appliedAt": receipt["applied_at"],
+        "rolledBackAt": receipt["rolled_back_at"],
+        "version": receipt["version"],
+        "replayed": receipt["replayed"],
+        "requestId": request_id,
+    }
+
+
+@problem_import_routes.post("/staff/api/v1/problem-imports/apply")
+async def apply_problem_import_route(request: web.Request) -> web.Response:
+    actor_user_id = _require_admin(request)
+    if request.query:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Этот запрос без параметров"
+        )
+    filename, values = await _multipart(request, fields=_APPLY_FIELDS)
+    course_public_id = _course_id(values)
+    source = values["workbook"]
+    source_sha256 = hashlib.sha256(source).hexdigest()
+    confirmed_source_sha256 = _sha256_field(values, "sourceSha256")
+    confirmed_preview_sha256 = _sha256_field(values, "previewSha256")
+    try:
+        parsed, _ = await asyncio.to_thread(parse_problem_workbook, source)
+        receipt = await _factory(request).run_write_async(
+            lambda connection: apply_problem_import(
+                connection,
+                course_public_id=course_public_id,
+                parsed_rows=parsed,
+                source_filename=filename,
+                source_sha256=source_sha256,
+                confirmed_source_sha256=confirmed_source_sha256,
+                confirmed_preview_sha256=confirmed_preview_sha256,
+                actor_user_id=actor_user_id,
+                now=datetime.now(UTC).isoformat(),
+            )
+        )
+    except ValueError as error:
+        if str(error) in {
+            "invalid_workbook",
+            "missing_problem_sheets",
+            "too_many_rows",
+        }:
+            raise PwaApiError(
+                status=422,
+                code=f"problem_import_{error}",
+                message="Не удалось прочитать XLSX-файл",
+            ) from error
+        raise _import_error(error) from error
+    return web.json_response(
+        _receipt_payload(receipt, request["request_id"]),
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@problem_import_routes.post(
+    "/staff/api/v1/problem-imports/{receipt_public_id}/rollback"
+)
+async def rollback_problem_import_route(request: web.Request) -> web.Response:
+    actor_user_id = _require_admin(request)
+    receipt_public_id = request.match_info["receipt_public_id"]
+    if _PUBLIC_ID.fullmatch(receipt_public_id) is None:
+        raise PwaApiError(
+            status=404, code="problem_import_not_found", message="Импорт не найден"
+        )
+    try:
+        value = await request.json()
+    except (ValueError, TypeError) as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте версию импорта"
+        ) from error
+    if (
+        not isinstance(value, dict)
+        or set(value) != {"expectedVersion"}
+        or type(value["expectedVersion"]) is not int
+        or value["expectedVersion"] < 1
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте версию импорта"
+        )
+    try:
+        receipt = await _factory(request).run_write_async(
+            lambda connection: rollback_problem_import(
+                connection,
+                receipt_public_id=receipt_public_id,
+                expected_version=value["expectedVersion"],
+                actor_user_id=actor_user_id,
+                now=datetime.now(UTC).isoformat(),
+            )
+        )
+    except ValueError as error:
+        raise _import_error(error) from error
+    return web.json_response(
+        _receipt_payload(receipt, request["request_id"]),
         headers={"Cache-Control": "no-store"},
     )
 

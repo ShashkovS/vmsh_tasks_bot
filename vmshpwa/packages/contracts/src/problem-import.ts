@@ -70,6 +70,7 @@ export const problemImportPreviewResponseSchema = z
         sha256: z.string().regex(/^[a-f0-9]{64}$/),
       })
       .strict(),
+    previewSha256: z.string().regex(/^[a-f0-9]{64}$/),
     summary: problemImportSummarySchema,
     rows: z.array(problemImportRowSchema).max(5_000),
     requestId: z.string().min(1),

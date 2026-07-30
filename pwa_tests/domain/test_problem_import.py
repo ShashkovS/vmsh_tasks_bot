@@ -9,6 +9,7 @@ from models.pwa.problem_import import (
     COLUMNS,
     compare_problem_rows,
     parse_problem_workbook,
+    problem_import_preview_hash,
 )
 
 
@@ -144,6 +145,10 @@ def test_comparison_marks_create_update_unchanged_and_unknown_group():
     assert [row["action"] for row in compared] == ["unchanged", "update", "invalid"]
     assert compared[0]["problem_public_id"] == "problem-one"
     assert compared[2]["diagnostics"][-1]["code"] == "group_unknown"
+
+    first = problem_import_preview_hash("course-math", "a" * 64, compared)
+    assert first == problem_import_preview_hash("course-math", "a" * 64, compared)
+    assert first != problem_import_preview_hash("course-math", "b" * 64, compared)
 
 
 def test_reference_workbook_remains_a_clean_characterization_input():

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
+import json
 import re
 import zipfile
 from collections import Counter
@@ -313,4 +315,50 @@ def compare_problem_rows(
     return compared
 
 
-__all__ = ["compare_problem_rows", "parse_problem_workbook"]
+def problem_import_preview_hash(
+    course_public_id: str,
+    source_sha256: str,
+    rows: list[dict[str, object]],
+) -> str:
+    payload = [
+        {
+            key: row[key]
+            for key in (
+                "sheet",
+                "row",
+                "group_code",
+                "group_public_id",
+                "lesson",
+                "problem",
+                "item",
+                "title",
+                "problem_text",
+                "problem_type",
+                "answer_type",
+                "answer_validation",
+                "validation_error",
+                "correct_answer",
+                "correct_answer_checker",
+                "wrong_answer",
+                "congratulation",
+                "action",
+                "problem_public_id",
+                "diagnostics",
+            )
+        }
+        for row in rows
+    ]
+    encoded = json.dumps(
+        {"course": course_public_id, "source": source_sha256, "rows": payload},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
+__all__ = [
+    "compare_problem_rows",
+    "parse_problem_workbook",
+    "problem_import_preview_hash",
+]

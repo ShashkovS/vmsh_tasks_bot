@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: c871e29968a8d136ee961feb4a6fbd53ab038d8a414c2d8ea05d5d486d01ef6d
+-- Product schema SHA-256: 84fd1a8b6e7515d3ef9a9bd704c1f87ebbd38300369508abcbefd0ec5929d862
 
 CREATE TABLE achievement_definitions
 (
@@ -1573,6 +1573,31 @@ CREATE TABLE problem_complexity
     for_strong DOUBLE not null
 );
 
+CREATE TABLE problem_import_receipts
+(
+    id                     integer primary key,
+    public_id              text    not null unique,
+    course_id              integer not null references courses (id),
+    source_filename        text    not null check (length(trim(source_filename)) > 0),
+    source_sha256          text    not null check (length(source_sha256) = 64),
+    preview_sha256         text    not null check (length(preview_sha256) = 64),
+    state                  text    not null check (state in ('applied', 'rolled_back')),
+    summary_json           text    not null
+        check (json_valid(summary_json) = 1 and json_type(summary_json) = 'object'),
+    changes_json           text    not null
+        check (json_valid(changes_json) = 1 and json_type(changes_json) = 'array'),
+    applied_by_user_id     integer not null references users (id),
+    applied_at             text    not null,
+    rolled_back_by_user_id integer references users (id),
+    rolled_back_at         text,
+    version                integer not null default 1 check (version > 0),
+    unique (course_id, source_sha256, preview_sha256),
+    check (
+        (state = 'applied' and rolled_back_by_user_id is null and rolled_back_at is null)
+        or (state = 'rolled_back' and rolled_back_by_user_id is not null and rolled_back_at is not null)
+    )
+);
+
 CREATE TABLE problem_revisions
 (
     id                 integer primary key,
@@ -2938,6 +2963,9 @@ CREATE INDEX notification_events_account_unread_idx
 
 CREATE INDEX oral_windows_group_time_idx
     on oral_windows (group_lesson_id, opens_at, sequence_number);
+
+CREATE INDEX problem_import_receipts_course_idx
+    on problem_import_receipts (course_id, applied_at desc, id desc);
 
 CREATE UNIQUE INDEX problem_revisions_id_problem_uq
     on problem_revisions (id, problem_id);

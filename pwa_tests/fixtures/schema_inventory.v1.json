@@ -221,6 +221,10 @@
       {
         "id": "0073.pwa_course_achievements",
         "sha256": "3981d9c3f8418543f33baddcd46c59a6c1ed46f0e09299a37a014800b6186752"
+      },
+      {
+        "id": "0074.pwa_problem_import_receipts",
+        "sha256": "3651f3b79fa74ca55b2f1d4aa8410ce9ee60f72a308020c3d1515d24e8d09230"
       }
     ],
     "repository_head_status": {
@@ -231,7 +235,7 @@
     }
   },
   "product": {
-    "object_count": 410,
+    "object_count": 412,
     "objects": [
       {
         "columns": [
@@ -14181,6 +14185,285 @@
           },
           {
             "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "course_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_filename",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "preview_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "state",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "summary_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "changes_json",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "applied_by_user_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "applied_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "rolled_back_by_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "rolled_back_at",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 13,
+            "declared_type": "INTEGER",
+            "default_sql": "1",
+            "hidden": 0,
+            "name": "version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "applied_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          },
+          {
+            "from_columns": [
+              "course_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "courses"
+          },
+          {
+            "from_columns": [
+              "rolled_back_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 10,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "applied_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "problem_import_receipts_course_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_problem_import_receipts_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "course_id",
+                "seqno": 0
+              },
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "source_sha256",
+                "seqno": 1
+              },
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "preview_sha256",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_problem_import_receipts_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "problem_import_receipts",
+        "object_sha256": "1f953b053ff04d1e9ad3a1b49ad0942b35f319cc3cde29dbece41ebe968b0253",
+        "sql": "CREATE TABLE problem_import_receipts\n(\n    id                     integer primary key,\n    public_id              text    not null unique,\n    course_id              integer not null references courses (id),\n    source_filename        text    not null check (length(trim(source_filename)) > 0),\n    source_sha256          text    not null check (length(source_sha256) = 64),\n    preview_sha256         text    not null check (length(preview_sha256) = 64),\n    state                  text    not null check (state in ('applied', 'rolled_back')),\n    summary_json           text    not null\n        check (json_valid(summary_json) = 1 and json_type(summary_json) = 'object'),\n    changes_json           text    not null\n        check (json_valid(changes_json) = 1 and json_type(changes_json) = 'array'),\n    applied_by_user_id     integer not null references users (id),\n    applied_at             text    not null,\n    rolled_back_by_user_id integer references users (id),\n    rolled_back_at         text,\n    version                integer not null default 1 check (version > 0),\n    unique (course_id, source_sha256, preview_sha256),\n    check (\n        (state = 'applied' and rolled_back_by_user_id is null and rolled_back_at is null)\n        or (state = 'rolled_back' and rolled_back_by_user_id is not null and rolled_back_at is not null)\n    )\n);",
+        "table_name": "problem_import_receipts",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -24981,6 +25264,13 @@
         "type": "index"
       },
       {
+        "name": "problem_import_receipts_course_idx",
+        "object_sha256": "6d11072218f75d62eba612fee36bd0872ac451ae95ce06609c8be3c4b83b335f",
+        "sql": "CREATE INDEX problem_import_receipts_course_idx\n    on problem_import_receipts (course_id, applied_at desc, id desc);",
+        "table_name": "problem_import_receipts",
+        "type": "index"
+      },
+      {
         "name": "problem_revisions_id_problem_uq",
         "object_sha256": "af65f8555bee2f95495b7019a84f1201d7b6767bf2cc51cf929347bff8a7aa5b",
         "sql": "CREATE UNIQUE INDEX problem_revisions_id_problem_uq\n    on problem_revisions (id, problem_id);",
@@ -26500,8 +26790,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "bdb65eb7ea4646264f90da1bc83c082e8c13d10d1df1f3baf0a69b7670fbcd38",
-    "sha256": "c871e29968a8d136ee961feb4a6fbd53ab038d8a414c2d8ea05d5d486d01ef6d"
+    "pragma_structure_sha256": "caca205681dd8ef309f2c654ae24b111d4713f458bf35b126a8a04bb445a8dc2",
+    "sha256": "84fd1a8b6e7515d3ef9a9bd704c1f87ebbd38300369508abcbefd0ec5929d862"
   },
   "source_kind": "repository-migration-head"
 }

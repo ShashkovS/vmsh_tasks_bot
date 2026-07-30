@@ -268,6 +268,7 @@ describe('admin course client', () => {
       schemaVersion: 1,
       course: { courseId: 'course-math', code: 'math', name: 'Математика' },
       source: { filename: 'tasks.xlsx', sha256: 'a'.repeat(64) },
+      previewSha256: 'b'.repeat(64),
       summary: { rows: 0, create: 0, update: 0, unchanged: 0, invalid: 0 },
       rows: [],
       requestId: 'preview',
