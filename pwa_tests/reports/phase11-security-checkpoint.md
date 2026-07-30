@@ -84,7 +84,11 @@ content HTTP workflow и `3 passed` для admin-only import/rollback. Един�
   Unix socket;
 - выполнить dependency vulnerability review по итоговым lock-файлам;
 - проверить Sentry redaction реальным синтетическим событием без приватного
-  содержимого;
-- провести ручной review IDOR для окончательного списка маршрутов и ролей.
+  содержимого.
+
+Ручной IDOR/role review закрыт отчётом
+[`phase11-idor-role-review.md`](phase11-idor-role-review.md): `154 passed`,
+без найденных bypass; различие `403`/`404` для некоторых Staff detail
+routes зафиксировано как принятый низкий риск без выдачи данных.
 
 До этих действий checkpoint не обозначается как финальный security sign-off.
