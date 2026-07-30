@@ -160,6 +160,22 @@ pwa-phase11-restore-rehearsal:
 	@test -n "$(PWA_RESTORE_REPORT)" || (echo "Set PWA_RESTORE_REPORT"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.sqlite_restore_rehearsal --source db/vmsh.db --target "$(PWA_RESTORE_TARGET)" --report "$(PWA_RESTORE_REPORT)"
 
+.PHONY: pwa-phase11-release-package pwa-phase11-release-activate pwa-phase11-release-rollback
+pwa-phase11-release-package:
+	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
+	@test -n "$(PWA_RELEASE_REPORT)" || (echo "Set PWA_RELEASE_REPORT"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release package --release-id "$(PWA_RELEASE_ID)" --report "$(PWA_RELEASE_REPORT)"
+
+pwa-phase11-release-activate:
+	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
+	@test -n "$(PWA_RELEASE_REPORT)" || (echo "Set PWA_RELEASE_REPORT"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release activate --release-id "$(PWA_RELEASE_ID)" --report "$(PWA_RELEASE_REPORT)"
+
+pwa-phase11-release-rollback:
+	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
+	@test -n "$(PWA_RELEASE_REPORT)" || (echo "Set PWA_RELEASE_REPORT"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release rollback --release-id "$(PWA_RELEASE_ID)" --report "$(PWA_RELEASE_REPORT)"
+
 .PHONY: pwa-classroom-import-preview pwa-classroom-import-apply
 pwa-classroom-import-preview:
 	@test -n "$(PWA_CLASSROOM_IMPORT_DATABASE)" || (echo "Set PWA_CLASSROOM_IMPORT_DATABASE"; exit 2)
