@@ -80,4 +80,35 @@ test('Phase 7: Student joins an oral window and Teacher records the legacy resul
     .getByText(`Занятие ${target.lessonNumber}`, { exact: true })
     .locator('xpath=..')
   await expect(lessonProgress).toContainText('1 зачтено из 1')
+
+  // A later teacher round is a real correction: the legacy positive result is
+  // superseded, while the Student progress read is recalculated from SQLite.
+  await page.goto(`/staff/oral?groupLesson=${groupLessonId}&tab=results`)
+  await page.getByRole('combobox', { name: 'Школьник' }).click()
+  await page.getByRole('option', { name: 'Тестовый-Онлайн Алексей' }).click()
+  await page.getByRole('button', { name: '1: Не зачтено' }).click()
+  const correctionResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname ===
+        `/staff/api/v1/group-lessons/${groupLessonId}/oral-results`,
+  )
+  await page.getByRole('button', { name: 'Сохранить результаты' }).click()
+  expect((await correctionResponse).status()).toBe(201)
+
+  await page.goto(`/student/progress?course=${contentFixture.coursePublicId}`)
+  const correctedLesson = page
+    .getByText(`Занятие ${target.lessonNumber}`, { exact: true })
+    .locator('xpath=..')
+  await expect(correctedLesson).toContainText('0 зачтено из 1')
+  await expect(page.getByText(/Здесь нет рейтинга и сравнения/)).toBeVisible()
+
+  const progressPayload = await page.evaluate(async (courseId) => {
+    const response = await fetch(`/student/api/v1/courses/${courseId}/progress`)
+    const payload: unknown = await response.json()
+    return payload
+  }, contentFixture.coursePublicId)
+  expect(JSON.stringify(progressPayload)).not.toMatch(
+    /"(?:cohort|distribution|percentile|rank|studentMarker)"/,
+  )
 })

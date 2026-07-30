@@ -205,12 +205,13 @@ reload, серверный read acknowledgement и capability-dependent Web Push
 Работают multi-child Family context, linked-child authorization, course/group
 and mode changes, current lessons, review/photo/annotation reads, Student
 course progress, strength chart, activity calendar, achievements и
-course-scoped analytics. Student/Family UI не показывает позицию ребёнка или
-маркер на групповой статистике.
+course-scoped analytics. Student/Family UI и API никогда не показывают
+распределение группы, позицию, percentile, rank или маркер ребёнка. Отдельный
+production-build browser-сценарий доказывает пересчёт личного прогресса после
+более позднего исправления учителя.
 
 Осталось:
 
-- browser proof progress grace/correction;
 - production family-link import dry-run;
 - visual acceptance.
 
