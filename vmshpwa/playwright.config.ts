@@ -63,7 +63,7 @@ export default defineConfig({
       // A clean checkout has no runtime DB. Seed is the explicit maintenance
       // boundary; aiohttp startup itself only verifies schema (ADR 0002).
       command:
-        'uv run python -m vmshpwa.scripts.seed_runtime && uv run python -m vmshpwa.scripts.seed_e2e_content && uv run python -m vmshpwa.scripts.seed_e2e_review && uv run python -m vmshpwa.scripts.seed_e2e_classrooms && uv run python -m vmshpwa.scripts.seed_e2e_oral && uv run python -m vmshpwa.scripts.seed_e2e_news && uv run python main.py',
+        'uv run python -m vmshpwa.scripts.seed_runtime && uv run python -m vmshpwa.scripts.seed_e2e_content && uv run python -m vmshpwa.scripts.seed_e2e_review && uv run python -m vmshpwa.scripts.seed_e2e_classrooms && uv run python -m vmshpwa.scripts.seed_e2e_family_progress && uv run python -m vmshpwa.scripts.seed_e2e_oral && uv run python -m vmshpwa.scripts.seed_e2e_news && uv run python main.py',
       cwd: repository,
       env: backendEnv,
       url: `${apiOrigin}/student/api/v1/health`,

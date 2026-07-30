@@ -210,8 +210,7 @@ course-scoped analytics. Student/Family UI не показывает позиц�
 
 Осталось:
 
-- browser proof group/mode change, progress grace/correction и cache isolation
-  между детьми в одном сценарии;
+- browser proof progress grace/correction;
 - production family-link import dry-run;
 - visual acceptance.
 
