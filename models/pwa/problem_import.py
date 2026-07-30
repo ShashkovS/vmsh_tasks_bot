@@ -8,6 +8,7 @@ import json
 import re
 import zipfile
 from collections import Counter
+from datetime import date, datetime, time
 from typing import Any
 
 from openpyxl import load_workbook
@@ -42,8 +43,69 @@ def _text(value: object) -> str | None:
         return None
     if isinstance(value, float) and value.is_integer():
         value = int(value)
-    result = str(value).strip().replace('""', '"')
+    result = (
+        str(value).replace("\r\n", "\n").replace("\r", "\n").strip().replace('""', '"')
+    )
     return result or None
+
+
+def _temporal_text(value: date | datetime | time, number_format: str) -> str:
+    """Return the text shown by the small set of formats used in the workbook."""
+
+    normalized = number_format.replace("\\", "").casefold()
+    if isinstance(value, time):
+        if normalized == "h:mm":
+            return f"{value.hour}:{value.minute:02d}"
+        if normalized == "h:mm:ss":
+            return f"{value.hour}:{value.minute:02d}:{value.second:02d}"
+    else:
+        if normalized == "d.m":
+            return f"{value.day}.{value.month}"
+        if normalized == "d/m":
+            return f"{value.day}/{value.month}"
+        if normalized == "d,m,yy":
+            return f"{value.day},{value.month},{value.year % 100}"
+        if normalized == "dd.mm":
+            return f"{value.day:02d}.{value.month:02d}"
+        if normalized == "dd.mm.yy":
+            return f"{value.day:02d}.{value.month:02d}.{value.year % 100:02d}"
+        if normalized == "dd.mm.yyyy":
+            return f"{value.day:02d}.{value.month:02d}.{value.year:04d}"
+    raise ValueError("unsupported_excel_temporal_format")
+
+
+def _cell_text(cell: Any) -> str | None:
+    value = cell.value
+    if isinstance(value, (datetime, date, time)):
+        return _temporal_text(value, str(cell.number_format))
+    return _text(value)
+
+
+_MULTI_VALUE_ANSWER_TYPES = {
+    int(ANS_TYPE.INT_SEQ),
+    int(ANS_TYPE.INT_SET),
+    int(ANS_TYPE.INT_2),
+    int(ANS_TYPE.INT_3),
+    int(ANS_TYPE.INT_4),
+    int(ANS_TYPE.FRAC_SEQ),
+    int(ANS_TYPE.MULTISET),
+}
+
+
+def _correct_answer_text(
+    cell: Any, answer_type: int | None, parsed_text: str | None
+) -> str | None:
+    value = cell.value
+    if (
+        answer_type in _MULTI_VALUE_ANSWER_TYPES
+        and isinstance(value, float)
+        and not value.is_integer()
+    ):
+        # Excel turns an entered comma-separated pair such as ``7,9`` into the
+        # number 7.9. For collection answer types the comma is the separator,
+        # not a decimal mark. The answer type makes that interpretation exact.
+        return str(value).replace(".", ",")
+    return parsed_text
 
 
 def _integer(value: object) -> int | None:
@@ -100,22 +162,36 @@ def parse_problem_workbook(
     diagnostics: list[dict[str, object]] = []
     for sheet_name in present:
         sheet = workbook[sheet_name]
-        header = tuple(_text(cell) for cell in next(sheet.iter_rows(values_only=True)))
+        header = tuple(
+            _text(cell.value) for cell in next(sheet.iter_rows(values_only=False))
+        )
         if header[: len(COLUMNS)] != COLUMNS:
             diagnostics.append(_diagnostic(sheet_name, 1, "header", "invalid_header"))
             continue
         # Row 2 contains human-readable column help in the canonical workbook.
-        for row_number, cells in enumerate(
-            sheet.iter_rows(min_row=3, values_only=True), 3
-        ):
-            values = cells[: len(COLUMNS)]
+        for row_number, cells in enumerate(sheet.iter_rows(min_row=3), 3):
+            cells = cells[: len(COLUMNS)]
+            values = tuple(cell.value for cell in cells)
             if all(_text(value) is None for value in values[:4]):
                 continue
             if len(rows) >= MAX_ROWS:
                 raise ValueError("too_many_rows")
             row_diagnostics: list[dict[str, object]] = []
-            for index, value in enumerate(values):
-                text = _text(value)
+            texts: list[str | None] = []
+            for index, cell in enumerate(cells):
+                try:
+                    text = _cell_text(cell)
+                except ValueError:
+                    text = None
+                    row_diagnostics.append(
+                        _diagnostic(
+                            sheet_name,
+                            row_number,
+                            COLUMNS[index],
+                            "cell_format_unsupported",
+                        )
+                    )
+                texts.append(text)
                 if text is not None and len(text) > MAX_CELL_LENGTH:
                     row_diagnostics.append(
                         _diagnostic(
@@ -123,14 +199,14 @@ def parse_problem_workbook(
                         )
                     )
 
-            group_code = _text(values[0])
+            group_code = texts[0]
             lesson = _integer(values[1])
             problem = _integer(values[2])
-            item = _text(values[3]) or ""
-            title = _text(values[4])
+            item = texts[3] or ""
+            title = texts[4]
             problem_type = _decoded(values[6], PROB_TYPES_DECODER)
             answer_type = _decoded(values[7], ANS_TYPES_DECODER)
-            answer_validation = _text(values[8])
+            answer_validation = texts[8]
 
             if group_code is None:
                 row_diagnostics.append(
@@ -189,15 +265,17 @@ def parse_problem_workbook(
                     "problem": problem,
                     "item": item,
                     "title": title,
-                    "problem_text": _text(values[5]) or "",
+                    "problem_text": texts[5] or "",
                     "problem_type": problem_type,
                     "answer_type": answer_type,
                     "answer_validation": answer_validation,
-                    "validation_error": _text(values[9]),
-                    "correct_answer": _text(values[10]),
-                    "correct_answer_checker": _text(values[11]),
-                    "wrong_answer": _text(values[12]),
-                    "congratulation": _text(values[13]),
+                    "validation_error": texts[9],
+                    "correct_answer": _correct_answer_text(
+                        cells[10], answer_type, texts[10]
+                    ),
+                    "correct_answer_checker": texts[11],
+                    "wrong_answer": texts[12],
+                    "congratulation": texts[13],
                     "diagnostics": row_diagnostics,
                 }
             )
@@ -303,7 +381,11 @@ def compare_problem_rows(
             same = True
             for field in fields:
                 stored_value = stored.get(database_fields.get(field, field))
-                if field not in numeric_fields:
+                if field == "answer_type" and stored_value in {None, ""}:
+                    stored_value = None
+                elif field in numeric_fields and stored_value is not None:
+                    stored_value = int(stored_value)
+                else:
                     stored_value = _text(stored_value)
                     if field == "problem_text":
                         stored_value = stored_value or ""
