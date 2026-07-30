@@ -20,6 +20,7 @@ import {
   createAdminCourseRequestSchema,
   parseRuntimeConfigForAudience,
   problemImportPreviewResponseSchema,
+  problemImportReceiptSchema,
   publicIdSchema,
   replaceStaffScopesRequestSchema,
   saveAdminGroupRequestSchema,
@@ -43,6 +44,7 @@ import {
   type CreateAdminCourseRequest,
   type PrincipalQueryScope,
   type ProblemImportPreviewResponse,
+  type ProblemImportReceipt,
   type RuntimeConfig,
   type ReplaceStaffScopesRequest,
   type SaveAdminGroupRequest,
@@ -98,6 +100,13 @@ export interface AdminCourseClient {
     input: ReplaceStaffScopesRequest,
   ): Promise<StaffAccessMemberResponse>
   previewProblemImport(courseId: string, workbook: File): Promise<ProblemImportPreviewResponse>
+  applyProblemImport(
+    courseId: string,
+    workbook: File,
+    sourceSha256: string,
+    previewSha256: string,
+  ): Promise<ProblemImportReceipt>
+  rollbackProblemImport(importId: string, expectedVersion: number): Promise<ProblemImportReceipt>
 }
 
 export function createAdminCourseClient(
@@ -286,6 +295,35 @@ export function createAdminCourseClient(
       body.set('workbook', workbook, workbook.name)
       return problemImportPreviewResponseSchema.parse(
         await request('/problem-imports/preview', { method: 'POST', body }),
+      )
+    },
+    async applyProblemImport(rawCourseId, workbook, sourceSha256, previewSha256) {
+      const courseId = publicIdSchema.parse(rawCourseId)
+      if (!(workbook instanceof File) || workbook.size < 1 || workbook.size > 10 * 1024 * 1024) {
+        throw new TypeError('Problem workbook must be a non-empty XLSX file up to 10 MiB')
+      }
+      if (!/^[a-f0-9]{64}$/.test(sourceSha256) || !/^[a-f0-9]{64}$/.test(previewSha256)) {
+        throw new TypeError('Problem import confirmation hashes are invalid')
+      }
+      const body = new FormData()
+      body.set('courseId', courseId)
+      body.set('workbook', workbook, workbook.name)
+      body.set('sourceSha256', sourceSha256)
+      body.set('previewSha256', previewSha256)
+      return problemImportReceiptSchema.parse(
+        await request('/problem-imports/apply', { method: 'POST', body }),
+      )
+    },
+    async rollbackProblemImport(rawImportId, expectedVersion) {
+      const importId = publicIdSchema.parse(rawImportId)
+      if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
+        throw new TypeError('Problem import version must be a positive integer')
+      }
+      return problemImportReceiptSchema.parse(
+        await request(`/problem-imports/${encodeURIComponent(importId)}/rollback`, {
+          method: 'POST',
+          body: JSON.stringify({ expectedVersion }),
+        }),
       )
     },
   }

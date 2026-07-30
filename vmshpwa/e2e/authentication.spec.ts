@@ -288,7 +288,7 @@ test('Admin edits teacher scopes without losing the local draft', async ({ page 
   expect((await restored).status()).toBe(200)
 })
 
-test('Admin previews the reference problem workbook without applying it', async ({ page }) => {
+test('Admin previews the reference problem workbook', async ({ page }) => {
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/problems')
   await expect(page.getByRole('heading', { name: 'Настройки задач' })).toBeVisible()
   await page.getByLabel('XLSX-файл').setInputFiles(problemWorkbook)
@@ -298,7 +298,23 @@ test('Admin previews the reference problem workbook without applying it', async 
   await expect(
     page.getByText('Строк', { exact: true }).locator('..').getByText('1813', { exact: true }),
   ).toBeVisible()
-  await expect(page.getByText(/Применение и откат появятся/)).toBeVisible()
+})
+
+test('Admin applies and rolls back the reviewed problem workbook', async ({ page }, testInfo) => {
+  // All Playwright projects share one seeded SQLite database. One browser owns this reversible
+  // write; preview and rendering still run in Chromium, Firefox and WebKit above.
+  test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite write')
+
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/problems')
+  await page.getByLabel('XLSX-файл').setInputFiles(problemWorkbook)
+  await page.getByRole('button', { name: 'Проверить файл' }).click()
+  await expect(page.getByRole('heading', { name: 'Результат проверки' })).toBeVisible()
+  await page.getByRole('button', { name: /Применить изменения/ }).click()
+  await page.getByRole('button', { name: 'Подтвердить применение' }).click()
+  await expect(page.getByText('Изменения применены')).toBeVisible()
+  await page.getByRole('button', { name: 'Откатить импорт' }).click()
+  await page.getByRole('button', { name: 'Подтвердить откат' }).click()
+  await expect(page.getByText('Импорт отменён')).toBeVisible()
 })
 
 test('Admin saves a course enrollment through the real API', async ({ page }, testInfo) => {

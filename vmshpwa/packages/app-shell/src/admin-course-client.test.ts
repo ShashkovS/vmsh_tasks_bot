@@ -286,4 +286,48 @@ describe('admin course client', () => {
     expect((init?.body as FormData).get('courseId')).toBe('course-math')
     expect(((init?.body as FormData).get('workbook') as File).name).toBe('tasks.xlsx')
   })
+
+  it('applies the reviewed workbook and rolls its receipt back', async () => {
+    const applied = {
+      schemaVersion: 1,
+      importId: 'problem-import.one',
+      state: 'applied' as const,
+      source: { filename: 'tasks.xlsx', sha256: 'a'.repeat(64) },
+      previewSha256: 'b'.repeat(64),
+      summary: { rows: 2, created: 1, updated: 1, unchanged: 0, skippedInvalid: 0 },
+      appliedAt: '2026-07-30T10:00:00+00:00',
+      rolledBackAt: null,
+      version: 1,
+      replayed: false,
+      requestId: 'apply',
+    }
+    const rolledBack = {
+      ...applied,
+      state: 'rolled_back' as const,
+      rolledBackAt: '2026-07-30T10:05:00+00:00',
+      version: 2,
+      requestId: 'rollback',
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json(applied))
+      .mockResolvedValueOnce(Response.json(rolledBack))
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+    const workbook = new File(['xlsx'], 'tasks.xlsx')
+
+    await expect(
+      client.applyProblemImport('course-math', workbook, 'a'.repeat(64), 'b'.repeat(64)),
+    ).resolves.toEqual(applied)
+    await expect(client.rollbackProblemImport(applied.importId, applied.version)).resolves.toEqual(
+      rolledBack,
+    )
+
+    const applyBody = fetchImplementation.mock.calls[0]?.[1]?.body as FormData
+    expect(applyBody.get('sourceSha256')).toBe('a'.repeat(64))
+    expect(applyBody.get('previewSha256')).toBe('b'.repeat(64))
+    expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+      '/staff/api/v1/problem-imports/problem-import.one/rollback',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[1]?.body).toBe('{"expectedVersion":1}')
+  })
 })

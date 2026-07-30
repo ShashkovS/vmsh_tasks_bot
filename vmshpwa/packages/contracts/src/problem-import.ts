@@ -82,6 +82,49 @@ export const problemImportPreviewResponseSchema = z
     }
   })
 
+const problemImportReceiptSummarySchema = z
+  .object({
+    rows: z.number().int().nonnegative(),
+    created: z.number().int().nonnegative(),
+    updated: z.number().int().nonnegative(),
+    unchanged: z.number().int().nonnegative(),
+    skippedInvalid: z.number().int().nonnegative(),
+  })
+  .strict()
+  .superRefine((summary, context) => {
+    if (
+      summary.created + summary.updated + summary.unchanged + summary.skippedInvalid !==
+      summary.rows
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Problem import receipt summary does not add up',
+      })
+    }
+  })
+
+export const problemImportReceiptSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    importId: publicIdSchema,
+    state: z.enum(['applied', 'rolled_back']),
+    source: z
+      .object({
+        filename: z.string().min(1),
+        sha256: z.string().regex(/^[a-f0-9]{64}$/),
+      })
+      .strict(),
+    previewSha256: z.string().regex(/^[a-f0-9]{64}$/),
+    summary: problemImportReceiptSummarySchema,
+    appliedAt: z.iso.datetime({ offset: true }),
+    rolledBackAt: z.iso.datetime({ offset: true }).nullable(),
+    version: z.number().int().positive(),
+    replayed: z.boolean(),
+    requestId: z.string().min(1),
+  })
+  .strict()
+
 export type ProblemImportAction = z.infer<typeof problemImportActionSchema>
 export type ProblemImportPreviewResponse = z.infer<typeof problemImportPreviewResponseSchema>
+export type ProblemImportReceipt = z.infer<typeof problemImportReceiptSchema>
 export type ProblemImportRow = z.infer<typeof problemImportRowSchema>

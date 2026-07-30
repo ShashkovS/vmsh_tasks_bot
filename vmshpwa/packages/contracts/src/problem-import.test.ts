@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { problemImportPreviewResponseSchema } from './problem-import'
+import { problemImportPreviewResponseSchema, problemImportReceiptSchema } from './problem-import'
 
 const preview = {
   schemaVersion: 1,
@@ -59,6 +59,29 @@ describe('problem import contract', () => {
       problemImportPreviewResponseSchema.parse({
         ...preview,
         rows: [{ ...preview.rows[0], secret: 'must not pass' }],
+      }),
+    ).toThrow()
+  })
+
+  it('validates apply and rollback receipts', () => {
+    const receipt = problemImportReceiptSchema.parse({
+      schemaVersion: 1,
+      importId: 'problem-import.one',
+      state: 'applied',
+      source: preview.source,
+      previewSha256: preview.previewSha256,
+      summary: { rows: 1, created: 0, updated: 0, unchanged: 0, skippedInvalid: 1 },
+      appliedAt: '2026-07-30T10:00:00+00:00',
+      rolledBackAt: null,
+      version: 1,
+      replayed: false,
+      requestId: 'apply-one',
+    })
+    expect(receipt.state).toBe('applied')
+    expect(() =>
+      problemImportReceiptSchema.parse({
+        ...receipt,
+        summary: { ...receipt.summary, created: 1 },
       }),
     ).toThrow()
   })

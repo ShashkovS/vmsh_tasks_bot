@@ -14,6 +14,7 @@ import {
   type AdminCourse,
   type ProblemImportAction,
   type ProblemImportPreviewResponse,
+  type ProblemImportReceipt,
 } from '@vmsh/contracts'
 import {
   Alert,
@@ -64,29 +65,47 @@ export function ProblemImportView({
   error,
   pending,
   preview,
+  receipt,
+  reviewedWorkbook,
+  onApply,
   onPreview,
+  onRollback,
 }: {
   courses: AdminCourse[]
   error?: Error
   pending: boolean
   preview?: ProblemImportPreviewResponse
+  receipt?: ProblemImportReceipt
+  reviewedWorkbook?: File
+  onApply: (courseId: string, workbook: File, preview: ProblemImportPreviewResponse) => void
   onPreview: (courseId: string, workbook: File) => void
+  onRollback: (receipt: ProblemImportReceipt) => void
 }) {
   const [courseId, setCourseId] = useState(
     courses.find((course) => course.status === 'active')?.courseId ?? courses[0]?.courseId ?? '',
   )
   const [workbook, setWorkbook] = useState<File>()
   const [filter, setFilter] = useState<'changes' | ProblemImportAction>('changes')
+  const [confirmation, setConfirmation] = useState<'apply' | 'rollback' | null>(null)
   const filteredRows = useMemo(() => {
     if (!preview) return []
     if (filter === 'changes') return preview.rows.filter((row) => row.action !== 'unchanged')
     return preview.rows.filter((row) => row.action === filter)
   }, [filter, preview])
   const visibleRows = filteredRows.slice(0, 300)
+  const changedRows = preview ? preview.summary.create + preview.summary.update : 0
+  const selectionMatchesPreview =
+    preview !== undefined &&
+    receipt === undefined &&
+    workbook === reviewedWorkbook &&
+    courseId === preview.course.courseId
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (courseId && workbook) onPreview(courseId, workbook)
+    if (courseId && workbook) {
+      setConfirmation(null)
+      onPreview(courseId, workbook)
+    }
   }
 
   return (
@@ -115,7 +134,10 @@ export function ProblemImportView({
               <select
                 className="h-10 rounded-md border border-input bg-surface px-3 text-small"
                 disabled={pending}
-                onChange={(event) => setCourseId(event.target.value)}
+                onChange={(event) => {
+                  setCourseId(event.target.value)
+                  setConfirmation(null)
+                }}
                 value={courseId}
               >
                 {courses.map((course) => (
@@ -130,7 +152,10 @@ export function ProblemImportView({
               <Input
                 accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 disabled={pending}
-                onChange={(event) => setWorkbook(event.target.files?.[0])}
+                onChange={(event) => {
+                  setWorkbook(event.target.files?.[0])
+                  setConfirmation(null)
+                }}
                 type="file"
               />
             </Label>
@@ -144,7 +169,7 @@ export function ProblemImportView({
       {error ? (
         <Alert role="alert" tone="danger">
           <AlertContent>
-            <AlertTitle>Файл не проверен</AlertTitle>
+            <AlertTitle>Операция не выполнена</AlertTitle>
             <AlertDescription>
               {error instanceof ApiResponseError
                 ? error.message
@@ -182,6 +207,17 @@ export function ProblemImportView({
               </Card>
             ))}
           </div>
+          {preview.summary.invalid > 0 ? (
+            <Alert tone="warning">
+              <AlertContent>
+                <AlertTitle>Строки с ошибками будут пропущены</AlertTitle>
+                <AlertDescription>
+                  Исправьте файл, если эти {preview.summary.invalid} строк тоже должны попасть в
+                  базу. Остальные строки можно применить сейчас.
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
+          ) : null}
           <div className="flex flex-wrap items-end justify-between gap-3">
             <Label className="grid gap-1 text-small">
               Показать
@@ -231,9 +267,90 @@ export function ProblemImportView({
               </TableBody>
             </Table>
           </div>
-          <p className="text-small text-muted-foreground">
-            Применение и откат появятся после отдельной серверной реализации с журналом изменений.
-          </p>
+          {receipt?.state === 'applied' ? (
+            <Alert tone="success">
+              <AlertContent>
+                <AlertTitle>Изменения применены</AlertTitle>
+                <AlertDescription>
+                  Создано {receipt.summary.created}, обновлено {receipt.summary.updated}, пропущено
+                  с ошибками {receipt.summary.skippedInvalid}. Квитанция: {receipt.importId}.
+                </AlertDescription>
+                {confirmation === 'rollback' ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      disabled={pending}
+                      onClick={() => onRollback(receipt)}
+                      type="button"
+                      variant="destructive"
+                    >
+                      Подтвердить откат
+                    </Button>
+                    <Button onClick={() => setConfirmation(null)} type="button" variant="outline">
+                      Отмена
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    className="mt-3"
+                    disabled={pending}
+                    onClick={() => setConfirmation('rollback')}
+                    type="button"
+                    variant="outline"
+                  >
+                    Откатить импорт
+                  </Button>
+                )}
+              </AlertContent>
+            </Alert>
+          ) : receipt?.state === 'rolled_back' ? (
+            <Alert>
+              <AlertContent>
+                <AlertTitle>Импорт отменён</AlertTitle>
+                <AlertDescription>
+                  Созданные задачи удалены, прежние значения восстановлены одной транзакцией.
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
+          ) : confirmation === 'apply' ? (
+            <Alert tone="warning">
+              <AlertContent>
+                <AlertTitle>Подтвердите запись в SQLite</AlertTitle>
+                <AlertDescription>
+                  Будет создано {preview.summary.create} и обновлено {preview.summary.update} задач.
+                  Откат возможен, пока эти строки не изменены и новые задачи не используются.
+                </AlertDescription>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    disabled={!selectionMatchesPreview || pending}
+                    onClick={() => {
+                      if (courseId && workbook) onApply(courseId, workbook, preview)
+                    }}
+                    type="button"
+                  >
+                    Подтвердить применение
+                  </Button>
+                  <Button onClick={() => setConfirmation(null)} type="button" variant="outline">
+                    Отмена
+                  </Button>
+                </div>
+              </AlertContent>
+            </Alert>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                disabled={!selectionMatchesPreview || changedRows === 0 || pending}
+                onClick={() => setConfirmation('apply')}
+                type="button"
+              >
+                Применить изменения · {changedRows}
+              </Button>
+              {!selectionMatchesPreview ? (
+                <p className="text-small text-muted-foreground">
+                  После выбора другого курса или файла запустите проверку заново.
+                </p>
+              ) : null}
+            </div>
+          )}
         </section>
       ) : null}
     </div>
@@ -266,6 +383,26 @@ export function ProblemImportPage() {
       client.previewProblemImport(courseId, workbook),
     onError: (error) => authentication.handleApiError(error),
   })
+  const apply = useMutation({
+    mutationFn: ({
+      courseId,
+      workbook,
+      review,
+    }: {
+      courseId: string
+      workbook: File
+      review: ProblemImportPreviewResponse
+    }) => client.applyProblemImport(courseId, workbook, review.source.sha256, review.previewSha256),
+    onError: (error) => authentication.handleApiError(error),
+  })
+  const rollback = useMutation({
+    mutationFn: (receipt: ProblemImportReceipt) =>
+      client.rollbackProblemImport(receipt.importId, receipt.version),
+    onError: (error) => authentication.handleApiError(error),
+  })
+  const operationError = rollback.error ?? apply.error ?? preview.error
+  const receipt = rollback.data ?? apply.data
+  const reviewedWorkbook = preview.variables?.workbook
 
   if (!isAdmin) {
     return (
@@ -302,10 +439,18 @@ export function ProblemImportPage() {
     >
       <ProblemImportView
         courses={catalog.data.courses}
-        {...(preview.error ? { error: preview.error } : {})}
-        onPreview={(courseId, workbook) => preview.mutate({ courseId, workbook })}
-        pending={preview.isPending}
+        {...(operationError ? { error: operationError } : {})}
+        onApply={(courseId, workbook, review) => apply.mutate({ courseId, workbook, review })}
+        onPreview={(courseId, workbook) => {
+          apply.reset()
+          rollback.reset()
+          preview.mutate({ courseId, workbook })
+        }}
+        onRollback={(current) => rollback.mutate(current)}
+        pending={preview.isPending || apply.isPending || rollback.isPending}
         {...(preview.data ? { preview: preview.data } : {})}
+        {...(receipt ? { receipt } : {})}
+        {...(reviewedWorkbook ? { reviewedWorkbook } : {})}
       />
     </PageLayout>
   )

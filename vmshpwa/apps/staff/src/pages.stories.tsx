@@ -8,6 +8,7 @@ import {
   adminStudentEnrollmentDirectoryResponseSchema,
   classroomDeliveryPreviewResponseSchema,
   problemImportPreviewResponseSchema,
+  problemImportReceiptSchema,
   type AdminCourse,
   type StaffAccessMember,
 } from '@vmsh/contracts'
@@ -171,16 +172,46 @@ const problemImportPreview = problemImportPreviewResponseSchema.parse({
   ],
   requestId: 'storybook-problem-import',
 })
+const problemImportReceipt = problemImportReceiptSchema.parse({
+  schemaVersion: 1,
+  importId: 'problem-import.storybook',
+  state: 'applied',
+  source: problemImportPreview.source,
+  previewSha256: problemImportPreview.previewSha256,
+  summary: { rows: 2, created: 1, updated: 0, unchanged: 0, skippedInvalid: 1 },
+  appliedAt: '2026-07-30T10:00:00+00:00',
+  rolledBackAt: null,
+  version: 1,
+  replayed: false,
+  requestId: 'storybook-problem-import-apply',
+})
 
 function ProblemImportStory() {
   const [preview, setPreview] = useState<typeof problemImportPreview>()
+  const [reviewedWorkbook, setReviewedWorkbook] = useState<File>()
+  const [receipt, setReceipt] = useState<typeof problemImportReceipt>()
   return (
     <div className="min-h-screen bg-background p-4">
       <ProblemImportView
         courses={[directoryCourse]}
-        onPreview={() => setPreview(problemImportPreview)}
+        onApply={() => setReceipt(problemImportReceipt)}
+        onPreview={(_courseId, workbook) => {
+          setReviewedWorkbook(workbook)
+          setReceipt(undefined)
+          setPreview(problemImportPreview)
+        }}
+        onRollback={() =>
+          setReceipt({
+            ...problemImportReceipt,
+            state: 'rolled_back',
+            rolledBackAt: '2026-07-30T10:05:00+00:00',
+            version: 2,
+          })
+        }
         pending={false}
         {...(preview ? { preview } : {})}
+        {...(receipt ? { receipt } : {})}
+        {...(reviewedWorkbook ? { reviewedWorkbook } : {})}
       />
     </div>
   )
@@ -200,6 +231,12 @@ export const ProblemWorkbookPreview: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Проверить файл' }))
     await expect(canvas.getByRole('heading', { name: 'Результат проверки' })).toBeVisible()
     await expect(canvas.getByText('Такой группы нет в выбранном курсе.')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Применить изменения · 1' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить применение' }))
+    await expect(canvas.getByText('Изменения применены')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Откатить импорт' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить откат' }))
+    await expect(canvas.getByText('Импорт отменён')).toBeVisible()
   },
 }
 export const Classrooms: Story = {
