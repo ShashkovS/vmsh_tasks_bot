@@ -175,7 +175,7 @@ Telegram transport остаётся в отдельном recording/live-test pr
 [oral E2E](phase7-oral-e2e.md),
 [classroom delivery E2E](phase7-classroom-delivery-e2e.md).
 
-### Phase 8 — news/notifications: backend и страницы готовы, phase-level E2E открыт
+### Phase 8 — news/notifications: backend, страницы и browser flow готовы
 
 Работают verified course/group Telegram bindings, live channel adapter,
 edits/deletes/albums/media copy, Student/Family feed, offline cache, moderation,
@@ -183,10 +183,12 @@ scheduled group banners, notification preferences/events, batching, Web Push
 subscription/delivery, quiet sound policy, course overrides и classroom
 personal Telegram transport.
 
+Production-build E2E в трёх браузерах проверяет Telegram-origin feed/detail,
+Student/Family scope, локальное скрытие баннера, offline read после полного
+reload, серверный read acknowledgement и capability-dependent Web Push UI.
+
 Осталось:
 
-- один production-build three-browser E2E для news/offline/banner/read ack и
-  permission-capability веток;
 - live Web Push проверка на реальном установленном устройстве;
 - privacy-safe inventory/reconciliation уже запланированных в Telegram UI
   сообщений перед будущим Staff publisher;
@@ -195,7 +197,8 @@ personal Telegram transport.
 Доказательства: `pwa_tests/reports/phase8-*.md`; ключевые —
 [live news](phase8-live-news-adapter.md), [feed](phase8-news-feed.md),
 [offline](phase8-news-offline.md), [push delivery](phase8-push-delivery.md),
-[notification batching](phase8-review-notification-batching.md).
+[notification batching](phase8-review-notification-batching.md),
+[news/notifications E2E](phase8-news-notifications-e2e.md).
 
 ### Phase 9 — Family/progress: функциональное ядро готово, доказательства неполны
 

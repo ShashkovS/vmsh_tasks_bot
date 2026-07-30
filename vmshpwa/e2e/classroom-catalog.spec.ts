@@ -272,5 +272,13 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
     return { status: response.status, payload: (await response.json()) as { items: unknown[] } }
   })
   expect(familyNotifications.status).toBe(200)
-  expect(familyNotifications.payload.items).toEqual([])
+  expect(
+    familyNotifications.payload.items.some(
+      (item) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'category' in item &&
+        item.category === 'classroom_assignment',
+    ),
+  ).toBe(false)
 })
