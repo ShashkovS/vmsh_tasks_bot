@@ -210,7 +210,6 @@ course-scoped analytics. Student/Family UI не показывает позиц�
 
 Осталось:
 
-- production-size 1500-student query/performance report;
 - browser proof group/mode change, progress grace/correction и cache isolation
   между детьми в одном сценарии;
 - production family-link import dry-run;
@@ -219,6 +218,7 @@ course-scoped analytics. Student/Family UI не показывает позиц�
 Доказательства: [Family E2E](phase9-family-e2e.md),
 [progress E2E](phase9-progress-e2e.md),
 [analytics](phase9-course-analytics.md),
+[1500-student performance](phase9-course-performance.md),
 [achievements](phase9-course-achievements.md).
 
 ### Phase 10 — Staff data/Google exit: частично готов
