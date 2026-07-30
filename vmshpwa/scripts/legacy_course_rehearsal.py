@@ -35,6 +35,46 @@ GROUPS = {
     "э": ("group-math-5-7-e", "expert"),
     "no_level": ("group-math-5-7-no-level", "neutral"),
 }
+LESSON_DATES = {
+    1: "2025-09-01",
+    2: "2025-09-08",
+    3: "2025-09-15",
+    4: "2025-09-22",
+    5: "2025-09-29",
+    6: "2025-10-06",
+    7: "2025-10-13",
+    8: "2025-10-20",
+    9: "2025-10-27",
+    10: "2025-11-03",
+    11: "2025-11-10",
+    12: "2025-11-17",
+    13: "2025-11-24",
+    14: "2025-12-01",
+    15: "2025-12-08",
+    16: "2025-12-15",
+    17: "2025-12-22",
+    18: "2025-12-29",
+    19: "2026-01-12",
+    20: "2026-01-19",
+    21: "2026-01-26",
+    22: "2026-02-02",
+    23: "2026-02-09",
+    24: "2026-02-16",
+    25: "2026-02-24",
+    26: "2026-03-02",
+    27: "2026-03-09",
+    28: "2026-03-16",
+    29: "2026-03-23",
+    30: "2026-03-30",
+    31: "2026-04-06",
+    32: "2026-04-13",
+    33: "2026-04-20",
+    34: "2026-04-27",
+    35: "2026-05-04",
+    36: "2026-05-13",
+    37: "2026-05-18",
+    38: "2026-05-25",
+}
 
 
 def _public_id(prefix: str, value: object) -> str:
@@ -477,6 +517,111 @@ def backfill_enrollment_history(database: Path, recorded_at: str) -> dict[str, o
     }
 
 
+def backfill_lessons(database: Path, recorded_at: str) -> dict[str, object]:
+    """Create shared course lessons and concrete group lessons for lessons 1+."""
+
+    if not _inside(database, REHEARSAL_ROOT):
+        raise ValueError("Lesson target must be below .runtime/phase11-rehearsal")
+    with sqlite3.connect(database, autocommit=False) as connection:
+        connection.execute("PRAGMA foreign_keys = ON")
+        course = connection.execute(
+            "SELECT id FROM courses WHERE public_id = ?", (COURSE_PUBLIC_ID,)
+        ).fetchone()
+        if course is None:
+            raise RuntimeError("Course enrollment backfill must run first")
+        course_id = int(course[0])
+        legacy_rows = connection.execute(
+            "SELECT group_id, lesson FROM lessons ORDER BY lesson, group_id"
+        ).fetchall()
+        mapped_rows = [
+            (str(group_id), int(lesson))
+            for group_id, lesson in legacy_rows
+            if int(lesson) > 0
+        ]
+        for group_id, lesson_number in mapped_rows:
+            if group_id not in GROUPS or lesson_number not in LESSON_DATES:
+                raise RuntimeError("A legacy lesson is outside the reviewed mapping")
+
+        inserted_course_lessons = 0
+        course_lesson_ids: dict[int, int] = {}
+        for lesson_number in sorted({lesson for _group, lesson in mapped_rows}):
+            public_id = f"course-lesson.math-5-7.{lesson_number}"
+            before = connection.total_changes
+            connection.execute(
+                "INSERT OR IGNORE INTO course_lessons "
+                "(public_id, course_id, lesson_number, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (public_id, course_id, lesson_number, recorded_at, recorded_at),
+            )
+            inserted_course_lessons += connection.total_changes > before
+            row = connection.execute(
+                "SELECT id, course_id, lesson_number FROM course_lessons "
+                "WHERE public_id = ?",
+                (public_id,),
+            ).fetchone()
+            if row is None or (int(row[1]), int(row[2])) != (
+                course_id,
+                lesson_number,
+            ):
+                raise RuntimeError("Existing course lesson conflicts with legacy data")
+            course_lesson_ids[lesson_number] = int(row[0])
+
+        inserted_group_lessons = 0
+        for group_id, lesson_number in mapped_rows:
+            public_id = _public_id(
+                "group-lesson", f"{COURSE_PUBLIC_ID}:{group_id}:{lesson_number}"
+            )
+            before = connection.total_changes
+            connection.execute(
+                "INSERT OR IGNORE INTO group_lessons "
+                "(public_id, course_lesson_id, course_id, group_id, "
+                "cycle_anchor_date, business_timezone, status, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, 'Europe/Moscow', 'active', ?, ?)",
+                (
+                    public_id,
+                    course_lesson_ids[lesson_number],
+                    course_id,
+                    group_id,
+                    LESSON_DATES[lesson_number],
+                    recorded_at,
+                    recorded_at,
+                ),
+            )
+            inserted_group_lessons += connection.total_changes > before
+            row = connection.execute(
+                "SELECT course_lesson_id, course_id, group_id, cycle_anchor_date "
+                "FROM group_lessons WHERE public_id = ?",
+                (public_id,),
+            ).fetchone()
+            expected = (
+                course_lesson_ids[lesson_number],
+                course_id,
+                group_id,
+                LESSON_DATES[lesson_number],
+            )
+            if row is None or tuple(row) != expected:
+                raise RuntimeError("Existing group lesson conflicts with legacy data")
+        connection.commit()
+        stored_course_lessons = connection.execute(
+            "SELECT count(*) FROM course_lessons WHERE course_id = ?", (course_id,)
+        ).fetchone()[0]
+        stored_group_lessons = connection.execute(
+            "SELECT count(*) FROM group_lessons WHERE course_id = ?", (course_id,)
+        ).fetchone()[0]
+
+    if stored_group_lessons != len(mapped_rows):
+        raise RuntimeError("Group lesson parity check failed")
+    return {
+        "legacyLessonRows": len(legacy_rows),
+        "legacyLessonZeroRowsExcluded": len(legacy_rows) - len(mapped_rows),
+        "courseLessons": stored_course_lessons,
+        "groupLessons": stored_group_lessons,
+        "insertedCourseLessons": inserted_course_lessons,
+        "insertedGroupLessons": inserted_group_lessons,
+        "legacyLessonRowsUpdated": 0,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
@@ -490,6 +635,7 @@ def main() -> int:
     source_sha256 = prepare_copy(arguments.source, arguments.target)
     report = backfill_course(arguments.target, arguments.recorded_at)
     report.update(backfill_enrollment_history(arguments.target, arguments.recorded_at))
+    report.update(backfill_lessons(arguments.target, arguments.recorded_at))
     report["sourceSha256"] = source_sha256
     atomic_write_text(
         arguments.report,

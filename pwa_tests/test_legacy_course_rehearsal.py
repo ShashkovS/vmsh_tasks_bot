@@ -62,6 +62,10 @@ def _seed_source(path: Path) -> Path:
                 ("2025-10-01T11:00:00", 101, "O", "2"),
             ),
         )
+        connection.executemany(
+            "INSERT INTO lessons (id, group_id, lesson) VALUES (?, ?, ?)",
+            ((201, "н", 0), (202, "н", 1), (203, "п", 1), (204, "э", 2)),
+        )
     path.chmod(0o600)
     return path
 
@@ -211,6 +215,43 @@ def test_history_coalesces_no_ops_and_reconciles_current_state(
         ).fetchone() == ("н", "online")
 
 
+def test_lessons_share_course_identity_and_keep_group_rows(
+    tmp_path: Path, rehearsal_root: Path
+) -> None:
+    source = _seed_source(tmp_path / "source.sqlite3")
+    target = rehearsal_root / "copy.sqlite3"
+    rehearsal.prepare_copy(source, target)
+    rehearsal.backfill_course(target, RECORDED_AT)
+
+    first = rehearsal.backfill_lessons(target, RECORDED_AT)
+    second = rehearsal.backfill_lessons(target, RECORDED_AT)
+
+    assert first == {
+        "legacyLessonRows": 4,
+        "legacyLessonZeroRowsExcluded": 1,
+        "courseLessons": 2,
+        "groupLessons": 3,
+        "insertedCourseLessons": 2,
+        "insertedGroupLessons": 3,
+        "legacyLessonRowsUpdated": 0,
+    }
+    assert second["insertedCourseLessons"] == 0
+    assert second["insertedGroupLessons"] == 0
+    with sqlite3.connect(target) as connection:
+        assert connection.execute(
+            "SELECT course_lesson.lesson_number, group_lesson.group_id, "
+            "group_lesson.cycle_anchor_date "
+            "FROM group_lessons AS group_lesson "
+            "JOIN course_lessons AS course_lesson "
+            "ON course_lesson.id = group_lesson.course_lesson_id "
+            "ORDER BY course_lesson.lesson_number, group_lesson.group_id"
+        ).fetchall() == [
+            (1, "н", "2025-09-01"),
+            (1, "п", "2025-09-01"),
+            (2, "э", "2025-09-08"),
+        ]
+
+
 def test_copy_refuses_an_existing_or_out_of_scope_target(
     tmp_path: Path, rehearsal_root: Path
 ) -> None:
@@ -267,4 +308,24 @@ def test_history_rejects_an_unknown_value_without_partial_events(
                 "WHERE event_type <> 'created'"
             ).fetchone()[0]
             == 0
+        )
+
+
+def test_lessons_reject_an_unmapped_number_without_partial_rows(
+    tmp_path: Path, rehearsal_root: Path
+) -> None:
+    source = _seed_source(tmp_path / "source.sqlite3")
+    with sqlite3.connect(source, autocommit=True) as connection:
+        connection.execute(
+            "INSERT INTO lessons (id, group_id, lesson) VALUES (999, 'н', 99)"
+        )
+    target = rehearsal_root / "copy.sqlite3"
+    rehearsal.prepare_copy(source, target)
+    rehearsal.backfill_course(target, RECORDED_AT)
+
+    with pytest.raises(RuntimeError, match="outside the reviewed mapping"):
+        rehearsal.backfill_lessons(target, RECORDED_AT)
+    with sqlite3.connect(target) as connection:
+        assert (
+            connection.execute("SELECT count(*) FROM course_lessons").fetchone()[0] == 0
         )
