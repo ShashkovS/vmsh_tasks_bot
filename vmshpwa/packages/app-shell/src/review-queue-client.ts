@@ -3,6 +3,8 @@ import {
   ApiResponseError,
   apiErrorSchema,
   claimReviewItemRequestSchema,
+  correctWrittenReviewRequestSchema,
+  correctWrittenReviewResponseSchema,
   completeReviewRequestSchema,
   completeReviewResponseSchema,
   deleteReviewInternalReactionRequestSchema,
@@ -21,6 +23,8 @@ import {
   setReviewInternalReactionRequestSchema,
   type CompleteReviewRequest,
   type CompleteReviewResponse,
+  type CorrectWrittenReviewRequest,
+  type CorrectWrittenReviewResponse,
   type PrincipalQueryScope,
   type ReviewInternalReactionResponse,
   type ReviewReactionInboxQuery,
@@ -65,6 +69,11 @@ export interface ReviewQueueClient {
     request: CompleteReviewRequest,
     options?: ReviewQueueRequestOptions,
   ): Promise<CompleteReviewResponse>
+  correct(
+    reviewId: string,
+    request: CorrectWrittenReviewRequest,
+    options?: ReviewQueueRequestOptions,
+  ): Promise<CorrectWrittenReviewResponse>
   setInternalReaction(
     reviewId: string,
     reactionId: WrittenTeacherReactionId,
@@ -201,6 +210,22 @@ class BrowserReviewQueueClient implements ReviewQueueClient {
       body,
       options,
       completeReviewResponseSchema,
+    )
+  }
+
+  async correct(
+    reviewId: string,
+    request: CorrectWrittenReviewRequest,
+    options: ReviewQueueRequestOptions = {},
+  ): Promise<CorrectWrittenReviewResponse> {
+    const parsedReviewId = publicIdSchema.parse(reviewId)
+    const body = JSON.stringify(correctWrittenReviewRequestSchema.parse(request))
+    return this.#jsonRequest(
+      `/reviews/${encodeURIComponent(parsedReviewId)}/correction`,
+      'POST',
+      body,
+      options,
+      correctWrittenReviewResponseSchema,
     )
   }
 
@@ -487,6 +512,23 @@ export function useCompleteReviewMutation(
       queryClient.removeQueries({ queryKey: reviewQueueQueryKeys.lease(principal, queueId) })
       await queryClient.invalidateQueries({
         queryKey: reviewQueueQueryKeys.all(principal),
+      })
+    },
+  })
+}
+
+export function useCorrectWrittenReviewMutation(
+  client: Pick<ReviewQueueClient, 'correct'>,
+  principal: PrincipalQueryScope,
+  reviewId: string,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationKey: [...reviewReactionInboxQueryKeys.all(principal), reviewId, 'correct'],
+    mutationFn: (request: CorrectWrittenReviewRequest) => client.correct(reviewId, request),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: reviewReactionInboxQueryKeys.all(principal),
       })
     },
   })

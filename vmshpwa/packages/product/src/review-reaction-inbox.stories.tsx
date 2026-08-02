@@ -40,6 +40,17 @@ const items: ReviewReactionInboxItem[] = [
     verdict: 15,
     comment: 'Нужно обосновать последний переход.',
     completedAt: '2026-07-29T10:00:00.000Z',
+    isLatestReview: true,
+    evidenceEntries: [
+      {
+        entryId: 'entry-anna',
+        entryVersion: 1,
+        entryKind: 'submission',
+        text: 'Пусть сначала у Пети было x орехов. Тогда после первого шага…',
+        submittedAt: '2026-07-29T09:35:00.000Z',
+        attachments: [],
+      },
+    ],
   },
   {
     itemId: 'reaction-inbox-teacher',
@@ -66,27 +77,44 @@ const items: ReviewReactionInboxItem[] = [
     verdict: 17,
     comment: 'Верное и очень короткое решение.',
     completedAt: '2026-07-29T09:40:00.000Z',
+    isLatestReview: true,
+    evidenceEntries: [
+      {
+        entryId: 'entry-boris',
+        entryVersion: 1,
+        entryKind: 'submission',
+        text: 'Расставим ладьи по одной в каждой строке и каждом столбце.',
+        submittedAt: '2026-07-29T09:25:00.000Z',
+        attachments: [],
+      },
+    ],
   },
 ]
 
 function InboxHarness() {
   const [kind, setKind] = useState<ReviewReactionInboxKind>('all')
   const [reactionId, setReactionId] = useState<ReviewReactionId | null>(null)
+  const [recheckingReviewId, setRecheckingReviewId] = useState<string | null>(null)
   return (
-    <ReviewReactionInbox
-      items={items.filter(
-        (item) =>
-          (kind === 'all' || item.kind === kind) &&
-          (reactionId === null || item.reactionId === reactionId),
-      )}
-      kind={kind}
-      onKindChange={(nextKind) => {
-        setKind(nextKind)
-        setReactionId(null)
-      }}
-      onReactionIdChange={setReactionId}
-      reactionId={reactionId}
-    />
+    <div className="space-y-3">
+      <ReviewReactionInbox
+        items={items.filter(
+          (item) =>
+            (kind === 'all' || item.kind === kind) &&
+            (reactionId === null || item.reactionId === reactionId),
+        )}
+        kind={kind}
+        onKindChange={(nextKind) => {
+          setKind(nextKind)
+          setReactionId(null)
+        }}
+        onReactionIdChange={setReactionId}
+        onRecheck={(item) => setRecheckingReviewId(item.reviewId)}
+        reactionId={reactionId}
+        recheckingReviewId={recheckingReviewId}
+      />
+      {recheckingReviewId ? <p role="status">Открыта перепроверка: {recheckingReviewId}</p> : null}
+    </div>
   )
 }
 
@@ -103,6 +131,23 @@ export const CurrentWrittenReactions: Story = {
     await expect(canvas.queryByText('Борис Ветров')).toBeNull()
     await userEvent.click(canvas.getByRole('button', { name: /Не могу согласиться с проверкой/ }))
     await expect(canvas.getByText('Анна Белова')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Перепроверить результат' }))
+    await expect(canvas.getByText('Открыта перепроверка: reaction-review-student')).toBeVisible()
+  },
+}
+
+export const AlreadyRechecked: Story = {
+  name: 'Реакция на прежнюю проверку',
+  args: {
+    items: [{ ...items[0]!, isLatestReview: false }],
+    kind: 'all',
+    onKindChange: () => undefined,
+    onRecheck: () => undefined,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Уже есть более новая проверка')).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: 'Перепроверить результат' })).toBeNull()
   },
 }
 

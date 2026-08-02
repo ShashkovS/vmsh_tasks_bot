@@ -8,7 +8,7 @@ import multiprocessing
 import os
 import sqlite3
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -41,7 +41,13 @@ from db_methods.pwa.reviews import (
     ReviewThreadChanged,
 )
 from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
-from helpers.consts import VERDICT
+from helpers.consts import USER_TYPE, VERDICT
+from models.pwa.review_corrections import (
+    ReviewCorrectionCommand,
+    ReviewCorrectionForbidden,
+    ReviewCorrectionStale,
+    correct_written_review,
+)
 
 
 NOW = datetime(2026, 10, 4, 12, tzinfo=UTC)
@@ -663,6 +669,90 @@ async def test_complete_persists_annotation_manifest_atomically_and_immutably(
     replay = await fixture.repository.complete(command)
     assert replay.replayed is True
     assert replay.annotations == receipt.annotations
+
+
+@pytest.mark.asyncio
+async def test_review_correction_appends_history_and_replaces_legacy_result(
+    review_queue_fixture,
+):
+    fixture = review_queue_fixture
+    lease = await fixture.repository.claim(
+        queue_public_id=fixture.queue_public_ids[0],
+        teacher_user_id=TEACHER_ONE_ID,
+        scope=ALL_GROUPS_SCOPE,
+    )
+    completed = await fixture.repository.complete(
+        _complete_command(lease, verdict=VERDICT.VERDICT_PLUS_DOT)
+    )
+    command = ReviewCorrectionCommand(
+        source_review_public_id=completed.review_public_id,
+        reviewer_user_id=TEACHER_ONE_ID,
+        reviewer_type=int(USER_TYPE.TEACHER),
+        scope=ALL_GROUPS_SCOPE,
+        idempotency_key="review-correction-test-1",
+        verdict=int(VERDICT.VERDICT_MINUS_PLUS),
+        comment="После перепроверки одного перехода не хватает.",
+        confirm_without_comment=False,
+    )
+
+    corrected = await correct_written_review(
+        fixture.factory, command, now=NOW + timedelta(minutes=1)
+    )
+    replay = await correct_written_review(
+        fixture.factory, command, now=NOW + timedelta(minutes=2)
+    )
+
+    assert corrected.source_review_public_id == completed.review_public_id
+    assert corrected.verdict == int(VERDICT.VERDICT_MINUS_PLUS)
+    assert corrected.status == "needs_work"
+    assert replay.review_public_id == corrected.review_public_id
+    assert replay.replayed is True
+    stored = fixture.factory.run_read(
+        lambda connection: {
+            "reviews": connection.execute(
+                "SELECT public_id, verdict FROM submission_reviews ORDER BY id"
+            ).fetchall(),
+            "results": connection.execute(
+                "SELECT verdict FROM results ORDER BY id"
+            ).fetchall(),
+            "evidence": connection.execute(
+                "SELECT review_id, count(*) AS count "
+                "FROM submission_review_evidence_entries GROUP BY review_id ORDER BY review_id"
+            ).fetchall(),
+            "thread": connection.execute(
+                "SELECT status, latest_result_id, version FROM submission_threads "
+                "WHERE public_id = ?",
+                (completed.target_thread_public_id,),
+            ).fetchone(),
+        }
+    )
+    assert [row["verdict"] for row in stored["reviews"]] == [16, 13]
+    assert [row["verdict"] for row in stored["results"]] == [-2, 13]
+    assert [row["count"] for row in stored["evidence"]] == [2, 2]
+    assert stored["thread"]["status"] == "needs_work"
+    assert stored["thread"]["version"] == 5
+
+    with pytest.raises(ReviewCorrectionStale):
+        await correct_written_review(
+            fixture.factory,
+            replace(command, idempotency_key="review-correction-test-2"),
+            now=NOW + timedelta(minutes=3),
+        )
+    with pytest.raises(ReviewCorrectionForbidden):
+        await correct_written_review(
+            fixture.factory,
+            ReviewCorrectionCommand(
+                source_review_public_id=corrected.review_public_id,
+                reviewer_user_id=TEACHER_TWO_ID,
+                reviewer_type=int(USER_TYPE.TEACHER),
+                scope=ALL_GROUPS_SCOPE,
+                idempotency_key="review-correction-test-3",
+                verdict=17,
+                comment=None,
+                confirm_without_comment=False,
+            ),
+            now=NOW + timedelta(minutes=4),
+        )
 
 
 @pytest.mark.asyncio

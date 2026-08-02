@@ -1,7 +1,11 @@
 import { z } from 'zod'
 
 import { principalQueryKey, publicIdSchema, type PrincipalQueryScope } from './auth'
-import { writtenReviewVerdictSchema, writtenTeacherReactionIdSchema } from './review-queue'
+import {
+  reviewEvidenceEntrySchema,
+  writtenReviewVerdictSchema,
+  writtenTeacherReactionIdSchema,
+} from './review-queue'
 
 const contractVersionSchema = z.literal(1)
 export const writtenStudentReactionIdSchema = z.union([z.literal(0), z.literal(1), z.literal(2)])
@@ -77,6 +81,8 @@ export const reviewReactionInboxItemSchema = z
     verdict: writtenReviewVerdictSchema,
     comment: z.string().max(100_000).nullable(),
     completedAt: z.iso.datetime(),
+    isLatestReview: z.boolean(),
+    evidenceEntries: z.array(reviewEvidenceEntrySchema).min(1),
   })
   .strict()
   .superRefine((item, context) => {
@@ -109,6 +115,37 @@ export const reviewReactionInboxResponseSchema = z
   })
   .strict()
 export type ReviewReactionInboxResponse = z.infer<typeof reviewReactionInboxResponseSchema>
+
+export const correctWrittenReviewRequestSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    idempotencyKey: publicIdSchema,
+    verdict: writtenReviewVerdictSchema,
+    comment: z.string().max(100_000).nullable(),
+    confirmWithoutComment: z.boolean(),
+  })
+  .strict()
+export type CorrectWrittenReviewRequest = z.infer<typeof correctWrittenReviewRequestSchema>
+
+export const correctWrittenReviewResponseSchema = z
+  .object({
+    schemaVersion: contractVersionSchema,
+    correction: z
+      .object({
+        reviewId: publicIdSchema,
+        correctsReviewId: publicIdSchema,
+        threadId: publicIdSchema,
+        problemId: publicIdSchema,
+        verdict: writtenReviewVerdictSchema,
+        threadStatus: z.enum(['accepted', 'needs_work']),
+        completedAt: z.iso.datetime(),
+        replayed: z.boolean(),
+      })
+      .strict(),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+export type CorrectWrittenReviewResponse = z.infer<typeof correctWrittenReviewResponseSchema>
 
 export const reviewReactionInboxQueryKeys = {
   all: (principal: PrincipalQueryScope) =>

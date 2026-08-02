@@ -11,6 +11,7 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   page,
   secondaryContext,
 }, testInfo) => {
+  test.setTimeout(90_000)
   const project = testInfo.project.name
   const queueId = `e2e-review-queue-${project}`
   const title = `E2E проверка ${project}`
@@ -327,6 +328,102 @@ test('Phase 6: Staff review restores its draft and completes one leased case', a
   await expect(studentReactionItem).toContainText('🙋 Не могу согласиться с проверкой!')
   await expect(teacherReactionItem).toContainText(title)
   await expect(teacherReactionItem).toContainText('🔥 Суперское решение.')
+
+  await studentReactionItem.getByRole('button', { name: 'Перепроверить результат' }).click()
+  let correctionPanel = adminPage
+    .locator('[aria-label^="Перепроверка:"]')
+    .filter({ hasText: title })
+  const correctedComment = `Перепроверено в ${project}: переход нужно довести.`
+  await expect(
+    correctionPanel.getByRole('img', { name: 'Страница 1 решения ученика' }),
+  ).toBeVisible()
+  await correctionPanel.getByLabel('Комментарий').fill(correctedComment)
+  await correctionPanel.getByRole('button', { name: /Есть идеи, не доведено/ }).click()
+
+  // The correction is a significant Staff draft: reload must not erase it.
+  await adminPage.reload()
+  await adminPage
+    .getByRole('article')
+    .filter({ hasText: title })
+    .filter({ hasText: '🙋 Не могу согласиться с проверкой!' })
+    .getByRole('button', { name: 'Перепроверить результат' })
+    .click()
+  correctionPanel = adminPage.locator('[aria-label^="Перепроверка:"]').filter({ hasText: title })
+  await expect(correctionPanel.getByLabel('Комментарий')).toHaveValue(correctedComment)
+  await expect(
+    correctionPanel.getByRole('button', { name: /Есть идеи, не доведено/ }),
+  ).toHaveAttribute('aria-pressed', 'true')
+
+  const correctionResponse = adminPage.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === `/staff/api/v1/reviews/${reviewId}/correction`,
+  )
+  await correctionPanel.getByRole('button', { name: 'Отправить вердикт' }).click()
+  expect((await correctionResponse).status()).toBe(200)
+  const staleStudentReactionItem = adminPage
+    .getByRole('article')
+    .filter({ hasText: title })
+    .filter({ hasText: '🙋 Не могу согласиться с проверкой!' })
+  await expect(staleStudentReactionItem).toContainText('Уже есть более новая проверка')
+  await expect(
+    staleStudentReactionItem.getByRole('button', { name: 'Перепроверить результат' }),
+  ).toHaveCount(0)
+
+  const correctedStudentProjection = await page.evaluate(async (problemId) => {
+    const response = await fetch(`/student/api/v1/problems/${problemId}/thread`)
+    const body: unknown = await response.json()
+    return { status: response.status, body }
+  }, `e2e-review-problem-${project}`)
+  expect(correctedStudentProjection.status).toBe(200)
+  const correctedStudentThread = writtenThreadResponseSchema.parse(correctedStudentProjection.body)
+  expect(correctedStudentThread.thread?.status).toBe('needs_work')
+  expect(correctedStudentThread.thread?.reviews).toHaveLength(2)
+  expect(correctedStudentThread.thread?.reviews[1]).toEqual(
+    expect.objectContaining({
+      verdict: 13,
+      comment: correctedComment,
+      evidenceEntryIds: [`e2e-review-student-entry-${project}`],
+      annotations: [],
+    }),
+  )
+
+  const correctedFamilyProjection = await familyPage.evaluate(
+    async ({ problemId, studentId }) => {
+      const response = await fetch(
+        `/family/api/v1/children/${studentId}/problems/${problemId}/thread`,
+      )
+      const body: unknown = await response.json()
+      return { status: response.status, body }
+    },
+    { problemId: `e2e-review-problem-${project}`, studentId: child.studentId },
+  )
+  expect(correctedFamilyProjection.status).toBe(200)
+  const correctedFamilyThread = familyWrittenThreadResponseSchema.parse(
+    correctedFamilyProjection.body,
+  )
+  expect(correctedFamilyThread.thread?.status).toBe('needs_work')
+  expect(correctedFamilyThread.thread?.reviews[1]).toEqual(
+    expect.objectContaining({ verdict: 13, comment: correctedComment }),
+  )
+  await expect
+    .poll(() =>
+      familyPage.evaluate((expectedResource) => {
+        const state = globalThis as typeof globalThis & {
+          __reviewRealtimeEvents?: Array<Record<string, unknown>>
+        }
+        return (
+          state.__reviewRealtimeEvents?.some(
+            (candidate) =>
+              candidate.type === 'invalidate' &&
+              candidate.reason === 'written-review-corrected' &&
+              Array.isArray(candidate.resources) &&
+              candidate.resources.includes(expectedResource),
+          ) ?? false
+        )
+      }, `problems/e2e-review-problem-${project}/thread`),
+    )
+    .toBe(true)
 
   await familyPage.evaluate(() => {
     const state = globalThis as typeof globalThis & { __reviewRealtimeSocket?: WebSocket }

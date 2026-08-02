@@ -13,6 +13,8 @@ export interface ReviewReactionInboxProps {
   onKindChange: (kind: ReviewReactionInboxKind) => void
   reactionId?: ReviewReactionId | null
   onReactionIdChange?: (reactionId: ReviewReactionId | null) => void
+  onRecheck?: (item: ReviewReactionInboxItem) => void
+  recheckingReviewId?: string | null
   className?: string
 }
 
@@ -38,6 +40,8 @@ export function ReviewReactionInbox({
   onKindChange,
   reactionId = null,
   onReactionIdChange,
+  onRecheck,
+  recheckingReviewId = null,
   className,
 }: ReviewReactionInboxProps) {
   const visibleReactions = reactionRegistry
@@ -149,6 +153,21 @@ export function ReviewReactionInbox({
               <p className="mt-1 text-caption text-muted-foreground">
                 Не меняет результат автоматически.
               </p>
+              {item.isLatestReview && onRecheck ? (
+                <Button
+                  aria-expanded={recheckingReviewId === item.reviewId}
+                  className="mt-2"
+                  onClick={() => onRecheck(item)}
+                  size="xs"
+                  variant="outline"
+                >
+                  Перепроверить результат
+                </Button>
+              ) : !item.isLatestReview ? (
+                <Badge className="mt-2" variant="neutral">
+                  Уже есть более новая проверка
+                </Badge>
+              ) : null}
             </article>
           ))}
         </div>

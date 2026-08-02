@@ -80,6 +80,17 @@ const reactionInboxPayload = {
       verdict: 15,
       comment: 'Нужно дописать обоснование.',
       completedAt: '2026-10-04T12:00:00.000000Z',
+      isLatestReview: true,
+      evidenceEntries: [
+        {
+          entryId: 'entry-one',
+          entryVersion: 1,
+          entryKind: 'submission' as const,
+          text: 'Решение ученика.',
+          submittedAt: '2026-10-04T11:55:00.000000Z',
+          attachments: [],
+        },
+      ],
     },
   ],
   nextCursor: null,
@@ -327,6 +338,47 @@ describe('Staff review queue client', () => {
     await expect(client.complete('review-queue-one', request)).resolves.toEqual(completion)
     expect(fetchImplementation).toHaveBeenCalledExactlyOnceWith(
       '/staff/api/v1/review/items/review-queue-one/complete',
+      {
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        redirect: 'error',
+        body: JSON.stringify(request),
+      },
+    )
+  })
+
+  it('sends a completed-review correction with a stable idempotency key', async () => {
+    const response = {
+      schemaVersion: 1 as const,
+      correction: {
+        reviewId: 'review-corrected',
+        correctsReviewId: 'review-one',
+        threadId: 'thread-one',
+        problemId: 'problem-one',
+        verdict: 13,
+        threadStatus: 'needs_work' as const,
+        completedAt: '2026-10-04T12:10:00.000000Z',
+        replayed: false,
+      },
+      requestId: 'review-correction-request',
+    }
+    const fetchImplementation = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(jsonResponse(response)),
+    )
+    const client = createReviewQueueClient(runtime, { fetchImplementation })
+    const request = {
+      schemaVersion: 1 as const,
+      idempotencyKey: 'review-correction-one',
+      verdict: 13,
+      comment: 'Перепроверено: переход не доказан.',
+      confirmWithoutComment: false,
+    }
+
+    await expect(client.correct('review-one', request)).resolves.toEqual(response)
+    expect(fetchImplementation).toHaveBeenCalledExactlyOnceWith(
+      '/staff/api/v1/reviews/review-one/correction',
       {
         method: 'POST',
         cache: 'no-store',

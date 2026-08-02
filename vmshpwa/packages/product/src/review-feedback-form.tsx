@@ -33,6 +33,7 @@ export interface ReviewFeedbackFormProps {
   initialDraft?: ReviewFeedbackDraft
   onDraftChange?: (draft: ReviewFeedbackDraft) => void
   disabled?: boolean
+  showInternalReaction?: boolean
   className?: string
 }
 
@@ -42,6 +43,7 @@ export function ReviewFeedbackForm({
   initialDraft,
   onDraftChange,
   disabled,
+  showInternalReaction = true,
   className,
 }: ReviewFeedbackFormProps) {
   const commentId = useId()
@@ -106,21 +108,23 @@ export function ReviewFeedbackForm({
         verdicts={verdicts}
       />
 
-      <ReactionPicker
-        compact
-        hotkeys
-        legend="Внутренняя пометка (не видна ученику)"
-        onSelect={(nextReactionId) => {
-          setReactionId(nextReactionId)
-          onDraftChange?.({
-            verdictValue: verdict?.value ?? null,
-            comment,
-            reactionId: nextReactionId,
-          })
-        }}
-        options={teacherWrittenReactions}
-        value={reactionId}
-      />
+      {showInternalReaction ? (
+        <ReactionPicker
+          compact
+          hotkeys
+          legend="Внутренняя пометка (не видна ученику)"
+          onSelect={(nextReactionId) => {
+            setReactionId(nextReactionId)
+            onDraftChange?.({
+              verdictValue: verdict?.value ?? null,
+              comment,
+              reactionId: nextReactionId,
+            })
+          }}
+          options={teacherWrittenReactions}
+          value={reactionId}
+        />
+      ) : null}
 
       {confirming ? (
         <div

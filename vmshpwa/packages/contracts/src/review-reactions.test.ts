@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  correctWrittenReviewRequestSchema,
+  correctWrittenReviewResponseSchema,
   reviewReactionInboxQuerySchema,
   reviewReactionInboxResponseSchema,
 } from './review-reactions'
@@ -30,6 +32,17 @@ const baseItem = {
   verdict: 15,
   comment: 'Нужно обосновать последний переход.',
   completedAt: '2026-07-29T10:00:00.000Z',
+  isLatestReview: true,
+  evidenceEntries: [
+    {
+      entryId: 'submission-one',
+      entryVersion: 1,
+      entryKind: 'submission' as const,
+      text: 'Решение ученика.',
+      submittedAt: '2026-07-29T09:45:00.000Z',
+      attachments: [],
+    },
+  ],
 }
 
 describe('admin review-reaction inbox contracts', () => {
@@ -88,5 +101,33 @@ describe('admin review-reaction inbox contracts', () => {
     expect(
       reviewReactionInboxQuerySchema.safeParse({ kind: 'teacher', reactionId: 2 }).success,
     ).toBe(false)
+  })
+
+  it('validates the append-only correction command and receipt', () => {
+    expect(
+      correctWrittenReviewRequestSchema.parse({
+        schemaVersion: 1,
+        idempotencyKey: 'review-correction-one',
+        verdict: 13,
+        comment: 'Переход не доказан.',
+        confirmWithoutComment: false,
+      }).verdict,
+    ).toBe(13)
+    expect(
+      correctWrittenReviewResponseSchema.parse({
+        schemaVersion: 1,
+        correction: {
+          reviewId: 'review-corrected',
+          correctsReviewId: 'review-one',
+          threadId: 'thread-one',
+          problemId: 'problem-one',
+          verdict: 13,
+          threadStatus: 'needs_work',
+          completedAt: '2026-07-29T10:20:00.000Z',
+          replayed: false,
+        },
+        requestId: 'review-correction-request',
+      }).correction.correctsReviewId,
+    ).toBe('review-one')
   })
 })

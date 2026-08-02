@@ -133,11 +133,13 @@ evidence, Staff media access, reassignment и настоящий filesystem E2E.
 immutable evidence, полноценный annotation editor/viewer, Teacher и Student
 reactions, admin reaction inbox, Student/Family projection, no-loss Staff
 draft, private text questions и production-build E2E в трёх браузерах.
+Исправление письменного вердикта и admin recheck из reaction inbox теперь тоже
+работают append-only: исходная проверка и evidence не меняются, новая проверка
+появляется в общей истории, а незавершённый Staff-черновик переживает reload.
 
 Осталось по заявленному phase-файлу:
 
 - rehearsed legacy reaction backfill/duplicate report;
-- explicit written verdict correction/admin recheck из reaction inbox;
 - Telegram composite image для аннотированной проверки;
 - таблица решений по idea-only `viewwrittensols*`;
 - visual acceptance. Cross-channel Telegram continuation вопросов была
@@ -147,6 +149,7 @@ draft, private text questions и production-build E2E в трёх браузер
 [annotation editor](phase6-review-annotation-editor.md),
 [review workspace E2E](phase6-review-workspace.md),
 [reaction inbox](phase6-review-reaction-inbox.md),
+[review correction](phase6-review-corrections.md),
 [support pages/E2E](phase6-support-pages.md).
 
 ### Phase 7 — oral/classrooms: функциональное ядро и browser flow готовы

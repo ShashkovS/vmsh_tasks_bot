@@ -672,6 +672,8 @@ class ReviewReactionInboxItem:
     verdict: int
     comment: str | None
     completed_at: datetime
+    is_latest_review: bool
+    evidence_entries: tuple[ReviewEvidenceEntry, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1480,7 +1482,13 @@ class PwaWrittenReviewQueueRepository:
             rows = connection.execute(
                 "SELECT state.kind, state.reaction_id, state.version, "
                 "state.updated_at, state.editable_until, reaction.reaction AS reaction_label, "
-                "review.public_id AS review_public_id, review.verdict, review.created_at, "
+                "review.id AS review_id, review.public_id AS review_public_id, "
+                "review.verdict, review.created_at, "
+                "NOT EXISTS (SELECT 1 FROM submission_reviews AS newer "
+                "WHERE newer.thread_id = review.thread_id AND "
+                "(newer.created_at > review.created_at OR "
+                "(newer.created_at = review.created_at AND newer.id > review.id))) "
+                "AS is_latest_review, "
                 "student.public_id AS student_public_id, student.name, student.surname, "
                 "reviewer.public_id AS teacher_public_id, "
                 "reviewer.name AS teacher_name, reviewer.surname AS teacher_surname, "
@@ -1518,6 +1526,48 @@ class PwaWrittenReviewQueueRepository:
                 if reaction_id is not None and row_reaction_id != reaction_id:
                     continue
                 review_public_id = str(row["review_public_id"])
+                evidence_entries = []
+                for evidence in connection.execute(
+                    "SELECT entry.id, entry.public_id, entry.version, entry.entry_kind, "
+                    "entry.text, entry.server_received_at "
+                    "FROM submission_review_evidence_entries AS snapshot "
+                    "JOIN submission_entries AS entry ON entry.id = snapshot.entry_id "
+                    "WHERE snapshot.review_id = ? "
+                    "ORDER BY snapshot.server_received_at, snapshot.entry_id",
+                    (row["review_id"],),
+                ).fetchall():
+                    attachments = connection.execute(
+                        "SELECT attachment.public_id, attachment.ordinal "
+                        "FROM submission_review_evidence_attachments AS snapshot "
+                        "JOIN submission_attachments AS attachment "
+                        "ON attachment.id = snapshot.attachment_id "
+                        "WHERE snapshot.review_id = ? AND snapshot.entry_id = ? "
+                        "ORDER BY snapshot.ordinal, snapshot.attachment_id",
+                        (row["review_id"], evidence["id"]),
+                    ).fetchall()
+                    evidence_entries.append(
+                        ReviewEvidenceEntry(
+                            entry_public_id=str(evidence["public_id"]),
+                            entry_version=int(evidence["version"]),
+                            entry_kind=str(evidence["entry_kind"]),
+                            text=(
+                                None
+                                if evidence["text"] is None
+                                else str(evidence["text"])
+                            ),
+                            server_received_at=_parse_timestamp(
+                                evidence["server_received_at"],
+                                label="evidence submission time",
+                            ),
+                            attachments=tuple(
+                                ReviewEvidenceAttachment(
+                                    attachment_public_id=str(item["public_id"]),
+                                    ordinal=int(item["ordinal"]),
+                                )
+                                for item in attachments
+                            ),
+                        )
+                    )
                 items.append(
                     ReviewReactionInboxItem(
                         item_public_id=_review_reaction_item_public_id(
@@ -1581,6 +1631,8 @@ class PwaWrittenReviewQueueRepository:
                         completed_at=_parse_timestamp(
                             row["created_at"], label="review completion time"
                         ),
+                        is_latest_review=bool(row["is_latest_review"]),
+                        evidence_entries=tuple(evidence_entries),
                     )
                 )
             items.sort(

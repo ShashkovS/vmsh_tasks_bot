@@ -839,6 +839,111 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
 
 
 @pytest.mark.asyncio
+async def test_admin_correction_is_append_only_and_marks_old_reaction_stale(
+    review_http: ReviewHttpFixture,
+):
+    fixture = review_http
+    queue_id = fixture.queue_public_ids[0]
+    claim = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    lease = (await claim.json())["lease"]
+    completion_payload = _complete_payload(lease)
+    completion_payload["internalReactionId"] = 100
+    completed = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=completion_payload,
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert completed.status == 200, await completed.text()
+    source_review_id = (await completed.json())["review"]["reviewId"]
+    correction_payload = {
+        "schemaVersion": 1,
+        "idempotencyKey": "review-http-correction-1",
+        "verdict": 13,
+        "comment": "Перепроверено администратором: переход не доказан.",
+        "confirmWithoutComment": False,
+    }
+
+    corrected = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json=correction_payload,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert corrected.status == 200, await corrected.text()
+    correction = (await corrected.json())["correction"]
+    assert correction["correctsReviewId"] == source_review_id
+    assert correction["verdict"] == 13
+    assert correction["threadStatus"] == "needs_work"
+    assert correction["replayed"] is False
+
+    replay = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json=correction_payload,
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert replay.status == 200, await replay.text()
+    assert (await replay.json())["correction"]["replayed"] is True
+
+    stale = await fixture.client.post(
+        f"/staff/api/v1/reviews/{source_review_id}/correction",
+        json={**correction_payload, "idempotencyKey": "review-http-correction-2"},
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(unsafe=True),
+    )
+    assert stale.status == 409
+    assert (await stale.json())["error"]["code"] == "review_correction_stale"
+
+    forbidden = await fixture.client.post(
+        f"/staff/api/v1/reviews/{correction['reviewId']}/correction",
+        json={**correction_payload, "idempotencyKey": "review-http-correction-3"},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert forbidden.status == 403
+
+    inbox = await fixture.client.get(
+        "/staff/api/v1/review/reactions",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert inbox.status == 200, await inbox.text()
+    teacher_reaction = (await inbox.json())["items"][0]
+    assert teacher_reaction["reviewId"] == source_review_id
+    assert teacher_reaction["isLatestReview"] is False
+    assert [entry["entryId"] for entry in teacher_reaction["evidenceEntries"]] == [
+        "review-http-entry-1",
+        "review-http-entry-2",
+    ]
+    assert teacher_reaction["evidenceEntries"][0]["attachments"] == [
+        {"attachmentId": "review-http-attachment-1", "ordinal": 0}
+    ]
+    stored = fixture.factory.run_read(
+        lambda connection: {
+            "review_verdicts": [
+                row["verdict"]
+                for row in connection.execute(
+                    "SELECT verdict FROM submission_reviews ORDER BY id"
+                ).fetchall()
+            ],
+            "result_verdicts": [
+                row["verdict"]
+                for row in connection.execute(
+                    "SELECT verdict FROM results ORDER BY id"
+                ).fetchall()
+            ],
+        }
+    )
+    assert stored == {"review_verdicts": [16, 13], "result_verdicts": [-2, 13]}
+
+
+@pytest.mark.asyncio
 async def test_internal_reaction_http_is_strict_optimistic_and_reviewer_owned(
     review_http: ReviewHttpFixture,
 ):

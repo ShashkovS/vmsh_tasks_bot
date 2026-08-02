@@ -52,6 +52,16 @@ from helpers.pwa.permissions import Capability
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.review_notifications import record_review_notifications
+from models.pwa.review_corrections import (
+    ReviewCorrectionCommand,
+    ReviewCorrectionConflict,
+    ReviewCorrectionForbidden,
+    ReviewCorrectionInvalid,
+    ReviewCorrectionNotFound,
+    ReviewCorrectionStale,
+    correct_written_review,
+)
+from helpers.consts import USER_TYPE
 
 
 # Keep the route below aiohttp's default one-megabyte application limit while
@@ -77,6 +87,15 @@ _COMPLETE_FIELDS = frozenset(
 )
 _REACTION_SET_FIELDS = frozenset({"schemaVersion", "reactionId", "expectedVersion"})
 _REACTION_DELETE_FIELDS = frozenset({"schemaVersion", "expectedVersion"})
+_CORRECTION_FIELDS = frozenset(
+    {
+        "schemaVersion",
+        "idempotencyKey",
+        "verdict",
+        "comment",
+        "confirmWithoutComment",
+    }
+)
 _LIST_QUERY_FIELDS = frozenset({"problemGroup", "sort", "cursor"})
 _REACTION_INBOX_QUERY_FIELDS = frozenset({"kind", "reactionId", "cursor"})
 
@@ -402,6 +421,24 @@ def _reaction_inbox_payload(item: ReviewReactionInboxItem) -> dict[str, object]:
         "verdict": item.verdict,
         "comment": item.comment,
         "completedAt": _timestamp(item.completed_at),
+        "isLatestReview": item.is_latest_review,
+        "evidenceEntries": [
+            {
+                "entryId": entry.entry_public_id,
+                "entryVersion": entry.entry_version,
+                "entryKind": entry.entry_kind,
+                "text": entry.text,
+                "submittedAt": _timestamp(entry.server_received_at),
+                "attachments": [
+                    {
+                        "attachmentId": attachment.attachment_public_id,
+                        "ordinal": attachment.ordinal,
+                    }
+                    for attachment in entry.attachments
+                ],
+            }
+            for entry in item.evidence_entries
+        ],
     }
 
 
@@ -1157,6 +1194,148 @@ async def complete_review_item(request: web.Request) -> web.Response:
                 "internalReaction": _internal_reaction_payload(
                     receipt.internal_reaction
                 ),
+                "completedAt": _timestamp(receipt.completed_at),
+                "replayed": receipt.replayed,
+            },
+            "requestId": request["request_id"],
+        }
+    )
+
+
+@review_routes.post("/staff/api/v1/reviews/{review_public_id}/correction")
+async def correct_completed_review(request: web.Request) -> web.Response:
+    reviewer_user_id, scope = _require_review_write(request)
+    database = request.app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        raise PwaApiError(
+            status=503,
+            code="review_queue_unavailable",
+            message="Проверка временно недоступна",
+        )
+    payload = await _json_object(request, required_fields=_CORRECTION_FIELDS)
+    verdict = payload["verdict"]
+    if (
+        isinstance(verdict, bool)
+        or not isinstance(verdict, int)
+        or not 11 <= verdict <= 17
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Выберите корректный вердикт",
+            details={"field": "verdict"},
+        )
+    comment = payload["comment"]
+    if comment is not None and (not isinstance(comment, str) or len(comment) > 100_000):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте комментарий",
+            details={"field": "comment"},
+        )
+    if not isinstance(payload["confirmWithoutComment"], bool):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте подтверждение отправки",
+            details={"field": "confirmWithoutComment"},
+        )
+    principal = authenticated_session(request).principal
+    try:
+        receipt = await correct_written_review(
+            database.factory,
+            ReviewCorrectionCommand(
+                source_review_public_id=_review_public_id(request),
+                reviewer_user_id=reviewer_user_id,
+                reviewer_type=(
+                    int(USER_TYPE.ADMIN)
+                    if principal.is_global_admin
+                    else int(USER_TYPE.TEACHER)
+                ),
+                scope=scope,
+                idempotency_key=_required_public_id(
+                    payload["idempotencyKey"], field="idempotencyKey"
+                ),
+                verdict=verdict,
+                comment=comment,
+                confirm_without_comment=payload["confirmWithoutComment"],
+            ),
+        )
+    except ReviewCorrectionNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="review_not_found",
+            message="Проверка не найдена",
+        ) from error
+    except ReviewCorrectionForbidden as error:
+        raise PwaApiError(
+            status=403,
+            code="forbidden",
+            message="Эту проверку нельзя исправить с текущими правами",
+        ) from error
+    except ReviewCorrectionStale as error:
+        raise PwaApiError(
+            status=409,
+            code="review_correction_stale",
+            message="У работы уже есть более новая проверка. Обновите страницу.",
+        ) from error
+    except ReviewCorrectionConflict as error:
+        raise PwaApiError(
+            status=409,
+            code="idempotency_payload_mismatch",
+            message="Это действие уже было отправлено с другими данными",
+        ) from error
+    except ReviewCorrectionInvalid as error:
+        raise PwaApiError(
+            status=422,
+            code="review_confirmation_required",
+            message="Подтвердите отправку вердикта без комментария",
+        ) from error
+
+    if not receipt.replayed:
+        try:
+            await database.factory.run_write_async(
+                lambda connection: record_review_notifications(
+                    connection,
+                    account_public_ids=receipt.owner_account_public_ids,
+                    review_public_id=receipt.review_public_id,
+                    problem_public_ids=(receipt.problem_public_id,),
+                    completed_at=receipt.completed_at,
+                )
+            )
+        except Exception:
+            logger.warning(
+                "Review correction notification failed after commit: review=%s",
+                receipt.review_public_id,
+                exc_info=True,
+            )
+        invalidator = request.app.get(PWA_REVIEW_COMPLETION_INVALIDATOR)
+        if invalidator is not None:
+            try:
+                await invalidator(
+                    receipt.owner_account_public_ids,
+                    receipt.family_account_public_ids,
+                    (receipt.problem_public_id,),
+                    "written-review-corrected",
+                )
+            except Exception:
+                logger.warning(
+                    "Review correction invalidation failed after commit: review=%s",
+                    receipt.review_public_id,
+                    exc_info=True,
+                )
+        await _invalidate_reaction_inbox(request, reason="written-review-corrected")
+
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "correction": {
+                "reviewId": receipt.review_public_id,
+                "correctsReviewId": receipt.source_review_public_id,
+                "threadId": receipt.thread_public_id,
+                "problemId": receipt.problem_public_id,
+                "verdict": receipt.verdict,
+                "threadStatus": receipt.status,
                 "completedAt": _timestamp(receipt.completed_at),
                 "replayed": receipt.replayed,
             },
