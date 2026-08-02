@@ -1034,3 +1034,18 @@
   а отдельная 50 ms timeout-проверка и production timeouts не менялись.
 - Proof:
   [`python-xdist-gate-2026-08-02.md`](../../../pwa_tests/reports/python-xdist-gate-2026-08-02.md).
+
+## Phase 11 checkpoint: fail-closed целостность frontend release — 2 августа 2026
+
+- `verify`, `activate` и `rollback` теперь пересчитывают число файлов, размер и
+  SHA-256 каждого Student/Family/Staff bundle до изменения `current`.
+- Повреждённый manifest, изменённый или удалённый файл, посторонний root entry и
+  любой symlink в release останавливают переключение; прежний release остаётся
+  активным.
+- Фактический release `945d21e` (456 файлов) совпал со своим манифестом. Focused
+  release/toolchain regression — **14 PASS**; полный PWA Python gate — **1546
+  PASS / 5 intentional skips** в восьми workers.
+- Proof:
+  [`phase11-static-release.md`](../../../pwa_tests/reports/phase11-static-release.md).
+- Полный server rollback остаётся открытым до утверждения FQDN/layout и проверки
+  backend revision, migrations, systemd и установленного nginx.

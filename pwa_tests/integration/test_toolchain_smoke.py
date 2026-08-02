@@ -55,7 +55,10 @@ target.write_bytes(b'RIFF0000WEBPsynthetic')""",
         magick_path=str(magick),
     )
 
-    report = await run_toolchain_smoke(config, timeout_seconds=1)
+    # Eight xdist workers may cold-start several Python subprocesses together
+    # on a developer laptop. Keep this success-path allowance above scheduler
+    # noise; dedicated timeout tests cover the production kill path separately.
+    report = await run_toolchain_smoke(config, timeout_seconds=5)
 
     assert report["ready"] is True
     assert report["tikzSvg"]["pdfBytes"] > 0

@@ -58,17 +58,49 @@ make pwa-phase11-release-rollback
 ## Проверки
 
 - production build: PASS;
-- focused Python suite: `7 passed`;
+- focused Python suite после добавления fail-closed integrity gate: `11 passed`;
 - синтетическая проверка двух отличающихся полных сборок: `A → B → A`, PASS;
 - переключение двух реальных собранных git-ревизий: `c33348e → 945d21e →
   c33348e → 945d21e`, PASS;
 - после возврата `current/student/index.html` содержит байты сборки A;
 - Ruff и `git diff --check`: PASS.
 
+## Проверка целостности перед переключением
+
+2 августа 2026 года упаковочный manifest стал обязательным fail-closed gate для
+`verify`, `activate` и `rollback`. Перед изменением `current` заново проверяются:
+
+- release ID и версия формата manifest;
+- ровно три корневых каталога Student/Family/Staff без посторонних файлов;
+- обязательные `index.html`, PWA manifests и service workers;
+- количество файлов, размер и SHA-256 дерева каждого приложения;
+- отсутствие symlink у release, manifest, приложений и внутри bundles.
+
+Удалённый файл, изменённые байты, посторонний root entry, неправильный release
+ID и повреждённый JSON теперь останавливают переключение, оставляя прежний
+`current` неизменным. Отдельная команда для deploy preflight:
+
+```shell
+PWA_RELEASE_ID=<revision> \
+PWA_RELEASE_REPORT=.runtime/phase11-rehearsal/releases/<revision>-verify.json \
+make pwa-phase11-release-verify
+```
+
+Команда проверена на фактическом сохранённом release `945d21e`: Student — 156,
+Family — 144, Staff — 162 файла; все три SHA-256 совпали с манифестом. Отчёт
+остался runtime-артефактом и не коммитится.
+
+Актуальный полный Python checkpoint после изменения: **1546 passed, 5 skipped**
+в восьми workers за 74,43 секунды. Единственный первый retry понадобился из-за
+слишком узкой секундной test-only границы cold-start четырёх синтетических
+converter subprocess; happy-path allowance увеличен до пяти секунд, production
+timeout и отдельные timeout-тесты не менялись.
+
 ## Граница доказательства
 
-Проверены упаковка и атомарное переключение полного frontend-набора на одном
-filesystem. Это ещё не полный production deploy/rollback: не переключались
+Проверены упаковка, проверка целостности и атомарное переключение полного
+frontend-набора на одном filesystem. Это ещё не полный production
+deploy/rollback: не переключались
 backend revision, migrations, systemd и установленный nginx; не выполнялся
 возврат backend на предыдущий commit. Полный server rehearsal остаётся Phase 11
 gate и должен выполняться после утверждения FQDN и точного server layout.

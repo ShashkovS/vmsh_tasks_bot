@@ -110,6 +110,60 @@ def package_release(
     return manifest
 
 
+def verify_release(release_id: str, recorded_at: str) -> dict[str, object]:
+    """Verify an immutable release against the manifest written at packaging."""
+
+    _validate_release_id(release_id)
+    release = RELEASE_ROOT / release_id
+    manifest_path = release / "release.json"
+    if (
+        release.is_symlink()
+        or not release.is_dir()
+        or manifest_path.is_symlink()
+        or not manifest_path.is_file()
+    ):
+        raise ValueError("Release directory is missing or incomplete")
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Release manifest is unreadable") from exc
+    if not isinstance(manifest, dict):
+        raise ValueError("Release manifest must be an object")
+    if manifest.get("schemaVersion") != 1 or manifest.get("releaseId") != release_id:
+        raise ValueError("Release manifest identity does not match the release")
+    recorded_applications = manifest.get("applications")
+    if not isinstance(recorded_applications, dict) or set(recorded_applications) != set(
+        REQUIRED_FILES
+    ):
+        raise ValueError("Release manifest must describe all three applications")
+
+    expected_root_entries = {*REQUIRED_FILES, "release.json"}
+    if {path.name for path in release.iterdir()} != expected_root_entries:
+        raise ValueError("Release directory contains unexpected or missing entries")
+
+    verified_applications: dict[str, object] = {}
+    for app_name, required_files in REQUIRED_FILES.items():
+        app_root = release / app_name
+        if app_root.is_symlink() or not app_root.is_dir():
+            raise ValueError(f"Missing {app_name} production bundle")
+        for relative_path in required_files:
+            if not (app_root / relative_path).is_file():
+                raise ValueError(f"Missing {app_name}/{relative_path}")
+        actual_summary = _tree_summary(app_root)
+        if recorded_applications[app_name] != actual_summary:
+            raise ValueError(f"Release integrity check failed for {app_name}")
+        verified_applications[app_name] = actual_summary
+
+    return {
+        "schemaVersion": 1,
+        "operation": "static-release-verify",
+        "recordedAt": recorded_at,
+        "releaseId": release_id,
+        "applications": verified_applications,
+    }
+
+
 def activate_release(
     release_id: str, recorded_at: str, *, action: str = "activate"
 ) -> dict[str, object]:
@@ -117,12 +171,13 @@ def activate_release(
 
     _validate_release_id(release_id)
     destination = RELEASE_ROOT / release_id
-    if not destination.is_dir() or not (destination / "release.json").is_file():
-        raise ValueError("Release directory is missing or incomplete")
-
     current = RELEASE_ROOT / "current"
     if current.exists() and not current.is_symlink():
         raise ValueError("The current release path exists and is not a symlink")
+    # Activation and rollback use the same fail-closed integrity gate. This is
+    # the concrete immutable-release decision from Phase 11, not a best-effort
+    # check of whether release.json merely exists.
+    verify_release(release_id, recorded_at)
     previous_release_id = (
         current.readlink().as_posix() if current.is_symlink() else None
     )
@@ -152,7 +207,7 @@ def activate_release(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("package", "activate", "rollback"))
+    parser.add_argument("action", choices=("package", "verify", "activate", "rollback"))
     parser.add_argument("--release-id", required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument(
@@ -163,6 +218,8 @@ def main() -> int:
 
     if arguments.action == "package":
         report = package_release(arguments.release_id, arguments.recorded_at)
+    elif arguments.action == "verify":
+        report = verify_release(arguments.release_id, arguments.recorded_at)
     else:
         report = activate_release(
             arguments.release_id,
