@@ -9,6 +9,7 @@
       "grade": 6,
       "birthday": "2013-03-14",
       "strength": 7.4,
+      "usernameSuggestion": null,
       "webAccount": {
         "accountId": "account-student-fixture",
         "username": "testovyi-14",
@@ -66,8 +67,12 @@
       "name": "Школьник",
       "middleName": null,
       "grade": null,
-      "birthday": null,
+      "birthday": "2013-06-12",
       "strength": null,
+      "usernameSuggestion": {
+        "username": "novyi-12",
+        "state": "ready"
+      },
       "webAccount": null,
       "familyAccounts": [],
       "enrollments": []

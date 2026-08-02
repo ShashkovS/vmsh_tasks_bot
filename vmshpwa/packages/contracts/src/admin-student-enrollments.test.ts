@@ -21,6 +21,10 @@ describe('admin student enrollment contracts', () => {
     expect(directory.students[0]?.enrollments[0]?.activeGroupId).toBe('group-fixture-beginner')
     expect(directory.students[0]?.webAccount?.credentialVersion).toBe(1)
     expect(directory.students[0]?.familyAccounts[0]?.username).toBe('family-testovye')
+    expect(directory.students[1]?.usernameSuggestion).toEqual({
+      username: 'novyi-12',
+      state: 'ready',
+    })
   })
 
   it('keeps Family passwords write-only while validating create, link and unlink payloads', () => {

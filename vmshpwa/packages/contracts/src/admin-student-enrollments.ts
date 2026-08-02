@@ -7,6 +7,11 @@ export type ManagedAccountStatus = z.infer<typeof managedAccountStatusSchema>
 const groupStatusSchema = z.enum(['draft', 'active', 'archived'])
 const attendanceModeSchema = z.enum(['online', 'in_person'])
 const enrollmentStatusSchema = z.enum(['active', 'paused', 'archived'])
+const usernameSuggestionSchema = z.discriminatedUnion('state', [
+  z.object({ username: z.string().trim().min(1).max(100), state: z.literal('ready') }).strict(),
+  z.object({ username: z.string().trim().min(1).max(100), state: z.literal('collision') }).strict(),
+  z.object({ username: z.null(), state: z.literal('invalid_identity') }).strict(),
+])
 
 export const adminEnrollmentGroupSchema = z
   .object({
@@ -69,6 +74,8 @@ export const adminStudentDirectoryEntrySchema = z
     grade: z.number().int().min(1).max(20).nullable(),
     birthday: z.iso.date().nullable(),
     strength: z.number().min(0).max(10).nullable(),
+    // Phase 10 exposes only actionable, collision-safe canonical login hints.
+    usernameSuggestion: usernameSuggestionSchema.nullable(),
     webAccount: z
       .object({
         accountId: publicIdSchema,

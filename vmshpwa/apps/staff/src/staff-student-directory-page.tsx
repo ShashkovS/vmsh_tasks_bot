@@ -454,6 +454,7 @@ export function StudentDirectoryView({
                     staffAccountId={accountId}
                     storageNamespace={storageNamespace}
                     studentId={selectedStudent.studentId}
+                    usernameSuggestion={selectedStudent.usernameSuggestion}
                   />
                 ) : (
                   <p className="text-small text-muted-foreground">

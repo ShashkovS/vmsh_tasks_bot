@@ -28,6 +28,7 @@ async def test_teacher_directory_is_scope_filtered_and_hides_account_links(
         "classroom-layout-student"
     ]
     assert students[0]["webAccount"] is None
+    assert students[0]["usernameSuggestion"] is None
     assert students[0]["familyAccounts"] == []
 
     forbidden_update = await classroom_http.client.put(
@@ -73,6 +74,7 @@ async def test_admin_directory_contains_accounts_family_and_course_access(
         "grade": None,
         "birthday": None,
         "strength": None,
+        "usernameSuggestion": None,
         "webAccount": {
             "accountId": "classroom-http-account-student",
             "username": "classroom-http-student",
@@ -115,6 +117,74 @@ async def test_admin_directory_contains_accounts_family_and_course_access(
                 "version": 1,
             }
         ],
+    }
+
+
+async def test_admin_directory_suggests_only_unique_canonical_student_logins(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    def seed(connection) -> None:
+        connection.executemany(
+            "INSERT INTO users "
+            "(id, public_id, type, name, surname, birthday, token) "
+            "VALUES (?, ?, 1, ?, ?, ?, ?)",
+            (
+                (
+                    958020,
+                    "student-login-ready",
+                    "Сергей",
+                    "Шашков",
+                    "2013-03-07",
+                    "SafeBatchTokenA8",
+                ),
+                (
+                    958021,
+                    "student-login-collision-a",
+                    "Анна",
+                    "Иванова",
+                    "2012-01-02",
+                    "SafeBatchTokenB8",
+                ),
+                (
+                    958022,
+                    "student-login-collision-b",
+                    "Алина",
+                    "Иванова",
+                    "2011-04-02",
+                    "SafeBatchTokenC8",
+                ),
+                (
+                    958023,
+                    "student-login-invalid",
+                    "Борис",
+                    "Петров",
+                    None,
+                    "SafeBatchTokenD8",
+                ),
+            ),
+        )
+
+    classroom_http.factory.run_write(seed)
+    response = await classroom_http.client.get(
+        "/staff/api/v1/student-enrollments",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert response.status == 200, await response.text()
+    students = {item["studentId"]: item for item in (await response.json())["students"]}
+
+    assert students["student-login-ready"]["usernameSuggestion"] == {
+        "username": "shashkov-07",
+        "state": "ready",
+    }
+    for student_id in ("student-login-collision-a", "student-login-collision-b"):
+        assert students[student_id]["usernameSuggestion"] == {
+            "username": "ivanova-02",
+            "state": "collision",
+        }
+    assert students["student-login-invalid"]["usernameSuggestion"] == {
+        "username": None,
+        "state": "invalid_identity",
     }
 
 

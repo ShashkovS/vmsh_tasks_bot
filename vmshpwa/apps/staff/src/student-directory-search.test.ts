@@ -12,6 +12,7 @@ const student = {
   grade: 7,
   birthday: null,
   strength: 8.1,
+  usernameSuggestion: null,
   webAccount: null,
   familyAccounts: [],
   enrollments: [],

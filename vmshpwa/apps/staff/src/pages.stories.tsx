@@ -400,6 +400,7 @@ function StudentDirectoryStory() {
               student.studentId === studentId
                 ? {
                     ...student,
+                    usernameSuggestion: null,
                     webAccount: {
                       accountId: 'storybook-student-account',
                       username: input.username,
@@ -510,11 +511,11 @@ export const StudentAccountCreation: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: /Новый Школьник/ }))
     const login = canvas.getByLabelText('Логин школьника')
-    await userEvent.type(login, 'vetrov-12')
-    await expect(canvas.getByText(/Несохранённый логин хранится/)).toBeVisible()
+    await expect(login).toHaveValue('novyi-12')
+    await expect(canvas.getByText(/Логин предложен по фамилии/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Создать web-вход' }))
     await expect(canvas.getByText('Web-вход активен')).toBeVisible()
-    await expect(canvas.getByText('vetrov-12')).toBeVisible()
+    await expect(canvas.getByText('novyi-12')).toBeVisible()
   },
 }
 

@@ -7,8 +7,9 @@ import logging
 import re
 import sqlite3
 import uuid
+from collections import Counter
 from collections.abc import Awaitable, Callable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from aiohttp import web
 
@@ -39,7 +40,7 @@ from models.pwa.admin_enrollment import (
     InvalidAdminEnrollmentChange,
     plan_admin_enrollment_change,
 )
-from models.pwa.auth import AuthAudience
+from models.pwa.auth import AuthAudience, build_student_username, normalize_login
 
 
 admin_enrollment_routes = web.RouteTableDef()
@@ -271,7 +272,56 @@ def _directory(
                     access_rows=access_by_enrollment.get(int(row["enrollment_id"]), []),
                 )
             )
-    return list(students.values())
+    result = list(students.values())
+    if not include_private_accounts:
+        for student in result:
+            student["usernameSuggestion"] = None
+        return result
+
+    candidates: dict[str, str] = {}
+    for student in result:
+        if student["webAccount"] is not None:
+            continue
+        try:
+            surname = str(student["surname"] or "").strip()
+            if not surname:
+                raise ValueError("missing surname")
+            birthday = date.fromisoformat(str(student["birthday"]))
+            candidates[str(student["studentId"])] = build_student_username(
+                surname, birthday
+            )
+        except TypeError, ValueError:
+            continue
+
+    candidate_counts = Counter(normalize_login(value) for value in candidates.values())
+    used_usernames = {
+        normalize_login(str(student["webAccount"]["username"]))
+        for student in result
+        if student["webAccount"] is not None
+    }
+    for student in result:
+        if student["webAccount"] is not None:
+            student["usernameSuggestion"] = None
+            continue
+        candidate = candidates.get(str(student["studentId"]))
+        if candidate is None:
+            student["usernameSuggestion"] = {
+                "username": None,
+                "state": "invalid_identity",
+            }
+            continue
+        normalized = normalize_login(candidate)
+        # Phase 10 / accepted-technical-decisions-2026-07.md requires a stored
+        # override for collisions; never derive identity from display order.
+        student["usernameSuggestion"] = {
+            "username": candidate,
+            "state": (
+                "collision"
+                if candidate_counts[normalized] > 1 or normalized in used_usernames
+                else "ready"
+            ),
+        }
+    return result
 
 
 @admin_enrollment_routes.get("/staff/api/v1/student-enrollments")

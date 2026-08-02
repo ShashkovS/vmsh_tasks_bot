@@ -186,6 +186,7 @@ describe('admin course client', () => {
               grade: 6,
               birthday: null,
               strength: null,
+              usernameSuggestion: null,
               webAccount: null,
               familyAccounts: [],
               enrollments: [enrollment],

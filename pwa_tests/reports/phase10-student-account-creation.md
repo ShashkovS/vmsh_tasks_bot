@@ -9,6 +9,10 @@
 - Teacher получает `403`; небезопасный legacy-токен — `422`; занятый логин или повторная привязка — `409`.
 - Ответ и `auth_events` не содержат Telegram-токен. После создания тот же текущий токен действительно открывает Student PWA.
 - Несохранённый логин Staff хранится в account/student-scoped `localStorage`; секретов в черновике нет.
+- Для строки без аккаунта backend предлагает канонический логин
+  `transliterated-surname-DD`. Предложение появляется только у admin, а
+  совпадения и некорректная фамилия/дата рождения явно требуют ручного решения;
+  случайный suffix не придумывается.
 
 ## Реализация
 
@@ -22,10 +26,14 @@
 
 - `pwa_tests/domain/test_admin_accounts.py`: 13 passed.
 - `pwa_tests/integration/test_phase10_admin_accounts.py`: 9 passed.
+- Directory/account focused HTTP suite: 15 passed, включая unique suggestion,
+  collision и invalid-identity состояния.
 - `make pwa-lint pwa-typecheck pwa-test pwa-build`:
   - frontend unit: 104 files, 573 passed;
-  - Python PWA: 1508 passed, 5 skipped;
+  - Python PWA: 1509 passed, 5 skipped;
   - все три production bundles и оба `injectManifest` service workers собраны.
+- Полный Python PWA suite отдельно подтверждён в `-n8`: 83,11 секунды вместо
+  274,14 секунды в `-n0`; каждый worker использует собственную временную SQLite.
 - Staff Storybook browser test: 1 file, 22 stories passed, включая создание аккаунта и восстановление черновика формы.
 - `make pwa-e2e-auth`: 80 passed, 10 ожидаемо skipped. Chromium через
   production bundles и настоящий aiohttp создаёт web-вход для отдельного

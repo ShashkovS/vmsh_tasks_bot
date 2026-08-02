@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 
-import type { CreateStudentAccountRequest } from '@vmsh/contracts'
+import type { AdminStudentDirectoryEntry, CreateStudentAccountRequest } from '@vmsh/contracts'
 import { Button, Input, Label } from '@vmsh/ui'
 
 import {
@@ -16,18 +16,22 @@ export function StudentAccountCreator({
   staffAccountId,
   storageNamespace,
   studentId,
+  usernameSuggestion,
   onCreate,
 }: {
   pending: boolean
   staffAccountId: string
   storageNamespace: string
   studentId: string
+  usernameSuggestion: AdminStudentDirectoryEntry['usernameSuggestion']
   onCreate: (studentId: string, input: CreateStudentAccountRequest) => Promise<void>
 }) {
   const draftKey = studentAccountDraftKey(storageNamespace, staffAccountId, studentId)
-  const [draft, setDraft] = useState(() =>
-    readStudentAccountDraft(globalThis.localStorage, draftKey),
-  )
+  const [draft, setDraft] = useState(() => {
+    const stored = readStudentAccountDraft(globalThis.localStorage, draftKey)
+    if (stored.username || usernameSuggestion?.state !== 'ready') return stored
+    return { schemaVersion: 1 as const, username: usernameSuggestion.username ?? '' }
+  })
   const [storageAvailable, setStorageAvailable] = useState(true)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -63,6 +67,20 @@ export function StudentAccountCreator({
       <p className="text-caption text-muted-foreground sm:col-span-2">
         Паролем останется текущий Telegram-токен школьника. Он не передаётся в браузер.
       </p>
+      {usernameSuggestion?.state === 'ready' ? (
+        <p className="text-caption text-muted-foreground sm:col-span-2">
+          Логин предложен по фамилии и дню рождения. Его можно исправить до создания.
+        </p>
+      ) : usernameSuggestion?.state === 'collision' ? (
+        <p className="text-small text-status-warning sm:col-span-2">
+          Предложенный логин {usernameSuggestion.username} уже занят или совпал у нескольких
+          школьников. Введите уникальный логин вручную.
+        </p>
+      ) : usernameSuggestion?.state === 'invalid_identity' ? (
+        <p className="text-small text-status-warning sm:col-span-2">
+          Для предложения логина нужны корректные фамилия и дата рождения. Введите логин вручную.
+        </p>
+      ) : null}
       {!storageAvailable ? (
         <p className="text-small text-status-error sm:col-span-2" role="alert">
           Логин не сохраняется в этом браузере. Не закрывайте вкладку до отправки.
