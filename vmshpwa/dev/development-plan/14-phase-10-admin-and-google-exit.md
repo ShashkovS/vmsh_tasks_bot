@@ -94,7 +94,8 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 подтверждено в
 [`phase10-student-account-creation.md`](../../../pwa_tests/reports/phase10-student-account-creation.md):
 Staff передаёт только логин, а backend хеширует текущий токен общего с Telegram-ботом
-аккаунта. Batch-import и production E2E с отдельным unprovisioned seed ещё не закрыты.
+аккаунта. Production E2E создаёт аккаунт для отдельного unprovisioned Student и
+входит с этим токеном через настоящий Student login; batch-import ещё не закрыт.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.
 - [ ] Google replacement matrix with every current loader: `<path>`.

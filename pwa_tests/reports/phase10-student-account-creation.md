@@ -27,7 +27,15 @@
   - Python PWA: 1508 passed, 5 skipped;
   - все три production bundles и оба `injectManifest` service workers собраны.
 - Staff Storybook browser test: 1 file, 22 stories passed, включая создание аккаунта и восстановление черновика формы.
+- `make pwa-e2e-auth`: 80 passed, 10 ожидаемо skipped. Chromium через
+  production bundles и настоящий aiohttp создаёт web-вход для отдельного
+  синтетического школьника без аккаунта, восстанавливает несекретный Staff draft
+  после reload и входит в Student PWA по текущему bot token. WebKit и Firefox
+  продолжают проверять общую auth-регрессию; shared-SQLite provisioning выполняет
+  один браузер, чтобы мутационные сценарии не конфликтовали.
 
 ## Оставшаяся граница
 
-Production E2E для индивидуального создания Student-аккаунта будет добавлен вместе с безопасным синтетическим unprovisioned Student seed. Backend-интеграционный тест уже выполняет полный цикл create → real Student login без test-only HTTP backdoor.
+Индивидуальный путь создания Student-аккаунта закрыт от Staff UI до настоящего
+Student login без test-only HTTP backdoor. Этап 10 всё ещё требует отдельного
+batch provisioning/import с dry-run и отчётом по неактивированным строкам.

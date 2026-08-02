@@ -291,6 +291,51 @@ test('Admin creates a Family login without persisting its password in the browse
   await expect(page.getByText('Ученик Тестов chromium')).toBeVisible()
 })
 
+test('Admin creates a Student web login backed by the current bot token', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite write')
+
+  const project = testInfo.project.name
+  const username = `student-created-${Date.now().toString(36)}`
+  const telegramToken = `synthetic-provision-${project}-not-a-secret`
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users')
+  await page.getByLabel('Поиск по имени').fill(`безаккаунта ${project}`)
+  await expect(page.getByRole('button', { name: /БезАккаунта chromium Новый/ })).toBeVisible()
+
+  await page.getByLabel('Логин школьника').fill(username)
+  await expect(page.getByText(/Несохранённый логин хранится/)).toBeVisible()
+  await page.reload()
+  await expect(page.getByLabel('Логин школьника')).toHaveValue(username)
+
+  const created = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/student-account'),
+  )
+  await page.getByRole('button', { name: 'Создать web-вход' }).click()
+  const response = await created
+  expect(response.status()).toBe(201)
+  expect(await response.text()).not.toContain(telegramToken)
+  await expect(page.getByText('Web-вход активен')).toBeVisible()
+  await expect(page.getByText(username, { exact: true })).toBeVisible()
+
+  await page.context().clearCookies()
+  await loginThroughUi(
+    page,
+    {
+      persona: 'student',
+      accountPublicId: 'created-student-account-e2e',
+      audience: 'student',
+      username,
+      credentialField: 'telegramToken',
+      credential: telegramToken,
+    },
+    '/student/profile',
+  )
+  await expect(page.getByRole('heading', { name: `Новый БезАккаунта ${project}` })).toBeVisible()
+})
+
 test('Teacher sees only scoped students and cannot edit admin enrollment fields', async ({
   page,
 }) => {

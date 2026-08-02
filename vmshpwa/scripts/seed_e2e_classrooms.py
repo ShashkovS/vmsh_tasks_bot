@@ -303,6 +303,49 @@ def _seed(connection: sqlite3.Connection) -> int:
             "VALUES (?, 0.5, 1.0)",
             (student_id,),
         )
+        unprovisioned_id = int(
+            connection.execute(
+                "INSERT INTO users "
+                "(public_id, type, name, surname, grade, birthday, token) "
+                "VALUES (?, 1, 'Новый', ?, 6, '2013-05-17', ?) RETURNING id",
+                (
+                    f"student-unprovisioned-e2e-{project}",
+                    f"БезАккаунта {project}",
+                    f"synthetic-provision-{project}-not-a-secret",
+                ),
+            ).fetchone()["id"]
+        )
+        unprovisioned_enrollment = int(
+            connection.execute(
+                "INSERT INTO course_enrollments "
+                "(public_id, student_user_id, course_id, active_group_id, "
+                "attendance_mode, status, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, 'online', 'active', ?, ?) RETURNING id",
+                (
+                    f"enrollment-unprovisioned-e2e-{project}",
+                    unprovisioned_id,
+                    course_id,
+                    group_id,
+                    TIMESTAMP,
+                    TIMESTAMP,
+                ),
+            ).fetchone()["id"]
+        )
+        connection.execute(
+            "INSERT INTO course_group_access "
+            "(enrollment_id, course_id, group_id, valid_from, granted_by, "
+            "reason, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                unprovisioned_enrollment,
+                course_id,
+                group_id,
+                TIMESTAMP,
+                actor_id,
+                "e2e_student_account_seed",
+                TIMESTAMP,
+                TIMESTAMP,
+            ),
+        )
     return len(TARGETS)
 
 
