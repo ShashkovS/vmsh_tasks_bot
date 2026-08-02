@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from apps.pwa_api import admin_account_routes
+from helpers.consts import USER_TYPE
 from pwa_tests.integration.test_classroom_catalog_http_api import (
     NOW,
     ClassroomHttpFixture,
@@ -214,3 +215,146 @@ async def test_status_and_credential_mutations_require_current_version(
         ).fetchone()
     )
     assert tuple(unchanged.values()) == ("active", 1)
+
+
+async def test_admin_creates_family_account_and_link_without_exposing_password(
+    classroom_http: ClassroomHttpFixture,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        admin_account_routes,
+        "_now",
+        lambda: NOW.isoformat(timespec="microseconds").replace("+00:00", "Z"),
+    )
+    path = "/staff/api/v1/students/classroom-layout-student/family-accounts"
+    payload = {
+        "schemaVersion": 1,
+        "username": "  Family   New  ",
+        "displayName": "  Семья   Новая  ",
+        "password": "initial-family-password",
+        "relationshipLabel": "  родитель  ",
+        "isPrimary": False,
+    }
+    teacher = await classroom_http.client.post(
+        path,
+        json=payload,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    response = await classroom_http.client.post(
+        path,
+        json=payload,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert response.status == 201, await response.text()
+    body = await response.json()
+    assert body["account"]["accountId"].startswith("family-account.")
+    assert {
+        key: value for key, value in body["account"].items() if key != "accountId"
+    } == {
+        "username": "Family New",
+        "displayName": "Семья Новая",
+        "status": "active",
+        "credentialVersion": 1,
+    }
+    assert body["link"] == {
+        "studentId": "classroom-layout-student",
+        "relationshipLabel": "родитель",
+        "isPrimary": False,
+    }
+    assert "password" not in str(body).casefold()
+
+    stored = classroom_http.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT account.credential_hash, event.event_type, event.metadata_json "
+            "FROM auth_accounts AS account JOIN auth_events AS event "
+            "ON event.account_id = account.id "
+            "WHERE account.username_normalized = 'family new'"
+        ).fetchone()
+    )
+    assert stored["credential_hash"] != payload["password"]
+    assert stored["event_type"] == "family.account_created"
+    assert payload["password"] not in stored["metadata_json"]
+
+    login = await classroom_http.client.post(
+        "/family/api/v1/auth/login",
+        json={"username": "FAMILY NEW", "password": payload["password"]},
+        headers=_headers(unsafe=True),
+    )
+    assert login.status == 200, await login.text()
+
+    duplicate = await classroom_http.client.post(
+        path,
+        json={**payload, "username": "family new"},
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert duplicate.status == 409
+    assert (await duplicate.json())["error"]["code"] == "family_username_conflict"
+
+
+async def test_admin_links_existing_family_to_second_child_and_can_revoke_link(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    second_student_id = 958004
+    classroom_http.factory.run_write(
+        lambda connection: connection.execute(
+            "INSERT INTO users (id, public_id, type, name, surname) "
+            "VALUES (?, 'classroom-second-student', ?, 'Борис', 'Ветров')",
+            (second_student_id, int(USER_TYPE.STUDENT)),
+        )
+    )
+    path = "/staff/api/v1/students/classroom-second-student/family-links"
+    response = await classroom_http.client.post(
+        path,
+        json={
+            "schemaVersion": 1,
+            "familyUsername": " CLASSROOM-HTTP-FAMILY ",
+            "relationshipLabel": "родитель",
+            "isPrimary": True,
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert response.status == 200, await response.text()
+    linked = await response.json()
+    assert linked["account"]["accountId"] == "classroom-http-account-family"
+    assert linked["link"]["studentId"] == "classroom-second-student"
+
+    family_access = await classroom_http.client.get(
+        "/family/api/v1/children/classroom-second-student/courses",
+        headers=_headers(),
+        cookies={"vmsh_family_access": classroom_http.family_cookie},
+    )
+    assert family_access.status == 200, await family_access.text()
+
+    unlink = await classroom_http.client.delete(
+        "/staff/api/v1/students/classroom-second-student/family-links/"
+        "classroom-http-account-family",
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert unlink.status == 200, await unlink.text()
+    assert (await unlink.json())["revoked"] is True
+
+    revoked_access = await classroom_http.client.get(
+        "/family/api/v1/children/classroom-second-student/courses",
+        headers=_headers(),
+        cookies={"vmsh_family_access": classroom_http.family_cookie},
+    )
+    assert revoked_access.status == 403
+    event_types = classroom_http.factory.run_read(
+        lambda connection: [
+            row["event_type"]
+            for row in connection.execute(
+                "SELECT event_type FROM auth_events WHERE account_id = "
+                "(SELECT id FROM auth_accounts "
+                "WHERE public_id = 'classroom-http-account-family') "
+                "AND event_type LIKE 'family.student_%' ORDER BY id"
+            ).fetchall()
+        ]
+    )
+    assert event_types == ["family.student_linked", "family.student_unlinked"]

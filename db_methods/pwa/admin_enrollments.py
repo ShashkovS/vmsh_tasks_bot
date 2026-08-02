@@ -121,6 +121,7 @@ def list_family_links(
         f"""
         SELECT link.student_user_id,
                account.public_id AS account_public_id,
+               account.username,
                account.display_name,
                account.status,
                account.credential_version,

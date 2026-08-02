@@ -252,6 +252,7 @@ def _directory(
                 "familyAccounts": [
                     {
                         "accountId": family["account_public_id"],
+                        "username": family["username"],
                         "displayName": family["display_name"],
                         "status": family["status"],
                         "credentialVersion": family["credential_version"],

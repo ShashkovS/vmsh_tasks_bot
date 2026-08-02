@@ -7,11 +7,13 @@ See Phase 10 in ``vmshpwa/dev/development-plan/14-phase-10-admin-and-google-exit
 
 from __future__ import annotations
 
+import unicodedata
 from enum import StrEnum
 
 from models.pwa.auth import (
     AuthAudience,
     legacy_telegram_token_risk_shapes,
+    normalize_login,
     normalize_telegram_token,
 )
 
@@ -55,9 +57,51 @@ def validate_status_change(
     return current is not requested
 
 
+def prepare_family_link_identity(
+    *, username: str, relationship_label: str
+) -> tuple[str, str, str]:
+    """Normalize a Family login and one child relationship label."""
+
+    stored_username = " ".join(unicodedata.normalize("NFKC", username).strip().split())
+    normalized_username = normalize_login(stored_username)
+    stored_relationship = " ".join(
+        unicodedata.normalize("NFKC", relationship_label).strip().split()
+    )
+    if not 1 <= len(stored_username) <= 100 or not normalized_username:
+        raise InvalidManagedAccountChange("invalid_family_username")
+    if not 1 <= len(stored_relationship) <= 100:
+        raise InvalidManagedAccountChange("invalid_family_relationship")
+    return stored_username, normalized_username, stored_relationship
+
+
+def prepare_family_identity(
+    *, username: str, display_name: str, relationship_label: str
+) -> tuple[str, str, str, str]:
+    """Normalize the non-secret fields used to create a Family account."""
+
+    stored_username, normalized_username, stored_relationship = (
+        prepare_family_link_identity(
+            username=username, relationship_label=relationship_label
+        )
+    )
+    stored_display_name = " ".join(
+        unicodedata.normalize("NFKC", display_name).strip().split()
+    )
+    if not 1 <= len(stored_display_name) <= 200:
+        raise InvalidManagedAccountChange("invalid_family_display_name")
+    return (
+        stored_username,
+        normalized_username,
+        stored_display_name,
+        stored_relationship,
+    )
+
+
 __all__ = [
     "InvalidManagedAccountChange",
     "ManagedAccountStatus",
+    "prepare_family_identity",
+    "prepare_family_link_identity",
     "prepare_replacement_credential",
     "validate_status_change",
 ]

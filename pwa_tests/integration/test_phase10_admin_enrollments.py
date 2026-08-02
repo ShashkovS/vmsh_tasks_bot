@@ -82,6 +82,7 @@ async def test_admin_directory_contains_accounts_family_and_course_access(
         "familyAccounts": [
             {
                 "accountId": "classroom-http-account-family",
+                "username": "classroom-http-family",
                 "displayName": "Семья Беловой",
                 "status": "active",
                 "credentialVersion": 1,

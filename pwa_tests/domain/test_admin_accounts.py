@@ -5,6 +5,8 @@ import pytest
 from models.pwa.admin_accounts import (
     InvalidManagedAccountChange,
     ManagedAccountStatus,
+    prepare_family_identity,
+    prepare_family_link_identity,
     prepare_replacement_credential,
     validate_status_change,
 )
@@ -50,3 +52,34 @@ def test_account_cannot_be_activated_without_a_credential() -> None:
         requested=ManagedAccountStatus.BLOCKED,
         has_credential=True,
     )
+
+
+def test_family_identity_normalizes_only_non_secret_fields() -> None:
+    assert prepare_family_identity(
+        username="  Family   Ivanov  ",
+        display_name="  Семья   Ивановых  ",
+        relationship_label="  родитель  ",
+    ) == (
+        "Family Ivanov",
+        "family ivanov",
+        "Семья Ивановых",
+        "родитель",
+    )
+    assert prepare_family_link_identity(
+        username="ＦＡＭＩＬＹ Иванов", relationship_label=" мама "
+    ) == ("FAMILY Иванов", "family иванов", "мама")
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("username", " "), ("display_name", " "), ("relationship_label", " ")],
+)
+def test_family_identity_rejects_blank_required_fields(field: str, value: str) -> None:
+    values = {
+        "username": "family-login",
+        "display_name": "Семья",
+        "relationship_label": "родитель",
+    }
+    values[field] = value
+    with pytest.raises(InvalidManagedAccountChange):
+        prepare_family_identity(**values)
