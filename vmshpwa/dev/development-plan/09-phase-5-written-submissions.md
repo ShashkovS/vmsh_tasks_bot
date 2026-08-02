@@ -72,7 +72,9 @@ Migration: `pwa_submission_threads_entries_assets`.
 
 - [ ] Revision/migration/backfill/rollback: `<sha/paths/results>`.
 - [ ] Demo 1/2/10 images online and offline: `<route/fixture/evidence>`.
-- [ ] Media corpus results (dimensions, WebP, EXIF, HEIC fallback, corrupt/huge): `<path>`.
+- [x] Real media corpus: JPEG orientation/GPS → bounded WebP without metadata,
+      HEIC → WebP, corrupt/oversized rejection:
+      [`phase5-written-media-corpus.md`](../../../pwa_tests/reports/phase5-written-media-corpus.md).
 - [ ] Filesystem/S3 adapter and cleanup tests: `<result>`.
 - [ ] Idempotency/crash/concurrency/lock tests: `<result>`.
 - [ ] Cross-storage draft recovery/isolation/receipt cleanup: `<result>`.

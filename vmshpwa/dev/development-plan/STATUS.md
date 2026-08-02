@@ -1078,3 +1078,17 @@
   [`phase11-production-e2e.md`](../../../pwa_tests/reports/phase11-production-e2e.md).
 - Functional browser matrix закрыта. Отдельный `@visual` owner gate остаётся
   открытым; snapshots не обновлялись.
+
+## Phase 5 checkpoint: настоящий media corpus — 2 августа 2026
+
+- Server fallback обработал временные реальные JPEG с EXIF orientation/GPS и
+  HEIC: итоговые WebP имеют длинную сторону не более 1920 px и не содержат GPS
+  или `UserComment`.
+- Повреждённый файл отклонён converter-ом, payload `25 MiB + 1 byte` — до
+  запуска внешнего процесса. Исходные файлы не сохраняются в репозитории.
+- Focused corpus: **5 PASS**, включая пять закреплённых по SHA-256 публичных
+  фотографий математических материалов; полный PWA Python gate — **1551 PASS /
+  5 intentional skips** в восьми workers. Proof:
+  [`phase5-written-media-corpus.md`](../../../pwa_tests/reports/phase5-written-media-corpus.md).
+- Media corpus gate Phase 5 закрыт; production service-profile и Hetzner S3
+  остаются внешними Phase-11 gates.
