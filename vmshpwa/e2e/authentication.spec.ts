@@ -238,6 +238,59 @@ test('Admin finds a student and never loses an unsaved course edit on reload', a
   await expect(page.getByLabel('Формат занятий')).toHaveValue('in_person')
 })
 
+test('Admin creates a Family login without persisting its password in the browser', async ({
+  page,
+}, testInfo) => {
+  // Browser projects share one isolated SQLite database. One unique account is
+  // enough to prove the Staff write and the subsequent real Family login.
+  test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite write')
+
+  const suffix = Date.now().toString(36)
+  const username = `family-created-${suffix}`
+  const password = AUTH_PERSONAS.family.credential
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users')
+  await page.getByLabel('Поиск по имени').fill('тестов chromium')
+  await expect(page.getByRole('button', { name: /Тестов chromium Ученик/ })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Создать аккаунт' }).click()
+  await page.getByLabel('Логин').fill(username)
+  await page.getByLabel('Имя аккаунта').fill('Семья browser E2E')
+  await page.getByLabel('Первый пароль').fill(password)
+  await expect(page.getByText(/Пароль — никогда/)).toBeVisible()
+
+  await page.reload()
+  await page.getByRole('button', { name: 'Создать аккаунт' }).click()
+  await expect(page.getByLabel('Логин')).toHaveValue(username)
+  await expect(page.getByLabel('Имя аккаунта')).toHaveValue('Семья browser E2E')
+  await expect(page.getByLabel('Первый пароль')).toHaveValue('')
+  await page.getByLabel('Первый пароль').fill(password)
+
+  const created = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/family-accounts'),
+  )
+  await page.getByRole('button', { name: 'Создать и привязать' }).click()
+  const response = await created
+  expect(response.status()).toBe(201)
+  const responseText = await response.text()
+  expect(responseText).not.toContain(password)
+  expect(responseText).not.toContain('password')
+  await expect(page.getByText(`${username} · родитель · основной контакт`)).toBeVisible()
+
+  await page.context().clearCookies()
+  const familyPersona: AuthPersona = {
+    persona: 'family',
+    accountPublicId: 'created-by-family-account-e2e',
+    audience: 'family',
+    username,
+    credentialField: 'password',
+    credential: password,
+  }
+  await loginThroughUi(page, familyPersona, '/family/children')
+  await expect(page.getByText('Ученик Тестов chromium')).toBeVisible()
+})
+
 test('Teacher sees only scoped students and cannot edit admin enrollment fields', async ({
   page,
 }) => {

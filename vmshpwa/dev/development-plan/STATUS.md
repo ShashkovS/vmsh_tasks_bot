@@ -864,3 +864,39 @@
 - Актуальный gate: frontend unit **439 PASS**, Python PWA **1324 PASS / 3
   intentional skips**, lint/typecheck/production builds **PASS**. Delivery,
   oral, production rehearsal и owner visual approval остаются открыты.
+
+## Phase 8 delivery observability checkpoint — 2 августа 2026
+
+- Existing classroom delivery batches now expose owner-confirmed per-channel
+  `selected`, `eligible`, `suppressed`, `queued`, `attempted`, `succeeded` and
+  `failed` counters derived directly from immutable recipient rows.
+- Staff shows `deliveredAny`, `deliveredAll`, `partial` and a privacy-safe
+  disclosure of partial recipients. Failed-only Telegram retry keeps successful
+  PWA delivery unchanged.
+- No migration or mutable counter projection was introduced. Proof:
+  [`phase8-classroom-delivery-observability.md`](../../../pwa_tests/reports/phase8-classroom-delivery-observability.md).
+- Current gates: lint/typecheck **PASS**, frontend unit **565 PASS**, Python PWA
+  **1498 PASS / 5 intentional skips**, Storybook browser **226 PASS** and
+  production-build classroom E2E **9/9 PASS** in Chromium, WebKit and Firefox.
+- Owner visual acceptance remains open; snapshots were not updated. Live-device
+  Web Push and Telegram UI scheduled-queue reconciliation remain separate gates.
+
+## Phase 10 Family-account UI checkpoint — 2 августа 2026
+
+- Revision `e219337` добавил простые admin-only create/link/unlink API поверх
+  `auth_accounts` и `family_student_links`; исходный пароль не возвращается и не
+  попадает в audit.
+- Текущий frontend-инкремент добавляет strict Zod-контракты, Staff client,
+  компактную форму и несекретный reload-safe draft. Пароль отсутствует в draft
+  schema и живёт только до успешной отправки.
+- Storybook evidence: `Pages/Staff--family-account-management`; desktop 1280 px
+  и mobile 390 px осмотрены вручную в light theme, snapshots не обновлялись.
+- Proof:
+  [`backend/API`](../../../pwa_tests/reports/phase10-family-account-backend.md) и
+  [`frontend/Storybook/E2E`](../../../pwa_tests/reports/phase10-family-account-ui.md).
+- Актуальные gates: lint/typecheck **PASS**, frontend unit **570 PASS**, Python
+  PWA **1504 PASS / 5 intentional skips**, Storybook browser **227 PASS**,
+  production-build authentication E2E **79 PASS / 8 intentional skips**.
+- Phase 10 остаётся открытой: создание Student-аккаунта, users import,
+  metadata grid, Google parity/cutover и способ первичной передачи Family
+  credentials ещё не завершены.

@@ -18,6 +18,7 @@
       "familyAccounts": [
         {
           "accountId": "account-family-fixture",
+          "username": "family-testovye",
           "displayName": "Семья Тестовых",
           "status": "active",
           "credentialVersion": 1,

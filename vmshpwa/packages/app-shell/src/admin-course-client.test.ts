@@ -261,6 +261,79 @@ describe('admin course client', () => {
     )
   })
 
+  it('creates, links and unlinks Family accounts with exact write-only requests', async () => {
+    const linked = {
+      schemaVersion: 1 as const,
+      account: {
+        accountId: 'family-account-one',
+        username: 'family-login',
+        displayName: 'Семья Ивановых',
+        status: 'active' as const,
+        credentialVersion: 1,
+      },
+      link: {
+        studentId: 'student-one',
+        relationshipLabel: 'родитель',
+        isPrimary: true,
+      },
+      requestId: 'family-link',
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json(linked, { status: 201 }))
+      .mockResolvedValueOnce(Response.json({ ...linked, requestId: 'family-relink' }))
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          studentId: 'student-one',
+          accountId: 'family-account-one',
+          revoked: true,
+          requestId: 'family-unlink',
+        }),
+      )
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+
+    await client.createFamilyAccount('student-one', {
+      schemaVersion: 1,
+      username: 'family-login',
+      displayName: 'Семья Ивановых',
+      password: 'family-password',
+      relationshipLabel: 'родитель',
+      isPrimary: true,
+    })
+    await client.linkFamilyAccount('student-one', {
+      schemaVersion: 1,
+      familyUsername: 'family-login',
+      relationshipLabel: 'родитель',
+      isPrimary: true,
+    })
+    await client.unlinkFamilyAccount('student-one', 'family-account-one')
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/staff/api/v1/students/student-one/family-accounts',
+    )
+    expect(fetchImplementation.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          schemaVersion: 1,
+          username: 'family-login',
+          displayName: 'Семья Ивановых',
+          password: 'family-password',
+          relationshipLabel: 'родитель',
+          isPrimary: true,
+        }),
+      }),
+    )
+    expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+      '/staff/api/v1/students/student-one/family-links',
+    )
+    expect(fetchImplementation.mock.calls[2]?.[0]).toBe(
+      '/staff/api/v1/students/student-one/family-links/family-account-one',
+    )
+    expect(fetchImplementation.mock.calls[2]?.[1]?.method).toBe('DELETE')
+  })
+
   it('loads Staff access and replaces the complete optimistic scope set', async () => {
     const member = {
       staffUserId: 'teacher-one',

@@ -85,15 +85,25 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 
 Промежуточный proof управления уже существующими Student/Family-аккаунтами:
 [`pwa_tests/reports/phase10-account-lifecycle-2026-07-30.md`](../../../pwa_tests/reports/phase10-account-lifecycle-2026-07-30.md).
-Он не закрывает создание/привязку семейного аккаунта, bulk import и остальные gates этапа.
+Создание, привязка, отзыв связи и Staff UI Family-аккаунтов подтверждены
+отдельными отчётами:
+[`backend/API`](../../../pwa_tests/reports/phase10-family-account-backend.md) и
+[`frontend/Storybook/E2E`](../../../pwa_tests/reports/phase10-family-account-ui.md).
+Они не закрывают создание Student-аккаунта, bulk import и остальные gates этапа.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.
 - [ ] Google replacement matrix with every current loader: `<path>`.
 - [ ] Protected production-copy parallel-run/parity reports: `<paths/results>`.
 - [ ] Task metadata field-by-field migration/parity report, including explicit synonym candidates and no physical rewrite of attempts/results: `<path/result>`.
-- [ ] Demo users/groups/family/permissions/import/dry-run/apply: `<routes/evidence>`.
+- [ ] Demo users/groups/family/permissions/import/dry-run/apply: Family create/link/unlink
+  и вход подтверждены в
+  [`phase10-family-account-ui.md`](../../../pwa_tests/reports/phase10-family-account-ui.md);
+  users import/dry-run/apply ещё не завершены.
 - [ ] Import security/idempotency/transaction tests: `<result>`.
-- [ ] Admin local draft reload/isolation/conflict/cleanup tests: `<result>`.
+- [ ] Admin local draft reload/isolation/conflict/cleanup tests: Family-form
+  reload/isolation/secret exclusion/cleanup подтверждены в
+  [`phase10-family-account-ui.md`](../../../pwa_tests/reports/phase10-family-account-ui.md);
+  metadata/import drafts ещё не завершены.
 - [ ] 1500-row performance + SQL plans: `<path/result>`.
 - [ ] Storybook dense admin states/a11y/visual approval: `<ids/paths>`.
 - [ ] Playwright 3 browsers, Google/Telegram network blocked: `<result>`.

@@ -18,6 +18,9 @@ import {
   adminStudentEnrollmentsQueryKey,
   apiErrorSchema,
   createAdminCourseRequestSchema,
+  createFamilyAccountRequestSchema,
+  familyAccountLinkResponseSchema,
+  linkFamilyAccountRequestSchema,
   managedAccountResponseSchema,
   parseRuntimeConfigForAudience,
   problemImportPreviewResponseSchema,
@@ -34,6 +37,7 @@ import {
   updateAdminCourseRequestSchema,
   updateAdminStudentEnrollmentRequestSchema,
   updateManagedAccountStatusRequestSchema,
+  unlinkFamilyAccountResponseSchema,
   type AdminCourseCatalogResponse,
   type AdminCourseResponse,
   type AdminCourseScheduleDraftResponse,
@@ -45,6 +49,9 @@ import {
   type AdminStudentEnrollmentDirectoryResponse,
   type AdminStudentEnrollmentResponse,
   type CreateAdminCourseRequest,
+  type CreateFamilyAccountRequest,
+  type FamilyAccountLinkResponse,
+  type LinkFamilyAccountRequest,
   type ManagedAccountResponse,
   type ManagedAccountStatus,
   type PrincipalQueryScope,
@@ -59,6 +66,7 @@ import {
   type StaffAccessMemberResponse,
   type UpdateAdminCourseRequest,
   type UpdateAdminStudentEnrollmentRequest,
+  type UnlinkFamilyAccountResponse,
 } from '@vmsh/contracts'
 
 export interface AdminCourseClient {
@@ -109,6 +117,15 @@ export interface AdminCourseClient {
     version: number,
     credential: string,
   ): Promise<ManagedAccountResponse>
+  createFamilyAccount(
+    studentId: string,
+    input: CreateFamilyAccountRequest,
+  ): Promise<FamilyAccountLinkResponse>
+  linkFamilyAccount(
+    studentId: string,
+    input: LinkFamilyAccountRequest,
+  ): Promise<FamilyAccountLinkResponse>
+  unlinkFamilyAccount(studentId: string, accountId: string): Promise<UnlinkFamilyAccountResponse>
   listStaffAccess(signal?: AbortSignal): Promise<StaffAccessDirectoryResponse>
   replaceStaffScopes(
     staffUserId: string,
@@ -308,6 +325,34 @@ export function createAdminCourseClient(
             }),
           ),
         }),
+      )
+    },
+    async createFamilyAccount(rawStudentId, input) {
+      const studentId = publicIdSchema.parse(rawStudentId)
+      return familyAccountLinkResponseSchema.parse(
+        await request(`/students/${encodeURIComponent(studentId)}/family-accounts`, {
+          method: 'POST',
+          body: JSON.stringify(createFamilyAccountRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async linkFamilyAccount(rawStudentId, input) {
+      const studentId = publicIdSchema.parse(rawStudentId)
+      return familyAccountLinkResponseSchema.parse(
+        await request(`/students/${encodeURIComponent(studentId)}/family-links`, {
+          method: 'POST',
+          body: JSON.stringify(linkFamilyAccountRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async unlinkFamilyAccount(rawStudentId, rawAccountId) {
+      const studentId = publicIdSchema.parse(rawStudentId)
+      const accountId = publicIdSchema.parse(rawAccountId)
+      return unlinkFamilyAccountResponseSchema.parse(
+        await request(
+          `/students/${encodeURIComponent(studentId)}/family-links/${encodeURIComponent(accountId)}`,
+          { method: 'DELETE' },
+        ),
       )
     },
     async listStaffAccess(signal) {

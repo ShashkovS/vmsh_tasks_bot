@@ -82,6 +82,7 @@ export const adminStudentDirectoryEntrySchema = z
       z
         .object({
           accountId: publicIdSchema,
+          username: z.string().trim().min(1).max(100),
           displayName: z.string().trim().min(1),
           status: managedAccountStatusSchema,
           credentialVersion: z.number().int().positive(),
@@ -180,6 +181,64 @@ export const managedAccountResponseSchema = z
   })
   .strict()
 export type ManagedAccountResponse = z.infer<typeof managedAccountResponseSchema>
+
+/** Family account/link boundary from development Phase 10; passwords are write-only. */
+export const createFamilyAccountRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    username: z.string().trim().min(1).max(100),
+    displayName: z.string().trim().min(1).max(200),
+    password: z.string().min(8).max(256),
+    relationshipLabel: z.string().trim().min(1).max(100),
+    isPrimary: z.boolean(),
+  })
+  .strict()
+export type CreateFamilyAccountRequest = z.infer<typeof createFamilyAccountRequestSchema>
+
+export const linkFamilyAccountRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    familyUsername: z.string().trim().min(1).max(100),
+    relationshipLabel: z.string().trim().min(1).max(100),
+    isPrimary: z.boolean(),
+  })
+  .strict()
+export type LinkFamilyAccountRequest = z.infer<typeof linkFamilyAccountRequestSchema>
+
+export const familyAccountLinkResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    account: z
+      .object({
+        accountId: publicIdSchema,
+        username: z.string().trim().min(1).max(100),
+        displayName: z.string().trim().min(1).max(200),
+        status: managedAccountStatusSchema,
+        credentialVersion: z.number().int().positive(),
+      })
+      .strict(),
+    link: z
+      .object({
+        studentId: publicIdSchema,
+        relationshipLabel: z.string().trim().min(1).max(100),
+        isPrimary: z.boolean(),
+      })
+      .strict(),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type FamilyAccountLinkResponse = z.infer<typeof familyAccountLinkResponseSchema>
+
+export const unlinkFamilyAccountResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    studentId: publicIdSchema,
+    accountId: publicIdSchema,
+    revoked: z.literal(true),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type UnlinkFamilyAccountResponse = z.infer<typeof unlinkFamilyAccountResponseSchema>
 
 export const adminStudentEnrollmentsQueryKey = (principal: PrincipalQueryScope) =>
   ['admin-student-enrollments', ...principalQueryKey(principal)] as const

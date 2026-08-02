@@ -44,6 +44,7 @@ import {
   writeEnrollmentDraft,
 } from './student-enrollment-draft'
 import { filterStudents } from './student-directory-search'
+import { FamilyAccountManager, type FamilyAccountCommand } from './family-account-manager'
 import { StudentAccountControls, type AccountLifecycleCommand } from './student-account-controls'
 import { UsersSectionTabs, type UsersSection } from './users-section-tabs'
 
@@ -260,11 +261,13 @@ export function StudentDirectoryView({
   search,
   saving = false,
   accountSaving = false,
+  familySaving = false,
   showPrivateAccounts = true,
   storageNamespace,
   students,
   onSave,
   onAccountChange,
+  onFamilyChange,
   onSearchChange,
 }: {
   accountId: string
@@ -274,11 +277,13 @@ export function StudentDirectoryView({
   search: DirectorySearch
   saving?: boolean
   accountSaving?: boolean
+  familySaving?: boolean
   showPrivateAccounts?: boolean
   storageNamespace: string
   students: AdminStudentDirectoryEntry[]
   onSave: (command: SaveCommand) => void
   onAccountChange?: (command: AccountLifecycleCommand) => Promise<void>
+  onFamilyChange?: (command: FamilyAccountCommand) => Promise<void>
   onSearchChange: (search: DirectorySearch) => void
 }) {
   const matches = filterStudents(students, search.query)
@@ -412,7 +417,8 @@ export function StudentDirectoryView({
                         ? '—'
                         : selectedStudent.familyAccounts
                             .map(
-                              (account) => `${account.displayName} · ${account.relationshipLabel}`,
+                              (account) =>
+                                `${account.displayName} · ${account.username} · ${account.relationshipLabel}`,
                             )
                             .join(', ')}
                     </p>
@@ -441,6 +447,17 @@ export function StudentDirectoryView({
                     Аккаунт школьника ещё не создан.
                   </p>
                 )}
+                {onFamilyChange ? (
+                  <FamilyAccountManager
+                    accounts={selectedStudent.familyAccounts}
+                    key={selectedStudent.studentId}
+                    onChange={onFamilyChange}
+                    pending={familySaving}
+                    staffAccountId={accountId}
+                    storageNamespace={storageNamespace}
+                    studentId={selectedStudent.studentId}
+                  />
+                ) : null}
                 {selectedStudent.familyAccounts.map((account) => (
                   <div className="space-y-2" key={account.accountId}>
                     <p className="text-small text-muted-foreground">
@@ -576,6 +593,23 @@ export function StaffStudentDirectoryPage({
     },
     onError: (error) => authentication.handleApiError(error),
   })
+  const familyMutation = useMutation({
+    mutationFn: async (command: FamilyAccountCommand) => {
+      if (command.kind === 'create') {
+        await client.createFamilyAccount(command.studentId, command.input)
+        return
+      }
+      if (command.kind === 'link') {
+        await client.linkFamilyAccount(command.studentId, command.input)
+        return
+      }
+      await client.unlinkFamilyAccount(command.studentId, command.accountId)
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: adminStudentEnrollmentsQueryKey(scope) })
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
 
   if (directory.isPending || (isAdmin && catalog.isPending)) {
     return (
@@ -626,12 +660,12 @@ export function StaffStudentDirectoryPage({
             </AlertContent>
           </Alert>
         ) : null}
-        {mutation.error || accountMutation.error ? (
+        {mutation.error || accountMutation.error || familyMutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
               <AlertTitle>Изменение не сохранено</AlertTitle>
               <AlertDescription>
-                {errorMessage((mutation.error ?? accountMutation.error)!)}
+                {errorMessage((mutation.error ?? accountMutation.error ?? familyMutation.error)!)}
               </AlertDescription>
             </AlertContent>
           </Alert>
@@ -648,8 +682,12 @@ export function StaffStudentDirectoryPage({
           canManageEnrollment={isAdmin}
           accountSaving={accountMutation.isPending}
           courses={catalog.data?.courses ?? []}
+          familySaving={familyMutation.isPending}
           onAccountChange={async (command) => {
             await accountMutation.mutateAsync(command)
+          }}
+          onFamilyChange={async (command) => {
+            await familyMutation.mutateAsync(command)
           }}
           onSave={(command) => mutation.mutate(command)}
           onSearchChange={onSearchChange}

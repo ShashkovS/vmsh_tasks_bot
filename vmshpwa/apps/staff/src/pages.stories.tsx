@@ -341,7 +341,9 @@ function StudentDirectoryStory() {
   const [search, setSearch] = useState({ query: '' })
   const [saved, setSaved] = useState(false)
   const [accountSaved, setAccountSaved] = useState(false)
+  const [familySaved, setFamilySaved] = useState<string | null>(null)
   const directory = adminStudentEnrollmentDirectoryResponseSchema.parse(studentDirectoryFixture)
+  const [students, setStudents] = useState(directory.students)
   return (
     <div className="min-h-screen bg-background p-4">
       <StudentDirectoryView
@@ -351,11 +353,52 @@ function StudentDirectoryStory() {
           setAccountSaved(true)
           return Promise.resolve()
         }}
+        onFamilyChange={(command) => {
+          setFamilySaved(command.kind)
+          setStudents((current) =>
+            current.map((student) => {
+              if (student.studentId !== command.studentId) return student
+              if (command.kind === 'unlink') {
+                return {
+                  ...student,
+                  familyAccounts: student.familyAccounts.filter(
+                    (account) => account.accountId !== command.accountId,
+                  ),
+                }
+              }
+              const nextAccount =
+                command.kind === 'create'
+                  ? {
+                      accountId: 'storybook-family-create',
+                      username: command.input.username,
+                      displayName: command.input.displayName,
+                      status: 'active' as const,
+                      credentialVersion: 1,
+                      relationshipLabel: command.input.relationshipLabel,
+                      isPrimary: command.input.isPrimary,
+                    }
+                  : {
+                      accountId: 'storybook-family-link',
+                      username: command.input.familyUsername,
+                      displayName: 'Существующая семья',
+                      status: 'active' as const,
+                      credentialVersion: 1,
+                      relationshipLabel: command.input.relationshipLabel,
+                      isPrimary: command.input.isPrimary,
+                    }
+              return {
+                ...student,
+                familyAccounts: [...student.familyAccounts, nextAccount],
+              }
+            }),
+          )
+          return Promise.resolve()
+        }}
         onSave={() => setSaved(true)}
         onSearchChange={setSearch}
         search={search}
         storageNamespace="vmsh-179:v1:staff:storybook"
-        students={directory.students}
+        students={students}
       />
       {saved ? (
         <p className="mt-3 text-small" role="status">
@@ -365,6 +408,11 @@ function StudentDirectoryStory() {
       {accountSaved ? (
         <p className="mt-3 text-small" role="status">
           Изменение аккаунта подготовлено к отправке.
+        </p>
+      ) : null}
+      {familySaved ? (
+        <p className="mt-3 text-small" role="status">
+          Семейное действие подготовлено: {familySaved}.
         </p>
       ) : null}
     </div>
@@ -396,6 +444,43 @@ export const StudentAccountLifecycle: Story = {
     await userEvent.selectOptions(canvas.getAllByLabelText('Состояние')[0]!, 'blocked')
     await userEvent.click(canvas.getAllByRole('button', { name: 'Сохранить состояние' })[0]!)
     await expect(canvas.getByText('Изменение аккаунта подготовлено к отправке.')).toBeVisible()
+  },
+}
+
+export const FamilyAccountManagement: Story = {
+  name: 'Участники · семейные аккаунты',
+  render: () => <StudentDirectoryStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('family-testovye · родитель · основной контакт')).toBeVisible()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Создать аккаунт' }))
+    const login = canvas.getByLabelText('Логин')
+    const displayName = canvas.getByLabelText('Имя аккаунта')
+    await userEvent.clear(login)
+    await userEvent.type(login, 'family-new')
+    await userEvent.clear(displayName)
+    await userEvent.type(displayName, 'Семья Новых')
+    await userEvent.type(canvas.getByLabelText('Первый пароль'), 'family-password')
+    await userEvent.click(canvas.getByRole('button', { name: 'Создать и привязать' }))
+    await expect(canvas.getByText('Семейный аккаунт создан и привязан.')).toBeVisible()
+    await expect(canvas.getByText('Семейное действие подготовлено: create.')).toBeVisible()
+
+    const createdAccount = canvas
+      .getByText('family-new · родитель · основной контакт')
+      .closest('li')
+    if (!createdAccount) throw new Error('Created Family account card is missing')
+    await userEvent.click(
+      within(createdAccount).getByRole('button', { name: 'Отвязать от школьника' }),
+    )
+    await userEvent.click(
+      within(createdAccount).getByRole('button', { name: 'Подтвердить отвязку' }),
+    )
+    await expect(canvas.getByText(/Сам семейный аккаунт сохранён/)).toBeVisible()
+    await expect(canvas.getByText('Семейное действие подготовлено: unlink.')).toBeVisible()
+    await expect(
+      canvas.queryByText('family-new · родитель · основной контакт'),
+    ).not.toBeInTheDocument()
   },
 }
 
