@@ -127,7 +127,7 @@ evidence, Staff media access, reassignment и настоящий filesystem E2E.
 [live storage](phase5-written-storage-live.md),
 [reassignment](phase5-written-material-reassignment.md).
 
-### Phase 6 — review/feedback/questions: основной v1 flow готов, compatibility gates открыты
+### Phase 6 — review/feedback/questions: функциональный v1 flow готов
 
 Работают очередь и lease, один combined synonym case, атомарный verdict,
 immutable evidence, полноценный annotation editor/viewer, Teacher и Student
@@ -137,11 +137,9 @@ draft, private text questions и production-build E2E в трёх браузер
 работают append-only: исходная проверка и evidence не меняются, новая проверка
 появляется в общей истории, а незавершённый Staff-черновик переживает reload.
 
-Осталось по заявленному phase-файлу:
-
-- rehearsed legacy reaction backfill/duplicate report;
-- visual acceptance. Cross-channel Telegram continuation вопросов была
-  согласована как желательная, но не блокирующая v1.
+Осталось по заявленному phase-файлу только ручное visual acceptance.
+Cross-channel Telegram continuation вопросов была согласована как желательная,
+но не блокирующая v1.
 
 Доказательства: [atomic completion](phase6-review-completion.md),
 [annotation editor](phase6-review-annotation-editor.md),
@@ -150,6 +148,7 @@ draft, private text questions и production-build E2E в трёх браузер
 [review correction](phase6-review-corrections.md),
 [Telegram annotation composite](phase6-review-telegram-composite.md),
 [external prototype decision record](phase6-external-review-reference.md),
+[legacy reaction rehearsal](phase6-legacy-reaction-rehearsal.md),
 [support pages/E2E](phase6-support-pages.md).
 
 ### Phase 7 — oral/classrooms: функциональное ядро и browser flow готовы
