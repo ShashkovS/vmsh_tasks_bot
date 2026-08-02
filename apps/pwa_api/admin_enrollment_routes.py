@@ -29,6 +29,7 @@ from db_methods.pwa.admin_enrollments import (
     revoke_group_access,
     update_enrollment,
 )
+from db_methods.pwa.audit import insert_audit_event
 from db_methods.pwa.family_enrollment import (
     mark_working_classroom_plans_stale,
     sync_legacy_single_course_user,
@@ -511,6 +512,38 @@ async def put_student_enrollment(request: web.Request) -> web.Response:
                 request_id=f"{request['request_id']}.status",
                 now=now,
             )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action="course_enrollment.updated",
+            object_type="course_enrollment",
+            object_id=public_id,
+            request_id=request["request_id"],
+            before_json=json.dumps(
+                {
+                    "activeGroupId": current["active_group_public_id"],
+                    "allowedGroupIds": ",".join(sorted(current_access_public_ids)),
+                    "attendanceMode": current["attendance_mode"],
+                    "status": current["enrollment_status"],
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+            after_json=json.dumps(
+                {
+                    "activeGroupId": payload["activeGroupId"],
+                    "allowedGroupIds": ",".join(sorted(requested_public_ids)),
+                    "attendanceMode": payload["attendanceMode"],
+                    "status": payload["status"],
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
+        )
         mark_working_classroom_plans_stale(
             connection, course_id=int(current["course_id"]), now=now
         )

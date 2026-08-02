@@ -2,6 +2,21 @@
 
 Последнее обновление: 2026-07-28.
 
+## Phase 10 checkpoint: searchable Staff audit — 2 August 2026
+
+- Added append-only migration `0075.pwa_staff_audit`; existing domain journals stay
+  authoritative and no general event framework was introduced.
+- Real admin-only `/staff/audit` now has strict URL/API contracts, object and request
+  search, stable cursor paging, actor/request ID and safe primitive before/after.
+- Current transactional coverage: account/Family lifecycle, credential/status,
+  course enrollment and problem-import apply/rollback. Remaining Staff mutations are
+  explicitly open and listed in
+  [`phase10-staff-audit.md`](../../../pwa_tests/reports/phase10-staff-audit.md).
+- Proof: Python focused **62 pass**; frontend unit **577 pass**; Storybook browser/a11y
+  **231 pass**; production E2E **84 pass / 12 expected skip** across three browsers.
+- Story IDs: `Pages/Staff/Audit--SearchableTimeline`,
+  `Pages/Staff/Audit--EmptySearch`. Visual snapshots were not updated.
+
 ## Состояние документов
 
 | Документ/этап       | Статус                         | Решение/блокер                                                                                                                                                        |

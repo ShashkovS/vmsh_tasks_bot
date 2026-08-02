@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import ipaddress
+import json
 import math
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -35,6 +36,7 @@ from argon2.low_level import Type
 from helpers.consts import USER_TYPE
 from models.pwa.auth import AuthAudience, normalize_login, normalize_telegram_token
 
+from .audit import insert_audit_event
 from .connection import PwaConnectionFactory
 
 
@@ -1302,6 +1304,9 @@ class PwaAuthRepository:
         replacement_credential_hash: str,
         request_id: str,
         ip_prefix: str | None = None,
+        audit_public_id: str | None = None,
+        actor_user_id: int | None = None,
+        actor_account_public_id: str | None = None,
     ) -> CredentialChangeResult:
         """Replace a Family/Staff credential and invalidate prior sessions.
 
@@ -1315,10 +1320,18 @@ class PwaAuthRepository:
         if expected_credential_version <= 0:
             raise ValueError("Expected credential version must be positive")
         _require_request_id(request_id)
+        if audit_public_id is not None and (
+            actor_user_id is None or actor_account_public_id is None
+        ):
+            raise ValueError("Audit actor is required for an audited credential change")
         ip_prefix = _normalize_ip_prefix(ip_prefix)
         timestamp = _format_timestamp(self._now())
 
         def write(connection):
+            account = connection.execute(
+                "SELECT public_id FROM auth_accounts WHERE id = ?",
+                (account_id,),
+            ).fetchone()
             updated_account = connection.execute(
                 "UPDATE auth_accounts SET credential_hash = ?, "
                 "credential_version = credential_version + 1, updated_at = ? "
@@ -1353,6 +1366,28 @@ class PwaAuthRepository:
                 account_id=account_id,
                 ip_prefix=ip_prefix,
             )
+            if audit_public_id is not None:
+                assert account is not None
+                insert_audit_event(
+                    connection,
+                    public_id=audit_public_id,
+                    actor_user_id=actor_user_id,
+                    actor_account_public_id=actor_account_public_id,
+                    audience="staff",
+                    action="account.credential_changed",
+                    object_type="account",
+                    object_id=str(account["public_id"]),
+                    request_id=request_id,
+                    before_json=json.dumps(
+                        {"credentialVersion": expected_credential_version},
+                        separators=(",", ":"),
+                    ),
+                    after_json=json.dumps(
+                        {"credentialVersion": new_version}, separators=(",", ":")
+                    ),
+                    occurred_at=timestamp,
+                    ip_prefix=ip_prefix,
+                )
             return CredentialChangeResult(True, new_version, revoked)
 
         return await self._factory.run_write_async(write)
@@ -1366,6 +1401,9 @@ class PwaAuthRepository:
         replacement_credential_hash: str,
         request_id: str,
         ip_prefix: str | None = None,
+        audit_public_id: str | None = None,
+        actor_user_id: int | None = None,
+        actor_account_public_id: str | None = None,
     ) -> CredentialChangeResult:
         """Rotate the one Student secret across Telegram and PWA atomically.
 
@@ -1404,12 +1442,17 @@ class PwaAuthRepository:
         if expected_credential_version <= 0:
             raise ValueError("Expected credential version must be positive")
         _require_request_id(request_id)
+        if audit_public_id is not None and (
+            actor_user_id is None or actor_account_public_id is None
+        ):
+            raise ValueError("Audit actor is required for an audited credential change")
         ip_prefix = _normalize_ip_prefix(ip_prefix)
         timestamp = _format_timestamp(self._now())
 
         def write(connection):
             account = connection.execute(
-                "SELECT a.linked_user_id, u.public_id AS linked_user_public_id "
+                "SELECT a.public_id, a.linked_user_id, "
+                "u.public_id AS linked_user_public_id "
                 "FROM auth_accounts AS a "
                 "JOIN users AS u ON u.id = a.linked_user_id "
                 "WHERE a.id = ? AND a.audience = 'student' "
@@ -1470,6 +1513,27 @@ class PwaAuthRepository:
                 account_id=account_id,
                 ip_prefix=ip_prefix,
             )
+            if audit_public_id is not None:
+                insert_audit_event(
+                    connection,
+                    public_id=audit_public_id,
+                    actor_user_id=actor_user_id,
+                    actor_account_public_id=actor_account_public_id,
+                    audience="staff",
+                    action="account.credential_changed",
+                    object_type="account",
+                    object_id=str(account["public_id"]),
+                    request_id=request_id,
+                    before_json=json.dumps(
+                        {"credentialVersion": expected_credential_version},
+                        separators=(",", ":"),
+                    ),
+                    after_json=json.dumps(
+                        {"credentialVersion": new_version}, separators=(",", ":")
+                    ),
+                    occurred_at=timestamp,
+                    ip_prefix=ip_prefix,
+                )
             return CredentialChangeResult(True, new_version, revoked)
 
         return await self._factory.run_write_async(write)

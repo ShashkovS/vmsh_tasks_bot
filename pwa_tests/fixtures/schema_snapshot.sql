@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 84fd1a8b6e7515d3ef9a9bd704c1f87ebbd38300369508abcbefd0ec5929d862
+-- Product schema SHA-256: 04e0e7e63c19fa1e64692743f344bd04abc10fd6bfc6cafd2733a81b736a0a69
 
 CREATE TABLE achievement_definitions
 (
@@ -31,6 +31,36 @@ CREATE TABLE analytics_runs
         (state = 'running' and completed_at is null)
         or (state in ('completed', 'failed') and completed_at is not null)
     )
+);
+
+CREATE TABLE audit_events
+(
+    id               integer primary key,
+    public_id        text    not null unique
+        check (
+            length(public_id) between 1 and 128
+            and public_id not glob '*[^a-z0-9._:-]*'
+            and substr(public_id, 1, 1) glob '[a-z0-9]'
+            and substr(public_id, -1, 1) glob '[a-z0-9]'
+        ),
+    actor_user_id    integer references users (id),
+    actor_account_id integer references auth_accounts (id),
+    audience         text    not null
+        check (audience in ('student', 'family', 'staff', 'system')),
+    action           text    not null check (length(trim(action)) between 1 and 128),
+    object_type      text    not null check (length(trim(object_type)) between 1 and 64),
+    object_id        text    not null check (length(trim(object_id)) between 1 and 128),
+    request_id       text    not null check (length(trim(request_id)) between 1 and 128),
+    before_json      text
+        check (before_json is null or (
+            json_valid(before_json) = 1 and json_type(before_json) = 'object'
+        )),
+    after_json       text
+        check (after_json is null or (
+            json_valid(after_json) = 1 and json_type(after_json) = 'object'
+        )),
+    occurred_at      text    not null,
+    ip_prefix        text
 );
 
 CREATE TABLE auth_accounts
@@ -2715,6 +2745,17 @@ CREATE TABLE zoom_queue
 CREATE INDEX analytics_runs_course_latest_idx
     on analytics_runs (course_id, state, completed_at desc, id desc);
 
+CREATE INDEX audit_events_action_timeline_idx
+    on audit_events (action, occurred_at desc, id desc);
+
+CREATE INDEX audit_events_object_timeline_idx
+    on audit_events (object_type, object_id, occurred_at desc, id desc);
+
+CREATE INDEX audit_events_request_idx on audit_events (request_id);
+
+CREATE INDEX audit_events_timeline_idx
+    on audit_events (occurred_at desc, id desc);
+
 CREATE INDEX auth_accounts_audience_status_idx
     on auth_accounts (audience, status);
 
@@ -3202,6 +3243,20 @@ FROM reactions rct
          LEFT JOIN zoom_conversation zc on rct.zoom_conversation_id = zc.id
          LEFT JOIN users AS stud ON (stud.id = coalesce(r.student_id, zc.student_id))
          LEFT JOIN users AS teach ON (teach.id = coalesce(r.teacher_id, zc.teacher_id));
+
+CREATE TRIGGER audit_events_delete_forbidden
+before delete on audit_events
+for each row
+begin
+    select raise(abort, 'audit event deletion is forbidden');
+end;
+
+CREATE TRIGGER audit_events_immutable_update
+before update on audit_events
+for each row
+begin
+    select raise(abort, 'audit event is immutable');
+end;
 
 CREATE TRIGGER auth_accounts_audience_update
 before update of audience on auth_accounts

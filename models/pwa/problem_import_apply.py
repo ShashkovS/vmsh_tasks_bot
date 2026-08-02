@@ -21,6 +21,7 @@ from db_methods.pwa.problem_imports import (
     mark_import_rolled_back,
     update_problem,
 )
+from db_methods.pwa.audit import insert_audit_event
 from models.pwa.problem_import import compare_problem_rows, problem_import_preview_hash
 
 
@@ -78,6 +79,8 @@ def apply_problem_import(
     confirmed_preview_sha256: str,
     actor_user_id: int,
     now: str,
+    request_id: str | None = None,
+    actor_account_public_id: str | None = None,
 ) -> dict[str, object]:
     course = find_course(connection, public_id=course_public_id)
     if course is None:
@@ -154,6 +157,32 @@ def apply_problem_import(
     )
     receipt = get_import_receipt(connection, public_id=public_id)
     assert receipt is not None
+    if request_id is not None and actor_account_public_id is not None:
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_public_id,
+            audience="staff",
+            action="problem_import.applied",
+            object_type="problem_import",
+            object_id=public_id,
+            request_id=request_id,
+            before_json=None,
+            after_json=json.dumps(
+                {
+                    "courseId": course_public_id,
+                    "created": summary["created"],
+                    "rows": summary["rows"],
+                    "sourceFilename": source_filename,
+                    "state": "applied",
+                    "updated": summary["updated"],
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
+        )
     return _receipt_payload(receipt, replayed=False)
 
 
@@ -164,6 +193,8 @@ def rollback_problem_import(
     expected_version: int,
     actor_user_id: int,
     now: str,
+    request_id: str | None = None,
+    actor_account_public_id: str | None = None,
 ) -> dict[str, object]:
     receipt = get_import_receipt(connection, public_id=receipt_public_id)
     if receipt is None:
@@ -206,6 +237,27 @@ def rollback_problem_import(
         raise ValueError("import_version_changed")
     rolled_back = get_import_receipt(connection, public_id=receipt_public_id)
     assert rolled_back is not None
+    if request_id is not None and actor_account_public_id is not None:
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_public_id,
+            audience="staff",
+            action="problem_import.rolled_back",
+            object_type="problem_import",
+            object_id=receipt_public_id,
+            request_id=request_id,
+            before_json=json.dumps(
+                {"state": "applied", "version": expected_version},
+                separators=(",", ":"),
+            ),
+            after_json=json.dumps(
+                {"state": "rolled_back", "version": rolled_back["version"]},
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
+        )
     return _receipt_payload(rolled_back, replayed=False)
 
 

@@ -469,3 +469,14 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - Staff browser-mode run: 23/23 page stories passed with the a11y gate enabled.
 - Initial historical bulk import remains a separate Phase 10 workflow; this
   story deliberately reuses the accepted single-account interaction.
+
+## Phase 4 reopened checkpoint: searchable Staff audit — 2 August 2026
+
+- Added the real dense Staff page stories `Pages/Staff/Audit--SearchableTimeline`
+  and `Pages/Staff/Audit--EmptySearch`: object/search filters, actor, request ID and
+  expandable before/after values.
+- Browser interaction/a11y gate: **48 files, 231 tests passed**. The production
+  route and API are also covered in Chromium, WebKit and Firefox.
+- No visual baseline was updated. Owner review of desktop and compact/mobile table
+  behaviour remains open; current implementation uses horizontal table scrolling on
+  narrow screens rather than hiding audit fields.

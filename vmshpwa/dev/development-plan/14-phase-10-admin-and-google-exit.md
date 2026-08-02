@@ -102,6 +102,13 @@ collision/invalid identity остаются явным ручным решени
 reload в account-scoped `localStorage`, а частичные ошибки не теряют выбор.
 Storybook: `Pages/Staff--student-account-batch-creation`; production E2E:
 `Admin creates a small Student account batch and keeps selection across reload`.
+Первая рабочая версия searchable Staff audit подтверждена в
+[`phase10-staff-audit.md`](../../../pwa_tests/reports/phase10-staff-audit.md):
+реальный `/staff/audit`, admin-only API, request ID, безопасный before/after,
+стабильный cursor и транзакционные события account/family/enrollment/problem-import.
+Storybook: `Pages/Staff/Audit--SearchableTimeline`, `--EmptySearch`; production E2E
+проверяет admin/teacher во всех трёх браузерах. Полное покрытие остальных Staff
+mutations явно оставлено следующим audit-инкрементом и не маскируется этим proof.
 Первоначальный bulk-import с dry-run и отчётом ещё не закрыт.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.

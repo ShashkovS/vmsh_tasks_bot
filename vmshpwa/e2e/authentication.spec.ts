@@ -167,6 +167,8 @@ for (const { name, persona, expectedRole } of loginMatrix) {
       await page.goto('/staff/classrooms')
       await expect(page.getByRole('heading', { name: 'Нет доступа' })).toBeVisible()
       await expect(page.getByText('Очное воскресенье')).toHaveCount(0)
+      await page.goto('/staff/audit')
+      await expect(page.getByRole('heading', { name: 'Нет доступа' })).toBeVisible()
     }
     if (expectedRole === 'admin') {
       await page.goto('/staff/classrooms')
@@ -175,6 +177,22 @@ for (const { name, persona, expectedRole } of loginMatrix) {
     }
   })
 }
+
+test('Admin searches the real immutable audit timeline', async ({ page }) => {
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.admin,
+    '/staff/audit?objectType=all&q=e2e.audit.baseline',
+  )
+  await expect(page.getByRole('heading', { name: 'Журнал изменений', level: 1 })).toBeVisible()
+  await expect(page.getByText('e2e.audit.baseline', { exact: true })).toBeVisible()
+  await expect(page.getByText('account-student-fixture', { exact: true })).toBeVisible()
+
+  await page.getByText('Показать изменения').click()
+  await expect(page.getByText('blocked', { exact: true })).toBeVisible()
+  await expect(page.getByText('active', { exact: true })).toBeVisible()
+  await expect(page).toHaveURL((url) => url.searchParams.get('q') === 'e2e.audit.baseline')
+})
 
 test('Student profile uses the authenticated course enrollment instead of prototype data', async ({
   page,

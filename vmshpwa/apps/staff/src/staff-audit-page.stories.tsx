@@ -1,0 +1,133 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
+import { expect, userEvent, within } from 'storybook/test'
+
+import { auditListResponseSchema, type AuditObjectType } from '@vmsh/contracts'
+
+import { StaffAuditView } from './staff-audit-page'
+
+const data = auditListResponseSchema.parse({
+  schemaVersion: 1,
+  items: [
+    {
+      eventId: 'audit.account-status',
+      occurredAt: '2026-08-02T10:30:00Z',
+      audience: 'staff',
+      action: 'account.status_changed',
+      objectType: 'account',
+      objectId: 'account.student-179',
+      requestId: 'request-admin-179',
+      actor: {
+        userId: 'user.admin-1',
+        accountId: 'account.admin-1',
+        displayName: 'Петрова Анна',
+      },
+      before: { status: 'active' },
+      after: { status: 'blocked' },
+    },
+    {
+      eventId: 'audit.enrollment',
+      occurredAt: '2026-08-02T09:15:00Z',
+      audience: 'staff',
+      action: 'course_enrollment.updated',
+      objectType: 'course_enrollment',
+      objectId: 'enrollment.math-179',
+      requestId: 'request-enrollment-41',
+      actor: {
+        userId: 'user.admin-1',
+        accountId: 'account.admin-1',
+        displayName: 'Петрова Анна',
+      },
+      before: {
+        activeGroupId: 'group.beginner',
+        attendanceMode: 'online',
+        status: 'active',
+      },
+      after: {
+        activeGroupId: 'group.continuing',
+        attendanceMode: 'in_person',
+        status: 'active',
+      },
+    },
+    {
+      eventId: 'audit.import',
+      occurredAt: '2026-08-01T18:05:00Z',
+      audience: 'staff',
+      action: 'problem_import.applied',
+      objectType: 'problem_import',
+      objectId: 'problem-import.lesson-41',
+      requestId: 'request-import-41',
+      actor: {
+        userId: 'user.admin-2',
+        accountId: 'account.admin-2',
+        displayName: 'Сергеев Иван',
+      },
+      before: null,
+      after: {
+        courseId: 'course.math',
+        created: 18,
+        rows: 56,
+        sourceFilename: 'Задачи 41.xlsx',
+        state: 'applied',
+        updated: 7,
+      },
+    },
+  ],
+  nextCursor: 'audit.import',
+  requestId: 'story-audit',
+})
+
+function Harness({ empty = false }: { empty?: boolean }) {
+  const [objectType, setObjectType] = useState<AuditObjectType>('all')
+  const [query, setQuery] = useState('')
+  const filtered = empty
+    ? []
+    : data.items.filter(
+        (event) =>
+          (objectType === 'all' || event.objectType === objectType) &&
+          (!query || `${event.action} ${event.objectId} ${event.requestId}`.includes(query)),
+      )
+  return (
+    <StaffAuditView
+      events={filtered}
+      nextCursor={filtered.length > 0 ? data.nextCursor : null}
+      objectType={objectType}
+      onFilter={(nextObjectType, nextQuery) => {
+        setObjectType(nextObjectType)
+        setQuery(nextQuery)
+      }}
+      onNextPage={() => undefined}
+      query={query}
+    />
+  )
+}
+
+const meta = {
+  title: 'Pages/Staff/Audit',
+  parameters: { canvasPadding: false, layout: 'fullscreen' },
+  globals: { density: 'staff' },
+} satisfies Meta
+export default meta
+type Story = StoryObj<typeof meta>
+
+export const SearchableTimeline: Story = {
+  name: 'Searchable timeline',
+  render: () => <Harness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getAllByText('Показать изменения')[0]!)
+    await expect(canvas.getAllByText('Было')[0]).toBeInTheDocument()
+    await userEvent.type(
+      canvas.getByLabelText('Поиск по действию, объекту или request ID'),
+      'request-import-41',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Найти' }))
+    await expect(canvas.getByText('Задачи 41.xlsx')).toBeInTheDocument()
+    await expect(canvas.queryByText('account.student-179')).not.toBeInTheDocument()
+  },
+}
+
+export const EmptySearch: Story = {
+  name: 'Empty search',
+  render: () => <Harness empty />,
+}

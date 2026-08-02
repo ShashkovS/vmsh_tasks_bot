@@ -31,6 +31,7 @@ from db_methods.pwa.admin_accounts import (
     save_family_link,
     update_status,
 )
+from db_methods.pwa.audit import insert_audit_event
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.admin_accounts import (
     InvalidManagedAccountChange,
@@ -318,6 +319,24 @@ async def create_student_account(request: web.Request) -> web.Response:
                 separators=(",", ":"),
             ),
         )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=principal.linked_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action="student.account_created",
+            object_type="account",
+            object_id=str(account["public_id"]),
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(
+                {"audience": "student", "status": "active", "username": username},
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
+        )
         return {"state": "ok", "account": account}
 
     try:
@@ -431,6 +450,46 @@ async def create_family_account(request: web.Request) -> web.Response:
                 separators=(",", ":"),
             ),
         )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=principal.linked_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action="family.account_created",
+            object_type="account",
+            object_id=str(account["public_id"]),
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(
+                {"audience": "family", "status": "active", "username": username},
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
+        )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=principal.linked_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action="family.student_linked",
+            object_type="family_link",
+            object_id=str(account["public_id"]),
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(
+                {
+                    "studentId": student_public_id,
+                    "relationshipLabel": relationship_label,
+                    "isPrimary": bool(payload["isPrimary"]),
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
+        )
         return {"state": "ok", "account": account}
 
     try:
@@ -525,6 +584,28 @@ async def link_family_account(request: web.Request) -> web.Response:
                 separators=(",", ":"),
             ),
         )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=principal.linked_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action="family.student_linked",
+            object_type="family_link",
+            object_id=str(account["public_id"]),
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(
+                {
+                    "studentId": student_public_id,
+                    "relationshipLabel": relationship_label,
+                    "isPrimary": bool(payload["isPrimary"]),
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
+        )
         return {"state": "ok", "account": account}
 
     result = await _factory(request).run_write_async(write)
@@ -582,6 +663,26 @@ async def unlink_family_account(request: web.Request) -> web.Response:
                 ensure_ascii=False,
                 separators=(",", ":"),
             ),
+        )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=principal.linked_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action="family.student_unlinked",
+            object_type="family_link",
+            object_id=str(account["public_id"]),
+            request_id=request["request_id"],
+            before_json=json.dumps(
+                {"studentId": student_public_id, "linked": True},
+                separators=(",", ":"),
+            ),
+            after_json=json.dumps(
+                {"studentId": student_public_id, "linked": False},
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
         )
         return {"state": "ok", "account": account}
 
@@ -667,6 +768,22 @@ async def patch_account_status(request: web.Request) -> web.Response:
                 separators=(",", ":"),
             ),
         )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=principal.linked_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action="account.status_changed",
+            object_type="account",
+            object_id=public_id,
+            request_id=request["request_id"],
+            before_json=json.dumps(
+                {"status": current["status"]}, separators=(",", ":")
+            ),
+            after_json=json.dumps({"status": requested.value}, separators=(",", ":")),
+            occurred_at=now,
+        )
         return {"state": "ok", "row": updated, "changed": True}
 
     result = await _factory(request).run_write_async(write)
@@ -694,7 +811,7 @@ async def patch_account_status(request: web.Request) -> web.Response:
 
 @admin_account_routes.post("/staff/api/v1/accounts/{account_public_id}/credential")
 async def replace_account_credential(request: web.Request) -> web.Response:
-    _admin(request)
+    principal = _admin(request)
     public_id = _account_public_id(request)
     expected_version = _expected_version(request, public_id)
     payload = await _json_object(request, {"credential"})
@@ -741,6 +858,9 @@ async def replace_account_credential(request: web.Request) -> web.Response:
                 normalized_telegram_token=credential,
                 replacement_credential_hash=credential_hash,
                 request_id=request["request_id"],
+                audit_public_id=f"audit.{uuid.uuid4().hex}",
+                actor_user_id=principal.linked_user_id,
+                actor_account_public_id=principal.account_public_id,
             )
         else:
             result = await service.repository.change_credential(
@@ -748,6 +868,9 @@ async def replace_account_credential(request: web.Request) -> web.Response:
                 expected_credential_version=expected_version,
                 replacement_credential_hash=credential_hash,
                 request_id=request["request_id"],
+                audit_public_id=f"audit.{uuid.uuid4().hex}",
+                actor_user_id=principal.linked_user_id,
+                actor_account_public_id=principal.account_public_id,
             )
     except sqlite3.IntegrityError as error:
         raise PwaApiError(

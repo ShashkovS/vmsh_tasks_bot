@@ -361,6 +361,7 @@ def _receipt_payload(receipt: dict[str, object], request_id: str) -> dict[str, o
 @problem_import_routes.post("/staff/api/v1/problem-imports/apply")
 async def apply_problem_import_route(request: web.Request) -> web.Response:
     actor_user_id = _require_admin(request)
+    actor_account_public_id = authenticated_session(request).principal.account_public_id
     if request.query:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
@@ -384,6 +385,8 @@ async def apply_problem_import_route(request: web.Request) -> web.Response:
                 confirmed_preview_sha256=confirmed_preview_sha256,
                 actor_user_id=actor_user_id,
                 now=datetime.now(UTC).isoformat(),
+                request_id=request["request_id"],
+                actor_account_public_id=actor_account_public_id,
             )
         )
     except ValueError as error:
@@ -409,6 +412,7 @@ async def apply_problem_import_route(request: web.Request) -> web.Response:
 )
 async def rollback_problem_import_route(request: web.Request) -> web.Response:
     actor_user_id = _require_admin(request)
+    actor_account_public_id = authenticated_session(request).principal.account_public_id
     receipt_public_id = request.match_info["receipt_public_id"]
     if _PUBLIC_ID.fullmatch(receipt_public_id) is None:
         raise PwaApiError(
@@ -437,6 +441,8 @@ async def rollback_problem_import_route(request: web.Request) -> web.Response:
                 expected_version=value["expectedVersion"],
                 actor_user_id=actor_user_id,
                 now=datetime.now(UTC).isoformat(),
+                request_id=request["request_id"],
+                actor_account_public_id=actor_account_public_id,
             )
         )
     except ValueError as error:

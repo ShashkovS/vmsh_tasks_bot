@@ -62,6 +62,19 @@ def _seed(connection: sqlite3.Connection) -> int:
     if student_credential is None or family_credential is None:
         raise RuntimeError("Classroom E2E seed requires the baseline auth accounts")
 
+    actor_id = int(actor["id"])
+    connection.execute(
+        "INSERT OR IGNORE INTO audit_events "
+        "(public_id, actor_user_id, actor_account_id, audience, action, "
+        "object_type, object_id, request_id, before_json, after_json, occurred_at) "
+        "VALUES ('audit.e2e-baseline', ?, "
+        "(SELECT id FROM auth_accounts WHERE public_id = 'account-admin-fixture'), "
+        "'staff', 'account.status_changed', 'account', 'account-student-fixture', "
+        "'e2e.audit.baseline', '{\"status\":\"blocked\"}', "
+        '\'{"status":"active"}\', ?)',
+        (actor_id, TIMESTAMP),
+    )
+
     event_ids = [f"in-person-classrooms-e2e-{project}" for project, _lesson in TARGETS]
     room_ids = [f"classroom-e2e-{project}" for project, _lesson in TARGETS] + [
         f"classroom-e2e-reassign-{project}" for project, _lesson in TARGETS
@@ -86,7 +99,6 @@ def _seed(connection: sqlite3.Connection) -> int:
             return 0
         raise RuntimeError("Classroom E2E fixture is only partially present")
 
-    actor_id = int(actor["id"])
     season_id = int(season["id"])
     course_id = int(course["id"])
     for ordinal, (project, group_lesson_public_id) in enumerate(TARGETS, start=1):

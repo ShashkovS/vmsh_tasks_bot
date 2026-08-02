@@ -225,6 +225,10 @@
       {
         "id": "0074.pwa_problem_import_receipts",
         "sha256": "3651f3b79fa74ca55b2f1d4aa8410ce9ee60f72a308020c3d1515d24e8d09230"
+      },
+      {
+        "id": "0075.pwa_staff_audit",
+        "sha256": "2c6c7bc5e7521dad607feb618d1fe9abb95394d8cfc4abe619b2de1fd26b4fd7"
       }
     ],
     "repository_head_status": {
@@ -235,7 +239,7 @@
     }
   },
   "product": {
-    "object_count": 412,
+    "object_count": 419,
     "objects": [
       {
         "columns": [
@@ -512,6 +516,328 @@
         "object_sha256": "d9d120c7a0ae73ae14ed3015206c4a52215c147d30e242e2e958fba2b47517a7",
         "sql": "CREATE TABLE analytics_runs\n(\n    id                      integer primary key,\n    public_id               text    not null unique,\n    course_id               integer not null references courses (id),\n    algorithm               text    not null,\n    algorithm_version       text    not null,\n    input_through_result_id integer not null check (input_through_result_id >= 0),\n    state                   text    not null check (state in ('running', 'completed', 'failed')),\n    started_at              text    not null,\n    completed_at            text,\n    diagnostics_json        text    not null default '[]'\n        check (json_valid(diagnostics_json) = 1 and json_type(diagnostics_json) = 'array'),\n    check (\n        (state = 'running' and completed_at is null)\n        or (state in ('completed', 'failed') and completed_at is not null)\n    )\n);",
         "table_name": "analytics_runs",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "public_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "actor_account_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "audience",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "action",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "object_type",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "object_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 8,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "request_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 9,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "before_json",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 10,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "after_json",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 11,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "occurred_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 12,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ip_prefix",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "actor_account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          },
+          {
+            "from_columns": [
+              "actor_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 5,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "action",
+                "seqno": 0
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "occurred_at",
+                "seqno": 1
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "audit_events_action_timeline_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 6,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "object_type",
+                "seqno": 0
+              },
+              {
+                "cid": 7,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "object_id",
+                "seqno": 1
+              },
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "occurred_at",
+                "seqno": 2
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 3
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 4
+              }
+            ],
+            "name": "audit_events_object_timeline_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 8,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "request_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "audit_events_request_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 11,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "occurred_at",
+                "seqno": 0
+              },
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": true,
+                "key": true,
+                "name": "id",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "audit_events_timeline_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "public_id",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_audit_events_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "audit_events",
+        "object_sha256": "9525aed2e7fc5dc83dbce8b26fe2152c940703b83300e35d98e288fb39d9c066",
+        "sql": "CREATE TABLE audit_events\n(\n    id               integer primary key,\n    public_id        text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    actor_user_id    integer references users (id),\n    actor_account_id integer references auth_accounts (id),\n    audience         text    not null\n        check (audience in ('student', 'family', 'staff', 'system')),\n    action           text    not null check (length(trim(action)) between 1 and 128),\n    object_type      text    not null check (length(trim(object_type)) between 1 and 64),\n    object_id        text    not null check (length(trim(object_id)) between 1 and 128),\n    request_id       text    not null check (length(trim(request_id)) between 1 and 128),\n    before_json      text\n        check (before_json is null or (\n            json_valid(before_json) = 1 and json_type(before_json) = 'object'\n        )),\n    after_json       text\n        check (after_json is null or (\n            json_valid(after_json) = 1 and json_type(after_json) = 'object'\n        )),\n    occurred_at      text    not null,\n    ip_prefix        text\n);",
+        "table_name": "audit_events",
         "type": "table"
       },
       {
@@ -24739,6 +25065,34 @@
         "type": "index"
       },
       {
+        "name": "audit_events_action_timeline_idx",
+        "object_sha256": "03a59c567d199332626c0504ba6308f6178496dfb374058caba6cfef841f6949",
+        "sql": "CREATE INDEX audit_events_action_timeline_idx\n    on audit_events (action, occurred_at desc, id desc);",
+        "table_name": "audit_events",
+        "type": "index"
+      },
+      {
+        "name": "audit_events_object_timeline_idx",
+        "object_sha256": "6f4998a3004cce43c6874ebcce9096777db06aa798b630889289c6d87a0f3b63",
+        "sql": "CREATE INDEX audit_events_object_timeline_idx\n    on audit_events (object_type, object_id, occurred_at desc, id desc);",
+        "table_name": "audit_events",
+        "type": "index"
+      },
+      {
+        "name": "audit_events_request_idx",
+        "object_sha256": "41443a4bcfda70a4e8baf7ecf925131d97a42669548a0abad3c6504a731c51c4",
+        "sql": "CREATE INDEX audit_events_request_idx on audit_events (request_id);",
+        "table_name": "audit_events",
+        "type": "index"
+      },
+      {
+        "name": "audit_events_timeline_idx",
+        "object_sha256": "8776b6fa685a91fabbbe2cea21d77f32e6693d88afdfdd4a459ec4444fa6fc24",
+        "sql": "CREATE INDEX audit_events_timeline_idx\n    on audit_events (occurred_at desc, id desc);",
+        "table_name": "audit_events",
+        "type": "index"
+      },
+      {
         "name": "auth_accounts_audience_status_idx",
         "object_sha256": "b67c4795b68dfb8d65305743d741f29c1eea141876b5a6e3e7e3d7318f67f8e2",
         "sql": "CREATE INDEX auth_accounts_audience_status_idx\n    on auth_accounts (audience, status);",
@@ -25710,6 +26064,20 @@
         "sql": "CREATE VIEW reaction_view AS\nSELECT rct.ts,\n       reaction_type,\n       problem_id,\n       result_id,\n       stud.name || ' ' || stud.surname || ' ' || stud.middlename    AS student_name,\n       reaction_enum.reaction,\n       teach.name || ' ' || teach.surname || ' ' || teach.middlename AS teacher_name,\n       coalesce(r.lesson, zc.lesson)                                 as lesson,\n       coalesce(r.group_id, zc.group_id)                             as group_id,\n       verdict,\n       coalesce(r.check_time_spent_sec, zc.check_time_spent_sec)     as check_time_spent_sec\nFROM reactions rct\n         JOIN reaction_enum USING (reaction_id)\n         JOIN reaction_type_enum USING (reaction_type_id)\n         LEFT JOIN results r ON rct.result_id = r.id\n         LEFT JOIN zoom_conversation zc on rct.zoom_conversation_id = zc.id\n         LEFT JOIN users AS stud ON (stud.id = coalesce(r.student_id, zc.student_id))\n         LEFT JOIN users AS teach ON (teach.id = coalesce(r.teacher_id, zc.teacher_id));",
         "table_name": "reaction_view",
         "type": "view"
+      },
+      {
+        "name": "audit_events_delete_forbidden",
+        "object_sha256": "4f1834bce2359ec988b9c075e31c280edbb18e555ecc9e7b3643066a49e5e8c6",
+        "sql": "CREATE TRIGGER audit_events_delete_forbidden\nbefore delete on audit_events\nfor each row\nbegin\n    select raise(abort, 'audit event deletion is forbidden');\nend;",
+        "table_name": "audit_events",
+        "type": "trigger"
+      },
+      {
+        "name": "audit_events_immutable_update",
+        "object_sha256": "846212de890053448546a57170e218efdea003c4cd41364f6c1aca04014b775c",
+        "sql": "CREATE TRIGGER audit_events_immutable_update\nbefore update on audit_events\nfor each row\nbegin\n    select raise(abort, 'audit event is immutable');\nend;",
+        "table_name": "audit_events",
+        "type": "trigger"
       },
       {
         "name": "auth_accounts_audience_update",
@@ -26790,8 +27158,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "caca205681dd8ef309f2c654ae24b111d4713f458bf35b126a8a04bb445a8dc2",
-    "sha256": "84fd1a8b6e7515d3ef9a9bd704c1f87ebbd38300369508abcbefd0ec5929d862"
+    "pragma_structure_sha256": "83a7f1e2746000673817eacacedbe6f1997913529752602132d503e12d157e25",
+    "sha256": "04e0e7e63c19fa1e64692743f344bd04abc10fd6bfc6cafd2733a81b736a0a69"
   },
   "source_kind": "repository-migration-head"
 }

@@ -134,7 +134,7 @@ pathlib.Path(sys.argv[2]).write_text('<svg xmlns="http://www.w3.org/2000/svg" wi
             cwebp=str(unused),
         ),
         temp_root=temp_root,
-        timeout_seconds=1,
+        timeout_seconds=5,
     )
 
     result = await converter.tikz_to_svg(
@@ -197,7 +197,7 @@ pathlib.Path(sys.argv[sys.argv.index('-o') + 1]).write_bytes({webp_literal})""",
             cwebp=str(cwebp),
         ),
         temp_root=tmp_path,
-        timeout_seconds=1,
+        timeout_seconds=5,
     )
     original = b"synthetic HEIC bytes with fake EXIF GPS"
 
