@@ -974,6 +974,21 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     assert unavailable_plan["students"][0]["status"] == "reassigning"
     assert unavailable_plan["students"][0]["classroomName"] is None
 
+    unavailable_student = await classroom_http.client.get(
+        "/student/api/v1/classroom-assignments",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[AuthAudience.STUDENT].access_name: (
+                classroom_http.student_cookie
+            )
+        },
+    )
+    assert unavailable_student.status == 200
+    unavailable_public = (await unavailable_student.json())["items"][0]
+    assert unavailable_public["status"] == "reassigning"
+    assert unavailable_public["classroomName"] is None
+    assert unavailable_public["announcedAt"] is None
+
     recalculated_after_archive = await classroom_http.client.post(
         f"{assignment_path}/recalculate",
         json={"schemaVersion": 1},

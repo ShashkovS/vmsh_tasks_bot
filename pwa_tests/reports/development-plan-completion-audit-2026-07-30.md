@@ -159,12 +159,15 @@ preview/batch, Student/Family projection и Telegram retry transport. Устны
 Production-build E2E теперь проверяет в трёх браузерах local draft/reload,
 confirm, историю, отдельный PWA delivery preview/send, Student notification,
 одинаковый Student/Family read model и отсутствие Family notification.
+Продолжение того же сценария скрывает назначенную аудиторию, проверяет
+`reassigning` у Student/Family и в Staff, пересчитывает и подтверждает новый
+план, а затем выполняет вторую явную PWA-рассылку. Browser fixtures разнесены по
+отдельным группам, поэтому мутационные проверки параллельны, но не делят планы.
 Telegram transport остаётся в отдельном recording/live-test proof и не
 подключается к E2E.
 
 Осталось:
 
-- browser-продолжение archive → reassigning → новый confirm/send;
 - production-size обезличенный assignment rehearsal и временная граница с
   legacy print;
 - visual acceptance полного planner.

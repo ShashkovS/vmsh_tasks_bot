@@ -34,7 +34,7 @@ def read_student_classroom_assignments(
                 "confirmed_at": row["confirmed_at"] if assigned else None,
                 # Phase 7D delivery is a separate explicit admin action. Until
                 # its receipt exists, confirmation must not look like delivery.
-                "announced_at": row["announced_at"],
+                "announced_at": row["announced_at"] if assigned else None,
             }
         )
     return items

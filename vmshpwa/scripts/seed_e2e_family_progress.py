@@ -87,19 +87,22 @@ def _seed(connection: sqlite3.Connection) -> int:
         if first_student is None or family_account is None or first_enrollment is None:
             raise RuntimeError("Family E2E seed requires classroom personas")
 
-        connection.execute(
+        connection.executemany(
             "INSERT INTO course_group_access "
             "(enrollment_id, course_id, group_id, valid_from, granted_by, reason, "
             "created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'e2e_family_seed', ?, ?)",
-            (
-                int(first_enrollment["id"]),
-                course_id,
-                continuing,
-                TIMESTAMP,
-                admin_id,
-                TIMESTAMP,
-                TIMESTAMP,
-            ),
+            [
+                (
+                    int(first_enrollment["id"]),
+                    course_id,
+                    group_id,
+                    TIMESTAMP,
+                    admin_id,
+                    TIMESTAMP,
+                    TIMESTAMP,
+                )
+                for group_id in (beginner, continuing)
+            ],
         )
 
         second_student_id = int(

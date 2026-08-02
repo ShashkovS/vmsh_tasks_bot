@@ -113,6 +113,7 @@ test('Phase 7: an event layout survives reload and is confirmed explicitly', asy
   }
   const roomName = roomNameByProject[project]
   const secondRoomName = secondRoomNameByProject[project]
+  const reassignRoomName = `Переназначение E2E ${project}`
   if (roomName === undefined || secondRoomName === undefined) {
     throw new Error(`Unknown Playwright project: ${project}`)
   }
@@ -127,19 +128,26 @@ test('Phase 7: an event layout survives reload and is confirmed explicitly', asy
 
   await page.getByRole('button', { name: 'Изменить для занятия' }).click()
   await expect(page.getByText('Черновик')).toBeVisible()
+  const groupLabel = `Математика 5–7 · Начинающие E2E ${project}`
   const roomSelect = page.getByLabel(`Группа для аудитории ${roomName}`)
-  await roomSelect.selectOption({ label: 'Математика 5–7 · Начинающие' })
+  await roomSelect.selectOption({ label: groupLabel })
   await page
     .getByLabel(`Группа для аудитории ${secondRoomName}`)
-    .selectOption({ label: 'Математика 5–7 · Начинающие' })
+    .selectOption({ label: groupLabel })
+  await page
+    .getByLabel(`Группа для аудитории ${reassignRoomName}`)
+    .selectOption({ label: groupLabel })
 
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Аудитории по группам' })).toBeVisible()
   await expect(page.getByLabel(`Группа для аудитории ${roomName}`)).toHaveValue(
-    `group-lesson-content-e2e-${project}`,
+    `group-lesson-classroom-e2e-${project}`,
   )
   await expect(page.getByLabel(`Группа для аудитории ${secondRoomName}`)).toHaveValue(
-    `group-lesson-content-e2e-${project}`,
+    `group-lesson-classroom-e2e-${project}`,
+  )
+  await expect(page.getByLabel(`Группа для аудитории ${reassignRoomName}`)).toHaveValue(
+    `group-lesson-classroom-e2e-${project}`,
   )
 
   const saveResponse = page.waitForResponse(
@@ -164,12 +172,22 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
   const project = testInfo.project.name
   const eventPublicId = `in-person-classrooms-e2e-${project}`
   const studentName = `Тестов ${project} Ученик`
+  const reassignRoomName = `Переназначение E2E ${project}`
 
   await loginThroughUi(
     page,
     AUTH_PERSONAS.admin,
-    `/staff/classrooms?tab=students&event=${eventPublicId}&roomStatus=active`,
+    `/staff/classrooms?tab=catalog&event=${eventPublicId}&roomStatus=archived`,
   )
+  const archivedFixtureRoom = page.getByRole('listitem').filter({ hasText: reassignRoomName })
+  if ((await archivedFixtureRoom.count()) > 0) {
+    const restoreResponse = page.waitForResponse((response) =>
+      new URL(response.url()).pathname.endsWith('/restore'),
+    )
+    await archivedFixtureRoom.getByRole('button', { name: 'Восстановить' }).click()
+    expect((await restoreResponse).status()).toBe(200)
+  }
+  await page.goto(`/staff/classrooms?tab=students&event=${eventPublicId}&roomStatus=active`)
   await expect(page.getByRole('heading', { name: 'Школьники по аудиториям' })).toBeVisible()
 
   const recalculateResponse = page.waitForResponse(
@@ -186,7 +204,6 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
   await expect(studentRow.getByText('возраст 13.6', { exact: true })).toBeVisible()
   await expect(studentRow.getByText('класс 7', { exact: true })).toBeVisible()
   await expect(studentRow.getByText('сила 8.0', { exact: true })).toBeVisible()
-  const currentRoom = await roomSelect.inputValue()
   const targetRoom = (
     await roomSelect.locator('option').evaluateAll((options) =>
       options.map((option) => ({
@@ -194,8 +211,9 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
         label: option.textContent?.trim() ?? '',
       })),
     )
-  ).find((option) => option.value !== '' && option.value !== currentRoom)
+  ).find((option) => option.label === reassignRoomName)
   if (targetRoom === undefined) throw new Error(`No alternate classroom for ${project}`)
+  expect(await roomSelect.inputValue()).not.toBe(targetRoom.value)
   await roomSelect.selectOption(targetRoom.value)
   await page.reload()
   await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom.value)
@@ -236,8 +254,8 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
   )
   await page.getByRole('button', { name: 'Подготовить предпросмотр' }).click()
   expect((await previewResponse).status()).toBe(200)
-  await expect(page.getByText('Получателей: 3', { exact: true })).toBeVisible()
-  await expect(page.getByText('Без Telegram: 3', { exact: true })).toBeVisible()
+  await expect(page.getByText('Получателей: 1', { exact: true })).toBeVisible()
+  await expect(page.getByText('Без Telegram: 1', { exact: true })).toBeVisible()
   const telegram = page.getByRole('checkbox', { name: /Telegram/ })
   await expect(telegram).toBeChecked()
   await telegram.click()
@@ -249,7 +267,7 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
   )
   await page.getByRole('button', { name: 'Разослать аудитории' }).click()
   expect((await deliveryResponse).status()).toBe(201)
-  await expect(page.getByTestId('classroom-delivery-report')).toContainText('доставлено 3')
+  await expect(page.getByTestId('classroom-delivery-report')).toContainText('доставлено 1')
 
   const eventName = `E2E схема аудиторий ${project}`
   await loginThroughUi(page, classroomPersona(project, 'student'), '/student/')
@@ -281,4 +299,74 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
         item.category === 'classroom_assignment',
     ),
   ).toBe(false)
+
+  await page.goto(`/staff/classrooms?tab=catalog&event=${eventPublicId}&roomStatus=active`)
+  await page.getByLabel('Поиск').fill(reassignRoomName)
+  const archivedRoom = page.getByRole('listitem').filter({ hasText: reassignRoomName })
+  const archiveResponse = page.waitForResponse((response) =>
+    new URL(response.url()).pathname.endsWith('/archive'),
+  )
+  await archivedRoom.getByRole('button', { name: 'Скрыть' }).click()
+  expect((await archiveResponse).status()).toBe(200)
+
+  await page.goto('/student/')
+  const reassigningStudentEvent = page.getByText(eventName, { exact: false }).locator('xpath=..')
+  await expect(reassigningStudentEvent).toContainText('Аудитория переназначается')
+
+  await page.goto('/family/')
+  const reassigningFamilyEvent = page.getByText(eventName, { exact: false }).locator('xpath=..')
+  await expect(reassigningFamilyEvent).toContainText('Аудитория переназначается')
+
+  await page.goto(`/staff/classrooms?tab=students&event=${eventPublicId}&roomStatus=active`)
+  await expect(page.getByText(studentName, { exact: true })).toBeVisible()
+  await expect(page.getByText('Не распределены / переназначаются')).toBeVisible()
+  const secondRecalculateResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/classroom-assignment-plan/recalculate'),
+  )
+  await page.getByRole('button', { name: 'Пересчитать' }).click()
+  expect((await secondRecalculateResponse).status()).toBe(200)
+  const replacementSelect = page.getByLabel(`Аудитория для ${studentName}`)
+  await expect(replacementSelect).not.toHaveValue('')
+  const replacementRoom = await replacementSelect.locator('option:checked').textContent()
+  if (!replacementRoom) throw new Error(`No replacement classroom for ${project}`)
+  const replacementRoomName = replacementRoom.trim()
+  expect(replacementRoomName).not.toBe(reassignRoomName)
+
+  const secondConfirmResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/confirm'),
+  )
+  await page.getByRole('button', { name: 'Подтвердить план' }).click()
+  expect((await secondConfirmResponse).status()).toBe(200)
+
+  const secondPreviewResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/delivery-preview'),
+  )
+  await page.getByRole('button', { name: 'Подготовить предпросмотр' }).click()
+  expect((await secondPreviewResponse).status()).toBe(200)
+  const secondTelegram = page.getByRole('checkbox', { name: /Telegram/ })
+  await expect(secondTelegram).toBeChecked()
+  await secondTelegram.click()
+  const secondDeliveryResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/delivery-batches'),
+  )
+  await page.getByRole('button', { name: 'Разослать аудитории' }).click()
+  expect((await secondDeliveryResponse).status()).toBe(201)
+
+  await page.goto('/student/')
+  const reassignedStudentEvent = page.getByText(eventName, { exact: false }).locator('xpath=..')
+  await expect(reassignedStudentEvent).toContainText(replacementRoomName)
+  await expect(reassignedStudentEvent).toContainText('Разослано')
+
+  await page.goto('/family/')
+  const reassignedFamilyEvent = page.getByText(eventName, { exact: false }).locator('xpath=..')
+  await expect(reassignedFamilyEvent).toContainText(replacementRoomName)
+  await expect(reassignedFamilyEvent).toContainText('Разослано')
 })
