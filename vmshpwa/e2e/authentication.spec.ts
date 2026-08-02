@@ -214,6 +214,26 @@ test('Teacher reads only the scoped anonymous course statistics', async ({ page 
   await expect(page).toHaveURL((url) => url.searchParams.get('lesson') === '41')
 })
 
+test('Teacher home loads the real scoped operational dashboard', async ({ page }) => {
+  await loginThroughUi(page, AUTH_PERSONAS.teacher, '/staff/')
+  await expect(page.getByRole('heading', { name: 'Рабочая сводка', level: 1 })).toBeVisible()
+  await expect(page.getByText('Ожидают проверки', { exact: true })).toBeVisible()
+  await expect(page.getByText('Занятия по группам', { exact: true })).toBeVisible()
+
+  const response = await browserApi(page, '/staff/api/v1/dashboard')
+  expect(response.status).toBe(200)
+  expect(response.body).toMatchObject({
+    schemaVersion: 1,
+    summary: {
+      review: { totalCases: expect.any(Number), claimedByOthers: expect.any(Number) },
+      questions: { awaitingStaff: expect.any(Number), olderThanOneHour: expect.any(Number) },
+      delivery: null,
+    },
+    lessons: expect.any(Array),
+  })
+  expect(JSON.stringify(response.body)).not.toContain('studentId')
+})
+
 test('Student profile uses the authenticated course enrollment instead of prototype data', async ({
   page,
 }) => {

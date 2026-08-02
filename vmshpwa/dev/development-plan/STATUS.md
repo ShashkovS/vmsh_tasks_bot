@@ -989,3 +989,19 @@
   браузерах. Desktop и mobile-light просмотрены вручную, snapshots не менялись.
 - Phase 10 остаётся незавершённой: нужны live operational counters, workload,
   oral/reach, scheduler и прочие перечисленные Google-cutover/admin gates.
+
+## Checkpoint 2 августа 2026 — рабочая Staff-сводка
+
+- `/staff/` переведён с prototype counters на scoped `GET /staff/api/v1/dashboard`.
+- Dashboard агрегирует существующие review/support projections, независимые
+  публикации, устные окна и admin-only ошибки classroom delivery, не отдавая
+  student rows или тексты частных диалогов.
+- Proof:
+  [`phase10-staff-dashboard.md`](../../../pwa_tests/reports/phase10-staff-dashboard.md).
+- Проверки: Python PWA `1542 passed / 5 intentional skips` в 8 workers,
+  frontend unit `110 files / 586 passed`, Storybook `50 files / 236 passed`,
+  lint/typecheck/build pass, production authentication
+  E2E `90 passed / 12 intentional skips`; новый сценарий зелёный в Chromium,
+  WebKit и Firefox. Desktop/mobile-light просмотрены, snapshots не менялись.
+- Phase 10 остаётся незавершённой: bulk import, Google cutover, полный teacher
+  workload и расширенный delivery/reach всё ещё открыты.

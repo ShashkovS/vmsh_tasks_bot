@@ -503,3 +503,14 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - Interaction/a11y full gate: `49 files / 233 passed`. Desktop и mobile-light
   390 px просмотрены вручную; таблица имеет собственную горизонтальную
   прокрутку. Visual snapshots сознательно не обновлялись до owner review.
+
+## Checkpoint 2 августа 2026 — Staff operational dashboard
+
+- Production `/staff/` использует новый `StaffDashboardView`, а не исторический
+  prototype `Pages/Staff--weekly-dashboard`.
+- Stories: `Pages/Staff/Dashboard--CurrentWeek`, `--TeacherScoped`,
+  `--NoCurrentLessons`; данные соответствуют строгому runtime-контракту.
+- Full interaction/a11y gate: `50 files / 236 passed`. Desktop и mobile-light
+  390 px просмотрены вручную; snapshots не обновлялись до owner review.
+- Общий технический gate этого среза: frontend unit `110 files / 586 passed`,
+  lint/typecheck/production build — pass.

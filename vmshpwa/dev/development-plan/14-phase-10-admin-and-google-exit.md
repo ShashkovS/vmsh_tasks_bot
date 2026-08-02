@@ -133,6 +133,15 @@ snapshot, ограничивает teacher действующими `staff_scope
 E2E прошёл в Chromium, WebKit и Firefox. Это не закрывает live submission/
 pending counters, teacher workload, oral/reach и scheduler расчёта — они явно
 остаются следующими статистическими инкрементами Phase 10.
+Рабочая Staff-сводка подтверждена в
+[`phase10-staff-dashboard.md`](../../../pwa_tests/reports/phase10-staff-dashboard.md):
+`/staff/` больше не показывает prototype counters, а читает scoped логические
+кейсы проверки, ожидающие вопросы, независимые публикации, устные окна и
+admin-only ошибки рассылки аудиторий. Storybook:
+`Pages/Staff/Dashboard--CurrentWeek`, `--TeacherScoped`,
+`--NoCurrentLessons`; production-build E2E прошёл в Chromium, WebKit и Firefox.
+Сводка не вводит отдельный read-model и не закрывает полный teacher workload,
+delivery/reach и Google cutover.
 Первоначальный bulk-import с dry-run и отчётом ещё не закрыт.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.
