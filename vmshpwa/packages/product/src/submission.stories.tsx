@@ -40,15 +40,35 @@ const seed: AttachmentView[] = [
   },
 ]
 
+// Phase 5 acceptance uses the ordinary 1–2 page case and the exact ten-page
+// boundary; keep these deterministic stories beside SubmissionComposer rather
+// than introducing a separate demo-only component.
+function readyPages(count: number): AttachmentView[] {
+  return Array.from({ length: count }, (_, index) => {
+    const page = index + 1
+    return {
+      id: `ready-page-${page}`,
+      name: `${page}.jpg`,
+      sizeLabel: `${Math.max(0.4, 1.3 - index * 0.05)
+        .toFixed(1)
+        .replace('.', ',')} МБ`,
+      status: 'ready' as const,
+      previewUrl: pagePreview(page, page % 2 === 0 ? '#6d5aa7' : '#1b7f75'),
+    }
+  })
+}
+
 function ComposerHarness({
   offline = false,
   queued = false,
+  initialAttachments = seed,
 }: {
   offline?: boolean
   queued?: boolean
+  initialAttachments?: AttachmentView[]
 }) {
   const [text, setText] = useState('')
-  const [items, setItems] = useState<AttachmentView[]>(seed)
+  const [items, setItems] = useState<AttachmentView[]>(initialAttachments)
 
   const move = (id: string, direction: -1 | 1) =>
     setItems((prev) => {
@@ -117,6 +137,39 @@ export const Composer: Story = {
     // Повтор загрузки убирает ошибку.
     await userEvent.click(canvas.getByRole('button', { name: 'Повторить' }))
     await expect(canvas.queryByText('Не удалось загрузить')).not.toBeInTheDocument()
+  },
+}
+
+export const OnePage: Story = {
+  name: 'Одна страница',
+  render: () => <ComposerHarness initialAttachments={readyPages(1)} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByRole('listitem')).toHaveLength(1)
+    await expect(canvas.getByText('1.jpg')).toBeInTheDocument()
+  },
+}
+
+export const TwoPages: Story = {
+  name: 'Две страницы',
+  render: () => <ComposerHarness initialAttachments={readyPages(2)} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByRole('listitem')).toHaveLength(2)
+    await userEvent.click(canvas.getByRole('button', { name: 'Страница 2: выше' }))
+    await expect(within(canvas.getAllByRole('listitem')[0]!).getByText('2.jpg')).toBeInTheDocument()
+  },
+}
+
+export const TenPages: Story = {
+  name: 'Десять страниц — предел',
+  render: () => <ComposerHarness initialAttachments={readyPages(10)} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const pages = canvas.getAllByRole('listitem')
+    await expect(pages).toHaveLength(10)
+    await expect(within(pages[0]!).getByText('1.jpg')).toBeInTheDocument()
+    await expect(within(pages[9]!).getByText('10.jpg')).toBeInTheDocument()
   },
 }
 

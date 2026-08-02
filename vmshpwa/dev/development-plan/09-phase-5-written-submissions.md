@@ -10,7 +10,34 @@
 
 Migration: `pwa_submission_threads_entries_assets`.
 
-Таблицы: `submission_threads`, `submission_entries`, `submission_attachments`, `media_assets`, `idempotency_records`. Lazy/batch backfill `written_tasks_discussions`; legacy IDs сохраняются. Публичный object key следует agreed pattern и не содержит имени школьника.
+Таблицы: `submission_threads`, `submission_entries`, `submission_attachments`,
+`submission_entry_replacements`,
+`submission_material_reassignments`, `submission_material_reassignment_items`,
+`media_assets`, `idempotency_records`.
+Lazy/batch backfill `written_tasks_discussions`; legacy IDs сохраняются.
+Публичный object key следует agreed pattern и не содержит имени школьника.
+
+До review lock замена реализуется как новая draft entry и одна атомарная
+операция `POST /student/api/v1/thread-entries/{newEntryId}/replace`. Она
+проверяет optimistic versions старой entry, новой entry и thread; прежнюю entry
+переводит в `deleted`, новую — в `submitted`, а append-only
+`submission_entry_replacements` сохраняет обе ссылки и idempotency key.
+Вложения и их object keys остаются привязаны к своим исходным entry; физического
+слияния или перезаписи evidence нет.
+
+Owner-confirmed core позволяет teacher перенести одно или несколько выбранных
+сообщений/фотографий и показывает их Student в целевой истории. Безопасный
+implementation default добавляет scoped admin, source/target preview и
+post-review correction. `submission_material_reassignments` — append-only header,
+который хранит школьника, исходный/целевой thread и `problem_id`, actor, server
+time, request ID и причину. `submission_material_reassignment_items` перечисляет выбранные
+`entry_text|attachment`: одно UI-действие может включать один или несколько
+текстов/фотографий, не пряча IDs в JSON. Файл, сообщение, исходный ID и уже
+зафиксированный review evidence не переписываются и не копируются: меняется
+только текущая проекция истории. Школьник видит выбранный материал в треде
+целевой задачи с ненавязчивой пометкой «Перенесено преподавателем»;
+техническая исходная привязка остаётся в audit/provenance. Существующий verdict
+автоматически не переносится и не пересчитывается.
 
 ## Client media pipeline
 
@@ -37,6 +64,11 @@ Migration: `pwa_submission_threads_entries_assets`.
 - Focused written task and composer in `student/src/features/submissions/written`; text-only разрешён, raw LaTeX сохраняется, но v1 не рендерится.
 - Thread timeline initially shows student entries; phase 6 adds review events.
 - Отдельные Student actions «дописать ответ» и «пересдать решение» ведут к одной backend operation без fake attempt numbering.
+- Staff correction flow позволяет выбрать одно или несколько сообщений/фото,
+  найти целевую задачу, увидеть preview последствий и подтвердить перенос. Для
+  уже проверенного материала UI явно предупреждает, что immutable evidence и
+  прежний verdict останутся в исходном review, а целевая задача получит только
+  исправленную проекцию выбранного материала.
 - Offline quota estimate and recovery: keep local preview until server acknowledgement; warnings when browser storage is low. Каждое выбранное фото сразу получает настоящую thumbnail, включая processing/upload/error states.
 - Composer metadata/text/order сохраняются в account/thread/revision-scoped `localStorage`, подготовленные фотографии и outbox — в Dexie. Reload/update восстанавливает одну согласованную композицию; receipt очищает оба слоя только после успешной фиксации.
 - Пользовательский интерфейс не создаёт отдельную «квитанцию», reference number или доказательный экран: успешная запись становится обычным entry/status в треде. Технический idempotency key остаётся внутри протокола.
@@ -53,6 +85,9 @@ Migration: `pwa_submission_threads_entries_assets`.
 - Offline outbox crash matrix and idempotency/payload conflict.
 - Reload/remount, account isolation, partial-photo recovery, PWA update и cleanup-after-receipt для связки localStorage + Dexie.
 - Concurrent edit vs review completion: новая фотография до commit обязана войти в текущую проверку; thread-version conflict заставляет teacher refetch.
+- Reassignment tests: owner-confirmed teacher flow для одного сообщения,
+  фотографии и batch; implementation-default admin/preview/post-review cases;
+  cross-student denial, immutable object/review IDs, target projection и audit.
 - Storybook photo-state matrix and 1/2/10-page mobile cases.
 - Playwright real aiohttp/filesystem storage: camera-file input → worker → offline/reconnect → stored → reload; no MSW.
 
@@ -65,7 +100,12 @@ Migration: `pwa_submission_threads_entries_assets`.
 - Retry creates one logical entry/asset set; Telegram media group и PWA entry сводятся в один thread/provenance.
 - 1–2 photos require few clear actions; 10 photos remain manageable.
 - Locked material cannot be mutated through UI or direct API.
+- Teacher может исправить problem association; implementation default разрешает
+  scoped admin и post-review correction через preview. Append-only operation не
+  меняет байты locked material и не переносит существующий verdict.
 - Незавершённый текст, порядок и выбранные страницы переживают reload; conflict/ошибка не очищают draft.
+- Подготовка pre-review replacement копирует доступные WebP в новый durable
+  draft; до атомарного подтверждения прежняя версия остаётся действующей.
 - Telegram discussions remain readable and new PWA thread does not corrupt queue behavior.
 
 ## Пруфы завершения этапа
@@ -76,17 +116,42 @@ Migration: `pwa_submission_threads_entries_assets`.
 - [ ] Legacy discussion backfill: owner-reviewed problem revisions и решение о
       40 531 Telegram-only строках без восстанавливаемого payload; см.
       [вопрос 2](22-development-questions.md#исторические-письменные-обсуждения).
-- [ ] Demo 1/2/10 images online and offline: `<route/fixture/evidence>`.
+- [x] Demo 1/2/10 images and offline state: Storybook
+      `product-submission--one-page`, `product-submission--two-pages`,
+      `product-submission--ten-pages`, `product-submission--offline` и
+      production-browser scenario из
+      [`phase5-written-consolidated-gates.md`](../../../pwa_tests/reports/phase5-written-consolidated-gates.md).
 - [x] Real media corpus: JPEG orientation/GPS → bounded WebP without metadata,
       HEIC → WebP, corrupt/oversized rejection:
       [`phase5-written-media-corpus.md`](../../../pwa_tests/reports/phase5-written-media-corpus.md).
-- [ ] Filesystem/S3 adapter and cleanup tests: `<result>`.
-- [ ] Idempotency/crash/concurrency/lock tests: `<result>`.
-- [ ] Cross-storage draft recovery/isolation/receipt cleanup: `<result>`.
-- [ ] Storybook photo state matrix/interactions/a11y/visuals: `<ids/paths>`.
-- [ ] Playwright 3 browsers and capability skips: `<result>`.
-- [ ] Telegram legacy discussion/queue tests: `<result>`.
-- [ ] Docs/storage retention/privacy/known limitations/acceptance: `<paths/issues/name/date>`.
+- [x] Filesystem/S3 adapter, public GET и cleanup:
+      [`phase5-written-storage-live.md`](../../../pwa_tests/reports/phase5-written-storage-live.md).
+- [x] Idempotency/crash/concurrency/lock matrix:
+      [`phase5-written-consolidated-gates.md`](../../../pwa_tests/reports/phase5-written-consolidated-gates.md).
+- [x] Pre-review replacement migration/API/outbox/reload/3-browser E2E:
+      [`pwa_tests/reports/phase5-written-replacement.md`](../../../pwa_tests/reports/phase5-written-replacement.md).
+- [x] Cross-storage draft recovery/isolation/receipt cleanup:
+      [`phase5-written-browser-draft.md`](../../../pwa_tests/reports/phase5-written-browser-draft.md).
+- [x] Material reassignment projection/audit/permissions/history:
+      [`pwa_tests/reports/phase5-written-material-reassignment.md`](../../../pwa_tests/reports/phase5-written-material-reassignment.md).
+- [x] Material reassignment Staff transport и reusable interaction/a11y UI:
+      [`written-material-reassignment-client.ts`](../../packages/app-shell/src/written-material-reassignment-client.ts),
+      [`written-material-reassignment.tsx`](../../packages/product/src/written-material-reassignment.tsx),
+      Storybook `product-review--material-reassignment` и
+      `product-review--material-reassignment-post-review`.
+- [ ] Storybook automated/visual gate: state matrix and deterministic 1/2/10-page
+      stories are implemented; current browser launch is externally blocked and
+      owner mobile-light visual approval remains open. See consolidated proof.
+- [x] Production-build Playwright in Chromium/WebKit/Firefox with real aiohttp,
+      seeded SQLite and filesystem storage:
+      [`phase5-written-replacement.md`](../../../pwa_tests/reports/phase5-written-replacement.md).
+- [x] Telegram legacy discussion/queue compatibility:
+      [`legacy-characterization.md`](../../../pwa_tests/reports/legacy-characterization.md)
+      and consolidated proof.
+- [x] Retention/privacy/storage limitations:
+      [`accepted-technical-decisions-2026-07.md`](../../docs/accepted-technical-decisions-2026-07.md),
+      [`object-storage.md`](../../docs/object-storage.md),
+      [`deployment.md`](../../docs/deployment.md).
 
 ## Многокурсовый инкремент Phase 5
 
