@@ -757,6 +757,31 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
         "pwa": {"sent": 1},
         "telegram": {"sent": 1},
     }
+    assert delivery["deliveryReport"] == {
+        "channels": {
+            "pwa": {
+                "selected": 1,
+                "eligible": 1,
+                "suppressed": 0,
+                "queued": 0,
+                "attempted": 1,
+                "succeeded": 1,
+                "failed": 0,
+            },
+            "telegram": {
+                "selected": 1,
+                "eligible": 1,
+                "suppressed": 0,
+                "queued": 0,
+                "attempted": 1,
+                "succeeded": 1,
+                "failed": 0,
+            },
+        },
+        "deliveredAny": 1,
+        "deliveredAll": 1,
+        "partial": 0,
+    }
     assert classroom_http.telegram_messages == [
         (
             179179,
@@ -887,6 +912,26 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
             ),
         )
     )
+    partial_response = await classroom_http.client.get(
+        f"/staff/api/v1/classroom-assignment-delivery-batches/{delivery['publicId']}",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert partial_response.status == 200
+    partial_delivery = (await partial_response.json())["batch"]
+    assert partial_delivery["deliveryReport"]["channels"]["pwa"]["succeeded"] == 1
+    assert partial_delivery["deliveryReport"]["channels"]["telegram"] == {
+        "selected": 1,
+        "eligible": 1,
+        "suppressed": 0,
+        "queued": 0,
+        "attempted": 1,
+        "succeeded": 0,
+        "failed": 1,
+    }
+    assert partial_delivery["deliveryReport"]["deliveredAny"] == 1
+    assert partial_delivery["deliveryReport"]["deliveredAll"] == 0
+    assert partial_delivery["deliveryReport"]["partial"] == 1
     retry_path = (
         f"/staff/api/v1/classroom-assignment-delivery-batches/"
         f"{delivery['publicId']}/retry-failed"
@@ -906,6 +951,8 @@ async def test_admin_materializes_updates_and_confirms_classroom_layout(classroo
     retried_delivery = (await retry_response.json())["batch"]
     assert retried_delivery["state"] == "completed"
     assert retried_delivery["channelCounts"]["telegram"] == {"sent": 1}
+    assert retried_delivery["deliveryReport"]["deliveredAll"] == 1
+    assert retried_delivery["deliveryReport"]["partial"] == 0
     assert len(classroom_http.telegram_messages) == 2
 
     repeated_retry = await classroom_http.client.post(

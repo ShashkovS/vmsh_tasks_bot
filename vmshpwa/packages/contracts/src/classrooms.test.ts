@@ -240,6 +240,31 @@ describe('classroom delivery contracts', () => {
     })
     expect(preview.preview.telegramUnavailableCount).toBe(1)
     expect(batch.batch.channelCounts.telegram).toEqual({ queued: 2, suppressed: 1 })
+    expect(batch.batch.deliveryReport).toEqual({
+      channels: {
+        pwa: {
+          selected: 3,
+          eligible: 3,
+          suppressed: 0,
+          queued: 0,
+          attempted: 3,
+          succeeded: 3,
+          failed: 0,
+        },
+        telegram: {
+          selected: 3,
+          eligible: 2,
+          suppressed: 1,
+          queued: 2,
+          attempted: 0,
+          succeeded: 0,
+          failed: 0,
+        },
+      },
+      deliveredAny: 3,
+      deliveredAll: 0,
+      partial: 3,
+    })
     expect(latest.batch?.publicId).toBe(batch.batch.publicId)
     expect(
       latestClassroomDeliveryBatchResponseSchema.parse({

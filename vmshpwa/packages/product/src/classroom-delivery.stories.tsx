@@ -70,6 +70,31 @@ const partialBatch: ClassroomDeliveryBatch = {
     pwa: { sent: 3 },
     telegram: { sent: 1, failed: 1, suppressed: 1 },
   },
+  deliveryReport: {
+    channels: {
+      pwa: {
+        selected: 3,
+        eligible: 3,
+        suppressed: 0,
+        queued: 0,
+        attempted: 3,
+        succeeded: 3,
+        failed: 0,
+      },
+      telegram: {
+        selected: 3,
+        eligible: 2,
+        suppressed: 1,
+        queued: 0,
+        attempted: 2,
+        succeeded: 1,
+        failed: 1,
+      },
+    },
+    deliveredAny: 3,
+    deliveredAll: 1,
+    partial: 2,
+  },
   recipients: batch.recipients.map((recipient, index) =>
     index === 1
       ? {
@@ -92,6 +117,17 @@ const partialBatch: ClassroomDeliveryBatch = {
 export const DeliveryPartialReport: Story = {
   name: 'Рассылка · частичный результат по каналам',
   args: { batch: partialBatch },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Получили хотя бы одно: 3')).toBeInTheDocument()
+    await expect(canvas.getByText('Получили всё: 1')).toBeInTheDocument()
+    await userEvent.click(canvas.getByText('Частично доставлено (2)'))
+    const partial = within(canvas.getByTestId('partial-recipient-list'))
+    await expect(partial.getByText('Ветров Борис')).toBeInTheDocument()
+    await expect(partial.getByText(/Telegram: ошибка/)).toBeInTheDocument()
+    await expect(partial.getByText('Орлова Вера')).toBeInTheDocument()
+    await expect(partial.getByText(/Telegram: недоступно/)).toBeInTheDocument()
+  },
 }
 
 function RetryHarness() {

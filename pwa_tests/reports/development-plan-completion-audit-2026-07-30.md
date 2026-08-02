@@ -196,12 +196,13 @@ reload, серверный read acknowledgement и capability-dependent Web Push
 - live Web Push проверка на реальном установленном устройстве;
 - privacy-safe inventory/reconciliation уже запланированных в Telegram UI
   сообщений перед будущим Staff publisher;
-- итоговый delivery-counter/partial-recipient Staff экран и visual acceptance.
+- visual acceptance итогового delivery-counter/partial-recipient Staff экрана.
 
 Доказательства: `pwa_tests/reports/phase8-*.md`; ключевые —
 [live news](phase8-live-news-adapter.md), [feed](phase8-news-feed.md),
 [offline](phase8-news-offline.md), [push delivery](phase8-push-delivery.md),
 [notification batching](phase8-review-notification-batching.md),
+[delivery observability](phase8-classroom-delivery-observability.md),
 [news/notifications E2E](phase8-news-notifications-e2e.md).
 
 ### Phase 9 — Family/progress: функциональное ядро готово, доказательства неполны

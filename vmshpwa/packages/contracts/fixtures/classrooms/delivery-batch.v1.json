@@ -16,6 +16,31 @@
       "pwa": { "sent": 3 },
       "telegram": { "queued": 2, "suppressed": 1 }
     },
+    "deliveryReport": {
+      "channels": {
+        "pwa": {
+          "selected": 3,
+          "eligible": 3,
+          "suppressed": 0,
+          "queued": 0,
+          "attempted": 3,
+          "succeeded": 3,
+          "failed": 0
+        },
+        "telegram": {
+          "selected": 3,
+          "eligible": 2,
+          "suppressed": 1,
+          "queued": 2,
+          "attempted": 0,
+          "succeeded": 0,
+          "failed": 0
+        }
+      },
+      "deliveredAny": 3,
+      "deliveredAll": 0,
+      "partial": 3
+    },
     "recipients": [
       {
         "studentPublicId": "student.anna",

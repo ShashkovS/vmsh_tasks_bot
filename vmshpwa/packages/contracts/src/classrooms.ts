@@ -425,6 +425,32 @@ const classroomDeliveryResultSchema = z
   })
   .strict()
 
+export const classroomDeliveryChannelReportSchema = z
+  .object({
+    selected: z.number().int().nonnegative(),
+    eligible: z.number().int().nonnegative(),
+    suppressed: z.number().int().nonnegative(),
+    queued: z.number().int().nonnegative(),
+    attempted: z.number().int().nonnegative(),
+    succeeded: z.number().int().nonnegative(),
+    failed: z.number().int().nonnegative(),
+  })
+  .strict()
+
+export const classroomDeliveryReportSchema = z
+  .object({
+    channels: z
+      .object({
+        pwa: classroomDeliveryChannelReportSchema,
+        telegram: classroomDeliveryChannelReportSchema,
+      })
+      .strict(),
+    deliveredAny: z.number().int().nonnegative(),
+    deliveredAll: z.number().int().nonnegative(),
+    partial: z.number().int().nonnegative(),
+  })
+  .strict()
+
 export const classroomDeliveryBatchSchema = z
   .object({
     publicId: publicIdSchema,
@@ -447,6 +473,7 @@ export const classroomDeliveryBatchSchema = z
         ),
       })
       .strict(),
+    deliveryReport: classroomDeliveryReportSchema,
     recipients: z.array(
       z
         .object({

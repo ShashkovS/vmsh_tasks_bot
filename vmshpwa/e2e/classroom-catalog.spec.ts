@@ -266,8 +266,28 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
       new URL(response.url()).pathname.endsWith('/delivery-batches'),
   )
   await page.getByRole('button', { name: 'Разослать аудитории' }).click()
-  expect((await deliveryResponse).status()).toBe(201)
-  await expect(page.getByTestId('classroom-delivery-report')).toContainText('доставлено 1')
+  const sentDeliveryResponse = await deliveryResponse
+  expect(sentDeliveryResponse.status()).toBe(201)
+  const sentDelivery = (await sentDeliveryResponse.json()) as {
+    batch: {
+      deliveryReport: {
+        channels: { pwa: { selected: number }; telegram: { selected: number } }
+        deliveredAny: number
+        deliveredAll: number
+        partial: number
+      }
+    }
+  }
+  expect(sentDelivery.batch.deliveryReport).toMatchObject({
+    channels: { pwa: { selected: 1 }, telegram: { selected: 0 } },
+    deliveredAny: 1,
+    deliveredAll: 1,
+    partial: 0,
+  })
+  const deliveryReport = page.getByTestId('classroom-delivery-report')
+  await expect(deliveryReport).toContainText('Получили хотя бы одно: 1')
+  await expect(deliveryReport).toContainText('Получили всё: 1')
+  await expect(deliveryReport).toContainText(/успешно\s*1/)
 
   const eventName = `E2E схема аудиторий ${project}`
   await loginThroughUi(page, classroomPersona(project, 'student'), '/student/')

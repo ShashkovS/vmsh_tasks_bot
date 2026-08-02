@@ -33,20 +33,46 @@ export interface ClassroomDeliveryPanelProps {
   className?: string
 }
 
-function channelCount(batch: ClassroomDeliveryBatch, channel: ClassroomDeliveryChannel) {
-  const counts = batch.channelCounts[channel]
-  return {
-    sent: counts.sent ?? 0,
-    queued: counts.queued ?? 0,
-    suppressed: counts.suppressed ?? 0,
-    failed: counts.failed ?? 0,
-  }
+const deliveryCounterLabels = {
+  selected: 'выбрано',
+  eligible: 'доступно',
+  suppressed: 'исключено',
+  queued: 'в очереди',
+  attempted: 'начато',
+  succeeded: 'успешно',
+  failed: 'ошибок',
+} as const
+
+function isPartialRecipient(
+  batch: ClassroomDeliveryBatch,
+  recipient: ClassroomDeliveryBatch['recipients'][number],
+) {
+  const states = batch.channels.map((channel) => recipient[channel].state)
+  const succeeded = states.filter((state) => state === 'sent').length
+  return succeeded > 0 && succeeded < states.length
+}
+
+function channelResultLabel(
+  channel: ClassroomDeliveryChannel,
+  state: ClassroomDeliveryBatch['recipients'][number]['pwa']['state'],
+) {
+  const name = channel === 'pwa' ? 'PWA' : 'Telegram'
+  const stateLabel = {
+    not_requested: 'не выбран',
+    queued: 'в очереди',
+    sent: 'доставлено',
+    suppressed: 'недоступно',
+    failed: 'ошибка',
+  }[state]
+  return `${name}: ${stateLabel}`
 }
 
 function DeliveryReport({ batch }: { batch: ClassroomDeliveryBatch }) {
-  const pwa = channelCount(batch, 'pwa')
-  const telegram = channelCount(batch, 'telegram')
-  const failed = pwa.failed + telegram.failed
+  const failed =
+    batch.deliveryReport.channels.pwa.failed + batch.deliveryReport.channels.telegram.failed
+  const partialRecipients = batch.recipients.filter((recipient) =>
+    isPartialRecipient(batch, recipient),
+  )
   return (
     <div className="space-y-3" data-testid="classroom-delivery-report">
       <div className="flex flex-wrap items-center gap-2">
@@ -61,9 +87,16 @@ function DeliveryReport({ batch }: { batch: ClassroomDeliveryBatch }) {
           План v{batch.planVersion} · {batch.recipientCount} получателей
         </span>
       </div>
+      <div className="flex flex-wrap gap-1.5" aria-label="Общий результат доставки">
+        <Badge variant="success">Получили хотя бы одно: {batch.deliveryReport.deliveredAny}</Badge>
+        <Badge variant="outline">Получили всё: {batch.deliveryReport.deliveredAll}</Badge>
+        {batch.deliveryReport.partial ? (
+          <Badge variant="warning">Частично: {batch.deliveryReport.partial}</Badge>
+        ) : null}
+      </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {batch.channels.map((channel) => {
-          const counts = channelCount(batch, channel)
+          const counts = batch.deliveryReport.channels[channel]
           return (
             <div className="rounded-md border border-border bg-surface-subtle p-2.5" key={channel}>
               <p className="flex items-center gap-1.5 text-small font-medium text-foreground">
@@ -74,23 +107,43 @@ function DeliveryReport({ batch }: { batch: ClassroomDeliveryBatch }) {
                 )}
                 {channel === 'pwa' ? 'PWA' : 'Telegram'}
               </p>
-              <p className="mt-1 text-caption text-muted-foreground">
-                {counts.sent ? `доставлено ${counts.sent}` : null}
-                {counts.sent && (counts.queued || counts.failed || counts.suppressed)
-                  ? ' · '
-                  : null}
-                {counts.queued ? `в очереди ${counts.queued}` : null}
-                {(counts.sent || counts.queued) && (counts.failed || counts.suppressed)
-                  ? ' · '
-                  : null}
-                {counts.failed ? `ошибок ${counts.failed}` : null}
-                {counts.failed && counts.suppressed ? ' · ' : null}
-                {counts.suppressed ? `недоступно ${counts.suppressed}` : null}
-              </p>
+              <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-caption sm:grid-cols-3">
+                {Object.entries(deliveryCounterLabels).map(([key, label]) => (
+                  <div className="flex justify-between gap-2" key={key}>
+                    <dt className="text-muted-foreground">{label}</dt>
+                    <dd className="tabular-nums text-foreground">
+                      {counts[key as keyof typeof counts]}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           )
         })}
       </div>
+      {partialRecipients.length ? (
+        <details className="rounded-md border border-border bg-surface-subtle p-2.5">
+          <summary className="cursor-pointer text-small font-medium text-foreground">
+            Частично доставлено ({partialRecipients.length})
+          </summary>
+          <ul className="mt-2 divide-y divide-border" data-testid="partial-recipient-list">
+            {partialRecipients.map((recipient) => (
+              <li className="space-y-0.5 py-1.5 text-caption" key={recipient.studentPublicId}>
+                <p className="font-medium text-foreground">{recipient.studentName}</p>
+                <p className="text-muted-foreground">
+                  {recipient.courseName} · {recipient.groupName} · аудитория{' '}
+                  {recipient.classroomName}
+                </p>
+                <p className="text-muted-foreground">
+                  {batch.channels
+                    .map((channel) => channelResultLabel(channel, recipient[channel].state))
+                    .join(' · ')}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
       {failed ? (
         <Alert role="alert" tone="danger">
           <CircleAlert aria-hidden="true" />
@@ -127,7 +180,7 @@ export function ClassroomDeliveryPanel({
     ...(telegram ? (['telegram'] as const) : []),
   ]
   const failed = batch
-    ? (batch.channelCounts.pwa.failed ?? 0) + (batch.channelCounts.telegram.failed ?? 0)
+    ? batch.deliveryReport.channels.pwa.failed + batch.deliveryReport.channels.telegram.failed
     : 0
 
   return (

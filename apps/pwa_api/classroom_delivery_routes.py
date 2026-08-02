@@ -176,19 +176,50 @@ def _batch_payload(result: dict[str, object]) -> dict[str, object]:
             if state in values
         }
 
+    selected_channels = [
+        channel
+        for channel, selected in (
+            ("pwa", batch["pwa_selected"]),
+            ("telegram", batch["telegram_selected"]),
+        )
+        if selected
+    ]
+
+    # Phase 8 reports are derived from immutable recipient rows, not from a
+    # second mutable counter store. See development-plan/12-phase-8-news-and-notifications.md.
+    def report_counts(channel: str) -> dict[str, int]:
+        selected = channel in selected_channels
+        states = (
+            [str(item[f"{channel}_state"]) for item in recipients] if selected else []
+        )
+        succeeded = states.count("sent")
+        failed = states.count("failed")
+        queued = states.count("queued")
+        suppressed = states.count("suppressed")
+        return {
+            "selected": len(states),
+            "eligible": queued + succeeded + failed,
+            "suppressed": suppressed,
+            "queued": queued,
+            "attempted": succeeded + failed,
+            "succeeded": succeeded,
+            "failed": failed,
+        }
+
+    delivered_any = 0
+    delivered_all = 0
+    for recipient in recipients:
+        states = [str(recipient[f"{channel}_state"]) for channel in selected_channels]
+        succeeded = sum(state == "sent" for state in states)
+        delivered_any += succeeded > 0
+        delivered_all += bool(states) and succeeded == len(states)
+
     return {
         "publicId": batch["public_id"],
         "planPublicId": batch["plan_public_id"],
         "planVersion": batch["assignment_plan_version"],
         "previewHash": batch["recipient_snapshot_hash"],
-        "channels": [
-            channel
-            for channel, selected in (
-                ("pwa", batch["pwa_selected"]),
-                ("telegram", batch["telegram_selected"]),
-            )
-            if selected
-        ],
+        "channels": selected_channels,
         "recipientCount": batch["recipient_count"],
         "changedCount": batch["changed_since_previous_count"],
         "state": batch["state"],
@@ -196,6 +227,15 @@ def _batch_payload(result: dict[str, object]) -> dict[str, object]:
         "completedAt": batch["completed_at"],
         "version": batch["version"],
         "channelCounts": {"pwa": counts("pwa"), "telegram": counts("telegram")},
+        "deliveryReport": {
+            "channels": {
+                "pwa": report_counts("pwa"),
+                "telegram": report_counts("telegram"),
+            },
+            "deliveredAny": delivered_any,
+            "deliveredAll": delivered_all,
+            "partial": delivered_any - delivered_all,
+        },
         "recipients": [
             {
                 "studentPublicId": item["student_public_id"],
