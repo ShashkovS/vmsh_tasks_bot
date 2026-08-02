@@ -514,3 +514,13 @@ Token core + brand + полировка готовы и зелёные (Storyboo
   390 px просмотрены вручную; snapshots не обновлялись до owner review.
 - Общий технический gate этого среза: frontend unit `110 files / 586 passed`,
   lint/typecheck/production build — pass.
+
+## Checkpoint 2 августа 2026 — письменная сдача: 1/2/10 страниц
+
+- Storybook IDs: `Product/Submission--one-page`, `--two-pages`, `--ten-pages`.
+- Interaction/a11y gate: **50 files / 239 PASS**; в двухстраничном состоянии
+  проверяется перестановка, в десятистраничном — точная верхняя граница.
+- Mobile-light 390 px и desktop 1280 px просмотрены в agent Storybook: без
+  горизонтального overflow, все страницы и controls доступны.
+- Snapshots не обновлялись. Финальное визуальное принятие владельцем остаётся
+  открытым.

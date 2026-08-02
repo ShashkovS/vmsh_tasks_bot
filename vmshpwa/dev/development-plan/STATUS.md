@@ -1092,3 +1092,16 @@
   [`phase5-written-media-corpus.md`](../../../pwa_tests/reports/phase5-written-media-corpus.md).
 - Media corpus gate Phase 5 закрыт; production service-profile и Hetzner S3
   остаются внешними Phase-11 gates.
+
+## Phase 5 checkpoint: Storybook 1/2/10 страниц — 2 августа 2026
+
+- Добавлены deterministic stories `product-submission--one-page`,
+  `product-submission--two-pages` и `product-submission--ten-pages`; interaction
+  проверяет перестановку двух страниц и точную верхнюю границу десять страниц.
+- Storybook interaction/a11y gate — **50 files / 239 PASS**, strict TypeScript —
+  PASS. Agent Storybook просмотрен на mobile-light 390 px и desktop 1280 px:
+  горизонтального overflow нет, все десять страниц и подписанные controls
+  доступны.
+- Proof:
+  [`phase5-written-consolidated-gates.md`](../../../pwa_tests/reports/phase5-written-consolidated-gates.md).
+- Owner visual approval остаётся открытым; snapshots не обновлялись.

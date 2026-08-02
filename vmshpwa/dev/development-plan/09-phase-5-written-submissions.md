@@ -139,9 +139,11 @@ time, request ID и причину. `submission_material_reassignment_items` п�
       [`written-material-reassignment.tsx`](../../packages/product/src/written-material-reassignment.tsx),
       Storybook `product-review--material-reassignment` и
       `product-review--material-reassignment-post-review`.
-- [ ] Storybook automated/visual gate: state matrix and deterministic 1/2/10-page
-      stories are implemented; current browser launch is externally blocked and
-      owner mobile-light visual approval remains open. See consolidated proof.
+- [ ] Storybook visual gate: automated interaction/a11y suite прошёл как
+      **50 files / 239 PASS**, deterministic 1/2/10-page stories технически
+      просмотрены на mobile-light 390 px и desktop 1280 px без горизонтального
+      overflow. Owner visual approval остаётся открытым; snapshots не
+      обновлялись. См. consolidated proof.
 - [x] Production-build Playwright in Chromium/WebKit/Firefox with real aiohttp,
       seeded SQLite and filesystem storage:
       [`phase5-written-replacement.md`](../../../pwa_tests/reports/phase5-written-replacement.md).

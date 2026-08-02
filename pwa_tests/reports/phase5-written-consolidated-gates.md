@@ -1,6 +1,6 @@
 # Phase 5 — consolidated written-submission gates
 
-Дата проверки: 3 августа 2026 года.
+Дата проверки: 2 августа 2026 года.
 
 Этот отчёт не заменяет подробные proof отдельных инкрементов. Он связывает
 оставшиеся пункты Phase 5 с уже существующими исполняемыми проверками и отделяет
@@ -95,10 +95,32 @@ smoke и проверяется deployment readiness.
 1. Legacy backfill требует owner-reviewed historical problem revisions и
    решения по 40 531 Telegram-only строкам без доступного payload. До ответа
    система не создаёт фиктивный текст и не выдумывает provenance.
-2. Storybook browser suite последний раз прошёл как **50 files / 236 PASS** с
-   addon-a11y error gate. Текущий повтор 3 августа дважды остановился до
-   collection из-за внешнего macOS `MachPortRendezvous` failure headless
-   Chromium; это не считается PASS. Production Storybook build, ESLint и strict
-   TypeScript с новыми stories проходят. Их interactions должны пройти browser
-   gate после восстановления launcher и затем получить ручное mobile-light
-   visual approval владельца. Snapshots не обновлялись.
+2. Автоматический Storybook gate и технический ручной осмотр пройдены, но
+   окончательное визуальное принятие владельцем остаётся открытым. Snapshots не
+   обновлялись.
+
+## Storybook: 1, 2 и 10 страниц
+
+Исполняемые stories находятся в
+[`submission.stories.tsx`](../../vmshpwa/packages/product/src/submission.stories.tsx):
+
+- `product-submission--one-page` — обычная сдача с одной фотографией;
+- `product-submission--two-pages` — две фотографии и interaction-проверка
+  перестановки второй страницы вверх;
+- `product-submission--ten-pages` — ровно десять фотографий, то есть принятая
+  верхняя граница одной сдачи;
+- `product-submission--offline` — сохранённое состояние offline queue.
+
+`make pwa-storybook-test` завершился как **50 files / 239 PASS** с
+`addon-a11y` в error mode; `make pwa-typecheck` также прошёл. Agent Storybook на
+порту 6106 дополнительно просмотрен через прямой preview:
+
+- mobile-light 390×844: 1, 2 и 10 фотографий, без горизонтального overflow;
+- desktop 1280×900: 10 фотографий, все 40 подписанных page controls доступны;
+- в двухстраничной story interaction действительно меняет порядок на `2.jpg`,
+  `1.jpg`;
+- в десятистраничной story присутствуют первая и десятая страницы, весь документ
+  прокручивается обычной вертикальной прокруткой.
+
+Это технический осмотр агента, а не подмена owner visual approval. Визуальные
+baseline-файлы не создавались и не обновлялись.
