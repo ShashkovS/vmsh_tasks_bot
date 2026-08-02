@@ -414,6 +414,29 @@ function StudentDirectoryStory() {
           setAccountSaved(true)
           return Promise.resolve()
         }}
+        onCreateStudentAccounts={(commands) => {
+          setStudents((current) =>
+            current.map((student) => {
+              const command = commands.find((item) => item.studentId === student.studentId)
+              if (!command) return student
+              return {
+                ...student,
+                usernameSuggestion: null,
+                webAccount: {
+                  accountId: `storybook-student-account-${student.studentId}`,
+                  username: command.username,
+                  status: 'active' as const,
+                  credentialVersion: 1,
+                },
+              }
+            }),
+          )
+          setAccountSaved(true)
+          return Promise.resolve({
+            createdStudentIds: commands.map((command) => command.studentId),
+            failures: [],
+          })
+        }}
         onSave={() => setSaved(true)}
         onSearchChange={setSearch}
         search={search}
@@ -516,6 +539,20 @@ export const StudentAccountCreation: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Создать web-вход' }))
     await expect(canvas.getByText('Web-вход активен')).toBeVisible()
     await expect(canvas.getByText('novyi-12')).toBeVisible()
+  },
+}
+
+export const StudentAccountBatchCreation: Story = {
+  name: 'Участники · пакетное создание web-входов',
+  render: () => <StudentDirectoryStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Выбрать школьников' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Выбрать найденных · 1' }))
+    await expect(canvas.getByText(/Выбрано: 1\. Выбор хранится/)).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Создать аккаунты · 1' }))
+    await expect(canvas.getByText('Создано: 1. Ошибок: 0.')).toBeVisible()
+    await expect(canvas.getByText('Готовы: 0')).toBeVisible()
   },
 }
 

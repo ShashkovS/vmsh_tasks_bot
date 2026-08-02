@@ -13,14 +13,24 @@
   `transliterated-surname-DD`. Предложение появляется только у admin, а
   совпадения и некорректная фамилия/дата рождения явно требуют ручного решения;
   случайный suffix не придумывается.
+- Admin может выбрать небольшую ежедневную пачку строк с однозначными
+  предложениями и создать входы одной кнопкой. Пачка последовательно использует
+  тот же одиночный API: успешные строки применяются, ошибки остаются выбранными
+  и показываются поимённо.
+- Выбор пачки хранится в account-scoped `localStorage`, переживает reload и не
+  содержит Telegram-токенов. Первоначальная миграция всех исторических
+  аккаунтов по-прежнему выполняется отдельным guarded CLI с dry-run и отчётом.
 
 ## Реализация
 
 - API: `POST /staff/api/v1/students/{student_public_id}/student-account` в `apps/pwa_api/admin_account_routes.py`.
 - Простые SQLite-операции: `db_methods/pwa/admin_accounts.py`.
 - Нормализация и проверка: `models/pwa/admin_accounts.py`.
-- Zod/client/UI: `admin-student-enrollments.ts`, `admin-course-client.ts`, `student-account-creator.tsx`.
-- Storybook: `Pages/Staff--student-account-creation`.
+- Zod/client/UI: `admin-student-enrollments.ts`, `admin-course-client.ts`,
+  `student-account-creator.tsx`, `student-account-batch-panel.tsx` и
+  `student-account-batch-draft.ts`.
+- Storybook: `Pages/Staff--student-account-creation` и
+  `Pages/Staff--student-account-batch-creation`.
 
 ## Выполненные проверки
 
@@ -29,21 +39,24 @@
 - Directory/account focused HTTP suite: 15 passed, включая unique suggestion,
   collision и invalid-identity состояния.
 - `make pwa-lint pwa-typecheck pwa-test pwa-build`:
-  - frontend unit: 104 files, 573 passed;
+  - frontend unit: 105 files, 575 passed;
   - Python PWA: 1509 passed, 5 skipped;
   - все три production bundles и оба `injectManifest` service workers собраны.
 - Полный Python PWA suite отдельно подтверждён в `-n8`: 83,11 секунды вместо
   274,14 секунды в `-n0`; каждый worker использует собственную временную SQLite.
-- Staff Storybook browser test: 1 file, 22 stories passed, включая создание аккаунта и восстановление черновика формы.
-- `make pwa-e2e-auth`: 80 passed, 10 ожидаемо skipped. Chromium через
+- Staff Storybook browser test: 1 file, 23 stories passed, включая одиночное и
+  пакетное создание аккаунтов и восстановление локальных черновиков.
+- `make pwa-e2e-auth`: 81 passed, 12 ожидаемо skipped. Chromium через
   production bundles и настоящий aiohttp создаёт web-вход для отдельного
   синтетического школьника без аккаунта, восстанавливает несекретный Staff draft
-  после reload и входит в Student PWA по текущему bot token. WebKit и Firefox
-  продолжают проверять общую auth-регрессию; shared-SQLite provisioning выполняет
-  один браузер, чтобы мутационные сценарии не конфликтовали.
+  после reload и входит в Student PWA по текущему bot token. Отдельный сценарий
+  сохраняет выбор двух школьников после reload и создаёт оба входа. WebKit и
+  Firefox продолжают проверять общую auth-регрессию; shared-SQLite provisioning
+  выполняет один браузер, чтобы мутационные сценарии не конфликтовали.
 
 ## Оставшаяся граница
 
-Индивидуальный путь создания Student-аккаунта закрыт от Staff UI до настоящего
-Student login без test-only HTTP backdoor. Этап 10 всё ещё требует отдельного
-batch provisioning/import с dry-run и отчётом по неактивированным строкам.
+Индивидуальный и небольшой ежедневный пакетный пути создания Student-аккаунтов
+закрыты от Staff UI до настоящего Student login без test-only HTTP backdoor.
+Этап 10 всё ещё требует первоначального bulk provisioning/import с dry-run и
+отчётом по неактивированным строкам.

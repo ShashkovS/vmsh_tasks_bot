@@ -346,6 +346,28 @@ def _seed(connection: sqlite3.Connection) -> int:
                 TIMESTAMP,
             ),
         )
+        if project == "chromium":
+            connection.executemany(
+                "INSERT INTO users "
+                "(public_id, type, name, surname, grade, birthday, token) "
+                "VALUES (?, 1, ?, ?, 6, ?, ?)",
+                (
+                    (
+                        "student-batch-account-e2e-one",
+                        "Первый",
+                        "Пакет Chromium",
+                        "2013-05-18",
+                        "synthetic-batch-one-not-secret",
+                    ),
+                    (
+                        "student-batch-account-e2e-two",
+                        "Второй",
+                        "Пакет Chromium",
+                        "2013-05-19",
+                        "synthetic-batch-two-not-secret",
+                    ),
+                ),
+            )
     return len(TARGETS)
 
 

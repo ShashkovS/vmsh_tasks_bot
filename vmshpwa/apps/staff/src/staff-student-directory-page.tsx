@@ -47,6 +47,11 @@ import {
 import { filterStudents } from './student-directory-search'
 import { FamilyAccountManager, type FamilyAccountCommand } from './family-account-manager'
 import { StudentAccountControls, type AccountLifecycleCommand } from './student-account-controls'
+import {
+  StudentAccountBatchPanel,
+  type StudentAccountBatchCommand,
+  type StudentAccountBatchResult,
+} from './student-account-batch-panel'
 import { StudentAccountCreator } from './student-account-creator'
 import { UsersSectionTabs, type UsersSection } from './users-section-tabs'
 
@@ -263,12 +268,14 @@ export function StudentDirectoryView({
   search,
   saving = false,
   accountSaving = false,
+  batchAccountSaving = false,
   familySaving = false,
   showPrivateAccounts = true,
   storageNamespace,
   students,
   onSave,
   onAccountChange,
+  onCreateStudentAccounts,
   onCreateStudentAccount,
   onFamilyChange,
   onSearchChange,
@@ -280,12 +287,16 @@ export function StudentDirectoryView({
   search: DirectorySearch
   saving?: boolean
   accountSaving?: boolean
+  batchAccountSaving?: boolean
   familySaving?: boolean
   showPrivateAccounts?: boolean
   storageNamespace: string
   students: AdminStudentDirectoryEntry[]
   onSave: (command: SaveCommand) => void
   onAccountChange?: (command: AccountLifecycleCommand) => Promise<void>
+  onCreateStudentAccounts?: (
+    commands: StudentAccountBatchCommand[],
+  ) => Promise<StudentAccountBatchResult>
   onCreateStudentAccount?: (studentId: string, input: CreateStudentAccountRequest) => Promise<void>
   onFamilyChange?: (command: FamilyAccountCommand) => Promise<void>
   onSearchChange: (search: DirectorySearch) => void
@@ -311,243 +322,256 @@ export function StudentDirectoryView({
   })
 
   return (
-    <div className="grid min-h-[34rem] gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
-      <Card className="min-w-0">
-        <CardHeader className="gap-3">
-          <CardTitle>Школьники</CardTitle>
-          <Label className="grid gap-1 text-small">
-            Поиск по имени
-            <Input
-              onChange={(event) => onSearchChange({ query: event.target.value })}
-              placeholder="Фамилия, имя или часть с опечаткой"
-              type="search"
-              value={search.query}
-            />
-          </Label>
-          <p className="text-caption text-muted-foreground">Найдено: {matches.length}</p>
-        </CardHeader>
-        <CardContent
-          aria-label="Список школьников"
-          className="max-h-[48rem] overflow-y-auto px-2 pb-2"
-          ref={studentList}
-          role="region"
-        >
-          {matches.length === 0 ? (
-            <p className="p-3 text-small text-muted-foreground">Никого не нашли.</p>
-          ) : (
-            <ol className="relative w-full" style={{ height: `${studentRows.getTotalSize()}px` }}>
-              {studentRows.getVirtualItems().map((virtualRow) => {
-                const student = matches[virtualRow.index]!
-                const selected = selectedStudent?.studentId === student.studentId
-                return (
-                  <li
-                    className="absolute left-0 top-0 w-full pr-1"
-                    key={student.studentId}
-                    style={{
-                      height: `${virtualRow.size}px`,
-                      transform: `translateY(${virtualRow.start}px)`,
-                    }}
-                  >
-                    <button
-                      aria-current={selected ? 'true' : undefined}
-                      className="h-[3.5rem] w-full rounded-md border border-transparent px-3 py-2 text-left hover:bg-muted aria-current:border-border aria-current:bg-muted"
-                      onClick={() =>
-                        onSearchChange({ query: search.query, studentId: student.studentId })
-                      }
-                      type="button"
+    <div className="space-y-4">
+      {showPrivateAccounts && onCreateStudentAccounts ? (
+        <StudentAccountBatchPanel
+          onCreate={onCreateStudentAccounts}
+          pending={batchAccountSaving}
+          staffAccountId={accountId}
+          storageNamespace={storageNamespace}
+          students={students}
+        />
+      ) : null}
+      <div className="grid min-h-[34rem] gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
+        <Card className="min-w-0">
+          <CardHeader className="gap-3">
+            <CardTitle>Школьники</CardTitle>
+            <Label className="grid gap-1 text-small">
+              Поиск по имени
+              <Input
+                onChange={(event) => onSearchChange({ query: event.target.value })}
+                placeholder="Фамилия, имя или часть с опечаткой"
+                type="search"
+                value={search.query}
+              />
+            </Label>
+            <p className="text-caption text-muted-foreground">Найдено: {matches.length}</p>
+          </CardHeader>
+          <CardContent
+            aria-label="Список школьников"
+            className="max-h-[48rem] overflow-y-auto px-2 pb-2"
+            ref={studentList}
+            role="region"
+          >
+            {matches.length === 0 ? (
+              <p className="p-3 text-small text-muted-foreground">Никого не нашли.</p>
+            ) : (
+              <ol className="relative w-full" style={{ height: `${studentRows.getTotalSize()}px` }}>
+                {studentRows.getVirtualItems().map((virtualRow) => {
+                  const student = matches[virtualRow.index]!
+                  const selected = selectedStudent?.studentId === student.studentId
+                  return (
+                    <li
+                      className="absolute left-0 top-0 w-full pr-1"
+                      key={student.studentId}
+                      style={{
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
                     >
-                      <span className="block text-small font-medium">{fullName(student)}</span>
-                      <span className="mt-1 flex flex-wrap gap-1 text-caption text-muted-foreground">
-                        <span>{student.grade === null ? 'класс —' : `${student.grade} класс`}</span>
-                        <span>·</span>
-                        <span>
-                          {student.strength === null ? 'сила —' : `сила ${student.strength}`}
+                      <button
+                        aria-current={selected ? 'true' : undefined}
+                        className="h-[3.5rem] w-full rounded-md border border-transparent px-3 py-2 text-left hover:bg-muted aria-current:border-border aria-current:bg-muted"
+                        onClick={() =>
+                          onSearchChange({ query: search.query, studentId: student.studentId })
+                        }
+                        type="button"
+                      >
+                        <span className="block text-small font-medium">{fullName(student)}</span>
+                        <span className="mt-1 flex flex-wrap gap-1 text-caption text-muted-foreground">
+                          <span>
+                            {student.grade === null ? 'класс —' : `${student.grade} класс`}
+                          </span>
+                          <span>·</span>
+                          <span>
+                            {student.strength === null ? 'сила —' : `сила ${student.strength}`}
+                          </span>
+                          {student.enrollments.length === 0 ? <span>· нет курса</span> : null}
                         </span>
-                        {student.enrollments.length === 0 ? <span>· нет курса</span> : null}
-                      </span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ol>
-          )}
-        </CardContent>
-      </Card>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
+          </CardContent>
+        </Card>
 
-      {selectedStudent ? (
-        <div className="min-w-0 space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-center gap-2">
-                <CardTitle>{fullName(selectedStudent)}</CardTitle>
-                {showPrivateAccounts ? (
-                  <Badge
-                    variant={
-                      selectedStudent.webAccount?.status === 'active' ? 'success' : 'warning'
-                    }
-                  >
-                    {selectedStudent.webAccount === null
-                      ? 'Web-вход не создан'
-                      : selectedStudent.webAccount.status === 'active'
-                        ? 'Web-вход активен'
-                        : 'Web-вход отключён'}
-                  </Badge>
-                ) : null}
-              </div>
-            </CardHeader>
-            <CardContent className="grid gap-3 text-small sm:grid-cols-2 xl:grid-cols-4">
-              <div>
-                <p className="text-caption text-muted-foreground">Класс</p>
-                <p>{selectedStudent.grade ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-caption text-muted-foreground">Дата рождения</p>
-                <p>{selectedStudent.birthday ?? '—'}</p>
-              </div>
-              <div>
-                <p className="text-caption text-muted-foreground">Сила</p>
-                <p>{selectedStudent.strength ?? '—'}</p>
-              </div>
-              {showPrivateAccounts ? (
-                <>
-                  <div>
-                    <p className="text-caption text-muted-foreground">Логин</p>
-                    <p>{selectedStudent.webAccount?.username ?? '—'}</p>
-                  </div>
-                  <div className="sm:col-span-2 xl:col-span-4">
-                    <p className="text-caption text-muted-foreground">Семейные аккаунты</p>
-                    <p>
-                      {selectedStudent.familyAccounts.length === 0
-                        ? '—'
-                        : selectedStudent.familyAccounts
-                            .map(
-                              (account) =>
-                                `${account.displayName} · ${account.username} · ${account.relationshipLabel}`,
-                            )
-                            .join(', ')}
-                    </p>
-                  </div>
-                </>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          {showPrivateAccounts && onAccountChange ? (
+        {selectedStudent ? (
+          <div className="min-w-0 space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Доступ в кабинеты</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <CardTitle>{fullName(selectedStudent)}</CardTitle>
+                  {showPrivateAccounts ? (
+                    <Badge
+                      variant={
+                        selectedStudent.webAccount?.status === 'active' ? 'success' : 'warning'
+                      }
+                    >
+                      {selectedStudent.webAccount === null
+                        ? 'Web-вход не создан'
+                        : selectedStudent.webAccount.status === 'active'
+                          ? 'Web-вход активен'
+                          : 'Web-вход отключён'}
+                    </Badge>
+                  ) : null}
+                </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {selectedStudent.webAccount ? (
-                  <StudentAccountControls
-                    account={selectedStudent.webAccount}
-                    audience="student"
-                    key={`${selectedStudent.webAccount.accountId}:${selectedStudent.webAccount.credentialVersion}`}
-                    onChange={onAccountChange}
-                    pending={accountSaving}
-                  />
-                ) : onCreateStudentAccount ? (
-                  <StudentAccountCreator
-                    key={`student-account:${selectedStudent.studentId}`}
-                    onCreate={onCreateStudentAccount}
-                    pending={accountSaving}
-                    staffAccountId={accountId}
-                    storageNamespace={storageNamespace}
-                    studentId={selectedStudent.studentId}
-                    usernameSuggestion={selectedStudent.usernameSuggestion}
-                  />
-                ) : (
-                  <p className="text-small text-muted-foreground">
-                    Аккаунт школьника ещё не создан.
-                  </p>
-                )}
-                {onFamilyChange ? (
-                  <FamilyAccountManager
-                    accounts={selectedStudent.familyAccounts}
-                    key={`family-accounts:${selectedStudent.studentId}`}
-                    onChange={onFamilyChange}
-                    pending={familySaving}
-                    staffAccountId={accountId}
-                    storageNamespace={storageNamespace}
-                    studentId={selectedStudent.studentId}
-                  />
+              <CardContent className="grid gap-3 text-small sm:grid-cols-2 xl:grid-cols-4">
+                <div>
+                  <p className="text-caption text-muted-foreground">Класс</p>
+                  <p>{selectedStudent.grade ?? '—'}</p>
+                </div>
+                <div>
+                  <p className="text-caption text-muted-foreground">Дата рождения</p>
+                  <p>{selectedStudent.birthday ?? '—'}</p>
+                </div>
+                <div>
+                  <p className="text-caption text-muted-foreground">Сила</p>
+                  <p>{selectedStudent.strength ?? '—'}</p>
+                </div>
+                {showPrivateAccounts ? (
+                  <>
+                    <div>
+                      <p className="text-caption text-muted-foreground">Логин</p>
+                      <p>{selectedStudent.webAccount?.username ?? '—'}</p>
+                    </div>
+                    <div className="sm:col-span-2 xl:col-span-4">
+                      <p className="text-caption text-muted-foreground">Семейные аккаунты</p>
+                      <p>
+                        {selectedStudent.familyAccounts.length === 0
+                          ? '—'
+                          : selectedStudent.familyAccounts
+                              .map(
+                                (account) =>
+                                  `${account.displayName} · ${account.username} · ${account.relationshipLabel}`,
+                              )
+                              .join(', ')}
+                      </p>
+                    </div>
+                  </>
                 ) : null}
-                {selectedStudent.familyAccounts.map((account) => (
-                  <div className="space-y-2" key={account.accountId}>
-                    <p className="text-small text-muted-foreground">
-                      {account.displayName} · {account.relationshipLabel}
-                    </p>
+              </CardContent>
+            </Card>
+
+            {showPrivateAccounts && onAccountChange ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Доступ в кабинеты</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {selectedStudent.webAccount ? (
                     <StudentAccountControls
-                      account={account}
-                      audience="family"
-                      key={`${account.accountId}:${account.credentialVersion}`}
+                      account={selectedStudent.webAccount}
+                      audience="student"
+                      key={`${selectedStudent.webAccount.accountId}:${selectedStudent.webAccount.credentialVersion}`}
                       onChange={onAccountChange}
                       pending={accountSaving}
                     />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ) : null}
+                  ) : onCreateStudentAccount ? (
+                    <StudentAccountCreator
+                      key={`student-account:${selectedStudent.studentId}`}
+                      onCreate={onCreateStudentAccount}
+                      pending={accountSaving}
+                      staffAccountId={accountId}
+                      storageNamespace={storageNamespace}
+                      studentId={selectedStudent.studentId}
+                      usernameSuggestion={selectedStudent.usernameSuggestion}
+                    />
+                  ) : (
+                    <p className="text-small text-muted-foreground">
+                      Аккаунт школьника ещё не создан.
+                    </p>
+                  )}
+                  {onFamilyChange ? (
+                    <FamilyAccountManager
+                      accounts={selectedStudent.familyAccounts}
+                      key={`family-accounts:${selectedStudent.studentId}`}
+                      onChange={onFamilyChange}
+                      pending={familySaving}
+                      staffAccountId={accountId}
+                      storageNamespace={storageNamespace}
+                      studentId={selectedStudent.studentId}
+                    />
+                  ) : null}
+                  {selectedStudent.familyAccounts.map((account) => (
+                    <div className="space-y-2" key={account.accountId}>
+                      <p className="text-small text-muted-foreground">
+                        {account.displayName} · {account.relationshipLabel}
+                      </p>
+                      <StudentAccountControls
+                        account={account}
+                        audience="family"
+                        key={`${account.accountId}:${account.credentialVersion}`}
+                        onChange={onAccountChange}
+                        pending={accountSaving}
+                      />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
 
-          {selectedStudent.enrollments.length === 0 ? (
-            <Card>
-              <CardContent className="pt-5 text-small text-muted-foreground">
-                Школьник пока не записан ни на один курс.
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader className="gap-3">
-                <CardTitle>Курс и доступ</CardTitle>
-                {selectedStudent.enrollments.length > 1 ? (
-                  <Label className="grid max-w-sm gap-1 text-small">
-                    Курс
-                    <select
-                      className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
-                      onChange={(event) =>
-                        onSearchChange({
-                          ...search,
-                          studentId: selectedStudent.studentId,
-                          courseId: event.target.value,
-                        })
+            {selectedStudent.enrollments.length === 0 ? (
+              <Card>
+                <CardContent className="pt-5 text-small text-muted-foreground">
+                  Школьник пока не записан ни на один курс.
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader className="gap-3">
+                  <CardTitle>Курс и доступ</CardTitle>
+                  {selectedStudent.enrollments.length > 1 ? (
+                    <Label className="grid max-w-sm gap-1 text-small">
+                      Курс
+                      <select
+                        className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+                        onChange={(event) =>
+                          onSearchChange({
+                            ...search,
+                            studentId: selectedStudent.studentId,
+                            courseId: event.target.value,
+                          })
+                        }
+                        value={selectedEnrollment?.course.courseId}
+                      >
+                        {selectedStudent.enrollments.map((enrollment) => (
+                          <option key={enrollment.enrollmentId} value={enrollment.course.courseId}>
+                            {enrollment.course.name}
+                          </option>
+                        ))}
+                      </select>
+                    </Label>
+                  ) : (
+                    <p className="text-small text-muted-foreground">
+                      {selectedEnrollment?.course.name}
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {selectedEnrollment ? (
+                    <EnrollmentEditor
+                      accountId={accountId}
+                      allGroups={courseGroups(selectedCourse, selectedEnrollment)}
+                      canEditGroup={(groupId) =>
+                        canEditGroup(selectedEnrollment.course.courseId, groupId)
                       }
-                      value={selectedEnrollment?.course.courseId}
-                    >
-                      {selectedStudent.enrollments.map((enrollment) => (
-                        <option key={enrollment.enrollmentId} value={enrollment.course.courseId}>
-                          {enrollment.course.name}
-                        </option>
-                      ))}
-                    </select>
-                  </Label>
-                ) : (
-                  <p className="text-small text-muted-foreground">
-                    {selectedEnrollment?.course.name}
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent>
-                {selectedEnrollment ? (
-                  <EnrollmentEditor
-                    accountId={accountId}
-                    allGroups={courseGroups(selectedCourse, selectedEnrollment)}
-                    canEditGroup={(groupId) =>
-                      canEditGroup(selectedEnrollment.course.courseId, groupId)
-                    }
-                    canManageEnrollment={canManageEnrollment}
-                    enrollment={selectedEnrollment}
-                    key={`${selectedEnrollment.enrollmentId}:${selectedEnrollment.version}`}
-                    onSave={onSave}
-                    saving={saving}
-                    storageNamespace={storageNamespace}
-                  />
-                ) : null}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      ) : null}
+                      canManageEnrollment={canManageEnrollment}
+                      enrollment={selectedEnrollment}
+                      key={`${selectedEnrollment.enrollmentId}:${selectedEnrollment.version}`}
+                      onSave={onSave}
+                      saving={saving}
+                      storageNamespace={storageNamespace}
+                    />
+                  ) : null}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -632,6 +656,35 @@ export function StaffStudentDirectoryPage({
     },
     onError: (error) => authentication.handleApiError(error),
   })
+  const createStudentAccountsMutation = useMutation({
+    mutationFn: async (
+      commands: StudentAccountBatchCommand[],
+    ): Promise<StudentAccountBatchResult> => {
+      const createdStudentIds: string[] = []
+      const failures: StudentAccountBatchResult['failures'] = []
+      // Phase 10 daily batches deliberately reuse the audited single-account
+      // endpoint; the guarded auth-import CLI remains the initial bulk path.
+      for (const command of commands) {
+        try {
+          await client.createStudentAccount(command.studentId, {
+            schemaVersion: 1,
+            username: command.username,
+          })
+          createdStudentIds.push(command.studentId)
+        } catch (caught) {
+          authentication.handleApiError(caught)
+          failures.push({
+            studentId: command.studentId,
+            message: errorMessage(caught instanceof Error ? caught : new Error('unknown error')),
+          })
+        }
+      }
+      return { createdStudentIds, failures }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: adminStudentEnrollmentsQueryKey(scope) })
+    },
+  })
 
   if (directory.isPending || (isAdmin && catalog.isPending)) {
     return (
@@ -685,6 +738,7 @@ export function StaffStudentDirectoryPage({
         {mutation.error ||
         accountMutation.error ||
         familyMutation.error ||
+        createStudentAccountsMutation.error ||
         createStudentAccountMutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>
@@ -694,6 +748,7 @@ export function StaffStudentDirectoryPage({
                   (mutation.error ??
                     accountMutation.error ??
                     familyMutation.error ??
+                    createStudentAccountsMutation.error ??
                     createStudentAccountMutation.error)!,
                 )}
               </AlertDescription>
@@ -710,7 +765,12 @@ export function StaffStudentDirectoryPage({
             )
           }
           canManageEnrollment={isAdmin}
-          accountSaving={accountMutation.isPending || createStudentAccountMutation.isPending}
+          accountSaving={
+            accountMutation.isPending ||
+            createStudentAccountMutation.isPending ||
+            createStudentAccountsMutation.isPending
+          }
+          batchAccountSaving={createStudentAccountsMutation.isPending}
           courses={catalog.data?.courses ?? []}
           familySaving={familyMutation.isPending}
           onAccountChange={async (command) => {
@@ -722,6 +782,9 @@ export function StaffStudentDirectoryPage({
           onCreateStudentAccount={async (studentId, input) => {
             await createStudentAccountMutation.mutateAsync({ studentId, input })
           }}
+          onCreateStudentAccounts={async (commands) =>
+            createStudentAccountsMutation.mutateAsync(commands)
+          }
           onSave={(command) => mutation.mutate(command)}
           onSearchChange={onSearchChange}
           saving={mutation.isPending}

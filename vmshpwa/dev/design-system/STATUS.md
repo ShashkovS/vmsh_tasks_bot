@@ -461,3 +461,11 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 ## Оставшийся инженерный follow-up
 
 - После фиксации math corpus проверить subset/форматы KaTeX fonts и повторно измерить precache.
+
+## Phase 4 reopened checkpoint: Student account batch creation — 2 August 2026
+
+- Added `Pages/Staff--student-account-batch-creation` for the compact admin-only
+  daily batch flow, canonical-login selection and reload-safe non-secret draft.
+- Staff browser-mode run: 23/23 page stories passed with the a11y gate enabled.
+- Initial historical bulk import remains a separate Phase 10 workflow; this
+  story deliberately reuses the accepted single-account interaction.

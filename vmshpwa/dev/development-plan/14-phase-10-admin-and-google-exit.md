@@ -97,8 +97,12 @@ Staff передаёт только логин, а backend хеширует те
 аккаунта. Production E2E создаёт аккаунт для отдельного unprovisioned Student и
 входит с этим токеном через настоящий Student login. Directory предлагает
 канонический login по фамилии и дню рождения только при отсутствии коллизии;
-collision/invalid identity остаются явным ручным решением. Batch-import ещё не
-закрыт.
+collision/invalid identity остаются явным ручным решением. Небольшие ежедневные
+пачки создаются из Staff через тот же одиночный API; выбранные строки переживают
+reload в account-scoped `localStorage`, а частичные ошибки не теряют выбор.
+Storybook: `Pages/Staff--student-account-batch-creation`; production E2E:
+`Admin creates a small Student account batch and keeps selection across reload`.
+Первоначальный bulk-import с dry-run и отчётом ещё не закрыт.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.
 - [ ] Google replacement matrix with every current loader: `<path>`.

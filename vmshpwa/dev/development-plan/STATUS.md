@@ -911,3 +911,17 @@
 - Proof: [`pwa_tests/reports/phase10-student-account-creation.md`](../../../pwa_tests/reports/phase10-student-account-creation.md).
 - Не закрыты: batch provisioning и production E2E с отдельным синтетическим
   unprovisioned Student seed.
+
+## Phase 10 checkpoint: ежедневное пакетное создание Student web-входов — 2 августа 2026
+
+- Admin выбирает небольшую пачку школьников с однозначными каноническими
+  логинами; выбор хранится локально, переживает reload и не содержит секретов.
+- Каждая строка проходит через существующий одиночный audited API. Успешные
+  строки снимаются с выбора, частичные ошибки остаются для повторной проверки.
+- Storybook: `Pages/Staff--student-account-batch-creation`; Staff browser gate —
+  **23/23 PASS**. Production auth E2E — **81 PASS / 12 intentional skips**,
+  включая создание двух настоящих аккаунтов после reload.
+- Proof:
+  [`phase10-student-account-creation.md`](../../../pwa_tests/reports/phase10-student-account-creation.md).
+  Первоначальный bulk import/dry-run по исторической базе остаётся отдельным
+  незакрытым gate.

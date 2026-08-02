@@ -252,14 +252,14 @@ test('Admin creates a Family login without persisting its password in the browse
   await page.getByLabel('Поиск по имени').fill('тестов chromium')
   await expect(page.getByRole('button', { name: /Тестов chromium Ученик/ })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Создать аккаунт' }).click()
+  await page.getByRole('button', { name: 'Создать аккаунт', exact: true }).click()
   await page.getByLabel('Логин').fill(username)
   await page.getByLabel('Имя аккаунта').fill('Семья browser E2E')
   await page.getByLabel('Первый пароль').fill(password)
   await expect(page.getByText(/Пароль — никогда/)).toBeVisible()
 
   await page.reload()
-  await page.getByRole('button', { name: 'Создать аккаунт' }).click()
+  await page.getByRole('button', { name: 'Создать аккаунт', exact: true }).click()
   await expect(page.getByLabel('Логин')).toHaveValue(username)
   await expect(page.getByLabel('Имя аккаунта')).toHaveValue('Семья browser E2E')
   await expect(page.getByLabel('Первый пароль')).toHaveValue('')
@@ -334,6 +334,35 @@ test('Admin creates a Student web login backed by the current bot token', async 
     '/student/profile',
   )
   await expect(page.getByRole('heading', { name: `Новый БезАккаунта ${project}` })).toBeVisible()
+})
+
+test('Admin creates a small Student account batch and keeps selection across reload', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite batch')
+
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users')
+  await page.getByRole('button', { name: 'Выбрать школьников' }).click()
+  await page.getByLabel('Поиск среди готовых').fill('пакет chromium')
+  await page.getByRole('button', { name: 'Выбрать найденных · 2' }).click()
+  await expect(page.getByText(/Выбрано: 2\. Выбор хранится/)).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Создать аккаунты · 2' })).toBeEnabled()
+
+  let accountResponses = 0
+  const secondCreated = page.waitForResponse((response) => {
+    if (
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/student-account')
+    ) {
+      accountResponses += 1
+    }
+    return accountResponses === 2
+  })
+  await page.getByRole('button', { name: 'Создать аккаунты · 2' }).click()
+  expect((await secondCreated).status()).toBe(201)
+  await expect(page.getByText('Создано: 2. Ошибок: 0.')).toBeVisible()
 })
 
 test('Teacher sees only scoped students and cannot edit admin enrollment fields', async ({
