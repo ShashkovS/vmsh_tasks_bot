@@ -1003,5 +1003,20 @@
   lint/typecheck/build pass, production authentication
   E2E `90 passed / 12 intentional skips`; новый сценарий зелёный в Chromium,
   WebKit и Firefox. Desktop/mobile-light просмотрены, snapshots не менялись.
-- Phase 10 остаётся незавершённой: bulk import, Google cutover, полный teacher
-  workload и расширенный delivery/reach всё ещё открыты.
+- Phase 10 остаётся незавершённой: первоначальный bulk import новых школьников
+  зависит от вопроса 19, а task-settings Google cutover — от владельческого
+  принятия после реальной недели. Сам problem-workbook software path, его
+  production-copy parity и classroom delivery/reach уже подтверждены; полный
+  teacher workload остаётся отдельным продуктовым срезом.
+
+## Phase 10 checkpoint: reconciliation импорта задач — 2 августа 2026
+
+- Существующий XLSX workflow листов «Задачи»/«Старые» сверён от HTTP до
+  production-build Playwright и не требует повторной реализации.
+- Preview/apply/idempotent receipt/guarded rollback, synonym candidates и
+  metadata grid образуют полный software replacement; parity настоящего файла
+  против изолированной копии `db/vmsh.db`: `1813 unchanged`, ноль diagnostics.
+- Сводный proof:
+  [`phase10-problem-workbook-replacement.md`](../../../pwa_tests/reports/phase10-problem-workbook-replacement.md).
+- Открыты только owner-run реальной недели и дата операционного cutover; import
+  новых школьников является другим workflow и остаётся зависимым от вопроса 19.

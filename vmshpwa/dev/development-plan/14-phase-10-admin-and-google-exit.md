@@ -140,26 +140,49 @@ pending counters, teacher workload, oral/reach и scheduler расчёта — �
 admin-only ошибки рассылки аудиторий. Storybook:
 `Pages/Staff/Dashboard--CurrentWeek`, `--TeacherScoped`,
 `--NoCurrentLessons`; production-build E2E прошёл в Chromium, WebKit и Firefox.
-Сводка не вводит отдельный read-model и не закрывает полный teacher workload,
-delivery/reach и Google cutover.
-Первоначальный bulk-import с dry-run и отчётом ещё не закрыт.
+Сводка не вводит отдельный read-model и не закрывает полный teacher workload или
+операционное принятие Google cutover.
 
-- [ ] Revision/migrations/backfills: `<sha/paths/results>`.
+Полный software-path замены листов «Задачи»/«Старые» подтверждён сводным proof
+[`phase10-problem-workbook-replacement.md`](../../../pwa_tests/reports/phase10-problem-workbook-replacement.md):
+course-scoped XLSX preview, понятные diagnostics, advisory synonym candidates,
+явный apply, idempotent receipt, guarded rollback, Staff interaction и
+production-build Playwright. Differential rehearsal настоящего workbook против
+изолированной копии `db/vmsh.db` получил 1813 `unchanged` и ноль расхождений.
+Это закрывает реализацию task-settings import, но не подменяет владельческое
+подтверждение cutover после реального недельного цикла. Первоначальный bulk
+import **новых школьников** остаётся отдельным незакрытым workflow и зависит от
+решения вопроса 19 в `20-implementation-questions.md`.
+
+- [x] Revision/migrations for problem import: `0074.pwa_problem_import_receipts`;
+  up/down/up, integrity и rollback подтверждены в
+  [`phase10-problem-import-apply.md`](../../../pwa_tests/reports/phase10-problem-import-apply.md).
 - [ ] Google replacement matrix with every current loader: `<path>`.
-- [ ] Protected production-copy parallel-run/parity reports: `<paths/results>`.
-- [ ] Task metadata field-by-field migration/parity report, including explicit synonym candidates and no physical rewrite of attempts/results: `<path/result>`.
+- [x] Protected production-copy task-workbook parity:
+  [`phase10-problem-import-parity.md`](../../../pwa_tests/reports/phase10-problem-import-parity.md)
+  и [JSON](../../../pwa_tests/reports/phase10-problem-import-parity.json):
+  1813 unchanged, zero diagnostics; source DB unchanged.
+- [x] Task metadata field-by-field parity and synonym candidates without
+  physical rewrite:
+  [`phase10-problem-workbook-replacement.md`](../../../pwa_tests/reports/phase10-problem-workbook-replacement.md).
 - [ ] Demo users/groups/family/permissions/import/dry-run/apply: Family create/link/unlink
   и вход подтверждены в
   [`phase10-family-account-ui.md`](../../../pwa_tests/reports/phase10-family-account-ui.md);
-  users import/dry-run/apply ещё не завершены.
-- [ ] Import security/idempotency/transaction tests: `<result>`.
+  problem workbook import закрыт; users import/dry-run/apply ещё не завершён.
+- [x] Problem import security/idempotency/transaction tests:
+  [`phase10-problem-import-apply.md`](../../../pwa_tests/reports/phase10-problem-import-apply.md).
 - [ ] Admin local draft reload/isolation/conflict/cleanup tests: Family-form
   reload/isolation/secret exclusion/cleanup подтверждены в
   [`phase10-family-account-ui.md`](../../../pwa_tests/reports/phase10-family-account-ui.md);
-  metadata/import drafts ещё не завершены.
-- [ ] 1500-row performance + SQL plans: `<path/result>`.
+  upload bytes невозможно безопасно восстанавливать после reload без повторного
+  выбора файла; metadata grid draft остаётся отдельным UI gate.
+- [x] 1500-row performance + SQL plans:
+  [`phase10-directory-performance.md`](../../../pwa_tests/reports/phase10-directory-performance.md).
 - [ ] Storybook dense admin states/a11y/visual approval: `<ids/paths>`.
-- [ ] Playwright 3 browsers, Google/Telegram network blocked: `<result>`.
+- [x] Problem-workbook Playwright: preview в Chromium/Firefox/WebKit, reversible
+  mutation в одном browser над общей seeded SQLite; Google/Telegram network не
+  используется. См.
+  [`phase10-problem-workbook-replacement.md`](../../../pwa_tests/reports/phase10-problem-workbook-replacement.md).
 - [ ] Cutover/rollback/security credential runbook and acceptance: `<paths/issues/name/date>`.
 
 ## Многокурсовый инкремент Phase 10

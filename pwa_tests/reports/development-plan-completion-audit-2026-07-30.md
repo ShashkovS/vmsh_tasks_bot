@@ -226,29 +226,36 @@ production-build browser-сценарий доказывает пересчёт 
 [1500-student performance](phase9-course-performance.md),
 [achievements](phase9-course-achievements.md).
 
-### Phase 10 — Staff data/Google exit: частично готов
+### Phase 10 — Staff data/Google exit: software core почти готов
 
 Готовы реальные course/group CRUD, independent schedules, Telegram bindings,
-Teacher scopes, Student course-enrollment editor, problem workbook
-preview/apply/rollback и synonym merge/split impact flow.
+Teacher scopes, Student course-enrollment editor, account lifecycle и создание
+Student web-входов, Family account/link management, searchable audit, scoped
+statistics, operational dashboard, problem workbook preview/apply/rollback и
+synonym merge/split impact flow.
 
 Заявленный результат этапа **ещё не достигнут**:
 
-- нет полного Student account CRUD, block/archive и credential reset;
-- нет управления Family accounts/links из Staff;
-- `/staff/audit` и `/staff/statistics` остаются информационными заглушками;
-- Google replacement matrix и production-copy cutover закрывают только problem
-  workbook, а не все перечисленные admin workflows;
-- нет единого three-browser upload → preview → apply → Student-use сценария;
+- первоначальный import/provisioning новых Student/Family accounts зависит от
+  решений 18–19 в `20-implementation-questions.md`;
+- software replacement и production-copy parity листов «Задачи»/«Старые»
+  закрыты, но owner ещё не провёл через Staff реальный недельный цикл и не
+  объявил операционную дату cutover;
+- остальные Google/external процессы имеют собственные owners/gates и не
+  считаются автоматически заменёнными импортом задач;
 - visual acceptance отсутствует.
 
 Доказательства готовых срезов: [course catalog](phase10-course-catalog-frontend.md),
 [schedules](phase10-course-schedule-frontend.md),
 [enrollments](phase10-admin-enrollments-frontend.md),
 [staff scopes](phase10-staff-access-frontend.md),
-[problem import](phase10-problem-import-apply.md),
+[problem import](phase10-problem-workbook-replacement.md),
 [synonyms](phase10-problem-synonym-frontend.md),
-[каталог 1500 школьников](phase10-directory-performance.md).
+[каталог 1500 школьников](phase10-directory-performance.md),
+[account lifecycle](phase10-account-lifecycle-2026-07-30.md),
+[Family UI](phase10-family-account-ui.md),
+[audit](phase10-staff-audit.md), [statistics](phase10-staff-statistics.md) и
+[dashboard](phase10-staff-dashboard.md).
 
 ### Phase 11 — hardening/rollout: сильный локальный checkpoint, production gates открыты
 

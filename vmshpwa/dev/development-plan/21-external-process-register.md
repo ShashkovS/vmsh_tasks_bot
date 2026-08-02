@@ -224,10 +224,13 @@ metadata-grid draft.
 Администратор вручную заполняет `prob_type`, `ans_type`, validation,
 `cor_ans`/`cor_ans_checker`, тексты ошибки и поздравления, затем запускает bot
 import. Текущий путь полагается на историю Google Sheet, ответ команды и ручную
-выборочную сверку; diff-preview и versioned revision ещё отсутствуют. Одинаковое
-название внутри занятия — historical synonym signal. Phase 2/4/10 требует typed
-grid, всех исторических answer families, preview diff, versioned trusted checker
-и rollback.
+выборочную сверку. Его software replacement уже реализован: course-scoped XLSX
+preview, typed metadata grid, все исторические answer families, advisory synonym
+candidates, atomic apply, idempotent receipt и guarded rollback. Нулевой diff на
+1813 строках настоящего workbook зафиксирован в
+[`phase10-problem-workbook-replacement.md`](../../../pwa_tests/reports/phase10-problem-workbook-replacement.md).
+Legacy path остаётся active upstream только до владельческого подтверждения после
+одного реального недельного цикла; затем он становится ручным read-only fallback.
 
 Ручное ревью имеет предметную семантику, а не только проверку «не пусто»:
 
@@ -437,8 +440,10 @@ Production DB несколько раз в день копируется к др
   [`legacy-email-templates`](#карта-файлов) — reference для post-v1 editor.
 - `news-characterization`: [`telegram-news-corpus`](#карта-файлов) — закрытый
   structural corpus Phase 8, не runtime source и не источник текста для docs.
-- `legacy-workbook-config`: [`legacy-workbook`](#карта-файлов) остаётся active
-  upstream до Phase 10 cutover листов «Задачи»/«Старые».
+- `legacy-workbook-config`: [`legacy-workbook`](#карта-файлов) имеет готовый
+  Staff replacement и нулевой parity diff, но остаётся active upstream до
+  владельческого cutover листов «Задачи»/«Старые» после реального недельного
+  цикла.
 
 ## Точный runbook недели
 
