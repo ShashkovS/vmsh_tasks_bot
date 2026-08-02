@@ -52,7 +52,7 @@ uv run pytest -q -n0 pwa_tests/integration/test_content_assets_smoke.py \
 ```
 
 После добавления corpus полный PWA Python gate в восьми изолированных workers:
-`1551 passed, 5 intentional skips` за `80.63s`.
+`1552 passed, 5 intentional skips` за `108.21s`.
 
 Локальный toolchain:
 

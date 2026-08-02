@@ -1087,7 +1087,7 @@
 - Повреждённый файл отклонён converter-ом, payload `25 MiB + 1 byte` — до
   запуска внешнего процесса. Исходные файлы не сохраняются в репозитории.
 - Focused corpus: **5 PASS**, включая пять закреплённых по SHA-256 публичных
-  фотографий математических материалов; полный PWA Python gate — **1551 PASS /
+  фотографий математических материалов; полный PWA Python gate — **1552 PASS /
   5 intentional skips** в восьми workers. Proof:
   [`phase5-written-media-corpus.md`](../../../pwa_tests/reports/phase5-written-media-corpus.md).
 - Media corpus gate Phase 5 закрыт; production service-profile и Hetzner S3
