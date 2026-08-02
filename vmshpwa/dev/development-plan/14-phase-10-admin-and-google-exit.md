@@ -124,6 +124,15 @@ Staff writes всё ещё перечислены в proof как открыты
 показывает старый и новый набор публичных course/group IDs, а append-only
 `staff_scopes` остаётся полной историей. Rollback-test не допускает grant/revoke
 без audit-строки.
+Первый course-scoped Staff statistics slice подтверждён в
+[`phase10-staff-statistics.md`](../../../pwa_tests/reports/phase10-staff-statistics.md):
+реальный `/staff/statistics` читает последний завершённый immutable analytics
+snapshot, ограничивает teacher действующими `staff_scopes` и отдаёт только
+анонимные агрегаты без student IDs и позиции ребёнка в группе. Storybook:
+`Pages/Staff/Statistics--HistoricalCourse`, `--NoCompletedRun`; production-build
+E2E прошёл в Chromium, WebKit и Firefox. Это не закрывает live submission/
+pending counters, teacher workload, oral/reach и scheduler расчёта — они явно
+остаются следующими статистическими инкрементами Phase 10.
 Первоначальный bulk-import с dry-run и отчётом ещё не закрыт.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.

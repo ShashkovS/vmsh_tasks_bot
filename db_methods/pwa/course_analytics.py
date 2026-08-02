@@ -185,8 +185,52 @@ def latest_student_course_metrics(
     return [dict(row) for row in rows]
 
 
+def find_latest_completed_course_run(
+    connection: sqlite3.Connection, *, course_id: int
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT id, public_id, algorithm, algorithm_version, "
+        "input_through_result_id, completed_at FROM analytics_runs "
+        "WHERE course_id = ? AND state = 'completed' "
+        "ORDER BY completed_at DESC, id DESC LIMIT 1",
+        (course_id,),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def list_course_run_metrics(
+    connection: sqlite3.Connection, *, run_id: int
+) -> list[dict[str, object]]:
+    """Return one completed snapshot; aggregation belongs to the domain layer."""
+    rows = connection.execute(
+        """
+        SELECT metric.student_user_id,
+               metric.lesson_number,
+               group_record.public_id AS group_public_id,
+               group_record.short_code AS group_code,
+               group_record.public_name AS group_name,
+               group_record.color_key,
+               group_record.sort_order AS group_sort_order,
+               metric.simple_strength,
+               metric.complex_strength,
+               metric.max_complex_strength,
+               metric.solved_items,
+               metric.total_items
+        FROM student_lesson_metrics AS metric
+        JOIN groups AS group_record ON group_record.group_id = metric.group_id
+        WHERE metric.run_id = ?
+        ORDER BY metric.lesson_number, group_record.sort_order,
+                 group_record.group_id, metric.student_user_id
+        """,
+        (run_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 __all__ = [
+    "find_latest_completed_course_run",
     "latest_student_course_metrics",
+    "list_course_run_metrics",
     "list_course_group_access_rows",
     "list_course_problem_rows",
     "list_course_result_rows",

@@ -172,12 +172,14 @@ Storybook:
 
 - [`DenseDataTable`](../../packages/product/src/dense-data-table.tsx), [`MetadataGrid`](../../packages/product/src/metadata-grid.tsx), [`PublicationControl`, `LatexUpload`, `MissingAssetsFlow`](../../packages/product/src/staff-publishing.tsx);
 - Staff admin compositions в [`apps/staff/src/pages.tsx`](../../apps/staff/src/pages.tsx); [`BroadcastComposer`](../../packages/product/src/staff-outreach.tsx) остаётся Phase-2 design placeholder, а не v1 Google-cutover scope.
+- course/group-scoped [`StaffStatisticsView`](../../apps/staff/src/staff-statistics-page.tsx), runtime route [`/statistics`](../../apps/staff/src/routes/statistics.tsx), strict [`staff statistics contract`](../../packages/contracts/src/staff-statistics.ts) и transport [`staff-statistics-client.ts`](../../packages/app-shell/src/staff-statistics-client.ts). Страница использует готовый immutable analytics snapshot и не получает индивидуальные student rows.
 
 Storybook:
 
 - [`Product/Staff data — Data table`](http://localhost:6006/?path=/story/product-staff-data--data-table), [`Metadata`](http://localhost:6006/?path=/story/product-staff-data--metadata) — [source](../../packages/product/src/staff-data.stories.tsx);
 - [`Product/Staff admin — Publication`](http://localhost:6006/?path=/story/product-staff-admin--publication), [`Publication scheduling`](http://localhost:6006/?path=/story/product-staff-admin--publication-scheduling), [`LaTeX`](http://localhost:6006/?path=/story/product-staff-admin--latex), [`Missing assets`](http://localhost:6006/?path=/story/product-staff-admin--missing-assets) — [source](../../packages/product/src/staff-admin.stories.tsx);
 - [`Pages/Staff — Weekly dashboard`](http://localhost:6006/?path=/story/pages-staff--weekly-dashboard), [`Lessons and publication`](http://localhost:6006/?path=/story/pages-staff--lessons-and-publication), [`Lesson import`](http://localhost:6006/?path=/story/pages-staff--lesson-import), [`Broadcast phase two`](http://localhost:6006/?path=/story/pages-staff--broadcast-phase-two) — [source](../../apps/staff/src/pages.stories.tsx).
+- [`Pages/Staff/Statistics — Historical course`](http://localhost:6006/?path=/story/pages-staff-statistics--historical-course), [`No completed run`](http://localhost:6006/?path=/story/pages-staff-statistics--no-completed-run) — [source](../../apps/staff/src/staff-statistics-page.stories.tsx). Violin является только Staff-агрегатом и не отмечает отдельного школьника.
 
 <a id="phase-11-design"></a>
 

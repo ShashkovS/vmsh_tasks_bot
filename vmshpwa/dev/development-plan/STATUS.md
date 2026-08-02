@@ -975,3 +975,17 @@
   lint/typecheck/production build **PASS**.
 - Proof: [`phase10-staff-access-backend.md`](../../../pwa_tests/reports/phase10-staff-access-backend.md)
   и [`phase10-staff-audit.md`](../../../pwa_tests/reports/phase10-staff-audit.md).
+
+## Checkpoint 2 августа 2026 — первый Staff statistics slice
+
+- Реализован `/staff/statistics` поверх последнего завершённого immutable
+  `analytics_runs`: course/group search state, teacher scope filtering,
+  анонимные lesson aggregates и violin без student marker.
+- Proof:
+  [`phase10-staff-statistics.md`](../../../pwa_tests/reports/phase10-staff-statistics.md).
+- Проверки: Python PWA `1533 passed / 5 skipped`, frontend unit `583 passed`,
+  Storybook `233 passed`, lint/typecheck/build pass, production authentication
+  E2E `87 passed / 12 intentional skips`; новый сценарий зелёный в трёх
+  браузерах. Desktop и mobile-light просмотрены вручную, snapshots не менялись.
+- Phase 10 остаётся незавершённой: нужны live operational counters, workload,
+  oral/reach, scheduler и прочие перечисленные Google-cutover/admin gates.

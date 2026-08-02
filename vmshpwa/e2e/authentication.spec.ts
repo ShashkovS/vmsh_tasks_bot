@@ -194,6 +194,26 @@ test('Admin searches the real immutable audit timeline', async ({ page }) => {
   await expect(page).toHaveURL((url) => url.searchParams.get('q') === 'e2e.audit.baseline')
 })
 
+test('Teacher reads only the scoped anonymous course statistics', async ({ page }) => {
+  await loginThroughUi(
+    page,
+    AUTH_PERSONAS.teacher,
+    '/staff/statistics?course=course-fixture-math-5-7&lesson=41',
+  )
+  await expect(page.getByRole('heading', { name: 'Статистика курса', level: 1 })).toBeVisible()
+  await expect(page.getByLabel('Группа')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Занятие 41' })).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  await expect(page.getByRole('img', { name: /Распределение по группе/ })).toBeVisible()
+  const aggregateCard = page.locator('[data-slot="card"]').filter({ hasText: 'Состав агрегата' })
+  await expect(aggregateCard.getByText('Начинающие', { exact: true })).toBeVisible()
+  await expect(page.getByText('Продолжающие', { exact: true })).toHaveCount(0)
+  await expect(page.getByText(/маркера или позиции отдельного школьника/)).toBeVisible()
+  await expect(page).toHaveURL((url) => url.searchParams.get('lesson') === '41')
+})
+
 test('Student profile uses the authenticated course enrollment instead of prototype data', async ({
   page,
 }) => {

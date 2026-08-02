@@ -491,3 +491,15 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - The same dense fixture now shows a teacher-scope replacement and exposes the
   `staff_scope` filter with compact course/group summaries. Focused
   interaction/a11y remains **2/2 PASS**; no visual baseline was updated.
+
+## Checkpoint 2 августа 2026 — Staff statistics page
+
+- Добавлены stories `Pages/Staff/Statistics--HistoricalCourse` и
+  `Pages/Staff/Statistics--NoCompletedRun` для реальной course/group-scoped
+  страницы `/staff/statistics`.
+- Визуальный контракт: плотная история занятий, компактная сводка и только
+  анонимный Staff violin; никакого маркера отдельного школьника или выдачи
+  student rows.
+- Interaction/a11y full gate: `49 files / 233 passed`. Desktop и mobile-light
+  390 px просмотрены вручную; таблица имеет собственную горизонтальную
+  прокрутку. Visual snapshots сознательно не обновлялись до owner review.
