@@ -10,6 +10,29 @@ const data = auditListResponseSchema.parse({
   schemaVersion: 1,
   items: [
     {
+      eventId: 'audit.problem-synonym-split',
+      occurredAt: '2026-08-02T11:20:00Z',
+      audience: 'staff',
+      action: 'problem_synonym.split',
+      objectType: 'problem_synonym',
+      objectId: 'problem-synonym.rooks',
+      requestId: 'request-synonym-split-7',
+      actor: {
+        userId: 'user.admin-1',
+        accountId: 'account.admin-1',
+        displayName: 'Петрова Анна',
+      },
+      before: { status: 'active', version: 1, memberCount: 2 },
+      after: {
+        courseLessonId: 'course-lesson.41',
+        status: 'split',
+        version: 2,
+        memberCount: 0,
+        removedCount: 2,
+        reason: 'Задачи были объединены по ошибке',
+      },
+    },
+    {
       eventId: 'audit.telegram-binding-verified',
       occurredAt: '2026-08-02T11:15:00Z',
       audience: 'staff',

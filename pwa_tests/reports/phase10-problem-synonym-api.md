@@ -39,5 +39,13 @@ test/written submissions, messages, results and verdicts keep their original
 
 The integration flow proves admin-only access, different task types, read-only
 preview, merge, stale-preview conflict, split, immutable original problem rows
-and an unchanged legacy result row. Frontend contracts and the production Staff
-screen are the next increment.
+and an unchanged legacy result row.
+
+## Audit follow-up — 2 August 2026
+
+Merge and split now append compact `problem_synonym` Staff-audit events inside
+the existing mutation transaction. The audit is a navigation summary rather than
+a replacement for versioned membership history. A forced audit-insert failure
+rolls back the synonym group and every member row. The current full PWA gate is
+**1524 passed, 5 skipped**; frontend unit is **578 passed**; lint, strict
+TypeScript and production builds pass.

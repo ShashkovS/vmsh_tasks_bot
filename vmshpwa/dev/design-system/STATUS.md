@@ -485,3 +485,6 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - The same timeline now includes a verified Telegram course destination and the
   `telegram_binding` filter with Russian field/action labels. Focused browser/a11y
   remains **2/2 PASS**; no visual baseline was updated.
+- The timeline fixture now also shows a synonym split with provenance summary and
+  exposes the `problem_synonym` filter. Focused interaction/a11y remains **2/2
+  PASS**; no visual baseline was updated.

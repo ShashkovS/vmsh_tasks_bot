@@ -32,6 +32,7 @@ const objectLabels: Record<AuditObjectType, string> = {
   course: 'Курсы',
   group: 'Группы',
   telegram_binding: 'Привязки Telegram',
+  problem_synonym: 'Синонимы задач',
 }
 
 const actionLabels: Record<string, string> = {
@@ -53,15 +54,19 @@ const actionLabels: Record<string, string> = {
   'telegram_binding.disabled': 'Отключена привязка Telegram',
   'telegram_binding.draft_restored': 'Привязка возвращена в черновик',
   'telegram_binding.verified': 'Проверена привязка Telegram',
+  'problem_synonym.merged': 'Задачи объединены в синонимы',
+  'problem_synonym.split': 'Задачи разделены',
 }
 
 const fieldLabels: Record<string, string> = {
   activeGroupId: 'Активная группа',
   accentKey: 'Цвет курса',
   allowedGroupIds: 'Доступные группы',
+  addedCount: 'Добавлено задач',
   attendanceMode: 'Режим участия',
   audience: 'Кабинет',
   courseId: 'Курс',
+  courseLessonId: 'Занятие курса',
   chatId: 'Чат',
   code: 'Код',
   colorKey: 'Цвет группы',
@@ -71,9 +76,12 @@ const fieldLabels: Record<string, string> = {
   allowSelfSwitch: 'Самостоятельная смена',
   linked: 'Связь активна',
   messageThreadId: 'Тема чата',
+  memberCount: 'Задач в группе',
   ownerId: 'Владелец',
   ownerType: 'Тип владельца',
   purpose: 'Назначение',
+  reason: 'Причина',
+  removedCount: 'Удалено задач',
   relationshipLabel: 'Роль в семье',
   rows: 'Строк обработано',
   scoreWeight: 'Вес результатов',

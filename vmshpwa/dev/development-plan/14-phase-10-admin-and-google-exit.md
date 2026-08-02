@@ -114,7 +114,12 @@ mutations явно оставлено следующим audit-инкремен�
 сохраняется без соответствующей audit-строки. Следующий инкремент добавил
 `telegram_binding.created/updated/disabled/draft_restored/verified`, включая
 старый/новый destination без bot token и атомарный rollback при сбое audit.
-Расписания, синонимы и прочие Staff writes всё ещё перечислены в proof как открытые.
+Следующий инкремент добавил атомарные `problem_synonym.merged/split`: audit хранит
+компактное резюме, а детальная membership-history остаётся источником истины;
+rollback-test не допускает частично сохранённого объединения. Расписания и прочие
+Staff writes всё ещё перечислены в proof как открытые. Для расписаний атомарная
+точка пока находится внутри старого `PwaContentRepository`, поэтому второй
+неатомарный audit-write сознательно не добавлен.
 Первоначальный bulk-import с dry-run и отчётом ещё не закрыт.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.

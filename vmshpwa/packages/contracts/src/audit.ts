@@ -11,6 +11,7 @@ export const auditObjectTypeSchema = z.enum([
   'course',
   'group',
   'telegram_binding',
+  'problem_synonym',
 ])
 export type AuditObjectType = z.infer<typeof auditObjectTypeSchema>
 

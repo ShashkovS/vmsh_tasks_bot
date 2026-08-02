@@ -948,3 +948,18 @@
   [`phase10-student-account-creation.md`](../../../pwa_tests/reports/phase10-student-account-creation.md).
   Первоначальный bulk import/dry-run по исторической базе остаётся отдельным
   незакрытым gate.
+
+## Phase 10 checkpoint: аудит синонимов задач — 2 августа 2026
+
+- Merge/split записывают `problem_synonym.merged/split` в той же SQLite-транзакции,
+  что и версионированная история состава; исходные задачи, посылки и результаты
+  не переносятся.
+- Synthetic audit failure полностью откатывает новое объединение. Searchable Staff
+  audit получил фильтр «Синонимы задач» и русские подписи полей.
+- Проверки: Python PWA **1524 PASS / 5 intentional skips**, frontend unit
+  **578 PASS**, focused Storybook interaction/a11y **2/2 PASS**,
+  lint/typecheck/production build **PASS**.
+- Расписания пока остаются открытым audit-долгом: их транзакция находится внутри
+  старого `PwaContentRepository`; неатомарная вторая запись сознательно не добавлена.
+- Proof: [`phase10-staff-audit.md`](../../../pwa_tests/reports/phase10-staff-audit.md)
+  и [`phase10-problem-synonym-api.md`](../../../pwa_tests/reports/phase10-problem-synonym-api.md).

@@ -55,7 +55,7 @@ describe('audit client', () => {
     await expect(client.list({ objectType: 'all', query: '', cursor: null })).rejects.toThrow()
   })
 
-  it('accepts catalog and Telegram binding object filters', async () => {
+  it('accepts catalog, Telegram and synonym object filters', async () => {
     const fetchImplementation = vi
       .fn<typeof fetch>()
       .mockImplementation(() => Promise.resolve(Response.json(response)))
@@ -64,11 +64,13 @@ describe('audit client', () => {
     await client.list({ objectType: 'course', query: '', cursor: null })
     await client.list({ objectType: 'group', query: '', cursor: null })
     await client.list({ objectType: 'telegram_binding', query: '', cursor: null })
+    await client.list({ objectType: 'problem_synonym', query: '', cursor: null })
 
     expect(fetchImplementation.mock.calls.map((call) => call[0])).toEqual([
       '/staff/api/v1/audit?objectType=course&q=&limit=50',
       '/staff/api/v1/audit?objectType=group&q=&limit=50',
       '/staff/api/v1/audit?objectType=telegram_binding&q=&limit=50',
+      '/staff/api/v1/audit?objectType=problem_synonym&q=&limit=50',
     ])
   })
 })

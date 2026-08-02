@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from apps import pwa_app
@@ -311,3 +313,105 @@ async def test_synonym_merge_and_split_preserve_original_problem_and_result_rows
     assert result["problem_public_id"] == first
     assert result["answer"] == "Исходный ответ"
     assert active_members == 0
+
+    def audit_rows(connection):
+        return connection.execute(
+            "SELECT action, before_json, after_json FROM audit_events "
+            "WHERE object_type = 'problem_synonym' ORDER BY id"
+        ).fetchall()
+
+    events = classroom_http.factory.run_read(audit_rows)
+    assert [event["action"] for event in events] == [
+        "problem_synonym.merged",
+        "problem_synonym.split",
+    ]
+    assert events[0]["before_json"] is None
+    assert json.loads(events[0]["after_json"]) == {
+        "courseLessonId": "classroom-layout-course-lesson",
+        "status": "active",
+        "version": 1,
+        "memberCount": 2,
+        "addedCount": 2,
+    }
+    assert json.loads(events[1]["before_json"]) == {
+        "status": "active",
+        "version": 1,
+        "memberCount": 2,
+    }
+    assert json.loads(events[1]["after_json"]) == {
+        "courseLessonId": "classroom-layout-course-lesson",
+        "status": "split",
+        "version": 2,
+        "memberCount": 0,
+        "removedCount": 2,
+        "reason": "Задачи были склеены по ошибке",
+    }
+
+    timeline = await classroom_http.client.get(
+        "/staff/api/v1/audit?objectType=problem_synonym",
+        headers=_headers(),
+        cookies=cookies,
+    )
+    assert timeline.status == 200
+    timeline_items = (await timeline.json())["items"]
+    assert {item["action"] for item in timeline_items} == {
+        "problem_synonym.merged",
+        "problem_synonym.split",
+    }
+    assert all(item["objectType"] == "problem_synonym" for item in timeline_items)
+
+
+@pytest.mark.asyncio
+async def test_synonym_merge_rolls_back_when_audit_insert_fails(classroom_http):
+    _seed_layout_scope(classroom_http.factory)
+    first, second = _seed_synonym_problems(classroom_http.factory)
+    cookies = _cookies(classroom_http, "admin")
+    headers = _headers(unsafe=True)
+    preview_response = await classroom_http.client.post(
+        "/staff/api/v1/problem-synonyms/impact-preview",
+        json={
+            "schemaVersion": 1,
+            "mode": "merge",
+            "problemIds": [first, second],
+            "synonymId": None,
+        },
+        headers=headers,
+        cookies=cookies,
+    )
+    preview = await preview_response.json()
+
+    def install_failure(connection):
+        connection.execute(
+            "CREATE TRIGGER audit_problem_synonym_test_failure "
+            "BEFORE INSERT ON audit_events "
+            "WHEN new.object_type = 'problem_synonym' BEGIN "
+            "SELECT raise(ABORT, 'synthetic audit failure'); END"
+        )
+
+    classroom_http.factory.run_write(install_failure)
+    merge_response = await classroom_http.client.post(
+        "/staff/api/v1/problem-synonyms/merge",
+        json={
+            "schemaVersion": 1,
+            "problemIds": [first, second],
+            "previewSha256": preview["previewSha256"],
+        },
+        headers=headers,
+        cookies=cookies,
+    )
+    assert merge_response.status == 500
+
+    def state(connection):
+        groups = connection.execute(
+            "SELECT count(*) AS count FROM problem_synonym_groups"
+        ).fetchone()["count"]
+        members = connection.execute(
+            "SELECT count(*) AS count FROM problem_synonym_members"
+        ).fetchone()["count"]
+        audits = connection.execute(
+            "SELECT count(*) AS count FROM audit_events "
+            "WHERE object_type = 'problem_synonym'"
+        ).fetchone()["count"]
+        return groups, members, audits
+
+    assert classroom_http.factory.run_read(state) == (0, 0, 0)

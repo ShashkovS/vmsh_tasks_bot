@@ -55,13 +55,29 @@ Telegram binding coverage increment:
 - lint, strict TypeScript and production builds: passed;
 - real object filter: `telegram_binding`.
 
+Problem-synonym coverage increment:
+
+- merge and split append a compact summary at the same SQLite transaction
+  boundary as the versioned membership history;
+- original problems, submissions and results remain untouched, and the detailed
+  synonym membership history remains authoritative;
+- a synthetic audit-insert failure rolls back the complete merge;
+- focused synonym/audit aiohttp suite: **6 passed**;
+- full Python PWA regression: **1524 passed, 5 skipped** in **97.44 seconds**;
+- frontend unit: **106 files, 578 passed**;
+- focused Storybook interaction/a11y: **2 passed**;
+- lint, strict TypeScript and production builds: passed;
+- real object filter: `problem_synonym`.
+
 ## Explicit remaining scope
 
 This slice does not yet claim complete audit coverage of every older Staff mutation.
-Schedules, synonym operations, classroom planning/news moderation and future
-publication/broadcast writes still need a compact audit append at their existing
-transaction boundary. Their domain-specific histories remain unchanged and
-authoritative meanwhile.
+Schedules, classroom planning/news moderation and future publication/broadcast
+writes still need a compact audit append at their existing transaction boundary.
+Schedule writes currently commit inside the older `PwaContentRepository`; auditing
+them atomically is deliberately deferred instead of adding a second non-atomic write
+or expanding that module during this increment. Their domain-specific histories
+remain unchanged and authoritative meanwhile.
 
 No visual baseline was updated. Owner visual approval of the dense desktop/mobile
 table remains open.

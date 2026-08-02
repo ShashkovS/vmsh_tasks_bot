@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
@@ -15,6 +16,7 @@ from aiohttp import web
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
+from db_methods.pwa.audit import insert_audit_event
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.problem_synonyms import (
@@ -61,6 +63,10 @@ def _admin_user_id(request: web.Request) -> int:
             message="Объединять и разделять задачи может только администратор",
         )
     return principal.linked_user_id
+
+
+def _actor_account_id(request: web.Request) -> str:
+    return authenticated_session(request).principal.account_public_id
 
 
 def _public_id(value: str, *, code: str, message: str) -> str:
@@ -186,6 +192,42 @@ def _impact_payload(plan: dict[str, object], request_id: str) -> dict[str, objec
             }
         )
     return payload
+
+
+def _append_synonym_audit(
+    connection: sqlite3.Connection,
+    request: web.Request,
+    *,
+    actor_user_id: int,
+    actor_account_id: str,
+    action: str,
+    synonym_public_id: str,
+    before: dict[str, object] | None,
+    after: dict[str, object],
+    now: str,
+) -> None:
+    """Store only a compact Staff summary; membership history remains canonical."""
+    insert_audit_event(
+        connection,
+        public_id=f"audit.{uuid.uuid4().hex}",
+        actor_user_id=actor_user_id,
+        actor_account_public_id=actor_account_id,
+        audience="staff",
+        action=action,
+        object_type="problem_synonym",
+        object_id=synonym_public_id,
+        request_id=request["request_id"],
+        before_json=(
+            None if before is None else json.dumps(before, ensure_ascii=False)
+        ),
+        after_json=json.dumps(after, ensure_ascii=False),
+        occurred_at=now,
+    )
+
+
+def _is_synonym_integrity_conflict(error: sqlite3.IntegrityError) -> bool:
+    message = str(error)
+    return "UNIQUE constraint failed" in message and "problem_synonym" in message
 
 
 async def _invalidate(
@@ -334,22 +376,63 @@ async def preview_problem_synonyms(request: web.Request) -> web.Response:
 @problem_synonym_routes.post("/staff/api/v1/problem-synonyms/merge")
 async def merge_problem_synonyms_route(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     payload = await _json(request, {"schemaVersion", "problemIds", "previewSha256"})
     problem_ids = _problem_ids(payload["problemIds"], minimum=2)
     preview_sha256 = _preview_hash(payload["previewSha256"])
-    try:
-        plan = await _factory(request).run_write_async(
-            lambda connection: merge_problem_synonyms(
-                connection,
-                problem_public_ids=problem_ids,
-                preview_sha256=preview_sha256,
-                actor_user_id=actor_user_id,
-                now=datetime.now(UTC).isoformat(),
-            )
+    now = datetime.now(UTC).isoformat()
+
+    def write(connection: sqlite3.Connection) -> dict[str, object]:
+        plan = merge_problem_synonyms(
+            connection,
+            problem_public_ids=problem_ids,
+            preview_sha256=preview_sha256,
+            actor_user_id=actor_user_id,
+            now=now,
         )
+        # An idempotent merge changes neither membership history nor the Staff audit.
+        if plan["changed"]:
+            problems = plan["problems"]
+            additions = plan["additions"]
+            synonym = plan["synonym"]
+            assert isinstance(problems, list) and problems
+            assert isinstance(additions, list)
+            assert synonym is None or isinstance(synonym, dict)
+            before = (
+                None
+                if synonym is None
+                else {
+                    "status": synonym["status"],
+                    "version": synonym["version"],
+                    "memberCount": len(problems) - len(additions),
+                }
+            )
+            _append_synonym_audit(
+                connection,
+                request,
+                actor_user_id=actor_user_id,
+                actor_account_id=actor_account_id,
+                action="problem_synonym.merged",
+                synonym_public_id=str(plan["synonym_public_id"]),
+                before=before,
+                after={
+                    "courseLessonId": problems[0]["course_lesson_public_id"],
+                    "status": plan["synonym_status"],
+                    "version": plan["synonym_version"],
+                    "memberCount": len(problems),
+                    "addedCount": len(additions),
+                },
+                now=now,
+            )
+        return plan
+
+    try:
+        plan = await _factory(request).run_write_async(write)
     except ProblemSynonymError as error:
         raise _domain_error(error) from error
     except sqlite3.IntegrityError as error:
+        if not _is_synonym_integrity_conflict(error):
+            raise
         raise PwaApiError(
             status=409,
             code="problem_synonym_conflict",
@@ -365,6 +448,7 @@ async def merge_problem_synonyms_route(request: web.Request) -> web.Response:
 @problem_synonym_routes.post("/staff/api/v1/problem-synonyms/{synonym_public_id}/split")
 async def split_problem_synonyms_route(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     synonym_public_id = _public_id(
         request.match_info["synonym_public_id"],
         code="problem_synonym_not_found",
@@ -383,18 +467,53 @@ async def split_problem_synonyms_route(request: web.Request) -> web.Response:
             code="validation_error",
             message="Укажите причину разделения",
         )
-    try:
-        plan = await _factory(request).run_write_async(
-            lambda connection: split_problem_synonyms(
-                connection,
-                synonym_public_id=synonym_public_id,
-                problem_public_ids=problem_ids,
-                preview_sha256=preview_sha256,
-                reason=reason.strip(),
-                actor_user_id=actor_user_id,
-                now=datetime.now(UTC).isoformat(),
-            )
+    reason = reason.strip()
+    now = datetime.now(UTC).isoformat()
+
+    def write(connection: sqlite3.Connection) -> dict[str, object]:
+        plan = split_problem_synonyms(
+            connection,
+            synonym_public_id=synonym_public_id,
+            problem_public_ids=problem_ids,
+            preview_sha256=preview_sha256,
+            reason=reason,
+            actor_user_id=actor_user_id,
+            now=now,
         )
+        problems = plan["problems"]
+        removals = plan["removals"]
+        remaining = plan["remaining_problem_ids"]
+        synonym = plan["synonym"]
+        assert isinstance(problems, list) and problems
+        assert isinstance(removals, list)
+        assert isinstance(remaining, tuple)
+        assert isinstance(synonym, dict)
+        _append_synonym_audit(
+            connection,
+            request,
+            actor_user_id=actor_user_id,
+            actor_account_id=actor_account_id,
+            action="problem_synonym.split",
+            synonym_public_id=synonym_public_id,
+            before={
+                "status": synonym["status"],
+                "version": synonym["version"],
+                "memberCount": len(problems),
+            },
+            after={
+                "courseLessonId": problems[0]["course_lesson_public_id"],
+                "status": plan["synonym_status"],
+                "version": plan["synonym_version"],
+                "memberCount": len(remaining),
+                "removedCount": len(removals),
+                "reason": reason,
+            },
+            now=now,
+        )
+        return plan
+
+    try:
+        plan = await _factory(request).run_write_async(write)
     except ProblemSynonymError as error:
         raise _domain_error(error) from error
     await _invalidate(request, plan, reason="problem-synonyms-changed")
