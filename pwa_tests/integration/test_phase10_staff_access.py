@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from pwa_tests.integration.test_classroom_catalog_http_api import (
     ADMIN_ID,
     TEACHER_ID,
@@ -124,6 +126,34 @@ async def test_admin_replaces_scope_and_teacher_sees_it_on_next_request(
     assert rows[1]["group_id"] is None
     assert rows[1]["granted_by"] == ADMIN_ID
 
+    def audit(connection):
+        return connection.execute(
+            "SELECT action, object_id, before_json, after_json FROM audit_events "
+            "WHERE object_type = 'staff_scope'"
+        ).fetchone()
+
+    event = classroom_http.factory.run_read(audit)
+    assert event["action"] == "staff_scope.replaced"
+    assert event["object_id"] == "classroom-http-teacher"
+    assert json.loads(event["before_json"]) == {
+        "scopeCount": 1,
+        "scopes": "classroom-layout-course/classroom-layout-group",
+    }
+    assert json.loads(event["after_json"]) == {
+        "scopeCount": 1,
+        "scopes": "classroom-layout-course",
+        "addedCount": 1,
+        "removedCount": 1,
+    }
+
+    timeline = await classroom_http.client.get(
+        "/staff/api/v1/audit?objectType=staff_scope",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert timeline.status == 200
+    assert (await timeline.json())["items"][0]["objectType"] == "staff_scope"
+
 
 async def test_scope_replace_rejects_stale_redundant_and_unknown_targets(
     classroom_http: ClassroomHttpFixture,
@@ -194,3 +224,51 @@ async def test_admin_scope_is_fixed_global_access(
     )
     assert response.status == 422
     assert (await response.json())["error"]["code"] == "admin_scope_fixed"
+
+
+async def test_scope_replace_rolls_back_when_audit_insert_fails(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    classroom_http.factory.run_write(
+        lambda connection: connection.execute(
+            "CREATE TRIGGER audit_staff_scope_test_failure "
+            "BEFORE INSERT ON audit_events "
+            "WHEN new.object_type = 'staff_scope' BEGIN "
+            "SELECT raise(ABORT, 'synthetic audit failure'); END"
+        )
+    )
+    response = await classroom_http.client.put(
+        "/staff/api/v1/staff-members/classroom-http-teacher/scopes",
+        json={
+            "schemaVersion": 1,
+            "expectedScopes": [
+                {
+                    "courseId": "classroom-layout-course",
+                    "groupId": "classroom-layout-group",
+                    "version": 1,
+                }
+            ],
+            "scopes": [{"courseId": "classroom-layout-course", "groupId": None}],
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert response.status == 500
+
+    def state(connection):
+        active = connection.execute(
+            "SELECT course_id, group_id, version FROM staff_scopes "
+            "WHERE staff_user_id = ? AND valid_to IS NULL",
+            (TEACHER_ID,),
+        ).fetchall()
+        audits = connection.execute(
+            "SELECT count(*) AS count FROM audit_events "
+            "WHERE object_type = 'staff_scope'"
+        ).fetchone()["count"]
+        return active, audits
+
+    active, audits = classroom_http.factory.run_read(state)
+    assert len(active) == 1
+    assert active[0]["group_id"] == "layout-beginner"
+    assert active[0]["version"] == 1
+    assert audits == 0

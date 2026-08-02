@@ -69,6 +69,20 @@ Problem-synonym coverage increment:
 - lint, strict TypeScript and production builds: passed;
 - real object filter: `problem_synonym`.
 
+Staff-scope coverage increment:
+
+- full-set teacher scope replacement appends `staff_scope.replaced` at the same
+  transaction boundary as versioned grant/revoke rows;
+- the compact audit exposes only course/group public IDs and counts; detailed
+  scope history remains authoritative;
+- a synthetic audit failure rolls back grant and revoke together;
+- focused Staff-access/audit aiohttp suite: **8 passed**;
+- full Python PWA regression: **1525 passed, 5 skipped** in **86.83 seconds**;
+- frontend unit: **106 files, 578 passed**;
+- focused Storybook interaction/a11y: **2 passed**;
+- lint, strict TypeScript and production builds: passed;
+- real object filter: `staff_scope`.
+
 ## Explicit remaining scope
 
 This slice does not yet claim complete audit coverage of every older Staff mutation.

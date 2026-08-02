@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+import uuid
 from datetime import UTC, datetime
 
 from aiohttp import web
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
+from db_methods.pwa.audit import insert_audit_event
 from db_methods.pwa.staff_access import (
     find_scope_target,
     find_staff_member,
@@ -58,6 +60,10 @@ def _admin_user_id(request: web.Request) -> int:
             message="Управлять доступами преподавателей может только администратор",
         )
     return principal.linked_user_id
+
+
+def _actor_account_id(request: web.Request) -> str:
+    return authenticated_session(request).principal.account_public_id
 
 
 def _path_id(request: web.Request) -> str:
@@ -192,6 +198,23 @@ def _member_payload(
     }
 
 
+def _scope_summary(rows: list[dict[str, object]]) -> str:
+    """Return a stable compact audit value without duplicating scope history."""
+    values = [
+        "/".join(
+            part
+            for part in (str(row["course_public_id"]), row["group_public_id"])
+            if part is not None
+        )
+        for row in rows
+    ]
+    return ", ".join(sorted(values))
+
+
+def _is_scope_integrity_conflict(error: sqlite3.IntegrityError) -> bool:
+    return "UNIQUE constraint failed: staff_scopes" in str(error)
+
+
 def _directory(connection) -> list[dict[str, object]]:
     members = list_staff_members(connection)
     scope_rows = list_teacher_scopes(
@@ -228,6 +251,7 @@ async def get_staff_access(request: web.Request) -> web.Response:
 @staff_access_routes.put("/staff/api/v1/staff-members/{staff_public_id}/scopes")
 async def replace_staff_scopes(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     if request.query:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
@@ -298,11 +322,39 @@ async def replace_staff_scopes(request: web.Request) -> web.Response:
                 now=now,
             )
         updated = list_teacher_scopes(connection, staff_user_ids=(int(member["id"]),))
+        if additions or removals:
+            insert_audit_event(
+                connection,
+                public_id=f"audit.{uuid.uuid4().hex}",
+                actor_user_id=actor_user_id,
+                actor_account_public_id=actor_account_id,
+                audience="staff",
+                action="staff_scope.replaced",
+                object_type="staff_scope",
+                object_id=staff_public_id,
+                request_id=request["request_id"],
+                before_json=json.dumps(
+                    {"scopeCount": len(current), "scopes": _scope_summary(current)},
+                    ensure_ascii=False,
+                ),
+                after_json=json.dumps(
+                    {
+                        "scopeCount": len(updated),
+                        "scopes": _scope_summary(updated),
+                        "addedCount": len(additions),
+                        "removedCount": len(removals),
+                    },
+                    ensure_ascii=False,
+                ),
+                occurred_at=now,
+            )
         return "ok", _member_payload(member, updated)
 
     try:
         outcome, member = await _factory(request).run_write_async(write)
     except sqlite3.IntegrityError as error:
+        if not _is_scope_integrity_conflict(error):
+            raise
         raise PwaApiError(
             status=409,
             code="staff_scope_conflict",

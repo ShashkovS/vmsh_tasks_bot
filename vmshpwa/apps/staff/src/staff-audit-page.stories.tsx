@@ -10,6 +10,30 @@ const data = auditListResponseSchema.parse({
   schemaVersion: 1,
   items: [
     {
+      eventId: 'audit.staff-scope-replaced',
+      occurredAt: '2026-08-02T11:25:00Z',
+      audience: 'staff',
+      action: 'staff_scope.replaced',
+      objectType: 'staff_scope',
+      objectId: 'user.teacher-1',
+      requestId: 'request-staff-scope-4',
+      actor: {
+        userId: 'user.admin-1',
+        accountId: 'account.admin-1',
+        displayName: 'Петрова Анна',
+      },
+      before: {
+        scopeCount: 1,
+        scopes: 'course.math/group.beginner',
+      },
+      after: {
+        scopeCount: 1,
+        scopes: 'course.math',
+        addedCount: 1,
+        removedCount: 1,
+      },
+    },
+    {
       eventId: 'audit.problem-synonym-split',
       occurredAt: '2026-08-02T11:20:00Z',
       audience: 'staff',

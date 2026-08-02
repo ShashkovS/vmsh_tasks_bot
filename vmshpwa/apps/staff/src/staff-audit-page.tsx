@@ -33,6 +33,7 @@ const objectLabels: Record<AuditObjectType, string> = {
   group: 'Группы',
   telegram_binding: 'Привязки Telegram',
   problem_synonym: 'Синонимы задач',
+  staff_scope: 'Доступы преподавателей',
 }
 
 const actionLabels: Record<string, string> = {
@@ -56,6 +57,7 @@ const actionLabels: Record<string, string> = {
   'telegram_binding.verified': 'Проверена привязка Telegram',
   'problem_synonym.merged': 'Задачи объединены в синонимы',
   'problem_synonym.split': 'Задачи разделены',
+  'staff_scope.replaced': 'Изменены доступы преподавателя',
 }
 
 const fieldLabels: Record<string, string> = {
@@ -85,6 +87,8 @@ const fieldLabels: Record<string, string> = {
   relationshipLabel: 'Роль в семье',
   rows: 'Строк обработано',
   scoreWeight: 'Вес результатов',
+  scopeCount: 'Областей доступа',
+  scopes: 'Курсы и группы',
   shortCode: 'Короткий код',
   sortOrder: 'Порядок',
   sourceFilename: 'Исходный файл',

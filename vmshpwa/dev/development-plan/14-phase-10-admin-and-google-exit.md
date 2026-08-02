@@ -120,6 +120,10 @@ rollback-test не допускает частично сохранённого 
 Staff writes всё ещё перечислены в proof как открытые. Для расписаний атомарная
 точка пока находится внутри старого `PwaContentRepository`, поэтому второй
 неатомарный audit-write сознательно не добавлен.
+Следующий инкремент добавил атомарный `staff_scope.replaced`: компактный audit
+показывает старый и новый набор публичных course/group IDs, а append-only
+`staff_scopes` остаётся полной историей. Rollback-test не допускает grant/revoke
+без audit-строки.
 Первоначальный bulk-import с dry-run и отчётом ещё не закрыт.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.

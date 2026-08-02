@@ -16,6 +16,9 @@
   строкой.
 - Изменение видно в `/staff/api/v1/auth/me` уже на следующем запросе с
   существующей сессией.
+- Изменение grant/revoke и компактный `staff_scope.replaced` audit-event
+  фиксируются одной SQLite-транзакцией. Исторические `staff_scopes` остаются
+  детальным источником истины.
 
 ## Границы реализации
 
@@ -32,9 +35,12 @@
 - `pwa_tests/integration/test_phase10_staff_access.py`: teacher `403`, admin
   directory, grant/revoke history, немедленное обновление principal, stale
   `409`, несуществующая цель `422` и неизменяемый глобальный admin.
-- `make pwa-test`: `540` frontend unit tests и `1428 passed, 3 skipped` Python
-  tests.
+- Focused Staff-access/audit aiohttp: **8 passed**; synthetic audit failure
+  полностью откатывает grant/revoke.
+- Полный gate: **578** frontend unit tests и **1525 passed, 5 skipped** Python
+  tests; focused Storybook interaction/a11y — **2 passed**.
 - `ruff check` и `ruff format --check` для затронутых Python-файлов: пройдено.
+- Lint, strict TypeScript и production build всех трёх приложений: пройдены.
 
 Frontend-редактор и browser E2E фиксируются отдельным инкрементом и отдельным
 proof-файлом.

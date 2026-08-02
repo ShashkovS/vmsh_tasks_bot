@@ -488,3 +488,6 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - The timeline fixture now also shows a synonym split with provenance summary and
   exposes the `problem_synonym` filter. Focused interaction/a11y remains **2/2
   PASS**; no visual baseline was updated.
+- The same dense fixture now shows a teacher-scope replacement and exposes the
+  `staff_scope` filter with compact course/group summaries. Focused
+  interaction/a11y remains **2/2 PASS**; no visual baseline was updated.

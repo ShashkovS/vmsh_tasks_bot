@@ -963,3 +963,15 @@
   старого `PwaContentRepository`; неатомарная вторая запись сознательно не добавлена.
 - Proof: [`phase10-staff-audit.md`](../../../pwa_tests/reports/phase10-staff-audit.md)
   и [`phase10-problem-synonym-api.md`](../../../pwa_tests/reports/phase10-problem-synonym-api.md).
+
+## Phase 10 checkpoint: аудит доступов преподавателей — 2 августа 2026
+
+- Полная замена областей teacher и `staff_scope.replaced` выполняются одной
+  SQLite-транзакцией; append-only `staff_scopes` остаётся детальной историей.
+- Audit показывает только публичные course/group IDs и counts. Synthetic failure
+  полностью откатывает grant/revoke.
+- Проверки: focused aiohttp **8/8 PASS**, Python PWA **1525 PASS / 5 intentional
+  skips**, frontend unit **578 PASS**, focused Storybook **2/2 PASS**,
+  lint/typecheck/production build **PASS**.
+- Proof: [`phase10-staff-access-backend.md`](../../../pwa_tests/reports/phase10-staff-access-backend.md)
+  и [`phase10-staff-audit.md`](../../../pwa_tests/reports/phase10-staff-audit.md).

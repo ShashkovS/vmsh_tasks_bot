@@ -27,6 +27,7 @@ _OBJECT_TYPES = {
     "group",
     "telegram_binding",
     "problem_synonym",
+    "staff_scope",
 }
 _QUERY_KEYS = {"objectType", "q", "cursor", "limit"}
 
