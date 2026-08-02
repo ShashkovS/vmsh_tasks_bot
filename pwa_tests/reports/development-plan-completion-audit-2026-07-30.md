@@ -168,16 +168,15 @@ confirm, историю, отдельный PWA delivery preview/send, Student n
 Telegram transport остаётся в отдельном recording/live-test proof и не
 подключается к E2E.
 
-Осталось:
-
-- production-size обезличенный assignment rehearsal и временная граница с
-  legacy print;
-- visual acceptance полного planner.
+Осталось только visual acceptance полного planner. Обезличенный worst-case
+rehearsal на 1500 очных школьников и отсутствие v1 print/export boundary теперь
+зафиксированы отдельно.
 
 Доказательства: [assignments](phase7-classroom-assignments.md),
 [delivery](phase7-classroom-delivery.md),
 [Telegram transport](phase8-classroom-telegram-transport.md),
 [oral E2E](phase7-oral-e2e.md),
+[scale and print boundary](phase7-classroom-scale-and-print-boundary.md),
 [classroom delivery E2E](phase7-classroom-delivery-e2e.md).
 
 ### Phase 8 — news/notifications: backend, страницы и browser flow готовы
