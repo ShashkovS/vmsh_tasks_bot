@@ -11,6 +11,8 @@ Date: 2026-08-02.
 - Admin account creation/status/credential changes, Family links, course-enrollment
   changes and problem-import apply/rollback append the audit row in the same SQLite
   transaction as the administrative write.
+- Course/group create and edit now use that same boundary. Failed duplicate or stale
+  requests append nothing; if the audit insert fails, the catalog write rolls back.
 - [`GET /staff/api/v1/audit`](../../apps/pwa_api/audit_routes.py) is admin-only and
   supports object filtering, request/action/object search and stable cursor paging.
 - The safe projection in [`models/pwa/audit.py`](../../models/pwa/audit.py) accepts
@@ -33,13 +35,20 @@ Date: 2026-08-02.
 - `make pwa-lint`, `make pwa-typecheck`, schema generation/check and production build
   passed for this slice.
 
+Catalog coverage increment:
+
+- focused aiohttp catalog/audit suite: **7 passed**;
+- focused frontend unit: **3 passed**;
+- focused Storybook interaction/a11y: **2 passed**;
+- real object filters: `course` and `group`.
+
 ## Explicit remaining scope
 
 This slice does not yet claim complete audit coverage of every older Staff mutation.
-Course/group catalog, schedules, Telegram bindings, synonym operations, classroom
-planning/news moderation and future publication/broadcast writes still need a compact
-audit append at their existing transaction boundary. Their domain-specific histories
-remain unchanged and authoritative meanwhile.
+Schedules, Telegram bindings, synonym operations, classroom planning/news moderation
+and future publication/broadcast writes still need a compact audit append at their
+existing transaction boundary. Their domain-specific histories remain unchanged and
+authoritative meanwhile.
 
 No visual baseline was updated. Owner visual approval of the dense desktop/mobile
 table remains open.

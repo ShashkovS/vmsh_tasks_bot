@@ -54,4 +54,19 @@ describe('audit client', () => {
 
     await expect(client.list({ objectType: 'all', query: '', cursor: null })).rejects.toThrow()
   })
+
+  it('accepts course and group filters used by the catalog audit', async () => {
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockImplementation(() => Promise.resolve(Response.json(response)))
+    const client = createAuditClient(runtime, { fetchImplementation })
+
+    await client.list({ objectType: 'course', query: '', cursor: null })
+    await client.list({ objectType: 'group', query: '', cursor: null })
+
+    expect(fetchImplementation.mock.calls.map((call) => call[0])).toEqual([
+      '/staff/api/v1/audit?objectType=course&q=&limit=50',
+      '/staff/api/v1/audit?objectType=group&q=&limit=50',
+    ])
+  })
 })

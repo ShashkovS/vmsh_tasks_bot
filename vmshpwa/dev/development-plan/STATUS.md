@@ -16,6 +16,10 @@
   **231 pass**; production E2E **84 pass / 12 expected skip** across three browsers.
 - Story IDs: `Pages/Staff/Audit--SearchableTimeline`,
   `Pages/Staff/Audit--EmptySearch`. Visual snapshots were not updated.
+- Course/group catalog coverage adds `course.created/updated` and
+  `group.created/updated`; focused aiohttp **7 pass**, frontend unit **3 pass** and
+  Storybook interaction/a11y **2 pass**. A forced audit failure rolls the catalog
+  mutation back instead of leaving an unjournaled change.
 
 ## Состояние документов
 

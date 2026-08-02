@@ -10,6 +10,22 @@ const data = auditListResponseSchema.parse({
   schemaVersion: 1,
   items: [
     {
+      eventId: 'audit.course-update',
+      occurredAt: '2026-08-02T11:00:00Z',
+      audience: 'staff',
+      action: 'course.updated',
+      objectType: 'course',
+      objectId: 'course.physics-7',
+      requestId: 'request-course-7',
+      actor: {
+        userId: 'user.admin-1',
+        accountId: 'account.admin-1',
+        displayName: 'Петрова Анна',
+      },
+      before: { code: 'physics-7', name: 'Физика', status: 'draft', version: 1 },
+      after: { code: 'physics-7', name: 'Физика 7', status: 'active', version: 2 },
+    },
+    {
       eventId: 'audit.account-status',
       occurredAt: '2026-08-02T10:30:00Z',
       audience: 'staff',

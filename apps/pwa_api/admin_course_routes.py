@@ -23,6 +23,7 @@ from db_methods.pwa.course_catalog import (
     update_course,
     update_group,
 )
+from db_methods.pwa.audit import insert_audit_event
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 
@@ -80,6 +81,12 @@ def _admin_user_id(request: web.Request) -> int:
             message="Управлять курсами и группами может только администратор",
         )
     return principal.linked_user_id
+
+
+def _actor_account_id(request: web.Request) -> str:
+    """Return the already-authorized Staff account for the audit row."""
+
+    return authenticated_session(request).principal.account_public_id
 
 
 def _path_public_id(request: web.Request, field: str, *, code: str) -> str:
@@ -154,6 +161,13 @@ def _code(value: object, *, maximum: int) -> str | None:
     ):
         return None
     return normalized
+
+
+def _is_duplicate(error: sqlite3.IntegrityError, table: str) -> bool:
+    """Do not disguise unrelated transaction failures as catalog duplicates."""
+
+    message = str(error)
+    return "UNIQUE constraint failed" in message and f"{table}." in message
 
 
 def _course_values(payload: dict[str, object]) -> dict[str, object]:
@@ -257,6 +271,31 @@ def _course_payload(
     }
 
 
+def _course_audit_values(row: dict[str, object]) -> dict[str, object]:
+    return {
+        "code": row["code"],
+        "name": row["name"],
+        "subjectCode": row["subject_code"],
+        "status": row["status"],
+        "sortOrder": row["sort_order"],
+        "accentKey": row["accent_key"],
+        "version": row["version"],
+    }
+
+
+def _group_audit_values(row: dict[str, object]) -> dict[str, object]:
+    return {
+        "shortCode": row["short_code"],
+        "name": row["public_name"],
+        "status": row["status"],
+        "colorKey": row["color_key"],
+        "sortOrder": row["sort_order"],
+        "allowSelfSwitch": bool(row["allow_self_switch"]),
+        "scoreWeight": row["score_weight"],
+        "version": row["version"],
+    }
+
+
 def _catalog(connection, season_public_id: str | None):
     season = find_season(connection, public_id=season_public_id)
     if season is None:
@@ -293,7 +332,9 @@ async def get_course_catalog(request: web.Request) -> web.Response:
         lambda connection: _catalog(connection, season_public_id)
     )
     if result is None:
-        raise PwaApiError(status=404, code="season_not_found", message="Сезон не найден")
+        raise PwaApiError(
+            status=404, code="season_not_found", message="Сезон не найден"
+        )
     season = result["season"]
     return web.json_response(
         {
@@ -314,6 +355,7 @@ async def get_course_catalog(request: web.Request) -> web.Response:
 @admin_course_routes.post("/staff/api/v1/courses")
 async def create_course(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     if request.query:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
@@ -321,9 +363,15 @@ async def create_course(request: web.Request) -> web.Response:
     payload = await _read_json(request, _COURSE_FIELDS | {"seasonId"})
     values = _course_values(payload)
     season_public_id = payload["seasonId"]
-    if not isinstance(season_public_id, str) or _PUBLIC_ID.fullmatch(season_public_id) is None:
-        raise PwaApiError(status=422, code="validation_error", message="Проверьте сезон")
+    if (
+        not isinstance(season_public_id, str)
+        or _PUBLIC_ID.fullmatch(season_public_id) is None
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте сезон"
+        )
     public_id = f"course.{uuid.uuid4().hex}"
+    now = _now()
 
     def write(connection):
         season = find_season(connection, public_id=season_public_id)
@@ -334,21 +382,41 @@ async def create_course(request: web.Request) -> web.Response:
             public_id=public_id,
             season_id=int(season["id"]),
             actor_user_id=actor_user_id,
-            now=_now(),
+            now=now,
             **values,
         )
-        return find_course(connection, public_id=public_id)
+        row = find_course(connection, public_id=public_id)
+        assert row is not None
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_id,
+            audience="staff",
+            action="course.created",
+            object_type="course",
+            object_id=public_id,
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(_course_audit_values(row), ensure_ascii=False),
+            occurred_at=now,
+        )
+        return row
 
     try:
         row = await _factory(request).run_write_async(write)
     except sqlite3.IntegrityError as error:
+        if not _is_duplicate(error, "courses"):
+            raise
         raise PwaApiError(
             status=409,
             code="course_duplicate",
             message="В этом сезоне уже есть курс с таким кодом",
         ) from error
     if row is None:
-        raise PwaApiError(status=404, code="season_not_found", message="Сезон не найден")
+        raise PwaApiError(
+            status=404, code="season_not_found", message="Сезон не найден"
+        )
     response = _course_payload(row, groups=[])
     return web.json_response(
         {"schemaVersion": 1, "course": response, "requestId": request["request_id"]},
@@ -360,6 +428,7 @@ async def create_course(request: web.Request) -> web.Response:
 @admin_course_routes.put("/staff/api/v1/courses/{course_public_id}")
 async def edit_course(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     if request.query:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
@@ -368,46 +437,76 @@ async def edit_course(request: web.Request) -> web.Response:
     expected_version = _expected_version(request, public_id)
     payload = await _read_json(request, _COURSE_FIELDS)
     values = _course_values(payload)
+    now = _now()
+
+    def write(connection):
+        current = find_course(connection, public_id=public_id)
+        if current is None:
+            return "not_found", None
+        if int(current["version"]) != expected_version:
+            return "conflict", None
+        changed = update_course(
+            connection,
+            public_id=public_id,
+            expected_version=expected_version,
+            actor_user_id=actor_user_id,
+            now=now,
+            **values,
+        )
+        if not changed:
+            return "conflict", None
+        row = find_course(connection, public_id=public_id)
+        assert row is not None
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_id,
+            audience="staff",
+            action="course.updated",
+            object_type="course",
+            object_id=public_id,
+            request_id=request["request_id"],
+            before_json=json.dumps(_course_audit_values(current), ensure_ascii=False),
+            after_json=json.dumps(_course_audit_values(row), ensure_ascii=False),
+            occurred_at=now,
+        )
+        return "ok", row
+
     try:
-        changed = await _factory(request).run_write_async(
-            lambda connection: update_course(
-                connection,
-                public_id=public_id,
-                expected_version=expected_version,
-                actor_user_id=actor_user_id,
-                now=_now(),
-                **values,
-            )
-        )
+        state, row = await _factory(request).run_write_async(write)
     except sqlite3.IntegrityError as error:
+        if not _is_duplicate(error, "courses"):
+            raise
         raise PwaApiError(
-            status=409, code="course_duplicate", message="Такой код курса уже используется"
+            status=409,
+            code="course_duplicate",
+            message="Такой код курса уже используется",
         ) from error
-    if not changed:
-        exists = await _factory(request).run_read_async(
-            lambda connection: find_course(connection, public_id=public_id)
-        )
-        if exists is None:
-            raise PwaApiError(status=404, code="course_not_found", message="Курс не найден")
+    if state == "not_found":
+        raise PwaApiError(status=404, code="course_not_found", message="Курс не найден")
+    if state == "conflict":
         raise PwaApiError(
             status=409,
             code="version_conflict",
             message="Курс уже изменился. Обновите страницу.",
         )
-    row = await _factory(request).run_read_async(
-        lambda connection: find_course(connection, public_id=public_id)
-    )
     assert row is not None
     version = int(row["version"])
     return web.json_response(
-        {"schemaVersion": 1, "course": _course_payload(row, groups=[]), "requestId": request["request_id"]},
+        {
+            "schemaVersion": 1,
+            "course": _course_payload(row, groups=[]),
+            "requestId": request["request_id"],
+        },
         headers={"ETag": f'"{public_id}:v{version}"', "Cache-Control": "no-store"},
     )
 
 
 @admin_course_routes.post("/staff/api/v1/courses/{course_public_id}/groups")
 async def create_group(request: web.Request) -> web.Response:
-    _admin_user_id(request)
+    actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     if request.query:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
@@ -419,6 +518,7 @@ async def create_group(request: web.Request) -> web.Response:
     values = _group_values(payload)
     public_id = f"group.{uuid.uuid4().hex}"
     internal_id = f"pwa-{uuid.uuid4().hex}"
+    now = _now()
 
     def write(connection):
         course = find_course(connection, public_id=course_public_id)
@@ -429,14 +529,32 @@ async def create_group(request: web.Request) -> web.Response:
             group_id=internal_id,
             public_id=public_id,
             course_id=int(course["id"]),
-            now=_now(),
+            now=now,
             **values,
         )
-        return find_group(connection, public_id=public_id)
+        row = find_group(connection, public_id=public_id)
+        assert row is not None
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_id,
+            audience="staff",
+            action="group.created",
+            object_type="group",
+            object_id=public_id,
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(_group_audit_values(row), ensure_ascii=False),
+            occurred_at=now,
+        )
+        return row
 
     try:
         row = await _factory(request).run_write_async(write)
     except sqlite3.IntegrityError as error:
+        if not _is_duplicate(error, "groups"):
+            raise
         raise PwaApiError(
             status=409,
             code="group_duplicate",
@@ -457,7 +575,8 @@ async def create_group(request: web.Request) -> web.Response:
 
 @admin_course_routes.put("/staff/api/v1/groups/{group_public_id}")
 async def edit_group(request: web.Request) -> web.Response:
-    _admin_user_id(request)
+    actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     if request.query:
         raise PwaApiError(
             status=422, code="validation_error", message="Этот запрос без параметров"
@@ -466,36 +585,61 @@ async def edit_group(request: web.Request) -> web.Response:
     expected_version = _expected_version(request, public_id)
     payload = await _read_json(request, _GROUP_FIELDS)
     values = _group_values(payload)
-    try:
-        changed = await _factory(request).run_write_async(
-            lambda connection: update_group(
-                connection,
-                public_id=public_id,
-                expected_version=expected_version,
-                now=_now(),
-                **values,
-            )
+    now = _now()
+
+    def write(connection):
+        current = find_group(connection, public_id=public_id)
+        if current is None:
+            return "not_found", None
+        if int(current["version"]) != expected_version:
+            return "conflict", None
+        changed = update_group(
+            connection,
+            public_id=public_id,
+            expected_version=expected_version,
+            now=now,
+            **values,
         )
+        if not changed:
+            return "conflict", None
+        row = find_group(connection, public_id=public_id)
+        assert row is not None
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_id,
+            audience="staff",
+            action="group.updated",
+            object_type="group",
+            object_id=public_id,
+            request_id=request["request_id"],
+            before_json=json.dumps(_group_audit_values(current), ensure_ascii=False),
+            after_json=json.dumps(_group_audit_values(row), ensure_ascii=False),
+            occurred_at=now,
+        )
+        return "ok", row
+
+    try:
+        state, row = await _factory(request).run_write_async(write)
     except sqlite3.IntegrityError as error:
+        if not _is_duplicate(error, "groups"):
+            raise
         raise PwaApiError(
             status=409,
             code="group_duplicate",
             message="Такой код или название группы уже используется в курсе",
         ) from error
-    if not changed:
-        exists = await _factory(request).run_read_async(
-            lambda connection: find_group(connection, public_id=public_id)
+    if state == "not_found":
+        raise PwaApiError(
+            status=404, code="group_not_found", message="Группа не найдена"
         )
-        if exists is None:
-            raise PwaApiError(status=404, code="group_not_found", message="Группа не найдена")
+    if state == "conflict":
         raise PwaApiError(
             status=409,
             code="version_conflict",
             message="Группа уже изменилась. Обновите страницу.",
         )
-    row = await _factory(request).run_read_async(
-        lambda connection: find_group(connection, public_id=public_id)
-    )
     assert row is not None
     version = int(row["version"])
     return web.json_response(

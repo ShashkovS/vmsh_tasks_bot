@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from pwa_tests.integration.test_classroom_catalog_http_api import _cookies, _headers
@@ -192,9 +194,36 @@ async def test_admin_creates_and_versioned_edits_courses_and_groups(classroom_ht
     assert physics["status"] == "archived"
     assert physics["groups"][0]["status"] == "archived"
 
+    def audit_rows(connection):
+        return connection.execute(
+            "SELECT event.action, event.object_type, event.object_id, "
+            "event.before_json, event.after_json, account.public_id AS actor_account_id "
+            "FROM audit_events AS event LEFT JOIN auth_accounts AS account "
+            "ON account.id = event.actor_account_id "
+            "WHERE event.object_type IN ('course', 'group') ORDER BY event.id"
+        ).fetchall()
+
+    events = classroom_http.factory.run_read(audit_rows)
+    assert [(event["action"], event["object_type"]) for event in events] == [
+        ("course.created", "course"),
+        ("group.created", "group"),
+        ("group.updated", "group"),
+        ("course.updated", "course"),
+    ]
+    assert all(
+        event["actor_account_id"] == "classroom-http-account-admin" for event in events
+    )
+    assert json.loads(events[0]["after_json"])["status"] == "draft"
+    assert json.loads(events[2]["before_json"])["status"] == "active"
+    assert json.loads(events[2]["after_json"])["status"] == "archived"
+    assert json.loads(events[3]["before_json"])["status"] == "draft"
+    assert json.loads(events[3]["after_json"])["status"] == "archived"
+
 
 @pytest.mark.asyncio
-async def test_catalog_rejects_unknown_fields_and_duplicate_group_identity(classroom_http):
+async def test_catalog_rejects_unknown_fields_and_duplicate_group_identity(
+    classroom_http,
+):
     invalid = await classroom_http.client.post(
         "/staff/api/v1/courses",
         json={**_course(season_id="classroom-layout-season"), "unexpected": True},
@@ -218,3 +247,36 @@ async def test_catalog_rejects_unknown_fields_and_duplicate_group_identity(class
     )
     assert duplicate.status == 409
     assert (await duplicate.json())["error"]["code"] == "group_duplicate"
+
+
+@pytest.mark.asyncio
+async def test_course_write_rolls_back_when_its_audit_row_cannot_be_saved(
+    classroom_http,
+):
+    def install_failure(connection):
+        connection.execute(
+            "CREATE TRIGGER audit_course_test_failure BEFORE INSERT ON audit_events "
+            "WHEN new.object_type = 'course' BEGIN "
+            "SELECT raise(ABORT, 'synthetic audit failure'); END"
+        )
+
+    classroom_http.factory.run_write(install_failure)
+    response = await classroom_http.client.post(
+        "/staff/api/v1/courses",
+        json=_course(season_id="classroom-layout-season", code="rollback-proof"),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert response.status == 500
+
+    def state(connection):
+        course_count = connection.execute(
+            "SELECT count(*) AS count FROM courses WHERE code = 'rollback-proof'"
+        ).fetchone()["count"]
+        audit_count = connection.execute(
+            "SELECT count(*) AS count FROM audit_events "
+            "WHERE object_id LIKE 'course.%' AND action = 'course.created'"
+        ).fetchone()["count"]
+        return course_count, audit_count
+
+    assert classroom_http.factory.run_read(state) == (0, 0)

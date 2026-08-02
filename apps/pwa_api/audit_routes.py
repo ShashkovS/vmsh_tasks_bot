@@ -17,7 +17,15 @@ from models.pwa.auth import AuthAudience
 
 audit_routes = web.RouteTableDef()
 _PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
-_OBJECT_TYPES = {"all", "account", "family_link", "course_enrollment", "problem_import"}
+_OBJECT_TYPES = {
+    "all",
+    "account",
+    "family_link",
+    "course_enrollment",
+    "problem_import",
+    "course",
+    "group",
+}
 _QUERY_KEYS = {"objectType", "q", "cursor", "limit"}
 
 

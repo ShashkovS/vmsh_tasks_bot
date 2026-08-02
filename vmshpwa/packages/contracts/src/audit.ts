@@ -8,6 +8,8 @@ export const auditObjectTypeSchema = z.enum([
   'family_link',
   'course_enrollment',
   'problem_import',
+  'course',
+  'group',
 ])
 export type AuditObjectType = z.infer<typeof auditObjectTypeSchema>
 

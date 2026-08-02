@@ -116,27 +116,26 @@ def insert_course(
     actor_user_id: int,
     now: str,
 ) -> None:
-    with connection:
-        connection.execute(
-            "INSERT INTO courses "
-            "(public_id, season_id, code, name, subject_code, status, sort_order, "
-            "accent_key, created_at, updated_at, created_by, updated_by) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                public_id,
-                season_id,
-                code,
-                name,
-                subject_code,
-                status,
-                sort_order,
-                accent_key,
-                now,
-                now,
-                actor_user_id,
-                actor_user_id,
-            ),
-        )
+    connection.execute(
+        "INSERT INTO courses "
+        "(public_id, season_id, code, name, subject_code, status, sort_order, "
+        "accent_key, created_at, updated_at, created_by, updated_by) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            public_id,
+            season_id,
+            code,
+            name,
+            subject_code,
+            status,
+            sort_order,
+            accent_key,
+            now,
+            now,
+            actor_user_id,
+            actor_user_id,
+        ),
+    )
 
 
 def update_course(
@@ -153,24 +152,23 @@ def update_course(
     actor_user_id: int,
     now: str,
 ) -> bool:
-    with connection:
-        cursor = connection.execute(
-            "UPDATE courses SET code = ?, name = ?, subject_code = ?, status = ?, "
-            "sort_order = ?, accent_key = ?, updated_at = ?, updated_by = ?, "
-            "version = version + 1 WHERE public_id = ? AND version = ?",
-            (
-                code,
-                name,
-                subject_code,
-                status,
-                sort_order,
-                accent_key,
-                now,
-                actor_user_id,
-                public_id,
-                expected_version,
-            ),
-        )
+    cursor = connection.execute(
+        "UPDATE courses SET code = ?, name = ?, subject_code = ?, status = ?, "
+        "sort_order = ?, accent_key = ?, updated_at = ?, updated_by = ?, "
+        "version = version + 1 WHERE public_id = ? AND version = ?",
+        (
+            code,
+            name,
+            subject_code,
+            status,
+            sort_order,
+            accent_key,
+            now,
+            actor_user_id,
+            public_id,
+            expected_version,
+        ),
+    )
     return cursor.rowcount == 1
 
 
@@ -209,29 +207,28 @@ def insert_group(
     score_weight: float,
     now: str,
 ) -> None:
-    with connection:
-        connection.execute(
-            "INSERT INTO groups "
-            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
-            "allow_self_switch, is_system, score_weight, public_id, course_id, status, "
-            "color_key, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                group_id,
-                short_code,
-                name,
-                sort_order,
-                int(status == "active"),
-                int(allow_self_switch),
-                score_weight,
-                public_id,
-                course_id,
-                status,
-                color_key,
-                now,
-                now,
-            ),
-        )
+    connection.execute(
+        "INSERT INTO groups "
+        "(group_id, short_code, public_name, sort_order, is_active, is_default, "
+        "allow_self_switch, is_system, score_weight, public_id, course_id, status, "
+        "color_key, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            group_id,
+            short_code,
+            name,
+            sort_order,
+            int(status == "active"),
+            int(allow_self_switch),
+            score_weight,
+            public_id,
+            course_id,
+            status,
+            color_key,
+            now,
+            now,
+        ),
+    )
 
 
 def update_group(
@@ -248,26 +245,25 @@ def update_group(
     score_weight: float,
     now: str,
 ) -> bool:
-    with connection:
-        cursor = connection.execute(
-            "UPDATE groups SET short_code = ?, public_name = ?, status = ?, "
-            "is_active = ?, color_key = ?, sort_order = ?, allow_self_switch = ?, "
-            "score_weight = ?, updated_at = ?, version = version + 1 "
-            "WHERE public_id = ? AND version = ?",
-            (
-                short_code,
-                name,
-                status,
-                int(status == "active"),
-                color_key,
-                sort_order,
-                int(allow_self_switch),
-                score_weight,
-                now,
-                public_id,
-                expected_version,
-            ),
-        )
+    cursor = connection.execute(
+        "UPDATE groups SET short_code = ?, public_name = ?, status = ?, "
+        "is_active = ?, color_key = ?, sort_order = ?, allow_self_switch = ?, "
+        "score_weight = ?, updated_at = ?, version = version + 1 "
+        "WHERE public_id = ? AND version = ?",
+        (
+            short_code,
+            name,
+            status,
+            int(status == "active"),
+            color_key,
+            sort_order,
+            int(allow_self_switch),
+            score_weight,
+            now,
+            public_id,
+            expected_version,
+        ),
+    )
     return cursor.rowcount == 1
 
 

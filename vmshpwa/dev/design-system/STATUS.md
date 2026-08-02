@@ -480,3 +480,5 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - No visual baseline was updated. Owner review of desktop and compact/mobile table
   behaviour remains open; current implementation uses horizontal table scrolling on
   narrow screens rather than hiding audit fields.
+- The accepted timeline fixture now also renders a real course update and exposes
+  `course`/`group` filters; focused interaction/a11y remains **2/2 PASS**.
