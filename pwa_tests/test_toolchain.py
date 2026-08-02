@@ -143,7 +143,9 @@ async def test_toolchain_preflight_is_redacted_and_requires_every_tool(tmp_path)
         magick_path=str(executable),
     )
 
-    probes = await probe_toolchain(config, timeout_seconds=1)
+    # Process startup may briefly exceed one second when the full suite runs in
+    # eight xdist workers; this test checks readiness/redaction, not a 1 s SLA.
+    probes = await probe_toolchain(config, timeout_seconds=5)
     report, ready = await toolchain_preflight(config)
 
     assert toolchain_ready(probes)

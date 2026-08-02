@@ -254,7 +254,7 @@ pwa-typecheck:
 
 pwa-test:
 	cd $(PWA_DIR) && CI=true pnpm test
-	$(PWA_UV_ENV) $(PWA_E2E_ENV) uv run pytest -q -n0 pwa_tests
+	$(PWA_UV_ENV) $(PWA_E2E_ENV) uv run pytest -q -n8 pwa_tests
 
 pwa-storybook-test:
 	cd $(PWA_DIR) && CI=true pnpm storybook:test

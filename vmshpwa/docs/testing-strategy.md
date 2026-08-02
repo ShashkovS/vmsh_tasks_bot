@@ -79,7 +79,16 @@ Update scenario также создаёт устаревший audience-owned pr
 [`cleanupOutdatedCaches()`](https://developer.chrome.com/docs/workbox/modules/workbox-precaching/#cleanupoutdatedcaches)
 распознаёт принадлежащие текущей регистрации precaches.
 
-Перед стартом настоящего aiohttp Playwright вызывает изолированный seed/migration entrypoint. Сам server startup схему не меняет. Python PWA suite создаёт мигрированную временную SQLite отдельно в каждом pytest worker; тесты migration lifecycle дополнительно проверяют пустую/устаревшую/будущую схему, hash drift, WAL, конкурирующих writers и rollback после исключения.
+Перед стартом настоящего aiohttp Playwright вызывает изолированный
+seed/migration entrypoint. Сам server startup схему не меняет. Python PWA suite
+создаёт мигрированную временную SQLite отдельно в каждом pytest worker; поэтому
+`make pwa-test` безопасно использует восемь xdist-процессов. Контрольный полный
+прогон 2 августа 2026 года сократился с 274,14 до 83,11 секунды при одинаковом
+результате `1509 passed, 5 skipped`. Тесты migration lifecycle дополнительно
+проверяют пустую/устаревшую/будущую схему, hash drift, WAL, конкурирующих writers
+и rollback после исключения. Guarded live-smoke targets остаются
+последовательными: они управляют общими внешними ресурсами и не входят в
+hermetic suite.
 
 ## Phase 1: browser-auth proof
 
