@@ -23,6 +23,10 @@ FIXTURE = (
     / "content"
     / "phase2-derivative-document.tex"
 )
+# Eight xdist workers can delay a freshly spawned Python process on a busy
+# developer machine. This remains bounded without treating scheduler latency
+# as a toolchain failure; converter-timeout cases below keep their 50 ms limit.
+SYNTHETIC_PROBE_TIMEOUT_SECONDS = 5.0
 
 
 def _executable(tmp_path: Path, name: str, body: str) -> Path:
@@ -57,12 +61,14 @@ pathlib.Path({str(capture)!r}).write_text(json.dumps({{
 pathlib.Path('content.pdf').write_bytes(b'%PDF-1.7\\nsynthetic derivative\\n%%EOF\\n')""",
     )
 
-    probe = await probe_pdf_tool(_config(executable), timeout_seconds=1)
+    probe = await probe_pdf_tool(
+        _config(executable), timeout_seconds=SYNTHETIC_PROBE_TIMEOUT_SECONDS
+    )
     renderer = await PdfDerivativeRenderer.from_config(
         _config(executable),
         temp_root=tmp_path,
-        probe_timeout_seconds=1,
-        timeout_seconds=1,
+        probe_timeout_seconds=SYNTHETIC_PROBE_TIMEOUT_SECONDS,
+        timeout_seconds=SYNTHETIC_PROBE_TIMEOUT_SECONDS,
     )
     first = await renderer.render(FIXTURE.read_bytes(), source_name=FIXTURE.name)
     second = await renderer.render(FIXTURE.read_bytes(), source_name=FIXTURE.name)
@@ -150,7 +156,7 @@ async def test_pdf_converter_failures_are_bounded_and_redacted(
     renderer = await PdfDerivativeRenderer.from_config(
         _config(executable),
         temp_root=tmp_path,
-        probe_timeout_seconds=1,
+        probe_timeout_seconds=SYNTHETIC_PROBE_TIMEOUT_SECONDS,
         timeout_seconds=0.05,
     )
 
@@ -177,7 +183,7 @@ else:
     renderer = await PdfDerivativeRenderer.from_config(
         _config(executable),
         temp_root=tmp_path,
-        probe_timeout_seconds=1,
+        probe_timeout_seconds=SYNTHETIC_PROBE_TIMEOUT_SECONDS,
         timeout_seconds=1,
     )
     unsafe = (
