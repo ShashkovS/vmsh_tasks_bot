@@ -70,7 +70,12 @@ Migration: `pwa_submission_threads_entries_assets`.
 
 ## Пруфы завершения этапа
 
-- [ ] Revision/migration/backfill/rollback: `<sha/paths/results>`.
+- [x] Schema migration `0047.pwa_submission_threads_entries_assets`:
+      up/down, integrity, immutable identity и legacy-row preservation:
+      [`phase5-written-submission-schema.md`](../../../pwa_tests/reports/phase5-written-submission-schema.md).
+- [ ] Legacy discussion backfill: owner-reviewed problem revisions и решение о
+      40 531 Telegram-only строках без восстанавливаемого payload; см.
+      [вопрос 2](22-development-questions.md#исторические-письменные-обсуждения).
 - [ ] Demo 1/2/10 images online and offline: `<route/fixture/evidence>`.
 - [x] Real media corpus: JPEG orientation/GPS → bounded WebP without metadata,
       HEIC → WebP, corrupt/oversized rejection:
