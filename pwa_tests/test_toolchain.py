@@ -19,6 +19,8 @@ from helpers.pwa.toolchain import (
 )
 from vmshpwa.scripts.toolchain_preflight import toolchain_preflight
 
+TEST_PROCESS_TIMEOUT_SECONDS = 5
+
 
 def _executable(tmp_path: Path, name: str, body: str) -> Path:
     path = tmp_path / name
@@ -93,7 +95,9 @@ async def test_fixed_command_does_not_interpolate_shell_and_bounds_output(tmp_pa
     result = await run_fixed_command(
         str(executable),
         [shell_like_argument],
-        timeout_seconds=1,
+        # Eight xdist workers can delay process startup on a busy laptop.  This
+        # test checks argv/output handling, not the timeout boundary below.
+        timeout_seconds=TEST_PROCESS_TIMEOUT_SECONDS,
         cwd=tmp_path,
         output_limit=32,
     )
@@ -113,12 +117,22 @@ async def test_probe_matrix_reports_ready_disabled_missing_failure_and_timeout(
     slow = _executable(tmp_path, "slow", "import time\ntime.sleep(5)")
     spec = ToolSpec("test", "test_path", ("--version",))
 
-    ready_probe = await probe_tool(spec, str(ready), timeout_seconds=1)
-    disabled_probe = await probe_tool(spec, None, timeout_seconds=1)
-    missing_probe = await probe_tool(
-        spec, "does-not-exist", path=str(tmp_path), timeout_seconds=1
+    ready_probe = await probe_tool(
+        spec, str(ready), timeout_seconds=TEST_PROCESS_TIMEOUT_SECONDS
     )
-    failed_probe = await probe_tool(spec, str(failed), timeout_seconds=1)
+    disabled_probe = await probe_tool(
+        spec, None, timeout_seconds=TEST_PROCESS_TIMEOUT_SECONDS
+    )
+    missing_probe = await probe_tool(
+        spec,
+        "does-not-exist",
+        path=str(tmp_path),
+        timeout_seconds=TEST_PROCESS_TIMEOUT_SECONDS,
+    )
+    failed_probe = await probe_tool(
+        spec, str(failed), timeout_seconds=TEST_PROCESS_TIMEOUT_SECONDS
+    )
+    # This is the only branch whose purpose is to exercise the short timeout.
     timeout_probe = await probe_tool(spec, str(slow), timeout_seconds=0.05)
 
     assert ready_probe.status is ToolStatus.READY

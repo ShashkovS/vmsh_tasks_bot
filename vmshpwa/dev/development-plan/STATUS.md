@@ -1020,3 +1020,17 @@
   [`phase10-problem-workbook-replacement.md`](../../../pwa_tests/reports/phase10-problem-workbook-replacement.md).
 - Открыты только owner-run реальной недели и дата операционного cutover; import
   новых школьников является другим workflow и остаётся зависимым от вопроса 19.
+
+## Общий Python gate на 8 workers — 2 августа 2026
+
+- `make python-test` последовательно запускает legacy и PWA suites, каждый в
+  восьми xdist workers; один смешанный collection запрещён разными runtime
+  profiles.
+- Legacy SQLite использует worker-specific filename/tmp_path, PWA — отдельную
+  мигрированную временную SQLite на каждый worker.
+- Финальный результат: legacy `121 pass / 1 skip` за 12,87 с; PWA `1542 pass /
+  5 skip` за 69,55 с; весь gate 85,53 с wall time.
+- Test-only subprocess startup allowance устранён найденный под нагрузкой flake,
+  а отдельная 50 ms timeout-проверка и production timeouts не менялись.
+- Proof:
+  [`python-xdist-gate-2026-08-02.md`](../../../pwa_tests/reports/python-xdist-gate-2026-08-02.md).

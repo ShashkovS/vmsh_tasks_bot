@@ -82,9 +82,15 @@ Update scenario также создаёт устаревший audience-owned pr
 Перед стартом настоящего aiohttp Playwright вызывает изолированный
 seed/migration entrypoint. Сам server startup схему не меняет. Python PWA suite
 создаёт мигрированную временную SQLite отдельно в каждом pytest worker; поэтому
-`make pwa-test` безопасно использует восемь xdist-процессов. Контрольный полный
-прогон 2 августа 2026 года сократился с 274,14 до 83,11 секунды при одинаковом
-результате `1509 passed, 5 skipped`. Тесты migration lifecycle дополнительно
+`make pwa-test` безопасно использует восемь xdist-процессов. Полный Python gate
+`make python-test` запускает legacy `tests` и PWA `pwa_tests` двумя
+последовательными pytest-командами: смешивать их при collection нельзя из-за
+разных import-time runtime profiles. Каждый набор внутри команды использует
+восемь workers. Контрольный прогон 2 августа 2026 года: legacy `121 passed, 1
+skipped` за 12,87 с; PWA `1542 passed, 5 skipped` за 69,55 с; общий wall time
+85,53 с. Подробный proof:
+[`python-xdist-gate-2026-08-02.md`](../../pwa_tests/reports/python-xdist-gate-2026-08-02.md).
+Тесты migration lifecycle дополнительно
 проверяют пустую/устаревшую/будущую схему, hash drift, WAL, конкурирующих writers
 и rollback после исключения. Guarded live-smoke targets остаются
 последовательными: они управляют общими внешними ресурсами и не входят в

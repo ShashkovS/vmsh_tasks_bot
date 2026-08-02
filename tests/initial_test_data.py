@@ -1,14 +1,14 @@
 test_students = [
-    {"chat_id": None, "type": 1, "group_id": "н", "allowed_groups": None, "name": "Григорий", "surname": "Ющенко", "middlename": "", "token": "token1", "online": 1, "grade": None, "birthday": None},
-    {"chat_id": 1230, "type": 1, "group_id": "п", "allowed_groups": ";п;э;", "name": "София", "surname": "Полякова", "middlename": "", "token": "token2", "online": 2, "grade": None, "birthday": None},
-    {"chat_id": 1231, "type": 1, "group_id": "п", "allowed_groups": None, "name": "Антон", "surname": "Михеенко", "middlename": "", "token": "token3", "online": 1, "grade": None, "birthday": None},
-    {"chat_id": None, "type": 1, "group_id": "н", "allowed_groups": None, "name": "Михаил", "surname": "Наумов", "middlename": "", "token": "token4", "online": 2, "grade": None, "birthday": None},
-    {"chat_id": 1232, "type": 1, "group_id": "н", "allowed_groups": None, "name": "Амир М.", "surname": "Файзуллин", "middlename": "", "token": "token5", "online": 1, "grade": None, "birthday": None},
-    {"chat_id": 1233, "type": 1, "group_id": "н", "allowed_groups": None, "name": "Марк", "surname": "Шерман", "middlename": "", "token": "token6", "online": 1, "grade": None, "birthday": None},
+    {"chat_id": None, "type": 1, "group_id": "н", "allowed_groups": None, "name": "Григорий", "surname": "Ющенко", "middlename": "", "token": "token1", "online": 1, "grade": None, "birthday": None, "public_id": None},
+    {"chat_id": 1230, "type": 1, "group_id": "п", "allowed_groups": ";п;э;", "name": "София", "surname": "Полякова", "middlename": "", "token": "token2", "online": 2, "grade": None, "birthday": None, "public_id": None},
+    {"chat_id": 1231, "type": 1, "group_id": "п", "allowed_groups": None, "name": "Антон", "surname": "Михеенко", "middlename": "", "token": "token3", "online": 1, "grade": None, "birthday": None, "public_id": None},
+    {"chat_id": None, "type": 1, "group_id": "н", "allowed_groups": None, "name": "Михаил", "surname": "Наумов", "middlename": "", "token": "token4", "online": 2, "grade": None, "birthday": None, "public_id": None},
+    {"chat_id": 1232, "type": 1, "group_id": "н", "allowed_groups": None, "name": "Амир М.", "surname": "Файзуллин", "middlename": "", "token": "token5", "online": 1, "grade": None, "birthday": None, "public_id": None},
+    {"chat_id": 1233, "type": 1, "group_id": "н", "allowed_groups": None, "name": "Марк", "surname": "Шерман", "middlename": "", "token": "token6", "online": 1, "grade": None, "birthday": None, "public_id": None},
 ]
 test_teachers = [
-    {"chat_id": None, "type": 2, "group_id": None, "allowed_groups": ";н;п;э;", "name": "Анна", "surname": "Гришина", "middlename": "10A", "token": "token101", "online": 1, "grade": None, "birthday": None},
-    {"chat_id": 2120, "type": 2, "group_id": None, "allowed_groups": None, "name": "Надежда", "surname": "Ибрагимова", "middlename": "10Б", "token": "token102", "online": 2, "grade": None, "birthday": None},
+    {"chat_id": None, "type": 2, "group_id": None, "allowed_groups": ";н;п;э;", "name": "Анна", "surname": "Гришина", "middlename": "10A", "token": "token101", "online": 1, "grade": None, "birthday": None, "public_id": None},
+    {"chat_id": 2120, "type": 2, "group_id": None, "allowed_groups": None, "name": "Надежда", "surname": "Ибрагимова", "middlename": "10Б", "token": "token102", "online": 2, "grade": None, "birthday": None, "public_id": None},
 ]
 test_problems = [
     {"id": 162, "group_id": "н", "lesson": 4, "prob": 4, "item": "", "title": "Две колонны из пяти бегунов", "prob_text": "", "prob_type": 1, "ans_type": 2, "ans_validation": "", "validation_error": "Сколько раз было произнесено \"Привет\"", "cor_ans": "50", "cor_ans_checker": "", "wrong_ans": "Нет, не столько", "congrat": "Да, всё верно!", },

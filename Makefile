@@ -17,6 +17,7 @@ db_dir:
 	@echo "[db] Ensured ./db exists"
 
 PWA_DIR := vmshpwa
+PYTEST_WORKERS ?= 8
 PWA_UV_ENV := UV_CACHE_DIR=.runtime/uv-cache
 PWA_HUMAN_ENV := VMSH_RUNTIME_PROFILE=pwa-human VMSH_INSTANCE=human VMSH_DB_FILENAME=db/vmshpwa_dev.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/human VMSH_NATS_SERVER=nats://127.0.0.1:4222 VMSH_NATS_TOPIC_PREFIX=vmshpwa_human VMSH_PWA_PROTOTYPE=true
 PWA_AGENT_ENV := VMSH_RUNTIME_PROFILE=pwa-agent VMSH_INSTANCE=agent VMSH_DB_FILENAME=db/vmshpwa_agent.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/agent VMSH_NATS_SERVER=nats://127.0.0.1:4222 VMSH_NATS_TOPIC_PREFIX=vmshpwa_agent VMSH_PWA_PROTOTYPE=true
@@ -242,7 +243,15 @@ pwa-telegram-rich-live-smoke:
 	@test -z "$(VMSH_TELEGRAM_TEST_CHANNEL_ID)" || (echo "Unset VMSH_TELEGRAM_TEST_CHANNEL_ID; smoke uses the verified local binding"; exit 2)
 	$(PWA_UV_ENV) VMSH_RUN_TELEGRAM_LIVE_SMOKE=1 uv run python -m vmshpwa.scripts.telegram_test_capability --live --run-rich-smoke --confirm vmsh179devbot-channel-synthetic
 
-.PHONY: pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-e2e-auth pwa-e2e-content pwa-e2e-submissions pwa-e2e-review pwa-e2e-support pwa-e2e-classrooms pwa-e2e-oral pwa-e2e-news pwa-e2e-family pwa-e2e-functional pwa-e2e-realtime pwa-e2e-runtime pwa-visual pwa-visual-update telegram-history-test
+.PHONY: python-test python-test-legacy pwa-python-test pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-e2e-auth pwa-e2e-content pwa-e2e-submissions pwa-e2e-review pwa-e2e-support pwa-e2e-classrooms pwa-e2e-oral pwa-e2e-news pwa-e2e-family pwa-e2e-functional pwa-e2e-realtime pwa-e2e-runtime pwa-visual pwa-visual-update telegram-history-test
+python-test: python-test-legacy pwa-python-test
+
+python-test-legacy:
+	$(PWA_UV_ENV) uv run pytest -q -n$(PYTEST_WORKERS) tests
+
+pwa-python-test:
+	$(PWA_UV_ENV) $(PWA_E2E_ENV) uv run pytest -q -n$(PYTEST_WORKERS) pwa_tests
+
 pwa-format:
 	cd $(PWA_DIR) && CI=true pnpm format
 
@@ -254,7 +263,7 @@ pwa-typecheck:
 
 pwa-test:
 	cd $(PWA_DIR) && CI=true pnpm test
-	$(PWA_UV_ENV) $(PWA_E2E_ENV) uv run pytest -q -n8 pwa_tests
+	$(MAKE) pwa-python-test
 
 pwa-storybook-test:
 	cd $(PWA_DIR) && CI=true pnpm storybook:test
