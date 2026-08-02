@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import sqlite3
 import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
@@ -12,6 +13,7 @@ from aiohttp import web
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
+from db_methods.pwa.audit import insert_audit_event
 from db_methods.pwa.telegram_bindings import (
     TelegramBindingDuplicate,
     TelegramBindingNotFound,
@@ -34,9 +36,7 @@ from models.pwa.telegram_bindings import (
 
 
 telegram_binding_routes = web.RouteTableDef()
-TelegramBindingVerifier = Callable[
-    [int, int | None, str], Awaitable[dict[str, object]]
-]
+TelegramBindingVerifier = Callable[[int, int | None, str], Awaitable[dict[str, object]]]
 PWA_TELEGRAM_BINDING_VERIFIER = web.AppKey(
     "pwa_telegram_binding_verifier", TelegramBindingVerifier
 )
@@ -84,6 +84,10 @@ def _admin_user_id(request: web.Request) -> int:
             message="Управлять привязками Telegram может только администратор",
         )
     return principal.linked_user_id
+
+
+def _actor_account_id(request: web.Request) -> str:
+    return authenticated_session(request).principal.account_public_id
 
 
 def _public_id(request: web.Request) -> str:
@@ -180,6 +184,55 @@ def _payload(item: dict[str, object]) -> dict[str, object]:
     }
 
 
+def _audit_values(item: dict[str, object]) -> dict[str, object]:
+    """Keep destinations visible to admins without ever journaling bot credentials."""
+
+    payload = _payload(item)
+    return {
+        "ownerType": payload["ownerType"],
+        "ownerId": payload["ownerId"],
+        "purpose": payload["purpose"],
+        "chatId": payload["chatId"],
+        "messageThreadId": payload["messageThreadId"],
+        "titleCached": payload["titleCached"],
+        "status": payload["status"],
+        "verifiedAt": payload["verifiedAt"],
+        "version": payload["version"],
+    }
+
+
+def _append_audit(
+    connection: sqlite3.Connection,
+    request: web.Request,
+    *,
+    actor_user_id: int,
+    actor_account_id: str,
+    action: str,
+    public_id: str,
+    before: dict[str, object] | None,
+    after: dict[str, object],
+    now: str,
+) -> None:
+    insert_audit_event(
+        connection,
+        public_id=f"audit.{uuid.uuid4().hex}",
+        actor_user_id=actor_user_id,
+        actor_account_public_id=actor_account_id,
+        audience="staff",
+        action=action,
+        object_type="telegram_binding",
+        object_id=public_id,
+        request_id=request["request_id"],
+        before_json=(
+            None
+            if before is None
+            else json.dumps(_audit_values(before), ensure_ascii=False)
+        ),
+        after_json=json.dumps(_audit_values(after), ensure_ascii=False),
+        occurred_at=now,
+    )
+
+
 def _response(
     request: web.Request, item: dict[str, object], *, status: int = 200
 ) -> web.Response:
@@ -239,13 +292,9 @@ async def get_telegram_bindings(request: web.Request) -> web.Response:
         )
     course_public_id = request.query.get("courseId")
     if course_public_id is not None and _PUBLIC_ID.fullmatch(course_public_id) is None:
-        raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте курс"
-        )
+        raise PwaApiError(status=422, code="validation_error", message="Проверьте курс")
     items = await _factory(request).run_read_async(
-        lambda connection: list_bindings(
-            connection, course_public_id=course_public_id
-        )
+        lambda connection: list_bindings(connection, course_public_id=course_public_id)
     )
     return web.json_response(
         {
@@ -293,25 +342,44 @@ async def get_telegram_binding_owners(request: web.Request) -> web.Response:
             "requestId": request["request_id"],
         }
     )
+
+
 @telegram_binding_routes.post("/staff/api/v1/telegram-bindings")
 async def post_telegram_binding(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     payload = await _json(request, _FIELDS)
-    try:
-        item = await _factory(request).run_write_async(
-            lambda connection: create_binding(
-                connection,
-                public_id=f"telegram-binding.{uuid.uuid4().hex}",
-                owner_type=payload["ownerType"],
-                owner_public_id=payload["ownerId"],
-                purpose=payload["purpose"],
-                chat_id=payload["chatId"],
-                message_thread_id=payload["messageThreadId"],
-                title_cached=payload["titleCached"],
-                actor_user_id=actor_user_id,
-                now=_now(),
-            )
+    public_id = f"telegram-binding.{uuid.uuid4().hex}"
+    now = _now()
+
+    def write(connection: sqlite3.Connection) -> dict[str, object]:
+        item = create_binding(
+            connection,
+            public_id=public_id,
+            owner_type=payload["ownerType"],
+            owner_public_id=payload["ownerId"],
+            purpose=payload["purpose"],
+            chat_id=payload["chatId"],
+            message_thread_id=payload["messageThreadId"],
+            title_cached=payload["titleCached"],
+            actor_user_id=actor_user_id,
+            now=now,
         )
+        _append_audit(
+            connection,
+            request,
+            actor_user_id=actor_user_id,
+            actor_account_id=actor_account_id,
+            action="telegram_binding.created",
+            public_id=public_id,
+            before=None,
+            after=item,
+            now=now,
+        )
+        return item
+
+    try:
+        item = await _factory(request).run_write_async(write)
     except (
         InvalidTelegramBinding,
         TelegramBindingOwnerNotFound,
@@ -325,25 +393,43 @@ async def post_telegram_binding(request: web.Request) -> web.Response:
 @telegram_binding_routes.put("/staff/api/v1/telegram-bindings/{binding_public_id}")
 async def put_telegram_binding(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     public_id = _public_id(request)
     expected_version = _expected_version(request, public_id)
     payload = await _json(request, _FIELDS)
-    try:
-        item = await _factory(request).run_write_async(
-            lambda connection: edit_binding(
-                connection,
-                public_id=public_id,
-                expected_version=expected_version,
-                owner_type=payload["ownerType"],
-                owner_public_id=payload["ownerId"],
-                purpose=payload["purpose"],
-                chat_id=payload["chatId"],
-                message_thread_id=payload["messageThreadId"],
-                title_cached=payload["titleCached"],
-                actor_user_id=actor_user_id,
-                now=_now(),
-            )
+    now = _now()
+
+    def write(connection: sqlite3.Connection) -> dict[str, object]:
+        before = get_binding(connection, public_id)
+        item = edit_binding(
+            connection,
+            public_id=public_id,
+            expected_version=expected_version,
+            owner_type=payload["ownerType"],
+            owner_public_id=payload["ownerId"],
+            purpose=payload["purpose"],
+            chat_id=payload["chatId"],
+            message_thread_id=payload["messageThreadId"],
+            title_cached=payload["titleCached"],
+            actor_user_id=actor_user_id,
+            now=now,
         )
+        assert before is not None
+        _append_audit(
+            connection,
+            request,
+            actor_user_id=actor_user_id,
+            actor_account_id=actor_account_id,
+            action="telegram_binding.updated",
+            public_id=public_id,
+            before=before,
+            after=item,
+            now=now,
+        )
+        return item
+
+    try:
+        item = await _factory(request).run_write_async(write)
     except (
         InvalidTelegramBinding,
         TelegramBindingOwnerNotFound,
@@ -358,15 +444,17 @@ async def put_telegram_binding(request: web.Request) -> web.Response:
 
 async def _change_status(request: web.Request, status: str) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     public_id = _public_id(request)
     expected_version = _expected_version(request, public_id)
     await _json(request, frozenset({"schemaVersion"}))
+    now = _now()
 
-    def change(connection):
+    def change(connection: sqlite3.Connection) -> dict[str, object]:
         current = get_binding(connection, public_id)
         if current is None:
             raise TelegramBindingNotFound
-        return set_binding_status(
+        item = set_binding_status(
             connection,
             public_id=public_id,
             expected_version=expected_version,
@@ -374,8 +462,24 @@ async def _change_status(request: web.Request, status: str) -> web.Response:
             verified_at=current["verified_at"] if status == "disabled" else None,
             title_cached=None,
             actor_user_id=actor_user_id,
-            now=_now(),
+            now=now,
         )
+        _append_audit(
+            connection,
+            request,
+            actor_user_id=actor_user_id,
+            actor_account_id=actor_account_id,
+            action=(
+                "telegram_binding.disabled"
+                if status == "disabled"
+                else "telegram_binding.draft_restored"
+            ),
+            public_id=public_id,
+            before=current,
+            after=item,
+            now=now,
+        )
+        return item
 
     try:
         item = await _factory(request).run_write_async(change)
@@ -404,6 +508,7 @@ async def restore_telegram_binding_draft(request: web.Request) -> web.Response:
 )
 async def verify_telegram_binding_route(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
     public_id = _public_id(request)
     expected_version = _expected_version(request, public_id)
     await _json(request, frozenset({"schemaVersion"}))
@@ -460,19 +565,40 @@ async def verify_telegram_binding_route(request: web.Request) -> web.Response:
             code="telegram_verification_mismatch",
             message="Telegram вернул другой канал или некорректное название",
         )
-    try:
-        item = await _factory(request).run_write_async(
-            lambda connection: set_binding_status(
-                connection,
-                public_id=public_id,
-                expected_version=expected_version,
-                status="verified",
-                verified_at=_now(),
-                title_cached=verified_title.strip()[:200],
-                actor_user_id=actor_user_id,
-                now=_now(),
-            )
+    now = _now()
+
+    def save_verified(connection: sqlite3.Connection) -> dict[str, object]:
+        # Telegram verification happens outside SQLite. Re-read and apply the
+        # optimistic version inside one transaction so a concurrent edit cannot
+        # be journaled as verified with stale destination data.
+        before = get_binding(connection, public_id)
+        if before is None:
+            raise TelegramBindingNotFound
+        item = set_binding_status(
+            connection,
+            public_id=public_id,
+            expected_version=expected_version,
+            status="verified",
+            verified_at=now,
+            title_cached=verified_title.strip()[:200],
+            actor_user_id=actor_user_id,
+            now=now,
         )
+        _append_audit(
+            connection,
+            request,
+            actor_user_id=actor_user_id,
+            actor_account_id=actor_account_id,
+            action="telegram_binding.verified",
+            public_id=public_id,
+            before=before,
+            after=item,
+            now=now,
+        )
+        return item
+
+    try:
+        item = await _factory(request).run_write_async(save_verified)
     except (TelegramBindingNotFound, TelegramBindingVersionConflict) as error:
         _raise_write_error(error)
         raise AssertionError("unreachable")

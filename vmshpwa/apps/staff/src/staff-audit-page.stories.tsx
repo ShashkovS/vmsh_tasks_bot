@@ -10,6 +10,35 @@ const data = auditListResponseSchema.parse({
   schemaVersion: 1,
   items: [
     {
+      eventId: 'audit.telegram-binding-verified',
+      occurredAt: '2026-08-02T11:15:00Z',
+      audience: 'staff',
+      action: 'telegram_binding.verified',
+      objectType: 'telegram_binding',
+      objectId: 'telegram-binding.math-news',
+      requestId: 'request-telegram-binding-7',
+      actor: {
+        userId: 'user.admin-1',
+        accountId: 'account.admin-1',
+        displayName: 'Петрова Анна',
+      },
+      before: {
+        ownerType: 'course',
+        ownerId: 'course.math-5-7',
+        chatId: -100179000001,
+        status: 'draft',
+        version: 2,
+      },
+      after: {
+        ownerType: 'course',
+        ownerId: 'course.math-5-7',
+        chatId: -100179000001,
+        status: 'verified',
+        titleCached: 'Новости математики',
+        version: 3,
+      },
+    },
+    {
       eventId: 'audit.course-update',
       occurredAt: '2026-08-02T11:00:00Z',
       audience: 'staff',

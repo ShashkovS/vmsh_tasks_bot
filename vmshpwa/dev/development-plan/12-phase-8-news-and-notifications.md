@@ -92,3 +92,10 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 `telegram_bindings` поддерживает course/group owners: news sources складываются, group materials targets заменяют course defaults либо наследуют их. Notification categories получают optional course override. WS/NATS invalidations сужаются audience/course/group/student полями; reconnect всегда делает authoritative refetch.
 
 Дополнительный proof: inheritance matrix, private-event leakage tests, course preference isolation и `Product/Staff-admin--telegram-bindings`.
+
+Audit follow-up 2 августа 2026 года: все admin mutations course/group Telegram
+bindings пишут безопасный before/after в общей транзакции с изменением; фиксируются
+destination, purpose и status, но не bot token. Duplicate/stale запросы не создают
+событий, а сбой audit insert откатывает binding. Proof:
+[`phase8-telegram-bindings.md`](../../../pwa_tests/reports/phase8-telegram-bindings.md)
+и [`phase10-staff-audit.md`](../../../pwa_tests/reports/phase10-staff-audit.md).

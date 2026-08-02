@@ -111,8 +111,10 @@ Storybook: `Pages/Staff/Audit--SearchableTimeline`, `--EmptySearch`; production 
 mutations явно оставлено следующим audit-инкрементом и не маскируется этим proof.
 Следующий audit-инкремент добавил транзакционные `course.created/updated` и
 `group.created/updated`; отдельный rollback-test доказывает, что каталог не
-сохраняется без соответствующей audit-строки. Расписания, Telegram bindings,
-синонимы и прочие Staff writes всё ещё перечислены в proof как открытые.
+сохраняется без соответствующей audit-строки. Следующий инкремент добавил
+`telegram_binding.created/updated/disabled/draft_restored/verified`, включая
+старый/новый destination без bot token и атомарный rollback при сбое audit.
+Расписания, синонимы и прочие Staff writes всё ещё перечислены в proof как открытые.
 Первоначальный bulk-import с dry-run и отчётом ещё не закрыт.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.

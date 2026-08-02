@@ -482,3 +482,6 @@ Token core + brand + полировка готовы и зелёные (Storyboo
   narrow screens rather than hiding audit fields.
 - The accepted timeline fixture now also renders a real course update and exposes
   `course`/`group` filters; focused interaction/a11y remains **2/2 PASS**.
+- The same timeline now includes a verified Telegram course destination and the
+  `telegram_binding` filter with Russian field/action labels. Focused browser/a11y
+  remains **2/2 PASS**; no visual baseline was updated.

@@ -34,3 +34,10 @@ The verifier deliberately does not prove that a particular forum topic exists. I
 - Manual Storybook inspection passed at desktop and 390×844 mobile-light sizes. The lifecycle controls and responsive layout were checked; browser console contained no application errors.
 - Visual snapshots were not updated.
 - No real Bot API mutation was made by this slice; live verification remains opt-in through the dedicated test bot/channel configuration.
+
+## Staff audit follow-up — 2026-08-02
+
+The searchable Staff timeline now understands `telegram_binding` and renders the
+exact destination/status changes with Russian field and action labels. The accepted
+audit story includes a verified course destination; focused Storybook interaction and
+a11y remain **2/2 passed**. No visual baseline was changed.

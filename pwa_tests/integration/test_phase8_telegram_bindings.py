@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 
 import pytest
@@ -171,10 +172,19 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
     assert disabled.status == 200
     assert (await disabled.json())["binding"]["status"] == "disabled"
 
+    restored = await classroom_http.client.post(
+        f"/staff/api/v1/telegram-bindings/{item['publicId']}/restore-draft",
+        json={"schemaVersion": 1},
+        headers=_headers(unsafe=True, if_match=f'"{item["publicId"]}:v3"'),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert restored.status == 200
+    assert (await restored.json())["binding"]["status"] == "draft"
+
     verified = await classroom_http.client.post(
         f"/staff/api/v1/telegram-bindings/{item['publicId']}/verify",
         json={"schemaVersion": 1},
-        headers=_headers(unsafe=True, if_match=f'"{item["publicId"]}:v3"'),
+        headers=_headers(unsafe=True, if_match=f'"{item["publicId"]}:v4"'),
         cookies=_cookies(classroom_http, "admin"),
     )
     assert verified.status == 200, await verified.text()
@@ -186,6 +196,93 @@ async def test_admin_crud_is_strict_and_teacher_is_forbidden(classroom_http):
     assert classroom_http.telegram_binding_checks == [
         (-100179000001, None, "news_source")
     ]
+
+    def audit_rows(connection):
+        return connection.execute(
+            "SELECT event.action, event.before_json, event.after_json, "
+            "account.public_id AS actor_account_id FROM audit_events AS event "
+            "LEFT JOIN auth_accounts AS account ON account.id = event.actor_account_id "
+            "WHERE event.object_type = 'telegram_binding' ORDER BY event.id"
+        ).fetchall()
+
+    events = classroom_http.factory.run_read(audit_rows)
+    assert [event["action"] for event in events] == [
+        "telegram_binding.created",
+        "telegram_binding.updated",
+        "telegram_binding.disabled",
+        "telegram_binding.draft_restored",
+        "telegram_binding.verified",
+    ]
+    assert all(
+        event["actor_account_id"] == "classroom-http-account-admin" for event in events
+    )
+    assert json.loads(events[1]["before_json"])["titleCached"] == "Новости математики"
+    assert json.loads(events[1]["after_json"])["titleCached"] == "Канал курса"
+    assert json.loads(events[-1]["before_json"])["status"] == "draft"
+    assert json.loads(events[-1]["after_json"])["status"] == "verified"
+
+    timeline = await classroom_http.client.get(
+        "/staff/api/v1/audit?objectType=telegram_binding",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert timeline.status == 200
+    timeline_items = (await timeline.json())["items"]
+    assert {event["action"] for event in timeline_items} == {
+        "telegram_binding.created",
+        "telegram_binding.updated",
+        "telegram_binding.disabled",
+        "telegram_binding.draft_restored",
+        "telegram_binding.verified",
+    }
+    assert all(event["objectType"] == "telegram_binding" for event in timeline_items)
+    assert all(
+        "token" not in key.casefold()
+        for event in timeline_items
+        for side in (event["before"], event["after"])
+        for key in (side or {})
+    )
+
+
+@pytest.mark.asyncio
+async def test_binding_write_rolls_back_when_audit_insert_fails(classroom_http):
+    def install_failure(connection):
+        connection.execute(
+            "CREATE TRIGGER audit_telegram_binding_test_failure "
+            "BEFORE INSERT ON audit_events "
+            "WHEN new.object_type = 'telegram_binding' BEGIN "
+            "SELECT raise(ABORT, 'synthetic audit failure'); END"
+        )
+
+    classroom_http.factory.run_write(install_failure)
+    response = await classroom_http.client.post(
+        "/staff/api/v1/telegram-bindings",
+        json={
+            "schemaVersion": 1,
+            "ownerType": "course",
+            "ownerId": "classroom-layout-course",
+            "purpose": "materials_target",
+            "chatId": -100179000099,
+            "messageThreadId": None,
+            "titleCached": "Rollback proof",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert response.status == 500
+
+    def state(connection):
+        binding_count = connection.execute(
+            "SELECT count(*) AS count FROM telegram_bindings "
+            "WHERE chat_id = -100179000099"
+        ).fetchone()["count"]
+        audit_count = connection.execute(
+            "SELECT count(*) AS count FROM audit_events "
+            "WHERE object_type = 'telegram_binding'"
+        ).fetchone()["count"]
+        return binding_count, audit_count
+
+    assert classroom_http.factory.run_read(state) == (0, 0)
 
 
 @pytest.mark.asyncio

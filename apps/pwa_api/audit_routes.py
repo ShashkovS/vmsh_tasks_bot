@@ -25,6 +25,7 @@ _OBJECT_TYPES = {
     "problem_import",
     "course",
     "group",
+    "telegram_binding",
 }
 _QUERY_KEYS = {"objectType", "q", "cursor", "limit"}
 

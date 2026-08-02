@@ -20,6 +20,10 @@
   `group.created/updated`; focused aiohttp **7 pass**, frontend unit **3 pass** and
   Storybook interaction/a11y **2 pass**. A forced audit failure rolls the catalog
   mutation back instead of leaving an unjournaled change.
+- Telegram binding coverage adds create/update/disable/restore/verify with safe
+  destination/status diffs and atomic rollback. Full checkpoint: Python PWA **1523
+  pass / 5 skip**, frontend unit **578 pass**, focused Storybook **2 pass**;
+  lint/typecheck/production build — PASS.
 
 ## Состояние документов
 

@@ -13,6 +13,9 @@ Date: 2026-08-02.
   transaction as the administrative write.
 - Course/group create and edit now use that same boundary. Failed duplicate or stale
   requests append nothing; if the audit insert fails, the catalog write rolls back.
+- Telegram binding create/edit/disable/restore/verify records the old and new owner,
+  destination, purpose and status in the same transaction. No bot credential is part
+  of the binding row or its audit projection.
 - [`GET /staff/api/v1/audit`](../../apps/pwa_api/audit_routes.py) is admin-only and
   supports object filtering, request/action/object search and stable cursor paging.
 - The safe projection in [`models/pwa/audit.py`](../../models/pwa/audit.py) accepts
@@ -25,8 +28,8 @@ Date: 2026-08-02.
 ## Automated proof
 
 - Python focused domain/API/migration/auth/import/account/enrollment suite: **62 passed**.
-- Full Python gate in 8 isolated pytest workers: **1521 passed, 5 skipped**.
-- Frontend unit suite: **106 files, 577 tests passed**.
+- Full Python gate in 8 isolated pytest workers: **1523 passed, 5 skipped**.
+- Frontend unit suite: **106 files, 578 tests passed**.
 - Storybook browser mode with a11y error gate: **48 files, 231 tests passed**;
   stories `Pages/Staff/Audit--SearchableTimeline` and `--EmptySearch`.
 - Production-build authentication E2E: **84 passed, 12 intentionally skipped** in
@@ -42,12 +45,22 @@ Catalog coverage increment:
 - focused Storybook interaction/a11y: **2 passed**;
 - real object filters: `course` and `group`.
 
+Telegram binding coverage increment:
+
+- focused Telegram binding/audit aiohttp suite: **7 passed**;
+- full Python PWA regression: **1523 passed, 5 skipped** in **81.35 seconds**;
+- frontend unit: **106 files, 578 passed**;
+- focused audit client: **3 passed**;
+- focused Storybook interaction/a11y: **2 passed**;
+- lint, strict TypeScript and production builds: passed;
+- real object filter: `telegram_binding`.
+
 ## Explicit remaining scope
 
 This slice does not yet claim complete audit coverage of every older Staff mutation.
-Schedules, Telegram bindings, synonym operations, classroom planning/news moderation
-and future publication/broadcast writes still need a compact audit append at their
-existing transaction boundary. Their domain-specific histories remain unchanged and
+Schedules, synonym operations, classroom planning/news moderation and future
+publication/broadcast writes still need a compact audit append at their existing
+transaction boundary. Their domain-specific histories remain unchanged and
 authoritative meanwhile.
 
 No visual baseline was updated. Owner visual approval of the dense desktop/mobile

@@ -28,6 +28,18 @@
 - Schema inventory: 385 objects, SHA-256 `4c977a5d76db476101a4d8fe5f9416188efb9940adfb13b3e787c12f9b473714`.
 - Visual snapshots: не изменялись.
 
-## Следующий срез
+## Следующий срез на момент отчёта
 
-Server-side `getMe`/`getChat`/`getChatMember` verification с явным переходом draft → verified, затем strict frontend contract/client и подключение принятого `TelegramBindingsEditor` к этому API.
+Server-side `getMe`/`getChat`/`getChatMember` verification с явным переходом draft → verified, затем strict frontend contract/client и подключение принятого `TelegramBindingsEditor` к этому API. Этот срез позднее закрыт в [`phase8-telegram-bindings-ui.md`](phase8-telegram-bindings-ui.md).
+
+## Audit increment — 2026-08-02
+
+- Все пять admin mutations — create, edit, disable, restore draft и verify —
+  добавляют безопасный before/after в общий Staff audit в той же SQLite-транзакции.
+- Audit содержит owner, purpose, `chat_id`, optional topic, cached title, status и
+  version. Bot token не является частью binding и не журналируется.
+- Duplicate/stale запросы не создают событий; искусственный сбой audit insert
+  откатывает создание binding целиком.
+- Focused Telegram binding + audit aiohttp suite: **7 passed**. Полный PWA Python:
+  **1523 passed, 5 skipped**; frontend unit: **578 passed**; lint, typecheck и
+  production build прошли.

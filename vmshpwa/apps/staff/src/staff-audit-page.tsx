@@ -31,6 +31,7 @@ const objectLabels: Record<AuditObjectType, string> = {
   problem_import: 'Импорт задач',
   course: 'Курсы',
   group: 'Группы',
+  telegram_binding: 'Привязки Telegram',
 }
 
 const actionLabels: Record<string, string> = {
@@ -47,6 +48,11 @@ const actionLabels: Record<string, string> = {
   'course.updated': 'Изменён курс',
   'group.created': 'Создана группа',
   'group.updated': 'Изменена группа',
+  'telegram_binding.created': 'Создана привязка Telegram',
+  'telegram_binding.updated': 'Изменена привязка Telegram',
+  'telegram_binding.disabled': 'Отключена привязка Telegram',
+  'telegram_binding.draft_restored': 'Привязка возвращена в черновик',
+  'telegram_binding.verified': 'Проверена привязка Telegram',
 }
 
 const fieldLabels: Record<string, string> = {
@@ -56,6 +62,7 @@ const fieldLabels: Record<string, string> = {
   attendanceMode: 'Режим участия',
   audience: 'Кабинет',
   courseId: 'Курс',
+  chatId: 'Чат',
   code: 'Код',
   colorKey: 'Цвет группы',
   created: 'Создано задач',
@@ -63,6 +70,10 @@ const fieldLabels: Record<string, string> = {
   isPrimary: 'Основная связь',
   allowSelfSwitch: 'Самостоятельная смена',
   linked: 'Связь активна',
+  messageThreadId: 'Тема чата',
+  ownerId: 'Владелец',
+  ownerType: 'Тип владельца',
+  purpose: 'Назначение',
   relationshipLabel: 'Роль в семье',
   rows: 'Строк обработано',
   scoreWeight: 'Вес результатов',
@@ -73,9 +84,11 @@ const fieldLabels: Record<string, string> = {
   status: 'Статус',
   studentId: 'Школьник',
   subjectCode: 'Предмет',
+  titleCached: 'Название в Telegram',
   updated: 'Изменено задач',
   username: 'Логин',
   version: 'Версия',
+  verifiedAt: 'Проверено',
 }
 
 function dateTime(value: string): string {
