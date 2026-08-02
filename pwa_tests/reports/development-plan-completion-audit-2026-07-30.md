@@ -140,7 +140,6 @@ draft, private text questions и production-build E2E в трёх браузер
 Осталось по заявленному phase-файлу:
 
 - rehearsed legacy reaction backfill/duplicate report;
-- Telegram composite image для аннотированной проверки;
 - таблица решений по idea-only `viewwrittensols*`;
 - visual acceptance. Cross-channel Telegram continuation вопросов была
   согласована как желательная, но не блокирующая v1.
@@ -150,6 +149,7 @@ draft, private text questions и production-build E2E в трёх браузер
 [review workspace E2E](phase6-review-workspace.md),
 [reaction inbox](phase6-review-reaction-inbox.md),
 [review correction](phase6-review-corrections.md),
+[Telegram annotation composite](phase6-review-telegram-composite.md),
 [support pages/E2E](phase6-support-pages.md).
 
 ### Phase 7 — oral/classrooms: функциональное ядро и browser flow готовы
