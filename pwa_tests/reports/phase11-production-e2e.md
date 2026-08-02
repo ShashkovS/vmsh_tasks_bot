@@ -1,79 +1,80 @@
 # Phase 11: production-build browser checkpoint
 
-Дата: 30 июля 2026 года.
+Дата: 2 августа 2026 года.
 
-## Среда
+## Проверяемая граница
 
-Все прогоны использовали один loopback origin, настоящие production bundles,
-aiohttp и заново seeded `pwa-e2e` SQLite. MSW, Telegram, Google, S3 и human
-runtime не подключались. Проверялись Chromium, WebKit и Firefox.
+`make pwa-e2e-functional` сначала собрал production bundles Student, Family и
+Staff, включая `injectManifest` workers Student/Family, затем запустил:
 
-## Результаты
+- один настоящий aiohttp на `127.0.0.1:8380`;
+- один test-only one-origin gateway на `127.0.0.1:5380`;
+- заново seeded изолированную `db/vmshpwa_e2e.sqlite3`;
+- Chromium, WebKit и Firefox одновременно.
 
-### Полный прогон
+MSW, prototype mode, Sentry, внешний media origin, Telegram и Google были
+отключены. Browser network fixture разрешал только единый gateway origin.
+Visual stories и snapshots этим checkpoint не изменялись: команда исключает
+`@visual`, пока владелец не примет новые изображения.
 
-Команда `make pwa-e2e`:
+## Исправленная изоляция
 
-- `197 passed`;
-- `6 skipped` по заранее заданной browser matrix;
-- `4 failed`;
-- длительность — 2,7 минуты.
+Функциональные ошибки предыдущего checkpoint оказались зависимостями тестов от
+общих изменяемых fixtures, а не product failures:
 
-Три ошибки относятся к одному visual test `@visual student current week`.
-Baseline изображает прежнюю одно-курсовую страницу высотой 1188 px, тогда как
-текущая production-сборка стабильно показывает принятую многокурсовую структуру
-высотой 966 px. Baseline не обновлялся: по правилам проекта новый snapshot
-должен сначала принять владелец дизайна.
+- Family enrollment mutation перенесена на отдельного Family-only ребёнка;
+- auth и classroom mutations стали повторяемыми относительно реально
+  прочитанного начального состояния;
+- news Student/Family получили отдельных synthetic principals для каждого
+  browser project;
+- news read подтверждается authoritative API polling после foreground и
+  трёхсекундного visibility window, а не гонкой с `waitForResponse`;
+- runtime socket assertion требует `connected`, но не объявляет корректный
+  параллельный owner-scoped `invalidate` ошибкой.
 
-Четвёртая ошибка — Firefox content publication flow. После cold-offline
-checkpoint повторная навигация завершилась browser-native `NS_ERROR_FAILURE`;
-retry дошёл дальше, но тест жёстко ожидал подпись `Revision 1`, хотя предыдущая
-неудачная попытка уже создала revisions 1–2.
+Playwright запускает разные spec-файлы параллельно даже при
+`fullyParallel: false` ([официальная модель](https://playwright.dev/docs/test-parallel)).
+Поэтому конфигурация использует три общих workers и ровно один worker на каждый
+browser project. Project-level `workers` и `failOnFlakyTests` поддерживаются с
+Playwright 1.52
+([release notes](https://playwright.dev/docs/release-notes#version-152)). Retry
+сохраняет диагностику, но любой flaky делает gate красным.
 
-### Functional-only прогон
+## Фактический результат
 
-Команда `make pwa-e2e-functional` завершилась с кодом 0:
+Playwright HTML report и `.last-run.json` зафиксировали:
 
-- `192 passed`;
-- `6 skipped`;
-- `3 flaky`;
-- длительность — 2,6 минуты.
+- **228 total**;
+- **216 expected / passed**;
+- **12 intentional browser-matrix skips**;
+- **0 unexpected**;
+- **0 flaky**;
+- **3 actual workers**;
+- browser duration **208.01 s**.
 
-Все три flaky относятся к realtime assertions. Параллельные реальные product
-flows публиковали корректные `invalidate` тому же seeded Student, а старые
-assertions ожидали строго `['connected']` либо ровно два сообщения
-`connected + pong`. Retry прошёл; это недостаточная изоляция тестовых событий,
-а не потеря invalidation или reconnect.
+Production build завершился до browser run. Student precache содержит 107
+entries, Family — 95; оба service worker собраны в `injectManifest` mode.
+После suite aiohttp и gateway завершились, порты 8380/5380 освободились.
 
-Изолированный `make pwa-e2e-realtime` затем прошёл **12/12** в трёх браузерах
-без retry.
+Дополнительные гейты того же worktree:
 
-### Изолированный content-прогон
+- ESLint + Stylelint: **PASS**;
+- strict TypeScript: **PASS**;
+- Vitest unit: **110 files / 586 PASS**;
+- PWA Python: **1547 PASS / 5 intentional skips** в восьми workers;
+- legacy Python: **120 PASS / 2 intentional skips** в восьми workers;
+- review ImageMagick integration: **3/3 PASS**.
 
-Команда `make pwa-e2e-content`:
+Storybook browser gate трижды не дошёл до collection: macOS отказал Chromium в
+Mach rendezvous до создания browser context. Это внешний launch failure с
+нулём выполненных stories, не PASS и не product regression; последний
+подтверждённый Storybook checkpoint до E2E-only изменений — **236 PASS**.
 
-- Chromium: PASS;
-- WebKit: PASS;
-- Firefox: FAIL.
+## Оставшиеся границы
 
-На первой Firefox-попытке сценарий дошёл до rollback, но нажатие
-«Откатить опубликованное» не показало inline-подтверждение; ожидание кнопки
-«Подтвердить» закончилось по 90-секундному timeout. Повторные попытки после
-этого упёрлись в уже описанную жёсткую подпись `Revision 1` при фактических
-`Revision 3` и `Revision 5`.
-
-## Вывод и незакрытые gate
-
-Ни product-код, ни E2E-код, ни snapshots в рамках этого checkpoint не
-изменялись. Функциональная матрица в целом работает, но Phase 11 browser gate
-нельзя назвать полностью зелёным до трёх отдельных действий:
-
-1. владелец визуально принимает новую Student «Сейчас», после чего snapshot
-   обновляется осознанно;
-2. Firefox rollback исследуется и получает отдельный устойчивый сценарий;
-3. realtime assertions перестают считать постороннее валидное `invalidate`
-   ошибкой либо получают раздельных seeded principals.
-
-Transient screenshots, traces и error contexts находятся в
-`vmshpwa/test-results/` и не коммитятся. Этот отчёт намеренно не превращает
-retry в PASS и не скрывает browser-specific blocker.
+- Visual snapshots по-прежнему требуют ручного просмотра владельцем и не
+  обновлялись автоматически.
+- Этот checkpoint не заменяет deploy smoke, nginx check, physical-device smoke,
+  live S3/Telegram probes, backup/restore rehearsal и production rollback.
+- Transient HTML report, traces и browser profiles не коммитятся; этот документ
+  хранит воспроизводимую сводку, а assertions остаются в `vmshpwa/e2e`.

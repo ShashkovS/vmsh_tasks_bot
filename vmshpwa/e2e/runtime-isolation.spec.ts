@@ -694,7 +694,10 @@ for (const audience of audiences) {
       .toEqual([
         {
           url: `${gatewayOrigin.replace('http:', 'ws:')}/${audience}/ws`,
-          receivedTypes: ['connected'],
+          // Other specs use the same real event fan-out. An owner-scoped
+          // invalidation may legitimately arrive before this probe closes the
+          // socket; connection establishment is the invariant under test.
+          receivedTypes: expect.arrayContaining(['connected']),
           closeCode: null,
         },
       ])
@@ -706,7 +709,7 @@ for (const audience of audiences) {
       .toEqual([
         {
           url: `${gatewayOrigin.replace('http:', 'ws:')}/${audience}/ws`,
-          receivedTypes: ['connected'],
+          receivedTypes: expect.arrayContaining(['connected']),
           // Browser engines are allowed to report a clean 1000 close when a
           // local test abort races their network teardown. The proof here is
           // that the original product socket actually closed, not which

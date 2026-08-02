@@ -204,16 +204,21 @@ test('Phase 7: classroom edits survive reload and are explicitly announced', asy
   await expect(studentRow.getByText('возраст 13.6', { exact: true })).toBeVisible()
   await expect(studentRow.getByText('класс 7', { exact: true })).toBeVisible()
   await expect(studentRow.getByText('сила 8.0', { exact: true })).toBeVisible()
-  const targetRoom = (
-    await roomSelect.locator('option').evaluateAll((options) =>
-      options.map((option) => ({
-        value: (option as HTMLOptionElement).value,
-        label: option.textContent?.trim() ?? '',
-      })),
-    )
-  ).find((option) => option.label === reassignRoomName)
+  const roomOptions = await roomSelect.locator('option').evaluateAll((options) =>
+    options.map((option) => ({
+      value: (option as HTMLOptionElement).value,
+      label: option.textContent?.trim() ?? '',
+    })),
+  )
+  const currentRoom = await roomSelect.inputValue()
+  // A retry may start after the preceding attempt already confirmed the
+  // preferred room. Pick another valid room in that case so the scenario
+  // still proves a real persisted edit instead of depending on seed-only state.
+  const targetRoom =
+    roomOptions.find(
+      (option) => option.label === reassignRoomName && option.value !== currentRoom,
+    ) ?? roomOptions.find((option) => option.value !== '' && option.value !== currentRoom)
   if (targetRoom === undefined) throw new Error(`No alternate classroom for ${project}`)
-  expect(await roomSelect.inputValue()).not.toBe(targetRoom.value)
   await roomSelect.selectOption(targetRoom.value)
   await page.reload()
   await expect(page.getByLabel(`Аудитория для ${studentName}`)).toHaveValue(targetRoom.value)

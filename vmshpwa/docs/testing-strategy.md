@@ -65,6 +65,21 @@ product page. Исполняемый probe с `.invalid` HTTP и WebSocket URL �
 environment это не позволяет случайно отправить E2E telemetry в реальный
 Sentry или загрузить media из внешнего бакета.
 
+Playwright запускает разные spec-файлы параллельно даже при
+`fullyParallel: false` ([официальная модель](https://playwright.dev/docs/test-parallel)).
+Поэтому конфигурация держит ровно три общих workers и не более одного worker в
+каждом browser project: Chromium, WebKit и Firefox идут одновременно, но один
+движок не создаёт несколько service-worker/visibility tabs против общей
+настоящей SQLite. Project-level `workers` поддерживается с Playwright 1.52
+([release notes](https://playwright.dev/docs/release-notes#version-152)). В CI
+retry сохраняет trace для диагностики, однако `failOnFlakyTests: true` делает
+любой такой retry ошибкой gate; flaky нельзя выдать за зелёный результат.
+
+Контрольный production-build functional run 2 августа 2026 года: **228 total,
+216 passed, 12 intentional skips, 0 unexpected, 0 flaky**, три фактических
+workers, browser duration 208,01 с. Сводка и оставшиеся внешние/visual gates:
+[`phase11-production-e2e.md`](../../pwa_tests/reports/phase11-production-e2e.md).
+
 Playwright-specific Service Worker events и network interception официально
 доступны только в Chromium. Наш lifecycle proof не зависит от них: он вызывает
 browser-native `navigator.serviceWorker`/Cache Storage API и сейчас обязателен и

@@ -61,7 +61,7 @@ test('Phase 9: child caches stay separate and Family confirms a group and mode c
         enrollments: Array<{ activeGroupId: string; attendanceMode: string; version: number }>
       }
     ).enrollments[0]!
-  }, `student-classroom-e2e-${project}`)
+  }, secondChildId)
   const targetGroup =
     initialEnrollment.activeGroupId === 'group-fixture-beginner'
       ? 'group-fixture-continuing'
@@ -99,8 +99,12 @@ test('Phase 9: child caches stay separate and Family confirms a group and mode c
   await expect(page.getByText('Новое занятие пока не опубликовано')).toBeVisible()
   await page.unroute(secondHome)
 
-  await page.goto(`/family/children/student-classroom-e2e-${project}`)
-  await expect(page.getByRole('heading', { name: firstChild })).toBeVisible()
+  // Keep this reversible write on the Family-only fixture. Classroom and
+  // Staff-auth specs intentionally exercise the first child in parallel
+  // against the same real SQLite server; sharing that enrollment made one
+  // product scenario silently change another one's starting state.
+  await page.goto(`/family/children/${secondChildId}`)
+  await expect(page.getByRole('heading', { name: secondChild })).toBeVisible()
   await page.getByLabel('Группа').selectOption(targetGroup)
   await page.getByLabel('Формат занятий').selectOption(targetMode)
   await page.getByRole('button', { name: 'Изменить' }).click()
@@ -117,7 +121,7 @@ test('Phase 9: child caches stay separate and Family confirms a group and mode c
   await expect(page.getByLabel('Формат занятий')).toHaveValue(targetMode)
 
   await page.reload()
-  await expect(page.getByRole('heading', { name: firstChild })).toBeVisible()
+  await expect(page.getByRole('heading', { name: secondChild })).toBeVisible()
   await expect(page.getByLabel('Группа')).toHaveValue(targetGroup)
   await expect(page.getByLabel('Формат занятий')).toHaveValue(targetMode)
   const enrollment = await page.evaluate(async (studentId) => {
@@ -125,7 +129,7 @@ test('Phase 9: child caches stay separate and Family confirms a group and mode c
     return (await response.json()) as {
       enrollments: Array<{ activeGroupId: string; attendanceMode: string; version: number }>
     }
-  }, `student-classroom-e2e-${project}`)
+  }, secondChildId)
   expect(enrollment.enrollments[0]).toMatchObject({
     activeGroupId: targetGroup,
     attendanceMode: targetMode,

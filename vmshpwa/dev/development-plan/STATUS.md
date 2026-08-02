@@ -1063,3 +1063,18 @@
   PASS**, Storybook **236 PASS**, lint/typecheck/build PASS.
 - Proof:
   [`phase11-dependency-audit-2026-08-02.md`](../../../pwa_tests/reports/phase11-dependency-audit-2026-08-02.md).
+
+## Phase 11 checkpoint: строгая production browser matrix — 2 августа 2026
+
+- `make pwa-e2e-functional` собирает все три production bundles и проверяет их
+  через один loopback origin, настоящий aiohttp и заново seeded E2E SQLite без
+  MSW, Telegram, Google и production credentials.
+- Три browser projects идут одновременно, но по одному worker на Chromium,
+  WebKit и Firefox. Dedicated mutable personas устранили пересечения news,
+  Family, classroom и Staff-auth scenarios; retries считаются ошибкой gate.
+- Итог: **216 PASS / 12 intentional skips / 0 flaky / 0 retries** за 3,5 минуты.
+  Production runtime и snapshots не менялись.
+- Proof:
+  [`phase11-production-e2e.md`](../../../pwa_tests/reports/phase11-production-e2e.md).
+- Functional browser matrix закрыта. Отдельный `@visual` owner gate остаётся
+  открытым; snapshots не обновлялись.

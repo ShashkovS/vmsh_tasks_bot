@@ -33,12 +33,15 @@ const backendEnv = {
 export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
-  // Keep tests within a project sequential. Firefox serializes service-worker
-  // installation internally, so parallel registrations from isolated contexts
-  // can exceed the activation timeout even though each worker is valid.
-  // Browser projects still run in parallel with one another.
+  // Playwright runs different spec files in parallel even when fullyParallel is
+  // false. The global cap plus one worker per project keeps all three browsers
+  // active without flooding the single real aiohttp/SQLite runtime with several
+  // same-engine background tabs. Higher default host concurrency made service-
+  // worker and visibility tests miss browser deadlines rather than expose bugs.
+  workers: 3,
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
+  failOnFlakyTests: true,
   retries: process.env.CI ? 2 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}{ext}',
@@ -54,9 +57,9 @@ export default defineConfig({
     toHaveScreenshot: { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.01 },
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'chromium', workers: 1, use: { ...devices['Desktop Chrome'] } },
+    { name: 'webkit', workers: 1, use: { ...devices['Desktop Safari'] } },
+    { name: 'firefox', workers: 1, use: { ...devices['Desktop Firefox'] } },
   ],
   webServer: [
     {

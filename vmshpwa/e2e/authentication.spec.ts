@@ -508,7 +508,10 @@ test('Admin saves a course enrollment through the real API', async ({ page }, te
   await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users')
   await page.getByLabel('Поиск по имени').fill('тестов chromium')
   await expect(page.getByRole('button', { name: /Тестов chromium Ученик/ })).toBeVisible()
-  await page.getByLabel('Формат занятий').selectOption('online')
+  const attendanceMode = page.getByLabel('Формат занятий')
+  const originalMode = await attendanceMode.inputValue()
+  const changedMode = originalMode === 'online' ? 'in_person' : 'online'
+  await attendanceMode.selectOption(changedMode)
 
   const changed = page.waitForResponse(
     (response) =>
@@ -518,10 +521,11 @@ test('Admin saves a course enrollment through the real API', async ({ page }, te
   )
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
   expect((await changed).status()).toBe(200)
-  await expect(page.getByLabel('Формат занятий')).toHaveValue('online')
+  await expect(attendanceMode).toHaveValue(changedMode)
 
-  // Restore the shared baseline for later browser scenarios.
-  await page.getByLabel('Формат занятий').selectOption('in_person')
+  // Restore the exact state observed by this attempt. This keeps Playwright
+  // retries valid even when the previous attempt reached the first write.
+  await attendanceMode.selectOption(originalMode)
   const restored = page.waitForResponse(
     (response) =>
       response.request().method() === 'PUT' &&
@@ -530,6 +534,7 @@ test('Admin saves a course enrollment through the real API', async ({ page }, te
   )
   await page.getByRole('button', { name: 'Сохранить изменения' }).click()
   expect((await restored).status()).toBe(200)
+  await expect(attendanceMode).toHaveValue(originalMode)
 })
 
 for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONAS.teacher]) {

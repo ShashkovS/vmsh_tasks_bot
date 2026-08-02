@@ -11,18 +11,18 @@ function phase8Persona(project: string, audience: 'student' | 'family'): AuthPer
   if (audience === 'student') {
     return {
       persona: 'student',
-      accountPublicId: `account-classroom-e2e-${project}`,
+      accountPublicId: `account-news-student-e2e-${project}`,
       audience,
-      username: `classroom-e2e-${project}`,
+      username: `news-student-e2e-${project}`,
       credentialField: 'telegramToken',
       credential: AUTH_PERSONAS.student.credential,
     }
   }
   return {
     persona: 'family',
-    accountPublicId: `account-classroom-family-e2e-${project}`,
+    accountPublicId: `account-news-family-e2e-${project}`,
     audience,
-    username: `classroom-family-e2e-${project}`,
+    username: `news-family-e2e-${project}`,
     credentialField: 'password',
     credential: AUTH_PERSONAS.family.credential,
   }
@@ -88,24 +88,36 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
   )
   expect(targetEvent).toBeDefined()
   const event = page.getByRole('link', { name: /Новая публикация/ })
-  const unreadBadge = event.getByText('Новое', { exact: true })
   await expect(event).toBeVisible()
   if (targetEvent?.readAt === null) {
-    await expect(unreadBadge).toBeVisible()
-    const readResponse = page.waitForResponse(
-      (response) =>
-        response.request().method() === 'POST' &&
-        new URL(response.url()).pathname.endsWith(
-          '/notification.news.phase8.e2e.student.' + testInfo.project.name + '/read',
-        ),
-    )
+    // The visibility observer may acknowledge the item between rendering the
+    // badge and arming a response listener. Poll the authoritative API instead:
+    // this also remains valid when a Playwright retry sees the completed write.
+    // Reading requires an actually foreground document. Full-matrix Playwright
+    // runs create background pages, unlike the single active browser tab a
+    // student uses, so explicitly foreground this page before starting the
+    // product's three-second visibility window.
+    await page.bringToFront()
+    await expect.poll(() => page.evaluate(() => document.visibilityState)).toBe('visible')
     await event.evaluate((element) => element.scrollIntoView({ block: 'center' }))
     await expect(event).toBeInViewport({ ratio: 0.75 })
-    const response = await readResponse
-    expect(response.status()).toBe(200)
-    expect((await response.json()) as { readAt: string | null }).toMatchObject({
-      readAt: expect.any(String),
-    })
+    await expect
+      .poll(
+        async () => {
+          const response = await page.evaluate(async () => {
+            const result = await fetch('/student/api/v1/notification-events?unreadOnly=false')
+            return (await result.json()) as {
+              items: Array<{ eventId: string; readAt: string | null }>
+            }
+          })
+          return response.items.find(
+            (item) =>
+              item.eventId === `notification.news.phase8.e2e.student.${testInfo.project.name}`,
+          )?.readAt
+        },
+        { timeout: 15_000 },
+      )
+      .toEqual(expect.any(String))
   }
   await expect(event.getByText('Новое', { exact: true })).toHaveCount(0)
   const unreadNews = await page.evaluate(async () => {
