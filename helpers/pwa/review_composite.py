@@ -66,6 +66,13 @@ def annotation_overlay_svg(
     """Build the transparent SVG overlay consumed by ImageMagick."""
 
     scale = min(width, height)
+    arrow_markers = "".join(
+        '<marker id="annotation-arrow-{}" markerWidth="4" markerHeight="4" '
+        'refX="3.5" refY="2" orient="auto" markerUnits="strokeWidth" '
+        'viewBox="0 0 4 4"><path d="M 0 0 L 4 2 L 0 4 z" fill="{}"/>'
+        "</marker>".format(color_name, color_value)
+        for color_name, color_value in _COLORS.items()
+    )
     erasers: list[str] = []
     visible: list[str] = []
     for mark in marks:
@@ -92,11 +99,12 @@ def annotation_overlay_svg(
         elif kind == "arrow":
             start_x, start_y = _point(data["start"], width=width, height=height)
             end_x, end_y = _point(data["end"], width=width, height=height)
+            color_name = str(data["color"])
             visible.append(
                 f'<line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}" '
-                f'stroke="{_color(data["color"])}" stroke-linecap="round" '
+                f'stroke="{_color(color_name)}" stroke-linecap="round" '
                 f'stroke-width="{_scaled(data["width"], scale)}" '
-                'marker-end="url(#annotation-arrow)"/>'
+                f'marker-end="url(#annotation-arrow-{color_name})"/>'
             )
         elif kind == "rectangle":
             visible.append(
@@ -120,7 +128,7 @@ def annotation_overlay_svg(
                 f'<text x="{_scaled(data["x"], width)}" '
                 f'y="{_scaled(data["y"], height)}" '
                 f'fill="{_color(data["color"])}" '
-                f'font-family="Arial, sans-serif" font-weight="600" '
+                f'font-weight="600" '
                 f'font-size="{_scaled(data["size"], scale)}" '
                 f'dominant-baseline="hanging">{html.escape(str(data["text"]))}</text>'
             )
@@ -134,10 +142,7 @@ def annotation_overlay_svg(
         f'x="0" y="0" width="{width}" height="{height}">'
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="white"/>'
         f"{''.join(erasers)}</mask>"
-        '<marker id="annotation-arrow" markerWidth="4" markerHeight="4" '
-        'refX="3.5" refY="2" orient="auto" markerUnits="strokeWidth" '
-        'viewBox="0 0 4 4"><path d="M 0 0 L 4 2 L 0 4 z" '
-        'fill="context-stroke"/></marker></defs>'
+        f"{arrow_markers}</defs>"
         f'<g mask="url(#annotation-eraser)">{"".join(visible)}</g></svg>'
     )
 
@@ -165,6 +170,7 @@ def _render_sync(
     rotation: int,
     marks: Sequence[Mapping[str, object]],
     magick_path: str,
+    font_path: str | None,
 ) -> bytes:
     if not source_webp:
         raise ReviewCompositeRenderError("identify")
@@ -189,11 +195,19 @@ def _render_sync(
             annotation_overlay_svg(width=width, height=height, marks=marks),
             encoding="utf-8",
         )
-        output = _run(
+        if any(str(mark.get("kind")) == "text" for mark in marks) and not font_path:
+            raise ReviewCompositeRenderError("font")
+        render_command = [magick_path]
+        if font_path:
+            render_command.extend(["-font", font_path])
+        # ImageMagick otherwise prefers an installed external Inkscape.  This
+        # overlay is our small trusted SVG subset, so Phase 6 deliberately uses
+        # the built-in MSVG coder for identical headless dev/prod behaviour.
+        # See pwa_tests/reports/phase6-review-telegram-composite.md.
+        render_command.extend(
             [
-                magick_path,
                 str(source_path),
-                str(overlay_path),
+                f"msvg:{overlay_path}",
                 "-compose",
                 "over",
                 "-composite",
@@ -205,7 +219,10 @@ def _render_sync(
                 "-define",
                 "png:compression-level=9",
                 "png:-",
-            ],
+            ]
+        )
+        output = _run(
+            render_command,
             operation="render",
         )
         if not output.startswith(b"\x89PNG\r\n\x1a\n"):
@@ -219,6 +236,7 @@ async def render_review_annotation_composite_png(
     rotation: int,
     marks: Sequence[Mapping[str, object]],
     magick_path: str = "magick",
+    font_path: str | None = None,
 ) -> bytes:
     """Rasterize a canonical annotation manifest without changing the WebP."""
 
@@ -233,6 +251,7 @@ async def render_review_annotation_composite_png(
         rotation=rotation,
         marks=frozen_marks,
         magick_path=magick_path,
+        font_path=font_path,
     )
 
 

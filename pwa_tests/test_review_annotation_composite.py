@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -74,6 +75,20 @@ MARKS = [
 ]
 
 
+def _installed_test_font() -> str:
+    """Return one explicit TrueType font for the real ImageMagick probe."""
+
+    candidates = (
+        Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+        Path("/usr/share/fonts/TTF/DejaVuSans.ttf"),
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+    pytest.skip("No TrueType font is installed for the ImageMagick probe")
+
+
 def test_overlay_svg_uses_normalized_canvas_and_escapes_text() -> None:
     svg = annotation_overlay_svg(width=120, height=80, marks=MARKS)
 
@@ -81,6 +96,8 @@ def test_overlay_svg_uses_normalized_canvas_and_escapes_text() -> None:
     assert 'preserveAspectRatio="none"' in svg
     assert "a &lt; b &amp; b &gt; 0" in svg
     assert 'mask="url(#annotation-eraser)"' in svg
+    assert 'marker-end="url(#annotation-arrow-blue)"' in svg
+    assert "context-stroke" not in svg
     assert "#c53d35" in svg
     assert "#416d9c" in svg
 
@@ -104,6 +121,7 @@ async def test_real_magick_renders_rotated_png_without_mutating_source(
         rotation=90,
         marks=MARKS,
         magick_path=magick,
+        font_path=_installed_test_font(),
     )
 
     output = tmp_path / "composite.png"

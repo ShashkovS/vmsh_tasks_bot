@@ -21,6 +21,12 @@ Authoritative plan:
 - Text is XML-escaped before it enters the temporary SVG. ImageMagick runs
   without a shell, with a 30-second bound; failures expose only a stable
   operation name and not private filenames or image diagnostics.
+- The command selects ImageMagick's built-in `msvg:` reader explicitly instead
+  of changing behaviour when a host happens to have Inkscape installed. This
+  is the documented ImageMagick format selector for its internal SVG renderer
+  ([ImageMagick image formats](https://imagemagick.org/formats/)). Text uses an
+  explicit TrueType font path supplied by the adapter; arrow markers contain
+  their actual palette color rather than unsupported `context-stroke`.
 - The module deliberately does not query SQLite, choose recipients or call the
   Telegram API. Those remain responsibilities of the current Telegram adapter;
   this keeps the reusable image operation independent of delivery policy.
@@ -40,7 +46,7 @@ Implementation:
 - Corrupt-image test proves the stable redacted `identify` failure.
 - SVG unit test proves normalized dimensions, non-distorting canvas semantics,
   eraser mask, palette mapping and XML escaping.
-- Review-composite plus toolchain suites: **12 passed**.
+- Review-composite suite: **3 passed** with ImageMagick 7.1.2-27.
 - Targeted Ruff check: **PASS**.
 - Manual inspection of the generated 1200 × 800 derivative confirmed visible
   pencil/eraser, arrow, rectangle, highlight and escaped text alignment.
