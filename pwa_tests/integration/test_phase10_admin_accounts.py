@@ -155,6 +155,101 @@ async def test_admin_rotates_student_token_and_invalidates_old_session(
     assert login.status == 200, await login.text()
 
 
+async def test_admin_creates_student_web_login_from_current_bot_token(
+    classroom_http: ClassroomHttpFixture,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        admin_account_routes,
+        "_now",
+        lambda: NOW.isoformat(timespec="microseconds").replace("+00:00", "Z"),
+    )
+    classroom_http.factory.run_write(
+        lambda connection: connection.execute(
+            "INSERT INTO users "
+            "(id, public_id, type, name, surname, token, chat_id) VALUES "
+            "(958010, 'classroom-unprovisioned-student', ?, 'Лев', 'Новый', "
+            "'CurrentBotToken2026', 958010)",
+            (int(USER_TYPE.STUDENT),),
+        )
+    )
+    path = "/staff/api/v1/students/classroom-unprovisioned-student/student-account"
+    payload = {"schemaVersion": 1, "username": "  novyi-17  "}
+
+    teacher = await classroom_http.client.post(
+        path,
+        json=payload,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    response = await classroom_http.client.post(
+        path,
+        json=payload,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert response.status == 201, await response.text()
+    body = await response.json()
+    assert body["account"]["audience"] == "student"
+    assert body["account"]["status"] == "active"
+    assert "token" not in str(body).casefold()
+
+    stored = classroom_http.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT account.username, account.username_normalized, "
+            "account.credential_hash, event.event_type, event.metadata_json "
+            "FROM auth_accounts AS account JOIN auth_events AS event "
+            "ON event.account_id = account.id "
+            "WHERE account.linked_user_id = 958010"
+        ).fetchone()
+    )
+    assert stored["username"] == "novyi-17"
+    assert stored["username_normalized"] == "novyi-17"
+    assert stored["credential_hash"] != "currentbottoken2026"
+    assert stored["event_type"] == "student.account_created"
+    assert "CurrentBotToken2026" not in stored["metadata_json"]
+
+    login = await classroom_http.client.post(
+        "/student/api/v1/auth/login",
+        json={"username": "NOVYI-17", "telegramToken": "CurrentBotToken2026"},
+        headers=_headers(unsafe=True),
+    )
+    assert login.status == 200, await login.text()
+
+    duplicate = await classroom_http.client.post(
+        path,
+        json=payload,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert duplicate.status == 409
+    assert (await duplicate.json())["error"]["code"] == "student_username_conflict"
+
+
+async def test_student_web_login_creation_rejects_unsafe_legacy_token(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    classroom_http.factory.run_write(
+        lambda connection: connection.execute(
+            "INSERT INTO users "
+            "(id, public_id, type, name, surname, token, chat_id) VALUES "
+            "(958011, 'classroom-unsafe-token-student', ?, 'Ира', 'Тест', "
+            "'123456', 958011)",
+            (int(USER_TYPE.STUDENT),),
+        )
+    )
+    response = await classroom_http.client.post(
+        "/staff/api/v1/students/classroom-unsafe-token-student/student-account",
+        json={"schemaVersion": 1, "username": "test-01"},
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert response.status == 422
+    assert (await response.json())["error"]["code"] == "unsafe_student_credential"
+
+
 async def test_admin_rotates_family_password_without_returning_it(
     classroom_http: ClassroomHttpFixture,
 ) -> None:

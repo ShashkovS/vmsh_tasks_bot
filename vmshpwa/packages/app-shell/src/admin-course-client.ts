@@ -18,6 +18,7 @@ import {
   adminStudentEnrollmentsQueryKey,
   apiErrorSchema,
   createAdminCourseRequestSchema,
+  createStudentAccountRequestSchema,
   createFamilyAccountRequestSchema,
   familyAccountLinkResponseSchema,
   linkFamilyAccountRequestSchema,
@@ -49,6 +50,7 @@ import {
   type AdminStudentEnrollmentDirectoryResponse,
   type AdminStudentEnrollmentResponse,
   type CreateAdminCourseRequest,
+  type CreateStudentAccountRequest,
   type CreateFamilyAccountRequest,
   type FamilyAccountLinkResponse,
   type LinkFamilyAccountRequest,
@@ -116,6 +118,10 @@ export interface AdminCourseClient {
     accountId: string,
     version: number,
     credential: string,
+  ): Promise<ManagedAccountResponse>
+  createStudentAccount(
+    studentId: string,
+    input: CreateStudentAccountRequest,
   ): Promise<ManagedAccountResponse>
   createFamilyAccount(
     studentId: string,
@@ -324,6 +330,15 @@ export function createAdminCourseClient(
               credential,
             }),
           ),
+        }),
+      )
+    },
+    async createStudentAccount(rawStudentId, input) {
+      const studentId = publicIdSchema.parse(rawStudentId)
+      return managedAccountResponseSchema.parse(
+        await request(`/students/${encodeURIComponent(studentId)}/student-account`, {
+          method: 'POST',
+          body: JSON.stringify(createStudentAccountRequestSchema.parse(input)),
         }),
       )
     },

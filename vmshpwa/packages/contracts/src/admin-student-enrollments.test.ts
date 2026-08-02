@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   adminStudentEnrollmentDirectoryResponseSchema,
   adminStudentEnrollmentsQueryKey,
+  createStudentAccountRequestSchema,
   createFamilyAccountRequestSchema,
   familyAccountLinkResponseSchema,
   linkFamilyAccountRequestSchema,
@@ -78,6 +79,9 @@ describe('admin student enrollment contracts', () => {
   })
 
   it('validates account lifecycle commands and responses', () => {
+    expect(
+      createStudentAccountRequestSchema.parse({ schemaVersion: 1, username: ' student-17 ' }),
+    ).toEqual({ schemaVersion: 1, username: 'student-17' })
     expect(
       updateManagedAccountStatusRequestSchema.parse({ schemaVersion: 1, status: 'blocked' }),
     ).toEqual({ schemaVersion: 1, status: 'blocked' })

@@ -182,6 +182,15 @@ export const managedAccountResponseSchema = z
   .strict()
 export type ManagedAccountResponse = z.infer<typeof managedAccountResponseSchema>
 
+/** Student web-login creation uses the current legacy bot token server-side. */
+export const createStudentAccountRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    username: z.string().trim().min(1).max(100),
+  })
+  .strict()
+export type CreateStudentAccountRequest = z.infer<typeof createStudentAccountRequestSchema>
+
 /** Family account/link boundary from development Phase 10; passwords are write-only. */
 export const createFamilyAccountRequestSchema = z
   .object({

@@ -72,10 +72,55 @@ def find_student(
     connection: sqlite3.Connection, *, public_id: str
 ) -> dict[str, object] | None:
     row = connection.execute(
-        "SELECT id, public_id FROM users WHERE public_id = ? AND type = ?",
+        "SELECT id, public_id, name, surname, token, chat_id FROM users "
+        "WHERE public_id = ? AND type = ?",
         (public_id, int(USER_TYPE.STUDENT)),
     ).fetchone()
     return None if row is None else dict(row)
+
+
+def find_student_account_by_username(
+    connection: sqlite3.Connection, *, username_normalized: str
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT id FROM auth_accounts WHERE audience = 'student' "
+        "AND username_normalized = ?",
+        (username_normalized,),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def insert_student_account(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    username: str,
+    username_normalized: str,
+    display_name: str,
+    credential_hash: str,
+    student_user_id: int,
+    now: str,
+) -> dict[str, object]:
+    row = connection.execute(
+        "INSERT INTO auth_accounts "
+        "(public_id, audience, username, username_normalized, "
+        "username_algorithm_version, provisioning_source, display_name, "
+        "credential_kind, credential_hash, linked_user_id, status, created_at, "
+        "updated_at) VALUES (?, 'student', ?, ?, 1, 'staff', ?, "
+        "'telegram_token', ?, ?, 'active', ?, ?) "
+        "RETURNING id, public_id, audience, status, credential_version",
+        (
+            public_id,
+            username,
+            username_normalized,
+            display_name,
+            credential_hash,
+            student_user_id,
+            now,
+            now,
+        ),
+    ).fetchone()
+    return dict(row)
 
 
 def find_family_account_by_username(
@@ -190,8 +235,10 @@ __all__ = [
     "find_account",
     "find_family_account_by_username",
     "find_student",
+    "find_student_account_by_username",
     "insert_account_event",
     "insert_family_account",
+    "insert_student_account",
     "insert_status_event",
     "revoke_family_link",
     "revoke_sessions",

@@ -8,6 +8,7 @@ from models.pwa.admin_accounts import (
     prepare_family_identity,
     prepare_family_link_identity,
     prepare_replacement_credential,
+    prepare_student_identity,
     validate_status_change,
 )
 from models.pwa.auth import AuthAudience
@@ -24,6 +25,19 @@ def test_student_replacement_uses_legacy_token_normalization() -> None:
 def test_student_replacement_rejects_unsafe_token_shapes(credential: str) -> None:
     with pytest.raises(InvalidManagedAccountChange, match="unsafe_student_credential"):
         prepare_replacement_credential(AuthAudience.STUDENT, credential)
+
+
+def test_student_account_creation_normalizes_login_and_current_bot_token() -> None:
+    assert prepare_student_identity(
+        username="  Petrov   07  ",
+        telegram_token="  Уnique-Token-2026  ",
+        chat_id=9001,
+    ) == ("Petrov 07", "petrov 07", "ynique-token-2026")
+
+
+def test_student_account_creation_rejects_unsafe_current_bot_token() -> None:
+    with pytest.raises(InvalidManagedAccountChange, match="unsafe_student_credential"):
+        prepare_student_identity(username="petrov-07", telegram_token="123456", chat_id=9001)
 
 
 def test_family_password_is_exact_and_bounded() -> None:

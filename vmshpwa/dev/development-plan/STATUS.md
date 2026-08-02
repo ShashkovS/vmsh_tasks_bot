@@ -900,3 +900,14 @@
 - Phase 10 остаётся открытой: создание Student-аккаунта, users import,
   metadata grid, Google parity/cutover и способ первичной передачи Family
   credentials ещё не завершены.
+## Phase 10 checkpoint: индивидуальный Student web-вход — 2 августа 2026
+
+- Admin может создать Student web-вход для существующего школьника без повторной
+  передачи Telegram-токена через браузер; используется текущий token общего с
+  ботом legacy-пользователя.
+- Storybook evidence: `Pages/Staff--student-account-creation`.
+- Проверки: 13 domain, 9 API integration, 573 frontend unit, 1508 Python PWA,
+  22 Staff stories; lint/typecheck и production build зелёные.
+- Proof: [`pwa_tests/reports/phase10-student-account-creation.md`](../../../pwa_tests/reports/phase10-student-account-creation.md).
+- Не закрыты: batch provisioning и production E2E с отдельным синтетическим
+  unprovisioned Student seed.

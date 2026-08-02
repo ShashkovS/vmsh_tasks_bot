@@ -90,6 +90,11 @@ Reference doc: `vmshpwa/docs/google-migration-roadmap.md`. Первая replacem
 [`backend/API`](../../../pwa_tests/reports/phase10-family-account-backend.md) и
 [`frontend/Storybook/E2E`](../../../pwa_tests/reports/phase10-family-account-ui.md).
 Они не закрывают создание Student-аккаунта, bulk import и остальные gates этапа.
+Индивидуальное создание Student web-входа из уже существующего legacy-пользователя
+подтверждено в
+[`phase10-student-account-creation.md`](../../../pwa_tests/reports/phase10-student-account-creation.md):
+Staff передаёт только логин, а backend хеширует текущий токен общего с Telegram-ботом
+аккаунта. Batch-import и production E2E с отдельным unprovisioned seed ещё не закрыты.
 
 - [ ] Revision/migrations/backfills: `<sha/paths/results>`.
 - [ ] Google replacement matrix with every current loader: `<path>`.

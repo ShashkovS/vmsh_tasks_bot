@@ -394,6 +394,25 @@ function StudentDirectoryStory() {
           )
           return Promise.resolve()
         }}
+        onCreateStudentAccount={(studentId, input) => {
+          setStudents((current) =>
+            current.map((student) =>
+              student.studentId === studentId
+                ? {
+                    ...student,
+                    webAccount: {
+                      accountId: 'storybook-student-account',
+                      username: input.username,
+                      status: 'active' as const,
+                      credentialVersion: 1,
+                    },
+                  }
+                : student,
+            ),
+          )
+          setAccountSaved(true)
+          return Promise.resolve()
+        }}
         onSave={() => setSaved(true)}
         onSearchChange={setSearch}
         search={search}
@@ -481,6 +500,21 @@ export const FamilyAccountManagement: Story = {
     await expect(
       canvas.queryByText('family-new · родитель · основной контакт'),
     ).not.toBeInTheDocument()
+  },
+}
+
+export const StudentAccountCreation: Story = {
+  name: 'Участники · создание web-входа школьника',
+  render: () => <StudentDirectoryStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: /Новый Школьник/ }))
+    const login = canvas.getByLabelText('Логин школьника')
+    await userEvent.type(login, 'vetrov-12')
+    await expect(canvas.getByText(/Несохранённый логин хранится/)).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Создать web-вход' }))
+    await expect(canvas.getByText('Web-вход активен')).toBeVisible()
+    await expect(canvas.getByText('vetrov-12')).toBeVisible()
   },
 }
 

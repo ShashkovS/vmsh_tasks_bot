@@ -21,8 +21,10 @@ from db_methods.pwa.admin_accounts import (
     find_account,
     find_family_account_by_username,
     find_student,
+    find_student_account_by_username,
     insert_account_event,
     insert_family_account,
+    insert_student_account,
     insert_status_event,
     revoke_family_link,
     revoke_sessions,
@@ -36,9 +38,10 @@ from models.pwa.admin_accounts import (
     prepare_family_identity,
     prepare_family_link_identity,
     prepare_replacement_credential,
+    prepare_student_identity,
     validate_status_change,
 )
-from models.pwa.auth import AuthAudience
+from models.pwa.auth import AuthAudience, normalize_telegram_token
 
 
 admin_account_routes = web.RouteTableDef()
@@ -155,7 +158,9 @@ def _account_payload(row: dict[str, object]) -> dict[str, object]:
     }
 
 
-def _response(request: web.Request, row: dict[str, object]) -> web.Response:
+def _response(
+    request: web.Request, row: dict[str, object], *, status: int = 200
+) -> web.Response:
     version = int(row["credential_version"])
     public_id = str(row["public_id"])
     return web.json_response(
@@ -164,6 +169,7 @@ def _response(request: web.Request, row: dict[str, object]) -> web.Response:
             "account": _account_payload(row),
             "requestId": request["request_id"],
         },
+        status=status,
         headers={
             "Cache-Control": "no-store",
             "ETag": f'"{public_id}:v{version}"',
@@ -226,6 +232,119 @@ def _family_link_response(
         status=status,
         headers={"Cache-Control": "no-store"},
     )
+
+
+@admin_account_routes.post("/staff/api/v1/students/{student_public_id}/student-account")
+async def create_student_account(request: web.Request) -> web.Response:
+    principal = _admin(request)
+    student_public_id = _path_public_id(request, "student_public_id")
+    payload = await _json_object(request, {"username"})
+    if not isinstance(payload["username"], str):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Введите логин школьника",
+        )
+
+    student = await _factory(request).run_read_async(
+        lambda connection: find_student(connection, public_id=student_public_id)
+    )
+    if student is None:
+        raise PwaApiError(
+            status=404, code="student_not_found", message="Школьник не найден"
+        )
+    try:
+        username, normalized_username, credential = prepare_student_identity(
+            username=str(payload["username"]),
+            telegram_token=str(student["token"] or ""),
+            chat_id=student["chat_id"],
+        )
+    except InvalidManagedAccountChange as error:
+        message = (
+            "Сначала задайте школьнику безопасный Telegram-токен"
+            if str(error) == "unsafe_student_credential"
+            else "Проверьте логин школьника"
+        )
+        raise PwaApiError(status=422, code=str(error), message=message) from error
+
+    credential_hash = await asyncio.to_thread(
+        auth_service(request).credential_hasher.hash, credential
+    )
+    now = _now()
+    display_name = " ".join(
+        part
+        for part in (
+            str(student["name"] or "").strip(),
+            str(student["surname"] or "").strip(),
+        )
+        if part
+    )
+
+    def write(connection: sqlite3.Connection) -> dict[str, object]:
+        current_student = find_student(connection, public_id=student_public_id)
+        if current_student is None:
+            return {"state": "student_not_found"}
+        if normalize_telegram_token(str(current_student["token"] or "")) != credential:
+            return {"state": "credential_changed"}
+        if (
+            find_student_account_by_username(
+                connection, username_normalized=normalized_username
+            )
+            is not None
+        ):
+            return {"state": "username_conflict"}
+        account = insert_student_account(
+            connection,
+            public_id=f"student-account.{uuid.uuid4().hex}",
+            username=username,
+            username_normalized=normalized_username,
+            display_name=display_name,
+            credential_hash=credential_hash,
+            student_user_id=int(current_student["id"]),
+            now=now,
+        )
+        insert_account_event(
+            connection,
+            account_id=int(account["id"]),
+            event_type="student.account_created",
+            request_id=request["request_id"],
+            occurred_at=now,
+            metadata_json=json.dumps(
+                {
+                    "actorUserId": principal.linked_user_id,
+                    "studentPublicId": student_public_id,
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+        )
+        return {"state": "ok", "account": account}
+
+    try:
+        result = await _factory(request).run_write_async(write)
+    except sqlite3.IntegrityError as error:
+        raise PwaApiError(
+            status=409,
+            code="student_account_conflict",
+            message="Web-вход уже создан или такой логин занят",
+        ) from error
+    if result["state"] == "student_not_found":
+        raise PwaApiError(
+            status=404, code="student_not_found", message="Школьник не найден"
+        )
+    if result["state"] == "credential_changed":
+        raise PwaApiError(
+            status=409,
+            code="student_credential_changed",
+            message="Telegram-токен изменился. Повторите создание входа.",
+        )
+    if result["state"] == "username_conflict":
+        raise PwaApiError(
+            status=409,
+            code="student_username_conflict",
+            message="Такой логин школьника уже используется",
+        )
+    return _response(request, result["account"], status=201)
 
 
 @admin_account_routes.post("/staff/api/v1/students/{student_public_id}/family-accounts")

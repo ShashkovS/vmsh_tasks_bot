@@ -97,11 +97,27 @@ def prepare_family_identity(
     )
 
 
+def prepare_student_identity(
+    *, username: str, telegram_token: str, chat_id: object
+) -> tuple[str, str, str]:
+    """Validate a Staff-selected login against the Student's current bot token."""
+
+    stored_username = " ".join(unicodedata.normalize("NFKC", username).strip().split())
+    normalized_username = normalize_login(stored_username)
+    if not 1 <= len(stored_username) <= 100 or not normalized_username:
+        raise InvalidManagedAccountChange("invalid_student_username")
+    credential = normalize_telegram_token(telegram_token)
+    if not credential or legacy_telegram_token_risk_shapes(credential, chat_id):
+        raise InvalidManagedAccountChange("unsafe_student_credential")
+    return stored_username, normalized_username, credential
+
+
 __all__ = [
     "InvalidManagedAccountChange",
     "ManagedAccountStatus",
     "prepare_family_identity",
     "prepare_family_link_identity",
     "prepare_replacement_credential",
+    "prepare_student_identity",
     "validate_status_change",
 ]

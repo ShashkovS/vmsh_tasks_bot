@@ -334,6 +334,37 @@ describe('admin course client', () => {
     expect(fetchImplementation.mock.calls[2]?.[1]?.method).toBe('DELETE')
   })
 
+  it('creates a Student web login without sending the Telegram token', async () => {
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        schemaVersion: 1,
+        account: {
+          accountId: 'student-account-new',
+          audience: 'student',
+          status: 'active',
+          credentialVersion: 1,
+        },
+        requestId: 'student-account-create',
+      }),
+    )
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+
+    await client.createStudentAccount('student-one', {
+      schemaVersion: 1,
+      username: ' student-17 ',
+    })
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/staff/api/v1/students/student-one/student-account',
+    )
+    expect(fetchImplementation.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ schemaVersion: 1, username: 'student-17' }),
+      }),
+    )
+  })
+
   it('loads Staff access and replaces the complete optimistic scope set', async () => {
     const member = {
       staffUserId: 'teacher-one',
