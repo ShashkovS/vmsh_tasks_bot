@@ -30,6 +30,10 @@
   legacy-admin и не появляются у teacher через staff scope;
 - public/private object-storage URL validation и отсутствие credentials в
   безопасном `repr`/ошибках.
+- итоговые Python и frontend lock-файлы проверены без ignored advisories;
+  известные уязвимости устранены, воспроизводимая команда и residual archived
+  Google dependency описаны в
+  [`phase11-dependency-audit-2026-08-02.md`](phase11-dependency-audit-2026-08-02.md).
 
 Граница checker проверена на том же пути, который использует production
 API, а не только скрытием UI:
@@ -83,7 +87,6 @@ content HTTP workflow и `3 passed` для admin-only import/rollback. Един�
   выполнить настоящий `nginx -t` на сервере;
 - проверить headers и spoofed proxy requests через реальный nginx → gunicorn
   Unix socket;
-- выполнить dependency vulnerability review по итоговым lock-файлам;
 - проверить Sentry redaction реальным синтетическим событием без приватного
   содержимого.
 
@@ -92,4 +95,4 @@ content HTTP workflow и `3 passed` для admin-only import/rollback. Един�
 без найденных bypass; различие `403`/`404` для некоторых Staff detail
 routes зафиксировано как принятый низкий риск без выдачи данных.
 
-До этих действий checkpoint не обозначается как финальный security sign-off.
+До оставшихся действий checkpoint не обозначается как финальный security sign-off.

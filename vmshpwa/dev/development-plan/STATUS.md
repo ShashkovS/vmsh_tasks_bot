@@ -1049,3 +1049,17 @@
   [`phase11-static-release.md`](../../../pwa_tests/reports/phase11-static-release.md).
 - Полный server rollback остаётся открытым до утверждения FQDN/layout и проверки
   backend revision, migrations, systemd и установленного nginx.
+
+## Phase 11 checkpoint: dependency audit — 2 августа 2026
+
+- `make dependency-audit` fail-closed проверяет все Python runtime/dev и все
+  frontend production/dev зависимости из frozen lock-файлов.
+- Python graph: **0 known vulnerabilities**; единственный adverse status —
+  архивный `rsa` в legacy Google graph без известной уязвимости. Frontend graph:
+  **0 known vulnerabilities** после минимальных patched overrides для
+  `GHSA-mh99-v99m-4gvg`; ignored advisories отсутствуют.
+- После совместимого обновления `aiohttp`/`aiogram`/`pydantic`: общий Python gate
+  **121 + 1547 PASS**, historical Telegram **44 PASS**, frontend unit **586
+  PASS**, Storybook **236 PASS**, lint/typecheck/build PASS.
+- Proof:
+  [`phase11-dependency-audit-2026-08-02.md`](../../../pwa_tests/reports/phase11-dependency-audit-2026-08-02.md).

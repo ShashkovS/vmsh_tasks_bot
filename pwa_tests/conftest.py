@@ -2,6 +2,11 @@ import os
 import sys
 from pathlib import Path
 
+# aiogram 3.30 rebuilds recursive generated Bot API models during import. Load
+# them before test modules create unrelated Pydantic namespaces; otherwise the
+# full pytest collection can resolve the new RichBlock aliases recursively even
+# though the normal application import and isolated adapter tests are valid.
+import aiogram  # noqa: F401
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
