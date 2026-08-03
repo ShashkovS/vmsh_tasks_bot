@@ -6,7 +6,7 @@
 которые устарели после последующих инкрементов, но не удаляет прежний отчёт из
 истории.
 
-Проверенная ревизия: `3e3de58706a0423ef4864db7a379c270432dee45`.
+Проверенная функциональная ревизия: `40f30ac`.
 
 Незакоммиченные параллельные изменения Family notification UI, дизайн-системы
 и планов в этот аудит не включены. Наличие файла, Storybook-прототипа или старой
@@ -17,9 +17,9 @@
 `make python-test` на этой ревизии, по восемь изолированных xdist workers в
 каждом последовательном наборе:
 
-- legacy: **121 passed, 1 skipped**, 12,95 с;
-- PWA: **1586 passed, 6 skipped**, 62,42 с;
-- итого: **1707 passed, 7 skipped**, около 75 секунд pytest time.
+- legacy: **124 passed, 1 skipped**, 11,68 с;
+- PWA: **1586 passed, 6 skipped**, 61,77 с;
+- итого: **1710 passed, 7 skipped**, около 74 секунд pytest time.
 
 Live NATS, S3 и Telegram smokes являются отдельными opt-in gates и в этот
 обычный hermetic regression не входят. Последний широкий frontend unit запуск
@@ -46,8 +46,8 @@ Live NATS, S3 и Telegram smokes являются отдельными opt-in ga
 
 ## Phase 0 — baseline и совместимость
 
-**Состояние: программная baseline закрыта; внешние acceptance и workload gates
-открыты.**
+**Состояние: программная baseline закрыта; внешние acceptance и service-host
+gates открыты.**
 
 Доказано:
 
@@ -57,8 +57,12 @@ Live NATS, S3 и Telegram smokes являются отдельными opt-in ga
 - deterministic seed, schema inventory, golden/characterization fixtures,
   filesystem storage и converter probes работают;
 - разрешённые test-S3/test-Telegram и local NATS smokes выполнены отдельно;
-- реальные event logs профилированы, а двухпроцессный SQLite/NATS сценарий не
-  получил `SQLITE_BUSY` или half-write.
+- реальные event logs профилированы;
+- двухпроцессный SQLite/NATS сценарий проверил login burst и representative
+  server-side outbox flush: 16 письменных сдач, 32 фотографии по 512 KiB,
+  16 MiB file IO, полные metadata/idempotency/queue writes, ноль исчерпанных
+  `SQLITE_BUSY` и half-write. Допустимый user-visible busy budget для такого
+  клубного burst зафиксирован как ноль, без выдуманного production SLA.
 
 Прямые доказательства: [`baseline-v1.md`](baseline-v1.md),
 [`runtime-isolation-phase0.md`](runtime-isolation-phase0.md),
@@ -68,8 +72,6 @@ Live NATS, S3 и Telegram smokes являются отдельными opt-in ga
 Открыто:
 
 - owner visual/phase acceptance;
-- отдельный representative photo/outbox workload и согласованный допустимый
-  `SQLITE_BUSY` budget; login burst не доказывает media workload;
 - production service-host повтор converter capability gate.
 
 ## Phase 1 — authentication и access control
@@ -306,6 +308,7 @@ preview/apply/rollback, synonym merge/split и reload-safe metadata drafts.
 [`phase10-staff-audit.md`](phase10-staff-audit.md),
 [`phase10-staff-statistics.md`](phase10-staff-statistics.md),
 [`phase10-google-loader-inventory-2026-08-03.md`](phase10-google-loader-inventory-2026-08-03.md),
+[`phase10-google-bulk-cutover-guard-2026-08-03.md`](phase10-google-bulk-cutover-guard-2026-08-03.md),
 [`phase10-metadata-grid-drafts-2026-08-03.md`](phase10-metadata-grid-drafts-2026-08-03.md).
 
 Открыто:
@@ -313,7 +316,6 @@ preview/apply/rollback, synonym merge/split и reload-safe metadata drafts.
 - initial Student/Family provisioning зависит от course/group mapping и
   credential-delivery decisions;
 - `_BotUIMsgs` и `_BotSettings` — вопросы 3–4;
-- guard частичного cutover для legacy `/update_all`;
 - owner-run полный недельный Staff workflow и объявленная дата cutover;
 - остальные external processes не считаются выключенными только потому, что
   заменён лист «Задачи»;
@@ -371,14 +373,12 @@ delete API и не превращает diagnostic в автоматическу
 
 1. После завершения соседнего Family notification UI вернуть зелёные
    frontend lint/type/unit/storybook/build gates и закоммитить его отдельно.
-2. Не угадывая Family digest semantics, выбрать следующий определённый Phase-8
-   notification gap (`deadline`/`oral_window`) только после сверки lifecycle и
-   существующих событий.
-3. Реализовать guard частичного Google cutover для `/update_all` как маленькую
-   fail-closed границу, без нового repository/framework.
-4. Подготовить исполняемые production runbooks/checklists Phase 11, оставляя
+2. После завершения соседнего `oral_window` notification slice сверить его
+   общий scheduler/allowlist и отдельно определить `deadline` semantics, не
+   угадывая Family digest rules.
+3. Подготовить исполняемые production runbooks/checklists Phase 11, оставляя
    реальные server/device результаты незакрытыми до их фактического запуска.
-5. После ответов владельца закрыть вопросы 1–8 отдельными вертикальными
+4. После ответов владельца закрыть вопросы 1–8 отдельными вертикальными
    срезами, а не общим speculative subsystem.
 
 До закрытия перечисленных gates формулировка «все этапы разработки завершены»
