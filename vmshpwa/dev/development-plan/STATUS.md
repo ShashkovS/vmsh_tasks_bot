@@ -1248,15 +1248,13 @@
 - Staff edit draft переживает reload и ошибку, изолирован по runtime, account,
   post и version и очищается только после server receipt.
 - Story IDs: `pages-staff-local-news-composer--editing-scheduled`,
-  `product-news-moderation--scheduled-local`. Проверенные gates: frontend unit
-  **113 файлов / 592 PASS**, PWA Python **1580 PASS / 6 intentional skips**,
-  lint/typecheck/build — PASS. Storybook browser/a11y и production E2E news
-  заблокированы до первой story/page системным macOS MachPortRendezvous error
-  141; PASS им не приписывается.
+  `product-news-moderation--scheduled-local`. Full gates: frontend unit **113
+  файлов / 592 PASS**, PWA Python **1580 PASS / 6 intentional skips**,
+  Storybook **51 файл / 245 PASS**, production E2E news **9/9 PASS** в Chromium,
+  Firefox и WebKit; lint/typecheck/build — PASS.
 - Proof:
   [`phase8-local-news-editing-2026-08-03.md`](../../../pwa_tests/reports/phase8-local-news-editing-2026-08-03.md).
-  Snapshots не обновлялись; browser/E2E и owner visual acceptance остаются
-  открытыми.
+  Snapshots не обновлялись; owner visual acceptance остаётся открытым.
 
 ## Phase 10 checkpoint: черновик metadata grid — 3 августа 2026
 

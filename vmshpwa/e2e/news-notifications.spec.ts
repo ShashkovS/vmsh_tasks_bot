@@ -147,12 +147,27 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
     // this also remains valid when a Playwright retry sees the completed write.
     // Reading requires an actually foreground document. Full-matrix Playwright
     // runs create background pages, unlike the single active browser tab a
-    // student uses, so explicitly foreground this page before starting the
-    // product's three-second visibility window.
-    await page.bringToFront()
-    await expect.poll(() => page.evaluate(() => document.visibilityState)).toBe('visible')
-    await event.evaluate((element) => element.scrollIntoView({ block: 'center' }))
-    await expect(event).toBeInViewport({ ratio: 0.75 })
+    // student uses. A concurrent browser page can also reset scroll restoration,
+    // so keep foregrounding and scrolling until the actual intersection is
+    // stable enough to start the product's three-second visibility window.
+    await expect
+      .poll(
+        async () => {
+          await page.bringToFront()
+          await event.scrollIntoViewIfNeeded()
+          return event.evaluate((element) => {
+            if (document.visibilityState !== 'visible') return 0
+            const box = element.getBoundingClientRect()
+            const visibleHeight = Math.max(
+              0,
+              Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0),
+            )
+            return box.height === 0 ? 0 : visibleHeight / box.height
+          })
+        },
+        { timeout: 15_000 },
+      )
+      .toBeGreaterThanOrEqual(0.75)
     await expect
       .poll(
         async () => {

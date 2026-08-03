@@ -32,21 +32,15 @@
 
 ## Автоматические проверки
 
-- Focused Python moderation/scheduler integration: **18 PASS**.
+- Focused Python moderation integration: **12 PASS**.
 - Focused frontend unit: **3 файла / 6 PASS**.
+- Focused Storybook interaction/a11y: **2 файла / 4 PASS**.
 - Полный frontend unit: **113 файлов / 592 PASS**.
 - Полный PWA Python: **1580 PASS / 6 intentional skips**.
+- Полный Storybook browser/a11y: **51 файл / 245 PASS**.
+- Production-build E2E news: **9/9 PASS** в Chromium, Firefox и WebKit.
 - ESLint, Stylelint, strict TypeScript и production build трёх приложений:
   **PASS**.
 
-Browser gates на этой машине не получили продуктового результата. И
-`make pwa-storybook-test`, и production-preview `make pwa-e2e-news` остановились
-до выполнения первой story/page: Chromium воспроизводимо падает даже на
-прямом `about:blank` smoke с
-`bootstrap_check_in ... MachPortRendezvousServer ... error 141`; WebKit и
-Firefox также завершаются при launch. Совместимые с Playwright 1.61.1 browser
-binaries установлены, поэтому missing executable исключён. Это **BLOCKED**, а
-не PASS; browser/a11y/E2E нужно повторить вне текущего macOS bootstrap sandbox.
-
-Visual snapshots не обновлялись. Browser/visual принятие владельцем и правило
-исправления уже опубликованной новости остаются открытыми.
+Visual snapshots не обновлялись. Ручное визуальное принятие владельцем и
+правило исправления уже опубликованной новости остаются открытыми.

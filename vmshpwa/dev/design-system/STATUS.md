@@ -569,3 +569,14 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - Это functional/design traceability checkpoint. Ручное visual acceptance не
   выполнялось, snapshots не обновлялись; streak/completed-lesson states будут
   добавлены вместе с соответствующими продуктовым правилами.
+
+## Development Phase 8 — scheduled local-news editing · 3 августа 2026
+
+- `Product/News moderation--Scheduled local` показывает edit action только для
+  будущей local publication; Telegram и уже опубликованные строки его не имеют.
+- `Pages/Staff/Local news composer--Editing scheduled` фиксирует неизменяемого
+  получателя, редактируемые текст/время и отдельную подпись сохранения.
+- Interaction/a11y входят в полный Storybook gate **245/245 PASS**; production
+  news E2E **9/9 PASS** в Chromium, Firefox и WebKit проверяет reload-safe draft.
+- Это функциональный checkpoint. Snapshots не обновлялись; ручное visual
+  acceptance владельцем остаётся открытым.
