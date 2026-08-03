@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import itertools
 import json
+import apps.pwa_api.review_routes as review_routes_module
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from types import MappingProxyType
@@ -13,6 +14,7 @@ from aiohttp import web
 from argon2 import PasswordHasher
 
 from apps import pwa_app
+from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
 from apps.pwa_api.auth_service import PwaAuthService
 from db_methods.pwa import PwaConnectionFactory, apply_schema_migrations
 from db_methods.pwa.auth import PwaAuthRepository
@@ -21,6 +23,7 @@ from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import Config
 from helpers.consts import USER_TYPE
 from helpers.nats_brocker import InProcessBroker
+from helpers.object_storage import LocalObjectStorage
 from helpers.pwa.app_keys import PWA_DATABASE, RUNTIME_CONFIG, PwaDatabaseState
 from helpers.pwa.auth_config import AuthRuntimeConfig, COOKIE_POLICY
 from models.pwa.auth import AuthAudience, CredentialHasher
@@ -50,6 +53,10 @@ class ReviewHttpFixture:
     cookies: MappingProxyType
     student_cookie: str
     family_cookie: str
+    telegram_calls: list[tuple[int, str, tuple[bytes, ...]]]
+    render_calls: list[dict[str, object]]
+    telegram_should_fail: list[bool]
+    render_should_fail: list[bool]
 
 
 def _timestamp(value: datetime = NOW) -> str:
@@ -78,12 +85,13 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
     def seed(connection):
         connection.execute("DELETE FROM kv_logins")
         connection.executemany(
-            "INSERT INTO users (id, public_id, type, name, surname) "
-            "VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO users (id, public_id, chat_id, type, name, surname) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
             (
                 (
                     STUDENT_ID,
                     "review-http-student",
+                    9_530_001,
                     int(USER_TYPE.STUDENT),
                     "Анна",
                     "Белова",
@@ -91,6 +99,7 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 (
                     FULL_TEACHER_ID,
                     "review-http-teacher-full",
+                    None,
                     int(USER_TYPE.TEACHER),
                     "Мария",
                     "Полная",
@@ -98,6 +107,7 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 (
                     PARTIAL_TEACHER_ID,
                     "review-http-teacher-partial",
+                    None,
                     int(USER_TYPE.TEACHER),
                     "Иван",
                     "Частичный",
@@ -105,6 +115,7 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
                 (
                     ADMIN_ID,
                     "review-http-admin",
+                    None,
                     int(USER_TYPE.ADMIN),
                     "Ада",
                     "Администратор",
@@ -423,7 +434,7 @@ def _seed_review_http(factory: PwaConnectionFactory) -> tuple[str, str]:
 
 
 @pytest.fixture()
-async def review_http(tmp_path, aiohttp_client) -> ReviewHttpFixture:
+async def review_http(tmp_path, aiohttp_client, monkeypatch) -> ReviewHttpFixture:
     database_path = tmp_path / "review-http.sqlite3"
     apply_schema_migrations(database_path)
     factory = PwaConnectionFactory(database_path)
@@ -449,6 +460,37 @@ async def review_http(tmp_path, aiohttp_client) -> ReviewHttpFixture:
         comment_public_id_factory=lambda: "review-http-comment",
         event_public_id_factory=lambda: "review-http-event",
     )
+    telegram_calls: list[tuple[int, str, tuple[bytes, ...]]] = []
+    render_calls: list[dict[str, object]] = []
+    telegram_should_fail = [False]
+    render_should_fail = [False]
+
+    async def render_composite(**kwargs) -> bytes:
+        render_calls.append(kwargs)
+        if render_should_fail[0]:
+            raise RuntimeError("synthetic renderer failure")
+        return b"\x89PNG\r\n\x1a\nfake-review-annotation"
+
+    async def send_review_telegram(
+        chat_id: int,
+        text: str,
+        images: tuple[bytes, ...],
+    ) -> None:
+        telegram_calls.append((chat_id, text, images))
+        if telegram_should_fail[0]:
+            raise RuntimeError("synthetic Telegram failure")
+
+    monkeypatch.setattr(
+        review_routes_module,
+        "render_review_annotation_composite_png",
+        render_composite,
+    )
+    storage = LocalObjectStorage(tmp_path / "media")
+    await storage.put(
+        "submission/review-http-asset-1.webp",
+        b"review-http-source-webp",
+        "image/webp",
+    )
     app = web.Application()
     app[RUNTIME_CONFIG] = Config(
         runtime_profile="pwa-e2e",
@@ -463,11 +505,13 @@ async def review_http(tmp_path, aiohttp_client) -> ReviewHttpFixture:
         auth_runtime_config=auth_config,
         auth_service=auth_service,
         review_queue_repository=review_repository,
+        review_telegram_sender=send_review_telegram,
         written_submission_repository=PwaWrittenSubmissionRepository(
             factory, clock=lambda: NOW
         ),
     )
     app[PWA_DATABASE] = PwaDatabaseState(factory=factory)
+    app[PWA_CONTENT_OBJECT_STORAGE] = storage
     client = await aiohttp_client(app)
 
     async def login(audience: AuthAudience, username: str, password: str) -> str:
@@ -510,6 +554,10 @@ async def review_http(tmp_path, aiohttp_client) -> ReviewHttpFixture:
         family_cookie=await login(
             AuthAudience.FAMILY, "review-http-family", "family-password"
         ),
+        telegram_calls=telegram_calls,
+        render_calls=render_calls,
+        telegram_should_fail=telegram_should_fail,
+        render_should_fail=render_should_fail,
     )
 
 
@@ -565,6 +613,26 @@ def _complete_payload(lease: dict[str, object]) -> dict[str, object]:
         ],
         "annotations": [],
         "internalReactionId": None,
+    }
+
+
+def _annotation_payload() -> dict[str, object]:
+    return {
+        "attachmentId": "review-http-attachment-1",
+        "schemaVersion": 1,
+        "rotation": 90,
+        "marks": [
+            {
+                "markId": "review-http-mark-1",
+                "kind": "arrow",
+                "data": {
+                    "start": {"x": 0.1, "y": 0.2},
+                    "end": {"x": 0.5, "y": 0.6},
+                    "width": 0.01,
+                    "color": "red",
+                },
+            }
+        ],
     }
 
 
@@ -745,25 +813,7 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
     ] == ["student", "student"]
     payload = _complete_payload(lease)
     payload["internalReactionId"] = 100
-    payload["annotations"] = [
-        {
-            "attachmentId": "review-http-attachment-1",
-            "schemaVersion": 1,
-            "rotation": 90,
-            "marks": [
-                {
-                    "markId": "review-http-mark-1",
-                    "kind": "arrow",
-                    "data": {
-                        "start": {"x": 0.1, "y": 0.2},
-                        "end": {"x": 0.5, "y": 0.6},
-                        "width": 0.01,
-                        "color": "red",
-                    },
-                }
-            ],
-        }
-    ]
+    payload["annotations"] = [_annotation_payload()]
 
     completed = await fixture.client.post(
         f"/staff/api/v1/review/items/{queue_id}/complete",
@@ -818,6 +868,21 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
         ).fetchone()
     )
     assert counts == {"results": 1, "reviews": 1, "queue": 0}
+    assert len(fixture.telegram_calls) == 1
+    telegram_chat_id, telegram_text, telegram_images = fixture.telegram_calls[0]
+    assert telegram_chat_id == 9_530_001
+    assert "41a.1 — Общая задача, ветка 1" in telegram_text
+    assert "41b.2 — Общая задача, ветка 2" in telegram_text
+    assert "Результат: ✅+." in telegram_text
+    assert "Проверено через Staff PWA." in telegram_text
+    assert telegram_images == (b"\x89PNG\r\n\x1a\nfake-review-annotation",)
+    assert fixture.render_calls == [
+        {
+            "source_webp": b"review-http-source-webp",
+            "rotation": 90,
+            "marks": payload["annotations"][0]["marks"],
+        }
+    ]
     notifications = fixture.factory.run_read(
         lambda connection: connection.execute(
             "SELECT account.public_id AS account_public_id, event.category, "
@@ -836,6 +901,87 @@ async def test_complete_review_is_atomic_and_idempotent_over_http(
         "reviewIds": ["review-http-completed"],
         "problemIds": [branch["problemId"] for branch in lease["branches"]],
     }
+
+
+@pytest.mark.asyncio
+async def test_review_telegram_failures_do_not_rollback_completed_review(
+    review_http: ReviewHttpFixture,
+):
+    fixture = review_http
+    fixture.render_should_fail[0] = True
+    fixture.telegram_should_fail[0] = True
+    queue_id = fixture.queue_public_ids[0]
+    claim = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    assert claim.status == 200, await claim.text()
+    payload = _complete_payload((await claim.json())["lease"])
+    payload["annotations"] = [_annotation_payload()]
+
+    response = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=payload,
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+
+    assert response.status == 200, await response.text()
+    assert (await response.json())["review"]["replayed"] is False
+    assert len(fixture.render_calls) == 1
+    assert len(fixture.telegram_calls) == 1
+    assert fixture.telegram_calls[0][2] == ()
+    counts = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT (SELECT count(*) FROM submission_reviews) AS reviews, "
+            "(SELECT count(*) FROM results) AS results"
+        ).fetchone()
+    )
+    assert counts == {"reviews": 1, "results": 1}
+
+
+@pytest.mark.asyncio
+async def test_review_telegram_projection_read_failure_is_post_commit_only(
+    review_http: ReviewHttpFixture,
+    monkeypatch,
+):
+    fixture = review_http
+
+    def fail_read(*_args, **_kwargs):
+        raise RuntimeError("synthetic post-commit read failure")
+
+    monkeypatch.setattr(
+        review_routes_module,
+        "read_review_telegram_delivery",
+        fail_read,
+    )
+    queue_id = fixture.queue_public_ids[0]
+    claim = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/claim",
+        json={"schemaVersion": 1},
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+    payload = _complete_payload((await claim.json())["lease"])
+
+    response = await fixture.client.post(
+        f"/staff/api/v1/review/items/{queue_id}/complete",
+        json=payload,
+        cookies=_cookie(fixture, "full"),
+        headers=_headers(unsafe=True),
+    )
+
+    assert response.status == 200, await response.text()
+    assert fixture.telegram_calls == []
+    counts = fixture.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT (SELECT count(*) FROM submission_reviews) AS reviews, "
+            "(SELECT count(*) FROM results) AS results"
+        ).fetchone()
+    )
+    assert counts == {"reviews": 1, "results": 1}
 
 
 @pytest.mark.asyncio

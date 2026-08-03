@@ -27,6 +27,10 @@
    invalidation. Student видит verdict, публичный комментарий и annotations;
    Family видит ту же публичную историю. Внутренняя reaction преподавателя им
    не сериализуется.
+7. Если production запущен с Telegram adapter и у Student есть `chat_id`, после
+   commit ему сразу отправляется тихое личное сообщение с исходными задачами,
+   verdict и комментарием. Размеченные изображения отправляются отдельными
+   composite PNG; исходные WebP не меняются.
 
 ## Реакции и перепроверка
 
@@ -48,7 +52,11 @@ Staff рисует versioned normalized marks поверх оригинальн�
 manifest. Для Telegram уже существует отдельная производная
 [`helpers/pwa/review_composite.py`](../../helpers/pwa/review_composite.py),
 которая создаёт PNG из immutable WebP и manifest без доступа к SQLite и без
-выбора получателей. Решение о доставке остаётся в Telegram adapter.
+выбора получателей. Узкий adapter в
+[`apps/pwa_api/review_routes.py`](../../apps/pwa_api/review_routes.py) читает
+точный committed review, загружает исходные WebP и передаёт готовые PNG
+существующему боту. Это не массовая очередь: MVP выполняет best-effort отправку
+сразу в HTTP-потоке после commit. Idempotent replay не отправляется повторно.
 
 ## Восстановление после ошибок
 
@@ -60,6 +68,10 @@ manifest. Для Telegram уже существует отдельная про�
   исходный claim и очередь остаются восстанавливаемыми.
 - Сбой NATS/WebSocket после commit не откатывает результат. Клиент при reconnect
   всегда перечитывает активные запросы из SQLite.
+- Сбой object storage, composite renderer или Telegram после commit логируется
+  без пользовательских путей и не откатывает review. Если не собралась одна
+  картинка, текст и остальные готовые PNG всё равно отправляются; полный
+  результат остаётся доступен в PWA.
 - Нельзя исправлять review, attachment или annotation прямым SQL. Для результата
   используется append-only correction; неправильное прикрепление материала к
   задаче — отдельное audited reassignment.
@@ -77,7 +89,7 @@ backfill и dual-write нет: Telegram продолжает читать legacy
 
 - Текстовые частные вопросы Student↔Staff работают; вложения и продолжение того
   же вопроса через Telegram остаются отдельными инкрементами.
-- PNG-производная для Telegram готова, но этот этап не добавляет новый массовый
-  delivery workflow.
+- Telegram delivery проверки остаётся немедленным best-effort adapter, без
+  отдельной массовой очереди и delivery dashboard в MVP.
 - Автоматические interaction/a11y и production E2E пройдены. Изменение visual
   snapshots разрешено только после ручного просмотра владельцем продукта.

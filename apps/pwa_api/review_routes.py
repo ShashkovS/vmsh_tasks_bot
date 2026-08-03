@@ -17,6 +17,8 @@ from aiohttp import web
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
+from apps.pwa_api.content_routes import PWA_CONTENT_OBJECT_STORAGE
+from db_methods.pwa.review_telegram import read_review_telegram_delivery
 from db_methods.pwa.reviews import (
     CompleteReviewCommand,
     PwaWrittenReviewQueueRepository,
@@ -48,6 +50,8 @@ from db_methods.pwa.reviews import (
     ReviewStudentReactionWindowClosed,
     ReviewThreadChanged,
 )
+from helpers.consts import USER_TYPE, VERDICT, VERDICT_TO_TICK
+from helpers.pwa.review_composite import render_review_annotation_composite_png
 from helpers.pwa.permissions import Capability
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
@@ -61,8 +65,6 @@ from models.pwa.review_corrections import (
     ReviewCorrectionStale,
     correct_written_review,
 )
-from helpers.consts import USER_TYPE
-
 
 # Keep the route below aiohttp's default one-megabyte application limit while
 # leaving room for the bounded 20k-point normalized annotation manifest.
@@ -129,6 +131,10 @@ ReviewReactionInboxInvalidator = Callable[[tuple[str, ...], str], Awaitable[None
 PWA_REVIEW_REACTION_INBOX_INVALIDATOR = web.AppKey(
     "pwa_review_reaction_inbox_invalidator", ReviewReactionInboxInvalidator
 )
+ReviewTelegramSender = Callable[[int, str, tuple[bytes, ...]], Awaitable[None]]
+PWA_REVIEW_TELEGRAM_SENDER = web.AppKey(
+    "pwa_review_telegram_sender", ReviewTelegramSender
+)
 review_routes = web.RouteTableDef()
 logger = logging.getLogger(__name__)
 
@@ -156,6 +162,87 @@ async def _invalidate_review_queue(request: web.Request, *, reason: str) -> None
         logger.warning(
             "Review queue invalidation failed after commit: reason=%s",
             reason,
+            exc_info=True,
+        )
+
+
+def _review_telegram_text(
+    problems: list[dict[str, object]],
+    *,
+    verdict: int,
+    comment: str | None,
+) -> str:
+    labels = []
+    for problem in problems:
+        number = (
+            f"{problem['lesson']}{problem.get('short_code') or ''}."
+            f"{problem['prob']}{problem['item']}"
+        )
+        labels.append(f"{number} — {problem['title']}")
+    if len(labels) == 1:
+        lines = [f"Проверена задача {labels[0]}"]
+    else:
+        lines = ["Проверены задачи:", *(f"• {label}" for label in labels)]
+    tick = VERDICT_TO_TICK.get(VERDICT(verdict), str(verdict))
+    lines.extend(("", f"Результат: {tick}"))
+    if comment:
+        lines.extend(("", "Комментарий преподавателя:", comment))
+    return "\n".join(lines)
+
+
+async def _deliver_review_to_telegram(
+    request: web.Request,
+    *,
+    review_public_id: str,
+    comment: str | None,
+) -> None:
+    sender = request.app.get(PWA_REVIEW_TELEGRAM_SENDER)
+    database = request.app.get(PWA_DATABASE)
+    if sender is None or database is None or database.factory is None:
+        return
+    delivery = await database.factory.run_read_async(
+        lambda connection: read_review_telegram_delivery(connection, review_public_id)
+    )
+    if delivery is None or delivery["chat_id"] is None:
+        return
+
+    images: list[bytes] = []
+    storage = request.app.get(PWA_CONTENT_OBJECT_STORAGE)
+    if storage is not None:
+        for annotation in delivery["annotations"]:
+            try:
+                marks = json.loads(str(annotation["marks_json"]))
+                source = await storage.get(str(annotation["object_key"]))
+                images.append(
+                    await render_review_annotation_composite_png(
+                        source_webp=source,
+                        rotation=int(annotation["rotation"]),
+                        marks=marks,
+                    )
+                )
+            except Exception:
+                # A broken derivative must not hide the verdict or roll back the
+                # authoritative review. See accepted-technical-decisions-2026-07.
+                logger.warning(
+                    "Review Telegram annotation failed: review=%s attachment=%s",
+                    review_public_id,
+                    annotation["attachment_public_id"],
+                    exc_info=True,
+                )
+    try:
+        await sender(
+            int(delivery["chat_id"]),
+            _review_telegram_text(
+                delivery["problems"],
+                verdict=int(delivery["verdict"]),
+                comment=comment,
+            ),
+            tuple(images),
+        )
+    except Exception:
+        logger.warning(
+            "Review Telegram delivery failed after commit: review=%s",
+            review_public_id,
             exc_info=True,
         )
 
@@ -1170,6 +1257,20 @@ async def complete_review_item(request: web.Request) -> web.Response:
             request,
             reason="written-review-internal-reaction-created",
         )
+    if not receipt.replayed:
+        try:
+            await _deliver_review_to_telegram(
+                request,
+                review_public_id=receipt.review_public_id,
+                comment=comment,
+            )
+        except Exception:
+            # The Telegram projection is never part of the review transaction.
+            logger.warning(
+                "Review Telegram projection failed after commit: review=%s",
+                receipt.review_public_id,
+                exc_info=True,
+            )
     return web.json_response(
         {
             "schemaVersion": 1,
@@ -1478,5 +1579,7 @@ __all__ = [
     "PWA_REVIEW_QUEUE_REPOSITORY",
     "PWA_REVIEW_REACTION_INBOX_INVALIDATOR",
     "PWA_REVIEW_STUDENT_REACTION_INVALIDATOR",
+    "PWA_REVIEW_TELEGRAM_SENDER",
+    "ReviewTelegramSender",
     "review_routes",
 ]

@@ -152,10 +152,12 @@ overlay; renderer сохраняет alignment при любом локальн�
       [`phase6-review-reaction-inbox.md`](../../../pwa_tests/reports/phase6-review-reaction-inbox.md).
 - [x] Annotation persistence format/version/normalized geometry/rotation tests:
       [`phase6-review-annotations.md`](../../../pwa_tests/reports/phase6-review-annotations.md).
-      Interactive editor zoom/pan alignment и Telegram composite остаются в
-      следующих UI/derivative gates. MVP delivery отправляет composite PNG
-      сразу при завершении проверки через существующий немедленный Telegram
-      path; сбой Telegram не откатывает authoritative PWA review.
+      Interactive editor zoom/pan alignment и Telegram composite renderer
+      доказаны отдельными gates. MVP delivery теперь отправляет тихое личное
+      Telegram-сообщение и все успешно собранные composite PNG сразу после
+      authoritative commit; replay не дублирует отправку, а сбой renderer,
+      storage или Telegram не откатывает PWA review:
+      [`phase6-review-telegram-delivery-2026-08-03.md`](../../../pwa_tests/reports/phase6-review-telegram-delivery-2026-08-03.md).
 - [x] Question draft persistence, account/audience/target isolation and
       page-level clear-after-receipt behavior:
       [`phase6-support-draft-storage.md`](../../../pwa_tests/reports/phase6-support-draft-storage.md),

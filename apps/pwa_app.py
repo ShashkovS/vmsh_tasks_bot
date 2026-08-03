@@ -83,6 +83,8 @@ from apps.pwa_api.review_routes import (
     PWA_REVIEW_QUEUE_REPOSITORY,
     PWA_REVIEW_REACTION_INBOX_INVALIDATOR,
     PWA_REVIEW_STUDENT_REACTION_INVALIDATOR,
+    PWA_REVIEW_TELEGRAM_SENDER,
+    ReviewTelegramSender,
     review_routes,
 )
 from apps.pwa_api.submission_routes import (
@@ -1590,6 +1592,7 @@ def configure(
         ContentAssetConverter | ConfiguredContentAssetConverter | None
     ) = None,
     classroom_telegram_sender: TelegramClassroomSender | None = None,
+    review_telegram_sender: ReviewTelegramSender | None = None,
     push_sender: PushSender | None = None,
     telegram_binding_verifier: TelegramBindingVerifier | None = None,
 ):
@@ -1639,6 +1642,40 @@ def configure(
         classroom_telegram_sender = send_classroom_telegram
     if classroom_telegram_sender is not None:
         app[PWA_CLASSROOM_TELEGRAM_SENDER] = classroom_telegram_sender
+    if review_telegram_sender is None and any(
+        getattr(adapter, "__name__", "") == "apps.tg_bot"
+        for adapter in app.get(ENABLED_ADAPTERS, ())
+    ):
+        from aiogram.types import BufferedInputFile
+        from helpers.bot import bot
+
+        async def send_review_telegram(
+            chat_id: int,
+            text: str,
+            images: tuple[bytes, ...],
+        ) -> None:
+            # 3500 Python characters also leave room for astral symbols under
+            # Telegram's UTF-16 message limit. The complete text remains in PWA.
+            for start in range(0, len(text), 3500):
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text=text[start : start + 3500],
+                    parse_mode=None,
+                    disable_notification=True,
+                )
+            for index, image in enumerate(images, start=1):
+                await bot.send_photo(
+                    chat_id=chat_id,
+                    photo=BufferedInputFile(
+                        image,
+                        filename=f"review-annotation-{index}.png",
+                    ),
+                    disable_notification=True,
+                )
+
+        review_telegram_sender = send_review_telegram
+    if review_telegram_sender is not None:
+        app[PWA_REVIEW_TELEGRAM_SENDER] = review_telegram_sender
     if push_sender is not None:
         app[PWA_PUSH_SENDER] = push_sender
     if telegram_binding_verifier is None and runtime_config.telegram_bot_token:
