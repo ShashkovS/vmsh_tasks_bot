@@ -145,6 +145,7 @@ async def test_scheduler_is_periodic_and_stops_cleanly(monkeypatch):
     repository = DueRepository()
     second_poll = asyncio.Event()
     news_windows: list[tuple[str, str]] = []
+    oral_windows: list[tuple[str | None, str]] = []
 
     original_activate = repository.activate_next_due_publication
 
@@ -163,8 +164,17 @@ async def test_scheduler_is_periodic_and_stops_cleanly(monkeypatch):
         news_windows.append((after, through))
         return False
 
+    async def activate_due_oral(_app, *, after, through):
+        oral_windows.append((after, through))
+        return 0
+
     monkeypatch.setattr(pwa_app, "CONTENT_SCHEDULER_INTERVAL_SECONDS", 0.01)
     monkeypatch.setattr(pwa_app, "invalidate_due_local_news", invalidate_due_news)
+    monkeypatch.setattr(
+        pwa_app,
+        "activate_due_oral_window_notifications",
+        activate_due_oral,
+    )
     app = web.Application()
     app[PWA_CONTENT_REPOSITORY] = repository
     app[PWA_CONTENT_INVALIDATOR] = invalidate
@@ -178,6 +188,48 @@ async def test_scheduler_is_periodic_and_stops_cleanly(monkeypatch):
     assert task.cancelled() is False
     assert len(news_windows) >= 2
     assert news_windows[0][1] == news_windows[1][0]
+    assert oral_windows[0][0] is None
+    assert oral_windows[0][1] == oral_windows[1][0]
+
+
+@pytest.mark.asyncio
+async def test_oral_window_activation_invalidates_only_created_student_owners():
+    class Factory:
+        async def run_write_async(self, operation):
+            del operation
+            return ("student-one", "student-two")
+
+    class RecordingBroker:
+        def __init__(self):
+            self.messages = []
+
+        async def publish(self, topic, payload):
+            self.messages.append((topic, payload))
+
+    app = web.Application()
+    broker = RecordingBroker()
+    app[pwa_app.PWA_DATABASE] = SimpleNamespace(factory=Factory())
+    app[pwa_app.PWA_BROKER] = broker
+
+    created = await pwa_app.activate_due_oral_window_notifications(
+        app,
+        after=None,
+        through="2026-08-03T12:00:00.000000Z",
+    )
+
+    assert created == 2
+    assert broker.messages == [
+        (
+            pwa_app.NATS_PWA_INVALIDATE,
+            {
+                "resources": ["oral-windows", "notification-events"],
+                "reason": "oral-window-opened",
+                "audience": "student",
+                "accountId": account_id,
+            },
+        )
+        for account_id in ("student-one", "student-two")
+    ]
 
 
 @pytest.mark.asyncio

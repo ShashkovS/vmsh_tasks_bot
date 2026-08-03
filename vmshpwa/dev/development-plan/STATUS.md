@@ -1377,3 +1377,16 @@
   [`phase8-family-notification-settings-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-notification-settings-2026-08-03.md).
   Weekly Family digest ждёт решения вопроса 8; snapshots не обновлялись, owner
   visual acceptance открыт.
+
+## Phase 8 checkpoint: oral-window notifications — 3 августа 2026
+
+- Открытие настроенного oral window создаёт account-scoped событие только для
+  текущих online Student active group; Family и очные участники исключены.
+- Startup catch-up, два worker, повторный scan и owner invalidation не создают
+  дублей. Zoom URL/code не попадают в event payload.
+- Focused Ruff и SQLite/aiohttp/scheduler gate: **11 PASS**; полный PWA Python
+  в 8 worker’ах: **1588 PASS / 6 intentional skips**.
+- Proof:
+  [`phase8-oral-window-notifications-2026-08-03.md`](../../../pwa_tests/reports/phase8-oral-window-notifications-2026-08-03.md).
+- `deadline` producer ждёт ответа на вопрос 9; physical push и owner visual
+  acceptance остаются внешними gates.

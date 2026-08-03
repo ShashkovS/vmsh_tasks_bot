@@ -49,6 +49,13 @@ Course-specific override остаётся Student-only. Точный server trig
 недельного Family-итога до реализации зафиксирован вопросом 8 в
 [`22-development-questions.md`](../dev/development-plan/22-development-questions.md).
 
+`oral_window` создаётся при фактическом открытии окна для текущих online Student
+активной группы. Recipient set не материализуется при редактировании расписания:
+это исключает Family, очный режим и устаревшее членство. Startup подхватывает
+окно, которое уже открылось и ещё не закрылось; два worker сходятся через
+dedupe SQLite. Join URL/code отсутствуют в event и читаются только отдельным
+no-store endpoint после повторной проверки Student scope.
+
 До отдельного подтверждения UX действует безопасное допущение: повтор с тем же ключом и payload hash возвращает тот же результат. Другой payload с тем же ключом получает conflict: исходная операция сохраняется, last-write-wins запрещён, а новая отправка возможна с новым ключом после явного решения пользователя. FIFO действует внутри одной сущности; независимые drafts могут синхронизироваться параллельно. Logout предупреждает о неотправленных данных; после явного подтверждения очередь и drafts этого аккаунта можно удалить.
 
 Notification preferences имеют общий default и optional course override. Invalidations сужаются полями `audience`, `courseId`, `groupId`, `studentUserId`; приватное событие не рассылается другим аудиториям или enrollment. После reconnect клиент всегда делает authoritative refetch. Набор course/group событий перечислен в [многокурсовом контракте](courses-groups-and-lessons.md).

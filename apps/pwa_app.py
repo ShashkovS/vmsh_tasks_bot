@@ -144,6 +144,7 @@ from helpers.pwa.written_attachments import WrittenAttachmentService
 from models.pwa.auth import AuthAudience
 from models.pwa.content_notifications import create_content_publication_notifications
 from models.pwa.content import ContentKind
+from models.pwa.oral_windows import create_due_window_notifications
 from models.pwa.support_notifications import create_staff_reply_notifications
 
 __all__ = ["PwaApiError", "pwa_routes"]
@@ -1333,11 +1334,57 @@ async def invalidate_due_local_news(
     return True
 
 
+async def activate_due_oral_window_notifications(
+    app: web.Application,
+    *,
+    after: str | None,
+    through: str,
+) -> int:
+    """Create owner-scoped Student events for oral windows that just opened."""
+
+    database = app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        return 0
+    account_public_ids = await database.factory.run_write_async(
+        lambda connection: create_due_window_notifications(
+            connection,
+            after=after,
+            through=through,
+        )
+    )
+    if not account_public_ids:
+        return 0
+    try:
+        await asyncio.gather(
+            *(
+                app[PWA_BROKER].publish(
+                    NATS_PWA_INVALIDATE,
+                    {
+                        "resources": ["oral-windows", "notification-events"],
+                        "reason": "oral-window-opened",
+                        "audience": AuthAudience.STUDENT.value,
+                        "accountId": account_public_id,
+                    },
+                )
+                for account_public_id in account_public_ids
+            )
+        )
+    except asyncio.CancelledError:
+        raise
+    except Exception:
+        # The event is durable in SQLite; NATS is only a foreground refetch
+        # hint and must not cause a duplicate notification write.
+        logger.warning("Oral-window invalidation failed after commit", exc_info=True)
+    return len(account_public_ids)
+
+
 async def _content_scheduler_loop(app: web.Application) -> None:
     stop = app[PWA_CONTENT_SCHEDULER_STOP]
     news_scan_after = _now()
+    oral_scan_after: str | None = None
     while not stop.is_set():
         news_scan_through = _now()
+        oral_scan_through = news_scan_through
         try:
             activated = await activate_due_content_publications(app)
             await invalidate_due_local_news(
@@ -1346,6 +1393,12 @@ async def _content_scheduler_loop(app: web.Application) -> None:
                 through=news_scan_through,
             )
             news_scan_after = news_scan_through
+            await activate_due_oral_window_notifications(
+                app,
+                after=oral_scan_after,
+                through=oral_scan_through,
+            )
+            oral_scan_after = oral_scan_through
         except asyncio.CancelledError:
             raise
         except Exception:

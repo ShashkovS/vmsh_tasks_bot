@@ -40,6 +40,42 @@ def list_windows(
     return [dict(row) for row in rows]
 
 
+def due_notification_windows(
+    connection: sqlite3.Connection,
+    *,
+    after: str | None,
+    through: str,
+) -> list[dict[str, object]]:
+    """Read active windows that opened in one scheduler interval.
+
+    The first scan also includes a window already open when the process starts.
+    """
+
+    if after is None:
+        timing = "window.opens_at <= ? AND window.closes_at > ?"
+        parameters = (through, through)
+    else:
+        timing = "window.opens_at > ? AND window.opens_at <= ? AND window.closes_at > ?"
+        parameters = (after, through, through)
+    rows = connection.execute(
+        "SELECT window.public_id, window.opens_at, window.closes_at, "
+        "lesson.public_id AS group_lesson_public_id, lesson.course_id, "
+        "lesson.group_id, course.public_id AS course_public_id, "
+        "group_record.public_id AS group_public_id, course_lesson.lesson_number "
+        "FROM oral_windows AS window "
+        "JOIN group_lessons AS lesson ON lesson.id = window.group_lesson_id "
+        "JOIN course_lessons AS course_lesson "
+        "ON course_lesson.id = lesson.course_lesson_id "
+        "JOIN courses AS course ON course.id = lesson.course_id "
+        "JOIN groups AS group_record ON group_record.course_id = lesson.course_id "
+        "AND group_record.group_id = lesson.group_id "
+        f"WHERE window.status = 'active' AND {timing} "
+        "ORDER BY window.opens_at, window.id",
+        parameters,
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def insert_window(
     connection: sqlite3.Connection,
     *,
@@ -198,6 +234,7 @@ def student_join_window(
 
 
 __all__ = [
+    "due_notification_windows",
     "group_lesson_scope",
     "insert_window",
     "list_windows",

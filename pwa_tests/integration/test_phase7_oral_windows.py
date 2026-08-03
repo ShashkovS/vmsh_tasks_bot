@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
 
 from apps.pwa_api import oral_window_routes as oral_routes
 from helpers.pwa.auth_config import COOKIE_POLICY
 from models.pwa.auth import AuthAudience
+from models.pwa.oral_windows import create_due_window_notifications
 from pwa_tests.integration import test_classroom_catalog_http_api as classroom_support
 from pwa_tests.integration.test_phase8_notification_core import (
     _apply,
@@ -194,3 +196,84 @@ async def test_admin_configures_and_online_student_reveals_open_join(
         cookies=student_cookies,
     )
     assert hidden.status == 404
+
+
+async def test_opening_window_notifies_current_online_student_once_without_secret(
+    classroom_http,
+    monkeypatch,
+):
+    fixture = classroom_http
+    _seed_group_lesson(fixture)
+    monkeypatch.setattr(oral_routes, "_now", lambda: NOW)
+    created = await fixture.client.post(
+        "/staff/api/v1/group-lessons/oral-group-lesson/oral-windows",
+        json=_payload(),
+        headers=classroom_support._headers(unsafe=True),
+        cookies=classroom_support._cookies(fixture, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    window_id = (await created.json())["window"]["windowId"]
+    through = NOW.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+    notified = fixture.factory.run_write(
+        lambda connection: create_due_window_notifications(
+            connection,
+            after=None,
+            through=through,
+        )
+    )
+    repeated = fixture.factory.run_write(
+        lambda connection: create_due_window_notifications(
+            connection,
+            after=None,
+            through=through,
+        )
+    )
+
+    fixture.factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE course_enrollments SET attendance_mode = 'in_person' "
+            "WHERE public_id = 'classroom-layout-enrollment'"
+        )
+    )
+    second = await fixture.client.post(
+        "/staff/api/v1/group-lessons/oral-group-lesson/oral-windows",
+        json=_payload(sequenceNumber=2, joinUrl="https://zoom.example.test/j/180"),
+        headers=classroom_support._headers(unsafe=True),
+        cookies=classroom_support._cookies(fixture, "admin"),
+    )
+    assert second.status == 201, await second.text()
+    in_person = fixture.factory.run_write(
+        lambda connection: create_due_window_notifications(
+            connection,
+            after=None,
+            through=through,
+        )
+    )
+
+    assert notified == ("classroom-http-account-student",)
+    assert repeated == ()
+    assert in_person == ()
+
+    def notification_rows(connection):
+        return connection.execute(
+            "SELECT account.audience, event.category, event.dedupe_key, "
+            "event.route, event.payload_json FROM notification_events AS event "
+            "JOIN auth_accounts AS account ON account.id = event.account_id "
+            "WHERE event.category = 'oral_window' ORDER BY event.id"
+        ).fetchall()
+
+    rows = fixture.factory.run_read(notification_rows)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["audience"] == "student"
+    assert row["dedupe_key"] == window_id
+    assert row["route"] == (
+        "/student/tasks?course=classroom-layout-course&group="
+        "classroom-layout-group&lesson=41"
+    )
+    payload = json.loads(row["payload_json"])
+    assert payload["windowId"] == window_id
+    assert payload["groupLessonId"] == "oral-group-lesson"
+    assert "joinUrl" not in payload
+    assert "joinCode" not in payload

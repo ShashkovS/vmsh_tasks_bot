@@ -220,6 +220,28 @@ def active_student_accounts(
     return [dict(row) for row in rows]
 
 
+def active_online_student_accounts_for_group(
+    connection: sqlite3.Connection,
+    *,
+    course_id: int,
+    group_id: str,
+) -> list[dict[str, object]]:
+    """Return current online Student accounts for one active course group."""
+
+    rows = connection.execute(
+        "SELECT account.id, account.public_id "
+        "FROM course_enrollments AS enrollment "
+        "JOIN auth_accounts AS account "
+        "ON account.linked_user_id = enrollment.student_user_id "
+        "AND account.audience = 'student' AND account.status = 'active' "
+        "WHERE enrollment.course_id = ? AND enrollment.active_group_id = ? "
+        "AND enrollment.status = 'active' AND enrollment.attendance_mode = 'online' "
+        "ORDER BY account.id",
+        (course_id, group_id),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def latest_staff_support_entry(
     connection: sqlite3.Connection,
     *,

@@ -190,3 +190,16 @@ Production E2E меняет preference, подтверждает reload и во�
 в Chromium, Firefox и WebKit. Недельный Family digest остаётся отдельным
 инкрементом после ответа на вопрос 8. Proof:
 [`phase8-family-notification-settings-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-notification-settings-2026-08-03.md).
+
+## Инкремент уведомления об устном окне — 3 августа 2026
+
+Существующий scheduler теперь создаёт `oral_window` event в момент фактического
+открытия настроенного окна. Получатели разрешаются тогда же по текущим active
+group и `attendance_mode=online`, поэтому поздняя смена режима не оставляет
+заранее сформированную рассылку. Family и очные школьники исключены.
+
+Первый проход после startup подхватывает ещё открытое окно; последующие читают
+только новый interval. Account/category/window dedupe делает два production
+worker идемпотентными. Event не содержит Zoom URL/code, а owner-scoped NATS
+остаётся только refetch hint после durable SQLite commit. Proof:
+[`phase8-oral-window-notifications-2026-08-03.md`](../../../pwa_tests/reports/phase8-oral-window-notifications-2026-08-03.md).

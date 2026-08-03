@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import uuid
 from datetime import UTC, datetime
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
+from db_methods.pwa.notifications import (
+    active_online_student_accounts_for_group,
+    insert_event,
+)
 from db_methods.pwa.oral_windows import (
+    due_notification_windows,
     group_lesson_scope,
     insert_window,
     list_windows,
@@ -98,6 +104,63 @@ def public_window(window: dict[str, object], now: datetime) -> dict[str, object]
         "join_available": state == "open",
         "version": window["version"],
     }
+
+
+def create_due_window_notifications(
+    connection: sqlite3.Connection,
+    *,
+    after: str | None,
+    through: str,
+) -> tuple[str, ...]:
+    """Create Student events when configured oral windows actually open.
+
+    Recipients are resolved at opening time, not when an admin edits the
+    schedule. This keeps late attendance/group changes authoritative and avoids
+    notifying in-person students. Zoom secrets never enter the event payload.
+    See development-plan Phase 8 notification semantics.
+    """
+
+    notified_accounts: list[str] = []
+    for window in due_notification_windows(connection, after=after, through=through):
+        route = "/student/tasks?" + urlencode(
+            {
+                "course": str(window["course_public_id"]),
+                "group": str(window["group_public_id"]),
+                "lesson": int(window["lesson_number"]),
+            }
+        )
+        payload = json.dumps(
+            {
+                "windowId": window["public_id"],
+                "courseId": window["course_public_id"],
+                "groupId": window["group_public_id"],
+                "groupLessonId": window["group_lesson_public_id"],
+                "lessonNumber": window["lesson_number"],
+                "opensAt": window["opens_at"],
+                "closesAt": window["closes_at"],
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        for account in active_online_student_accounts_for_group(
+            connection,
+            course_id=int(window["course_id"]),
+            group_id=str(window["group_id"]),
+        ):
+            if insert_event(
+                connection,
+                public_id=f"notification.oral.{uuid.uuid4().hex}",
+                account_id=int(account["id"]),
+                category="oral_window",
+                dedupe_key=str(window["public_id"]),
+                route=route,
+                payload_json=payload,
+                occurred_at=str(window["opens_at"]),
+                deliver_after=str(window["opens_at"]),
+                created_at=through,
+            ):
+                notified_accounts.append(str(account["public_id"]))
+    return tuple(notified_accounts)
 
 
 def create_window(
@@ -253,6 +316,7 @@ __all__ = [
     "OralWindowConflict",
     "OralWindowInvalid",
     "OralWindowNotFound",
+    "create_due_window_notifications",
     "create_window",
     "public_window",
     "state_at",
