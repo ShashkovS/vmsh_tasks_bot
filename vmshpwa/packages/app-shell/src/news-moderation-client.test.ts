@@ -28,6 +28,9 @@ describe('news moderation client', () => {
       .mockResolvedValueOnce(
         Response.json({ schemaVersion: 1, item: hidden, requestId: 'request-local' }),
       )
+      .mockResolvedValueOnce(
+        Response.json({ schemaVersion: 1, item: hidden, requestId: 'request-edit-local' }),
+      )
     const client = createNewsModerationClient(runtime, { fetchImplementation })
 
     expect((await client.list('all')).items).toHaveLength(3)
@@ -47,6 +50,11 @@ describe('news moderation client', () => {
       ownerId: 'course.math',
       text: 'Новая публикация',
       publishedAt: '2026-08-04T13:00:00Z',
+    })
+    await client.updateLocal('news.visible', 2, {
+      schemaVersion: 1,
+      text: 'Исправленная публикация',
+      publishedAt: '2026-08-05T13:00:00Z',
     })
 
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/news?state=all&limit=100')
@@ -68,6 +76,13 @@ describe('news moderation client', () => {
     expect(fetchImplementation.mock.calls[3]?.[0]).toBe('/staff/api/v1/news/local')
     expect(fetchImplementation.mock.calls[3]?.[1]).toEqual(
       expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchImplementation.mock.calls[4]?.[0]).toBe('/staff/api/v1/news/news.visible/local')
+    expect(fetchImplementation.mock.calls[4]?.[1]).toEqual(
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: expect.objectContaining({ 'If-Match': '"news.visible:v2"' }),
+      }),
     )
   })
 })

@@ -7,12 +7,16 @@ export function StaffLocalNewsComposer({
   courses,
   draft,
   pending = false,
+  ownerDisabled = false,
+  submitLabel = 'Запланировать публикацию',
   onChange,
   onSubmit,
 }: {
   courses: AdminCourse[]
   draft: LocalNewsDraft
   pending?: boolean
+  ownerDisabled?: boolean
+  submitLabel?: string
   onChange: (draft: LocalNewsDraft) => void
   onSubmit: () => void
 }) {
@@ -29,6 +33,7 @@ export function StaffLocalNewsComposer({
         Кому показать
         <select
           className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+          disabled={ownerDisabled}
           id="local-news-owner"
           onChange={(event) => onChange({ ...draft, owner: event.target.value })}
           required
@@ -78,7 +83,7 @@ export function StaffLocalNewsComposer({
         фазе.
       </p>
       <Button disabled={!valid || pending} type="submit">
-        {pending ? 'Сохраняем…' : 'Запланировать публикацию'}
+        {pending ? 'Сохраняем…' : submitLabel}
       </Button>
     </form>
   )

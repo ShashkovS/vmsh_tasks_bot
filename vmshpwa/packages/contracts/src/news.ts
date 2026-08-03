@@ -122,6 +122,7 @@ export const staffNewsItemSchema = z
     editedAt: z.iso.datetime().nullable(),
     revision: z.number().int().positive(),
     textExcerpt: z.string().max(500),
+    editableText: z.string().max(32_768).nullable(),
     mediaCount: z.number().int().nonnegative(),
     visibility: staffNewsVisibilitySchema,
     moderationReason: z.string().trim().min(1).max(500).nullable(),
@@ -178,6 +179,15 @@ export const createLocalNewsRequestSchema = z
   })
   .strict()
 export type CreateLocalNewsRequest = z.infer<typeof createLocalNewsRequestSchema>
+
+export const updateLocalNewsRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    text: z.string().trim().min(1).max(32_768),
+    publishedAt: z.iso.datetime({ offset: true }),
+  })
+  .strict()
+export type UpdateLocalNewsRequest = z.infer<typeof updateLocalNewsRequestSchema>
 
 export const staffNewsItemResponseSchema = z
   .object({

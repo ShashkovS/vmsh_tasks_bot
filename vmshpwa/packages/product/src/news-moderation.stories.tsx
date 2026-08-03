@@ -42,6 +42,16 @@ function InteractiveModeration() {
   )
 }
 
+function EditableScheduledModeration({ items }: { items: StaffNewsItem[] }) {
+  const [edited, setEdited] = useState(false)
+  return (
+    <div className="space-y-3">
+      <NewsModerationList items={items} onEdit={() => setEdited(true)} />
+      {edited ? <p role="status">Открыт редактор публикации</p> : null}
+    </div>
+  )
+}
+
 export const Lifecycle: Story = {
   name: 'В ленте, скрыто и удалено в источнике',
   args: { items },
@@ -81,6 +91,7 @@ export const ScheduledLocal: Story = {
         editedAt: null,
         revision: 1,
         textExcerpt: 'Разбор задач состоится завтра в 17:00.',
+        editableText: 'Разбор задач состоится завтра в 17:00.',
         mediaCount: 0,
         visibility: 'visible',
         moderationReason: null,
@@ -90,7 +101,11 @@ export const ScheduledLocal: Story = {
       }),
     ],
   },
+  render: (args) => <EditableScheduledModeration items={args.items} />,
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('По расписанию')).toBeInTheDocument()
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('По расписанию')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: /Изменить запланированную/ }))
+    await expect(canvas.getByRole('status')).toHaveTextContent('Открыт редактор публикации')
   },
 }

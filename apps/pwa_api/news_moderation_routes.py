@@ -18,8 +18,13 @@ from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.local_news import (
     InvalidLocalNews,
+    LocalNewsAlreadyPublished,
+    LocalNewsConflict,
+    LocalNewsNotFound,
     LocalNewsOwnerNotFound,
     create_local_news,
+    edit_scheduled_local_news,
+    sync_scheduled_local_news_notifications,
 )
 from models.pwa.news_moderation import (
     InvalidNewsVisibility,
@@ -81,6 +86,9 @@ def _payload(item: dict[str, object], *, now: str) -> dict[str, object]:
         "editedAt": item["last_source_edited_at"],
         "revision": item["revision_number"],
         "textExcerpt": str(item["text_plain"])[:500],
+        "editableText": (
+            str(item["text_plain"]) if item["source_type"] == "local" else None
+        ),
         "mediaCount": item["media_count"],
         "visibility": item["visibility_state"],
         "moderationReason": item["moderation_reason"],
@@ -243,6 +251,139 @@ async def create_local_publication(request: web.Request) -> web.Response:
     return response
 
 
+@news_moderation_routes.patch("/staff/api/v1/news/{post_id}/local")
+async def edit_local_publication(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    principal = authenticated_session(request).principal
+    public_id = request.match_info["post_id"]
+    if _PUBLIC_ID.fullmatch(public_id) is None:
+        raise PwaApiError(
+            status=404, code="news_post_not_found", message="Публикация не найдена"
+        )
+    etags = request.headers.getall("If-Match", [])
+    match = _ETAG.fullmatch(etags[0]) if len(etags) == 1 else None
+    if match is None:
+        raise PwaApiError(
+            status=422,
+            code="if_match_required",
+            message="Обновите данные перед сохранением",
+        )
+    if match.group(1) != public_id:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Публикация уже изменилась. Обновите список.",
+        )
+    if request.content_type != "application/json":
+        raise PwaApiError(
+            status=422, code="validation_error", message="Тело запроса должно быть JSON"
+        )
+    try:
+        body = json.loads(await request.read())
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте текст и время публикации",
+        ) from error
+    if (
+        not isinstance(body, dict)
+        or set(body) != {"schemaVersion", "text", "publishedAt"}
+        or body.get("schemaVersion") != 1
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте текст и время публикации",
+        )
+    now = _now()
+
+    def write(connection):
+        before_rows = list_news_for_moderation(
+            connection, state=None, limit=1, public_id=public_id
+        )
+        changed = edit_scheduled_local_news(
+            connection,
+            public_id=public_id,
+            expected_version=int(match.group(2)),
+            text=body["text"],
+            published_at=body["publishedAt"],
+            actor_user_id=actor_user_id,
+            now=now,
+        )
+        after_rows = list_news_for_moderation(
+            connection, state=None, limit=1, public_id=public_id
+        )
+        if len(before_rows) != 1 or len(after_rows) != 1:
+            raise LocalNewsNotFound
+        before = before_rows[0]
+        item = after_rows[0]
+        if changed:
+            insert_audit_event(
+                connection,
+                public_id=f"audit.{uuid.uuid4().hex}",
+                actor_user_id=actor_user_id,
+                actor_account_public_id=principal.account_public_id,
+                audience="staff",
+                action="news_local.updated",
+                object_type="news_post",
+                object_id=public_id,
+                request_id=request["request_id"],
+                before_json=json.dumps(
+                    {
+                        "publishedAt": before["published_at"],
+                        "revision": before["revision_number"],
+                        "version": before["visibility_version"],
+                    }
+                ),
+                after_json=json.dumps(
+                    {
+                        "publishedAt": item["published_at"],
+                        "revision": item["revision_number"],
+                        "version": item["visibility_version"],
+                    }
+                ),
+                occurred_at=now,
+            )
+        return item
+
+    try:
+        item = await _factory(request).run_write_async(write)
+    except LocalNewsNotFound as error:
+        raise PwaApiError(
+            status=404, code="news_post_not_found", message="Публикация не найдена"
+        ) from error
+    except LocalNewsConflict as error:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Публикация уже изменилась. Обновите список.",
+        ) from error
+    except LocalNewsAlreadyPublished as error:
+        raise PwaApiError(
+            status=409,
+            code="local_news_already_published",
+            message="Уже опубликованную новость пока нельзя изменить",
+        ) from error
+    except InvalidLocalNews as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте текст и время публикации",
+        ) from error
+
+    await request.app[PWA_NEWS_INVALIDATOR]("local-news-updated")
+    response = web.json_response(
+        {
+            "schemaVersion": 1,
+            "item": _payload(item, now=_now()),
+            "requestId": request["request_id"],
+        }
+    )
+    response.headers["ETag"] = f'"{public_id}:v{item["visibility_version"]}"'
+    return response
+
+
 @news_moderation_routes.patch("/staff/api/v1/news/{post_id}/visibility")
 async def change_visibility(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
@@ -283,18 +424,27 @@ async def change_visibility(request: web.Request) -> web.Response:
         raise PwaApiError(
             status=422, code="validation_error", message="Проверьте поля изменения"
         )
-    try:
-        item = await _factory(request).run_write_async(
-            lambda connection: change_news_visibility(
-                connection,
-                public_id=public_id,
-                expected_version=int(match.group(2)),
-                target_state=body["state"],
-                reason=body["reason"],
-                actor_user_id=actor_user_id,
-                now=_now(),
-            )
+    now = _now()
+
+    def write(connection):
+        item = change_news_visibility(
+            connection,
+            public_id=public_id,
+            expected_version=int(match.group(2)),
+            target_state=body["state"],
+            reason=body["reason"],
+            actor_user_id=actor_user_id,
+            now=now,
         )
+        sync_scheduled_local_news_notifications(
+            connection,
+            public_id=public_id,
+            now=now,
+        )
+        return item
+
+    try:
+        item = await _factory(request).run_write_async(write)
     except NewsPostNotFound as error:
         raise PwaApiError(
             status=404, code="news_post_not_found", message="Публикация не найдена"

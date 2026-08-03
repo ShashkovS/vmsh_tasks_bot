@@ -44,7 +44,8 @@
 
 - V1 поддерживает обычный текст. Markdown composer и Staff→Telegram publication
   остаются второй версией.
-- Существующее hide отменяет показ в PWA; edit/reschedule API ещё не добавлены.
+- Hide и edit/reschedule будущей записи закрыты отдельным инкрементом; см.
+  [`phase8-local-news-editing-2026-08-03.md`](phase8-local-news-editing-2026-08-03.md).
 - Due-time foreground invalidation реализована следующим отдельным инкрементом;
   см. [`phase8-local-news-due-invalidation.md`](phase8-local-news-due-invalidation.md).
 - Focused Storybook browser/a11y не выполнил ни одной story: установленный

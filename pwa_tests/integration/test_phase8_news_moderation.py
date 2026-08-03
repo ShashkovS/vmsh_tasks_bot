@@ -88,6 +88,7 @@ async def test_admin_hides_and_restores_news_without_changing_telegram(classroom
         "editedAt": None,
         "revision": 1,
         "textExcerpt": "Условия занятия",
+        "editableText": None,
         "mediaCount": 0,
         "visibility": "visible",
         "moderationReason": None,
@@ -384,6 +385,7 @@ async def test_admin_schedules_local_news_without_releasing_it_early(classroom_h
         "publishedAt": "2099-08-04T13:00:00.000000Z",
         "revision": 1,
         "textExcerpt": "Разбор задач состоится завтра в 17:00.",
+        "editableText": "Разбор задач состоится завтра в 17:00.",
         "mediaCount": 0,
         "visibility": "visible",
         "moderationReason": None,
@@ -445,6 +447,258 @@ async def test_admin_schedules_local_news_without_releasing_it_early(classroom_h
     }
     assert audit["action"] == "news_local.created"
     assert "Разбор задач" not in audit["after_json"]
+
+
+@pytest.mark.asyncio
+async def test_admin_edits_future_local_news_and_reschedules_notifications(
+    classroom_http,
+):
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 1,
+            "ownerType": "course",
+            "ownerId": "classroom-layout-course",
+            "text": "Первоначальный текст",
+            "publishedAt": "2099-08-04T13:00:00Z",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201
+    post_id = (await created.json())["item"]["postId"]
+
+    teacher = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/local",
+        json={
+            "schemaVersion": 1,
+            "text": "Исправленный текст",
+            "publishedAt": "2099-08-05T14:30:00Z",
+        },
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    updated = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/local",
+        json={
+            "schemaVersion": 1,
+            "text": "  Исправленный текст  ",
+            "publishedAt": "2099-08-05T14:30:00+00:00",
+        },
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert updated.status == 200, await updated.text()
+    item = (await updated.json())["item"]
+    assert item["publishedAt"] == "2099-08-05T14:30:00.000000Z"
+    assert item["revision"] == 2
+    assert item["textExcerpt"] == "Исправленный текст"
+    assert item["editableText"] == "Исправленный текст"
+    assert item["version"] == 2
+    assert updated.headers["ETag"] == f'"{post_id}:v2"'
+
+    stale = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/local",
+        json={
+            "schemaVersion": 1,
+            "text": "Ещё одна версия",
+            "publishedAt": "2099-08-06T14:30:00Z",
+        },
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert stale.status == 409
+    assert (await stale.json())["error"]["code"] == "version_conflict"
+
+    def stored(connection):
+        revisions = connection.execute(
+            "SELECT revision_number, text_plain, source_payload_json "
+            "FROM news_revisions WHERE post_id = "
+            "(SELECT id FROM news_posts WHERE public_id = ?) "
+            "ORDER BY revision_number",
+            (post_id,),
+        ).fetchall()
+        events = connection.execute(
+            "SELECT occurred_at, deliver_after FROM notification_events "
+            "WHERE category = 'news' AND dedupe_key = ?",
+            (post_id,),
+        ).fetchall()
+        audit = connection.execute(
+            "SELECT before_json, after_json FROM audit_events "
+            "WHERE object_id = ? AND action = 'news_local.updated'",
+            (post_id,),
+        ).fetchone()
+        return (
+            [dict(row) for row in revisions],
+            [dict(row) for row in events],
+            dict(audit),
+        )
+
+    revisions, events, audit = classroom_http.factory.run_read(stored)
+    assert [revision["text_plain"] for revision in revisions] == [
+        "Первоначальный текст",
+        "Исправленный текст",
+    ]
+    assert json.loads(revisions[1]["source_payload_json"])["publishedAt"] == (
+        "2099-08-05T14:30:00.000000Z"
+    )
+    assert {event["occurred_at"] for event in events} == {"2099-08-05T14:30:00.000000Z"}
+    assert {event["deliver_after"] for event in events} == {
+        "2099-08-05T14:30:00.000000Z"
+    }
+    assert "Исправленный текст" not in audit["before_json"]
+    assert "Исправленный текст" not in audit["after_json"]
+
+
+@pytest.mark.asyncio
+async def test_admin_cannot_edit_an_already_published_local_news(classroom_http):
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 1,
+            "ownerType": "group",
+            "ownerId": "classroom-layout-group",
+            "text": "Уже в ленте",
+            "publishedAt": "2020-08-04T13:00:00Z",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    post_id = (await created.json())["item"]["postId"]
+
+    response = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/local",
+        json={
+            "schemaVersion": 1,
+            "text": "Попытка исправить",
+            "publishedAt": "2099-08-04T13:00:00Z",
+        },
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+
+    assert response.status == 409
+    assert (await response.json())["error"]["code"] == "local_news_already_published"
+
+
+@pytest.mark.asyncio
+async def test_admin_can_restore_previous_text_and_time_as_a_new_revision(
+    classroom_http,
+):
+    original = {
+        "schemaVersion": 1,
+        "ownerType": "group",
+        "ownerId": "classroom-layout-group",
+        "text": "Первый вариант",
+        "publishedAt": "2099-08-04T13:00:00Z",
+    }
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json=original,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    post_id = (await created.json())["item"]["postId"]
+    changed = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/local",
+        json={
+            "schemaVersion": 1,
+            "text": "Второй вариант",
+            "publishedAt": "2099-08-05T14:00:00Z",
+        },
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert changed.status == 200
+    restored = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/local",
+        json={
+            "schemaVersion": 1,
+            "text": original["text"],
+            "publishedAt": original["publishedAt"],
+        },
+        headers=_headers(unsafe=True, if_match=changed.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+
+    assert restored.status == 200, await restored.text()
+    assert (await restored.json())["item"]["revision"] == 3
+
+    def revision_hashes(connection):
+        return connection.execute(
+            "SELECT revision.source_hash FROM news_revisions revision "
+            "JOIN news_posts post ON post.id = revision.post_id "
+            "WHERE post.public_id = ? ORDER BY revision.revision_number",
+            (post_id,),
+        ).fetchall()
+
+    hashes = classroom_http.factory.run_read(revision_hashes)
+    assert len({row["source_hash"] for row in hashes}) == 3
+
+
+@pytest.mark.asyncio
+async def test_local_news_edit_rolls_back_revision_schedule_and_version_with_audit(
+    classroom_http,
+):
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 1,
+            "ownerType": "course",
+            "ownerId": "classroom-layout-course",
+            "text": "До сбоя аудита",
+            "publishedAt": "2099-08-04T13:00:00Z",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    post_id = (await created.json())["item"]["postId"]
+
+    classroom_http.factory.run_write(
+        lambda connection: connection.execute(
+            "CREATE TRIGGER fail_local_news_update_audit "
+            "BEFORE INSERT ON audit_events "
+            "WHEN new.action = 'news_local.updated' BEGIN "
+            "SELECT raise(ABORT, 'synthetic audit failure'); END"
+        )
+    )
+    failed = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/local",
+        json={
+            "schemaVersion": 1,
+            "text": "После сбоя аудита",
+            "publishedAt": "2099-08-05T14:00:00Z",
+        },
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert failed.status == 500
+
+    def state(connection):
+        post = connection.execute(
+            "SELECT post.published_at, visibility.version, "
+            "(SELECT count(*) FROM news_revisions revision "
+            "WHERE revision.post_id = post.id) AS revision_count "
+            "FROM news_posts post JOIN news_visibility visibility "
+            "ON visibility.post_id = post.id WHERE post.public_id = ?",
+            (post_id,),
+        ).fetchone()
+        event_times = connection.execute(
+            "SELECT DISTINCT deliver_after FROM notification_events "
+            "WHERE category = 'news' AND dedupe_key = ?",
+            (post_id,),
+        ).fetchall()
+        return dict(post), {row["deliver_after"] for row in event_times}
+
+    post, event_times = classroom_http.factory.run_read(state)
+    assert post == {
+        "published_at": "2099-08-04T13:00:00.000000Z",
+        "version": 1,
+        "revision_count": 1,
+    }
+    assert event_times == {"2099-08-04T13:00:00.000000Z"}
 
 
 @pytest.mark.asyncio
@@ -593,8 +847,26 @@ async def test_hidden_local_news_does_not_trigger_due_invalidation(classroom_htt
     )
     assert hidden.status == 200
 
+    def notification_count(connection):
+        return connection.execute(
+            "SELECT count(*) AS total FROM notification_events "
+            "WHERE category = 'news' AND dedupe_key = ?",
+            (item["postId"],),
+        ).fetchone()["total"]
+
+    assert classroom_http.factory.run_read(notification_count) == 0
+
     assert not await pwa_app.invalidate_due_local_news(
         classroom_http.client.app,
         after="2099-08-04T12:59:59.000000Z",
         through="2099-08-04T13:00:00.000000Z",
     )
+
+    restored = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{item['postId']}/visibility",
+        json={"schemaVersion": 1, "state": "visible", "reason": None},
+        headers=_headers(unsafe=True, if_match=hidden.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert restored.status == 200
+    assert classroom_http.factory.run_read(notification_count) == 2

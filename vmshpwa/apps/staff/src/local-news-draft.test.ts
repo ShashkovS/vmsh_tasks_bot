@@ -6,6 +6,7 @@ import {
   loadLocalNewsDraft,
   moscowDateTime,
   saveLocalNewsDraft,
+  toMoscowLocalDateTime,
 } from './local-news-draft'
 
 function memoryStorage(): Storage {
@@ -44,5 +45,7 @@ describe('local news draft', () => {
     expect(loadLocalNewsDraft(storage, 'test:bad-local-news-draft')).toEqual(EMPTY_LOCAL_NEWS_DRAFT)
     expect(moscowDateTime('2026-08-04T17:00')).toBe('2026-08-04T14:00:00.000Z')
     expect(moscowDateTime('tomorrow')).toBeNull()
+    expect(toMoscowLocalDateTime('2026-08-04T14:00:00Z')).toBe('2026-08-04T17:00')
+    expect(toMoscowLocalDateTime('tomorrow')).toBeNull()
   })
 })

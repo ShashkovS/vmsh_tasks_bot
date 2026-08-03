@@ -156,3 +156,19 @@ Focused Python regression: **52 PASS**; полный PWA Python gate после
 Proof:
 [`phase8-local-news-due-invalidation.md`](../../../pwa_tests/reports/phase8-local-news-due-invalidation.md),
 runbook: [`local-scheduled-news.md`](../../docs/local-scheduled-news.md).
+
+## Инкремент редактирования будущей локальной публикации — 3 августа 2026
+
+Global admin может до исходного срока изменить plain text и московское время
+локальной PWA-публикации. Получатель остаётся прежним, каждое изменение создаёт
+immutable revision, а `If-Match` защищает от параллельной перезаписи. Будущие
+notification events переносятся в той же SQLite-транзакции; скрытие удаляет их,
+восстановление создаёт снова. Runtime/account/post/version-scoped Staff draft
+сохраняется в `localStorage` до server receipt.
+
+Story IDs: `pages-staff-local-news-composer--editing-scheduled` и
+`product-news-moderation--scheduled-local`. Production E2E проходит создание,
+reload сохранённого edit draft и перенос срока в Chromium, Firefox и WebKit.
+Редактирование уже видимой публикации закрыто с `409`, пока не решён вопрос 7 в
+[`22-development-questions.md`](22-development-questions.md). Proof:
+[`phase8-local-news-editing-2026-08-03.md`](../../../pwa_tests/reports/phase8-local-news-editing-2026-08-03.md).

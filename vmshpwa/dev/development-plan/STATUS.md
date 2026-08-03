@@ -1237,6 +1237,27 @@
 - Local-news edit/reschedule и общий Phase 8 browser/visual gate остаются
   открыты; snapshots не менялись.
 
+## Phase 8 checkpoint: редактирование будущей local news — 3 августа 2026
+
+- Global admin редактирует текст и время только до исходного срока; owner не
+  меняется. Immutable revision, optimistic version, notification reschedule и
+  privacy-safe audit фиксируются атомарно.
+- Скрытие будущей новости отменяет её ещё не наступившие события, восстановление
+  создаёт их снова. Уже опубликованная новость отвечает `409` до решения
+  вопроса 7.
+- Staff edit draft переживает reload и ошибку, изолирован по runtime, account,
+  post и version и очищается только после server receipt.
+- Story IDs: `pages-staff-local-news-composer--editing-scheduled`,
+  `product-news-moderation--scheduled-local`. Проверенные gates: frontend unit
+  **113 файлов / 592 PASS**, PWA Python **1580 PASS / 6 intentional skips**,
+  lint/typecheck/build — PASS. Storybook browser/a11y и production E2E news
+  заблокированы до первой story/page системным macOS MachPortRendezvous error
+  141; PASS им не приписывается.
+- Proof:
+  [`phase8-local-news-editing-2026-08-03.md`](../../../pwa_tests/reports/phase8-local-news-editing-2026-08-03.md).
+  Snapshots не обновлялись; browser/E2E и owner visual acceptance остаются
+  открытыми.
+
 ## Phase 10 checkpoint: черновик metadata grid — 3 августа 2026
 
 - Реальный Staff content workflow хранит незавершённые matching/metadata

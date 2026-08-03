@@ -9,6 +9,7 @@ import {
   newsQueryKeys,
   reconcileNewsSourceRequestSchema,
   staffNewsListResponseSchema,
+  updateLocalNewsRequestSchema,
 } from './news'
 
 describe('news contracts', () => {
@@ -87,5 +88,12 @@ describe('news contracts', () => {
         publishedAt: 'tomorrow',
       }),
     ).toThrow()
+    expect(
+      updateLocalNewsRequestSchema.parse({
+        schemaVersion: 1,
+        text: 'Новое время разбора',
+        publishedAt: '2026-08-05T14:30:00Z',
+      }).publishedAt,
+    ).toBe('2026-08-05T14:30:00Z')
   })
 })

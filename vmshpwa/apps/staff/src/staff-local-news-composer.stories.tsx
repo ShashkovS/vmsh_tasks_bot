@@ -69,3 +69,16 @@ export const Scheduled: Story = {
     await expect(args.onSubmit).toHaveBeenCalledOnce()
   },
 }
+
+export const EditingScheduled: Story = {
+  args: {
+    ownerDisabled: true,
+    submitLabel: 'Сохранить изменения',
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByLabelText('Кому показать')).toBeDisabled()
+    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить изменения' }))
+    await expect(args.onSubmit).toHaveBeenCalledOnce()
+  },
+}

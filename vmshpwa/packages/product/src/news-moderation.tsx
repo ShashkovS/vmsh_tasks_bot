@@ -1,4 +1,4 @@
-import { Clock3, Eye, EyeOff, Images, RefreshCcw, Send, Trash2, Unlink } from 'lucide-react'
+import { Clock3, Eye, EyeOff, Images, Pencil, RefreshCcw, Send, Trash2, Unlink } from 'lucide-react'
 
 import type { StaffNewsItem } from '@vmsh/contracts'
 import { Badge, Button, Card, CardContent } from '@vmsh/ui'
@@ -23,6 +23,7 @@ export function NewsModerationList({
   items,
   pendingPostId,
   onHide,
+  onEdit,
   onMarkSourceDeleted,
   onMarkSourcePresent,
   onRestore,
@@ -30,6 +31,7 @@ export function NewsModerationList({
   items: StaffNewsItem[]
   pendingPostId?: string | null
   onHide?: (item: StaffNewsItem) => void
+  onEdit?: (item: StaffNewsItem) => void
   onMarkSourceDeleted?: (item: StaffNewsItem) => void
   onMarkSourcePresent?: (item: StaffNewsItem) => void
   onRestore?: (item: StaffNewsItem) => void
@@ -70,6 +72,18 @@ export function NewsModerationList({
                   </p>
                 </div>
                 <div className="flex justify-end gap-2">
+                  {item.source === 'local' && item.isScheduled && onEdit ? (
+                    <Button
+                      aria-label={`Изменить запланированную публикацию ${item.postId}`}
+                      disabled={pendingPostId === item.postId}
+                      onClick={() => onEdit(item)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Pencil aria-hidden="true" />
+                      Изменить
+                    </Button>
+                  ) : null}
                   {item.visibility === 'visible' && onHide ? (
                     <Button
                       aria-label={`Скрыть публикацию ${item.postId} в PWA`}

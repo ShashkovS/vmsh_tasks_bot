@@ -59,3 +59,10 @@ export function moscowDateTime(value: string): string | null {
   const date = new Date(`${value}:00+03:00`)
   return Number.isNaN(date.valueOf()) ? null : date.toISOString()
 }
+
+export function toMoscowLocalDateTime(value: string): string | null {
+  const date = new Date(value)
+  if (Number.isNaN(date.valueOf())) return null
+  // Europe/Moscow is fixed at UTC+03:00 for every supported product season.
+  return new Date(date.valueOf() + 3 * 60 * 60 * 1000).toISOString().slice(0, 16)
+}

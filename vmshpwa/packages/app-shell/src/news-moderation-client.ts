@@ -12,6 +12,7 @@ import {
   staffNewsItemResponseSchema,
   staffNewsListResponseSchema,
   staffNewsVisibilityFilterSchema,
+  updateLocalNewsRequestSchema,
   type ChangeNewsVisibilityRequest,
   type CreateLocalNewsRequest,
   type PrincipalQueryScope,
@@ -20,6 +21,7 @@ import {
   type StaffNewsItemResponse,
   type StaffNewsListResponse,
   type StaffNewsVisibilityFilter,
+  type UpdateLocalNewsRequest,
 } from '@vmsh/contracts'
 
 export interface NewsModerationClient {
@@ -28,6 +30,11 @@ export interface NewsModerationClient {
     options?: { signal?: AbortSignal },
   ): Promise<StaffNewsListResponse>
   createLocal(request: CreateLocalNewsRequest): Promise<StaffNewsItemResponse>
+  updateLocal(
+    postId: string,
+    version: number,
+    request: UpdateLocalNewsRequest,
+  ): Promise<StaffNewsItemResponse>
   changeVisibility(
     postId: string,
     version: number,
@@ -90,6 +97,17 @@ export function createNewsModerationClient(
       return staffNewsItemResponseSchema.parse(
         await request('/news/local', {
           method: 'POST',
+          body: JSON.stringify(body),
+        }),
+      )
+    },
+    async updateLocal(rawPostId, version, input) {
+      const postId = publicIdSchema.parse(rawPostId)
+      const body = updateLocalNewsRequestSchema.parse(input)
+      return staffNewsItemResponseSchema.parse(
+        await request(`/news/${encodeURIComponent(postId)}/local`, {
+          method: 'PATCH',
+          headers: { 'If-Match': `"${postId}:v${version}"` },
           body: JSON.stringify(body),
         }),
       )

@@ -20,14 +20,22 @@ Staff может создать новость, которая относитс�
 - Черновик формы хранится в `localStorage` с ключом runtime + Staff account и
   удаляется только после подтверждённого ответа backend. Перезагрузка и ошибка
   запроса не теряют текст, адресата и время.
-- Отменить публикацию можно существующим действием «Скрыть в PWA». Изменение
-  текста и перенос времени будут отдельным инкрементом, чтобы сохранить историю
-  revisions и не подменять уже созданную запись.
+- Пока исходный `published_at` ещё не наступил, admin может изменить текст и
+  время. Получатель не меняется. Каждое содержательное изменение создаёт новую
+  immutable revision, сдвигает будущие notification events и использует
+  optimistic `If-Match`; черновик редактора переживает reload и конфликт.
+- Скрытие будущей публикации удаляет ещё не наступившие notification events, а
+  восстановление создаёт их снова идемпотентно. Уже опубликованные новости пока
+  нельзя редактировать: правила показа исправлений и повторного уведомления
+  вынесены в вопрос 7 development plan.
 
 ## Интерфейсы
 
 - `POST /staff/api/v1/news/local` — только global admin; строгий JSON-контракт
   `{schemaVersion, ownerType, ownerId, text, publishedAt}`.
+- `PATCH /staff/api/v1/news/{postId}/local` — только global admin и только для
+  будущей local publication; строгий JSON `{schemaVersion, text, publishedAt}`
+  и обязательный `If-Match: "{postId}:v{version}"`.
 - Student/Family `GET /{audience}/api/v1/news` и detail endpoint фильтруют
   будущие публикации по серверному времени.
 - `GET /{audience}/api/v1/notification-events` не возвращает событие раньше
@@ -58,8 +66,11 @@ Staff может создать новость, которая относитс�
 - TypeScript unit: Zod-контракт, HTTP client, reload-safe draft и Moscow→UTC.
 - Storybook:
   `pages-staff-local-news-composer--scheduled` и
+  `pages-staff-local-news-composer--editing-scheduled`,
   `product-news-moderation--scheduled-local`.
 - Сводный результат записан в
   [`pwa_tests/reports/phase8-local-scheduled-news.md`](../../pwa_tests/reports/phase8-local-scheduled-news.md).
 - Due-time realtime proof:
   [`pwa_tests/reports/phase8-local-news-due-invalidation.md`](../../pwa_tests/reports/phase8-local-news-due-invalidation.md).
+- Edit/reschedule proof:
+  [`pwa_tests/reports/phase8-local-news-editing-2026-08-03.md`](../../pwa_tests/reports/phase8-local-news-editing-2026-08-03.md).

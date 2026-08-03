@@ -32,6 +32,58 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
 })
 
+test('Phase 8: Admin edits a scheduled local post without losing its draft', async ({
+  page,
+}, testInfo) => {
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/news?state=all')
+  const suffix = testInfo.project.name
+  const originalText = `Локальная публикация ${suffix}`
+  const editedText = `Исправленная локальная публикация ${suffix}`
+
+  await page.getByRole('button', { name: 'Создать публикацию' }).click()
+  const createDialog = page.getByRole('dialog', { name: 'Новая публикация в PWA' })
+  await createDialog.getByLabel('Кому показать').selectOption({ index: 1 })
+  await createDialog.getByLabel('Текст публикации').fill(originalText)
+  await createDialog.getByLabel('Опубликовать по московскому времени').fill('2099-08-04T17:00')
+  const createResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === '/staff/api/v1/news/local',
+  )
+  await createDialog.getByRole('button', { name: 'Запланировать публикацию' }).click()
+  expect((await createResponse).status()).toBe(201)
+
+  const row = page.getByText(originalText, { exact: true }).locator('xpath=ancestor::li[1]')
+  await expect(row).toContainText('По расписанию')
+  await row.getByRole('button', { name: /Изменить запланированную/ }).click()
+  const editDialog = page.getByRole('dialog', { name: 'Изменить запланированную публикацию' })
+  await editDialog.getByLabel('Текст публикации').fill(editedText)
+
+  // Meaningful Staff input is account/entity/version scoped in localStorage.
+  // A reload may close the dialog, but opening the same revision restores it.
+  await page.reload()
+  await page
+    .getByText(originalText, { exact: true })
+    .locator('xpath=ancestor::li[1]')
+    .getByRole('button', { name: /Изменить запланированную/ })
+    .click()
+  const restoredDialog = page.getByRole('dialog', {
+    name: 'Изменить запланированную публикацию',
+  })
+  await expect(restoredDialog.getByLabel('Текст публикации')).toHaveValue(editedText)
+  await restoredDialog.getByLabel('Опубликовать по московскому времени').fill('2099-08-05T18:30')
+  const updateResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      /\/staff\/api\/v1\/news\/[^/]+\/local$/.test(new URL(response.url()).pathname),
+  )
+  await restoredDialog.getByRole('button', { name: 'Сохранить изменения' }).click()
+  expect((await updateResponse).status()).toBe(200)
+
+  const updatedRow = page.getByText(editedText, { exact: true }).locator('xpath=ancestor::li[1]')
+  await expect(updatedRow).toContainText('ревизия 2')
+})
+
 test('Phase 8: Student reads cached news, dismisses a banner and acknowledges the event', async ({
   page,
 }, testInfo) => {

@@ -17,6 +17,7 @@ import {
   type CreateLocalNewsRequest,
   type StaffNewsItem,
   type StaffNewsVisibilityFilter,
+  type UpdateLocalNewsRequest,
 } from '@vmsh/contracts'
 import { NewsModerationList } from '@vmsh/product'
 import {
@@ -41,6 +42,7 @@ import {
   loadLocalNewsDraft,
   moscowDateTime,
   saveLocalNewsDraft,
+  toMoscowLocalDateTime,
 } from './local-news-draft'
 import { StaffLocalNewsComposer } from './staff-local-news-composer'
 
@@ -48,6 +50,7 @@ type Command =
   | { kind: 'visibility'; item: StaffNewsItem; state: 'visible' | 'manual_hidden' }
   | { kind: 'source'; item: StaffNewsItem; state: 'deleted' | 'present'; reason: string }
   | { kind: 'local'; request: CreateLocalNewsRequest }
+  | { kind: 'edit-local'; item: StaffNewsItem; request: UpdateLocalNewsRequest }
 
 type SourceCommand = { item: StaffNewsItem; state: 'deleted' | 'present' }
 
@@ -95,11 +98,22 @@ export function StaffNewsPage({
   const [sourceCommand, setSourceCommand] = useState<SourceCommand | null>(null)
   const [sourceReason, setSourceReason] = useState('')
   const [localOpen, setLocalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<StaffNewsItem | null>(null)
+  const [editDraft, setEditDraft] = useState(EMPTY_LOCAL_NEWS_DRAFT)
   const draftKey = `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-draft:v1`
   const [localDraft, setLocalDraft] = useState(() =>
     loadLocalNewsDraft(globalThis.localStorage, draftKey),
   )
-  const catalog = useAdminCourseCatalogQuery(catalogClient, scope, undefined, localOpen)
+  const catalog = useAdminCourseCatalogQuery(
+    catalogClient,
+    scope,
+    undefined,
+    localOpen || editingItem !== null,
+  )
+  const editDraftKey =
+    editingItem === null
+      ? null
+      : `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-edit:${editingItem.postId}:v${editingItem.version}`
   useEffect(() => {
     if (localDraft.owner === '' && localDraft.text === '' && localDraft.publishedLocal === '') {
       clearLocalNewsDraft(globalThis.localStorage, draftKey)
@@ -107,21 +121,30 @@ export function StaffNewsPage({
       saveLocalNewsDraft(globalThis.localStorage, draftKey, localDraft)
     }
   }, [draftKey, localDraft])
+  useEffect(() => {
+    if (editDraftKey !== null) {
+      saveLocalNewsDraft(globalThis.localStorage, editDraftKey, editDraft)
+    }
+  }, [editDraft, editDraftKey])
   const mutation = useMutation({
-    mutationFn: (command: Command) =>
-      command.kind === 'local'
-        ? client.createLocal(command.request)
-        : command.kind === 'visibility'
-          ? client.changeVisibility(command.item.postId, command.item.version, {
-              schemaVersion: 1,
-              state: command.state,
-              reason: null,
-            })
-          : client.reconcileSource(command.item.postId, command.item.version, {
-              schemaVersion: 1,
-              sourceState: command.state,
-              reason: command.reason,
-            }),
+    mutationFn: (command: Command) => {
+      if (command.kind === 'local') return client.createLocal(command.request)
+      if (command.kind === 'edit-local') {
+        return client.updateLocal(command.item.postId, command.item.version, command.request)
+      }
+      if (command.kind === 'visibility') {
+        return client.changeVisibility(command.item.postId, command.item.version, {
+          schemaVersion: 1,
+          state: command.state,
+          reason: null,
+        })
+      }
+      return client.reconcileSource(command.item.postId, command.item.version, {
+        schemaVersion: 1,
+        sourceState: command.state,
+        reason: command.reason,
+      })
+    },
     onSuccess: async (_result, command) => {
       setSourceCommand(null)
       setSourceReason('')
@@ -129,6 +152,14 @@ export function StaffNewsPage({
         clearLocalNewsDraft(globalThis.localStorage, draftKey)
         setLocalDraft(EMPTY_LOCAL_NEWS_DRAFT)
         setLocalOpen(false)
+      }
+      if (command.kind === 'edit-local') {
+        clearLocalNewsDraft(
+          globalThis.localStorage,
+          `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-edit:${command.item.postId}:v${command.item.version}`,
+        )
+        setEditingItem(null)
+        setEditDraft(EMPTY_LOCAL_NEWS_DRAFT)
       }
       await queryClient.invalidateQueries({ queryKey: newsQueryKeys.moderation(scope, state) })
     },
@@ -156,6 +187,17 @@ export function StaffNewsPage({
     content = (
       <NewsModerationList
         items={query.data.items}
+        onEdit={(item) => {
+          const key = `${authentication.client.runtime.instance}:staff:${principal.accountId}:local-news-edit:${item.postId}:v${item.version}`
+          const initial = {
+            owner: `${item.ownerType}:${item.ownerId}`,
+            text: item.editableText ?? '',
+            publishedLocal: toMoscowLocalDateTime(item.publishedAt) ?? '',
+          }
+          const saved = loadLocalNewsDraft(globalThis.localStorage, key)
+          setEditDraft(saved.owner === '' ? initial : saved)
+          setEditingItem(item)
+        }}
         onHide={(item) => mutation.mutate({ kind: 'visibility', item, state: 'manual_hidden' })}
         onMarkSourceDeleted={(item) => setSourceCommand({ item, state: 'deleted' })}
         onMarkSourcePresent={(item) => setSourceCommand({ item, state: 'present' })}
@@ -253,6 +295,53 @@ export function StaffNewsPage({
                   })
                 }}
                 pending={mutation.isPending && mutation.variables.kind === 'local'}
+              />
+            ) : null}
+          </DialogContent>
+        </Dialog>
+        <Dialog
+          onOpenChange={(open) => {
+            if (!open && !mutation.isPending) setEditingItem(null)
+          }}
+          open={editingItem !== null}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Изменить запланированную публикацию</DialogTitle>
+              <DialogDescription>
+                Текст и время можно изменить, пока публикация ещё не появилась в ленте. Получатели и
+                Telegram не меняются.
+              </DialogDescription>
+            </DialogHeader>
+            {catalog.isPending ? <PageStatePanel state="loading" /> : null}
+            {catalog.isError ? (
+              <PageStatePanel
+                description="Обновите данные и попробуйте открыть редактор ещё раз."
+                state="error"
+                title="Не удалось загрузить список получателей"
+              />
+            ) : null}
+            {catalog.data && editingItem ? (
+              <StaffLocalNewsComposer
+                courses={catalog.data.courses}
+                draft={editDraft}
+                onChange={setEditDraft}
+                onSubmit={() => {
+                  const publishedAt = moscowDateTime(editDraft.publishedLocal)
+                  if (publishedAt === null) return
+                  mutation.mutate({
+                    kind: 'edit-local',
+                    item: editingItem,
+                    request: {
+                      schemaVersion: 1,
+                      text: editDraft.text,
+                      publishedAt,
+                    },
+                  })
+                }}
+                ownerDisabled
+                pending={mutation.isPending && mutation.variables.kind === 'edit-local'}
+                submitLabel="Сохранить изменения"
               />
             ) : null}
           </DialogContent>
