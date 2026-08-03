@@ -84,9 +84,18 @@ def _payload(item: dict[str, object], now: datetime) -> dict[str, object]:
         if names:
             body = " · ".join(names)
     elif category == "review_completed":
-        count = values.get("count")
-        if isinstance(count, int) and not isinstance(count, bool) and count > 1:
-            body = f"Проверено задач: {count}. Результаты уже в кабинете."
+        if values.get("kind") == "family_lesson_digest":
+            title = "Итоги занятия готовы"
+            lesson_number = values.get("lessonNumber")
+            group_name = values.get("groupName")
+            if isinstance(lesson_number, int) and isinstance(group_name, str):
+                body = f"{group_name} · занятие {lesson_number}. Результаты уже в кабинете."
+            else:
+                body = "Результаты занятия уже доступны в семейном кабинете."
+        else:
+            count = values.get("count")
+            if isinstance(count, int) and not isinstance(count, bool) and count > 1:
+                body = f"Проверено задач: {count}. Результаты уже в кабинете."
     audience = str(item["audience"])
     route = str(item["route"])
     if not route.startswith(f"/{audience}/"):

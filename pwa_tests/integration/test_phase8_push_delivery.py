@@ -199,6 +199,38 @@ async def test_review_batch_push_uses_the_aggregated_count(tmp_path):
     assert sent[0]["body"] == "Проверено задач: 3. Результаты уже в кабинете."
 
 
+async def test_family_digest_push_uses_one_lesson_summary(tmp_path):
+    _database_path, factory = _prepare_database(tmp_path)
+    factory.run_write(
+        lambda connection: connection.execute(
+            "UPDATE notification_events SET category = 'review_completed', "
+            "payload_json = ?, deliver_after = ?",
+            (
+                json.dumps(
+                    {
+                        "kind": "family_lesson_digest",
+                        "lessonNumber": 41,
+                        "groupName": "Начинающие",
+                    }
+                ),
+                DELIVERY_TIME.isoformat(),
+            ),
+        )
+    )
+    sent = []
+
+    async def sender(_subscription, payload):
+        sent.append(payload)
+
+    result = await deliver_web_push_once(factory, sender, now=DELIVERY_TIME)
+
+    assert result["sent"] == 1
+    assert sent[0]["title"] == "Итоги занятия готовы"
+    assert sent[0]["body"] == (
+        "Начинающие · занятие 41. Результаты уже в кабинете."
+    )
+
+
 async def test_temporary_failure_retries_without_duplicate_row(tmp_path):
     _database_path, factory = _prepare_database(tmp_path)
     calls = 0

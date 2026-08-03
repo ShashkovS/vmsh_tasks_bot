@@ -36,7 +36,10 @@ from apps.pwa_api.classroom_assignment_routes import (
 from apps.pwa_api.classroom_delivery_routes import classroom_delivery_routes
 from apps.pwa_api.classroom_delivery_routes import PWA_CLASSROOM_TELEGRAM_SENDER
 from apps.pwa_api.classroom_delivery_transport import TelegramClassroomSender
-from apps.pwa_api.notification_routes import notification_routes
+from apps.pwa_api.notification_routes import (
+    PWA_FAMILY_DIGEST_INVALIDATOR,
+    notification_routes,
+)
 from apps.pwa_api.oral_window_routes import oral_window_routes
 from apps.pwa_api.oral_result_routes import oral_result_routes
 from apps.pwa_api.news_routes import news_routes
@@ -932,6 +935,28 @@ async def publish_news_invalidation(
         )
 
 
+async def publish_family_digest_invalidation(
+    app: web.Application,
+    account_public_ids: tuple[str, ...],
+) -> None:
+    """Tell only affected Family sessions to refetch durable events."""
+
+    await asyncio.gather(
+        *(
+            app[PWA_BROKER].publish(
+                NATS_PWA_INVALIDATE,
+                {
+                    "resources": ["notification-events"],
+                    "reason": "family-digest-sent",
+                    "audience": AuthAudience.FAMILY.value,
+                    "accountId": account_public_id,
+                },
+            )
+            for account_public_id in account_public_ids
+        )
+    )
+
+
 async def publish_banner_invalidation(app: web.Application, *, reason: str) -> None:
     """Best-effort refetch hint; banner reads remain authoritative in SQLite."""
 
@@ -1720,6 +1745,13 @@ def configure(
             await publish_news_invalidation(app, reason=reason)
 
         app[PWA_NEWS_INVALIDATOR] = invalidate_news
+
+        async def invalidate_family_digest(
+            account_public_ids: tuple[str, ...],
+        ) -> None:
+            await publish_family_digest_invalidation(app, account_public_ids)
+
+        app[PWA_FAMILY_DIGEST_INVALIDATOR] = invalidate_family_digest
 
         async def invalidate_banners(reason: str) -> None:
             await publish_banner_invalidation(app, reason=reason)
