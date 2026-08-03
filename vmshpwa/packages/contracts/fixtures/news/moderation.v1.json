@@ -16,6 +16,7 @@
       "visibility": "visible",
       "moderationReason": null,
       "visibilityUpdatedAt": "2026-10-05T10:00:00Z",
+      "isScheduled": false,
       "version": 1
     },
     {
@@ -33,6 +34,7 @@
       "visibility": "manual_hidden",
       "moderationReason": "Дубль",
       "visibilityUpdatedAt": "2026-10-04T10:06:00Z",
+      "isScheduled": false,
       "version": 2
     },
     {
@@ -50,6 +52,7 @@
       "visibility": "source_deleted",
       "moderationReason": null,
       "visibilityUpdatedAt": "2026-10-03T11:00:00Z",
+      "isScheduled": false,
       "version": 2
     }
   ],

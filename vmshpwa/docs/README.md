@@ -12,6 +12,7 @@
 - [Realtime, offline и уведомления](realtime-offline-and-notifications.md)
 - [LaTeX/content pipeline](latex-content-pipeline.md)
 - [Зеркалирование Telegram-новостей](telegram-news-mirroring.md)
+- [Локальные публикации PWA по расписанию](local-scheduled-news.md)
 - [Явная сверка удалённых Telegram-публикаций](telegram-news-deletion-reconciliation.md)
 - [Сверка запланированных публикаций Telegram](telegram-scheduled-queue-cutover.md)
 - [Стратегия тестирования](testing-strategy.md)

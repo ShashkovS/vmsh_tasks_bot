@@ -153,6 +153,7 @@ async def _get_events(request: web.Request) -> web.Response:
             account_id=account_id,
             limit=limit,
             unread_only=unread_value == "true",
+            now=_now(),
         )
     )
     return web.json_response(

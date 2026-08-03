@@ -128,7 +128,7 @@ async def _append(values: list[str], value: str) -> None:
 
 
 def result_payload(result: dict[str, object]) -> str:
-    return f'{{"postId":"{result["public_id"]}"}}'
+    return f'{{"postId":"{result["public_id"]}","courseId":"classroom-layout-course"}}'
 
 
 @pytest.mark.asyncio

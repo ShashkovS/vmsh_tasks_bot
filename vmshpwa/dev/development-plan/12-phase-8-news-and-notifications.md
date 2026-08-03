@@ -124,3 +124,20 @@ Family перестают видеть `source_deleted`. Proof:
 [`phase8-news-source-deletion-reconciliation.md`](../../../pwa_tests/reports/phase8-news-source-deletion-reconciliation.md),
 runbook:
 [`telegram-news-deletion-reconciliation.md`](../../docs/telegram-news-deletion-reconciliation.md).
+
+## Инкремент локальной публикации PWA по расписанию — 3 августа 2026
+
+Global admin создаёт course- или group-scoped plain-text публикацию без участия
+Telegram. Staff вводит московское wall time, API хранит UTC; существующие feed,
+detail и notification-event reads не раскрывают публикацию до `published_at`.
+Post, revision, initial visibility, scheduled Student/Family events и
+privacy-safe audit создаются атомарно. Account/runtime-scoped `localStorage`
+сохраняет Staff-черновик до server receipt.
+
+Story IDs: `pages-staff-local-news-composer--scheduled` и
+`product-news-moderation--scheduled-local`. Markdown, edit/reschedule и
+Staff→Telegram publication остаются следующими инкрементами. Точная due-time
+WebSocket invalidation для уже открытой вкладки также не закрыта этим срезом.
+Proof:
+[`phase8-local-scheduled-news.md`](../../../pwa_tests/reports/phase8-local-scheduled-news.md),
+runbook: [`local-scheduled-news.md`](../../docs/local-scheduled-news.md).

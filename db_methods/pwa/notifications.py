@@ -11,6 +11,7 @@ def list_events(
     account_id: int,
     limit: int,
     unread_only: bool,
+    now: str,
 ) -> list[dict[str, object]]:
     unread_clause = "AND read_at IS NULL" if unread_only else ""
     rows = connection.execute(
@@ -20,11 +21,11 @@ def list_events(
         f"LEFT JOIN notification_preferences AS preference "
         f"ON preference.account_id = event.account_id "
         f"AND preference.category = event.category "
-        f"WHERE event.account_id = ? {unread_clause} "
+        f"WHERE event.account_id = ? AND event.deliver_after <= ? {unread_clause} "
         f"AND coalesce(preference.in_app_enabled, "
         f"CASE WHEN event.category = 'oral_window' THEN 0 ELSE 1 END) = 1 "
         f"ORDER BY event.occurred_at DESC, event.id DESC LIMIT ?",
-        (account_id, limit),
+        (account_id, now, limit),
     ).fetchall()
     return [dict(row) for row in rows]
 

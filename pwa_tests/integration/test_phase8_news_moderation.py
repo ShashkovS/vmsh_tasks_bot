@@ -49,7 +49,7 @@ def _seed_post(connection):
         "chat_id": -700,
         "message_id": 41,
         "media_group_id": None,
-        "published_at": "2026-10-05T10:00:00Z",
+        "published_at": "2026-07-05T10:00:00Z",
         "edited_at": None,
         "deleted": False,
         "content": [{"type": "plain", "text": "Условия занятия"}],
@@ -84,7 +84,7 @@ async def test_admin_hides_and_restores_news_without_changing_telegram(classroom
         "ownerType": "course",
         "ownerId": "classroom-layout-course",
         "ownerName": "Математика",
-        "publishedAt": "2026-10-05T10:00:00Z",
+        "publishedAt": "2026-07-05T10:00:00Z",
         "editedAt": None,
         "revision": 1,
         "textExcerpt": "Условия занятия",
@@ -92,6 +92,7 @@ async def test_admin_hides_and_restores_news_without_changing_telegram(classroom
         "visibility": "visible",
         "moderationReason": None,
         "visibilityUpdatedAt": NOW,
+        "isScheduled": False,
         "version": 1,
     }
     cursors_before = dict(classroom_http.client.app[pwa_app.PWA_STATE]["cursors"])
@@ -347,3 +348,168 @@ async def test_source_reconciliation_validates_transition_and_rolls_back_with_au
         )
 
     assert classroom_http.factory.run_read(state) == (None, "visible", 1)
+
+
+@pytest.mark.asyncio
+async def test_admin_schedules_local_news_without_releasing_it_early(classroom_http):
+    body = {
+        "schemaVersion": 1,
+        "ownerType": "course",
+        "ownerId": "classroom-layout-course",
+        "text": "  Разбор задач состоится завтра в 17:00.  ",
+        "publishedAt": "2099-08-04T13:00:00+00:00",
+    }
+    teacher = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json=body,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json=body,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    item = (await created.json())["item"]
+    assert item == {
+        **item,
+        "source": "local",
+        "channelTitle": None,
+        "ownerType": "course",
+        "ownerId": "classroom-layout-course",
+        "publishedAt": "2099-08-04T13:00:00.000000Z",
+        "revision": 1,
+        "textExcerpt": "Разбор задач состоится завтра в 17:00.",
+        "mediaCount": 0,
+        "visibility": "visible",
+        "moderationReason": None,
+        "isScheduled": True,
+        "version": 1,
+    }
+    assert created.headers["ETag"] == f'"{item["postId"]}:v1"'
+
+    student_cookies = {
+        COOKIE_POLICY[AuthAudience.STUDENT].access_name: classroom_http.student_cookie
+    }
+    feed = await classroom_http.client.get(
+        "/student/api/v1/news",
+        headers=_headers(),
+        cookies=student_cookies,
+    )
+    assert (await feed.json())["items"] == []
+    notifications = await classroom_http.client.get(
+        "/student/api/v1/notification-events",
+        headers=_headers(),
+        cookies=student_cookies,
+    )
+    assert notifications.status == 200, await notifications.text()
+    assert (await notifications.json())["items"] == []
+
+    def stored(connection):
+        post = connection.execute(
+            "SELECT source_type, published_at FROM news_posts WHERE public_id = ?",
+            (item["postId"],),
+        ).fetchone()
+        revision = connection.execute(
+            "SELECT text_plain, source_payload_json FROM news_revisions "
+            "WHERE post_id = (SELECT id FROM news_posts WHERE public_id = ?)",
+            (item["postId"],),
+        ).fetchone()
+        events = connection.execute(
+            "SELECT account.audience, event.deliver_after "
+            "FROM notification_events event "
+            "JOIN auth_accounts account ON account.id = event.account_id "
+            "WHERE event.dedupe_key = ? ORDER BY account.audience",
+            (item["postId"],),
+        ).fetchall()
+        audit = connection.execute(
+            "SELECT action, after_json FROM audit_events WHERE object_id = ?",
+            (item["postId"],),
+        ).fetchone()
+        return dict(post), dict(revision), [dict(row) for row in events], dict(audit)
+
+    post, revision, events, audit = classroom_http.factory.run_read(stored)
+    assert post == {
+        "source_type": "local",
+        "published_at": "2099-08-04T13:00:00.000000Z",
+    }
+    assert revision["text_plain"] == "Разбор задач состоится завтра в 17:00."
+    assert json.loads(revision["source_payload_json"])["schemaVersion"] == 1
+    assert {event["audience"] for event in events} == {"student", "family"}
+    assert {event["deliver_after"] for event in events} == {
+        "2099-08-04T13:00:00.000000Z"
+    }
+    assert audit["action"] == "news_local.created"
+    assert "Разбор задач" not in audit["after_json"]
+
+
+@pytest.mark.asyncio
+async def test_published_local_news_reaches_student_and_family(classroom_http):
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 1,
+            "ownerType": "group",
+            "ownerId": "classroom-layout-group",
+            "text": "Аудитории опубликованы.",
+            "publishedAt": "2020-08-04T13:00:00Z",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    post_id = (await created.json())["item"]["postId"]
+
+    for audience, cookie in (
+        (AuthAudience.STUDENT, classroom_http.student_cookie),
+        (AuthAudience.FAMILY, classroom_http.family_cookie),
+    ):
+        response = await classroom_http.client.get(
+            f"/{audience.value}/api/v1/news",
+            headers=_headers(),
+            cookies={COOKIE_POLICY[audience].access_name: cookie},
+        )
+        assert response.status == 200
+        item = (await response.json())["items"][0]
+        assert (item["postId"], item["source"], item["attribution"]) == (
+            post_id,
+            "local",
+            None,
+        )
+        assert item["blocks"] == [{"kind": "text", "text": "Аудитории опубликованы."}]
+
+
+@pytest.mark.asyncio
+async def test_local_news_rejects_unknown_owner_and_invalid_content(classroom_http):
+    cookies = _cookies(classroom_http, "admin")
+    headers = _headers(unsafe=True)
+    unknown = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 1,
+            "ownerType": "course",
+            "ownerId": "course.missing",
+            "text": "Текст",
+            "publishedAt": "2026-08-04T13:00:00Z",
+        },
+        headers=headers,
+        cookies=cookies,
+    )
+    assert unknown.status == 404
+    invalid = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 1,
+            "ownerType": "course",
+            "ownerId": "classroom-layout-course",
+            "text": "   ",
+            "publishedAt": "tomorrow",
+        },
+        headers=headers,
+        cookies=cookies,
+    )
+    assert invalid.status == 422

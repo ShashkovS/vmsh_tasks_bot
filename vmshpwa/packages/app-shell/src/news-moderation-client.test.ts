@@ -25,6 +25,9 @@ describe('news moderation client', () => {
       .mockResolvedValueOnce(
         Response.json({ schemaVersion: 1, item: deleted, requestId: 'request-source' }),
       )
+      .mockResolvedValueOnce(
+        Response.json({ schemaVersion: 1, item: hidden, requestId: 'request-local' }),
+      )
     const client = createNewsModerationClient(runtime, { fetchImplementation })
 
     expect((await client.list('all')).items).toHaveLength(3)
@@ -37,6 +40,13 @@ describe('news moderation client', () => {
       schemaVersion: 1,
       sourceState: 'deleted',
       reason: 'Проверено в Telegram',
+    })
+    await client.createLocal({
+      schemaVersion: 1,
+      ownerType: 'course',
+      ownerId: 'course.math',
+      text: 'Новая публикация',
+      publishedAt: '2026-08-04T13:00:00Z',
     })
 
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/news?state=all&limit=100')
@@ -54,6 +64,10 @@ describe('news moderation client', () => {
         method: 'PATCH',
         headers: expect.objectContaining({ 'If-Match': '"news.visible:v2"' }),
       }),
+    )
+    expect(fetchImplementation.mock.calls[3]?.[0]).toBe('/staff/api/v1/news/local')
+    expect(fetchImplementation.mock.calls[3]?.[1]).toEqual(
+      expect.objectContaining({ method: 'POST' }),
     )
   })
 })

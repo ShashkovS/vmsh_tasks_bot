@@ -1204,6 +1204,25 @@
   runbook:
   [`telegram-news-deletion-reconciliation.md`](../../docs/telegram-news-deletion-reconciliation.md).
 
+## Phase 8 checkpoint: локальная публикация PWA — 3 августа 2026
+
+- Global admin может создать course/group публикацию с московским временем;
+  teacher получает `403`, Telegram не вызывается.
+- До срока post отсутствует в Student/Family feed, detail и in-app events;
+  scheduled notification хранится с `deliver_after` и course context.
+- Staff draft переживает reload и очищается только после server receipt.
+- Story IDs: `pages-staff-local-news-composer--scheduled` и
+  `product-news-moderation--scheduled-local`; snapshots не обновлялись.
+- Focused Python **19 PASS**, полный PWA Python **1573 PASS / 6 skips**,
+  frontend unit **113 файлов / 592 PASS**, lint/typecheck/build — PASS.
+- Storybook не стартовал из-за внешнего macOS `MachPortRendezvous` code 141;
+  ноль выполненных stories не записывается как зелёный gate.
+- Proof:
+  [`phase8-local-scheduled-news.md`](../../../pwa_tests/reports/phase8-local-scheduled-news.md),
+  runbook: [`local-scheduled-news.md`](../../docs/local-scheduled-news.md).
+- Открыты edit/reschedule и точная due-time foreground WebSocket invalidation;
+  этот checkpoint не выдаётся за полное закрытие Phase 8.
+
 ## Phase 10 checkpoint: черновик metadata grid — 3 августа 2026
 
 - Реальный Staff content workflow хранит незавершённые matching/metadata

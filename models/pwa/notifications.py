@@ -188,12 +188,14 @@ def read_events(
     account_id: int,
     limit: int,
     unread_only: bool,
+    now: str,
 ) -> list[dict[str, object]]:
     items = list_events(
         connection,
         account_id=account_id,
         limit=limit,
         unread_only=unread_only,
+        now=now,
     )
     for item in items:
         item["payload"] = json.loads(str(item.pop("payload_json")))

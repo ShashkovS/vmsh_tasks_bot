@@ -16,6 +16,11 @@ from db_methods.pwa.audit import insert_audit_event
 from db_methods.pwa.news_moderation import list_news_for_moderation
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.local_news import (
+    InvalidLocalNews,
+    LocalNewsOwnerNotFound,
+    create_local_news,
+)
 from models.pwa.news_moderation import (
     InvalidNewsVisibility,
     NewsPostNotFound,
@@ -23,6 +28,7 @@ from models.pwa.news_moderation import (
     change_news_visibility,
     reconcile_news_source_state,
 )
+from models.pwa.news_notifications import create_news_notifications
 
 
 news_moderation_routes = web.RouteTableDef()
@@ -63,7 +69,7 @@ def _admin_user_id(request: web.Request) -> int:
     return principal.linked_user_id
 
 
-def _payload(item: dict[str, object]) -> dict[str, object]:
+def _payload(item: dict[str, object], *, now: str) -> dict[str, object]:
     return {
         "postId": item["public_id"],
         "source": item["source_type"],
@@ -79,6 +85,11 @@ def _payload(item: dict[str, object]) -> dict[str, object]:
         "visibility": item["visibility_state"],
         "moderationReason": item["moderation_reason"],
         "visibilityUpdatedAt": item["visibility_updated_at"],
+        "isScheduled": (
+            item["source_type"] == "local"
+            and item["visibility_state"] == "visible"
+            and str(item["published_at"]) > now
+        ),
         "version": item["visibility_version"],
     }
 
@@ -107,13 +118,129 @@ async def list_news(request: web.Request) -> web.Response:
             connection, state=state, limit=limit
         )
     )
+    now = _now()
     return web.json_response(
         {
             "schemaVersion": 1,
-            "items": [_payload(item) for item in rows],
+            "items": [_payload(item, now=now) for item in rows],
             "requestId": request["request_id"],
         }
     )
+
+
+@news_moderation_routes.post("/staff/api/v1/news/local")
+async def create_local_publication(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    principal = authenticated_session(request).principal
+    if request.content_type != "application/json":
+        raise PwaApiError(
+            status=422, code="validation_error", message="Тело запроса должно быть JSON"
+        )
+    try:
+        body = json.loads(await request.read())
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте поля публикации",
+        ) from error
+    expected_fields = {
+        "schemaVersion",
+        "ownerType",
+        "ownerId",
+        "text",
+        "publishedAt",
+    }
+    if (
+        not isinstance(body, dict)
+        or set(body) != expected_fields
+        or body.get("schemaVersion") != 1
+        or not isinstance(body.get("ownerId"), str)
+        or _PUBLIC_ID.fullmatch(body["ownerId"]) is None
+    ):
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте поля публикации",
+        )
+    now = _now()
+
+    def write(connection):
+        created = create_local_news(
+            connection,
+            owner_type=body["ownerType"],
+            owner_public_id=body["ownerId"],
+            text=body["text"],
+            published_at=body["publishedAt"],
+            actor_user_id=actor_user_id,
+            now=now,
+        )
+        create_news_notifications(
+            connection,
+            post_id=int(created["post_id"]),
+            now=now,
+            deliver_after=str(created["published_at"]),
+        )
+        items = list_news_for_moderation(
+            connection,
+            state=None,
+            limit=1,
+            public_id=str(created["public_id"]),
+        )
+        assert len(items) == 1
+        item = items[0]
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action="news_local.created",
+            object_type="news_post",
+            object_id=str(created["public_id"]),
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(
+                {
+                    "source": "local",
+                    "ownerType": item["owner_type"],
+                    "ownerId": item["owner_public_id"],
+                    "publishedAt": item["published_at"],
+                    "visibility": item["visibility_state"],
+                    "version": item["visibility_version"],
+                },
+                ensure_ascii=False,
+            ),
+            occurred_at=now,
+        )
+        return item
+
+    try:
+        item = await _factory(request).run_write_async(write)
+    except LocalNewsOwnerNotFound as error:
+        raise PwaApiError(
+            status=404,
+            code="news_owner_not_found",
+            message="Курс или группа не найдены",
+        ) from error
+    except InvalidLocalNews as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте текст и время публикации",
+        ) from error
+
+    await request.app[PWA_NEWS_INVALIDATOR]("local-news-created")
+    response = web.json_response(
+        {
+            "schemaVersion": 1,
+            "item": _payload(item, now=now),
+            "requestId": request["request_id"],
+        },
+        status=201,
+    )
+    response.headers["ETag"] = f'"{item["public_id"]}:v{item["visibility_version"]}"'
+    return response
 
 
 @news_moderation_routes.patch("/staff/api/v1/news/{post_id}/visibility")
@@ -188,7 +315,7 @@ async def change_visibility(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item),
+            "item": _payload(item, now=_now()),
             "requestId": request["request_id"],
         }
     )
@@ -317,7 +444,7 @@ async def reconcile_source_state(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             "schemaVersion": 1,
-            "item": _payload(item),
+            "item": _payload(item, now=_now()),
             "requestId": request["request_id"],
         }
     )

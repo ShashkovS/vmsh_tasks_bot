@@ -3,7 +3,11 @@ import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
 import moderationFixture from '@vmsh/contracts/fixtures/news/moderation.v1.json'
-import { staffNewsListResponseSchema, type StaffNewsItem } from '@vmsh/contracts'
+import {
+  staffNewsItemSchema,
+  staffNewsListResponseSchema,
+  type StaffNewsItem,
+} from '@vmsh/contracts'
 
 import { NewsModerationList } from './news-moderation'
 
@@ -59,5 +63,34 @@ export const Lifecycle: Story = {
       within(visiblePost).getByRole('button', { name: /Отметить публикацию .* доступной/ }),
     )
     await expect(within(visiblePost).getByText('В ленте')).toBeInTheDocument()
+  },
+}
+
+export const ScheduledLocal: Story = {
+  name: 'Локальная публикация по расписанию',
+  args: {
+    items: [
+      staffNewsItemSchema.parse({
+        postId: 'news.local-scheduled',
+        source: 'local',
+        channelTitle: null,
+        ownerType: 'group',
+        ownerId: 'group.beginner',
+        ownerName: 'Начинающие',
+        publishedAt: '2099-08-04T14:00:00Z',
+        editedAt: null,
+        revision: 1,
+        textExcerpt: 'Разбор задач состоится завтра в 17:00.',
+        mediaCount: 0,
+        visibility: 'visible',
+        moderationReason: null,
+        visibilityUpdatedAt: '2026-08-03T12:00:00Z',
+        isScheduled: true,
+        version: 1,
+      }),
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('По расписанию')).toBeInTheDocument()
   },
 }

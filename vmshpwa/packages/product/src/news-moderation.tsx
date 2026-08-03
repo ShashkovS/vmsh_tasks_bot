@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Images, RefreshCcw, Send, Trash2, Unlink } from 'lucide-react'
+import { Clock3, Eye, EyeOff, Images, RefreshCcw, Send, Trash2, Unlink } from 'lucide-react'
 
 import type { StaffNewsItem } from '@vmsh/contracts'
 import { Badge, Button, Card, CardContent } from '@vmsh/ui'
@@ -37,7 +37,9 @@ export function NewsModerationList({
   return (
     <ul className="space-y-2">
       {items.map((item) => {
-        const state = visibilityCopy[item.visibility]
+        const state = item.isScheduled
+          ? { label: 'По расписанию', variant: 'info' as const, Icon: Clock3 }
+          : visibilityCopy[item.visibility]
         const StateIcon = state.Icon
         return (
           <li key={item.postId}>

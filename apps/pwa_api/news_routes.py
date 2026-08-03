@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import UTC, datetime
 
 from aiohttp import web
 
@@ -35,6 +36,10 @@ _ENTITY_TYPES = frozenset(
         "sup",
     }
 )
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
 def _factory(request: web.Request):
@@ -192,6 +197,7 @@ async def _get_news(request: web.Request) -> web.Response:
             course_ids=course_ids,
             group_ids=group_ids,
             cursor_public_id=cursor,
+            now=_now(),
             limit=limit + 1,
         )
         visible_rows = rows[:limit]
@@ -234,6 +240,7 @@ async def _get_news_post(request: web.Request) -> web.Response:
             public_id=public_id,
             course_ids=course_ids,
             group_ids=group_ids,
+            now=_now(),
         )
         if post is None:
             return None, []

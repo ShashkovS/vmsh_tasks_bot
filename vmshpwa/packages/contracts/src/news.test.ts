@@ -4,6 +4,7 @@ import feedFixture from '../fixtures/news/feed.v1.json'
 import moderationFixture from '../fixtures/news/moderation.v1.json'
 import {
   changeNewsVisibilityRequestSchema,
+  createLocalNewsRequestSchema,
   newsFeedResponseSchema,
   newsQueryKeys,
   reconcileNewsSourceRequestSchema,
@@ -66,6 +67,24 @@ describe('news contracts', () => {
         schemaVersion: 1,
         sourceState: 'present',
         reason: '   ',
+      }),
+    ).toThrow()
+    expect(
+      createLocalNewsRequestSchema.parse({
+        schemaVersion: 1,
+        ownerType: 'group',
+        ownerId: 'group.beginners',
+        text: 'Разбор сегодня в 17:00',
+        publishedAt: '2026-08-04T13:00:00Z',
+      }).text,
+    ).toBe('Разбор сегодня в 17:00')
+    expect(() =>
+      createLocalNewsRequestSchema.parse({
+        schemaVersion: 1,
+        ownerType: 'course',
+        ownerId: 'course.math',
+        text: '   ',
+        publishedAt: 'tomorrow',
       }),
     ).toThrow()
   })

@@ -126,6 +126,7 @@ export const staffNewsItemSchema = z
     visibility: staffNewsVisibilitySchema,
     moderationReason: z.string().trim().min(1).max(500).nullable(),
     visibilityUpdatedAt: z.iso.datetime(),
+    isScheduled: z.boolean(),
     version: z.number().int().positive(),
   })
   .strict()
@@ -166,6 +167,17 @@ export const reconcileNewsSourceRequestSchema = z
   })
   .strict()
 export type ReconcileNewsSourceRequest = z.infer<typeof reconcileNewsSourceRequestSchema>
+
+export const createLocalNewsRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    ownerType: z.enum(['course', 'group']),
+    ownerId: publicIdSchema,
+    text: z.string().trim().min(1).max(32_768),
+    publishedAt: z.iso.datetime({ offset: true }),
+  })
+  .strict()
+export type CreateLocalNewsRequest = z.infer<typeof createLocalNewsRequestSchema>
 
 export const staffNewsItemResponseSchema = z
   .object({

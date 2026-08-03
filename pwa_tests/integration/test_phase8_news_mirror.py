@@ -259,7 +259,7 @@ async def test_student_and_family_read_course_and_group_news(classroom_http):
             "chat_id": -501,
             "message_id": 1,
             "media_group_id": None,
-            "published_at": "2026-10-05T10:00:00Z",
+            "published_at": "2026-07-05T10:00:00Z",
             "content": [
                 {"type": "plain", "text": "A😀"},
                 {
@@ -278,7 +278,7 @@ async def test_student_and_family_read_course_and_group_news(classroom_http):
             "chat_id": -502,
             "message_id": 2,
             "media_group_id": None,
-            "published_at": "2026-10-05T11:00:00Z",
+            "published_at": "2026-07-05T11:00:00Z",
         }
         return (
             ingest_telegram_news(connection, update=course_update, now=NOW),

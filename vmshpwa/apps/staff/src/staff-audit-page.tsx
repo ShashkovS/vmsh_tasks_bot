@@ -60,6 +60,7 @@ const actionLabels: Record<string, string> = {
   'problem_synonym.split': 'Задачи разделены',
   'news_source.marked_deleted': 'Пост отмечен удалённым в Telegram',
   'news_source.marked_present': 'Пост отмечен доступным в Telegram',
+  'news_local.created': 'Создана публикация в PWA',
   'staff_scope.replaced': 'Изменены доступы преподавателя',
 }
 
@@ -85,6 +86,7 @@ const fieldLabels: Record<string, string> = {
   ownerId: 'Владелец',
   ownerType: 'Тип владельца',
   purpose: 'Назначение',
+  publishedAt: 'Время публикации',
   reason: 'Причина',
   reconciliationReason: 'Причина сверки',
   removedCount: 'Удалено задач',

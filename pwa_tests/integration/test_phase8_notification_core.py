@@ -200,7 +200,7 @@ def test_event_read_is_idempotent_and_account_scoped(tmp_path):
         )
 
         items = read_events(
-            connection, account_id=account_id, limit=10, unread_only=True
+            connection, account_id=account_id, limit=10, unread_only=True, now=NOW
         )
         assert items[0]["payload"] == {"classroomName": "201"}
         first = acknowledge_event(
@@ -219,7 +219,13 @@ def test_event_read_is_idempotent_and_account_scoped(tmp_path):
         )
         assert first == repeated
         assert (
-            read_events(connection, account_id=account_id, limit=10, unread_only=True)
+            read_events(
+                connection,
+                account_id=account_id,
+                limit=10,
+                unread_only=True,
+                now=NOW,
+            )
             == []
         )
         with pytest.raises(NotificationNotFound):
@@ -257,7 +263,11 @@ def test_event_list_applies_in_app_preference_and_oral_default(tmp_path):
         assert [
             item["category"]
             for item in read_events(
-                connection, account_id=account_id, limit=10, unread_only=False
+                connection,
+                account_id=account_id,
+                limit=10,
+                unread_only=False,
+                now=NOW,
             )
         ] == ["news"]
 
@@ -288,6 +298,53 @@ def test_event_list_applies_in_app_preference_and_oral_default(tmp_path):
         assert [
             item["category"]
             for item in read_events(
-                connection, account_id=account_id, limit=10, unread_only=False
+                connection,
+                account_id=account_id,
+                limit=10,
+                unread_only=False,
+                now=NOW,
             )
         ] == ["oral_window"]
+
+
+def test_event_is_not_visible_before_deliver_after(tmp_path):
+    database_path = tmp_path / "notification-schedule.sqlite3"
+    _apply(database_path, {item.id for item in _migrations()})
+    with sqlite3.connect(database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        account_id, _session_id = _seed_account(connection)
+        assert insert_event(
+            connection,
+            public_id="notification.future-news",
+            account_id=account_id,
+            category="news",
+            dedupe_key="news:future",
+            route="/student/news/future",
+            payload_json="{}",
+            occurred_at="2026-10-05T13:00:00Z",
+            deliver_after="2026-10-05T13:00:00Z",
+            created_at=NOW,
+        )
+        assert (
+            read_events(
+                connection,
+                account_id=account_id,
+                limit=10,
+                unread_only=False,
+                now=NOW,
+            )
+            == []
+        )
+        assert (
+            len(
+                read_events(
+                    connection,
+                    account_id=account_id,
+                    limit=10,
+                    unread_only=False,
+                    now="2026-10-05T13:00:00Z",
+                )
+            )
+            == 1
+        )

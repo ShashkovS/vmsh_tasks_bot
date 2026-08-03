@@ -84,6 +84,54 @@ def insert_telegram_post(
     return post_id
 
 
+def find_local_news_owner(
+    connection: sqlite3.Connection, *, owner_type: str, owner_public_id: str
+) -> dict[str, object] | None:
+    """Resolve one active course or group for a local PWA publication."""
+
+    if owner_type == "course":
+        row = connection.execute(
+            "SELECT id AS owner_course_id, NULL AS owner_group_id "
+            "FROM courses WHERE public_id = ? AND status = 'active'",
+            (owner_public_id,),
+        ).fetchone()
+    else:
+        row = connection.execute(
+            "SELECT NULL AS owner_course_id, group_id AS owner_group_id "
+            "FROM groups WHERE public_id = ? AND status = 'active'",
+            (owner_public_id,),
+        ).fetchone()
+    return None if row is None else dict(row)
+
+
+def insert_local_post(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    owner_course_id: int | None,
+    owner_group_id: str | None,
+    published_at: str,
+    actor_user_id: int,
+    now: str,
+) -> int:
+    """Insert the local post header and its initial visible state."""
+
+    row = connection.execute(
+        "INSERT INTO news_posts "
+        "(public_id, source_type, owner_course_id, owner_group_id, published_at, "
+        "created_at, updated_at) VALUES (?, 'local', ?, ?, ?, ?, ?) RETURNING id",
+        (public_id, owner_course_id, owner_group_id, published_at, now, now),
+    ).fetchone()
+    post_id = int(row["id"])
+    connection.execute(
+        "INSERT INTO news_visibility "
+        "(post_id, state, updated_by_user_id, updated_at) "
+        "VALUES (?, 'visible', ?, ?)",
+        (post_id, actor_user_id, now),
+    )
+    return post_id
+
+
 def revision_exists(
     connection: sqlite3.Connection, *, post_id: int, source_hash: str
 ) -> bool:
@@ -262,12 +310,32 @@ def list_news_recipient_accounts(
     return [dict(row) for row in rows]
 
 
+def news_course_public_id(
+    connection: sqlite3.Connection,
+    *,
+    owner_course_id: int | None,
+    owner_group_id: str | None,
+) -> str:
+    row = connection.execute(
+        "SELECT course.public_id FROM courses course WHERE "
+        "(? IS NOT NULL AND course.id = ?) OR "
+        "(? IS NOT NULL AND EXISTS (SELECT 1 FROM groups owner_group "
+        "WHERE owner_group.course_id = course.id AND owner_group.group_id = ?)) "
+        "LIMIT 1",
+        (owner_course_id, owner_course_id, owner_group_id, owner_group_id),
+    ).fetchone()
+    if row is None:
+        raise LookupError("news owner course is missing")
+    return str(row["public_id"])
+
+
 def list_visible_posts(
     connection: sqlite3.Connection,
     *,
     course_ids: tuple[int, ...],
     group_ids: tuple[str, ...],
     cursor_public_id: str | None,
+    now: str,
     limit: int,
 ) -> list[dict[str, object]]:
     if not course_ids and not group_ids:
@@ -285,6 +353,7 @@ def list_visible_posts(
         )
         values.extend(group_ids)
     cursor_clause = ""
+    values.append(now)
     if cursor_public_id is not None:
         cursor_clause = (
             "AND (post.published_at, post.id) < ("
@@ -307,7 +376,7 @@ def list_visible_posts(
         "ORDER BY latest.revision_number DESC LIMIT 1) "
         "WHERE visibility.state = 'visible' AND ("
         + " OR ".join(scope_parts)
-        + ") "
+        + ") AND post.published_at <= ? "
         + cursor_clause
         + "AND NOT EXISTS (SELECT 1 FROM news_media media "
         "WHERE media.revision_id = revision.id AND media.storage_status <> 'stored') "
@@ -323,6 +392,7 @@ def get_visible_post_by_public_id(
     public_id: str,
     course_ids: tuple[int, ...],
     group_ids: tuple[str, ...],
+    now: str,
 ) -> dict[str, object] | None:
     if not course_ids and not group_ids:
         return None
@@ -352,9 +422,10 @@ def get_visible_post_by_public_id(
         "ORDER BY latest.revision_number DESC LIMIT 1) "
         "WHERE post.public_id = ? AND visibility.state = 'visible' AND ("
         + " OR ".join(scope_parts)
-        + ") AND NOT EXISTS (SELECT 1 FROM news_media media "
+        + ") AND post.published_at <= ? "
+        "AND NOT EXISTS (SELECT 1 FROM news_media media "
         "WHERE media.revision_id = revision.id AND media.storage_status <> 'stored')",
-        tuple(values),
+        (*values, now),
     ).fetchone()
     return None if row is None else dict(row)
 
@@ -377,14 +448,17 @@ def list_media_for_revisions(
 __all__ = [
     "find_news_source_bindings",
     "find_telegram_post",
+    "find_local_news_owner",
     "get_post",
     "get_visible_post_by_public_id",
     "insert_diagnostic",
     "insert_media",
+    "insert_local_post",
     "insert_revision",
     "insert_telegram_post",
     "list_media",
     "list_news_recipient_accounts",
+    "news_course_public_id",
     "list_media_for_revisions",
     "list_visible_posts",
     "mark_source_deleted",

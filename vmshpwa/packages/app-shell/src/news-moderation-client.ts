@@ -4,6 +4,7 @@ import {
   ApiResponseError,
   apiErrorSchema,
   changeNewsVisibilityRequestSchema,
+  createLocalNewsRequestSchema,
   newsQueryKeys,
   parseRuntimeConfigForAudience,
   publicIdSchema,
@@ -12,6 +13,7 @@ import {
   staffNewsListResponseSchema,
   staffNewsVisibilityFilterSchema,
   type ChangeNewsVisibilityRequest,
+  type CreateLocalNewsRequest,
   type PrincipalQueryScope,
   type ReconcileNewsSourceRequest,
   type RuntimeConfig,
@@ -25,6 +27,7 @@ export interface NewsModerationClient {
     state: StaffNewsVisibilityFilter,
     options?: { signal?: AbortSignal },
   ): Promise<StaffNewsListResponse>
+  createLocal(request: CreateLocalNewsRequest): Promise<StaffNewsItemResponse>
   changeVisibility(
     postId: string,
     version: number,
@@ -79,6 +82,15 @@ export function createNewsModerationClient(
         await request(`/news?state=${state}&limit=100`, {
           method: 'GET',
           ...(signal === undefined ? {} : { signal }),
+        }),
+      )
+    },
+    async createLocal(input) {
+      const body = createLocalNewsRequestSchema.parse(input)
+      return staffNewsItemResponseSchema.parse(
+        await request('/news/local', {
+          method: 'POST',
+          body: JSON.stringify(body),
         }),
       )
     },
