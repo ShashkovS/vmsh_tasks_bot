@@ -31,6 +31,9 @@ describe('news moderation client', () => {
       .mockResolvedValueOnce(
         Response.json({ schemaVersion: 1, item: hidden, requestId: 'request-edit-local' }),
       )
+      .mockResolvedValueOnce(
+        Response.json({ schemaVersion: 1, item: hidden, requestId: 'request-correct-local' }),
+      )
     const client = createNewsModerationClient(runtime, { fetchImplementation })
 
     expect((await client.list('all')).items).toHaveLength(3)
@@ -55,6 +58,10 @@ describe('news moderation client', () => {
       schemaVersion: 1,
       text: 'Исправленная публикация',
       publishedAt: '2026-08-05T13:00:00Z',
+    })
+    await client.updateLocal('news.visible', 3, {
+      schemaVersion: 1,
+      text: 'Исправление опубликованной новости',
     })
 
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/news?state=all&limit=100')
@@ -82,6 +89,16 @@ describe('news moderation client', () => {
       expect.objectContaining({
         method: 'PATCH',
         headers: expect.objectContaining({ 'If-Match': '"news.visible:v2"' }),
+      }),
+    )
+    expect(fetchImplementation.mock.calls[5]?.[1]).toEqual(
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: expect.objectContaining({ 'If-Match': '"news.visible:v3"' }),
+        body: JSON.stringify({
+          schemaVersion: 1,
+          text: 'Исправление опубликованной новости',
+        }),
       }),
     )
   })

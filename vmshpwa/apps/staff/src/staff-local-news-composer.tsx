@@ -8,6 +8,7 @@ export function StaffLocalNewsComposer({
   draft,
   pending = false,
   ownerDisabled = false,
+  publishedAtDisabled = false,
   submitLabel = 'Запланировать публикацию',
   onChange,
   onSubmit,
@@ -16,6 +17,7 @@ export function StaffLocalNewsComposer({
   draft: LocalNewsDraft
   pending?: boolean
   ownerDisabled?: boolean
+  publishedAtDisabled?: boolean
   submitLabel?: string
   onChange: (draft: LocalNewsDraft) => void
   onSubmit: () => void
@@ -69,8 +71,11 @@ export function StaffLocalNewsComposer({
         />
       </Label>
       <Label className="grid gap-1.5" htmlFor="local-news-published-at">
-        Опубликовать по московскому времени
+        {publishedAtDisabled
+          ? 'Опубликовано по московскому времени'
+          : 'Опубликовать по московскому времени'}
         <Input
+          disabled={publishedAtDisabled}
           id="local-news-published-at"
           onChange={(event) => onChange({ ...draft, publishedLocal: event.target.value })}
           required

@@ -195,7 +195,12 @@ export function StaffNewsPage({
             publishedLocal: toMoscowLocalDateTime(item.publishedAt) ?? '',
           }
           const saved = loadLocalNewsDraft(globalThis.localStorage, key)
-          setEditDraft(saved.owner === '' ? initial : saved)
+          const restored = saved.owner === '' ? initial : { ...saved, owner: initial.owner }
+          // Published news keeps its original ordering and notification moment.
+          // See docs/local-scheduled-news.md and the matching HTTP integration test.
+          setEditDraft(
+            item.isScheduled ? restored : { ...restored, publishedLocal: initial.publishedLocal },
+          )
           setEditingItem(item)
         }}
         onHide={(item) => mutation.mutate({ kind: 'visibility', item, state: 'manual_hidden' })}
@@ -307,10 +312,15 @@ export function StaffNewsPage({
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Изменить запланированную публикацию</DialogTitle>
+              <DialogTitle>
+                {editingItem?.isScheduled
+                  ? 'Изменить запланированную публикацию'
+                  : 'Исправить опубликованную новость'}
+              </DialogTitle>
               <DialogDescription>
-                Текст и время можно изменить, пока публикация ещё не появилась в ленте. Получатели и
-                Telegram не меняются.
+                {editingItem?.isScheduled
+                  ? 'Текст и время можно изменить, пока публикация ещё не появилась в ленте. Получатели и Telegram не меняются.'
+                  : 'Исправление появится в ленте с пометкой «Обновлено». Повторное уведомление не отправится; время и получатели не меняются.'}
               </DialogDescription>
             </DialogHeader>
             {catalog.isPending ? <PageStatePanel state="loading" /> : null}
@@ -327,20 +337,29 @@ export function StaffNewsPage({
                 draft={editDraft}
                 onChange={setEditDraft}
                 onSubmit={() => {
-                  const publishedAt = moscowDateTime(editDraft.publishedLocal)
-                  if (publishedAt === null) return
+                  if (editingItem.isScheduled) {
+                    const publishedAt = moscowDateTime(editDraft.publishedLocal)
+                    if (publishedAt === null) return
+                    mutation.mutate({
+                      kind: 'edit-local',
+                      item: editingItem,
+                      request: {
+                        schemaVersion: 1,
+                        text: editDraft.text,
+                        publishedAt,
+                      },
+                    })
+                    return
+                  }
                   mutation.mutate({
                     kind: 'edit-local',
                     item: editingItem,
-                    request: {
-                      schemaVersion: 1,
-                      text: editDraft.text,
-                      publishedAt,
-                    },
+                    request: { schemaVersion: 1, text: editDraft.text },
                   })
                 }}
                 ownerDisabled
                 pending={mutation.isPending && mutation.variables.kind === 'edit-local'}
+                publishedAtDisabled={!editingItem.isScheduled}
                 submitLabel="Сохранить изменения"
               />
             ) : null}

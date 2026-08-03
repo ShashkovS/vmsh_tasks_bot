@@ -84,6 +84,51 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
   await expect(updatedRow).toContainText('ревизия 2')
 })
 
+test('Phase 8: Admin corrects a published local post without moving its time', async ({
+  page,
+}, testInfo) => {
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/news?state=all')
+  const originalText = `Опубликованная новость ${testInfo.project.name}`
+  const correctedText = `Исправленная опубликованная новость ${testInfo.project.name}`
+
+  await page.getByRole('button', { name: 'Создать публикацию' }).click()
+  const createDialog = page.getByRole('dialog', { name: 'Новая публикация в PWA' })
+  await createDialog.getByLabel('Кому показать').selectOption({ index: 1 })
+  await createDialog.getByLabel('Текст публикации').fill(originalText)
+  await createDialog.getByLabel('Опубликовать по московскому времени').fill('2020-08-04T17:00')
+  const createResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === '/staff/api/v1/news/local',
+  )
+  await createDialog.getByRole('button', { name: 'Запланировать публикацию' }).click()
+  expect((await createResponse).status()).toBe(201)
+
+  const row = page.getByText(originalText, { exact: true }).locator('xpath=ancestor::li[1]')
+  await row.getByRole('button', { name: /Исправить опубликованную/ }).click()
+  const editDialog = page.getByRole('dialog', { name: 'Исправить опубликованную новость' })
+  await expect(editDialog.getByLabel('Опубликовано по московскому времени')).toBeDisabled()
+  await editDialog.getByLabel('Текст публикации').fill(correctedText)
+  const updateResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      /\/staff\/api\/v1\/news\/[^/]+\/local$/.test(new URL(response.url()).pathname),
+  )
+  await editDialog.getByRole('button', { name: 'Сохранить изменения' }).click()
+  const response = await updateResponse
+  expect(response.status()).toBe(200)
+  expect(response.request().postDataJSON()).toEqual({
+    schemaVersion: 1,
+    text: correctedText,
+  })
+
+  const correctedRow = page
+    .getByText(correctedText, { exact: true })
+    .locator('xpath=ancestor::li[1]')
+  await expect(correctedRow).toContainText('ревизия 2')
+  await expect(correctedRow).toContainText('обновлено')
+})
+
 test('Phase 8: Family changes real notification preferences without individual review push', async ({
   page,
 }, testInfo) => {

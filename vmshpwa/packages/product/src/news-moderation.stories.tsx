@@ -42,7 +42,7 @@ function InteractiveModeration() {
   )
 }
 
-function EditableScheduledModeration({ items }: { items: StaffNewsItem[] }) {
+function EditableLocalModeration({ items }: { items: StaffNewsItem[] }) {
   const [edited, setEdited] = useState(false)
   return (
     <div className="space-y-3">
@@ -101,11 +101,45 @@ export const ScheduledLocal: Story = {
       }),
     ],
   },
-  render: (args) => <EditableScheduledModeration items={args.items} />,
+  render: (args) => <EditableLocalModeration items={args.items} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('По расписанию')).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: /Изменить запланированную/ }))
+    await expect(canvas.getByRole('status')).toHaveTextContent('Открыт редактор публикации')
+  },
+}
+
+export const PublishedLocalCorrection: Story = {
+  name: 'Исправленная локальная публикация',
+  args: {
+    items: [
+      staffNewsItemSchema.parse({
+        postId: 'news.local-corrected',
+        source: 'local',
+        channelTitle: null,
+        ownerType: 'course',
+        ownerId: 'course.math',
+        ownerName: 'Математика 5–7',
+        publishedAt: '2026-08-03T10:00:00Z',
+        editedAt: '2026-08-03T12:15:00Z',
+        revision: 2,
+        textExcerpt: 'Исправлено время начала разбора: встречаемся в 17:30.',
+        editableText: 'Исправлено время начала разбора: встречаемся в 17:30.',
+        mediaCount: 0,
+        visibility: 'visible',
+        moderationReason: null,
+        visibilityUpdatedAt: '2026-08-03T12:15:00Z',
+        isScheduled: false,
+        version: 2,
+      }),
+    ],
+  },
+  render: (args) => <EditableLocalModeration items={args.items} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/обновлено 3 авг.*15:15/i)).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: /Исправить опубликованную/ }))
     await expect(canvas.getByRole('status')).toHaveTextContent('Открыт редактор публикации')
   },
 }

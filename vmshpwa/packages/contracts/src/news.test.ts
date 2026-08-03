@@ -88,12 +88,22 @@ describe('news contracts', () => {
         publishedAt: 'tomorrow',
       }),
     ).toThrow()
+    const scheduledUpdate = updateLocalNewsRequestSchema.parse({
+      schemaVersion: 1,
+      text: 'Новое время разбора',
+      publishedAt: '2026-08-05T14:30:00Z',
+    })
+    expect('publishedAt' in scheduledUpdate ? scheduledUpdate.publishedAt : null).toBe(
+      '2026-08-05T14:30:00Z',
+    )
     expect(
       updateLocalNewsRequestSchema.parse({
         schemaVersion: 1,
-        text: 'Новое время разбора',
-        publishedAt: '2026-08-05T14:30:00Z',
-      }).publishedAt,
-    ).toBe('2026-08-05T14:30:00Z')
+        text: 'Исправление уже опубликованной новости',
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      text: 'Исправление уже опубликованной новости',
+    })
   })
 })

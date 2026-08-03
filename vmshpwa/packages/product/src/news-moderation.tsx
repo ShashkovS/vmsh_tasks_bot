@@ -68,13 +68,14 @@ export function NewsModerationList({
                   </p>
                   <p className="text-caption text-muted-foreground">
                     {formatMoment(item.publishedAt)} · ревизия {item.revision}
+                    {item.editedAt ? ` · обновлено ${formatMoment(item.editedAt)}` : ''}
                     {item.moderationReason ? ` · ${item.moderationReason}` : ''}
                   </p>
                 </div>
                 <div className="flex justify-end gap-2">
-                  {item.source === 'local' && item.isScheduled && onEdit ? (
+                  {item.source === 'local' && onEdit ? (
                     <Button
-                      aria-label={`Изменить запланированную публикацию ${item.postId}`}
+                      aria-label={`${item.isScheduled ? 'Изменить запланированную' : 'Исправить опубликованную'} публикацию ${item.postId}`}
                       disabled={pendingPostId === item.postId}
                       onClick={() => onEdit(item)}
                       size="sm"

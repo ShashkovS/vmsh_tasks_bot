@@ -82,3 +82,19 @@ export const EditingScheduled: Story = {
     await expect(args.onSubmit).toHaveBeenCalledOnce()
   },
 }
+
+export const EditingPublished: Story = {
+  args: {
+    ownerDisabled: true,
+    publishedAtDisabled: true,
+    submitLabel: 'Сохранить исправление',
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByLabelText('Кому показать')).toBeDisabled()
+    await expect(canvas.getByLabelText('Опубликовано по московскому времени')).toBeDisabled()
+    await userEvent.type(canvas.getByLabelText('Текст публикации'), ' Уточнение.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить исправление' }))
+    await expect(args.onSubmit).toHaveBeenCalledOnce()
+  },
+}

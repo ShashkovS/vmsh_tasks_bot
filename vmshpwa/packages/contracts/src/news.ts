@@ -180,13 +180,21 @@ export const createLocalNewsRequestSchema = z
   .strict()
 export type CreateLocalNewsRequest = z.infer<typeof createLocalNewsRequestSchema>
 
-export const updateLocalNewsRequestSchema = z
-  .object({
-    schemaVersion: z.literal(1),
-    text: z.string().trim().min(1).max(32_768),
-    publishedAt: z.iso.datetime({ offset: true }),
-  })
-  .strict()
+export const updateLocalNewsRequestSchema = z.union([
+  z
+    .object({
+      schemaVersion: z.literal(1),
+      text: z.string().trim().min(1).max(32_768),
+      publishedAt: z.iso.datetime({ offset: true }),
+    })
+    .strict(),
+  z
+    .object({
+      schemaVersion: z.literal(1),
+      text: z.string().trim().min(1).max(32_768),
+    })
+    .strict(),
+])
 export type UpdateLocalNewsRequest = z.infer<typeof updateLocalNewsRequestSchema>
 
 export const staffNewsItemResponseSchema = z
