@@ -94,6 +94,11 @@ optional staging получает отдельный утверждённый FQ
 
 ## Пруфы завершения этапа
 
+Операторская последовательность и формат evidence bundle зафиксированы в
+[`production-rollout-checklist.md`](../../docs/production-rollout-checklist.md).
+Она связывает уже реализованные Make-команды, но не закрывает server/device/
+owner gates без фактического выполнения.
+
 - [ ] Release revision/config/migrations: `<sha/manifest/paths>`.
 - [ ] Service-profile toolchain probe и converter versions/capabilities: `<redacted report/result>`.
 - [ ] Redacted production S3 config/capability probe и test-bucket disposable-prefix smoke: `<reports/results>`.
@@ -104,7 +109,11 @@ optional staging получает отдельный утверждённый FQ
 - [ ] Security review/headers/CSP/upload/checker/public-media findings: `<path/issues>`.
 - [ ] Sentry/log/metrics redaction and alert screenshots: `<paths>`.
 - [ ] All-groups launch/reconciliation/rollback report: `<path>`.
-- [ ] Final docs/runbooks/data policy/known limitations: `<paths>`.
+- [ ] Final docs/runbooks/data policy/known limitations:
+      [`deployment.md`](../../docs/deployment.md),
+      [`production-rollout-checklist.md`](../../docs/production-rollout-checklist.md),
+      [`testing-strategy.md`](../../docs/testing-strategy.md); production copy
+      чек-листа и реальные результаты остаются rollout evidence.
 - [ ] Product and operational acceptance: `<names/date>`.
 
 ## Многокурсовый инкремент Phase 11

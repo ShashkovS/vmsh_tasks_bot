@@ -1482,6 +1482,23 @@
   отдельно по группе, без auto-repeat после исправления; implementation и proof
   остаются открыты. Snapshots не обновлялись, owner visual acceptance открыт.
 
+## Phase 8 checkpoint: явная Family lesson digest — 3 августа 2026
+
+- Admin preview и отдельное подтверждение работают на конкретном
+  `group_lesson`; состояние review queue не запускает отправку автоматически.
+- Дедупликация выполняется по Family account + group lesson. Повторный POST не
+  дублирует событие, но новый поздно связанный Family account получает итог.
+- Family показывает account-scoped событие и шестую категорию «Итоги занятия»;
+  Student не получает событие. Staff показывает ready, late-family,
+  already-sent, no-recipient, loading и error states.
+- Python integration **13 PASS**, contracts/client Vitest **12 PASS**,
+  lint/typecheck и отдельные Staff/Family production builds — **PASS**.
+  `make pwa-e2e-news` собрал все приложения/SW и поднял seed/aiohttp, но все
+  browser cases остановились до test body на внешнем macOS launcher failure;
+  E2E и visual acceptance не объявлены зелёными, snapshots не обновлялись.
+- Proof:
+  [`phase8-family-digest-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-digest-2026-08-03.md).
+
 ## Phase 8 checkpoint: oral-window notifications — 3 августа 2026
 
 - Открытие настроенного oral window создаёт account-scoped событие только для
@@ -1544,3 +1561,15 @@
   [`phase11-systemd-service-profile-2026-08-03.md`](../../../pwa_tests/reports/phase11-systemd-service-profile-2026-08-03.md).
 - Реальные rendered paths/secrets, `systemd-analyze verify`, restart, socket
   ownership и public health/rollback остаются production gates.
+
+## Phase 11 checkpoint: единый rollout checklist — 3 августа 2026
+
+- Существующие rehearsal, release, systemd, nginx и public-smoke команды
+  собраны в один операторский порядок с заранее записанным rollback target.
+- Автоматические checks явно отделены от FQDN/service-user, production storage,
+  real browser/device, alerts и owner acceptance. `NOT RUN` и browser launcher
+  failure нельзя записывать как `PASS`.
+- Evidence bundle запрещает credentials, cookies, PII и полные media URL;
+  несовместимый schema rollback требует заранее выполненного rehearsal.
+- Proof:
+  [`phase11-production-rollout-checklist-2026-08-03.md`](../../../pwa_tests/reports/phase11-production-rollout-checklist-2026-08-03.md).

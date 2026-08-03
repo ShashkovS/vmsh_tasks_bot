@@ -1,5 +1,10 @@
 # Production deployment
 
+Исполняемый порядок одного выпуска и набор сохраняемых доказательств вынесены
+в [`production-rollout-checklist.md`](production-rollout-checklist.md). Чек-лист
+не считается заполненным заранее: server, browser/device и owner gates получают
+статус только после фактического запуска.
+
 ## Текущая модель
 
 CI-платформа пока не вводится. Production deployment запускается защищённым server-side webhook и всегда разворачивает конкретный commit из основной ветки. Webhook не принимает shell fragments, paths или произвольные revision от публичного request.
