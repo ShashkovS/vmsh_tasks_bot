@@ -1,8 +1,14 @@
 # Controlled import Student-аккаунтов
 
-Этот runbook относится только к Phase 1 Student authentication. Он не создаёт
-семейные/Staff accounts, курсы, enrollments, интервалы доступа или события
-смены группы/режима.
+Этот runbook относится к compatibility rehearsal legacy Student authentication.
+Он не является target Staff batch, не создаёт Family/Staff accounts, курсы,
+enrollments, интервалы доступа или события смены группы/режима.
+
+Target v1 Student batch принимает явно заданные surname, name, optional
+patronymic/birth date/grade, login и Telegram-token password. Конфликт login
+получает предложенный случайный `-NN`; plaintext provisioning password
+сохраняется для внешней email-рассылки наряду с Argon2 verifier. Ни этот
+plaintext, ни email не входят в aggregate proof.
 
 Реализация: [`auth_import.py`](../scripts/auth_import.py); проверки:
 [`test_auth_import.py`](../../pwa_tests/test_auth_import.py). Канонический

@@ -29,6 +29,17 @@ bindings, очные события и production backfill остаются це
 - `status = draft | active | archived`, `sort_order`, `accent_key`;
 - `created_at`, `updated_at`, `created_by`, `updated_by`, `version`.
 
+`course_runtime_settings`:
+
+- `course_id` PK/FK, `schema_version`, `values_json`;
+- `updated_at`, `updated_by`, `version`.
+
+`values_json` принимает только описанные Python-моделью ключи, перенесённые из
+legacy `_BotSettings`; неизвестный key блокирует preview. Настройки читаются
+per-course и могут кешироваться до рестарта backend. `save_sol_mode` отсутствует:
+content и submissions всегда сохраняются в S3. Отдельной таблицы редактируемых
+UI-текстов в v1 нет; тексты hardcoded до v2 i18n.
+
 Существующая `groups` расширяется полями:
 
 - `public_id`, `course_id`, `status`, `color_key`;
@@ -75,7 +86,8 @@ ownership-key `course_id`, `group_id`, `valid_from`, `valid_to`, `granted_by`,
 `group_lessons`:
 
 - `id`, `public_id`, `course_lesson_id`, технический `course_id`, `group_id`;
-- нейтральная `cycle_anchor_date` и `business_timezone` для вычисления schedule;
+- `cycle_anchor_date` (transitional schema name) означает локальную дату
+  публикации условия; `business_timezone` задаёт зону вычисления schedule;
 - `status`, audit timestamps и optimistic `version`;
 - unique `(course_lesson_id, group_id)`.
 
@@ -95,6 +107,10 @@ value только для `override`; cutoff отключить нельзя. Е
 `lesson_window_schedule_sources`. Изменение шаблона не двигает существующие
 занятия: Staff сначала получает impact preview, затем выполняет отдельное
 подтверждённое действие.
+
+Основной anchor шаблона курса — время публикации условия. Группа наследует
+course rules, но может переопределить отдельные окна. Уже материализованные
+timestamps конкретного занятия не пересчитываются молча после правки шаблона.
 
 Phase-2A/2C schema/domain/repository/HTTP boundary реализован в
 [`0041.pwa_content_lessons.sql`](../../migrations/0041.pwa_content_lessons.sql),

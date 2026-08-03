@@ -6,28 +6,26 @@
 которые устарели после последующих инкрементов, но не удаляет прежний отчёт из
 истории.
 
-Проверенная функциональная ревизия: `40f30ac`.
+Проверенная committed baseline перед текущим HTTP-smoke инкрементом: `727cc24`.
 
-Незакоммиченные параллельные изменения Family notification UI, дизайн-системы
-и планов в этот аудит не включены. Наличие файла, Storybook-прототипа или старой
-галочки само по себе не считается доказательством завершения.
+Незакоммиченные параллельные изменения systemd, дизайн-системы и планов в этот
+аудит не включены. Наличие файла, Storybook-прототипа или старой галочки само по
+себе не считается доказательством завершения.
 
 ## Текущий автоматический checkpoint
 
-`make python-test` на этой ревизии, по восемь изолированных xdist workers в
-каждом последовательном наборе:
+Текущий HTTP-smoke candidate проверен по восемь изолированных xdist workers:
 
-- legacy: **124 passed, 1 skipped**, 11,68 с;
-- PWA: **1586 passed, 6 skipped**, 61,77 с;
-- итого: **1710 passed, 7 skipped**, около 74 секунд pytest time.
+- legacy: **124 passed, 1 skipped**, 11,51 с;
+- PWA clean scope: **1606 passed, 6 skipped**, финальный прогон 74,05 с;
+- полный dirty-worktree `make python-test` также прошёл **1614 PWA tests** и
+  занял 79,48 с wall time, но его дополнительные 8 untracked systemd tests не
+  выдаются за доказательство этого инкремента.
 
 Live NATS, S3 и Telegram smokes являются отдельными opt-in gates и в этот
 обычный hermetic regression не входят. Последний широкий frontend unit запуск
-в текущем worktree: **114 файлов / 594 tests**, strict TypeScript PASS. Он не
-выдаётся за clean-revision checkpoint, потому что запуск видел соседний
-незакоммиченный Family UI. Общий ESLint грязного worktree также не используется
-как доказательство: он останавливается на незакоммиченном соседнем
-`family-notifications-page.tsx`.
+в текущем worktree: **114 файлов / 594 tests**, strict TypeScript PASS; frontend
+в HTTP-smoke инкременте не менялся.
 
 ## Значения статусов
 
@@ -227,8 +225,8 @@ macOS `MachPortRendezvous`/`SIGABRT`; он не отменяет предыду�
 
 ## Phase 8 — news, realtime и notifications
 
-**Состояние: основной news/notification v1 почти закрыт; Family digest,
-physical push и owner visual gates открыты.**
+**Состояние: основной news/notification v1 почти закрыт; published-news edit,
+Family digest implementation, physical push и owner visual gates открыты.**
 
 Доказаны Telegram channel ingest/edit/albums/media copy, explicit deletion
 reconciliation, Student/Family feed и offline cache, moderation, verified
@@ -252,9 +250,10 @@ sound policy и delivery observability. Запланированные вруч�
 
 Открыто:
 
-- weekly Family digest semantics — вопрос 8 в
-  [`22-development-questions.md`](../../vmshpwa/dev/development-plan/22-development-questions.md);
-- редактирование уже опубликованной локальной новости — вопрос 7;
+- weekly Family digest: явная admin-отправка отдельно по группе; исправления не
+  создают второй digest — требуется implementation/proof;
+- опубликованная local news редактируется без повторного notification и
+  показывает `updatedAt` — требуется implementation/proof;
 - live Web Push на установленном iOS/Android устройстве;
 - owner execution реального Telegram scheduled-queue inventory;
 - owner visual acceptance delivery/moderation/settings states;
@@ -281,8 +280,8 @@ preview с синтетическим migrated-SQLite proof.
 
 Открыто:
 
-- Family batch provisioning/apply и передача первого credential — вопрос 1;
-- точные streak rules — вопрос 5;
+- target Family batch provisioning/apply и external email handoff;
+- точные streak qualifying action/current-max/milestone rules — вопрос 1;
 - owner production Family-link preview/apply;
 - owner visual acceptance Family/progress pages.
 
@@ -312,9 +311,12 @@ preview/apply/rollback, synonym merge/split и reload-safe metadata drafts.
 
 Открыто:
 
-- initial Student/Family provisioning зависит от course/group mapping и
-  credential-delivery decisions;
-- `_BotUIMsgs` и `_BotSettings` — вопросы 3–4;
+- target Student/Family provisioning batches и отдельный course enrollment
+  batch ещё не реализованы; active-group rule — вопрос 3;
+- plaintext provisioning storage/external-mail boundary принято, но ещё не
+  реализовано;
+- `_BotUIMsgs` hardcoded в v1; per-course `_BotSettings` и удаление
+  `save_sol_mode` требуют implementation;
 - owner-run полный недельный Staff workflow и объявленная дата cutover;
 - остальные external processes не считаются выключенными только потому, что
   заменён лист «Задачи»;
@@ -329,6 +331,9 @@ course-enrollment rehearsals, converter chain, test S3/Telegram, NATS с дву�
 workers, WebSocket resync, dependency audit, Sentry redaction, IDOR/role review,
 security headers и read-only media growth/orphan inventory. Inventory не имеет
 delete API и не превращает diagnostic в автоматическую retention policy.
+Для уже переключённого публичного release теперь есть credential-free GET-only
+smoke: он fail-closed проверяет три audience, runtime identity, SPA/API routing,
+security/cache headers, manifests, icons и service workers.
 
 Ключевые доказательства:
 [`phase11-static-release.md`](phase11-static-release.md),
@@ -339,11 +344,13 @@ delete API и не превращает diagnostic в автоматическу
 [`phase11-sentry-privacy.md`](phase11-sentry-privacy.md),
 [`phase11-dependency-audit-2026-08-02.md`](phase11-dependency-audit-2026-08-02.md),
 [`phase11-service-worker-cache-boundary-2026-08-03.md`](phase11-service-worker-cache-boundary-2026-08-03.md),
+[`phase11-production-http-smoke-2026-08-03.md`](phase11-production-http-smoke-2026-08-03.md),
 [`phase11-media-inventory-2026-08-03.md`](phase11-media-inventory-2026-08-03.md).
 
 Открыто:
 
-- production service profile, nginx/FQDN, systemd и реальный deploy/rollback;
+- production service profile, installed `nginx -t`, выбранный FQDN/systemd и
+  реальный запуск HTTP smoke после deploy/rollback;
 - production Hetzner S3 readiness и production media inventory;
 - реальный Sentry event/alert;
 - production backup schedule, retention, measured RPO/RTO;
@@ -367,19 +374,17 @@ delete API и не превращает diagnostic в автоматическу
 - test S3 вместо readiness production Hetzner bucket;
 - NATS event как durable log вместо повторного authoritative SQLite GET;
 - отсутствие очереди review как автоматический сигнал «проверка занятия
-  завершена» до ответа на вопрос 8.
+  завершена»: Family digest запускается только явным admin action.
 
 ## Следующий порядок независимой разработки
 
-1. После завершения соседнего Family notification UI вернуть зелёные
-   frontend lint/type/unit/storybook/build gates и закоммитить его отдельно.
-2. После завершения соседнего `oral_window` notification slice сверить его
-   общий scheduler/allowlist и отдельно определить `deadline` semantics, не
-   угадывая Family digest rules.
+1. Реализовать published-news edit и per-group explicit Family digest
+   отдельными простыми вертикальными срезами.
+2. Определить deadline semantics по вопросу 2 и реализовать producer отдельно.
 3. Подготовить исполняемые production runbooks/checklists Phase 11, оставляя
    реальные server/device результаты незакрытыми до их фактического запуска.
-4. После ответов владельца закрыть вопросы 1–8 отдельными вертикальными
-   срезами, а не общим speculative subsystem.
+4. Реализовать два account batches и enrollment batch; не угадывать active group
+   до ответа на вопрос 3.
 
 До закрытия перечисленных gates формулировка «все этапы разработки завершены»
 остаётся недоказанной.

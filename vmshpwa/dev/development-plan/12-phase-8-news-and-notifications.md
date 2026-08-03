@@ -25,6 +25,10 @@ Telegram update identity: chat/message/media-group IDs + source hash. Source cha
 - Local post v1 остаётся в PWA. Telegram preview/publish используется во второй версии для автоматической публикации условий.
 - Баннер имеет display window и исчезает после него; публикация в нормальном случае остаётся навсегда. Dismissal баннера хранится только локально на устройстве.
 
+## Cutover запланированных публикаций Telegram UI
+
+Очередь сообщений, вручную запланированных редакторами в Telegram UI, является внешним mutable state: до фактической публикации она не представлена в `news_posts` и не должна неявно импортироваться либо дедуплицироваться по тексту. До включения Staff scheduler для destination/time window администратор составляет privacy-safe inventory pending-записей и принимает по каждой решение `retain_in_telegram | cancel_and_recreate_in_staff | cancel_as_obsolete`. Reconciliation сопоставляет destination, intended time, принятую content revision и media manifest. Staff publishing включается только после отчёта, в котором у каждого ожидаемого сообщения ровно один владелец доставки и нет ни пропуска, ни двойной публикации.
+
 ## Notification semantics
 
 Categories at minimum: `lesson_published`, `hint_published`, `solution_published`, `review_completed`, `thread_updated`, `oral_window`, `classroom_assignment`, `deadline`, `news`. Категория `broadcast` появляется вместе с полной функцией во второй фазе.
@@ -34,9 +38,19 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - Все review-completed events ученика агрегируются в одну пачку за 30 минут.
 - Foreground can suppress duplicate native push display while still marking in-app event.
 - Review event становится read после минимум трёх непрерывных секунд видимости: client запускает monotonic timer только для реально видимого события и затем отправляет идемпотентный acknowledgement, а server ставит собственный `readAt`. Read-state account-scoped, поэтому второе устройство получает invalidation/refetch и снимает badge. Telegram delivery не считается read без надёжного receipt. Badge «Задачи» считает обновлённые/проверенные задачи, которые student ещё не видел.
-- Family по умолчанию получает один weekly digest после окончания всей проверки, без потока individual review pushes.
+- Family не получает поток individual review pushes. Admin явно отправляет один
+  digest отдельно для выбранной группы и занятия; последующие исправления
+  обновляют данные без автоматического повторного уведомления.
 - `classroom.assignment.changed` продолжает vertical slice этапа 7 как тихая Student/Family invalidation после confirm/change. Только явный admin delivery batch создаёт `classroom.assignment.announced`: выбранный PWA channel даёт Student in-app/push, выбранный Telegram channel — личное bot message. Family не получает delivery этой категории.
 - Delivery is DB-durable with retry/backoff/dead-letter/admin diagnostics. NATS only invalidates read models.
+- Owner-confirmed delivery report допускает partial success и раскрываемые
+  списки. Staff агрегирует по каждому каналу `selected`, `eligible`,
+  `suppressed`, `queued`, `attempted`, `succeeded`, `failed` и общие
+  `delivered_any`, `delivered_all`, `partial`. Получателя с успехом хотя бы в
+  одном выбранном канале считаем охваченным, но partial cases остаются в
+  раскрываемом privacy-safe списке. Implementation-default `retry failed`
+  означает явную новую попытку только неуспешной пары recipient/channel и не
+  дублирует успешную доставку.
 
 ## WebSocket scoping
 
@@ -56,9 +70,13 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 ## Tests
 
 - Telegram new/edit/album/duplicate/reordered/retry fixtures, no live Bot API in unit/E2E.
+- Cutover fixture для Telegram UI scheduled queue: retain/cancel/recreate decisions, изменение pending-записи до cutover, одинаковый текст в разных destination и доказательство no-gap/no-duplicate. Fixture синтетический и не содержит реальные сообщения или Telegram IDs.
 - Binding routing fixtures: course+две группы/несколько channel IDs, additive news sources, inherited/replaced materials target, unmapped/disabled/changed destination и неизменность historical binding/chat/message snapshot после перенастройки.
 - Sanitizer/CSP/entity/math/oversize/unsupported media tests.
 - Delivery outbox crash/lease/retry/dedup/batching/quiet hours tests with frozen clocks.
+- Delivery observability: owner-confirmed channel counters/partial list сходятся
+  с immutable recipient rows; implementation-default retry создаёт attempts
+  только для failed pairs и не меняет уже успешные rows.
 - Read acknowledgement: background tab/быстрый scroll не засчитываются, два устройства сходятся к одному `readAt`, duplicate ack безопасен, Telegram sent не снимает PWA badge.
 - Three-audience WS plus private owner leakage tests across two workers/NATS.
 - Classroom delivery routing: confirm обновляет Student/Family sockets без push; explicit batch доставляет только Student через выбранные PWA/Telegram каналы. Проверяются immutable recipient snapshot, preview/version conflict, no-auto-resend, idempotency, retry/partial failure и отсутствие token/chat ID в browser/logs.
@@ -74,6 +92,9 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - Quiet hours do not hide/belay in-app information, only suppress sound behavior.
 - Storybook различает узкий classroom delivery preview/send и отложенный общий broadcast composer. Markdown editor, произвольные audiences/content и Staff→Telegram channel publication остаются phase two.
 - Telegram adapter outage does not stop PWA API.
+- Частичная доставка видна Staff и может быть адресно повторена без повторной
+  отправки успешным получателям/каналам.
+- Staff scheduler нельзя сделать владельцем Telegram destination, пока pending-очередь этого destination/window не прошла явный reconciliation.
 
 ## Пруфы завершения этапа
 
@@ -82,9 +103,16 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
 - [ ] Demo Telegram mirror, полное текстовое условие, PWA-local publication/hide/banner + PWA offline: `<routes/evidence>`.
 - [ ] WS audience/owner/two-worker/reconnect leakage tests: `<result>`.
 - [ ] Push/outbox/batching/quiet-hours failure matrix: `<path/result>`.
+- [ ] Delivery counters/partial recipient list/failed-only retry: `<path/result>`.
 - [ ] Storybook stories/interactions/a11y/visual approval: `<ids/paths>`.
 - [ ] Playwright production preview 3 browsers/capability skips: `<result>`.
 - [ ] Telegram historical adapter tests: `<result>`.
+- [x] Offline Telegram UI scheduled-queue validator, synthetic
+      retain/cancel+recreate/obsolete fixture и privacy-safe aggregate report без
+      payload/Telegram IDs/destination keys/hashes:
+      [`phase8-telegram-scheduled-queue-reconciliation.md`](../../../pwa_tests/reports/phase8-telegram-scheduled-queue-reconciliation.md).
+      Owner-run inventory настоящей Telegram UI queue остаётся deployment gate
+      непосредственно перед передачей destination Staff scheduler.
 - [ ] Docs/delivery runbook/known limitations/acceptance: `<paths/issues/name/date>`.
 
 ## Многокурсовый инкремент Phase 8
@@ -169,8 +197,10 @@ notification events переносятся в той же SQLite-транзак�
 Story IDs: `pages-staff-local-news-composer--editing-scheduled` и
 `product-news-moderation--scheduled-local`. Production E2E проходит создание,
 reload сохранённого edit draft и перенос срока в Chromium, Firefox и WebKit.
-Редактирование уже видимой публикации закрыто с `409`, пока не решён вопрос 7 в
-[`22-development-questions.md`](22-development-questions.md). Proof:
+Редактирование уже видимой публикации остаётся следующим implementation
+increment: admin может исправить текст, feed показывает `updatedAt`, но повторное
+notification event не создаётся. Текущий `409` — известный разрыв реализации,
+а не открытая продуктовая развилка. Proof текущего scheduled-only состояния:
 [`phase8-local-news-editing-2026-08-03.md`](../../../pwa_tests/reports/phase8-local-news-editing-2026-08-03.md).
 
 ## Инкремент настоящих Family notification settings — 3 августа 2026
@@ -188,7 +218,8 @@ Browser subscription handshake переиспользуется Student и Famil
 `pages-family--notifications`, `product-connectivity--push-device-states`.
 Production E2E меняет preference, подтверждает reload и восстанавливает fixture
 в Chromium, Firefox и WebKit. Недельный Family digest остаётся отдельным
-инкрементом после ответа на вопрос 8. Proof:
+инкрементом: admin явно отправляет его независимо по каждой группе; последующие
+исправления просто обновляют Family API и сами не создают второй digest. Proof:
 [`phase8-family-notification-settings-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-notification-settings-2026-08-03.md).
 
 ## Инкремент уведомления об устном окне — 3 августа 2026

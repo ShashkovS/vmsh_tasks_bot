@@ -25,17 +25,19 @@ Staff может создать новость, которая относитс�
   immutable revision, сдвигает будущие notification events и использует
   optimistic `If-Match`; черновик редактора переживает reload и конфликт.
 - Скрытие будущей публикации удаляет ещё не наступившие notification events, а
-  восстановление создаёт их снова идемпотентно. Уже опубликованные новости пока
-  нельзя редактировать: правила показа исправлений и повторного уведомления
-  вынесены в вопрос 7 development plan.
+  восстановление создаёт их снова идемпотентно.
+- Опубликованную local PWA news admin может исправить. Правка создаёт новую
+  immutable revision и обновляет `updatedAt`, который feed показывает как
+  «Обновлено …», но не создаёт повторного notification event. Текущий backend
+  ещё отвечает `409`; это известный MVP implementation gap, не вопрос продукта.
 
 ## Интерфейсы
 
 - `POST /staff/api/v1/news/local` — только global admin; строгий JSON-контракт
   `{schemaVersion, ownerType, ownerId, text, publishedAt}`.
-- `PATCH /staff/api/v1/news/{postId}/local` — только global admin и только для
-  будущей local publication; строгий JSON `{schemaVersion, text, publishedAt}`
-  и обязательный `If-Match: "{postId}:v{version}"`.
+- `PATCH /staff/api/v1/news/{postId}/local` — только global admin. Для будущей
+  публикации принимает `{schemaVersion, text, publishedAt}`, для уже видимой —
+  только текст; обязательный `If-Match: "{postId}:v{version}"`.
 - Student/Family `GET /{audience}/api/v1/news` и detail endpoint фильтруют
   будущие публикации по серверному времени.
 - `GET /{audience}/api/v1/notification-events` не возвращает событие раньше

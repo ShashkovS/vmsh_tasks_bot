@@ -2,7 +2,10 @@
 
 ## Результат
 
-Student входит сгенерированным логином и текущим Telegram-токеном, Family — отдельным минимальным аккаунтом, Staff — staff credentials. Три кабинета защищены настоящими server sessions до ближайшего 10 августа; cookie одного audience не авторизует другой.
+Student входит заданным batch login и текущим Telegram-токеном, Family —
+заданным отдельным login/password, Staff — staff credentials. Три кабинета
+защищены настоящими server sessions до ближайшего 10 августа; cookie одного
+audience не авторизует другой.
 
 Дизайн-контракт этапа: [три login pages, form states, forbidden state и соответствующие Storybook stories](18-design-implementation-map.md#phase-1-design).
 
@@ -15,15 +18,18 @@ Student входит сгенерированным логином и текущ
 Создать `auth_accounts`, `family_student_links`, `auth_sessions`, `auth_events`,
 shared-worker `auth_throttle_buckets`, а затем `seasons`, `courses`,
 course enrollment/access/events и единственный новый permission source
-`staff_scopes`. Параллельную `staff_group_permissions` не создавать. Production
-backfill сначала dry-run:
+`staff_scopes` и `family_account_emails`. Параллельную
+`staff_group_permissions` не создавать. Target batch flow:
 
-- student username строится версионированным transliteration helper как фамилия + день рождения; import preview блокирует коллизии, `NULL`/невалидную дату, пустую фамилию и позволяет исправить source либо назначить явно сохранённый уникальный вариант;
+- Student batch принимает surname, name, optional patronymic/birth date/grade,
+  login и Telegram-token password; preview предлагает случайный `-NN` для
+  конфликтующего login;
 - student/staff account связывается с внутренним `users.id`, а controlled activation одновременно назначает отсутствующий opaque `users.public_id`; этот случайный стабильный ID является browser `userId`/`studentId` и не совпадает с `auth_accounts.public_id` (`accountId`);
-- student credential не копирует plaintext token во второе поле;
-- family accounts импортируются только из согласованного файла/Staff batch flow, хранят имя без фамилии/email и поддерживают many-to-many child links;
-- конфликтующие normalized usernames попадают в report, не исправляются автоматически.
-- credential profile сверяется с этапом 0. По закрытому `AUTH-01` настоящие аккаунты должны иметь корректную фамилию и пригодный Telegram token; некорректные test/unknown rows не активируются для production web и попадают в aggregate/quarantine report без plaintext/hash, по которому можно восстановить token.
+- Family batch отдельно принимает name, login/password, comma-separated emails
+  и child logins; связи many-to-many;
+- по owner-confirmed v1 policy оба plaintext password сохраняются для внешнего
+  mailer наряду с Argon2 verifier, но исключаются из обычных API/logs/proofs;
+- test passwords `qwerty*` допустимы в летнем cohort и затем удаляются.
 
 ## Backend
 
@@ -225,8 +231,9 @@ credentials, затем повторно валидирует весь план 
 вставляет все accounts одной транзакцией. Повторный run с теми же решениями
 проверяет Argon2 и возвращает `already-applied`; несовместимое частичное
 состояние блокирует run. `users.public_id` и `auth_accounts.public_id`
-назначаются независимо и случайно, plaintext token остаётся только в legacy
-`users.token` для параллельного Telegram adapter.
+назначаются независимо и случайно. Этот legacy controlled importer остаётся
+rehearsal/compatibility path; target Staff batch дополнительно хранит
+owner-only plaintext provisioning value согласно принятому v1-решению.
 
 Точный runbook: [`phase-1-student-auth-import.md`](../../docs/phase-1-student-auth-import.md),
 focused proof: [`phase1-auth-import-tooling.md`](../../../pwa_tests/reports/phase1-auth-import-tooling.md).

@@ -33,6 +33,9 @@ Migration: `pwa_family_achievements`.
 - GitHub-style activity calendar считает один active event на problem item в день независимо от числа посылок.
 - Streak хранит число недель подряд с 1+, 2+, 3+ и 4+ активными днями.
 - Achievements: первая отправка, первая письменная, первое завершённое занятие, занятие с результатом не ниже максимума и streak milestones; выполняется historical backfill.
+- Streak считается только по последовательности занятий одного курса подряд,
+  не по календарным неделям. Qualifying action, current/max display и milestone
+  thresholds остаются вопросом 1 в `22-development-questions.md`.
 - Русские подписи achievement rule codes принадлежат UI boundary и едины для Student/Family. Неизвестный будущий code не показывается как технический текст до добавления согласованной подписи.
 - История текущего сезона включает занятия 1–38, backfilled в этапе 2. Если конкретному legacy занятию нельзя восстановить точный publication timestamp, оно остаётся доступно с provenance/nullable time и не исчезает из progress только из-за отсутствия `lesson_publications` старого формата.
 - Empty/new-student/level-change/late-data/correction states explicit.
@@ -49,7 +52,9 @@ Migration: `pwa_family_achievements`.
 
 - Permission matrix: multi-child, revoked link, guessed ID, two parents if supported.
 - Historical group/mode reconstruction and corrections in results.
-- Differential analytics fixtures сравнивают `student_lesson_metrics`, best-level membership, rolling 1/7-lesson curves и violin inputs с `a53`/`a54`; rerun публикуется атомарно и не смешивает versions.
+- Differential analytics fixtures сравнивают `student_lesson_metrics`,
+  best-level membership и rolling 1/7-lesson curves с `a53`/`a54`; rerun
+  публикуется атомарно и не смешивает versions.
 - Weight/counter/grace/cohort/privacy/activity calendar property tests.
 - Chart domain/empty/single point/extreme/outlier/1500 students performance; SVG a11y summary.
 - Family multi-child feed дедуплицирует общие новости и подписывает child/group-specific entries; first-version history UI ограничен текущим сезоном.
@@ -61,7 +66,8 @@ Migration: `pwa_family_achievements`.
 
 - Family не может открыть несвязанного ребёнка или сдать его работу, но может менять его level/mode.
 - Переключение детей меняет весь scoped state без flash чужих данных.
-- Group distribution появляется только после grace и `n >= 30`; Family его не видит.
+- Student и Family не получают group distribution, rank, percentile или
+  собственный маркер на групповой статистике ни после какого grace period.
 - Исправленный/новый result детерминированно пересчитывает read model.
 - Графики понятны без цвета/hover и не создают рейтинг.
 - Achievement rerun не выдаёт дубликаты.

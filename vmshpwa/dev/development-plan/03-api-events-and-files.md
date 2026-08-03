@@ -24,7 +24,24 @@
 - `DELETE /{audience}/api/v1/auth/sessions/{sessionPublicId}`
 - `POST /{audience}/api/v1/auth/logout-all`
 
-Student login payload: `username`, `telegramToken`, optional `deviceLabel`. Username создаётся import-ом версионированным transliteration helper из фамилии и дня рождения, а коллизия/неполные legacy-данные разрешаются до активации account. Family/staff payload names используют `password`. Ответ не возвращает token/session secret, только principal и policy dates. Все audience sessions имеют абсолютную границу ближайшего 10 августа. Неуспешная попытка учитывается одновременно в IP- и normalized-login buckets, не раскрывая существование account.
+Student login payload: `username`, `telegramToken`, optional `deviceLabel`;
+`telegramToken` — password, заданный Student batch. Family/staff используют поле
+`password`. Ответ не возвращает token, plaintext provisioning value или session
+secret, только principal и policy dates. Все audience sessions имеют абсолютную
+границу ближайшего 10 августа. Неуспешная попытка учитывается одновременно в
+IP- и normalized-login buckets, не раскрывая существование account.
+
+Реализующие файлы:
+`apps/pwa_api/{auth_routes,auth_service,middleware,realtime_control,websocket_sessions}.py`,
+`db_methods/pwa/auth.py`, `models/pwa/auth.py` и composition root
+`apps/pwa_app.py`. Wire/API доказательство: real-aiohttp + migrated-SQLite suite
+`pwa_tests/integration/test_auth_http_api.py`; чистые
+security/session/realtime проверки —
+`pwa_tests/{test_auth_service,test_auth_config,test_permissions,test_request_security,test_websocket_sessions,test_realtime_control}.py`.
+WebSocket session binding, exact Origin до upgrade, periodic SQLite
+revalidation и close при logout/revoke/logout-all реализованы в том же Phase-1
+adapter. Refresh-only logout публикует close только по repository-verified
+target; malformed/foreign refresh не создаёт realtime-команду.
 
 ## Student API
 
@@ -105,13 +122,66 @@ Family endpoints никогда не принимают произвольный
 - `POST /staff/api/v1/review/items/{queuePublicId}/heartbeat`
 - `POST /staff/api/v1/review/items/{queuePublicId}/release`
 - `POST /staff/api/v1/review/items/{queuePublicId}/complete`
-- `POST /staff/api/v1/reviews/{reviewPublicId}/annotations/{attachmentPublicId}` — immutable после complete
+- annotation manifests передаются только внутри atomic `POST .../complete`;
+  отдельного изменяемого post-complete endpoint нет
 - `PUT/DELETE /staff/api/v1/reviews/{reviewPublicId}/internal-reaction` — одна реакция, окно редактирования один час
 - `POST /staff/api/v1/reviews/{reviewPublicId}/correct` — teacher/admin исправляет текущий verdict
+- Owner-confirmed material-move core — teacher выбирает одно или несколько
+  сообщений/фото, Student видит target history. Следующие два endpoint являются
+  безопасным implementation default для preview, scoped admin и post-review
+  correction; append-only invariant остаётся обязательным:
+- `POST /staff/api/v1/submission-material/reassignment-preview` — проверяет
+  выбранные `entry_text|attachment` items и целевую задачу без изменения
+  данных; preview показывает target timeline, scope/ownership, уже завершённые
+  reviews и то, что verdict не переносится
+- `POST /staff/api/v1/submission-material/reassign` — teacher/admin применяет
+  подтверждённую append-only correction; immutable files/review evidence и
+  существующий verdict не перемещаются; повтор требует новый idempotency key,
+  а повтор с тем же key/hash возвращает тот же batch
 - `GET /staff/api/v1/review/student-reactions`
 - `GET/POST /staff/api/v1/questions/*`
 
-`complete` принимает claim token, expected queue version, expected thread version, evidence boundary, verdict, optional comment, optional single internal reaction и annotations manifest. Если школьник успел дослать материал, server возвращает `409 THREAD_CHANGED`, чтобы teacher увидел новую фотографию и завершил проверку уже по актуальному evidence. Для verdict ниже «Зачтено» отсутствие comment не запрещено API, но Staff требует дополнительного подтверждения.
+Phase 6B реализует первый ограниченный срез списка и lease API. `GET
+/review/items` принимает только `problemGroup`, `sort=oldest|newest` и opaque
+`cursor`. `claim` принимает строго `{"schemaVersion":1}`; `heartbeat` и
+`release` — только `schemaVersion` и server-issued `claimToken`. Actor всегда
+берётся из Staff cookie. Collection возвращает logical case только целиком:
+если хотя бы одна актуальная synonym-ветка вне public course/group scope
+teacher, кейс не попадает в список, а прямой claim получает `403`. Ответы не
+содержат integer IDs; lock metadata показывает безопасное имя преподавателя,
+тип `pwa|legacy`, expiry и принадлежность текущей сессии. Реализация:
+`apps/pwa_api/review_routes.py`, `db_methods/pwa/reviews.py`,
+`packages/contracts/src/review-queue.ts` и
+`packages/app-shell/src/review-queue-client.ts`; executable proof —
+[`phase6-review-queue-http.md`](../../../pwa_tests/reports/phase6-review-queue-http.md).
+
+Phase 6C реализует базовую атомарную часть `complete`. Claim/heartbeat возвращают
+`evidenceBranches`; mutation принимает `schemaVersion`, `claimToken`,
+`idempotencyKey`, `verdict`, nullable `comment`, `confirmWithoutComment` и полный
+массив branches с exact `queueId`/`leaseVersion`, `threadId`/`threadVersion` и
+`entryId`/`entryVersion`. Browser не передаёт actor/student/internal IDs.
+Если школьник дослал или изменил материал, server отвечает
+`409 review_thread_changed` либо `review_evidence_unavailable`, не создавая
+частичный verdict. Повтор того же key/payload возвращает исходную квитанцию, а
+другой payload с тем же key отклоняется. Для verdict ниже `+.` отсутствие
+comment требует `confirmWithoutComment=true`; `+.` и `+` считаются принятыми.
+Phase 6D добавляет в этот же request `annotations[]`: exact evidence
+`attachmentId`, `schemaVersion=1`, rotation и discriminated normalized marks
+`pencil|eraser|text|arrow|rectangle|highlight`. Manifest входит в idempotency
+digest и транзакцию review; post-complete update/delete отсутствуют. Реализация
+и executable proofs:
+
+- [`phase6-review-completion.md`](../../../pwa_tests/reports/phase6-review-completion.md);
+- [`phase6-review-annotations.md`](../../../pwa_tests/reports/phase6-review-annotations.md).
+
+Phase 6E добавляет nullable `internalReactionId` в атомарный complete и strict
+`PUT/DELETE /staff/api/v1/reviews/{reviewPublicId}/internal-reaction` с
+`expectedVersion`. Current state принадлежит исходному reviewer, меняется или
+снимается только в течение часа и сопровождается append-only событиями;
+Student/Family payload и owner invalidation эту скрытую пометку не содержат.
+Реализация и proof:
+
+- [`phase6-review-internal-reactions.md`](../../../pwa_tests/reports/phase6-review-internal-reactions.md).
 
 ### Content — этап 2
 
@@ -131,6 +201,15 @@ Family endpoints никогда не принимают произвольный
 
 - `/staff/api/v1/oral/windows`, `/oral/conversations`, `/oral/results`
 - `GET/POST /staff/api/v1/courses`, `GET/PATCH /staff/api/v1/courses/{coursePublicId}`, `POST /staff/api/v1/courses/{coursePublicId}/archive`
+- `GET/PUT /staff/api/v1/courses/{coursePublicId}/runtime-settings` — admin-only
+  typed per-course replacement главных `_BotSettings`; ответ явно сообщает,
+  что cached значения применятся после restart
+- `POST /staff/api/v1/imports/student-accounts/preview|apply` — Student batch с
+  ФИО, nullable birthday/grade, login/password и collision suffix preview
+- `POST /staff/api/v1/imports/family-accounts/preview|apply` — Family batch с
+  name, login/password, emails и child logins
+- `POST /staff/api/v1/imports/course-enrollments/preview|apply` — один course и
+  `login + allowedGroups` на строку; active-group rule ожидает owner answer
 - `GET/POST /staff/api/v1/courses/{coursePublicId}/groups`, `PATCH /staff/api/v1/groups/{groupPublicId}`, `POST /staff/api/v1/groups/{groupPublicId}/archive`
 - `GET/PUT /staff/api/v1/courses/{coursePublicId}/schedule-rules`, `GET/PUT /staff/api/v1/groups/{groupPublicId}/schedule-overrides`
 - `POST /staff/api/v1/group-lessons/{groupLessonPublicId}/schedule-preview`, `POST /staff/api/v1/group-lessons/{groupLessonPublicId}/schedule-confirm`
@@ -152,6 +231,7 @@ Family endpoints никогда не принимают произвольный
 - `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/delivery-preview` — только confirmed current version; возвращает число получателей, изменения после предыдущей рассылки, недоступные Telegram destinations и безопасный recipient preview
 - `POST /staff/api/v1/classroom-assignment-plans/{planPublicId}/delivery-batches` — admin явно выбирает `pwa` и/или `telegram`, передаёт expected plan version, preview hash и idempotency key; draft/stale/изменившийся после preview plan получает conflict
 - `GET /staff/api/v1/classroom-assignment-delivery-batches/{batchPublicId}` — агрегированные per-channel states/retries без токенов и chat IDs
+- `POST /staff/api/v1/classroom-assignment-delivery-batches/{batchPublicId}/retry-failed` — implementation-default explicit admin retry только текущих failed recipient/channel pairs; принимает expected batch version и idempotency key
 - Полноценные print/export endpoints относятся ко второй версии. V1 не создаёт compatibility export для `a11`–`a14`; narrow classroom delivery не является общим broadcast API.
 - `/staff/api/v1/news/import-status`, `/news/posts`, `/news/posts/{id}/visibility`
 - будущие `/staff/api/v1/broadcasts`, `/broadcasts/{id}/preview`, `/broadcasts/{id}/send` относятся ко второй фазе вместе с Markdown editor и не входят в initial v1 contract; Staff→Telegram channel publication также относится ко второй версии. Исключение v1 — строго типизированная персональная рассылка подтверждённых аудиторий через endpoints выше.
@@ -160,6 +240,15 @@ Family endpoints никогда не принимают произвольный
 Teacher получает `403` на content/checker, broadcasts, Staff classroom catalog/layout/plan routes и audit. Он может менять активную группу доступного ученика внутри разрешённого курса, исправлять/перепроверять работу и читать разрешённую статистику. Остальные capabilities проверяются по course/group scopes, а не предполагаются по видимости navigation.
 
 Все classroom mutations используют `If-Match`/`version`; stale version возвращает `409 VERSION_CONFLICT`. Нормализация имени выполняется сервером, duplicate возвращает `409 CLASSROOM_NAME_CONFLICT` вместе с существующим `publicId`. Layout confirm возвращает `409 CLASSROOM_LAYOUT_STALE`, если base больше не effective. Assignment confirm возвращает `409 CLASSROOM_ASSIGNMENTS_STALE` для устаревшего layout и `422` с отдельными кодами `CLASSROOM_STUDENT_UNASSIGNED`, `CLASSROOM_GROUP_MISMATCH` или `CLASSROOM_MIXED_GROUPS` для нарушенного плана.
+
+Owner-confirmed delivery report допускает partial success и раскрываемые списки.
+Delivery-batch response показывает `selected`, `eligible`, `suppressed`,
+`queued`, `attempted`, `succeeded`, `failed` по каждому выбранному каналу и
+итоговые `delivered_any`, `delivered_all`, `partial`. Раскрываемые списки
+содержат только безопасные Student identity/display fields и per-channel state,
+без Telegram chat ID/token. По implementation default «Повтор ошибок» —
+отдельное явное admin action, которое создаёт новый attempt только для failed
+channel-recipient pairs и не дублирует уже успешную доставку.
 
 Assignment batch не вызывается на каждую смену select. Клиент передаёт полный набор локальных изменений, base plan version и для каждого перехода в другую группу того же курса явное `confirmGroupChange=true`; server применяет group history и assignments атомарно. Аудитория группы другого курса не является допустимым вариантом этой строки. Read payload содержит nullable `ageYears`, `grade`, `strength`, но не `birthday`; room summary содержит `studentCount`, nullable `averageAgeYears`, `averageGrade`, `averageStrength`. Каждый average исключает соответствующие `NULL` и округляется до одного знака. Fuzzy name search выполняется на клиенте по уже загруженным нескольким сотням строк и не требует отдельного endpoint.
 
@@ -173,19 +262,35 @@ Endpoint: `/{audience}/ws`. После authenticated handshake:
 { "type": "connected", "protocolVersion": 1, "connectionId": "...", "heartbeatSeconds": 25 }
 ```
 
+Это целевая расширенная форма. Реализованный Phase-1 transport пока отдаёт
+минимальный совместимый payload `type`, `cursor`, `serverTime`, `audience`; при
+наличии reconnect cursor первым событием всегда становится
+`resync-required` с причиной `reconnect-full-refetch-required`.
+
 Client всегда invalidates/refetches authoritative bootstrap queries после reconnect. Cursor можно использовать для диагностики и gaps внутри живого соединения, но не для отмены resync.
 
 Server events:
 
-- `invalidation`: `audience`, optional `ownerAccountId`, `courseId`, `groupId`, `studentUserId`, `keys[]`, `reason`, `entityVersion`, `requestId`.
+- `invalidation`: `audience`, optional routing `ownerAccountId`, `courseId`, `groupId`, `studentUserId`, `keys[]`, `reason`, `entityVersion`, `requestId`. Phase-1 transport принимает broker `accountId` только вместе с audience, маршрутизирует по authenticated registry и не копирует target ID в browser event; более предметные owner mappings добавляют service layers соответствующих фаз.
 - `notification`: продукт разрешает полные сведения о проверке, но payload всё равно адресуется конкретному account и не содержит credentials/media write URLs.
 - `lease-changed`: staff group/queue key, не чужая работа целиком.
 - `server-update`: новая frontend release/service-worker hint.
 - `resync-required`: protocol/schema mismatch или обнаруженный gap.
 - `classroom.assignment.changed`: owner-scoped invalidation с `audience`, `ownerAccountId`, `studentUserId`, `eventPublicId`, исходными `courseId/groupId`, новым публичным `status` и query keys. После confirm/change отдельные Student и Family sockets только refetch-ят read model; событие не создаёт push/in-app delivery.
 - `classroom.assignment.announced`: создаётся только явным admin delivery batch для Student account. PWA-канал создаёт персональные in-app/push deliveries, Telegram-канал отправляет личное сообщение через существующего бота. Family event/delivery отсутствует. Payload ссылается на immutable plan/batch version и не содержит токен или chat ID.
+- `submission.material.reassigned`: owner-scoped invalidation целевого Student и
+  связанных Family accounts с source/target thread query keys, но без чужих
+  материалов в event payload; Staff получает отдельную scope-filtered
+  invalidation очереди. Authoritative timeline после refetch содержит
+  provenance label.
 
-NATS subject: `<runtimePrefix>.pwa.<audience>.<event>`. Payload обязан иметь `audience`; owner-targeted event фильтруется по authenticated principal до отправки socket. Broad lesson publication публикуется в три явных audience subjects.
+Текущий Phase-1 transport использует изолированные subjects
+`<runtimePrefix>.pwa_invalidate` и `<runtimePrefix>.pwa_session_control`.
+Invalidation без audience остаётся общей, с audience — audience-scoped, а с
+`audience + accountId` — owner-scoped. Control event имеет exact schema
+`version=1`, `type=auth.close`, `scope=session|account` и канонический target;
+лишние поля отвергаются. Целевая предметная декомпозиция по course/group events
+может появиться позже, не меняя reconnect/full-refetch contract.
 
 ## Invalidation/query keys
 
@@ -196,6 +301,7 @@ NATS subject: `<runtimePrefix>.pwa.<audience>.<event>`. Payload обязан и�
 - `lessonKeys.list(course, group, filters)`, `lessonKeys.detail(course, group, id, revision)`
 - `problemKeys.detail(id, revision)`
 - `threadKeys.byProblem(id)`, `reviewKeys.queue(filters)`, `reviewKeys.item(id)`
+- `threadKeys.materialReassignmentPreview(student, sourceProblem, targetProblem, selectionHash)`
 - `newsKeys.list(audience, course, group)`, `notificationKeys.preferences(course?)`
 - `progressKeys.summary(student, course)`, `progressKeys.lesson(student, course, lesson)`
 - `adminKeys.contentRevision(id)`, `adminKeys.publications(lesson, group)`

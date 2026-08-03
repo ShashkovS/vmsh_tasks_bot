@@ -1,9 +1,9 @@
 # Пакетная проверка связей Family–Student
 
-Phase 9 использует отдельный read-only preview для будущего пакетного
-заполнения `family_student_links`. Инструмент работает только с уже созданными
-Family-аккаунтами и существующими школьниками. Он не принимает пароли, не
-создаёт аккаунты и не изменяет SQLite.
+Phase 9 уже содержит отдельный read-only compatibility preview для заполнения
+`family_student_links` между существующими аккаунтами. Target v1 workflow не
+расширяет этот CSV: Staff выполняет два независимых batch — сначала Student,
+затем Family account provisioning.
 
 ## Формат CSV
 
@@ -37,7 +37,9 @@ SQLite открывается через `mode=ro` и `PRAGMA query_only`. Previ
 только номер строки и стабильный код: Family login и Student public ID остаются
 в локальном исходном CSV и не копируются в отчёт.
 
-Отсутствие blockers означает лишь, что файл согласован с выбранной копией БД.
-Apply-команда сознательно не добавлена: пакетное создание Family-аккаунтов,
-выдача первого пароля и способ передачи доступа родителю ещё требуют решения в
-[`22-development-questions.md`](../dev/development-plan/22-development-questions.md).
+Отсутствие blockers означает лишь, что compatibility-файл согласован с выбранной
+копией БД. Target Family batch принимает `name`, `login`, `password`, список
+email через запятую и список login детей. Он создаёт Family account и все links
+одним применением после preview. Login/password сохраняются для внешнего v1
+email-script; сам Staff письма не отправляет. Один Family account открывает всех
+связанных детей в Family PWA.

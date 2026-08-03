@@ -44,11 +44,36 @@ Browser-контракт различает три идентичности: в�
 
 `id INTEGER PK`, `public_id TEXT UNIQUE`, `code TEXT UNIQUE` (например `2026`), `title TEXT`, `starts_on TEXT`, `ends_on TEXT`, `timezone TEXT DEFAULT 'Europe/Moscow'`, `session_expires_on TEXT`, `status TEXT CHECK(draft|active|archived)`, `created_at TEXT`, `updated_at TEXT`.
 
+### `course_runtime_settings`
+
+`course_id INTEGER PK FK courses`, `schema_version INTEGER`, `values_json TEXT`,
+`updated_by_user_id INTEGER`, `updated_at TEXT`, `version INTEGER`. JSON имеет
+небольшой whitelist typed keys, полученный characterization `_BotSettings`;
+unknown keys и wrong types блокируются до write. Backend кеширует effective
+settings и может применять изменения после restart. `save_sol_mode` не
+переносится, поскольку content и submissions всегда хранятся в S3. UI messages
+остаются code resources в v1 и не получают таблицу до v2 i18n.
+
 ### `auth_accounts`
 
-`id INTEGER PK`, `public_id TEXT UNIQUE`, `audience TEXT CHECK(student|family|staff)`, `username TEXT`, `username_normalized TEXT`, `username_algorithm_version INTEGER NULL`, `provisioning_source TEXT`, `display_name TEXT NULL`, `credential_kind TEXT CHECK(telegram_token|password)`, `credential_hash TEXT NULL`, `linked_user_id INTEGER NULL FK users(id)`, `status TEXT CHECK(active|blocked|disabled|archived)`, `credential_version INTEGER DEFAULT 1`, `last_login_at TEXT NULL`, `created_at TEXT`, `updated_at TEXT`.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `audience TEXT CHECK(student|family|staff)`, `username TEXT`, `username_normalized TEXT`, `username_algorithm_version INTEGER NULL`, `provisioning_source TEXT`, `display_name TEXT NULL`, `credential_kind TEXT CHECK(telegram_token|password)`, `credential_hash TEXT NULL`, `provisioning_password_plaintext TEXT NULL`, `linked_user_id INTEGER NULL FK users(id)`, `status TEXT CHECK(active|blocked|disabled|archived)`, `credential_version INTEGER DEFAULT 1`, `last_login_at TEXT NULL`, `created_at TEXT`, `updated_at TEXT`.
 
-Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_user_id, audience)`. Student username импортируется версионированным helper как транслитерация фамилии + день рождения; коллизия, `NULL`/невалидная дата, пустая фамилия или credential, не прошедший security policy, блокируют активацию строки и попадают в report. Источник student credential — текущий Telegram token; второй plaintext не создаётся. Family хранит только минимальное display name без email.
+Constraints/indexes: `UNIQUE(audience, username_normalized)`, index
+`(linked_user_id, audience)`. Student login задаётся batch input; при конфликте
+preview предлагает случайный suffix `-NN`. Источник Student password — текущий
+Telegram token. По owner-confirmed v1 boundary для Student и Family рядом с
+Argon2 verifier сохраняется owner-only plaintext provisioning value для внешней
+email-рассылки. Оно не входит в directory/session API, logs, Sentry, fixtures
+или committed proofs. Family batch также хранит display name и список email;
+связь с детьми остаётся many-to-many.
+
+### `family_account_emails`
+
+`family_account_id INTEGER FK auth_accounts`, `ordinal INTEGER`, `email TEXT`,
+`email_normalized TEXT`, `created_at TEXT`; PK `(family_account_id, ordinal)`.
+Email нужен для будущих внешних рассылок и не является login. Порядок из batch
+сохраняется, пустые элементы после разделения по запятой отбрасываются,
+некорректный адрес блокирует строку preview.
 
 ### `family_student_links`
 
@@ -84,37 +109,94 @@ Constraints/indexes: `UNIQUE(audience, username_normalized)`, index `(linked_use
 
 ## 2. Контент, revisions и assets
 
+Реализованный Phase-2A schema boundary:
+[`0041.pwa_content_lessons.sql`](../../../migrations/0041.pwa_content_lessons.sql),
+domain/repository — [`models/pwa/content.py`](../../../models/pwa/content.py) и
+[`db_methods/pwa/content.py`](../../../db_methods/pwa/content.py).
+
+### `course_lessons` и `group_lessons`
+
+Course lesson: `id INTEGER PK`, `public_id TEXT UNIQUE`, `course_id INTEGER FK
+courses`, `lesson_number INTEGER`, optional `title`, audit actors/timestamps и
+optimistic `version`; unique `(course_id, lesson_number)`.
+
+Group lesson: `id INTEGER PK`, `public_id TEXT UNIQUE`, `course_lesson_id`,
+технический `course_id`, legacy `group_id`, `cycle_anchor_date TEXT`,
+`business_timezone TEXT`, `status CHECK(draft|active|archived)`, audit и
+`version`; unique `(course_lesson_id, group_id)`. Composite FK одновременно
+проверяют принадлежность lesson и group одному курсу. `cycle_anchor_date` —
+legacy/transitional имя поля: его бизнес-смысл в v1 — локальная дата публикации
+условия. Это не понедельник и не дата очного занятия; при следующей совместимой
+schema cleanup поле следует переименовать без изменения уже материализованных
+timestamps.
+
+### `course_schedule_rules`, `group_schedule_overrides` и materialization source
+
+Каждое поле `opens_at | hint_scheduled_at | submission_closes_at |
+solution_scheduled_at` имеет отдельную append-versioned course rule:
+`day_offset`, canonical local `HH:MM:SS`, IANA timezone и состояние
+`draft|active|superseded`. Group override имеет те же owner/field/version,
+обязательный `based_on_schedule_rule_id`, режим `inherit|override|disabled` и
+явное значение только для `override`; cutoff нельзя отключить. Confirmed actor
+и timestamp появляются только вместе. Подтверждение draft проверяет, что его
+`based_on_schedule_rule_id` всё ещё active; если course rule уже заменён,
+операция получает version conflict и требует заново построить impact preview.
+После confirm/supersede audit metadata и terminal row нельзя переписать.
+
+`lesson_window_schedule_sources` хранит для каждого поля materialized window
+точные IDs/версии course rule и optional group override, режим разрешения и
+resolved offset/local time/timezone. Строки immutable. Подтверждение нового
+шаблона не пересчитывает существующее окно: новая materialization всегда
+явное действие после impact preview.
+
 ### `content_sources`
 
 `id INTEGER PK`, `public_id TEXT UNIQUE`, `group_lesson_id INTEGER FK group_lessons`, `kind TEXT CHECK(condition|hint|solution|teacher_note)`, `logical_filename TEXT`, `source_encoding TEXT`, `created_at TEXT`, `created_by_user_id INTEGER FK users`, `archived_at TEXT NULL`. Legacy `season/lesson/group` выводятся через `group_lesson → course_lesson/group` и не являются вторым владельцем source.
 
-Unique candidate: `(season_id, lesson_number, group_id, kind, logical_filename)`.
+Unique: `(group_lesson_id, kind, logical_filename)`. Encoding хранится только
+как canonical `utf-8 | cp1251`; hash revision считается по исходным bytes, а
+UTF-8 BOM удаляется уже после hash/provenance boundary.
 
 ### `content_revisions`
 
 `id INTEGER PK`, `public_id TEXT UNIQUE`, `source_id INTEGER FK content_sources`, `revision_number INTEGER`, `source_sha256 TEXT`, `latex_text TEXT`, `parser_version TEXT`, `status TEXT CHECK(uploaded|compiling|ready|invalid|superseded)`, `canonical_json TEXT NULL`, `diagnostics_json TEXT`, `created_by_user_id INTEGER`, `created_at TEXT`, `supersedes_revision_id INTEGER NULL`.
 
-Constraint: `UNIQUE(source_id, revision_number)` and `UNIQUE(source_id, source_sha256)` unless duplicate upload is intentionally logged separately.
+Constraints: `UNIQUE(source_id, revision_number)` и
+`UNIQUE(source_id, source_sha256)`. `supersedes_revision_id` указывает на
+предыдущую revision того же source как lineage, но append не переводит старую
+`ready` revision в `superseded`: это отдельное явное действие, чтобы сохранить
+publication rollback. Compiler обновляет только status/canonical/diagnostics
+под optimistic version; source identity и terminal rows immutable, delete
+запрещён.
 
 ### `media_assets`
 
-`id INTEGER PK`, `public_id TEXT UNIQUE`, `sha256 TEXT`, `storage_namespace TEXT CHECK(content|submission|news|annotation|generated)`, `object_key TEXT UNIQUE`, `public_url TEXT`, `media_type TEXT`, `byte_size INTEGER`, `width INTEGER NULL`, `height INTEGER NULL`, `source_filename TEXT NULL`, `conversion_version TEXT NULL`, `created_by_user_id INTEGER NULL`, `created_at TEXT`, `immutable_at TEXT NULL`, `deleted_at TEXT NULL`.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `sha256 TEXT`, `storage_namespace TEXT CHECK(content|submission|news|annotation|generated)`, canonical bounded `object_key TEXT UNIQUE`, optional credential-free HTTP(S) `public_url`, `media_type TEXT`, `byte_size INTEGER > 0`, `width INTEGER NULL`, `height INTEGER NULL`, `source_filename TEXT NULL`, `conversion_version TEXT`, `created_by_user_id INTEGER NULL`, `created_at TEXT`, `immutable_at TEXT NULL`, `deleted_at TEXT NULL`. Ненулевые `width` и `height` лежат в диапазоне `1..20000`.
 
-Indexes: `UNIQUE(storage_namespace, sha256, conversion_version)` для переиспользуемых content assets; submission assets могут не дедуплицироваться между учениками из соображений изоляции.
+Indexes: `UNIQUE(storage_namespace, sha256, conversion_version)` для
+переиспользуемых content/generated assets; повторный hash возвращает старую
+строку только при совпадении media type, byte size и dimensions. Submission
+assets могут не дедуплицироваться между учениками из соображений изоляции.
 
 ### `content_revision_assets`
 
-`revision_id INTEGER FK content_revisions`, `asset_id INTEGER FK media_assets`, `logical_name TEXT`, `role TEXT CHECK(source|figure|tikz|pdf|preview)`, `ordinal INTEGER`, `alt_text TEXT NULL`, PK `(revision_id, logical_name, role)`.
+`revision_id INTEGER FK content_revisions`, `asset_id INTEGER FK media_assets`,
+`logical_name TEXT`, `role TEXT CHECK(source|figure|tikz|pdf|preview)`,
+`ordinal INTEGER`, `alt_text TEXT NULL`, PK `(revision_id, logical_name, role)`.
+После записи association immutable и не удаляется молча.
 
 ### `content_derivatives`
 
 `id INTEGER PK`, `revision_id INTEGER FK content_revisions`, `kind TEXT CHECK(web_ast|web_html|telegram_html|pdf|thumbnail)`, `renderer_version TEXT`, `content_text TEXT NULL`, `asset_id INTEGER NULL FK media_assets`, `sha256 TEXT`, `diagnostics_json TEXT`, `created_at TEXT`, `invalidated_at TEXT NULL`.
 
-Unique: `(revision_id, kind, renderer_version)`.
+Unique: `(revision_id, kind, renderer_version)`. Text derivative сам проверяет
+hash; asset derivative обязан ссылаться на неудалённый `media_assets` с тем
+же SHA-256. Payload immutable, `invalidated_at` устанавливается не более одного
+раза, delete запрещён.
 
 ### `content_problem_matches` и `problem_revisions`
 
-Match: `id INTEGER PK`, `content_revision_id INTEGER`, `source_ordinal INTEGER`, `source_item TEXT`, `problem_id INTEGER NULL`, `decision TEXT CHECK(auto_position|manual_match|insert_new|omit)`, `resolved_by_user_id INTEGER NULL`, `resolved_at TEXT NULL`, `diagnostics_json TEXT`; unique `(content_revision_id, source_ordinal, source_item)`.
+Match: `id INTEGER PK`, `content_revision_id INTEGER`, `source_ordinal INTEGER`, `source_item TEXT`, `problem_id INTEGER NULL`, `decision TEXT CHECK(auto_position|manual_match|insert_new|omit)`, `resolved_by_user_id INTEGER NULL`, `resolved_at TEXT NULL`, `diagnostics_json TEXT`; unique `(content_revision_id, source_ordinal, source_item)`. В текущем increment resolved match append-only; исправление создаёт новую source revision/match, а не перепривязывает старую строку.
 
 Revision: `id INTEGER PK`, `problem_id INTEGER FK problems`, `content_revision_id INTEGER FK content_revisions`, `source_ordinal INTEGER`, `source_item TEXT`, `display_number TEXT`, `title TEXT`, `problem_type INTEGER`, `answer_type INTEGER NULL`, `answer_config_json TEXT`, `attempt_policy_json TEXT`, `config_version INTEGER`, `created_at TEXT`, `created_by_user_id INTEGER`.
 
@@ -122,17 +204,23 @@ Revision: `id INTEGER PK`, `problem_id INTEGER FK problems`, `content_revision_i
 
 ### `problem_synonym_groups` и `problem_synonym_members`
 
-Group: `id INTEGER PK`, `public_id TEXT UNIQUE`, `course_lesson_id INTEGER FK course_lessons`, `group_key TEXT`, `display_title TEXT`, `created_by_user_id`, `created_at`, `updated_at`, `version INTEGER`.
+Group: `id INTEGER PK`, `public_id TEXT UNIQUE`, `course_lesson_id INTEGER FK course_lessons`, `group_key TEXT`, `display_title TEXT`, `status CHECK(active|split|archived)`, `created_by_user_id`, `created_at`, `updated_at`, `version INTEGER`.
 
-Member: `id INTEGER PK`, `synonym_group_id INTEGER`, `problem_id INTEGER`, `added_by_user_id`, `added_at TEXT`, `removed_by_user_id NULL`, `removed_at TEXT NULL`, `membership_version INTEGER`. Active unique constraints запрещают problem одновременно состоять в двух synonym groups одного `course_lesson` и запрещают два active member одной synonym group внутри одного `group_lesson`. История merge/split не удаляется.
+Member: `id INTEGER PK`, `synonym_group_id INTEGER`, materialized
+`group_lesson_id INTEGER`, `problem_id INTEGER`, `added_by_user_id`, `added_at
+TEXT`, `removed_by_user_id NULL`, `removed_at TEXT NULL`, optional `reason`,
+`membership_version INTEGER`. Active unique constraints запрещают problem
+одновременно состоять в двух synonym groups и два active member одной synonym
+group внутри одного `group_lesson`; trigger проверяет общую course lesson через
+immutable problem revision lineage. История merge/split не удаляется.
 
 ### `lesson_publications`
 
-`id INTEGER PK`, `public_id TEXT UNIQUE`, `group_lesson_id INTEGER FK group_lessons`, `kind TEXT CHECK(condition|hint|solution)`, `revision_id INTEGER FK content_revisions`, `state TEXT CHECK(scheduled|published|superseded|hidden)`, `scheduled_at TEXT NULL`, `published_at TEXT NULL`, `hidden_at TEXT NULL`, `published_by_user_id INTEGER`, `supersedes_publication_id INTEGER NULL`, `version INTEGER`. Condition/hint/solution одной группы независимы от другой даже при общем `course_lesson`.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `group_lesson_id INTEGER FK group_lessons`, `kind TEXT CHECK(condition|hint|solution)`, `revision_id INTEGER FK content_revisions`, `state TEXT CHECK(scheduled|published|superseded|hidden)`, `scheduled_at TEXT NULL`, `published_at TEXT NULL`, `hidden_at TEXT NULL`, `published_by_user_id INTEGER`, `supersedes_publication_id INTEGER NULL`, `activated_from_schedule_id INTEGER NULL`, `version INTEGER`. Публикуется только `ready` revision того же group lesson/kind. Identity/delete immutable; activation, replacement и rollback append new row и атомарно supersede фактическую предыдущую publication. При плановой активации новая published row одновременно хранит lineage предыдущей published row в `supersedes_publication_id` и исходной scheduled row в `activated_from_schedule_id`. Condition/hint/solution одной группы независимы от другой даже при общем `course_lesson`.
 
 ### `lesson_windows`
 
-`id INTEGER PK`, `public_id TEXT UNIQUE`, `group_lesson_id INTEGER FK group_lessons UNIQUE`, `opens_at TEXT NULL`, `submission_closes_at TEXT`, `hint_scheduled_at TEXT NULL`, `solution_scheduled_at TEXT NULL`, `timezone TEXT`, `source TEXT CHECK(native|legacy_schedule|manual_backfill)`, `schedule_rule_version INTEGER NULL`, `created_by_user_id INTEGER NULL`, `created_at TEXT`, `updated_at TEXT`, `version INTEGER`.
+`id INTEGER PK`, `public_id TEXT UNIQUE`, `group_lesson_id INTEGER FK group_lessons UNIQUE`, `opens_at TEXT NULL`, `submission_closes_at TEXT NOT NULL`, `hint_scheduled_at TEXT NULL`, `solution_scheduled_at TEXT NULL`, `timezone TEXT`, `source TEXT CHECK(native|legacy_schedule|manual_backfill)`, actor/audit timestamps и `version INTEGER`. Единого `schedule_rule_version` нет: provenance каждого поля находится в `lesson_window_schedule_sources`.
 
 Authoritative дедлайн сдачи — отдельный `submission_closes_at`, преобразованный в UTC из бизнес-зоны сезона. `solution_scheduled_at` управляет ожидаемой публикацией, а `lesson_publications.published_at` фиксирует фактическое событие. Эти timestamps могут совпасть, но один не выводится из другого. Клиент получает оба значения и никогда не вычисляет cutoff из локального календаря. По закрытому `SCHEDULE-01` правка расписания решения не меняет cutoff; дедлайн редактируется только отдельным confirmed/audited action.
 
@@ -140,7 +228,7 @@ Authoritative дедлайн сдачи — отдельный `submission_close
 
 ### `hint_reveals` и `solution_reveals`
 
-Одинаковая форма: `id INTEGER PK`, `student_user_id`, `problem_id`, `publication_id`, `revealed_at`, `request_id`; unique `(student_user_id, problem_id, publication_id)`. Событие создаётся после явного подтверждения.
+Одинаковая форма: `id INTEGER PK`, `student_user_id`, `problem_id`, `publication_id`, `revealed_at`, `request_id`; unique `(student_user_id, problem_id, publication_id)`. Событие создаётся после явного подтверждения только для published hint/solution и problem конкретного group lesson. Reveal immutable и не удаляется.
 
 ## 3. Сдачи, тред и идемпотентность
 
@@ -162,6 +250,33 @@ Indexes: `(thread_id, server_received_at, id)`, unique `(author_user_id, idempot
 
 Логическая письменная отправка становится `submitted` только после сохранения всех выбранных attachments. До первого review lock text/entry можно с подтверждением изменить или удалить. После lock исходная entry не меняется, но student может добавить новую entry в тот же thread. Review completion фиксирует все student entries, успевшие стать `submitted`; если thread version изменилась во время проверки, complete получает `409` и reviewer обязан обновить evidence, поэтому досланная фотография не теряется.
 
+### `submission_material_reassignments` и `submission_material_reassignment_items`
+
+Header коррекции: `id INTEGER PK`, `public_id TEXT UNIQUE`,
+`student_user_id INTEGER`, `source_thread_id INTEGER`,
+`target_thread_id INTEGER`, `source_problem_id INTEGER`,
+`target_problem_id INTEGER`, `performed_by_user_id INTEGER`,
+`reason TEXT NULL`, `request_id TEXT`, `created_at TEXT`.
+
+Item: `reassignment_id INTEGER`, `source_entry_id INTEGER`,
+`item_kind TEXT CHECK(entry_text|attachment)`, `attachment_id INTEGER NULL`,
+`ordinal INTEGER`, PK `(reassignment_id, ordinal)`. Для `entry_text`
+`attachment_id IS NULL`, для `attachment` он обязателен и должен принадлежать
+`source_entry_id`. Выбор контейнера сообщения в UI разворачивается в явный
+набор его текстовой части и/или фотографий; JSON-массив IDs в header не
+используется.
+
+Owner-confirmed core разрешает teacher перенести одно или несколько выбранных
+сообщений/фотографий и показывает их Student в целевой истории. Модель применяет
+безопасный implementation default: операция доступна также admin с правом на обе
+задачи, разрешена после review и всегда является append-only. Исходные entry,
+attachment, object key, problem ID и immutable review snapshot не меняются и не
+копируются. Текущая проекция каждого текстового/фото-item определяется последней
+коррекцией по `(created_at, id, ordinal)`; повторный перенос создаёт новую запись.
+Все items одного batch принадлежат одному школьнику. Student видит пометку
+«Перенесено преподавателем», исходная цепочка остаётся в provenance/audit, а
+verdict автоматически не переезжает.
+
 ### `test_attempts`
 
 `id INTEGER PK`, `public_id TEXT UNIQUE`, `student_user_id INTEGER`, `problem_id INTEGER`, `problem_revision_id INTEGER`, `answer_payload_json TEXT`, `normalized_answer_json TEXT NULL`, `parse_status TEXT CHECK(valid|invalid_format)`, `counts_as_attempt INTEGER`, `check_status TEXT CHECK(pending_configuration|pending|checked|failed)`, `client_created_at TEXT`, `server_received_at TEXT`, `clock_skew_seconds INTEGER NULL`, `clock_suspicious INTEGER DEFAULT 0`, `idempotency_key TEXT`, `payload_sha256 TEXT`, `checker_version TEXT NULL`, `verdict INTEGER NULL`, `result_id INTEGER NULL FK results`, `created_at TEXT`, `checked_at TEXT NULL`.
@@ -178,7 +293,16 @@ Unique `(student_user_id, idempotency_key)`. Неразобранный отве
 
 ### Эволюция `written_tasks_queue`
 
-Добавить: `claim_token TEXT NULL`, `claimed_at TEXT NULL`, `lease_expires_at TEXT NULL`, `lease_version INTEGER DEFAULT 0`, `updated_at TEXT`. Claim выполняется одним conditional `UPDATE`; heartbeat продлевает только совпадающий token. Telegram adapter использует тот же repository.
+Добавить: opaque `public_id`, `claim_token TEXT NULL`, `claimed_at TEXT NULL`,
+`lease_expires_at TEXT NULL`, `lease_version INTEGER DEFAULT 0`, `updated_at
+TEXT`. Claim выполняется одной `BEGIN IMMEDIATE` transaction; heartbeat
+продлевает только совпадающий token. Phase 6A реализован migration
+[`0051.pwa_review_queue_leases.sql`](../../../migrations/0051.pwa_review_queue_leases.sql)
+и repository
+[`reviews.py`](../../../db_methods/pwa/reviews.py). Legacy Telegram сохраняет
+старые columns/write shape и видит PWA claim через `cur_status`, `teacher_ts` и
+`teacher_id`; перевод самого Telegram adapter на новый repository остаётся
+отдельным cutover.
 
 ### `submission_reviews`
 
@@ -190,7 +314,13 @@ Review + актуальный legacy result + queue transition + asset locks з�
 
 `id INTEGER PK`, `public_id TEXT UNIQUE`, `review_id INTEGER`, `attachment_id INTEGER`, `format_version INTEGER`, `rotation_quarter_turns INTEGER`, `annotation_json TEXT`, `preview_asset_id INTEGER NULL`, `telegram_composite_asset_id INTEGER NULL`, `created_by_user_id INTEGER`, `created_at TEXT`.
 
-Original WebP не меняется. Annotation payload содержит карандаш/ластик, один из 4–5 цветов и координаты в normalized image space; zoom является viewer state. После отправки запись immutable. Для Telegram создаётся объединённый PNG derivative.
+Original WebP не меняется. Versioned annotation payload обязательно поддерживает
+`pencil|eraser|text|arrow|rectangle`, координаты в normalized image space и
+поворот отдельным числом четверть-оборотов. Schema может также хранить optional
+`highlight` и palette key; отдельный highlight-tool и точная палитра примерно из
+4–5 цветов остаются implementation detail. Zoom и pan являются только локальным
+viewer state и в payload не входят. После отправки запись immutable. Для
+Telegram создаётся объединённый PNG derivative.
 
 ### Эволюция `reactions`
 
@@ -288,6 +418,16 @@ Select комнаты другой группы того же курса соз�
 
 `id`, `event_id`, `channel CHECK(in_app|web_push|telegram)`, `destination_ref`, `state CHECK(pending|sending|sent|failed|suppressed)`, `attempt_count`, `next_attempt_at`, `last_error_code`, `sent_at`, timestamps.
 
+Owner-confirmed delivery report допускает частичный успех и раскрываемую
+детализацию. Для каждого immutable delivery batch read model агрегирует по каналу
+`selected`, `eligible`, `suppressed`, `queued`, `attempted`, `succeeded` и
+`failed`, а поверх каналов — `delivered_any`, `delivered_all` и `partial`.
+Раскрываемая детализация показывает безопасное имя/публичный Student ID и
+per-channel state, но никогда не Telegram chat ID/token. Implementation default
+для явного `retry failed` создаёт новый attempt только для неуспешной пары
+`(recipient, channel)`; успешные доставки не повторяются и не превращаются в
+новый broadcast.
+
 ### `classroom_assignment_delivery_batches`
 
 `id`, `public_id`, `assignment_plan_id`, `assignment_plan_version`, `requested_by_user_id`, `channels_json`, `recipient_snapshot_hash`, `recipient_count`, `changed_since_previous_count`, `state CHECK(previewed|queued|sending|completed|completed_with_errors|cancelled)`, `idempotency_key`, `created_at`, `started_at NULL`, `completed_at NULL`, `version`. Batch создаётся только для confirmed plan и immutable snapshot получателей; draft/stale plan отправить нельзя. Изменение плана после batch не запускает доставку и появляется в следующем preview как `not announced`.
@@ -295,6 +435,12 @@ Select комнаты другой группы того же курса соз�
 ### `classroom_assignment_delivery_recipients`
 
 `batch_id`, `student_user_id`, `course_enrollment_id`, `classroom_assignment_id`, snapshot публичного room/event text, `pwa_event_id NULL`, server-side `telegram_destination_ref NULL`, per-channel state/error/sent timestamps, unique `(batch_id, student_user_id, course_enrollment_id)`. Browser получает имя/счётчики/status preview, но не Telegram token/chat ID. PWA delivery создаёт Student in-app/push; Telegram delivery идёт в личный bot dialogue. Family rows не создаются.
+
+Частичная доставка считается успешной для школьника по `delivered_any`, но не
+скрывается из диагностики `partial`. По implementation default повтор после
+устранения ошибки запускается admin явно и адресуется только failed
+channel-recipient pairs исходного batch; он не пересылает уже доставленное
+сообщение по второму каналу.
 
 ### `delivery_outbox`
 
@@ -324,11 +470,12 @@ Delivery: `broadcast_id`, `account_id NULL`, `user_id NULL`, `channel`, `state`,
 
 Accepted counts и activity calendar сначала вычисляются из `results`, `submission_entries`, `user_changes_log` и read-only SQL. Accepted count использует `VERDICT_TO_NUM >= 0.9`; denominator считает problem items. Activity calendar схлопывает все отправки одного item за день в одно событие.
 
-Кривые силы, сложность занятия, выбранный лучший уровень и violin зависят от алгоритма `_external_pipelines/a53_calc_rating_new.py`, а не только от ledger rows. Для них планируются измеренные persistent read models:
+Кривые силы, сложность занятия и выбранная лучшая группа зависят от алгоритма `_external_pipelines/a53_calc_rating_new.py`, а не только от ledger rows. Для них планируются измеренные persistent read models:
 
 - `analytics_runs(id, public_id, algorithm, algorithm_version, input_through_result_id, state, started_at, completed_at, diagnostics_json)`;
 - `student_lesson_metrics(run_id, student_user_id, lesson_number, group_id, simple_strength, complex_strength, max_complex_strength, solved_items, total_items)` с unique `(run_id, student_user_id, lesson_number)` и индексом для latest-by-student;
-- при необходимости measured `lesson_problem_statistics`, если прямой read для violin/Staff table не укладывается в budget.
+- при необходимости measured `lesson_problem_statistics` только для Staff
+  analytics; Student/Family contracts не получают group distribution.
 
 Job публикует полный successful run атомарно и обновляет совместимую latest projection `student_strength`; незавершённый run не виден API. Violin показывает число решённых items, cohort для прошлого урока выбирается по сохранённому лучшему уровню и публикуется только при `n >= 30`. Названия `temp_*` из внешнего скрипта не становятся production schema.
 

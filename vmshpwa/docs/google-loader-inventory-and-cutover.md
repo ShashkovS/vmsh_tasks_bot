@@ -93,9 +93,10 @@ semicolon-строку. Если active group не входит в allowed group
 editing через
 [`admin_account_routes.py`](../../apps/pwa_api/admin_account_routes.py) и
 [`admin_enrollment_routes.py`](../../apps/pwa_api/admin_enrollment_routes.py).
-Первичный Excel import новых школьников с preview/partial apply ещё не
-реализован: не решено, как файл однозначно задаёт course/group в многокурсовой
-модели.
+Первичный import новых школьников с preview/apply ещё не реализован. Target
+разделён на Student account batch, Family account batch и отдельный per-course
+enrollment batch `login, course, allowed_groups`; правило active group при
+нескольких allowed groups остаётся отдельным вопросом.
 
 **Golden/parity.** Golden input и DB diff появятся вместе с users import. Он
 должен отдельно показать create/update/skip, collision логинов, invalid token,
@@ -104,9 +105,8 @@ course enrollment и сохранение исходного `users.id`; реа�
 
 **Cutover и rollback.** Статус `legacy bridge`. `/update_students` остаётся
 ручным recovery path до production rehearsal нового импорта. Cutover и удаление
-Google credentials для этого листа запрещены до решения вопроса 19 в
-[`20-implementation-questions.md`](../dev/development-plan/20-implementation-questions.md)
-и доказанного repeatable apply/rollback.
+Google credentials для этого листа запрещено удалять до доказанного repeatable
+apply/rollback нового batch workflow и owner-run cutover rehearsal.
 
 ## Лист «Учителя»
 
@@ -182,14 +182,13 @@ cutover возможен только после mapping report, повторн�
 есть 215 keys. Значения являются локализуемыми Telegram/UI-текстами, а не PWA
 content publications.
 
-**Новая замена.** Не выбрана. Переносить все 215 строк в общий Staff editor без
-решения владельца нельзя: часть сообщений разумнее оставить versioned code
-resources, а часть может потребовать admin editing.
+**Новая замена.** В v1 тексты остаются hardcoded/versioned code resources и не
+получают Staff editor. В v2 вводятся i18n resources и admin-настройка текстов
+для доступных языков.
 
 **Cutover и rollback.** Статус `legacy bridge`. Recovery — повторный
-`/update_ui_messages`; построчного rollback и удаления нет. Нужное продуктовое
-решение записано в
-[`22-development-questions.md`](../dev/development-plan/22-development-questions.md).
+`/update_ui_messages`; построчного rollback и удаления нет. Cutover v1 требует
+characterization используемых keys и явного code mapping, а не нового editor.
 
 ## Лист `_BotSettings`
 
@@ -204,14 +203,16 @@ resources, а часть может потребовать admin editing.
 наблюдаются семь keys: `game_mode`, `prev_problems_mode`, `rate_limit`,
 `reg_mode`, `result_mode`, `save_sol_mode`, `verdict_mode`.
 
-**Новая замена.** Не реализована. Эти настройки управляют legacy Telegram
-behavior и не должны автоматически становиться PWA runtime flags. Для каждого
-key сначала нужны тип, допустимые значения, момент применения и owner.
+**Новая замена.** Не реализована. Главные настройки становятся per-course и
+редактируются вместе с курсом; backend может кешировать их до перезапуска.
+Перед реализацией каждый legacy key получает тип/validation и mapping.
+`save_sol_mode` удаляется без replacement: новый pipeline всегда хранит content
+и submissions в S3.
 
 **Cutover и rollback.** Статус `legacy bridge`. Recovery — исправить значение и
 повторить `/update_bot_settings`, затем при необходимости перезапустить bot.
-Требуемое решение о Staff editor либо code/config ownership записано в
-[`22-development-questions.md`](../dev/development-plan/22-development-questions.md).
+Cutover проходит только после per-course Staff settings и compatibility read
+для Telegram adapter.
 
 ## Полная загрузка `/update_all`
 

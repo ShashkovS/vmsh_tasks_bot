@@ -27,21 +27,23 @@
 
 ## Состояние документов
 
-| Документ/этап       | Статус                         | Решение/блокер                                                                                                                                                        |
-| ------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Инженерный контракт | draft for approval             | Формат proof описан; фактически заполняется при реализации                                                                                                            |
-| Решения и границы   | accepted planning input        | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                        |
-| Модель данных       | revised planning input         | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                            |
-| API/events/files    | accepted planning input        | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                     |
-| Этап 0              | in progress                    | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps           |
-| Этап 1              | in progress                    | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import |
-| Этап 2              | Phase 2A–2E + browser E2E      | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                         |
-| Этап 3              | Phase 3A–3H reading slice      | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                  |
-| Этап 4              | Phase 4A–4G functionally ready | Domain/API, draft/outbox, Student submit, Staff recheck и общая PWA/Telegram policy готовы; открыт только visual owner gate                                           |
-| Этап 5              | Phase 5A–5F browser + live S3  | Server/browser vertical и guarded written-photo S3 lifecycle готовы; replacement, backfill, Staff review, media corpus и visual gate открыты                          |
-| Этапы 6–11          | planned with gates             | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                         |
-| Design system       | phases 5–7 ready for review    | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                    |
-| Multi-course model  | schema + verified prototype    | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                |
+| Документ/этап       | Статус                         | Решение/блокер                                                                                                                                                                          |
+| ------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Инженерный контракт | draft for approval             | Формат proof описан; фактически заполняется при реализации                                                                                                                              |
+| Решения и границы   | accepted planning input        | Исходный опросник и 4 развилки внешнего ревью закрыты в `17-open-questions.md`                                                                                                          |
+| Модель данных       | revised planning input         | Cutoff, season backfill, analytics snapshots и reaction migration уточнены                                                                                                              |
+| API/events/files    | accepted planning input        | Batch move, cross-group confirm и classroom history зафиксированы                                                                                                                       |
+| Этап 0              | in progress                    | Runtime/schema/seed/auth/storage, one-origin functional E2E 72/72 и live Telegram bind/send/edit/delete готовы; остаются visual owner gate и telemetry gaps                             |
+| Этап 1              | in progress                    | Auth/HTTP/WebSocket и proxy boundary зафиксированы в `1aad776`, browser auth E2E 60/60 готовы; остаются server nginx-t/live rate smoke и production controlled import                   |
+| Этап 2              | Phase 2A–2E + browser E2E      | Matching/metadata, PDF, пакетная загрузка и content E2E 3/3 проверены; открыты production parity/backfill и owner visual gate                                                           |
+| Этап 3              | Phase 3A–3H reading slice      | Course/lesson/home, canonical task/reveal, owner-isolated cold-offline reading и long-corpus KaTeX budget проверены; открыт только visual owner gate                                    |
+| Этап 4              | Phase 4A–4G functionally ready | Domain/API, draft/outbox, Student submit, Staff recheck и общая PWA/Telegram policy готовы; открыт только visual owner gate                                                             |
+| Этап 5              | Phase 5A–5I browser + live S3  | Server/browser vertical, guarded S3, atomic replacement, append-only reassignment, Staff media/client, correction UI и media corpus готовы; legacy backfill и общий visual gate открыты |
+| Этап 6              | functionally ready             | Review/workspace/reactions/corrections/support и production E2E доказаны; открыты owner visual gate, support attachments и Telegram continuation                                        |
+| Этап 7              | Phase 7A catalog accepted      | Каталог аудиторий прошёл storage/API/Staff UI/E2E; layout, assignment, delivery и oral gates остаются открыты                                                                           |
+| Этапы 8–11          | planned with gates             | Продуктовые развилки закрыты; readiness доказывается phase proof, а не дополнительным опросом                                                                                           |
+| Design system       | phases 5–7 ready for review    | [Этапы связаны](18-design-implementation-map.md) с components/story IDs; остался ручной owner gate                                                                                      |
+| Multi-course model  | schema + verified prototype    | Phase-1 course/access schema и UI prototype готовы; backend repository/HTTP и миграции последующих фаз ещё выполняются                                                                  |
 
 ## Журнал решений
 
@@ -128,6 +130,7 @@
 | 2026-07-28 | PLAN-079 | Submission photo хранится только как уникальный final WebP после server re-encode                        | Source не попадает в durable storage; DB failure компенсирует object delete, filesystem использует owner-only mediaPath, production может отдать public S3 URL |
 | 2026-07-28 | PLAN-080 | До review-lock страницы можно удалить и переупорядочить; после lock evidence неизменяемо                 | Удаление сразу убирает projection и ставит asset deleted_at; final object остаётся под admin-managed retention до отдельной manifest-driven очистки            |
 | 2026-07-28 | PLAN-081 | Written draft делит serializable state и бинарные страницы между localStorage и Dexie                    | Reload сохраняет текст/порядок/server IDs; portable ArrayBuffer обходит WebKit Blob/IDB failure; source хранится только до server fallback receipt             |
+| 2026-07-28 | PLAN-082 | Pre-review исправление — новая entry и атомарная логическая замена                                       | Старое evidence не перепривязывается; durable replacement intent переживает reload, а после lock доступно только продолжение треда                             |
 
 ## Текущий инкремент этапа 0
 
@@ -503,9 +506,86 @@
   [`phase5-written-storage-live.md`](../../../pwa_tests/reports/phase5-written-storage-live.md).
 - Объединённый proof:
   [`phase5-written-browser-draft.md`](../../../pwa_tests/reports/phase5-written-browser-draft.md).
-- Следующий gate: post-submit pre-review atomic replacement. Legacy
-  backfill/reassignment, большой media corpus, Staff review и visual owner gate
-  также остаются открыты; snapshots не обновлялись.
+- Phase 5G revisions `1fa320b`, `6b30141`, `9d3b821`, `34d371d` добавляют
+  append-only `submission_entry_replacements`, атомарный Student API и durable
+  local replacement intent. Прежняя entry/evidence остаётся отдельно и
+  становится `deleted` только вместе с переводом новой entry в `submitted`.
+- Replacement draft копирует прежний текст и authenticated WebP, переживает
+  reload и завершает resumable create/upload цепочку вызовом `replace` вместо
+  `submit`. Reconnect race закрыт; retry backoff возрастает до 30 секунд.
+- Focused frontend — **4 файла / 32 PASS**; актуальный frontend checkpoint —
+  **47 файлов / 362 PASS**; schema inventory — **269 objects / 21 focused
+  PASS**; полный Python PWA — **1223 PASS / 3 intentional skips**; Storybook —
+  **38 файлов / 188 PASS**. Production-build submissions E2E — **9/9 PASS**,
+  включая replacement в Chromium, WebKit и Firefox. Proof:
+  [`phase5-written-replacement.md`](../../../pwa_tests/reports/phase5-written-replacement.md).
+- Phase 5H revision `0e8b84f` реализует Staff preview и append-only перенос
+  выбранного текста/фотографий между конкретными задачами одного школьника.
+  Физические entry/attachment/object/result/verdict остаются в исходной ветке;
+  Student получает target projection с provenance и две owner invalidations.
+- Focused contracts/repository/aiohttp — **8 + 3 + 1 PASS**; broad written
+  regression — **27 PASS**. Актуальный полный checkpoint: frontend **47 файлов /
+  363 PASS**, Python PWA **1227 PASS / 3 intentional skips**, lint/typecheck и
+  production build — PASS. Proof:
+  [`phase5-written-material-reassignment.md`](../../../pwa_tests/reports/phase5-written-material-reassignment.md).
+- Phase 5I revisions `08ac0bf`, `89d0427`, `a2187c7`, `4d7b4f6` закрывают
+  authenticated Staff WebP media route, typed preview/commit/media client и
+  reusable correction UI. Storybook IDs:
+  `product-review--material-reassignment` и
+  `product-review--material-reassignment-post-review`; desktop/mobile-light
+  просмотрены вручную, найденный mobile overflow исправлен, snapshots не
+  обновлялись. Актуальный checkpoint: frontend **48 файлов / 367 PASS**,
+  Python PWA **1227 PASS / 3 intentional skips / 1 existing SymPy warning**,
+  Storybook browser **39 файлов / 190 PASS**, lint/typecheck/production build —
+  PASS. Proof:
+  [`phase5-written-material-reassignment.md`](../../../pwa_tests/reports/phase5-written-material-reassignment.md).
+- Следующие gates: legacy backfill и visual owner approval. Production review
+  route/search wiring, полный Staff review и media corpus закрыты последующими
+  инкрементами.
+- Phase 6A revision `16980f6` rebuild-ит `written_tasks_queue`, исправляет
+  affinity `teacher_id`, добавляет opaque ID и renewable lease. Shared-SQLite
+  repository захватывает все ветки одного Student+modern-synonym-case,
+  fail-closed проверяет Staff scope, уважает живой 30-минутный Telegram lock и
+  даёт ровно одного победителя при concurrent claim. Focused queue/migration/
+  legacy — **10 PASS**; schema inventory — **274 objects / 31 PASS**;
+  seed/maintenance — **117 PASS**; полный checkpoint — **367 frontend + 1233
+  Python PASS / 3 intentional skips / 1 existing SymPy warning**. Proof:
+  [`phase6-review-queue-leases.md`](../../../pwa_tests/reports/phase6-review-queue-leases.md).
+- Phase 6B revisions `8742244`, `b2c539c` добавляют authenticated Staff
+  list/claim/heartbeat/release, public course/group scope без частичной утечки
+  synonym-case, strict wire contracts и account-scoped browser client. Focused
+  Python — **8 PASS**, TypeScript — **2 файла / 9 PASS**; полный checkpoint:
+  frontend **50 файлов / 376 PASS**, Python PWA **1237 PASS / 3 intentional
+  skips / 1 existing SymPy warning**, lint/typecheck/production build — PASS.
+  Proof:
+  [`phase6-review-queue-http.md`](../../../pwa_tests/reports/phase6-review-queue-http.md).
+- Phase 6C revisions `7c52472`, `30c9f11`, `7df0d81` добавляют append-only
+  review/evidence schema, exact multi-branch snapshot, atomic target-last
+  result/comment/queue transaction, evidence freeze, idempotent replay,
+  authenticated complete endpoint, strict TypeScript client и owner-scoped
+  invalidation. Focused Python/HTTP — **12 PASS**, focused TypeScript — **12
+  PASS**; полный checkpoint: frontend **50 файлов / 379 PASS**, Python PWA
+  **1241 PASS / 3 intentional skips / 1 existing SymPy warning**, schema **298
+  objects**, lint/typecheck/production build — PASS. Proof:
+  [`phase6-review-completion.md`](../../../pwa_tests/reports/phase6-review-completion.md).
+- Phase 6D revisions `9fdfe98`, `b93defa` добавляют versioned normalized
+  annotation manifest для exact reviewed attachment, все core marks и optional
+  highlight, rotation, strict geometry/size limits, atomic/idempotent storage и
+  strict HTTP/Zod transport. Focused Python/HTTP — **19 PASS**, focused
+  TypeScript — **12 PASS**; полный checkpoint: frontend **50 файлов / 379
+  PASS**, Python PWA **1248 PASS / 3 intentional skips / 1 existing SymPy
+  warning**, Storybook **39 файлов / 190 PASS**, schema **303 objects**,
+  lint/typecheck/production build — PASS. Proof:
+  [`phase6-review-annotations.md`](../../../pwa_tests/reports/phase6-review-annotations.md).
+- Phase 6E revisions `1db6f0b`, `978d0e9` добавляют current internal Teacher
+  reaction и append-only history, атомарную initial reaction, часовое окно,
+  optimistic set/delete/reselect, original-reviewer/scope authorization и
+  strict HTTP/Zod/Staff-client transport. Focused migration/repository/schema —
+  **39 PASS**, real aiohttp — **6 PASS**, focused TypeScript — **14 PASS**;
+  полный checkpoint: frontend **50 файлов / 381 PASS**, Python PWA **1254 PASS /
+  3 intentional skips / 1 existing SymPy warning**, Storybook **39 файлов / 190
+  PASS**, schema **312 objects**, lint/typecheck/production build — PASS. Proof:
+  [`phase6-review-internal-reactions.md`](../../../pwa_tests/reports/phase6-review-internal-reactions.md).
 
 ## Текущий инкремент этапа 1
 
@@ -652,11 +732,10 @@
   риск старых credential-like literals в migration history; они не копируются
   в fixtures/reports и не становятся источником нового web-входа. Controlled
   production activation всё равно требует preflight, актуальных
-  Telegram-токенов и явного отчёта. Историческая credential-развилка закрыта,
-  но настоящий inventory теперь требует owner-only decision-файл для 10
-  blockers и 58 строк login-collision; это открытый вопрос 16 в
-  [`20-implementation-questions.md`](20-implementation-questions.md), а не
-  повод угадывать исключения или логины.
+  Telegram-токенов и явного отчёта. Позднее owner-решение заменило этот
+  legacy-backfill как основной onboarding: target Student batch получает login
+  явно и предлагает `-NN` при конфликте; inventory остаётся compatibility
+  rehearsal, а не блокером MVP.
 
 ## Phase 1 browser-auth increment — 27 июля 2026
 
@@ -861,20 +940,20 @@
 Таблица различает промежуточный проверенный инкремент и окончательное принятие
 этапа. Наличие revision/proof не закрывает оставшиеся criteria из phase-файла.
 
-| Этап | Revision             | Proof                                                                                           | Принято                                          |
-| ---: | -------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-|    0 | —                    | —                                                                                               | —                                                |
-|    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)                                             | частично; production gates открыты               |
-|    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                          | Browser path принят; этап открыт                 |
-|    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                  | Phase 3A–3H приняты; visual открыт               |
-|    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md) | функционально; visual открыт                     |
-|    5 | `5acecbb`…`71e96e6`  | [Phase 5A–5F proof](../../../pwa_tests/reports/phase5-written-browser-draft.md)                 | browser + test-S3 vertical приняты; прочие gates открыты |
-|    6 | —                    | —                                                                                               | —                                                |
-|    7 | —                    | —                                                                                               | —                                                |
-|    8 | —                    | —                                                                                               | —                                                |
-|    9 | —                    | —                                                                                               | —                                                |
-|   10 | —                    | —                                                                                               | —                                                |
-|   11 | —                    | —                                                                                               | —                                                |
+| Этап | Revision             | Proof                                                                                                                                                | Принято                                                                                                                  |
+| ---: | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+|    0 | —                    | —                                                                                                                                                    | —                                                                                                                        |
+|    1 | `1aad776`, `866e3fe` | [Этап 1](05-phase-1-auth.md#пруфы-завершения-этапа)                                                                                                  | частично; production gates открыты                                                                                       |
+|    2 | `43b0323`…`3b5a4e8`  | [Этап 2](06-phase-2-content.md#пруфы-завершения-этапа)                                                                                               | Browser path принят; этап открыт                                                                                         |
+|    3 | `d70b0d9`…`f787a64`  | [Этап 3](07-phase-3-student-reading.md#пруфы-завершения-этапа)                                                                                       | Phase 3A–3H приняты; visual открыт                                                                                       |
+|    4 | `6409191`…`0fde237`  | [Phase 4A–4G proof](../../../pwa_tests/reports/phase4-test-submission-domain-and-repository.md)                                                      | функционально; visual открыт                                                                                             |
+|    5 | `5acecbb`…`4d7b4f6`  | [Phase 5A–5I proof](../../../pwa_tests/reports/phase5-written-material-reassignment.md)                                                              | browser, test-S3, replacement, reassignment и reusable Staff correction UI приняты; прочие gates открыты                 |
+|    6 | `16980f6`…`892646f`  | [Phase 6U Student/Staff support pages](../../../pwa_tests/reports/phase6-support-pages.md)                                                           | review workflow, reactions and text-only private questions приняты инкрементами; attachments/Telegram/E2E/visual открыты |
+|    7 | `70df3da`…`c625d7b`  | [Phase 7A catalog](../../../pwa_tests/reports/phase7-classroom-catalog.md), [Phase 7B layout](../../../pwa_tests/reports/phase7-classroom-layout.md) | catalog + inherited layout + reload-safe Staff confirm приняты; assignment/delivery/oral открыты                         |
+|    8 | —                    | —                                                                                                                                                    | —                                                                                                                        |
+|    9 | —                    | —                                                                                                                                                    | —                                                                                                                        |
+|   10 | —                    | —                                                                                                                                                    | —                                                                                                                        |
+|   11 | —                    | —                                                                                                                                                    | —                                                                                                                        |
 
 ## Phase 7C checkpoint — 29 июля 2026
 
@@ -920,20 +999,26 @@
 - Актуальные gates: lint/typecheck **PASS**, frontend unit **570 PASS**, Python
   PWA **1504 PASS / 5 intentional skips**, Storybook browser **227 PASS**,
   production-build authentication E2E **79 PASS / 8 intentional skips**.
-- Phase 10 остаётся открытой: создание Student-аккаунта, users import,
-  metadata grid, Google parity/cutover и способ первичной передачи Family
-  credentials ещё не завершены.
+- Phase 10 остаётся открытой: target Student/Family account batches, enrollment
+  batch, metadata grid и Google parity/cutover ещё не завершены. Credential
+  delivery решена: v1 хранит plaintext provisioning values и передаёт их
+  внешнему email-script, а не Staff mail sender.
+
 ## Phase 10 checkpoint: индивидуальный Student web-вход — 2 августа 2026
 
 - Admin может создать Student web-вход для существующего школьника без повторной
   передачи Telegram-токена через браузер; используется текущий token общего с
   ботом legacy-пользователя.
+- На этом историческом checkpoint Directory предлагал
+  `transliterated-surname-DD`; принятое позднее target-решение заменяет его
+  explicit batch login и preview случайного `-NN` suffix при конфликте.
 - Storybook evidence: `Pages/Staff--student-account-creation`.
 - Проверки: 13 domain, 9 API integration, 573 frontend unit, 1508 Python PWA,
-  22 Staff stories; lint/typecheck и production build зелёные.
+  22 Staff stories и production auth E2E **80 PASS / 10 intentional skips**;
+  lint/typecheck и production build зелёные.
 - Proof: [`pwa_tests/reports/phase10-student-account-creation.md`](../../../pwa_tests/reports/phase10-student-account-creation.md).
-- Не закрыты: batch provisioning и production E2E с отдельным синтетическим
-  unprovisioned Student seed.
+- Не закрыт batch provisioning/import; индивидуальный production E2E с отдельным
+  синтетическим unprovisioned Student seed пройден.
 
 ## Phase 10 checkpoint: ежедневное пакетное создание Student web-входов — 2 августа 2026
 
@@ -980,7 +1065,8 @@
 
 - Реализован `/staff/statistics` поверх последнего завершённого immutable
   `analytics_runs`: course/group search state, teacher scope filtering,
-  анонимные lesson aggregates и violin без student marker.
+  личные course metrics без group distribution, rank, percentile или student
+  marker.
 - Proof:
   [`phase10-staff-statistics.md`](../../../pwa_tests/reports/phase10-staff-statistics.md).
 - Проверки: Python PWA `1533 passed / 5 skipped`, frontend unit `583 passed`,
@@ -1003,9 +1089,10 @@
   lint/typecheck/build pass, production authentication
   E2E `90 passed / 12 intentional skips`; новый сценарий зелёный в Chromium,
   WebKit и Firefox. Desktop/mobile-light просмотрены, snapshots не менялись.
-- Phase 10 остаётся незавершённой: первоначальный bulk import новых школьников
-  зависит от вопроса 19, а task-settings Google cutover — от владельческого
-  принятия после реальной недели. Сам problem-workbook software path, его
+- Phase 10 остаётся незавершённой: target Student/Family и enrollment batches
+  ещё не реализованы; active-group rule при нескольких allowed groups остаётся
+  вопросом 3. Task-settings Google cutover зависит от владельческого принятия
+  после реальной недели. Сам problem-workbook software path, его
   production-copy parity и classroom delivery/reach уже подтверждены; полный
   teacher workload остаётся отдельным продуктовым срезом.
 
@@ -1019,7 +1106,7 @@
 - Сводный proof:
   [`phase10-problem-workbook-replacement.md`](../../../pwa_tests/reports/phase10-problem-workbook-replacement.md).
 - Открыты только owner-run реальной недели и дата операционного cutover; import
-  новых школьников является другим workflow и остаётся зависимым от вопроса 19.
+  новых школьников является другим target workflow с уже принятым форматом.
 
 ## Общий Python gate на 8 workers — 2 августа 2026
 
@@ -1029,7 +1116,7 @@
 - Legacy SQLite использует worker-specific filename/tmp_path, PWA — отдельную
   мигрированную временную SQLite на каждый worker.
 - Финальный результат: legacy `121 pass / 1 skip` за 12,87 с; PWA `1542 pass /
-  5 skip` за 69,55 с; весь gate 85,53 с wall time.
+5 skip` за 69,55 с; весь gate 85,53 с wall time.
 - Test-only subprocess startup allowance устранён найденный под нагрузкой flake,
   а отдельная 50 ms timeout-проверка и production timeouts не менялись.
 - Proof:
@@ -1243,8 +1330,9 @@
   меняется. Immutable revision, optimistic version, notification reschedule и
   privacy-safe audit фиксируются атомарно.
 - Скрытие будущей новости отменяет её ещё не наступившие события, восстановление
-  создаёт их снова. Уже опубликованная новость отвечает `409` до решения
-  вопроса 7.
+  создаёт их снова. Уже опубликованная новость пока отвечает `409`; owner уже
+  решил разрешить text edit с `updatedAt` и без repeat notification, поэтому
+  это implementation gap.
 - Staff edit draft переживает reload и ошибку, изолирован по runtime, account,
   post и version и очищается только после server receipt.
 - Story IDs: `pages-staff-local-news-composer--editing-scheduled`,
@@ -1321,7 +1409,7 @@
 - Proof:
   [`phase9-family-achievements-ui-2026-08-03.md`](../../../pwa_tests/reports/phase9-family-achievements-ui-2026-08-03.md).
 - Это functional checkpoint, не полное закрытие Phase 9: family-link import,
-  completed-lesson/streak rules, grace/distribution и owner visual acceptance
+  completed-lesson/streak rules и owner visual acceptance
   остаются открыты. Snapshots не обновлялись.
 
 ## Phase 9 checkpoint: read-only Family-link import preview — 3 августа 2026
@@ -1337,9 +1425,10 @@
   intentional skip**, PWA **1573 PASS / 6 intentional skips**, **99,83 с** wall
   time. Proof:
   [`phase9-family-link-import-preview-2026-08-03.md`](../../../pwa_tests/reports/phase9-family-link-import-preview-2026-08-03.md).
-- Production CSV dry-run и apply не объявлены готовыми. Инструмент не создаёт
-  аккаунты и не принимает passwords; выдача первого Family password остаётся
-  вопросом 1 в [`22-development-questions.md`](22-development-questions.md).
+- Production CSV dry-run и apply не объявлены готовыми. Этот compatibility
+  preview не создаёт аккаунты и не принимает passwords; target Family batch
+  отдельно принимает name/login/password/emails/child logins и хранит
+  provisioning value для внешнего v1 mailer.
 
 ## Phase 11 checkpoint: media growth/orphan inventory — 3 августа 2026
 
@@ -1375,8 +1464,9 @@
   PASS.
 - Proof:
   [`phase8-family-notification-settings-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-notification-settings-2026-08-03.md).
-  Weekly Family digest ждёт решения вопроса 8; snapshots не обновлялись, owner
-  visual acceptance открыт.
+  Weekly Family digest теперь имеет owner semantics: явная admin-отправка
+  отдельно по группе, без auto-repeat после исправления; implementation и proof
+  остаются открыты. Snapshots не обновлялись, owner visual acceptance открыт.
 
 ## Phase 8 checkpoint: oral-window notifications — 3 августа 2026
 
@@ -1388,5 +1478,21 @@
   в 8 worker’ах: **1588 PASS / 6 intentional skips**.
 - Proof:
   [`phase8-oral-window-notifications-2026-08-03.md`](../../../pwa_tests/reports/phase8-oral-window-notifications-2026-08-03.md).
-- `deadline` producer ждёт ответа на вопрос 9; physical push и owner visual
+- `deadline` producer ждёт ответа на вопрос 2; physical push и owner visual
   acceptance остаются внешними gates.
+
+## Phase 11 checkpoint: public post-deploy HTTP smoke — 3 августа 2026
+
+- Добавлена одна GET-only команда для уже переключённого public release. Она
+  требует exact HTTPS FQDN и ожидаемый runtime instance, не читает credentials
+  и не посылает login/другие write-запросы.
+- Все три audience проверяются на health/runtime, production features,
+  API-vs-SPA boundary и security headers. HTML shell обязан revalidate через
+  `no-cache`; Student/Family manifest, icons и `no-store` service workers
+  проверяются отдельно.
+- Focused local aiohttp/unit gate: **16 PASS**; Ruff и structural nginx tests —
+  **PASS**. Полный Python checkpoint записан в proof.
+- Proof:
+  [`phase11-production-http-smoke-2026-08-03.md`](../../../pwa_tests/reports/phase11-production-http-smoke-2026-08-03.md).
+- Owner-approved FQDN, installed `nginx -t`, реальный запуск команды и
+  authenticated/device checks остаются открытыми production gates.

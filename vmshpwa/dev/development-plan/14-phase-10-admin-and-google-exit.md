@@ -11,13 +11,24 @@ Admin из Staff импортирует Excel, создаёт/правит по�
 - Users: search/filter, create/edit любого поля кроме `id`, block/archive, group, allowed groups, online mode, family account/link, credential/token reset workflow. Hard delete отсутствует.
 - Groups/season: active/default/system flags, display/order, score weight, self-switch policy, fourth/future levels; per-group Telegram channel ID/title/enabled/verified state. Bot token не находится в group row или browser payload; verification выполняет backend.
 - Teacher permissions by group/capability.
-- Batch Excel import: обязательны surname, name, unique token/password, birthday, grade. Valid rows применяются, invalid rows пропускаются и попадают в итоговый report; повторный import связывается по token.
+- Два независимых account batch flow с TSV/CSV copy-paste и preview:
+  Student — surname, name, optional patronymic/birth date/grade, login и
+  Telegram-token password; Family — name, login/password, comma-separated
+  emails и child logins. Login conflict получает предложенный случайный `-NN`.
+  Valid rows применяются, invalid rows перечисляются в receipt.
+- Отдельный enrollment batch `login, course, allowed_groups` назначает доступ к
+  одному курсу за запуск; тот же flow повторяется для дополнительных курсов.
+  Выбор active group при нескольких allowed groups пока зафиксирован вопросом 3
+  в [`22-development-questions.md`](22-development-questions.md).
 - Task metadata TSV grid and version conflicts, включая отдельный task type (`test|written|oral`), answer type и checker trusted-admin surface. Task/answer type редактируются dropdown-ячейками, но прямоугольная TSV copy/paste работает так же, как в Google Sheets. Legacy `Письменно<-Устно` при migration явно отображается в canonical oral с доступной письменной сдачей.
 - Grid/import сохраняет точную семантику `title`, `prob_type`, `ans_type`, `ans_validation`, `validation_error`, `cor_ans`, `cor_ans_checker`, `wrong_ans`, `congrat`. `cor_ans` может содержать много `;`-separated допустимых ответов; `SELECT_ONE.ans_validation` — список видимых labels, а для остальных типов непустое поле — regex override. Import preview различает пустое значение, inherited/default и явно заданный текст.
 - Title должен оставаться коротким для Student/Telegram UI, но отличать задачу. Equal-title rows в одном `course_lesson` показываются как synonym candidates с impact preview; import не склеивает их автоматически и никогда не связывает разные курсы/занятия.
 - Publication UI не имеет общего action «опубликовать уровень»: condition, hint и solution публикуются, планируются и откатываются независимо по каждому уровню.
 - Несохранённые правки users/task metadata/import mapping сохраняются в account/entity/base-version-scoped `localStorage`; reload и server conflict не теряют их. После successful apply/receipt draft очищается.
-- Импорт очных/устных результатов из `a19`, печатные spreadsheet flows и email откладываются на последующие версии.
+- Credential email в v1 отправляют внешние скрипты по сохранённым plaintext
+  provisioning values и Family email list; Staff mail sender не входит в v1.
+  Импорт очных/устных результатов из `a19` и печатные spreadsheet flows
+  откладываются на последующие версии.
 - Surveys не переносятся. Email workflow относится ко второй/третьей версии. Export пользователей в первой версии не нужен.
 - Staff statistics/audit of writes and imports. Teacher continues to have no broadcasts/classrooms/audit.
 
@@ -151,8 +162,9 @@ production-build Playwright. Differential rehearsal настоящего workboo
 изолированной копии `db/vmsh.db` получил 1813 `unchanged` и ноль расхождений.
 Это закрывает реализацию task-settings import, но не подменяет владельческое
 подтверждение cutover после реального недельного цикла. Первоначальный bulk
-import **новых школьников** остаётся отдельным незакрытым workflow и зависит от
-решения вопроса 19 в `20-implementation-questions.md`.
+import **новых школьников** остаётся отдельным незакрытым workflow, но формат уже
+принят: Student и Family batches разделены, а course enrollment выполняется
+третьим batch.
 
 - [x] Revision/migrations for problem import: `0074.pwa_problem_import_receipts`;
   up/down/up, integrity и rollback подтверждены в

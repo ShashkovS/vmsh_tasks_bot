@@ -114,8 +114,10 @@ time, request ID и причину. `submission_material_reassignment_items` п�
       up/down, integrity, immutable identity и legacy-row preservation:
       [`phase5-written-submission-schema.md`](../../../pwa_tests/reports/phase5-written-submission-schema.md).
 - [ ] Legacy discussion backfill: owner-reviewed problem revisions и решение о
-      40 531 Telegram-only строках без восстанавливаемого payload; см.
-      [вопрос 2](22-development-questions.md#исторические-письменные-обсуждения).
+      40 531 Telegram-only строках без восстанавливаемого payload. По решению
+      владельца это изображения, хранящиеся только на серверах Telegram; v1 их
+      не восстанавливает и не показывает placeholder. Новый учебный год
+      начинается с новых submission threads.
 - [x] Demo 1/2/10 images and offline state: Storybook
       `product-submission--one-page`, `product-submission--two-pages`,
       `product-submission--ten-pages`, `product-submission--offline` и

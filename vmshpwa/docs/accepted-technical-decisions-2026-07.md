@@ -28,12 +28,27 @@
 - До первого review lock школьник может изменить или удалить логическую отправку. После начала review исходная entry не меняется, но новый material можно дослать в тот же thread: его version меняется, и teacher обязан включить материал в текущий evidence перед complete. В транзакции результата attachment revision становится immutable; overwrite object key запрещён.
 - Клиент декодирует изображение, уменьшает длинную сторону максимум до 1920 px и сохраняет только WebP. Оригинал не загружается и не хранится. Декодирование/re-encode обычно удаляет EXIF, отдельный EXIF pipeline не требуется.
 - HEIC и другие неподдержанные браузером источники сначала пробуются на клиенте, затем отправляются через aiohttp в серверный image service на основе `mathimg_service.py` с ImageMagick/HEIC support. Результат всё равно WebP до 1920 px; исходник остаётся только во временном файле операции.
+- Staff annotation для Telegram рендерится отдельным composite PNG поверх
+  immutable исходного WebP. Для MVP он отправляется сразу при завершении review
+  через существующий immediate Telegram path; сбой Telegram не откатывает
+  authoritative PWA review.
 - Фотографии и история хранятся бессрочно до отдельной политики или ручной чистки bucket. Миграции из `VMSH_MEDIA_ROOT` нет: это новый storage namespace без существующих объектов.
 
 ## Authentication и security
 
 - Логин школьника + текущий Telegram token как пароль — финальная совместимая модель, а не временная миграция и не Telegram OAuth.
-- Student login генерируется как транслитерация фамилии + день рождения с обязательным разрешением коллизий. Family accounts содержат минимальное имя без email, создаются пакетно и имеют many-to-many links с детьми. Parent/teacher одного человека используют отдельные logins.
+- Student accounts создаются отдельной пакетной загрузкой: фамилия, имя,
+  optional отчество, optional дата рождения, optional класс, заданный login и
+  password, равный Telegram-токену. Конфликтующий login получает предложенный
+  случайный suffix `-NN`, видимый в preview; синтетические `qwerty*` accounts
+  разрешены для тестирования и позднее удаляются.
+- Family accounts создаются вторым независимым batch: имя, заданные
+  login/password, comma-separated emails и список login детей. Links остаются
+  many-to-many. Parent/teacher одного человека используют отдельные logins.
+- По осознанному v1-решению plaintext Student/Family passwords сохраняются для
+  внешней email-рассылки. Web login продолжает сверять Argon2 verifier;
+  plaintext недоступен обычным browser API и не попадает в logs, Sentry,
+  fixtures или committed proofs.
 - Целевая сессия — две audience-scoped HttpOnly cookie: короткая подписанная `itsdangerous` access cookie и ротируемая refresh session в SQLite. Refresh token хранится в cookie только в raw-виде, в БД — HMAC/hash. Отзыв отдельного устройства удаляет DB session.
 - Максимальный срок refresh session Student, Family и Staff — ближайшее 10 августа; access cookie существенно короче. У audiences разные имена и `Path`.
 - `Secure`, `HttpOnly`, `SameSite=Lax` обязательны. Отдельный synchronizer CSRF token на первом этапе не вводится; unsafe endpoints дополнительно проверяют same-origin `Origin`/Fetch Metadata и принимают только ожидаемый content type.
@@ -64,8 +79,22 @@
 ## Домен
 
 - Активных уровней сейчас три, но схема, контракты и UI допускают четвёртый и последующие уровни. Цвет назначается по `groups.sort_order`; неизвестные/лишние позиции получают доступный нейтральный fallback.
-- Статистика сложности становится видна школьнику после окончания проверки занятия; автоматический grace period фиксирован и равен семи дням, а не является настройкой сезона.
+- Student и Family не получают групповое распределение, rank, percentile или
+  self marker. Личная статистика может использовать опубликованные параметры
+  занятия, но интерфейс не строит сравнение ребёнка с другими.
 - История группы/уровня/режима сохраняется. Текущий legacy source — `user_changes_log` (`change_type`, `new_value`, `ts`); миграция обязана сохранить и backfill эту историю.
+- Streak считается по цепочке занятий одного курса подряд, не по календарным
+  неделям. Точный qualifying action и milestone thresholds ещё требуют решения.
+- Курс задаёт расписание, anchored на времени публикации условия; группа
+  наследует и может переопределять правила. Уже materialized lesson timestamps
+  не меняются без preview/confirm.
+- `_BotUIMsgs` в v1 hardcoded; v2 получает i18n/admin editor. Главные
+  `_BotSettings` становятся per-course и могут применяться после restart cache.
+  `save_sol_mode` удаляется: новый pipeline всегда хранит content/submissions в
+  S3.
+- Опубликованную local PWA news можно исправить без повторного уведомления; UI
+  показывает `updatedAt`. Family digest admin отправляет явно отдельно по каждой
+  группе; поздние исправления не вызывают второй digest автоматически.
 
 ## Frontend
 
@@ -132,7 +161,7 @@
 - production Hetzner bucket/media hostname, Sentry ingest, API/WS и окончательной CSP;
 - короткий access-cookie TTL;
 - точная команда/systemd units production webhook;
-- точный suffix/ручной workflow для коллизии сгенерированных student logins.
+- выбор active group при enrollment batch с несколькими allowed groups.
 
 ## Решение 26 июля: независимые курсы и группы
 

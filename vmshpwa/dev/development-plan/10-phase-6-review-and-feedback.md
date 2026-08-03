@@ -8,11 +8,21 @@ Teacher выбирает problem/synonym group, атомарно получае�
 
 ## Модель данных
 
-Migration: `pwa_reviews_annotations_queue_leases_reactions_support`.
+Migrations: `0052.pwa_submission_reviews_evidence`,
+`0053.pwa_submission_review_annotations` and
+`0054.pwa_submission_review_internal_reactions`.
 
 - Эволюция `written_tasks_queue`: rebuild исправляет ошибочную affinity legacy `teacher_id TIMESTAMP` на `INTEGER` FK и добавляет `claim_token`, `claimed_at`, `lease_expires_at`, `lease_version`, `updated_at`; preflight проверяет значения, которые нельзя привести к существующему `users.id`.
-- `submission_reviews`, immutable `review_annotations`; расширение `reactions` с one-per-review и часовым окном изменения.
-- Reaction backfill выводит actor из reaction type и связанного result/Zoom conversation, сохраняет старые дубли как history и активирует только последнюю однозначную строку. Неоднозначные legacy rows попадают в manual report до создания partial unique index.
+- `submission_reviews`, immutable `submission_review_annotations`, current
+  `submission_review_internal_reactions` и append-only reaction events с
+  one-per-review и часовым окном изменения. Legacy `reactions` не меняется до
+  отдельного rehearsed backfill gate.
+- Read-only rehearsal legacy reactions строит приватный duplicate/malformed
+  report и проверяет возможность точного сопоставления с review round.
+  Автоматический backfill или dual-write допустим только для однозначных строк.
+  На настоящей базе таких строк нет: legacy `reactions` связаны с `results`, но
+  не с конкретной проверкой, поэтому исторические строки остаются отдельной
+  Telegram-историей и не получают выдуманную связь.
 - `support_threads`, `support_entries` с dual-write/mapping к `questions` и negative problem IDs.
 - Review transaction создаёт `results`, review/comment/annotations, фиксирует evidence attachments, снимает queue item и пишет audit/outbox.
 
@@ -33,7 +43,12 @@ Fast flow: tap verdict → optional одна реакция из текущег�
 
 Comment, текущий verdict choice, reaction choice и сериализуемый annotation state сохраняются в account/review/evidence-version-scoped `localStorage` после каждого осмысленного изменения. Reload восстанавливает их, lost lease/version conflict не очищает, successful complete очищает. Большие временные бинарные derivatives при необходимости используют Dexie, не `localStorage`.
 
-Annotation format — normalized coordinates + versioned strokes/marks; preview layer never modifies original WebP. Student видит annotation, zoom сохраняет alignment.
+Owner-confirmed annotation core — normalized coordinates + versioned
+`pencil|eraser|text|arrow|rectangle` marks и rotation. Optional `highlight` и
+palette key допустимы как implementation detail; отдельный tool и точные 4–5
+цветов не являются gate. Preview layer never modifies original WebP. Student
+видит annotation. Zoom/pan остаются локальным viewer state и не входят в
+overlay; renderer сохраняет alignment при любом локальном масштабе холста.
 
 ## Thread and visibility
 
@@ -72,10 +87,14 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 - Multi-worker/process concurrency on shared SQLite + NATS: exactly one claim, lost lease, heartbeat, completion race.
 - Transaction fault injection after each write boundary; no half verdict/locked images/queue loss.
 - Visibility matrix API + UI; direct URL and WS owner scoping.
-- Annotation pencil/eraser/rotation/4–5 colors, geometry/zoom/sanitization, immutable-after-send and Telegram composite PNG.
+- Annotation core pencil/eraser/text/arrow/rectangle/rotation, normalized
+  geometry, local-only zoom/pan, sanitization, immutable-after-send and Telegram
+  composite PNG; optional highlight/palette проверяются, только если exposed.
 - Review draft reload/account isolation/evidence-version conflict/lost lease/success cleanup; unsent question/comment draft не пропадает при route change.
 - Legacy queue/discussion/result/reaction and Telegram historical tests.
-- Reaction migration fixtures: student/teacher written and oral actor inference, duplicate history, missing actor quarantine; queue rebuild проверяет integer FK и не теряет rows.
+- Legacy-reaction rehearsal fixtures: written/oral inventory, duplicate and
+  malformed-row report, отсутствие PII в aggregate и неизменность исходной БД;
+  queue rebuild отдельно проверяет integer FK и не теряет rows.
 - Storybook priority: teacher queue + quick review mobile/desktop, long thread, latest verdict, annotations, all reaction visibilities.
 - Storybook interaction: internal reaction выбирается/заменяется Mod+Alt chord при фокусе в textarea; повторный chord снимает выбор, `AltGraph` не перехватывается.
 - Playwright two staff browser contexts racing; Student context receives refetch and thread; forbidden Teacher admin view.
@@ -92,20 +111,88 @@ Annotation format — normalized coordinates + versioned strokes/marks; preview 
 
 ## Пруфы завершения этапа
 
-- [ ] Revision/migration/dual-write/backfill: `<sha/paths/results>`.
-- [ ] Queue concurrency/lease/fault-injection report: `<path/result>`.
-- [ ] Demo quick review + annotation + Student thread + admin reactions: `<routes/evidence>`.
-- [ ] Idea-only reference review: таблица «принято / перереализовано / сознательно отклонено» для `viewwrittensols*`/`_viewmailings_helpers.js`, без runtime import `<path/result>`.
-- [ ] Visibility matrix API/E2E: `<path/result>`.
-- [ ] Annotation format/version/zoom tests: `<result>`.
-- [ ] Review/question draft persistence, isolation and conflict tests: `<result>`.
-- [ ] Storybook priority stories/interactions/a11y/visual approval: `<ids/paths>`.
-- [ ] Playwright multi-context 3 browsers: `<result>`.
-- [ ] Telegram queue/discussion/results/questions historical tests: `<result>`.
-- [ ] Docs/review runbook/known limitations/acceptance: `<paths/issues/name/date>`.
+- [x] Phase 6A queue rebuild, opaque identity, synonym-case claim,
+      heartbeat/release, Staff scope и Telegram-lock compatibility:
+      [`phase6-review-queue-leases.md`](../../../pwa_tests/reports/phase6-review-queue-leases.md).
+- [x] Phase 6B authenticated HTTP list/claim/heartbeat/release, fail-closed
+      public course/group scope, strict TypeScript contracts и account-scoped
+      Staff client:
+      [`phase6-review-queue-http.md`](../../../pwa_tests/reports/phase6-review-queue-http.md).
+- [x] Phase 6C atomic/idempotent completion, exact multi-branch evidence
+      snapshot, immutable reviewed entries/assets, target-last legacy result,
+      strict HTTP/TypeScript transport и owner-scoped invalidation:
+      [`phase6-review-completion.md`](../../../pwa_tests/reports/phase6-review-completion.md).
+- [x] Phase 6D versioned normalized annotation manifests for exact evidence,
+      all owner-confirmed core tools plus optional highlight, atomic completion,
+      immutable SQLite storage и strict HTTP/Zod transport:
+      [`phase6-review-annotations.md`](../../../pwa_tests/reports/phase6-review-annotations.md).
+- [x] Phase 6E atomic initial internal Teacher reaction, one-hour optimistic
+      set/delete/reselect, immutable event history, original-reviewer/scope
+      authorization и strict HTTP/Zod transport:
+      [`phase6-review-internal-reactions.md`](../../../pwa_tests/reports/phase6-review-internal-reactions.md).
+- [x] Read-only legacy reaction rehearsal и manual duplicate/malformed report
+      доказали, что точного backfill/dual-write сделать нельзя; legacy rows не
+      меняются и остаются доступны Telegram adapter:
+      [`phase6-legacy-reaction-rehearsal.md`](../../../pwa_tests/reports/phase6-legacy-reaction-rehearsal.md).
+- [x] Межпроцессная claim/completion race, потерянный lease и rollback после
+      каждой write boundary:
+      [`phase6-review-concurrency-and-faults.md`](../../../pwa_tests/reports/phase6-review-concurrency-and-faults.md).
+- [x] Quick review, reload-safe draft, annotation, Student/Family history,
+      обе асимметричные reactions, admin inbox и append-only recheck:
+      [`phase6-review-workspace.md`](../../../pwa_tests/reports/phase6-review-workspace.md),
+      [`phase6-review-annotation-editor.md`](../../../pwa_tests/reports/phase6-review-annotation-editor.md),
+      [`phase6-review-reaction-inbox.md`](../../../pwa_tests/reports/phase6-review-reaction-inbox.md),
+      [`phase6-review-corrections.md`](../../../pwa_tests/reports/phase6-review-corrections.md).
+- [x] Idea-only reference review с таблицей принятых, отложенных и отклонённых
+      идей без runtime import:
+      [`phase6-external-review-reference.md`](../../../pwa_tests/reports/phase6-external-review-reference.md).
+- [x] Visibility matrix защищена serializer/API, owner-scoped realtime и
+      production-browser flow; Teacher получает `403` на admin inbox:
+      [`phase6-review-audience-fanout.md`](../../../pwa_tests/reports/phase6-review-audience-fanout.md),
+      [`phase6-review-reaction-inbox.md`](../../../pwa_tests/reports/phase6-review-reaction-inbox.md).
+- [x] Annotation persistence format/version/normalized geometry/rotation tests:
+      [`phase6-review-annotations.md`](../../../pwa_tests/reports/phase6-review-annotations.md).
+      Interactive editor zoom/pan alignment и Telegram composite остаются в
+      следующих UI/derivative gates. MVP delivery отправляет composite PNG
+      сразу при завершении проверки через существующий немедленный Telegram
+      path; сбой Telegram не откатывает authoritative PWA review.
+- [x] Question draft persistence, account/audience/target isolation and
+      page-level clear-after-receipt behavior:
+      [`phase6-support-draft-storage.md`](../../../pwa_tests/reports/phase6-support-draft-storage.md),
+      [`phase6-support-pages.md`](../../../pwa_tests/reports/phase6-support-pages.md).
+      Review comment/verdict/reaction/annotation draft recovery и conflict
+      handling доказаны в
+      [`phase6-review-workspace.md`](../../../pwa_tests/reports/phase6-review-workspace.md).
+- [x] Text-only Student/Staff private-question routes, scoped Staff inbox and
+      chronological dialogue composition:
+      [`phase6-support-pages.md`](../../../pwa_tests/reports/phase6-support-pages.md).
+      Three-browser production E2E covers reload, bidirectional realtime and
+      another Student's owner isolation. Attachments, Staff forbidden-scope
+      browser proof and Telegram continuation remain open.
+- [ ] Storybook priority stories/interactions/a11y автоматизированы (**50 файлов /
+      239 PASS**), включая `product-review--workspace`,
+      `--feedback-restored-draft`, `--feedback-reaction-shortcuts`,
+      `product-review-annotation--editor`,
+      `product-feedback--reviewed-written-photo` и reaction inbox. Ручное
+      visual acceptance владельцем остаётся открытым; snapshots не менялись.
+- [x] Production-build Playwright multi-context в Chromium, WebKit и Firefox:
+      **3/3 PASS**; точный охват описан в
+      [`phase6-consolidated-gates-2026-08-03.md`](../../../pwa_tests/reports/phase6-consolidated-gates-2026-08-03.md).
+- [x] Исторический Telegram regression: `make telegram-history-test` —
+      **44 PASS**, без polling и внешних запросов.
+- [x] Runbook, recovery и известные границы:
+      [`review-workflow.md`](../../docs/review-workflow.md). Сводка текущих
+      функциональных и автоматических gates:
+      [`phase6-consolidated-gates-2026-08-03.md`](../../../pwa_tests/reports/phase6-consolidated-gates-2026-08-03.md).
 
 ## Многокурсовый инкремент Phase 6
 
-Queue объединяет ожидающие submission одного student/synonym-group в один logical case. Review lock/snapshot перечисляет все submission IDs; teacher видит provenance всех материалов. Verdict и ответ записываются в problem последней включённой посылки. После split остальные ветки восстанавливают собственные статусы.
+Queue объединяет ожидающие submission одного student/synonym-group в один
+logical case. Review lock/snapshot перечисляет все submission IDs; teacher
+видит provenance всех материалов. Verdict и ответ записываются в problem
+последней включённой посылки по `server_received_at`; при равном timestamp
+используется стабильный больший internal submission ID только как технический
+tie-break. Client time в выборе target не участвует. После split остальные
+ветки восстанавливают собственные статусы.
 
 Дополнительный proof: concurrency объединённого case, immutable snapshot, target-last assertion, split status и stories `Product/Review--synonym-combined-case`, `Product/Feedback--synonym-merged-timeline`.

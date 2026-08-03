@@ -51,7 +51,9 @@ baseline конца прошлого сезона. В целевом проду�
 рабочие копии примерно двух десятков Python-скриптов живут в общей
 Dropbox-папке. Публикации в нескольких ученических и преподавательских
 Telegram-каналах/группах в основном выполняются вручную либо через admin-команды
-действующего бота. Старый сайт обновляется скриптами по FTP и редко требует
+действующего бота. Часть постов заранее ставится редакторами в очередь Telegram
+UI; до публикации это отдельное изменяемое состояние, невидимое текущему
+bot/PWA ingest. Старый сайт обновляется скриптами по FTP и редко требует
 ручного доступа. Бот работает на отдельном сервере с общей SQLite; её резервные
 копии несколько раз в день уходят к другому провайдеру. Это текущая
 архитектура, а не описание уже существующих Staff API, versioned publication
@@ -69,12 +71,21 @@ cutover.
   oral/Zoom и массовые действия. Это закрытый characterization source. Реестр
   хранит только путь-класс `logs` и агрегаты: JSONL payload с настоящими
   идентификаторами не копируется.
+- `logs/selected.jsonl`, `logs/cnt.py` и их история по решению владельца пока
+  остаются в закрытом репозитории. Они не являются допустимым fixture source:
+  реальные строки, имена и идентификаторы не переносятся в производные
+  документы/тесты и не требуют отдельной чистки Git в текущем этапе.
 - Экспорт Telegram и workbook используются как закрытый characterization input.
   Имена, адреса, токены, `chat_id`, bucket names и message payload в реестр не
   переносятся.
 - `_external_pipelines` — snapshot, а не production dependency. Скрипты читаются
   как спецификация observable behavior; новый код получает собственные fixtures
   и тесты.
+- `db/vmsh.db` никогда не меняется ради characterization. Production-size
+  локальный replay начинается только с изолированной временной копии; до test
+  derivation все `users.name`/`users.surname` в ней заменяются Faker-значениями.
+  Копия не коммитится, а credentials/contacts/message bodies не переходят в
+  committed artifacts.
 - Dropbox, Google, FTP, production SQLite, бот, почта и Zoom не вызываются из
   unit/E2E. Разрешённые live integration используют только отдельные test
   resources и собственный префикс запуска.
@@ -87,13 +98,19 @@ webhook/queue events, 214 admin commands, 58 завершённых broadcast, 1
 и 540 смен групп. Эти числа — characterization corpus, не SLO и не пользовательская
 статистика.
 
+Legacy `user_changes_log` может содержать повторную `G`/`O` команду без смены
+значения. Source rows не переписываются, но target backfill последовательно
+сравнивает состояние и создаёт `course_enrollment_events` только для реальных
+переходов; report отдельно считает входные строки, no-op и созданные события.
+
 ## Внешние системы
 
 Машинный реестр задаёт только классы credentials, без значений:
 
 - общая Dropbox-папка — TeX/PDF, сканы, инструкции и рабочие копии скриптов;
 - Telegram bot плюс отдельные каналы/группы — личные действия, публикации и
-  обсуждения;
+  обсуждения; очередь сообщений, вручную запланированных в Telegram UI, —
+  отдельное pending-состояние до фактической публикации;
 - Google Sheets и локальные Excel-кондуиты — legacy configuration/import;
 - esz и email sender — регистрация и письма;
 - FTP/public site — старое web-представление условий и статистики;
@@ -145,8 +162,10 @@ webhook/queue events, 214 admin commands, 58 завершённых broadcast, 1
 - Повтор без сверки существующего пользователя запрещён: он может неожиданно
   ротировать доступ. До импорта ошибку исправляют в листе; после импорта или
   рассылки требуется явная ротация и повтор следующих шагов.
-- Только целевой Staff batch Phase 1 + Phase 10 создаёт одновременно Student и
-  связанный отдельный Family account, audit и безопасный receipt.
+- Target разделяет операции: Student batch создаёт ФИО, optional birthday/grade,
+  login и Telegram-token password; следующий Family batch принимает name,
+  login/password, emails и child logins. Третий per-course batch назначает
+  allowed groups. Каждый шаг имеет отдельный preview/receipt.
 
 ### `newcomer-bot-import` — загрузка пользователей в бота
 
@@ -161,7 +180,9 @@ webhook/queue events, 214 admin commands, 58 завершённых broadcast, 1
   инструкция. Side effect: персональные письма с данными доступа.
 - Повторяется только failed/явно выбранным адресатам; при подозрении на раскрытие
   сначала ротируется token.
-- Следующий владелец: `post-v1-email`, с preview, recipient snapshot и audit.
+- В v1 остаётся внешний mail script: он читает owner-only plaintext
+  provisioning values и email list после подтверждённого batch. Staff mail UI
+  относится к post-v1; реальные credentials не попадают в committed proof.
 
 ## Подготовка занятия, контент и публикация
 
@@ -201,6 +222,9 @@ upload, но Dropbox может оставаться authoring source.
 отбрасывают неполную новую DB и вручную возвращают `.temp`, а не запускают
 скрипт повторно вслепую. Phase 11 должен дать отдельные snapshot/restore/
 analytics commands с настоящим atomic publish после проверки кандидата.
+Этот active legacy mirror не является разрешением менять repository source
+`db/vmsh.db`: characterization/rehearsal использует только отдельную временную
+копию с Faker-заменой имён/фамилий до derivation.
 
 ### `analytics-refresh` — derived metrics
 
@@ -237,7 +261,7 @@ Legacy path остаётся active upstream только до владельч�
 - `title` достаточно точно идентифицирует задачу, но остаётся коротким для кнопки; равное имя было historical synonym signal, но в target лишь создаёт admin-confirmed candidate в одном `course_lesson`;
 - custom `ans_validation` заменяет default regex типа и делает `fullmatch` по trimmed answer; для `SELECT_ONE` это `;`-separated visible labels;
 - `validation_error` называет искомую величину/порядок и по возможности даёт пример; `wrong_ans` и `congrat` отвечают за неверный и верный ответ после валидации;
-- `cor_ans` может перечислять много верных ответов через `;`; optional `cor_ans_checker` остаётся trusted-admin code с version/diff/audit и compatibility tests.
+- `cor_ans` может перечислять много верных ответов через `;`; optional `cor_ans_checker` остаётся trusted-admin code. Фактическая execution boundary — [`handlers/student_handlers.py`](../../../handlers/student_handlers.py) (`is_py_func`, `GLOBALS_FOR_TEST_FUNCTION_CREATION`, `run_py_func_checker`): Phase 4 до рефакторинга фиксирует на синтетическом positive/negative/error/cache corpus выбор checker, exposed names, `(bool, optional message)` result и сбои. Restricted globals не считаются sandbox; реальные production checker strings в fixtures не копируются.
 
 ### `print-content-derivatives` — teacher/print документы
 
@@ -282,19 +306,29 @@ cutover старого сайта принимается отдельно.
 
 Channel post, личная рассылка ссылок, состояние intake и автоматическое открытие
 сайта — четыре отдельных эффекта. Каждый проверяется отдельно; повтор broadcast
-требует preview. Phase 2/8 делает их per-group actions и Telegram bindings.
+требует preview. Вручную запланированный в Telegram UI post до выхода является
+пятым, внешним pending-состоянием, а не уже опубликованной revision. Перед тем
+как Staff scheduler станет владельцем destination/time window, оператор
+инвентаризирует эту очередь и для каждой записи выбирает retain в Telegram,
+cancel + recreate в Staff либо cancel obsolete. Cutover report доказывает одного
+владельца доставки без пропусков и дублей. Phase 2/8 делает публикации per-group
+actions и Telegram bindings.
 
 ### `hints-publish` — подсказки
 
 [`a20-hints`](#карта-файлов) извлекает подсказки из TeX; дальше редактор отдельно
 публикует пост и reminder. Phase 2/8 хранит отдельную hint revision/schedule и
-не связывает её с condition/solution.
+не связывает её с condition/solution. Уже поставленная вручную Telegram UI
+schedule остаётся внешней изменяемой записью и проходит тот же cutover reconcile,
+а не переносится неявно по совпадению текста.
 
 ### `cutoff-and-solutions` — дедлайн и решения
 
 Это два разных процесса. Перенос публикации решения не двигает deadline;
 изменение deadline требует собственного preview и подтверждения. Исторические
 времена расходятся между сезонами, поэтому target хранит окна как данные группы.
+Pending solution post в Telegram UI отдельно инвентаризируется, отменяется или
+сохраняется до включения Staff scheduler; deadline при этом не меняется.
 
 ### `quantik-post` и `online-review-session`
 
@@ -312,7 +346,8 @@ Channel post, личная рассылка ссылок, состояние int
 `ИзБота`, после Enter — `Посещаемость`. После ручных правок нельзя бездумно
 повторно вставлять диапазон. Скрипт и следующие classroom scripts читают
 отдельный рабочий Excel-кондуит через runtime symbol `XLS_CONDUIT_NAME` из
-отсутствующего `z_helpers`; это **не** workbook
+добавленной reference-копии `z_helpers.py`; сам workbook и Dropbox runtime
+остаются внешними. Это **не** workbook
 `ВМШ 2025-26, информация для бота ВМШ — prod.xlsx`, где находятся листы бота.
 Phase 7/9/10 заменяет clipboard typed read models.
 
@@ -326,9 +361,14 @@ Phase 7/9/10 заменяет clipboard typed read models.
 ### `classroom-delivery`
 
 [`a02-welcome-aud`](#карта-файлов) группирует строки по комнате и печатает
-`/broadcast_html`; администратор вручную отправляет личное сообщение каждому
-школьнику. Текущий скрипт не создаёт immutable delivery batch: до отправки
-оператор вручную просматривает напечатанные команды. Целевой Staff action сначала
+одну `/broadcast_html` batch-команду на аудиторию со списком `IDd` получателей.
+`IDd` здесь — legacy numeric `users.id`, а не Telegram token; печатный barcode
+не раскрывает token без отдельного доступа к БД и сам по себе не требует его
+ротации.
+Администратор вручную выполняет несколько таких команд, а бот доставляет каждому
+токену отдельное сообщение в личный диалог; это не channel post и не ручная
+отправка по одному школьнику. Текущий скрипт не создаёт immutable delivery batch:
+до отправки оператор вручную просматривает напечатанные команды. Целевой Staff action сначала
 показывает preview, затем по выбору отправляет PWA и/или personal Telegram. После
 черновой перестановки ничего не уходит автоматически.
 
@@ -375,8 +415,9 @@ Phase 7/9/10 заменяет clipboard typed read models.
 [`a18-conduit-ocr`](#карта-файлов) создаёт распознанный Excel/debug output.
 Результат обязательно выборочно проверяется; scan hash остаётся immutable input.
 Snapshot не запускается сам по себе: он импортирует отсутствующий модуль
-`plus_reader.plus_reader`, а также общие helpers. Staff import diagnostics —
-`post-v1-results-import`.
+`plus_reader.plus_reader`; reference-копии общих helpers уже есть, но рабочего
+Dropbox environment всё равно нет. Staff import diagnostics —
+`post-v1-results-import`, поэтому этот gap не блокирует текущий v1.
 
 ### `school-results-import`
 
@@ -416,10 +457,15 @@ analytics run. Student/Family никогда не получают маркер 
 
 ### `production-backups`
 
-Production DB несколько раз в день копируется к другому провайдеру; deploy также
-имеет pre/post backup. Это сохраняется как operations-owned process. Phase 11
-закрывается только реальным restore rehearsal с измеренными RPO/RTO, а не
-наличием файла с похожим именем.
+Внешний cron job несколько раз в день создаёт backup production DB и пересылает
+его на другой физический сервер; копии фактически хранятся долго. Точная команда,
+количественная retention policy и измеренные RPO/RTO в repository evidence пока
+отсутствуют. Запуск из копий работал для Telegram-модуля, обрабатывающего только
+новые сообщения, но это не доказывает восстановление PWA, historical read models,
+media/outbox links или согласованной SQLite/WAL/SHM. Процесс остаётся
+operations-owned. Phase 11 target, не текущий факт: documented runbook,
+coordinated SQLite/WAL/SHM + media/outbox restore, измеренные RPO/RTO и
+периодический full restore rehearsal.
 
 ## Reference-only процессы
 
@@ -433,6 +479,10 @@ Production DB несколько раз в день копируется к др
   canvas annotation/zoom/rotate/undo/redo/autosave, comment/verdict controls,
   suspicion/task-reassignment controls и isolated mailing preview; ни один файл не
   является VMШ runtime-кодом, sanitizer или API contract.
+- Legacy `written_tasks_discussions` и `results` связываются только через
+  student/problem, поэтому backfill сохраняет единый хронологический thread с
+  provenance и не фабрикует message→review-round связи. Точные связи появляются
+  только у новых review после cutover.
 - `reference-auth`: [`ref-auth-routes`](#карта-файлов) и
   [`ref-auth-tokens`](#карта-файлов) — паттерн cookies/refresh для Phase 1.
 - `reference-mailing-ui`: [`legacy-mailing-core`](#карта-файлов),
@@ -459,10 +509,11 @@ Production DB несколько раз в день копируется к др
 4. Несколько раз в неделю выгрузить esz и сохранить Excel
    (`newcomer-applications`).
 5. Добавить отдельные немосковские заявки (`newcomer-applications`).
-6. Создать legacy-логины/пароли школьников и строки user sheet
-   (`newcomer-account-provision`); Family accounts появятся только в target.
-7. Загрузить пользователей admin-командой (`newcomer-bot-import`).
-8. Обновить текст и разослать доступы (`newcomer-credentials-mailing`).
+6. Выполнить Student batch (`newcomer-account-provision`).
+7. Выполнить отдельный Family batch и per-course enrollment batch.
+8. Передать подтверждённый provisioning output внешнему email script
+   (`newcomer-credentials-mailing`). Legacy bot import остаётся compatibility
+   шагом только до cutover общего SQLite owner.
 
 ### До занятия
 
@@ -577,58 +628,81 @@ confirm → отдельный delivery batch. Правка после расс�
 входят в fixture ровно один раз. Media-файлы экспорта намеренно представлены
 одним corpus item, чтобы реестр не копировал message metadata.
 
-| ID | Файл | Текущая классификация | Целевой этап |
-| --- | --- | --- | --- |
-| `a00-dates` | `_external_pipelines/a00_dates.py` | active external | Phase 2/7/10 |
-| `a00-update-db` | `_external_pipelines/a00_update_db.py` | active external | Phase 11 |
-| `a01-school-conduit` | `_external_pipelines/a01_school_to_conduit.py` | active external | Phase 7/9/10 |
-| `a02-welcome-aud` | `_external_pipelines/a02_welcome_aud.py` | active external | Phase 7 |
-| `a03-task-template` | `_external_pipelines/a03_tempate_for_bot.py` | active external | Phase 2/10 |
-| `a11-classroom-lists` | `_external_pipelines/a11_spis_from_xls.py` | active external | post-v1 print |
-| `a12-print-derivatives` | `_external_pipelines/a12_dum_tex_files.py` | active external | Phase 2/post-v1 print |
-| `a13-previous-results` | `_external_pipelines/a13_print_per_aud_conds_tex.py` | active external | post-v1 print |
-| `a14-print-pack` | `_external_pipelines/a14_zall_auds_pdf.py` | active external | post-v1 print |
-| `a16-html` | `_external_pipelines/a16_html_from_tex.py` | active external | Phase 2 |
-| `a16-topics` | `_external_pipelines/a16_topics_to_html.py` | active external | Phase 2/10 |
-| `a17-site-upload` | `_external_pipelines/a17_upload_to_website.py` | active external | post-v1 old site |
-| `a18-conduit-ocr` | `_external_pipelines/a18_conduit_recognition.py` | active external | post-v1 result import |
-| `a19-results-import` | `_external_pipelines/a19_from_excel_into_bot_via_api.py` | active external | post-v1 result import |
-| `a20-hints` | `_external_pipelines/a20_подсказки.py` | active external | Phase 2/8 |
-| `a21-personal-plots` | `_external_pipelines/a21_create_plots.py` | active external | Phase 9/post-v1 email |
-| `a21-group-plots` | `_external_pipelines/a21_create_zall_plots.py` | active external | Phase 9 |
-| `a22-mails` | `_external_pipelines/a22_create_mails.py` | active external | post-v1 email |
-| `a23-site-stats` | `_external_pipelines/a23_mark_compl_in_html.py` | active external | Phase 9/post-v1 old site |
-| `a52-teacher-stats` | `_external_pipelines/a52_teacher_stats.py` | active automated | Phase 6/9 |
-| `a53-rating` | `_external_pipelines/a53_calc_rating_new.py` | active automated | Phase 7/9 |
-| `a54-report` | `_external_pipelines/a54_upd_report.py` | active automated | Phase 9 |
-| `ref-edt-parser` | `_external_pipelines/edt_tasks_parser.py` | reference | Phase 2 |
-| `ref-mathimg-endpoints` | `_external_pipelines/mathimg_endpoints.py` | reference | Phase 2/5 |
-| `ref-mathimg-service` | `_external_pipelines/mathimg_service.py` | reference | Phase 2/5 |
-| `ref-auth-routes` | `_external_pipelines/routes.py` | reference | Phase 1 |
-| `ref-auth-tokens` | `_external_pipelines/tokens.py` | reference | Phase 1 |
-| `legacy-mailing-core` | `_external_pipelines/_crtmailings_helpers.js` | reference | post-v1 email |
-| `legacy-mailing-editor` | `_external_pipelines/_mailing_editor_helpers.js` | reference | post-v1 email |
-| `legacy-mailing-view` | `_external_pipelines/_viewmailings_helpers.js` | idea-only reference for written review and mailing view | Phase 6/post-v1 email |
-| `legacy-email-templates` | `_external_pipelines/edtemailtemplates.js` | reference | post-v1 email |
-| `ref-written-html` | `_external_pipelines/viewwrittensols.html` | reference | Phase 6 |
-| `ref-written-js` | `_external_pipelines/viewwrittensols.js` | reference | Phase 6 |
-| `ref-written-helpers` | `_external_pipelines/_viewwrittensols_helpers.js` | reference | Phase 6 |
-| `telegram-news-corpus` | `_external_pipelines/ChatExport_2026-07-25/result.json` | private reference corpus | Phase 8 |
-| `legacy-workbook` | `_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx` | active external/private characterization | Phase 10 |
+| ID                          | Файл                                                                   | Текущая классификация                                   | Целевой этап              |
+| --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------- |
+| `a00-dates`                 | `_external_pipelines/a00_dates.py`                                     | active external                                         | Phase 2/7/10              |
+| `a00-update-db`             | `_external_pipelines/a00_update_db.py`                                 | active external                                         | Phase 11                  |
+| `a01-school-conduit`        | `_external_pipelines/a01_school_to_conduit.py`                         | active external                                         | Phase 7/9/10              |
+| `a02-welcome-aud`           | `_external_pipelines/a02_welcome_aud.py`                               | active external                                         | Phase 7                   |
+| `a03-task-template`         | `_external_pipelines/a03_tempate_for_bot.py`                           | active external                                         | Phase 2/10                |
+| `a11-classroom-lists`       | `_external_pipelines/a11_spis_from_xls.py`                             | active external                                         | post-v1 print             |
+| `a12-print-derivatives`     | `_external_pipelines/a12_dum_tex_files.py`                             | active external                                         | Phase 2/post-v1 print     |
+| `a13-previous-results`      | `_external_pipelines/a13_print_per_aud_conds_tex.py`                   | active external                                         | post-v1 print             |
+| `a14-print-pack`            | `_external_pipelines/a14_zall_auds_pdf.py`                             | active external                                         | post-v1 print             |
+| `a16-html`                  | `_external_pipelines/a16_html_from_tex.py`                             | active external                                         | Phase 2                   |
+| `a16-topics`                | `_external_pipelines/a16_topics_to_html.py`                            | active external                                         | Phase 2/10                |
+| `a17-site-upload`           | `_external_pipelines/a17_upload_to_website.py`                         | active external                                         | post-v1 old site          |
+| `a18-conduit-ocr`           | `_external_pipelines/a18_conduit_recognition.py`                       | active external                                         | post-v1 result import     |
+| `a19-results-import`        | `_external_pipelines/a19_from_excel_into_bot_via_api.py`               | active external                                         | post-v1 result import     |
+| `a20-hints`                 | `_external_pipelines/a20_подсказки.py`                                 | active external                                         | Phase 2/8                 |
+| `a21-personal-plots`        | `_external_pipelines/a21_create_plots.py`                              | active external                                         | Phase 9/post-v1 email     |
+| `a21-group-plots`           | `_external_pipelines/a21_create_zall_plots.py`                         | active external                                         | Phase 9                   |
+| `a22-mails`                 | `_external_pipelines/a22_create_mails.py`                              | active external                                         | post-v1 email             |
+| `a23-site-stats`            | `_external_pipelines/a23_mark_compl_in_html.py`                        | active external                                         | Phase 9/post-v1 old site  |
+| `a52-teacher-stats`         | `_external_pipelines/a52_teacher_stats.py`                             | active automated                                        | Phase 6/9                 |
+| `a53-rating`                | `_external_pipelines/a53_calc_rating_new.py`                           | active automated                                        | Phase 7/9                 |
+| `a54-report`                | `_external_pipelines/a54_upd_report.py`                                | active automated                                        | Phase 9                   |
+| `legacy-z-consts`           | `_external_pipelines/z_CONSTS.py`                                      | active external support module                          | Phase 2/7/9/10/11/post-v1 |
+| `legacy-z-helpers`          | `_external_pipelines/z_helpers.py`                                     | active external support module                          | Phase 2/7/9/10/post-v1    |
+| `legacy-z-cpdf`             | `_external_pipelines/z_cpdf.py`                                        | active external PDF support module                      | post-v1 print             |
+| `template-mega-floor-lists` | `_external_pipelines/mega_floor_lists.tex`                             | active external LaTeX template                          | post-v1 print             |
+| `template-per-aud-lists`    | `_external_pipelines/per_aud_lists.tex`                                | active external LaTeX template                          | post-v1 print             |
+| `template-prev-conduit`     | `_external_pipelines/prev_conduit_template.tex`                        | active external LaTeX template                          | post-v1 print             |
+| `ref-edt-parser`            | `_external_pipelines/edt_tasks_parser.py`                              | reference                                               | Phase 2                   |
+| `ref-mathimg-endpoints`     | `_external_pipelines/mathimg_endpoints.py`                             | reference                                               | Phase 2/5                 |
+| `ref-mathimg-service`       | `_external_pipelines/mathimg_service.py`                               | reference                                               | Phase 2/5                 |
+| `ref-auth-routes`           | `_external_pipelines/routes.py`                                        | reference                                               | Phase 1                   |
+| `ref-auth-tokens`           | `_external_pipelines/tokens.py`                                        | reference                                               | Phase 1                   |
+| `legacy-mailing-core`       | `_external_pipelines/_crtmailings_helpers.js`                          | reference                                               | post-v1 email             |
+| `legacy-mailing-editor`     | `_external_pipelines/_mailing_editor_helpers.js`                       | reference                                               | post-v1 email             |
+| `legacy-mailing-view`       | `_external_pipelines/_viewmailings_helpers.js`                         | idea-only reference for written review and mailing view | Phase 6/post-v1 email     |
+| `legacy-email-templates`    | `_external_pipelines/edtemailtemplates.js`                             | reference                                               | post-v1 email             |
+| `ref-written-html`          | `_external_pipelines/viewwrittensols.html`                             | reference                                               | Phase 6                   |
+| `ref-written-js`            | `_external_pipelines/viewwrittensols.js`                               | reference                                               | Phase 6                   |
+| `ref-written-helpers`       | `_external_pipelines/_viewwrittensols_helpers.js`                      | reference                                               | Phase 6                   |
+| `telegram-news-corpus`      | `_external_pipelines/ChatExport_2026-07-25/result.json`                | private reference corpus                                | Phase 8                   |
+| `legacy-workbook`           | `_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx` | active external/private characterization                | Phase 10                  |
 
-## Внешние зависимости, которых нет в snapshot
+Роли и consumers добавленных reference-копий зафиксированы двусторонними
+ссылками `artifact.processIds ↔ process.artifactIds` в machine-register:
 
-Machine-register хранит их в `knownExternalDependencies`; отсутствующий путь не
-маскируется repository artifact:
+- `legacy-z-consts` — общая legacy-конфигурация путей, DB и параметров для
+  mirror/analytics, classroom, content, print, site, import, hints, mailing и
+  statistics процессов;
+- `legacy-z-helpers` — общие функции и runtime symbols для classroom, content,
+  print, site, conduit import/OCR, hints и legacy site statistics;
+- `legacy-z-cpdf` — CPDF-wrapper только для `print-pack-assembly`;
+- `template-mega-floor-lists` и `template-per-aud-lists` — шаблоны процесса
+  `classroom-print-lists`;
+- `template-prev-conduit` — шаблон процесса `previous-results-print`.
 
-- `legacy-python-support-modules`: `z_CONSTS.py`, `z_helpers.py`, `z_cpdf.py`;
+## Внешние зависимости и добавленные reference-копии
+
+Machine-register хранит operational dependencies в `knownExternalDependencies`;
+наличие отдельной reference-копии не делает весь внешний runtime воспроизводимым:
+
+- `legacy-python-support-modules`: reference-копии `z_CONSTS.py`, `z_helpers.py`,
+  `z_cpdf.py` теперь присутствуют в `_external_pipelines`, но рабочая Dropbox
+  конфигурация/roots остаются внешними;
 - `canonical-conduit-workbook`: отдельный workbook, разрешаемый в runtime через
   `z_helpers.XLS_CONDUIT_NAME`; его листы `Аудитории`, `Итог`, `ИзБота` и
   `Посещаемость` не относятся к переданному workbook бота;
-- `plus-reader`: `plus_reader.plus_reader`, обязательный для
-  `a18_conduit_recognition.py`;
-- `tex-template-tree`: рабочая папка `tex_templates` и связанные Dropbox
-  templates;
+- `plus-reader`: `plus_reader.plus_reader`, обязательный только для
+  отложенного `a18_conduit_recognition.py` и не нужный текущему v1;
+- `tex-template-tree`: три используемые classroom/previous-results template
+  представлены reference-копиями в `_external_pipelines`, но рабочая папка
+  `tex_templates`, остальные файлы и связанные Dropbox templates остаются
+  внешними;
 - `external-mail-sender`: фактически используемый sender/скрипт после генерации
   email-артефактов;
 - `registration-credentials-workbook`: отдельный
@@ -638,15 +712,15 @@ Machine-register хранит их в `knownExternalDependencies`; отсутс�
   адресов.
 
 Для каждого указаны реальные consumer process IDs и существующие evidence files.
-Место зависимостей спрашивается в
-[`20-implementation-questions.md`](20-implementation-questions.md#где-находятся-отсутствующие-зависимости),
-а безопасный test bundle — в
-[отдельном вопросе](20-implementation-questions.md#можно-ли-подготовить-обезличенный-комплект).
+Решения о [reference-копиях](20-implementation-questions.md#где-находятся-отсутствующие-зависимости)
+и [безопасной derivation из временной Faker-анонимизированной DB](20-implementation-questions.md#можно-ли-подготовить-обезличенный-комплект)
+зафиксированы как закрытые implementation-вопросы.
 
 ## Известные границы baseline
 
-1. Snapshot не содержит `z_CONSTS`, `z_helpers`, `z_cpdf`,
-   `plus_reader.plus_reader`, `tex_templates`, canonical Dropbox roots,
+1. Snapshot содержит reference-копии `z_CONSTS`, `z_helpers`, `z_cpdf` и трёх
+   LaTeX templates, но не содержит `plus_reader.plus_reader`, полного рабочего
+   `tex_templates` tree, canonical Dropbox roots,
    workbook из `XLS_CONDUIT_NAME`, чувствительный registration credentials
    workbook и внешний mail sender. Поэтому наличие Python-файла не доказывает
    воспроизводимость полного production-run.
@@ -654,18 +728,20 @@ Machine-register хранит их в `knownExternalDependencies`; отсутс�
    `a15_print_per_aud_conds_html`, `a21_create_mails` и
    `a22_mark_compl_in_html_new`, тогда как данный snapshot содержит
    `a03_tempate_for_bot.py`, `a13_print_per_aud_conds_tex.py`,
-   `a22_create_mails.py` и `a23_mark_compl_in_html.py`. Реестр использует
-   фактические пути snapshot; live filenames нужно подтвердить в
-   [вопросе о скриптах](20-implementation-questions.md#какие-скрипты-используются-сейчас).
+   `a22_create_mails.py` и `a23_mark_compl_in_html.py`. Владелец подтвердил
+   фактические пути snapshot как актуальные после переименований; старые имена
+   остаются только историческими labels.
 3. Исторические времена cutoff/solution расходятся. Это не разрешается выбором
    одной «правильной» константы: Phase 2 импортирует/задаёт расписание отдельно
    для каждой группы.
-4. Для backups известен ожидаемый результат, но в репозитории нет полного
-   service/retention/restore runbook.
+4. Для backups подтверждены cron-передача на другой физический сервер, длительное
+   хранение и Telegram-only startup из копии, но в репозитории нет точной команды,
+   количественной retention policy, полного service/restore runbook и RPO/RTO.
 
-Неразрешённые пункты вынесены в
-[`20-implementation-questions.md`](20-implementation-questions.md); они не
-мешают characterization, но блокируют соответствующий production cutover.
+Продуктовые вопросы по этим пунктам закрыты в
+[`20-implementation-questions.md`](20-implementation-questions.md). Явно
+перечисленные operational evidence gaps не мешают characterization, но блокируют
+соответствующий production cutover.
 
 ## Acceptance этого реестра
 

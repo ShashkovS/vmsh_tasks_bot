@@ -61,6 +61,13 @@ LaTeX в Staff не редактируется. Metadata grid содержит �
 
 Библиотека content-addressed: binary hash определяет object key, одинаковые assets переиспользуются. Source хранит логическое имя и связь с hash. Pipeline предлагает match по имени/hash/preview; недостающие assets показывает отдельным blocking списком и никогда не заменяет пустой картинкой.
 
+Первичное заполнение asset library выполняет отдельный idempotent script:
+несколько тысяч исторических изображений условий загружаются в S3 по content
+hash с dry-run и receipt. Сначала новый pipeline проверяется на занятиях 39–41;
+массовый historical-content replay выполняется позже отдельным debugging step.
+Исторические фотографии ученических посылок, оставшиеся только на Telegram
+servers, в этот импорт не входят.
+
 Pure compiler принимает known asset не как раздельные `hash + URL`, а как
 единый строгий `WebAssetDescriptor`: canonical public ID, SHA-256,
 root-relative либо credential-free HTTPS `src`, поддерживаемый media type и

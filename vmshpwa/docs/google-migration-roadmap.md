@@ -11,6 +11,17 @@ Google остаётся только в legacy Telegram startup/import paths. Н
 отключить общие Google credentials: «Школьники», «Учителя», «Группы»,
 `_BotUIMsgs` и `_BotSettings` пока остаются полностью либо частично legacy.
 
+Принятая replacement boundary:
+
+- «Школьники» заменяется двумя Staff batch flows Student и Family плюс отдельным
+  enrollment batch `login, course, allowed_groups`;
+- `_BotUIMsgs` в v1 остаются hardcoded, а v2 получает i18n и admin-editor для
+  доступных языков;
+- главные `_BotSettings` становятся per-course настройками Staff и могут
+  применяться после перезапуска backend cache;
+- `save_sol_mode` не переносится: новый pipeline всегда хранит content и
+  submissions в S3.
+
 Операционный cutover этих листов ещё не объявлен: владелец должен провести через Staff один реальный недельный цикл, назвать дату переключения и сохранить legacy loader как ручной read-only fallback на период наблюдения. Surveys в первую версию не входят. Email workflows переносятся не раньше второй–третьей фазы.
 
 ## Этапы

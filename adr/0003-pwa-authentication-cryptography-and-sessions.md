@@ -13,8 +13,7 @@ deployment currently has two workers, so login throttling, refresh rotation and
 revocation cannot rely on process memory.
 
 The repository also contains legacy plaintext/token-shaped data. It is not a
-source for fixtures and it is not copied into a second plaintext auth field.
-The owner accepted the historical migration/repository exposure risk on
+source for fixtures. The owner accepted the historical migration/repository exposure risk on
 2026-07-27: current activation reads the authoritative user credential,
 requires the existing aggregate preflight and never reuses migration-carried
 rows. Rewriting Git history or rotating otherwise valid accounts solely because
@@ -24,7 +23,7 @@ of migration `0038` is outside this phase.
 
 ### Credentials
 
-- Every web credential is stored as Argon2id using `argon2-cffi` 25.1 or newer.
+- Web verification uses Argon2id via `argon2-cffi` 25.1 or newer.
   Production uses `PasswordHasher` defaults. Tests inject a cheaper hasher;
   there is no runtime switch that weakens production parameters.
 - Successful verification calls `check_needs_rehash`; a stale hash is replaced
@@ -32,10 +31,15 @@ of migration `0038` is outside this phase.
 - Login normalization is Unicode NFKC, trim, casefold and collapsed whitespace.
   Student token normalization additionally preserves the historical bot
   homoglyph mapping from `models/user.py`.
-- Student username algorithm v1 is a frozen local Cyrillic transliteration plus
-  zero-padded birth day: `transliterated-surname-DD`. A collision blocks import
-  until an explicit stored override is approved. Row-order or numeric-ID
-  suffixes are forbidden because they make an identity unstable.
+- Target v1 Student provisioning accepts an explicit login. A conflict proposes
+  a random decimal `-NN` suffix in preview; the accepted value is then stable.
+  The earlier `transliterated-surname-DD` importer remains only a controlled
+  legacy rehearsal/compatibility path.
+- Owner amendment of 2026-08-03: Student and Family plaintext provisioning
+  passwords are retained in v1 so an external owner-controlled mailer can send
+  credentials. This does not replace the Argon2 verifier. Plaintext is excluded
+  from ordinary browser APIs, logs, Sentry, fixtures and committed proofs; its
+  later removal is a post-v1 hardening task.
 
 ### Sessions and cookies
 
