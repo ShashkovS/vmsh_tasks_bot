@@ -1290,3 +1290,20 @@
 - Это functional checkpoint, не полное закрытие Phase 9: family-link import,
   completed-lesson/streak rules, grace/distribution и owner visual acceptance
   остаются открыты. Snapshots не обновлялись.
+
+## Phase 9 checkpoint: read-only Family-link import preview — 3 августа 2026
+
+- Добавлен простой CSV preview для связей уже существующих Family accounts и
+  Students: exact header, общая login normalization, duplicate guard и четыре
+  состояния `create|restore|update|unchanged`.
+- SQLite открывается только через `mode=ro` + `query_only`; integration test
+  сверяет неизменность SHA-256 файла БД. Отчёт не содержит usernames или
+  Student IDs — только counts, row numbers и stable codes.
+- Focused parser/SQLite/CLI gate: **5 PASS**, Ruff format/check — PASS. Полный
+  Python gate на восьми изолированных workers: legacy **121 PASS / 1
+  intentional skip**, PWA **1573 PASS / 6 intentional skips**, **99,83 с** wall
+  time. Proof:
+  [`phase9-family-link-import-preview-2026-08-03.md`](../../../pwa_tests/reports/phase9-family-link-import-preview-2026-08-03.md).
+- Production CSV dry-run и apply не объявлены готовыми. Инструмент не создаёт
+  аккаунты и не принимает passwords; выдача первого Family password остаётся
+  вопросом 1 в [`22-development-questions.md`](22-development-questions.md).

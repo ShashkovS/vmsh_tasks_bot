@@ -43,6 +43,7 @@ Migration: `pwa_family_achievements`.
 - Student `progress.tsx`.
 - Features: `family/src/features/children|progress|profile`; `student/src/features/progress`.
 - Shared chart logic may live in a new product package only if reuse is real; raw charts do not enter `packages/ui`.
+- Batch link preview: [`vmshpwa/scripts/family_link_import.py`](../../scripts/family_link_import.py) и [`family-link-import.md`](../../docs/family-link-import.md). Он работает только с существующими аккаунтами, не принимает passwords и открывает SQLite read-only.
 
 ## Tests
 
@@ -67,7 +68,7 @@ Migration: `pwa_family_achievements`.
 
 ## Пруфы завершения этапа
 
-- [ ] Revision/migration/family link import dry-run: `<sha/paths/results>`.
+- [ ] Revision/migration/family link import dry-run: software preview и synthetic migrated-SQLite proof готовы — [`phase9-family-link-import-preview-2026-08-03.md`](../../../pwa_tests/reports/phase9-family-link-import-preview-2026-08-03.md); owner production CSV run и batch account provisioning остаются открытыми.
 - [x] Demo multi-child/full thread/group-mode change/Student progress: [`phase9-family-e2e.md`](../../../pwa_tests/reports/phase9-family-e2e.md), [`phase6-family-review-projection.md`](../../../pwa_tests/reports/phase6-family-review-projection.md), [`phase9-progress-e2e.md`](../../../pwa_tests/reports/phase9-progress-e2e.md).
 - [x] Permission/cache isolation tests: [`phase9-family-e2e.md`](../../../pwa_tests/reports/phase9-family-e2e.md), [`phase9-family-course-context.md`](../../../pwa_tests/reports/phase9-family-course-context.md).
 - [x] Statistics formulas, SQL plans and golden expected values: [`phase9-course-analytics.md`](../../../pwa_tests/reports/phase9-course-analytics.md), [`phase9-course-performance.md`](../../../pwa_tests/reports/phase9-course-performance.md).
