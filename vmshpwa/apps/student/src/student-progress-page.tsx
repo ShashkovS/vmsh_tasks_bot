@@ -12,7 +12,13 @@ import {
   useStudentCoursesQuery,
 } from '@vmsh/app-shell'
 import { ApiResponseError } from '@vmsh/contracts'
-import { ActivityCalendar, CourseContext, StrengthTrend, StudentProgress } from '@vmsh/product'
+import {
+  ActivityCalendar,
+  CourseContext,
+  StrengthTrend,
+  StudentProgress,
+  courseAchievementLabel,
+} from '@vmsh/product'
 import { Card, CardContent } from '@vmsh/ui'
 
 import { toCourseEnrollmentView } from './student-home-view'
@@ -20,12 +26,6 @@ import { toCourseEnrollmentView } from './student-home-view'
 export interface StudentProgressPageProps {
   courseId?: string
   onCourseChange: (courseId: string) => void
-}
-
-const achievementLabels: Record<string, string> = {
-  first_submission: 'Первая задача отправлена',
-  first_accepted: 'Первая задача зачтена',
-  first_written_submission: 'Первая письменная работа',
 }
 
 /** Production personal progress; cohort comparisons are deliberately absent. */
@@ -128,7 +128,7 @@ export function StudentProgressPage({ courseId, onCourseChange }: StudentProgres
           <CardContent className="pt-5">
             <StudentProgress
               achievements={progress.data.achievements.flatMap((achievement) => {
-                const label = achievementLabels[achievement.code]
+                const label = courseAchievementLabel(achievement.code)
                 return label === undefined ? [] : [label]
               })}
               attemptedCount={progress.data.summary.attempted}

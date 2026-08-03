@@ -87,6 +87,15 @@ async def test_family_home_returns_only_browser_ready_current_lessons(content_ht
             "VALUES (?, ?, 'content-a', 41, NULL, '2026-09-15T10:00:00', 17, 1)",
             (content_support.STUDENT_USER_ID, problem_id),
         )
+        connection.execute(
+            "INSERT INTO user_achievements "
+            "(definition_id, user_id, course_id, earned_at, evidence_json) "
+            "SELECT definition.id, ?, course.id, '2026-09-15T10:00:00Z', '{}' "
+            "FROM achievement_definitions AS definition "
+            "JOIN courses AS course ON course.public_id = 'course-content-http' "
+            "WHERE definition.code = 'first_submission'",
+            (content_support.STUDENT_USER_ID,),
+        )
 
     fixture.factory.run_write(seed_result)
     response = await fixture.client.get(
@@ -115,6 +124,12 @@ async def test_family_home_returns_only_browser_ready_current_lessons(content_ht
         "needsWork": 0,
         "awaitingReview": 0,
     }
+    assert body["courses"][0]["progress"]["achievements"] == [
+        {
+            "code": "first_submission",
+            "earnedAt": "2026-09-15T10:00:00Z",
+        }
+    ]
 
     hidden = await fixture.client.get(
         "/family/api/v1/children/unlinked-student/home",

@@ -40,7 +40,7 @@ News list/detail с Telegram-rich content и albums. Progress: собствен�
 
 ### Сейчас и ребёнок
 
-Online/очный режим ребёнка и назначенная аудитория видны отдельно для каждого курса. Главная показывает course lessons, phase/deadline, значимые изменения и активность без сравнений с другими. Detail ребёнка включает фотографии, полный student-visible synonym thread с provenance, comments, annotations, verdict history, текущие задачи и прошлую course-scoped статистику. Родитель может менять active group/mode конкретного курса и независимо раскрывать опубликованные hint/solution.
+Online/очный режим ребёнка и назначенная аудитория видны отдельно для каждого курса. Главная показывает course lessons, phase/deadline, значимые изменения, активность и спокойные личные достижения курса без сравнений с другими. Подписи достижений совпадают со Student UI; неизвестный server rule не показывается техническим кодом. Detail ребёнка включает фотографии, полный student-visible synonym thread с provenance, comments, annotations, verdict history, текущие задачи и прошлую course-scoped статистику. Родитель может менять active group/mode конкретного курса и независимо раскрывать опубликованные hint/solution.
 
 ### Опубликованные решения
 
@@ -97,7 +97,7 @@ News moderation; users/groups/roles; statistics with accessible tables; searchab
 
 - Общий адаптивный shell и page-state contract: [`AppShell`](../../packages/app-shell/src/app-shell.tsx) и [`PageLayout`/`PageStatePanel`](../../packages/app-shell/src/page-layout.tsx). Login исключается из защищённого shell в [`student routes`](../../apps/student/src/routes/__root.tsx), [`family routes`](../../apps/family/src/routes/__root.tsx) и [`staff routes`](../../apps/staff/src/routes/__root.tsx).
 - Student compositions: [`apps/student/src/pages.tsx`](../../apps/student/src/pages.tsx); детерминированные page stories и interaction checks: [`Pages/Student`](../../apps/student/src/pages.stories.tsx). Реальный detail route выводит test/written/oral fixture по `taskId`; production-данные позже заменят это правило без изменения page contract.
-- Family compositions: [`apps/family/src/pages.tsx`](../../apps/family/src/pages.tsx); proof: [`Pages/Family`](../../apps/family/src/pages.stories.tsx). Story `Read only task` отдельно доказывает отсутствие textbox/self-check.
+- Family compositions: [`apps/family/src/pages.tsx`](../../apps/family/src/pages.tsx) и [`family-children-page.tsx`](../../apps/family/src/family-children-page.tsx); proof: [`Pages/Family`](../../apps/family/src/pages.stories.tsx). Stories `Course achievements` и `Read only task` отдельно доказывают course-scoped личные факты без ranking и отсутствие textbox/self-check.
 - Staff dashboard, review, publication/import, classrooms и permission state: [`apps/staff/src/pages.tsx`](../../apps/staff/src/pages.tsx); proof: [`Pages/Staff`](../../apps/staff/src/pages.stories.tsx).
 - Shareable classroom URL contract `event/course/group/tab/roomStatus` с Zod runtime validation и синхронизацией вкладки: [`routes/classrooms.tsx`](../../apps/staff/src/routes/classrooms.tsx). Task-list search contract `course/group/lesson/view/topic`: [`routes/tasks.index.tsx`](../../apps/student/src/routes/tasks.index.tsx).
 - `/staff/classrooms` использует принятый product component без DnD: [`ClassroomStudentPlanner`](../../packages/product/src/classroom-planning.tsx); плотная и local-draft фикстуры находятся в [`Product/Classrooms`](../../packages/product/src/classroom-planning.stories.tsx).

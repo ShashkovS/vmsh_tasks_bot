@@ -557,3 +557,15 @@ Token core + brand + полировка готовы и зелёные (Storyboo
   [`phase10-metadata-grid-drafts-2026-08-03.md`](../../../pwa_tests/reports/phase10-metadata-grid-drafts-2026-08-03.md).
 - Это functional checkpoint, не новое визуальное принятие. Snapshots не
   обновлялись; owner visual review остаётся открытым.
+
+## Development Phase 9 — Family course achievements · 3 августа 2026
+
+- Production `FamilyCourseAchievements` показывает только известные спокойные
+  личные достижения конкретного курса и использует те же подписи, что Student.
+- Story `Pages/Family--course-achievements` проверяет две известные подписи,
+  скрытие неизвестного server rule и отсутствие ranking/place/percentile.
+- Focused interaction/a11y: **12/12 PASS**; полный browser gate:
+  **242/242 PASS**. Lint, strict TypeScript и production builds — PASS.
+- Это functional/design traceability checkpoint. Ручное visual acceptance не
+  выполнялось, snapshots не обновлялись; streak/completed-lesson states будут
+  добавлены вместе с соответствующими продуктовым правилами.

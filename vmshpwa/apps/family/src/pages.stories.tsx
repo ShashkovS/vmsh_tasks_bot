@@ -17,6 +17,7 @@ import {
   FamilyTaskPage,
   type FamilyLoginState,
 } from './pages'
+import { FamilyCourseAchievements } from './family-children-page'
 
 /* Page evidence for dev/design-system/05-pages-and-flows.md (“Family PWA”). */
 const meta = {
@@ -39,6 +40,28 @@ export const ActivityByCourse: Story = {
 }
 export const ChildSwitcher: Story = { render: () => <FamilyChildrenPage /> }
 export const ChildActivity: Story = { render: () => <FamilyChildPage childId="vasily" /> }
+export const CourseAchievements: Story = {
+  name: 'Достижения курса ребёнка',
+  render: () => (
+    <div className="max-w-sm rounded-lg border border-border bg-surface p-4">
+      <FamilyCourseAchievements
+        achievements={[
+          { code: 'first_submission', earnedAt: '2026-01-12T12:00:00Z' },
+          { code: 'first_accepted', earnedAt: '2026-01-13T12:00:00Z' },
+          { code: 'future_rule', earnedAt: '2026-01-14T12:00:00Z' },
+        ]}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('region', { name: 'Достижения курса' })).toBeInTheDocument()
+    await expect(canvas.getByText('Первая задача отправлена')).toBeInTheDocument()
+    await expect(canvas.getByText('Первая задача зачтена')).toBeInTheDocument()
+    await expect(canvas.queryByText('future_rule')).not.toBeInTheDocument()
+    await expect(canvas.queryByText(/рейтинг|место|процентиль/i)).not.toBeInTheDocument()
+  },
+}
 export const ReadOnlyTask: Story = {
   render: () => <FamilyTaskPage taskId="41n-6" />,
   play: async ({ canvasElement }) => {

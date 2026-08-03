@@ -155,12 +155,13 @@ Storybook:
 
 Компоненты и страницы:
 
-- Family compositions в [`apps/family/src/pages.tsx`](../../apps/family/src/pages.tsx);
+- Family compositions в [`apps/family/src/pages.tsx`](../../apps/family/src/pages.tsx), production child/progress view и course achievements в [`apps/family/src/family-children-page.tsx`](../../apps/family/src/family-children-page.tsx);
 - [`StudentProgress`](../../packages/product/src/student-progress.tsx), [`DistributionViolin`, `TrendWithBand`, `StrengthTrend`](../../packages/product/src/progress-charts.tsx), Student progress page в [`apps/student/src/pages.tsx`](../../apps/student/src/pages.tsx).
+- Общие локализованные подписи initial achievement rules: [`course-achievements.ts`](../../packages/product/src/course-achievements.ts); неизвестные server codes не просачиваются в UI.
 
 Storybook:
 
-- [`Pages/Family — Current lesson`](http://localhost:6006/?path=/story/pages-family--current-lesson), [`Child switcher`](http://localhost:6006/?path=/story/pages-family--child-switcher), [`Child activity`](http://localhost:6006/?path=/story/pages-family--child-activity), [`Read-only task`](http://localhost:6006/?path=/story/pages-family--read-only-task), [`Page states`](http://localhost:6006/?path=/story/pages-family--page-states) — [source](../../apps/family/src/pages.stories.tsx);
+- [`Pages/Family — Current lesson`](http://localhost:6006/?path=/story/pages-family--current-lesson), [`Child switcher`](http://localhost:6006/?path=/story/pages-family--child-switcher), [`Child activity`](http://localhost:6006/?path=/story/pages-family--child-activity), [`Course achievements`](http://localhost:6006/?path=/story/pages-family--course-achievements), [`Read-only task`](http://localhost:6006/?path=/story/pages-family--read-only-task), [`Page states`](http://localhost:6006/?path=/story/pages-family--page-states) — [source](../../apps/family/src/pages.stories.tsx);
 - [`Pages/Student — Progress`](http://localhost:6006/?path=/story/pages-student--progress) — [source](../../apps/student/src/pages.stories.tsx);
 - [`Product/Progress — Charts`](http://localhost:6006/?path=/story/product-progress--charts), [`Confidence band`](http://localhost:6006/?path=/story/product-progress--confidence-band), [`Personal`](http://localhost:6006/?path=/story/product-progress--personal), [`Empty`](http://localhost:6006/?path=/story/product-progress--empty-state) — [source](../../packages/product/src/progress.stories.tsx). Ни один Student/Family chart не отмечает ребёнка внутри группового распределения.
 

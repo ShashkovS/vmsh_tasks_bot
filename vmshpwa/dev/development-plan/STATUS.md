@@ -1253,3 +1253,21 @@
 - Proof: [`toolchain-local.md`](../../../pwa_tests/reports/toolchain-local.md).
 - Local Phase 2 gate закрыт. Production service-account/staging probe остаётся
   отдельным незакрытым критерием Phase 11.
+
+## Phase 9 checkpoint: course achievements в Family PWA — 3 августа 2026
+
+- Family production page теперь показывает уже рассчитанные личные достижения
+  внутри соответствующего курса ребёнка; Student и Family используют один
+  UI-boundary словарь русских подписей.
+- Неизвестный будущий rule code не показывается техническим текстом. Рейтинг,
+  место, процентиль и сравнение с группой в блок не добавлены.
+- Storybook ID: `Pages/Family--course-achievements`; focused browser/a11y —
+  **12 PASS**, полный Storybook — **50 файлов / 242 PASS**.
+- Полный frontend unit — **112 файлов / 590 PASS**, полный PWA Python в восьми
+  workers — **1568 PASS / 6 intentional skips**; lint, typecheck и production
+  build трёх приложений — PASS.
+- Proof:
+  [`phase9-family-achievements-ui-2026-08-03.md`](../../../pwa_tests/reports/phase9-family-achievements-ui-2026-08-03.md).
+- Это functional checkpoint, не полное закрытие Phase 9: family-link import,
+  completed-lesson/streak rules, grace/distribution и owner visual acceptance
+  остаются открыты. Snapshots не обновлялись.

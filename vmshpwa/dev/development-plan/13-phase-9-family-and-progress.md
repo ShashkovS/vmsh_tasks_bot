@@ -2,7 +2,7 @@
 
 ## Результат
 
-Родитель переключается между связанными детьми, видит всю student-visible работу и может менять уровень/режим ребёнка. Отдельного self-check нет. Student видит accepted counts, распределение решённых задач, календарь и достижения; Family не получает сравнение с группой.
+Родитель переключается между связанными детьми, видит всю student-visible работу и может менять уровень/режим ребёнка. Отдельного self-check нет. Student видит accepted counts, распределение решённых задач, календарь и достижения; Family видит те же course-scoped достижения ребёнка, но не получает сравнение с группой.
 
 Дизайн-контракт этапа: [Family flows, Student progress, charts без self-marker и соответствующие Storybook stories](18-design-implementation-map.md#phase-9-design).
 
@@ -33,6 +33,7 @@ Migration: `pwa_family_achievements`.
 - GitHub-style activity calendar считает один active event на problem item в день независимо от числа посылок.
 - Streak хранит число недель подряд с 1+, 2+, 3+ и 4+ активными днями.
 - Achievements: первая отправка, первая письменная, первое завершённое занятие, занятие с результатом не ниже максимума и streak milestones; выполняется historical backfill.
+- Русские подписи achievement rule codes принадлежат UI boundary и едины для Student/Family. Неизвестный будущий code не показывается как технический текст до добавления согласованной подписи.
 - История текущего сезона включает занятия 1–38, backfilled в этапе 2. Если конкретному legacy занятию нельзя восстановить точный publication timestamp, оно остаётся доступно с provenance/nullable time и не исчезает из progress только из-за отсутствия `lesson_publications` старого формата.
 - Empty/new-student/level-change/late-data/correction states explicit.
 
@@ -67,13 +68,13 @@ Migration: `pwa_family_achievements`.
 ## Пруфы завершения этапа
 
 - [ ] Revision/migration/family link import dry-run: `<sha/paths/results>`.
-- [ ] Demo multi-child/full thread/group-mode change/Student progress: `<routes/evidence>`.
-- [ ] Permission/cache isolation tests: `<result>`.
-- [ ] Statistics formulas, SQL plans and golden expected values: `<path/result>`.
-- [ ] Grace/privacy/1500-student performance evidence: `<path/result>`.
+- [x] Demo multi-child/full thread/group-mode change/Student progress: [`phase9-family-e2e.md`](../../../pwa_tests/reports/phase9-family-e2e.md), [`phase6-family-review-projection.md`](../../../pwa_tests/reports/phase6-family-review-projection.md), [`phase9-progress-e2e.md`](../../../pwa_tests/reports/phase9-progress-e2e.md).
+- [x] Permission/cache isolation tests: [`phase9-family-e2e.md`](../../../pwa_tests/reports/phase9-family-e2e.md), [`phase9-family-course-context.md`](../../../pwa_tests/reports/phase9-family-course-context.md).
+- [x] Statistics formulas, SQL plans and golden expected values: [`phase9-course-analytics.md`](../../../pwa_tests/reports/phase9-course-analytics.md), [`phase9-course-performance.md`](../../../pwa_tests/reports/phase9-course-performance.md).
+- [ ] Grace/privacy/1500-student performance evidence: privacy и 1500-student performance доказаны в [`phase9-course-analytics.md`](../../../pwa_tests/reports/phase9-course-analytics.md) и [`phase9-course-performance.md`](../../../pwa_tests/reports/phase9-course-performance.md); grace/distribution gate остаётся открытым.
 - [ ] Storybook charts/family pages/interactions/a11y/visual approval: `<ids/paths>`.
-- [ ] Playwright 3 browsers: `<result>`.
-- [ ] Achievement definitions/rule version proof: `<path/result>`.
+- [x] Playwright 3 browsers: [`phase9-family-e2e.md`](../../../pwa_tests/reports/phase9-family-e2e.md), [`phase9-progress-e2e.md`](../../../pwa_tests/reports/phase9-progress-e2e.md).
+- [ ] Achievement definitions/rule version proof: initial rules и Student/Family UI доказаны в [`phase9-course-achievements.md`](../../../pwa_tests/reports/phase9-course-achievements.md) и [`phase9-family-achievements-ui-2026-08-03.md`](../../../pwa_tests/reports/phase9-family-achievements-ui-2026-08-03.md); completed-lesson/streak rules остаются открытыми.
 - [ ] Docs/data definitions/known limitations/acceptance: `<paths/issues/name/date>`.
 
 ## Многокурсовый инкремент Phase 9

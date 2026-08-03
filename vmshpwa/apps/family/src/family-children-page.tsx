@@ -15,9 +15,10 @@ import {
   ApiResponseError,
   type AttendanceMode,
   type CourseEnrollment,
+  type CourseProgressResponse,
   type FamilyEnrollmentUpdateRequest,
 } from '@vmsh/contracts'
-import { ActivityCalendar, LevelChip, type GroupView } from '@vmsh/product'
+import { ActivityCalendar, LevelChip, courseAchievementLabel, type GroupView } from '@vmsh/product'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@vmsh/ui'
 
 type ColorIndex = 0 | 1 | 2 | 3 | 4
@@ -40,6 +41,32 @@ function activeGroup(enrollment: CourseEnrollment): GroupView | undefined {
     name: group.name,
     colorIndex: presentationIndex(group.colorKey, group.sortOrder),
   }
+}
+
+/** Family sees the same calm, course-scoped achievements as the child, never a rank. */
+export function FamilyCourseAchievements({
+  achievements,
+}: {
+  achievements: CourseProgressResponse['achievements']
+}) {
+  const visible = achievements.flatMap((achievement) => {
+    const label = courseAchievementLabel(achievement.code)
+    return label === undefined ? [] : [{ code: achievement.code, label }]
+  })
+  if (visible.length === 0) return null
+
+  return (
+    <section aria-label="Достижения курса" className="space-y-2">
+      <p className="text-caption font-medium text-foreground">Достижения</p>
+      <ul className="flex flex-wrap gap-2">
+        {visible.map((achievement) => (
+          <li key={achievement.code}>
+            <Badge variant="outline">{achievement.label}</Badge>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
 }
 
 export function FamilyEnrollmentSettings({
@@ -306,6 +333,7 @@ export function FamilyChildPage({ childId }: { childId: string }) {
                       ? ` · ждут проверки: ${progress.summary.awaitingReview}`
                       : ''}
                   </p>
+                  <FamilyCourseAchievements achievements={progress.achievements} />
                   {progress.lessons.length || progress.activity.length ? (
                     <details className="rounded-md border border-border bg-surface px-3 py-2">
                       <summary className="cursor-pointer text-small font-medium">
