@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   PageLayout,
   PageStatePanel,
+  createStaffFamilyDigestClient,
+  type StaffFamilyDigestClient,
   useAuthenticatedPrincipal,
   useAuthentication,
 } from '@vmsh/app-shell'
@@ -53,6 +55,7 @@ import {
 import { RevisionAssetsRecovery } from './revision-assets-recovery'
 import { ProblemReviewWorkflow } from './problem-review-workflow'
 import { BulkContentUpload } from './bulk-content-upload'
+import { FamilyDigestPanel } from './family-digest-panel'
 
 const materialOrder: ContentMaterialKind[] = ['condition', 'hint', 'solution']
 const materialLabels: Record<ContentMaterialKind, string> = {
@@ -1019,10 +1022,15 @@ function MaterialWorkflowCard({
 export function StaffContentWorkspace({
   client,
   draftNamespace,
+  familyDigest,
   groupLessonId,
 }: {
   client: ContentApiClient
   draftNamespace: string
+  familyDigest?: {
+    client: StaffFamilyDigestClient
+    scope: { audience: 'staff'; accountId: string }
+  }
   groupLessonId: string
 }) {
   const history = useStaffContentHistoryQuery(client, groupLessonId)
@@ -1093,6 +1101,13 @@ export function StaffContentWorkspace({
             onConflict={() => history.refetch()}
           />
         ))}
+        {familyDigest ? (
+          <FamilyDigestPanel
+            client={familyDigest.client}
+            groupLessonId={groupLessonId}
+            scope={familyDigest.scope}
+          />
+        ) : null}
       </div>
     </PageLayout>
   )
@@ -1115,10 +1130,36 @@ export function StaffLessonContentPage({ lessonId }: { lessonId: string }) {
       }),
     [authentication],
   )
+  const familyDigestClient = useMemo(
+    () =>
+      createStaffFamilyDigestClient(authentication.client.runtime, {
+        refreshSession: async () => {
+          try {
+            return await authentication.refresh()
+          } catch (error) {
+            authentication.handleApiError(error)
+            throw error
+          }
+        },
+      }),
+    [authentication],
+  )
+  const canSendFamilyDigest =
+    principal.audience === 'staff' &&
+    principal.role === 'admin' &&
+    principal.capabilities.includes('broadcast.manage')
   return (
     <StaffContentWorkspace
       client={client}
       draftNamespace={`${authentication.client.runtime.instance}:${principal.accountId}`}
+      {...(canSendFamilyDigest
+        ? {
+            familyDigest: {
+              client: familyDigestClient,
+              scope: { audience: 'staff' as const, accountId: principal.accountId },
+            },
+          }
+        : {})}
       groupLessonId={lessonId}
     />
   )

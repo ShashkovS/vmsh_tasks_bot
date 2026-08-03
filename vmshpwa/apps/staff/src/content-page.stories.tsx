@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
+import type { StaffFamilyDigestClient } from '@vmsh/app-shell'
 import fixture from '@vmsh/contracts/fixtures/content/web-document.v1.json'
 import { ContentNetworkError, type ContentApiClient } from '@vmsh/content'
 import {
@@ -487,6 +488,61 @@ export const UploadPreviewPublish: Story = {
     await expect(canvas.getByText(/Скрыть опубликованное условие/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Отмена' }))
     await expect(canvas.getByRole('button', { name: 'Скрыть опубликованное' })).toBeVisible()
+  },
+}
+
+export const FamilyDigestAfterReview: Story = {
+  name: 'Explicit Family digest after review',
+  render: () => {
+    let sent = false
+    const digestClient: StaffFamilyDigestClient = {
+      preview() {
+        return Promise.resolve({
+          schemaVersion: 1,
+          digest: {
+            groupLessonId,
+            courseId: 'course-math-5-7',
+            courseName: 'Математика 5–7',
+            groupId: 'group-beginner',
+            groupName: 'Начинающие',
+            lessonNumber: 41,
+            studentCount: 28,
+            familyCount: 26,
+            alreadySentFamilyCount: sent ? 26 : 0,
+            pendingFamilyCount: sent ? 0 : 26,
+            unlinkedStudents: [{ studentId: 'student-without-family', displayName: 'Иванов Иван' }],
+          },
+          requestId: 'storybook-family-digest-preview',
+        })
+      },
+      send() {
+        sent = true
+        return this.preview(groupLessonId).then((response) => ({
+          ...response,
+          createdFamilyCount: 26,
+          requestId: 'storybook-family-digest-send',
+        }))
+      },
+    }
+    return (
+      <StaffContentWorkspace
+        client={storyClient()}
+        draftNamespace={storyDraftNamespace}
+        familyDigest={{
+          client: digestClient,
+          scope: { audience: 'staff', accountId: 'staff.admin' },
+        }}
+        groupLessonId={groupLessonId}
+      />
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Итоги для семей')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Разослать итог' }))
+    await expect(canvas.getByRole('alertdialog')).toHaveTextContent('Отправить итог 26 семьям?')
+    await userEvent.click(canvas.getByRole('button', { name: 'Отправить' }))
+    await expect(await canvas.findByText('Итог уже разослан')).toBeVisible()
   },
 }
 

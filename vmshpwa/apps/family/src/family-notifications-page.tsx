@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bell, Volume2 } from 'lucide-react'
-import { useMemo, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
 
 import {
   PageLayout,
@@ -9,12 +9,18 @@ import {
   createNotificationClient,
   useAuthenticatedPrincipal,
   useAuthentication,
+  useNotificationEventsQuery,
   useNotificationPreferencesQuery,
   usePushDevice,
   usePushSubscriptionConfigQuery,
 } from '@vmsh/app-shell'
-import { notificationQueryKeys, type NotificationPreference } from '@vmsh/contracts'
-import { PushDeviceControls } from '@vmsh/product'
+import {
+  notificationQueryKeys,
+  type NotificationEvent,
+  type NotificationEventListResponse,
+  type NotificationPreference,
+} from '@vmsh/contracts'
+import { NotificationEventCard, PushDeviceControls } from '@vmsh/product'
 import {
   Alert,
   AlertContent,
@@ -26,14 +32,21 @@ import {
 } from '@vmsh/ui'
 
 type FamilyNotificationCategory =
-  'lesson_published' | 'hint_published' | 'solution_published' | 'deadline' | 'news'
+  | 'lesson_published'
+  | 'hint_published'
+  | 'solution_published'
+  | 'review_completed'
+  | 'deadline'
+  | 'news'
 
-// Phase 8 sends Family shared materials/news, not per-review, oral or classroom
-// pushes. Course overrides remain Student-only at the API boundary.
+// Per dev/development-plan/12-phase-8-news-and-notifications.md,
+// ``review_completed`` means one explicit lesson digest for Family; the server
+// never creates per-problem Family review events.
 const familyCategories: readonly FamilyNotificationCategory[] = [
   'lesson_published',
   'hint_published',
   'solution_published',
+  'review_completed',
   'deadline',
   'news',
 ] as const
@@ -42,6 +55,10 @@ const categoryCopy: Record<FamilyNotificationCategory, { title: string; descript
   lesson_published: { title: 'Новый урок', description: 'Условия нового занятия' },
   hint_published: { title: 'Подсказки', description: 'Опубликованы подсказки к задачам' },
   solution_published: { title: 'Решения', description: 'Опубликованы решения занятия' },
+  review_completed: {
+    title: 'Итоги занятия',
+    description: 'Один итог после завершения всей проверки',
+  },
   deadline: { title: 'Дедлайн', description: 'Напоминание о публикации решений' },
   news: { title: 'Новости', description: 'Публикации кружка' },
 }
@@ -58,7 +75,12 @@ function isFamilyPreference(
 
 export function FamilyNotificationSettingsView({
   error = false,
+  events,
+  eventsError = false,
+  eventsLoading = false,
   loading = false,
+  onEventsRetry,
+  onRead,
   onRetry,
   onToggle,
   pending = false,
@@ -66,7 +88,12 @@ export function FamilyNotificationSettingsView({
   pushControls,
 }: {
   error?: boolean
+  events?: NotificationEvent[]
+  eventsError?: boolean
+  eventsLoading?: boolean
   loading?: boolean
+  onEventsRetry?: () => void
+  onRead?: (eventId: string) => void
   onRetry?: () => void
   onToggle?: (preference: NotificationPreference, enabled: boolean) => void
   pending?: boolean
@@ -80,6 +107,28 @@ export function FamilyNotificationSettingsView({
       eyebrow="Профиль"
       title="Уведомления"
     >
+      <PageSection title="Последние события">
+        {eventsLoading ? <PageStatePanel state="loading" /> : null}
+        {eventsError ? (
+          <PageStatePanel actionLabel="Повторить" onAction={onEventsRetry} state="error" />
+        ) : null}
+        {events?.length === 0 ? (
+          <PageStatePanel
+            description="Новые материалы, новости и итог занятия появятся здесь."
+            state="empty"
+            title="Пока пусто"
+          />
+        ) : null}
+        <div className="space-y-2">
+          {events?.map((event) => (
+            <VisibleFamilyNotification
+              event={event}
+              key={event.eventId}
+              {...(onRead ? { onRead } : {})}
+            />
+          ))}
+        </div>
+      </PageSection>
       <PageSection title="На этом устройстве">{pushControls}</PageSection>
       <PageSection
         description="Отдельные push о каждой проверенной задаче ребёнка семье не отправляются."
@@ -127,6 +176,89 @@ export function FamilyNotificationSettingsView({
   )
 }
 
+function formatMoment(value: string): string {
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Moscow',
+  }).format(new Date(value))
+}
+
+function familyEventCopy(event: NotificationEvent): { title: string; description: string } {
+  if (event.category === 'review_completed' && event.payload.kind === 'family_lesson_digest') {
+    const lesson = event.payload.lessonNumber
+    const group = event.payload.groupName
+    return {
+      title: 'Итоги занятия готовы',
+      description:
+        typeof lesson === 'number' && typeof group === 'string'
+          ? `${group} · занятие ${lesson}`
+          : 'Результаты ребёнка уже доступны в кабинете',
+    }
+  }
+  const preference = categoryCopy[event.category as FamilyNotificationCategory]
+  return preference ?? { title: 'Новое событие', description: 'Откройте кабинет' }
+}
+
+function VisibleFamilyNotification({
+  event,
+  onRead,
+}: {
+  event: NotificationEvent
+  onRead?: (eventId: string) => void
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const sentRef = useRef(false)
+  useEffect(() => {
+    if (event.readAt !== null || sentRef.current || !containerRef.current || !onRead) return
+    if (typeof IntersectionObserver === 'undefined') return
+    let visible = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const cancel = () => {
+      if (timer !== undefined) clearTimeout(timer)
+      timer = undefined
+    }
+    const updateTimer = () => {
+      cancel()
+      if (!visible || document.visibilityState !== 'visible' || sentRef.current) return
+      timer = setTimeout(() => {
+        sentRef.current = true
+        onRead(event.eventId)
+      }, 3_000)
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visible = Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.75)
+        updateTimer()
+      },
+      { threshold: [0.75] },
+    )
+    observer.observe(containerRef.current)
+    document.addEventListener('visibilitychange', updateTimer)
+    return () => {
+      cancel()
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', updateTimer)
+    }
+  }, [event.eventId, event.readAt, onRead])
+
+  const copy = familyEventCopy(event)
+  return (
+    <div ref={containerRef}>
+      <NotificationEventCard
+        description={copy.description}
+        href={event.route}
+        occurredAt={formatMoment(event.occurredAt)}
+        occurredAtDateTime={event.occurredAt}
+        title={copy.title}
+        unread={event.readAt === null}
+      />
+    </div>
+  )
+}
+
 function FamilyPushDeviceSettings({
   applicationServerKey,
   client,
@@ -139,6 +271,7 @@ function FamilyPushDeviceSettings({
     <PushDeviceControls
       categories={[
         { id: 'materials', label: 'Новые материалы' },
+        { id: 'results', label: 'Итоги занятия' },
         { id: 'deadline', label: 'Дедлайн' },
         { id: 'news', label: 'Новости кружка' },
       ]}
@@ -171,6 +304,7 @@ export function FamilyNotificationsPage() {
     [authentication],
   )
   const preferences = useNotificationPreferencesQuery(client, scope)
+  const events = useNotificationEventsQuery(client, scope)
   const pushConfig = usePushSubscriptionConfigQuery(client, scope)
   const queryClient = useQueryClient()
   const preferenceMutation = useMutation({
@@ -189,6 +323,23 @@ export function FamilyNotificationsPage() {
       queryClient.invalidateQueries({ queryKey: notificationQueryKeys.preferences(scope) }),
     onError: (error) => authentication.handleApiError(error),
   })
+  const readMutation = useMutation({
+    mutationFn: (eventId: string) => client.acknowledge(eventId),
+    onSuccess: (receipt) => {
+      queryClient.setQueryData<NotificationEventListResponse>(
+        notificationQueryKeys.events(scope),
+        (current) =>
+          current && {
+            ...current,
+            items: current.items.map((item) =>
+              item.eventId === receipt.eventId ? { ...item, readAt: receipt.readAt } : item,
+            ),
+          },
+      )
+    },
+  })
+  const markRead = readMutation.mutate
+  const onRead = useCallback((eventId: string) => markRead(eventId), [markRead])
 
   let pushControls: ReactNode
   if (pushConfig.isPending) {
@@ -223,7 +374,15 @@ export function FamilyNotificationsPage() {
   return (
     <FamilyNotificationSettingsView
       error={preferences.isError || preferenceMutation.isError}
+      {...(events.data ? { events: events.data.items } : {})}
+      eventsError={events.isError || readMutation.isError}
+      eventsLoading={events.isPending}
       loading={preferences.isPending}
+      onEventsRetry={() => {
+        readMutation.reset()
+        void events.refetch()
+      }}
+      onRead={onRead}
       onRetry={() => void preferences.refetch()}
       onToggle={(preference, pushEnabled) =>
         preferenceMutation.mutate({ ...preference, pushEnabled })

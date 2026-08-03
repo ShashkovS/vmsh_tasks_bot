@@ -4,6 +4,7 @@ import { expect, userEvent, within } from 'storybook/test'
 
 import preferencesFixture from '@vmsh/contracts/fixtures/notifications/preferences.v1.json'
 import {
+  notificationEventSchema,
   notificationPreferenceListResponseSchema,
   type NotificationPreference,
 } from '@vmsh/contracts'
@@ -12,6 +13,19 @@ import { PushDeviceControls } from '@vmsh/product'
 import { FamilyNotificationSettingsView } from './family-notifications-page'
 
 const preferences = notificationPreferenceListResponseSchema.parse(preferencesFixture).items
+const digestEvent = notificationEventSchema.parse({
+  eventId: 'notification.family-digest.41',
+  category: 'review_completed',
+  route: '/family/children/student.one',
+  payload: {
+    kind: 'family_lesson_digest',
+    groupName: 'Начинающие',
+    lessonNumber: 41,
+  },
+  occurredAt: '2026-10-05T12:00:00Z',
+  deliverAfter: '2026-10-05T12:00:00Z',
+  readAt: null,
+})
 
 const meta = {
   title: 'Pages/Family/Notifications',
@@ -35,6 +49,7 @@ function ReadyView() {
   return (
     <>
       <FamilyNotificationSettingsView
+        events={[digestEvent]}
         onToggle={toggle}
         preferences={items}
         pushControls={
@@ -58,8 +73,9 @@ export const Ready: Story = {
   render: () => <ReadyView />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getAllByRole('switch')).toHaveLength(5)
-    await expect(canvas.queryByLabelText(/Проверка завершена/)).not.toBeInTheDocument()
+    await expect(canvas.getAllByRole('switch')).toHaveLength(6)
+    await expect(canvas.getByText('Итоги занятия готовы')).toBeVisible()
+    await expect(canvas.getByLabelText('Push: Итоги занятия')).toBeVisible()
     await expect(canvas.queryByLabelText(/Назначена аудитория/)).not.toBeInTheDocument()
     await userEvent.click(canvas.getByRole('switch', { name: 'Push: Новости' }))
     await expect(canvas.getByTestId('changed')).toHaveTextContent('news:false')
