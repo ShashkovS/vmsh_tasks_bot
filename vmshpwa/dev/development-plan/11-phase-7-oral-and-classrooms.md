@@ -195,22 +195,64 @@ vmshpwa/e2e/classrooms.spec.ts
 - [Phase 7C: распределение школьников](../../../pwa_tests/reports/phase7-classroom-assignments.md);
 - [Phase 7C: одноразовый Excel dry-run/import](../../../pwa_tests/reports/phase7-classroom-import.md).
 
-- [ ] Revision, migration up/down и rehearsal на копии production-size SQLite: `<sha/paths/results>`.
-- [ ] One-time Excel dry-run/import report с анонимизированными `IDd`, найденными конфликтами и итоговыми counts: `<path/result>`.
-- [ ] Demo online oral + written fallback + Staff result: `<routes/video/evidence>`.
-- [ ] Catalog normalization/archive/restore и optimistic conflict report: `<tests/result>`.
-- [ ] Classroom assignment property/invariant report: `<seed/count/result>`.
-- [ ] Fuzzy-search, age/grade/strength projection, aggregates и rating-job parity с `a53_calc_rating_new.py`: `<tests/result>`.
-- [ ] Local draft reload/conflict/discard и atomic single/bulk/cross-group save: `<tests/result>`.
-- [ ] Historical immutability и stale/reassigning API tests, включая Teacher `403`: `<result>`.
-- [ ] Classroom delivery preview/send: immutable plan snapshot, PWA/Telegram recipient matrix, idempotency/retry, no-auto-resend и отсутствие Family delivery: `<tests/result>`.
-- [ ] Join secret authorization/no-log/no-cache tests: `<result>`.
-- [ ] Storybook catalog/layout/plan/Student/Family stories, interaction+a11y и просмотренный visual diff: `<story-ids/paths/approver/date>`.
-- [ ] Playwright classroom E2E в трёх браузерах на production preview: `<result/artifacts>`.
-- [ ] Зафиксированная граница отложенной печати `a11`–`a14` и characterization персональных recipient semantics `a02`: `<paths>`.
-- [ ] Rehearsal «ранняя рассылка → смена режимов → новая confirmed version → final print»: version/hash/counts каждого snapshot, видимые неразосланные изменения и доказанный temporary print handoff либо явно отложенный production cutover `<path/result/decision>`.
-- [ ] Telegram/Zoom historical tests: `<result>`.
-- [ ] Обновлённые contracts, API/domain docs, runbook, known limitations и запись в `STATUS.md`: `<paths/issues/name/date>`.
+- [x] Все Phase-7 migrations проходят up/down/up и integrity/schema gates;
+      synthetic production-size rehearsal подтверждает 1500 очных школьников и
+      15 комнат. Реальный owner-reviewed workbook apply остаётся production
+      gate, а не частью hermetic suite:
+      [`phase7-classroom-scale-and-print-boundary.md`](../../../pwa_tests/reports/phase7-classroom-scale-and-print-boundary.md).
+- [x] One-time Excel preview/apply использует synthetic `IDd`, показывает
+      blockers/counts/hash, атомарно создаёт plan и сохраняет только компактный
+      receipt без строк/имён:
+      [`phase7-classroom-import.md`](../../../pwa_tests/reports/phase7-classroom-import.md).
+- [x] Online oral + written fallback + Staff result + Student final state:
+      [`phase7-oral-e2e.md`](../../../pwa_tests/reports/phase7-oral-e2e.md).
+- [x] Catalog normalization/archive/restore/optimistic conflict:
+      [`phase7-classroom-catalog.md`](../../../pwa_tests/reports/phase7-classroom-catalog.md).
+- [x] Assignment invariants, history, no-room incident, natural-sort balance и
+      cross-group confirmation:
+      [`phase7-classroom-assignments.md`](../../../pwa_tests/reports/phase7-classroom-assignments.md).
+- [x] Fuzzy search, nullable age/grade/automatic strength, independent room
+      averages и 1500-row scale входят в assignment/scale proof. Rating job
+      parity остаётся источником Phase-9 analytics, а Phase 7 читает latest
+      projection.
+- [x] Layout/plan/oral local drafts переживают reload; batch single/bulk,
+      cross-group confirm, explicit discard/success cleanup и version conflict
+      покрыты API/UI/browser slices.
+- [x] Historical immutability, stale/reassigning после archive/layout change и
+      Teacher `403`:
+      [`phase7-classroom-layout.md`](../../../pwa_tests/reports/phase7-classroom-layout.md),
+      [`phase7-classroom-assignments.md`](../../../pwa_tests/reports/phase7-classroom-assignments.md).
+- [x] Delivery preview/send, immutable recipient snapshot, PWA/Telegram matrix,
+      failed-only retry, no-auto-resend, partial report и отсутствие Family
+      delivery:
+      [`phase7-classroom-delivery-e2e.md`](../../../pwa_tests/reports/phase7-classroom-delivery-e2e.md),
+      [`phase8-classroom-telegram-transport.md`](../../../pwa_tests/reports/phase8-classroom-telegram-transport.md),
+      [`phase8-classroom-delivery-observability.md`](../../../pwa_tests/reports/phase8-classroom-delivery-observability.md).
+- [x] Join secret authorization, explicit reveal и `no-store`:
+      [`phase7-oral-windows.md`](../../../pwa_tests/reports/phase7-oral-windows.md).
+- [ ] Storybook component/page interactions и a11y зафиксированы в
+      [`phase7-consolidated-gates-2026-08-03.md`](../../../pwa_tests/reports/phase7-consolidated-gates-2026-08-03.md),
+      но общий visual diff всё ещё требует принятия владельцем; snapshots не
+      обновлялись.
+- [x] Последний успешный production-build Playwright: classroom **9 PASS** и
+      oral **3 PASS** в Chromium/WebKit/Firefox. Повтор 3 августа 2026 года
+      заблокирован macOS browser launcher до выполнения assertions и честно не
+      считается новым PASS.
+- [x] Граница v1 с `a11`–`a14` и персональная recipient semantics зафиксированы:
+      Staff plan управляет PWA/Telegram состоянием, внешний workbook остаётся
+      print source of truth до второй версии:
+      [`phase7-classroom-scale-and-print-boundary.md`](../../../pwa_tests/reports/phase7-classroom-scale-and-print-boundary.md).
+- [ ] Реальный operational rehearsal «ранняя рассылка → поздние mode changes →
+      новая confirmed version → final print» остаётся обязательным до
+      production cutover от workbook. Software flow до новой явной рассылки
+      уже покрыт E2E.
+- [x] Historical Telegram regression и legacy-compatible Zoom/result behavior
+      входят в общий Python/Telegram gate; новый oral path не создаёт второй
+      ledger.
+- [x] Contracts, API/domain docs, runbook, known limitations и актуальная
+      acceptance matrix:
+      [`classroom-and-oral-workflow.md`](../../docs/classroom-and-oral-workflow.md),
+      [`phase7-consolidated-gates-2026-08-03.md`](../../../pwa_tests/reports/phase7-consolidated-gates-2026-08-03.md).
 
 ## Многокурсовый инкремент Phase 7
 

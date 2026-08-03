@@ -1122,3 +1122,24 @@
   [`phase11-two-worker-runtime.md`](../../../pwa_tests/reports/phase11-two-worker-runtime.md).
 - Production concurrent-session telemetry и фактическая глубина offline outbox
   всё ещё неизвестны; они не выдаются за закрытые этим локальным измерением.
+
+## Phase 7 consolidated checkpoint — 3 августа 2026
+
+- Каталог, multi-course layout, deterministic assignment/history, one-time
+  import, явная PWA/личная Telegram-рассылка, partial/retry report, публичное
+  Student/Family состояние, устные окна и существующий result ledger свёрены с
+  12 инкрементальными proof-файлами.
+- Актуальный focused Python gate: **40 PASS** в восьми workers; contracts/clients
+  Vitest: **8 файлов / 37 PASS**; общий PWA Python gate: **1552 PASS / 6 skips**.
+- Последний успешный production matrix: classroom **9 PASS**, oral **3 PASS** в
+  Chromium/WebKit/Firefox. Повтор 3 августа упал в macOS launcher на 0ms до
+  assertions и не записан как новый PASS.
+- Synthetic scale — 1500 очных школьников / 15 комнат, 0.55s; v1 намеренно не
+  вводит print/export и оставляет `a11`–`a14`/workbook источником физической
+  печати до отдельной второй версии.
+- Proof:
+  [`phase7-consolidated-gates-2026-08-03.md`](../../../pwa_tests/reports/phase7-consolidated-gates-2026-08-03.md),
+  runbook:
+  [`classroom-and-oral-workflow.md`](../../docs/classroom-and-oral-workflow.md).
+- Software gate functionally ready. Открыты owner visual approval, реальный
+  owner-reviewed classroom import/operational print rehearsal и свежий
