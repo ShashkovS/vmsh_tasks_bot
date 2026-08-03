@@ -40,6 +40,72 @@ export const notificationEventListResponseSchema = z
   .strict()
 export type NotificationEventListResponse = z.infer<typeof notificationEventListResponseSchema>
 
+export const familyDigestPreviewSchema = z
+  .object({
+    groupLessonId: publicIdSchema,
+    courseId: publicIdSchema,
+    courseName: z.string().trim().min(1),
+    groupId: publicIdSchema,
+    groupName: z.string().trim().min(1),
+    lessonNumber: z.number().int().positive(),
+    studentCount: z.number().int().nonnegative(),
+    familyCount: z.number().int().nonnegative(),
+    alreadySentFamilyCount: z.number().int().nonnegative(),
+    pendingFamilyCount: z.number().int().nonnegative(),
+    unlinkedStudents: z.array(
+      z
+        .object({
+          studentId: publicIdSchema,
+          displayName: z.string().trim().min(1),
+        })
+        .strict(),
+    ),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.alreadySentFamilyCount + value.pendingFamilyCount !== value.familyCount) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Family digest counts do not add up',
+        path: ['pendingFamilyCount'],
+      })
+    }
+    if (value.unlinkedStudents.length > value.studentCount) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Unlinked students exceed the lesson group',
+        path: ['unlinkedStudents'],
+      })
+    }
+  })
+export type FamilyDigestPreview = z.infer<typeof familyDigestPreviewSchema>
+
+export const familyDigestPreviewResponseSchema = z
+  .object({
+    schemaVersion: versionSchema,
+    digest: familyDigestPreviewSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type FamilyDigestPreviewResponse = z.infer<typeof familyDigestPreviewResponseSchema>
+
+export const sendFamilyDigestRequestSchema = z.object({ schemaVersion: versionSchema }).strict()
+export type SendFamilyDigestRequest = z.infer<typeof sendFamilyDigestRequestSchema>
+
+export const sendFamilyDigestResponseSchema = familyDigestPreviewResponseSchema
+  .extend({ createdFamilyCount: z.number().int().nonnegative() })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.createdFamilyCount > value.digest.familyCount) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Created Family events exceed eligible recipients',
+        path: ['createdFamilyCount'],
+      })
+    }
+  })
+export type SendFamilyDigestResponse = z.infer<typeof sendFamilyDigestResponseSchema>
+
 export const notificationPreferenceSchema = z
   .object({
     category: notificationCategorySchema,
@@ -231,4 +297,6 @@ export const notificationQueryKeys = {
     ['notifications', ...principalQueryKey(principal), 'course', courseId, 'preferences'] as const,
   pushConfig: (principal: PrincipalQueryScope) =>
     ['notifications', ...principalQueryKey(principal), 'push-config'] as const,
+  familyDigest: (principal: PrincipalQueryScope, groupLessonId: string) =>
+    ['notifications', ...principalQueryKey(principal), 'family-digest', groupLessonId] as const,
 } as const

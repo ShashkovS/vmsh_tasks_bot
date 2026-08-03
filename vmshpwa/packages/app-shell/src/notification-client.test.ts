@@ -2,12 +2,14 @@ import { describe, expect, it, vi } from 'vitest'
 
 import eventsFixture from '@vmsh/contracts/fixtures/notifications/events.v1.json'
 import preferencesFixture from '@vmsh/contracts/fixtures/notifications/preferences.v1.json'
+import staffRuntimeFixture from '@vmsh/contracts/fixtures/runtime/staff.v1.json'
 import runtimeFixture from '@vmsh/contracts/fixtures/runtime/student.v1.json'
 import { runtimeConfigSchemaForAudience } from '@vmsh/contracts'
 
-import { createNotificationClient } from './notification-client'
+import { createNotificationClient, createStaffFamilyDigestClient } from './notification-client'
 
 const runtime = runtimeConfigSchemaForAudience('student').parse(runtimeFixture.response)
+const staffRuntime = runtimeConfigSchemaForAudience('staff').parse(staffRuntimeFixture.response)
 
 describe('notification client', () => {
   it('uses the audience API and validates list responses', async () => {
@@ -163,5 +165,46 @@ describe('notification client', () => {
       'POST',
       'DELETE',
     ])
+  })
+
+  it('previews and explicitly sends one Staff Family digest', async () => {
+    const digest = {
+      groupLessonId: 'lesson.math.41.n',
+      courseId: 'course.math',
+      courseName: 'Математика',
+      groupId: 'group.beginner',
+      groupName: 'Начинающие',
+      lessonNumber: 41,
+      studentCount: 2,
+      familyCount: 2,
+      alreadySentFamilyCount: 0,
+      pendingFamilyCount: 2,
+      unlinkedStudents: [],
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({ schemaVersion: 1, digest, requestId: 'digest-preview' }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          schemaVersion: 1,
+          digest: {
+            ...digest,
+            alreadySentFamilyCount: 2,
+            pendingFamilyCount: 0,
+          },
+          createdFamilyCount: 2,
+          requestId: 'digest-send',
+        }),
+      )
+    const client = createStaffFamilyDigestClient(staffRuntime, { fetchImplementation })
+
+    expect((await client.preview('lesson.math.41.n')).digest.pendingFamilyCount).toBe(2)
+    expect((await client.send('lesson.math.41.n')).createdFamilyCount).toBe(2)
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/staff/api/v1/group-lessons/lesson.math.41.n/family-digest',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[1]?.body).toBe('{"schemaVersion":1}')
   })
 })

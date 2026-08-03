@@ -9,6 +9,7 @@ import {
   courseNotificationPreferenceResponseSchema,
   deletePushSubscriptionRequestSchema,
   deletePushSubscriptionResponseSchema,
+  familyDigestPreviewResponseSchema,
   notificationEventListResponseSchema,
   notificationPreferenceListResponseSchema,
   notificationPreferenceResponseSchema,
@@ -18,10 +19,13 @@ import {
   pushSubscriptionConfigResponseSchema,
   savePushSubscriptionRequestSchema,
   savePushSubscriptionResponseSchema,
+  sendFamilyDigestRequestSchema,
+  sendFamilyDigestResponseSchema,
   updateNotificationPreferenceRequestSchema,
   updateCourseNotificationPreferenceRequestSchema,
   type AcknowledgeNotificationResponse,
   type DeletePushSubscriptionResponse,
+  type FamilyDigestPreviewResponse,
   type CourseNotificationPreferenceListResponse,
   type CourseNotificationPreferenceResponse,
   type NotificationEventListResponse,
@@ -32,6 +36,7 @@ import {
   type RuntimeConfig,
   type SavePushSubscriptionRequest,
   type SavePushSubscriptionResponse,
+  type SendFamilyDigestResponse,
   type UpdateNotificationPreferenceRequest,
   type UpdateCourseNotificationPreferenceRequest,
 } from '@vmsh/contracts'
@@ -60,6 +65,11 @@ export interface NotificationClient {
   pushConfig(options?: { signal?: AbortSignal }): Promise<PushSubscriptionConfigResponse>
   savePushSubscription(request: SavePushSubscriptionRequest): Promise<SavePushSubscriptionResponse>
   deletePushSubscription(endpoint: string): Promise<DeletePushSubscriptionResponse>
+}
+
+export interface StaffFamilyDigestClient {
+  preview(groupLessonId: string, signal?: AbortSignal): Promise<FamilyDigestPreviewResponse>
+  send(groupLessonId: string): Promise<SendFamilyDigestResponse>
 }
 
 export function createNotificationClient(
@@ -181,6 +191,61 @@ export function createNotificationClient(
   }
 }
 
+export function createStaffFamilyDigestClient(
+  runtime: RuntimeConfig,
+  options: {
+    fetchImplementation?: typeof globalThis.fetch
+    refreshSession?: () => Promise<unknown>
+  } = {},
+): StaffFamilyDigestClient {
+  const configured = parseRuntimeConfigForAudience('staff', runtime)
+  const fetchImplementation = options.fetchImplementation ?? globalThis.fetch
+
+  async function request(groupLessonId: string, init: RequestInit): Promise<unknown> {
+    const lessonId = publicIdSchema.parse(groupLessonId)
+    const send = () =>
+      fetchImplementation(
+        `${configured.apiBase}/group-lessons/${encodeURIComponent(lessonId)}/family-digest`,
+        {
+          cache: 'no-store',
+          credentials: 'include',
+          redirect: 'error',
+          ...init,
+          headers: {
+            Accept: 'application/json',
+            ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+          },
+        },
+      )
+    let response = await send()
+    if (response.status === 401 && options.refreshSession) {
+      await response.body?.cancel()
+      await options.refreshSession()
+      response = await send()
+    }
+    const payload: unknown = await response.json()
+    if (!response.ok) throw new ApiResponseError(response.status, apiErrorSchema.parse(payload))
+    return payload
+  }
+
+  return {
+    async preview(groupLessonId, signal) {
+      return familyDigestPreviewResponseSchema.parse(
+        await request(groupLessonId, {
+          method: 'GET',
+          ...(signal === undefined ? {} : { signal }),
+        }),
+      )
+    },
+    async send(groupLessonId) {
+      const body = sendFamilyDigestRequestSchema.parse({ schemaVersion: 1 })
+      return sendFamilyDigestResponseSchema.parse(
+        await request(groupLessonId, { method: 'POST', body: JSON.stringify(body) }),
+      )
+    },
+  }
+}
+
 export function useNotificationEventsQuery(
   client: NotificationClient,
   principal: PrincipalQueryScope,
@@ -189,6 +254,18 @@ export function useNotificationEventsQuery(
   return useQuery({
     queryKey: notificationQueryKeys.events(principal, unreadOnly),
     queryFn: ({ signal }) => client.events({ unreadOnly, signal }),
+    meta: { realtimeResources: ['notification-events'] },
+  })
+}
+
+export function useStaffFamilyDigestQuery(
+  client: StaffFamilyDigestClient,
+  principal: PrincipalQueryScope,
+  groupLessonId: string,
+) {
+  return useQuery({
+    queryKey: notificationQueryKeys.familyDigest(principal, groupLessonId),
+    queryFn: ({ signal }) => client.preview(groupLessonId, signal),
     meta: { realtimeResources: ['notification-events'] },
   })
 }

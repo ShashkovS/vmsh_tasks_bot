@@ -5,12 +5,14 @@ import preferencesFixture from '../fixtures/notifications/preferences.v1.json'
 import {
   courseNotificationPreferenceListResponseSchema,
   deletePushSubscriptionRequestSchema,
+  familyDigestPreviewResponseSchema,
   nativePushPayloadSchema,
   notificationEventListResponseSchema,
   notificationPreferenceListResponseSchema,
   notificationQueryKeys,
   pushSubscriptionConfigResponseSchema,
   savePushSubscriptionRequestSchema,
+  sendFamilyDigestResponseSchema,
   updateNotificationPreferenceRequestSchema,
   updateCourseNotificationPreferenceRequestSchema,
 } from './notifications'
@@ -73,6 +75,40 @@ describe('notification contracts', () => {
     expect(notificationQueryKeys.events(first)).not.toEqual(
       notificationQueryKeys.events(first, true),
     )
+    expect(notificationQueryKeys.familyDigest(first, 'lesson.one')).not.toEqual(
+      notificationQueryKeys.familyDigest(second, 'lesson.one'),
+    )
+  })
+
+  it('validates Family digest preview and exact recipient counters', () => {
+    const response = {
+      schemaVersion: 1,
+      digest: {
+        groupLessonId: 'lesson.math.41.n',
+        courseId: 'course.math',
+        courseName: 'Математика',
+        groupId: 'group.beginner',
+        groupName: 'Начинающие',
+        lessonNumber: 41,
+        studentCount: 3,
+        familyCount: 2,
+        alreadySentFamilyCount: 1,
+        pendingFamilyCount: 1,
+        unlinkedStudents: [{ studentId: 'student.three', displayName: 'Иванов Иван' }],
+      },
+      requestId: 'request.family-digest',
+    }
+    expect(familyDigestPreviewResponseSchema.parse(response).digest.pendingFamilyCount).toBe(1)
+    expect(
+      sendFamilyDigestResponseSchema.parse({ ...response, createdFamilyCount: 1 })
+        .createdFamilyCount,
+    ).toBe(1)
+    expect(() =>
+      familyDigestPreviewResponseSchema.parse({
+        ...response,
+        digest: { ...response.digest, pendingFamilyCount: 2 },
+      }),
+    ).toThrow()
   })
 
   it('validates browser subscription and native payload boundaries', () => {
