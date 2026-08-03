@@ -1143,3 +1143,26 @@
   [`classroom-and-oral-workflow.md`](../../docs/classroom-and-oral-workflow.md).
 - Software gate functionally ready. Открыты owner visual approval, реальный
   owner-reviewed classroom import/operational print rehearsal и свежий
+  three-engine rerun после устранения внешнего macOS browser-launch сбоя.
+
+## Phase 8 checkpoint: Telegram UI scheduled queue — 3 августа 2026
+
+- Добавлен offline validator ручного инвентаря сообщений, запланированных в
+  Telegram-клиенте: каждая строка получает одно решение
+  `retain_in_telegram | cancel_and_recreate_in_staff | cancel_as_obsolete`.
+- Hash mismatch после просмотра, дубли active intent/item/Staff draft и
+  некорректная ownership-семантика блокируют cutover; одинаковый контент в
+  разных destination разрешён.
+- Aggregate report не содержит payload, Telegram IDs, destination keys или
+  content hashes. Синтетический gate: **8 PASS**, CLI fixture: **ready, 4 items,
+  0 blockers**; полный PWA Python regression: **1560 PASS / 6 intentional
+  skips** в восьми workers.
+- Bot API не умеет читать ручную scheduled queue, а официальный MTProto-метод
+  user-only; user-account session намеренно не добавлен. Реальный owner-run
+  inventory остаётся deployment gate перед будущим Staff scheduler.
+- Proof:
+  [`phase8-telegram-scheduled-queue-reconciliation.md`](../../../pwa_tests/reports/phase8-telegram-scheduled-queue-reconciliation.md),
+  runbook:
+  [`telegram-scheduled-queue-cutover.md`](../../docs/telegram-scheduled-queue-cutover.md).
+- Удаление уже опубликованных channel posts этим срезом не закрывается и
+  остаётся отдельным explicit reconciliation gate.

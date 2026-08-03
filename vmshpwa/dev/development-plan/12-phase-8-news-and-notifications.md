@@ -99,3 +99,16 @@ destination, purpose и status, но не bot token. Duplicate/stale запро�
 событий, а сбой audit insert откатывает binding. Proof:
 [`phase8-telegram-bindings.md`](../../../pwa_tests/reports/phase8-telegram-bindings.md)
 и [`phase10-staff-audit.md`](../../../pwa_tests/reports/phase10-staff-audit.md).
+
+## Инкремент сверки Telegram scheduled queue — 3 августа 2026
+
+Offline-команда проверяет owner-reviewed hash inventory без Telegram/Google/
+SQLite network dependencies. Поддержаны решения retain, cancel+recreate и
+obsolete; changed-after-review и дубли блокируют cutover, а aggregate report не
+содержит payload, Telegram IDs, destination keys или content hashes. Реальная
+ручная очередь проверяется владельцем непосредственно перед будущей передачей
+destination Staff scheduler. Удаление уже опубликованных posts остаётся
+отдельным explicit reconciliation gate. Proof:
+[`phase8-telegram-scheduled-queue-reconciliation.md`](../../../pwa_tests/reports/phase8-telegram-scheduled-queue-reconciliation.md),
+runbook:
+[`telegram-scheduled-queue-cutover.md`](../../docs/telegram-scheduled-queue-cutover.md).

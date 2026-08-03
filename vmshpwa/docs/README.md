@@ -12,6 +12,7 @@
 - [Realtime, offline и уведомления](realtime-offline-and-notifications.md)
 - [LaTeX/content pipeline](latex-content-pipeline.md)
 - [Зеркалирование Telegram-новостей](telegram-news-mirroring.md)
+- [Сверка запланированных публикаций Telegram](telegram-scheduled-queue-cutover.md)
 - [Стратегия тестирования](testing-strategy.md)
 - [Отказ от Google](google-migration-roadmap.md)
 - [Модель данных и миграционные границы](data-model-and-migrations.md)

@@ -223,7 +223,7 @@ pwa-written-attachment-live-smoke:
 	@test -n "$(PWA_S3_RUN_ID)" || (echo "Set a unique lowercase PWA_S3_RUN_ID"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.written_attachment_storage_smoke --run-id "$(PWA_S3_RUN_ID)"
 
-.PHONY: pwa-nats-local-smoke pwa-two-worker-local-smoke pwa-two-worker-load-local-smoke pwa-telegram-bind-test-channel pwa-telegram-live-smoke pwa-telegram-rich-live-smoke
+.PHONY: pwa-nats-local-smoke pwa-two-worker-local-smoke pwa-two-worker-load-local-smoke pwa-telegram-schedule-reconcile pwa-telegram-bind-test-channel pwa-telegram-live-smoke pwa-telegram-rich-live-smoke
 pwa-nats-local-smoke:
 	$(PWA_UV_ENV) VMSH_RUN_LOCAL_NATS_SMOKE=1 uv run pytest -q -n0 pwa_tests/integration/test_nats_live.py
 
@@ -232,6 +232,11 @@ pwa-two-worker-local-smoke:
 
 pwa-two-worker-load-local-smoke:
 	$(PWA_UV_ENV) VMSH_RUN_TWO_WORKER_SMOKE=1 uv run pytest -q -n0 pwa_tests/integration/test_two_worker_load_live.py
+
+pwa-telegram-schedule-reconcile:
+	@test -n "$(PWA_TELEGRAM_SCHEDULE_INVENTORY)" || (echo "Set PWA_TELEGRAM_SCHEDULE_INVENTORY to the reviewed local JSON inventory"; exit 2)
+	@test -n "$(PWA_TELEGRAM_SCHEDULE_REPORT)" || (echo "Set PWA_TELEGRAM_SCHEDULE_REPORT below .runtime"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.telegram_schedule_reconciliation --inventory "$(PWA_TELEGRAM_SCHEDULE_INVENTORY)" --report "$(PWA_TELEGRAM_SCHEDULE_REPORT)"
 
 pwa-telegram-bind-test-channel:
 	@test "$(VMSH_RUN_TELEGRAM_LIVE_SMOKE)" = "1" || (echo "Set VMSH_RUN_TELEGRAM_LIVE_SMOKE=1"; exit 2)
