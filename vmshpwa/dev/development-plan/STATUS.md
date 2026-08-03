@@ -1225,3 +1225,15 @@
   [`phase10-google-loader-inventory-2026-08-03.md`](../../../pwa_tests/reports/phase10-google-loader-inventory-2026-08-03.md).
 - Matrix gate закрыт. Production cutover, дата owner acceptance и удаление
   credentials не объявлены; незавершённые домены перечислены явно.
+
+## Phase 2 checkpoint: повторный local converter gate — 3 августа 2026
+
+- Agent preflight с явным owner-local `pdflatex` подтвердил четыре capability:
+  MiKTeX pdfTeX, `pdf2svg`, libwebp `cwebp` и ImageMagick.
+- Synthetic smoke повторно прошёл обе цепочки: TikZ→PDF→SVG и
+  raster→normalized PNG→WebP; HEIC decode advertised.
+- Реальный converter corpus: **6 PASS**, включая JPEG/PNG/WebP/HEIC, фотографии
+  математического канала, strip EXIF/GPS и rejection corrupt/oversized input.
+- Proof: [`toolchain-local.md`](../../../pwa_tests/reports/toolchain-local.md).
+- Local Phase 2 gate закрыт. Production service-account/staging probe остаётся
+  отдельным незакрытым критерием Phase 11.

@@ -27,3 +27,28 @@ MiKTeX к собственным локальным каталогам, но б�
 Хеши производных формируются командой и могут использоваться для диагностики одного запуска, но не являются cross-machine golden: LaTeX/tool metadata способны изменяться между версиями. Автоматические fake-tool tests проверяют fixed argv, shell-injection boundary, timeout с остановкой process group, ограничение stdout/stderr, missing/disabled/non-zero состояния и отсутствие абсолютного пути в публичном отчёте.
 
 Это доказательство локальной готовности developer toolchain, а не production/staging gate. Тот же smoke должен быть повторён под service account при rollout Phase 11.
+
+## Повторная проверка 3 августа 2026 года
+
+Agent-профиль повторно проверен с явным локальным override для `pdflatex`.
+Первый запуск без override корректно показал `pdflatex: missing`; запуск с
+абсолютным executable внутри ограниченного sandbox дошёл до timeout MiKTeX, а
+разрешённый повтор с доступом только к его локальным служебным каталогам прошёл.
+Это подтверждает, что путь должен быть частью service environment, а не
+неявного интерактивного `PATH`.
+
+Актуальный результат:
+
+- preflight: все четыре capability `ready`;
+- synthetic TikZ → PDF → SVG: 10 737-byte PDF и 3 486-byte SVG;
+- synthetic raster → normalized PNG → WebP: 8 092-byte WebP, target width 1920;
+- HEIC decode capability advertised;
+- реальный converter corpus
+  `pwa_tests/integration/test_content_assets_smoke.py`: **6 PASS** — TikZ/SVG,
+  JPEG/PNG/existing WebP/HEIC, owner-local public math photos, EXIF/GPS stripping,
+  corrupt и oversized rejection.
+
+Все производные создавались во временных каталогах; сеть, S3, Telegram,
+production DB и credentials в этом повторе не использовались. Отдельный
+guarded test-S3 roundtrip остаётся зафиксирован в
+[`phase2-content-assets-live.md`](phase2-content-assets-live.md).

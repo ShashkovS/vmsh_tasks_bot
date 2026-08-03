@@ -399,7 +399,12 @@ approval остаются открытыми gates Phase 2.
 - [x] RecordingBot fixtures и разрешённый live test-channel Rich Message на
       границе 32 768 symbols: send/edit/delete PASS,
       [`phase2-derivative-adapters.md`](../../../pwa_tests/reports/phase2-derivative-adapters.md).
-- [ ] Toolchain config/probe и версии `pdflatex`/`pdf2svg`/`cwebp`/`magick` в local target runtime; staging gate относится к этапу 11: `<path/result>`.
+- [x] Local agent target runtime: `pdflatex`/`pdf2svg`/`cwebp`/`magick`
+      preflight, synthetic TikZ→SVG/raster→WebP и реальный шестисценарный
+      converter corpus PASS:
+      [`toolchain-local.md`](../../../pwa_tests/reports/toolchain-local.md).
+      Production service-account/staging probe остаётся отдельным Phase 11
+      gate и этим локальным результатом не подменяется.
 - [x] Production-build content Playwright в трёх браузерах: **3 PASS** —
       [`phase2-content-e2e.md`](../../../pwa_tests/reports/phase2-content-e2e.md),
       revision `3b5a4e8`.
