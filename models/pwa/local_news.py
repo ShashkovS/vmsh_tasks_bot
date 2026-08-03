@@ -38,7 +38,7 @@ class LocalNewsConflict(Exception):
     pass
 
 
-class LocalNewsAlreadyPublished(Exception):
+class LocalNewsPublicationTimeLocked(Exception):
     pass
 
 
@@ -138,21 +138,22 @@ def create_local_news(
     }
 
 
-def edit_scheduled_local_news(
+def edit_local_news(
     connection: sqlite3.Connection,
     *,
     public_id: str,
     expected_version: int,
     text: object,
-    published_at: object,
+    published_at: object | None,
     actor_user_id: int,
     now: str,
 ) -> bool:
-    """Replace the revision and schedule of a not-yet-published local post.
+    """Create a revision, allowing only text corrections after publication.
 
-    Once the original publication moment has passed, people may already have
-    seen the post or its notification. That separate product policy remains
-    open in development question 7; this transition therefore fails closed.
+    See ``vmshpwa/docs/local-scheduled-news.md`` and
+    ``test_admin_corrects_published_local_news_without_repeat_notification``.
+    Published news keeps its original ordering/deadline timestamp and existing
+    notification rows; only a future scheduled post may move those rows.
     """
 
     if not isinstance(text, str):
@@ -160,14 +161,18 @@ def edit_scheduled_local_news(
     normalized_text = text.strip()
     if not normalized_text or len(normalized_text) > 32_768:
         raise InvalidLocalNews("text")
-    normalized_published_at = _published_at(published_at)
     current = find_local_post_for_edit(connection, public_id=public_id)
     if current is None:
         raise LocalNewsNotFound
     if int(current["version"]) != expected_version:
         raise LocalNewsConflict
-    if str(current["published_at"]) <= now:
-        raise LocalNewsAlreadyPublished
+    already_published = str(current["published_at"]) <= now
+    if already_published:
+        if published_at is not None:
+            raise LocalNewsPublicationTimeLocked
+        normalized_published_at = str(current["published_at"])
+    else:
+        normalized_published_at = _published_at(published_at)
     if (
         current["text_plain"] == normalized_text
         and current["published_at"] == normalized_published_at
@@ -212,11 +217,12 @@ def edit_scheduled_local_news(
         source_payload_json=source_payload_json,
         now=now,
     )
-    reschedule_local_news_events(
-        connection,
-        public_id=public_id,
-        published_at=normalized_published_at,
-    )
+    if not already_published:
+        reschedule_local_news_events(
+            connection,
+            public_id=public_id,
+            published_at=normalized_published_at,
+        )
     return True
 
 
@@ -244,11 +250,11 @@ def sync_scheduled_local_news_notifications(
 
 __all__ = [
     "InvalidLocalNews",
-    "LocalNewsAlreadyPublished",
     "LocalNewsConflict",
     "LocalNewsNotFound",
     "LocalNewsOwnerNotFound",
+    "LocalNewsPublicationTimeLocked",
     "create_local_news",
-    "edit_scheduled_local_news",
+    "edit_local_news",
     "sync_scheduled_local_news_notifications",
 ]

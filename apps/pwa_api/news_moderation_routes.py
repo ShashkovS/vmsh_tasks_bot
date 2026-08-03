@@ -18,12 +18,12 @@ from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
 from models.pwa.local_news import (
     InvalidLocalNews,
-    LocalNewsAlreadyPublished,
     LocalNewsConflict,
     LocalNewsNotFound,
     LocalNewsOwnerNotFound,
+    LocalNewsPublicationTimeLocked,
     create_local_news,
-    edit_scheduled_local_news,
+    edit_local_news,
     sync_scheduled_local_news_notifications,
 )
 from models.pwa.news_moderation import (
@@ -286,11 +286,13 @@ async def edit_local_publication(request: web.Request) -> web.Response:
             code="validation_error",
             message="Проверьте текст и время публикации",
         ) from error
-    if (
-        not isinstance(body, dict)
-        or set(body) != {"schemaVersion", "text", "publishedAt"}
-        or body.get("schemaVersion") != 1
-    ):
+    allowed_fields = (
+        {"schemaVersion", "text"},
+        {"schemaVersion", "text", "publishedAt"},
+    )
+    if not isinstance(body, dict) or set(body) not in allowed_fields or body.get(
+        "schemaVersion"
+    ) != 1:
         raise PwaApiError(
             status=422,
             code="validation_error",
@@ -302,12 +304,12 @@ async def edit_local_publication(request: web.Request) -> web.Response:
         before_rows = list_news_for_moderation(
             connection, state=None, limit=1, public_id=public_id
         )
-        changed = edit_scheduled_local_news(
+        changed = edit_local_news(
             connection,
             public_id=public_id,
             expected_version=int(match.group(2)),
             text=body["text"],
-            published_at=body["publishedAt"],
+            published_at=body.get("publishedAt"),
             actor_user_id=actor_user_id,
             now=now,
         )
@@ -359,11 +361,11 @@ async def edit_local_publication(request: web.Request) -> web.Response:
             code="version_conflict",
             message="Публикация уже изменилась. Обновите список.",
         ) from error
-    except LocalNewsAlreadyPublished as error:
+    except LocalNewsPublicationTimeLocked as error:
         raise PwaApiError(
             status=409,
-            code="local_news_already_published",
-            message="Уже опубликованную новость пока нельзя изменить",
+            code="local_news_publication_time_locked",
+            message="У уже опубликованной новости можно исправить текст, но не время",
         ) from error
     except InvalidLocalNews as error:
         raise PwaApiError(

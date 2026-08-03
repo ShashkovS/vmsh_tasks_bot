@@ -553,7 +553,9 @@ async def test_admin_edits_future_local_news_and_reschedules_notifications(
 
 
 @pytest.mark.asyncio
-async def test_admin_cannot_edit_an_already_published_local_news(classroom_http):
+async def test_admin_corrects_published_local_news_without_repeat_notification(
+    classroom_http,
+):
     created = await classroom_http.client.post(
         "/staff/api/v1/news/local",
         json={
@@ -566,21 +568,117 @@ async def test_admin_cannot_edit_an_already_published_local_news(classroom_http)
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
     )
-    post_id = (await created.json())["item"]["postId"]
+    original_item = (await created.json())["item"]
+    post_id = original_item["postId"]
+
+    def stored_delivery_state(connection):
+        events = connection.execute(
+            "SELECT public_id, account_id, category, dedupe_key, route, "
+            "payload_json, occurred_at, deliver_after, read_at, created_at "
+            "FROM notification_events WHERE category = 'news' AND dedupe_key = ? "
+            "ORDER BY account_id",
+            (post_id,),
+        ).fetchall()
+        deliveries = connection.execute(
+            "SELECT public_id, event_id, subscription_public_id, state, "
+            "attempt_count, next_attempt_at, delivered_at, created_at, updated_at "
+            "FROM notification_deliveries WHERE event_id IN "
+            "(SELECT id FROM notification_events WHERE dedupe_key = ?) "
+            "ORDER BY id",
+            (post_id,),
+        ).fetchall()
+        return [dict(row) for row in events], [dict(row) for row in deliveries]
+
+    events_before, deliveries_before = classroom_http.factory.run_read(
+        stored_delivery_state
+    )
+    assert len(events_before) == 2
 
     response = await classroom_http.client.patch(
         f"/staff/api/v1/news/{post_id}/local",
         json={
             "schemaVersion": 1,
-            "text": "Попытка исправить",
-            "publishedAt": "2099-08-04T13:00:00Z",
+            "text": "  Исправленный текст уже опубликованной новости  ",
         },
         headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
         cookies=_cookies(classroom_http, "admin"),
     )
 
-    assert response.status == 409
-    assert (await response.json())["error"]["code"] == "local_news_already_published"
+    assert response.status == 200, await response.text()
+    item = (await response.json())["item"]
+    assert item["publishedAt"] == original_item["publishedAt"]
+    assert item["editedAt"] is not None
+    assert item["revision"] == 2
+    assert item["textExcerpt"] == "Исправленный текст уже опубликованной новости"
+    assert item["isScheduled"] is False
+    assert item["version"] == 2
+    assert response.headers["ETag"] == f'"{post_id}:v2"'
+
+    events_after, deliveries_after = classroom_http.factory.run_read(
+        stored_delivery_state
+    )
+    assert events_after == events_before
+    assert deliveries_after == deliveries_before
+
+    for audience, cookie in (
+        (AuthAudience.STUDENT, classroom_http.student_cookie),
+        (AuthAudience.FAMILY, classroom_http.family_cookie),
+    ):
+        feed = await classroom_http.client.get(
+            f"/{audience.value}/api/v1/news",
+            headers=_headers(),
+            cookies={COOKIE_POLICY[audience].access_name: cookie},
+        )
+        assert feed.status == 200
+        feed_item = next(
+            candidate
+            for candidate in (await feed.json())["items"]
+            if candidate["postId"] == post_id
+        )
+        assert feed_item["blocks"] == [
+            {
+                "kind": "text",
+                "text": "Исправленный текст уже опубликованной новости",
+            }
+        ]
+        assert feed_item["editedAt"] == item["editedAt"]
+        assert feed_item["revision"] == 2
+
+    changed_time = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/local",
+        json={
+            "schemaVersion": 1,
+            "text": "Ещё один текст",
+            "publishedAt": "2099-08-04T13:00:00Z",
+        },
+        headers=_headers(unsafe=True, if_match=response.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert changed_time.status == 409
+    assert (await changed_time.json())["error"]["code"] == (
+        "local_news_publication_time_locked"
+    )
+
+    def revision_and_audit_state(connection):
+        revisions = connection.execute(
+            "SELECT text_plain FROM news_revisions WHERE post_id = "
+            "(SELECT id FROM news_posts WHERE public_id = ?) ORDER BY revision_number",
+            (post_id,),
+        ).fetchall()
+        audit = connection.execute(
+            "SELECT before_json, after_json FROM audit_events "
+            "WHERE object_id = ? AND action = 'news_local.updated'",
+            (post_id,),
+        ).fetchone()
+        return [row["text_plain"] for row in revisions], dict(audit)
+
+    revisions, audit = classroom_http.factory.run_read(revision_and_audit_state)
+    assert revisions == [
+        "Уже в ленте",
+        "Исправленный текст уже опубликованной новости",
+    ]
+    assert "Исправленный текст" not in audit["before_json"]
+    assert "Исправленный текст" not in audit["after_json"]
 
 
 @pytest.mark.asyncio
