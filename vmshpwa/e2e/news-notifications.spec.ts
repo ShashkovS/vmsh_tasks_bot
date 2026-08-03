@@ -1,3 +1,5 @@
+import contentFixture from '../../pwa_tests/fixtures/content/e2e-content-v1.json' with { type: 'json' }
+
 import { AUTH_PERSONAS, loginThroughUi, type AuthPersona } from './auth-personas'
 import { expect, test } from './fixtures'
 
@@ -26,6 +28,12 @@ function phase8Persona(project: string, audience: 'student' | 'family'): AuthPer
     credentialField: 'password',
     credential: AUTH_PERSONAS.family.credential,
   }
+}
+
+function digestTarget(project: string) {
+  const target = contentFixture.targets.find((candidate) => candidate.project === project)
+  if (!target) throw new Error(`No Family digest target for Playwright project ${project}`)
+  return target
 }
 
 test.beforeEach(async ({ page }) => {
@@ -138,7 +146,8 @@ test('Phase 8: Family changes real notification preferences without individual r
     '/family/profile/notifications',
   )
   await expect(page.getByRole('heading', { name: 'Уведомления' })).toBeVisible()
-  await expect(page.getByRole('switch')).toHaveCount(5)
+  await expect(page.getByRole('switch')).toHaveCount(6)
+  await expect(page.getByRole('switch', { name: 'Push: Итоги занятия' })).toBeVisible()
   await expect(page.getByText(/Отдельные push о каждой проверенной задаче/)).toBeVisible()
   await expect(page.getByRole('switch', { name: /Проверка/ })).toHaveCount(0)
   await expect(page.getByRole('switch', { name: /Аудитория/ })).toHaveCount(0)
@@ -170,6 +179,62 @@ test('Phase 8: Family changes real notification preferences without individual r
   await expect(page.getByRole('switch', { name: 'Push: Новости' })).toBeChecked({
     checked: initiallyEnabled,
   })
+})
+
+test('Phase 8: Admin explicitly sends one lesson digest and Family sees it', async ({
+  page,
+}, testInfo) => {
+  const target = digestTarget(testInfo.project.name)
+  const endpoint = `/staff/api/v1/group-lessons/${target.groupLessonPublicId}/family-digest`
+
+  // Acceptance trace: development-plan/12-phase-8-news-and-notifications.md.
+  // The actual Staff page and aiohttp endpoint are used; a queue becoming empty
+  // never sends this digest automatically.
+  await loginThroughUi(page, AUTH_PERSONAS.admin, `/staff/lessons/${target.groupLessonPublicId}`)
+  await expect(page.getByText('Итоги для семей', { exact: true })).toBeVisible()
+
+  const sendButton = page.getByRole('button', { name: 'Разослать итог' })
+  if (await sendButton.isVisible()) {
+    await sendButton.click()
+    await expect(page.getByRole('alertdialog')).toContainText(/Отправить итог \d+ семьям\?/)
+    const sendResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && new URL(response.url()).pathname === endpoint,
+    )
+    await page.getByRole('button', { name: 'Отправить', exact: true }).click()
+    expect((await sendResponse).status()).toBe(200)
+  }
+  await expect(page.getByText('Итог уже разослан')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Разослать итог' })).toHaveCount(0)
+
+  await loginThroughUi(
+    page,
+    phase8Persona(testInfo.project.name, 'family'),
+    '/family/profile/notifications',
+  )
+  await expect(page.getByText('Итоги занятия готовы')).toBeVisible()
+  await expect(
+    page.getByText(`Начинающие · занятие ${target.lessonNumber}`, { exact: true }),
+  ).toBeVisible()
+
+  const storedEvents = await page.evaluate(async () => {
+    const response = await fetch('/family/api/v1/notification-events?unreadOnly=false')
+    return (await response.json()) as {
+      items: Array<{ category: string; payload: Record<string, unknown> }>
+    }
+  })
+  expect(storedEvents.items).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        category: 'review_completed',
+        payload: expect.objectContaining({
+          kind: 'family_lesson_digest',
+          groupLessonId: target.groupLessonPublicId,
+          lessonNumber: target.lessonNumber,
+        }),
+      }),
+    ]),
+  )
 })
 
 test('Phase 8: Student reads cached news, dismisses a banner and acknowledges the event', async ({
