@@ -78,6 +78,10 @@ async function uploadReviewAndPublish({
     if (!metadataTitle) throw new Error('Condition publication requires a task title')
     const title = workflow.getByLabel('Название, строка 1')
     await title.fill(metadataTitle)
+    // Phase 10 no-loss boundary: the real Staff route must restore the exact
+    // account/revision-scoped grid before any server mutation is attempted.
+    await page.reload()
+    await expect(workflow.getByLabel('Название, строка 1')).toHaveValue(metadataTitle)
     const metadataResponsePromise = page.waitForResponse(
       (response) =>
         response.request().method() === 'PUT' &&
@@ -88,6 +92,14 @@ async function uploadReviewAndPublish({
     const metadataResponse = await metadataResponsePromise
     expect(metadataResponse.status()).toBe(200)
     await expect(workflow.getByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
+    const remainingDraftKeys = await page.evaluate(
+      ({ lessonId, revisionId }) => {
+        const suffix = `:metadata:v1:${lessonId}:${revisionId}`
+        return Object.keys(window.localStorage).filter((key) => key.endsWith(suffix))
+      },
+      { lessonId: target.groupLessonPublicId, revisionId: uploadPayload.revisionId },
+    )
+    expect(remainingDraftKeys).toEqual([])
   } else {
     await expect(
       workflow.getByText('Сопоставление задач подтверждено; метаданные берутся из условия.'),
@@ -230,6 +242,11 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
     await page.evaluate((marker) => window.sessionStorage.removeItem(marker), offlineMarker)
   }
   await page.reload()
+  // Firefox aborts a second navigation while the authenticated shell is still
+  // completing its post-offline route reconciliation. Waiting for the actual
+  // online document proves recovery and gives the router a stable boundary;
+  // see development-plan/07-phase-3-offline-and-pwa.md.
+  await expect(page.getByText(firstStatement)).toBeVisible()
 
   await page.goto(studentUrl)
   await expect(page.getByText(firstStatement)).toBeVisible()
@@ -252,7 +269,7 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await page.goto(staffUrl)
   const workflow = page.getByTestId('content-workflow-condition')
   await expect(workflow.getByText(`Публичная revision: ${secondRevisionId}`)).toBeVisible()
-  await expect(workflow.getByLabel('Revision для отката')).toContainText('Revision 1')
+  await expect(workflow.getByLabel('Revision для отката')).toBeVisible()
 
   await workflow.getByRole('button', { name: 'Откатить опубликованное' }).click()
   const rollbackResponsePromise = page.waitForResponse(

@@ -17,11 +17,13 @@ import { Button } from '@vmsh/ui'
 
 import { StaffContentWorkspace } from './content-page'
 import { BulkContentUpload } from './bulk-content-upload'
+import { problemReviewDraftStorageKey } from './problem-review-draft'
 import { ProblemReviewWorkflow } from './problem-review-workflow'
 import { RevisionAssetsRecovery } from './revision-assets-recovery'
 
 const revisionId = fixture.document.revisionId
 const groupLessonId = 'group-lesson-41-n'
+const storyDraftNamespace = 'storybook:staff-content'
 const webDocument = webContentDocumentSchema.parse(
   JSON.parse(
     JSON.stringify(fixture.document).replace(
@@ -444,7 +446,13 @@ type Story = StoryObj<typeof meta>
 
 export const UploadPreviewPublish: Story = {
   name: 'Upload → diagnostics → two previews → publish',
-  render: () => <StaffContentWorkspace client={storyClient()} groupLessonId={groupLessonId} />,
+  render: () => (
+    <StaffContentWorkspace
+      client={storyClient()}
+      draftNamespace={storyDraftNamespace}
+      groupLessonId={groupLessonId}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const conditionInput = (await canvas.findAllByLabelText('LaTeX-файл'))[0]!
@@ -562,6 +570,7 @@ export const ResumeInterruptedRevision: Story = {
   render: () => (
     <StaffContentWorkspace
       client={storyClient({ history: () => Promise.resolve(revisionHistoryScenario()) })}
+      draftNamespace={storyDraftNamespace}
       groupLessonId={groupLessonId}
     />
   ),
@@ -674,7 +683,13 @@ export const RecoverMissingAsset: Story = {
         })
       },
     })
-    return <StaffContentWorkspace client={client} groupLessonId={groupLessonId} />
+    return (
+      <StaffContentWorkspace
+        client={client}
+        draftNamespace={storyDraftNamespace}
+        groupLessonId={groupLessonId}
+      />
+    )
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -772,7 +787,13 @@ export const RollbackReadyHistory: Story = {
         })
       },
     })
-    return <StaffContentWorkspace client={client} groupLessonId={groupLessonId} />
+    return (
+      <StaffContentWorkspace
+        client={client}
+        draftNamespace={storyDraftNamespace}
+        groupLessonId={groupLessonId}
+      />
+    )
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -795,6 +816,7 @@ export const ScheduleInBusinessTimezone: Story = {
       client={storyClient({
         history: () => Promise.resolve(publishedHistory('publication-current', revisionId, 1)),
       })}
+      draftNamespace={storyDraftNamespace}
       groupLessonId={groupLessonId}
     />
   ),
@@ -834,7 +856,13 @@ export const OptimisticConflictRefetch: Story = {
         )
       },
     })
-    return <StaffContentWorkspace client={client} groupLessonId={groupLessonId} />
+    return (
+      <StaffContentWorkspace
+        client={client}
+        draftNamespace={storyDraftNamespace}
+        groupLessonId={groupLessonId}
+      />
+    )
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -944,6 +972,7 @@ export const MatchThenReviewMetadata: Story = {
       <div className="max-w-6xl p-4">
         <ProblemReviewWorkflow
           client={client}
+          draftNamespace={storyDraftNamespace}
           groupLessonId={groupLessonId}
           kind="condition"
           onReadyChange={() => undefined}
@@ -954,6 +983,19 @@ export const MatchThenReviewMetadata: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const storage = canvasElement.ownerDocument.defaultView?.localStorage
+    const matchingKey = problemReviewDraftStorageKey(
+      storyDraftNamespace,
+      'matching',
+      groupLessonId,
+      revisionId,
+    )
+    const metadataKey = problemReviewDraftStorageKey(
+      storyDraftNamespace,
+      'metadata',
+      groupLessonId,
+      revisionId,
+    )
     await userEvent.selectOptions(
       await canvas.findByLabelText('Сопоставление задачи 1'),
       'insert_new',
@@ -963,6 +1005,8 @@ export const MatchThenReviewMetadata: Story = {
     await userEvent.type(title, 'Орехи и клетки')
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить' }))
     await expect(await canvas.findByText('Сопоставление и метаданные подтверждены.')).toBeVisible()
+    await expect(storage?.getItem(matchingKey)).toBeNull()
+    await expect(storage?.getItem(metadataKey)).toBeNull()
   },
 }
 
@@ -1016,6 +1060,7 @@ export const HintNeedsOnlyStructuralMatching: Story = {
               return Promise.reject(new Error('Hint must not request metadata'))
             },
           })}
+          draftNamespace={storyDraftNamespace}
           groupLessonId={groupLessonId}
           kind="hint"
           onReadyChange={() => undefined}
@@ -1071,6 +1116,7 @@ export const MatchingDraftSurvivesReload: Story = {
           </Button>
           <ProblemReviewWorkflow
             client={client}
+            draftNamespace={storyDraftNamespace}
             groupLessonId={groupLessonId}
             key={generation}
             kind="hint"
@@ -1175,6 +1221,7 @@ export const MetadataDraftSurvivesReload: Story = {
           </Button>
           <ProblemReviewWorkflow
             client={client}
+            draftNamespace={storyDraftNamespace}
             groupLessonId={groupLessonId}
             key={generation}
             kind="condition"
@@ -1188,11 +1235,241 @@ export const MetadataDraftSurvivesReload: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const key = problemReviewDraftStorageKey(
+      storyDraftNamespace,
+      'metadata',
+      groupLessonId,
+      'revision-metadata-draft-recovery',
+    )
+    canvasElement.ownerDocument.defaultView?.localStorage.removeItem(key)
     const title = await canvas.findByLabelText('Название, строка 1')
     await userEvent.type(title, 'Сохранённый локально заголовок')
+    await expect(canvasElement.ownerDocument.defaultView?.localStorage.getItem(key)).toContain(
+      'Сохранённый локально заголовок',
+    )
     await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))
     await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue(
       'Сохранённый локально заголовок',
     )
+    await userEvent.click(canvas.getByRole('button', { name: 'Отменить правки' }))
+    await expect(canvas.getByLabelText('Название, строка 1')).toHaveValue('')
+    await expect(canvasElement.ownerDocument.defaultView?.localStorage.getItem(key)).toBeNull()
+  },
+}
+
+function metadataDraftClient(
+  draftRevisionId: string,
+  etagValue: () => string,
+  saveMetadataGrid?: ContentApiClient['saveMetadataGrid'],
+): ContentApiClient {
+  const resourceEtag = () => contentEtagSchema.parse(etagValue())
+  return storyClient({
+    problemMatches() {
+      const etag = resourceEtag()
+      return Promise.resolve({
+        data: {
+          revisionId: draftRevisionId,
+          groupLessonId,
+          version: Number(etagValue().match(/v(\d+)/)?.[1] ?? 1),
+          etag,
+          items: [
+            {
+              sourceOrdinal: 1,
+              sourceItem: '1',
+              displayNumber: '1',
+              sourceTitle: 'Изоляция черновика',
+              suggestedProblemId: -61,
+              match: { decision: 'auto_position', problemId: -61 },
+            },
+          ],
+          candidates: [
+            {
+              problemId: -61,
+              problemNumber: 1,
+              item: '',
+              title: '',
+              problemType: 2,
+              answerType: null,
+              answerValidation: null,
+              validationError: null,
+              correctAnswer: null,
+              correctAnswerChecker: null,
+              wrongAnswer: null,
+              congratulation: null,
+            },
+          ],
+          requestId: 'storybook-metadata-draft-scope',
+        },
+        etag,
+      })
+    },
+    metadataGrid() {
+      const etag = resourceEtag()
+      return Promise.resolve({
+        data: {
+          revisionId: draftRevisionId,
+          groupLessonId,
+          version: Number(etagValue().match(/v(\d+)/)?.[1] ?? 1),
+          etag,
+          rows: [
+            {
+              problemId: -61,
+              sourceOrdinal: 1,
+              sourceItem: '1',
+              displayNumber: '1',
+              title: '',
+              problemType: 2,
+              answerType: null,
+              answerValidation: null,
+              validationError: null,
+              correctAnswer: null,
+              correctAnswerChecker: null,
+              wrongAnswer: null,
+              congratulation: null,
+              reviewed: false,
+            },
+          ],
+          requestId: 'storybook-metadata-draft-grid-scope',
+        },
+        etag,
+      })
+    },
+    ...(saveMetadataGrid ? { saveMetadataGrid } : {}),
+  })
+}
+
+export const MetadataDraftIsAccountScoped: Story = {
+  name: 'Metadata draft is account scoped',
+  render: () => {
+    function Harness() {
+      const [account, setAccount] = useState<'teacher-a' | 'teacher-b'>('teacher-a')
+      const draftRevisionId = 'revision-metadata-account-isolation'
+      const client = metadataDraftClient(
+        draftRevisionId,
+        () => '"review-metadata-account-isolation:v2"',
+      )
+      return (
+        <div className="max-w-6xl space-y-3 p-4">
+          <p className="text-small">Текущий аккаунт: {account}</p>
+          <Button
+            onClick={() =>
+              setAccount((value) => (value === 'teacher-a' ? 'teacher-b' : 'teacher-a'))
+            }
+            size="sm"
+            variant="outline"
+          >
+            Переключить аккаунт
+          </Button>
+          <ProblemReviewWorkflow
+            client={client}
+            draftNamespace={`storybook:${account}`}
+            groupLessonId={groupLessonId}
+            key={account}
+            kind="condition"
+            onReadyChange={() => undefined}
+            revisionId={draftRevisionId}
+          />
+        </div>
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const storage = canvasElement.ownerDocument.defaultView?.localStorage
+    const revision = 'revision-metadata-account-isolation'
+    const keyA = problemReviewDraftStorageKey(
+      'storybook:teacher-a',
+      'metadata',
+      groupLessonId,
+      revision,
+    )
+    const keyB = problemReviewDraftStorageKey(
+      'storybook:teacher-b',
+      'metadata',
+      groupLessonId,
+      revision,
+    )
+    storage?.removeItem(keyA)
+    storage?.removeItem(keyB)
+
+    await userEvent.type(await canvas.findByLabelText('Название, строка 1'), 'Черновик А')
+    await userEvent.click(canvas.getByRole('button', { name: 'Переключить аккаунт' }))
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('')
+    await userEvent.type(canvas.getByLabelText('Название, строка 1'), 'Черновик Б')
+    await userEvent.click(canvas.getByRole('button', { name: 'Переключить аккаунт' }))
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Черновик А')
+    await expect(storage?.getItem(keyB)).toContain('Черновик Б')
+
+    storage?.removeItem(keyA)
+    storage?.removeItem(keyB)
+  },
+}
+
+export const MetadataConflictKeepsDraft: Story = {
+  name: 'Metadata conflict keeps local draft',
+  render: () => {
+    let conflicted = false
+    function Harness() {
+      const [generation, setGeneration] = useState(0)
+      const draftRevisionId = 'revision-metadata-conflict-recovery'
+      const client = metadataDraftClient(
+        draftRevisionId,
+        () =>
+          conflicted
+            ? '"review-metadata-conflict-recovery:v3"'
+            : '"review-metadata-conflict-recovery:v2"',
+        () => {
+          conflicted = true
+          return Promise.reject(
+            new ApiResponseError(409, {
+              error: {
+                code: 'version_conflict',
+                message: 'Метаданные уже изменились',
+                requestId: 'storybook-metadata-conflict',
+              },
+            }),
+          )
+        },
+      )
+      return (
+        <div className="max-w-6xl space-y-3 p-4">
+          <Button onClick={() => setGeneration((value) => value + 1)} size="sm" variant="outline">
+            Перезагрузить интерфейс
+          </Button>
+          <ProblemReviewWorkflow
+            client={client}
+            draftNamespace="storybook:metadata-conflict"
+            groupLessonId={groupLessonId}
+            key={generation}
+            kind="condition"
+            onReadyChange={() => undefined}
+            revisionId={draftRevisionId}
+          />
+        </div>
+      )
+    }
+    return <Harness />
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const key = problemReviewDraftStorageKey(
+      'storybook:metadata-conflict',
+      'metadata',
+      groupLessonId,
+      'revision-metadata-conflict-recovery',
+    )
+    const storage = canvasElement.ownerDocument.defaultView?.localStorage
+    storage?.removeItem(key)
+
+    await userEvent.type(await canvas.findByLabelText('Название, строка 1'), 'Не потерять')
+    await userEvent.click(canvas.getByRole('button', { name: 'Сохранить' }))
+    await expect(await canvas.findByText('Серверная версия изменилась')).toBeVisible()
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Не потерять')
+    await userEvent.click(canvas.getByRole('button', { name: 'Перезагрузить интерфейс' }))
+    await expect(await canvas.findByLabelText('Название, строка 1')).toHaveValue('Не потерять')
+    await expect(storage?.getItem(key)).toContain('Не потерять')
+
+    storage?.removeItem(key)
   },
 }

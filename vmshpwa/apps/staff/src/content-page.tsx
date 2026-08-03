@@ -1,7 +1,12 @@
 import { AlertTriangle, CheckCircle2, FileCode2, RefreshCw, Send, Upload } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { PageLayout, PageStatePanel, useAuthentication } from '@vmsh/app-shell'
+import {
+  PageLayout,
+  PageStatePanel,
+  useAuthenticatedPrincipal,
+  useAuthentication,
+} from '@vmsh/app-shell'
 import {
   SemanticMathDocument,
   createContentApiClient,
@@ -214,6 +219,7 @@ function formatInBusinessTimezone(instant: string, timezone: BusinessTimezone): 
 
 function MaterialWorkflowCard({
   client,
+  draftNamespace,
   groupLessonId,
   history,
   kind,
@@ -221,6 +227,7 @@ function MaterialWorkflowCard({
   onConflict,
 }: {
   client: ContentApiClient
+  draftNamespace: string
   groupLessonId: string
   history: StaffContentMaterialHistory
   kind: ContentMaterialKind
@@ -451,7 +458,12 @@ function MaterialWorkflowCard({
   }
 
   const publish = async (mode: 'publish' | 'schedule') => {
-    if (!selectedRevision || !readyForPublication) return
+    if (!selectedRevision) return
+    // The confirmation was reachable only after the review became ready. A
+    // concurrent Staff invalidation may briefly reset that child projection
+    // before the user confirms; silently dropping the click would lose an
+    // explicit action. The Phase 2 API rechecks revision status, matching and
+    // metadata authoritatively in publish_content_revision.
     const parsedLocalTime =
       mode === 'schedule' ? localPublicationTimeSchema.safeParse(state.scheduleAt) : undefined
     if (mode === 'schedule' && !parsedLocalTime?.success) {
@@ -737,6 +749,7 @@ function MaterialWorkflowCard({
         {selectedRevision && selectedRevision.data.missingAssets.length === 0 ? (
           <ProblemReviewWorkflow
             client={client}
+            draftNamespace={draftNamespace}
             groupLessonId={groupLessonId}
             key={`${kind}:${selectedRevision.data.revisionId}`}
             kind={kind}
@@ -1005,9 +1018,11 @@ function MaterialWorkflowCard({
 
 export function StaffContentWorkspace({
   client,
+  draftNamespace,
   groupLessonId,
 }: {
   client: ContentApiClient
+  draftNamespace: string
   groupLessonId: string
 }) {
   const history = useStaffContentHistoryQuery(client, groupLessonId)
@@ -1069,6 +1084,7 @@ export function StaffContentWorkspace({
         {materialOrder.map((kind) => (
           <MaterialWorkflowCard
             client={client}
+            draftNamespace={draftNamespace}
             businessTimezone={history.data.businessTimezone}
             groupLessonId={groupLessonId}
             history={materialHistoryFor(history.data.materials, kind)}
@@ -1084,6 +1100,7 @@ export function StaffContentWorkspace({
 
 export function StaffLessonContentPage({ lessonId }: { lessonId: string }) {
   const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
   const client = useMemo(
     () =>
       createContentApiClient(authentication.client.runtime, {
@@ -1098,5 +1115,11 @@ export function StaffLessonContentPage({ lessonId }: { lessonId: string }) {
       }),
     [authentication],
   )
-  return <StaffContentWorkspace client={client} groupLessonId={lessonId} />
+  return (
+    <StaffContentWorkspace
+      client={client}
+      draftNamespace={`${authentication.client.runtime.instance}:${principal.accountId}`}
+      groupLessonId={lessonId}
+    />
+  )
 }

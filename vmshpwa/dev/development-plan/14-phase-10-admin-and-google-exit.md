@@ -171,11 +171,14 @@ import **новых школьников** остаётся отдельным �
   problem workbook import закрыт; users import/dry-run/apply ещё не завершён.
 - [x] Problem import security/idempotency/transaction tests:
   [`phase10-problem-import-apply.md`](../../../pwa_tests/reports/phase10-problem-import-apply.md).
-- [ ] Admin local draft reload/isolation/conflict/cleanup tests: Family-form
+- [x] Admin local draft reload/isolation/conflict/cleanup tests: Family-form
   reload/isolation/secret exclusion/cleanup подтверждены в
   [`phase10-family-account-ui.md`](../../../pwa_tests/reports/phase10-family-account-ui.md);
-  upload bytes невозможно безопасно восстанавливать после reload без повторного
-  выбора файла; metadata grid draft остаётся отдельным UI gate.
+  metadata grid account/revision scope, reload, `409`, explicit discard и
+  receipt cleanup — в
+  [`phase10-metadata-grid-drafts-2026-08-03.md`](../../../pwa_tests/reports/phase10-metadata-grid-drafts-2026-08-03.md).
+  Upload bytes по-прежнему требуют повторного выбора файла: бинарный upload не
+  маскируется текстовым `localStorage`-черновиком.
 - [x] 1500-row performance + SQL plans:
   [`phase10-directory-performance.md`](../../../pwa_tests/reports/phase10-directory-performance.md).
 - [ ] Storybook dense admin states/a11y/visual approval: `<ids/paths>`.

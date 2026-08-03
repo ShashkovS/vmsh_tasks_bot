@@ -1123,6 +1123,27 @@
 - Production concurrent-session telemetry и фактическая глубина offline outbox
   всё ещё неизвестны; они не выдаются за закрытые этим локальным измерением.
 
+## Phase 6 consolidated checkpoint — 3 августа 2026
+
+- Основной чек-лист сверен с 24 инкрементальными proof-файлами: queue/lease,
+  atomic completion, concurrency/fault rollback, workspace draft, annotation,
+  Student/Family projections, обе reaction-модели, admin inbox, append-only
+  recheck, audience fan-out, support и Telegram PNG derivative реализованы.
+- Production `make pwa-e2e-review`: **3/3 PASS** — один полный multi-context
+  flow в Chromium, WebKit и Firefox против real aiohttp/seeded SQLite.
+- Актуальные автоматические gates: `make python-test` — legacy **121 PASS / 1
+  skip**, PWA **1552 PASS / 6 skip** в восьми workers; Storybook browser/a11y —
+  **50 файлов / 239 PASS**; historical Telegram — **44 PASS**.
+- Read-only rehearsal доказал, что legacy reactions нельзя точно связать с
+  review round: безопасно переносимых строк **0**. Backfill/dual-write не
+  добавляются, legacy-история остаётся у Telegram adapter.
+- Сводный proof:
+  [`phase6-consolidated-gates-2026-08-03.md`](../../../pwa_tests/reports/phase6-consolidated-gates-2026-08-03.md),
+  runbook: [`review-workflow.md`](../../docs/review-workflow.md).
+- Functional gate принят. Открыты owner visual acceptance без обновления
+  snapshots, вложения в support, Telegram continuation и delivery wiring для
+  уже готовой PNG-производной.
+
 ## Phase 7 consolidated checkpoint — 3 августа 2026
 
 - Каталог, multi-course layout, deterministic assignment/history, one-time
@@ -1166,3 +1187,22 @@
   [`telegram-scheduled-queue-cutover.md`](../../docs/telegram-scheduled-queue-cutover.md).
 - Удаление уже опубликованных channel posts этим срезом не закрывается и
   остаётся отдельным explicit reconciliation gate.
+
+## Phase 10 checkpoint: черновик metadata grid — 3 августа 2026
+
+- Реальный Staff content workflow хранит незавершённые matching/metadata
+  правки в runtime/account/group-lesson/revision-scoped `localStorage`; другой
+  Staff-аккаунт в том же browser profile не видит чужой draft.
+- Storybook доказывает reload, account isolation, сохранение при `409`, explicit
+  discard и cleanup после server receipt. Focused gate: **1 файл / 14 PASS**;
+  полный browser/a11y gate: **50 файлов / 241 PASS**.
+- Production `make pwa-e2e-content`: **3/3 PASS** без retry в Chromium, WebKit и
+  Firefox. Реальный reload выполняется до сохранения metadata; после receipt
+  browser key отсутствует.
+- Исправлена обнаруженная E2E гонка: Staff invalidation больше не превращает
+  уже подтверждаемую публикацию в молчаливый no-op; сервер повторно проверяет
+  revision/matching/metadata как авторитетный gate.
+- Сводный proof:
+  [`phase10-metadata-grid-drafts-2026-08-03.md`](../../../pwa_tests/reports/phase10-metadata-grid-drafts-2026-08-03.md).
+- Metadata draft gate закрыт. Визуальные snapshots не менялись; owner visual
+  review и остальные незавершённые пункты Phase 10 остаются открыты.

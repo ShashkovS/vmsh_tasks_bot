@@ -21,6 +21,8 @@ import {
 } from '@vmsh/product'
 import { Alert, AlertContent, AlertDescription, AlertTitle, Button } from '@vmsh/ui'
 
+import { problemReviewDraftStorageKey } from './problem-review-draft'
+
 /**
  * Staff adapter for Phase 2 MATCH-01..03 and METADATA-01..02. The product
  * components remain transport-free; this file owns optimistic ETags and
@@ -98,16 +100,6 @@ const typeLabels: Record<number, string> = {
 
 function problemKey(sourceOrdinal: number, sourceItem: string): string {
   return JSON.stringify([sourceOrdinal, sourceItem])
-}
-
-function storageKey(
-  kind: 'matching' | 'metadata',
-  groupLessonId: string,
-  revisionId: string,
-): string {
-  // Human and agent ports are different origins; the prefix also prevents any
-  // collision with Student/Family storage on the production host.
-  return `vmshpwa:staff:content:${kind}:v1:${groupLessonId}:${revisionId}`
 }
 
 function readStoredObject(key: string): unknown {
@@ -307,12 +299,14 @@ function readableError(error: unknown): string {
 
 export function ProblemReviewWorkflow({
   client,
+  draftNamespace,
   groupLessonId,
   revisionId,
   kind,
   onReadyChange,
 }: {
   client: ContentApiClient
+  draftNamespace: string
   groupLessonId: string
   revisionId: string
   kind: ContentMaterialKind
@@ -326,8 +320,18 @@ export function ProblemReviewWorkflow({
   const [message, setMessage] = useState<string>()
   const [staleDraft, setStaleDraft] = useState(false)
 
-  const matchDraftKey = storageKey('matching', groupLessonId, revisionId)
-  const metadataDraftKey = storageKey('metadata', groupLessonId, revisionId)
+  const matchDraftKey = problemReviewDraftStorageKey(
+    draftNamespace,
+    'matching',
+    groupLessonId,
+    revisionId,
+  )
+  const metadataDraftKey = problemReviewDraftStorageKey(
+    draftNamespace,
+    'metadata',
+    groupLessonId,
+    revisionId,
+  )
 
   const acceptMetadata = useCallback(
     (resource: MetadataResource) => {

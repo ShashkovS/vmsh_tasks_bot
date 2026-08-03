@@ -524,3 +524,36 @@ Token core + brand + полировка готовы и зелёные (Storyboo
   горизонтального overflow, все страницы и controls доступны.
 - Snapshots не обновлялись. Финальное визуальное принятие владельцем остаётся
   открытым.
+
+## Development Phase 6 — automated review-surface gate · 3 августа 2026
+
+- Проверяемая Storybook-матрица включает queue/workspace, восстановленный
+  draft, быстрые verdict/reaction shortcuts, annotation editor/read-only view,
+  reviewed Student/Family states, admin reaction inbox, synonym combined case
+  и private support dialogue.
+- Актуальный browser interaction/a11y gate: **50 файлов / 239 PASS**;
+  `addon-a11y` остаётся в режиме error.
+- Production multi-context E2E: **3/3 PASS** в Chromium, WebKit и Firefox,
+  включая скрытие Staff-only reaction и admin correction.
+- Точный список story IDs и функциональных proof:
+  [`phase6-consolidated-gates-2026-08-03.md`](../../../pwa_tests/reports/phase6-consolidated-gates-2026-08-03.md).
+- Это автоматический gate, не визуальное принятие. Snapshots не обновлялись;
+  owner review для review/correction/support surfaces остаётся открытым.
+
+## Development Phase 10 — Staff metadata draft states · 3 августа 2026
+
+- В production `ProblemReviewWorkflow` подключён принятый DraftPersistence
+  contract для metadata grid: reload, runtime/account/revision isolation,
+  optimistic conflict, explicit discard и receipt cleanup.
+- Story IDs:
+  `Pages/Staff/Content publication--metadata-draft-survives-reload`,
+  `--metadata-draft-is-account-scoped`,
+  `--metadata-conflict-keeps-draft`,
+  `--match-then-review-metadata`.
+- Focused interaction/a11y: **14/14 PASS**; полный Storybook browser gate:
+  **241/241 PASS**. Production content flow: **3/3 PASS** в
+  Chromium/WebKit/Firefox без retry.
+- Proof и concrete implementation links:
+  [`phase10-metadata-grid-drafts-2026-08-03.md`](../../../pwa_tests/reports/phase10-metadata-grid-drafts-2026-08-03.md).
+- Это functional checkpoint, не новое визуальное принятие. Snapshots не
+  обновлялись; owner visual review остаётся открытым.
