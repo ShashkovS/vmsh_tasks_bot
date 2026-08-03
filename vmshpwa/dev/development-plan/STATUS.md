@@ -1188,6 +1188,22 @@
 - Удаление уже опубликованных channel posts этим срезом не закрывается и
   остаётся отдельным explicit reconciliation gate.
 
+## Phase 8 checkpoint: удаление Telegram-поста — 3 августа 2026
+
+- Global admin может явно отметить зеркальный Telegram-пост удалённым и
+  исправить ошибочную отметку; teacher получает `403`.
+- `If-Match`, обязательная причина и одна SQLite-транзакция защищают переход,
+  а audit не содержит Telegram IDs, content или credentials.
+- Проверки: focused Python **6 PASS**, полный PWA Python **1564 PASS / 6
+  intentional skips**, frontend unit **111 файлов / 588 PASS**,
+  lint/typecheck/production build — PASS.
+- Storybook browser gate не стартовал из-за внешнего macOS Chromium
+  `MachPortRendezvous`; это явно не засчитано как PASS, snapshots не менялись.
+- Proof:
+  [`phase8-news-source-deletion-reconciliation.md`](../../../pwa_tests/reports/phase8-news-source-deletion-reconciliation.md),
+  runbook:
+  [`telegram-news-deletion-reconciliation.md`](../../docs/telegram-news-deletion-reconciliation.md).
+
 ## Phase 10 checkpoint: черновик metadata grid — 3 августа 2026
 
 - Реальный Staff content workflow хранит незавершённые matching/metadata

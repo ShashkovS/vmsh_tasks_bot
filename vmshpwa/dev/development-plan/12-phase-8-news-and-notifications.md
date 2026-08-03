@@ -112,3 +112,15 @@ destination Staff scheduler. Удаление уже опубликованны�
 [`phase8-telegram-scheduled-queue-reconciliation.md`](../../../pwa_tests/reports/phase8-telegram-scheduled-queue-reconciliation.md),
 runbook:
 [`telegram-scheduled-queue-cutover.md`](../../docs/telegram-scheduled-queue-cutover.md).
+
+## Инкремент явной сверки удалённых Telegram-постов — 3 августа 2026
+
+Bot API не обещает update об удалении опубликованного `channel_post`, поэтому
+v1 не угадывает deletion и не добавляет MTProto user session. Global admin
+явно отмечает зеркальный пост `deleted` либо исправляет отметку через `present`
+с обязательной причиной и текущим `If-Match`. Изменение source/visibility и
+privacy-safe append-only audit атомарны; teacher получает `403`, а Student и
+Family перестают видеть `source_deleted`. Proof:
+[`phase8-news-source-deletion-reconciliation.md`](../../../pwa_tests/reports/phase8-news-source-deletion-reconciliation.md),
+runbook:
+[`telegram-news-deletion-reconciliation.md`](../../docs/telegram-news-deletion-reconciliation.md).

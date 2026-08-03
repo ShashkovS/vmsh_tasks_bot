@@ -7,11 +7,13 @@ import {
   newsQueryKeys,
   parseRuntimeConfigForAudience,
   publicIdSchema,
+  reconcileNewsSourceRequestSchema,
   staffNewsItemResponseSchema,
   staffNewsListResponseSchema,
   staffNewsVisibilityFilterSchema,
   type ChangeNewsVisibilityRequest,
   type PrincipalQueryScope,
+  type ReconcileNewsSourceRequest,
   type RuntimeConfig,
   type StaffNewsItemResponse,
   type StaffNewsListResponse,
@@ -27,6 +29,11 @@ export interface NewsModerationClient {
     postId: string,
     version: number,
     request: ChangeNewsVisibilityRequest,
+  ): Promise<StaffNewsItemResponse>
+  reconcileSource(
+    postId: string,
+    version: number,
+    request: ReconcileNewsSourceRequest,
   ): Promise<StaffNewsItemResponse>
 }
 
@@ -80,6 +87,17 @@ export function createNewsModerationClient(
       const body = changeNewsVisibilityRequestSchema.parse(input)
       return staffNewsItemResponseSchema.parse(
         await request(`/news/${encodeURIComponent(postId)}/visibility`, {
+          method: 'PATCH',
+          headers: { 'If-Match': `"${postId}:v${version}"` },
+          body: JSON.stringify(body),
+        }),
+      )
+    },
+    async reconcileSource(rawPostId, version, input) {
+      const postId = publicIdSchema.parse(rawPostId)
+      const body = reconcileNewsSourceRequestSchema.parse(input)
+      return staffNewsItemResponseSchema.parse(
+        await request(`/news/${encodeURIComponent(postId)}/source-state`, {
           method: 'PATCH',
           headers: { 'If-Match': `"${postId}:v${version}"` },
           body: JSON.stringify(body),

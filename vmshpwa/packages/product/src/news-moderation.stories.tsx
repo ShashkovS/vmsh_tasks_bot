@@ -31,6 +31,8 @@ function InteractiveModeration() {
     <NewsModerationList
       items={current}
       onHide={(item) => change(item, 'manual_hidden')}
+      onMarkSourceDeleted={(item) => change(item, 'source_deleted')}
+      onMarkSourcePresent={(item) => change(item, 'visible')}
       onRestore={(item) => change(item, 'visible')}
     />
   )
@@ -48,6 +50,14 @@ export const Lifecycle: Story = {
     await userEvent.click(within(visiblePost).getByRole('button', { name: /Скрыть публикацию/ }))
     await expect(within(visiblePost).getByText('Скрыто в PWA')).toBeInTheDocument()
     await userEvent.click(within(visiblePost).getByRole('button', { name: /Вернуть публикацию/ }))
+    await expect(within(visiblePost).getByText('В ленте')).toBeInTheDocument()
+    await userEvent.click(
+      within(visiblePost).getByRole('button', { name: /Отметить публикацию .* удалённой/ }),
+    )
+    await expect(within(visiblePost).getByText('Удалено в Telegram')).toBeInTheDocument()
+    await userEvent.click(
+      within(visiblePost).getByRole('button', { name: /Отметить публикацию .* доступной/ }),
+    )
     await expect(within(visiblePost).getByText('В ленте')).toBeInTheDocument()
   },
 }

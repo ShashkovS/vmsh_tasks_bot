@@ -10,6 +10,27 @@ const data = auditListResponseSchema.parse({
   schemaVersion: 1,
   items: [
     {
+      eventId: 'audit.news-source-deleted',
+      occurredAt: '2026-08-02T11:30:00Z',
+      audience: 'staff',
+      action: 'news_source.marked_deleted',
+      objectType: 'news_post',
+      objectId: 'news.lesson-41',
+      requestId: 'request-news-source-41',
+      actor: {
+        userId: 'user.admin-1',
+        accountId: 'account.admin-1',
+        displayName: 'Петрова Анна',
+      },
+      before: { visibility: 'visible', sourceDeletedAt: null, version: 1 },
+      after: {
+        visibility: 'source_deleted',
+        sourceDeletedAt: '2026-08-02T11:30:00Z',
+        reconciliationReason: 'Пост отсутствует в канале',
+        version: 2,
+      },
+    },
+    {
       eventId: 'audit.staff-scope-replaced',
       occurredAt: '2026-08-02T11:25:00Z',
       audience: 'staff',

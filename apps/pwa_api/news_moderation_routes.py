@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
@@ -11,6 +12,7 @@ from aiohttp import web
 
 from apps.pwa_api.errors import PwaApiError
 from apps.pwa_api.middleware import authenticated_session
+from db_methods.pwa.audit import insert_audit_event
 from db_methods.pwa.news_moderation import list_news_for_moderation
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
@@ -19,6 +21,7 @@ from models.pwa.news_moderation import (
     NewsPostNotFound,
     NewsVisibilityConflict,
     change_news_visibility,
+    reconcile_news_source_state,
 )
 
 
@@ -182,6 +185,135 @@ async def change_visibility(request: web.Request) -> web.Response:
             message="Это состояние публикации нельзя изменить вручную",
         ) from error
     await request.app[PWA_NEWS_INVALIDATOR]("news-visibility-changed")
+    response = web.json_response(
+        {
+            "schemaVersion": 1,
+            "item": _payload(item),
+            "requestId": request["request_id"],
+        }
+    )
+    response.headers["ETag"] = f'"{public_id}:v{item["visibility_version"]}"'
+    return response
+
+
+def _source_audit_values(
+    item: dict[str, object], *, reason: str | None = None
+) -> dict[str, object]:
+    values = {
+        "source": item["source_type"],
+        "ownerType": ("course" if item["owner_type"] == "course" else "group"),
+        "ownerId": item["owner_public_id"],
+        "visibility": item["visibility_state"],
+        "sourceDeletedAt": item["source_deleted_at"],
+        "version": item["visibility_version"],
+    }
+    if reason is not None:
+        values["reconciliationReason"] = reason
+    return values
+
+
+@news_moderation_routes.patch("/staff/api/v1/news/{post_id}/source-state")
+async def reconcile_source_state(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    principal = authenticated_session(request).principal
+    public_id = request.match_info["post_id"]
+    if _PUBLIC_ID.fullmatch(public_id) is None:
+        raise PwaApiError(
+            status=404, code="news_post_not_found", message="Публикация не найдена"
+        )
+    etags = request.headers.getall("If-Match", [])
+    match = _ETAG.fullmatch(etags[0]) if len(etags) == 1 else None
+    if match is None:
+        raise PwaApiError(
+            status=422,
+            code="if_match_required",
+            message="Обновите данные перед сверкой",
+        )
+    if match.group(1) != public_id:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Публикация уже изменилась. Обновите список.",
+        )
+    if request.content_type != "application/json":
+        raise PwaApiError(
+            status=422, code="validation_error", message="Тело запроса должно быть JSON"
+        )
+    try:
+        body = json.loads(await request.read())
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте поля сверки"
+        ) from error
+    if (
+        not isinstance(body, dict)
+        or set(body) != {"schemaVersion", "sourceState", "reason"}
+        or body.get("schemaVersion") != 1
+        or body.get("sourceState") not in {"deleted", "present"}
+        or not isinstance(body.get("reason"), str)
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте поля сверки"
+        )
+    reason = body["reason"].strip()
+    if not reason or len(reason) > 500:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Укажите краткую причину"
+        )
+    source_state = body["sourceState"]
+    now = _now()
+
+    def write(connection):
+        before, item = reconcile_news_source_state(
+            connection,
+            public_id=public_id,
+            expected_version=int(match.group(2)),
+            source_state=source_state,
+            actor_user_id=actor_user_id,
+            now=now,
+        )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=principal.account_public_id,
+            audience="staff",
+            action=(
+                "news_source.marked_deleted"
+                if source_state == "deleted"
+                else "news_source.marked_present"
+            ),
+            object_type="news_post",
+            object_id=public_id,
+            request_id=request["request_id"],
+            before_json=json.dumps(_source_audit_values(before), ensure_ascii=False),
+            after_json=json.dumps(
+                _source_audit_values(item, reason=reason), ensure_ascii=False
+            ),
+            occurred_at=now,
+        )
+        return item
+
+    try:
+        item = await _factory(request).run_write_async(write)
+    except NewsPostNotFound as error:
+        raise PwaApiError(
+            status=404, code="news_post_not_found", message="Публикация не найдена"
+        ) from error
+    except NewsVisibilityConflict as error:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Публикация уже изменилась. Обновите список.",
+        ) from error
+    except InvalidNewsVisibility as error:
+        raise PwaApiError(
+            status=409,
+            code="news_source_state_not_allowed",
+            message="Состояние источника уже изменилось или недоступно для этого поста",
+        ) from error
+
+    await request.app[PWA_NEWS_INVALIDATOR]("news-source-reconciled")
     response = web.json_response(
         {
             "schemaVersion": 1,

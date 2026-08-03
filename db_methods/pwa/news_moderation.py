@@ -74,4 +74,45 @@ def update_news_visibility(
     return rows[0] if rows else None
 
 
-__all__ = ["list_news_for_moderation", "update_news_visibility"]
+def update_news_source_state(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    expected_version: int,
+    source_state: str,
+    actor_user_id: int,
+    now: str,
+) -> dict[str, object] | None:
+    """Apply one optimistic Telegram-source reconciliation write."""
+
+    if source_state == "deleted":
+        visibility_state = "source_deleted"
+        source_deleted_at: str | None = now
+    else:
+        visibility_state = "visible"
+        source_deleted_at = None
+    cursor = connection.execute(
+        "UPDATE news_visibility SET state = ?, moderation_reason = NULL, "
+        "updated_by_user_id = ?, updated_at = ?, version = version + 1 "
+        "WHERE post_id = (SELECT id FROM news_posts "
+        "WHERE public_id = ? AND source_type = 'telegram') AND version = ?",
+        (visibility_state, actor_user_id, now, public_id, expected_version),
+    )
+    if cursor.rowcount != 1:
+        return None
+    connection.execute(
+        "UPDATE news_posts SET source_deleted_at = ?, updated_at = ?, "
+        "version = version + 1 WHERE public_id = ? AND source_type = 'telegram'",
+        (source_deleted_at, now, public_id),
+    )
+    rows = list_news_for_moderation(
+        connection, state=None, limit=1, public_id=public_id
+    )
+    return rows[0] if rows else None
+
+
+__all__ = [
+    "list_news_for_moderation",
+    "update_news_source_state",
+    "update_news_visibility",
+]

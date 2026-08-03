@@ -33,6 +33,7 @@ const objectLabels: Record<AuditObjectType, string> = {
   group: 'Группы',
   telegram_binding: 'Привязки Telegram',
   problem_synonym: 'Синонимы задач',
+  news_post: 'Публикации',
   staff_scope: 'Доступы преподавателей',
 }
 
@@ -57,6 +58,8 @@ const actionLabels: Record<string, string> = {
   'telegram_binding.verified': 'Проверена привязка Telegram',
   'problem_synonym.merged': 'Задачи объединены в синонимы',
   'problem_synonym.split': 'Задачи разделены',
+  'news_source.marked_deleted': 'Пост отмечен удалённым в Telegram',
+  'news_source.marked_present': 'Пост отмечен доступным в Telegram',
   'staff_scope.replaced': 'Изменены доступы преподавателя',
 }
 
@@ -83,6 +86,7 @@ const fieldLabels: Record<string, string> = {
   ownerType: 'Тип владельца',
   purpose: 'Назначение',
   reason: 'Причина',
+  reconciliationReason: 'Причина сверки',
   removedCount: 'Удалено задач',
   relationshipLabel: 'Роль в семье',
   rows: 'Строк обработано',
@@ -92,6 +96,7 @@ const fieldLabels: Record<string, string> = {
   shortCode: 'Короткий код',
   sortOrder: 'Порядок',
   sourceFilename: 'Исходный файл',
+  sourceDeletedAt: 'Удалено в источнике',
   state: 'Состояние',
   status: 'Статус',
   studentId: 'Школьник',
@@ -101,6 +106,7 @@ const fieldLabels: Record<string, string> = {
   username: 'Логин',
   version: 'Версия',
   verifiedAt: 'Проверено',
+  visibility: 'Видимость',
 }
 
 function dateTime(value: string): string {

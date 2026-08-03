@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 import {
   PageLayout,
@@ -16,9 +16,27 @@ import {
   type StaffNewsVisibilityFilter,
 } from '@vmsh/contracts'
 import { NewsModerationList } from '@vmsh/product'
-import { Alert, AlertContent, AlertDescription, AlertTitle, Label } from '@vmsh/ui'
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Label,
+  Textarea,
+} from '@vmsh/ui'
 
-type Command = { item: StaffNewsItem; state: 'visible' | 'manual_hidden' }
+type Command =
+  | { kind: 'visibility'; item: StaffNewsItem; state: 'visible' | 'manual_hidden' }
+  | { kind: 'source'; item: StaffNewsItem; state: 'deleted' | 'present'; reason: string }
+
+type SourceCommand = { item: StaffNewsItem; state: 'deleted' | 'present' }
 
 export function StaffNewsPage({
   state,
@@ -47,14 +65,24 @@ export function StaffNewsPage({
   )
   const query = useNewsModerationQuery(client, scope, state)
   const queryClient = useQueryClient()
+  const [sourceCommand, setSourceCommand] = useState<SourceCommand | null>(null)
+  const [sourceReason, setSourceReason] = useState('')
   const mutation = useMutation({
-    mutationFn: ({ item, state: targetState }: Command) =>
-      client.changeVisibility(item.postId, item.version, {
-        schemaVersion: 1,
-        state: targetState,
-        reason: null,
-      }),
+    mutationFn: (command: Command) =>
+      command.kind === 'visibility'
+        ? client.changeVisibility(command.item.postId, command.item.version, {
+            schemaVersion: 1,
+            state: command.state,
+            reason: null,
+          })
+        : client.reconcileSource(command.item.postId, command.item.version, {
+            schemaVersion: 1,
+            sourceState: command.state,
+            reason: command.reason,
+          }),
     onSuccess: async () => {
+      setSourceCommand(null)
+      setSourceReason('')
       await queryClient.invalidateQueries({ queryKey: newsQueryKeys.moderation(scope, state) })
     },
     onError: (error) => authentication.handleApiError(error),
@@ -81,8 +109,10 @@ export function StaffNewsPage({
     content = (
       <NewsModerationList
         items={query.data.items}
-        onHide={(item) => mutation.mutate({ item, state: 'manual_hidden' })}
-        onRestore={(item) => mutation.mutate({ item, state: 'visible' })}
+        onHide={(item) => mutation.mutate({ kind: 'visibility', item, state: 'manual_hidden' })}
+        onMarkSourceDeleted={(item) => setSourceCommand({ item, state: 'deleted' })}
+        onMarkSourcePresent={(item) => setSourceCommand({ item, state: 'present' })}
+        onRestore={(item) => mutation.mutate({ kind: 'visibility', item, state: 'visible' })}
         pendingPostId={mutation.isPending ? mutation.variables.item.postId : null}
       />
     )
@@ -123,6 +153,70 @@ export function StaffNewsPage({
           </Alert>
         ) : null}
         {content}
+        <Dialog
+          onOpenChange={(open) => {
+            if (!open && !mutation.isPending) {
+              setSourceCommand(null)
+              setSourceReason('')
+            }
+          }}
+          open={sourceCommand !== null}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {sourceCommand?.state === 'deleted'
+                  ? 'Пост удалён в Telegram?'
+                  : 'Пост снова доступен?'}
+              </DialogTitle>
+              <DialogDescription>
+                Эта ручная сверка меняет PWA-ленту и сохраняется в журнале. Само сообщение в
+                Telegram не изменяется.
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              className="grid gap-4"
+              onSubmit={(event) => {
+                event.preventDefault()
+                if (sourceCommand === null || sourceReason.trim() === '') return
+                mutation.mutate({
+                  kind: 'source',
+                  item: sourceCommand.item,
+                  state: sourceCommand.state,
+                  reason: sourceReason.trim(),
+                })
+              }}
+            >
+              <Label className="grid gap-1.5" htmlFor="news-source-reason">
+                Краткая причина
+                <Textarea
+                  id="news-source-reason"
+                  maxLength={500}
+                  onChange={(event) => setSourceReason(event.target.value)}
+                  placeholder="Например: проверено в канале, пост отсутствует"
+                  rows={3}
+                  value={sourceReason}
+                />
+              </Label>
+              <DialogFooter>
+                <Button
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    setSourceCommand(null)
+                    setSourceReason('')
+                  }}
+                  type="button"
+                  variant="outline"
+                >
+                  Отмена
+                </Button>
+                <Button disabled={mutation.isPending || sourceReason.trim() === ''} type="submit">
+                  Сохранить сверку
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageLayout>
   )

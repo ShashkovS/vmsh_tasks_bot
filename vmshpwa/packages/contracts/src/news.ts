@@ -158,6 +158,15 @@ export const changeNewsVisibilityRequestSchema = z
   })
 export type ChangeNewsVisibilityRequest = z.infer<typeof changeNewsVisibilityRequestSchema>
 
+export const reconcileNewsSourceRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    sourceState: z.enum(['deleted', 'present']),
+    reason: z.string().trim().min(1).max(500),
+  })
+  .strict()
+export type ReconcileNewsSourceRequest = z.infer<typeof reconcileNewsSourceRequestSchema>
+
 export const staffNewsItemResponseSchema = z
   .object({
     schemaVersion: z.literal(1),

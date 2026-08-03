@@ -6,6 +6,7 @@ import {
   changeNewsVisibilityRequestSchema,
   newsFeedResponseSchema,
   newsQueryKeys,
+  reconcileNewsSourceRequestSchema,
   staffNewsListResponseSchema,
 } from './news'
 
@@ -51,6 +52,20 @@ describe('news contracts', () => {
         schemaVersion: 1,
         state: 'visible',
         reason: 'old reason',
+      }),
+    ).toThrow()
+    expect(
+      reconcileNewsSourceRequestSchema.parse({
+        schemaVersion: 1,
+        sourceState: 'deleted',
+        reason: 'Пост отсутствует в канале',
+      }).sourceState,
+    ).toBe('deleted')
+    expect(() =>
+      reconcileNewsSourceRequestSchema.parse({
+        schemaVersion: 1,
+        sourceState: 'present',
+        reason: '   ',
       }),
     ).toThrow()
   })

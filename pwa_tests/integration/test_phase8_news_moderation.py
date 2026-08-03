@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from apps import pwa_app
@@ -177,3 +179,171 @@ async def test_admin_hides_and_restores_news_without_changing_telegram(classroom
     )
     assert denied.status == 409
     assert (await denied.json())["error"]["code"] == "news_visibility_not_allowed"
+
+
+@pytest.mark.asyncio
+async def test_admin_reconciles_deleted_source_and_can_correct_the_mark(classroom_http):
+    result, _ = classroom_http.factory.run_write(_seed_post)
+    post_id = result["public_id"]
+    admin_cookies = _cookies(classroom_http, "admin")
+    unsafe_headers = _headers(unsafe=True, if_match=f'"{post_id}:v1"')
+
+    teacher = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/source-state",
+        json={
+            "schemaVersion": 1,
+            "sourceState": "deleted",
+            "reason": "Пост отсутствует в канале",
+        },
+        headers=unsafe_headers,
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    deleted = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/source-state",
+        json={
+            "schemaVersion": 1,
+            "sourceState": "deleted",
+            "reason": "  Пост отсутствует в канале  ",
+        },
+        headers=unsafe_headers,
+        cookies=admin_cookies,
+    )
+    assert deleted.status == 200, await deleted.text()
+    deleted_item = (await deleted.json())["item"]
+    assert (deleted_item["visibility"], deleted_item["version"]) == (
+        "source_deleted",
+        2,
+    )
+
+    student = await classroom_http.client.get(
+        "/student/api/v1/news",
+        headers=_headers(),
+        cookies={
+            COOKIE_POLICY[
+                AuthAudience.STUDENT
+            ].access_name: classroom_http.student_cookie
+        },
+    )
+    assert (await student.json())["items"] == []
+
+    stale = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/source-state",
+        json={
+            "schemaVersion": 1,
+            "sourceState": "present",
+            "reason": "Отметка была ошибочной",
+        },
+        headers=unsafe_headers,
+        cookies=admin_cookies,
+    )
+    assert stale.status == 409
+
+    restored = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/source-state",
+        json={
+            "schemaVersion": 1,
+            "sourceState": "present",
+            "reason": "Отметка была ошибочной",
+        },
+        headers=_headers(unsafe=True, if_match=f'"{post_id}:v2"'),
+        cookies=admin_cookies,
+    )
+    assert restored.status == 200, await restored.text()
+    assert ((await restored.json())["item"]["visibility"]) == "visible"
+
+    def stored_state(connection):
+        post = connection.execute(
+            "SELECT source_deleted_at FROM news_posts WHERE public_id = ?",
+            (post_id,),
+        ).fetchone()
+        events = connection.execute(
+            "SELECT action, before_json, after_json FROM audit_events "
+            "WHERE object_type = 'news_post' ORDER BY id",
+        ).fetchall()
+        return post["source_deleted_at"], [dict(event) for event in events]
+
+    source_deleted_at, events = classroom_http.factory.run_read(stored_state)
+    assert source_deleted_at is None
+    assert [event["action"] for event in events] == [
+        "news_source.marked_deleted",
+        "news_source.marked_present",
+    ]
+    assert json.loads(events[0]["after_json"])["reconciliationReason"] == (
+        "Пост отсутствует в канале"
+    )
+    assert all("chat" not in (event["after_json"] or "").casefold() for event in events)
+
+    timeline = await classroom_http.client.get(
+        "/staff/api/v1/audit?objectType=news_post",
+        headers=_headers(),
+        cookies=admin_cookies,
+    )
+    assert timeline.status == 200
+    assert len((await timeline.json())["items"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_source_reconciliation_validates_transition_and_rolls_back_with_audit(
+    classroom_http,
+):
+    result, _ = classroom_http.factory.run_write(_seed_post)
+    post_id = result["public_id"]
+    admin_cookies = _cookies(classroom_http, "admin")
+
+    already_present = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/source-state",
+        json={
+            "schemaVersion": 1,
+            "sourceState": "present",
+            "reason": "Проверено",
+        },
+        headers=_headers(unsafe=True, if_match=f'"{post_id}:v1"'),
+        cookies=admin_cookies,
+    )
+    assert already_present.status == 409
+
+    missing_reason = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/source-state",
+        json={"schemaVersion": 1, "sourceState": "deleted", "reason": "   "},
+        headers=_headers(unsafe=True, if_match=f'"{post_id}:v1"'),
+        cookies=admin_cookies,
+    )
+    assert missing_reason.status == 422
+
+    def install_failure(connection):
+        connection.execute(
+            "CREATE TRIGGER audit_news_source_test_failure "
+            "BEFORE INSERT ON audit_events "
+            "WHEN new.object_type = 'news_post' BEGIN "
+            "SELECT raise(ABORT, 'synthetic audit failure'); END"
+        )
+
+    classroom_http.factory.run_write(install_failure)
+    failed = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{post_id}/source-state",
+        json={
+            "schemaVersion": 1,
+            "sourceState": "deleted",
+            "reason": "Пост отсутствует в канале",
+        },
+        headers=_headers(unsafe=True, if_match=f'"{post_id}:v1"'),
+        cookies=admin_cookies,
+    )
+    assert failed.status == 500
+
+    def state(connection):
+        row = connection.execute(
+            "SELECT post.source_deleted_at, visibility.state, visibility.version "
+            "FROM news_posts post JOIN news_visibility visibility "
+            "ON visibility.post_id = post.id WHERE post.public_id = ?",
+            (post_id,),
+        ).fetchone()
+        return (
+            row["source_deleted_at"],
+            row["state"],
+            row["version"],
+        )
+
+    assert classroom_http.factory.run_read(state) == (None, "visible", 1)

@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Images, Send, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, Images, RefreshCcw, Send, Trash2, Unlink } from 'lucide-react'
 
 import type { StaffNewsItem } from '@vmsh/contracts'
 import { Badge, Button, Card, CardContent } from '@vmsh/ui'
@@ -23,11 +23,15 @@ export function NewsModerationList({
   items,
   pendingPostId,
   onHide,
+  onMarkSourceDeleted,
+  onMarkSourcePresent,
   onRestore,
 }: {
   items: StaffNewsItem[]
   pendingPostId?: string | null
   onHide?: (item: StaffNewsItem) => void
+  onMarkSourceDeleted?: (item: StaffNewsItem) => void
+  onMarkSourcePresent?: (item: StaffNewsItem) => void
   onRestore?: (item: StaffNewsItem) => void
 }) {
   return (
@@ -86,6 +90,34 @@ export function NewsModerationList({
                     >
                       <Send aria-hidden="true" />
                       Вернуть
+                    </Button>
+                  ) : null}
+                  {item.source === 'telegram' &&
+                  item.visibility !== 'source_deleted' &&
+                  onMarkSourceDeleted ? (
+                    <Button
+                      aria-label={`Отметить публикацию ${item.postId} удалённой в Telegram`}
+                      disabled={pendingPostId === item.postId}
+                      onClick={() => onMarkSourceDeleted(item)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <Unlink aria-hidden="true" />
+                      Нет в Telegram
+                    </Button>
+                  ) : null}
+                  {item.source === 'telegram' &&
+                  item.visibility === 'source_deleted' &&
+                  onMarkSourcePresent ? (
+                    <Button
+                      aria-label={`Отметить публикацию ${item.postId} доступной в Telegram`}
+                      disabled={pendingPostId === item.postId}
+                      onClick={() => onMarkSourcePresent(item)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <RefreshCcw aria-hidden="true" />
+                      Пост доступен
                     </Button>
                   ) : null}
                 </div>

@@ -55,7 +55,7 @@ describe('audit client', () => {
     await expect(client.list({ objectType: 'all', query: '', cursor: null })).rejects.toThrow()
   })
 
-  it('accepts catalog, Telegram, synonym and Staff-scope object filters', async () => {
+  it('accepts catalog, Telegram, news, synonym and Staff-scope object filters', async () => {
     const fetchImplementation = vi
       .fn<typeof fetch>()
       .mockImplementation(() => Promise.resolve(Response.json(response)))
@@ -65,6 +65,7 @@ describe('audit client', () => {
     await client.list({ objectType: 'group', query: '', cursor: null })
     await client.list({ objectType: 'telegram_binding', query: '', cursor: null })
     await client.list({ objectType: 'problem_synonym', query: '', cursor: null })
+    await client.list({ objectType: 'news_post', query: '', cursor: null })
     await client.list({ objectType: 'staff_scope', query: '', cursor: null })
 
     expect(fetchImplementation.mock.calls.map((call) => call[0])).toEqual([
@@ -72,6 +73,7 @@ describe('audit client', () => {
       '/staff/api/v1/audit?objectType=group&q=&limit=50',
       '/staff/api/v1/audit?objectType=telegram_binding&q=&limit=50',
       '/staff/api/v1/audit?objectType=problem_synonym&q=&limit=50',
+      '/staff/api/v1/audit?objectType=news_post&q=&limit=50',
       '/staff/api/v1/audit?objectType=staff_scope&q=&limit=50',
     ])
   })
