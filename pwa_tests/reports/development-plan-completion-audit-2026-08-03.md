@@ -339,6 +339,7 @@ delete API и не превращает diagnostic в автоматическу
 [`phase11-security-checkpoint.md`](phase11-security-checkpoint.md),
 [`phase11-sentry-privacy.md`](phase11-sentry-privacy.md),
 [`phase11-dependency-audit-2026-08-02.md`](phase11-dependency-audit-2026-08-02.md),
+[`phase11-service-worker-cache-boundary-2026-08-03.md`](phase11-service-worker-cache-boundary-2026-08-03.md),
 [`phase11-media-inventory-2026-08-03.md`](phase11-media-inventory-2026-08-03.md).
 
 Открыто:

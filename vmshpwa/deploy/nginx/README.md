@@ -74,6 +74,20 @@ installed `nginx -t`.
 If nginx or the config is absent, it exits non-zero and says the live proof is
 unavailable; structural unit tests do not masquerade as that production proof.
 
+## Service-worker update headers
+
+`/student/sw.js` and `/family/sw.js` are stable URLs across releases. The
+template therefore returns `Cache-Control: no-store` and the exact
+`Service-Worker-Allowed` scope for them. Other responses receive an empty map
+value, so nginx does not add a second cache header to aiohttp API responses.
+
+Both `add_header` directives deliberately stay at the same TLS-server level as
+CSP, HSTS and the rest of the security set. On nginx versions using the
+standard inheritance model, defining any `add_header` inside a child location
+would suppress all parent `add_header` values for that location. Do not move
+these directives into the Student/Family static blocks unless the complete
+security-header inheritance is proven by the installed nginx version.
+
 ## Primary references
 
 Checked 27 July 2026:
@@ -82,8 +96,10 @@ Checked 27 July 2026:
 - [nginx Unix upstream syntax](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass);
 - [nginx WebSocket upgrade and timeout behavior](https://nginx.org/en/docs/http/websocket.html);
 - [nginx request limiting](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html);
+- [nginx response headers, cache expiry and inheritance](https://nginx.org/en/docs/http/ngx_http_headers_module.html);
 - [aiohttp proxy warning and custom-middleware requirement](https://docs.aiohttp.org/en/stable/web_advanced.html#deploying-behind-a-proxy);
 - [aiohttp transport access](https://docs.aiohttp.org/en/stable/web_reference.html#aiohttp.web.BaseRequest.transport);
 - [Python 3.14 AF_UNIX and socket address semantics](https://docs.python.org/3/library/socket.html#socket-families);
 - [W3C CSP `default-src` fail-closed construction](https://www.w3.org/TR/CSP3/#directive-default-src);
+- [W3C Service Worker update and HTTP-cache model](https://www.w3.org/TR/service-workers/);
 - [OWASP HTTP security-header guidance](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html).

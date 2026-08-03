@@ -12,6 +12,22 @@ map $limit_req_status $vmshpwa_retry_after {
     REJECTED 60;
 }
 
+# Keep the stable worker URL revalidated on every update check.  URI maps live
+# at http scope so the TLS server can add these headers beside CSP/HSTS; a
+# child-location add_header would drop the inherited security-header set on
+# nginx versions before add_header_inherit merge.
+map $uri $vmshpwa_service_worker_cache_control {
+    default "";
+    /student/sw.js "no-store";
+    /family/sw.js "no-store";
+}
+
+map $uri $vmshpwa_service_worker_scope {
+    default "";
+    /student/sw.js "/student/";
+    /family/sw.js "/family/";
+}
+
 limit_req_zone $vmshpwa_login_limit_key zone=vmshpwa_login_per_ip:10m rate=6r/m;
 
 upstream vmshpwa_backend {
@@ -51,6 +67,8 @@ server {
     add_header Permissions-Policy "camera=(self), geolocation=(), microphone=(), payment=(), usb=()" always;
     add_header Strict-Transport-Security "max-age=31536000" always;
     add_header Retry-After $vmshpwa_retry_after always;
+    add_header Cache-Control $vmshpwa_service_worker_cache_control always;
+    add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;
 
     location = /student { return 308 /student/; }
     location = /family { return 308 /family/; }

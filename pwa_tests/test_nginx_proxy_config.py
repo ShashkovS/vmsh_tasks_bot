@@ -34,10 +34,22 @@ def _location(source: str, selector: str) -> str:
 
 def _rendered_site(public_host: str = "pwa.example.org") -> str:
     return f"""
+map $uri $vmshpwa_service_worker_cache_control {{
+    default "";
+    /student/sw.js "no-store";
+    /family/sw.js "no-store";
+}}
+map $uri $vmshpwa_service_worker_scope {{
+    default "";
+    /student/sw.js "/student/";
+    /family/sw.js "/family/";
+}}
 server {{ server_name {public_host}; return 308 https://{public_host}$request_uri; }}
 server {{
     server_name {public_host};
     add_header Content-Security-Policy "default-src 'none'; connect-src 'self' wss://{public_host}";
+    add_header Cache-Control $vmshpwa_service_worker_cache_control always;
+    add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;
 }}
 """
 
@@ -144,6 +156,28 @@ def test_csp_and_security_headers_are_strict_with_explicit_render_markers():
     assert "Strict-Transport-Security" in source
 
 
+def test_service_workers_are_never_cached_without_losing_server_headers():
+    source = TEMPLATE.read_text(encoding="utf-8")
+
+    assert source.count("map $uri $vmshpwa_service_worker_cache_control {") == 1
+    assert source.count("map $uri $vmshpwa_service_worker_scope {") == 1
+    for audience in ("student", "family"):
+        assert f'/{audience}/sw.js "no-store";' in source
+        assert f'/{audience}/sw.js "/{audience}/";' in source
+        # Keep add_header at server level. Defining it in the static child
+        # location would suppress the inherited CSP/HSTS set on common nginx.
+        static = _location(source, f"^~ /{audience}/")
+        assert "add_header" not in static
+    assert (
+        "add_header Cache-Control $vmshpwa_service_worker_cache_control always;"
+        in source
+    )
+    assert (
+        "add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;"
+        in source
+    )
+
+
 def test_make_target_invokes_only_the_fail_closed_syntax_helper():
     source = MAKEFILE.read_text(encoding="utf-8")
 
@@ -188,6 +222,38 @@ def test_syntax_check_refuses_unrendered_config_before_invocation(
 
     assert result == 2
     assert "unresolved markers" in capsys.readouterr().out
+
+
+def test_syntax_check_refuses_installed_site_without_worker_cache_boundary(
+    monkeypatch, tmp_path, capsys
+):
+    config = tmp_path / "nginx.conf"
+    config.write_text("events {}\n", encoding="utf-8")
+    site_config = tmp_path / "vmshpwa.conf"
+    site_config.write_text(
+        """
+server { server_name pwa.example.org; return 308 https://pwa.example.org$request_uri; }
+server {
+    server_name pwa.example.org;
+    add_header Content-Security-Policy "default-src 'none'; connect-src 'self' wss://pwa.example.org";
+}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        nginx_config_check.shutil,
+        "which",
+        lambda _binary: "/usr/sbin/nginx",
+    )
+
+    result = nginx_config_check.check_nginx_config(
+        config,
+        site_config_path=site_config,
+        public_host="pwa.example.org",
+    )
+
+    assert result == 2
+    assert "service-worker cache boundary" in capsys.readouterr().out
 
 
 def test_syntax_check_runs_exact_nginx_test_command(monkeypatch, tmp_path, capsys):
