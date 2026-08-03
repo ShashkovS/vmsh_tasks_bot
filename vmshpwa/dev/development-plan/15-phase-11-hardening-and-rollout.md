@@ -107,3 +107,17 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 Production-size rehearsal создаёт курс «Математика 5–7», backfill-ит enrollments/access/course/group lessons и сравнивает legacy/new read models, statistics, Telegram paths и classroom inheritance. Cutover сохраняет legacy IDs и допускает rollback без физического разъединения submission history.
 
 Дополнительный proof: migration parity/repeat/rollback report, synonym identity reconciliation, multi-course load/permission test, historical Telegram regression и явно подписанное решение о включении новых reads/writes.
+
+## Инкремент growth/orphan inventory — 3 августа 2026
+
+Добавлена read-only maintenance-команда, которая сравнивает фактический
+filesystem/S3 prefix с `media_assets.object_key` и `news_media.storage_key`.
+Она различает missing active objects, size mismatch, логически удалённые
+фотографии бессрочной retention, незавершённые news uploads и объекты без
+SQLite-ссылки. Exact keys пишутся только в owner-local mode-0600 manifest;
+stdout и committed proof содержат агрегаты. Delete отсутствует: будущая ручная
+очистка остаётся отдельным preview/confirm/audit процессом.
+
+Software path и agent-profile smoke доказаны в
+[`phase11-media-inventory-2026-08-03.md`](../../../pwa_tests/reports/phase11-media-inventory-2026-08-03.md).
+Production service-account inventory Hetzner остаётся rollout gate.

@@ -1340,3 +1340,25 @@
 - Production CSV dry-run и apply не объявлены готовыми. Инструмент не создаёт
   аккаунты и не принимает passwords; выдача первого Family password остаётся
   вопросом 1 в [`22-development-questions.md`](22-development-questions.md).
+
+## Phase 11 checkpoint: media growth/orphan inventory — 3 августа 2026
+
+- Read-only команда сравнивает migration-head SQLite с filesystem или точным
+  configured S3 prefix; источники ключей ограничены `media_assets` и
+  `news_media`.
+- Missing/size mismatch, retained-deleted, unconfirmed и storage-only objects
+  не смешиваются. Exact keys остаются в owner-local mode-0600 manifest, stdout
+  содержит только aggregates.
+- Delete отсутствует: этот срез даёт обязательный preview/diagnostic, но не
+  меняет бессрочную admin-managed retention и не разрешает cleanup.
+- Focused Python: **6 PASS**; полный PWA Python — **1586 PASS / 6 skip** в
+  восьми workers; frontend unit — **594 PASS**; strict TypeScript и Ruff —
+  **PASS**. Реальная agent Make-команда — **PASS**, нулевой изолированный
+  inventory без diagnostics.
+- Proof:
+  [`phase11-media-inventory-2026-08-03.md`](../../../pwa_tests/reports/phase11-media-inventory-2026-08-03.md).
+- Production Hetzner/service-account запуск, owner cleanup decision и audit
+  остаются Phase 11 rollout gates.
+- Общий ESLint gate временно красный только в параллельном незакоммиченном
+  `family-notifications-page.tsx` (4 ошибки); настройки ради этого checkpoint не
+  ослаблялись.

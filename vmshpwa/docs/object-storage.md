@@ -124,6 +124,20 @@ bucket, prefix key и полный public URL не печатаются. Рез�
 Production secret path
 недоступен этой команде по конструкции.
 
+## Growth и orphan inventory
+
+Read-only команда [`media_inventory.py`](../scripts/media_inventory.py)
+сравнивает `media_assets.object_key` и `news_media.storage_key` с filesystem или
+настроенным S3 prefix. Точные ключи сохраняются только в owner-local manifest с
+mode `0600`, stdout содержит агрегаты. Команда различает missing active object,
+size mismatch, retained-deleted submission, unconfirmed news upload и object
+без SQLite-ссылки; delete API у неё отсутствует.
+
+Порядок запуска и интерпретация категорий описаны в
+[media inventory и retention](media-inventory-and-retention.md). Один inventory
+не является разрешением на удаление: бессрочная admin-managed retention требует
+повторного preview, актуальной проверки БД, явного подтверждения и audit.
+
 Если основная операция и cleanup завершаются ошибкой одновременно, обе
 санитизированные причины сохраняются в `ExceptionGroup` и отдельно выводятся в
 поле `causes`, а не маскируют друг друга. Случайный суффикс probe защищает от
