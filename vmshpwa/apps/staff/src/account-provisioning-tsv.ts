@@ -1,4 +1,8 @@
-import type { FamilyProvisioningRow, StudentProvisioningRow } from '@vmsh/contracts'
+import type {
+  CourseEnrollmentProvisioningRow,
+  FamilyProvisioningRow,
+  StudentProvisioningRow,
+} from '@vmsh/contracts'
 
 export class ProvisioningTsvError extends Error {
   constructor(
@@ -78,10 +82,33 @@ export function parseFamilyProvisioningTsv(source: string): FamilyProvisioningRo
   })
 }
 
+export function parseCourseEnrollmentProvisioningTsv(
+  source: string,
+): CourseEnrollmentProvisioningRow[] {
+  return lines(source).map(({ cells, index }) => {
+    const lineNumber = index + 1
+    if (cells.length !== 3) {
+      throw new ProvisioningTsvError(lineNumber, 'нужно 3 столбца, разделённых табуляцией')
+    }
+    const [login, courseCode, allowedGroupsText] = cells
+    if (!login || !courseCode || !allowedGroupsText) {
+      throw new ProvisioningTsvError(lineNumber, 'все три столбца обязательны')
+    }
+    const allowedGroupCodes = allowedGroupsText
+      .split(/[,;]/)
+      .map((value) => value.trim())
+      .filter(Boolean)
+    if (allowedGroupCodes.length === 0) {
+      throw new ProvisioningTsvError(lineNumber, 'укажите хотя бы одну доступную группу')
+    }
+    return { login, courseCode, allowedGroupCodes }
+  })
+}
+
 export function provisioningDraftKey(
   storageNamespace: string,
   accountId: string,
-  audience: 'student' | 'family',
+  audience: 'student' | 'family' | 'course-enrollment',
 ) {
   return `${storageNamespace}:draft:${accountId}:provision-${audience}`
 }

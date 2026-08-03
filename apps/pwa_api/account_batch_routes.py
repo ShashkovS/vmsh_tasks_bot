@@ -1,4 +1,4 @@
-"""Admin preview/apply endpoints for the two v1 account batches."""
+"""Admin preview/apply endpoints for the three v1 account batches."""
 
 from __future__ import annotations
 
@@ -18,19 +18,29 @@ from apps.pwa_api.middleware import auth_service, authenticated_session
 from db_methods.pwa.account_batches import (
     account_logins,
     available_student_logins,
+    course_for_code,
+    enrollment_for_student_course,
+    groups_for_course,
+    insert_course_enrollment,
+    insert_course_enrollment_created_event,
     insert_family_emails,
     insert_family_link,
+    insert_imported_group_access,
     insert_provisioned_account,
     insert_student_user,
+    student_has_course_enrollment,
     student_for_login,
     student_tokens,
+    sync_first_course_to_legacy_user,
 )
 from db_methods.pwa.admin_accounts import insert_account_event
 from db_methods.pwa.audit import insert_audit_event
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.account_batches import (
     InvalidAccountBatchRow,
+    choose_active_group,
     choose_available_login,
+    normalize_course_enrollment_batch_row,
     normalize_family_batch_row,
     normalize_student_batch_row,
 )
@@ -55,7 +65,7 @@ def _admin(request: web.Request):
         raise PwaApiError(
             status=403,
             code="forbidden",
-            message="Пакетно создавать аккаунты может только администратор",
+            message="Пакетные операции может выполнять только администратор",
         )
     return principal
 
@@ -66,7 +76,7 @@ def _factory(request: web.Request):
         raise PwaApiError(
             status=503,
             code="account_import_unavailable",
-            message="Пакетное создание аккаунтов временно недоступно",
+            message="Пакетные операции временно недоступны",
         )
     return state.factory
 
@@ -110,9 +120,45 @@ async def _payload(request: web.Request, *, apply: bool) -> dict[str, object]:
     return payload
 
 
-def _preview_hash(rows: list[object], resolved_logins: list[str | None]) -> str:
+async def _enrollment_payload(
+    request: web.Request, *, apply: bool
+) -> dict[str, object]:
+    if request.content_type != "application/json":
+        raise PwaApiError(
+            status=422, code="validation_error", message="Тело запроса должно быть JSON"
+        )
+    try:
+        payload = json.loads(await request.read())
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте таблицу"
+        ) from error
+    expected = {"schemaVersion", "rows"}
+    if apply:
+        expected.add("previewHash")
+    if (
+        not isinstance(payload, dict)
+        or set(payload) != expected
+        or payload.get("schemaVersion") != 1
+        or not isinstance(payload.get("rows"), list)
+        or not 1 <= len(payload["rows"]) <= _MAX_ROWS
+        or (
+            apply
+            and (
+                not isinstance(payload.get("previewHash"), str)
+                or len(payload["previewHash"]) != 64
+            )
+        )
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте таблицу"
+        )
+    return payload
+
+
+def _preview_hash(rows: list[object], resolution: list[object]) -> str:
     encoded = json.dumps(
-        {"rows": rows, "resolvedLogins": resolved_logins},
+        {"rows": rows, "resolution": resolution},
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
@@ -158,6 +204,142 @@ def _preview_row(
         "loginAdjusted": state == "ready" and resolved_login is not None,
         "code": code,
     }
+
+
+def _resolve_enrollment_batch(
+    connection: sqlite3.Connection, source_rows: list[object]
+) -> list[dict[str, object]]:
+    result: list[dict[str, object]] = []
+    seen: set[tuple[int, int]] = set()
+    for number, source in enumerate(source_rows, start=1):
+        try:
+            normalized = normalize_course_enrollment_batch_row(source)
+            student = student_for_login(
+                connection, login_normalized=str(normalized["login_normalized"])
+            )
+            if student is None:
+                raise InvalidAccountBatchRow("student_login_not_found")
+            course = course_for_code(
+                connection, course_code=str(normalized["course_code"])
+            )
+            if course is None:
+                raise InvalidAccountBatchRow("course_not_found")
+            if course["status"] == "archived":
+                raise InvalidAccountBatchRow("course_archived")
+            natural_key = (int(student["user_id"]), int(course["id"]))
+            if natural_key in seen:
+                raise InvalidAccountBatchRow("duplicate_enrollment_row")
+            seen.add(natural_key)
+            if (
+                enrollment_for_student_course(
+                    connection,
+                    student_user_id=natural_key[0],
+                    course_id=natural_key[1],
+                )
+                is not None
+            ):
+                raise InvalidAccountBatchRow("enrollment_exists")
+            groups = groups_for_course(connection, course_id=natural_key[1])
+            active_group = choose_active_group(
+                groups, normalized["allowed_group_codes"]
+            )
+            allowed_codes = set(normalized["allowed_group_codes"])
+            allowed_groups = [
+                group
+                for group in groups
+                if str(group["short_code"]).casefold() in allowed_codes
+            ]
+            if any(group["status"] == "archived" for group in allowed_groups):
+                raise InvalidAccountBatchRow("group_archived")
+        except InvalidAccountBatchRow as error:
+            result.append({"rowNumber": number, "state": "invalid", "code": str(error)})
+            continue
+        result.append(
+            {
+                "rowNumber": number,
+                "state": "ready",
+                "code": None,
+                "login": normalized["login_normalized"],
+                "studentUserId": student["user_id"],
+                "courseId": course["id"],
+                "coursePublicId": course["public_id"],
+                "courseCode": course["code"],
+                "activeGroupId": active_group["group_id"],
+                "activeGroupPublicId": active_group["public_id"],
+                "activeGroupCode": active_group["short_code"],
+                "allowedGroupIds": [group["group_id"] for group in allowed_groups],
+                "allowedGroupPublicIds": [
+                    group["public_id"] for group in allowed_groups
+                ],
+                "allowedGroupCodes": [group["short_code"] for group in allowed_groups],
+            }
+        )
+    return result
+
+
+def _enrollment_resolution_hash(
+    source_rows: list[object], rows: list[dict[str, object]]
+) -> str:
+    resolution: list[object] = []
+    for row in rows:
+        if row["state"] == "invalid":
+            resolution.append({"state": "invalid", "code": row["code"]})
+        else:
+            resolution.append(
+                {
+                    "state": "ready",
+                    "studentUserId": row["studentUserId"],
+                    "coursePublicId": row["coursePublicId"],
+                    "activeGroupPublicId": row["activeGroupPublicId"],
+                    "allowedGroupPublicIds": row["allowedGroupPublicIds"],
+                }
+            )
+    return _preview_hash(source_rows, resolution)
+
+
+def _enrollment_preview_response(
+    request: web.Request,
+    *,
+    source_rows: list[object],
+    rows: list[dict[str, object]],
+) -> web.Response:
+    ready = sum(row["state"] == "ready" for row in rows)
+    public_rows = []
+    for row in rows:
+        if row["state"] == "invalid":
+            public_rows.append(
+                {
+                    "rowNumber": row["rowNumber"],
+                    "state": "invalid",
+                    "code": row["code"],
+                }
+            )
+        else:
+            public_rows.append(
+                {
+                    "rowNumber": row["rowNumber"],
+                    "state": "ready",
+                    "login": row["login"],
+                    "courseCode": row["courseCode"],
+                    "activeGroupCode": row["activeGroupCode"],
+                    "allowedGroupCodes": row["allowedGroupCodes"],
+                    "code": None,
+                }
+            )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "previewHash": _enrollment_resolution_hash(source_rows, rows),
+            "counts": {
+                "total": len(rows),
+                "ready": ready,
+                "invalid": len(rows) - ready,
+            },
+            "rows": public_rows,
+            "requestId": request["request_id"],
+        },
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @account_batch_routes.post("/staff/api/v1/imports/student-accounts/preview")
@@ -208,6 +390,21 @@ async def preview_student_accounts(request: web.Request) -> web.Response:
         rows=rows,
         source_rows=source_rows,
         resolved_logins=resolved_logins,
+    )
+
+
+@account_batch_routes.post("/staff/api/v1/imports/course-enrollments/preview")
+async def preview_course_enrollments(request: web.Request) -> web.Response:
+    _admin(request)
+    payload = await _enrollment_payload(request, apply=False)
+    source_rows = payload["rows"]
+    rows = await _factory(request).run_read_async(
+        lambda connection: _resolve_enrollment_batch(connection, source_rows)
+    )
+    return _enrollment_preview_response(
+        request,
+        source_rows=source_rows,
+        rows=rows,
     )
 
 
@@ -323,6 +520,33 @@ def _batch_audit(
         after_json=json.dumps(
             {"audience": audience, "created": created, "skipped": skipped},
             separators=(",", ":"),
+        ),
+        occurred_at=now,
+    )
+
+
+def _enrollment_batch_audit(
+    connection: sqlite3.Connection,
+    *,
+    request: web.Request,
+    principal,
+    created: int,
+    skipped: int,
+    now: str,
+) -> None:
+    insert_audit_event(
+        connection,
+        public_id=f"audit.{uuid.uuid4().hex}",
+        actor_user_id=principal.linked_user_id,
+        actor_account_public_id=principal.account_public_id,
+        audience="staff",
+        action="course_enrollments.batch_created",
+        object_type="course_enrollment_batch",
+        object_id=request["request_id"],
+        request_id=request["request_id"],
+        before_json=None,
+        after_json=json.dumps(
+            {"created": created, "skipped": skipped}, separators=(",", ":")
         ),
         occurred_at=now,
     )
@@ -463,6 +687,110 @@ async def apply_student_accounts(request: web.Request) -> web.Response:
             message="Данные изменились. Обновите предпросмотр.",
         ) from error
     return _apply_response(request, rows)
+
+
+@account_batch_routes.post("/staff/api/v1/imports/course-enrollments/apply")
+async def apply_course_enrollments(request: web.Request) -> web.Response:
+    principal = _admin(request)
+    payload = await _enrollment_payload(request, apply=True)
+    source_rows = payload["rows"]
+    now = _now()
+
+    def write(connection: sqlite3.Connection) -> dict[str, object]:
+        resolved = _resolve_enrollment_batch(connection, source_rows)
+        expected_hash = _enrollment_resolution_hash(source_rows, resolved)
+        if not hmac.compare_digest(str(payload["previewHash"]), expected_hash):
+            return {"state": "preview_changed"}
+        result: list[dict[str, object]] = []
+        for row in resolved:
+            number = int(row["rowNumber"])
+            if row["state"] == "invalid":
+                result.append(
+                    {
+                        "rowNumber": number,
+                        "state": "skipped",
+                        "code": row["code"],
+                    }
+                )
+                continue
+            student_user_id = int(row["studentUserId"])
+            first_course = not student_has_course_enrollment(
+                connection, student_user_id=student_user_id
+            )
+            enrollment_public_id = f"course-enrollment.{uuid.uuid4().hex}"
+            enrollment_id = insert_course_enrollment(
+                connection,
+                public_id=enrollment_public_id,
+                student_user_id=student_user_id,
+                course_id=int(row["courseId"]),
+                active_group_id=str(row["activeGroupId"]),
+                actor_user_id=int(principal.linked_user_id),
+                now=now,
+            )
+            allowed_group_ids = tuple(str(value) for value in row["allowedGroupIds"])
+            insert_imported_group_access(
+                connection,
+                enrollment_id=enrollment_id,
+                course_id=int(row["courseId"]),
+                group_ids=allowed_group_ids,
+                actor_user_id=int(principal.linked_user_id),
+                now=now,
+            )
+            insert_course_enrollment_created_event(
+                connection,
+                public_id=f"course-enrollment-event.{uuid.uuid4().hex}",
+                enrollment_id=enrollment_id,
+                course_id=int(row["courseId"]),
+                active_group_id=str(row["activeGroupId"]),
+                actor_user_id=int(principal.linked_user_id),
+                request_id=f"{request['request_id']}.row-{number}",
+                now=now,
+            )
+            if first_course:
+                # The first course remains visible to the parallel legacy bot;
+                # later courses cannot be represented by its single group field.
+                sync_first_course_to_legacy_user(
+                    connection,
+                    student_user_id=student_user_id,
+                    active_group_id=str(row["activeGroupId"]),
+                    allowed_group_ids=allowed_group_ids,
+                )
+            result.append(
+                {
+                    "rowNumber": number,
+                    "state": "created",
+                    "login": row["login"],
+                    "courseCode": row["courseCode"],
+                    "activeGroupCode": row["activeGroupCode"],
+                    "allowedGroupCodes": row["allowedGroupCodes"],
+                    "enrollmentId": enrollment_public_id,
+                }
+            )
+        _enrollment_batch_audit(
+            connection,
+            request=request,
+            principal=principal,
+            created=sum(row["state"] == "created" for row in result),
+            skipped=sum(row["state"] != "created" for row in result),
+            now=now,
+        )
+        return {"state": "ok", "rows": result}
+
+    try:
+        outcome = await _factory(request).run_write_async(write)
+    except sqlite3.IntegrityError as error:
+        raise PwaApiError(
+            status=409,
+            code="enrollment_conflict",
+            message="Данные изменились. Обновите предпросмотр.",
+        ) from error
+    if outcome["state"] == "preview_changed":
+        raise PwaApiError(
+            status=409,
+            code="preview_changed",
+            message="Состав курса или групп изменился. Обновите предпросмотр.",
+        )
+    return _apply_response(request, outcome["rows"])
 
 
 @account_batch_routes.post("/staff/api/v1/imports/family-accounts/apply")

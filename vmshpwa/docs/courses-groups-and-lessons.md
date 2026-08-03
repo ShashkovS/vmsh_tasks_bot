@@ -59,6 +59,14 @@ admin-only GET/PUT в
 - `created_at`, `updated_at`, `version`.
 
 Legacy `group_id` сохраняется. Название и короткий код группы уникальны внутри курса; совпадения между курсами допустимы.
+
+`groups.sort_order` задаёт единый порядок групп курса в API, UI,
+select-контролах и import preview. При равенстве используются
+`short_code`, затем legacy `group_id`. Новое enrollment получает первую
+разрешённую группу в этом порядке. Для текущего курса:
+«Начинающие» = 1, «Продолжающие» = 2, «Эксперты» = 3.
+Конкретные названия и числа остаются course data, а не глобальным
+зашитым enum.
 В переходной миграции `course_id` и audit timestamps остаются nullable для
 legacy-строк, а `public_id` получает детерминированный `legacy-...`; Phase 11
 закрывает nullability после production-size backfill. Composite key

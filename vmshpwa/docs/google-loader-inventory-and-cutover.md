@@ -93,15 +93,17 @@ semicolon-строку. Если active group не входит в allowed group
 editing через
 [`admin_account_routes.py`](../../apps/pwa_api/admin_account_routes.py) и
 [`admin_enrollment_routes.py`](../../apps/pwa_api/admin_enrollment_routes.py).
-Первичный import новых школьников с preview/apply ещё не реализован. Target
-разделён на Student account batch, Family account batch и отдельный per-course
-enrollment batch `login, course, allowed_groups`; правило active group при
-нескольких allowed groups остаётся отдельным вопросом.
+Первичный import новых школьников теперь разделён на Student account batch,
+Family account batch и отдельный per-course enrollment batch
+`login, course, allowed_groups`. Preview показывает active group: первая
+доступная группа по `groups.sort_order`, затем по short code и legacy
+`group_id`; порядок ячеек TSV на выбор не влияет.
 
-**Golden/parity.** Golden input и DB diff появятся вместе с users import. Он
-должен отдельно показать create/update/skip, collision логинов, invalid token,
-course enrollment и сохранение исходного `users.id`; реальные credentials не
-попадают в proof.
+**Golden/parity.** Hermetic HTTP proof отдельно показывает create/skip,
+collision логинов, invalid token и course enrollment; реальные credentials не
+попадают в proof:
+[`phase1-course-enrollment-batch-2026-08-03.md`](../../pwa_tests/reports/phase1-course-enrollment-batch-2026-08-03.md).
+Production import остаётся owner-run действием.
 
 **Cutover и rollback.** Статус `legacy bridge`. `/update_students` остаётся
 ручным recovery path до production rehearsal нового импорта. Cutover и удаление

@@ -215,7 +215,7 @@ read остаются отдельным инкрементом.
 - `POST /staff/api/v1/imports/family-accounts/preview|apply` — Family batch с
   name, login/password, emails и child logins
 - `POST /staff/api/v1/imports/course-enrollments/preview|apply` — один course и
-  `login + allowedGroups` на строку; active-group rule ожидает owner answer
+  `login + allowedGroups` на строку; active group выбирается по group order
 
 Реализованный v1 account-batch contract использует `schemaVersion: 1` и не
 возвращает credential. Preview принимает `rows`, возвращает по каждой строке
@@ -224,7 +224,9 @@ Apply принимает исходные `rows`, просмотренные `re
 повторно валидирует данные и в одной SQLite transaction создаёт только готовые
 строки. Ответ содержит public account/user IDs и per-row `created|skipped`, но
 не password, token или email. Student и Family — два независимых действия;
-course enrollment остаётся третьим batch после решения правила active group.
+course enrollment — третий batch: `login, course, allowed_groups`, preview
+явно показывает active group, выбранную по `groups.sort_order`, и apply повторно
+проверяет тот же порядок.
 - `GET/POST /staff/api/v1/courses/{coursePublicId}/groups`, `PATCH /staff/api/v1/groups/{groupPublicId}`, `POST /staff/api/v1/groups/{groupPublicId}/archive`
 - `GET/PUT /staff/api/v1/courses/{coursePublicId}/schedule-rules`, `GET/PUT /staff/api/v1/groups/{groupPublicId}/schedule-overrides`
 - `POST /staff/api/v1/group-lessons/{groupLessonPublicId}/schedule-preview`, `POST /staff/api/v1/group-lessons/{groupLessonPublicId}/schedule-confirm`

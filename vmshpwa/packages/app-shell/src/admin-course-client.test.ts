@@ -541,4 +541,65 @@ describe('admin course client', () => {
     )
     expect(fetchImplementation.mock.calls[1]?.[1]?.body).toContain('"password":"telegram-token"')
   })
+
+  it('previews and applies a separate course enrollment batch', async () => {
+    const preview = {
+      schemaVersion: 1 as const,
+      previewHash: 'b'.repeat(64),
+      counts: { total: 1, ready: 1, invalid: 0 },
+      rows: [
+        {
+          rowNumber: 1,
+          state: 'ready' as const,
+          login: 'ivanov',
+          courseCode: 'math-57',
+          activeGroupCode: 'n',
+          allowedGroupCodes: ['n', 'p'],
+          code: null,
+        },
+      ],
+      requestId: 'preview',
+    }
+    const receipt = {
+      schemaVersion: 1 as const,
+      counts: { total: 1, created: 1, skipped: 0 },
+      rows: [
+        {
+          rowNumber: 1,
+          state: 'created' as const,
+          login: 'ivanov',
+          courseCode: 'math-57',
+          activeGroupCode: 'n',
+          allowedGroupCodes: ['n', 'p'],
+          enrollmentId: 'course-enrollment.ivanov',
+        },
+      ],
+      requestId: 'apply',
+    }
+    const row = {
+      login: 'ivanov',
+      courseCode: 'math-57',
+      allowedGroupCodes: ['p', 'n'],
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json(preview))
+      .mockResolvedValueOnce(Response.json(receipt))
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+
+    await client.previewCourseEnrollments({ schemaVersion: 1, rows: [row] })
+    await client.applyCourseEnrollments({
+      schemaVersion: 1,
+      rows: [row],
+      previewHash: 'b'.repeat(64),
+    })
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/staff/api/v1/imports/course-enrollments/preview',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+      '/staff/api/v1/imports/course-enrollments/apply',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[1]?.body).toContain('"allowedGroupCodes":["p","n"]')
+  })
 })

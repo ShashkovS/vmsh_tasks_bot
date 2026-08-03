@@ -30,6 +30,15 @@ export const familyProvisioningRowSchema = z
   .strict()
 export type FamilyProvisioningRow = z.infer<typeof familyProvisioningRowSchema>
 
+export const courseEnrollmentProvisioningRowSchema = z
+  .object({
+    login: z.string().trim().min(1).max(100),
+    courseCode: z.string().trim().min(1).max(50),
+    allowedGroupCodes: z.array(z.string().trim().min(1).max(50)).min(1).max(100),
+  })
+  .strict()
+export type CourseEnrollmentProvisioningRow = z.infer<typeof courseEnrollmentProvisioningRowSchema>
+
 function previewRequest<Row extends z.ZodType>(row: Row) {
   return z.object({ schemaVersion: z.literal(1), rows: z.array(row).min(1).max(2_000) }).strict()
 }
@@ -147,3 +156,94 @@ export const accountProvisioningReceiptSchema = z
   })
   .strict()
 export type AccountProvisioningReceipt = z.infer<typeof accountProvisioningReceiptSchema>
+
+export const courseEnrollmentProvisioningPreviewRequestSchema = previewRequest(
+  courseEnrollmentProvisioningRowSchema,
+)
+export type CourseEnrollmentProvisioningPreviewRequest = z.infer<
+  typeof courseEnrollmentProvisioningPreviewRequestSchema
+>
+
+const readyEnrollmentPreviewRowSchema = z
+  .object({
+    rowNumber: z.number().int().positive(),
+    state: z.literal('ready'),
+    login: z.string().trim().min(1).max(100),
+    courseCode: z.string().trim().min(1).max(50),
+    activeGroupCode: z.string().trim().min(1).max(50),
+    allowedGroupCodes: z.array(z.string().trim().min(1).max(50)).min(1).max(100),
+    code: z.null(),
+  })
+  .strict()
+const invalidEnrollmentPreviewRowSchema = z
+  .object({
+    rowNumber: z.number().int().positive(),
+    state: z.literal('invalid'),
+    code: z.string().trim().min(1).max(100),
+  })
+  .strict()
+export const courseEnrollmentProvisioningPreviewResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    previewHash: z.string().regex(/^[a-f0-9]{64}$/),
+    counts: z
+      .object({
+        total: z.number().int().positive(),
+        ready: z.number().int().nonnegative(),
+        invalid: z.number().int().nonnegative(),
+      })
+      .strict(),
+    rows: z.array(
+      z.discriminatedUnion('state', [
+        readyEnrollmentPreviewRowSchema,
+        invalidEnrollmentPreviewRowSchema,
+      ]),
+    ),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type CourseEnrollmentProvisioningPreviewResponse = z.infer<
+  typeof courseEnrollmentProvisioningPreviewResponseSchema
+>
+
+export const courseEnrollmentProvisioningApplyRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    rows: z.array(courseEnrollmentProvisioningRowSchema).min(1).max(2_000),
+    previewHash: z.string().regex(/^[a-f0-9]{64}$/),
+  })
+  .strict()
+export type CourseEnrollmentProvisioningApplyRequest = z.infer<
+  typeof courseEnrollmentProvisioningApplyRequestSchema
+>
+
+const createdEnrollmentReceiptRowSchema = z
+  .object({
+    rowNumber: z.number().int().positive(),
+    state: z.literal('created'),
+    login: z.string().trim().min(1).max(100),
+    courseCode: z.string().trim().min(1).max(50),
+    activeGroupCode: z.string().trim().min(1).max(50),
+    allowedGroupCodes: z.array(z.string().trim().min(1).max(50)).min(1).max(100),
+    enrollmentId: publicIdSchema,
+  })
+  .strict()
+export const courseEnrollmentProvisioningReceiptSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    counts: z
+      .object({
+        total: z.number().int().positive(),
+        created: z.number().int().nonnegative(),
+        skipped: z.number().int().nonnegative(),
+      })
+      .strict(),
+    rows: z.array(
+      z.discriminatedUnion('state', [createdEnrollmentReceiptRowSchema, skippedReceiptRowSchema]),
+    ),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type CourseEnrollmentProvisioningReceipt = z.infer<
+  typeof courseEnrollmentProvisioningReceiptSchema
+>

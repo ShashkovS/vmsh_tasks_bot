@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ProvisioningTsvError,
+  parseCourseEnrollmentProvisioningTsv,
   parseFamilyProvisioningTsv,
   parseStudentProvisioningTsv,
   provisioningDraftKey,
@@ -51,5 +52,22 @@ describe('account provisioning TSV', () => {
     expect(provisioningDraftKey('vmsh:staff:agent', 'admin.one', 'student')).toBe(
       'vmsh:staff:agent:draft:admin.one:provision-student',
     )
+  })
+
+  it('parses a separate course enrollment batch with comma or semicolon groups', () => {
+    expect(
+      parseCourseEnrollmentProvisioningTsv('ivanov\tmath-57\tэ, н, п\npetrova\tphysics\tф1; ф2'),
+    ).toEqual([
+      {
+        login: 'ivanov',
+        courseCode: 'math-57',
+        allowedGroupCodes: ['э', 'н', 'п'],
+      },
+      {
+        login: 'petrova',
+        courseCode: 'physics',
+        allowedGroupCodes: ['ф1', 'ф2'],
+      },
+    ])
   })
 })

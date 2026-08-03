@@ -1,4 +1,4 @@
-"""Pure validation for the two v1 account provisioning batches.
+"""Pure validation for the three v1 account provisioning batches.
 
 Storage is intentionally absent here. See Phase 10 in
 ``vmshpwa/dev/development-plan/14-phase-10-admin-and-google-exit.md``.
@@ -151,6 +151,72 @@ def normalize_family_batch_row(row: object) -> dict[str, object]:
     }
 
 
+def _catalog_code(value: Any, *, code: str) -> str:
+    stored = _text(value, code=code, maximum=50)
+    normalized = unicodedata.normalize("NFKC", stored).casefold()
+    if (
+        normalized.startswith("-")
+        or normalized.endswith("-")
+        or "--" in normalized
+        or not all(character.isalnum() or character == "-" for character in normalized)
+    ):
+        raise InvalidAccountBatchRow(code)
+    return normalized
+
+
+def normalize_course_enrollment_batch_row(row: object) -> dict[str, object]:
+    """Normalize the owner-confirmed ``login, course, allowed groups`` row."""
+
+    if not isinstance(row, dict) or set(row) != {
+        "login",
+        "courseCode",
+        "allowedGroupCodes",
+    }:
+        raise InvalidAccountBatchRow("invalid_enrollment_row")
+    _, login_normalized = _login(row["login"])
+    values = row["allowedGroupCodes"]
+    if not isinstance(values, list) or not 1 <= len(values) <= 100:
+        raise InvalidAccountBatchRow("invalid_allowed_groups")
+    allowed: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        group_code = _catalog_code(value, code="invalid_allowed_groups")
+        if group_code in seen:
+            raise InvalidAccountBatchRow("invalid_allowed_groups")
+        seen.add(group_code)
+        allowed.append(group_code)
+    return {
+        "login_normalized": login_normalized,
+        "course_code": _catalog_code(row["courseCode"], code="invalid_course"),
+        "allowed_group_codes": tuple(allowed),
+    }
+
+
+def choose_active_group(
+    groups: list[dict[str, object]], allowed_group_codes: tuple[str, ...]
+) -> dict[str, object]:
+    """Choose the first allowed group by product order, with stable tie-breaks.
+
+    Group order is product data, not TSV order. See
+    ``accepted-technical-decisions-2026-07.md`` and Phase 10.
+    """
+
+    allowed = set(allowed_group_codes)
+    candidates = [
+        group for group in groups if str(group["short_code"]).casefold() in allowed
+    ]
+    if len(candidates) != len(allowed):
+        raise InvalidAccountBatchRow("group_not_found")
+    return min(
+        candidates,
+        key=lambda group: (
+            int(group["sort_order"]),
+            str(group["short_code"]).casefold(),
+            str(group["group_id"]),
+        ),
+    )
+
+
 def choose_available_login(
     login: str,
     normalized_login: str,
@@ -174,7 +240,9 @@ def choose_available_login(
 
 __all__ = [
     "InvalidAccountBatchRow",
+    "choose_active_group",
     "choose_available_login",
+    "normalize_course_enrollment_batch_row",
     "normalize_family_batch_row",
     "normalize_student_batch_row",
 ]

@@ -161,7 +161,18 @@
 - production Hetzner bucket/media hostname, Sentry ingest, API/WS и окончательной CSP;
 - короткий access-cookie TTL;
 - точная команда/systemd units production webhook;
-- выбор active group при enrollment batch с несколькими allowed groups.
+- Enrollment batch принимает `login, course, allowed_groups`. Active group —
+  первая доступная группа по `groups.sort_order`, затем по short code и legacy
+  `group_id`; порядок групп в TSV на выбор не влияет. Новая запись создаётся в
+  режиме online. Первое course enrollment синхронизирует legacy
+  `users.group_id/allowed_groups` для параллельного Telegram-бота, последующие
+  курсы эти единственные legacy-поля не перезаписывают.
+- `groups.sort_order` — единый product order: все списки групп в API,
+  Student/Family/Staff UI, import preview и select-контролах идут по
+  возрастанию этого поля со стабильным tie-break. Для текущего
+  курса: «Начинающие» = 1, «Продолжающие» = 2, «Эксперты» = 3.
+  Новый школьник получает первую разрешённую группу, а не
+  захардкоженный код `1`.
 
 ## Решение 26 июля: независимые курсы и группы
 

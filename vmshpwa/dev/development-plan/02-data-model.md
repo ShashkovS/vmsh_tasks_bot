@@ -521,4 +521,10 @@ Job публикует полный successful run атомарно и обно�
 
 Добавляются `courses`, `course_enrollments`, `course_group_access`, `course_enrollment_events`, `staff_scopes`, `course_lessons`, `group_lessons`, `course_schedule_rules`, `group_schedule_overrides`, `problem_synonym_groups`, `problem_synonym_members`, `telegram_bindings`, `in_person_events`, `in_person_event_group_lessons`. Existing `groups` получает `public_id`, `course_id`, `status`, `color_key`, audit timestamps и optimistic `version`; legacy `group_id` сохраняется.
 
+`groups.sort_order` является product order для всех выдач и селекторов.
+Первая разрешённая группа по этому порядку становится
+`course_enrollments.active_group_id` по умолчанию; порядок allowed groups в
+исходной таблице на выбор не влияет. Stable tie-break: `short_code`,
+затем legacy `group_id`.
+
 Точные поля, unique/invariant rules и миграционная граница зафиксированы в [`docs/courses-groups-and-lessons.md`](../../docs/courses-groups-and-lessons.md). Phase 11 backfill создаёт курс «Математика 5–7» и не переписывает problem/submission/result/Telegram IDs. Synonym membership versioned; физическое перемещение истории запрещено.

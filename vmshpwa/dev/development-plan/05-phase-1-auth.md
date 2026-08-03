@@ -27,6 +27,9 @@ course enrollment/access/events и единственный новый permissio
 - student/staff account связывается с внутренним `users.id`, а controlled activation одновременно назначает отсутствующий opaque `users.public_id`; этот случайный стабильный ID является browser `userId`/`studentId` и не совпадает с `auth_accounts.public_id` (`accountId`);
 - Family batch отдельно принимает name, login/password, comma-separated emails
   и child logins; связи many-to-many;
+- enrollment batch отдельно принимает login, course code и allowed group codes;
+  active group выбирается по product `groups.sort_order`, новое участие
+  начинается online;
 - по owner-confirmed v1 policy оба plaintext password сохраняются для внешнего
   mailer наряду с Argon2 verifier, но исключаются из обычных API/logs/proofs;
 - test passwords `qwerty*` допустимы в летнем cohort и затем удаляются.
@@ -321,9 +324,9 @@ rate-limit smoke и controlled production import также остаются о�
   повторно проверяет просмотренный input и создаёт готовые строки одной
   transaction;
 - Student batch создаёт legacy `users` и связанный web-account, Family batch —
-  web-account, emails и связи с уже созданными Student login. Course enrollment
-  сюда намеренно не включён: это отдельный batch с ещё открытым правилом выбора
-  active group.
+  web-account, emails и связи с уже созданными Student login. Отдельный course
+  enrollment batch реализован следующим инкрементом; active group в нём
+  выбирается по order, а не по порядку TSV.
 
 Пруф: [`phase1-account-provisioning-batches-2026-08-03.md`](../../../pwa_tests/reports/phase1-account-provisioning-batches-2026-08-03.md).
 
@@ -434,6 +437,8 @@ Account provisioning checkpoint: backend proof
 [`phase1-account-provisioning-batches-2026-08-03.md`](../../../pwa_tests/reports/phase1-account-provisioning-batches-2026-08-03.md),
 Staff UI proof
 [`phase1-account-provisioning-staff-ui-2026-08-03.md`](../../../pwa_tests/reports/phase1-account-provisioning-staff-ui-2026-08-03.md).
+Course enrollment proof:
+[`phase1-course-enrollment-batch-2026-08-03.md`](../../../pwa_tests/reports/phase1-course-enrollment-batch-2026-08-03.md).
 
 ## Многокурсовый инкремент Phase 1
 

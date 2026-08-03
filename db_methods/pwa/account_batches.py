@@ -41,6 +41,143 @@ def student_for_login(
     return None if row is None else dict(row)
 
 
+def course_for_code(
+    connection: sqlite3.Connection, *, course_code: str
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT id, public_id, code, status FROM courses WHERE code = ?",
+        (course_code,),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def groups_for_course(
+    connection: sqlite3.Connection, *, course_id: int
+) -> list[dict[str, object]]:
+    rows = connection.execute(
+        "SELECT group_id, public_id, short_code, public_name, status, sort_order "
+        "FROM groups WHERE course_id = ? "
+        "ORDER BY sort_order, short_code, group_id",
+        (course_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def enrollment_for_student_course(
+    connection: sqlite3.Connection, *, student_user_id: int, course_id: int
+) -> dict[str, object] | None:
+    row = connection.execute(
+        "SELECT id, public_id, status FROM course_enrollments "
+        "WHERE student_user_id = ? AND course_id = ?",
+        (student_user_id, course_id),
+    ).fetchone()
+    return None if row is None else dict(row)
+
+
+def student_has_course_enrollment(
+    connection: sqlite3.Connection, *, student_user_id: int
+) -> bool:
+    return (
+        connection.execute(
+            "SELECT 1 FROM course_enrollments WHERE student_user_id = ? LIMIT 1",
+            (student_user_id,),
+        ).fetchone()
+        is not None
+    )
+
+
+def insert_course_enrollment(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    student_user_id: int,
+    course_id: int,
+    active_group_id: str,
+    actor_user_id: int,
+    now: str,
+) -> int:
+    row = connection.execute(
+        "INSERT INTO course_enrollments "
+        "(public_id, student_user_id, course_id, active_group_id, "
+        "attendance_mode, status, created_at, updated_at, created_by, updated_by) "
+        "VALUES (?, ?, ?, ?, 'online', 'active', ?, ?, ?, ?) RETURNING id",
+        (
+            public_id,
+            student_user_id,
+            course_id,
+            active_group_id,
+            now,
+            now,
+            actor_user_id,
+            actor_user_id,
+        ),
+    ).fetchone()
+    return int(row["id"])
+
+
+def insert_imported_group_access(
+    connection: sqlite3.Connection,
+    *,
+    enrollment_id: int,
+    course_id: int,
+    group_ids: tuple[str, ...],
+    actor_user_id: int,
+    now: str,
+) -> None:
+    connection.executemany(
+        "INSERT INTO course_group_access "
+        "(enrollment_id, course_id, group_id, valid_from, granted_by, reason, "
+        "created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'import', ?, ?)",
+        [
+            (enrollment_id, course_id, group_id, now, actor_user_id, now, now)
+            for group_id in group_ids
+        ],
+    )
+
+
+def insert_course_enrollment_created_event(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    enrollment_id: int,
+    course_id: int,
+    active_group_id: str,
+    actor_user_id: int,
+    request_id: str,
+    now: str,
+) -> None:
+    connection.execute(
+        "INSERT INTO course_enrollment_events "
+        "(public_id, enrollment_id, course_id, event_type, new_group_id, "
+        "new_attendance_mode, new_status, actor_user_id, source, request_id, "
+        "occurred_at, created_at) "
+        "VALUES (?, ?, ?, 'created', ?, 'online', 'active', ?, 'import', ?, ?, ?)",
+        (
+            public_id,
+            enrollment_id,
+            course_id,
+            active_group_id,
+            actor_user_id,
+            request_id,
+            now,
+            now,
+        ),
+    )
+
+
+def sync_first_course_to_legacy_user(
+    connection: sqlite3.Connection,
+    *,
+    student_user_id: int,
+    active_group_id: str,
+    allowed_group_ids: tuple[str, ...],
+) -> None:
+    connection.execute(
+        "UPDATE users SET group_id = ?, allowed_groups = ? WHERE id = ?",
+        (active_group_id, ";".join(allowed_group_ids), student_user_id),
+    )
+
+
 def available_student_logins(connection: sqlite3.Connection) -> set[str]:
     return {
         str(row["username_normalized"])
@@ -157,10 +294,18 @@ def insert_family_link(
 __all__ = [
     "account_logins",
     "available_student_logins",
+    "course_for_code",
+    "enrollment_for_student_course",
+    "groups_for_course",
+    "insert_course_enrollment",
+    "insert_course_enrollment_created_event",
     "insert_family_emails",
     "insert_family_link",
+    "insert_imported_group_access",
     "insert_provisioned_account",
     "insert_student_user",
+    "student_has_course_enrollment",
     "student_for_login",
     "student_tokens",
+    "sync_first_course_to_legacy_user",
 ]

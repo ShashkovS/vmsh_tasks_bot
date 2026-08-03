@@ -18,8 +18,11 @@ Admin из Staff импортирует Excel, создаёт/правит по�
   Valid rows применяются, invalid rows перечисляются в receipt.
 - Отдельный enrollment batch `login, course, allowed_groups` назначает доступ к
   одному курсу за запуск; тот же flow повторяется для дополнительных курсов.
-  Выбор active group при нескольких allowed groups пока зафиксирован вопросом 3
-  в [`22-development-questions.md`](22-development-questions.md).
+  Active group выбирается не по порядку ячеек TSV, а как первая доступная группа
+  по `groups.sort_order`, затем стабильно по short code и legacy `group_id`.
+  Новое зачисление начинается online. Первое зачисление также синхронизирует
+  единственные legacy `users.group_id/allowed_groups`, чтобы Telegram-бот
+  продолжал работать; дополнительные курсы эти поля не перезаписывают.
 - Task metadata TSV grid and version conflicts, включая отдельный task type (`test|written|oral`), answer type и checker trusted-admin surface. Task/answer type редактируются dropdown-ячейками, но прямоугольная TSV copy/paste работает так же, как в Google Sheets. Legacy `Письменно<-Устно` при migration явно отображается в canonical oral с доступной письменной сдачей.
 - Grid/import сохраняет точную семантику `title`, `prob_type`, `ans_type`, `ans_validation`, `validation_error`, `cor_ans`, `cor_ans_checker`, `wrong_ans`, `congrat`. `cor_ans` может содержать много `;`-separated допустимых ответов; `SELECT_ONE.ans_validation` — список видимых labels, а для остальных типов непустое поле — regex override. Import preview различает пустое значение, inherited/default и явно заданный текст.
 - Title должен оставаться коротким для Student/Telegram UI, но отличать задачу. Equal-title rows в одном `course_lesson` показываются как synonym candidates с impact preview; import не склеивает их автоматически и никогда не связывает разные курсы/занятия.
@@ -161,10 +164,11 @@ course-scoped XLSX preview, понятные diagnostics, advisory synonym candi
 production-build Playwright. Differential rehearsal настоящего workbook против
 изолированной копии `db/vmsh.db` получил 1813 `unchanged` и ноль расхождений.
 Это закрывает реализацию task-settings import, но не подменяет владельческое
-подтверждение cutover после реального недельного цикла. Первоначальный bulk
-import **новых школьников** остаётся отдельным незакрытым workflow, но формат уже
-принят: Student и Family batches разделены, а course enrollment выполняется
-третьим batch.
+подтверждение cutover после реального недельного цикла. Software workflow
+первичного bulk import новых школьников также состоит из трёх
+отдельных preview/apply batch: Student accounts, Family accounts и per-course
+enrollment. Владельческая summer rehearsal и внешняя email-рассылка
+остаются deployment-действиями, а не скрытой частью apply.
 
 - [x] Revision/migrations for problem import: `0074.pwa_problem_import_receipts`;
   up/down/up, integrity и rollback подтверждены в
@@ -186,10 +190,12 @@ import **новых школьников** остаётся отдельным �
 - [x] Task metadata field-by-field parity and synonym candidates without
   physical rewrite:
   [`phase10-problem-workbook-replacement.md`](../../../pwa_tests/reports/phase10-problem-workbook-replacement.md).
-- [ ] Demo users/groups/family/permissions/import/dry-run/apply: Family create/link/unlink
-  и вход подтверждены в
-  [`phase10-family-account-ui.md`](../../../pwa_tests/reports/phase10-family-account-ui.md);
-  problem workbook import закрыт; users import/dry-run/apply ещё не завершён.
+- [x] Hermetic users/groups/family/permissions preview/apply: три отдельных
+  account/enrollment batch, включая group order и legacy Telegram sync,
+  подтверждены в
+  [`phase1-course-enrollment-batch-2026-08-03.md`](../../../pwa_tests/reports/phase1-course-enrollment-batch-2026-08-03.md).
+  Owner-run summer/production rehearsal и внешняя email-рассылка всё ещё
+  выполняются отдельно.
 - [x] Problem import security/idempotency/transaction tests:
   [`phase10-problem-import-apply.md`](../../../pwa_tests/reports/phase10-problem-import-apply.md).
 - [x] Admin local draft reload/isolation/conflict/cleanup tests: Family-form

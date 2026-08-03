@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   accountProvisioningPreviewResponseSchema,
   accountProvisioningReceiptSchema,
+  courseEnrollmentProvisioningApplyRequestSchema,
+  courseEnrollmentProvisioningPreviewResponseSchema,
+  courseEnrollmentProvisioningReceiptSchema,
   familyProvisioningPreviewRequestSchema,
   studentProvisioningApplyRequestSchema,
   studentProvisioningPreviewRequestSchema,
@@ -89,5 +92,63 @@ describe('account provisioning contracts', () => {
     })
     expect(receipt.counts.created).toBe(1)
     expect(JSON.stringify(receipt)).not.toContain('telegram-token')
+  })
+})
+
+describe('course enrollment provisioning contracts', () => {
+  it('keeps the reviewed active group and ordered allowed groups explicit', () => {
+    const preview = courseEnrollmentProvisioningPreviewResponseSchema.parse({
+      schemaVersion: 1,
+      previewHash: 'a'.repeat(64),
+      counts: { total: 1, ready: 1, invalid: 0 },
+      rows: [
+        {
+          rowNumber: 1,
+          state: 'ready',
+          login: 'student',
+          courseCode: 'math-57',
+          activeGroupCode: 'n',
+          allowedGroupCodes: ['n', 'p', 'e'],
+          code: null,
+        },
+      ],
+      requestId: 'request.enrollment-preview',
+    })
+    expect(preview.rows[0]).toMatchObject({
+      activeGroupCode: 'n',
+      allowedGroupCodes: ['n', 'p', 'e'],
+    })
+
+    expect(
+      courseEnrollmentProvisioningApplyRequestSchema.parse({
+        schemaVersion: 1,
+        rows: [
+          {
+            login: 'student',
+            courseCode: 'math-57',
+            allowedGroupCodes: ['e', 'n', 'p'],
+          },
+        ],
+        previewHash: 'a'.repeat(64),
+      }).rows,
+    ).toHaveLength(1)
+    expect(
+      courseEnrollmentProvisioningReceiptSchema.parse({
+        schemaVersion: 1,
+        counts: { total: 1, created: 1, skipped: 0 },
+        rows: [
+          {
+            rowNumber: 1,
+            state: 'created',
+            login: 'student',
+            courseCode: 'math-57',
+            activeGroupCode: 'n',
+            allowedGroupCodes: ['n', 'p', 'e'],
+            enrollmentId: 'course-enrollment.student',
+          },
+        ],
+        requestId: 'request.enrollment-apply',
+      }).counts.created,
+    ).toBe(1)
   })
 })

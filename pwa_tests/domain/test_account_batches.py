@@ -4,7 +4,9 @@ import pytest
 
 from models.pwa.account_batches import (
     InvalidAccountBatchRow,
+    choose_active_group,
     choose_available_login,
+    normalize_course_enrollment_batch_row,
     normalize_family_batch_row,
     normalize_student_batch_row,
 )
@@ -97,3 +99,39 @@ def test_login_collision_gets_reviewable_two_digit_suffix() -> None:
 
     assert (login, normalized, adjusted) == ("ivanov-17", "ivanov-17", True)
     assert "ivanov-17" in used
+
+
+def test_course_enrollment_batch_normalizes_codes_and_rejects_duplicates() -> None:
+    row = normalize_course_enrollment_batch_row(
+        {
+            "login": " Student-17 ",
+            "courseCode": " MATH-57 ",
+            "allowedGroupCodes": [" Н ", "П"],
+        }
+    )
+
+    assert row == {
+        "login_normalized": "student-17",
+        "course_code": "math-57",
+        "allowed_group_codes": ("н", "п"),
+    }
+    with pytest.raises(InvalidAccountBatchRow, match="invalid_allowed_groups"):
+        normalize_course_enrollment_batch_row(
+            {
+                "login": "student",
+                "courseCode": "math",
+                "allowedGroupCodes": ["Н", "н"],
+            }
+        )
+
+
+def test_active_group_uses_product_order_not_tsv_order() -> None:
+    groups = [
+        {"group_id": "expert", "short_code": "э", "sort_order": 3},
+        {"group_id": "beginner", "short_code": "н", "sort_order": 1},
+        {"group_id": "continuing", "short_code": "п", "sort_order": 2},
+    ]
+
+    selected = choose_active_group(groups, ("э", "н", "п"))
+
+    assert selected["group_id"] == "beginner"

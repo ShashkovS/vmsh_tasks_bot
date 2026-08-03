@@ -1,4 +1,4 @@
-"""HTTP proof for the two owner-confirmed v1 provisioning batches."""
+"""HTTP proof for the three owner-confirmed v1 provisioning batches."""
 
 from __future__ import annotations
 
@@ -214,6 +214,249 @@ async def test_apply_rejects_changed_preview(
     response = await classroom_http.client.post(
         "/staff/api/v1/imports/student-accounts/apply",
         json=_apply_payload(source, preview),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert response.status == 409
+    assert (await response.json())["error"]["code"] == "preview_changed"
+
+
+async def test_admin_enrolls_students_and_uses_first_allowed_group_by_order(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    student_source = {
+        "schemaVersion": 1,
+        "rows": [
+            {
+                "surname": "Порядков",
+                "name": "Лев",
+                "login": "ordered-student",
+                "password": "ordered-student-token",
+            }
+        ],
+    }
+    student_preview_response = await classroom_http.client.post(
+        "/staff/api/v1/imports/student-accounts/preview",
+        json=student_source,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    student_preview = await student_preview_response.json()
+    student_apply = await classroom_http.client.post(
+        "/staff/api/v1/imports/student-accounts/apply",
+        json=_apply_payload(student_source, student_preview),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert student_apply.status == 201, await student_apply.text()
+
+    def add_groups(connection):
+        course_id = connection.execute(
+            "SELECT id FROM courses WHERE code = 'math-layout'"
+        ).fetchone()["id"]
+        now = "2026-08-03T10:00:00Z"
+        connection.executemany(
+            "INSERT INTO groups "
+            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
+            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "status, color_key, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, 1, 0, 0, 0, 1.0, ?, ?, 'active', ?, ?, ?)",
+            (
+                (
+                    "layout-continuing",
+                    "п",
+                    "Продолжающие",
+                    2,
+                    "classroom-layout-group-continuing",
+                    course_id,
+                    "continuing",
+                    now,
+                    now,
+                ),
+                (
+                    "layout-expert",
+                    "э",
+                    "Эксперты",
+                    3,
+                    "classroom-layout-group-expert",
+                    course_id,
+                    "expert",
+                    now,
+                    now,
+                ),
+            ),
+        )
+
+    classroom_http.factory.run_write(add_groups)
+    source = {
+        "schemaVersion": 1,
+        "rows": [
+            {
+                "login": "ORDERED-STUDENT",
+                "courseCode": "MATH-LAYOUT",
+                "allowedGroupCodes": ["э", "п", "н"],
+            }
+        ],
+    }
+    teacher = await classroom_http.client.post(
+        "/staff/api/v1/imports/course-enrollments/preview",
+        json=source,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+    preview_response = await classroom_http.client.post(
+        "/staff/api/v1/imports/course-enrollments/preview",
+        json=source,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert preview_response.status == 200, await preview_response.text()
+    preview = await preview_response.json()
+    assert preview["counts"] == {"total": 1, "ready": 1, "invalid": 0}
+    assert preview["rows"] == [
+        {
+            "rowNumber": 1,
+            "state": "ready",
+            "login": "ordered-student",
+            "courseCode": "math-layout",
+            "activeGroupCode": "н",
+            "allowedGroupCodes": ["н", "п", "э"],
+            "code": None,
+        }
+    ]
+
+    apply_response = await classroom_http.client.post(
+        "/staff/api/v1/imports/course-enrollments/apply",
+        json={
+            "schemaVersion": 1,
+            "rows": source["rows"],
+            "previewHash": preview["previewHash"],
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert apply_response.status == 201, await apply_response.text()
+    receipt = await apply_response.json()
+    assert receipt["counts"] == {"total": 1, "created": 1, "skipped": 0}
+    assert receipt["rows"][0]["activeGroupCode"] == "н"
+
+    stored = classroom_http.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT enrollment.active_group_id, enrollment.attendance_mode, "
+            "student.group_id, student.allowed_groups, "
+            "group_concat(access.group_id, ',') AS allowed, "
+            "event.event_type, event.source "
+            "FROM auth_accounts account "
+            "JOIN users student ON student.id = account.linked_user_id "
+            "JOIN course_enrollments enrollment "
+            "ON enrollment.student_user_id = student.id "
+            "JOIN course_group_access access ON access.enrollment_id = enrollment.id "
+            "JOIN course_enrollment_events event "
+            "ON event.enrollment_id = enrollment.id "
+            "WHERE account.username_normalized = 'ordered-student'"
+        ).fetchone()
+    )
+    assert stored == {
+        "active_group_id": "layout-beginner",
+        "attendance_mode": "online",
+        "group_id": "layout-beginner",
+        "allowed_groups": "layout-beginner;layout-continuing;layout-expert",
+        "allowed": "layout-beginner,layout-continuing,layout-expert",
+        "event_type": "created",
+        "source": "import",
+    }
+
+
+async def test_course_enrollment_apply_rejects_group_order_changed_after_preview(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    source = {
+        "schemaVersion": 1,
+        "rows": [
+            {
+                "login": "classroom-http-student",
+                "courseCode": "math-layout",
+                "allowedGroupCodes": ["н"],
+            }
+        ],
+    }
+
+    # The seeded Student is already enrolled, so first create an independent
+    # course whose group order can change between preview and apply.
+    def add_course(connection):
+        season_id = connection.execute("SELECT id FROM seasons").fetchone()["id"]
+        now = "2026-08-03T10:00:00Z"
+        course_id = connection.execute(
+            "INSERT INTO courses "
+            "(public_id, season_id, code, name, subject_code, status, sort_order, "
+            "accent_key, created_at, updated_at) VALUES "
+            "('order-change-course', ?, 'physics', 'Физика', 'physics', 'active', "
+            "2, 'physics', ?, ?) RETURNING id",
+            (season_id, now, now),
+        ).fetchone()["id"]
+        connection.executemany(
+            "INSERT INTO groups "
+            "(group_id, short_code, public_name, sort_order, is_active, is_default, "
+            "allow_self_switch, is_system, score_weight, public_id, course_id, "
+            "status, color_key, created_at, updated_at) VALUES "
+            "(?, ?, ?, ?, 1, 0, 0, 0, 1.0, ?, ?, 'active', 'physics', ?, ?)",
+            (
+                (
+                    "physics-first",
+                    "ф1",
+                    "Физика 1",
+                    1,
+                    "physics-first-public",
+                    course_id,
+                    now,
+                    now,
+                ),
+                (
+                    "physics-second",
+                    "ф2",
+                    "Физика 2",
+                    2,
+                    "physics-second-public",
+                    course_id,
+                    now,
+                    now,
+                ),
+            ),
+        )
+
+    classroom_http.factory.run_write(add_course)
+    source["rows"][0] = {
+        "login": "classroom-http-student",
+        "courseCode": "physics",
+        "allowedGroupCodes": ["ф2", "ф1"],
+    }
+    preview_response = await classroom_http.client.post(
+        "/staff/api/v1/imports/course-enrollments/preview",
+        json=source,
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    preview = await preview_response.json()
+    assert preview["rows"][0]["activeGroupCode"] == "ф1"
+
+    def swap_group_order(connection):
+        connection.execute(
+            "UPDATE groups SET sort_order = 2 WHERE group_id = 'physics-first'"
+        )
+        connection.execute(
+            "UPDATE groups SET sort_order = 1 WHERE group_id = 'physics-second'"
+        )
+
+    classroom_http.factory.run_write(swap_group_order)
+
+    response = await classroom_http.client.post(
+        "/staff/api/v1/imports/course-enrollments/apply",
+        json={
+            "schemaVersion": 1,
+            "rows": source["rows"],
+            "previewHash": preview["previewHash"],
+        },
         headers=_headers(unsafe=True),
         cookies=_cookies(classroom_http, "admin"),
     )

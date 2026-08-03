@@ -4,6 +4,10 @@ import {
   ApiResponseError,
   accountProvisioningPreviewResponseSchema,
   accountProvisioningReceiptSchema,
+  courseEnrollmentProvisioningApplyRequestSchema,
+  courseEnrollmentProvisioningPreviewRequestSchema,
+  courseEnrollmentProvisioningPreviewResponseSchema,
+  courseEnrollmentProvisioningReceiptSchema,
   adminCourseCatalogQueryKey,
   adminCourseCatalogResponseSchema,
   adminCourseScheduleDraftResponseSchema,
@@ -57,6 +61,10 @@ import {
   type AdminStudentEnrollmentResponse,
   type AccountProvisioningPreviewResponse,
   type AccountProvisioningReceipt,
+  type CourseEnrollmentProvisioningApplyRequest,
+  type CourseEnrollmentProvisioningPreviewRequest,
+  type CourseEnrollmentProvisioningPreviewResponse,
+  type CourseEnrollmentProvisioningReceipt,
   type CreateAdminCourseRequest,
   type CreateStudentAccountRequest,
   type CreateFamilyAccountRequest,
@@ -152,6 +160,12 @@ export interface AdminCourseClient {
     input: FamilyProvisioningPreviewRequest,
   ): Promise<AccountProvisioningPreviewResponse>
   applyFamilyAccounts(input: FamilyProvisioningApplyRequest): Promise<AccountProvisioningReceipt>
+  previewCourseEnrollments(
+    input: CourseEnrollmentProvisioningPreviewRequest,
+  ): Promise<CourseEnrollmentProvisioningPreviewResponse>
+  applyCourseEnrollments(
+    input: CourseEnrollmentProvisioningApplyRequest,
+  ): Promise<CourseEnrollmentProvisioningReceipt>
   listStaffAccess(signal?: AbortSignal): Promise<StaffAccessDirectoryResponse>
   replaceStaffScopes(
     staffUserId: string,
@@ -419,6 +433,22 @@ export function createAdminCourseClient(
         await request('/imports/family-accounts/apply', {
           method: 'POST',
           body: JSON.stringify(familyProvisioningApplyRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async previewCourseEnrollments(input) {
+      return courseEnrollmentProvisioningPreviewResponseSchema.parse(
+        await request('/imports/course-enrollments/preview', {
+          method: 'POST',
+          body: JSON.stringify(courseEnrollmentProvisioningPreviewRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async applyCourseEnrollments(input) {
+      return courseEnrollmentProvisioningReceiptSchema.parse(
+        await request('/imports/course-enrollments/apply', {
+          method: 'POST',
+          body: JSON.stringify(courseEnrollmentProvisioningApplyRequestSchema.parse(input)),
         }),
       )
     },
