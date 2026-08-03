@@ -225,8 +225,8 @@ macOS `MachPortRendezvous`/`SIGABRT`; он не отменяет предыду�
 
 ## Phase 8 — news, realtime и notifications
 
-**Состояние: основной news/notification v1 почти закрыт; Family digest
-implementation, physical push и owner visual gates открыты.**
+**Состояние: основной news/notification v1 и Family digest функционально
+реализованы; physical push, свежий browser run и owner visual gates открыты.**
 
 Доказаны Telegram channel ingest/edit/albums/media copy, explicit deletion
 reconciliation, Student/Family feed и offline cache, moderation, verified
@@ -236,6 +236,12 @@ course-scoped preferences, batching, Web Push subscription/delivery, quiet
 sound policy, delivery observability и text-only исправление опубликованной
 local news без повторного notification. Запланированные вручную Telegram posts
 имеют отдельный offline cutover inventory.
+
+Family digest реализован отдельным простым вертикальным срезом: admin вручную
+подтверждает итог конкретной группы/занятия, уже уведомлённые Family accounts не
+получают дубль, а поздно связанный подходящий аккаунт получает своё первое
+событие. Student events не меняются; отсутствие review queue не является
+автоматическим сигналом отправки.
 
 Ключевые доказательства:
 
@@ -249,11 +255,12 @@ local news без повторного notification. Запланированн�
 - [`phase8-published-local-news-correction-2026-08-03.md`](phase8-published-local-news-correction-2026-08-03.md);
 - [`phase8-news-source-deletion-reconciliation.md`](phase8-news-source-deletion-reconciliation.md);
 - [`phase8-telegram-scheduled-queue-reconciliation.md`](phase8-telegram-scheduled-queue-reconciliation.md).
+- [`phase8-family-digest-2026-08-03.md`](phase8-family-digest-2026-08-03.md).
 
 Открыто:
 
-- weekly Family digest: явная admin-отправка отдельно по группе; исправления не
-  создают второй digest — требуется implementation/proof;
+- browser-выполнение нового Family digest scenario и Storybook interaction/a11y
+  после устранения локального macOS launcher failure;
 - live Web Push на установленном iOS/Android устройстве;
 - owner execution реального Telegram scheduled-queue inventory;
 - owner visual acceptance delivery/moderation/settings states;
@@ -381,12 +388,10 @@ security/cache headers, manifests, icons и service workers.
 
 ## Следующий порядок независимой разработки
 
-1. Реализовать per-group explicit Family digest отдельным простым вертикальным
-   срезом.
-2. Определить deadline semantics по вопросу 2 и реализовать producer отдельно.
-3. Подготовить исполняемые production runbooks/checklists Phase 11, оставляя
+1. Определить deadline semantics по вопросу 2 и реализовать producer отдельно.
+2. Подготовить исполняемые production runbooks/checklists Phase 11, оставляя
    реальные server/device результаты незакрытыми до их фактического запуска.
-4. Реализовать два account batches и enrollment batch; не угадывать active group
+3. Реализовать два account batches и enrollment batch; не угадывать active group
    до ответа на вопрос 3.
 
 До закрытия перечисленных gates формулировка «все этапы разработки завершены»

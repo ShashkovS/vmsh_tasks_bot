@@ -81,6 +81,13 @@ Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](0
 
 - [ ] Все Student routes и нижняя навигация реализованы.
 - [ ] Все Family routes и child context реализованы: полный student-visible thread/evidence, смена level/mode, самостоятельное раскрытие hint/solution и недельные уведомления; self-check отсутствует.
+- [ ] Family lesson digest отправляется только явным global-admin confirm по
+      конкретной группе/занятию; zero recipients виден честно, повтор не
+      дублирует старые события, late-linked Family получает первое событие,
+      Student и teacher UI не получают лишнего доступа. Реализация:
+      [`FamilyDigestPanel`](../../apps/staff/src/family-digest-panel.tsx),
+      [`Family notifications`](../../apps/family/src/family-notifications-page.tsx),
+      proof [`phase8-family-digest-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-digest-2026-08-03.md).
 - [ ] Все Staff routes и capability states реализованы.
 - [ ] `/staff/classrooms` имеет выбор `in_person_event`, вкладки «Каталог», «По группам», «Школьники», URL-state `event/course/group/tab/roomStatus`; Teacher получает forbidden.
 - [ ] `/staff/courses` имеет catalog, schedule и Telegram contexts; route вне Staff scope возвращает forbidden.

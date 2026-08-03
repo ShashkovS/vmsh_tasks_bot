@@ -84,6 +84,13 @@ DraftPersistence — не отдельная декоративная карто
 - ClassroomStudentSearch: нормализует case/`ё–е`/пробелы/порядок имени и допускает небольшое edit distance; совпадение подсвечивается на месте, результат содержит jump action.
 - ClassroomBulkMove: режим checkbox-selection, sticky bar с count и одним room select; применяет несколько локальных правок разом. DnD не используется. До explicit batch-save/confirm все изменения восстанавливаются из local draft; print/export в v1 отсутствуют.
 - ClassroomAssignmentStatus: Student/Family варианты `not_applicable|reassigning|assigned`, имя комнаты, время confirm и nullable время последней рассылки. Confirmed state меняется через тихий API/WS refetch; Family не обещает classroom push/Telegram.
+- FamilyLessonDigest: компактный Staff preview показывает группу, занятие,
+  число школьников/семей, уже уведомлённых, ожидающих и школьников без Family
+  account. Отправка требует отдельного confirm; состояния `ready|late-family|
+  already-sent|no-recipients|loading|error` не маскируют отсутствие адресатов.
+  Family видит одно событие «Итоги занятия», но не отдельные per-problem review
+  pushes. Реализация: [`FamilyDigestPanel`](../../apps/staff/src/family-digest-panel.tsx)
+  и [`FamilyNotificationSettingsView`](../../apps/family/src/family-notifications-page.tsx).
 - ClassroomDeliveryPreview: отдельный admin-only шаг после confirm, визуально не смешанный с planner save. Показывает plan version, Student recipient count, число изменившихся после прошлого batch, Telegram-unreachable rows и channel checkboxes `PWA`/`Telegram`. Primary action — «Разослать аудитории»; draft/stale/changed-after-preview блокируют отправку. Progress различает queued/sending/completed/partial failure/retry. После новой перестановки интерфейс показывает `не разослано`, но ничего не отправляет автоматически. Telegram означает личный bot-диалог Student, не group channel; token/chat ID не показываются.
 
 Questions/SOS получают отдельный от verdict queue product surface. Это приватный диалог по задаче или общий диалог занятия: teacher/admin видят входящие, student — только свои; закрепления за одним teacher и отдельного close/reopen статуса нет. Adapter сохраняет совместимость с legacy negative `problem_id` и Telegram handlers до отдельной backend-миграции.

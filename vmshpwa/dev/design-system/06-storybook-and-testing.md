@@ -49,6 +49,8 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - classroom density 6/5/2 и 15-room/~200-student × group colors/`очно–распределено` × compact flex wrap;
 - classroom draft clean/dirty/restored/conflict/saved × single/bulk/cross-group move;
 - classroom delivery confirmed/changed-since-send × PWA/Telegram selection × preview/sending/partial failure/completed/stale-preview; Family delivery отсутствует;
+- Family lesson digest ready/confirm/late-family/already-sent/no-recipient/
+  loading/error × Staff, плюс Family event/preference без per-problem review;
 - short/long Russian text, 200% zoom и narrow width.
 
 ## Interaction tests
@@ -76,6 +78,9 @@ Theme decorator меняет реальный `.dark`, background и color schem
 - classroom fuzzy search с `ё/е`, переставленными словами и опечаткой; jump/focus найденной строки; history disclosure;
 - classroom local draft восстанавливается после remount/reload simulation, очищается после receipt и сохраняется при version conflict;
 - classroom confirm не отправляет уведомление; delivery preview инвалидируется при смене plan version, явный send создаёт только Student recipients, а повторная перестановка не запускает resend;
+- Family digest interaction требует explicit admin confirmation, после receipt
+  убирает send action, не считает zero recipients успешной рассылкой и
+  показывает поздно связанный аккаунт как единственного нового получателя;
 - archive assigned room → Student/Family reassigning, затем новая confirmed room; Family notification control отсутствует;
 - update prompt preserving draft.
 
@@ -108,6 +113,11 @@ Classroom visual set фиксирует catalog active/hidden/duplicate, inherit
 ## Реализованный Phase 6 corpus
 
 - Page stories: [`Pages/Student`](../../apps/student/src/pages.stories.tsx), [`Pages/Family`](../../apps/family/src/pages.stories.tsx), [`Pages/Staff`](../../apps/staff/src/pages.stories.tsx). Они покрывают основные ready flows, loading/empty/error/offline, login/reveal, validation, read-only Family, course achievements без ranking, Staff verdict и classroom tab interaction. Точный Family proof — `Pages/Family--course-achievements`; он использует production-компонент, скрывает неизвестный rule code и проходит addon-a11y в режиме error.
+- Family digest proof: `Product/Staff admin/Family digest--Ready to send|Late
+  family pending|Already sent|No recipients|Loading|Error`,
+  `Pages/Staff/Content publication--Explicit Family digest after review` и
+  `Pages/Family/Notifications--Ready`. Production-build flow находится в
+  [`news-notifications.spec.ts`](../../e2e/news-notifications.spec.ts).
 - Component corpus: [`packages/product/src`](../../packages/product/src) и [`packages/ui/src`](../../packages/ui/src). Classroom stories `Plan local draft restored` и `Plan dense two hundred students` являются точными proof для reload и 15-room/200-row требований.
 - Глобальные light/dark, density и reduced-motion controls, MSW strict handling и `a11y: error`: [`.storybook/preview.tsx`](../../.storybook/preview.tsx). Story discovery: [`.storybook/main.ts`](../../.storybook/main.ts).
 - 26 июля browser-mode gate после compact internal-reaction и bounded publication-scheduler increments: **24 files / 121 stories passed**, включая addon-a11y error mode. Ручной осмотр выполнен на agent Storybook `6106` для `Pages/Student--Today`, `Pages/Staff--Review workspace`, `Pages/Staff--Classrooms`, `Product/Review--Feedback guard`, `Product/Review--Feedback reaction shortcuts` и `Product/Staff admin--Publication scheduling`; он обнаружил и закрыл ошибку horizontal Tabs в [`tabs.tsx`](../../packages/ui/src/components/tabs.tsx), подтвердил 24px compact reactions и отсутствие overlap у scheduler на desktop/narrow Staff viewport.

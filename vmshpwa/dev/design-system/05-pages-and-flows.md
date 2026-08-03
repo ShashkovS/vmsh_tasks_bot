@@ -48,7 +48,13 @@ Online/очный режим ребёнка и назначенная аудит
 
 ### Новости и профиль
 
-Общие публикации для нескольких детей дедуплицируются; адресные элементы подписываются ребёнком/группой. По умолчанию Family получает один недельный итог после окончания всех проверок, а не отдельные review pushes. В первой версии есть push preferences, device sessions и privacy explanation; email UI отложен.
+Общие публикации для нескольких детей дедуплицируются; адресные элементы
+подписываются ребёнком/группой. Family получает один итог конкретного занятия
+только после явного admin-действия, а не отдельные review pushes и не по
+автоматическому признаку пустой очереди. Поздно связанный Family account можно
+уведомить без дубля прежним получателям. В первой версии есть push preferences,
+device sessions и privacy explanation; email UI отложен. Реализация:
+[`family-notifications-page.tsx`](../../apps/family/src/family-notifications-page.tsx).
 
 ## Staff SPA
 
@@ -73,6 +79,12 @@ Staff показывает готовый advisory сразу, но никогд
 ### Content administration
 
 Course/group catalog, lesson list/detail, upload по group lesson, positional problem reconciliation, source diagnostics, missing-assets matching, web/Telegram/PDF derivative previews и отдельная scheduled publication/hide для условия, подсказки и решения каждой группы. LaTeX в браузере не редактируется. Metadata grid с TSV и dropdown-ячейками task type/answer type. Problem settings включают answer type, synonym candidate/merge/split impact и trusted `cor_ans_checker` diff/optional examples/audit; неготовый checker оставляет ответы pending до recheck.
+
+На странице конкретного группового занятия global admin видит отдельный блок
+«Итоги для семей» после content/review context. Он проверяет получателей,
+подтверждает рассылку вручную и после receipt видит идемпотентное состояние;
+teacher блока не получает. Реализация: [`StaffContentWorkspace`](../../apps/staff/src/content-page.tsx)
+и [`FamilyDigestPanel`](../../apps/staff/src/family-digest-panel.tsx).
 
 ### Operations
 

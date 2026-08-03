@@ -595,6 +595,21 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 - Snapshots не обновлялись; ручное visual acceptance владельцем остаётся
   открытым.
 
+## Development Phase 8 — explicit Family lesson digest · 3 августа 2026
+
+- `Product/Staff admin/Family digest--Ready to send|Late family pending|Already
+  sent|No recipients|Loading|Error` документирует ручной preview/confirm и
+  честные состояния получателей.
+- `Pages/Staff/Content publication--Explicit Family digest after review`
+  связывает действие с конкретным групповым занятием; Family
+  `Pages/Family/Notifications--Ready` показывает итог и шестую push-категорию.
+- TypeScript, ESLint и production Staff/Family builds — PASS. Storybook
+  browser-mode и ручной visual review не стартовали из-за внешнего macOS
+  launcher/browser availability failure; interaction/a11y не объявлены
+  пройденными, snapshots не обновлялись.
+- Functional proof:
+  [`phase8-family-digest-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-digest-2026-08-03.md).
+
 ## Development Phase 8 — published local-news correction · 3 августа 2026
 
 - `Product/News moderation--Published local correction` показывает revision,

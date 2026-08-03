@@ -114,6 +114,12 @@ Categories at minimum: `lesson_published`, `hint_published`, `solution_published
       Owner-run inventory настоящей Telegram UI queue остаётся deployment gate
       непосредственно перед передачей destination Staff scheduler.
 - [ ] Docs/delivery runbook/known limitations/acceptance: `<paths/issues/name/date>`.
+- [x] Явная per-group Family lesson digest: admin preview/confirm, дедупликация
+      по Family account + group lesson, late-link delivery, Family event/read,
+      Student isolation, owner invalidation, API/integration/contracts/UI и
+      production-build Playwright scenario. Browser execution и visual gate
+      остаются открыты из-за launcher failure:
+      [`phase8-family-digest-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-digest-2026-08-03.md).
 
 ## Многокурсовый инкремент Phase 8
 
@@ -228,8 +234,9 @@ Chromium `MachPortRendezvous`; snapshots не обновлялись и visual a
 Route `/family/profile/notifications` больше не показывает prototype/no-op
 кнопку. Он читает и изменяет account-scoped preferences через реальный aiohttp,
 управляет browser/server push subscription и показывает loading/error/denied/
-unsupported states. Family видит только пять работающих категорий общих
-материалов и новостей; per-review, oral и classroom push не предлагаются.
+unsupported states. Family видит шесть работающих категорий общих материалов,
+новостей и явного итога занятия; per-problem review, oral и classroom push не
+предлагаются.
 Course override остаётся Student-only.
 
 Browser subscription handshake переиспользуется Student и Family через
@@ -237,10 +244,20 @@ Browser subscription handshake переиспользуется Student и Famil
 `pages-family-notifications--ready`, `--loading`, `--error`, `--push-denied`,
 `pages-family--notifications`, `product-connectivity--push-device-states`.
 Production E2E меняет preference, подтверждает reload и восстанавливает fixture
-в Chromium, Firefox и WebKit. Недельный Family digest остаётся отдельным
-инкрементом: admin явно отправляет его независимо по каждой группе; последующие
-исправления просто обновляют Family API и сами не создают второй digest. Proof:
+в Chromium, Firefox и WebKit. Proof:
 [`phase8-family-notification-settings-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-notification-settings-2026-08-03.md).
+
+## Инкремент явной Family lesson digest — 3 августа 2026
+
+Admin отдельно preview-ит и подтверждает один итог конкретной группы и занятия.
+Уже уведомлённые Family accounts не получают дубль, а поздно связанный аккаунт
+получает первое событие. Последующие исправления обновляют Family API без
+автоматической повторной рассылки; отсутствие review queue не запускает
+действие. Staff и Family UI, strict contracts/client, owner-scoped invalidation,
+API/integration proof и production-build Playwright scenario реализованы.
+Browser execution и visual acceptance остаются открыты из-за внешнего macOS
+launcher failure. Proof:
+[`phase8-family-digest-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-digest-2026-08-03.md).
 
 ## Инкремент уведомления об устном окне — 3 августа 2026
 
