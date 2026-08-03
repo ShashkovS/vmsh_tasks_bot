@@ -203,6 +203,26 @@ notification event не создаётся. Текущий `409` — извес�
 а не открытая продуктовая развилка. Proof текущего scheduled-only состояния:
 [`phase8-local-news-editing-2026-08-03.md`](../../../pwa_tests/reports/phase8-local-news-editing-2026-08-03.md).
 
+## Инкремент исправления опубликованной local news — 3 августа 2026
+
+Global admin может исправить plain text уже видимой локальной PWA-новости.
+Каждое содержательное исправление создаёт immutable revision и новое
+`editedAt`; Student/Family feed и Staff moderation показывают исправленный
+текст и отметку «Обновлено». Исходные owner и `published_at` неизменны.
+
+API принимает для опубликованной записи только `{schemaVersion, text}`.
+Переданный `publishedAt` отклоняется; notification events и delivery outbox
+остаются теми же сохранёнными строками, поэтому повторной рассылки нет.
+Optimistic `If-Match`, privacy-safe audit и transaction rollback сохранены.
+
+Story IDs: `pages-staff-local-news-composer--editing-published` и
+`product-news-moderation--published-local-correction`. Production E2E-сценарий
+проверяет заблокированное время и фактическое PATCH-тело без `publishedAt`.
+Автоматический browser-run на текущем macOS host не стартовал из-за внешнего
+Chromium `MachPortRendezvous`; snapshots не обновлялись и visual acceptance не
+заявляется. Proof:
+[`phase8-published-local-news-correction-2026-08-03.md`](../../../pwa_tests/reports/phase8-published-local-news-correction-2026-08-03.md).
+
 ## Инкремент настоящих Family notification settings — 3 августа 2026
 
 Route `/family/profile/notifications` больше не показывает prototype/no-op

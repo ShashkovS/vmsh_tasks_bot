@@ -13,8 +13,9 @@
 - Заголовок post, visibility version, revision, privacy-safe audit и перенос
   `notification_events.deliver_after` входят в одну SQLite-транзакцию.
 - Скрытие будущей публикации удаляет ещё не доставленные события; восстановление
-  создаёт Student/Family events снова. Уже опубликованная запись отвечает
-  `409 local_news_already_published`, пока не решён вопрос 7.
+  создаёт Student/Family events снова. Этот checkpoint исторически проверял
+  только будущую запись; последующее исправление опубликованной новости
+  доказано отдельно.
 - Staff edit draft хранится по runtime/account/post/version и очищается только
   после подтверждённого ответа сервера.
 
@@ -42,5 +43,6 @@
 - ESLint, Stylelint, strict TypeScript и production build трёх приложений:
   **PASS**.
 
-Visual snapshots не обновлялись. Ручное визуальное принятие владельцем и
-правило исправления уже опубликованной новости остаются открытыми.
+Visual snapshots не обновлялись. Ручное визуальное принятие владельцем остаётся
+открытым. Follow-up реализации и тестов опубликованной новости:
+[`phase8-published-local-news-correction-2026-08-03.md`](phase8-published-local-news-correction-2026-08-03.md).

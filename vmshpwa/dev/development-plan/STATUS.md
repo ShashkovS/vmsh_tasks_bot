@@ -1330,9 +1330,9 @@
   меняется. Immutable revision, optimistic version, notification reschedule и
   privacy-safe audit фиксируются атомарно.
 - Скрытие будущей новости отменяет её ещё не наступившие события, восстановление
-  создаёт их снова. Уже опубликованная новость пока отвечает `409`; owner уже
-  решил разрешить text edit с `updatedAt` и без repeat notification, поэтому
-  это implementation gap.
+  создаёт их снова. На момент этого исторического checkpoint опубликованная
+  новость отвечала `409`; последующий checkpoint исправления закрывает разрыв
+  text edit с `updatedAt` и без repeat notification.
 - Staff edit draft переживает reload и ошибку, изолирован по runtime, account,
   post и version и очищается только после server receipt.
 - Story IDs: `pages-staff-local-news-composer--editing-scheduled`,
@@ -1480,6 +1480,25 @@
   [`phase8-oral-window-notifications-2026-08-03.md`](../../../pwa_tests/reports/phase8-oral-window-notifications-2026-08-03.md).
 - `deadline` producer ждёт ответа на вопрос 2; physical push и owner visual
   acceptance остаются внешними gates.
+
+## Phase 8 checkpoint: исправление опубликованной local news — 3 августа 2026
+
+- Global admin исправляет только текст уже видимой local PWA news; owner и
+  исходное время не меняются. Immutable revision, optimistic version и
+  privacy-safe audit сохранены.
+- Student/Family feed показывает новую revision и `editedAt`; Staff показывает
+  «обновлено» и не даёт изменить время. Существующие notification event/delivery
+  rows остаются неизменными, повторной рассылки нет.
+- Story IDs: `pages-staff-local-news-composer--editing-published` и
+  `product-news-moderation--published-local-correction`; production E2E-сценарий
+  добавлен в `news-notifications.spec.ts`.
+- Focused Python **12 PASS**, frontend unit **114 файлов / 594 PASS**,
+  lint/typecheck/production build — PASS. Свежие Storybook/E2E browser gates не
+  объявлены зелёными: Chromium launcher падает на macOS `MachPortRendezvous`, а
+  E2E seed временно видит незавершённый parallel migration-0076 digest.
+- Proof:
+  [`phase8-published-local-news-correction-2026-08-03.md`](../../../pwa_tests/reports/phase8-published-local-news-correction-2026-08-03.md).
+  Snapshots не обновлялись; owner visual acceptance открыт.
 
 ## Phase 11 checkpoint: public post-deploy HTTP smoke — 3 августа 2026
 

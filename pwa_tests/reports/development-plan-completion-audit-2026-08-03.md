@@ -225,15 +225,16 @@ macOS `MachPortRendezvous`/`SIGABRT`; он не отменяет предыду�
 
 ## Phase 8 — news, realtime и notifications
 
-**Состояние: основной news/notification v1 почти закрыт; published-news edit,
-Family digest implementation, physical push и owner visual gates открыты.**
+**Состояние: основной news/notification v1 почти закрыт; Family digest
+implementation, physical push и owner visual gates открыты.**
 
 Доказаны Telegram channel ingest/edit/albums/media copy, explicit deletion
 reconciliation, Student/Family feed и offline cache, moderation, verified
 course/group bindings, scheduled local PWA news, edit/reschedule до публикации,
 due-time foreground invalidation, group banners, notification core,
 course-scoped preferences, batching, Web Push subscription/delivery, quiet
-sound policy и delivery observability. Запланированные вручную Telegram posts
+sound policy, delivery observability и text-only исправление опубликованной
+local news без повторного notification. Запланированные вручную Telegram posts
 имеют отдельный offline cutover inventory.
 
 Ключевые доказательства:
@@ -245,6 +246,7 @@ sound policy и delivery observability. Запланированные вруч�
 - [`phase8-news-notifications-e2e.md`](phase8-news-notifications-e2e.md);
 - [`phase8-local-scheduled-news.md`](phase8-local-scheduled-news.md);
 - [`phase8-local-news-editing-2026-08-03.md`](phase8-local-news-editing-2026-08-03.md);
+- [`phase8-published-local-news-correction-2026-08-03.md`](phase8-published-local-news-correction-2026-08-03.md);
 - [`phase8-news-source-deletion-reconciliation.md`](phase8-news-source-deletion-reconciliation.md);
 - [`phase8-telegram-scheduled-queue-reconciliation.md`](phase8-telegram-scheduled-queue-reconciliation.md).
 
@@ -252,8 +254,6 @@ sound policy и delivery observability. Запланированные вруч�
 
 - weekly Family digest: явная admin-отправка отдельно по группе; исправления не
   создают второй digest — требуется implementation/proof;
-- опубликованная local news редактируется без повторного notification и
-  показывает `updatedAt` — требуется implementation/proof;
 - live Web Push на установленном iOS/Android устройстве;
 - owner execution реального Telegram scheduled-queue inventory;
 - owner visual acceptance delivery/moderation/settings states;
@@ -381,8 +381,8 @@ security/cache headers, manifests, icons и service workers.
 
 ## Следующий порядок независимой разработки
 
-1. Реализовать published-news edit и per-group explicit Family digest
-   отдельными простыми вертикальными срезами.
+1. Реализовать per-group explicit Family digest отдельным простым вертикальным
+   срезом.
 2. Определить deadline semantics по вопросу 2 и реализовать producer отдельно.
 3. Подготовить исполняемые production runbooks/checklists Phase 11, оставляя
    реальные server/device результаты незакрытыми до их фактического запуска.

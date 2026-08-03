@@ -28,8 +28,8 @@ Staff может создать новость, которая относитс�
   восстановление создаёт их снова идемпотентно.
 - Опубликованную local PWA news admin может исправить. Правка создаёт новую
   immutable revision и обновляет `updatedAt`, который feed показывает как
-  «Обновлено …», но не создаёт повторного notification event. Текущий backend
-  ещё отвечает `409`; это известный MVP implementation gap, не вопрос продукта.
+  «Обновлено …», но не создаёт повторного notification event. Исходные
+  `published_at`, owner и порядок ленты при этом неизменны.
 
 ## Интерфейсы
 
@@ -37,7 +37,9 @@ Staff может создать новость, которая относитс�
   `{schemaVersion, ownerType, ownerId, text, publishedAt}`.
 - `PATCH /staff/api/v1/news/{postId}/local` — только global admin. Для будущей
   публикации принимает `{schemaVersion, text, publishedAt}`, для уже видимой —
-  только текст; обязательный `If-Match: "{postId}:v{version}"`.
+  `{schemaVersion, text}`; обязательный `If-Match: "{postId}:v{version}"`.
+  Если уже видимая публикация пришла с `publishedAt`, API отвечает
+  `409 local_news_publication_time_locked` и ничего не меняет.
 - Student/Family `GET /{audience}/api/v1/news` и detail endpoint фильтруют
   будущие публикации по серверному времени.
 - `GET /{audience}/api/v1/notification-events` не возвращает событие раньше
@@ -69,10 +71,14 @@ Staff может создать новость, которая относитс�
 - Storybook:
   `pages-staff-local-news-composer--scheduled` и
   `pages-staff-local-news-composer--editing-scheduled`,
-  `product-news-moderation--scheduled-local`.
+  `pages-staff-local-news-composer--editing-published`,
+  `product-news-moderation--scheduled-local` и
+  `product-news-moderation--published-local-correction`.
 - Сводный результат записан в
   [`pwa_tests/reports/phase8-local-scheduled-news.md`](../../pwa_tests/reports/phase8-local-scheduled-news.md).
 - Due-time realtime proof:
   [`pwa_tests/reports/phase8-local-news-due-invalidation.md`](../../pwa_tests/reports/phase8-local-news-due-invalidation.md).
 - Edit/reschedule proof:
   [`pwa_tests/reports/phase8-local-news-editing-2026-08-03.md`](../../pwa_tests/reports/phase8-local-news-editing-2026-08-03.md).
+- Published correction proof:
+  [`pwa_tests/reports/phase8-published-local-news-correction-2026-08-03.md`](../../pwa_tests/reports/phase8-published-local-news-correction-2026-08-03.md).

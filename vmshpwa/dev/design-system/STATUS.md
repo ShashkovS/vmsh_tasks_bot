@@ -573,7 +573,8 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 ## Development Phase 8 — scheduled local-news editing · 3 августа 2026
 
 - `Product/News moderation--Scheduled local` показывает edit action только для
-  будущей local publication; Telegram и уже опубликованные строки его не имеют.
+  будущей local publication; Telegram-строки его не имеют, а опубликованная
+  local news покрыта отдельным последующим checkpoint.
 - `Pages/Staff/Local news composer--Editing scheduled` фиксирует неизменяемого
   получателя, редактируемые текст/время и отдельную подпись сохранения.
 - Interaction/a11y входят в полный Storybook gate **245/245 PASS**; production
@@ -593,3 +594,15 @@ Token core + brand + полировка готовы и зелёные (Storyboo
   PASS**, production E2E **12/12 PASS** в трёх браузерах без retry.
 - Snapshots не обновлялись; ручное visual acceptance владельцем остаётся
   открытым.
+
+## Development Phase 8 — published local-news correction · 3 августа 2026
+
+- `Product/News moderation--Published local correction` показывает revision,
+  отметку «обновлено» и явное действие исправления только для local source.
+- `Pages/Staff/Local news composer--Editing published` фиксирует неизменяемые
+  owner/время и редактируемый plain text. Повторное уведомление явно исключено
+  в тексте диалога.
+- Focused Storybook browser-mode не стартовал из-за внешнего macOS Chromium
+  `MachPortRendezvous` code 141; interaction/a11y не объявлены пройденными.
+- Unit **594 PASS**, lint, strict TypeScript и production build — PASS.
+  Snapshots не обновлялись; owner visual acceptance остаётся открытым.
