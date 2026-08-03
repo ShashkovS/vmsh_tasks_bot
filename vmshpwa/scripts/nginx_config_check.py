@@ -42,13 +42,16 @@ def _validate_rendered_site(source: str, public_host: str) -> str | None:
     if f"connect-src 'self' wss://{public_host}" not in uncommented:
         return "site config CSP WebSocket origin does not match the exact public host"
     worker_boundary = (
-        "map $uri $vmshpwa_service_worker_cache_control",
+        "map $uri $vmshpwa_release_cache_control",
         '/student/sw.js "no-store";',
         '/family/sw.js "no-store";',
+        '/student/index.html "no-cache";',
+        '/family/index.html "no-cache";',
+        '/staff/index.html "no-cache";',
         "map $uri $vmshpwa_service_worker_scope",
         '/student/sw.js "/student/";',
         '/family/sw.js "/family/";',
-        "add_header Cache-Control $vmshpwa_service_worker_cache_control always;",
+        "add_header Cache-Control $vmshpwa_release_cache_control always;",
         "add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;",
     )
     if any(required not in uncommented for required in worker_boundary):

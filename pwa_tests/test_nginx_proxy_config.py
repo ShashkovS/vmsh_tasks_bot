@@ -34,10 +34,13 @@ def _location(source: str, selector: str) -> str:
 
 def _rendered_site(public_host: str = "pwa.example.org") -> str:
     return f"""
-map $uri $vmshpwa_service_worker_cache_control {{
+map $uri $vmshpwa_release_cache_control {{
     default "";
     /student/sw.js "no-store";
     /family/sw.js "no-store";
+    /student/index.html "no-cache";
+    /family/index.html "no-cache";
+    /staff/index.html "no-cache";
 }}
 map $uri $vmshpwa_service_worker_scope {{
     default "";
@@ -48,7 +51,7 @@ server {{ server_name {public_host}; return 308 https://{public_host}$request_ur
 server {{
     server_name {public_host};
     add_header Content-Security-Policy "default-src 'none'; connect-src 'self' wss://{public_host}";
-    add_header Cache-Control $vmshpwa_service_worker_cache_control always;
+    add_header Cache-Control $vmshpwa_release_cache_control always;
     add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;
 }}
 """
@@ -156,10 +159,10 @@ def test_csp_and_security_headers_are_strict_with_explicit_render_markers():
     assert "Strict-Transport-Security" in source
 
 
-def test_service_workers_are_never_cached_without_losing_server_headers():
+def test_release_entrypoints_revalidate_without_losing_server_headers():
     source = TEMPLATE.read_text(encoding="utf-8")
 
-    assert source.count("map $uri $vmshpwa_service_worker_cache_control {") == 1
+    assert source.count("map $uri $vmshpwa_release_cache_control {") == 1
     assert source.count("map $uri $vmshpwa_service_worker_scope {") == 1
     for audience in ("student", "family"):
         assert f'/{audience}/sw.js "no-store";' in source
@@ -168,10 +171,9 @@ def test_service_workers_are_never_cached_without_losing_server_headers():
         # location would suppress the inherited CSP/HSTS set on common nginx.
         static = _location(source, f"^~ /{audience}/")
         assert "add_header" not in static
-    assert (
-        "add_header Cache-Control $vmshpwa_service_worker_cache_control always;"
-        in source
-    )
+    for audience in ("student", "family", "staff"):
+        assert f'/{audience}/index.html "no-cache";' in source
+    assert "add_header Cache-Control $vmshpwa_release_cache_control always;" in source
     assert (
         "add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;"
         in source

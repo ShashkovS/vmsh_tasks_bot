@@ -14,7 +14,8 @@ Production nginx обслуживает `student/sw.js` и `family/sw.js` по �
 
 В `http` scope добавлены две точные URI map:
 
-- cache value `no-store` только для двух service-worker URL;
+- release cache value: `no-store` для двух service-worker URL и `no-cache`
+  для трёх стабильных `index.html`;
 - `Service-Worker-Allowed` только с соответствующим `/student/` или `/family/`
   scope.
 
@@ -22,15 +23,18 @@ Production nginx обслуживает `student/sw.js` и `family/sw.js` по �
 HSTS и остальные security headers. Они не перенесены в дочерние static
 locations: стандартная nginx-модель наследует родительские `add_header` только
 если child level не объявляет собственных. Пустое map value для остальных URI
-не добавляет второй Cache-Control к API response.
+не добавляет второй Cache-Control к API response. HTML policy добавлена при
+следующем public HTTP smoke-инкременте: она закрывает уже записанное Phase 11
+требование revalidate shell после atomic release switch и не меняет
+content-hashed assets.
 
 Новая cache library, revision endpoint и runtime state не добавлялись. Workbox
 update flow и stable worker URLs остаются прежними.
 
 ## Доказательства
 
-- structural test требует обе точные URI, `no-store`, audience scope и
-  server-level placement;
+- structural test требует точные worker/index URI, соответствующие
+  `no-store`/`no-cache`, audience scope и server-level placement;
 - тот же тест запрещает `add_header` внутри Student/Family static locations;
 - существующие template tests продолжают проверять exact host, API/WS/history
   boundaries, CSP, HSTS, login rate limit и proxy-header replacement;

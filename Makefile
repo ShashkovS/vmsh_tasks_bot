@@ -347,6 +347,11 @@ pwa-visual-update:
 telegram-history-test:
 	$(PWA_UV_ENV) VMSH_RUNTIME_PROFILE=telegram-history-test uv run pytest -q -n0 tests/test_telegram_test_submission_policy.py tests/test_handler_flows.py tests/test_admin_weekly_ops.py
 
-.PHONY: pwa-nginx-check
+.PHONY: pwa-nginx-check pwa-production-http-smoke
 pwa-nginx-check:
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.nginx_config_check --config "$${VMSH_PWA_NGINX_CONFIG:-/etc/nginx/nginx.conf}" --site-config "$${VMSH_PWA_NGINX_SITE_CONFIG:-/etc/nginx/conf.d/vmshpwa.conf}" --public-host "$${VMSH_PWA_PUBLIC_HOST:-}"
+
+pwa-production-http-smoke:
+	@test -n "$(PWA_PRODUCTION_ORIGIN)" || (echo "Set PWA_PRODUCTION_ORIGIN to the exact public HTTPS origin"; exit 2)
+	@test -n "$(PWA_PRODUCTION_INSTANCE)" || (echo "Set PWA_PRODUCTION_INSTANCE to the expected runtime instance"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.production_http_smoke --origin "$(PWA_PRODUCTION_ORIGIN)" --expected-instance "$(PWA_PRODUCTION_INSTANCE)"

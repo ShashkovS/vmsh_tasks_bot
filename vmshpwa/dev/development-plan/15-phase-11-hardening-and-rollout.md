@@ -121,3 +121,18 @@ stdout и committed proof содержат агрегаты. Delete отсутс
 Software path и agent-profile smoke доказаны в
 [`phase11-media-inventory-2026-08-03.md`](../../../pwa_tests/reports/phase11-media-inventory-2026-08-03.md).
 Production service-account inventory Hetzner остаётся rollout gate.
+
+## Инкремент public HTTP smoke — 3 августа 2026
+
+После atomic release switch оператор запускает credential-free read-only
+команду `make pwa-production-http-smoke` с двумя явными значениями: точный
+HTTPS FQDN и ожидаемый runtime instance. Команда проверяет health/runtime всех
+audience, отсутствие prototype/Google, готовность NATS, API-vs-SPA routing,
+security headers, `no-cache` HTML shells, Student/Family manifests/icons и
+`no-store` service workers. Redirect, HTTP/IP target и ответ больше 4 MiB
+считаются ошибкой; retry намеренно отсутствует.
+
+Software contract и local aiohttp tests зафиксированы в
+[`phase11-production-http-smoke-2026-08-03.md`](../../../pwa_tests/reports/phase11-production-http-smoke-2026-08-03.md).
+Реальный запуск по owner-approved FQDN, authenticated WebSocket/login limit и
+physical-device install остаются отдельными production gates.
