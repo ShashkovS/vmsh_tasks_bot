@@ -1206,3 +1206,22 @@
   [`phase10-metadata-grid-drafts-2026-08-03.md`](../../../pwa_tests/reports/phase10-metadata-grid-drafts-2026-08-03.md).
 - Metadata draft gate закрыт. Визуальные snapshots не менялись; owner visual
   review и остальные незавершённые пункты Phase 10 остаются открыты.
+
+## Phase 10 checkpoint: полный Google loader inventory — 3 августа 2026
+
+- С реальным legacy-кодом сверены все шесть листов: `Задачи`, `Школьники`,
+  `Учителя`, `Группы`, `_BotUIMsgs`, `_BotSettings`; для каждого названы
+  колонки, SQLite side effects, Staff replacement, parity gap, recovery и
+  cutover boundary.
+- Отдельно зафиксирован operational риск: `/update_all` пишет домены
+  последовательно без общей транзакции и до первого частичного cutover требует
+  guard, чтобы не вернуть уже переключённый домен к Google-данным.
+- Focused structural regression: **2 PASS**. Он извлекает worksheet names из
+  настоящего loader и требует точного соответствия inventory и `/update_*`
+  команд.
+- Документ:
+  [`google-loader-inventory-and-cutover.md`](../../docs/google-loader-inventory-and-cutover.md),
+  proof:
+  [`phase10-google-loader-inventory-2026-08-03.md`](../../../pwa_tests/reports/phase10-google-loader-inventory-2026-08-03.md).
+- Matrix gate закрыт. Production cutover, дата owner acceptance и удаление
+  credentials не объявлены; незавершённые домены перечислены явно.

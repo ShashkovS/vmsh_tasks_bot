@@ -4,6 +4,13 @@ Google остаётся только в legacy Telegram startup/import paths. Н
 
 Основной legacy-источник еженедельной конфигурации — файл `_external_pipelines/ВМШ 2025-26, информация для бота ВМШ — prod.xlsx`. Software replacement листов «Задачи» и «Старые» уже реализован: Staff умеет course-scoped preview, apply, receipt и rollback, а затем даёт нативный metadata grid. Реальный файл на 1813 строк дал нулевой diff против изолированной копии SQLite. Доказательства собраны в [`phase10-problem-workbook-replacement.md`](../../pwa_tests/reports/phase10-problem-workbook-replacement.md).
 
+Полная инвентаризация шести листов, команд `/update_*`, SQLite side effects,
+состояния replacement и recovery boundaries находится в
+[`google-loader-inventory-and-cutover.md`](google-loader-inventory-and-cutover.md).
+Она отдельно показывает, что task-settings software gate не означает готовность
+отключить общие Google credentials: «Школьники», «Учителя», «Группы»,
+`_BotUIMsgs` и `_BotSettings` пока остаются полностью либо частично legacy.
+
 Операционный cutover этих листов ещё не объявлен: владелец должен провести через Staff один реальный недельный цикл, назвать дату переключения и сохранить legacy loader как ручной read-only fallback на период наблюдения. Surveys в первую версию не входят. Email workflows переносятся не раньше второй–третьей фазы.
 
 ## Этапы
@@ -20,3 +27,7 @@ Google остаётся только в legacy Telegram startup/import paths. Н
 ## Критерий отключения loader
 
 Есть Staff UI для всех операций домена, роли/validation/audit, массовый импорт, rollback, тесты на исторических fixtures, наблюдение полного недельного цикла и документированное восстановление. Экспорт не является обязательным для первой версии. До этого Google-код не должен проникать в новые PWA imports.
+
+Композиционная `/update_all` должна быть запрещена либо пропускать уже
+переключённые домены раньше первого частичного cutover. Иначе ручная legacy
+команда способна без preview вернуть перенесённый домен к данным Google.

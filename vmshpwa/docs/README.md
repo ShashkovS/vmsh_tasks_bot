@@ -15,6 +15,7 @@
 - [Сверка запланированных публикаций Telegram](telegram-scheduled-queue-cutover.md)
 - [Стратегия тестирования](testing-strategy.md)
 - [Отказ от Google](google-migration-roadmap.md)
+- [Инвентаризация Google loader и границы cutover](google-loader-inventory-and-cutover.md)
 - [Модель данных и миграционные границы](data-model-and-migrations.md)
 - [Курсы, независимые группы, занятия и синонимы задач](courses-groups-and-lessons.md)
 - [Принятые технические решения — обновлено 24 июля 2026](accepted-technical-decisions-2026-07.md)

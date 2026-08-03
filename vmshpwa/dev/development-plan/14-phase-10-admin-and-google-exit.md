@@ -157,7 +157,11 @@ import **новых школьников** остаётся отдельным �
 - [x] Revision/migrations for problem import: `0074.pwa_problem_import_receipts`;
   up/down/up, integrity и rollback подтверждены в
   [`phase10-problem-import-apply.md`](../../../pwa_tests/reports/phase10-problem-import-apply.md).
-- [ ] Google replacement matrix with every current loader: `<path>`.
+- [x] Google replacement matrix перечисляет все шесть листов, ручные команды,
+  SQLite side effects, состояние новой замены и rollback/cutover boundary:
+  [`google-loader-inventory-and-cutover.md`](../../docs/google-loader-inventory-and-cutover.md).
+  Структурный regression-test:
+  [`test_google_loader_inventory.py`](../../../pwa_tests/test_google_loader_inventory.py).
 - [x] Protected production-copy task-workbook parity:
   [`phase10-problem-import-parity.md`](../../../pwa_tests/reports/phase10-problem-import-parity.md)
   и [JSON](../../../pwa_tests/reports/phase10-problem-import-parity.json):
