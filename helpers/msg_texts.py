@@ -271,6 +271,10 @@ class Msgs:
 
     # handlers\admin_handlers.py
     a_all_data_updated = "Все данные обновлены"
+    a_all_data_update_disabled = (
+        "Полное обновление из Google отключено после частичного перехода на Staff. "
+        "Используйте только отдельную команду нужного раздела."
+    )
     a_teachers_updated = "Учителя обновлены"
     a_students_updated = "Студенты обновлены"
     a_problems_updated = "Задачи обновлены"

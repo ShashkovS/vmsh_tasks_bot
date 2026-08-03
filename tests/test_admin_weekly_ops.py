@@ -10,6 +10,7 @@ from handlers import admin_handlers, main_handlers
 from helpers.consts import CALLBACK, ONLINE_MODE, PROB_TYPE, RES_TYPE, STATE, VERDICT
 from helpers.msg_texts import msgs
 from models import Problem, State, User
+from models.spreadsheets import GoogleBulkUpdateDisabled
 
 from .telegram_harness import make_callback_query, make_message
 
@@ -256,3 +257,31 @@ async def test_update_groups_can_be_invoked_with_mocked_spreadsheet_backend(scen
     await admin_handlers.update_groups(make_message(teacher.chat_id, text="/update_groups", message_id=40))
 
     assert calls["registered"] == 1
+
+
+async def test_update_all_reports_partial_cutover_without_side_effects(scenario_env, monkeypatch):
+    data = scenario_env["data"]
+    bot = scenario_env["bot"]
+    teacher = data.bind_chat(data.get_teacher(), 65002)
+    calls = {"registered": 0}
+
+    def reject_bulk_update():
+        raise GoogleBulkUpdateDisabled
+
+    monkeypatch.setattr(
+        admin_handlers.FromGoogleSpreadsheet,
+        "update_all",
+        staticmethod(reject_bulk_update),
+    )
+    monkeypatch.setattr(
+        admin_handlers,
+        "register_group_switch_commands",
+        lambda: calls.__setitem__("registered", calls["registered"] + 1),
+    )
+
+    await admin_handlers.update_all_internal_data(
+        make_message(teacher.chat_id, text="/update_all", message_id=41)
+    )
+
+    assert calls["registered"] == 0
+    assert bot.sent_messages[-1].text == msgs.a_all_data_update_disabled

@@ -63,6 +63,7 @@ _KNOWN_EVENT_LABELS = frozenset(
         "admin.broadcast.completed",
         "admin.command.invoked",
         "admin.data.sync",
+        "admin.data.sync.blocked",
         "admin.sleep_state.set",
         "admin.state.mass_reset",
         "auth.failed",

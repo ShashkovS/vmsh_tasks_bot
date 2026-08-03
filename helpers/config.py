@@ -56,6 +56,10 @@ class Config:
     pwa_prototype: bool = False
     config_name: str = ""
     google_sheets_key: str = ""
+    # Turn this off at the first domain cutover.  Individual legacy import
+    # commands remain available as explicit recovery paths; the unsafe
+    # six-sheet composition does not.  See google-loader-inventory-and-cutover.md.
+    allow_google_update_all: bool = True
     google_cred_json: str = field(default="", repr=False)
     telegram_bot_token: str = field(default="", repr=False)
     webhook_host: str = ""

@@ -6,13 +6,18 @@ from pyexpat import features
 from typing import List
 
 from helpers.consts import *
-from helpers.config import logger
+from helpers.config import config, logger
 from helpers.features import SYNONYMS_MODE, FEATURES
 from helpers.loader_from_google_spreadsheets import google_spreadsheet_loader
 import db_methods as db
 from .state import State
 from .user import User
 from .problem import Problem
+
+
+class GoogleBulkUpdateDisabled(RuntimeError):
+    """Raised before the unsafe six-sheet import after a partial cutover."""
+
 
 class FromGoogleSpreadsheet:
     @staticmethod
@@ -27,6 +32,11 @@ class FromGoogleSpreadsheet:
 
     @staticmethod
     def update_all() -> List[str]:
+        # A partial Staff cutover makes this non-transactional composition
+        # destructive.  Keep recovery explicit through the individual
+        # update_* methods; see google-loader-inventory-and-cutover.md.
+        if not config.allow_google_update_all:
+            raise GoogleBulkUpdateDisabled
         groups, problems, students, teachers, ui_messages, bot_settings = google_spreadsheet_loader.get_all_from_spreadsheet()
         errors = []
         errors += FromGoogleSpreadsheet.groups_to_db(groups)

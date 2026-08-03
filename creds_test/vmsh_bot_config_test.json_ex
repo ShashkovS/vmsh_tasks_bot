@@ -5,6 +5,8 @@
   "telegram_bot_name": "foo_bot",
   "telegram_bot_token": "1111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
   "google_sheets_key": "1abababababababababababababababababababababa",
+  "allow_google_update_all_help": "После первого частичного перехода на Staff поставить false; отдельные /update_* останутся доступны для явного recovery.",
+  "allow_google_update_all": true,
   "webhook_host": "bot.domain.ru",
   "webhook_path": "mytgbot",
   "webhook_port": 443,

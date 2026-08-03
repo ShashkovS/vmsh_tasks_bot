@@ -162,6 +162,11 @@ import **новых школьников** остаётся отдельным �
   [`google-loader-inventory-and-cutover.md`](../../docs/google-loader-inventory-and-cutover.md).
   Структурный regression-test:
   [`test_google_loader_inventory.py`](../../../pwa_tests/test_google_loader_inventory.py).
+- [x] `/update_all` fail-closed после первого частичного cutover: один legacy
+  config boolean проверяется до Google read/SQLite write, handler не выполняет
+  побочные действия, а отдельные доменные recovery-команды остаются доступны.
+  Proof:
+  [`phase10-google-bulk-cutover-guard-2026-08-03.md`](../../../pwa_tests/reports/phase10-google-bulk-cutover-guard-2026-08-03.md).
 - [x] Protected production-copy task-workbook parity:
   [`phase10-problem-import-parity.md`](../../../pwa_tests/reports/phase10-problem-import-parity.md)
   и [JSON](../../../pwa_tests/reports/phase10-problem-import-parity.json):

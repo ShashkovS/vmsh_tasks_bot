@@ -218,15 +218,39 @@ key сначала нужны тип, допустимые значения, м�
 `/update_all` не является седьмым источником данных: это последовательная
 композиция шести loader выше. Её нельзя использовать после доменного cutover,
 потому что она без preview перезапишет уже перенесённый домен Google-данными.
-Перед первым production cutover task settings команда должна получить явный
-guard: либо отказ при cutover-state, либо выбор только ещё legacy-доменов.
+Команда теперь имеет простой fail-closed guard
+`allow_google_update_all` в legacy JSON config:
 
-До реализации guard разрешены только текущие условия:
+- до первого доменного cutover значение остаётся `true` и историческое
+  поведение не меняется;
+- при первом подтверждённом частичном cutover владелец deploy-конфига ставит
+  `false` и перезапускает Telegram contour;
+- `FromGoogleSpreadsheet.update_all()` проверяет guard **до** чтения Google и
+  любых записей SQLite;
+- Telegram `/update_all` сообщает об отказе и не перерегистрирует команды
+  групп;
+- отдельные `/update_problems`, `/update_students`, `/update_teachers`,
+  `/update_groups`, `/update_ui_messages` и `/update_bot_settings` остаются
+  явными recovery-командами до cutover соответствующего домена.
+
+Guard намеренно является одним boolean, а не новым registry/table: после
+первого частичного cutover любая композиция всех шести листов уже небезопасна.
+Он также запрещает автоматический empty-DB bootstrap через `update_all`; после
+cutover пустую production SQLite следует восстанавливать из backup, а не
+собирать частично из устаревшей Google-таблицы.
+
+Операционные условия guard:
 
 1. PWA не вызывает `/update_all` и не загружает Google.
-2. Операционный владелец не объявляет Staff единственным source of truth.
-3. Перед ручным recovery создаётся SQLite backup и записывается, какие именно
-   домены будут затронуты.
+2. До первого cutover `allow_google_update_all=true` означает только сохранение
+   legacy behavior, а не автоматический rollback.
+3. После первого cutover deployment не продолжается, пока в service config не
+   зафиксировано `allow_google_update_all=false`.
+4. Перед отдельным ручным recovery создаётся SQLite backup и записывается,
+   какой именно домен будет затронут.
+
+Исполняемое доказательство:
+[`phase10-google-bulk-cutover-guard-2026-08-03.md`](../../pwa_tests/reports/phase10-google-bulk-cutover-guard-2026-08-03.md).
 
 ## Удаление credentials
 

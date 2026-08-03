@@ -14,7 +14,7 @@ from helpers.consts import *
 from helpers.config import logger, config
 from helpers.msg_texts import msgs
 from models import User, Problem, State
-from models.spreadsheets import FromGoogleSpreadsheet
+from models.spreadsheets import FromGoogleSpreadsheet, GoogleBulkUpdateDisabled
 import db_methods as db
 from helpers.bot import bot, router
 from handlers import student_keyboards
@@ -47,7 +47,22 @@ async def update_all_internal_data(message: types.Message):
     teacher = User.get_by_chat_id(message.chat.id)
     if not teacher or teacher.type != USER_TYPE.TEACHER:
         return
-    errors = FromGoogleSpreadsheet.update_all()
+    try:
+        errors = FromGoogleSpreadsheet.update_all()
+    except GoogleBulkUpdateDisabled:
+        emit_trace(
+            "admin.data.sync.blocked",
+            user_id=teacher.id,
+            teacher_id=teacher.id,
+            chat_id=message.chat.id,
+            entity="all",
+            reason="partial_google_cutover",
+        )
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=msgs.a_all_data_update_disabled,
+        )
+        return
     emit_trace(
         "admin.data.sync",
         user_id=teacher.id,
