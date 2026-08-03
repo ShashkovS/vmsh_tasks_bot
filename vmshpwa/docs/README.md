@@ -18,6 +18,7 @@
 - [Курсы, независимые группы, занятия и синонимы задач](courses-groups-and-lessons.md)
 - [Принятые технические решения — обновлено 24 июля 2026](accepted-technical-decisions-2026-07.md)
 - [Принятые продуктовые UX-решения: проверка, вердикты, реакции и AI](product-ux-decisions-2026-07.md)
+- [Рабочий процесс проверки письменных решений](review-workflow.md)
 - [Production deployment](deployment.md)
 - [Фазовый план разработки и закрытый опросник](../dev/development-plan/README.md)
 
