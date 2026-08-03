@@ -723,7 +723,12 @@ export function StaffStudentDirectoryPage({
       width="wide"
     >
       <div className="space-y-4">
-        <UsersSectionTabs onChange={onSectionChange} section="students" showTeachers={isAdmin} />
+        <UsersSectionTabs
+          onChange={onSectionChange}
+          section="students"
+          showImports={isAdmin}
+          showTeachers={isAdmin}
+        />
         {!isAdmin ? (
           <Alert>
             <AlertContent>

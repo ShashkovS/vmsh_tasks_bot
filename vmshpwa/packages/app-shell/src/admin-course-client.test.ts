@@ -482,4 +482,63 @@ describe('admin course client', () => {
     )
     expect(fetchImplementation.mock.calls[1]?.[1]?.body).toBe('{"expectedVersion":1}')
   })
+
+  it('previews and applies write-only Student provisioning rows', async () => {
+    const preview = {
+      schemaVersion: 1 as const,
+      previewHash: 'a'.repeat(64),
+      counts: { total: 1, ready: 1, invalid: 0 },
+      rows: [
+        {
+          rowNumber: 1,
+          state: 'ready' as const,
+          resolvedLogin: 'ivanov',
+          loginAdjusted: false,
+          code: null,
+        },
+      ],
+      requestId: 'preview',
+    }
+    const receipt = {
+      schemaVersion: 1 as const,
+      counts: { total: 1, created: 1, skipped: 0 },
+      rows: [
+        {
+          rowNumber: 1,
+          state: 'created' as const,
+          login: 'ivanov',
+          userId: 'user.ivanov',
+          accountId: 'student-account.ivanov',
+        },
+      ],
+      requestId: 'apply',
+    }
+    const row = {
+      surname: 'Иванов',
+      name: 'Иван',
+      login: 'ivanov',
+      password: 'telegram-token',
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json(preview))
+      .mockResolvedValueOnce(Response.json(receipt))
+    const client = createAdminCourseClient(runtime, { fetchImplementation })
+
+    await client.previewStudentAccounts({ schemaVersion: 1, rows: [row] })
+    await client.applyStudentAccounts({
+      schemaVersion: 1,
+      rows: [row],
+      resolvedLogins: ['ivanov'],
+      previewHash: 'a'.repeat(64),
+    })
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe(
+      '/staff/api/v1/imports/student-accounts/preview',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[0]).toBe(
+      '/staff/api/v1/imports/student-accounts/apply',
+    )
+    expect(fetchImplementation.mock.calls[1]?.[1]?.body).toContain('"password":"telegram-token"')
+  })
 })

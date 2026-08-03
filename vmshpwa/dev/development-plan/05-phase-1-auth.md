@@ -354,6 +354,12 @@ rate-limit smoke и controlled production import также остаются о�
   Абсолютный `sessionExpiresAt` проверяется таймером и при возврате браузера;
   expiry размонтирует private UI даже в ранее подтверждённом offline-состоянии.
 - Forbidden route получает осмысленную страницу, но не раскрывает admin data.
+- Staff `/staff/users?tab=imports` реализует два независимых пакетных шага:
+  Student TSV preview/apply, затем Family TSV preview/apply. Черновик каждого
+  шага привязан к Staff account/runtime namespace и хранится в `localStorage`
+  до полного receipt; preview показывает только итоговые login и диагностику,
+  но не password, Telegram token или email. Course enrollment остаётся
+  отдельным пакетным действием.
 
 ## Tests
 
@@ -423,6 +429,11 @@ controlled import и visual approval, перечисленные ниже.
 - [ ] Telegram historical auth tests: `<result or N/A reason>`.
 - [ ] Docs/runbook updated: `<paths>`.
 - [ ] Known limitations/issues and acceptance: `<links/name/date>`.
+
+Account provisioning checkpoint: backend proof
+[`phase1-account-provisioning-batches-2026-08-03.md`](../../../pwa_tests/reports/phase1-account-provisioning-batches-2026-08-03.md),
+Staff UI proof
+[`phase1-account-provisioning-staff-ui-2026-08-03.md`](../../../pwa_tests/reports/phase1-account-provisioning-staff-ui-2026-08-03.md).
 
 ## Многокурсовый инкремент Phase 1
 

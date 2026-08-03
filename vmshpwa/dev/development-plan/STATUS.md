@@ -2,6 +2,20 @@
 
 Последнее обновление: 2026-07-28.
 
+## Phase 1 checkpoint: account provisioning UI — 3 August 2026
+
+- Admin-only Student and Family TSV preview/apply is connected to the real
+  provisioning API at `/staff/users?tab=imports`; course enrollment remains a
+  separate batch.
+- Account/runtime-scoped `localStorage` keeps unsent TSV through reload and is
+  cleared only after a complete creation receipt. Preview/receipt contracts do
+  not expose credentials or Family email addresses.
+- Proof: frontend unit **603 pass**, Storybook browser interaction/a11y **259
+  pass**, lint/typecheck/production build pass. Desktop and 390×844 were
+  inspected manually; snapshots were not updated.
+- Report:
+  [`phase1-account-provisioning-staff-ui-2026-08-03.md`](../../../pwa_tests/reports/phase1-account-provisioning-staff-ui-2026-08-03.md).
+
 ## Phase 10 checkpoint: searchable Staff audit — 2 August 2026
 
 - Added append-only migration `0075.pwa_staff_audit`; existing domain journals stay

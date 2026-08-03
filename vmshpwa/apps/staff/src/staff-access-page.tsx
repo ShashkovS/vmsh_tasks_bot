@@ -401,7 +401,7 @@ export function StaffAccessPage({
       width="wide"
     >
       <div className="space-y-4">
-        <UsersSectionTabs onChange={onSectionChange} section="teachers" showTeachers />
+        <UsersSectionTabs onChange={onSectionChange} section="teachers" showImports showTeachers />
         <Alert>
           <AlertContent>
             <AlertTitle>Возможности преподавателя фиксированы ролью</AlertTitle>

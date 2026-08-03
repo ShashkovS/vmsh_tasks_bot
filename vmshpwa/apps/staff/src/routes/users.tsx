@@ -3,9 +3,10 @@ import { z } from 'zod'
 
 import { StaffStudentDirectoryPage } from '../staff-student-directory-page'
 import { StaffAccessPage } from '../staff-access-page'
+import { StaffAccountProvisioningPage } from '../account-provisioning-page'
 
 const searchSchema = z.object({
-  tab: z.enum(['students', 'teachers']).optional().catch(undefined),
+  tab: z.enum(['students', 'teachers', 'imports']).optional().catch(undefined),
   q: z.string().trim().max(100).optional().catch(undefined),
   student: z.string().trim().min(1).optional(),
   course: z.string().trim().min(1).optional(),
@@ -20,13 +21,16 @@ function UsersRoute() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const section = search.tab ?? 'students'
-  const changeSection = (tab: 'students' | 'teachers') =>
+  const changeSection = (tab: 'students' | 'teachers' | 'imports') =>
     void navigate({
       replace: true,
       search: tab === 'students' ? {} : { tab },
     })
   if (section === 'teachers') {
     return <StaffAccessPage onSectionChange={changeSection} />
+  }
+  if (section === 'imports') {
+    return <StaffAccountProvisioningPage onSectionChange={changeSection} />
   }
   return (
     <StaffStudentDirectoryPage

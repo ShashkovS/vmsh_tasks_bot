@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 
 import {
   ApiResponseError,
+  accountProvisioningPreviewResponseSchema,
+  accountProvisioningReceiptSchema,
   adminCourseCatalogQueryKey,
   adminCourseCatalogResponseSchema,
   adminCourseScheduleDraftResponseSchema,
@@ -21,6 +23,8 @@ import {
   createStudentAccountRequestSchema,
   createFamilyAccountRequestSchema,
   familyAccountLinkResponseSchema,
+  familyProvisioningApplyRequestSchema,
+  familyProvisioningPreviewRequestSchema,
   linkFamilyAccountRequestSchema,
   managedAccountResponseSchema,
   parseRuntimeConfigForAudience,
@@ -35,6 +39,8 @@ import {
   staffAccessDirectoryResponseSchema,
   staffAccessMemberResponseSchema,
   staffAccessQueryKey,
+  studentProvisioningApplyRequestSchema,
+  studentProvisioningPreviewRequestSchema,
   updateAdminCourseRequestSchema,
   updateAdminStudentEnrollmentRequestSchema,
   updateManagedAccountStatusRequestSchema,
@@ -49,10 +55,14 @@ import {
   type AdminGroupResponse,
   type AdminStudentEnrollmentDirectoryResponse,
   type AdminStudentEnrollmentResponse,
+  type AccountProvisioningPreviewResponse,
+  type AccountProvisioningReceipt,
   type CreateAdminCourseRequest,
   type CreateStudentAccountRequest,
   type CreateFamilyAccountRequest,
   type FamilyAccountLinkResponse,
+  type FamilyProvisioningApplyRequest,
+  type FamilyProvisioningPreviewRequest,
   type LinkFamilyAccountRequest,
   type ManagedAccountResponse,
   type ManagedAccountStatus,
@@ -66,6 +76,8 @@ import {
   type SaveAdminCourseScheduleRule,
   type StaffAccessDirectoryResponse,
   type StaffAccessMemberResponse,
+  type StudentProvisioningApplyRequest,
+  type StudentProvisioningPreviewRequest,
   type UpdateAdminCourseRequest,
   type UpdateAdminStudentEnrollmentRequest,
   type UnlinkFamilyAccountResponse,
@@ -132,6 +144,14 @@ export interface AdminCourseClient {
     input: LinkFamilyAccountRequest,
   ): Promise<FamilyAccountLinkResponse>
   unlinkFamilyAccount(studentId: string, accountId: string): Promise<UnlinkFamilyAccountResponse>
+  previewStudentAccounts(
+    input: StudentProvisioningPreviewRequest,
+  ): Promise<AccountProvisioningPreviewResponse>
+  applyStudentAccounts(input: StudentProvisioningApplyRequest): Promise<AccountProvisioningReceipt>
+  previewFamilyAccounts(
+    input: FamilyProvisioningPreviewRequest,
+  ): Promise<AccountProvisioningPreviewResponse>
+  applyFamilyAccounts(input: FamilyProvisioningApplyRequest): Promise<AccountProvisioningReceipt>
   listStaffAccess(signal?: AbortSignal): Promise<StaffAccessDirectoryResponse>
   replaceStaffScopes(
     staffUserId: string,
@@ -368,6 +388,38 @@ export function createAdminCourseClient(
           `/students/${encodeURIComponent(studentId)}/family-links/${encodeURIComponent(accountId)}`,
           { method: 'DELETE' },
         ),
+      )
+    },
+    async previewStudentAccounts(input) {
+      return accountProvisioningPreviewResponseSchema.parse(
+        await request('/imports/student-accounts/preview', {
+          method: 'POST',
+          body: JSON.stringify(studentProvisioningPreviewRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async applyStudentAccounts(input) {
+      return accountProvisioningReceiptSchema.parse(
+        await request('/imports/student-accounts/apply', {
+          method: 'POST',
+          body: JSON.stringify(studentProvisioningApplyRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async previewFamilyAccounts(input) {
+      return accountProvisioningPreviewResponseSchema.parse(
+        await request('/imports/family-accounts/preview', {
+          method: 'POST',
+          body: JSON.stringify(familyProvisioningPreviewRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async applyFamilyAccounts(input) {
+      return accountProvisioningReceiptSchema.parse(
+        await request('/imports/family-accounts/apply', {
+          method: 'POST',
+          body: JSON.stringify(familyProvisioningApplyRequestSchema.parse(input)),
+        }),
       )
     },
     async listStaffAccess(signal) {
