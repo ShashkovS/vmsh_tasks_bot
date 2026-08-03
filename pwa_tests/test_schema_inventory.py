@@ -86,7 +86,7 @@ def test_inventory_is_deterministic_and_does_not_read_rows(tmp_path):
     assert sentinel not in rendered_json
     assert sentinel not in rendered_sql
     assert "insert into" not in rendered_sql.casefold()
-    assert second["product"]["object_count"] == 419
+    assert second["product"]["object_count"] == 422
     assert second["legacy_derived"]["object_count"] == 0
     assert all(
         not record["name"].startswith("sqlite_") and "yoyo" not in record["name"]
@@ -332,6 +332,9 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
                 # this intentionally inconsistent lag fixture omits auth tables,
                 # so it must also stay behind the Phase-6 rebuild.
                 "0051.pwa_review_queue_leases",
+                # This migration adds the owner-only provisioning column
+                # and therefore cannot be applied to the no-auth lag fixture.
+                "0076.pwa_account_provisioning_batches",
             }
         )
     )
@@ -352,6 +355,7 @@ def test_live_report_records_migration_lag_without_mutating_database(tmp_path):
         "0039.pwa_auth_accounts_sessions",
         "0040.pwa_courses_access",
         "0051.pwa_review_queue_leases",
+        "0076.pwa_account_provisioning_batches",
     ]
     assert {item["name"] for item in report["missing_product_objects"]} >= {
         "auth_accounts",

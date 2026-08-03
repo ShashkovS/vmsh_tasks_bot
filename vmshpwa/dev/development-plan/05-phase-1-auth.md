@@ -308,6 +308,25 @@ UI gate и permission/API matrix уже зелёные, но искусстве�
 rate-limit smoke и controlled production import также остаются отдельными
 незакрытыми gates.
 
+### Реализованный batch-инкремент — 3 августа 2026
+
+- `migrations/0076.pwa_account_provisioning_batches.sql` добавляет owner-only
+  provisioning plaintext и упорядоченные Family emails; rollback проверяется
+  циклом up/down/up;
+- `models/pwa/account_batches.py` содержит только нормализацию строк и выбор
+  просмотренного `-NN`, а `db_methods/pwa/account_batches.py` — короткие
+  механические SQLite-операции без продуктовых текстов и HTTP-состояний;
+- `apps/pwa_api/account_batch_routes.py` реализует отдельные admin-only
+  preview/apply для Student и Family. Preview не возвращает secret, apply
+  повторно проверяет просмотренный input и создаёт готовые строки одной
+  transaction;
+- Student batch создаёт legacy `users` и связанный web-account, Family batch —
+  web-account, emails и связи с уже созданными Student login. Course enrollment
+  сюда намеренно не включён: это отдельный batch с ещё открытым правилом выбора
+  active group.
+
+Пруф: [`phase1-account-provisioning-batches-2026-08-03.md`](../../../pwa_tests/reports/phase1-account-provisioning-batches-2026-08-03.md).
+
 ## Frontend
 
 - Реальные login routes уже существуют: `student/family/staff/src/routes/login.tsx`.

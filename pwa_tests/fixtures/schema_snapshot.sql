@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 04e0e7e63c19fa1e64692743f344bd04abc10fd6bfc6cafd2733a81b736a0a69
+-- Product schema SHA-256: 6a6fa4a37cbf99ac4c30f6fe1f63eed333c513bde935dcf35e0733d15bfb7486
 
 CREATE TABLE achievement_definitions
 (
@@ -94,7 +94,11 @@ CREATE TABLE auth_accounts
         check (credential_version > 0),
     last_login_at              text,
     created_at                 text    not null,
-    updated_at                 text    not null,
+    updated_at                 text    not null, provisioning_password_plaintext text
+    check (
+        provisioning_password_plaintext is null
+        or length(provisioning_password_plaintext) between 1 and 512
+    ),
     unique (audience, username_normalized),
     check (credential_hash is null or length(trim(credential_hash)) > 0),
     check (status <> 'active' or credential_hash is not null),
@@ -843,6 +847,17 @@ CREATE TABLE courses
     version      integer not null default 1
         check (version > 0),
     unique (season_id, code)
+);
+
+CREATE TABLE family_account_emails
+(
+    family_account_id integer not null references auth_accounts (id),
+    ordinal           integer not null check (ordinal >= 0),
+    email             text    not null check (length(trim(email)) between 3 and 320),
+    email_normalized  text    not null check (length(trim(email_normalized)) between 3 and 320),
+    created_at        text    not null,
+    primary key (family_account_id, ordinal),
+    unique (family_account_id, email_normalized)
 );
 
 CREATE TABLE family_student_links
@@ -2898,6 +2913,9 @@ CREATE UNIQUE INDEX course_schedule_rules_one_draft_uq
 CREATE INDEX courses_season_status_order_idx
     on courses (season_id, status, sort_order, id);
 
+CREATE INDEX family_account_emails_normalized_idx
+    on family_account_emails (email_normalized);
+
 CREATE INDEX family_student_links_student_revoked_idx
     on family_student_links (student_user_id, revoked_at);
 
@@ -3590,6 +3608,17 @@ when not (
 )
 begin
     select raise(abort, 'invalid course schedule rule state transition');
+end;
+
+CREATE TRIGGER family_account_emails_family_only_insert
+before insert on family_account_emails
+for each row
+when not exists (
+    select 1 from auth_accounts
+    where id = new.family_account_id and audience = 'family'
+)
+begin
+    select raise(abort, 'email owner must be a Family account');
 end;
 
 CREATE TRIGGER family_student_links_family_account_insert

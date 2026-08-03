@@ -229,6 +229,10 @@
       {
         "id": "0075.pwa_staff_audit",
         "sha256": "2c6c7bc5e7521dad607feb618d1fe9abb95394d8cfc4abe619b2de1fd26b4fd7"
+      },
+      {
+        "id": "0076.pwa_account_provisioning_batches",
+        "sha256": "474fff8058425951761bf6c8df10c1c75e55e978f6babe72474e724dc5e7aca6"
       }
     ],
     "repository_head_status": {
@@ -239,7 +243,7 @@
     }
   },
   "product": {
-    "object_count": 419,
+    "object_count": 422,
     "objects": [
       {
         "columns": [
@@ -985,6 +989,15 @@
             "name": "updated_at",
             "not_null": true,
             "primary_key_ordinal": 0
+          },
+          {
+            "cid": 16,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "provisioning_password_plaintext",
+            "not_null": false,
+            "primary_key_ordinal": 0
           }
         ],
         "foreign_keys": [
@@ -1124,8 +1137,8 @@
           }
         ],
         "name": "auth_accounts",
-        "object_sha256": "74bc63d689ec802927ca769327f23296a94d49b3fa7d5b14a66b7874d114bb33",
-        "sql": "CREATE TABLE auth_accounts\n(\n    id                         integer primary key,\n    public_id                  text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    audience                   text    not null\n        check (audience in ('student', 'family', 'staff')),\n    username                   text    not null\n        check (length(trim(username)) > 0),\n    username_normalized        text    not null\n        check (length(trim(username_normalized)) > 0),\n    username_algorithm_version integer\n        check (username_algorithm_version > 0),\n    provisioning_source        text    not null\n        check (length(trim(provisioning_source)) > 0),\n    display_name               text,\n    credential_kind            text    not null\n        check (credential_kind in ('telegram_token', 'password')),\n    credential_hash            text,\n    linked_user_id             integer references users (id),\n    status                     text    not null\n        check (status in ('active', 'blocked', 'disabled', 'archived')),\n    credential_version         integer not null default 1\n        check (credential_version > 0),\n    last_login_at              text,\n    created_at                 text    not null,\n    updated_at                 text    not null,\n    unique (audience, username_normalized),\n    check (credential_hash is null or length(trim(credential_hash)) > 0),\n    check (status <> 'active' or credential_hash is not null),\n    check (audience <> 'student' or username_algorithm_version is not null),\n    check (\n        (audience = 'student' and credential_kind = 'telegram_token' and linked_user_id is not null)\n        or (audience = 'family' and credential_kind = 'password' and linked_user_id is null)\n        or (audience = 'staff' and credential_kind = 'password' and linked_user_id is not null)\n    ),\n    check (\n        audience <> 'family'\n        or (display_name is not null and length(trim(display_name)) > 0)\n    )\n);",
+        "object_sha256": "3afc21996c00d4bdfc1456b37e8cf8504f8d4f50375780fa9999f46cf6737cd4",
+        "sql": "CREATE TABLE auth_accounts\n(\n    id                         integer primary key,\n    public_id                  text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    audience                   text    not null\n        check (audience in ('student', 'family', 'staff')),\n    username                   text    not null\n        check (length(trim(username)) > 0),\n    username_normalized        text    not null\n        check (length(trim(username_normalized)) > 0),\n    username_algorithm_version integer\n        check (username_algorithm_version > 0),\n    provisioning_source        text    not null\n        check (length(trim(provisioning_source)) > 0),\n    display_name               text,\n    credential_kind            text    not null\n        check (credential_kind in ('telegram_token', 'password')),\n    credential_hash            text,\n    linked_user_id             integer references users (id),\n    status                     text    not null\n        check (status in ('active', 'blocked', 'disabled', 'archived')),\n    credential_version         integer not null default 1\n        check (credential_version > 0),\n    last_login_at              text,\n    created_at                 text    not null,\n    updated_at                 text    not null, provisioning_password_plaintext text\n    check (\n        provisioning_password_plaintext is null\n        or length(provisioning_password_plaintext) between 1 and 512\n    ),\n    unique (audience, username_normalized),\n    check (credential_hash is null or length(trim(credential_hash)) > 0),\n    check (status <> 'active' or credential_hash is not null),\n    check (audience <> 'student' or username_algorithm_version is not null),\n    check (\n        (audience = 'student' and credential_kind = 'telegram_token' and linked_user_id is not null)\n        or (audience = 'family' and credential_kind = 'password' and linked_user_id is null)\n        or (audience = 'staff' and credential_kind = 'password' and linked_user_id is not null)\n    ),\n    check (\n        audience <> 'family'\n        or (display_name is not null and length(trim(display_name)) > 0)\n    )\n);",
         "table_name": "auth_accounts",
         "type": "table"
       },
@@ -7695,6 +7708,164 @@
         "object_sha256": "ab616b94f603f3f7d8a420d5120fa1de68640aef5e3b262cc4eff2fbe90b94f2",
         "sql": "CREATE TABLE courses\n(\n    id           integer primary key,\n    public_id    text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    season_id    integer not null references seasons (id),\n    code         text    not null\n        check (length(trim(code)) > 0),\n    name         text    not null\n        check (length(trim(name)) > 0),\n    subject_code text    not null\n        check (length(trim(subject_code)) > 0),\n    status       text    not null\n        check (status in ('draft', 'active', 'archived')),\n    sort_order   integer not null default 0,\n    accent_key   text    not null\n        check (length(trim(accent_key)) > 0),\n    created_at   text    not null,\n    updated_at   text    not null,\n    created_by   integer references users (id),\n    updated_by   integer references users (id),\n    version      integer not null default 1\n        check (version > 0),\n    unique (season_id, code)\n);",
         "table_name": "courses",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "family_account_id",
+            "not_null": true,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "ordinal",
+            "not_null": true,
+            "primary_key_ordinal": 2
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "email",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "email_normalized",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "family_account_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "auth_accounts"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "email_normalized",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "family_account_emails_normalized_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "family_account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "ordinal",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_family_account_emails_1",
+            "origin": "pk",
+            "partial": false,
+            "unique": true
+          },
+          {
+            "columns": [
+              {
+                "cid": 0,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "family_account_id",
+                "seqno": 0
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "email_normalized",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "sqlite_autoindex_family_account_emails_2",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "family_account_emails",
+        "object_sha256": "ddb824d5476283e2c96556700bb3c14e0e6a2aee0fbcabde6541c9b530f17ecc",
+        "sql": "CREATE TABLE family_account_emails\n(\n    family_account_id integer not null references auth_accounts (id),\n    ordinal           integer not null check (ordinal >= 0),\n    email             text    not null check (length(trim(email)) between 3 and 320),\n    email_normalized  text    not null check (length(trim(email_normalized)) between 3 and 320),\n    created_at        text    not null,\n    primary key (family_account_id, ordinal),\n    unique (family_account_id, email_normalized)\n);",
+        "table_name": "family_account_emails",
         "type": "table"
       },
       {
@@ -25394,6 +25565,13 @@
         "type": "index"
       },
       {
+        "name": "family_account_emails_normalized_idx",
+        "object_sha256": "b4d4bc417ec02bc95e3478c2fe3ea49b6c5e316bf1a23f08cd2079316bb11d9d",
+        "sql": "CREATE INDEX family_account_emails_normalized_idx\n    on family_account_emails (email_normalized);",
+        "table_name": "family_account_emails",
+        "type": "index"
+      },
+      {
         "name": "family_student_links_student_revoked_idx",
         "object_sha256": "e5eba7b172315a549d3e817f293b8e40f7036cfbc7f865ca778fd49aebb0a32c",
         "sql": "CREATE INDEX family_student_links_student_revoked_idx\n    on family_student_links (student_user_id, revoked_at);",
@@ -26297,6 +26475,13 @@
         "type": "trigger"
       },
       {
+        "name": "family_account_emails_family_only_insert",
+        "object_sha256": "8920bac9543f655671972b2a34abca80b7997fffc9c205d359560b6de7106e68",
+        "sql": "CREATE TRIGGER family_account_emails_family_only_insert\nbefore insert on family_account_emails\nfor each row\nwhen not exists (\n    select 1 from auth_accounts\n    where id = new.family_account_id and audience = 'family'\n)\nbegin\n    select raise(abort, 'email owner must be a Family account');\nend;",
+        "table_name": "family_account_emails",
+        "type": "trigger"
+      },
+      {
         "name": "family_student_links_family_account_insert",
         "object_sha256": "8de77acc9e454eb79aa4de42b27b9ebdc818be325dad502485edf97e48b03f9b",
         "sql": "CREATE TRIGGER family_student_links_family_account_insert\nbefore insert on family_student_links\nfor each row\nwhen not exists (\n    select 1\n    from auth_accounts\n    where id = new.family_account_id and audience = 'family'\n)\nbegin\n    select raise(abort, 'family_student_links requires a family account');\nend;",
@@ -27158,8 +27343,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "83a7f1e2746000673817eacacedbe6f1997913529752602132d503e12d157e25",
-    "sha256": "04e0e7e63c19fa1e64692743f344bd04abc10fd6bfc6cafd2733a81b736a0a69"
+    "pragma_structure_sha256": "823be77472f7f74be0f151d8cf610fd438bd748ac3e210b6fb54256a89ed25b2",
+    "sha256": "6a6fa4a37cbf99ac4c30f6fe1f63eed333c513bde935dcf35e0733d15bfb7486"
   },
   "source_kind": "repository-migration-head"
 }
