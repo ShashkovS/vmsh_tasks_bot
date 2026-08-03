@@ -262,8 +262,8 @@ sound policy и delivery observability. Запланированные вруч�
 
 ## Phase 9 — Family и личный прогресс
 
-**Состояние: основной read/progress v1 закрыт; provisioning, streak,
-distribution policy и visual gates открыты.**
+**Состояние: основной read/progress v1 закрыт; provisioning, streak и visual
+gates открыты.**
 
 Доказаны multi-child context, Family authorization, course/group/mode changes,
 current lessons, review/photo/annotation read, course-separated personal
@@ -283,7 +283,6 @@ preview с синтетическим migrated-SQLite proof.
 
 - Family batch provisioning/apply и передача первого credential — вопрос 1;
 - точные streak rules — вопрос 5;
-- полное удаление либо разрешение анонимной distribution — вопрос 6;
 - owner production Family-link preview/apply;
 - owner visual acceptance Family/progress pages.
 

@@ -72,7 +72,11 @@ Migration: `pwa_family_achievements`.
 - [x] Demo multi-child/full thread/group-mode change/Student progress: [`phase9-family-e2e.md`](../../../pwa_tests/reports/phase9-family-e2e.md), [`phase6-family-review-projection.md`](../../../pwa_tests/reports/phase6-family-review-projection.md), [`phase9-progress-e2e.md`](../../../pwa_tests/reports/phase9-progress-e2e.md).
 - [x] Permission/cache isolation tests: [`phase9-family-e2e.md`](../../../pwa_tests/reports/phase9-family-e2e.md), [`phase9-family-course-context.md`](../../../pwa_tests/reports/phase9-family-course-context.md).
 - [x] Statistics formulas, SQL plans and golden expected values: [`phase9-course-analytics.md`](../../../pwa_tests/reports/phase9-course-analytics.md), [`phase9-course-performance.md`](../../../pwa_tests/reports/phase9-course-performance.md).
-- [ ] Grace/privacy/1500-student performance evidence: privacy и 1500-student performance доказаны в [`phase9-course-analytics.md`](../../../pwa_tests/reports/phase9-course-analytics.md) и [`phase9-course-performance.md`](../../../pwa_tests/reports/phase9-course-performance.md); grace/distribution gate остаётся открытым.
+- [x] Privacy/1500-student performance evidence: production Student/Family
+      contracts не содержат group distribution, rank, percentile или маркер
+      ребёнка; privacy и 1500-student performance доказаны в
+      [`phase9-course-analytics.md`](../../../pwa_tests/reports/phase9-course-analytics.md)
+      и [`phase9-course-performance.md`](../../../pwa_tests/reports/phase9-course-performance.md).
 - [ ] Storybook charts/family pages/interactions/a11y/visual approval: `<ids/paths>`.
 - [x] Playwright 3 browsers: [`phase9-family-e2e.md`](../../../pwa_tests/reports/phase9-family-e2e.md), [`phase9-progress-e2e.md`](../../../pwa_tests/reports/phase9-progress-e2e.md).
 - [ ] Achievement definitions/rule version proof: initial rules и Student/Family UI доказаны в [`phase9-course-achievements.md`](../../../pwa_tests/reports/phase9-course-achievements.md) и [`phase9-family-achievements-ui-2026-08-03.md`](../../../pwa_tests/reports/phase9-family-achievements-ui-2026-08-03.md); completed-lesson/streak rules остаются открытыми.
