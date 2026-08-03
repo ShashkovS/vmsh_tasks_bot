@@ -580,3 +580,16 @@ Token core + brand + полировка готовы и зелёные (Storyboo
   news E2E **9/9 PASS** в Chromium, Firefox и WebKit проверяет reload-safe draft.
 - Это функциональный checkpoint. Snapshots не обновлялись; ручное visual
   acceptance владельцем остаётся открытым.
+
+## Development Phase 8 — Family notification settings · 3 августа 2026
+
+- `Pages/Family/Notifications--Ready|Loading|Error|Push denied` фиксируют
+  production states, пять допустимых Family-категорий и отсутствие ложных
+  per-review/classroom controls.
+- `Product/Connectivity--Push · состояния устройства` документирует loading,
+  available, enabled, denied, unsupported и error для общего Student/Family
+  `PushDeviceControls`.
+- Focused interaction/a11y **22/22 PASS**, полный Storybook gate **250/250
+  PASS**, production E2E **12/12 PASS** в трёх браузерах без retry.
+- Snapshots не обновлялись; ручное visual acceptance владельцем остаётся
+  открытым.

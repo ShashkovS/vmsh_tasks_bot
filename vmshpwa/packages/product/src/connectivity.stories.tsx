@@ -5,6 +5,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import { ConnectionBanner, type ConnectionState } from './connection-banner'
 import { NotificationEventCard } from './notification-event-card'
 import { PushPermissionCard } from './push-permission-card'
+import { PushDeviceControls, type PushDeviceControlState } from './push-device-controls'
 import { SyncIndicator } from './sync-indicator'
 import { UpdatePrompt } from './update-prompt'
 
@@ -126,6 +127,35 @@ export const Push: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Включить уведомления' }))
     await expect(canvas.getByTestId('readout')).toHaveTextContent('Запросим разрешение у браузера')
   },
+}
+
+const pushStates: PushDeviceControlState[] = [
+  'loading',
+  'available',
+  'enabled',
+  'denied',
+  'unsupported',
+  'error',
+]
+
+export const PushDeviceStates: Story = {
+  name: 'Push · состояния устройства',
+  render: () => (
+    <div className="grid max-w-3xl gap-4 md:grid-cols-2">
+      {pushStates.map((state) => (
+        <section className="space-y-2" key={state}>
+          <p className="text-caption text-muted-foreground">{state}</p>
+          <PushDeviceControls
+            categories={[{ id: 'news', label: 'Новости кружка' }]}
+            onDisable={() => undefined}
+            onDismiss={() => undefined}
+            onEnable={() => undefined}
+            state={state}
+          />
+        </section>
+      ))}
+    </div>
+  ),
 }
 
 export const InAppEvents: Story = {

@@ -172,3 +172,21 @@ reload сохранённого edit draft и перенос срока в Chrom
 Редактирование уже видимой публикации закрыто с `409`, пока не решён вопрос 7 в
 [`22-development-questions.md`](22-development-questions.md). Proof:
 [`phase8-local-news-editing-2026-08-03.md`](../../../pwa_tests/reports/phase8-local-news-editing-2026-08-03.md).
+
+## Инкремент настоящих Family notification settings — 3 августа 2026
+
+Route `/family/profile/notifications` больше не показывает prototype/no-op
+кнопку. Он читает и изменяет account-scoped preferences через реальный aiohttp,
+управляет browser/server push subscription и показывает loading/error/denied/
+unsupported states. Family видит только пять работающих категорий общих
+материалов и новостей; per-review, oral и classroom push не предлагаются.
+Course override остаётся Student-only.
+
+Browser subscription handshake переиспользуется Student и Family через
+`usePushDevice`, а presentation — через `PushDeviceControls`. Story IDs:
+`pages-family-notifications--ready`, `--loading`, `--error`, `--push-denied`,
+`pages-family--notifications`, `product-connectivity--push-device-states`.
+Production E2E меняет preference, подтверждает reload и восстанавливает fixture
+в Chromium, Firefox и WebKit. Недельный Family digest остаётся отдельным
+инкрементом после ответа на вопрос 8. Proof:
+[`phase8-family-notification-settings-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-notification-settings-2026-08-03.md).

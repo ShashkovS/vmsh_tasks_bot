@@ -16,7 +16,6 @@ import {
   DeadlineNotice,
   FeedbackThread,
   ProblemHeader,
-  PushPermissionCard,
   StudentProgress,
   TaskListItem,
   TelegramRichPost,
@@ -460,29 +459,6 @@ export function FamilyProfilePage({
             </CardContent>
           </Card>
         </div>
-      </PageLayout>
-    </StatefulPage>
-  )
-}
-
-export function FamilyNotificationsPage({ state = 'ready' }: { state?: PageDisplayState }) {
-  return (
-    <StatefulPage state={state} title="Уведомления">
-      <PageLayout
-        description="Аудитория ребёнка видна здесь, но отдельный push о ней получает только школьник."
-        title="Уведомления"
-      >
-        <PushPermissionCard
-          categories={[
-            {
-              id: 'activity',
-              label: 'Активность ребёнка',
-              description: 'Новые сдачи и завершённые проверки',
-            },
-            { id: 'news', label: 'Новости', description: 'Публикации кружка' },
-            { id: 'deadline', label: 'Дедлайны', description: 'Напоминания о публикации решений' },
-          ]}
-        />
       </PageLayout>
     </StatefulPage>
   )

@@ -4,7 +4,12 @@ import { expect, userEvent, within } from 'storybook/test'
 
 import { SessionManagementView } from '@vmsh/app-shell'
 import familyAuthFixture from '@vmsh/contracts/fixtures/auth/family.v1.json'
-import { authSessionsResponseSchema } from '@vmsh/contracts'
+import preferencesFixture from '@vmsh/contracts/fixtures/notifications/preferences.v1.json'
+import {
+  authSessionsResponseSchema,
+  notificationPreferenceListResponseSchema,
+} from '@vmsh/contracts'
+import { PushDeviceControls } from '@vmsh/product'
 
 import {
   FamilyChildPage,
@@ -12,12 +17,12 @@ import {
   FamilyHomePage,
   FamilyLoginPage,
   FamilyNewsPage,
-  FamilyNotificationsPage,
   FamilyProfilePage,
   FamilyTaskPage,
   type FamilyLoginState,
 } from './pages'
 import { FamilyCourseAchievements } from './family-children-page'
+import { FamilyNotificationSettingsView } from './family-notifications-page'
 
 /* Page evidence for dev/design-system/05-pages-and-flows.md (“Family PWA”). */
 const meta = {
@@ -87,7 +92,24 @@ export const Profile: Story = {
     />
   ),
 }
-export const Notifications: Story = { render: () => <FamilyNotificationsPage /> }
+const notificationPreferences =
+  notificationPreferenceListResponseSchema.parse(preferencesFixture).items
+export const Notifications: Story = {
+  render: () => (
+    <FamilyNotificationSettingsView
+      preferences={notificationPreferences}
+      pushControls={
+        <PushDeviceControls
+          categories={[]}
+          onDisable={() => undefined}
+          onDismiss={() => undefined}
+          onEnable={() => undefined}
+          state="enabled"
+        />
+      }
+    />
+  ),
+}
 export const Login: Story = {
   render: () => <FamilyLoginPage />,
   play: async ({ canvasElement }) => {

@@ -1359,6 +1359,21 @@
   [`phase11-media-inventory-2026-08-03.md`](../../../pwa_tests/reports/phase11-media-inventory-2026-08-03.md).
 - Production Hetzner/service-account запуск, owner cleanup decision и audit
   остаются Phase 11 rollout gates.
-- Общий ESLint gate временно красный только в параллельном незакоммиченном
-  `family-notifications-page.tsx` (4 ошибки); настройки ради этого checkpoint не
-  ослаблялись.
+- Временные ESLint-ошибки незавершённого Family route устранены в следующем
+  Phase 8 checkpoint без ослабления правил.
+
+## Phase 8 checkpoint: Family notification settings — 3 августа 2026
+
+- Production `/family/profile/notifications` подключён к account-scoped
+  preferences/push API вместо prototype. Переключатели есть только у пяти
+  фактически доставляемых Family-категорий материалов и новостей.
+- Student и Family используют один browser subscription handshake; loading,
+  available, enabled, denied, unsupported и error имеют явные состояния.
+- Full gates: frontend unit **114 файлов / 594 PASS**, PWA Python **1586 PASS /
+  6 intentional skips**, Storybook **52 файла / 250 PASS**, production news E2E
+  **12/12 PASS** в Chromium, Firefox и WebKit без retry; lint/typecheck/build —
+  PASS.
+- Proof:
+  [`phase8-family-notification-settings-2026-08-03.md`](../../../pwa_tests/reports/phase8-family-notification-settings-2026-08-03.md).
+  Weekly Family digest ждёт решения вопроса 8; snapshots не обновлялись, owner
+  visual acceptance открыт.

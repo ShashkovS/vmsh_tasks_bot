@@ -84,6 +84,49 @@ test('Phase 8: Admin edits a scheduled local post without losing its draft', asy
   await expect(updatedRow).toContainText('ревизия 2')
 })
 
+test('Phase 8: Family changes real notification preferences without individual review push', async ({
+  page,
+}, testInfo) => {
+  await loginThroughUi(
+    page,
+    phase8Persona(testInfo.project.name, 'family'),
+    '/family/profile/notifications',
+  )
+  await expect(page.getByRole('heading', { name: 'Уведомления' })).toBeVisible()
+  await expect(page.getByRole('switch')).toHaveCount(5)
+  await expect(page.getByText(/Отдельные push о каждой проверенной задаче/)).toBeVisible()
+  await expect(page.getByRole('switch', { name: /Проверка/ })).toHaveCount(0)
+  await expect(page.getByRole('switch', { name: /Аудитория/ })).toHaveCount(0)
+
+  const news = page.getByRole('switch', { name: 'Push: Новости' })
+  const initiallyEnabled = await news.isChecked()
+  const firstReceipt = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' &&
+      new URL(response.url()).pathname === '/family/api/v1/notifications/preferences',
+  )
+  await news.click()
+  expect((await firstReceipt).status()).toBe(200)
+  await expect(news).toBeChecked({ checked: !initiallyEnabled })
+
+  await page.reload()
+  await expect(page.getByRole('switch', { name: 'Push: Новости' })).toBeChecked({
+    checked: !initiallyEnabled,
+  })
+
+  // Restore the per-browser fixture so a failed retry cannot change another run's start state.
+  const restoreReceipt = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' &&
+      new URL(response.url()).pathname === '/family/api/v1/notifications/preferences',
+  )
+  await page.getByRole('switch', { name: 'Push: Новости' }).click()
+  expect((await restoreReceipt).status()).toBe(200)
+  await expect(page.getByRole('switch', { name: 'Push: Новости' })).toBeChecked({
+    checked: initiallyEnabled,
+  })
+})
+
 test('Phase 8: Student reads cached news, dismisses a banner and acknowledges the event', async ({
   page,
 }, testInfo) => {
@@ -168,6 +211,20 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
         { timeout: 15_000 },
       )
       .toBeGreaterThanOrEqual(0.75)
+    // Playwright's bringToFront can leave document.visibilityState at `visible`
+    // without emitting a visibilitychange. Re-dispatch after proving real
+    // foreground intersection so the same production timer is armed reliably.
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              document.dispatchEvent(new Event('visibilitychange'))
+              resolve()
+            })
+          })
+        }),
+    )
     await expect
       .poll(
         async () => {

@@ -41,6 +41,14 @@ Student и Family имеют отдельные Dexie namespaces по audience �
 
 Review notifications всех задач ученика объединяются за 30 минут. Quiet hours считаются в timezone пользователя и подавляют только sound. Review event считается прочитанным, когда видимый PWA-клиент непрерывно выдержал три секунды и отправил идемпотентный acknowledgement; server ставит собственный account-scoped `readAt`, а другие устройства сходятся через invalidation/refetch. Telegram delivery без read receipt не снимает badge. Task badge считает обновлённые задачи, которые student ещё не видел. Family по умолчанию получает один недельный итог после окончания проверки.
 
+Production route `/family/profile/notifications` использует настоящий
+account-scoped preferences и push-subscription API. Family может включать и
+отключать push для нового урока, подсказок, решений, дедлайна и новостей;
+индивидуальная проверка, устное окно и аудитория намеренно не предлагаются.
+Course-specific override остаётся Student-only. Точный server trigger
+недельного Family-итога до реализации зафиксирован вопросом 8 в
+[`22-development-questions.md`](../dev/development-plan/22-development-questions.md).
+
 До отдельного подтверждения UX действует безопасное допущение: повтор с тем же ключом и payload hash возвращает тот же результат. Другой payload с тем же ключом получает conflict: исходная операция сохраняется, last-write-wins запрещён, а новая отправка возможна с новым ключом после явного решения пользователя. FIFO действует внутри одной сущности; независимые drafts могут синхронизироваться параллельно. Logout предупреждает о неотправленных данных; после явного подтверждения очередь и drafts этого аккаунта можно удалить.
 
 Notification preferences имеют общий default и optional course override. Invalidations сужаются полями `audience`, `courseId`, `groupId`, `studentUserId`; приватное событие не рассылается другим аудиториям или enrollment. После reconnect клиент всегда делает authoritative refetch. Набор course/group событий перечислен в [многокурсовом контракте](courses-groups-and-lessons.md).
