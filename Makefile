@@ -355,3 +355,9 @@ pwa-production-http-smoke:
 	@test -n "$(PWA_PRODUCTION_ORIGIN)" || (echo "Set PWA_PRODUCTION_ORIGIN to the exact public HTTPS origin"; exit 2)
 	@test -n "$(PWA_PRODUCTION_INSTANCE)" || (echo "Set PWA_PRODUCTION_INSTANCE to the expected runtime instance"; exit 2)
 	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.production_http_smoke --origin "$(PWA_PRODUCTION_ORIGIN)" --expected-instance "$(PWA_PRODUCTION_INSTANCE)"
+
+.PHONY: pwa-systemd-check
+pwa-systemd-check:
+	@test -n "$${VMSH_PWA_SYSTEMD_UNIT:-}" || (echo "Set VMSH_PWA_SYSTEMD_UNIT"; exit 2)
+	@test -n "$${VMSH_PWA_SYSTEMD_ENV:-}" || (echo "Set VMSH_PWA_SYSTEMD_ENV"; exit 2)
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.systemd_config_check --unit "$${VMSH_PWA_SYSTEMD_UNIT}" --environment "$${VMSH_PWA_SYSTEMD_ENV}" --require-systemd-analyze

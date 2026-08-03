@@ -2,7 +2,11 @@
 
 ## Результат
 
-Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` под своими base paths рядом с работающим Telegram-ботом; желательный staging — `devvmsh.shashkovs.ru`. После acceptance возможности включаются сразу для всех трёх уровней, без продуктового rollout по отдельным группам.
+Student/Family/Staff разворачиваются на одном явно утверждённом production FQDN
+под своими base paths рядом с работающим Telegram-ботом. Hostname ещё не выбран;
+optional staging получает отдельный утверждённый FQDN. После acceptance
+возможности включаются сразу для всех трёх уровней, без продуктового rollout по
+отдельным группам.
 
 Дизайн-контракт этапа: [all-audience failure/update states, production E2E/visual baselines и Storybook release stories](18-design-implementation-map.md#phase-11-design).
 
@@ -47,14 +51,15 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 
 ## Backup/restore and retention
 
-- SQLite backup три раза в день и перед каждым deploy считается достаточным baseline; restore rehearsal использует согласованную копию трёх файлов SQLite/WAL/SHM в изолированном runtime.
+- Текущий baseline: внешний cron job несколько раз в день создаёт SQLite backup и пересылает его на другой физический сервер; копии фактически хранятся долго. Точная команда, количественная retention policy и измеренные RPO/RTO пока не зафиксированы.
+- Запуск из таких копий проверялся только на Telegram-модуле, который обрабатывает новые сообщения. Это полезный operational signal, но не доказательство полного восстановления PWA, historical reads, outbox/media references или согласованной тройки SQLite/WAL/SHM. Phase 11 отдельно вводит documented runbook, согласованный full-stack restore, измеренные RPO/RTO и расписание периодического полного rehearsal.
 - Полный отдельный backup S3 не требуется. Student images не versioned; teacher-authored отправленные artifacts защищаются application immutability или отдельной policy.
 - Document what «manual bucket cleanup» may safely delete; preferably manifest-driven orphan report before any deletion.
 - По закрытому `RETENTION-01` retention остаётся бессрочным без автоматической review/cleanup даты. Решение о ручной очистке принимает admin; операция обязана быть manifest-driven, иметь preview/audit и согласованно обновлять SQLite/S3. Growth/orphan reports остаются обязательной эксплуатационной диагностикой.
 
 ## Rollout strategy
 
-1. Полный rehearsal на staging/local production copy.
+1. Полный rehearsal на staging либо изолированной временной production copy. Локальный источник `db/vmsh.db` никогда не меняется; до test derivation имена и фамилии в копии заменяются Faker-значениями, копия не коммитится.
 2. Внутренние admin/teacher accounts и test bot/channel.
 3. Acceptance занятий 39–41 во всех трёх уровнях.
 4. Одновременное включение Student/Family/Staff для всех уровней с Telegram fallback.
@@ -70,7 +75,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 - Real staging toolchain smoke: LaTeX/TikZ → PDF → SVG и HEIC/raster → WebP с redacted executable/version report, timeout и cleanup assertions.
 - Two-worker/NATS/WS/SQLite load and failure tests выполняются против численного workload profile этапа 0: concurrency, submit/photo sizes, write latency, queue/outbox depth и допустимые busy/error thresholds. Неопределённый «load test прошёл» gate не принимается.
 - Security review: auth, IDOR, CSRF/origin, CSP, upload, checker execution, public media URLs, push payload.
-- Restore rehearsal with objective RPO/RTO.
+- Documented coordinated SQLite/WAL/SHM, media и outbox restore с objective RPO/RTO; прежняя успешная загрузка Telegram new-message module не считается полным restore proof. После первого gate фиксируется периодический full-rehearsal schedule.
 - Полный physical-device smoke на доступных Android; iPhone — по возможности. Chromium/WebKit/Firefox E2E остаются обязательными.
 - Rollback test from new frontend and migration-compatible backend to previous release.
 
@@ -93,7 +98,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 - [ ] Service-profile toolchain probe и converter versions/capabilities: `<redacted report/result>`.
 - [ ] Redacted production S3 config/capability probe и test-bucket disposable-prefix smoke: `<reports/results>`.
 - [ ] Deploy and atomic rollback rehearsal: `<runbook/result>`.
-- [ ] SQLite backup/restore RPO/RTO evidence and S3 immutability/retrieval checks (no separate S3 backup in v1): `<path/result>`.
+- [ ] SQLite backup/restore RPO/RTO evidence: cron identity/schedule, retention inventory и full-stack restore из изолированной копии; отдельно указать, что прежний Telegram-only startup не покрывает полный gate. S3 immutability/retrieval checks без отдельного S3 backup в v1: `<path/result>`.
 - [ ] Full tests, historical Telegram, 3-browser E2E, physical-device smoke: `<results>`.
 - [ ] Two-worker/NATS/WS/load/failure report: `<path>`.
 - [ ] Security review/headers/CSP/upload/checker/public-media findings: `<path/issues>`.
@@ -104,7 +109,7 @@ Student/Family/Staff разворачиваются на `vmsh.shashkovs.ru` п�
 
 ## Многокурсовый инкремент Phase 11
 
-Production-size rehearsal создаёт курс «Математика 5–7», backfill-ит enrollments/access/course/group lessons и сравнивает legacy/new read models, statistics, Telegram paths и classroom inheritance. Cutover сохраняет legacy IDs и допускает rollback без физического разъединения submission history.
+Production-size rehearsal создаёт курс «Математика 5–7», backfill-ит enrollments/access/course/group lessons и сравнивает legacy/new read models, statistics, Telegram paths и classroom inheritance. Он выполняется только над изолированной временной копией `db/vmsh.db` после Faker-замены имён/фамилий и никогда не пишет в source DB. Последовательные одинаковые legacy `G`/`O` строки схлопываются в отчёте до реальных enrollment transitions. Legacy `written_tasks_discussions` переносится единым хронологическим thread без выдуманных message→review-round links. Cutover сохраняет legacy IDs и допускает rollback без физического разъединения submission history.
 
 Дополнительный proof: migration parity/repeat/rollback report, synonym identity reconciliation, multi-course load/permission test, historical Telegram regression и явно подписанное решение о включении новых reads/writes.
 
@@ -136,3 +141,18 @@ Software contract и local aiohttp tests зафиксированы в
 [`phase11-production-http-smoke-2026-08-03.md`](../../../pwa_tests/reports/phase11-production-http-smoke-2026-08-03.md).
 Реальный запуск по owner-approved FQDN, authenticated WebSocket/login limit и
 physical-device install остаются отдельными production gates.
+
+## Инкремент production systemd profile — 3 августа 2026
+
+Добавлен отдельный PWA-only unit template и owner-only environment template.
+Unit фиксирует `pwa-production`, отключённый prototype, два Gunicorn worker,
+Unix socket и минимальное hardening; Telegram/Google adapters не запускаются и
+остаются в legacy service. Rolling reload отсутствует, чтобы schema maintenance
+не пересекалась с продолжающими запись worker.
+
+`make pwa-systemd-check` fail-closed проверяет exact mode `0600`, обязательную
+environment tuple, HTTPS origins, один trusted Unix socket, unresolved markers,
+worker class/count и hardening. На production host обязателен
+`systemd-analyze verify`; локальная structural проверка не объявляется реальным
+restart proof. Software evidence:
+[`phase11-systemd-service-profile-2026-08-03.md`](../../../pwa_tests/reports/phase11-systemd-service-profile-2026-08-03.md).

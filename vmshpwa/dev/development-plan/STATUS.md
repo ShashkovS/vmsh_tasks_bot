@@ -1496,3 +1496,18 @@
   [`phase11-production-http-smoke-2026-08-03.md`](../../../pwa_tests/reports/phase11-production-http-smoke-2026-08-03.md).
 - Owner-approved FQDN, installed `nginx -t`, реальный запуск команды и
   authenticated/device checks остаются открытыми production gates.
+
+## Phase 11 checkpoint: отдельный production systemd profile — 3 августа 2026
+
+- Добавлены PWA-only unit/environment templates: два Gunicorn worker, Unix
+  socket, `pwa-production`, prototype=false и базовое systemd hardening.
+  Telegram/Google adapters остаются в отдельном legacy service.
+- `make pwa-systemd-check` проверяет exact mode `0600`, обязательную env tuple,
+  HTTPS origins, proxy socket, unresolved markers, worker boundary и отсутствие
+  rolling reload/preload.
+- Focused Ruff/pytest: **10 PASS**; полный PWA Python gate на восьми workers:
+  **1616 PASS / 6 intentional skips**, 71,70 с.
+- Proof:
+  [`phase11-systemd-service-profile-2026-08-03.md`](../../../pwa_tests/reports/phase11-systemd-service-profile-2026-08-03.md).
+- Реальные rendered paths/secrets, `systemd-analyze verify`, restart, socket
+  ownership и public health/rollback остаются production gates.

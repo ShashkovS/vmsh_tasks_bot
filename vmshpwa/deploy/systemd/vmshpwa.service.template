@@ -1,0 +1,34 @@
+[Unit]
+Description=VMSH 179 Student, Family and Staff PWA API
+After=network-online.target nats.service
+Wants=network-online.target nats.service
+ConditionPathIsDirectory=@@REPOSITORY_DIR@@
+ConditionPathIsRegular=@@ENV_FILE@@
+
+[Service]
+Type=simple
+User=@@SERVICE_USER@@
+Group=@@SERVICE_GROUP@@
+WorkingDirectory=@@REPOSITORY_DIR@@
+EnvironmentFile=@@ENV_FILE@@
+Environment=PATH=@@VENV_DIR@@/bin:/usr/local/bin:/usr/bin:/bin
+# EnvironmentFile takes precedence over Environment= in systemd. Put the two
+# security boundary values on the actual command line so the secret file cannot
+# accidentally select a local profile or prototype auth.
+ExecStart=/usr/bin/env VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false @@VENV_DIR@@/bin/gunicorn --workers 2 --worker-class uvloop_worker.GunicornUVLoopWebWorkerFixed --bind unix:@@BACKEND_UNIX_SOCKET@@ --umask 007 --timeout 120 --graceful-timeout 30 --error-logfile - --capture-output main:app
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=45
+UMask=0007
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=@@DATABASE_DIR@@ @@MEDIA_ROOT@@ @@RUNTIME_WRITE_DIR@@
+LimitNOFILE=8192
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

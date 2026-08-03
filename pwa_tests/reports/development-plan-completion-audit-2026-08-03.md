@@ -329,8 +329,9 @@ preview/apply/rollback, synonym merge/split и reload-safe metadata drafts.
 Доказаны atomic static release/rollback, isolated SQLite restore, migration и
 course-enrollment rehearsals, converter chain, test S3/Telegram, NATS с двумя
 workers, WebSocket resync, dependency audit, Sentry redaction, IDOR/role review,
-security headers и read-only media growth/orphan inventory. Inventory не имеет
-delete API и не превращает diagnostic в автоматическую retention policy.
+security headers, read-only media growth/orphan inventory и отдельный PWA-only
+systemd profile/preflight. Inventory не имеет delete API и не превращает
+diagnostic в автоматическую retention policy.
 Для уже переключённого публичного release теперь есть credential-free GET-only
 smoke: он fail-closed проверяет три audience, runtime identity, SPA/API routing,
 security/cache headers, manifests, icons и service workers.
@@ -345,12 +346,14 @@ security/cache headers, manifests, icons и service workers.
 [`phase11-dependency-audit-2026-08-02.md`](phase11-dependency-audit-2026-08-02.md),
 [`phase11-service-worker-cache-boundary-2026-08-03.md`](phase11-service-worker-cache-boundary-2026-08-03.md),
 [`phase11-production-http-smoke-2026-08-03.md`](phase11-production-http-smoke-2026-08-03.md),
+[`phase11-systemd-service-profile-2026-08-03.md`](phase11-systemd-service-profile-2026-08-03.md),
 [`phase11-media-inventory-2026-08-03.md`](phase11-media-inventory-2026-08-03.md).
 
 Открыто:
 
-- production service profile, installed `nginx -t`, выбранный FQDN/systemd и
-  реальный запуск HTTP smoke после deploy/rollback;
+- rendered/installed systemd profile, `systemd-analyze verify`, настоящий
+  restart, installed `nginx -t`, выбранный FQDN и реальный HTTP smoke после
+  deploy/rollback;
 - production Hetzner S3 readiness и production media inventory;
 - реальный Sentry event/alert;
 - production backup schedule, retention, measured RPO/RTO;
