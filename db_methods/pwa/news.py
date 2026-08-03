@@ -329,6 +329,19 @@ def news_course_public_id(
     return str(row["public_id"])
 
 
+def has_visible_local_post_due_between(
+    connection: sqlite3.Connection, *, after: str, through: str
+) -> bool:
+    row = connection.execute(
+        "SELECT 1 FROM news_posts post "
+        "JOIN news_visibility visibility ON visibility.post_id = post.id "
+        "WHERE post.source_type = 'local' AND visibility.state = 'visible' "
+        "AND post.published_at > ? AND post.published_at <= ? LIMIT 1",
+        (after, through),
+    ).fetchone()
+    return row is not None
+
+
 def list_visible_posts(
     connection: sqlite3.Connection,
     *,
@@ -451,6 +464,7 @@ __all__ = [
     "find_local_news_owner",
     "get_post",
     "get_visible_post_by_public_id",
+    "has_visible_local_post_due_between",
     "insert_diagnostic",
     "insert_media",
     "insert_local_post",

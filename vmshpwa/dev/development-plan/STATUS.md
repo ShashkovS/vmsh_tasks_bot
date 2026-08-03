@@ -1220,8 +1220,22 @@
 - Proof:
   [`phase8-local-scheduled-news.md`](../../../pwa_tests/reports/phase8-local-scheduled-news.md),
   runbook: [`local-scheduled-news.md`](../../docs/local-scheduled-news.md).
-- Открыты edit/reschedule и точная due-time foreground WebSocket invalidation;
-  этот checkpoint не выдаётся за полное закрытие Phase 8.
+- Открыт edit/reschedule; due-time foreground invalidation закрывается
+  следующим checkpoint. Полное закрытие Phase 8 здесь не заявляется.
+
+## Phase 8 checkpoint: due-time local-news invalidation — 3 августа 2026
+
+- Уже открытые Student/Family/Staff вкладки получают
+  `local-news-published` не позже следующего пятисекундного scheduler poll.
+- Successful in-memory scan windows непрерывны; broker failure повторяет то же
+  окно. Hidden publication не создаёт hint.
+- Durable lease намеренно не добавлен: два worker могут безопасно вызвать два
+  authoritative refetch несколько раз в неделю.
+- Focused scheduler/realtime regression: **52 PASS**, полный PWA Python gate:
+  **1578 PASS / 6 intentional skips**, Ruff — PASS. Proof:
+  [`phase8-local-news-due-invalidation.md`](../../../pwa_tests/reports/phase8-local-news-due-invalidation.md).
+- Local-news edit/reschedule и общий Phase 8 browser/visual gate остаются
+  открыты; snapshots не менялись.
 
 ## Phase 10 checkpoint: черновик metadata grid — 3 августа 2026
 

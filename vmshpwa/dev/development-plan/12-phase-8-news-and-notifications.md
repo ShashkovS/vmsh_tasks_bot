@@ -141,3 +141,18 @@ WebSocket invalidation для уже открытой вкладки также 
 Proof:
 [`phase8-local-scheduled-news.md`](../../../pwa_tests/reports/phase8-local-scheduled-news.md),
 runbook: [`local-scheduled-news.md`](../../docs/local-scheduled-news.md).
+
+## Инкремент due-time foreground invalidation — 3 августа 2026
+
+Существующий пятисекундный content scheduler сканирует successful time windows
+для visible local news и при наступлении срока публикует
+`local-news-published` для Student, Family и Staff. Новая таблица/lease не
+добавлены: NATS-сообщение является безопасным idempotent refetch hint, поэтому
+два worker могут отправить дубль. Broker failure не двигает in-memory watermark
+и повторяет окно; restart полагается на обязательный WebSocket resync.
+
+Focused Python regression: **52 PASS**; полный PWA Python gate после
+объединения с соседним news-edit срезом: **1578 PASS / 6 intentional skips**.
+Proof:
+[`phase8-local-news-due-invalidation.md`](../../../pwa_tests/reports/phase8-local-news-due-invalidation.md),
+runbook: [`local-scheduled-news.md`](../../docs/local-scheduled-news.md).

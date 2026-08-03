@@ -39,10 +39,17 @@ Staff может создать новость, которая относитс�
 
 Создание сразу инвалидирует Staff moderation list. Будущая публикация остаётся
 скрытой на клиентских чтениях до срока, поэтому ранняя инвалидация не раскрывает
-её. Отдельный due-time foreground invalidation ещё нужен: без него уже открытая
-вкладка с отключённым push увидит публикацию при следующем refetch, focus или
-reconnect, но не обязательно точно в назначенную секунду. Этот пункт нельзя
-считать закрытым только наличием scheduled notification event.
+её. Существующий content scheduler раз в пять секунд проверяет, появилась ли
+хотя бы одна due local publication после предыдущего успешного прохода, и
+посылает `local-news-published` для `news` и `notification-events`. Поэтому уже
+открытая вкладка обновляется независимо от Web Push; обычная погрешность — до
+пяти секунд.
+
+Отдельный durable scheduler/lease не используется. NATS остаётся
+неавторитетным refetch hint, и два production-worker могут одновременно послать
+одинаковую инвалидацию. Два безопасных refetch несколько раз в неделю дешевле,
+чем новый distributed state. После рестарта websocket reconnect всё равно
+требует полный authoritative refetch, поэтому старые окна не воспроизводятся.
 
 ## Проверка
 
@@ -54,3 +61,5 @@ reconnect, но не обязательно точно в назначенную
   `product-news-moderation--scheduled-local`.
 - Сводный результат записан в
   [`pwa_tests/reports/phase8-local-scheduled-news.md`](../../pwa_tests/reports/phase8-local-scheduled-news.md).
+- Due-time realtime proof:
+  [`pwa_tests/reports/phase8-local-news-due-invalidation.md`](../../pwa_tests/reports/phase8-local-news-due-invalidation.md).

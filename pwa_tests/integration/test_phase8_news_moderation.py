@@ -513,3 +513,88 @@ async def test_local_news_rejects_unknown_owner_and_invalid_content(classroom_ht
         cookies=cookies,
     )
     assert invalid.status == 422
+
+
+@pytest.mark.asyncio
+async def test_due_local_news_publishes_one_idempotent_refetch_hint(classroom_http):
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 1,
+            "ownerType": "course",
+            "ownerId": "classroom-layout-course",
+            "text": "Публикация по расписанию",
+            "publishedAt": "2099-08-04T13:00:00Z",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201
+
+    messages: list[dict[str, object]] = []
+
+    async def record(payload):
+        assert isinstance(payload, dict)
+        messages.append(payload)
+
+    await classroom_http.client.app[pwa_app.PWA_BROKER].subscribe(
+        pwa_app.NATS_PWA_INVALIDATE,
+        record,
+    )
+    assert await pwa_app.invalidate_due_local_news(
+        classroom_http.client.app,
+        after="2099-08-04T12:59:59.000000Z",
+        through="2099-08-04T13:00:00.000000Z",
+    )
+    assert {str(message["audience"]) for message in messages} == {
+        "student",
+        "family",
+        "staff",
+    }
+    assert all(
+        message
+        == {
+            "resources": ["news", "notification-events"],
+            "reason": "local-news-published",
+            "audience": message["audience"],
+        }
+        for message in messages
+    )
+
+    messages.clear()
+    assert not await pwa_app.invalidate_due_local_news(
+        classroom_http.client.app,
+        after="2099-08-04T13:00:00.000000Z",
+        through="2099-08-04T13:00:05.000000Z",
+    )
+    assert messages == []
+
+
+@pytest.mark.asyncio
+async def test_hidden_local_news_does_not_trigger_due_invalidation(classroom_http):
+    created = await classroom_http.client.post(
+        "/staff/api/v1/news/local",
+        json={
+            "schemaVersion": 1,
+            "ownerType": "group",
+            "ownerId": "classroom-layout-group",
+            "text": "Отменённая публикация",
+            "publishedAt": "2099-08-04T13:00:00Z",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    item = (await created.json())["item"]
+    hidden = await classroom_http.client.patch(
+        f"/staff/api/v1/news/{item['postId']}/visibility",
+        json={"schemaVersion": 1, "state": "manual_hidden", "reason": "Отменено"},
+        headers=_headers(unsafe=True, if_match=created.headers["ETag"]),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert hidden.status == 200
+
+    assert not await pwa_app.invalidate_due_local_news(
+        classroom_http.client.app,
+        after="2099-08-04T12:59:59.000000Z",
+        through="2099-08-04T13:00:00.000000Z",
+    )

@@ -111,6 +111,7 @@ from apps.pwa_api.written_submission_routes import (
 )
 from db_methods.pwa.auth import PwaAuthRepository
 from db_methods.pwa.content import GroupLessonContentScope, PwaContentRepository
+from db_methods.pwa.news import has_visible_local_post_due_between
 from db_methods.pwa.reviews import PwaWrittenReviewQueueRepository
 from db_methods.pwa.submissions import PwaTestSubmissionRepository
 from db_methods.pwa.support import (
@@ -210,7 +211,7 @@ pwa_routes = web.RouteTableDef()
 
 
 def _now() -> str:
-    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
 def _audience(request: web.Request) -> str:
@@ -892,6 +893,22 @@ async def publish_test_submission_invalidation(
     )
 
 
+async def _send_news_invalidation(app: web.Application, *, reason: str) -> None:
+    await asyncio.gather(
+        *(
+            app[PWA_BROKER].publish(
+                NATS_PWA_INVALIDATE,
+                {
+                    "resources": ["news", "notification-events"],
+                    "reason": reason,
+                    "audience": audience,
+                },
+            )
+            for audience in AUDIENCES
+        )
+    )
+
+
 async def publish_news_invalidation(
     app: web.Application,
     *,
@@ -900,19 +917,7 @@ async def publish_news_invalidation(
     """Best-effort refetch hint for the three authenticated news views."""
 
     try:
-        await asyncio.gather(
-            *(
-                app[PWA_BROKER].publish(
-                    NATS_PWA_INVALIDATE,
-                    {
-                        "resources": ["news", "notification-events"],
-                        "reason": reason,
-                        "audience": audience,
-                    },
-                )
-                for audience in AUDIENCES
-            )
-        )
+        await _send_news_invalidation(app, reason=reason)
     except asyncio.CancelledError:
         raise
     except Exception:
@@ -1304,11 +1309,43 @@ async def activate_due_content_publications(
     return activated
 
 
+async def invalidate_due_local_news(
+    app: web.Application, *, after: str, through: str
+) -> bool:
+    """Publish one refetch hint when local news became visible in this window."""
+
+    database = app.get(PWA_DATABASE)
+    if database is None or database.factory is None:
+        return False
+    due = await database.factory.run_read_async(
+        lambda connection: has_visible_local_post_due_between(
+            connection, after=after, through=through
+        )
+    )
+    if not due:
+        return False
+    # NATS invalidations are transient, idempotent hints rather than durable
+    # jobs. Both production workers may publish the same rare five-second
+    # transition; persisting a distributed lease would add no product safety.
+    # Unlike an HTTP mutation, this call owns an in-memory scan watermark. Let
+    # a broker error reach the loop so the same time window is retried.
+    await _send_news_invalidation(app, reason="local-news-published")
+    return True
+
+
 async def _content_scheduler_loop(app: web.Application) -> None:
     stop = app[PWA_CONTENT_SCHEDULER_STOP]
+    news_scan_after = _now()
     while not stop.is_set():
+        news_scan_through = _now()
         try:
             activated = await activate_due_content_publications(app)
+            await invalidate_due_local_news(
+                app,
+                after=news_scan_after,
+                through=news_scan_through,
+            )
+            news_scan_after = news_scan_through
         except asyncio.CancelledError:
             raise
         except Exception:
