@@ -40,6 +40,19 @@ per-course и могут кешироваться до рестарта backend.
 content и submissions всегда сохраняются в S3. Отдельной таблицы редактируемых
 UI-текстов в v1 нет; тексты hardcoded до v2 i18n.
 
+Backend boundary реализован migration
+[`0077.pwa_course_runtime_settings`](../../migrations/0077.pwa_course_runtime_settings.sql),
+typed policy
+[`course_runtime_settings.py`](../../models/pwa/course_runtime_settings.py) и
+admin-only GET/PUT в
+[`admin_course_routes.py`](../../apps/pwa_api/admin_course_routes.py). V1 хранит
+ровно четыре course-owned значения: шкалу verdict, момент показа результата,
+видимость прошлых листков и ограничение тестовых попыток. `reg_mode` остаётся
+глобальной legacy-регистрацией, game не входит в v1, а `save_sol_mode` удалён из
+нового контракта. Staff UI и Telegram compatibility read выполняются отдельным
+следующим инкрементом; наличие backend API само по себе Google cutover не
+закрывает.
+
 Существующая `groups` расширяется полями:
 
 - `public_id`, `course_id`, `status`, `color_key`;

@@ -204,6 +204,12 @@ Student/Family payload и owner invalidation эту скрытую пометк�
 - `GET/PUT /staff/api/v1/courses/{coursePublicId}/runtime-settings` — admin-only
   typed per-course replacement главных `_BotSettings`; ответ явно сообщает,
   что cached значения применятся после restart
+
+Backend API этого пункта реализован в
+[`admin_course_routes.py`](../../../apps/pwa_api/admin_course_routes.py): GET
+возвращает code-owned defaults с version `0`, первый PUT материализует row, а
+следующие PUT требуют matching ETag. Staff contract/UI и Telegram compatibility
+read остаются отдельным инкрементом.
 - `POST /staff/api/v1/imports/student-accounts/preview|apply` — Student batch с
   ФИО, nullable birthday/grade, login/password и collision suffix preview
 - `POST /staff/api/v1/imports/family-accounts/preview|apply` — Family batch с

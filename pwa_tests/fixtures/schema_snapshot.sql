@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 6a6fa4a37cbf99ac4c30f6fe1f63eed333c513bde935dcf35e0733d15bfb7486
+-- Product schema SHA-256: 2197289b1cc84f40b8175604b69a6943e9b7201574f3f630fbc0684c0ccb8e9a
 
 CREATE TABLE achievement_definitions
 (
@@ -767,6 +767,16 @@ CREATE TABLE course_lessons
     version            integer not null default 1 check (version > 0),
     unique (course_id, lesson_number),
     unique (id, course_id)
+);
+
+CREATE TABLE course_runtime_settings
+(
+    course_id          integer primary key references courses (id),
+    schema_version     integer not null check (schema_version = 1),
+    values_json        text    not null check (length(values_json) between 2 and 4096),
+    updated_by_user_id integer not null references users (id),
+    updated_at         text    not null,
+    version            integer not null default 1 check (version >= 1)
 );
 
 CREATE TABLE course_schedule_rules

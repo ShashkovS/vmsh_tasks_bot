@@ -433,6 +433,11 @@ Axe baseline действует для Student, Family и Staff. Для Staff о
 - Classroom API suite проверяет Teacher `403`, stale `409`, запрет неполного/mismatched plan, атомарный batch move, обязательное подтверждение cross-group change, confirmed history и неизменность прошлых plans. Storybook покрывает catalog/layout/plan states, group markers и `очно/распределено`, 6/5/2 и плотный 15-room/~200-student fixtures, stale/reassigning/no-room, profile missing data, room averages возраста/класса/силы, search/history, bulk mode, local draft restore/conflict и mobile Staff. Отдельная проверка `mobile-staff-layout` требует эти поля в student rows и room headers.
 - Classroom Playwright E2E в трёх браузерах создаёт `201` и `Актовый зал`, отклоняет `АКТОВЫЙ ЗАЛ`, подтверждает layout/plan, сверяет Student/Family, скрывает комнату, видит `reassigning`, пересчитывает и подтверждает новую версию. Дополнительно E2E восстанавливает несохранённые select после reload, выполняет bulk и подтверждённый cross-group move, находит фамилию с опечаткой и открывает историю. E2E использует production preview, настоящий aiohttp и seeded SQLite без MSW.
 - Draft-persistence suite для Student/Staff проверяет reload/remount, PWA update prompt, account isolation, base-version conflict, explicit discard и очистку только после server receipt. Текст/UI-state проверяются через `localStorage`, blobs/outbox — через Dexie.
+- Course runtime settings backend проверяется migration `up/down/up`, точным
+  whitelist enum без `save_sol_mode`, admin-only доступом, default `v0` →
+  stored `v1`, stale ETag, атомарным audit rollback и fail-closed чтением
+  повреждённого JSON. Staff interaction и Telegram compatibility read являются
+  отдельными последующими gates.
 - Written-submission suite проверяет owner-confirmed teacher flow и
   implementation-default admin/post-review/preview: один текст, одна фотография
   и batch материалов получают audited target projection; исходные bytes/IDs,

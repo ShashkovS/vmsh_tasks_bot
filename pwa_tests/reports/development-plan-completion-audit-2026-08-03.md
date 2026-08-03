@@ -302,7 +302,9 @@ scopes, enrollment editor, Student account lifecycle, Family account/link
 management, searchable audit, statistics/dashboard, task-workbook
 preview/apply/rollback, synonym merge/split и reload-safe metadata drafts.
 Полный loader inventory теперь фиксирует все шесть Google sheets и
-неатомарность `/update_all`.
+неатомарность `/update_all`. Backend typed owner четырёх course-scoped
+`_BotSettings` реализован отдельно; глобальная регистрация, исключённая game и
+удалённый `save_sol_mode` не маскируются course JSON.
 
 Ключевые доказательства:
 [`phase10-problem-workbook-replacement.md`](phase10-problem-workbook-replacement.md),
@@ -314,7 +316,8 @@ preview/apply/rollback, synonym merge/split и reload-safe metadata drafts.
 [`phase10-staff-statistics.md`](phase10-staff-statistics.md),
 [`phase10-google-loader-inventory-2026-08-03.md`](phase10-google-loader-inventory-2026-08-03.md),
 [`phase10-google-bulk-cutover-guard-2026-08-03.md`](phase10-google-bulk-cutover-guard-2026-08-03.md),
-[`phase10-metadata-grid-drafts-2026-08-03.md`](phase10-metadata-grid-drafts-2026-08-03.md).
+[`phase10-metadata-grid-drafts-2026-08-03.md`](phase10-metadata-grid-drafts-2026-08-03.md),
+[`phase10-course-runtime-settings-backend-2026-08-03.md`](phase10-course-runtime-settings-backend-2026-08-03.md).
 
 Открыто:
 
@@ -322,8 +325,9 @@ preview/apply/rollback, synonym merge/split и reload-safe metadata drafts.
   batch ещё не реализованы; active-group rule — вопрос 3;
 - plaintext provisioning storage/external-mail boundary принято, но ещё не
   реализовано;
-- `_BotUIMsgs` hardcoded в v1; per-course `_BotSettings` и удаление
-  `save_sol_mode` требуют implementation;
+- `_BotUIMsgs` остаётся hardcoded в v1; course runtime settings backend готов,
+  но Staff UI, Telegram compatibility read и production mapping ещё не
+  реализованы;
 - owner-run полный недельный Staff workflow и объявленная дата cutover;
 - остальные external processes не считаются выключенными только потому, что
   заменён лист «Задачи»;

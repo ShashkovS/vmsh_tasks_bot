@@ -1573,3 +1573,18 @@
   несовместимый schema rollback требует заранее выполненного rehearsal.
 - Proof:
   [`phase11-production-rollout-checklist-2026-08-03.md`](../../../pwa_tests/reports/phase11-production-rollout-checklist-2026-08-03.md).
+
+## Phase 10 checkpoint: backend course runtime settings — 3 августа 2026
+
+- Migration `0077` и admin-only GET/PUT дают внутреннего typed owner четырём
+  course-scoped значениям `_BotSettings`; default version `0` материализуется
+  только после matching ETag.
+- `reg_mode` остаётся глобальным legacy onboarding, game исключена из v1,
+  `save_sol_mode` отсутствует, потому что новый pipeline всегда сохраняет
+  content/submissions.
+- Migration/schema/domain/API/audit gate: **29 PASS**; полный shared-worktree
+  PWA Python gate — **1646 PASS / 6 skips** за **76,58 с** на восьми workers;
+  Ruff и diff checks — PASS. Staff UI, Telegram compatibility read и production
+  mapping/cutover остаются открыты.
+- Proof:
+  [`phase10-course-runtime-settings-backend-2026-08-03.md`](../../../pwa_tests/reports/phase10-course-runtime-settings-backend-2026-08-03.md).

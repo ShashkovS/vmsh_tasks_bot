@@ -23,15 +23,28 @@ from db_methods.pwa.course_catalog import (
     update_course,
     update_group,
 )
+from db_methods.pwa.course_runtime_settings import (
+    find_course_runtime_settings,
+    insert_course_runtime_settings,
+    update_course_runtime_settings,
+)
 from db_methods.pwa.audit import insert_audit_event
 from helpers.pwa.app_keys import PWA_DATABASE
 from models.pwa.auth import AuthAudience
+from models.pwa.course_runtime_settings import (
+    DEFAULT_COURSE_RUNTIME_SETTINGS,
+    InvalidCourseRuntimeSettings,
+    normalize_course_runtime_settings,
+)
 
 
 admin_course_routes = web.RouteTableDef()
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?")
 _COLOR = re.compile(r"[a-z](?:[a-z0-9-]{0,30}[a-z0-9])?")
 _ETAG = re.compile(r'^"([a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?):v([1-9]\d*)"$')
+_RUNTIME_SETTINGS_ETAG = re.compile(
+    r'^"([a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?):runtime-settings:v(\d+)"$'
+)
 _COURSE_FIELDS = {
     "schemaVersion",
     "code",
@@ -110,6 +123,24 @@ def _expected_version(request: web.Request, public_id: str) -> int:
             status=409,
             code="version_conflict",
             message="Запись уже изменилась. Обновите страницу.",
+        )
+    return int(match.group(2))
+
+
+def _expected_runtime_settings_version(request: web.Request, public_id: str) -> int:
+    values = request.headers.getall("If-Match", [])
+    match = _RUNTIME_SETTINGS_ETAG.fullmatch(values[0]) if len(values) == 1 else None
+    if match is None:
+        raise PwaApiError(
+            status=422,
+            code="if_match_required",
+            message="Обновите настройки перед сохранением",
+        )
+    if match.group(1) != public_id:
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Настройки уже изменились. Обновите страницу.",
         )
     return int(match.group(2))
 
@@ -280,6 +311,32 @@ def _course_audit_values(row: dict[str, object]) -> dict[str, object]:
         "sortOrder": row["sort_order"],
         "accentKey": row["accent_key"],
         "version": row["version"],
+    }
+
+
+def _runtime_settings_values(row: dict[str, object] | None) -> dict[str, str]:
+    if row is None:
+        return dict(DEFAULT_COURSE_RUNTIME_SETTINGS)
+    try:
+        stored = json.loads(str(row["values_json"]))
+        return normalize_course_runtime_settings(stored)
+    except (json.JSONDecodeError, InvalidCourseRuntimeSettings) as error:
+        # Invalid persisted JSON is an operator-visible integrity failure. It
+        # must not silently fall back to defaults and change course behavior.
+        raise RuntimeError("stored course runtime settings are invalid") from error
+
+
+def _runtime_settings_payload(
+    *,
+    course_public_id: str,
+    row: dict[str, object] | None,
+) -> dict[str, object]:
+    return {
+        "courseId": course_public_id,
+        "values": _runtime_settings_values(row),
+        "version": 0 if row is None else int(row["version"]),
+        "source": "defaults" if row is None else "stored",
+        "appliesAfter": "restart",
     }
 
 
@@ -500,6 +557,147 @@ async def edit_course(request: web.Request) -> web.Response:
             "requestId": request["request_id"],
         },
         headers={"ETag": f'"{public_id}:v{version}"', "Cache-Control": "no-store"},
+    )
+
+
+@admin_course_routes.get("/staff/api/v1/courses/{course_public_id}/runtime-settings")
+async def get_course_runtime_settings(request: web.Request) -> web.Response:
+    _admin_user_id(request)
+    if request.query:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Этот запрос без параметров"
+        )
+    public_id = _path_public_id(request, "course_public_id", code="course_not_found")
+
+    def read(connection):
+        course = find_course(connection, public_id=public_id)
+        if course is None:
+            return None
+        settings = find_course_runtime_settings(connection, course_id=int(course["id"]))
+        return _runtime_settings_payload(
+            course_public_id=public_id,
+            row=settings,
+        )
+
+    result = await _factory(request).run_read_async(read)
+    if result is None:
+        raise PwaApiError(status=404, code="course_not_found", message="Курс не найден")
+    version = int(result["version"])
+    return web.json_response(
+        {"schemaVersion": 1, "settings": result, "requestId": request["request_id"]},
+        headers={
+            "ETag": f'"{public_id}:runtime-settings:v{version}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@admin_course_routes.put("/staff/api/v1/courses/{course_public_id}/runtime-settings")
+async def put_course_runtime_settings(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
+    if request.query:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Этот запрос без параметров"
+        )
+    public_id = _path_public_id(request, "course_public_id", code="course_not_found")
+    expected_version = _expected_runtime_settings_version(request, public_id)
+    payload = await _read_json(request, {"schemaVersion", "values"})
+    try:
+        values = normalize_course_runtime_settings(payload["values"])
+    except InvalidCourseRuntimeSettings as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте настройки курса",
+        ) from error
+    values_json = json.dumps(
+        values, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
+    now = _now()
+
+    def write(connection):
+        course = find_course(connection, public_id=public_id)
+        if course is None:
+            return "not_found", None
+        course_id = int(course["id"])
+        current = find_course_runtime_settings(connection, course_id=course_id)
+        current_version = 0 if current is None else int(current["version"])
+        if current_version != expected_version:
+            return "conflict", None
+        before = _runtime_settings_payload(
+            course_public_id=public_id,
+            row=current,
+        )
+        if current is None:
+            insert_course_runtime_settings(
+                connection,
+                course_id=course_id,
+                values_json=values_json,
+                actor_user_id=actor_user_id,
+                now=now,
+            )
+        elif not update_course_runtime_settings(
+            connection,
+            course_id=course_id,
+            expected_version=expected_version,
+            values_json=values_json,
+            actor_user_id=actor_user_id,
+            now=now,
+        ):
+            return "conflict", None
+        stored = find_course_runtime_settings(connection, course_id=course_id)
+        assert stored is not None
+        after = _runtime_settings_payload(
+            course_public_id=public_id,
+            row=stored,
+        )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_id,
+            audience="staff",
+            action="course_runtime_settings.updated",
+            object_type="course_runtime_settings",
+            object_id=public_id,
+            request_id=request["request_id"],
+            before_json=json.dumps(before, ensure_ascii=False, sort_keys=True),
+            after_json=json.dumps(after, ensure_ascii=False, sort_keys=True),
+            occurred_at=now,
+        )
+        return "ok", after
+
+    try:
+        state, result = await _factory(request).run_write_async(write)
+    except sqlite3.IntegrityError as error:
+        if "UNIQUE constraint failed: course_runtime_settings.course_id" not in str(
+            error
+        ):
+            # Audit/FK/check failures are server integrity errors, not an
+            # optimistic conflict that the administrator can fix by retrying.
+            raise
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Настройки уже изменились. Обновите страницу.",
+        ) from error
+    if state == "not_found":
+        raise PwaApiError(status=404, code="course_not_found", message="Курс не найден")
+    if state == "conflict":
+        raise PwaApiError(
+            status=409,
+            code="version_conflict",
+            message="Настройки уже изменились. Обновите страницу.",
+        )
+    assert result is not None
+    version = int(result["version"])
+    return web.json_response(
+        {"schemaVersion": 1, "settings": result, "requestId": request["request_id"]},
+        headers={
+            "ETag": f'"{public_id}:runtime-settings:v{version}"',
+            "Cache-Control": "no-store",
+        },
     )
 
 

@@ -209,6 +209,14 @@ import **новых школьников** остаётся отдельным �
   [`phase10-problem-workbook-replacement.md`](../../../pwa_tests/reports/phase10-problem-workbook-replacement.md).
 - [ ] Cutover/rollback/security credential runbook and acceptance: `<paths/issues/name/date>`.
 
+Backend typed replacement `_BotSettings` реализован отдельным промежуточным
+инкрементом: migration `0077`, четыре однозначно course-owned enum, admin-only
+GET/PUT, optimistic ETag и атомарный audit. Глобальный `reg_mode`, исключённая
+game и удалённый `save_sol_mode` не протаскиваются в course JSON. Staff UI,
+Telegram compatibility read и production backfill/cutover остаются открыты.
+Proof:
+[`phase10-course-runtime-settings-backend-2026-08-03.md`](../../../pwa_tests/reports/phase10-course-runtime-settings-backend-2026-08-03.md).
+
 ## Многокурсовый инкремент Phase 10
 
 Staff получает полный каталог CRUD/archive курсов и групп, enrollment/access/scopes, schedule overrides, Telegram bindings и synonym impact preview. Google replacement imports становятся course-aware и не используют один глобальный level context.

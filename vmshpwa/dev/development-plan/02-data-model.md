@@ -54,6 +54,12 @@ settings и может применять изменения после restart.
 переносится, поскольку content и submissions всегда хранятся в S3. UI messages
 остаются code resources в v1 и не получают таблицу до v2 i18n.
 
+Migration [`0077`](../../../migrations/0077.pwa_course_runtime_settings.sql)
+реализует эту таблицу без backfill production-значений. Typed v1 whitelist
+содержит `verdictMode`, `resultMode`, `previousLessonsMode` и
+`testAttemptRateLimit`; глобальная регистрация и исключённая из v1 game не
+маскируются course-setting.
+
 ### `auth_accounts`
 
 `id INTEGER PK`, `public_id TEXT UNIQUE`, `audience TEXT CHECK(student|family|staff)`, `username TEXT`, `username_normalized TEXT`, `username_algorithm_version INTEGER NULL`, `provisioning_source TEXT`, `display_name TEXT NULL`, `credential_kind TEXT CHECK(telegram_token|password)`, `credential_hash TEXT NULL`, `provisioning_password_plaintext TEXT NULL`, `linked_user_id INTEGER NULL FK users(id)`, `status TEXT CHECK(active|blocked|disabled|archived)`, `credential_version INTEGER DEFAULT 1`, `last_login_at TEXT NULL`, `created_at TEXT`, `updated_at TEXT`.

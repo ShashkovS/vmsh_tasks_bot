@@ -203,16 +203,19 @@ characterization используемых keys и явного code mapping, а 
 наблюдаются семь keys: `game_mode`, `prev_problems_mode`, `rate_limit`,
 `reg_mode`, `result_mode`, `save_sol_mode`, `verdict_mode`.
 
-**Новая замена.** Не реализована. Главные настройки становятся per-course и
-редактируются вместе с курсом; backend может кешировать их до перезапуска.
-Перед реализацией каждый legacy key получает тип/validation и mapping.
-`save_sol_mode` удаляется без replacement: новый pipeline всегда хранит content
-и submissions в S3.
+**Новая замена.** Backend storage и admin-only typed GET/PUT реализованы для
+четырёх course-owned keys: `verdict_mode`, `result_mode`,
+`prev_problems_mode`, `rate_limit`. API использует полные enum-значения,
+optimistic version и атомарный audit; неизвестный key/value блокируется.
+`reg_mode` остаётся глобальным legacy onboarding до отдельного отказа от
+регистрации через bot, game не входит в v1. `save_sol_mode` удаляется без
+replacement: новый pipeline всегда хранит content и submissions в S3. Staff UI
+и compatibility read Telegram adapter ещё не реализованы.
 
-**Cutover и rollback.** Статус `legacy bridge`. Recovery — исправить значение и
-повторить `/update_bot_settings`, затем при необходимости перезапустить bot.
-Cutover проходит только после per-course Staff settings и compatibility read
-для Telegram adapter.
+**Cutover и rollback.** Статус `parallel/partial`. Recovery — исправить значение
+и повторить `/update_bot_settings`, затем при необходимости перезапустить bot.
+Cutover проходит только после Staff UI, compatibility read Telegram adapter,
+production mapping первого курса и owner rehearsal.
 
 ## Полная загрузка `/update_all`
 
