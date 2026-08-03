@@ -379,10 +379,15 @@ replace команда может оставить частичную пару, 
 ведёт к `make ...-update` либо эквивалентному `python -m ... write`, а не к
 неработоспособному запуску файла по path.
 
-Minute-level workload numbers — только observed proxies. Они не доказывают
-concurrent sessions, request/write latency, photo bytes, outbox depth или
-`SQLITE_BUSY` budget; отсутствующие входы должны быть получены отдельной
-telemetry/load characterization до закрытия этапа 0 и performance gate этапа 11.
+Minute-level workload numbers — только observed proxies. Дополняющий opt-in
+two-process smoke проверяет server-side burst чуть выше наблюдаемого пика: 16
+письменных сдач, 32 фотографии и 16 MiB representative file IO через одну WAL
+SQLite. Для этого малого объёма user-visible exhausted `SQLITE_BUSY` не
+допускается; внутренний bounded retry разрешён. Широкие smoke thresholds ловят
+зависший writer и не являются production SLA. Реальные concurrent sessions и
+глубина клиентского offline outbox по-прежнему требуют production telemetry.
+Команда и результаты зафиксированы в
+[`phase11-two-worker-runtime.md`](../../pwa_tests/reports/phase11-two-worker-runtime.md).
 
 ## Visual regression
 

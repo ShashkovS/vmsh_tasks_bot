@@ -81,8 +81,7 @@ class SubmissionFixture:
     window_id: int
 
 
-@pytest.fixture()
-def submission_fixture(tmp_path) -> SubmissionFixture:
+def build_submission_fixture(tmp_path) -> SubmissionFixture:
     database_path = tmp_path / "test-submissions.sqlite3"
     apply_schema_migrations(database_path)
     factory = PwaConnectionFactory(database_path)
@@ -558,6 +557,11 @@ def submission_fixture(tmp_path) -> SubmissionFixture:
         written_target_problem_revision_id=written_target_problem_revision_id,
         window_id=window_id,
     )
+
+
+@pytest.fixture()
+def submission_fixture(tmp_path) -> SubmissionFixture:
+    return build_submission_fixture(tmp_path)
 
 
 def command(

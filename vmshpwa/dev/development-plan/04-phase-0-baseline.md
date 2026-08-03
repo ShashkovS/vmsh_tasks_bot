@@ -82,7 +82,16 @@ Auth preflight отклоняет sidecars и symlink/hard-link aliases, зат�
 
 Техническая опора этой гарантии: [Python 3.14 `Connection.deserialize`](https://docs.python.org/3.14/library/sqlite3.html#sqlite3.Connection.deserialize), [SQLite `sqlite3_deserialize`](https://sqlite.org/c3ref/deserialize.html) с ограничением WAL-mode serialization и platform-dependent [`O_NOFOLLOW_ANY`](https://docs.python.org/3.14/library/os.html#os.O_NOFOLLOW_ANY), [`O_NOFOLLOW`](https://docs.python.org/3.14/library/os.html#os.O_NOFOLLOW), [`fstat`](https://docs.python.org/3.14/library/os.html#os.fstat). Код не меняет SQLite header bytes; непригодный к deserialize snapshot отклоняется fail-closed. Полная тестовая формулировка зафиксирована в [`testing-strategy.md`](../../docs/testing-strategy.md#aggregate-preflight-реальных-источников).
 
-Workload profile использует только raw `logs/events.jsonl` и 18 rotations `events.jsonl.YYYY-MM-DD`; PII-bearing filtered derivative `logs/selected.jsonl` исключён, чтобы не дублировать и не смещать выборку. Все source fd удерживаются открытыми; bytes читаются и хешируются через эти же descriptors, после parsing повторяются `fstat`/hash/path checks. Состав rotations проверяется повторно, symlink/hard-link/duplicate-inode aliases отклоняются, JSON records deduplicate-ятся по canonical representation, а event/source/actor labels проходят explicit allowlists. Текущий отчёт покрывает 176713 observed records и 37408 traces в окне 2–20 марта; completeness metadata отсутствует. Peak minute proxies — 38 ingress updates, 13 submission events, 11 review completions и 12 distinct flows. Concurrent sessions, request/write latency, photo bytes, outbox depth и `SQLITE_BUSY` budget остаются неизвестными и всё ещё блокируют окончательный performance input этапа 11.
+Workload profile использует только raw `logs/events.jsonl` и 18 rotations `events.jsonl.YYYY-MM-DD`; PII-bearing filtered derivative `logs/selected.jsonl` исключён, чтобы не дублировать и не смещать выборку. Все source fd удерживаются открытыми; bytes читаются и хешируются через эти же descriptors, после parsing повторяются `fstat`/hash/path checks. Состав rotations проверяется повторно, symlink/hard-link/duplicate-inode aliases отклоняются, JSON records deduplicate-ятся по canonical representation, а event/source/actor labels проходят explicit allowlists. Текущий отчёт покрывает 176713 observed records и 37408 traces в окне 2–20 марта; completeness metadata отсутствует. Peak minute proxies — 38 ingress updates, 13 submission events, 11 review completions и 12 distinct flows.
+
+Локальный two-process smoke теперь измеряет недостающую серверную границу:
+16 письменных сдач, 32 фотографии и 16 MiB file IO записаны в одну WAL-базу за
+0.692s с p95 0.033s и без исчерпанного `SQLITE_BUSY`; допустимый
+user-visible busy budget для такого объёма равен нулю. Proof:
+[`phase11-two-worker-runtime.md`](../../../pwa_tests/reports/phase11-two-worker-runtime.md).
+Это не заменяет production telemetry: фактическое число одновременных сессий и
+глубина клиентского offline outbox пока неизвестны, а измеренные цифры не
+являются SLA.
 
 Decommission baseline реализован как связанная пара
 [`21-external-process-register.md`](21-external-process-register.md) и

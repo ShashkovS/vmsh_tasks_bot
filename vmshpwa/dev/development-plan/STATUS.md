@@ -1105,3 +1105,20 @@
 - Proof:
   [`phase5-written-consolidated-gates.md`](../../../pwa_tests/reports/phase5-written-consolidated-gates.md).
 - Owner visual approval остаётся открытым; snapshots не обновлялись.
+
+## Phase 0/11 checkpoint: SQLite photo workload — 3 августа 2026
+
+- Два отдельных процесса записали в одну WAL-базу 16 письменных сдач, 32
+  фотографии и 16 MiB representative file IO: 0.692s total, 0.033s p95, ни
+  одного исчерпанного `SQLITE_BUSY`.
+- Полный opt-in target вместе с 40-login burst: **2 PASS за 5.53s**. Допустимый
+  user-visible busy budget для масштаба smoke равен нулю; широкие latency
+  пределы являются только защитой от зависания, а не production SLA.
+- Общий PWA Python gate после изменения: **1552 PASS / 6 intentional skips за
+  72.83s** в восьми workers.
+- Реальная конверсия HEIC/JPEG/WebP и browser outbox доказаны отдельными
+  Phase-5 gates; этот тест намеренно изолирует SQLite metadata и file IO.
+- Proof:
+  [`phase11-two-worker-runtime.md`](../../../pwa_tests/reports/phase11-two-worker-runtime.md).
+- Production concurrent-session telemetry и фактическая глубина offline outbox
+  всё ещё неизвестны; они не выдаются за закрытые этим локальным измерением.
