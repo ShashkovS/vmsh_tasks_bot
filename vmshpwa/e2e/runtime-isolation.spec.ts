@@ -446,6 +446,10 @@ test('student and family service workers install, activate and control only thei
         navigationProbe.evaluate(() => navigator.serviceWorker.controller?.scriptURL ?? null),
       )
       .toBe(`${gatewayOrigin}/${audience}/sw.js`)
+    // The anonymous product shell redirects to login after it becomes
+    // controlled. Wait for that router navigation before probing unrelated
+    // 404 documents, otherwise WebKit can cancel the first probe mid-flight.
+    await expect(navigationProbe).toHaveURL(`/${audience}/login?returnTo=%2F`)
     for (const path of [
       `/${audience}/api`,
       `/${audience}/ws/not-exact`,

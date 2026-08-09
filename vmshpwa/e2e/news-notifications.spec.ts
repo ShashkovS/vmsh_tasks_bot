@@ -250,8 +250,11 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
   await expect(banner).toHaveCount(0)
   await page.reload()
   await expect(page.locator('[data-banner-id="banner.phase8.e2e"]')).toHaveCount(0)
+  await expect(page).toHaveURL('/student/')
+  await expect(page.locator('[data-product="student"]')).toBeVisible()
 
-  await page.goto('/student/news')
+  await page.locator('a[href="/student/news"]').first().click()
+  await expect(page).toHaveURL('/student/news')
   await expect(page.getByText(postText, { exact: false })).toBeVisible()
   await expect(page.getByText('Тестовый канал ВМШ')).toBeVisible()
   await page.locator(`a[href="/student/news/${postId}"]`).click()

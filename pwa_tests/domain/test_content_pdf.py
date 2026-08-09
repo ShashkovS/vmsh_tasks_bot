@@ -25,7 +25,7 @@ FIXTURE = (
 )
 # Eight xdist workers can delay a freshly spawned Python process on a busy
 # developer machine. This remains bounded without treating scheduler latency
-# as a toolchain failure; converter-timeout cases below keep their 50 ms limit.
+# as a toolchain failure; only the deliberate timeout case keeps a 50 ms limit.
 SYNTHETIC_PROBE_TIMEOUT_SECONDS = 5.0
 
 
@@ -120,7 +120,7 @@ async def test_pdf_probe_reports_missing_without_attempting_render(tmp_path):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("body", "expected_code"),
+    ("body", "expected_code", "render_timeout_seconds"),
     [
         (
             """import sys
@@ -130,6 +130,7 @@ else:
     print('/private/secret/source.tex and message content', file=sys.stderr)
     raise SystemExit(7)""",
             "pdf.converter_failed",
+            2.0,
         ),
         (
             """import sys, time
@@ -138,12 +139,14 @@ if '-version' in sys.argv:
 else:
     time.sleep(5)""",
             "pdf.converter_timeout",
+            0.05,
         ),
         (
             """import sys
 if '-version' in sys.argv:
     print('Synthetic pdfTeX 1.0')""",
             "pdf.output_missing",
+            2.0,
         ),
     ],
 )
@@ -151,13 +154,14 @@ async def test_pdf_converter_failures_are_bounded_and_redacted(
     tmp_path,
     body,
     expected_code,
+    render_timeout_seconds,
 ):
     executable = _executable(tmp_path, "pdflatex", body)
     renderer = await PdfDerivativeRenderer.from_config(
         _config(executable),
         temp_root=tmp_path,
         probe_timeout_seconds=SYNTHETIC_PROBE_TIMEOUT_SECONDS,
-        timeout_seconds=0.05,
+        timeout_seconds=render_timeout_seconds,
     )
 
     with pytest.raises(PdfDerivativeError) as captured:

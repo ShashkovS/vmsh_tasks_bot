@@ -11,7 +11,28 @@ from vmshpwa.scripts import static_release
 RECORDED_AT = "2026-07-30T18:00:00Z"
 
 
-def _bundles(root: Path, marker: str) -> dict[str, Path]:
+def _write_provenance(root: Path, application: str, release_id: str) -> None:
+    root.joinpath("build-provenance.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "application": application,
+                "profile": "production",
+                "releaseId": release_id,
+                "publicMediaOrigin": "https://media.vmsh.example",
+                "sentryConfigured": True,
+                "sentryOrigin": "https://errors.vmsh.example",
+                "msw": False,
+                "prototype": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def _bundles(
+    root: Path, marker: str, release_id: str = "revision-a"
+) -> dict[str, Path]:
     sources: dict[str, Path] = {}
     for app_name in ("student", "family", "staff"):
         source = root / app_name
@@ -20,6 +41,7 @@ def _bundles(root: Path, marker: str) -> dict[str, Path]:
         if app_name != "staff":
             (source / "manifest.webmanifest").write_text("{}", encoding="utf-8")
             (source / "sw.js").write_text("// worker", encoding="utf-8")
+        _write_provenance(source, app_name, release_id)
         sources[app_name] = source
     return sources
 
@@ -38,6 +60,8 @@ def test_packages_and_rolls_back_complete_frontend_set(
     first = static_release.package_release("revision-a", RECORDED_AT, sources=sources)
     for source in sources.values():
         (source / "index.html").write_text("second", encoding="utf-8")
+    for app_name, source in sources.items():
+        _write_provenance(source, app_name, "revision-b")
     second = static_release.package_release("revision-b", RECORDED_AT, sources=sources)
 
     verified = static_release.verify_release("revision-a", RECORDED_AT)
@@ -53,6 +77,7 @@ def test_packages_and_rolls_back_complete_frontend_set(
     )
     assert verified["operation"] == "static-release-verify"
     assert verified["applications"] == first["applications"]
+    assert verified["build"] == first["build"]
     assert activated["previousReleaseId"] == "revision-a"
     assert rolled_back["previousReleaseId"] == "revision-b"
     assert release_root.joinpath("current").readlink().as_posix() == "revision-a"
@@ -76,6 +101,47 @@ def test_package_rejects_incomplete_or_existing_release(
     sources["student"].joinpath("sw.js").write_text("// worker")
     static_release.package_release("revision-a", RECORDED_AT, sources=sources)
     with pytest.raises(ValueError, match="already exists"):
+        static_release.package_release("revision-a", RECORDED_AT, sources=sources)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        (lambda value: value.update(profile="verification"), "student"),
+        (lambda value: value.update(releaseId="other-release"), "student"),
+        (lambda value: value.update(sentryConfigured=False), "student"),
+        (
+            lambda value: value.update(publicMediaOrigin="http://media.vmsh.example"),
+            "HTTPS",
+        ),
+    ),
+)
+def test_package_rejects_non_production_build_provenance(
+    tmp_path: Path,
+    release_root: Path,
+    mutation,
+    message: str,
+) -> None:
+    sources = _bundles(tmp_path / "bundles", "ready")
+    path = sources["student"] / "build-provenance.json"
+    value = json.loads(path.read_text(encoding="utf-8"))
+    mutation(value)
+    path.write_text(json.dumps(value), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        static_release.package_release("revision-a", RECORDED_AT, sources=sources)
+
+
+def test_package_rejects_mixed_application_provenance(
+    tmp_path: Path, release_root: Path
+) -> None:
+    sources = _bundles(tmp_path / "bundles", "ready")
+    path = sources["family"] / "build-provenance.json"
+    value = json.loads(path.read_text(encoding="utf-8"))
+    value["sentryOrigin"] = "https://other-errors.vmsh.example"
+    path.write_text(json.dumps(value), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="different build provenance"):
         static_release.package_release("revision-a", RECORDED_AT, sources=sources)
 
 

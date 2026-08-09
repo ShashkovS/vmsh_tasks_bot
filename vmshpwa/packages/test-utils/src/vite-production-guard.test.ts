@@ -59,4 +59,69 @@ describe('production Vite guard', () => {
       assertSafeProductionBuild({ command: 'build', mode: 'production' }, envDir),
     ).toThrow('VITE_ENABLE_MSW')
   })
+
+  it('marks an ordinary credential-free build as verification-only', () => {
+    const provenance = assertSafeProductionBuild(
+      { command: 'build', mode: 'production' },
+      environmentDirectory(),
+    )
+
+    expect(provenance).toEqual({
+      schemaVersion: 1,
+      profile: 'verification',
+      releaseId: null,
+      publicMediaOrigin: null,
+      sentryConfigured: false,
+      sentryOrigin: null,
+      msw: false,
+      prototype: false,
+    })
+  })
+
+  it('records only non-secret origins for an explicit production build', () => {
+    const provenance = assertSafeProductionBuild(
+      { command: 'build', mode: 'production' },
+      environmentDirectory(
+        [
+          'VMSH_FRONTEND_BUILD_PROFILE=production',
+          'VITE_SENTRY_RELEASE=pilot-2026.08.09',
+          'VITE_PUBLIC_MEDIA_ORIGIN=https://media.vmsh.example',
+          'VITE_SENTRY_DSN=https://public-key@errors.example/179',
+          '',
+        ].join('\n'),
+      ),
+    )
+
+    expect(provenance).toEqual({
+      schemaVersion: 1,
+      profile: 'production',
+      releaseId: 'pilot-2026.08.09',
+      publicMediaOrigin: 'https://media.vmsh.example',
+      sentryConfigured: true,
+      sentryOrigin: 'https://errors.example',
+      msw: false,
+      prototype: false,
+    })
+  })
+
+  it.each([
+    ['missing release', 'VITE_SENTRY_RELEASE='],
+    ['media path', 'VITE_PUBLIC_MEDIA_ORIGIN=https://media.vmsh.example/path'],
+    ['incomplete Sentry DSN', 'VITE_SENTRY_DSN=https://errors.example/179'],
+  ])('rejects incomplete production provenance: %s', (_label, replacement) => {
+    const values = new Map([
+      ['VITE_SENTRY_RELEASE', 'VITE_SENTRY_RELEASE=pilot-2026.08.09'],
+      ['VITE_PUBLIC_MEDIA_ORIGIN', 'VITE_PUBLIC_MEDIA_ORIGIN=https://media.vmsh.example'],
+      ['VITE_SENTRY_DSN', 'VITE_SENTRY_DSN=https://public-key@errors.example/179'],
+    ])
+    const name = replacement.slice(0, replacement.indexOf('='))
+    values.set(name, replacement)
+    const envDir = environmentDirectory(
+      ['VMSH_FRONTEND_BUILD_PROFILE=production', ...values.values(), ''].join('\n'),
+    )
+
+    expect(() =>
+      assertSafeProductionBuild({ command: 'build', mode: 'production' }, envDir),
+    ).toThrow()
+  })
 })

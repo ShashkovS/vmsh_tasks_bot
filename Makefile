@@ -267,7 +267,7 @@ pwa-telegram-rich-live-smoke:
 	@test -z "$(VMSH_TELEGRAM_TEST_CHANNEL_ID)" || (echo "Unset VMSH_TELEGRAM_TEST_CHANNEL_ID; smoke uses the verified local binding"; exit 2)
 	$(PWA_UV_ENV) VMSH_RUN_TELEGRAM_LIVE_SMOKE=1 uv run python -m vmshpwa.scripts.telegram_test_capability --live --run-rich-smoke --confirm vmsh179devbot-channel-synthetic
 
-.PHONY: dependency-audit python-test python-test-legacy pwa-python-test pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-e2e pwa-e2e-auth pwa-e2e-content pwa-e2e-submissions pwa-e2e-review pwa-e2e-support pwa-e2e-classrooms pwa-e2e-oral pwa-e2e-news pwa-e2e-family pwa-e2e-functional pwa-e2e-realtime pwa-e2e-runtime pwa-visual pwa-visual-update telegram-history-test
+.PHONY: dependency-audit python-test python-test-legacy pwa-python-test pwa-format pwa-lint pwa-typecheck pwa-test pwa-storybook-test pwa-build pwa-production-build pwa-e2e pwa-e2e-auth pwa-e2e-content pwa-e2e-submissions pwa-e2e-review pwa-e2e-support pwa-e2e-classrooms pwa-e2e-oral pwa-e2e-news pwa-e2e-family pwa-e2e-functional pwa-e2e-realtime pwa-e2e-runtime pwa-visual pwa-visual-update telegram-history-test
 dependency-audit:
 	$(PWA_UV_ENV) uv audit --frozen --preview-features audit-command
 	cd $(PWA_DIR) && CI=true pnpm audit
@@ -298,6 +298,19 @@ pwa-storybook-test:
 
 pwa-build:
 	cd $(PWA_DIR) && CI=true pnpm build
+
+pwa-production-build:
+	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
+	@test -n "$(VITE_PUBLIC_MEDIA_ORIGIN)" || (echo "Set VITE_PUBLIC_MEDIA_ORIGIN"; exit 2)
+	@test -n "$(VITE_SENTRY_DSN)" || (echo "Set VITE_SENTRY_DSN"; exit 2)
+	@cd $(PWA_DIR) && CI=true \
+		VMSH_FRONTEND_BUILD_PROFILE=production \
+		VITE_ENABLE_MSW=false \
+		VITE_PROTOTYPE=false \
+		VITE_PUBLIC_MEDIA_ORIGIN="$(VITE_PUBLIC_MEDIA_ORIGIN)" \
+		VITE_SENTRY_DSN="$(VITE_SENTRY_DSN)" \
+		VITE_SENTRY_RELEASE="$(PWA_RELEASE_ID)" \
+		pnpm build
 
 pwa-e2e:
 	cd $(PWA_DIR) && CI=true pnpm e2e
