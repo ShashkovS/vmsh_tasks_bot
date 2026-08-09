@@ -75,7 +75,9 @@ prototype adapters.
   изменяется;
 - backup/restore rehearsal проходит SQLite integrity и согласованные read-model
   проверки;
-- статический release упаковывается и проверяется по manifest/checksums;
+- статический release упаковывается и проверяется по manifest/checksums только
+  из `pwa-production-build`: все три `build-provenance.json` подтверждают один
+  release ID, Sentry/media origins и выключенные prototype/MSW;
 - в отчёте нет credentials, персональных данных и публичных URL ученических
   фотографий.
 
@@ -140,13 +142,21 @@ Rollback выполняется по
 
 ## Порядок текущей работы
 
-1. Стабилизировать полный non-visual Playwright gate на общей E2E-БД.
-2. Прогнать локальные lint/type/unit/Storybook/Python gates.
-3. Выполнить migration и restore rehearsal на копии `db/vmsh.db`.
-4. Упаковать и проверить локальный static release-кандидат.
-5. Подготовить server environment, nginx/systemd и production secret sources.
-6. Выполнить maintenance-window deploy и публичный smoke.
-7. Выдать доступ пилотной группе и начать журнал обратной связи.
+Локальные пункты 1–4 завершены; доказательства сведены в
+[`pilot-deploy-candidate-2026-08-09.md`](../../../pwa_tests/reports/pilot-deploy-candidate-2026-08-09.md).
+Текущий порядок дальнейшей работы:
+
+1. Утвердить FQDN, public media origin, frontend Sentry DSN, production service
+   user и пути установки.
+2. Подготовить server environment, nginx/systemd и production secret sources.
+3. Собрать настоящий production release с утверждёнными публичными параметрами,
+   упаковать и проверить его до активации.
+4. Выполнить maintenance-window deploy и публичный smoke.
+5. Выдать доступ пилотной группе и начать журнал обратной связи.
+
+До начала пилота не возвращаться к полному закрытию фаз 0–11, если найденный
+пункт не блокирует deploy, сохранность данных, основной учебный сценарий или
+откат.
 
 ## Пруфы завершения этапа
 

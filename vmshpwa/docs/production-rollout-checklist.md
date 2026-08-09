@@ -44,8 +44,13 @@ privacy-safe report.
 
 - [ ] Node 26, pnpm 11.15.1, Python 3.14 и frozen lockfiles подтверждены под
       production service user.
-- [ ] Frontend собран без prototype/MSW и упакован командой
-      `make pwa-phase11-release-package` с точным `PWA_RELEASE_ID`.
+- [ ] Frontend собран командой `make pwa-production-build` с точными
+      `PWA_RELEASE_ID`, `VITE_PUBLIC_MEDIA_ORIGIN` и `VITE_SENTRY_DSN`; во всех
+      трёх `build-provenance.json` записаны одинаковые release/origins и
+      `prototype=false`, `msw=false`.
+- [ ] Production bundles упакованы командой
+      `make pwa-phase11-release-package` с тем же `PWA_RELEASE_ID`; обычная
+      verification-сборка проверенно отклоняется.
 - [ ] `make pwa-phase11-release-verify` подтвердил manifest и checksums до
       активации.
 - [ ] Redacted toolchain probe подтвердил нужные `pdflatex`, `pdf2svg`, `cwebp`

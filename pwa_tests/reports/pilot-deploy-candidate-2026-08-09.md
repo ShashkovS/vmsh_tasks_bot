@@ -6,16 +6,16 @@
 [`23-pilot-deployment.md`](../../vmshpwa/dev/development-plan/23-pilot-deployment.md).
 Отчёт не утверждает, что приложение уже развёрнуто на production host.
 
-Проверяемая базовая ревизия: `cebebf2581dad3a9fb23bcedb0d421dd411e014d`.
-Стабилизация browser gates зафиксирована в `962947b`; сам отчёт добавляется
-следующим документационным коммитом.
+Проверяемая ревизия: `17a95bec356bfd607a1eb91838184f206675f8a2`.
+Production provenance зафиксирован в `8bd236a`, последний test-only refresh
+setup — в `17a95be`.
 
 ## Локальные проверки
 
 - `make pwa-lint pwa-typecheck pwa-build` — `PASS`; Student и Family собрали
   `injectManifest` Service Worker, Staff собрал обычный SPA.
-- `make pwa-test` — `PASS`: frontend Vitest 606/606; PWA Python 1646 passed,
-  6 skipped, 9 warnings за 96,90 секунды с `pytest-xdist -n8`. Интеграционные
+- `make pwa-test` — `PASS`: frontend Vitest 611/611; PWA Python 1651 passed,
+  6 skipped, 9 warnings за 189,57 секунды с `pytest-xdist -n8`. Интеграционные
   фикстуры используют отдельную временную SQLite для каждого worker.
 - `make pwa-storybook-test` — `PASS`: 54 файлов, 262 tests.
 - `make python-test-legacy telegram-history-test` — `PASS`: 124 legacy tests,
@@ -28,18 +28,13 @@
   объединения Student/Family scope-проверок в один последовательный browser
   context; assertions на manifest, scope, control, update, Cache Storage,
   IndexedDB, WebSocket и audience isolation сохранены.
-- полные production-build прогоны подтвердили 227 product scenarios и 12
-  ожидаемых single-writer skips. До последней правки они завершались с одним
-  WebKit flaky при создании второго холодного Service Worker context. После
-  правки повтор полного набора был остановлен: весь host замедлился в 5–10 раз
-  после серии браузерных прогонов и обычные auth tests стали упираться в timeout.
-  Это не записано как `PASS`; требуется один чистый контрольный запуск после
-  освобождения ресурсов.
+- финальный `make pwa-e2e-functional` — `PASS`: 225 passed, 12 ожидаемых
+  single-writer skips, 0 flaky в Chromium, WebKit и Firefox за 6,7 минуты.
 
-E2E-исправления затрагивают только тестовый setup и ожидания. Они перестали
-предполагать пустую новостную ленту, отсутствие чужих валидных invalidation,
-мгновенное удаление истёкшей cookie из Firefox cookie jar и отдельный холодный
-WebKit context для каждого PWA. Production API и данные не менялись.
+Последние E2E-исправления затрагивают только тестовый setup и ожидания. После
+reload тест дожидается законченного router redirect, а фильтрованная очистка
+Playwright cookie явно возвращает намеренно сохранённую HttpOnly refresh cookie
+до навигации. Production API и данные не менялись.
 
 ## Rehearsal и release
 
@@ -55,8 +50,12 @@ WebKit context для каждого PWA. Production API и данные не м
 - `make pwa-phase11-restore-rehearsal` — `PASS`: 72 migrations,
   `integrityCheck=ok`, `schemaCurrent=true`, legacy row parity сохранён,
   исходная БД не изменена, общее время 0,633 секунды.
-- static release `pilot-20260809-candidate` упакован и проверен — `PASS`:
-  Student 156 файлов, Family 145, Staff 169; manifest/checksums совпали.
+- synthetic production build `pilot-provenance-smoke` с безопасными example
+  origins собран, упакован и повторно проверен — `PASS`: все три приложения
+  содержат один release ID, `prototype=false`, `msw=false`, Sentry/media origins
+  и совпадающие manifest/checksums. Обычный credential-free `make pwa-build`
+  создаёт `profile=verification` и проверенно отклоняется packager до создания
+  release. Example build не активирован и не является production bundle.
   Privacy-safe отчёты лежат в `.runtime/phase11-rehearsal/` и не предназначены
   для Git.
 
@@ -90,9 +89,10 @@ WebKit context для каждого PWA. Production API и данные не м
 
 ## Решение
 
-Статус: `LOCAL CANDIDATE — CONTROL RUN PENDING`.
+Статус: `LOCAL DEPLOY CANDIDATE — SERVER INPUTS PENDING`.
 
 Сборка, unit/interaction/Python/legacy gates, migration/restore rehearsal,
-release packaging и все отдельные browser suites зелёные. Перед установкой на
-сервер остаётся один контрольный полный non-visual run на освободившемся host.
-До server smoke нельзя использовать статус `DEPLOYED`.
+production provenance/release packaging и полный browser matrix зелёные.
+Следующая работа начинается с утверждённых FQDN, public media origin, frontend
+Sentry DSN и production service paths, затем выполняет server install и smoke.
+До этого нельзя использовать статус `DEPLOYED`.

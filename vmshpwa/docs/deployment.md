@@ -22,7 +22,23 @@ legacy-сайта. Production и optional staging должны получить 
 3. Запустить backup SQLite до migrations/restart и дождаться его перед изменением backend.
 4. Если изменились `pyproject.toml`/`uv.lock`, выполнить frozen production sync в выделенное окружение.
 5. Если изменились `vmshpwa/pnpm-lock.yaml`, `pnpm-workspace.yaml` или любой `package.json`, выполнить `pnpm install --frozen-lockfile` под закреплёнными Node 26 и pnpm 11.15.1.
-6. Для frontend-изменений выполнить format-check, lint, typecheck, unit/Storybook tests и production build. Не собирать с `VITE_ENABLE_MSW` или `VITE_PROTOTYPE`.
+6. Для frontend-изменений выполнить format-check, lint, typecheck и
+   unit/Storybook tests. Финальные bundles собирать только отдельной командой:
+
+   ```shell
+   make pwa-production-build \
+     PWA_RELEASE_ID=<lowercase-release-id> \
+     VITE_PUBLIC_MEDIA_ORIGIN=https://<public-media-host> \
+     VITE_SENTRY_DSN=https://<public-key>@<sentry-ingest-host>/<project-id>
+   ```
+
+   Значения `VITE_*` по контракту Vite попадают в клиентский bundle и поэтому
+   не должны содержать secrets. Команда принудительно отключает MSW/prototype,
+   связывает Sentry release с `PWA_RELEASE_ID` и создаёт в каждом приложении
+   `build-provenance.json`. Обычный `make pwa-build` остаётся credential-free
+   verification build и намеренно не может быть упакован как production
+   release. `make pwa-phase11-release-package` принимает только одинаковый
+   production provenance всех трёх приложений с тем же release ID.
 7. Для schema maintenance остановить и дождаться завершения Gunicorn master/workers, Telegram adapter и всех background jobs, которые могут открыть общую SQLite. Rolling HUP для этого шага запрещён: перекрывающиеся shared locks намеренно не оставляют окна для migration.
 8. Получить exclusive database lifecycle lock и применить yoyo migrations до переключения backend revision. Каждая migration имеет backup/rollback procedure; занятый lock прерывает deploy до любого DDL.
 9. Атомарно переключить static assets и запустить gunicorn/связанные workers только при соответствующих изменениях.
