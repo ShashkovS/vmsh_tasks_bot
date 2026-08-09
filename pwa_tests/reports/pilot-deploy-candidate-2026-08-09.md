@@ -60,6 +60,24 @@ WebKit context для каждого PWA. Production API и данные не м
   Privacy-safe отчёты лежат в `.runtime/phase11-rehearsal/` и не предназначены
   для Git.
 
+## Разрешённые live integration smoke
+
+- test S3 lifecycle — `PASS`: synthetic put, private read, public GET и delete
+  под отдельным `integration/<run-id>/`.
+- TikZ→SVG и raster→WebP через реальные локальные инструменты и test S3 —
+  `PASS`; оба объекта прочитаны и удалены.
+- письменное вложение через реальный `WrittenAttachmentService`, WebP и путь
+  `sol_imgs/user_{id}/{year}/lesson_{n}/...` — `PASS`; объект удалён. Для
+  non-interactive запуска нужен явный
+  `VMSH_PDFLATEX_PATH=/Users/sergeyshashkov/bin/pdflatex`, поскольку общий
+  tool resolver проверяет весь набор converter tools.
+- обычная и rich Telegram-публикации тестовым ботом — `PASS`; synthetic
+  сообщения отправлены, изменены и удалены из приватного test-канала. Safe
+  reports сохранены только в `.runtime/vmshpwa/telegram-smoke/`.
+- локальный NATS prefix fan-out/isolation — `PASS`: 1 test.
+- два aiohttp workers с NATS — `PASS`: основной smoke 1 test, bounded load
+  smoke 2 tests. Временный локальный `nats-server` после проверки остановлен.
+
 ## Внешние проверки
 
 - production FQDN и установленный nginx/systemd profile — `NOT RUN`;
