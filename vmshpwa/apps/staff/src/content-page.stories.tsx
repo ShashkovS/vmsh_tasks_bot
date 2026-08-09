@@ -539,7 +539,7 @@ export const FamilyDigestAfterReview: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Итоги для семей')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Разослать итог' }))
+    await userEvent.click(await canvas.findByRole('button', { name: 'Разослать итог' }))
     await expect(canvas.getByRole('alertdialog')).toHaveTextContent('Отправить итог 26 семьям?')
     await userEvent.click(canvas.getByRole('button', { name: 'Отправить' }))
     await expect(await canvas.findByText('Итог уже разослан')).toBeVisible()

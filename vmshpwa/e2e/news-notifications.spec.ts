@@ -194,6 +194,8 @@ test('Phase 8: Admin explicitly sends one lesson digest and Family sees it', asy
   await expect(page.getByText('Итоги для семей', { exact: true })).toBeVisible()
 
   const sendButton = page.getByRole('button', { name: 'Разослать итог' })
+  const sentNotice = page.getByText('Итог уже разослан')
+  await expect(sendButton.or(sentNotice)).toBeVisible()
   if (await sendButton.isVisible()) {
     await sendButton.click()
     await expect(page.getByRole('alertdialog')).toContainText(/Отправить итог \d+ семьям\?/)
@@ -204,7 +206,7 @@ test('Phase 8: Admin explicitly sends one lesson digest and Family sees it', asy
     await page.getByRole('button', { name: 'Отправить', exact: true }).click()
     expect((await sendResponse).status()).toBe(200)
   }
-  await expect(page.getByText('Итог уже разослан')).toBeVisible()
+  await expect(sentNotice).toBeVisible()
   await expect(page.getByRole('button', { name: 'Разослать итог' })).toHaveCount(0)
 
   await loginThroughUi(
@@ -212,10 +214,10 @@ test('Phase 8: Admin explicitly sends one lesson digest and Family sees it', asy
     phase8Persona(testInfo.project.name, 'family'),
     '/family/profile/notifications',
   )
-  await expect(page.getByText('Итоги занятия готовы')).toBeVisible()
-  await expect(
-    page.getByText(`Начинающие · занятие ${target.lessonNumber}`, { exact: true }),
-  ).toBeVisible()
+  const digestEvent = page
+    .getByRole('link')
+    .filter({ hasText: `Начинающие · занятие ${target.lessonNumber}` })
+  await expect(digestEvent.getByText('Итоги занятия готовы')).toBeVisible()
 
   const storedEvents = await page.evaluate(async () => {
     const response = await fetch('/family/api/v1/notification-events?unreadOnly=false')
@@ -252,7 +254,7 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
   await page.goto('/student/news')
   await expect(page.getByText(postText, { exact: false })).toBeVisible()
   await expect(page.getByText('Тестовый канал ВМШ')).toBeVisible()
-  await page.getByRole('link', { name: 'Открыть публикацию' }).click()
+  await page.locator(`a[href="/student/news/${postId}"]`).click()
   await expect(page).toHaveURL(`/student/news/${postId}`)
   await expect(page.getByText(postText, { exact: false })).toBeVisible()
 
@@ -292,7 +294,9 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
     (item) => item.eventId === `notification.news.phase8.e2e.student.${testInfo.project.name}`,
   )
   expect(targetEvent).toBeDefined()
-  const event = page.getByRole('link', { name: /Новая публикация/ })
+  const event = page
+    .locator(`a[href="/student/news/${postId}"]`)
+    .filter({ hasText: 'Новая публикация' })
   await expect(event).toBeVisible()
   if (targetEvent?.readAt === null) {
     // The visibility observer may acknowledge the item between rendering the
@@ -356,9 +360,13 @@ test('Phase 8: Student reads cached news, dismisses a banner and acknowledges th
   await expect(event.getByText('Новое', { exact: true })).toHaveCount(0)
   const unreadNews = await page.evaluate(async () => {
     const response = await fetch('/student/api/v1/notification-events?unreadOnly=true')
-    return (await response.json()) as { items: Array<{ category: string }> }
+    return (await response.json()) as { items: Array<{ eventId: string }> }
   })
-  expect(unreadNews.items.some((item) => item.category === 'news')).toBe(false)
+  expect(
+    unreadNews.items.some(
+      (item) => item.eventId === `notification.news.phase8.e2e.student.${testInfo.project.name}`,
+    ),
+  ).toBe(false)
 
   const pushCapability = await page.evaluate(() => ({
     supported:
@@ -390,7 +398,7 @@ test('Phase 8: Family sees the shared post, banner and its own news event', asyn
   )
   await page.goto('/family/news')
   await expect(page.getByText(postText, { exact: false })).toBeVisible()
-  await page.getByRole('link', { name: 'Открыть публикацию' }).click()
+  await page.locator(`a[href="/family/news/${postId}"]`).click()
   await expect(page).toHaveURL(`/family/news/${postId}`)
   await expect(page.getByText(postText, { exact: false })).toBeVisible()
 

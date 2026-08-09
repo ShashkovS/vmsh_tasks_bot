@@ -579,12 +579,16 @@ for (const persona of [AUTH_PERSONAS.student, AUTH_PERSONAS.family, AUTH_PERSONA
     expect(logout.status).toBe(204)
 
     expect((await browserApi(page, `/${persona.audience}/api/v1/auth/me`)).status).toBe(401)
-    const remainingCookies = await context.cookies()
-    expect(
-      remainingCookies.filter((cookie) =>
-        audienceCookieNames[persona.audience].includes(cookie.name),
-      ),
-    ).toEqual([])
+    // Firefox can expose the just-expired deletion cookie for one event-loop
+    // turn even though the following authenticated request is already rejected.
+    await expect
+      .poll(async () => {
+        const remainingCookies = await context.cookies()
+        return remainingCookies.filter((cookie) =>
+          audienceCookieNames[persona.audience].includes(cookie.name),
+        ).length
+      })
+      .toBe(0)
 
     // The authenticated boundary may already be redirecting after the 401.
     // Wait for that navigation before reloading so WebKit does not race two
