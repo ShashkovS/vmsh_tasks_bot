@@ -94,7 +94,9 @@ prototype adapters.
 2. Сделана согласованная резервная копия SQLite; все writers остановлены перед
    migration.
 3. Yoyo migrations применены отдельной командой под lifecycle lock.
-4. Проверенный static release активирован атомарным symlink switch.
+4. Проверенный static release активирован атомарным symlink switch. Каталог
+   задаётся явным `PWA_RELEASE_ROOT` вне deployment checkout, а nginx
+   обслуживает `<PWA_RELEASE_ROOT>/current`.
 5. Отдельный PWA systemd unit запускает два worker без Telegram polling и
    Google loader; legacy Telegram service продолжает работать отдельно.
 6. Nginx обслуживает три base path, API, WebSocket и Service Worker; login rate

@@ -39,10 +39,12 @@ release-каталог `.runtime/phase11-rehearsal/releases/c33348e`. Симли
 make pwa-build
 
 PWA_RELEASE_ID=<revision> \
+PWA_RELEASE_ROOT=.runtime/phase11-rehearsal/releases \
 PWA_RELEASE_REPORT=.runtime/phase11-rehearsal/releases/<revision>-package.json \
 make pwa-phase11-release-package
 
 PWA_RELEASE_ID=<revision> \
+PWA_RELEASE_ROOT=.runtime/phase11-rehearsal/releases \
 PWA_RELEASE_REPORT=.runtime/phase11-rehearsal/releases/<revision>-activate.json \
 make pwa-phase11-release-activate
 ```
@@ -51,6 +53,7 @@ make pwa-phase11-release-activate
 
 ```shell
 PWA_RELEASE_ID=<previous-revision> \
+PWA_RELEASE_ROOT=.runtime/phase11-rehearsal/releases \
 PWA_RELEASE_REPORT=.runtime/phase11-rehearsal/releases/<revision>-rollback.json \
 make pwa-phase11-release-rollback
 ```
@@ -82,6 +85,7 @@ ID и повреждённый JSON теперь останавливают пе
 
 ```shell
 PWA_RELEASE_ID=<revision> \
+PWA_RELEASE_ROOT=.runtime/phase11-rehearsal/releases \
 PWA_RELEASE_REPORT=.runtime/phase11-rehearsal/releases/<revision>-verify.json \
 make pwa-phase11-release-verify
 ```
@@ -104,3 +108,6 @@ deploy/rollback: не переключались
 backend revision, migrations, systemd и установленный nginx; не выполнялся
 возврат backend на предыдущий commit. Полный server rehearsal остаётся Phase 11
 gate и должен выполняться после утверждения FQDN и точного server layout.
+В production тот же интерфейс требует отдельный абсолютный `PWA_RELEASE_ROOT`
+вне checkout; локальный `.runtime/phase11-rehearsal/releases` приведён здесь
+только как каталог воспроизводимой репетиции.

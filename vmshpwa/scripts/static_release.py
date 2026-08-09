@@ -128,6 +128,7 @@ def package_release(
     recorded_at: str,
     *,
     sources: dict[str, Path] | None = None,
+    release_root: Path | None = None,
 ) -> dict[str, object]:
     """Copy three complete builds into a new immutable release directory."""
 
@@ -155,12 +156,15 @@ def package_release(
     if build_provenance is None:  # pragma: no cover - guarded by exact app set
         raise ValueError("Build provenance is missing")
 
-    RELEASE_ROOT.mkdir(parents=True, exist_ok=True)
-    destination = RELEASE_ROOT / release_id
+    selected_release_root = RELEASE_ROOT if release_root is None else release_root
+    selected_release_root.mkdir(parents=True, exist_ok=True)
+    destination = selected_release_root / release_id
     if destination.exists():
         raise ValueError("Release directory already exists")
 
-    staging = Path(tempfile.mkdtemp(prefix=f".{release_id}.", dir=RELEASE_ROOT))
+    staging = Path(
+        tempfile.mkdtemp(prefix=f".{release_id}.", dir=selected_release_root)
+    )
     try:
         applications: dict[str, object] = {}
         for app_name, source in source_directories.items():
@@ -187,11 +191,17 @@ def package_release(
     return manifest
 
 
-def verify_release(release_id: str, recorded_at: str) -> dict[str, object]:
+def verify_release(
+    release_id: str,
+    recorded_at: str,
+    *,
+    release_root: Path | None = None,
+) -> dict[str, object]:
     """Verify an immutable release against the manifest written at packaging."""
 
     _validate_release_id(release_id)
-    release = RELEASE_ROOT / release_id
+    selected_release_root = RELEASE_ROOT if release_root is None else release_root
+    release = selected_release_root / release_id
     manifest_path = release / "release.json"
     if (
         release.is_symlink()
@@ -253,24 +263,29 @@ def verify_release(release_id: str, recorded_at: str) -> dict[str, object]:
 
 
 def activate_release(
-    release_id: str, recorded_at: str, *, action: str = "activate"
+    release_id: str,
+    recorded_at: str,
+    *,
+    action: str = "activate",
+    release_root: Path | None = None,
 ) -> dict[str, object]:
     """Atomically point ``current`` at an existing release."""
 
     _validate_release_id(release_id)
-    destination = RELEASE_ROOT / release_id
-    current = RELEASE_ROOT / "current"
+    selected_release_root = RELEASE_ROOT if release_root is None else release_root
+    destination = selected_release_root / release_id
+    current = selected_release_root / "current"
     if current.exists() and not current.is_symlink():
         raise ValueError("The current release path exists and is not a symlink")
     # Activation and rollback use the same fail-closed integrity gate. This is
     # the concrete immutable-release decision from Phase 11, not a best-effort
     # check of whether release.json merely exists.
-    verify_release(release_id, recorded_at)
+    verify_release(release_id, recorded_at, release_root=selected_release_root)
     previous_release_id = (
         current.readlink().as_posix() if current.is_symlink() else None
     )
 
-    temporary = RELEASE_ROOT / f".current.{os.getpid()}"
+    temporary = selected_release_root / f".current.{os.getpid()}"
     if temporary.exists() or temporary.is_symlink():
         raise ValueError("Temporary activation link already exists")
     try:
@@ -297,6 +312,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("package", "verify", "activate", "rollback"))
     parser.add_argument("--release-id", required=True)
+    parser.add_argument(
+        "--release-root",
+        type=Path,
+        required=True,
+        help="dedicated static release directory outside the deployment checkout",
+    )
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument(
         "--recorded-at",
@@ -305,14 +326,23 @@ def main() -> int:
     arguments = parser.parse_args()
 
     if arguments.action == "package":
-        report = package_release(arguments.release_id, arguments.recorded_at)
+        report = package_release(
+            arguments.release_id,
+            arguments.recorded_at,
+            release_root=arguments.release_root,
+        )
     elif arguments.action == "verify":
-        report = verify_release(arguments.release_id, arguments.recorded_at)
+        report = verify_release(
+            arguments.release_id,
+            arguments.recorded_at,
+            release_root=arguments.release_root,
+        )
     else:
         report = activate_release(
             arguments.release_id,
             arguments.recorded_at,
             action=arguments.action,
+            release_root=arguments.release_root,
         )
     atomic_write_text(
         arguments.report,

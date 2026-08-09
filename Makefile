@@ -172,23 +172,27 @@ pwa-phase11-restore-rehearsal:
 .PHONY: pwa-phase11-release-package pwa-phase11-release-verify pwa-phase11-release-activate pwa-phase11-release-rollback
 pwa-phase11-release-package:
 	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
+	@test -n "$(PWA_RELEASE_ROOT)" || (echo "Set PWA_RELEASE_ROOT to the dedicated static release directory"; exit 2)
 	@test -n "$(PWA_RELEASE_REPORT)" || (echo "Set PWA_RELEASE_REPORT"; exit 2)
-	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release package --release-id "$(PWA_RELEASE_ID)" --report "$(PWA_RELEASE_REPORT)"
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release package --release-id "$(PWA_RELEASE_ID)" --release-root "$(PWA_RELEASE_ROOT)" --report "$(PWA_RELEASE_REPORT)"
 
 pwa-phase11-release-verify:
 	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
+	@test -n "$(PWA_RELEASE_ROOT)" || (echo "Set PWA_RELEASE_ROOT to the dedicated static release directory"; exit 2)
 	@test -n "$(PWA_RELEASE_REPORT)" || (echo "Set PWA_RELEASE_REPORT"; exit 2)
-	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release verify --release-id "$(PWA_RELEASE_ID)" --report "$(PWA_RELEASE_REPORT)"
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release verify --release-id "$(PWA_RELEASE_ID)" --release-root "$(PWA_RELEASE_ROOT)" --report "$(PWA_RELEASE_REPORT)"
 
 pwa-phase11-release-activate:
 	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
+	@test -n "$(PWA_RELEASE_ROOT)" || (echo "Set PWA_RELEASE_ROOT to the dedicated static release directory"; exit 2)
 	@test -n "$(PWA_RELEASE_REPORT)" || (echo "Set PWA_RELEASE_REPORT"; exit 2)
-	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release activate --release-id "$(PWA_RELEASE_ID)" --report "$(PWA_RELEASE_REPORT)"
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release activate --release-id "$(PWA_RELEASE_ID)" --release-root "$(PWA_RELEASE_ROOT)" --report "$(PWA_RELEASE_REPORT)"
 
 pwa-phase11-release-rollback:
 	@test -n "$(PWA_RELEASE_ID)" || (echo "Set PWA_RELEASE_ID"; exit 2)
+	@test -n "$(PWA_RELEASE_ROOT)" || (echo "Set PWA_RELEASE_ROOT to the dedicated static release directory"; exit 2)
 	@test -n "$(PWA_RELEASE_REPORT)" || (echo "Set PWA_RELEASE_REPORT"; exit 2)
-	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release rollback --release-id "$(PWA_RELEASE_ID)" --report "$(PWA_RELEASE_REPORT)"
+	$(PWA_UV_ENV) uv run python -m vmshpwa.scripts.static_release rollback --release-id "$(PWA_RELEASE_ID)" --release-root "$(PWA_RELEASE_ROOT)" --report "$(PWA_RELEASE_REPORT)"
 
 .PHONY: pwa-classroom-import-preview pwa-classroom-import-apply
 pwa-classroom-import-preview:

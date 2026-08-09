@@ -96,3 +96,10 @@ production provenance/release packaging и полный browser matrix зелё�
 Следующая работа начинается с утверждённых FQDN, public media origin, frontend
 Sentry DSN и production service paths, затем выполняет server install и smoke.
 До этого нельзя использовать статус `DEPLOYED`.
+
+После формирования кандидата устранён deploy-only разрыв: release-команды
+больше не выбирают скрыто локальный каталог репетиции. Для package, verify,
+activate и rollback оператор обязан передать один явный `PWA_RELEASE_ROOT`; в
+production он находится вне checkout, а nginx обслуживает его атомарный
+`current`. Focused deploy suite после изменения: `67 passed`; внешний server
+rollout по-прежнему `NOT RUN` до получения точных параметров хоста.

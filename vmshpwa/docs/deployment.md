@@ -38,7 +38,10 @@ legacy-сайта. Production и optional staging должны получить 
    `build-provenance.json`. Обычный `make pwa-build` остаётся credential-free
    verification build и намеренно не может быть упакован как production
    release. `make pwa-phase11-release-package` принимает только одинаковый
-   production provenance всех трёх приложений с тем же release ID.
+   production provenance всех трёх приложений с тем же release ID. Команды
+   package/verify/activate/rollback требуют явный `PWA_RELEASE_ROOT`; на сервере
+   это отдельный каталог статических релизов вне deployment checkout, и тот же
+   путь с `/current` передаётся в nginx как `@@STATIC_ROOT@@`.
 7. Для schema maintenance остановить и дождаться завершения Gunicorn master/workers, Telegram adapter и всех background jobs, которые могут открыть общую SQLite. Rolling HUP для этого шага запрещён: перекрывающиеся shared locks намеренно не оставляют окна для migration.
 8. Получить exclusive database lifecycle lock и применить yoyo migrations до переключения backend revision. Каждая migration имеет backup/rollback procedure; занятый lock прерывает deploy до любого DDL.
 9. Атомарно переключить static assets и запустить gunicorn/связанные workers только при соответствующих изменениях.

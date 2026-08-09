@@ -49,8 +49,9 @@ privacy-safe report.
       трёх `build-provenance.json` записаны одинаковые release/origins и
       `prototype=false`, `msw=false`.
 - [ ] Production bundles упакованы командой
-      `make pwa-phase11-release-package` с тем же `PWA_RELEASE_ID`; обычная
-      verification-сборка проверенно отклоняется.
+      `make pwa-phase11-release-package` с тем же `PWA_RELEASE_ID` и явным
+      `PWA_RELEASE_ROOT` вне deployment checkout; обычная verification-сборка
+      проверенно отклоняется.
 - [ ] `make pwa-phase11-release-verify` подтвердил manifest и checksums до
       активации.
 - [ ] Redacted toolchain probe подтвердил нужные `pdflatex`, `pdf2svg`, `cwebp`
@@ -66,7 +67,8 @@ privacy-safe report.
 - [ ] Yoyo migrations применены отдельной командой; runtime startup их не
       запускает. Итоговая schema version совпала с release manifest.
 - [ ] `make pwa-phase11-release-activate` атомарно переключил проверенный
-      frontend release.
+      frontend release; nginx `@@STATIC_ROOT@@` указывает на
+      `<PWA_RELEASE_ROOT>/current`.
 - [ ] Rendered systemd unit/environment прошли `make pwa-systemd-check`;
       environment file имеет mode `0600`.
 - [ ] Rendered nginx config прошёл `make pwa-nginx-check` до reload.

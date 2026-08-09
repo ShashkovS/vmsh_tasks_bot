@@ -90,6 +90,28 @@ def test_packages_and_rolls_back_complete_frontend_set(
     )
 
 
+def test_explicit_release_root_is_used_for_server_layout(
+    tmp_path: Path, release_root: Path
+) -> None:
+    server_release_root = tmp_path / "server-static-releases"
+    sources = _bundles(tmp_path / "bundles", "server")
+
+    static_release.package_release(
+        "revision-a",
+        RECORDED_AT,
+        sources=sources,
+        release_root=server_release_root,
+    )
+    static_release.activate_release(
+        "revision-a",
+        RECORDED_AT,
+        release_root=server_release_root,
+    )
+
+    assert server_release_root.joinpath("current").readlink().as_posix() == "revision-a"
+    assert not release_root.exists()
+
+
 def test_package_rejects_incomplete_or_existing_release(
     tmp_path: Path, release_root: Path
 ) -> None:
