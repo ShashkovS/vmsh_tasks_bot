@@ -687,10 +687,16 @@ test('a private reload recovers a missing access cookie through one automatic re
 
   const beforeCookies = await context.cookies()
   const oldAccessCookie = beforeCookies.find((cookie) => cookie.name === accessCookieName)
+  const refreshCookie = beforeCookies.find((cookie) => cookie.name === refreshCookieName)
   expect(oldAccessCookie).toBeDefined()
-  expect(beforeCookies.some((cookie) => cookie.name === refreshCookieName)).toBe(true)
+  expect(refreshCookie).toBeDefined()
+  if (!refreshCookie) throw new Error(`Missing pre-refresh ${refreshCookieName}`)
 
   await context.clearCookies({ name: accessCookieName })
+  // Playwright implements a filtered clear differently across engines. Put
+  // the intentionally retained HttpOnly cookie back explicitly before the
+  // reload so the test never observes an intermediate empty browser jar.
+  await context.addCookies([refreshCookie])
   const accessRemoved = await context.cookies()
   expect(accessRemoved.some((cookie) => cookie.name === accessCookieName)).toBe(false)
   expect(accessRemoved.some((cookie) => cookie.name === refreshCookieName)).toBe(true)
