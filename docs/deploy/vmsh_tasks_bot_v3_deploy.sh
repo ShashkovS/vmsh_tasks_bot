@@ -2,6 +2,9 @@ ssh -F C:\Users\sh57\.ssh\config root@217.114.6.190 -p 22 -i "C:\Users\sh57\.ssh
 
 # BMFdPmQ9%Ncc
 
+sudo hostnamectl set-hostname vmshbeget
+sudo sed -i 's/\bPUT_TRASH_NAME_HERE\b/vmshbeget/g' /etc/hosts
+
 sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get dist-upgrade
@@ -89,7 +92,7 @@ sudo apt install -y net-tools wget tar p7zip htop make gcc bison   sed file expa
 sudo apt install -y fcgiwrap spawn-fcgi
 
 # nginx, certbot
-sudo apt install -y snapd nginx
+sudo apt install -y snapd nginx brotli webp
 sudo snap install core& sudo snap refresh core
 sudo snap install --classic certbot
 sudo ln -s /snap/bin/certbot /usr/bin/certbot
@@ -682,28 +685,18 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
   ghostscript \
   brotli \
   pdf2svg \
-  webp \
-  imagemagick \
-  libheif1 \
-  texlive-latex-base \
-  texlive-latex-recommended \
-  texlive-latex-extra \
-  texlive-pictures \
-  texlive-fonts-recommended \
-  texlive-lang-cyrillic
+  webp
 
-# Ubuntu может поставить ImageMagick 6 с бинарником convert. Наш безопасный
-# argv-пайплайн использует имя magick; интерфейс конвертации для наших команд
-# совместим. Если ImageMagick 7 уже установлен, этот блок ничего не меняет.
-if ! command -v magick >/dev/null 2>&1 && command -v convert >/dev/null 2>&1; then
-  sudo ln -sfn /usr/bin/convert /usr/local/bin/magick
-fi
+# TeX Live 2026 и ImageMagick 7 smartphone build уже установлены вручную.
+# Не ставим поверх них Ubuntu texlive/imagemagick/libheif.
+test -x /usr/local/texlive/2026/bin/x86_64-linux/pdflatex
+test -x /usr/local/bin/magick
 
 command -v sqlite3
-command -v pdflatex
 command -v pdf2svg
 command -v cwebp
 command -v magick
+/usr/local/texlive/2026/bin/x86_64-linux/pdflatex --version
 magick -version
 magick -list format | grep -E 'HEIC|WEBP'
 
@@ -858,7 +851,7 @@ sudo chown -R vmsh_tasks_bot:vmsh_tasks_bot /web/vmsh_tasks_bot
 # Делаем так, чтобы всё новое лежало в группе
 
 
-'
+
 
 
 # Настраиваем systemd для поддержания приложения в рабочем состоянии
@@ -1018,6 +1011,10 @@ load_module /usr/lib/nginx/modules/ngx_http_brotli_static_module.so;\
     fi
 fi
 
+
+
+
+
 sudo tee /etc/nginx/conf.d/10-brotli.conf >/dev/null <<'EOF'
 brotli on;
 brotli_static on;
@@ -1045,6 +1042,57 @@ nginx -v
 
 sudo nginx -T 2>&1 \
     | grep -E 'load_module.*brotli|brotli(_[a-z]+)?[[:space:]]'
+
+
+# latex
+sudo apt-get update
+sudo apt-get install -y curl perl tar gzip xz-utils ca-certificates
+
+rm -rf /tmp/install-tl-20*
+rm -f /tmp/texlive-installer.tar.gz
+
+curl -L \
+  -o /tmp/texlive-installer.tar.gz \
+  https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
+
+tar -xzf /tmp/texlive-installer.tar.gz -C /tmp
+cd /tmp/install-tl-20*
+
+sudo perl ./install-tl \
+  --no-interaction \
+  --scheme=basic \
+  --repository=https://mirror.ctan.org/systems/texlive/tlnet \
+  --texdir=/usr/local/texlive/2026 \
+  --texmflocal=/usr/local/texlive/texmf-local
+
+sudo /usr/local/texlive/2026/bin/x86_64-linux/tlmgr \
+  option repository https://mirror.ctan.org/systems/texlive/tlnet
+
+sudo /usr/local/texlive/2026/bin/x86_64-linux/tlmgr update --self
+
+sudo /usr/local/texlive/2026/bin/x86_64-linux/tlmgr path add
+
+sudo tlmgr install 12many a2ping abbr abstyles accents accfonts addliga addtoluatexpath adhocfilelist adigraph adjustbox advice ae aeguill afm2pl aiplans albatross alg algobox algorithm2e algorithmicx algorithms algpseudocodex algxpar aligned-overset amiweb2c-guide amscdx amscls amscls-doc amsfonts amslatex-primer amsldoc-it amsmath amsmath-it amstex amsthdoc-it annee-scolaire annotate-equations antanilipsum antique-spanish-units anysize aobs-tikz apalike-german apnum apprendre-a-programmer-en-tex apprends-latex apxproof arabxetex arara armtex around-the-bend ascii-chart askmaps aspen asyfig asymptote asy-overview asypictureb atableau atbegshi attachfile2 atveryend autoaligne autoarea autobreak automata auto-pst-pdf auto-pst-pdf-lua autotype auxhook avantgar axodraw2 babel babel-albanian babel-basque babel-belarusian babelbib babel-bosnian babel-breton babel-bulgarian babel-catalan babel-croatian babel-czech babel-danish babel-dutch babel-english babel-estonian babel-finnish babel-french babel-friulan babel-galician babel-german babel-hungarian babel-icelandic babel-irish babel-italian babel-kurmanji babel-latin babel-latvian babel-lithuanian babel-macedonian babel-norsk babel-occitan babel-piedmontese babel-polish babel-portuges babel-romanian babel-romansh babel-russian babel-samin babel-scottish babel-serbian babel-serbianc babel-slovak babel-slovenian babel-spanish babel-swedish babel-turkish babel-ukrainian babel-welsh backnaur bardiag barr barracuda basque-book basque-date bbcard bbding bclogo beamer beamerswitch beamer-tut-pt begriff bezierplot bib-fr biblatex-accursius biblatex-cheatsheet bibleref-french bibleref-german bibtex bibtex8 bibtexu bidi-atbegshi bidicontour bidipagegrid bidipresentation bidishadowtext bigintcalc binarytree binomexp biocon bitelist bitpattern bitset blochsphere blockdraw_mp blopentype bloques blox bodegraph bodeplot bohr boldtensors bondgraph bondgraphs bookman bookmark booktabs booktabs-de booktabs-fr bootstrapicons borceux bosisio bpchem bpolynomial bracealign braids bredzenie breqn bropd broydensolve bundledoc businesscard-qrcode bussproofs bussproofs-colorful bussproofs-extra bxeepic byo-twemojis byrne bytefield cachepic cahierprof calcfrac calculation callouts callouts-box caption carlisle cartonaugh cascade catcodes causets cbfonts cbfonts-fd ccfonts ccool cc-pl celtic changepage char2path charter checkcites checklistings chemarrow chemcompounds chemcono chemexec chemfig chemformula chemformula-ru chemgreek chemmacros chemnum chemobabel chemplants chemschemex chemsec chemstyle chickenize chinese-jfm chklref chktex chronosys churchslavonic circuitikz circuit-macros circularglyphs cite clojure-pamphlet cloze clrscode clrscode3e cluttex cm cmap cmarrows cmcyr cmexb cmextra cm-super cnbwp codeanatomy codicefiscaleitaliano coffeestains collargs collectbox coloredbelts coloredtheorem colorprofiles colorsep colortbl combinedgraphics combofont commath commutative-diagrams compare complexity complexpolylongdiv components comprehensive computational-complexity concmath concrete conteq context context-animation context-calendar-examples context-chat context-collating-marks context-cyrillicnumbers context-filter context-gnuplot context-handlecsv context-legacy context-letter context-mathsets context-notes-zh-cn context-pocketdiary context-simpleslides context-squares context-sudoku context-transliterator context-typescripts context-vim context-visualcounter cora-macs correctmathalign couleurs-fr courier c-pascal cqubeamer crop crossrefenum cryptocode cs csassignments csbulletin cslatex csplain csquotes-de cs-techrep cstex csthm cstypo ctable ctablestack ctanbib ctan_chk ctanify ctan-o-mat ctanupload ctie currfile cursolatex curve curve2e curves cvss cweb cweb-old cyrillic cyrillic-bin cyrplain dcpic decision-table dehyph dehyph-exptl dejavu delim delimseasy delimset de-macro derivative detex dhua diagmac2 dickimaw diffcoeff digestif digiconfigs dijkstra dinat dirtree disser ditaa docbytex doc-pictex docsurvey domaincoloring dosepsbin dot2texi dottex dowith dpcircling dratex drawing-with-metapost drawmatrix drawstack droit-fr drs drv dsptricks dtk-bibliography dtl dtxgen dtxtut duotenzor dvi2tty dviasm dvicopy dvidvi dviincl dviinfox dviljk dviout-util dvipdfmx dvipng dvipos dvips dvipsconfig dvisvgm dynkin-diagrams dyntree easing easydtx ebproof ec ecgdraw econometrics eepic e-french egpeirce eijkhout ekdosis ellipse elocalloc eltex emf emoji emojicite emp enctex encxvlna endiagram endofproofwd engtlc enigma environ eolang eoldef epigram epsf epsf-dvipdfmx epsincl epslatex-fr epspdf epspdfconversion epstopdf epstopdf-pkg eqexpl eqnarray eqnlines eqnnumwarn esk eskd eskdx eso-pic es-tex-faq etdipa etex etexcmds etex-pkg etoolbox etoolbox-de etoolbox-generic euclideangeometry euclidean-lattice euenc euflag euler euro euro-ce eurosym everysel everyshi expex-acro expkv-bundle expltools expose-expl3-dunkerque-2019 expressg extarrows exteps extpfeil extractbb extsizes facture fadingimage faktor fancybox fancyhdr fancyhdr-it fancymag fancyref fancyvrb faq-fr faq-fr-gutenberg farbe fascicules fast-diagram featpost fenetrecas fenixpar feupphdteses feynmf feynmp-auto fifinddo-info fig4latex figchild figflow  figput filecontentsdef filehook fileinfo filemod finbib findhyph firstaid first-latex-doc fitbox fitch fix2col fixdif fixlatvian fixltxhyph fixmath fixpdfmag fiziko float flowchart fltpoint fnspe fntproof fodot fontbook fontch font-change font-change-xetex fontinst fontinstallationguide fontname fontools fonts-churchslavonic fontspec fontware fontwrap footnotehyper forest forest-ext forest-quickstart formal-grammar formation-latex-ul fouridx fp fpl fragmaster fragoli framed freealign freemath frenchmath frletter frontespizio frpseudocode functan galois garrigues gastex gates genealogytree gene-logic gentle geometry german germbib germkorr getmap getoptk gettitlestring gfnotation ghsystem gincltex gitinfo-lua git-latexdiff glosmathtools gloss-occitan glyphlist gmp gnuplottex gobble gost gotoh gradientframe grafcet graph35 graphics graphics-cfg graphics-def graphics-pln graphicxpsd graphviz greek-fontenc grfext grffile grundgesetze gsftopk gtl gtrlib-largetrees gu guide-to-latex gustlib gustprog happy4th harveyballs hatching hausarbeit-jura helmholtz-ellis-ji-notation helvetic hep hep-graphic hepnames hepparticles hep-reference hepthesis hepunits here hershey-mp hf-tikz hideproofs hlist hobby hologo hook-pre-commit-pkg hopatch hrlatex huaz huffman hulipsum hvfloat hycolor hypcap hyperref hyphen-albanian hyphen-base hyphen-basque hyphen-belarusian hyphen-bulgarian hyphen-catalan hyphen-churchslavonic hyphen-croatian hyphen-czech hyphen-danish hyphen-dutch hyphen-english hyphen-estonian hyphenex hyphen-finnish hyphen-french hyphen-friulan hyphen-galician hyphen-german hyphen-hungarian hyphen-icelandic hyphen-irish hyphen-italian hyphen-kurmanji hyphen-latin hyphen-latvian hyphen-lithuanian hyphen-macedonian hyphen-mongolian hyphen-norwegian hyphen-occitan hyphen-piedmontese hyphen-polish hyphen-portuguese hyphen-romanian hyphen-romansh hyphen-russian hyphen-serbian hyphen-slovak hyphen-slovenian hyphen-spanish  hyphen-swedish hyphen-turkish hyphen-ukrainian hyphen-uppersorbian hyphen-welsh hyph-utf8 hyplain ibrackets ideavault iexec ifis-macros ifmtarg ifplatform iftex ifthenx impatient impatient-fr impnattypo includernw index infwarerr inlinedef innerscript inputnormalization insbox installfont intcalc interchar interpreter interval intexgral intro-scientific ionumbers isomath isphysicalmath istgame itnumpar jkmath jknapltx jmn js-misc jupynotex kanaparser karnaugh karnaugh-map karnaughmap kastrup kaytannollista-latexia kblocks keisennote ketcindy keytheorems kinematikz kkluaverb kkran kksymbols knitting knittingpattern knuth-errata knuth-hint knuth-lib knuth-local knuth-pdf koma-script koma-script-examples kpathsea kvdefinekeys kvmap kvoptions kvsetkeys l2picfaq l2tabu l2tabu-english l2tabu-french l2tabu-italian l2tabu-spanish l3backend l3backend-dev l3experimental l3kernel l3kernel-dev l3packages l3sys-query lacheck ladder lambda-lists langcode lapdf latex latex2e-help-texinfo latex2e-help-texinfo-fr latex2e-help-texinfo-spanish latex2man latex2nemeth latex4wp latex4wp-it latex-base-dev latex-bin latex-brochure latexbug latexcheat latexcheat-de latexcheat-esmx latexcheat-ptbr latexconfig latex-course latexcourse-rug latexdiff latex-doc-ptr latexfileinfo-pkgs latexfileversion latex-firstaid-dev latex-fonts latex-for-undergraduates latex-git-log latex-graphics-companion latexindent latex-lab latex-make latexmk latexmp latexpand latex-papersize latex-refsheet latex-veryshortguide latex-via-exemplos latex-web-companion layaureo lcdftypetools lcyw lecturer letgut letltxmacro letterspacing letterswitharrows lh lhcyr librarian lie-hasse liftarm light-latex-make ligtype linearregression linebreaker lineno linkedthm listings listings-ext listofitems lithuanian lm lm-math localloc logicproof logictools longdivision longmath lparse lpform lpic lplfitch lroundrect lshort-bulgarian lshort-czech lshort-dutch lshort-english lshort-estonian lshort-finnish lshort-french lshort-german lshort-italian lshort-mongol lshort-polish lshort-portuguese lshort-russian lshort-slovak lshort-slovenian lshort-spanish lshort-turkish lshort-ukr lstbayes lt3luabridge ltxcmds ltxfileinfo ltximg ltxmisc ltx-talk luaaddplot lua-alt-getopt luacas luacensor luacode luacolor luacomplex luafindfont luagcd luahbtex luahttp luahyphenrules luaimageembed luaindex luainputenc luajittex luakeys luakeyval lualatex-doc-de lualatex-math lualatex-truncate lualibs lualinalg luamathalign luamaths luamesh luamml luamodulartables luamplib luanumint luaoptions luaotfload luapackageloader lua-placeholders luaplot luaprogtable luapstricks luaquotes luarandom lua-regression luaset luasseq luatbls luatex luatex85 luatexbase luatexko luatextra luatex-type-definitions luatikz lua-tikz3dtools lua-tinyyaml luatruthtable lua-typo lua-uca lua-ul lua-uni-algos lua-unicode-math lua-visual-debug luavlna lua-widow-control luaxml lucide-icons lutabulartools lwarp ly1 macros2e mafr  make4ht makecmds makeindex makeplot maker makeshape manfnt-font marginalia marginnote maritime marvosym matapli match_parens mathcommand mathcomp mathdots mathfixs math-into-latex-4 mathlig math-operator mathpartir mathpazo mathpunctspace mathsemantics mathspec mathspic maths-symbols mathtools matlab-prettifier matrix-skeleton mattens mcf2graph mdwtools measurebox mecaso medmath membranecomputing memdesign memoir memoirchapterstyles memoize memorygraphs mercatormap messagepassing metafont metafont-beginners metago metalogo metaobj metaplot metapost metapost-colorbrewer metapost-examples metatex metatype1 metauml mex mf2pt1 mflogo mflogo-font mflua mfnfss mfpic mfpic4ode mfware mgltex mhchem mhequ microtype microtype-de midnight miller milog milsymb minim minim-hatching minim-math minim-mp minim-pdf minim-xmp miniplot mismath mkjobtexmf mkpattern mkpic mlawriter mnhyphn modes modiagram modulus mongolian-babel montex moremath mp3d mparrows mpattern mpchess mpcolornames mp-geom2d mpgraphics mpkiviat mpman-ru mp-neuralnetwork mptopdf mptrees multido multiobjective mwcls naive-ebnf namedef namedtensor na-position natbib natded nath navigator nchairx ncntrsbk neuralnetwork nevelok newfloat newpax newsletr nicematrix nl-interval nndraw nodetree ntgclass nth nuc nucleardata numberpt numbersets numerica numerica-plus numerica-tables numericplots numnameru oberdiek objectz odesandpdes odsfile ofs olsak-misc open-everyday-symbols openmoji oplotsymbl optex optexcount optikz ordinalpt ot-tableau oubraces outerhbox outilsgeomtikz overarrows pagesel palatino panneauxroute papiergurvan paralist parskip parstat pascaltriangle patgen patgen2-tutorial path pb-diagram pdfarticle pdfbook2 pdfcolfoot pdfcrop pdfescape pdfextra pdfjam pdflatexpicscale pdflscape pdfmanagement pdfmsym pdfpages pdftex pdftexcmds pdftex-quiet pdftoolbox pdftosrc pdf-trans pdftricks pdftricks2 pdfxup pedigree-perl penlight penlightplus perfectcut petri-nets pfarrei pfdicons pgf pgf-blur pgfgantt pgf-interference pgfkeysearch pgfkeyx pgfmolbio pgfmorepages pgfopts pgfornament pgf-periodictable pgf-pie pgfplots pgfplotsthemebeamer pgf-soroban pgf-spectra pgf-umlcd pgf-umlsd philokalia physconst physics physics2 physics3 physics-patch physunits picinpar pict2e pictex pictex2 pictexsum pictochrono piechartmp pinlabel pinoutikz pitex piton pixelart pixelarttikz pkfix pkfix-helper pl placeat placeins placeins-plain plain plain-doc plainpkg plain-widow plantuml plipsum plnfss plstmary pmdraw pmgraph pm-isomath polexpr polski polyglossia polyhedra polyomino poormanlog postage postit ppmcheckpdf prerex present prftree principia prisma-flow-diagram proba productbox profcollege proflabo proflycee profsio proof-at-the-end prooftrees przechlewski-book ps2eps ps2pk psbao pseudo pseudocode psfrag psfrag-italian pslatex psnfss pspicture pst-2dplot pst2pdf pst-3d pst-3dplot pst-abspos pst-am pst-antiprism pst-arrow pst-asr pst-bar pst-barcode pst-bezier pst-blur pst-bspline pst-calculate pst-calendar pst-cie pst-circ pst-coil pst-contourplot pst-cox pst-dart pst-dbicons pst-diffraction pst-electricfield pst-eps pst-eucl pst-eucl-translation-bg pst-exa pst-feyn pst-fill pst-fit pst-flags pst-fourbarlinkage pst-fr3d pst-fractal pst-fun pst-func pst-gantt pst-gears pst-geo pst-geometrictools pst-gr3d pst-grad pst-graphicx pst-hsb pst-infixplot pst-intersect pst-jtree pst-kepler pst-knot pst-labo pst-layout pst-lens pst-light3d pst-lsystem pst-magneticfield pst-marble pst-massspring pst-math pst-mirror pst-moire pst-node pst-nutation pst-ob3d pst-ode pst-optexp pst-optic pst-osci pst-ovl pst-pad pst-pdf pst-pdgr pst-perspective pst-platon pst-plot pst-poker pst-poly pst-pulley pst-qtree pstricks pstricks-add pstricks_calcnotes pst-rputover pst-rubans pst-shell pst-sigsys pst-slpe pst-solarsystem pst-solides3d pst-soroban pst-spectra pst-sphericaltrochoid pst-spinner pst-stru pst-support pst-text pst-thick pst-tools pst-tree pst-turtle pst-tvz pst-uml pst-vectorian pst-vehicle pst-venn pst-vowel psutils ptext ptlatexcommands ptolemaicastronomy purifyeps puyotikz pwebmac pxfonts pxpgfmark pxpic pyluatex pythonhighlight pythontex qcircuit qpxqtx qrcode qrcodetikz qsharp quantikz quantum-chemistry-bonn quantumcubemodel quickreaction quiver quran-de quran-en quran-es qworld ragged2e randbild random randomlist randomwalk rank-2-roots rbt-mathnotes rcs realhats realscripts rec-thy refcount reotex repere reptheorem rerunfilecheck resolsysteme rest-api resumemac revquantum ribbonproofs rigidnotation rmathbr robotarm roex rojud roundrect rsfs ruhyphen ruler r_und_s runtexfile runtexshebang russ rviewport sacsymb sankey sansmath sasnrdisplay sa-tikz sauerj schemabloc schemata schulmathematik scikgtex sciposter sclang-prettifier scratch scratch3 scratchx scsnowman seatingchart section seetexk selnolig semesterplannerlua seminar sepnum serbian-apostrophe serbian-date-lat serbian-def-cyr serbian-lig sesamanuel setdeck setspace sfg shade shapes short-math-guide showhyphenation showkerning show-pdf-tags shuffle signchart simplebnf simplekv simplenodes simpleoptics simple-resume-cv simpler-wick simples-matrices simple-thesis-dissertation simplewick simplified-latex sistyle siunits siunitx skmath slideshow smartdiagram soul spacekern spalign spath3 spbmark spectralsequences spelling spix splines sqltex srcredact standalone stanli statex statex2 statistics statistik statmath steinmetz stmaryrd strands stretchy stricttex string-diagrams stringenc structmech struktex sty2dtx suanpan subfig substances subsupscripts subtext sunpath susy svg-inkscape svn-prov swebib swimgraf swrule syllogism symbol sympycalc sympytexpackage synctex synproof syntaxdi systeme t1utils t2 table-fct tablor tabto-generic tabularray-abnt tabvar tamethebeast t-angles tango tap tcolorbox tds tdsfrmath templates-fenn templates-sommer temporal-logic tensind tensor tensormatrix termcal-de termmenu tetragonos tex tex4ebook tex4ht texaccents texapi texblend texbytopic texcount texdate texdef texdiff texdimens texdirflatten texdoc texdoctk texdraw tex-ewd texfindpkg tex-font-errors-cheatsheet texfot tex-gyre tex-gyre-math texinfo tex-ini-files texlive-common texlive-cz texlive-de texlive-en texlive-es texlive-fr texlive.infra texlive-it texlive-msg-translations texliveonfly texlive-pl texlive-ru texlive-scripts texlive-scripts-extra texlive-sr texloganalyser texlogfilter texlogsieve tex-nutshell texonly texosquery tex-overview texplate tex-ps textcase textgreek textopo textpath tex-virtual-academy-pl tex-vpat texware texworks thermodynamics thmbox thmtools threeddice thumbpdf ticollege tie tikz2d-fr tikz3d-fr tikz-3dplot tikz-among-us tikz-bagua tikz-bayesnet tikz-bbox tikz-bpmn tikzbrickfigurines tikzbricks tikzcalendarnotes tikz-cd tikzcodeblocks tikz-cookingsymbols tikz-decofonts tikz-dependency tikz-dimline tikzdotncross tikzducks tikz-ext tikz-feynhand tikz-feynman tikzfill tikzfxgraph tikz-imagelabels tikzinclude tikz-inet tikz-kalender tikz-karnaugh tikz-ladder tikz-lake-fig tikz-layers tikzlings tikzmark tikzmarmots tikz-mirror-lens tikz-nef tikz-network tikz-nfold tikz-opm tikz-optics tikzorbital tikz-osci tikzpackets tikz-page tikzpagenodes tikz-palattice tikzpeople tikzpfeile tikzpingus tikz-planets tikzposter tikz-qtree tikzquads tikzquests tikz-relay tikzscale tikz-sfc tikz-shields tikz-swigs tikzsymbols tikz-timing tikztosvg tikz-trackschematic tikz-truchet tikzviolinplots tile-graphic tilings timechart times timetable timing-diagrams tipa tipa-de tipfr tiscreen titlepages tkz-base tkz-berge tkz-bernoulli tkz-doc tkz-elements tkz-euclide tkzexample tkz-fct tkz-graph tkz-grapheur tkz-interval tkz-orm tkz-tab tlc2 tlc3-examples tlcockpit tlmgrbasics tlshell tokmap tonevalue tools tpic2pdftex tqft tracklang translation-array-fr translation-arsclassica-de translation-biblatex-de translation-chemsym-de translation-dcolumn-fr translation-ecv-de translation-enumitem-de translation-europecv-de translation-filecontents-de translation-moreverb-de translation-natbib-fr translation-tabbing-fr translator transparent-io treetex trigonometry trimspaces truthtable tsemlines tsvtemplate ttfutils tufte-latex tuple turkmen turnstile twemojis txfonts typehtml typeoutfileinfo typewriter typstfun tzplot ucharcat ucharclasses udesoftec uhrzeit ukrhyph ulem ulqda uml umlaute undergradmath underscore unibidi-lua unicode-bidi unicode-data unicode-math unimath-plain-xetex uninormalize uniquecounter unisugar units unitsdef upca upmendex url utf8mex utfsym utopia variations varisize varwidth vaucanson-g vectorlogos venn venndiagram verifica vexillology visualfaq visualfaq-fr visualpstricks visualtikz visualtoks vlna vocaltract voss-mathcol wasy wasysym wasy-type1 web webguide wheelchart witharrows wordcloud worldflags wrapstuff-doc-en xcolor xdvi xebaposter xechangebar xecolor xecyr xecyrmongolian xeindex xelatex-dev xesearch xespotcolor xetex xetexconfig xetexfontinfo xetex-itrans xetexko xetex-pstricks xetexref xetex-tibetan xevlna xfrac xifthen xii xii-lat xindex xindy xintsession xistercian xkeyval xlop xltxtra xpatch xpdfopen xpicture xstring xunicode xymtex xypic xypic-tut-pt yamlvars yax yet-another-guide-latex2e yhmath youngtab yquant ytableau zapfchan zapfding zbmath-review-template zeckendorf zx-calculus zztex
+
+sudo apt install pdf2svg
+
+sudo tlmgr update --self
+sudo tlmgr update --all
+
+tlmgr --version
+kpsewhich -var-value=TEXMFROOT
+
+pdflatex --version
+xelatex --version
+lualatex --version
+
+
+
+
+
+
+
+
 
 
 sudo mkdir /etc/pki/nginx

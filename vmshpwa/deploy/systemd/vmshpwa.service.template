@@ -13,7 +13,7 @@ User=@@SERVICE_USER@@
 Group=@@SERVICE_GROUP@@
 WorkingDirectory=@@REPOSITORY_DIR@@
 EnvironmentFile=@@ENV_FILE@@
-Environment=PATH=@@VENV_DIR@@/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PATH=@@VENV_DIR@@/bin:/usr/local/texlive/2026/bin/x86_64-linux:/usr/local/bin:/usr/bin:/bin
 # EnvironmentFile takes precedence over Environment= in systemd. Put the two
 # security boundary values on the actual command line so the secret file cannot
 # accidentally select a local profile or prototype auth.
