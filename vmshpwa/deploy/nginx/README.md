@@ -1,8 +1,8 @@
 # Production nginx boundary
 
-The template serves the three applications from one TLS origin and proxies the
-six exact API/WebSocket namespaces to the existing aiohttp application. It is
-a deployment artifact, not a development gateway.
+The template serves a public landing page and three applications from one TLS
+origin and proxies the six exact API/WebSocket namespaces to the existing
+aiohttp application. It is a deployment artifact, not a development gateway.
 
 ## Required rendering
 
@@ -13,8 +13,8 @@ Before installation replace every marker in `vmshpwa.conf.template`:
 - `@@BACKEND_UNIX_SOCKET@@`: exact canonical absolute Gunicorn socket path;
 - `@@TLS_CONFIG_FILE@@`: absolute nginx include with certificate/key and the
   site's TLS policy;
-- `@@STATIC_ROOT@@`: atomic release root containing `student/`, `family/` and
-  `staff/` production builds;
+- `@@STATIC_ROOT@@`: atomic release root containing `landing/`, `student/`,
+  `family/` and `staff/` production builds;
 - `@@CSP_MEDIA_ORIGIN@@`: one exact public Hetzner media origin, without path;
 - `@@CSP_SENTRY_ORIGIN@@`: one exact Sentry ingest origin or the empty string.
 
@@ -58,6 +58,11 @@ render-time allowances. `style-src 'unsafe-inline'` is the only initial inline
 allowance because current product components use style attributes; `unsafe-eval`
 is forbidden. Tightening this after an inline-style inventory does not block the
 Phase-1 proxy boundary.
+
+The public `/` entry point is served from `landing/index.html`; its hashed
+assets live under `/landing/assets/`. The landing page links only to the
+Student and Family cabinets. Other paths continue through their explicit
+application or legacy boundaries.
 
 Run the following after installing the rendered files:
 

@@ -308,6 +308,20 @@ async def _check_static(
     return passed
 
 
+async def _check_landing(session: aiohttp.ClientSession, origin: str) -> str:
+    label = "public landing"
+    response = await _read_response(session, origin, "/", label=label)
+    _require_security(response, label)
+    _require_cache(response, label, "no-cache")
+    _require("text/html" in _header(response, "content-type"), label, "not HTML")
+    html = response[2].decode("utf-8")
+    _require("ВМШ 179" in html, label, "brand is missing")
+    _require('href="/student/"' in html, label, "Student link is missing")
+    _require('href="/family/"' in html, label, "Family link is missing")
+    _require("/staff/" not in html, label, "Staff link must not be public")
+    return label
+
+
 async def check_deployed_release(origin: str, expected_instance: str) -> list[str]:
     """Check one already validated origin without sending credentials or writes."""
 
@@ -315,7 +329,7 @@ async def check_deployed_release(origin: str, expected_instance: str) -> list[st
     async with aiohttp.ClientSession(
         timeout=timeout, headers={"User-Agent": "vmshpwa-production-smoke/1"}
     ) as session:
-        passed: list[str] = []
+        passed: list[str] = [await _check_landing(session, origin)]
         for audience in AUDIENCES:
             passed.extend(
                 await _check_api(session, origin, audience, expected_instance)

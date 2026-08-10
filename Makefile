@@ -23,12 +23,15 @@ PWA_HUMAN_ENV := VMSH_RUNTIME_PROFILE=pwa-human VMSH_INSTANCE=human VMSH_DB_FILE
 PWA_AGENT_ENV := VMSH_RUNTIME_PROFILE=pwa-agent VMSH_INSTANCE=agent VMSH_DB_FILENAME=db/vmshpwa_agent.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/agent VMSH_NATS_SERVER=nats://127.0.0.1:4222 VMSH_NATS_TOPIC_PREFIX=vmshpwa_agent VMSH_PWA_PROTOTYPE=true
 PWA_E2E_ENV := VMSH_RUNTIME_PROFILE=pwa-e2e VMSH_INSTANCE=e2e VMSH_DB_FILENAME=db/vmshpwa_e2e.sqlite3 VMSH_MEDIA_ROOT=.runtime/vmshpwa/e2e VMSH_NATS_SERVER= VMSH_NATS_TOPIC_PREFIX=vmshpwa_e2e VMSH_PWA_PROTOTYPE=true
 
-.PHONY: pwa-dev pwa-api pwa-student pwa-family pwa-staff pwa-storybook
+.PHONY: pwa-dev pwa-api pwa-landing pwa-student pwa-family pwa-staff pwa-storybook
 pwa-dev:
-	$(MAKE) -j5 pwa-api pwa-student pwa-family pwa-staff pwa-storybook
+	$(MAKE) -j6 pwa-api pwa-landing pwa-student pwa-family pwa-staff pwa-storybook
 
 pwa-api:
 	$(PWA_UV_ENV) $(PWA_HUMAN_ENV) VMSH_API_PORT=8180 uv run python main.py
+
+pwa-landing:
+	cd $(PWA_DIR) && CI=true VITE_PORT=5172 pnpm --filter @vmsh/landing dev
 
 pwa-student:
 	cd $(PWA_DIR) && CI=true VITE_PORT=5173 VMSH_API_ORIGIN=http://127.0.0.1:8180 pnpm --filter @vmsh/student dev
@@ -42,12 +45,15 @@ pwa-staff:
 pwa-storybook:
 	cd $(PWA_DIR) && CI=true STORYBOOK_PORT=6006 pnpm storybook
 
-.PHONY: pwa-agent-dev pwa-agent-api pwa-agent-student pwa-agent-family pwa-agent-staff pwa-agent-storybook
+.PHONY: pwa-agent-dev pwa-agent-api pwa-agent-landing pwa-agent-student pwa-agent-family pwa-agent-staff pwa-agent-storybook
 pwa-agent-dev:
-	$(MAKE) -j5 pwa-agent-api pwa-agent-student pwa-agent-family pwa-agent-staff pwa-agent-storybook
+	$(MAKE) -j6 pwa-agent-api pwa-agent-landing pwa-agent-student pwa-agent-family pwa-agent-staff pwa-agent-storybook
 
 pwa-agent-api:
 	$(PWA_UV_ENV) $(PWA_AGENT_ENV) VMSH_API_PORT=8280 uv run python main.py
+
+pwa-agent-landing:
+	cd $(PWA_DIR) && CI=true VITE_PORT=5272 pnpm --filter @vmsh/landing dev
 
 pwa-agent-student:
 	cd $(PWA_DIR) && CI=true VITE_PORT=5273 VMSH_API_ORIGIN=http://127.0.0.1:8280 pnpm --filter @vmsh/student dev

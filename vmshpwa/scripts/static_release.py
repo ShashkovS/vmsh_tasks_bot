@@ -19,12 +19,14 @@ from vmshpwa.scripts.report_io import atomic_write_text
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 RELEASE_ROOT = REPOSITORY_ROOT / ".runtime" / "phase11-rehearsal" / "releases"
 APP_SOURCES = {
+    "landing": REPOSITORY_ROOT / "vmshpwa" / "apps" / "landing" / "dist",
     "student": REPOSITORY_ROOT / "vmshpwa" / "apps" / "student" / "dist",
     "family": REPOSITORY_ROOT / "vmshpwa" / "apps" / "family" / "dist",
     "staff": REPOSITORY_ROOT / "vmshpwa" / "apps" / "staff" / "dist",
 }
 BUILD_PROVENANCE_FILE = "build-provenance.json"
 REQUIRED_FILES = {
+    "landing": ("index.html", BUILD_PROVENANCE_FILE),
     "student": ("index.html", "manifest.webmanifest", "sw.js", BUILD_PROVENANCE_FILE),
     "family": ("index.html", "manifest.webmanifest", "sw.js", BUILD_PROVENANCE_FILE),
     "staff": ("index.html", BUILD_PROVENANCE_FILE),
@@ -58,6 +60,16 @@ def _tree_summary(root: Path) -> dict[str, object]:
         "bytes": byte_count,
         "sha256": digest.hexdigest(),
     }
+
+
+def _set_public_permissions(root: Path) -> None:
+    """Make a public release traversable by nginx after atomic activation."""
+
+    for path in root.rglob("*"):
+        if path.is_symlink():
+            raise ValueError(f"Release bundle contains a symlink: {path}")
+        path.chmod(0o755 if path.is_dir() else 0o644)
+    root.chmod(0o755)
 
 
 def _exact_https_origin(value: object, *, field: str) -> str:
@@ -130,12 +142,12 @@ def package_release(
     sources: dict[str, Path] | None = None,
     release_root: Path | None = None,
 ) -> dict[str, object]:
-    """Copy three complete builds into a new immutable release directory."""
+    """Copy four complete builds into a new immutable release directory."""
 
     _validate_release_id(release_id)
     source_directories = APP_SOURCES if sources is None else sources
     if set(source_directories) != set(REQUIRED_FILES):
-        raise ValueError("Exactly the student, family and staff bundles are required")
+        raise ValueError("Exactly the landing, student, family and staff bundles are required")
 
     build_provenance: dict[str, object] | None = None
     for app_name, required_files in REQUIRED_FILES.items():
@@ -183,6 +195,9 @@ def package_release(
             json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
+        # mkdtemp starts at 0700; reset public tree permissions before the
+        # atomic rename so nginx can read the selected release.
+        _set_public_permissions(staging)
         os.replace(staging, destination)
     except Exception:
         shutil.rmtree(staging, ignore_errors=True)
@@ -223,7 +238,7 @@ def verify_release(
     if not isinstance(recorded_applications, dict) or set(recorded_applications) != set(
         REQUIRED_FILES
     ):
-        raise ValueError("Release manifest must describe all three applications")
+        raise ValueError("Release manifest must describe all four bundles")
     recorded_build = manifest.get("build")
     if not isinstance(recorded_build, dict):
         raise ValueError("Release manifest must contain build provenance")

@@ -410,6 +410,21 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
 
+  apps/landing:
+    dependencies:
+      '@vmsh/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      lucide-react:
+        specifier: 'catalog:'
+        version: 0.540.0(react@19.2.8)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.8(react@19.2.8)
+
   apps/staff:
     dependencies:
       '@tanstack/react-query':

@@ -132,6 +132,17 @@ def _release_app(
             headers={"Cache-Control": html_cache_control},
         )
 
+    async def landing(_request: web.Request) -> web.Response:
+        return web.Response(
+            text=(
+                '<!doctype html><title>ВМШ 179</title>'
+                '<a href="/student/">Student</a>'
+                '<a href="/family/">Family</a>'
+            ),
+            content_type="text/html",
+            headers={"Cache-Control": "no-cache"},
+        )
+
     app.router.add_get("/{audience:student|family|staff}/api/v1/health", health)
     app.router.add_get("/{audience:student|family|staff}/api/v1/runtime", runtime)
     app.router.add_get("/{audience:student|family|staff}/api/v1/{tail:.*}", missing_api)
@@ -139,6 +150,7 @@ def _release_app(
     app.router.add_get("/{audience:student|family}/icon.svg", icon)
     app.router.add_get("/{audience:student|family}/sw.js", worker)
     app.router.add_get("/{audience:student|family|staff}/{tail:.*}", static)
+    app.router.add_get("/", landing)
     return app
 
 
@@ -178,7 +190,8 @@ async def test_smoke_checks_all_audiences_static_manifests_icons_and_workers(
         "production-2026",
     )
 
-    assert len(passed) == 18
+    assert len(passed) == 19
+    assert "public landing" in passed
     assert "student service worker" in passed
     assert "family manifest" in passed
     assert "staff SPA fallback" in passed

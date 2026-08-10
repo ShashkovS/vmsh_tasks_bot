@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import stat
 from pathlib import Path
 
 import pytest
@@ -34,11 +35,11 @@ def _bundles(
     root: Path, marker: str, release_id: str = "revision-a"
 ) -> dict[str, Path]:
     sources: dict[str, Path] = {}
-    for app_name in ("student", "family", "staff"):
+    for app_name in ("landing", "student", "family", "staff"):
         source = root / app_name
         source.mkdir(parents=True)
         (source / "index.html").write_text(marker, encoding="utf-8")
-        if app_name != "staff":
+        if app_name in {"student", "family"}:
             (source / "manifest.webmanifest").write_text("{}", encoding="utf-8")
             (source / "sw.js").write_text("// worker", encoding="utf-8")
         _write_provenance(source, app_name, release_id)
@@ -88,6 +89,18 @@ def test_packages_and_rolls_back_complete_frontend_set(
         ]
         == "revision-a"
     )
+
+
+def test_packaged_release_is_readable_by_static_file_workers(
+    tmp_path: Path, release_root: Path
+) -> None:
+    sources = _bundles(tmp_path / "bundles", "public")
+    static_release.package_release("revision-a", RECORDED_AT, sources=sources)
+
+    release = release_root / "revision-a"
+    assert stat.S_IMODE(release.stat().st_mode) == 0o755
+    assert stat.S_IMODE((release / "landing").stat().st_mode) == 0o755
+    assert stat.S_IMODE((release / "landing/index.html").stat().st_mode) == 0o644
 
 
 def test_explicit_release_root_is_used_for_server_layout(

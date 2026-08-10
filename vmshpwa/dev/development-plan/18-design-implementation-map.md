@@ -278,6 +278,11 @@ Storybook:
 
 Эти stories являются prototype proof только для интерфейса и детерминированной projection logic. Backend endpoints, migrations и production wiring закрываются соответствующими Phase 1–11.
 
+## Публичная стартовая страница
+
+- [`Product/Landing — Home`](http://localhost:6006/?path=/story/product-landing--home) — [LandingPage](../../apps/landing/src/landing-page.tsx), [story](../../apps/landing/src/landing-page.stories.tsx). Страница использует только публичные semantic tokens и содержит ссылки на `/student/` и `/family/`; Staff намеренно не показывается.
+- Production bundle собирается из [`apps/landing`](../../apps/landing), публикуется в `landing/`, а root gateway/nginx обслуживает его через `/`.
+
 ## Правило использования карты в этапах
 
 Перед началом frontend-части этапа разработчик:

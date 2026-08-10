@@ -23,6 +23,9 @@ map $uri $vmshpwa_release_cache_control {
     /student/index.html "no-cache";
     /family/index.html "no-cache";
     /staff/index.html "no-cache";
+    / "no-cache";
+    /landing/index.html "no-cache";
+    ~^/landing/assets/ "public, max-age=31536000, immutable";
 }
 
 map $uri $vmshpwa_service_worker_scope {
@@ -56,6 +59,9 @@ server {
     client_header_timeout 15s;
     client_body_timeout 120s;
     send_timeout 60s;
+    proxy_send_timeout 120s;
+    proxy_read_timeout 120s;
+    proxy_buffering off;
 
     limit_req zone=vmshpwa_login_per_ip burst=4 nodelay;
     limit_req_status 429;
@@ -76,6 +82,16 @@ server {
     location = /student { return 308 /student/; }
     location = /family { return 308 /family/; }
     location = /staff { return 308 /staff/; }
+
+    # Public entry page. It has no API or session state and deliberately does
+    # not expose the Staff application link.
+    location = / {
+        try_files /landing/index.html =404;
+    }
+
+    location ^~ /landing/ {
+        try_files $uri =404;
+    }
 
     # API locations are deliberately outside SPA fallback. The backend keeps
     # stricter endpoint-specific limits (for example the 16 KiB auth JSON cap).

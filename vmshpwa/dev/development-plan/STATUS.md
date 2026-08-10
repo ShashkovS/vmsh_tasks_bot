@@ -1,6 +1,27 @@
 # Статус плана разработки
 
-Последнее обновление: 2026-07-28.
+Последнее обновление: 2026-08-10.
+
+## Public landing checkpoint — 10 August 2026
+
+- Добавлен лёгкий React/Vite app [`apps/landing`](../../apps/landing) без API,
+  авторизации, Telegram, Google и PWA-состояния. Root gateway и production
+  release обслуживают его на `/`; пользователю показаны только Student и Family.
+- Storybook proof: `Product/Landing--home` (mobile-light и desktop-light,
+  interaction/a11y-проверка ссылок). Story связана с implementation map.
+- Release/nginx proof: landing добавлен в provenance, static release, E2E gateway
+  и production HTTP smoke; каталоги и файлы release получают публичные права
+  `0755/0644`, чтобы nginx мог читать их после атомарной публикации.
+- Проверки этого инкремента: lint, typecheck, Storybook browser tests **265/265**,
+  Python gateway/release/nginx/smoke **78/78**, landing и полный frontend
+  production build — PASS; targeted Playwright root smoke **3/3** в Chromium,
+  WebKit и Firefox. Общий frontend unit suite имеет 10 существующих
+  падений в `packages/app-shell` (auth/realtime/session-management), не связанных
+  с landing; snapshots не обновлялись.
+- Backend, миграции и production deploy остаются вне этого инкремента. Перед
+  публикацией на сервере нужно добавить landing locations из
+  [`vmshpwa.conf.template`](../../deploy/nginx/vmshpwa.conf.template) и один раз
+  исправить права уже созданного release.
 
 ## Phase 6 checkpoint: immediate Telegram review delivery — 3 August 2026
 

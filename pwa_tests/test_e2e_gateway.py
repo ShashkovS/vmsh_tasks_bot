@@ -22,15 +22,15 @@ from vmshpwa.scripts.e2e_gateway import (
 
 def _production_workspace(tmp_path: Path) -> Path:
     workspace = tmp_path / "vmshpwa"
-    for audience in AUDIENCES:
+    for audience in e2e_gateway.BUNDLES:
         dist = workspace / "apps" / audience / "dist"
         (dist / "assets").mkdir(parents=True)
-        (dist / "index.html").write_text(
-            f"<!doctype html><main data-product='{audience}'>{audience}</main>",
-            encoding="utf-8",
-        )
+        index = f"<!doctype html><main data-product='{audience}'>{audience}</main>"
+        if audience == "landing":
+            index += '<a href="/student/">Student</a><a href="/family/">Family</a>'
+        (dist / "index.html").write_text(index, encoding="utf-8")
         (dist / "assets" / "app.js").write_text("export {}", encoding="utf-8")
-        if audience != "staff":
+        if audience in {"student", "family"}:
             (dist / "sw.js").write_text(
                 "self.addEventListener('fetch',()=>{})", encoding="utf-8"
             )
@@ -141,6 +141,23 @@ async def test_gateway_serves_three_bundles_and_only_navigation_fallback(
     assert unknown.status == 404
     non_navigation = await gateway_client.post("/student/deep/route")
     assert non_navigation.status == 405
+
+
+async def test_gateway_serves_public_landing_without_staff_link(gateway_client):
+    response = await gateway_client.get("/")
+    assert response.status == 200
+    assert response.headers["Cache-Control"] == "no-cache"
+    body = await response.text()
+    assert "data-product='landing'" in body
+    assert 'href="/student/"' in body
+    assert 'href="/family/"' in body
+    assert "/staff/" not in body
+
+    asset = await gateway_client.get("/landing/assets/app.js")
+    assert asset.status == 200
+    assert asset.headers["Cache-Control"] == "public, max-age=31536000, immutable"
+
+    assert (await gateway_client.get("/landing/assets/missing.js")).status == 404
 
 
 async def test_gateway_proxies_api_before_fallback_and_forces_no_store(gateway_client):

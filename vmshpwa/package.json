@@ -12,7 +12,8 @@
     "pnpm": ">=11.15 <12"
   },
   "scripts": {
-    "dev": "concurrently -k -n student,family,staff -c cyan,green,magenta \"pnpm --filter @vmsh/student dev\" \"pnpm --filter @vmsh/family dev\" \"pnpm --filter @vmsh/staff dev\"",
+    "dev": "concurrently -k -n landing,student,family,staff -c yellow,cyan,green,magenta \"pnpm --filter @vmsh/landing dev\" \"pnpm --filter @vmsh/student dev\" \"pnpm --filter @vmsh/family dev\" \"pnpm --filter @vmsh/staff dev\"",
+    "dev:landing": "pnpm --filter @vmsh/landing dev",
     "dev:student": "pnpm --filter @vmsh/student dev",
     "dev:family": "pnpm --filter @vmsh/family dev",
     "dev:staff": "pnpm --filter @vmsh/staff dev",

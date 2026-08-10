@@ -5,6 +5,17 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
 })
 
+test('public root shows Student and Family entry points only', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(
+    page.getByRole('heading', { name: 'Решаем задачи и учимся видеть в математике больше.' }),
+  ).toBeVisible()
+  await expect(page.locator('a[href="/student/"]')).toHaveCount(1)
+  await expect(page.locator('a[href="/family/"]')).toHaveCount(1)
+  await expect(page.locator('a[href^="/staff/"]')).toHaveCount(0)
+})
+
 const apps = [
   {
     audience: 'student',

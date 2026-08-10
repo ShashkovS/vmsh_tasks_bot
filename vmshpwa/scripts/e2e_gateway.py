@@ -1,6 +1,6 @@
 """Serve all production PWA bundles behind one test-only origin.
 
-The real deployment routes three applications and their API/WebSocket paths on
+The real deployment routes a public landing page plus three applications and their API/WebSocket paths on
 one host.  Vite's preview server cannot model that boundary by itself, so this
 small aiohttp gateway is deliberately part of the Playwright harness only.  It
 fails closed unless it is started with the isolated ``pwa-e2e`` profile.
@@ -28,6 +28,7 @@ from multidict import CIMultiDict, CIMultiDictProxy
 
 AUDIENCES = ("student", "family", "staff")
 PWA_AUDIENCES = ("student", "family")
+BUNDLES = ("landing", *AUDIENCES)
 HOP_BY_HOP_HEADERS = frozenset(
     {
         "connection",
@@ -115,7 +116,7 @@ def _validate_api_origin(value: str) -> str:
 def _load_dist_roots(workspace: Path) -> dict[str, Path]:
     workspace = workspace.resolve(strict=True)
     roots: dict[str, Path] = {}
-    for audience in AUDIENCES:
+    for audience in BUNDLES:
         audience_root = workspace / "apps" / audience
         dist_root = audience_root / "dist"
         if audience_root.is_symlink() or dist_root.is_symlink():
@@ -467,6 +468,25 @@ async def _serve_application(request: web.Request) -> web.StreamResponse:
     return web.FileResponse(source, headers=_static_headers(relative_path, audience))
 
 
+def _landing_headers(relative_path: str) -> dict[str, str]:
+    headers = {"Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff"}
+    if relative_path.startswith("assets/"):
+        headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return headers
+
+
+async def _serve_landing(request: web.Request) -> web.StreamResponse:
+    relative_path = request.match_info.get("tail", "") or "index.html"
+    root = request.app[DIST_ROOTS]["landing"]
+    try:
+        source = resolve_static_file(root, relative_path)
+    except UnsafeStaticPath as exc:
+        raise web.HTTPNotFound(text="Static resource not found") from exc
+    if source is None:
+        raise web.HTTPNotFound(text="Static resource not found")
+    return web.FileResponse(source, headers=_landing_headers(relative_path))
+
+
 async def _redirect_application_root(request: web.Request) -> web.Response:
     audience = request.match_info["audience"]
     raise web.HTTPPermanentRedirect(location=f"/{audience}/")
@@ -582,6 +602,8 @@ def create_gateway(
         "/__e2e__/service-worker-generation/{audience:student|family}",
         _set_service_worker_generation,
     )
+    app.router.add_get("/", _serve_landing)
+    app.router.add_get("/landing/{tail:.*}", _serve_landing)
     app.router.add_post(
         "/__e2e__/runtime-mode/{audience:student|family}",
         _set_runtime_mode,

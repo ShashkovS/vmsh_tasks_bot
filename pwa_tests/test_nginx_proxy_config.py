@@ -65,6 +65,11 @@ def test_template_has_one_host_and_separate_static_api_websocket_boundaries():
     assert "root @@STATIC_ROOT@@;" in source
     assert source.count("include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;") == 7
 
+    landing = _location(source, "= /")
+    assert "try_files /landing/index.html =404;" in landing
+    landing_assets = _location(source, "^~ /landing/")
+    assert "try_files $uri =404;" in landing_assets
+
     content_assets = _location(source, "^~ /pwa-content-assets/")
     assert "limit_except GET { deny all; }" in content_assets
     assert "client_max_body_size 1k;" in content_assets
@@ -116,8 +121,21 @@ def test_proxy_header_snippet_replaces_client_forwarding_evidence():
     ):
         assert forbidden not in directives
     assert "proxy_connect_timeout 5s;" in source
-    assert "proxy_send_timeout 120s;" in source
+    assert "proxy_send_timeout 120s;" not in source
+    assert "proxy_read_timeout 120s;" not in source
+    assert "proxy_buffering off;" not in source
+
+
+def test_common_proxy_timeouts_are_inherited_from_the_server_boundary():
+    source = TEMPLATE.read_text(encoding="utf-8")
+
+    assert "send_timeout 60s;\n    proxy_send_timeout 120s;" in source
     assert "proxy_read_timeout 120s;" in source
+    assert "proxy_buffering off;" in source
+    for audience in ("student", "family", "staff"):
+        websocket = _location(source, f"= /{audience}/ws")
+        assert "proxy_read_timeout 75s;" in websocket
+        assert "proxy_send_timeout 75s;" in websocket
 
 
 def test_login_limit_is_exact_per_ip_and_returns_retry_semantics():
@@ -173,6 +191,8 @@ def test_release_entrypoints_revalidate_without_losing_server_headers():
         assert "add_header" not in static
     for audience in ("student", "family", "staff"):
         assert f'/{audience}/index.html "no-cache";' in source
+    assert '/landing/index.html "no-cache";' in source
+    assert '~^/landing/assets/ "public, max-age=31536000, immutable";' in source
     assert "add_header Cache-Control $vmshpwa_release_cache_control always;" in source
     assert (
         "add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;"

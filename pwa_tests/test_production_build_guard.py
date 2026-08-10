@@ -11,7 +11,7 @@ WORKSPACE = REPOSITORY_ROOT / "vmshpwa"
 VITE_BINARY = WORKSPACE / "node_modules" / ".bin" / "vite"
 
 
-@pytest.mark.parametrize("audience", ["student", "family", "staff"])
+@pytest.mark.parametrize("audience", ["landing", "student", "family", "staff"])
 @pytest.mark.parametrize("unsafe_flag", ["VITE_ENABLE_MSW", "VITE_PROTOTYPE"])
 def test_production_build_fails_closed_before_touching_output(
     tmp_path: Path,

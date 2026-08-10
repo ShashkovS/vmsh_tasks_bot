@@ -5,7 +5,7 @@ const explicitDisabledValues = new Set(['', '0', 'false', 'no', 'off'])
 const releaseIdPattern = /^[a-z0-9][a-z0-9._-]{0,63}$/
 
 export interface FrontendBuildProvenance {
-  application: 'student' | 'family' | 'staff'
+  application: 'student' | 'family' | 'staff' | 'landing'
   msw: false
   profile: 'production' | 'verification'
   prototype: false
