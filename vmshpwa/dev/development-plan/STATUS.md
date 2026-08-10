@@ -1673,3 +1673,14 @@
   Ruff, ESLint, strict TypeScript и production Staff build — **PASS**.
 - Storybook и аудитории не менялись. Буквальный номер занятия `0` остаётся
   открытым решением: действующая schema/контракты пока требуют номер от `1`.
+
+## Deploy-first checkpoint: изоляция локального agent auth — 10 августа 2026
+
+- Профили `pwa-agent` и другие prototype-профили больше не подхватывают
+  production-подобные auth keys/peppers из общего test credentials-файла:
+  без явных environment overrides используются детерминированные изолированные
+  test-only значения профиля.
+- Явно переданные environment overrides по-прежнему имеют приоритет; production
+  поведение не менялось. Это позволяет запускать `make pwa-agent-api` независимо
+  от legacy Telegram/Google и от содержимого локального credentials-файла.
+- Focused auth config gate: **25 PASS**; Ruff: **PASS**.

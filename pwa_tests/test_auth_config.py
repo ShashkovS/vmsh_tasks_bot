@@ -57,6 +57,23 @@ def test_known_prototype_profiles_get_isolated_test_only_defaults():
     assert "signing_keys" not in repr(agent)
 
 
+def test_prototype_ignores_credentials_file_security_values_without_env_override():
+    config = load_auth_runtime_config(
+        _runtime(
+            pwa_public_origins_json={"student": ["invalid"]},
+            pwa_auth_signing_keys_json=["invalid"],
+            pwa_refresh_pepper_b64="invalid",
+            pwa_throttle_pepper_b64="invalid",
+        ),
+        {},
+    )
+
+    assert config.test_only_defaults
+    assert config.origins_by_audience[AuthAudience.STAFF] == frozenset(
+        {"http://127.0.0.1:5275"}
+    )
+
+
 def test_e2e_uses_one_origin_for_all_audiences():
     config = load_auth_runtime_config(
         _runtime(runtime_profile="pwa-e2e", pwa_instance="e2e"), {}
