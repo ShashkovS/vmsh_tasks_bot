@@ -43,5 +43,6 @@
   "pwa_vapid_private_key": "",
   "pwa_vapid_subject": "",
   "conduit_import_api_token": "",
+  "first_admin_password": "REPLACE_WITH_LOCAL_FIRST_ADMIN_PASSWORD",
   "zdummy": "Тупо последняя строка без запятой"
 }

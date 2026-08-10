@@ -24,6 +24,27 @@ Student account; переключатель между несколькими St
 browser не входит в v1. Login/password обеих аудиторий в v1 рассылаются
 внешними email-скриптами.
 
+### Первый глобальный администратор
+
+После применения migrations PWA startup проверяет наличие пользователя с
+legacy-типом `ADMIN`. Если такого пользователя нет, из поля
+`first_admin_password` текущего JSON-конфига один раз создаются пользователь и
+активный Staff account с login `admin`. Пароль сразу превращается в Argon2id
+hash; исходное значение не сохраняется в SQLite, audit или operational logs.
+Создание выполняется одной SQLite-транзакцией и повторно проверяет условие
+внутри неё, поэтому два gunicorn worker не создают две записи. Факт создания
+попадает в Staff audit как `auth.first_admin.created` без credential.
+
+Если база пуста, а `first_admin_password` отсутствует или пуст, auth startup
+останавливается с ошибкой. Если глобальный администратор уже существует, поле
+не используется: после первого успешного запуска его можно убрать из конфига.
+Механика реализована в
+[`first_admin.py`](../../apps/pwa_api/first_admin.py) и механических SQLite-
+операциях
+[`db_methods/pwa/first_admin.py`](../../db_methods/pwa/first_admin.py); race,
+идемпотентность и отсутствие plaintext проверяет
+[`test_first_admin_bootstrap.py`](../../pwa_tests/integration/test_first_admin_bootstrap.py).
+
 Внешняя идентичность человека отделена от учётной записи: nullable
 `users.public_id` становится стабильным browser `userId`/`studentId` только
 при controlled activation, тогда как `auth_accounts.public_id` является

@@ -12,6 +12,7 @@ def test_config_repr_redacts_known_secrets():
         conduit_import_api_token="conduit-secret",
         s3_access_key="access-secret",
         s3_secret_key="storage-secret",
+        first_admin_password="first-admin-secret",
     )
 
     rendered = repr(config)
@@ -23,6 +24,7 @@ def test_config_repr_redacts_known_secrets():
         "conduit-secret",
         "access-secret",
         "storage-secret",
+        "first-admin-secret",
     ):
         assert secret not in rendered
 

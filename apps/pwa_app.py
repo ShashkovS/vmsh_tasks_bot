@@ -29,6 +29,7 @@ from apps.pwa_api.problem_synonym_routes import (
     problem_synonym_routes,
 )
 from apps.pwa_api.auth_service import PwaAuthService
+from apps.pwa_api.first_admin import ensure_first_global_admin
 from apps.pwa_api.classroom_assignment_routes import (
     PWA_CLASSROOM_ASSIGNMENT_INVALIDATOR,
     classroom_assignment_routes,
@@ -147,7 +148,7 @@ from helpers.pwa.storage_config import load_storage_config
 from helpers.pwa.web_push import send_web_push
 from helpers.pwa.telegram_bindings import verify_telegram_binding
 from helpers.pwa.written_attachments import WrittenAttachmentService
-from models.pwa.auth import AuthAudience
+from models.pwa.auth import AuthAudience, CredentialHasher
 from models.pwa.content_notifications import create_content_publication_notifications
 from models.pwa.content import ContentKind
 from models.pwa.oral_windows import create_due_window_notifications
@@ -720,9 +721,18 @@ async def on_auth_startup(app: web.Application) -> None:
     factory = app[PWA_DATABASE].factory
     if factory is None:
         raise RuntimeError("PWA auth startup requires a verified database factory")
+    credential_hasher = CredentialHasher()
+    created = await ensure_first_global_admin(
+        factory,
+        _runtime_config(app),
+        credential_hasher,
+    )
+    if created:
+        logger.warning("Created initial global administrator account: admin")
     state.service = await PwaAuthService.create(
         PwaAuthRepository(factory),
         state.runtime_config,
+        credential_hasher=credential_hasher,
     )
 
 

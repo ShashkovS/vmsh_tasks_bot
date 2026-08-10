@@ -1626,3 +1626,21 @@
   mapping/cutover остаются открыты.
 - Proof:
   [`phase10-course-runtime-settings-backend-2026-08-03.md`](../../../pwa_tests/reports/phase10-course-runtime-settings-backend-2026-08-03.md).
+
+## Phase 1 checkpoint: первый global admin — 10 августа 2026
+
+- PWA auth startup после schema preflight создаёт login `admin` только если в
+  `users` ещё нет global admin (`type = 128`). Password читается из
+  `first_admin_password`, сразу хешируется Argon2id и не сохраняется/не
+  журналируется в исходном виде.
+- SQLite write повторно проверяет условие внутри одной транзакции: два gunicorn
+  worker сходятся на одной записи. Повторный startup ничего не меняет; пустая
+  база без настроенного password fail-closed не запускает auth.
+- Удалён startup-вывод полного списка aiohttp endpoints. Остаются обычные
+  короткие lifecycle-сообщения.
+- Focused bootstrap/config/app-factory gate: **14 PASS**. Соседний
+  auth/repository/HTTP/PWA regression gate: **134 PASS**. Ruff: **PASS**.
+- Реализация и proof:
+  [`apps/pwa_api/first_admin.py`](../../../apps/pwa_api/first_admin.py),
+  [`db_methods/pwa/first_admin.py`](../../../db_methods/pwa/first_admin.py),
+  [`test_first_admin_bootstrap.py`](../../../pwa_tests/integration/test_first_admin_bootstrap.py).

@@ -142,16 +142,9 @@ def create_app(
         module.configure(app)
     # Обращаем on_shutdown, чтобы приложения закрывались в правильном порядке
     app.on_shutdown[:] = app.on_shutdown[::-1]
-    if __name__ == "__main__":
-        url_prefix = f"http://127.0.0.1:{LOCAL_APP_PORT}"
-    else:
+    if __name__ != "__main__":
         if hasattr(apps, "tg_bot") and apps.tg_bot in selected_adapters:
             apps.tg_bot.setup_tgbot_webhook(app)
-        url_prefix = f"https://{selected_config.webhook_host}"
-    logger.info("Routes:")
-    for route in app.router.routes():
-        logger.info(f"{route.method}: {url_prefix}{route.resource.canonical}")
-        print(f"{route.method}: {url_prefix}{route.resource.canonical}")
 
     return app
 

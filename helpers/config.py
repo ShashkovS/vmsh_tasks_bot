@@ -82,6 +82,7 @@ class Config:
     pwa_auth_signing_keys_json: object = field(default="", repr=False)
     pwa_refresh_pepper_b64: str = field(default="", repr=False)
     pwa_throttle_pepper_b64: str = field(default="", repr=False)
+    first_admin_password: str = field(default="", repr=False)
     logging_level = logging.WARNING
     verdict_mode: str = "verdict_plus_minus_half"
     result_mode: str = "res_immed"
@@ -192,6 +193,11 @@ def _setup(*, force_production=False):
         configured_instance = os.environ.get("VMSH_INSTANCE", "") or str(
             profile_values.get("pwa_instance", runtime_profile.removeprefix("pwa-"))
         )
+        configured_first_admin_password = profile_values.get(
+            "first_admin_password", ""
+        )
+        if not isinstance(configured_first_admin_password, str):
+            raise RuntimeError("first_admin_password must be a string")
         config = Config(
             runtime_profile=runtime_profile,
             pwa_instance=configured_instance,
@@ -236,6 +242,7 @@ def _setup(*, force_production=False):
             pwa_throttle_pepper_b64=str(
                 profile_values.get("pwa_throttle_pepper_b64", "")
             ).strip(),
+            first_admin_password=configured_first_admin_password,
             pdf2svg_path=_optional_executable_from_env("VMSH_PDF2SVG_PATH", "pdf2svg"),
             cwebp_path=_optional_executable_from_env("VMSH_CWEBP_PATH", "cwebp"),
             pdflatex_path=_optional_executable_from_env(

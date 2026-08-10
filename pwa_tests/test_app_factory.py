@@ -52,6 +52,14 @@ def test_factory_composes_only_selected_adapters():
     assert [route.method for route in app.router.routes()] == ["HEAD", "GET"]
 
 
+def test_factory_does_not_print_registered_routes(capsys):
+    runtime = Config(runtime_profile="legacy", config_name="factory-test")
+
+    create_app([MarkerAdapter], runtime_config=runtime)
+
+    assert capsys.readouterr().out == ""
+
+
 @pytest.mark.asyncio
 async def test_pwa_startup_refuses_to_create_or_migrate_database(tmp_path):
     database_path = tmp_path / "missing.sqlite3"
