@@ -667,11 +667,116 @@ cd /web/vmsh_tasks_bot/vmsh_tasks_bot
 git checkout vmshpwa
 git pull
 uv sync
+
+
 # pnpm
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 pnpm self-update next-12
 cd /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa
 
+# nvm
+export NVM_DIR="$HOME/.nvm"
+if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
+fi
+. "$NVM_DIR/nvm.sh"
+
+
+# папочки для деплоя
+sudo install -d \
+  -o vmsh_tasks_bot \
+  -g vmsh_tasks_bot \
+  -m 2770 \
+  /web/vmsh_tasks_bot/vmshpwa \
+  /web/vmsh_tasks_bot/vmshpwa/reports
+
+nvm install 26.5.1
+nvm alias default 26.5.1
+nvm use 26.5.1
+
+export NVM_DIR="$HOME/.nvm"
+. "$NVM_DIR/nvm.sh"
+nvm use --silent 26.5.1
+
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+export XDG_CACHE_HOME="$HOME/.cache"
+
+cd /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa
+
+CI=true pnpm install \
+  --frozen-lockfile \
+  --prefer-offline \
+  --reporter=append-only
+'
+
+
+sudo -H -u vmsh_tasks_bot bash -lc '
+set -euo pipefail
+
+export NVM_DIR="$HOME/.nvm"
+. "$NVM_DIR/nvm.sh"
+nvm use --silent 26.5.1
+
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+export XDG_CACHE_HOME="$HOME/.cache"
+export NODE_OPTIONS="--max-old-space-size=4096"
+
+REPO=/web/vmsh_tasks_bot/vmsh_tasks_bot
+RELEASE_ROOT=/web/vmsh_tasks_bot/vmshpwa
+REPORT_ROOT="$RELEASE_ROOT/reports"
+
+PUBLIC_MEDIA_ORIGIN="https://s3.ru1.storage.beget.cloud"
+SENTRY_DSN="https://09d20146c8b808c3760a240956fb3c90@o489435.ingest.us.sentry.io/4511885728088064"
+
+cd "$REPO"
+
+RELEASE_ID="$(git rev-parse --short=12 HEAD)-$(date -u +%Y%m%d%H%M%S)"
+
+make pwa-production-build \
+  PWA_RELEASE_ID="$RELEASE_ID" \
+  VITE_PUBLIC_MEDIA_ORIGIN="$PUBLIC_MEDIA_ORIGIN" \
+  VITE_SENTRY_DSN="$SENTRY_DSN"
+
+make pwa-phase11-release-package \
+  PWA_RELEASE_ID="$RELEASE_ID" \
+  PWA_RELEASE_ROOT="$RELEASE_ROOT" \
+  PWA_RELEASE_REPORT="$REPORT_ROOT/$RELEASE_ID-package.json"
+
+make pwa-phase11-release-verify \
+  PWA_RELEASE_ID="$RELEASE_ID" \
+  PWA_RELEASE_ROOT="$RELEASE_ROOT" \
+  PWA_RELEASE_REPORT="$REPORT_ROOT/$RELEASE_ID-verify.json"
+
+echo
+echo "Собран релиз: $RELEASE_ID"
+echo "Файлы: $RELEASE_ROOT/$RELEASE_ID"
+'
+
+
+
+sudo -H -u vmsh_tasks_bot bash -lc '
+set -euo pipefail
+
+export PATH="$HOME/.local/bin:$PATH"
+
+REPO=/web/vmsh_tasks_bot/vmsh_tasks_bot
+RELEASE_ROOT=/web/vmsh_tasks_bot/vmshpwa
+REPORT_ROOT="$RELEASE_ROOT/reports"
+
+cd "$REPO"
+
+read -r -p "Release ID: " RELEASE_ID
+
+make pwa-phase11-release-activate \
+  PWA_RELEASE_ID="$RELEASE_ID" \
+  PWA_RELEASE_ROOT="$RELEASE_ROOT" \
+  PWA_RELEASE_REPORT="$REPORT_ROOT/$RELEASE_ID-activate.json"
+
+readlink -f "$RELEASE_ROOT/current"
+'
+'
 
 
 # Специальный пользователь для загрузки db
@@ -725,7 +830,7 @@ sudo chown -R vmsh_tasks_bot:vmsh_tasks_bot /web/vmsh_tasks_bot
 
 # Настраиваем systemd для поддержания приложения в рабочем состоянии
 # Начинаем с описания сервиса
-sudo echo '
+echo '
 [Unit]
 Description=Gunicorn instance to serve vmsh_tasks_bot
 After=network.target
@@ -738,80 +843,631 @@ User=vmsh_tasks_bot
 Group=nginx
 RuntimeDirectory=gunicorn
 WorkingDirectory=/web/vmsh_tasks_bot/vmsh_tasks_bot
-Environment="PATH=/web/vmsh_tasks_bot/vmsh_tasks_bot_env/bin"
+Environment="PATH=/web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin"
 Environment="PROD=true"
 Environment="LD_RUN_PATH=/usr/local/lib"
 Environment="LD_LIBRARY_PATH=/usr/local/lib"
-ExecStart=/web/vmsh_tasks_bot/vmsh_tasks_bot_env/bin/gunicorn  --pid /web/vmsh_tasks_bot/vmsh_tasks_bot.pid  --workers 2  --bind unix:/web/vmsh_tasks_bot/vmsh_tasks_bot.socket --worker-class aiohttp.GunicornUVLoopWebWorker -m 007  main:app
+ExecStart=/web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin/gunicorn  --pid /web/vmsh_tasks_bot/vmsh_tasks_bot.pid  --workers 2  --bind unix:/web/vmsh_tasks_bot/vmsh_tasks_bot.socket --worker-class aiohttp.GunicornUVLoopWebWorker -m 007  main:app
 ExecReload=/bin/kill -s HUP $MAINPID
 ExecStop=/bin/kill -s TERM $MAINPID
 PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
-' > /etc/systemd/system/gunicorn.vmsh_tasks_bot.service
+' > /web/vmsh_tasks_bot/gunicorn.vmsh_tasks_bot.service
 sudo ln -s /web/vmsh_tasks_bot/gunicorn.vmsh_tasks_bot.service /etc/systemd/system/gunicorn.vmsh_tasks_bot.service
 
 # Тестовый запуск
-cd /web/vmsh_tasks_bot/vmsh_tasks_bot && export PROD=true && /web/vmsh_tasks_bot/vmsh_tasks_bot_env/bin/gunicorn  --pid /web/vmsh_tasks_bot/vmsh_tasks_bot.pid  --workers 2  --bind unix:/web/vmsh_tasks_bot/vmsh_tasks_bot.socket --worker-class aiohttp.GunicornUVLoopWebWorker -m 007  main:app
+cd /web/vmsh_tasks_bot/vmsh_tasks_bot && export PROD=true && /web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin/gunicorn  --pid /web/vmsh_tasks_bot/vmsh_tasks_bot.pid  --workers 2  --bind unix:/web/vmsh_tasks_bot/vmsh_tasks_bot.socket --worker-class aiohttp.GunicornUVLoopWebWorker -m 007  main:app
+
+
+# ставим свежайший nginx с поддержкой brotli
+set -euo pipefail
+STAMP="$(date +%Y%m%d-%H%M%S)"
+sudo cp -a /etc/nginx "/root/nginx-backup-${STAMP}"
+sudo nginx -T 2>&1 | sudo tee "/root/nginx-T-${STAMP}.txt" >/dev/null
+nginx -V 2>&1 | sudo tee "/root/nginx-V-${STAMP}.txt"
+
+sudo apt update
+
+sudo apt install -y \
+    curl \
+    gnupg2 \
+    ca-certificates \
+    lsb-release \
+    ubuntu-keyring
+
+curl -fsSL https://nginx.org/keys/nginx_signing.key \
+    | gpg --dearmor \
+    | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null
+
+gpg --dry-run --quiet --no-keyring \
+    --import \
+    --import-options import-show \
+    /usr/share/keyrings/nginx-archive-keyring.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/mainline/ubuntu $(lsb_release -cs) nginx" \
+    | sudo tee /etc/apt/sources.list.d/nginx.list
+
+printf 'Package: *\nPin: origin nginx.org\nPin: release o=nginx\nPin-Priority: 900\n' \
+    | sudo tee /etc/apt/preferences.d/99nginx
+
+sudo apt update
+
+apt-cache policy nginx
+
+sudo apt-get install -y \
+    -o Dpkg::Options::="--force-confold" \
+    nginx
+
+nginx -v
+sudo nginx -t
+
+# brotli
+sudo apt install -y \
+    git \
+    build-essential \
+    cmake \
+    libpcre2-dev \
+    zlib1g-dev \
+    libssl-dev
+
+set -euo pipefail
+
+NGINX_VERSION="$(nginx -v 2>&1 | sed 's#nginx version: nginx/##')"
+BUILD_DIR="$(mktemp -d /tmp/nginx-brotli.XXXXXX)"
+
+echo "Building Brotli for nginx ${NGINX_VERSION}"
+echo "Build directory: ${BUILD_DIR}"
+
+git clone \
+    --recurse-submodules \
+    --shallow-submodules \
+    --depth 1 \
+    https://github.com/google/ngx_brotli.git \
+    "${BUILD_DIR}/ngx_brotli"
+
+cmake \
+    -S "${BUILD_DIR}/ngx_brotli/deps/brotli" \
+    -B "${BUILD_DIR}/ngx_brotli/deps/brotli/out" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=OFF
+
+cmake \
+    --build "${BUILD_DIR}/ngx_brotli/deps/brotli/out" \
+    --config Release \
+    --target brotlienc \
+    --parallel "$(nproc)"
+
+cd "${BUILD_DIR}"
+
+curl -fsSLO \
+    "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"
+
+tar xzf "nginx-${NGINX_VERSION}.tar.gz"
+
+cd "nginx-${NGINX_VERSION}"
+
+CONFIGURE_ARGS="$(nginx -V 2>&1 | sed -n 's/^configure arguments: //p')"
+
+if [[ " ${CONFIGURE_ARGS} " != *" --with-compat "* ]]; then
+    CONFIGURE_ARGS="${CONFIGURE_ARGS} --with-compat"
+fi
+
+eval "./configure ${CONFIGURE_ARGS} --add-dynamic-module=${BUILD_DIR}/ngx_brotli"
+
+make -j"$(nproc)" modules
+
+sudo install -d -m 0755 /usr/lib/nginx/modules
+
+sudo install -m 0644 \
+    objs/ngx_http_brotli_filter_module.so \
+    /usr/lib/nginx/modules/ngx_http_brotli_filter_module.so
+
+sudo install -m 0644 \
+    objs/ngx_http_brotli_static_module.so \
+    /usr/lib/nginx/modules/ngx_http_brotli_static_module.so
+
+
+if grep -Eq '^[[:space:]]*include[[:space:]]+/etc/nginx/modules-enabled/\*\.conf;' /etc/nginx/nginx.conf; then
+    sudo mkdir -p /etc/nginx/modules-enabled
+
+    sudo tee /etc/nginx/modules-enabled/50-mod-http-brotli.conf >/dev/null <<'EOF'
+load_module /usr/lib/nginx/modules/ngx_http_brotli_filter_module.so;
+load_module /usr/lib/nginx/modules/ngx_http_brotli_static_module.so;
+EOF
+else
+    if ! grep -q 'ngx_http_brotli_filter_module.so' /etc/nginx/nginx.conf; then
+        sudo sed -i '1i\
+load_module /usr/lib/nginx/modules/ngx_http_brotli_filter_module.so;\
+load_module /usr/lib/nginx/modules/ngx_http_brotli_static_module.so;\
+' /etc/nginx/nginx.conf
+    fi
+fi
+
+sudo tee /etc/nginx/conf.d/10-brotli.conf >/dev/null <<'EOF'
+brotli on;
+brotli_static on;
+
+brotli_comp_level 5;
+brotli_min_length 1024;
+
+brotli_types
+    text/plain
+    text/css
+    text/xml
+    application/json
+    application/javascript
+    application/xml
+    application/rss+xml
+    application/atom+xml
+    application/wasm
+    image/svg+xml;
+EOF
+
+sudo nginx -t
+sudo systemctl restart nginx
+
+nginx -v
+
+sudo nginx -T 2>&1 \
+    | grep -E 'load_module.*brotli|brotli(_[a-z]+)?[[:space:]]'
 
 
 sudo mkdir /etc/pki/nginx
 sudo openssl dhparam -out /etc/pki/nginx/dhparam.pem 4096
 chown nginx:nginx /etc/pki/nginx/dhparam.pem
 # Настраиваем nginx (здесь настройки СТРОГО отдельного домена или поддомена). Если хочется держать в папке, то настраивать nginx нужно по-другому
-echo '
-    server {
-        listen [::]:443 ssl http2; # managed by Certbot
-        listen 443 ssl http2; # managed by Certbot
-        server_name vmsh.shashkovs.ru; # managed by Certbot
+sudo install -d -m 755 /etc/nginx/snippets
 
-        ssl_certificate /etc/letsencrypt/live/vmsh.shashkovs.ru/fullchain.pem; # managed by Certbot
-        ssl_certificate_key /etc/letsencrypt/live/vmsh.shashkovs.ru/privkey.pem; # managed by Certbot
-        include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-        ssl_dhparam /etc/pki/nginx/dhparam.pem;
-        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+sudo tee /etc/nginx/snippets/vmshpwa-proxy-headers.conf >/dev/null <<'NGINX'
+# Клиент не должен подмешивать собственные Forwarded/X-Forwarded-*.
+proxy_http_version 1.1;
+proxy_set_header Host $host;
+proxy_set_header Forwarded "for=\"$remote_addr\";proto=https;host=\"$host\"";
 
-        location / {
-          proxy_set_header Host $http_host;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_redirect off;
-          proxy_buffering off;
-          proxy_pass http://unix:/web/vmsh_tasks_bot/vmsh_tasks_bot.socket;
-        }
-        location /online/ws {
-          error_log /web/vmsh_tasks_bot/ws.log debug;
-          proxy_http_version 1.1;
-          proxy_set_header Upgrade $http_upgrade;
-          proxy_set_header Connection "Upgrade";
-          proxy_set_header Host $http_host;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_redirect off;
-          proxy_buffering off;
-          proxy_pass http://unix:/web/vmsh_tasks_bot/vmsh_tasks_bot.socket;
-        }
-        location /game/ws {
-          error_log /web/vmsh_tasks_bot/ws.log debug;
-          proxy_http_version 1.1;
-          proxy_set_header Upgrade $http_upgrade;
-          proxy_set_header Connection "Upgrade";
-          proxy_set_header Host $http_host;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_redirect off;
-          proxy_buffering off;
-          proxy_pass http://unix:/web/vmsh_tasks_bot/vmsh_tasks_bot.socket;
-        }
+proxy_set_header X-Forwarded-For "";
+proxy_set_header X-Forwarded-Host "";
+proxy_set_header X-Forwarded-Proto "";
+proxy_set_header X-Forwarded-Port "";
+proxy_set_header X-Forwarded-Prefix "";
+proxy_set_header X-Forwarded-Server "";
+proxy_set_header X-Forwarded-Ssl "";
+proxy_set_header X-Real-IP "";
+proxy_set_header Proxy "";
+
+proxy_connect_timeout 5s;
+proxy_request_buffering on;
+NGINX
+
+
+sudo cp -a \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot.conf \
+  "/web/vmsh_tasks_bot/vmsh_tasks_bot.conf.backup.$(date +%Y%m%d-%H%M%S)"
+
+sudo tee /web/vmsh_tasks_bot/vmsh_tasks_bot.conf >/dev/null <<'NGINX'
+# Этот файл подключается внутри блока http через /etc/nginx/conf.d/*.conf.
+
+map $uri $vmshpwa_login_limit_key {
+    default "";
+    ~^/(student|family|staff)/api/v1/auth/login$ $binary_remote_addr;
+}
+
+map $limit_req_status $vmshpwa_retry_after {
+    default "";
+    REJECTED 60;
+}
+
+# Хешированные Vite-assets можно кешировать навсегда.
+# Стабильные entry points обязательно перепроверяются.
+map $uri $vmshpwa_release_cache_control {
+    default "";
+
+    /student/sw.js "no-store";
+    /family/sw.js "no-store";
+
+    /student/index.html "no-cache";
+    /family/index.html "no-cache";
+    /staff/index.html "no-cache";
+
+    /student/manifest.webmanifest "no-cache";
+    /family/manifest.webmanifest "no-cache";
+
+    ~^/(student|family|staff)/build-provenance\.json$ "no-cache";
+    ~^/(student|family)/icon[^/]*\.(png|svg|webp)$ "no-cache";
+
+    ~^/(student|family|staff)/assets/ "public, max-age=31536000, immutable";
+}
+
+map $uri $vmshpwa_service_worker_scope {
+    default "";
+    /student/sw.js "/student/";
+    /family/sw.js "/family/";
+}
+
+# Строгие заголовки применяются только к трём новым приложениям.
+# Legacy-сайт продолжает работать со своей прежней политикой.
+map $uri $vmshpwa_csp {
+    default "";
+    ~^/(student|family|staff)(/|$) "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
+}
+
+map $uri $vmshpwa_referrer_policy {
+    default "";
+    ~^/(student|family|staff)(/|$) "no-referrer";
+}
+
+map $uri $vmshpwa_frame_options {
+    default "";
+    ~^/(student|family|staff)(/|$) "DENY";
+}
+
+map $uri $vmshpwa_content_type_options {
+    default "";
+    ~^/(student|family|staff)(/|$) "nosniff";
+}
+
+map $uri $vmshpwa_permissions_policy {
+    default "";
+    ~^/(student|family|staff)(/|$) "camera=(self), geolocation=(), microphone=(), payment=(), usb=()";
+}
+
+limit_req_zone
+    $vmshpwa_login_limit_key
+    zone=vmshpwa_login_per_ip:10m
+    rate=6r/m;
+
+upstream vmsh_legacy_backend {
+    server unix:/web/vmsh_tasks_bot/vmsh_tasks_bot.socket fail_timeout=0;
+    keepalive 16;
+}
+
+upstream vmshpwa_backend {
+    server unix:/run/vmshpwa/vmshpwa.sock fail_timeout=0;
+    keepalive 16;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name vmsh.shashkovs.ru;
+
+    return 308 https://vmsh.shashkovs.ru$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+
+    server_name vmsh.shashkovs.ru;
+
+    ssl_certificate /etc/letsencrypt/live/vmsh.shashkovs.ru/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/vmsh.shashkovs.ru/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/pki/nginx/dhparam.pem;
+
+    root /web/vmsh_tasks_bot/vmshpwa/current;
+    index index.html;
+
+    server_tokens off;
+    etag on;
+    sendfile on;
+    tcp_nopush on;
+
+    client_header_timeout 15s;
+    client_body_timeout 120s;
+    send_timeout 60s;
+    keepalive_timeout 65s;
+
+    # Динамический Brotli; если рядом есть file.js.br, сначала используется он.
+    brotli on;
+    brotli_static on;
+    brotli_comp_level 5;
+    brotli_min_length 1024;
+    brotli_types
+        application/javascript
+        application/json
+        application/manifest+json
+        application/wasm
+        application/xml
+        font/otf
+        font/ttf
+        image/svg+xml
+        text/css
+        text/javascript
+        text/plain
+        text/xml;
+
+    # Fallback для клиентов без Brotli.
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_types
+        application/javascript
+        application/json
+        application/manifest+json
+        application/wasm
+        application/xml
+        font/otf
+        font/ttf
+        image/svg+xml
+        text/css
+        text/javascript
+        text/plain
+        text/xml;
+
+    limit_req
+        zone=vmshpwa_login_per_ip
+        burst=4
+        nodelay;
+    limit_req_status 429;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    add_header Content-Security-Policy $vmshpwa_csp always;
+    add_header Referrer-Policy $vmshpwa_referrer_policy always;
+    add_header X-Frame-Options $vmshpwa_frame_options always;
+    add_header X-Content-Type-Options $vmshpwa_content_type_options always;
+    add_header Permissions-Policy $vmshpwa_permissions_policy always;
+
+    add_header Retry-After $vmshpwa_retry_after always;
+    add_header Cache-Control $vmshpwa_release_cache_control always;
+    add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;
+
+    # ----------------------------------------------------------------------
+    # Student, Family и Staff API
+    # ----------------------------------------------------------------------
+
+    location ^~ /student/api/ {
+        client_max_body_size 64m;
+
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+
+        proxy_pass http://vmshpwa_backend;
     }
-' > /web/vmsh_tasks_bot/vmsh_tasks_bot.conf
 
-sudo ln -s /web/vmsh_tasks_bot/vmsh_tasks_bot.conf /etc/nginx/conf.d/vmsh_tasks_bot.conf
+    location ^~ /family/api/ {
+        client_max_body_size 64m;
+
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    location ^~ /staff/api/ {
+        client_max_body_size 64m;
+
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    location = /student/api {
+        return 404;
+    }
+
+    location = /family/api {
+        return 404;
+    }
+
+    location = /staff/api {
+        return 404;
+    }
+
+    # В production основные media URL ведут прямо в S3.
+    # Этот read-only endpoint сохраняется для совместимости.
+    location ^~ /pwa-content-assets/ {
+        limit_except GET {
+            deny all;
+        }
+
+        client_max_body_size 1k;
+
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+        proxy_set_header Connection "";
+
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    # ----------------------------------------------------------------------
+    # Student, Family и Staff WebSocket
+    # ----------------------------------------------------------------------
+
+    location = /student/ws {
+        client_max_body_size 64k;
+
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_read_timeout 75s;
+        proxy_send_timeout 75s;
+        proxy_buffering off;
+
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    location = /family/ws {
+        client_max_body_size 64k;
+
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_read_timeout 75s;
+        proxy_send_timeout 75s;
+        proxy_buffering off;
+
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    location = /staff/ws {
+        client_max_body_size 64k;
+
+        include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_read_timeout 75s;
+        proxy_send_timeout 75s;
+        proxy_buffering off;
+
+        proxy_pass http://vmshpwa_backend;
+    }
+
+    location = /student/ws/ {
+        return 404;
+    }
+
+    location = /family/ws/ {
+        return 404;
+    }
+
+    location = /staff/ws/ {
+        return 404;
+    }
+
+    # ----------------------------------------------------------------------
+    # Статические SPA/PWA
+    # ----------------------------------------------------------------------
+
+    location = /student {
+        return 308 /student/;
+    }
+
+    location = /family {
+        return 308 /family/;
+    }
+
+    location = /staff {
+        return 308 /staff/;
+    }
+
+    location ^~ /student/ {
+        try_files $uri $uri/ /student/index.html;
+    }
+
+    location ^~ /family/ {
+        try_files $uri $uri/ /family/index.html;
+    }
+
+    location ^~ /staff/ {
+        try_files $uri $uri/ /staff/index.html;
+    }
+
+    # ----------------------------------------------------------------------
+    # Старые WebSocket
+    # ----------------------------------------------------------------------
+
+    location ^~ /online/ws {
+        proxy_http_version 1.1;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+
+        # Не сохраняем присланный клиентом X-Forwarded-For.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+        proxy_buffering off;
+        proxy_redirect off;
+
+        proxy_pass http://vmsh_legacy_backend;
+    }
+
+    location ^~ /game/ws {
+        proxy_http_version 1.1;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+        proxy_buffering off;
+        proxy_redirect off;
+
+        proxy_pass http://vmsh_legacy_backend;
+    }
+
+    # ----------------------------------------------------------------------
+    # Всё остальное остаётся в существующем приложении
+    # ----------------------------------------------------------------------
+
+    location / {
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header Connection "";
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
+        proxy_redirect off;
+        proxy_buffering off;
+
+        proxy_pass http://vmsh_legacy_backend;
+    }
+}
+NGINX
+
+sudo sed -i \
+  's#@@CSP_MEDIA_ORIGIN@@#https://s3.ru1.storage.beget.cloud#g' \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot.conf
+
+sudo sed -i \
+  's#@@CSP_SENTRY_ORIGIN@@#https://09d20146c8b808c3760a240956fb3c90@o489435.ingest.us.sentry.io#g' \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot.conf
+
+if sudo grep -n '@@' /web/vmsh_tasks_bot/vmsh_tasks_bot.conf; then
+    echo "ОШИБКА: в nginx-конфиге остались незаменённые маркеры"
+    exit 1
+fi
+
+
+
+sudo ln -sfn \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot.conf \
+  /etc/nginx/conf.d/vmsh_tasks_bot.conf
 
 # Проверяем корректность конфига. СУПЕР-ВАЖНО!
 sudo nginx -t
+
 # Перезапускаем nginx
 sudo systemctl reload nginx.service
+sudo systemctl status nginx.service --no-pager
+
+# проверки
+curl -sSI https://vmsh.shashkovs.ru/student/
+curl -sSI https://vmsh.shashkovs.ru/student/sw.js
+curl -sSI -H 'Accept-Encoding: br' https://vmsh.shashkovs.ru/student/
+curl -sSI https://vmsh.shashkovs.ru/
 
 
+
+
+sudo systemctl daemon-reload
 # Говорим, что нужен автозапуск
 sudo systemctl enable gunicorn.vmsh_tasks_bot
 # Запускаем
@@ -819,10 +1475,10 @@ sudo systemctl start gunicorn.vmsh_tasks_bot
 # Проверяем
 curl --unix-socket /web/vmsh_tasks_bot/vmsh_tasks_bot.socket http
 
-journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago"
+sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago"
 
 
-/web/vmsh_tasks_bot/vmsh_tasks_bot_env/bin
+/web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin
 
 
 
@@ -1079,5 +1735,5 @@ sudo -H -u vmsh_tasks_bot sqlite3 production.db < arch_2023-10-23T12-04-25.dump
 0 3 * * * /usr/bin/bash /web/vmsh_tasks_bot/vmsh_tasks_bot/db/backup_to_vds.sh >/dev/null 2>&1
 0 13 * * * /usr/bin/bash /web/vmsh_tasks_bot/vmsh_tasks_bot/db/backup_to_vds.sh >/dev/null 2>&1
 0 21 * * * /usr/bin/bash /web/vmsh_tasks_bot/vmsh_tasks_bot/db/backup_to_vds.sh >/dev/null 2>&1
-0 * * * * sudo -u vmsh_tasks_bot bash -c 'export PROD=true; cd /web/vmsh_tasks_bot/vmsh_tasks_bot && /web/vmsh_tasks_bot/vmsh_tasks_bot_env/bin/python -m plugins.calc_complexity >/dev/null'
+0 * * * * sudo -u vmsh_tasks_bot bash -c 'export PROD=true; cd /web/vmsh_tasks_bot/vmsh_tasks_bot && /web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin/python -m plugins.calc_complexity >/dev/null'
 
