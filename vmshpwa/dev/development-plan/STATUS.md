@@ -2,6 +2,24 @@
 
 Последнее обновление: 2026-08-10.
 
+## Deploy-first учебный цикл — 10 August 2026
+
+- Добавлена пошаговая ручная приёмка на пустой production-подобной базе:
+  [`manual-pilot-cycle.md`](../../docs/manual-pilot-cycle.md). Она проводит
+  администратора через импорт школьников, создание преподавателя, занятие 0,
+  публикации, Student submissions, Staff review, баннеры и семейный итог;
+  аудитории из прохода исключены.
+- Production-build Playwright теперь отдельно доказывает создание занятия из
+  Staff UI, изменение расписания фаз и дедлайна, публикацию condition/solution,
+  досрочное закрытие приёма и раскрытие решения Student. Сценарий находится в
+  [`content-publication.spec.ts`](../../e2e/content-publication.spec.ts).
+- Проверки текущего прохода: content **6/6**, submissions **9/9**, review
+  **3/3**, news/notifications **18/18** в Chromium, WebKit и Firefox.
+- Зафиксирована честная граница: текущие `/staff/broadcasts` — PWA-баннеры, а
+  явный итог занятия адресован Family. Student получает verdict сразу после
+  review. Общая финальная Student/Telegram-рассылка пока не реализована и не
+  изображается готовой.
+
 ## Public landing checkpoint — 10 August 2026
 
 - Добавлен лёгкий React/Vite app [`apps/landing`](../../apps/landing) без API,

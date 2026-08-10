@@ -20,7 +20,10 @@ function latexSource(title: string, statement: string, kind: ContentKind = 'cond
     kind === 'hint'
       ? String.raw`
 \hint ${statement} \ehint`
-      : ''
+      : kind === 'solution'
+        ? String.raw`
+\solution ${statement} \esolution`
+        : ''
   return String.raw`\documentclass{article}
 \begin{document}
 \problem[name=e2e,title=${title}]
@@ -132,6 +135,111 @@ async function uploadReviewAndPublish({
 
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
+})
+
+test('Deploy-first: Admin creates a lesson, changes its phases, publishes a solution and closes submissions', async ({
+  page,
+}, testInfo) => {
+  const target = targetForProject(testInfo.project.name)
+  const projectOffset = target.lessonNumber - 900
+  const lessonNumber = 1_900 + projectOffset + testInfo.retry * 100
+  const lessonTitle = `Приёмка полного цикла ${testInfo.project.name}`
+  const taskTitle = `Задача полного цикла ${testInfo.project.name}`
+  const solutionText = `Решение полного цикла для ${testInfo.project.name}.`
+
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/lessons')
+  await page.getByRole('button', { name: 'Создать занятие' }).click()
+  await page.getByLabel('Курс').selectOption(contentFixture.coursePublicId)
+  await page.getByLabel('Группа').selectOption(contentFixture.groupPublicId)
+  await page.getByLabel('Номер занятия').fill(String(lessonNumber))
+  await page.getByLabel('Название (необязательно)').fill(lessonTitle)
+  await page.getByLabel('Дата занятия').fill(`2027-02-0${projectOffset}`)
+  await page.getByLabel('Открыть приём · Москва (необязательно)').fill('2026-01-01T16:00')
+  await page.getByLabel('Закрыть приём · Москва').fill('2027-02-08T20:50')
+  await page.getByLabel('Подсказки · Москва (необязательно)').fill('2027-02-06T12:00')
+  await page.getByLabel('Решения · Москва (необязательно)').fill('2027-02-08T21:00')
+
+  const createdResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === '/staff/api/v1/group-lessons',
+  )
+  await page.getByRole('button', { name: 'Создать и открыть' }).click()
+  const created = await createdResponse
+  expect(created.status()).toBe(201)
+  const createdPayload = (await created.json()) as {
+    groupLesson: { groupLessonId: string; lessonNumber: number }
+  }
+  expect(createdPayload.groupLesson.lessonNumber).toBe(lessonNumber)
+  const groupLessonId = createdPayload.groupLesson.groupLessonId
+  await expect(page).toHaveURL(
+    new RegExp(`/staff/lessons/${groupLessonId.replaceAll('.', '\\.')}$`),
+  )
+
+  await page.getByLabel('Открыть приём', { exact: true }).fill('2026-01-02T16:00')
+  await page.getByLabel('Подсказки', { exact: true }).fill('2027-02-07T12:00')
+  await page.getByLabel('Решения', { exact: true }).fill('2027-02-09T21:00')
+  const scheduleResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      new URL(response.url()).pathname.endsWith('/lesson-window/schedule'),
+  )
+  await page.getByRole('button', { name: 'Сохранить расписание публикаций' }).click()
+  expect((await scheduleResponse).status()).toBe(200)
+
+  await page.getByLabel('Дедлайн сдачи').fill('2027-02-09T20:50')
+  const cutoffResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      new URL(response.url()).pathname.endsWith('/lesson-window/submission-cutoff'),
+  )
+  await page.getByRole('button', { name: 'Изменить дедлайн' }).click()
+  expect((await cutoffResponse).status()).toBe(200)
+
+  const createdTarget = { ...target, groupLessonPublicId: groupLessonId, lessonNumber }
+  await uploadReviewAndPublish({
+    page,
+    target: createdTarget,
+    source: latexSource('Полный цикл', 'Условие задачи полного цикла.'),
+    metadataTitle: taskTitle,
+    match: 'insert-new',
+  })
+  await uploadReviewAndPublish({
+    page,
+    target: createdTarget,
+    source: latexSource('Полный цикл', solutionText, 'solution'),
+    match: 'suggested',
+    kind: 'solution',
+  })
+
+  const closeResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      new URL(response.url()).pathname.endsWith('/lesson-window/submission-cutoff'),
+  )
+  await page.getByRole('button', { name: 'Закрыть приём сейчас' }).click()
+  const closed = await closeResponse
+  expect(closed.status()).toBe(200)
+  const closedPayload = (await closed.json()) as { submissionClosesAt: string }
+  expect(new Date(closedPayload.submissionClosesAt).getTime()).toBeLessThanOrEqual(
+    Date.now() + 5_000,
+  )
+
+  await loginThroughUi(page, AUTH_PERSONAS.student, '/student/tasks')
+  await page.goto(
+    `/student/tasks?course=${contentFixture.coursePublicId}` +
+      `&group=${contentFixture.groupPublicId}&lesson=${lessonNumber}`,
+  )
+  await page.getByRole('button', { name: new RegExp(taskTitle) }).click()
+  await page.getByRole('button', { name: /^Решение/ }).click()
+  const revealResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      /\/reveal\/solution$/.test(new URL(response.url()).pathname),
+  )
+  await page.getByRole('button', { name: 'Показать решение' }).click()
+  expect((await revealResponse).status()).toBe(200)
+  await expect(page.getByText(solutionText)).toBeVisible()
 })
 
 test('Phase 2: Staff publishes two real revisions, Student reads them, then rollback restores the first', async ({
