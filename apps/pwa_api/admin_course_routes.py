@@ -485,7 +485,7 @@ async def create_group_lesson(request: web.Request) -> web.Response:
         or _PUBLIC_ID.fullmatch(group_public_id) is None
         or isinstance(lesson_number, bool)
         or not isinstance(lesson_number, int)
-        or lesson_number < 1
+        or lesson_number < 0
         or lesson_number > 10_000
         or timezone is None
         or (title_value is not None and _text(title_value, maximum=200) is None)

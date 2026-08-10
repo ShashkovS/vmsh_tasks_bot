@@ -21,7 +21,7 @@ const publicationStateSchema = z
 export const staffDashboardLessonSchema = z
   .object({
     groupLessonId: publicIdSchema,
-    lessonNumber: z.number().int().positive(),
+    lessonNumber: z.number().int().nonnegative(),
     cycleAnchorDate: z.iso.date(),
     course: z
       .object({

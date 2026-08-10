@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 2197289b1cc84f40b8175604b69a6943e9b7201574f3f630fbc0684c0ccb8e9a
+-- Product schema SHA-256: 103111200a8f6a314ebe69d864b6fa360ec8dcfcc41f8d582d1fc7e41931561b
 
 CREATE TABLE achievement_definitions
 (
@@ -758,7 +758,7 @@ CREATE TABLE course_lessons
             and substr(public_id, -1, 1) glob '[a-z0-9]'
         ),
     course_id          integer not null references courses (id),
-    lesson_number      integer not null check (lesson_number > 0),
+    lesson_number      integer not null check (lesson_number >= 0),
     title              text check (title is null or length(trim(title)) > 0),
     created_by_user_id integer references users (id),
     updated_by_user_id integer references users (id),
@@ -1924,7 +1924,7 @@ CREATE TABLE student_lesson_metrics
 (
     run_id               integer not null references analytics_runs (id) on delete cascade,
     student_user_id      integer not null references users (id),
-    lesson_number        integer not null check (lesson_number > 0),
+    lesson_number        integer not null check (lesson_number >= 0),
     group_id             text    not null references groups (group_id),
     simple_strength      real    not null check (simple_strength between 0 and 10),
     complex_strength     real    not null check (complex_strength between 0 and 10),

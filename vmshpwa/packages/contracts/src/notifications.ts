@@ -47,7 +47,7 @@ export const familyDigestPreviewSchema = z
     courseName: z.string().trim().min(1),
     groupId: publicIdSchema,
     groupName: z.string().trim().min(1),
-    lessonNumber: z.number().int().positive(),
+    lessonNumber: z.number().int().nonnegative(),
     studentCount: z.number().int().nonnegative(),
     familyCount: z.number().int().nonnegative(),
     alreadySentFamilyCount: z.number().int().nonnegative(),

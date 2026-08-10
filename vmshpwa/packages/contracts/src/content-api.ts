@@ -395,7 +395,7 @@ export const staffContentUploadTargetsSchema = z
     courseLessonId: publicIdSchema,
     courseId: publicIdSchema,
     courseName: z.string().trim().min(1).max(200),
-    lessonNumber: z.number().int().positive(),
+    lessonNumber: z.number().int().nonnegative(),
     targets: z.array(contentUploadTargetSchema).min(1).max(100),
     requestId: z.string().trim().min(1).max(200),
   })

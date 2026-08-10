@@ -8,7 +8,7 @@ import { StaffStatisticsPage } from '../staff-statistics-page'
 const searchSchema = z.object({
   course: publicIdSchema.optional().catch(undefined),
   group: publicIdSchema.optional().catch(undefined),
-  lesson: z.coerce.number().int().positive().optional().catch(undefined),
+  lesson: z.coerce.number().int().nonnegative().optional().catch(undefined),
 })
 
 export const Route = createFileRoute('/statistics')({

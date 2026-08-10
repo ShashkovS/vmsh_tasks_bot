@@ -430,7 +430,7 @@ export const goldenContentComparisonFixtureSchema = z
       .min(1)
       .max(128)
       .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/),
-    lessonNumber: z.number().int().positive().max(10_000),
+    lessonNumber: z.number().int().nonnegative().max(10_000),
     groupCode: z.string().min(1).max(16),
     source: z
       .object({

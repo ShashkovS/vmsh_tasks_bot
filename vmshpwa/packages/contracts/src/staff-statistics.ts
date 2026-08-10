@@ -46,7 +46,7 @@ const lessonGroupSchema = z
 
 export const staffStatisticsLessonSchema = z
   .object({
-    lessonNumber: z.number().int().positive(),
+    lessonNumber: z.number().int().nonnegative(),
     studentCount: z.number().int().positive(),
     meanSimpleStrength: z.number().min(0).max(10).nullable(),
     meanComplexStrength: z.number().min(0).max(10).nullable(),

@@ -55,8 +55,8 @@ def _group_lesson() -> dict[str, object]:
         "schemaVersion": 1,
         "courseId": "classroom-layout-course",
         "groupId": "classroom-layout-group",
-        "lessonNumber": 1,
-        "title": "Пробное занятие",
+        "lessonNumber": 0,
+        "title": "Нулевое занятие",
         "cycleAnchorDate": "2026-09-06",
         "businessTimezone": "Europe/Moscow",
         "opensLocalTime": "2026-09-06T16:00",
@@ -176,7 +176,7 @@ async def test_admin_creates_group_lesson_with_independent_window(classroom_http
     )
     assert created.status == 201, await created.text()
     lesson = (await created.json())["groupLesson"]
-    assert lesson["lessonNumber"] == 1
+    assert lesson["lessonNumber"] == 0
     assert lesson["opensAt"] == "2026-09-06T13:00:00.000000Z"
     assert lesson["submissionClosesAt"] == "2026-09-12T17:50:00.000000Z"
 

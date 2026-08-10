@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   adminCourseCatalogResponseSchema,
   createAdminCourseRequestSchema,
+  createAdminGroupLessonRequestSchema,
   saveAdminGroupRequestSchema,
 } from './admin-course-catalog'
 
@@ -76,5 +77,23 @@ describe('Staff course catalog contract', () => {
         unexpected: true,
       }),
     ).toThrow()
+  })
+
+  it('accepts a real diagnostic lesson numbered zero', () => {
+    expect(
+      createAdminGroupLessonRequestSchema.parse({
+        schemaVersion: 1,
+        courseId: 'course-math',
+        groupId: 'group-beginner',
+        lessonNumber: 0,
+        title: 'Нулевое занятие',
+        cycleAnchorDate: '2026-09-06',
+        businessTimezone: 'Europe/Moscow',
+        opensLocalTime: null,
+        submissionClosesLocalTime: '2026-09-12T20:50',
+        hintScheduledLocalTime: null,
+        solutionScheduledLocalTime: null,
+      }).lessonNumber,
+    ).toBe(0)
   })
 })

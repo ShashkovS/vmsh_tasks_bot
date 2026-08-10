@@ -137,7 +137,7 @@ export type StudentCourseAccessResponse = z.infer<typeof studentCourseAccessResp
 
 export const lessonCursorSchema = z
   .string()
-  .regex(/^[1-9][0-9]{0,8}$/, 'Lesson cursor must be a positive lesson number')
+  .regex(/^(?:0|[1-9][0-9]{0,8})$/, 'Lesson cursor must be a non-negative lesson number')
 export type LessonCursor = z.infer<typeof lessonCursorSchema>
 
 export const studentLessonMaterialSchema = z.discriminatedUnion('status', [
@@ -182,7 +182,7 @@ export const studentLessonSummarySchema = z
     courseLessonId: publicIdSchema,
     courseId: publicIdSchema,
     groupId: publicIdSchema,
-    lessonNumber: z.number().int().positive(),
+    lessonNumber: z.number().int().nonnegative(),
     title: displayTextSchema.nullable(),
     cycleAnchorDate: z.iso.date(),
     businessTimezone: z.string().trim().min(1).max(100),

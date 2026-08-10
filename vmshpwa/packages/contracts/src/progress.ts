@@ -20,7 +20,7 @@ const progressCountsSchema = z
 
 const courseAnalyticsLessonSchema = z
   .object({
-    lessonNumber: z.number().int().positive(),
+    lessonNumber: z.number().int().nonnegative(),
     groupId: publicIdSchema,
     groupCode: z.string().trim().min(1).max(20),
     simpleStrength: z.number().min(0).max(10),
@@ -41,7 +41,7 @@ export const courseProgressResponseSchema = z
     courseId: publicIdSchema,
     summary: progressCountsSchema,
     lessons: z.array(
-      progressCountsSchema.extend({ lessonNumber: z.number().int().positive() }).strip(),
+      progressCountsSchema.extend({ lessonNumber: z.number().int().nonnegative() }).strip(),
     ),
     activity: z.array(
       z

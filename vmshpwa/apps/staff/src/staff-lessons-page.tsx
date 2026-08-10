@@ -66,13 +66,19 @@ type LessonDraft = {
 const emptyDraft: LessonDraft = {
   courseId: '',
   groupId: '',
-  lessonNumber: '1',
+  lessonNumber: '0',
   title: '',
   cycleAnchorDate: '',
   opensLocalTime: '',
   submissionClosesLocalTime: '',
   hintScheduledLocalTime: '',
   solutionScheduledLocalTime: '',
+}
+
+function lessonCreationError(error: Error): string {
+  return error instanceof ApiResponseError
+    ? error.message
+    : 'Проверьте обязательные даты и повторите попытку.'
 }
 
 function readDraft(key: string): LessonDraft {
@@ -187,7 +193,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             Номер занятия
             <Input
               max="10000"
-              min="1"
+              min="0"
               onChange={(event) =>
                 setDraft((value) => ({ ...value, lessonNumber: event.target.value }))
               }
@@ -262,11 +268,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             <Alert className="md:col-span-2" tone="danger">
               <AlertContent>
                 <AlertTitle>Занятие не создано</AlertTitle>
-                <AlertDescription>
-                  {mutation.error instanceof ApiResponseError
-                    ? mutation.error.message
-                    : mutation.error.message}
-                </AlertDescription>
+                <AlertDescription>{lessonCreationError(mutation.error)}</AlertDescription>
               </AlertContent>
             </Alert>
           ) : null}

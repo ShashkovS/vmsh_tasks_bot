@@ -49,7 +49,7 @@ export const familyCurrentLessonSchema = z
   .object({
     groupLessonId: publicIdSchema,
     courseLessonId: publicIdSchema,
-    lessonNumber: z.number().int().positive(),
+    lessonNumber: z.number().int().nonnegative(),
     title: z.string().trim().min(1).max(300),
     cycleAnchorDate: z.iso.date(),
     businessTimezone: z.string().trim().min(1).max(100),

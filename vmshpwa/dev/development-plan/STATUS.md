@@ -1671,8 +1671,7 @@
 - Focused proof: course catalog/group lesson API **6 PASS**, staff access и
   enrollment API **13 PASS**, contracts/content/app-shell unit **32 PASS**;
   Ruff, ESLint, strict TypeScript и production Staff build — **PASS**.
-- Storybook и аудитории не менялись. Буквальный номер занятия `0` остаётся
-  открытым решением: действующая schema/контракты пока требуют номер от `1`.
+- Storybook и аудитории не менялись.
 
 ## Deploy-first checkpoint: изоляция локального agent auth — 10 августа 2026
 
@@ -1684,3 +1683,19 @@
   поведение не менялось. Это позволяет запускать `make pwa-agent-api` независимо
   от legacy Telegram/Google и от содержимого локального credentials-файла.
 - Focused auth config gate: **25 PASS**; Ruff: **PASS**.
+
+## Deploy-first checkpoint: настоящее занятие 0 — 10 августа 2026
+
+- Диагностическое занятие можно создать с номером `0`; это обычные
+  `course_lesson`, `group_lesson` и `lesson_window`, поэтому загрузка LaTeX,
+  сдача, проверка, фазы и публикации идут тем же production-путём, что и для
+  последующих занятий.
+- Migration `0078` меняет только нижнюю границу номера занятия и сохраняет
+  существующие строки и идентификаторы. API, URL search params, Student,
+  Family, Staff, progress и notification contracts принимают `0`.
+- Реальный agent smoke: migration применена, `POST /staff/api/v1/group-lessons`
+  вернул `201`, а Staff list/detail показали занятие `0`, независимый дедлайн,
+  редактор фаз, загрузку трёх материалов и явную семейную итоговую рассылку.
+- Focused API: **6 PASS**; contracts/client: **18 PASS**; schema inventory
+  generate/check, Ruff и strict TypeScript — **PASS**. Storybook и код
+  аудиторий не менялись.

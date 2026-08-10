@@ -20,7 +20,7 @@ import {
 export const studentTasksSearchSchema = z.object({
   course: publicIdSchema.optional(),
   group: publicIdSchema.optional(),
-  lesson: z.coerce.number().int().positive().optional(),
+  lesson: z.coerce.number().int().nonnegative().optional(),
   view: z.enum(['list', 'sheet']).optional().catch(undefined),
   topic: z.string().trim().min(1).max(100).optional(),
 })
