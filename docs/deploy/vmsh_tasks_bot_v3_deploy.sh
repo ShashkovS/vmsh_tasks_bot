@@ -316,10 +316,8 @@ sudo mkdir -p /etc/pki/nginx
 sudo openssl dhparam -out /etc/pki/nginx/dhparam.pem 4096
 
 
-# nodejs
-sudo apt install nodejs npm  -y
-# pnpm
-curl -fsSL https://get.pnpm.io/install.sh | sh -
+# Node.js из apt для vmshpwa не используем: нужная закреплённая версия
+# устанавливается ниже под vmsh_tasks_bot через nvm.
 
 
 # ==============================================
@@ -659,126 +657,159 @@ sudo setfacl -R -m group:vmsh_tasks_bot:rwx /web/vmsh_tasks_bot
 sudo su vmsh_tasks_bot -s /usr/bin/bash
 cd /web/vmsh_tasks_bot
 git clone https://github.com/ShashkovS/vmsh_tasks_bot vmsh_tasks_bot
-
-# виртуальное окружение
-# uv. Выполнять этот блок внутри shell пользователя vmsh_tasks_bot:
-# `sudo -H -u vmsh_tasks_bot uv ...` здесь не использовать: uv установлен
-# в пользовательском окружении этого аккаунта.
-curl -LsSf https://astral.sh/uv/install.sh | sh
 cd /web/vmsh_tasks_bot/vmsh_tasks_bot
-git checkout vmshpwa
-git pull
-uv sync
+git switch vmshpwa
+exit
 
+# ============================================================================
+# АКТУАЛЬНЫЕ РУЧНЫЕ БЛОКИ ДЛЯ VMSHPWA
+# Этот файл целиком не запускается. Каждый блок выполняется отдельно.
+# Стабильные версии, пути и публичные origins здесь намеренно захардкожены.
+# Единственная переменная ниже — уникальный ID собираемого frontend-релиза.
+# ============================================================================
 
-# pnpm
-curl -fsSL https://get.pnpm.io/install.sh | sh -
-pnpm self-update next-12
-cd /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa
+# --- Один раз: системные зависимости. Выполнять из-под serge/root. ---
+sudo apt-get update
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  ca-certificates \
+  curl \
+  git \
+  make \
+  gcc \
+  g++ \
+  pkg-config \
+  sqlite3 \
+  ghostscript \
+  brotli \
+  pdf2svg \
+  webp \
+  imagemagick \
+  libheif1 \
+  texlive-latex-base \
+  texlive-latex-recommended \
+  texlive-latex-extra \
+  texlive-pictures \
+  texlive-fonts-recommended \
+  texlive-lang-cyrillic
 
-# nvm
-export NVM_DIR="$HOME/.nvm"
-if [ ! -s "$NVM_DIR/nvm.sh" ]; then
-  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
+# Ubuntu может поставить ImageMagick 6 с бинарником convert. Наш безопасный
+# argv-пайплайн использует имя magick; интерфейс конвертации для наших команд
+# совместим. Если ImageMagick 7 уже установлен, этот блок ничего не меняет.
+if ! command -v magick >/dev/null 2>&1 && command -v convert >/dev/null 2>&1; then
+  sudo ln -sfn /usr/bin/convert /usr/local/bin/magick
 fi
-. "$NVM_DIR/nvm.sh"
+
+command -v sqlite3
+command -v pdflatex
+command -v pdf2svg
+command -v cwebp
+command -v magick
+magick -version
+magick -list format | grep -E 'HEIC|WEBP'
 
 
-# папочки для деплоя
-sudo install -d \
-  -o vmsh_tasks_bot \
-  -g vmsh_tasks_bot \
-  -m 2770 \
-  /web/vmsh_tasks_bot/vmshpwa \
+# --- Один раз: Node 26.5.1 и pnpm 11.15.1. ---
+# Сначала перейти в shell пользователя приложения:
+sudo su vmsh_tasks_bot -s /usr/bin/bash
+
+set -euo pipefail
+mkdir -p \
+  /web/vmsh_tasks_bot/toolchains/nvm \
+  /web/vmsh_tasks_bot/cache/uv \
+  /web/vmsh_tasks_bot/cache/pnpm \
+  /web/vmsh_tasks_bot/cache/npm \
   /web/vmsh_tasks_bot/vmshpwa/reports
 
+export NVM_DIR=/web/vmsh_tasks_bot/toolchains/nvm
+if [ ! -s /web/vmsh_tasks_bot/toolchains/nvm/nvm.sh ]; then
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.6/install.sh | bash
+fi
+. /web/vmsh_tasks_bot/toolchains/nvm/nvm.sh
 nvm install 26.5.1
 nvm alias default 26.5.1
 nvm use 26.5.1
 
-export NVM_DIR="$HOME/.nvm"
-. "$NVM_DIR/nvm.sh"
-nvm use --silent 26.5.1
+npm config set cache /web/vmsh_tasks_bot/cache/npm
+npm install --global pnpm@11.15.1
+pnpm config set store-dir /web/vmsh_tasks_bot/cache/pnpm --global
 
-export PNPM_HOME="$HOME/.local/share/pnpm"
-export PATH="$PNPM_HOME:$PATH"
-export XDG_CACHE_HOME="$HOME/.cache"
+node --version
+pnpm --version
+exit
+
+
+# --- После каждого git pull: Python и frontend-зависимости. ---
+sudo su vmsh_tasks_bot -s /usr/bin/bash
+
+set -euo pipefail
+cd /web/vmsh_tasks_bot/vmsh_tasks_bot
+git pull --ff-only
+
+export PATH=/home/vmsh_tasks_bot/.local/bin:$PATH
+export UV_CACHE_DIR=/web/vmsh_tasks_bot/cache/uv
+uv sync --frozen
+
+export NVM_DIR=/web/vmsh_tasks_bot/toolchains/nvm
+. /web/vmsh_tasks_bot/toolchains/nvm/nvm.sh
+nvm use --silent 26.5.1
+pnpm config set store-dir /web/vmsh_tasks_bot/cache/pnpm --global
 
 cd /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa
-
-CI=true pnpm install \
-  --frozen-lockfile \
-  --prefer-offline \
-  --reporter=append-only
+CI=true pnpm install --frozen-lockfile --prefer-offline --reporter=append-only
+exit
 
 
+# --- После каждого обновления: production-сборка всех четырёх приложений. ---
+# Собираются Landing, Student, Family и Staff; результат атомарно становится
+# /web/vmsh_tasks_bot/vmshpwa/current. Пересобирать сейчас обязательно.
+sudo su vmsh_tasks_bot -s /usr/bin/bash
 
-sudo -H -u vmsh_tasks_bot bash -lc '
 set -euo pipefail
-
-export NVM_DIR="$HOME/.nvm"
-. "$NVM_DIR/nvm.sh"
+cd /web/vmsh_tasks_bot/vmsh_tasks_bot
+export PATH=/home/vmsh_tasks_bot/.local/bin:$PATH
+export UV_CACHE_DIR=/web/vmsh_tasks_bot/cache/uv
+export NVM_DIR=/web/vmsh_tasks_bot/toolchains/nvm
+. /web/vmsh_tasks_bot/toolchains/nvm/nvm.sh
 nvm use --silent 26.5.1
+export NODE_OPTIONS=--max-old-space-size=4096
 
-export PNPM_HOME="$HOME/.local/share/pnpm"
-export PATH="$PNPM_HOME:$PATH"
-export XDG_CACHE_HOME="$HOME/.cache"
-export NODE_OPTIONS="--max-old-space-size=4096"
-
-REPO=/web/vmsh_tasks_bot/vmsh_tasks_bot
-RELEASE_ROOT=/web/vmsh_tasks_bot/vmshpwa
-REPORT_ROOT="$RELEASE_ROOT/reports"
-
-PUBLIC_MEDIA_ORIGIN="https://s3.ru1.storage.beget.cloud"
-SENTRY_DSN="https://09d20146c8b808c3760a240956fb3c90@o489435.ingest.us.sentry.io/4511885728088064"
-
-cd "$REPO"
-
-RELEASE_ID="$(git rev-parse --short=12 HEAD)-$(date -u +%Y%m%d%H%M%S)"
+PWA_RELEASE_ID="$(git rev-parse --short=12 HEAD)-$(date -u +%Y%m%d%H%M%S)"
 
 make pwa-production-build \
-  PWA_RELEASE_ID="$RELEASE_ID" \
-  VITE_PUBLIC_MEDIA_ORIGIN="$PUBLIC_MEDIA_ORIGIN" \
-  VITE_SENTRY_DSN="$SENTRY_DSN"
+  PWA_RELEASE_ID="$PWA_RELEASE_ID" \
+  VITE_PUBLIC_MEDIA_ORIGIN=https://s3.ru1.storage.beget.cloud \
+  VITE_SENTRY_DSN=https://09d20146c8b808c3760a240956fb3c90@o489435.ingest.us.sentry.io/4511885728088064
+
+# nginx с brotli_static отдаст эти файлы без сжатия на каждом запросе.
+find \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/apps/landing/dist \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/apps/student/dist \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/apps/family/dist \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/apps/staff/dist \
+  -type f \
+  -size +1024c \
+  \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.json' -o -name '*.svg' -o -name '*.webmanifest' -o -name '*.wasm' \) \
+  -print0 \
+  | xargs -0 -r -n1 brotli --force --quality=11
 
 make pwa-phase11-release-package \
-  PWA_RELEASE_ID="$RELEASE_ID" \
-  PWA_RELEASE_ROOT="$RELEASE_ROOT" \
-  PWA_RELEASE_REPORT="$REPORT_ROOT/$RELEASE_ID-package.json"
+  PWA_RELEASE_ID="$PWA_RELEASE_ID" \
+  PWA_RELEASE_ROOT=/web/vmsh_tasks_bot/vmshpwa \
+  PWA_RELEASE_REPORT="/web/vmsh_tasks_bot/vmshpwa/reports/$PWA_RELEASE_ID-package.json"
 
 make pwa-phase11-release-verify \
-  PWA_RELEASE_ID="$RELEASE_ID" \
-  PWA_RELEASE_ROOT="$RELEASE_ROOT" \
-  PWA_RELEASE_REPORT="$REPORT_ROOT/$RELEASE_ID-verify.json"
-
-echo
-echo "Собран релиз: $RELEASE_ID"
-echo "Файлы: $RELEASE_ROOT/$RELEASE_ID"
-'
-
-
-
-sudo -H -u vmsh_tasks_bot bash -lc '
-set -euo pipefail
-
-export PATH="$HOME/.local/bin:$PATH"
-
-REPO=/web/vmsh_tasks_bot/vmsh_tasks_bot
-RELEASE_ROOT=/web/vmsh_tasks_bot/vmshpwa
-REPORT_ROOT="$RELEASE_ROOT/reports"
-
-cd "$REPO"
-
-read -r -p "Release ID: " RELEASE_ID
+  PWA_RELEASE_ID="$PWA_RELEASE_ID" \
+  PWA_RELEASE_ROOT=/web/vmsh_tasks_bot/vmshpwa \
+  PWA_RELEASE_REPORT="/web/vmsh_tasks_bot/vmshpwa/reports/$PWA_RELEASE_ID-verify.json"
 
 make pwa-phase11-release-activate \
-  PWA_RELEASE_ID="$RELEASE_ID" \
-  PWA_RELEASE_ROOT="$RELEASE_ROOT" \
-  PWA_RELEASE_REPORT="$REPORT_ROOT/$RELEASE_ID-activate.json"
+  PWA_RELEASE_ID="$PWA_RELEASE_ID" \
+  PWA_RELEASE_ROOT=/web/vmsh_tasks_bot/vmshpwa \
+  PWA_RELEASE_REPORT="/web/vmsh_tasks_bot/vmshpwa/reports/$PWA_RELEASE_ID-activate.json"
 
-readlink -f "$RELEASE_ROOT/current"
-'
-'
+readlink -f /web/vmsh_tasks_bot/vmshpwa/current
+printf 'Активирован frontend-релиз: %s\n' "$PWA_RELEASE_ID"
+exit
 
 
 # Специальный пользователь для загрузки db
@@ -1071,14 +1102,16 @@ map $uri $vmshpwa_release_cache_control {
     /student/index.html "no-cache";
     /family/index.html "no-cache";
     /staff/index.html "no-cache";
+    / "no-cache";
+    /landing/index.html "no-cache";
 
     /student/manifest.webmanifest "no-cache";
     /family/manifest.webmanifest "no-cache";
 
-    ~^/(student|family|staff)/build-provenance\.json$ "no-cache";
+    ~^/(landing|student|family|staff)/build-provenance\.json$ "no-cache";
     ~^/(student|family)/icon[^/]*\.(png|svg|webp)$ "no-cache";
 
-    ~^/(student|family|staff)/assets/ "public, max-age=31536000, immutable";
+    ~^/(landing|student|family|staff)/assets/ "public, max-age=31536000, immutable";
 }
 
 map $uri $vmshpwa_service_worker_scope {
@@ -1087,31 +1120,36 @@ map $uri $vmshpwa_service_worker_scope {
     /family/sw.js "/family/";
 }
 
-# Строгие заголовки применяются только к трём новым приложениям.
+# Строгие заголовки применяются к landing и трём новым кабинетам.
 # Legacy-сайт продолжает работать со своей прежней политикой.
 map $uri $vmshpwa_csp {
     default "";
-    ~^/(student|family|staff)(/|$) "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
+    / "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
+    ~^/(landing|student|family|staff)(/|$) "default-src 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: @@CSP_MEDIA_ORIGIN@@; media-src 'self' blob: @@CSP_MEDIA_ORIGIN@@; connect-src 'self' wss://vmsh.shashkovs.ru @@CSP_SENTRY_ORIGIN@@; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
 }
 
 map $uri $vmshpwa_referrer_policy {
     default "";
-    ~^/(student|family|staff)(/|$) "no-referrer";
+    / "no-referrer";
+    ~^/(landing|student|family|staff)(/|$) "no-referrer";
 }
 
 map $uri $vmshpwa_frame_options {
     default "";
-    ~^/(student|family|staff)(/|$) "DENY";
+    / "DENY";
+    ~^/(landing|student|family|staff)(/|$) "DENY";
 }
 
 map $uri $vmshpwa_content_type_options {
     default "";
-    ~^/(student|family|staff)(/|$) "nosniff";
+    / "nosniff";
+    ~^/(landing|student|family|staff)(/|$) "nosniff";
 }
 
 map $uri $vmshpwa_permissions_policy {
     default "";
-    ~^/(student|family|staff)(/|$) "camera=(self), geolocation=(), microphone=(), payment=(), usb=()";
+    / "camera=(self), geolocation=(), microphone=(), payment=(), usb=()";
+    ~^/(landing|student|family|staff)(/|$) "camera=(self), geolocation=(), microphone=(), payment=(), usb=()";
 }
 
 limit_req_zone
@@ -1343,6 +1381,14 @@ server {
     # Статические SPA/PWA
     # ----------------------------------------------------------------------
 
+    location = / {
+        try_files /landing/index.html =404;
+    }
+
+    location ^~ /landing/ {
+        try_files $uri =404;
+    }
+
     location = /student {
         return 308 /student/;
     }
@@ -1465,6 +1511,103 @@ curl -sSI https://vmsh.shashkovs.ru/student/
 curl -sSI https://vmsh.shashkovs.ru/student/sw.js
 curl -sSI -H 'Accept-Encoding: br' https://vmsh.shashkovs.ru/student/
 curl -sSI https://vmsh.shashkovs.ru/
+
+
+# --- Один раз и после изменения unit: установить отдельный PWA API service. ---
+sudo install -d -o vmsh_tasks_bot -g nginx -m 0750 \
+  /web/vmsh_tasks_bot/vmshpwa/runtime \
+  /web/vmsh_tasks_bot/vmshpwa/runtime/media \
+  /web/vmsh_tasks_bot/vmshpwa/runtime/write
+
+sudo install \
+  -o vmsh_tasks_bot \
+  -g nginx \
+  -m 0600 \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/deploy/systemd/vmshpwa.env.example \
+  /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env
+
+sudo sed \
+  -e 's#@@REPOSITORY_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot#g' \
+  -e 's#@@ENV_FILE@@#/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env#g' \
+  -e 's#@@SERVICE_USER@@#vmsh_tasks_bot#g' \
+  -e 's#@@SERVICE_GROUP@@#nginx#g' \
+  -e 's#@@VENV_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot/.venv#g' \
+  -e 's#@@BACKEND_UNIX_SOCKET@@#/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock#g' \
+  -e 's#@@DATABASE_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot/db#g' \
+  -e 's#@@MEDIA_ROOT@@#/web/vmsh_tasks_bot/vmshpwa/runtime/media#g' \
+  -e 's#@@RUNTIME_WRITE_DIR@@#/web/vmsh_tasks_bot/vmshpwa/runtime/write#g' \
+  -e 's#@@SOCKET_DIR@@#/web/vmsh_tasks_bot/vmshpwa/runtime#g' \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/deploy/systemd/vmshpwa.service.template \
+  | sudo tee /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service >/dev/null
+
+sudo chown root:root /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
+sudo chmod 0644 /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
+sudo ln -sfn \
+  /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service \
+  /etc/systemd/system/vmshpwa.service
+
+sudo systemctl daemon-reload
+sudo systemd-analyze verify /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
+sudo systemctl enable vmshpwa.service
+
+
+# --- Первый запуск после обновления схемы: backup и migration. ---
+# Оба процесса используют db/vmsh.db, поэтому на время migration останавливаем
+# и legacy Gunicorn, и PWA Gunicorn. Если migration завершилась ошибкой, процессы
+# не запускать до разбора причины.
+sudo systemctl stop vmshpwa.service 2>/dev/null || true
+sudo systemctl stop gunicorn.vmsh_tasks_bot.service
+sudo install -d -o vmsh_tasks_bot -g vmsh_tasks_bot -m 0750 \
+  /web/vmsh_tasks_bot/backups
+
+sudo su vmsh_tasks_bot -s /usr/bin/bash
+
+set -euo pipefail
+cd /web/vmsh_tasks_bot/vmsh_tasks_bot
+export PATH=/home/vmsh_tasks_bot/.local/bin:$PATH
+export UV_CACHE_DIR=/web/vmsh_tasks_bot/cache/uv
+
+sqlite3 /web/vmsh_tasks_bot/vmsh_tasks_bot/db/vmsh.db \
+  ".backup '/web/vmsh_tasks_bot/backups/vmsh-before-pwa-$(date -u +%Y%m%d%H%M%S).sqlite3'"
+
+VMSH_RUNTIME_PROFILE=pwa-production \
+VMSH_PWA_PROTOTYPE=false \
+uv run --no-sync python -m vmshpwa.scripts.migrate_runtime
+
+sqlite3 /web/vmsh_tasks_bot/vmsh_tasks_bot/db/vmsh.db 'PRAGMA quick_check;'
+
+VMSH_RUNTIME_PROFILE=pwa-production \
+VMSH_PWA_PROTOTYPE=false \
+uv run --no-sync python -m vmshpwa.scripts.toolchain_preflight
+
+VMSH_RUNTIME_PROFILE=pwa-production \
+VMSH_PWA_PROTOTYPE=false \
+uv run --no-sync python -m vmshpwa.scripts.toolchain_smoke
+exit
+
+sudo systemctl start gunicorn.vmsh_tasks_bot.service
+sudo systemctl restart vmshpwa.service
+sudo systemctl status vmshpwa.service --no-pager -l
+sudo journalctl -u vmshpwa.service -n 100 --no-pager
+
+sudo curl --unix-socket /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock \
+  -i -H 'Host: vmsh.shashkovs.ru' \
+  http://localhost/student/api/v1/runtime
+
+curl -fsS https://vmsh.shashkovs.ru/student/api/v1/runtime
+curl -fsS https://vmsh.shashkovs.ru/family/api/v1/runtime
+curl -fsS https://vmsh.shashkovs.ru/staff/api/v1/runtime
+curl -fsS https://vmsh.shashkovs.ru/ | grep 'ВМШ 179'
+
+sudo su vmsh_tasks_bot -s /usr/bin/bash
+set -euo pipefail
+cd /web/vmsh_tasks_bot/vmsh_tasks_bot
+export PATH=/home/vmsh_tasks_bot/.local/bin:$PATH
+export UV_CACHE_DIR=/web/vmsh_tasks_bot/cache/uv
+PWA_PRODUCTION_ORIGIN=https://vmsh.shashkovs.ru \
+PWA_PRODUCTION_INSTANCE=production \
+make pwa-production-http-smoke
+exit
 
 
 

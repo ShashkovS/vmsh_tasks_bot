@@ -2,8 +2,8 @@
 Description=VMSH 179 Student, Family and Staff PWA API
 # Render this unit into /web/vmsh_tasks_bot/vmshpwa/runtime and link it from
 # /etc/systemd/system. Keep the environment and socket under the same root.
-After=network-online.target nats.service
-Wants=network-online.target nats.service
+After=network-online.target nats-server.service
+Wants=network-online.target nats-server.service
 ConditionPathIsDirectory=@@REPOSITORY_DIR@@
 ConditionPathIsRegular=@@ENV_FILE@@
 
@@ -28,7 +28,7 @@ PrivateDevices=true
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=@@DATABASE_DIR@@ @@MEDIA_ROOT@@ @@RUNTIME_WRITE_DIR@@
+ReadWritePaths=@@DATABASE_DIR@@ @@MEDIA_ROOT@@ @@RUNTIME_WRITE_DIR@@ @@SOCKET_DIR@@
 LimitNOFILE=8192
 TasksMax=512
 

@@ -29,6 +29,7 @@ def _render(tmp_path: Path) -> tuple[Path, Path]:
         "@@DATABASE_PATH@@": "/srv/vmshpwa/db/vmsh.sqlite3",
         "@@MEDIA_ROOT@@": "/srv/vmshpwa/media",
         "@@RUNTIME_WRITE_DIR@@": "/srv/vmshpwa/runtime",
+        "@@SOCKET_DIR@@": str(socket.parent),
         "@@PUBLIC_HOST@@": "vmsh.example.test",
         "@@AUTH_SIGNING_KEY@@": "s" * 32,
         "@@REFRESH_PEPPER_B64@@": "c" * 44,
