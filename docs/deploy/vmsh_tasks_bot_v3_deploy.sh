@@ -320,7 +320,6 @@ sudo openssl dhparam -out /etc/pki/nginx/dhparam.pem 4096
 sudo apt install nodejs npm  -y
 # pnpm
 curl -fsSL https://get.pnpm.io/install.sh | sh -
-pnpm self-update next-12
 
 
 # ==============================================
@@ -670,6 +669,7 @@ git pull
 uv sync
 # pnpm
 curl -fsSL https://get.pnpm.io/install.sh | sh -
+pnpm self-update next-12
 cd /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa
 
 
@@ -688,12 +688,7 @@ sudo chmod 600 ~vmsh_tasks_botdb/.ssh/authorized_keys
 sudo cat ~vmsh_tasks_botdb/.ssh/id_ed25519_backup.pub >> ~vmsh_tasks_botdb/.ssh/authorized_keys
 sudo cat ~vmsh_tasks_botdb/.ssh/id_ed25519_backup
 -----BEGIN OPENSSH PRIVATE KEY-----
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACD4ywycYMlAA+X8eAzvpZZOm5Jbl2OYI/pzLvCWYDecOAAAALBjj1f6Y49X
-+gAAAAtzc2gtZWQyNTUxOQAAACD4ywycYMlAA+X8eAzvpZZOm5Jbl2OYI/pzLvCWYDecOA
-AAAECekFCIbSrDhLR6fpCh3eiixYVjhTLKp22N334a8/PWCPjLDJxgyUAD5fx4DO+llk6b
-kluXY5gj+nMu8JZgN5w4AAAALHZtc2gxNzlib3RoemdlcmRiQHZtc2gxNzlib3Roemdlci
-5wcm9qMTc5LnJ1AQ==
+...
 -----END OPENSSH PRIVATE KEY-----
 exit
 sudo chown vmsh_tasks_botdb:vmsh_tasks_botdb ~vmsh_tasks_botdb/.ssh
@@ -713,21 +708,10 @@ sudo chsh -s /bin/rbash vmsh_tasks_botdb
 # Настройка при логине
 echo 'export PATH=$HOME/bin' | sudo tee /home/vmsh_tasks_botdb/.bash_profile
 
-ssh -F C:\Users\sh57\.ssh\config vmsh_tasks_botdb@188.245.158.162 -p 22179 -i "X:\Dropbox\ВМШ 5-7 2024-2025\Py_VMSH_5-7_2024\db\_vmsh_tasks_botdb.priv.ppk"
-icacls "X:\Dropbox\ВМШ 5-7 2024-2025\Py_VMSH_5-7_2024\db\_vmsh_tasks_botdb.priv.ppk" /inheritance:r
-icacls "X:\Dropbox\ВМШ 5-7 2024-2025\Py_VMSH_5-7_2024\db\_vmsh_tasks_botdb.priv.ppk" /grant:r "$($env:UserName):(R)"
+ssh vmsh_tasks_botdb@188.245.158.162 -p 22179 -i "X:\Dropbox\ВМШ 5-7 2024-2025\Py_VMSH_5-7_2024\db\_vmsh_tasks_botdb.priv.ppk"
 
 
 
-
-
-
-
-# Проверяем sqlite3
-/web/vmsh_tasks_bot/vmsh_tasks_bot_env/bin/python3.12
-import sqlite3
-sqlite3.version
-sqlite3.sqlite_version
 
 
 
@@ -770,22 +754,6 @@ sudo ln -s /web/vmsh_tasks_bot/gunicorn.vmsh_tasks_bot.service /etc/systemd/syst
 
 # Тестовый запуск
 cd /web/vmsh_tasks_bot/vmsh_tasks_bot && export PROD=true && /web/vmsh_tasks_bot/vmsh_tasks_bot_env/bin/gunicorn  --pid /web/vmsh_tasks_bot/vmsh_tasks_bot.pid  --workers 2  --bind unix:/web/vmsh_tasks_bot/vmsh_tasks_bot.socket --worker-class aiohttp.GunicornUVLoopWebWorker -m 007  main:app
-
-
-# # Теперь socket-файл. В нём написано, что если в сокет упадут какие-либо данные, то нужно запустить сервис, если он вдруг не запущен
-# sudo echo '[Unit]
-# Description=gunicorn.vmsh_tasks_bot.socket
-
-# [Socket]
-# ListenStream=/web/vmsh_tasks_bot/vmsh_tasks_bot.socket
-
-# [Install]
-# WantedBy=sockets.target
-# ' >  /etc/systemd/system/gunicorn.vmsh_tasks_bot.socket
-
-# # Путь к конфигаем
-# echo 'd /run/gunicorn 0755 vmsh_tasks_bot nginx -
-# ' > /etc/tmpfiles.d/gunicorn.vmsh_tasks_bot.conf
 
 
 sudo mkdir /etc/pki/nginx
@@ -877,7 +845,6 @@ sudo systemctl restart gunicorn.vmsh_tasks_bot
 journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" | tail -n 50
 
 # Всё сразу
-a6Pgm38n362V
 sudo systemctl restart gunicorn.vmsh_tasks_bot && sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" -f
 sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" -f
 sudo systemctl stop gunicorn.vmsh_tasks_bot
@@ -1113,94 +1080,4 @@ sudo -H -u vmsh_tasks_bot sqlite3 production.db < arch_2023-10-23T12-04-25.dump
 0 13 * * * /usr/bin/bash /web/vmsh_tasks_bot/vmsh_tasks_bot/db/backup_to_vds.sh >/dev/null 2>&1
 0 21 * * * /usr/bin/bash /web/vmsh_tasks_bot/vmsh_tasks_bot/db/backup_to_vds.sh >/dev/null 2>&1
 0 * * * * sudo -u vmsh_tasks_bot bash -c 'export PROD=true; cd /web/vmsh_tasks_bot/vmsh_tasks_bot && /web/vmsh_tasks_bot/vmsh_tasks_bot_env/bin/python -m plugins.calc_complexity >/dev/null'
-
-
-
-
-cd /web/vmsh_tasks_bot
-source /web/vmsh_tasks_bot/vmsh_tasks_bot_env/bin/activate.fish
-pip install --upgrade numpy
-
-
-
-cd /web/vmsh179botProdBackup
-source /web/vmsh179botProdBackup/vmsh179botProdBackup_env/bin/activate.fish
-pip install --upgrade numpy
-
-
-
-sudo -H -u vmsh179botProdBackup  crontab -e
-# crontab -e
-0 4,12 * * * export LD_RUN_PATH=/usr/local/lib; export LD_LIBRARY_PATH=/usr/local/lib; export PROD=true; cd /web/vmsh179botProdBackup/vmsh179botProdBackup && /web/vmsh179botProdBackup/vmsh179botProdBackup_env/bin/python -m plugins.calc_complexity >/dev/null 2>&1
-
-
-LD_RUN_PATH=/usr/local/lib &&
-Environment="LD_LIBRARY_PATH=/usr/local/lib"
-export LD_RUN_PATH=/usr/local/lib; export LD_LIBRARY_PATH=/usr/local/lib; export PROD=true; cd /web/vmsh179botProdBackup/vmsh179botProdBackup && /web/vmsh179botProdBackup/vmsh179botProdBackup_env/bin/python  -m plugins.calc_complexity
-
-
-
-
-vdb
-with pre as ( select distinct u.token, r.answer from results r join users u on r.student_id = u.id where u.token not like 'qwerty%' and r.problem_id in (3,9,15) ) select answer, count(*) cnt from pre group by answer order by 2 desc ; with pre as ( select distinct u.token, r.answer from results r join users u on r.student_id = u.id where u.token not like 'qwerty%' and r.problem_id in (2,8,14) ) select answer, count(*) cnt from pre group by answer order by 2 desc ; with pre as ( select distinct u.token, r.answer from results r join users u on r.student_id = u.id where u.token not like 'qwerty%' and r.problem_id in (1,7,13) ) select answer, count(*) cnt from pre group by answer order by 1 ;
-
-vdb
-select u.token, (select r2.answer from results r2 where r2.student_id = u.id and r2.ts = (select max(ts) from results r where r.student_id = u.id and r.problem_id in (1,7,13))) q1, (select r2.answer from results r2 where r2.student_id = u.id and r2.ts = (select max(ts) from results r where r.student_id = u.id and r.problem_id in (2,8,14))) q2, (select r2.answer from results r2 where r2.student_id = u.id and r2.ts = (select max(ts) from results r where r.student_id = u.id and r.problem_id in (3,9,15))) q3 from users u where q1 is not null or q2 is not null or q3 is not null ;
-
-
-with pre as (select distinct lesson, student_id from results where res_type = 4) select lesson, count(*) from pre group by 1 order by 1;
-
-
-sudo journalctl -u gunicorn.vmsh_tasks_bot --since "2400 days ago" | grep "Кружок по математике для 5-8" >> ~/events_11_10.log
-
-
-
-sudo journalctl -u gunicorn.vmsh_tasks_bot --since "24 hours ago" | grep "Кружок по математике для 5-8"
-
-
-
-# prod
-sudo systemctl restart gunicorn.vmsh_tasks_bot && sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" -f
-# game
-sudo systemctl restart gunicorn.vmsh_tasks_bot && sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" -f
-
-
-# physics
-sudo systemctl restart gunicorn.vmsh_tasks_bot && sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" -f
-
-# anybody2 mathgame179bot
-cd /web/vmsh179bot3/vmsh179bot3 && sudo chown -R vmsh179bot3:vmsh179bot3 /web/vmsh179bot3 && sudo git fetch --all && sudo systemctl daemon-reload && sudo systemctl stop gunicorn.vmsh179bot3.socket && sudo systemctl stop gunicorn.vmsh179bot3.service && sudo git checkout anybody2 && sudo git pull && sudo chown -R vmsh179bot3:vmsh179bot3 /web/vmsh179bot3 && sudo systemctl start gunicorn.vmsh179bot3.socket && sudo systemctl restart gunicorn.vmsh179bot3.service && sudo journalctl -u gunicorn.vmsh179bot3 --since "5 minutes ago" -f
-sudo systemctl stop gunicorn.vmsh179bot3.socket && sudo systemctl stop gunicorn.vmsh179bot3.service
-
-# prod4  MSKsq
-sudo systemctl restart gunicorn.vmsh_tasks_bot && sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" -f
-
-
-sudo systemctl stop gunicorn.vmsh_tasks_bot
-
-sudo systemctl disable gunicorn.vmsh_tasks_bot
-
-#
-sudo systemctl restart gunicorn.vmsh_tasks_bot
-sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" -f
-#
-
-#
-cd /web/vmsh_tasks_bot/vmsh_tasks_bot
-#
-sudo systemctl restart gunicorn.vmsh_tasks_bot && sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" -f
-#
-sudo systemctl stop gunicorn.vmsh_tasks_bot
-
-sudo systemctl stop gunicorn.vmsh179botProdBackup.socket
-sudo systemctl stop gunicorn.vmsh179botProdBackup.service
-#
-sudo systemctl start gunicorn.vmsh179botProdBackup.socket
-sudo systemctl start gunicorn.vmsh179botProdBackup.service
-
-
-
-
-sudo systemctl restart gunicorn.vmsh_tasks_bot && sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago" -f
-
 
