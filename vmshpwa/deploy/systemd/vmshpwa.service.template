@@ -5,7 +5,7 @@ Description=VMSH 179 Student, Family and Staff PWA API
 After=network-online.target nats-server.service
 Wants=network-online.target nats-server.service
 ConditionPathIsDirectory=@@REPOSITORY_DIR@@
-ConditionPathIsRegular=@@ENV_FILE@@
+ConditionPathExists=@@ENV_FILE@@
 
 [Service]
 Type=simple
@@ -17,7 +17,7 @@ Environment=PATH=@@VENV_DIR@@/bin:/usr/local/texlive/2026/bin/x86_64-linux:/usr/
 # EnvironmentFile takes precedence over Environment= in systemd. Put the two
 # security boundary values on the actual command line so the secret file cannot
 # accidentally select a local profile or prototype auth.
-ExecStart=/usr/bin/env VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false @@VENV_DIR@@/bin/gunicorn --workers 2 --worker-class uvloop_worker.GunicornUVLoopWebWorkerFixed --bind unix:@@BACKEND_UNIX_SOCKET@@ --umask 007 --timeout 120 --graceful-timeout 30 --error-logfile - --capture-output main:app
+ExecStart=/usr/bin/env VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false @@VENV_DIR@@/bin/gunicorn --workers 2 --worker-class uvloop_worker.GunicornUVLoopWebWorkerFixed --bind unix:@@BACKEND_UNIX_SOCKET@@ --no-control-socket --umask 007 --timeout 120 --graceful-timeout 30 --error-logfile - --capture-output main:app
 Restart=on-failure
 RestartSec=3
 KillSignal=SIGTERM

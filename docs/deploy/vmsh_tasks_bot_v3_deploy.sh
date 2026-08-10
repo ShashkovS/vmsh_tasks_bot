@@ -92,7 +92,7 @@ sudo apt install -y net-tools wget tar p7zip htop make gcc bison   sed file expa
 sudo apt install -y fcgiwrap spawn-fcgi
 
 # nginx, certbot
-sudo apt install -y snapd nginx brotli webp
+sudo apt install -y snapd nginx brotli webp sqlite3
 sudo snap install core& sudo snap refresh core
 sudo snap install --classic certbot
 sudo ln -s /snap/bin/certbot /usr/bin/certbot
@@ -1600,7 +1600,8 @@ sudo systemctl enable vmshpwa.service
 
 
 # --- Первый запуск после обновления схемы: backup и migration. ---
-# Оба процесса используют db/vmsh.db, поэтому на время migration останавливаем
+# Оба процесса используют db/production_v2.db из production-конфига,
+# поэтому на время migration останавливаем
 # и legacy Gunicorn, и PWA Gunicorn. Если migration завершилась ошибкой, процессы
 # не запускать до разбора причины.
 sudo systemctl stop vmshpwa.service 2>/dev/null || true
@@ -1615,14 +1616,19 @@ cd /web/vmsh_tasks_bot/vmsh_tasks_bot
 export PATH=/home/vmsh_tasks_bot/.local/bin:$PATH
 export UV_CACHE_DIR=/web/vmsh_tasks_bot/cache/uv
 
-sqlite3 /web/vmsh_tasks_bot/vmsh_tasks_bot/db/vmsh.db \
+sqlite3 /web/vmsh_tasks_bot/vmsh_tasks_bot/db/production_v2.db \
   ".backup '/web/vmsh_tasks_bot/backups/vmsh-before-pwa-$(date -u +%Y%m%d%H%M%S).sqlite3'"
 
 VMSH_RUNTIME_PROFILE=pwa-production \
 VMSH_PWA_PROTOTYPE=false \
 uv run --no-sync python -m vmshpwa.scripts.migrate_runtime
 
-sqlite3 /web/vmsh_tasks_bot/vmsh_tasks_bot/db/vmsh.db 'PRAGMA quick_check;'
+sqlite3 /web/vmsh_tasks_bot/vmsh_tasks_bot/db/production_v2.db 'PRAGMA quick_check;'
+
+VMSH_RUNTIME_PROFILE=pwa-production \
+VMSH_PWA_PROTOTYPE=false \
+uv run --no-sync python -c \
+  'from helpers.config import config; from helpers.pwa.auth_config import load_auth_runtime_config; load_auth_runtime_config(config); print("PWA auth config: OK")'
 
 VMSH_RUNTIME_PROFILE=pwa-production \
 VMSH_PWA_PROTOTYPE=false \
