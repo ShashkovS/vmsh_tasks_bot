@@ -32,6 +32,16 @@
   "rate_limit": "rate_limit_3_and_6",
   "apps_help": "tg_bot, game_web_app, results_app, apis_app, zoom_events_parser",
   "apps": "tg_bot, game_web_app, results_app, apis_app, zoom_events_parser",
+  "sep_pwa": "====== PWA ======",
+  "pwa_instance": "test",
+  "pwa_media_root": ".runtime/vmshpwa/test",
+  "pwa_public_origins_json": {},
+  "pwa_auth_signing_keys_json": [],
+  "pwa_refresh_pepper_b64": "",
+  "pwa_throttle_pepper_b64": "",
+  "pwa_vapid_public_key": "",
+  "pwa_vapid_private_key": "",
+  "pwa_vapid_subject": "",
   "conduit_import_api_token": "",
   "zdummy": "Тупо последняя строка без запятой"
 }

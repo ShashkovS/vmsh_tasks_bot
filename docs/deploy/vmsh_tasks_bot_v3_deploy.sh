@@ -661,7 +661,9 @@ cd /web/vmsh_tasks_bot
 git clone https://github.com/ShashkovS/vmsh_tasks_bot vmsh_tasks_bot
 
 # виртуальное окружение
-# uv
+# uv. Выполнять этот блок внутри shell пользователя vmsh_tasks_bot:
+# `sudo -H -u vmsh_tasks_bot uv ...` здесь не использовать: uv установлен
+# в пользовательском окружении этого аккаунта.
 curl -LsSf https://astral.sh/uv/install.sh | sh
 cd /web/vmsh_tasks_bot/vmsh_tasks_bot
 git checkout vmshpwa
@@ -708,7 +710,7 @@ CI=true pnpm install \
   --frozen-lockfile \
   --prefer-offline \
   --reporter=append-only
-'
+
 
 
 sudo -H -u vmsh_tasks_bot bash -lc '
@@ -825,7 +827,7 @@ sudo chown -R vmsh_tasks_bot:vmsh_tasks_bot /web/vmsh_tasks_bot
 # Делаем так, чтобы всё новое лежало в группе
 
 
-
+'
 
 
 # Настраиваем systemd для поддержания приложения в рабочем состоянии
@@ -1123,7 +1125,7 @@ upstream vmsh_legacy_backend {
 }
 
 upstream vmshpwa_backend {
-    server unix:/run/vmshpwa/vmshpwa.sock fail_timeout=0;
+    server unix:/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock fail_timeout=0;
     keepalive 16;
 }
 
@@ -1437,7 +1439,7 @@ sudo sed -i \
   /web/vmsh_tasks_bot/vmsh_tasks_bot.conf
 
 sudo sed -i \
-  's#@@CSP_SENTRY_ORIGIN@@#https://09d20146c8b808c3760a240956fb3c90@o489435.ingest.us.sentry.io#g' \
+  's#@@CSP_SENTRY_ORIGIN@@#https://o489435.ingest.us.sentry.io#g' \
   /web/vmsh_tasks_bot/vmsh_tasks_bot.conf
 
 if sudo grep -n '@@' /web/vmsh_tasks_bot/vmsh_tasks_bot.conf; then
@@ -1471,11 +1473,55 @@ sudo systemctl daemon-reload
 # Говорим, что нужен автозапуск
 sudo systemctl enable gunicorn.vmsh_tasks_bot
 # Запускаем
-sudo systemctl start gunicorn.vmsh_tasks_bot
+sudo systemctl restart gunicorn.vmsh_tasks_bot
 # Проверяем
 curl --unix-socket /web/vmsh_tasks_bot/vmsh_tasks_bot.socket http
 
 sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago"
+
+
+
+# Ставим отдельный PWA-сервис.
+# Все реальные файлы PWA держим внутри /web/vmsh_tasks_bot:
+# source unit, env/secrets, socket и runtime-каталоги. В /etc/systemd
+# остаётся только symlink, необходимый systemd.
+sudo install -d -o vmsh_tasks_bot -g nginx -m 0750 \
+  /web/vmsh_tasks_bot/vmshpwa/runtime
+sudo install -d -o vmsh_tasks_bot -g nginx -m 0750 \
+  /web/vmsh_tasks_bot/vmshpwa/runtime/media \
+  /web/vmsh_tasks_bot/vmshpwa/runtime/write
+
+if ! sudo test -s /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env; then
+    echo "Создайте /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env из vmshpwa/deploy/systemd/vmshpwa.env.example; это только параметры trusted proxy."
+    exit 1
+fi
+
+sudo sed \
+  -e 's#@@REPOSITORY_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot#g' \
+  -e 's#@@ENV_FILE@@#/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env#g' \
+  -e 's#@@SERVICE_USER@@#vmsh_tasks_bot#g' \
+  -e 's#@@SERVICE_GROUP@@#nginx#g' \
+  -e 's#@@VENV_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot/.venv#g' \
+  -e 's#@@BACKEND_UNIX_SOCKET@@#/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock#g' \
+  -e 's#@@DATABASE_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot/db#g' \
+  -e 's#@@MEDIA_ROOT@@#/web/vmsh_tasks_bot/vmshpwa/runtime/media#g' \
+  -e 's#@@RUNTIME_WRITE_DIR@@#/web/vmsh_tasks_bot/vmshpwa/runtime/write#g' \
+  /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/deploy/systemd/vmshpwa.service.template \
+  | sudo tee /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service >/dev/null
+
+sudo chown vmsh_tasks_bot:nginx /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
+sudo chmod 0640 /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
+sudo ln -sfn /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service /etc/systemd/system/vmshpwa.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now vmshpwa.service
+sudo systemctl status vmshpwa.service --no-pager -l
+
+
+
+
+
+
+
 
 
 /web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin
@@ -1736,4 +1782,3 @@ sudo -H -u vmsh_tasks_bot sqlite3 production.db < arch_2023-10-23T12-04-25.dump
 0 13 * * * /usr/bin/bash /web/vmsh_tasks_bot/vmsh_tasks_bot/db/backup_to_vds.sh >/dev/null 2>&1
 0 21 * * * /usr/bin/bash /web/vmsh_tasks_bot/vmsh_tasks_bot/db/backup_to_vds.sh >/dev/null 2>&1
 0 * * * * sudo -u vmsh_tasks_bot bash -c 'export PROD=true; cd /web/vmsh_tasks_bot/vmsh_tasks_bot && /web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin/python -m plugins.calc_complexity >/dev/null'
-

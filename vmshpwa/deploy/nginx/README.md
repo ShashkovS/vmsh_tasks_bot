@@ -26,13 +26,17 @@ deployment is:
 ```text
 VMSH_PWA_TRUSTED_PROXY_HOPS=1
 VMSH_PWA_TRUSTED_PROXY_CIDRS=
-VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON=["/run/vmshpwa/vmshpwa.sock"]
+VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON=["/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock"]
 ```
 
 The path in the JSON and the rendered upstream must be byte-for-byte equal.
-Use a dedicated directory owned by the backend service and the nginx/backend
-group (`0750` directory, `0660` socket); do not put it in a generally writable
-directory. Merely arriving over `AF_UNIX` is never trusted by the application.
+Keep the socket, rendered nginx source and runtime environment under the single
+deployment root `/web/vmsh_tasks_bot/vmshpwa/runtime`. Nginx may use symlinks in
+its conventional system directories, but the actual files remain under that
+root. Use a dedicated directory owned by the backend service and the
+nginx/backend group (`0750` directory, `0660` socket); do not put it in a
+generally writable directory. Merely arriving over `AF_UNIX` is never trusted
+by the application.
 
 Loopback TCP is also supported for a controlled host:
 
@@ -64,12 +68,24 @@ assets live under `/landing/assets/`. The landing page links only to the
 Student and Family cabinets. Other paths continue through their explicit
 application or legacy boundaries.
 
+Install the rendered nginx source from the deployment root and expose it to
+nginx through symlinks:
+
+```shell
+sudo ln -sfn \
+  /web/vmsh_tasks_bot/vmshpwa/runtime/nginx/vmshpwa.conf \
+  /etc/nginx/conf.d/vmshpwa.conf
+sudo ln -sfn \
+  /web/vmsh_tasks_bot/vmshpwa/runtime/nginx/vmshpwa-proxy-headers.conf \
+  /etc/nginx/snippets/vmshpwa-proxy-headers.conf
+```
+
 Run the following after installing the rendered files:
 
 ```text
 VMSH_PWA_PUBLIC_HOST=<approved-fqdn> \
 VMSH_PWA_NGINX_CONFIG=/etc/nginx/nginx.conf \
-VMSH_PWA_NGINX_SITE_CONFIG=/etc/nginx/conf.d/vmshpwa.conf \
+  VMSH_PWA_NGINX_SITE_CONFIG=/web/vmsh_tasks_bot/vmshpwa/runtime/nginx/vmshpwa.conf \
 make pwa-nginx-check
 ```
 

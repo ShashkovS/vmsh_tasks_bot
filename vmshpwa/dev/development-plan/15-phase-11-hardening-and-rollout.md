@@ -28,7 +28,10 @@ optional staging получает отдельный утверждённый FQ
 - change detection учитывает `pnpm-lock.yaml`, workspace packages и каждое app;
 - deterministic `pnpm install --frozen-lockfile` when manifests change;
 - build all affected apps before switching served release;
-- Python `uv sync --no-dev` only when lock/project changes;
+- Python `uv sync --no-dev` only when lock/project changes; on the production
+  host run it inside `sudo su vmsh_tasks_bot -s /usr/bin/bash` (never through
+  `sudo -H -u vmsh_tasks_bot uv`, because uv is installed in that user's
+  environment);
 - pre-deploy SQLite backup completes before migration/restart;
 - migrations under explicit lock with version report;
 - runtime `DB_CONNECTION.setup()`/эквивалент не вызывает yoyo apply: migration command завершён до старта workers, а schema mismatch делает health/startup красным;

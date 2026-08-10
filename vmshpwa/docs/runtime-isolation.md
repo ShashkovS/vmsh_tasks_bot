@@ -17,6 +17,11 @@ Human и agent runtime могут работать одновременно и �
 
 Legacy aiohttp остаётся на 8179. Новые команды его не занимают.
 
+На production все изменяемые PWA-артефакты находятся в
+`/web/vmsh_tasks_bot/vmshpwa/runtime`: environment/secrets, unit source, Unix
+socket, media и runtime-write каталоги. Системные `/etc/systemd` и `/etc/nginx`
+содержат только symlink на файлы из этого корня.
+
 Production PWA использует явный профиль `pwa-production` либо точный маркер
 `PROD=true`; оба пути устанавливают `Config.production_mode=True`, не загружая
 legacy Telegram/Google config. В таком режиме `VMSH_PWA_PROTOTYPE=true`
@@ -57,7 +62,7 @@ hop count обязателен в обоих вариантах:
   обновление снимков;
 - `VMSH_PWA_PUBLIC_HOST=<approved-fqdn>
 VMSH_PWA_NGINX_CONFIG=/etc/nginx/nginx.conf
-VMSH_PWA_NGINX_SITE_CONFIG=/etc/nginx/conf.d/vmshpwa.conf
+VMSH_PWA_NGINX_SITE_CONFIG=/web/vmsh_tasks_bot/vmshpwa/runtime/nginx/vmshpwa.conf
 make pwa-nginx-check` — только настоящий `nginx -t`; отсутствие binary/config,
   обязательного exact host или rendered site завершается `UNAVAILABLE` с
   non-zero status и не считается skip;

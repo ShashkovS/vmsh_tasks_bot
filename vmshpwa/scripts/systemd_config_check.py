@@ -9,29 +9,14 @@ import shutil
 import stat
 import subprocess
 from pathlib import Path
-from urllib.parse import urlsplit
 
 
 MARKER = re.compile(r"@@[A-Z0-9_]+@@")
 ENVIRONMENT_NAME = re.compile(r"[A-Z][A-Z0-9_]*")
 REQUIRED_ENVIRONMENT = frozenset(
     {
-        "VMSH_INSTANCE",
-        "VMSH_DB_FILENAME",
-        "VMSH_MEDIA_ROOT",
-        "VMSH_NATS_SERVER",
-        "VMSH_NATS_TOPIC_PREFIX",
-        "VMSH_PWA_PUBLIC_ORIGINS_JSON",
-        "VMSH_PWA_AUTH_SIGNING_KEYS_JSON",
-        "VMSH_PWA_REFRESH_PEPPER_B64",
-        "VMSH_PWA_THROTTLE_PEPPER_B64",
         "VMSH_PWA_TRUSTED_PROXY_HOPS",
         "VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON",
-        "VMSH_SENTRY_DSN",
-        "VMSH_SENTRY_RELEASE",
-        "VMSH_VAPID_PUBLIC_KEY",
-        "VMSH_VAPID_PRIVATE_KEY",
-        "VMSH_VAPID_SUBJECT",
     }
 )
 FORBIDDEN_ENVIRONMENT = frozenset(
@@ -93,16 +78,6 @@ def _environment(source: str) -> dict[str, str]:
     return values
 
 
-def _json_object(value: str, *, field: str) -> dict[str, object]:
-    try:
-        payload = json.loads(value)
-    except json.JSONDecodeError as error:
-        raise SystemdProfileError(f"{field} is not valid JSON") from error
-    if not isinstance(payload, dict):
-        raise SystemdProfileError(f"{field} must be a JSON object")
-    return payload
-
-
 def _json_array(value: str, *, field: str) -> list[object]:
     try:
         payload = json.loads(value)
@@ -114,42 +89,6 @@ def _json_array(value: str, *, field: str) -> list[object]:
 
 
 def _validate_environment(values: dict[str, str]) -> None:
-    for name in ("VMSH_DB_FILENAME", "VMSH_MEDIA_ROOT"):
-        if not Path(values[name]).is_absolute():
-            raise SystemdProfileError(f"{name} must be an absolute path")
-    origins = _json_object(
-        values["VMSH_PWA_PUBLIC_ORIGINS_JSON"],
-        field="VMSH_PWA_PUBLIC_ORIGINS_JSON",
-    )
-    if set(origins) != {"student", "family", "staff"}:
-        raise SystemdProfileError("PWA origins must define all three audiences")
-    for audience, items in origins.items():
-        if not isinstance(items, list) or not items:
-            raise SystemdProfileError(f"PWA origins for {audience} are empty")
-        for item in items:
-            parsed = urlsplit(item) if isinstance(item, str) else None
-            if (
-                parsed is None
-                or parsed.scheme != "https"
-                or not parsed.hostname
-                or parsed.username is not None
-                or parsed.password is not None
-                or parsed.path not in {"", "/"}
-                or parsed.query
-                or parsed.fragment
-            ):
-                raise SystemdProfileError(
-                    "Production PWA origins must be HTTPS origins"
-                )
-    signing_keys = _json_array(
-        values["VMSH_PWA_AUTH_SIGNING_KEYS_JSON"],
-        field="VMSH_PWA_AUTH_SIGNING_KEYS_JSON",
-    )
-    if not signing_keys or any(
-        not isinstance(item, str) or len(item.encode("utf-8")) < 32
-        for item in signing_keys
-    ):
-        raise SystemdProfileError("PWA signing keys are missing or too short")
     sockets = _json_array(
         values["VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON"],
         field="VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON",
@@ -164,8 +103,6 @@ def _validate_environment(values: dict[str, str]) -> None:
         )
     if values["VMSH_PWA_TRUSTED_PROXY_HOPS"] != "1":
         raise SystemdProfileError("PWA production proxy hop count must be one")
-    if not values["VMSH_VAPID_SUBJECT"].startswith(("mailto:", "https://")):
-        raise SystemdProfileError("VAPID subject must use mailto: or https:")
 
 
 def _validate_unit(source: str, *, env_file: Path) -> None:

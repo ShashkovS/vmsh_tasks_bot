@@ -1,5 +1,7 @@
 [Unit]
 Description=VMSH 179 Student, Family and Staff PWA API
+# Render this unit into /web/vmsh_tasks_bot/vmshpwa/runtime and link it from
+# /etc/systemd/system. Keep the environment and socket under the same root.
 After=network-online.target nats.service
 Wants=network-online.target nats.service
 ConditionPathIsDirectory=@@REPOSITORY_DIR@@

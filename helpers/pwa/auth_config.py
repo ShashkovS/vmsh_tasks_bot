@@ -297,10 +297,22 @@ def load_auth_runtime_config(
     if runtime_config.production_mode and prototype:
         raise AuthConfigurationError("Production cannot enable test-only auth defaults")
 
-    raw_origins = env.get("VMSH_PWA_PUBLIC_ORIGINS_JSON", "")
-    raw_keys = env.get("VMSH_PWA_AUTH_SIGNING_KEYS_JSON", "")
-    raw_refresh_pepper = env.get("VMSH_PWA_REFRESH_PEPPER_B64", "")
-    raw_throttle_pepper = env.get("VMSH_PWA_THROTTLE_PEPPER_B64", "")
+    raw_origins = env.get("VMSH_PWA_PUBLIC_ORIGINS_JSON", "") or getattr(
+        runtime_config, "pwa_public_origins_json", ""
+    )
+    raw_keys = env.get("VMSH_PWA_AUTH_SIGNING_KEYS_JSON", "") or getattr(
+        runtime_config, "pwa_auth_signing_keys_json", ""
+    )
+    raw_refresh_pepper = env.get("VMSH_PWA_REFRESH_PEPPER_B64", "") or getattr(
+        runtime_config, "pwa_refresh_pepper_b64", ""
+    )
+    raw_throttle_pepper = env.get("VMSH_PWA_THROTTLE_PEPPER_B64", "") or getattr(
+        runtime_config, "pwa_throttle_pepper_b64", ""
+    )
+    if isinstance(raw_origins, (dict, list)):
+        raw_origins = json.dumps(raw_origins, separators=(",", ":"))
+    if isinstance(raw_keys, list):
+        raw_keys = json.dumps(raw_keys, separators=(",", ":"))
     security_values = (
         raw_origins,
         raw_keys,

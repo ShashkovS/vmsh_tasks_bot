@@ -15,6 +15,15 @@ legacy-сайта. Production и optional staging должны получить 
 утверждённые FQDN. Плановое окно обслуживания с недоступностью сервиса
 допустимо; blue/green переключение не является требованием первой версии.
 
+Все production-артефакты PWA, включая runtime environment, unit source, Unix
+socket и media/write каталоги, находятся под `/web/vmsh_tasks_bot/vmshpwa`.
+Systemd и nginx получают только symlink в своих стандартных каталогах. `uv`
+запускается из shell пользователя приложения: на сервере нужно выполнить
+`sudo su vmsh_tasks_bot -s /usr/bin/bash`, затем перейти в
+`/web/vmsh_tasks_bot/vmsh_tasks_bot` и только после этого запускать `uv sync`.
+Вызов `sudo -H -u vmsh_tasks_bot uv ...` не используется, потому что uv
+установлен в пользовательском окружении `vmsh_tasks_bot`.
+
 ## Последовательность
 
 1. Взять deploy lock и проверить подпись/secret webhook.
@@ -54,7 +63,7 @@ legacy-сайта. Production и optional staging должны получить 
     ```sh
     VMSH_PWA_PUBLIC_HOST=<approved-fqdn> \
       VMSH_PWA_NGINX_CONFIG=/etc/nginx/nginx.conf \
-      VMSH_PWA_NGINX_SITE_CONFIG=/etc/nginx/conf.d/vmshpwa.conf \
+      VMSH_PWA_NGINX_SITE_CONFIG=/web/vmsh_tasks_bot/vmshpwa/runtime/nginx/vmshpwa.conf \
       make pwa-nginx-check
     ```
 
@@ -63,8 +72,8 @@ legacy-сайта. Production и optional staging должны получить 
     на production host:
 
     ```sh
-    VMSH_PWA_SYSTEMD_UNIT=/etc/systemd/system/vmshpwa.service \
-      VMSH_PWA_SYSTEMD_ENV=/etc/vmshpwa/vmshpwa.env \
+    VMSH_PWA_SYSTEMD_UNIT=/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service \
+      VMSH_PWA_SYSTEMD_ENV=/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env \
       make pwa-systemd-check
     ```
 

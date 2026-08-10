@@ -75,6 +75,13 @@ class Config:
     pwa_vapid_public_key: str = ""
     pwa_vapid_private_key: str = field(default="", repr=False)
     pwa_vapid_subject: str = ""
+    # PWA production security settings live in the same profile JSON as the
+    # legacy settings. Environment values remain an explicit test/override
+    # boundary, not a second production configuration store.
+    pwa_public_origins_json: object = field(default="", repr=False)
+    pwa_auth_signing_keys_json: object = field(default="", repr=False)
+    pwa_refresh_pepper_b64: str = field(default="", repr=False)
+    pwa_throttle_pepper_b64: str = field(default="", repr=False)
     logging_level = logging.WARNING
     verdict_mode: str = "verdict_plus_minus_half"
     result_mode: str = "res_immed"
@@ -154,39 +161,81 @@ def _setup(*, force_production=False):
             raise RuntimeError(
                 "Production PWA runtime cannot enable VMSH_PWA_PROTOTYPE"
             )
+        profile_config_path = _absolute_path(
+            "creds_prod/vmsh_bot_config_prod.json"
+            if production_mode
+            else "creds_test/vmsh_bot_config_test.json"
+        )
+        try:
+            with profile_config_path.open("r", encoding="utf-8") as profile_file:
+                profile_text = profile_file.read().strip()
+                profile_values = json.loads(profile_text) if profile_text else {}
+        except (OSError, json.JSONDecodeError) as error:
+            raise RuntimeError(
+                f"PWA runtime requires a valid profile config: {profile_config_path}"
+            ) from error
+        if not isinstance(profile_values, dict):
+            raise RuntimeError(f"PWA profile config must be a JSON object: {profile_config_path}")
+
+        configured_database = os.environ.get("VMSH_DB_FILENAME", "")
+        if not configured_database:
+            configured_database = str(profile_values.get("db_filename", ""))
+        if not configured_database:
+            configured_database = f"db/{runtime_profile}.sqlite3"
+        configured_media_root = os.environ.get("VMSH_MEDIA_ROOT", "")
+        if not configured_media_root:
+            configured_media_root = str(
+                profile_values.get(
+                    "pwa_media_root", f".runtime/vmshpwa/{runtime_profile}"
+                )
+            )
+        configured_instance = os.environ.get("VMSH_INSTANCE", "") or str(
+            profile_values.get("pwa_instance", runtime_profile.removeprefix("pwa-"))
+        )
         config = Config(
             runtime_profile=runtime_profile,
-            pwa_instance=os.environ.get(
-                "VMSH_INSTANCE", runtime_profile.removeprefix("pwa-")
-            ),
+            pwa_instance=configured_instance,
             pwa_prototype=pwa_prototype,
             production_mode=production_mode,
             config_name=os.environ.get(
-                "VMSH_NATS_TOPIC_PREFIX", runtime_profile.replace("-", "_")
-            ),
-            db_filename=str(
-                _absolute_path(
-                    os.environ.get("VMSH_DB_FILENAME", f"db/{runtime_profile}.sqlite3")
-                )
-            ),
-            pwa_media_root=str(
-                _absolute_path(
-                    os.environ.get(
-                        "VMSH_MEDIA_ROOT", f".runtime/vmshpwa/{runtime_profile}"
+                "VMSH_NATS_TOPIC_PREFIX",
+                str(
+                    profile_values.get(
+                        "pwa_nats_topic_prefix",
+                        profile_values.get("config_name", runtime_profile.replace("-", "_")),
                     )
-                )
+                ),
             ),
+            db_filename=str(_absolute_path(configured_database)),
+            pwa_media_root=str(_absolute_path(configured_media_root)),
             apps="pwa_app",
             google_sheets_key="",
             google_cred_json="",
             telegram_bot_token="",
-            nats_server=os.environ.get("VMSH_NATS_SERVER") or None,
+            nats_server=os.environ.get("VMSH_NATS_SERVER")
+            or profile_values.get("nats_server")
+            or None,
             trace_enabled=False,
-            sentry_dsn=os.environ.get("VMSH_SENTRY_DSN", "").strip(),
-            sentry_release=os.environ.get("VMSH_SENTRY_RELEASE", "").strip(),
-            pwa_vapid_public_key=os.environ.get("VMSH_VAPID_PUBLIC_KEY", "").strip(),
-            pwa_vapid_private_key=os.environ.get("VMSH_VAPID_PRIVATE_KEY", "").strip(),
-            pwa_vapid_subject=os.environ.get("VMSH_VAPID_SUBJECT", "").strip(),
+            sentry_dsn=os.environ.get("VMSH_SENTRY_DSN")
+            or str(profile_values.get("sentry_dsn", "")).strip(),
+            sentry_release=os.environ.get("VMSH_SENTRY_RELEASE")
+            or str(profile_values.get("sentry_release", "")).strip(),
+            pwa_vapid_public_key=os.environ.get("VMSH_VAPID_PUBLIC_KEY")
+            or str(profile_values.get("pwa_vapid_public_key", "")).strip(),
+            pwa_vapid_private_key=os.environ.get("VMSH_VAPID_PRIVATE_KEY")
+            or str(profile_values.get("pwa_vapid_private_key", "")).strip(),
+            pwa_vapid_subject=os.environ.get("VMSH_VAPID_SUBJECT")
+            or str(profile_values.get("pwa_vapid_subject", "")).strip(),
+            pwa_public_origins_json=profile_values.get("pwa_public_origins_json", ""),
+            pwa_auth_signing_keys_json=profile_values.get(
+                "pwa_auth_signing_keys_json", ""
+            ),
+            pwa_refresh_pepper_b64=str(
+                profile_values.get("pwa_refresh_pepper_b64", "")
+            ).strip(),
+            pwa_throttle_pepper_b64=str(
+                profile_values.get("pwa_throttle_pepper_b64", "")
+            ).strip(),
             pdf2svg_path=_optional_executable_from_env("VMSH_PDF2SVG_PATH", "pdf2svg"),
             cwebp_path=_optional_executable_from_env("VMSH_CWEBP_PATH", "cwebp"),
             pdflatex_path=_optional_executable_from_env(
