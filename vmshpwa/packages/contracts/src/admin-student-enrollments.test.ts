@@ -27,6 +27,20 @@ describe('admin student enrollment contracts', () => {
     })
   })
 
+  it('accepts a Family link imported without an explicit relationship label', () => {
+    const imported = structuredClone(directoryFixture) as {
+      students: Array<{
+        familyAccounts: Array<{ relationshipLabel: string | null }>
+      }>
+    }
+    imported.students[0]!.familyAccounts[0]!.relationshipLabel = null
+
+    expect(
+      adminStudentEnrollmentDirectoryResponseSchema.parse(imported).students[0]
+        ?.familyAccounts[0]?.relationshipLabel,
+    ).toBeNull()
+  })
+
   it('keeps Family passwords write-only while validating create, link and unlink payloads', () => {
     const created = createFamilyAccountRequestSchema.parse({
       schemaVersion: 1,

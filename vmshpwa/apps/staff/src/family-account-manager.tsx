@@ -167,7 +167,7 @@ export function FamilyAccountManager({
                 <div className="min-w-0">
                   <p className="text-small font-medium">{account.displayName}</p>
                   <p className="break-all text-caption text-muted-foreground">
-                    {account.username} · {account.relationshipLabel}
+                    {account.username} · {account.relationshipLabel ?? 'родитель'}
                     {account.isPrimary ? ' · основной контакт' : ''}
                   </p>
                 </div>

@@ -445,7 +445,7 @@ export function StudentDirectoryView({
                           : selectedStudent.familyAccounts
                               .map(
                                 (account) =>
-                                  `${account.displayName} · ${account.username} · ${account.relationshipLabel}`,
+                                  `${account.displayName} · ${account.username} · ${account.relationshipLabel ?? 'родитель'}`,
                               )
                               .join(', ')}
                       </p>
@@ -498,7 +498,7 @@ export function StudentDirectoryView({
                   {selectedStudent.familyAccounts.map((account) => (
                     <div className="space-y-2" key={account.accountId}>
                       <p className="text-small text-muted-foreground">
-                        {account.displayName} · {account.relationshipLabel}
+                        {account.displayName} · {account.relationshipLabel ?? 'родитель'}
                       </p>
                       <StudentAccountControls
                         account={account}

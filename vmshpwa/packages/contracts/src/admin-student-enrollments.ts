@@ -93,7 +93,7 @@ export const adminStudentDirectoryEntrySchema = z
           displayName: z.string().trim().min(1),
           status: managedAccountStatusSchema,
           credentialVersion: z.number().int().positive(),
-          relationshipLabel: z.string().trim().min(1),
+          relationshipLabel: z.string().trim().min(1).nullable(),
           isPrimary: z.boolean(),
         })
         .strict(),
