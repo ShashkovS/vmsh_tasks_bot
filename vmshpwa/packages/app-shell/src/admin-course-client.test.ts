@@ -33,6 +33,26 @@ const course = {
 }
 
 describe('admin course client', () => {
+  it('creates a season', async () => {
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        schemaVersion: 1,
+        season: { seasonId: 'season-2027', code: '2027-28', title: '2027–2028', status: 'active' },
+        requestId: 'season-create',
+      }),
+    )
+    await createAdminCourseClient(runtime, { fetchImplementation }).createSeason({
+      schemaVersion: 1,
+      code: '2027-28',
+      title: '2027–2028',
+      startsOn: '2027-09-01',
+      endsOn: '2028-05-31',
+      sessionExpiresOn: '2028-08-10',
+      status: 'active',
+    })
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/seasons')
+  })
+
   it('loads and validates the real Staff catalog', async () => {
     const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({

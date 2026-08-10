@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 
 import {
   PageLayout,
@@ -16,12 +16,14 @@ import {
   type AdminCourseResponse,
   type AdminGroup,
   type AdminGroupResponse,
+  type AdminSeasonResponse,
+  type CreateAdminSeasonRequest,
   type CreateAdminCourseRequest,
   type SaveAdminGroupRequest,
   type UpdateAdminCourseRequest,
 } from '@vmsh/contracts'
 import { CourseGroupCatalog, type ManagedCourse } from '@vmsh/product'
-import { Alert, AlertContent, AlertDescription, AlertTitle } from '@vmsh/ui'
+import { Alert, AlertContent, AlertDescription, AlertTitle, Button, Input, Label } from '@vmsh/ui'
 
 import { clearCatalogDraft } from './course-catalog-draft'
 import { CourseCatalogEditor, GroupCatalogEditor } from './course-catalog-editors'
@@ -87,6 +89,114 @@ function courseView(courses: AdminCourse[]): ManagedCourse[] {
   }))
 }
 
+function initialSeasonDraft(): CreateAdminSeasonRequest {
+  const now = new Date()
+  const year = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1
+  return {
+    schemaVersion: 1,
+    code: `${year}-${String(year + 1).slice(-2)}`,
+    title: `${year}–${year + 1}`,
+    startsOn: `${year}-09-01`,
+    endsOn: `${year + 1}-05-31`,
+    sessionExpiresOn: `${year + 1}-08-10`,
+    status: 'active',
+  }
+}
+
+function SeasonEditor({
+  error,
+  saving,
+  onCancel,
+  onSave,
+}: {
+  error: Error | null
+  saving: boolean
+  onCancel?: () => void
+  onSave: (input: CreateAdminSeasonRequest) => void
+}) {
+  const [draft, setDraft] = useState(initialSeasonDraft)
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    onSave(draft)
+  }
+
+  return (
+    <form
+      className="grid max-w-2xl gap-3 rounded-lg border border-border p-4 sm:grid-cols-2"
+      onSubmit={submit}
+    >
+      <div className="sm:col-span-2">
+        <h2 className="font-medium">Новый сезон</h2>
+        <p className="text-small text-muted-foreground">
+          Сезон станет активным сразу после создания.
+        </p>
+      </div>
+      <Label className="grid gap-1">
+        Код
+        <Input
+          disabled={saving}
+          onChange={(event) => setDraft({ ...draft, code: event.target.value })}
+          required
+          value={draft.code}
+        />
+      </Label>
+      <Label className="grid gap-1">
+        Название
+        <Input
+          disabled={saving}
+          onChange={(event) => setDraft({ ...draft, title: event.target.value })}
+          required
+          value={draft.title}
+        />
+      </Label>
+      <Label className="grid gap-1">
+        Начало
+        <Input
+          disabled={saving}
+          onChange={(event) => setDraft({ ...draft, startsOn: event.target.value })}
+          required
+          type="date"
+          value={draft.startsOn}
+        />
+      </Label>
+      <Label className="grid gap-1">
+        Конец занятий
+        <Input
+          disabled={saving}
+          onChange={(event) => setDraft({ ...draft, endsOn: event.target.value })}
+          required
+          type="date"
+          value={draft.endsOn}
+        />
+      </Label>
+      <Label className="grid gap-1">
+        Сессии действуют до
+        <Input
+          disabled={saving}
+          onChange={(event) => setDraft({ ...draft, sessionExpiresOn: event.target.value })}
+          required
+          type="date"
+          value={draft.sessionExpiresOn}
+        />
+      </Label>
+      {error ? (
+        <p className="text-small text-status-error sm:col-span-2">{errorMessage(error)}</p>
+      ) : null}
+      <div className="flex gap-2 sm:col-span-2">
+        <Button disabled={saving} type="submit">
+          {saving ? 'Создаём…' : 'Создать сезон'}
+        </Button>
+        {onCancel ? (
+          <Button disabled={saving} onClick={onCancel} type="button" variant="outline">
+            Отмена
+          </Button>
+        ) : null}
+      </div>
+    </form>
+  )
+}
+
 /**
  * Real Staff course catalog for design-system page flow 5.3 and Phase 10.
  * See dev/design-system/05-pages-and-flows.md and dev/development-plan/14-phase-10-admin-and-google-exit.md.
@@ -113,6 +223,15 @@ export function StaffCourseCatalogPage() {
   const catalog = useAdminCourseCatalogQuery(client, scope)
   const queryClient = useQueryClient()
   const [editor, setEditor] = useState<Editor | null>(null)
+  const [seasonEditorOpen, setSeasonEditorOpen] = useState(false)
+  const seasonMutation = useMutation<AdminSeasonResponse, Error, CreateAdminSeasonRequest>({
+    mutationFn: (input) => client.createSeason(input),
+    onSuccess: async () => {
+      setSeasonEditorOpen(false)
+      await queryClient.invalidateQueries({ queryKey: adminCourseCatalogQueryKey(scope) })
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
   const mutation = useMutation<AdminCourseResponse | AdminGroupResponse, Error, Command>({
     mutationFn: (command: Command) => {
       if (command.kind === 'toggle-course') {
@@ -152,6 +271,23 @@ export function StaffCourseCatalogPage() {
     )
   }
   if (catalog.error) {
+    const seasonMissing =
+      catalog.error instanceof ApiResponseError && catalog.error.code === 'season_not_found'
+    if (seasonMissing) {
+      return (
+        <PageLayout
+          description="Сначала создайте учебный сезон, затем добавьте в него курсы и группы."
+          title="Курсы и группы"
+          width="wide"
+        >
+          <SeasonEditor
+            error={seasonMutation.error}
+            onSave={(input) => seasonMutation.mutate(input)}
+            saving={seasonMutation.isPending}
+          />
+        </PageLayout>
+      )
+    }
     return (
       <PageLayout title="Курсы и группы" width="wide">
         <PageStatePanel
@@ -188,6 +324,19 @@ export function StaffCourseCatalogPage() {
       width="wide"
     >
       <div className="space-y-4">
+        <div className="flex justify-end">
+          <Button onClick={() => setSeasonEditorOpen(true)} size="sm" variant="outline">
+            Добавить сезон
+          </Button>
+        </div>
+        {seasonEditorOpen ? (
+          <SeasonEditor
+            error={seasonMutation.error}
+            onCancel={() => setSeasonEditorOpen(false)}
+            onSave={(input) => seasonMutation.mutate(input)}
+            saving={seasonMutation.isPending}
+          />
+        ) : null}
         {mutation.error ? (
           <Alert role="alert" tone="danger">
             <AlertContent>

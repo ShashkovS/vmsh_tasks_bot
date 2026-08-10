@@ -21,6 +21,37 @@ def find_season(
     return None if row is None else dict(row)
 
 
+def insert_season(
+    connection: sqlite3.Connection,
+    *,
+    public_id: str,
+    code: str,
+    title: str,
+    starts_on: str,
+    ends_on: str,
+    session_expires_on: str,
+    status: str,
+    now: str,
+) -> None:
+    connection.execute(
+        "INSERT INTO seasons "
+        "(public_id, code, title, starts_on, ends_on, timezone, "
+        "session_expires_on, status, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, 'Europe/Moscow', ?, ?, ?, ?)",
+        (
+            public_id,
+            code,
+            title,
+            starts_on,
+            ends_on,
+            session_expires_on,
+            status,
+            now,
+            now,
+        ),
+    )
+
+
 def list_courses(
     connection: sqlite3.Connection, *, season_id: int
 ) -> list[dict[str, object]]:
@@ -273,6 +304,7 @@ __all__ = [
     "find_season",
     "insert_course",
     "insert_group",
+    "insert_season",
     "list_courses",
     "list_groups",
     "update_course",

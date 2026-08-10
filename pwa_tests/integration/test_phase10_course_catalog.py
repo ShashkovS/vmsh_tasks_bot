@@ -25,6 +25,18 @@ def _course(*, season_id: str, code: str = "physics-7") -> dict[str, object]:
     }
 
 
+def _season(*, code: str = "2027-28") -> dict[str, object]:
+    return {
+        "schemaVersion": 1,
+        "code": code,
+        "title": "2027–2028",
+        "startsOn": "2027-09-01",
+        "endsOn": "2028-05-31",
+        "sessionExpiresOn": "2028-08-10",
+        "status": "active",
+    }
+
+
 def _group(*, code: str = "dp2", name: str = "Динамика · 2") -> dict[str, object]:
     return {
         "schemaVersion": 1,
@@ -90,6 +102,44 @@ async def test_course_catalog_is_admin_only_and_reports_real_counts(classroom_ht
             "version": 1,
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_admin_creates_first_class_season(classroom_http):
+    teacher = await classroom_http.client.post(
+        "/staff/api/v1/seasons",
+        json=_season(),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    created = await classroom_http.client.post(
+        "/staff/api/v1/seasons",
+        json=_season(code=" 2027-28 "),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    season = (await created.json())["season"]
+    assert season["code"] == "2027-28"
+
+    listed = await classroom_http.client.get(
+        f'/staff/api/v1/courses?seasonId={season["seasonId"]}',
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert listed.status == 200
+    assert (await listed.json())["season"] == season
+
+    duplicate = await classroom_http.client.post(
+        "/staff/api/v1/seasons",
+        json=_season(code="2027-28"),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert duplicate.status == 409
+    assert (await duplicate.json())["error"]["code"] == "season_duplicate"
 
 
 @pytest.mark.asyncio

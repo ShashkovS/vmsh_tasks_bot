@@ -15,6 +15,7 @@ import {
   adminCourseScheduleResponseSchema,
   adminCourseScheduleRuleResponseSchema,
   adminCourseResponseSchema,
+  adminSeasonResponseSchema,
   adminGroupScheduleOverrideResponseSchema,
   adminGroupScheduleQueryKey,
   adminGroupScheduleResponseSchema,
@@ -24,6 +25,7 @@ import {
   adminStudentEnrollmentsQueryKey,
   apiErrorSchema,
   createAdminCourseRequestSchema,
+  createAdminSeasonRequestSchema,
   createStudentAccountRequestSchema,
   createFamilyAccountRequestSchema,
   familyAccountLinkResponseSchema,
@@ -51,6 +53,7 @@ import {
   unlinkFamilyAccountResponseSchema,
   type AdminCourseCatalogResponse,
   type AdminCourseResponse,
+  type AdminSeasonResponse,
   type AdminCourseScheduleDraftResponse,
   type AdminCourseScheduleResponse,
   type AdminCourseScheduleRuleResponse,
@@ -66,6 +69,7 @@ import {
   type CourseEnrollmentProvisioningPreviewResponse,
   type CourseEnrollmentProvisioningReceipt,
   type CreateAdminCourseRequest,
+  type CreateAdminSeasonRequest,
   type CreateStudentAccountRequest,
   type CreateFamilyAccountRequest,
   type FamilyAccountLinkResponse,
@@ -93,6 +97,7 @@ import {
 
 export interface AdminCourseClient {
   list(options?: { seasonId?: string; signal?: AbortSignal }): Promise<AdminCourseCatalogResponse>
+  createSeason(input: CreateAdminSeasonRequest): Promise<AdminSeasonResponse>
   createCourse(input: CreateAdminCourseRequest): Promise<AdminCourseResponse>
   updateCourse(
     courseId: string,
@@ -226,6 +231,14 @@ export function createAdminCourseClient(
         await request(`/courses${suffix}`, {
           method: 'GET',
           ...(signal === undefined ? {} : { signal }),
+        }),
+      )
+    },
+    async createSeason(input) {
+      return adminSeasonResponseSchema.parse(
+        await request('/seasons', {
+          method: 'POST',
+          body: JSON.stringify(createAdminSeasonRequestSchema.parse(input)),
         }),
       )
     },

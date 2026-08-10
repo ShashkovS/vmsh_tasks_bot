@@ -1644,3 +1644,12 @@
   [`apps/pwa_api/first_admin.py`](../../../apps/pwa_api/first_admin.py),
   [`db_methods/pwa/first_admin.py`](../../../db_methods/pwa/first_admin.py),
   [`test_first_admin_bootstrap.py`](../../../pwa_tests/integration/test_first_admin_bootstrap.py).
+
+## Phase 10 checkpoint: создание сезонов в Staff — 10 августа 2026
+
+- При отсутствии active season страница «Курсы и группы» показывает короткую
+  форму создания сезона; в заполненном каталоге доступна кнопка «Добавить сезон».
+- Admin-only `POST /staff/api/v1/seasons` создаёт сезон и audit-событие
+  `season.created`; Storybook и snapshots по решению владельца не менялись.
+- Проверки: Python API **5 PASS**, contracts/client **15 PASS**, Ruff,
+  contracts/app-shell/staff typecheck и production Staff build — **PASS**.

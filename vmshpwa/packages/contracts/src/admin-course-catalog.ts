@@ -39,7 +39,7 @@ export const adminCourseSchema = z
   .strict()
 export type AdminCourse = z.infer<typeof adminCourseSchema>
 
-const seasonSchema = z
+export const adminSeasonSchema = z
   .object({
     seasonId: publicIdSchema,
     code: z.string().trim().min(1),
@@ -51,12 +51,38 @@ const seasonSchema = z
 export const adminCourseCatalogResponseSchema = z
   .object({
     schemaVersion: z.literal(1),
-    season: seasonSchema,
+    season: adminSeasonSchema,
     courses: z.array(adminCourseSchema),
     requestId: z.string().trim().min(1),
   })
   .strict()
 export type AdminCourseCatalogResponse = z.infer<typeof adminCourseCatalogResponseSchema>
+
+export const createAdminSeasonRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    code: z.string().trim().min(1).max(30),
+    title: z.string().trim().min(1).max(200),
+    startsOn: z.iso.date(),
+    endsOn: z.iso.date(),
+    sessionExpiresOn: z.iso.date(),
+    status: catalogStatusSchema,
+  })
+  .strict()
+  .refine((value) => value.startsOn <= value.endsOn, { message: 'Invalid season dates' })
+  .refine((value) => value.sessionExpiresOn >= value.endsOn, {
+    message: 'Invalid session expiry',
+  })
+export type CreateAdminSeasonRequest = z.input<typeof createAdminSeasonRequestSchema>
+
+export const adminSeasonResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    season: adminSeasonSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type AdminSeasonResponse = z.infer<typeof adminSeasonResponseSchema>
 
 const codeSchema = z
   .string()

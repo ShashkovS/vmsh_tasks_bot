@@ -6,7 +6,7 @@ import json
 import re
 import sqlite3
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from aiohttp import web
 
@@ -18,6 +18,7 @@ from db_methods.pwa.course_catalog import (
     find_season,
     insert_course,
     insert_group,
+    insert_season,
     list_courses,
     list_groups,
     update_course,
@@ -63,6 +64,15 @@ _GROUP_FIELDS = {
     "sortOrder",
     "allowSelfSwitch",
     "scoreWeight",
+}
+_SEASON_FIELDS = {
+    "schemaVersion",
+    "code",
+    "title",
+    "startsOn",
+    "endsOn",
+    "sessionExpiresOn",
+    "status",
 }
 
 
@@ -199,6 +209,38 @@ def _is_duplicate(error: sqlite3.IntegrityError, table: str) -> bool:
 
     message = str(error)
     return "UNIQUE constraint failed" in message and f"{table}." in message
+
+
+def _season_values(payload: dict[str, object]) -> dict[str, str]:
+    code = _code(payload["code"], maximum=30)
+    title = _text(payload["title"], maximum=200)
+    try:
+        starts_on = date.fromisoformat(str(payload["startsOn"]))
+        ends_on = date.fromisoformat(str(payload["endsOn"]))
+        session_expires_on = date.fromisoformat(str(payload["sessionExpiresOn"]))
+    except ValueError as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте даты сезона"
+        ) from error
+    status = payload["status"]
+    if (
+        code is None
+        or title is None
+        or status not in {"draft", "active", "archived"}
+        or starts_on > ends_on
+        or session_expires_on < ends_on
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте сезон"
+        )
+    return {
+        "code": code,
+        "title": title,
+        "starts_on": starts_on.isoformat(),
+        "ends_on": ends_on.isoformat(),
+        "session_expires_on": session_expires_on.isoformat(),
+        "status": str(status),
+    }
 
 
 def _course_values(payload: dict[str, object]) -> dict[str, object]:
@@ -371,6 +413,64 @@ def _catalog(connection, season_public_id: str | None):
             for course in courses
         ],
     }
+
+
+@admin_course_routes.post("/staff/api/v1/seasons")
+async def create_season(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
+    if request.query:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Этот запрос без параметров"
+        )
+    payload = await _read_json(request, _SEASON_FIELDS)
+    values = _season_values(payload)
+    public_id = f"season.{uuid.uuid4().hex}"
+    now = _now()
+
+    def write(connection):
+        insert_season(connection, public_id=public_id, now=now, **values)
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_id,
+            audience="staff",
+            action="season.created",
+            object_type="season",
+            object_id=public_id,
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(
+                {"seasonId": public_id, **values}, ensure_ascii=False
+            ),
+            occurred_at=now,
+        )
+
+    try:
+        await _factory(request).run_write_async(write)
+    except sqlite3.IntegrityError as error:
+        if not _is_duplicate(error, "seasons"):
+            raise
+        raise PwaApiError(
+            status=409,
+            code="season_duplicate",
+            message="Сезон с таким кодом уже существует",
+        ) from error
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "season": {
+                "seasonId": public_id,
+                "code": values["code"],
+                "title": values["title"],
+                "status": values["status"],
+            },
+            "requestId": request["request_id"],
+        },
+        status=201,
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @admin_course_routes.get("/staff/api/v1/courses")
