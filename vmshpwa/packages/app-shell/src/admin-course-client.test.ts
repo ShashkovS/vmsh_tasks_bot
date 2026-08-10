@@ -66,6 +66,33 @@ describe('admin course client', () => {
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/staff-members')
   })
 
+  it('creates an atomic teacher batch with shared scopes', async () => {
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        schemaVersion: 1,
+        counts: { total: 1, created: 1 },
+        requestId: 'teacher-batch-create',
+      }),
+    )
+
+    await createAdminCourseClient(runtime, { fetchImplementation }).createStaffMemberBatch({
+      schemaVersion: 1,
+      rows: [
+        {
+          surname: 'Новый',
+          name: 'Преподаватель',
+          middleName: null,
+          username: 'teacher-batch',
+          password: 'teacher-password-179',
+        },
+      ],
+      scopes: [{ courseId: 'course-math', groupId: null }],
+    })
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/staff-members/batch')
+    expect(fetchImplementation.mock.calls[0]?.[1]).toMatchObject({ method: 'POST' })
+  })
+
   it('creates a season', async () => {
     const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({

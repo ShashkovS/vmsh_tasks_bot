@@ -70,6 +70,98 @@ async def test_admin_creates_teacher_account(
     assert teacher.status == 403
 
 
+async def test_admin_creates_teacher_batch_with_shared_scopes_atomically(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    response = await classroom_http.client.post(
+        "/staff/api/v1/staff-members/batch",
+        json={
+            "schemaVersion": 1,
+            "rows": [
+                {
+                    "surname": "Пакетный",
+                    "name": "Первый",
+                    "middleName": None,
+                    "username": "teacher-batch-one",
+                    "password": "teacher-batch-password-one",
+                },
+                {
+                    "surname": "Пакетный",
+                    "name": "Второй",
+                    "middleName": "Тестович",
+                    "username": "teacher-batch-two",
+                    "password": "teacher-batch-password-two",
+                },
+            ],
+            "scopes": [
+                {
+                    "courseId": "classroom-layout-course",
+                    "groupId": "classroom-layout-group",
+                }
+            ],
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+
+    assert response.status == 201, await response.text()
+    assert (await response.json())["counts"] == {"total": 2, "created": 2}
+    stored = classroom_http.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT account.username, count(scope.id) AS scope_count "
+            "FROM auth_accounts AS account "
+            "JOIN users AS user ON user.id = account.linked_user_id "
+            "LEFT JOIN staff_scopes AS scope ON scope.staff_user_id = user.id "
+            "AND scope.valid_to IS NULL "
+            "WHERE account.username IN ('teacher-batch-one', 'teacher-batch-two') "
+            "GROUP BY account.username ORDER BY account.username"
+        ).fetchall()
+    )
+    assert [(row["username"], row["scope_count"]) for row in stored] == [
+        ("teacher-batch-one", 1),
+        ("teacher-batch-two", 1),
+    ]
+
+
+async def test_teacher_batch_conflict_creates_nothing(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    response = await classroom_http.client.post(
+        "/staff/api/v1/staff-members/batch",
+        json={
+            "schemaVersion": 1,
+            "rows": [
+                {
+                    "surname": "Новый",
+                    "name": "Не создастся",
+                    "middleName": None,
+                    "username": "teacher-batch-rollback",
+                    "password": "teacher-batch-password-new",
+                },
+                {
+                    "surname": "Дубликат",
+                    "name": "Логина",
+                    "middleName": None,
+                    "username": "classroom-http-teacher",
+                    "password": "teacher-batch-password-duplicate",
+                },
+            ],
+            "scopes": [{"courseId": "classroom-layout-course", "groupId": None}],
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+
+    assert response.status == 409, await response.text()
+    count = classroom_http.factory.run_read(
+        lambda connection: connection.execute(
+            "SELECT count(*) AS count FROM auth_accounts WHERE username = ?",
+            ("teacher-batch-rollback",),
+        ).fetchone()["count"]
+    )
+    assert count == 0
+
+
 async def test_only_admin_lists_staff_access(
     classroom_http: ClassroomHttpFixture,
 ) -> None:

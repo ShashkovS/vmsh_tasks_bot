@@ -33,7 +33,16 @@ from models.pwa.staff_access import InvalidTeacherScopes, teacher_scope_changes
 staff_access_routes = web.RouteTableDef()
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?")
 _FIELDS = {"schemaVersion", "expectedScopes", "scopes"}
-_CREATE_FIELDS = {"schemaVersion", "surname", "name", "middleName", "username", "password"}
+_CREATE_FIELDS = {
+    "schemaVersion",
+    "surname",
+    "name",
+    "middleName",
+    "username",
+    "password",
+}
+_BATCH_FIELDS = {"schemaVersion", "rows", "scopes"}
+_BATCH_ROW_FIELDS = {"surname", "name", "middleName", "username", "password"}
 
 
 def _now() -> str:
@@ -245,6 +254,86 @@ def _required_text(value: object, *, maximum: int) -> str | None:
     return result if 1 <= len(result) <= maximum else None
 
 
+async def _batch_payload(
+    request: web.Request,
+) -> tuple[list[dict[str, str | None]], list[tuple[str, str | None]]]:
+    if request.content_type != "application/json":
+        raise PwaApiError(
+            status=422, code="validation_error", message="Тело запроса должно быть JSON"
+        )
+    try:
+        body = json.loads(await request.read())
+        if (
+            not isinstance(body, dict)
+            or set(body) != _BATCH_FIELDS
+            or body.get("schemaVersion") != 1
+            or not isinstance(body["rows"], list)
+            or not 1 <= len(body["rows"]) <= 500
+            or not isinstance(body["scopes"], list)
+            or not 1 <= len(body["scopes"]) <= 100
+        ):
+            raise ValueError
+        desired_raw = [
+            _scope_input(item, with_version=False) for item in body["scopes"]
+        ]
+        desired = [(course_id, group_id) for course_id, group_id, _ in desired_raw]
+        teacher_scope_changes((), desired)
+        rows: list[dict[str, str | None]] = []
+        normalized_usernames: set[str] = set()
+        for item in body["rows"]:
+            if not isinstance(item, dict) or set(item) != _BATCH_ROW_FIELDS:
+                raise ValueError
+            surname = _required_text(item["surname"], maximum=100)
+            name = _required_text(item["name"], maximum=100)
+            username = _required_text(item["username"], maximum=100)
+            middle_value = item["middleName"]
+            middle_name = (
+                None
+                if middle_value is None
+                else _required_text(middle_value, maximum=100)
+            )
+            password = item["password"]
+            username_normalized = normalize_login(username or "")
+            if (
+                surname is None
+                or name is None
+                or username is None
+                or (middle_value is not None and middle_name is None)
+                or not username_normalized
+                or username_normalized in normalized_usernames
+                or not isinstance(password, str)
+                or not 8 <= len(password) <= 256
+                or not password.strip()
+            ):
+                raise ValueError
+            normalized_usernames.add(username_normalized)
+            rows.append(
+                {
+                    "surname": surname,
+                    "name": name,
+                    "middle_name": middle_name,
+                    "username": username,
+                    "username_normalized": username_normalized,
+                    "password": password,
+                }
+            )
+    except (
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        RecursionError,
+        InvalidTeacherScopes,
+        ValueError,
+        KeyError,
+        TypeError,
+    ) as error:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Проверьте таблицу преподавателей и выбранные доступы",
+        ) from error
+    return rows, desired
+
+
 @staff_access_routes.post("/staff/api/v1/staff-members")
 async def create_staff_member(request: web.Request) -> web.Response:
     actor_user_id = _admin_user_id(request)
@@ -257,17 +346,27 @@ async def create_staff_member(request: web.Request) -> web.Response:
         payload = json.loads(await request.read())
     except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
         raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте данные преподавателя"
+            status=422,
+            code="validation_error",
+            message="Проверьте данные преподавателя",
         ) from error
-    if not isinstance(payload, dict) or set(payload) != _CREATE_FIELDS or payload.get("schemaVersion") != 1:
+    if (
+        not isinstance(payload, dict)
+        or set(payload) != _CREATE_FIELDS
+        or payload.get("schemaVersion") != 1
+    ):
         raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте данные преподавателя"
+            status=422,
+            code="validation_error",
+            message="Проверьте данные преподавателя",
         )
     surname = _required_text(payload["surname"], maximum=100)
     name = _required_text(payload["name"], maximum=100)
     username = _required_text(payload["username"], maximum=100)
     middle_value = payload["middleName"]
-    middle_name = None if middle_value is None else _required_text(middle_value, maximum=100)
+    middle_name = (
+        None if middle_value is None else _required_text(middle_value, maximum=100)
+    )
     password = payload["password"]
     normalized_username = normalize_login(username or "")
     if (
@@ -281,7 +380,9 @@ async def create_staff_member(request: web.Request) -> web.Response:
         or not password.strip()
     ):
         raise PwaApiError(
-            status=422, code="validation_error", message="Проверьте данные преподавателя"
+            status=422,
+            code="validation_error",
+            message="Проверьте данные преподавателя",
         )
 
     credential_hash = await asyncio.to_thread(
@@ -338,6 +439,114 @@ async def create_staff_member(request: web.Request) -> web.Response:
             "schemaVersion": 1,
             "member": _member_payload(member, []),
             "requestId": request["request_id"],
+        },
+        status=201,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@staff_access_routes.post("/staff/api/v1/staff-members/batch")
+async def create_staff_member_batch(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
+    rows, desired_scopes = await _batch_payload(request)
+    hasher = auth_service(request).credential_hasher
+    credential_hashes = await asyncio.to_thread(
+        lambda: [hasher.hash(str(row["password"])) for row in rows]
+    )
+    now = _now()
+    request_id = request["request_id"]
+
+    def write(connection):
+        existing_usernames = {
+            normalize_login(str(member["username"]))
+            for member in list_staff_members(connection)
+            if member.get("username") is not None
+        }
+        if any(str(row["username_normalized"]) in existing_usernames for row in rows):
+            return "conflict"
+
+        targets: list[dict[str, object]] = []
+        for course_id, group_id in desired_scopes:
+            target = find_scope_target(
+                connection, course_public_id=course_id, group_public_id=group_id
+            )
+            if (
+                target is None
+                or target["course_status"] != "active"
+                or (group_id is not None and target["group_status"] != "active")
+            ):
+                return "invalid_target"
+            targets.append(target)
+
+        for row, credential_hash in zip(rows, credential_hashes, strict=True):
+            staff_user_id = insert_teacher(
+                connection,
+                user_public_id=f"user.staff.{uuid.uuid4().hex}",
+                account_public_id=f"account.staff.{uuid.uuid4().hex}",
+                surname=str(row["surname"]),
+                name=str(row["name"]),
+                middle_name=row["middle_name"],
+                username=str(row["username"]),
+                username_normalized=str(row["username_normalized"]),
+                credential_hash=credential_hash,
+                now=now,
+            )
+            for target in targets:
+                insert_teacher_scope(
+                    connection,
+                    staff_user_id=staff_user_id,
+                    course_id=int(target["course_id"]),
+                    group_id=target.get("group_id"),
+                    actor_user_id=actor_user_id,
+                    now=now,
+                )
+
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_id,
+            audience="staff",
+            action="staff.member_batch_created",
+            object_type="staff_member_batch",
+            object_id=request_id,
+            request_id=request_id,
+            before_json=None,
+            after_json=json.dumps(
+                {"createdCount": len(rows), "scopeCount": len(desired_scopes)},
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
+        )
+        return "created"
+
+    try:
+        outcome = await _factory(request).run_write_async(write)
+    except sqlite3.IntegrityError as error:
+        raise PwaApiError(
+            status=409,
+            code="staff_member_batch_conflict",
+            message="Один из логинов преподавателей уже используется",
+        ) from error
+    if outcome == "conflict":
+        raise PwaApiError(
+            status=409,
+            code="staff_member_batch_conflict",
+            message="Один из логинов преподавателей уже используется",
+        )
+    if outcome == "invalid_target":
+        raise PwaApiError(
+            status=409,
+            code="staff_scope_target_changed",
+            message="Курс или группа изменились. Обновите страницу и повторите загрузку",
+        )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "counts": {"total": len(rows), "created": len(rows)},
+            "requestId": request_id,
         },
         status=201,
         headers={"Cache-Control": "no-store"},

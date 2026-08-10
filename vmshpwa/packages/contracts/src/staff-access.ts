@@ -66,6 +66,46 @@ export const createStaffMemberRequestSchema = z
   .strict()
 export type CreateStaffMemberRequest = z.infer<typeof createStaffMemberRequestSchema>
 
+const staffMemberBatchRowSchema = createStaffMemberRequestSchema.omit({ schemaVersion: true })
+
+export const createStaffMemberBatchRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    rows: z.array(staffMemberBatchRowSchema).min(1).max(500),
+    scopes: z.array(staffScopeSelectionSchema).min(1).max(100),
+  })
+  .strict()
+  .superRefine((request, context) => {
+    const keys = request.scopes.map((scope) => `${scope.courseId}\0${scope.groupId ?? ''}`)
+    if (new Set(keys).size !== keys.length) {
+      context.addIssue({ code: 'custom', message: 'Scopes must be unique', path: ['scopes'] })
+    }
+    const courseWide = new Set(
+      request.scopes.filter((scope) => scope.groupId === null).map((scope) => scope.courseId),
+    )
+    request.scopes.forEach((scope, index) => {
+      if (scope.groupId !== null && courseWide.has(scope.courseId)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Course-wide scope already includes its groups',
+          path: ['scopes', index],
+        })
+      }
+    })
+  })
+export type CreateStaffMemberBatchRequest = z.infer<typeof createStaffMemberBatchRequestSchema>
+
+export const createStaffMemberBatchResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    counts: z
+      .object({ total: z.number().int().positive(), created: z.number().int().positive() })
+      .strict(),
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type CreateStaffMemberBatchResponse = z.infer<typeof createStaffMemberBatchResponseSchema>
+
 export const staffAccessDirectoryResponseSchema = z
   .object({
     schemaVersion: z.literal(1),

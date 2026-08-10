@@ -15,6 +15,7 @@ import {
   createBrowserStorageNamespace,
   staffAccessQueryKey,
   type AdminCourse,
+  type CreateStaffMemberBatchRequest,
   type CreateStaffMemberRequest,
   type ReplaceStaffScopesRequest,
   type StaffAccessMember,
@@ -43,6 +44,7 @@ import {
   writeStaffAccessDraft,
 } from './staff-access-draft'
 import { UsersSectionTabs, type UsersSection } from './users-section-tabs'
+import { TeacherBatchPanel } from './teacher-batch-panel'
 
 interface SaveStaffAccessCommand {
   member: StaffAccessMember
@@ -456,6 +458,7 @@ export function StaffAccessPage({
   const catalog = useAdminCourseCatalogQuery(client, scope, undefined, isAdmin)
   const queryClient = useQueryClient()
   const [creatorOpen, setCreatorOpen] = useState(false)
+  const [batchOpen, setBatchOpen] = useState(false)
   const createMutation = useMutation({
     mutationFn: (input: CreateStaffMemberRequest) => client.createStaffMember(input),
     onSuccess: async () => {
@@ -469,6 +472,13 @@ export function StaffAccessPage({
       client.replaceStaffScopes(command.member.staffUserId, command.input),
     onSuccess: async (_, command) => {
       clearStaffAccessDraft(globalThis.localStorage, command.draftKey)
+      await queryClient.invalidateQueries({ queryKey: staffAccessQueryKey(scope) })
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
+  const batchMutation = useMutation({
+    mutationFn: (input: CreateStaffMemberBatchRequest) => client.createStaffMemberBatch(input),
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: staffAccessQueryKey(scope) })
     },
     onError: (error) => authentication.handleApiError(error),
@@ -511,11 +521,28 @@ export function StaffAccessPage({
     >
       <div className="space-y-4">
         <UsersSectionTabs onChange={onSectionChange} section="teachers" showImports showTeachers />
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            aria-pressed={batchOpen}
+            onClick={() => setBatchOpen((open) => !open)}
+            size="sm"
+            variant="outline"
+          >
+            Пакетная загрузка
+          </Button>
           <Button onClick={() => setCreatorOpen(true)} size="sm">
             Добавить преподавателя
           </Button>
         </div>
+        {batchOpen ? (
+          <TeacherBatchPanel
+            accountId={principal.accountId}
+            courses={catalog.data.courses}
+            members={directory.data.members}
+            onApply={(input) => batchMutation.mutateAsync(input)}
+            storageNamespace={createBrowserStorageNamespace(authentication.client.runtime)}
+          />
+        ) : null}
         {creatorOpen ? (
           <TeacherCreator
             error={createMutation.error}

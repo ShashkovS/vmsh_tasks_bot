@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  createStaffMemberBatchRequestSchema,
+  createStaffMemberBatchResponseSchema,
   replaceStaffScopesRequestSchema,
   staffAccessDirectoryResponseSchema,
   staffAccessQueryKey,
@@ -72,5 +74,30 @@ describe('Staff access contract', () => {
         ],
       }),
     ).toThrow()
+  })
+
+  it('validates an atomic teacher batch without returning passwords', () => {
+    const request = createStaffMemberBatchRequestSchema.parse({
+      schemaVersion: 1,
+      rows: [
+        {
+          surname: 'Учитель',
+          name: 'Мария',
+          middleName: null,
+          username: 'teacher-batch',
+          password: 'temporary-password',
+        },
+      ],
+      scopes: [{ courseId: 'course-math', groupId: null }],
+    })
+    expect(request.rows).toHaveLength(1)
+
+    const response = createStaffMemberBatchResponseSchema.parse({
+      schemaVersion: 1,
+      counts: { total: 1, created: 1 },
+      requestId: 'teacher-batch-request',
+    })
+    expect(response).not.toHaveProperty('rows')
+    expect(JSON.stringify(response)).not.toContain('password')
   })
 })

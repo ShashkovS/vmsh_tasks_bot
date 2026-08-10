@@ -541,6 +541,62 @@ test('Deploy-first: Admin creates a Teacher, grants a course and Teacher logs in
   expect((await browserApi(page, '/staff/api/v1/dashboard')).status).toBe(200)
 })
 
+test('Deploy-first: Admin imports a Teacher batch with shared course access', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite writes')
+
+  const suffix = Date.now().toString(36)
+  const firstUsername = `pilot-batch-one-${suffix}`
+  const secondUsername = `pilot-batch-two-${suffix}`
+  const password = `pilot-batch-password-${suffix}`
+
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users?tab=teachers')
+  await page.getByRole('button', { name: 'Пакетная загрузка' }).click()
+  await page
+    .getByLabel('Вставьте преподавателей из таблицы')
+    .fill(
+      `Пакетный\tПервый\t\t${firstUsername}\t${password}\n` +
+        `Пакетный\tВторой\tТестович\t${secondUsername}\t${password}`,
+    )
+  await page.getByRole('checkbox', { name: 'Математика 5–7 · весь курс' }).click()
+
+  await page.reload()
+  await page.getByRole('button', { name: 'Пакетная загрузка' }).click()
+  await expect(page.getByLabel('Вставьте преподавателей из таблицы')).toHaveValue(
+    new RegExp(firstUsername),
+  )
+  await expect(page.getByRole('checkbox', { name: 'Математика 5–7 · весь курс' })).toBeChecked()
+
+  await page.getByRole('button', { name: 'Проверить таблицу' }).click()
+  await expect(page.getByText(firstUsername, { exact: true })).toBeVisible()
+  await expect(page.getByText(secondUsername, { exact: true })).toBeVisible()
+
+  const created = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === '/staff/api/v1/staff-members/batch',
+  )
+  await page.getByRole('button', { name: 'Создать преподавателей · 2' }).click()
+  expect((await created).status()).toBe(201)
+  await expect(page.getByText('Создано: 2.')).toBeVisible()
+
+  await page.context().clearCookies()
+  await loginThroughUi(
+    page,
+    {
+      persona: 'teacher',
+      accountPublicId: 'deploy-first-batch-teacher',
+      audience: 'staff',
+      username: firstUsername,
+      credentialField: 'password',
+      credential: password,
+    },
+    '/staff/',
+  )
+  await expect(page.getByRole('heading', { name: 'Рабочая сводка', level: 1 })).toBeVisible()
+})
+
 test('Teacher sees only scoped students and cannot edit admin enrollment fields', async ({
   page,
 }) => {

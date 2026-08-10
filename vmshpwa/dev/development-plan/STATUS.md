@@ -4,6 +4,15 @@
 
 ## Deploy-first учебный цикл — 10 August 2026
 
+- Исправлен реальный импорт Family: `relationshipLabel = null` является
+  допустимым значением и больше не ломает `/staff/users`; Staff показывает
+  нейтральную подпись «родитель».
+- На вкладке преподавателей добавлена атомарная пакетная загрузка из пяти
+  TSV-столбцов с одним общим набором course/group scopes. Черновик хранится в
+  `localStorage`, пароли не попадают в preview/response, а конфликт одной строки
+  откатывает всю пачку. Реализация: [`teacher-batch-panel.tsx`](../../apps/staff/src/teacher-batch-panel.tsx),
+  [`staff_access_routes.py`](../../../apps/pwa_api/staff_access_routes.py) и
+  deploy-first E2E в [`authentication.spec.ts`](../../e2e/authentication.spec.ts).
 - Добавлена пошаговая ручная приёмка на пустой production-подобной базе:
   [`manual-pilot-cycle.md`](../../docs/manual-pilot-cycle.md). Она проводит
   администратора через импорт школьников, создание преподавателя, занятие 0,
@@ -15,7 +24,7 @@
   [`content-publication.spec.ts`](../../e2e/content-publication.spec.ts).
 - Проверки текущего прохода: auth **90 passed / 12 intentional shared-DB skips**
   во всех трёх браузерах; отдельные deploy-first Student TSV/enrollment и
-  Teacher create/scope/login **2/2** в Chromium; content **6/6**, submissions
+  Teacher create/scope/login/batch **3/3** в Chromium; content **6/6**, submissions
   **9/9**, review **3/3**, news/notifications **18/18** в Chromium, WebKit и
   Firefox.
 - Зафиксирована честная граница: текущие `/staff/broadcasts` — PWA-баннеры, а

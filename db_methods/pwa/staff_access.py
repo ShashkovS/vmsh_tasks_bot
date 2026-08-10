@@ -42,7 +42,7 @@ def insert_teacher(
     username_normalized: str,
     credential_hash: str,
     now: str,
-) -> None:
+) -> int:
     user_id = connection.execute(
         "INSERT INTO users (public_id, type, surname, name, middlename) "
         "VALUES (?, ?, ?, ?, ?) RETURNING id",
@@ -65,6 +65,7 @@ def insert_teacher(
             now,
         ),
     )
+    return int(user_id)
 
 
 def find_staff_member(

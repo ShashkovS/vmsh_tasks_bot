@@ -28,6 +28,8 @@ import {
   createAdminCourseRequestSchema,
   createAdminGroupLessonRequestSchema,
   createAdminSeasonRequestSchema,
+  createStaffMemberBatchRequestSchema,
+  createStaffMemberBatchResponseSchema,
   createStaffMemberRequestSchema,
   createStudentAccountRequestSchema,
   createFamilyAccountRequestSchema,
@@ -75,6 +77,8 @@ import {
   type CreateAdminCourseRequest,
   type CreateAdminGroupLessonRequest,
   type CreateAdminSeasonRequest,
+  type CreateStaffMemberBatchRequest,
+  type CreateStaffMemberBatchResponse,
   type CreateStaffMemberRequest,
   type CreateStudentAccountRequest,
   type CreateFamilyAccountRequest,
@@ -105,6 +109,9 @@ export interface AdminCourseClient {
   list(options?: { seasonId?: string; signal?: AbortSignal }): Promise<AdminCourseCatalogResponse>
   createSeason(input: CreateAdminSeasonRequest): Promise<AdminSeasonResponse>
   createStaffMember(input: CreateStaffMemberRequest): Promise<StaffAccessMemberResponse>
+  createStaffMemberBatch(
+    input: CreateStaffMemberBatchRequest,
+  ): Promise<CreateStaffMemberBatchResponse>
   createCourse(input: CreateAdminCourseRequest): Promise<AdminCourseResponse>
   updateCourse(
     courseId: string,
@@ -255,6 +262,14 @@ export function createAdminCourseClient(
         await request('/staff-members', {
           method: 'POST',
           body: JSON.stringify(createStaffMemberRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async createStaffMemberBatch(input) {
+      return createStaffMemberBatchResponseSchema.parse(
+        await request('/staff-members/batch', {
+          method: 'POST',
+          body: JSON.stringify(createStaffMemberBatchRequestSchema.parse(input)),
         }),
       )
     },
