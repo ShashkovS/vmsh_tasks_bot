@@ -1481,47 +1481,6 @@ sudo journalctl -u gunicorn.vmsh_tasks_bot --since "5 minutes ago"
 
 
 
-# Ставим отдельный PWA-сервис.
-# Все реальные файлы PWA держим внутри /web/vmsh_tasks_bot:
-# source unit, env/secrets, socket и runtime-каталоги. В /etc/systemd
-# остаётся только symlink, необходимый systemd.
-sudo install -d -o vmsh_tasks_bot -g nginx -m 0750 \
-  /web/vmsh_tasks_bot/vmshpwa/runtime
-sudo install -d -o vmsh_tasks_bot -g nginx -m 0750 \
-  /web/vmsh_tasks_bot/vmshpwa/runtime/media \
-  /web/vmsh_tasks_bot/vmshpwa/runtime/write
-
-if ! sudo test -s /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env; then
-    echo "Создайте /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env из vmshpwa/deploy/systemd/vmshpwa.env.example; это только параметры trusted proxy."
-    exit 1
-fi
-
-sudo sed \
-  -e 's#@@REPOSITORY_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot#g' \
-  -e 's#@@ENV_FILE@@#/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env#g' \
-  -e 's#@@SERVICE_USER@@#vmsh_tasks_bot#g' \
-  -e 's#@@SERVICE_GROUP@@#nginx#g' \
-  -e 's#@@VENV_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot/.venv#g' \
-  -e 's#@@BACKEND_UNIX_SOCKET@@#/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock#g' \
-  -e 's#@@DATABASE_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot/db#g' \
-  -e 's#@@MEDIA_ROOT@@#/web/vmsh_tasks_bot/vmshpwa/runtime/media#g' \
-  -e 's#@@RUNTIME_WRITE_DIR@@#/web/vmsh_tasks_bot/vmshpwa/runtime/write#g' \
-  /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/deploy/systemd/vmshpwa.service.template \
-  | sudo tee /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service >/dev/null
-
-sudo chown vmsh_tasks_bot:nginx /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
-sudo chmod 0640 /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
-sudo ln -sfn /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service /etc/systemd/system/vmshpwa.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now vmshpwa.service
-sudo systemctl status vmshpwa.service --no-pager -l
-
-
-
-
-
-
-
 
 
 /web/vmsh_tasks_bot/vmsh_tasks_bot/.venv/bin

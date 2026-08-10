@@ -189,6 +189,17 @@ export DEBIAN_FRONTEND=noninteractive
 
 log "Удаление прежних источников Grafana, если они остались от прошлых попыток"
 
+# APT шумит даже об игнорируемых файлах с нестандартным расширением внутри
+# sources.list.d. Сохраняем предыдущие резервные копии вне этого каталога.
+install -d -o root -g root -m 0700 /root/vmsh-monitoring-backups
+for stale_backup in \
+    /etc/apt/sources.list.d/grafana.list.before-vmsh-monitoring \
+    /etc/apt/sources.list.d/grafana.sources.before-vmsh-monitoring; do
+    if [[ -f "${stale_backup}" ]]; then
+        mv -f "${stale_backup}" /root/vmsh-monitoring-backups/
+    fi
+done
+
 # apt modernize-sources может превратить grafana.list в grafana.sources.
 # Убираем оба варианта, чтобы ниже создать ровно один источник и не получать
 # дублированные Target Packages / Translations / DEP-11 / CNF.
@@ -1813,19 +1824,25 @@ wait_for_grafana || die "Grafana не отвечает на 127.0.0.1:3001."
 systemctl stop grafana-server.service
 
 if [[ -x /usr/share/grafana/bin/grafana ]]; then
-    runuser -u grafana -- \
-        /usr/share/grafana/bin/grafana cli \
-        --homepath /usr/share/grafana \
-        --config /etc/grafana/grafana.ini \
-        --configOverrides cfg:default.paths.data=/var/lib/grafana \
-        admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}"
+    (
+        cd /usr/share/grafana
+        runuser -u grafana -- \
+            /usr/share/grafana/bin/grafana cli \
+            --homepath /usr/share/grafana \
+            --config /etc/grafana/grafana.ini \
+            --configOverrides cfg:default.paths.data=/var/lib/grafana \
+            admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}"
+    )
 elif command -v grafana-cli >/dev/null 2>&1; then
-    runuser -u grafana -- \
-        grafana-cli \
-        --homepath /usr/share/grafana \
-        --config /etc/grafana/grafana.ini \
-        --configOverrides cfg:default.paths.data=/var/lib/grafana \
-        admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}"
+    (
+        cd /usr/share/grafana
+        runuser -u grafana -- \
+            grafana-cli \
+            --homepath /usr/share/grafana \
+            --config /etc/grafana/grafana.ini \
+            --configOverrides cfg:default.paths.data=/var/lib/grafana \
+            admin reset-admin-password "${GRAFANA_ADMIN_PASSWORD}"
+    )
 else
     die "Не найден Grafana CLI для установки пароля администратора."
 fi
