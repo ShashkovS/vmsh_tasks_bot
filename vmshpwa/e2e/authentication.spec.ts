@@ -423,6 +423,124 @@ test('Admin creates a small Student account batch and keeps selection across rel
   await expect(page.getByText('Создано: 2. Ошибок: 0.')).toBeVisible()
 })
 
+test('Deploy-first: Admin imports a Student TSV, enrolls the account and Student logs in', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite writes')
+
+  const suffix = Date.now().toString(36)
+  const username = `pilot-student-${suffix}`
+  const telegramToken = `pilot-telegram-token-${suffix}`
+
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users?tab=imports')
+  const studentSource = page.getByLabel('Вставьте строки из таблицы').first()
+  await studentSource.fill(`Приёмочный\tШкольник\t\t2012-03-04\t7\t${username}\t${telegramToken}`)
+  const studentPreview = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/imports/student-accounts/preview'),
+  )
+  await page.getByRole('button', { name: 'Проверить таблицу' }).first().click()
+  expect((await studentPreview).status()).toBe(200)
+  await expect(page.getByText(username, { exact: true })).toBeVisible()
+
+  const studentApply = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/imports/student-accounts/apply'),
+  )
+  await page.getByRole('button', { name: 'Создать готовые · 1' }).click()
+  expect((await studentApply).status()).toBe(201)
+  await expect(page.getByText('Создано: 1. Пропущено: 0.')).toBeVisible()
+
+  await page.getByLabel('Вставьте строки зачисления').fill(`${username}\tmath-5-7\tн,п`)
+  const enrollmentPreview = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/imports/course-enrollments/preview'),
+  )
+  await page.getByRole('button', { name: 'Проверить зачисление' }).click()
+  expect((await enrollmentPreview).status()).toBe(200)
+  await expect(page.getByText(`${username} · math-5-7`, { exact: true })).toBeVisible()
+
+  const enrollmentApply = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname.endsWith('/imports/course-enrollments/apply'),
+  )
+  await page.getByRole('button', { name: 'Зачислить готовых · 1' }).click()
+  expect((await enrollmentApply).status()).toBe(201)
+  await expect(page.getByText('Зачислено: 1. Пропущено: 0.')).toBeVisible()
+
+  await page.context().clearCookies()
+  await loginThroughUi(
+    page,
+    {
+      persona: 'student',
+      accountPublicId: 'deploy-first-imported-student',
+      audience: 'student',
+      username,
+      credentialField: 'telegramToken',
+      credential: telegramToken,
+    },
+    '/student/profile',
+  )
+  await expect(page.getByRole('heading', { name: 'Школьник Приёмочный' })).toBeVisible()
+  await expect(page.getByLabel('Активная группа')).toHaveValue('group-fixture-beginner')
+})
+
+test('Deploy-first: Admin creates a Teacher, grants a course and Teacher logs in', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'One browser proves the shared SQLite writes')
+
+  const suffix = Date.now().toString(36)
+  const username = `pilot-teacher-${suffix}`
+  const password = `pilot-password-${suffix}`
+
+  await loginThroughUi(page, AUTH_PERSONAS.admin, '/staff/users?tab=teachers')
+  await page.getByRole('button', { name: 'Добавить преподавателя' }).click()
+  const creator = page.locator('form').filter({ hasText: 'Временный пароль' })
+  await creator.getByLabel('Фамилия').fill('Приёмочный')
+  await creator.getByLabel('Имя').fill('Преподаватель')
+  await creator.getByLabel('Логин').fill(username)
+  await creator.getByLabel('Временный пароль').fill(password)
+  const created = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === '/staff/api/v1/staff-members',
+  )
+  await creator.getByRole('button', { name: 'Создать преподавателя' }).click()
+  expect((await created).status()).toBe(201)
+
+  await page.getByRole('button', { name: /Приёмочный Преподаватель/ }).click()
+  const course = page.getByRole('group', { name: 'Доступ к курсу «Математика 5–7»' })
+  await course.getByRole('checkbox', { name: 'Весь курс' }).click()
+  const scopesSaved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PUT' &&
+      /\/staff-members\/[^/]+\/scopes$/.test(new URL(response.url()).pathname),
+  )
+  await page.getByRole('button', { name: 'Сохранить доступы' }).click()
+  expect((await scopesSaved).status()).toBe(200)
+
+  await page.context().clearCookies()
+  await loginThroughUi(
+    page,
+    {
+      persona: 'teacher',
+      accountPublicId: 'deploy-first-created-teacher',
+      audience: 'staff',
+      username,
+      credentialField: 'password',
+      credential: password,
+    },
+    '/staff/',
+  )
+  await expect(page.getByRole('heading', { name: 'Рабочая сводка', level: 1 })).toBeVisible()
+  expect((await browserApi(page, '/staff/api/v1/dashboard')).status).toBe(200)
+})
+
 test('Teacher sees only scoped students and cannot edit admin enrollment fields', async ({
   page,
 }) => {

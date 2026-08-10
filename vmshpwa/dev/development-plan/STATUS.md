@@ -13,8 +13,11 @@
   Staff UI, изменение расписания фаз и дедлайна, публикацию condition/solution,
   досрочное закрытие приёма и раскрытие решения Student. Сценарий находится в
   [`content-publication.spec.ts`](../../e2e/content-publication.spec.ts).
-- Проверки текущего прохода: content **6/6**, submissions **9/9**, review
-  **3/3**, news/notifications **18/18** в Chromium, WebKit и Firefox.
+- Проверки текущего прохода: auth **90 passed / 12 intentional shared-DB skips**
+  во всех трёх браузерах; отдельные deploy-first Student TSV/enrollment и
+  Teacher create/scope/login **2/2** в Chromium; content **6/6**, submissions
+  **9/9**, review **3/3**, news/notifications **18/18** в Chromium, WebKit и
+  Firefox.
 - Зафиксирована честная граница: текущие `/staff/broadcasts` — PWA-баннеры, а
   явный итог занятия адресован Family. Student получает verdict сразу после
   review. Общая финальная Student/Telegram-рассылка пока не реализована и не
