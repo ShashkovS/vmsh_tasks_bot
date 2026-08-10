@@ -20,12 +20,12 @@
 10. Для каждого реально запускаемого `_external_pipelines` записать owner, команду/расписание, upstream, side effects, rollback и состояние `legacy bridge | v1 cutover | later internalization`.
 11. Зафиксировать внешний converter contract: четыре настраиваемых executable (`pdf2svg`, `cwebp`, `pdflatex`, `magick` по умолчанию из service `PATH`), capability probe, безопасный argv-вызов, timeout и поведение при `None`/missing binary.
 12. Зафиксировать storage profile contract: filesystem/mock для hermetic unit/agent/E2E; opt-in Beget test integration берёт allowlisted `s3_*` поля из test secret file и сверяет pinned bucket identity, production target Hetzner читает отдельный production secret file, без побочной загрузки Telegram/Google credentials.
-13. Зафиксировать live Telegram integration profile: `@vmsh179devbot`, token только из test config, private test channel `vmsh179devbot channel` с UI ID `3913815635`; read-only Bot API bind получает canonical chat ID/admin capability и неизменно сохраняет identity в owner-only local SQLite, после чего write-smoke использует только её. Целевая course/group `telegram_bindings` остаётся migration Phase 2.
+13. Зафиксировать live Telegram integration profile: `@vmsh179devbot`, token только из test config, private test channel `vmsh179devbot channel` с owner-provided canonical test-only `chat.id = -1003913815635`; read-only Bot API bind перепроверяет этот ID/admin capability и неизменно сохраняет identity в owner-only local SQLite, после чего write-smoke использует только её. ID канала не является token и не разрешён как production destination. Целевая course/group `telegram_bindings` остаётся migration Phase 2.
 
 ## Подтверждённые локальные входы — 27 июля 2026
 
 - Локальный NATS уже управляется пользователем и слушает `127.0.0.1:4222`; Docker/NATS container для этого runtime не запускается. Agent tests сохраняют собственный topic prefix и не останавливают внешний процесс.
-- Authoritative read-only preflight source — `db/vmsh.db`. Любые schema/auth/migration эксперименты выполняются только над отдельной временной копией; исходный файл не изменяется и не коммитится.
+- Authoritative read-only preflight source — `db/vmsh.db`. Исходный файл никогда не изменяется. Любая строковая characterization, migration rehearsal или подготовка test derivatives начинается только с изолированной временной копии: до derivation все `users.name`/`users.surname` в ней заменяются Faker-значениями. Временная копия не коммитится, а credential/contact/content-bearing поля не переносятся в fixtures или reports.
 - `pdflatex` доступен через локальный human toolchain override. Абсолютный пользовательский путь не попадает в репозиторий: capability probe получает его из environment/config и обязан доказать реальную TikZ compile, а не только наличие executable.
 - Владелец явно разрешил opt-in side effects только в выделенных test resources: S3 create/read/public-GET/delete под disposable `integration/<run-id>/` и send/edit/delete synthetic content через `@vmsh179devbot` в private test channel. Production bucket/credentials/channels/recipients запрещены.
 
@@ -40,7 +40,7 @@
 - `pwa_tests/domain/test_legacy_answer_types.py`;
 - `pwa_tests/domain/test_legacy_review_queue.py`;
 - `pwa_tests/domain/test_legacy_results_and_reactions.py`;
-- `vmshpwa/fixtures/content/golden-manifest.yaml`;
+- `vmshpwa/fixtures/content/golden-manifest.json`;
 - `vmshpwa/packages/contracts/fixtures/runtime/*`;
 - `vmshpwa/e2e/runtime-isolation.spec.ts`;
 - `vmshpwa/docs/developer-runtime.md` или обновление существующего runtime doc.
@@ -119,7 +119,7 @@ Seed `baseline-v1` и первый release fixture:
 - empty/review-queued/review-locked/accepted/needs-work threads;
 - timestamps по обе стороны отдельного submission cutoff и более поздней solution publication.
 
-Для migration/performance characterization разрешена локальная защищённая копия production SQLite вместе с `-wal` и `-shm`. Она не коммитится и не используется обычным E2E seed. Content visual gate сравнивает PWA, Telegram и PDF для трёх листков одного уровня из `_vmsh_examples`.
+Для migration/performance characterization разрешена только локальная защищённая временная копия production SQLite вместе с согласованными `-wal`/`-shm`. Source `db/vmsh.db` не открывается на запись. До получения test derivatives имена и фамилии в копии детерминированно заменяются Faker-значениями; сама копия не коммитится и не используется обычным E2E seed. Content visual gate сравнивает PWA, Telegram и PDF для трёх листков одного уровня из `_vmsh_examples`.
 
 ## Автоматические проверки
 
@@ -192,14 +192,22 @@ Seed `baseline-v1` и первый release fixture:
       engines; focused runner tests — 8 PASS. Полные детали и предупреждения —
       в isolation report.
 - [ ] Golden corpus manifest: `<path>`; source hashes/encoding verified `<result>`.
-- [x] Legacy characterization report: `pwa_tests/reports/legacy-characterization.md`; 63 domain tests фиксируют 23 answer types, verdict/reaction/queue/synonym rules, `G`/`O` audit rows и nullable Telegram provenance без network/credentials.
+- [x] Legacy characterization report: `pwa_tests/reports/legacy-characterization.md`; 63 domain tests фиксируют 23 answer types, verdict/reaction/queue/synonym rules, повторные no-op `G`/`O` audit rows и nullable Telegram provenance без network/credentials. Target backfill сохраняет source log, но создаёт enrollment events только для реальных переходов; legacy discussion остаётся непрерывным thread без выдуманной связи message→review round.
 - [ ] DB concurrency/migration ADR и two-writer fault tests: `<path/result>`.
 - [x] Auth preflight aggregates и unresolved policy: `pwa_tests/reports/auth-preflight.{json,md}`; 1617 Student, 36 measured lower-bound blockers, 1581 provisionally eligible, final eligibility unknown.
 - [ ] Workload profile: `pwa_tests/reports/workload-profile.{json,md}`; 176713 observed events/37408 traces и minute proxies зафиксированы, но concurrent sessions/write latency/photo bytes/outbox/`SQLITE_BUSY` budget и approval всё ещё отсутствуют.
-- [x] External-process decommission register: `vmshpwa/dev/development-plan/21-external-process-register.md` + `pwa_tests/fixtures/external-process-register.v1.json`; 48 процессов, 36 artifacts, два runbook, шесть известных внешних dependencies; 7 focused tests PASS.
+- [x] External-process decommission register: `vmshpwa/dev/development-plan/21-external-process-register.md` + `pwa_tests/fixtures/external-process-register.v1.json`; 48 процессов, 42 artifacts, два runbook, шесть известных внешних dependencies; 7 focused tests PASS.
 - [ ] Converter config/probe contract и local capability report; server повторяет gate в этапе 11: `<paths/results>`.
 - [x] Storage profile/config/redaction: `helpers/{object_storage,pwa/storage_config}.py`, `vmshpwa/docs/object-storage.md`; 86 focused tests PASS, pinned Beget test-bucket live runs `codex-phase0-20260727-f6c821d9` и collision-safe replay `codex-phase0-20260727-collision-safe` прошли put/private-read/public-GET/delete-ack. Production target Hetzner остаётся Phase-11 readiness gate.
-- [ ] RecordingBot suite и opt-in `@vmsh179devbot`/test-channel capability report с message IDs, без token: hermetic suite и двухшаговый harness готовы (`helpers/pwa/telegram_test_{harness,binding}.py`, `vmshpwa/scripts/telegram_test_capability.py`), но live bind/smoke ждёт canonical signed `chat.id` из раздела «Где взять канонический ID тестового канала?» в `20-implementation-questions.md`. Rich/limits proof выполняется с renderer в Phase 2.
+- [x] RecordingBot suite и opt-in `@vmsh179devbot`/test-channel capability:
+      hermetic suite и двухшаговый harness находятся в
+      `helpers/pwa/telegram_test_{harness,binding}.py` и
+      `vmshpwa/scripts/telegram_test_capability.py`; 27 июля 2026 года live bind
+      повторно проверил test-only identity/capabilities, а synthetic lifecycle
+      успешно выполнил send/edit/delete и cleanup. Message ID остался только в
+      ignored owner-only runtime report, token нигде не записан. Обезличенный
+      proof: `pwa_tests/reports/phase0-live-integration-2026-07-27.md`.
+      Rich/limits proof выполняется с renderer в Phase 2.
 - [ ] Visual baseline environment and screenshots: `<paths>`.
 - [x] Docs updated для инкремента:
       `vmshpwa/docs/{runtime-isolation,testing-strategy}.md`,

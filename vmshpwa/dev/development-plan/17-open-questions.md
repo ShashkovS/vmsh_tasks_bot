@@ -12,6 +12,22 @@
 
 Блокирующих продуктовых вопросов перед этапом 0 нет. Дополнения по аудиториям закрыты: принято глобальное переименование с audit старого имени, явная административная рассылка подтверждённого плана Student через PWA и личный Telegram-диалог, одноразовый Excel dry-run/import, compact select/bulk move без DnD, age/class/auto-strength, fuzzy search, история комнат и восстанавливаемый local draft. Сквозное правило «значимую незавершённую работу нельзя терять» также перенесено в product, offline, phase и testing документы.
 
+## Решения implementation-вопросов 4–13 — 27 июля 2026 года
+
+Эти вопросы закрыты владельцем и подробно разнесены в
+[`20-implementation-questions.md`](20-implementation-questions.md): legacy DML
+`0038` не используется как источник web credentials; barcode содержит только
+numeric `users.id`; закрытые event logs остаются на месте, но не копируются в
+производные; reference helpers частично добавлены, а OCR/mail/template gaps
+отложены; production-size derivation разрешена только из временной копии
+`db/vmsh.db` после Faker-замены имён/фамилий; актуальные имена scripts
+подтверждены; backup имеет лишь Telegram-only restore evidence; test channel
+получил owner-provided ID `-1003913815635`; no-op `G`/`O` схлопываются; legacy
+written history остаётся непрерывным thread без выдуманных review-round links.
+
+Незакрытые restore/RPO/RTO и live Telegram smoke являются проверяемыми
+operational proof gaps, а не новыми продуктовыми вопросами.
+
 ## Решения по вопросам внешнего ревью — 27 июля 2026
 
 Все четыре развилки закрыты владельцем продукта. Они больше не блокируют готовность этапов.

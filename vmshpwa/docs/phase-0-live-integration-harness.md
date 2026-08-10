@@ -80,9 +80,16 @@ Live workflow намеренно двухшаговый. Сначала read-onl
 
 ```bash
 VMSH_RUN_TELEGRAM_LIVE_SMOKE=1 \
-VMSH_TELEGRAM_TEST_CHANNEL_ID='<canonical-negative-chat-id>' \
+VMSH_TELEGRAM_TEST_CHANNEL_ID='-1003913815635' \
   make pwa-telegram-bind-test-channel
 ```
+
+`-1003913815635` предоставлен владельцем как canonical destination отдельного
+private test channel и подтверждён ручной синтетической отправкой. Это
+test-only configuration value, не bot token и не production binding. Его можно
+коммитить в документацию/allowlist, но token по-прежнему читается только из
+ignored test config. Bind не доверяет одному утверждению владельца: он обязан
+получить тот же ID от Bot API и проверить channel identity/capabilities.
 
 Bind делает `getMe/getChat/getChatMember`, требует private channel без public
 username и сохраняет неизменяемую identity в owner-only
@@ -117,13 +124,13 @@ VMSH_RUN_TELEGRAM_LIVE_SMOKE=1 \
   make pwa-telegram-live-smoke
 ```
 
-В рамках Phase-0 implementation increment write-enabled команда **не
-запускалась**: UI fragment `3913815635` не преобразуется эвристически, прямой
-`getChat` его не разрешил, а у test bot включён webhook, поэтому `getUpdates`
-недоступен. Нужен canonical signed `chat.id` из webhook update или другого
-авторитетного Bot API результата. Первый живой результат заносится в копию
-[`pwa_tests/reports/phase0-live-integration-template.md`](../../pwa_tests/reports/phase0-live-integration-template.md),
-но runtime JSON с private canonical ID не коммитится.
+27 июля 2026 года обе защищённые стадии прошли успешно: read-only bind
+перепроверил canonical identity и права приватного test-channel, затем
+write-enabled smoke отправил, отредактировал и удалил одно фиксированное
+синтетическое сообщение. После cleanup сообщение не осталось. Обезличенный
+committed proof: [`pwa_tests/reports/phase0-live-integration-2026-07-27.md`](../../pwa_tests/reports/phase0-live-integration-2026-07-27.md);
+runtime JSON с подробными binding/message metadata остаётся ignored и
+owner-only.
 
 Phase 0 доказывает identity и простой send/edit/delete lifecycle. Rich Message,
 `tg-math`, tables, media и albums проверяются тем же trusted binding как часть

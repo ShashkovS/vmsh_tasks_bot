@@ -28,7 +28,7 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 - Offline `clientCreatedAt` до `submission_closes_at` считается своевременным даже при поздней доставке. Clock skew больше часа маркируется для диагностики.
 - Same idempotency key + same payload возвращает записанный response. Same key + different payload → `409 IDEMPOTENCY_PAYLOAD_MISMATCH`.
 - Checker version/hash сохраняется с attempt. Если checker ещё не настроен, attempt получает `pending_configuration`; admin запускает совместимую `problem_recheck` после настройки.
-- Trusted `cor_ans_checker` исполняется только в выбранном контролируемом path; UI не создаёт новый arbitrary execution surface для teacher.
+- Trusted `cor_ans_checker` исполняется только в выбранном контролируемом path; UI не создаёт новый arbitrary execution surface для teacher. Observable legacy contract закреплён в [`handlers/student_handlers.py`](../../../handlers/student_handlers.py): `is_py_func`, `GLOBALS_FOR_TEST_FUNCTION_CREATION` и `run_py_func_checker`. Это compatibility boundary доверенного admin-кода, не security sandbox.
 - Ответ содержит attempts used/remaining/unlimited, verdict и canonical display answer.
 
 Пути: `models/pwa/submissions.py`, `db_methods/pwa/submissions.py`, `helpers/pwa/idempotency.py`, `contracts/src/tasks.ts`, `student/features/submissions/test-answer-*`.
@@ -54,7 +54,7 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 - Local answer draft reload/account isolation/revision conflict/receipt cleanup.
 - Storybook states каждого answer family, help/errors/attempt counter/offline/late.
 - E2E: минимум один сценарий каждой input family, full matrix остаётся unit/contract; online + offline replay + duplicate retry.
-- Compatibility tests `cor_ans_checker`: current trusted-admin `exec` behavior, exception/output normalization and safe failure to `pending_configuration`; a new sandbox is not a v1 prerequisite.
+- Compatibility tests `cor_ans_checker` сначала характеризуют текущие `is_py_func`/`run_py_func_checker` на синтетическом positive/negative corpus: начальный `def`, exact restricted globals/builtins, trim входа, выбор созданного callable, cache по точной строке, ожидаемую пару `(bool, optional message)`, а также compile/call/result-shape failures. Реальные production checker strings не копируются в fixtures. Затем новый path доказывает согласованную нормализацию ошибок и safe failure to `pending_configuration`; создание новой sandbox не является prerequisite v1.
 
 ## Критерии приёмки
 
@@ -74,7 +74,7 @@ Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `ide
 - [ ] Metadata differential matrix: blank/custom validation, `SELECT_ONE` labels, multi-answer `cor_ans`, contextual validation/wrong/congrat messages and no secret answer/checker in Student/Family payload `<path/result>`.
 - [ ] Idempotency/crash/race tests: `<result>`.
 - [ ] Local draft reload/isolation/conflict/cleanup tests: `<result>`.
-- [ ] `cor_ans_checker` trust/compatibility decision and tests: `<path/result>`.
+- [ ] `cor_ans_checker` trust/compatibility decision, ссылка на legacy symbols и synthetic allow/deny/error/cache corpus: `<path/result>`.
 - [ ] Storybook stories/interactions/a11y/visual approval: `<ids/paths>`.
 - [ ] Playwright online/offline/retry 3 browsers: `<result>`.
 - [ ] Telegram historical test submissions: `<result>`.

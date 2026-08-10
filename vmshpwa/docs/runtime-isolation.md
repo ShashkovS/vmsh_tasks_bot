@@ -17,6 +17,28 @@ Human и agent runtime могут работать одновременно и �
 
 Legacy aiohttp остаётся на 8179. Новые команды его не занимают.
 
+Production PWA использует явный профиль `pwa-production` либо точный маркер
+`PROD=true`; оба пути устанавливают `Config.production_mode=True`, не загружая
+legacy Telegram/Google config. В таком режиме `VMSH_PWA_PROTOTYPE=true`
+останавливает startup, public origins обязаны быть HTTPS, а auth cookies всегда
+получают `Secure`. Профили `pwa-human`, `pwa-agent` и `pwa-e2e` остаются
+неproduction до явного `PROD=true`; случайное имя, начинающееся с `pwa-`, не
+может само снять production security policy после того, как маркер задан.
+
+Production trusted-proxy transport задаётся отдельно от public origins. Exact
+hop count обязателен в обоих вариантах:
+
+- loopback TCP: `VMSH_PWA_TRUSTED_PROXY_HOPS=1` и exact canonical
+  `VMSH_PWA_TRUSTED_PROXY_CIDRS=127.0.0.1/32,::1/128`;
+- Unix: `VMSH_PWA_TRUSTED_PROXY_HOPS=1` и JSON array exact canonical paths в
+  `VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON`; путь сверяется с transport
+  `AF_UNIX`/`sockname`, а не с client header.
+
+Наличие Unix/local transport не включает implicit trust. Для двух и более hops
+также обязательны explicit networks всех промежуточных proxies. Production
+шаблон и OS permission boundary описаны в
+[`deploy/nginx/README.md`](../deploy/nginx/README.md).
+
 ## Запуск
 
 - `make pwa-dev` — API, три приложения и Storybook для человека;
@@ -28,15 +50,30 @@ Legacy aiohttp остаётся на 8179. Новые команды его не
 - `make pwa-schema-check` — воспроизводит schema-only artifacts из migrations; `pwa-schema-live-check` безопасно сверяет только структуру `db/vmsh.db`, а update-цели требуют отдельного явного запуска;
 - `make pwa-format`, `pwa-lint`, `pwa-typecheck`, `pwa-test`, `pwa-storybook-test`, `pwa-build`;
 - `make pwa-e2e` — полный production E2E; `make pwa-e2e-runtime` — только
-  runtime/isolation; `make pwa-e2e-functional` — все non-visual сценарии;
+  runtime/isolation; `make pwa-e2e-auth` и `make pwa-e2e-realtime` — focused
+  production auth/realtime gates; `make pwa-e2e-functional` — все non-visual
+  сценарии;
 - `make pwa-visual`, `pwa-visual-update` — visual gate и отдельно разрешённое
   обновление снимков;
+- `VMSH_PWA_PUBLIC_HOST=<approved-fqdn>
+VMSH_PWA_NGINX_CONFIG=/etc/nginx/nginx.conf
+VMSH_PWA_NGINX_SITE_CONFIG=/etc/nginx/conf.d/vmshpwa.conf
+make pwa-nginx-check` — только настоящий `nginx -t`; отсутствие binary/config,
+  обязательного exact host или rendered site завершается `UNAVAILABLE` с
+  non-zero status и не считается skip;
 - `make telegram-history-test` — отдельная историческая регрессия Telegram.
 
 `VMSH_API_ORIGIN` настраивает только proxy локального Vite dev server и
 не встраивается в production bundle. Frontend всегда обращается к относительным
 `/{audience}/api/v1/*` и `/{audience}/ws`. Test credentials и browser context
 создаются независимо для каждого запуска.
+
+`db/vmsh.db` не является runtime DB human/agent/E2E и никогда не изменяется
+тестами. Schema/auth aggregate checks читают его только по своим fail-closed
+read-only правилам. Если production-size characterization требует строковые
+данные, сначала создаётся изолированная временная копия; до test derivation все
+`users.name`/`users.surname` в ней заменяются Faker-значениями. Копия не
+коммитится и не может заменить source DB.
 
 ## Runtime contract и browser state
 
@@ -122,8 +159,9 @@ protected UI, но не регистрацию worker и не recovery чере�
 
 ## Production-like E2E origin
 
-`make pwa-e2e`, `pwa-e2e-runtime`, `pwa-e2e-functional` и visual-команды идут
-через [`scripts/e2e_runner.py`](../scripts/e2e_runner.py). Один
+`make pwa-e2e`, `pwa-e2e-auth`, `pwa-e2e-realtime`, `pwa-e2e-runtime`,
+`pwa-e2e-functional` и visual-команды идут через
+[`scripts/e2e_runner.py`](../scripts/e2e_runner.py). Один
 cross-process `flock` охватывает build и Playwright; конкурентный запуск
 завершается до изменения общих `dist`, портов или seeded SQLite. Runner сначала
 собирает все три production bundles. Затем
@@ -172,12 +210,14 @@ start. Versioned cached bootstrap с expiry/revocation semantics относит�
 этапу 3. До его реализации E2E доказывает offline storage isolation и PWA
 lifecycle, но не заявляет cold offline reading как готовый сценарий.
 
-Phase-0 gateway моделирует один browser origin, но ещё не production trusted
-reverse proxy: upstream видит `Host` API-порта 8380, а браузер отправляет
-`Origin` gateway 5380. До auth/CSRF gate этапа 1 нужен явный public-origin и
-trusted-proxy contract, включая отказ от поддельных `Forwarded` и
-`X-Forwarded-*` headers. Это не блокирует текущую transport/storage проверку,
-но её нельзя использовать как доказательство session/CSRF policy.
+Phase-0 gateway моделирует один browser origin и сохраняет для HTTP/WebSocket
+upstream точный browser-facing `Host`; Vite dev/preview proxies также используют
+`changeOrigin: false`. Он по-прежнему не притворяется production reverse proxy
+и не создаёт forwarding chain. Отдельный Phase-1 контур теперь покрывает exact
+public origin, TCP/Unix trusted hop, spoofed/mixed/лишние `Forwarded`/
+`X-Forwarded-*` и WebSocket Origin реальным aiohttp transport test, а nginx
+template — structural test. Настоящий server `nginx -t` и burst/`429` smoke
+остаются deploy proof; транспортный Host proof Phase 0 их не заменяет.
 
 Gateway unit/E2E доказывают server-side fallback ordering, а browser scenario
 повторяет exact `/api`, malformed `/ws/...`, `/assets`, отсутствующий root

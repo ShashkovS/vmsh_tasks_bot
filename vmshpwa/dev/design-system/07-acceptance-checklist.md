@@ -43,7 +43,8 @@ Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](0
 - [ ] До 10 фото: worker progress, up/down reordering, preview, retry, offline queue.
 - [ ] Отдельная «квитанция» сдачи отсутствует; успешная фиксация показана обычным thread/sync status.
 - [ ] До первого review lock исходную entry можно изменить/удалить; досланное после lock входит в текущую проверку, а evidence становится immutable только при завершении verdict.
-- [ ] Immutable evidence и annotation overlay разделены; overlay поддерживает карандаш, ластик, поворот, zoom и 4–5 цветов и не редактируется после отправки.
+- [ ] Owner-confirmed teacher flow переносит одно/несколько сообщений или фото и показывает target history Student; implementation-default admin/post-review/preview сохраняет append-only provenance без переписывания records.
+- [ ] Immutable overlay обязательно поддерживает owner-confirmed карандаш, ластик, текст, стрелку, прямоугольник и поворот. Optional highlight/palette проверяются, только если exposed; zoom/pan остаются local-only.
 - [ ] Feedback/resubmission history не теряется.
 - [ ] Последний verdict, раскрываемая история, correction/recheck и частичные веса представлены корректно.
 - [ ] Четыре технических task types покрыты; гибрид школьнику выглядит oral и поддерживает written+Zoom window.
@@ -52,6 +53,7 @@ Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](0
 - [ ] Telegram-rich news, albums, math и два preview готовы.
 - [ ] Полное условие задачи показано текстом Telegram Rich Message с headings/lists/math, а не скриншотом.
 - [ ] Offline/reconnect/update/push states недвусмысленны.
+- [ ] Owner-confirmed cached reading/drafts и logout warning дополнены implementation-default `offline-unverified`, сроком session expiry и account cleanup общего устройства.
 - [ ] Каждый значимый Student/Staff composer/editor восстанавливает compatible local draft после reload/update, изолирует аккаунты и очищается только после receipt/confirm или explicit discard.
 - [ ] Dense tables, TSV, bulk actions, locks, diagnostics и missing assets готовы.
 - [ ] Metadata grid имеет task type и copy/paste-compatible dropdown answer type; condition/hint/solution публикуются и планируются независимо.
@@ -68,12 +70,14 @@ Phase 5/6 implementation trace находится в [`05-pages-and-flows.md`](0
 - [ ] Local classroom draft переживает reload/update, не теряется при conflict и удаляется только после receipt/confirm либо explicit discard.
 - [ ] Stale, reassigning, empty group, no-room incident, фактические 6/5/2 комнаты и historical immutability представлены отдельными stories.
 - [ ] Student/Family показывают `not_applicable|reassigning|assigned`; confirm тихо обновляет оба read model, а Student notification появляется только после explicit admin delivery. Family classroom push/Telegram отсутствует.
-- [ ] Classroom delivery preview показывает plan version, Student/changed/unreachable counts и PWA/Telegram selection; plan change инвалидирует preview и не вызывает auto-resend.
+- [ ] Classroom delivery preview показывает plan version, per-channel `selected/eligible/suppressed/queued/attempted/succeeded/failed`, changed/unreachable counts и PWA/Telegram selection; plan change инвалидирует preview и не вызывает auto-resend.
+- [ ] Owner-confirmed partial delivery/lists отделены от полного успеха; implementation-default explicit retry повторяет только failed channel–recipient pairs без дублирования успешных.
 - [ ] Progress не содержит рейтингов, цвет-only charts или маркера/словесного сравнения конкретного школьника с группой.
 - [ ] Course — явный крупный контекст; group остаётся мягким marker, интерфейс не превращён в набор цветных pills.
 - [ ] Student «Сейчас», Tasks, Progress и notifications поддерживают несколько независимых курсов.
 - [ ] Synonym merge/split preview не обещает физический перенос; timeline единая без branch filter и всегда показывает provenance.
 - [ ] Combined review показывает все посылки и concrete задачу, куда будет записан verdict.
+- [ ] Concrete target combined synonym review выбран по задаче последней посылки по server receive time, а не client clock; технический tie-break детерминирован и не виден пользователю.
 - [ ] Staff catalog/schedules/Telegram различают course defaults, group overrides и materialized lesson snapshot.
 - [ ] In-person event объединяет group lessons разных курсов/номеров и показывает полностью inherited plan.
 

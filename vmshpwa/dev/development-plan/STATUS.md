@@ -2,6 +2,23 @@
 
 Последнее обновление: 2026-07-28.
 
+## Phase 6 checkpoint: immediate Telegram review delivery — 3 August 2026
+
+- После успешного Staff review Student получает одно тихое личное сообщение с
+  provenance всех веток синонимичного кейса, verdict и комментарием; все
+  успешно собранные annotation composite отправляются PNG-фотографиями.
+- Запрос читает только committed review. Idempotent replay не дублирует
+  Telegram, а storage/render/API failure не откатывает SQLite review/result и
+  не мешает тексту либо другим готовым картинкам.
+- Реализация не создаёт очередь или общий delivery framework:
+  [`db_methods/pwa/review_telegram.py`](../../../db_methods/pwa/review_telegram.py)
+  содержит два коротких read-запроса, policy и русские формулировки остаются в
+  HTTP/Telegram boundary.
+- Proof:
+  [`phase6-review-telegram-delivery-2026-08-03.md`](../../../pwa_tests/reports/phase6-review-telegram-delivery-2026-08-03.md).
+- Verification: focused delivery/composite **7 pass**; full eight-worker PWA
+  Python suite **1634 pass / 6 skip** in **75.22 s**; Ruff and diff checks pass.
+
 ## Phase 1 checkpoint: account provisioning UI — 3 August 2026
 
 - Admin-only Student and Family TSV preview/apply is connected to the real

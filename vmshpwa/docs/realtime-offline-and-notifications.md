@@ -2,17 +2,84 @@
 
 ## Foreground realtime
 
-Каждое приложение открывает свой WebSocket. При первом соединении без cursor сервер посылает `connected`. Клиент шлёт `ping`, сервер отвечает `pong`; network backoff имеет jitter и не создаёт reconnect storm. Событие `invalidate` содержит список ресурсов, причину и необязательный audience — после него TanStack Query повторно читает авторитетное состояние.
+Каждое приложение открывает свой WebSocket. Handshake до upgrade проходит тот
+же exact target/proxy/Origin boundary, что browser API, и требует действующую
+access-cookie именно этого audience. После `prepare()` соединение связывается с
+server-authoritative `accountId` и 32-hex session ID; присланная клиентом
+identity никогда не используется для маршрутизации. При первом соединении без
+cursor сервер посылает `connected`. Клиент шлёт `ping`, сервер отвечает `pong`;
+network backoff имеет jitter и не создаёт reconnect storm. Событие `invalidate`
+содержит список ресурсов, причину и audience — после него TanStack Query
+повторно читает авторитетное состояние. Handshake, pong, protocol errors,
+invalidation и close сериализуются одним per-socket lock с ограничением
+конкурентности и времени операции.
 
 Cursor полезен только внутри уже живого соединения и не является durable event offset. Любое повторное подключение передаёт cursor и всегда получает `resync-required`, после чего клиент полностью читает версию/состояние из SQLite. Сравнивать cursor разных gunicorn workers и делать вывод «ничего не пропущено» запрещено.
 
-NATS переносит invalidation между процессами. Отсутствующий audience означает общий event для Student, Family и Staff; заданный `student`, `family` или `staff` ограничивает fan-out соответствующим набором соединений. Отправка сокетам внутри процесса выполняется конкурентно. При отсутствии NATS тестовый однопроцессный wrapper вызывает тот же callback. Текущий production baseline — два gunicorn worker, поэтому production требует NATS; увеличение числа workers не меняет протокол.
+Production-клиент находится в
+[`packages/app-shell/src/realtime.tsx`](../packages/app-shell/src/realtime.tsx)
+и подключён к Student, Family и Staff после `AuthenticationProvider`. URL
+строится только из validated runtime path и текущего origin; session token,
+account ID и другие credentials в URL, Query key либо Web Storage не попадают.
+Каждый входящий frame проходит JSON parse и Zod-validation до любого изменения
+Query state. Неверный audience, binary/malformed frame и неожиданный повторный
+handshake закрывают соединение как protocol failure.
 
-Audience scope не является user scope. До появления authenticated WebSocket principal запрещено публиковать через student/family-wide invalidation приватный submission ID или другой идентификатор, видимый только одному аккаунту. Owner-scoped fan-out добавляется вместе с реальными сессиями: соединение связывается с account/user ID, а backend проверяет право до отправки. Независимо от события API повторно проверяет authorization.
+Клиент хранит cursor только в памяти. На первом соединении он принимает только
+`connected`; на каждом повторном — только `resync-required` и вызывает полный
+refetch активных TanStack Query до перехода в `ready`. Invalidations
+коалесцируются перед refetch. Heartbeat, handshake и отсутствие pong имеют
+ограниченные таймауты; backoff экспоненциальный, ограниченный и с jitter.
+Offline/hidden не создают reconnect storm. Policy close `1008` и
+неоднозначный clean close `1000` выполняют authoritative `/auth/me` проверку:
+действующая сессия продолжает bounded reconnect, отозванная завершает локальный
+auth state, а transient network/5xx остаётся отдельным `unavailable` и повторяет
+authority check с bounded backoff. Последнее нужно для transport layers,
+которые не сохраняют точный close code; server integration tests по-прежнему
+отдельно проверяют `1008`.
+
+NATS переносит invalidation между процессами. В Phase 1 используются два
+строго изолированных subject внутри runtime prefix: `pwa_invalidate` и
+`pwa_session_control`. Отсутствующий audience в invalidation означает общий
+event для Student, Family и Staff; заданный `student`, `family` или `staff`
+ограничивает fan-out соответствующим набором соединений. Необязательный
+канонический `accountId` разрешён только вместе с audience и маршрутизирует
+событие всем вкладкам/сессиям одного аккаунта; это поле остаётся broker routing
+metadata и не попадает в browser payload или лог. Неизвестные поля, owner без
+audience и неканонические IDs отвергаются. При отсутствии NATS тестовый
+однопроцессный wrapper вызывает тот же callback. Текущий production baseline —
+два gunicorn worker, поэтому production требует NATS; увеличение числа workers
+не меняет протокол.
+
+Audience scope не является user scope. Phase-1 authenticated registry уже
+поддерживает owner-account scope; сервис, публикующий приватную invalidation,
+сначала проверяет право и передаёт только проверенный account public ID.
+Course/group/student mapping остаётся обязанностью предметного service layer
+следующих фаз. Независимо от события API повторно проверяет authorization.
+
+Logout, ручной revoke и logout-all сначала закрывают подходящие локальные
+сокеты, затем публикуют строгую cross-worker команду `auth.close`. Session
+target всегда 32 lowercase hex, account target использует канонический public
+ID. Refresh-only logout создаёт команду только если repository доказал текущий
+либо consumed refresh secret; malformed/foreign cookie сохраняет равномерный
+`204` и не становится DoS-oracle. Ошибка transient publication не отменяет
+локальный close: периодическая bounded-проверка снова читает versions,
+expiry/revoke/account/credential/principal из SQLite и fail-closed закрывает
+оставшиеся соединения.
 
 Назначение аудитории разделяет изменение состояния и доставку. После confirm/change owner-scoped `classroom.assignment.changed` тихо инвалидирует Student и каждый связанный Family account; оба читают authoritative `not_applicable | reassigning | assigned`, имя комнаты и `confirmedAt` из SQLite. Это событие не создаёт notification delivery.
 
 Только admin-only «Разослать аудитории» после preview создаёт immutable delivery batch и `classroom.assignment.announced` для Student. Выбранный PWA-канал создаёт in-app/push, Telegram-канал отправляет личное сообщение через существующего бота. Family не получает classroom push/Telegram. Изменение плана после batch отображается Staff как неразосланное, но автоматический resend запрещён; admin повторяет preview/send явно. Browser/WS payload никогда не содержит token или Telegram chat ID.
+
+Owner-confirmed report допускает частичный успех и раскрываемые списки. Статус
+batch содержит по каждому выбранному каналу `selected`, `eligible`,
+`suppressed`, `queued`, `attempted`, `succeeded`, `failed` и общие
+`deliveredAny`, `deliveredAll`, `partial`. Частичный успех допустим: получатель,
+которому сообщение пришло хотя бы по одному каналу, считается охваченным, но
+остаётся в раскрываемом списке partial delivery. Список использует только
+безопасную публичную identity и per-channel status. По implementation default
+действие «Повторить ошибки» создаёт новую попытку только failed
+channel-recipient pairs; успешные пары исходного batch не создаются повторно.
 
 ## Background
 
@@ -30,6 +97,30 @@ Student и Family имеют отдельные Dexie namespaces по audience �
 - локальные текстовые drafts;
 - подготовленные фотографии и очередь письменной сдачи;
 - отображение точного состояния: offline, local draft, queued, uploading, retrying, synced, conflict, failed.
+
+Owner-confirmed core разрешает после прежнего входа холодный offline-запуск без
+повторного credential и допускает потерю непустого outbox при подтверждённом
+logout после предупреждения. Implementation default делает кеш account-scoped,
+показывает `offline-unverified`, ограничивает доступ известным
+`sessionExpiresAt`, а queued mutations синхронизирует только после auth refresh.
+Подтверждённый logout, account switch или очистка удаляют cache, drafts и outbox,
+чтобы данные одного пользователя общего устройства не показывались другому.
+
+Phase-1 frontend уже реализует узкую безопасную часть этого контракта:
+подтверждённый в текущей вкладке principal переживает transient refetch failure
+как явно непроверенное offline-состояние, но только до абсолютного server
+`sessionExpiresAt`; expiry срабатывает также после browser resume и немедленно
+размонтирует private shell. Cold start с персистентным чтением/черновиками и
+account-scoped Dexie projection ещё не реализован и не считается готовым.
+
+Phase-1 session UI уже предоставляет `SessionOfflineWorkGuard`, но не выдаёт
+отсутствующий Dexie/outbox за готовый. Будущий adapter проверяет локальную
+очередь до current logout/logout-all: ошибка проверки блокирует выход,
+непустая очередь показывает отдельное предупреждение, а cleanup callback
+запускается строго после успешного server logout и продолжает выполняться при
+размонтировании private shell. До подключения durable adapter текущие
+Student/Family profiles не показывают вымышленный queued count; это явно
+отложенная часть offline-этапа.
 
 Для Student и Staff действует общий draft persistence contract. Небольшой сериализуемый текст и значимое UI-state записываются в `localStorage` после каждого осмысленного изменения; blobs, подготовленные фотографии и outbox — в Dexie. Ключ включает runtime, audience, account, entity kind/public ID и base version. При открытии экран предлагает восстановить совместимый draft; конфликт с новой server version не перезаписывается молча. Draft удаляется после server receipt/confirm или явного discard. Logout/account switch предупреждает и не раскрывает draft другому аккаунту. Session secrets в Web Storage не попадают.
 

@@ -43,7 +43,9 @@ Composer поддерживает текст и до 10 фотографий:
 - final review порядка страниц до отправки;
 - после успешной отправки — короткий обычный status в треде; отдельной «квитанции», reference number и доказательного экрана нет.
 
-До первого review lock ученик может изменить или удалить исходную отправку с подтверждением. После начала проверки он добавляет новый материал отдельной записью; reviewer обязан увидеть его до завершения verdict. В момент завершения проверки evidence фиксируется навсегда. Teacher annotation — отдельный неизменяемый после отправки overlay: карандаш, ластик, поворот, масштабирование, 4–5 основных цветов и page navigation. FeedbackThread показывает автора/время/канал и позволяет дослать ответ или пересдать без потери истории.
+До первого review lock ученик может изменить или удалить исходную отправку с подтверждением. После начала проверки он добавляет новый материал отдельной записью; reviewer обязан увидеть его до завершения verdict. В момент завершения проверки evidence фиксируется навсегда. Owner-confirmed annotation core — отдельный неизменяемый overlay с карандашом, ластиком, текстом, стрелкой, прямоугольником и поворотом. Optional highlight и компактная палитра — implementation detail, не product gate. Zoom/pan меняют только локальное состояние viewer и не входят в payload. FeedbackThread показывает автора/время/канал и позволяет дослать ответ или пересдать без потери истории.
+
+`SubmissionMaterialReassignment` — требуемый, но пока не реализованный Staff-компонент. Teacher и admin выбирают одно или несколько целых сообщений/фотографий, целевую задачу и подтверждают preview. Операция не переписывает и не копирует исходные immutable records: audited logical projection оставляет source/target provenance, а Student видит материал в timeline целевой задачи с ясной меткой переноса.
 
 Human feedback и AI feedback имеют разные author/provenance components, accessible labels и tokens. Даже в режиме AI-verdict школьник не должен принять AI за живого преподавателя; complaint/escalation ведёт к human review.
 
@@ -64,6 +66,8 @@ ConnectionBanner/SyncIndicator/UpdatePrompt/PushPermissionCard:
 
 DraftPersistence — не отдельная декоративная карточка, а общий поведенческий контракт Student/Staff composers и editors. Компонент показывает `сохранено локально`, восстановление после reload, конфликт base version, успешную серверную фиксацию и явный discard. Текст/UI-state сохраняются в `localStorage`, blobs/outbox — в Dexie; update prompt, route change и accidental reload не очищают draft.
 
+`OfflineUnverifiedSession` — требуемое, но пока не реализованное состояние Student/Family cold start. Owner-confirmed core разрешает cached reading/drafts без повторного пароля и logout с outbox после предупреждения. Implementation default явно помечает сессию непроверенной, не обещает online actions и после подтверждённого logout очищает account scope общего устройства.
+
 ## Staff data work
 
 - DenseDataTable: sticky headers, resize/visibility, sort/filter, row selection, keyboard traversal;
@@ -71,6 +75,7 @@ DraftPersistence — не отдельная декоративная карто
 - ReviewQueue: основной вход по `synonyms`, счётчик и возраст очереди; list mode и fast one-at-a-time mode; sort по задаче, ожиданию, группе и ученику; полное название и recheck already-reviewed action;
 - ReviewLock: текущая атомарная 30-минутная lease; занятая работа остаётся видна с именем проверяющего и disabled action; lost lock блокирует устаревший verdict и требует refetch;
 - ReviewWorkspace: компактная queue и единая хронологическая основная колонка `immutable evidence → существующее обсуждение → новый teacher reply + verdict`. Это не три независимые панели: комментарий преподавателя добавляется в конец реальной переписки. Verdict actions строятся из course registry, идут от лучшего к худшему, доступны маленькими подписанными кнопками и digits (`1` всегда `+`); shortcuts не работают в editable fields и имеют видимую legend;
+- ReviewMaterialReassignment: owner-confirmed teacher flow переносит одно или несколько сообщений/фотографий и показывает target history Student; scoped admin, source/target preview и post-review correction — implementation default поверх обязательной append-only projection. Компонент и stories пока не реализованы;
 - ReviewCommentGuard: для любого verdict кроме «Зачтено» без комментария спрашивает подтверждение, но не запрещает отправку; «Зачтено» без комментария сохраняет и листает дальше; abandon освобождает lock и переходит дальше без обязательной причины, а локальный unsent draft не теряется;
 - ReviewReaction: одна staff-only internal reaction на verdict, недоступная Student/Family API/view-model, с заменой/удалением в течение часа; compact controls имеют видимую Mod+Alt shortcut legend;
 - LaTeXUpload: file/batch progress, diagnostics, source preview, derived previews;
@@ -91,7 +96,7 @@ DraftPersistence — не отдельная декоративная карто
   Family видит одно событие «Итоги занятия», но не отдельные per-problem review
   pushes. Реализация: [`FamilyDigestPanel`](../../apps/staff/src/family-digest-panel.tsx)
   и [`FamilyNotificationSettingsView`](../../apps/family/src/family-notifications-page.tsx).
-- ClassroomDeliveryPreview: отдельный admin-only шаг после confirm, визуально не смешанный с planner save. Показывает plan version, Student recipient count, число изменившихся после прошлого batch, Telegram-unreachable rows и channel checkboxes `PWA`/`Telegram`. Primary action — «Разослать аудитории»; draft/stale/changed-after-preview блокируют отправку. Progress различает queued/sending/completed/partial failure/retry. После новой перестановки интерфейс показывает `не разослано`, но ничего не отправляет автоматически. Telegram означает личный bot-диалог Student, не group channel; token/chat ID не показываются.
+- ClassroomDeliveryPreview: отдельный admin-only шаг после confirm, визуально не смешанный с planner save. Owner-confirmed report показывает per-channel counts и раскрываемую partial delivery без token/chat ID. Implementation-default «Повторить ошибки» создаёт новую попытку только failed channel–recipient pairs и не дублирует success. Draft/stale/changed-after-preview блокируют отправку; новая перестановка не вызывает auto-send. Telegram означает личный bot-диалог Student. Расширенный report/retry ещё не реализован.
 
 Questions/SOS получают отдельный от verdict queue product surface. Это приватный диалог по задаче или общий диалог занятия: teacher/admin видят входящие, student — только свои; закрепления за одним teacher и отдельного close/reopen статуса нет. Adapter сохраняет совместимость с legacy negative `problem_id` и Telegram handlers до отдельной backend-миграции.
 
@@ -121,7 +126,7 @@ StudentProgress показывает личную динамику, спокой
 - `CourseContext` и `CourseGroupSwitcher` разделяют выбор курса и active/allowed groups. Смена group/mode относится только к enrollment выбранного курса.
 - `CourseNotificationSettings` показывает optional course override отдельно от global default.
 - `CourseGroupCatalog`, `IndependentScheduleMatrix`, `TelegramBindingsEditor` покрывают Staff CRUD/archive, course defaults, group overrides/materialized snapshot и inheritance course/group Telegram targets.
-- `SynonymMergeSplitPreview` показывает impact без физического переноса IDs. `SynonymMergedTimeline` даёт одну chronology без branch filter, но с provenance course/group/task. `SynonymReviewCase` объединяет все evidence и явно показывает concrete target verdict.
+- `SynonymMergeSplitPreview` показывает impact без физического переноса IDs. `SynonymMergedTimeline` даёт одну chronology без branch filter, но с provenance course/group/task. `SynonymReviewCase` объединяет все evidence и явно показывает concrete target verdict: задачу последней посылки по server receive time, никогда не по client clock. Для технически равных timestamps допустим любой детерминированный internal tie-breaker; он не является product-смыслом и не показывается пользователю.
 - `InPersonEventComposer` выбирает group lessons разных курсов/номеров и показывает полностью наследуемые rooms/assignments до перехода к planner.
 - Product prototypes используют `CourseView`/`GroupView`; `LevelView` допустим только как legacy adapter на data boundary.
 

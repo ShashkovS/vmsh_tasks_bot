@@ -36,9 +36,9 @@
 - `classroom_assignment_delivery_batches` + recipients — immutable confirmed-plan snapshot для explicit PWA/personal-Telegram send только Student.
 - `users.grade`, `users.birthday` и существующая `student_strength` используются как nullable read sources. Расчёт силы остаётся совместимым с `_external_pipelines/a53_calc_rating_new.py`, выполняется versioned analytics job раз в несколько часов, публикует только полный successful run и не получает ручного Staff editor. Этап 7 может читать latest projection; исторические lesson metrics и графики подключаются в этапе 9.
 - `group_banners` может создаваться здесь или в этапе 8, но oral-window card остаётся отдельным типом UI.
-- `user_changes_log` продолжает фиксировать online/in-person и group changes; audit сохраняет catalog/layout/plan mutations и одноразовый import.
+- `user_changes_log` остаётся неизменяемым legacy source для online/in-person и group history; новый `course_enrollment_events` записывает только реальные переходы. При backfill последовательные одинаковые `G`/`O` значения считаются no-op и схлопываются с отдельными source/no-op/created counts в отчёте. Audit сохраняет catalog/layout/plan mutations и одноразовый import.
 
-Первый production backfill — отдельная одноразовая команда этапа. Она читает текущий Excel-export с колонками `IDd`, `Уровень`, `Аудитория`, сначала формирует dry-run report, затем при явном подтверждении создаёт catalog, effective layout и initial plan. Dry-run показывает неизвестные `IDd`, неизвестные группы, пустые/дублирующиеся после NFKC+casefold комнаты, смешение групп и школьников без назначения. `_external_pipelines` не импортируется в runtime, а исходный файл не становится постоянным source of truth. После apply authoritative source назначений и персональной рассылки — confirmed Staff plan. Legacy print scripts остаются отдельным явно обозначенным процессом до реализации print-раздела второй версии.
+Первый production backfill — отдельная одноразовая команда этапа. Она читает текущий Excel-export с колонками `IDd`, `Уровень`, `Аудитория`, сначала формирует dry-run report, затем при явном подтверждении создаёт catalog, effective layout и initial plan. `IDd` здесь является legacy numeric `users.id`, а не Telegram token или новым browser ID. Dry-run показывает неизвестные `IDd`, неизвестные группы, пустые/дублирующиеся после NFKC+casefold комнаты, смешение групп и школьников без назначения. `_external_pipelines` не импортируется в runtime, а исходный файл не становится постоянным source of truth. После apply authoritative source назначений и персональной рассылки — confirmed Staff plan. Legacy print scripts остаются отдельным явно обозначенным процессом до реализации print-раздела второй версии.
 
 ## Domain rules
 
@@ -145,7 +145,7 @@ vmshpwa/e2e/classrooms.spec.ts
 - Прошлые confirmed layouts/plans не меняют membership/assignment после archive/recalculation текущего урока. Глобальный rename исправляет отображаемое имя и в истории, а прежнее имя остаётся в audit.
 - Join secret исключён из caches, Sentry, WS и list payload.
 - Mapping oral results к `results`, duplicate import и legacy Zoom history сохраняются.
-- One-time Excel dry-run/import проверяется на anonymized fixtures с `IDd`, `Уровень`, `Аудитория` и сравнительным report по `a11`.
+- One-time Excel dry-run/import проверяется на synthetic committed fixtures с `IDd`, `Уровень`, `Аудитория` и сравнительным report по `a11`. Production-size локальный rehearsal может исходить только из временной копии `db/vmsh.db`, в которой до derivation имена и фамилии заменены Faker-значениями; source DB никогда не меняется, а копия не коммитится.
 - Delivery batch проверяется как immutable snapshot: preview hash/version conflict, idempotency, partial channel failure/retry, отсутствие token/chat ID в browser/logs и запрет draft/stale send.
 - Narrow Telegram delivery характеризуется против recipient semantics `a02`, но новый runtime не импортирует скрипт. Print parity `a11`–`a14` остаётся proof отдельной второй версии.
 

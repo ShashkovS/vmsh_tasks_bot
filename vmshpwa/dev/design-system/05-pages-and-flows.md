@@ -18,6 +18,8 @@ Login — отдельный shell без раскрытия защищённо�
 
 Логин вида `transliterated-surname-birth-day`, текущий Telegram-токен как пароль, password reveal, rate-limit/invalid/blocked/deactivated states. Восстановление доступа — обращение на почту `vmsh@179.ru` (логин выдаётся на почту после регистрации на кружок); Telegram-токен остаётся паролем, но Telegram OAuth не обещаем. Онбординга в первой фазе нет. После входа — возврат к безопасному intended route.
 
+Owner-confirmed core разрешает после прежнего online-входа cold start без сети с cached content/drafts без повторного пароля и logout с outbox после предупреждения. Implementation default делает cache account-scoped, явно подписывает непроверенную сессию и после подтверждённого logout очищает данные общего устройства. Уже реализован срок жизни shell: prior-verified вкладка остаётся явно `offline-unverified` только до server `sessionExpiresAt` и закрывается на expiry/browser resume. Durable cold start, cached content/drafts и Family-эквивалент этой персистентной части ещё не реализованы.
+
 ### Сейчас / текущая неделя
 
 Каждый курс имеет отдельную карточку: group lesson, online/очный режим этого enrollment, текущая фаза, ближайшее событие, компактный progress и продолжение последней задачи. Для очного режима здесь же видна подтверждённая аудитория, состояние «Аудитория переназначается» или отсутствие применимости. Активная группа одна внутри курса, но allowed groups этого enrollment дают полный доступ к чтению, сдаче и проверке. Attention order может поднимать новый feedback и незавершённое действие выше натурального порядка задач. Отдельно: pending submission, новый feedback, group problem-review call с конференцией, hints available, solutions published, no current lesson, offline cached.
@@ -26,17 +28,20 @@ Login — отдельный shell без раскрытия защищённо�
 
 Листок целиком с anchors и фильтром, строго в порядке номеров; архив уроков; focused task. Условие не дробится на cards без необходимости. Task detail содержит version/status/deadline, test или written/oral action, hidden-until-available hint/solution и историю. `WRITTEN_BEFORE_ORALLY` выглядит устной задачей и одновременно даёт письменную отправку и данные подключения в разрешённое окно.
 
-Submission flows: все исторические test answer types с format/error/rate limit/pending-checker; written text/photos/up-down reordering/compress/review/offline queue/receipt; oral instructions/current availability и письменная сдача любой устной задачи. До первого review lock исходную written entry можно изменить/удалить; после lock новый материал добавляется в общий тред. Result/thread показывает зафиксированные после verdict pages, annotations, comments, последний градуированный verdict + раскрываемую историю, разрешённую AI provenance, реакцию ученика, пересдачу и changed-condition notice. Новый feedback остаётся отмеченным до трёх секунд видимости.
+Submission flows: все исторические test answer types с format/error/rate limit/pending-checker; written text/photos/up-down reordering/compress/review/offline queue/receipt; oral instructions/current availability и письменная сдача любой устной задачи. До первого review lock исходную written entry можно изменить/удалить; после lock новый материал добавляется в общий тред. Result/thread показывает зафиксированные после verdict pages, annotations, comments, последний градуированный verdict + раскрываемую историю, разрешённую AI provenance, реакцию ученика, пересдачу и changed-condition notice. Owner-confirmed teacher flow показывает перенесённые сообщения/фотографии в target timeline; scoped admin, preview и post-review correction — implementation default. Records не сливаются физически. Новый feedback остаётся отмеченным до трёх секунд видимости.
 
 ### Новости, прогресс, профиль
 
-News list/detail с Telegram-rich content и albums. Progress: собственная динамика, достижения, streak, accessible statistics. Profile: identity/group/mode/devices/sessions; notification categories и push permission; outbox storage details.
+News list/detail с Telegram-rich content и albums. Progress: собственная динамика, достижения, streak, accessible statistics. Profile: identity/group/mode/devices/sessions; notification categories и push permission; outbox storage details. Student profile использует реальный `AccountSessionManager`: current device, revoke другого устройства, current logout и logout-all, с fail-closed состояниями и подтверждением.
 
 ## Family PWA
 
 ### Login и child switcher
 
-Отдельный family account, recovery и session devices. Child switcher всегда показывает активного ребёнка и не смешивает cached data. Empty link state ведёт к безопасной процедуре привязки.
+Отдельный family account, recovery и те же реальные session devices через
+`AccountSessionManager`. Child switcher всегда показывает активного ребёнка и
+не смешивает cached data. Empty link state ведёт к безопасной процедуре
+привязки. Отдельный Staff profile route только ради session UI не создаётся.
 
 ### Сейчас и ребёнок
 
@@ -66,7 +71,7 @@ Teacher и admin работают в одном приложении. Navigation
 
 ### Written review
 
-Queue page с основным grouping по задаче/`synonyms`, list/fast modes, сортировками по задаче, ожиданию, группе и ученику, фильтрами и deep link. Detail имеет компактную очередь и одну основную хронологическую колонку: immutable evidence/annotation, затем весь student/teacher thread, затем composer нового teacher reply и registry-driven verdict. Типично до ответа уже есть 1–2 student messages, но длинная переписка не ломает layout. Состояния claim, 30-minute lease, lock lost, another reviewer with name, long session, abandon с сохранением local unsent draft, recheck, accepted-without-comment, non-accepted confirmation, next item и return-to-problem-picker. Keyboard shortcuts отображаются, `1` означает `+` и не перехватывает ввод текста. На телефоне основная зона сохраняет тот же порядок, очередь открывается отдельно; offline verdict запрещён.
+Queue page с основным grouping по задаче/`synonyms`, list/fast modes, сортировками по задаче, ожиданию, группе и ученику, фильтрами и deep link. Detail имеет компактную очередь и одну основную хронологическую колонку: immutable evidence/annotation, затем весь student/teacher thread, затем composer нового teacher reply и registry-driven verdict. Типично до ответа уже есть 1–2 student messages, но длинная переписка не ломает layout. Owner-confirmed teacher flow переносит одно или несколько выбранных сообщений/фотографий и показывает target timeline; implementation default добавляет scoped admin, source/target preview и post-review correction поверх append-only projection. В combined synonym case concrete target для verdict выбирается по задаче последней посылки по server receive time, не client time. Состояния claim, 30-minute lease, lock lost, another reviewer with name, long session, abandon с сохранением local unsent draft, recheck, accepted-without-comment, non-accepted confirmation, next item и return-to-problem-picker. Keyboard shortcuts отображаются, `1` означает `+` и не перехватывает ввод текста. На телефоне основная зона сохраняет тот же порядок, очередь открывается отдельно; offline verdict запрещён. Перенос материала и его Staff UI пока не реализованы.
 
 ### Questions и oral
 
@@ -96,7 +101,7 @@ News moderation; users/groups/roles; statistics with accessible tables; searchab
 2. «По группам»: effective inherited layout, явное materialize-on-edit, строки комнат с group select/unassigned, level-color marker + мягкая border tint, фактические counts комнат и `очно/распределено` по каждой группе, confirm с optimistic conflict.
 3. «Школьники»: compact flex-wrap room cards, отдельная reassigning/unassigned-секция, строки имя/возраст/класс/сила + compact room select, room count/average age/average grade/average strength, fuzzy search с подсветкой/jump, single и checkbox bulk move, classroom history, recalculate, stale state, blocking no-room/mismatch incident и confirm.
 
-После confirm появляется отдельный блок «Рассылка аудиторий». Он не отправляет ничего автоматически: admin открывает preview, проверяет Student/changed/unreachable counts, выбирает PWA и/или Telegram и нажимает «Разослать аудитории». Изменение плана после batch возвращает статус `есть неразосланные изменения`. Family получает только authoritative room state через API/WS. Общий broadcast composer и печать на этом экране не имитируются.
+После confirm появляется отдельный блок «Рассылка аудиторий». Он не отправляет ничего автоматически: admin открывает preview, проверяет owner-confirmed per-channel counts, выбирает PWA и/или Telegram и нажимает «Разослать аудитории». Partial delivery явно отделена от полного успеха, списки раскрываются по запросу. Implementation-default «Повторить ошибки» повторяет только failed channel–recipient pairs без дублей success. Изменение плана после batch возвращает `есть неразосланные изменения`; Family получает только authoritative room state. Расширенный report/retry flow ещё не реализован.
 
 Школьники внутри каждой комнаты всегда отсортированы по фамилии и имени. Выбор комнаты другой группы того же курса требует confirmation одновременной смены active group; комнаты другого курса не предлагаются для этой строки. Изменения не пишутся на сервер по одному: local draft переживает reload и очищается после explicit batch-save/confirm либо явного discard. Типичный fixture показывает 6/5/2 фактически используемых комнат, но не изображает эти значения как вместимость или целевое ограничение. Неиспользованные active rooms допустимы. Archive используемой комнаты немедленно переводит затронутых текущих школьников в reassigning; restore не возвращает назначения. Mobile Staff использует последовательный layout без потери трёх шагов.
 

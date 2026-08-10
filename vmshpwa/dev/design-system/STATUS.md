@@ -8,9 +8,9 @@
 | 2. Brand and tokens        | accepted          | 2026-07-23 | Токены + бренд приняты владельцем. Журнал решений ниже.                                |
 | 3. UI primitives           | accepted          | 2026-07-23 | Владелец направил к Phase 4 («всё нравится»). Набор примитивов готов.                  |
 | 4. Product components      | accepted          | 2026-07-25 | Владелец: «в остальном вроде ок», направил к фазам 5–7; partial validation исправлена. |
-| 4M. Multi-course extension | changes requested | —          | Добавлен ClassroomDeliveryPreview; component/story ещё нужно реализовать.              |
-| 5. Pages and flows         | changes requested | —          | `/staff/classrooms` требует отдельный confirm→preview→send delivery step.              |
-| 6. Storybook and testing   | changes requested | —          | Предыдущие 137 tests зелёные; новая delivery interaction matrix ещё не реализована.    |
+| 4M. Multi-course extension | changes requested | —          | После ответов 27 июля нужны reassignment/offline/delivery components и states.         |
+| 5. Pages and flows         | changes requested | —          | Нужны Staff material move, offline cold start и полный classroom delivery flow.        |
+| 6. Storybook and testing   | changes requested | —          | Новая reassignment/offline/delivery interaction matrix ещё не реализована.             |
 | 7. Final acceptance        | ready for review  | —          | Functional gates зелёные; multi-course Student visual diff ждёт решения владельца.     |
 
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
@@ -63,6 +63,80 @@ Known follow-ups:
   в changes requested.
 ```
 
+```text
+2026-07-27 — Phase 5/6 auth states — ready for review
+Implemented:
+  Real Student/Family/Staff login pages are connected to the server session
+  boundary. Interactive state selectors cover invalid credentials, rate limit,
+  unavailable account, network/error and pending; Student also covers blocked.
+  Existing login stories keep password/token reveal interaction.
+Evidence stories:
+  Pages/Student--login-state-matrix;
+  Pages/Family--login-state-matrix;
+  Pages/Staff--login-state-matrix;
+  corresponding Pages/*--login stories.
+Automated proof:
+  Storybook browser mode: 32 files / 143 PASS with addon-a11y error;
+  Vitest: 16 files / 139 PASS;
+  production browser auth: 60/60 PASS in Chromium, WebKit and Firefox,
+  including automatic refresh recovery and two-tab/single-refresh coordination;
+  ESLint/Stylelint, strict TypeScript and production builds: green.
+Known follow-ups:
+  This records functional and interaction coverage, not owner visual approval;
+  snapshots were not updated. Browser Teacher→admin API 403 waits for a real
+  capability-protected admin endpoint; no test-only production probe is added.
+```
+
+```text
+2026-07-27 — Phase 5/6 account sessions — ready for review
+Implemented:
+  Domain-neutral AccountSessionManager/SessionManagementView use the real
+  audience-relative session API in Student and Family profiles. Current device,
+  multiple devices, one-device revoke, current logout and logout-all are compact
+  and separately confirmed. Empty/corrupt/cross-audience payloads fail closed;
+  opaque session IDs are not shown as device labels. No artificial Staff route
+  was added.
+  SessionOfflineWorkGuard is the explicit future Dexie boundary: inspect error
+  blocks logout, pending work changes confirmation copy, and cleanup follows a
+  confirmed server logout even when the auth shell unmounts. The actual durable
+  outbox adapter remains deferred and no fake queued state is shown in profiles.
+Evidence stories:
+  Product/Account sessions--loading;
+  --current-device; --multiple-devices; --revoke-pending; --revoke-error;
+  --empty-fails-closed; --corrupt-fails-closed;
+  --logout-with-offline-queue-warning; --network-error.
+Automated proof:
+  focused Vitest: 18 PASS; focused Storybook interaction/addon-a11y: 9 PASS;
+  strict TypeScript, scoped ESLint and Prettier: PASS.
+Known follow-ups:
+  Real Dexie/outbox cleanup belongs to the offline increment; visual owner
+  approval and snapshots remain open. Staff gets an account surface only when
+  an appropriate shell location exists.
+```
+
+```text
+2026-07-27 — Phase 5/6 auth lifetime and cross-tab states — ready for review
+Implemented:
+  Audience-scoped Web Locks coordinate the single-use refresh cookie between
+  tabs. Every lock holder rechecks /auth/me before refreshing; the unsupported
+  browser fallback only rechecks and never treats localStorage as a mutex.
+  Server policy.sessionExpiresAt is an absolute frontend boundary: active and
+  prior-verified offline private shells unmount at expiry and after browser
+  resume. Cold-start durable offline content remains a separate follow-up.
+Automated proof:
+  focused auth/session Vitest: 31/31 PASS, including two independent clients,
+  no-Web-Locks fail-closed behavior and three fake-clock expiry scenarios;
+  production browser auth: 60/60 PASS in Chromium, WebKit and Firefox, with a
+  real two-page shared-cookie case asserting exactly one refresh request;
+  full frontend unit: 19 files / 162 PASS; Python PWA: 808 PASS / 1 intentional
+  skip; Storybook browser mode: 33 files / 152 PASS with addon-a11y error;
+  full lint/typecheck: PASS.
+Known follow-ups:
+  Product/Connectivity--offline-unverified-session and Student/Family durable
+  cold-start stories still require the account-scoped Dexie projection. No
+  snapshots were changed.
+```
+
 ## Журнал решений
 
 Добавлять запись в формате:
@@ -74,6 +148,33 @@ Chosen option and exact combination:
 Rejected traits:
 Evidence stories:
 Known follow-ups:
+```
+
+```text
+2026-07-27 — Phase 4M/5/6 — changes requested
+Decision owner: Сергей Шашков (владелец продукта)
+Chosen option and exact combination:
+  Owner-confirmed: teacher переносит выбранные сообщения/фото, Student видит
+  target history; annotation core — pencil/eraser/text/arrow/rectangle/rotation
+  и local-only zoom/pan; offline cache разрешён после прежнего входа; delivery
+  report допускает partial и раскрываемые списки. Implementation defaults:
+  scoped admin/post-review/preview при append-only records; optional
+  highlight/palette; offline-unverified до session expiry с cleanup общего
+  устройства; explicit retry только failed pairs без дублей success. Combined
+  synonym target выбирается по server receive time.
+Evidence stories required:
+  Product/Review--material-reassignment;
+  Product/Feedback--reassigned-student-timeline;
+  Product/Feedback--annotation-toolbox;
+  Product/Review--synonym-combined-case с server-order fixture;
+  Product/Connectivity--offline-unverified-session;
+  Pages/Student--offline-cold-start;
+  Pages/Family--offline-cold-start;
+  Product/Classrooms--delivery-partial-report;
+  Product/Classrooms--delivery-retry-failed.
+Known follow-ups:
+  Компоненты и stories перечислены в phase/docs как required/not implemented;
+  backend/migrations и visual snapshots не считаются выполненными.
 ```
 
 ```text
@@ -415,10 +516,10 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 
 **Инкремент 2 — чтение задачи (зелёный):**
 
-- `@vmsh/content`: `MathHtml` рендерит санитайзенный HTML + client-side KaTeX (`renderMathInElement`, `output: htmlAndMathml`, `trust: false`), формула не обрезается (`.katex-display` — локальный scroll), выделение формул отключено. Добавлено: широкие таблицы автоматически оборачиваются в `.vmsh-scroll-x` (локальный горизонтальный scroll, не страница), theorem-like callout (`.vmsh-note`), нумерованная формула с deep-link (`.vmsh-eq`/`.vmsh-eqno`, `:target` подсветка). Story `Product/Mathematical document` показывает вводный текст, подпункты, callout, inline+display math, широкую таблицу с числовыми `td`-формулами (заголовки — обычный текст ради screen reader) и code-like ответ; interaction-тест проверяет рендер KaTeX и обёртку таблицы;
+- `@vmsh/content`: production path теперь `SemanticMathDocument` поверх bounded Zod `WebContentDocument v1`; compatibility `MathHtml` использует fail-closed explicit allowlist и DOMPurify `DocumentFragment`, без raw-string `innerHTML`. Script/event/style/inline SVG/form/unsafe URL блокируют всю производную. KaTeX остаётся client-side (`htmlAndMathml`, `trust:false`) и теперь имеет explicit `maxSize`/`maxExpand` и локальный invalid-formula fallback. Формулы не получили copy/menu UX;
 - `@vmsh/product` `ProblemHeader` — фиксированная рамка задачи: номер, тип **иконкой** (accessible name + hover title, не слово), `LevelChip` словом, финальный `VerdictMark` с подписью, ссылка «История»; условие рендерит страница ниже — заголовок его не прячет;
 - `ConsciousDisclosure` + пресеты `HintDisclosure`/`SolutionDisclosure` — «условие всегда перед глазами»: раскрытие идёт **ниже** условия и аддитивно; первое открытие требует осознанного подтверждения (решение «нельзя развидеть»), затем переключается свободно; недоступное (до дедлайна) состояние — locked, а не мёртвая кнопка;
-- `ZoomableFigure` — рисунок (TikZ/SVG) с zoom in/out/reset кнопками (keyboard-operable), локальный scroll увеличенного, `role="img"` + alt как текстовая альтернатива, отдельная подпись;
+- Phase-2 `ZoomableAssetFigure` загружает SVG/raster только внешним asset URL, масштабирует одним transform и изображение, и бумажный холст, поддерживает buttons, keyboard `+/-/0`, pinch/pan, alt/caption и явный missing/error fallback. Старый product `ZoomableFigure` остаётся prototype adapter до page wiring;
 - `Product/Reading` stories (заголовок, рисунок, disclosure, «чтение задачи целиком») на фикстуре 21н «Расстановка ладей» + interaction-тесты: условие видно до любых раскрытий, подтверждение появляется раньше текста, заблокированное решение не раскрывается, zoom меняет масштаб;
 - гейты: Storybook **34/34** (axe error), lint (js+css), typecheck, build — зелёные.
 
@@ -445,6 +546,21 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 
 **Исторический gate Phase 4:** результаты 83/83 относились к корпусу до финальных classroom/draft требований. Недостающие local-draft, 15-room/200-student и bounded publication-scheduler stories добавлены в Phase 6; актуальный browser gate — **121/121** с addon-a11y в режиме error. Phase 4 принят владельцем, дальнейшие решения фиксируются как Phase 5/6 review, а не возвращают принятую фазу в `changes requested`.
 
+### Development Phase 2 · настоящий математический corpus — 27 июля 2026
+
+- Добавлена story
+  `Product/Mathematical document/Real corpus--Lessons 39–41 · PWA, Telegram and PDF`:
+  три настоящих листка начинающих выбираются внутри одного проверяемого
+  сценария, каждое представление связано с exact source/PDF SHA-256.
+- PWA использует production `SemanticMathDocument`, Telegram preview — тот же
+  compiler derivative без raw HTML sink, PDF — repository reference artifact.
+- Focused addon-vitest/a11y: **1/1 PASS**. Desktop и mobile-light 390 px
+  просмотрены вручную; найденные horizontal hash overflow и пустой верхний
+  Telegram paragraph исправлены. Baselines не обновлялись и owner approval не
+  подразумевается.
+- Proof и ограничения реального corpus:
+  [`phase2-real-content-corpus.md`](../../../pwa_tests/reports/phase2-real-content-corpus.md).
+
 ## Решения итогового продуктового опросника — 24 июля 2026
 
 - Первый рабочий корпус: занятия 39–41 сезона 2025–2026, все три уровня; сначала полный online flow. Print, быстрый очный ввод, общий Staff→Telegram channel publisher и AI-интеграция — следующая версия; персональная classroom delivery Student входит в v1.
@@ -460,7 +576,55 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 
 ## Оставшийся инженерный follow-up
 
+- 29 июля 2026 года принятый `ClassroomGroupLayout` подключён к настоящему
+  event-scoped API на Staff route: inherited → materialized draft → confirmed,
+  а выбранные группы переживают reload в account/event/version-scoped
+  `localStorage`. Production E2E — **3/3 PASS** для этого сценария в
+  Chromium/WebKit/Firefox; полный classroom target вместе с каталогом —
+  **6/6 PASS**. Visual snapshots не менялись, Student assignment planner и
+  owner visual gate остаются открыты. Proof:
+  [`phase7-classroom-layout.md`](../../../pwa_tests/reports/phase7-classroom-layout.md).
+
+- 29 июля 2026 года реальные Student/Staff маршруты приватных вопросов
+  подключены к принятому `SupportComposer`/`FeedbackThread`: Student открывает
+  диалог из конкретной задачи, Staff отвечает из scoped inbox, а текстовый
+  черновик переживает reload и очищается только после server receipt. Общий
+  gate: **420 frontend unit**, **1297 Python / 3 skip**, **199 Storybook
+  browser**, lint/typecheck/build PASS. Production-build support E2E — **3/3
+  PASS** в Chromium/WebKit/Firefox. Новых visual snapshots нет; attachments и
+  owner visual review остаются открыты.
+  Proof:
+  [`phase6-support-pages.md`](../../../pwa_tests/reports/phase6-support-pages.md).
+
+- 28 июля Student focused task подключил атомарную pre-review replacement к
+  принятому `SubmissionComposer`: отдельное подтверждение, явное состояние
+  «Готовится замена», восстановление текста/WebP после reload и сохранение
+  прежней версии до server receipt. Shared product API и visual snapshots не
+  менялись. Production E2E — **3/3 PASS**; owner visual gate replacement-state
+  остаётся открытым и зафиксирован в
+  [`phase5-written-replacement.md`](../../../pwa_tests/reports/phase5-written-replacement.md).
+- 27 июля 2026 года production
+  [`RealtimeProvider`](../../packages/app-shell/src/realtime.tsx) подключён во
+  все три приложения. Это context-only инфраструктурный инкремент без нового
+  визуального состояния: focused Vitest **17/17**, production browser E2E
+  **12/12** в Chromium/WebKit/Firefox; Storybook stories и visual snapshots не
+  менялись. Видимые connectivity/offline состояния по-прежнему принадлежат
+  принятым `Product/Connectivity` stories и будут подключаться к provider в
+  соответствующем вертикальном срезе.
+- Полный runtime E2E после этого инкремента: **65 PASS, 6 FAIL, 1 flaky**.
+  Realtime/theme/IndexedDB проверки зелёные; шесть failures — неизменённый
+  Student/Family PWA-update сценарий во всех трёх движках, flaky — WebKit
+  service-worker scope probe. Старые ожидания и visual snapshots не менялись.
 - После фиксации math corpus проверить subset/форматы KaTeX fonts и повторно измерить precache.
+
+## Phase 4 reopened checkpoint: Student account creation — 2 August 2026
+
+- Added accepted Staff interaction story `Pages/Staff--student-account-creation`.
+- The compact form explains that the existing Telegram token remains the password,
+  persists only the non-secret login draft, and exposes no credential field.
+- The form now pre-fills the accepted `transliterated-surname-DD` login only when
+  it is unique; collision and incomplete-identity states stay explicit and editable.
+- Staff browser-mode run: 22/22 page stories passed with the a11y gate enabled.
 
 ## Phase 4 reopened checkpoint: Student account batch creation — 2 August 2026
 
