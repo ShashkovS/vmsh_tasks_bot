@@ -24,6 +24,12 @@ from db_methods.pwa.course_catalog import (
     update_course,
     update_group,
 )
+from db_methods.pwa.admin_lessons import (
+    find_course_group,
+    find_course_lesson,
+    insert_course_lesson,
+    insert_group_lesson_with_window,
+)
 from db_methods.pwa.course_runtime_settings import (
     find_course_runtime_settings,
     insert_course_runtime_settings,
@@ -37,6 +43,7 @@ from models.pwa.course_runtime_settings import (
     InvalidCourseRuntimeSettings,
     normalize_course_runtime_settings,
 )
+from models.pwa.content import ContentInvariantError, resolve_local_wall_time
 
 
 admin_course_routes = web.RouteTableDef()
@@ -74,10 +81,29 @@ _SEASON_FIELDS = {
     "sessionExpiresOn",
     "status",
 }
+_GROUP_LESSON_FIELDS = {
+    "schemaVersion",
+    "courseId",
+    "groupId",
+    "lessonNumber",
+    "title",
+    "cycleAnchorDate",
+    "businessTimezone",
+    "opensLocalTime",
+    "submissionClosesLocalTime",
+    "hintScheduledLocalTime",
+    "solutionScheduledLocalTime",
+}
 
 
 def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def _utc(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    return value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
 def _factory(request: web.Request):
@@ -202,6 +228,23 @@ def _code(value: object, *, maximum: int) -> str | None:
     ):
         return None
     return normalized
+
+
+def _local_time(
+    value: object, *, timezone: str, optional: bool
+) -> datetime | None:
+    if optional and value is None:
+        return None
+    if not isinstance(value, str):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте расписание занятия"
+        )
+    try:
+        return resolve_local_wall_time(value, timezone=timezone)
+    except ContentInvariantError as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте расписание занятия"
+        ) from error
 
 
 def _is_duplicate(error: sqlite3.IntegrityError, table: str) -> bool:
@@ -413,6 +456,170 @@ def _catalog(connection, season_public_id: str | None):
             for course in courses
         ],
     }
+
+
+@admin_course_routes.post("/staff/api/v1/group-lessons")
+async def create_group_lesson(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
+    if request.query:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Этот запрос без параметров"
+        )
+    payload = await _read_json(request, _GROUP_LESSON_FIELDS)
+    course_public_id = payload["courseId"]
+    group_public_id = payload["groupId"]
+    lesson_number = payload["lessonNumber"]
+    title_value = payload["title"]
+    timezone = _text(payload["businessTimezone"], maximum=100)
+    try:
+        anchor = date.fromisoformat(str(payload["cycleAnchorDate"]))
+    except ValueError as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте дату занятия"
+        ) from error
+    if (
+        not isinstance(course_public_id, str)
+        or _PUBLIC_ID.fullmatch(course_public_id) is None
+        or not isinstance(group_public_id, str)
+        or _PUBLIC_ID.fullmatch(group_public_id) is None
+        or isinstance(lesson_number, bool)
+        or not isinstance(lesson_number, int)
+        or lesson_number < 1
+        or lesson_number > 10_000
+        or timezone is None
+        or (title_value is not None and _text(title_value, maximum=200) is None)
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте данные занятия"
+        )
+    title = None if title_value is None else _text(title_value, maximum=200)
+    opens_at = _local_time(payload["opensLocalTime"], timezone=timezone, optional=True)
+    closes_at = _local_time(
+        payload["submissionClosesLocalTime"], timezone=timezone, optional=False
+    )
+    hint_at = _local_time(
+        payload["hintScheduledLocalTime"], timezone=timezone, optional=True
+    )
+    solution_at = _local_time(
+        payload["solutionScheduledLocalTime"], timezone=timezone, optional=True
+    )
+    assert closes_at is not None
+    if opens_at is not None and opens_at >= closes_at:
+        raise PwaApiError(
+            status=422,
+            code="validation_error",
+            message="Начало приёма должно быть раньше дедлайна",
+        )
+
+    group_lesson_public_id = f"group-lesson.{uuid.uuid4().hex}"
+    lesson_window_public_id = f"lesson-window.{uuid.uuid4().hex}"
+    course_lesson_public_id = f"course-lesson.{uuid.uuid4().hex}"
+    now = _now()
+
+    def write(connection):
+        owner = find_course_group(
+            connection,
+            course_public_id=course_public_id,
+            group_public_id=group_public_id,
+        )
+        if owner is None:
+            return "not_found"
+        course_lesson = find_course_lesson(
+            connection,
+            course_id=int(owner["course_id"]),
+            lesson_number=lesson_number,
+        )
+        if course_lesson is None:
+            course_lesson_id = insert_course_lesson(
+                connection,
+                public_id=course_lesson_public_id,
+                course_id=int(owner["course_id"]),
+                lesson_number=lesson_number,
+                title=title,
+                actor_user_id=actor_user_id,
+                now=now,
+            )
+            resolved_course_lesson_public_id = course_lesson_public_id
+        else:
+            course_lesson_id = int(course_lesson["id"])
+            resolved_course_lesson_public_id = str(course_lesson["public_id"])
+        insert_group_lesson_with_window(
+            connection,
+            group_lesson_public_id=group_lesson_public_id,
+            lesson_window_public_id=lesson_window_public_id,
+            course_lesson_id=course_lesson_id,
+            course_id=int(owner["course_id"]),
+            group_id=str(owner["group_id"]),
+            cycle_anchor_date=anchor.isoformat(),
+            business_timezone=timezone,
+            opens_at=_utc(opens_at),
+            submission_closes_at=_utc(closes_at),
+            hint_scheduled_at=_utc(hint_at),
+            solution_scheduled_at=_utc(solution_at),
+            actor_user_id=actor_user_id,
+            now=now,
+        )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_id,
+            audience="staff",
+            action="group_lesson.created",
+            object_type="group_lesson",
+            object_id=group_lesson_public_id,
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(
+                {
+                    "courseId": course_public_id,
+                    "groupId": group_public_id,
+                    "lessonNumber": lesson_number,
+                    "submissionClosesAt": _utc(closes_at),
+                },
+                ensure_ascii=False,
+            ),
+            occurred_at=now,
+        )
+        return resolved_course_lesson_public_id
+
+    try:
+        course_lesson_id = await _factory(request).run_write_async(write)
+    except sqlite3.IntegrityError as error:
+        if not _is_duplicate(error, "group_lessons"):
+            raise
+        raise PwaApiError(
+            status=409,
+            code="group_lesson_duplicate",
+            message="Для этой группы занятие с таким номером уже создано",
+        ) from error
+    if course_lesson_id == "not_found":
+        raise PwaApiError(
+            status=404, code="group_not_found", message="Курс или группа не найдены"
+        )
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "groupLesson": {
+                "groupLessonId": group_lesson_public_id,
+                "courseLessonId": course_lesson_id,
+                "courseId": course_public_id,
+                "groupId": group_public_id,
+                "lessonNumber": lesson_number,
+                "title": title,
+                "cycleAnchorDate": anchor.isoformat(),
+                "businessTimezone": timezone,
+                "opensAt": _utc(opens_at),
+                "submissionClosesAt": _utc(closes_at),
+                "hintScheduledAt": _utc(hint_at),
+                "solutionScheduledAt": _utc(solution_at),
+            },
+            "requestId": request["request_id"],
+        },
+        status=201,
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @admin_course_routes.post("/staff/api/v1/seasons")

@@ -1653,3 +1653,23 @@
   `season.created`; Storybook и snapshots по решению владельца не менялись.
 - Проверки: Python API **5 PASS**, contracts/client **15 PASS**, Ruff,
   contracts/app-shell/staff typecheck и production Staff build — **PASS**.
+
+## Deploy-first checkpoint: участники и первое занятие — 10 августа 2026
+
+- Production-список `/staff/lessons` больше не показывает prototype-публикации:
+  он читает реальный Staff dashboard и честно показывает пустое состояние.
+- Admin может создать преподавателя с password-account, затем назначить ему
+  course/group scopes существующим редактором. Legacy `users` без PWA
+  `public_id` больше не попадают в новый каталог школьников; новые школьники и
+  зачисления создаются существующим TSV preview/apply-процессом.
+- Admin создаёт одно независимое `group_lesson` вместе с его собственным
+  `lesson_window`; одинаковый номер другого уровня переиспользует только общий
+  `course_lesson`. Черновик формы хранится в localStorage.
+- Detail занятия показывает реальное расписание фаз, отдельно меняет
+  opens/hint/solution и подтверждённый submission cutoff, а также позволяет
+  явно закрыть приём сейчас. Дедлайн не связан с публикацией решения.
+- Focused proof: course catalog/group lesson API **6 PASS**, staff access и
+  enrollment API **13 PASS**, contracts/content/app-shell unit **32 PASS**;
+  Ruff, ESLint, strict TypeScript и production Staff build — **PASS**.
+- Storybook и аудитории не менялись. Буквальный номер занятия `0` остаётся
+  открытым решением: действующая schema/контракты пока требуют номер от `1`.

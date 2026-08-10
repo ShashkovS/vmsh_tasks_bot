@@ -19,11 +19,13 @@ export {
   useContentPreviewQuery,
   usePublishedContentQuery,
   useStaffContentHistoryQuery,
+  useStaffLessonWindowQuery,
 } from './content-client'
 export type {
   ContentApiClient,
   ContentApiClientOptions,
   ContentRequestOptions,
+  StaffLessonWindowClient,
   PublicationSlotVersion,
   PublishedContentInput,
   PublishContentInput,

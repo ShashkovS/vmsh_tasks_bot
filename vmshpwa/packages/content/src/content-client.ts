@@ -29,6 +29,9 @@ import {
   staffContentRevisionAssetsSchema,
   staffContentRevisionSchema,
   staffContentUploadTargetsSchema,
+  staffLessonWindowSchema,
+  updateStaffLessonWindowScheduleSchema,
+  updateStaffSubmissionCutoffSchema,
   type Audience,
   type ContentEtag,
   type ContentAssetUploadKind,
@@ -54,6 +57,9 @@ import {
   type StaffContentRevisionAssets,
   type StaffContentRevision,
   type StaffContentUploadTargets,
+  type StaffLessonWindow,
+  type UpdateStaffLessonWindowSchedule,
+  type UpdateStaffSubmissionCutoff,
 } from '@vmsh/contracts'
 
 /**
@@ -182,6 +188,22 @@ export interface ContentApiClient {
     options?: ContentRequestOptions,
   ): Promise<StaffContentPreview>
   history(groupLessonId: string, options?: ContentRequestOptions): Promise<StaffContentHistory>
+  lessonWindow?(
+    groupLessonId: string,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<StaffLessonWindow>>
+  updateLessonWindowSchedule?(
+    groupLessonId: string,
+    etag: ContentEtag,
+    input: UpdateStaffLessonWindowSchedule,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<StaffLessonWindow>>
+  updateSubmissionCutoff?(
+    groupLessonId: string,
+    etag: ContentEtag,
+    input: UpdateStaffSubmissionCutoff,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<StaffLessonWindow>>
   publish(
     input: PublishContentInput,
     options?: ContentRequestOptions,
@@ -209,6 +231,10 @@ export interface ContentApiClient {
     options?: ContentRequestOptions,
   ): Promise<StudentProblemReveal>
 }
+
+export type StaffLessonWindowClient = Required<
+  Pick<ContentApiClient, 'lessonWindow' | 'updateLessonWindowSchedule' | 'updateSubmissionCutoff'>
+>
 
 export interface ContentApiClientOptions {
   fetchImplementation?: typeof globalThis.fetch
@@ -474,6 +500,58 @@ class BrowserContentApiClient implements ContentApiClient {
       `/publications?${query.toString()}`,
       { method: 'GET', ...options },
       staffContentHistorySchema,
+    )
+  }
+
+  async lessonWindow(
+    groupLessonId: string,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<StaffLessonWindow>> {
+    this.#requireStaff()
+    return this.#versionedJson(
+      `/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/lesson-window`,
+      { method: 'GET', ...options },
+      staffLessonWindowSchema,
+    )
+  }
+
+  async updateLessonWindowSchedule(
+    groupLessonId: string,
+    etag: ContentEtag,
+    input: UpdateStaffLessonWindowSchedule,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<StaffLessonWindow>> {
+    this.#requireStaff()
+    return this.#versionedJson(
+      `/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/lesson-window/schedule`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(updateStaffLessonWindowScheduleSchema.parse(input)),
+        ifMatch: contentEtagSchema.parse(etag),
+        contentType: 'application/json',
+        ...options,
+      },
+      staffLessonWindowSchema,
+    )
+  }
+
+  async updateSubmissionCutoff(
+    groupLessonId: string,
+    etag: ContentEtag,
+    input: UpdateStaffSubmissionCutoff,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<StaffLessonWindow>> {
+    this.#requireStaff()
+    return this.#versionedJson(
+      `/group-lessons/${encodeURIComponent(publicIdSchema.parse(groupLessonId))}/lesson-window/submission-cutoff`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(updateStaffSubmissionCutoffSchema.parse(input)),
+        ifMatch: contentEtagSchema.parse(etag),
+        contentType: 'application/json',
+        ...options,
+      },
+      staffLessonWindowSchema,
     )
   }
 
@@ -754,7 +832,7 @@ class BrowserContentApiClient implements ContentApiClient {
 }
 
 interface ContentTransportRequest extends ContentRequestOptions {
-  method: 'GET' | 'POST' | 'PUT'
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH'
   body?: BodyInit
   ifMatch?: ContentIfMatch
   contentType?: string
@@ -845,6 +923,18 @@ export function useStaffContentHistoryQuery(
   return useQuery({
     queryKey: contentQueryKeys.history(groupLessonId),
     queryFn: ({ signal }) => client.history(groupLessonId, { signal }),
+    enabled: options.enabled ?? true,
+  })
+}
+
+export function useStaffLessonWindowQuery(
+  client: StaffLessonWindowClient,
+  groupLessonId: string,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: contentQueryKeys.lessonWindow(groupLessonId),
+    queryFn: ({ signal }) => client.lessonWindow(groupLessonId, { signal }),
     enabled: options.enabled ?? true,
   })
 }

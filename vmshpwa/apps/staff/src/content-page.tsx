@@ -14,8 +14,10 @@ import {
   createContentApiClient,
   type ContentApiClient,
   type PublicationSlotVersion,
+  type StaffLessonWindowClient,
   type VersionedContentResource,
   useStaffContentHistoryQuery,
+  useStaffLessonWindowQuery,
 } from '@vmsh/content'
 import {
   ApiResponseError,
@@ -28,6 +30,7 @@ import {
   type ContentPublicationHistoryItem,
   type StaffContentMaterialHistory,
   type StaffContentRevision,
+  type StaffLessonWindow,
   type StaffPdfContentPreview,
   type WebContentDocument,
 } from '@vmsh/contracts'
@@ -103,6 +106,43 @@ interface MaterialWorkflowState {
 }
 
 type ConfirmationAction = 'publish' | 'schedule' | 'rollback' | 'hide'
+
+type LessonWindowDraft = {
+  opensLocalTime: string
+  submissionClosesLocalTime: string
+  hintScheduledLocalTime: string
+  solutionScheduledLocalTime: string
+}
+
+function localInput(value: string | null, timezone: string): string {
+  if (value === null) return ''
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: timezone,
+  }).formatToParts(new Date(value))
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? ''
+  return `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`
+}
+
+function nowLocal(timezone: string): string {
+  return localInput(new Date().toISOString(), timezone)
+}
+
+function readWindowDraft(key: string): LessonWindowDraft | null {
+  try {
+    const value: unknown = JSON.parse(globalThis.localStorage.getItem(key) ?? 'null')
+    if (value === null || typeof value !== 'object') return null
+    return value as LessonWindowDraft
+  } catch {
+    return null
+  }
+}
 
 function publicationView(
   resource:
@@ -1019,6 +1059,194 @@ function MaterialWorkflowCard({
   )
 }
 
+function LessonWindowPanel(props: {
+  client: ContentApiClient
+  draftNamespace: string
+  groupLessonId: string
+}) {
+  const { client } = props
+  if (
+    !client.lessonWindow ||
+    !client.updateLessonWindowSchedule ||
+    !client.updateSubmissionCutoff
+  ) {
+    return null
+  }
+  return <LessonWindowPanelEnabled {...props} client={client as StaffLessonWindowClient} />
+}
+
+function LessonWindowPanelEnabled({
+  client,
+  draftNamespace,
+  groupLessonId,
+}: {
+  client: StaffLessonWindowClient
+  draftNamespace: string
+  groupLessonId: string
+}) {
+  const query = useStaffLessonWindowQuery(client, groupLessonId)
+  if (query.isPending) return <PageStatePanel state="loading" />
+  if (query.error) return <PageStatePanel state="error" />
+  return (
+    <LessonWindowEditor
+      client={client}
+      draftKey={`${draftNamespace}:lesson-window:${groupLessonId}`}
+      groupLessonId={groupLessonId}
+      onRefetch={() => query.refetch()}
+      resource={query.data}
+    />
+  )
+}
+
+function LessonWindowEditor({
+  client,
+  draftKey,
+  groupLessonId,
+  onRefetch,
+  resource,
+}: {
+  client: StaffLessonWindowClient
+  draftKey: string
+  groupLessonId: string
+  onRefetch: () => Promise<unknown>
+  resource: VersionedContentResource<StaffLessonWindow>
+}) {
+  const window = resource.data
+  const [draft, setDraft] = useState<LessonWindowDraft>(
+    () =>
+      readWindowDraft(draftKey) ?? {
+        opensLocalTime: localInput(window.opensAt, window.businessTimezone),
+        submissionClosesLocalTime: localInput(window.submissionClosesAt, window.businessTimezone),
+        hintScheduledLocalTime: localInput(window.hintScheduledAt, window.businessTimezone),
+        solutionScheduledLocalTime: localInput(window.solutionScheduledAt, window.businessTimezone),
+      },
+  )
+  const [pending, setPending] = useState<'schedule' | 'cutoff' | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    globalThis.localStorage.setItem(draftKey, JSON.stringify(draft))
+  }, [draft, draftKey])
+
+  async function saveSchedule() {
+    setPending('schedule')
+    setError(null)
+    try {
+      await client.updateLessonWindowSchedule(groupLessonId, resource.etag, {
+        opensLocalTime: draft.opensLocalTime || null,
+        hintScheduledLocalTime: draft.hintScheduledLocalTime || null,
+        solutionScheduledLocalTime: draft.solutionScheduledLocalTime || null,
+        businessTimezone: window.businessTimezone,
+      })
+      await onRefetch()
+    } catch (caught) {
+      setError(caught instanceof ApiResponseError ? caught.message : 'Изменение не сохранено')
+    } finally {
+      setPending(null)
+    }
+  }
+
+  async function saveCutoff(value = draft.submissionClosesLocalTime) {
+    if (!value) return
+    setPending('cutoff')
+    setError(null)
+    try {
+      await client.updateSubmissionCutoff(groupLessonId, resource.etag, {
+        submissionClosesLocalTime: value,
+        businessTimezone: window.businessTimezone,
+        confirmChange: true,
+      })
+      setDraft((current) => ({ ...current, submissionClosesLocalTime: value }))
+      await onRefetch()
+    } catch (caught) {
+      setError(caught instanceof ApiResponseError ? caught.message : 'Дедлайн не изменён')
+    } finally {
+      setPending(null)
+    }
+  }
+
+  const timezone = window.businessTimezone
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Фазы занятия</CardTitle>
+        <p className="text-small text-muted-foreground">
+          Время указано для {timezone}. Дедлайн меняется отдельно от публикации решений.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-3 md:grid-cols-3">
+          <Label className="grid gap-1">
+            Открыть приём
+            <Input
+              onChange={(event) =>
+                setDraft((value) => ({ ...value, opensLocalTime: event.target.value }))
+              }
+              type="datetime-local"
+              value={draft.opensLocalTime}
+            />
+          </Label>
+          <Label className="grid gap-1">
+            Подсказки
+            <Input
+              onChange={(event) =>
+                setDraft((value) => ({ ...value, hintScheduledLocalTime: event.target.value }))
+              }
+              type="datetime-local"
+              value={draft.hintScheduledLocalTime}
+            />
+          </Label>
+          <Label className="grid gap-1">
+            Решения
+            <Input
+              onChange={(event) =>
+                setDraft((value) => ({ ...value, solutionScheduledLocalTime: event.target.value }))
+              }
+              type="datetime-local"
+              value={draft.solutionScheduledLocalTime}
+            />
+          </Label>
+        </div>
+        <Button disabled={pending !== null} onClick={() => void saveSchedule()} size="sm">
+          Сохранить расписание публикаций
+        </Button>
+        <div className="grid gap-3 border-t border-border pt-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+          <Label className="grid gap-1">
+            Дедлайн сдачи
+            <Input
+              onChange={(event) =>
+                setDraft((value) => ({
+                  ...value,
+                  submissionClosesLocalTime: event.target.value,
+                }))
+              }
+              required
+              type="datetime-local"
+              value={draft.submissionClosesLocalTime}
+            />
+          </Label>
+          <Button disabled={pending !== null} onClick={() => void saveCutoff()} size="sm">
+            Изменить дедлайн
+          </Button>
+          <Button
+            disabled={pending !== null}
+            onClick={() => void saveCutoff(nowLocal(timezone))}
+            size="sm"
+            variant="outline"
+          >
+            Закрыть приём сейчас
+          </Button>
+        </div>
+        {error ? (
+          <p className="text-small text-status-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  )
+}
+
 export function StaffContentWorkspace({
   client,
   draftNamespace,
@@ -1084,6 +1312,11 @@ export function StaffContentWorkspace({
         </AlertContent>
       </Alert>
       <div className="space-y-4">
+        <LessonWindowPanel
+          client={client}
+          draftNamespace={draftNamespace}
+          groupLessonId={groupLessonId}
+        />
         <BulkContentUpload
           client={client}
           groupLessonId={groupLessonId}

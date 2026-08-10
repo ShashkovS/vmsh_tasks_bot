@@ -50,6 +50,22 @@ def _group(*, code: str = "dp2", name: str = "Динамика · 2") -> dict[st
     }
 
 
+def _group_lesson() -> dict[str, object]:
+    return {
+        "schemaVersion": 1,
+        "courseId": "classroom-layout-course",
+        "groupId": "classroom-layout-group",
+        "lessonNumber": 1,
+        "title": "Пробное занятие",
+        "cycleAnchorDate": "2026-09-06",
+        "businessTimezone": "Europe/Moscow",
+        "opensLocalTime": "2026-09-06T16:00",
+        "submissionClosesLocalTime": "2026-09-12T20:50",
+        "hintScheduledLocalTime": "2026-09-12T12:00",
+        "solutionScheduledLocalTime": "2026-09-12T21:00",
+    }
+
+
 @pytest.mark.asyncio
 async def test_course_catalog_is_admin_only_and_reports_real_counts(classroom_http):
     teacher = await classroom_http.client.get(
@@ -140,6 +156,54 @@ async def test_admin_creates_first_class_season(classroom_http):
     )
     assert duplicate.status == 409
     assert (await duplicate.json())["error"]["code"] == "season_duplicate"
+
+
+@pytest.mark.asyncio
+async def test_admin_creates_group_lesson_with_independent_window(classroom_http):
+    teacher = await classroom_http.client.post(
+        "/staff/api/v1/group-lessons",
+        json=_group_lesson(),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+    created = await classroom_http.client.post(
+        "/staff/api/v1/group-lessons",
+        json=_group_lesson(),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert created.status == 201, await created.text()
+    lesson = (await created.json())["groupLesson"]
+    assert lesson["lessonNumber"] == 1
+    assert lesson["opensAt"] == "2026-09-06T13:00:00.000000Z"
+    assert lesson["submissionClosesAt"] == "2026-09-12T17:50:00.000000Z"
+
+    duplicate = await classroom_http.client.post(
+        "/staff/api/v1/group-lessons",
+        json=_group_lesson(),
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert duplicate.status == 409
+    assert (await duplicate.json())["error"]["code"] == "group_lesson_duplicate"
+
+    def stored(connection):
+        return connection.execute(
+            "SELECT lesson.status, window.source, window.timezone "
+            "FROM group_lessons AS lesson JOIN lesson_windows AS window "
+            "ON window.group_lesson_id = lesson.id "
+            "WHERE lesson.public_id = ?",
+            (lesson["groupLessonId"],),
+        ).fetchone()
+
+    row = classroom_http.factory.run_read(stored)
+    assert dict(row) == {
+        "status": "active",
+        "source": "native",
+        "timezone": "Europe/Moscow",
+    }
 
 
 @pytest.mark.asyncio

@@ -588,6 +588,41 @@ export const staffContentHistorySchema = z
   })
 export type StaffContentHistory = z.infer<typeof staffContentHistorySchema>
 
+export const staffLessonWindowSchema = z
+  .object({
+    lessonWindowId: publicIdSchema,
+    groupLessonId: publicIdSchema,
+    opensAt: z.iso.datetime({ offset: true }).nullable(),
+    submissionClosesAt: z.iso.datetime({ offset: true }),
+    hintScheduledAt: z.iso.datetime({ offset: true }).nullable(),
+    solutionScheduledAt: z.iso.datetime({ offset: true }).nullable(),
+    businessTimezone: businessTimezoneSchema,
+    source: z.enum(['native', 'legacy_schedule', 'manual_backfill']),
+    version: z.number().int().positive(),
+    requestId: z.string().trim().min(1).max(200),
+  })
+  .strict()
+export type StaffLessonWindow = z.infer<typeof staffLessonWindowSchema>
+
+export const updateStaffLessonWindowScheduleSchema = z
+  .object({
+    opensLocalTime: localPublicationTimeSchema.nullable(),
+    hintScheduledLocalTime: localPublicationTimeSchema.nullable(),
+    solutionScheduledLocalTime: localPublicationTimeSchema.nullable(),
+    businessTimezone: businessTimezoneSchema,
+  })
+  .strict()
+export type UpdateStaffLessonWindowSchedule = z.infer<typeof updateStaffLessonWindowScheduleSchema>
+
+export const updateStaffSubmissionCutoffSchema = z
+  .object({
+    submissionClosesLocalTime: localPublicationTimeSchema,
+    businessTimezone: businessTimezoneSchema,
+    confirmChange: z.literal(true),
+  })
+  .strict()
+export type UpdateStaffSubmissionCutoff = z.infer<typeof updateStaffSubmissionCutoffSchema>
+
 // `problemId` is deliberately the only legacy integer on this Staff-only
 // reconciliation boundary. Phase 3 replaces it with an opaque public ID before
 // task data reaches Student/Family; see Phase 2 MATCH-03 and METADATA-01.
@@ -1017,6 +1052,7 @@ export const contentQueryKeys = {
   metadataGrid: (groupLessonId: string, revisionId: string) =>
     ['content', 'metadata-grid', groupLessonId, revisionId] as const,
   history: (groupLessonId: string) => ['content', 'history', groupLessonId] as const,
+  lessonWindow: (groupLessonId: string) => ['content', 'lesson-window', groupLessonId] as const,
   uploadTargets: (groupLessonId: string) => ['content', 'upload-targets', groupLessonId] as const,
   preview: (revisionId: string, kind: 'web' | 'telegram' | 'pdf') =>
     ['content', 'preview', revisionId, kind] as const,

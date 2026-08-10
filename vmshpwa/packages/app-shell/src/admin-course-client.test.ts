@@ -86,6 +86,44 @@ describe('admin course client', () => {
     expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/seasons')
   })
 
+  it('creates one group lesson with its own publication window', async () => {
+    const groupLesson = {
+      groupLessonId: 'group-lesson.math.1.n',
+      courseLessonId: 'course-lesson.math.1',
+      courseId: course.courseId,
+      groupId: group.groupId,
+      lessonNumber: 1,
+      title: 'Пробное занятие',
+      cycleAnchorDate: '2026-09-06',
+      businessTimezone: 'Europe/Moscow',
+      opensAt: '2026-09-06T13:00:00Z',
+      submissionClosesAt: '2026-09-12T17:50:00Z',
+      hintScheduledAt: '2026-09-12T09:00:00Z',
+      solutionScheduledAt: '2026-09-12T18:00:00Z',
+    }
+    const fetchImplementation = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        Response.json({ schemaVersion: 1, groupLesson, requestId: 'lesson-create' }),
+      )
+
+    await createAdminCourseClient(runtime, { fetchImplementation }).createGroupLesson({
+      schemaVersion: 1,
+      courseId: course.courseId,
+      groupId: group.groupId,
+      lessonNumber: 1,
+      title: 'Пробное занятие',
+      cycleAnchorDate: '2026-09-06',
+      businessTimezone: 'Europe/Moscow',
+      opensLocalTime: '2026-09-06T16:00',
+      submissionClosesLocalTime: '2026-09-12T20:50',
+      hintScheduledLocalTime: '2026-09-12T12:00',
+      solutionScheduledLocalTime: '2026-09-12T21:00',
+    })
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/group-lessons')
+  })
+
   it('loads and validates the real Staff catalog', async () => {
     const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({

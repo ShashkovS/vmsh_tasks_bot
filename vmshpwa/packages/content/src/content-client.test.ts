@@ -115,6 +115,40 @@ function requestUrl(input: RequestInfo | URL): string {
 }
 
 describe('Content API client', () => {
+  it('loads and updates the independent lesson cutoff', async () => {
+    const requests: Array<{ url: string; init: RequestInit | undefined }> = []
+    const window = {
+      lessonWindowId: 'lesson-window-1',
+      groupLessonId: revision.groupLessonId,
+      opensAt: '2026-09-06T13:00:00Z',
+      submissionClosesAt: '2026-09-12T17:50:00Z',
+      hintScheduledAt: null,
+      solutionScheduledAt: '2026-09-12T18:00:00Z',
+      businessTimezone: 'Europe/Moscow',
+      source: 'native',
+      version: 1,
+      requestId: 'window-test',
+    } as const
+    const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push({ url: requestUrl(input), init })
+      return Promise.resolve(jsonResponse(window, { etag: '"lesson-window-1:v1"' }))
+    }) as typeof fetch
+    const client = createContentApiClient(runtime('staff'), { fetchImplementation })
+
+    const loaded = await client.lessonWindow!(revision.groupLessonId)
+    await client.updateSubmissionCutoff!(revision.groupLessonId, loaded.etag, {
+      submissionClosesLocalTime: '2026-09-12T20:50',
+      businessTimezone: 'Europe/Moscow',
+      confirmChange: true,
+    })
+
+    expect(requests[0]?.url).toBe(
+      `/staff/api/v1/group-lessons/${revision.groupLessonId}/lesson-window`,
+    )
+    expect(requests[1]?.url).toContain('/lesson-window/submission-cutoff')
+    expect(new Headers(requests[1]?.init?.headers).get('If-Match')).toBe('"lesson-window-1:v1"')
+  })
+
   it('sends multipart upload and preserves the strong revision ETag for compile', async () => {
     const requests: Array<{ url: string; init: RequestInit | undefined }> = []
     const fetchImplementation = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {

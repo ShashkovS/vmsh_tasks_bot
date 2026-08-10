@@ -20,11 +20,13 @@ import {
   adminGroupScheduleQueryKey,
   adminGroupScheduleResponseSchema,
   adminGroupResponseSchema,
+  adminGroupLessonResponseSchema,
   adminStudentEnrollmentDirectoryResponseSchema,
   adminStudentEnrollmentResponseSchema,
   adminStudentEnrollmentsQueryKey,
   apiErrorSchema,
   createAdminCourseRequestSchema,
+  createAdminGroupLessonRequestSchema,
   createAdminSeasonRequestSchema,
   createStaffMemberRequestSchema,
   createStudentAccountRequestSchema,
@@ -61,6 +63,7 @@ import {
   type AdminGroupScheduleOverrideResponse,
   type AdminGroupScheduleResponse,
   type AdminGroupResponse,
+  type AdminGroupLessonResponse,
   type AdminStudentEnrollmentDirectoryResponse,
   type AdminStudentEnrollmentResponse,
   type AccountProvisioningPreviewResponse,
@@ -70,6 +73,7 @@ import {
   type CourseEnrollmentProvisioningPreviewResponse,
   type CourseEnrollmentProvisioningReceipt,
   type CreateAdminCourseRequest,
+  type CreateAdminGroupLessonRequest,
   type CreateAdminSeasonRequest,
   type CreateStaffMemberRequest,
   type CreateStudentAccountRequest,
@@ -108,6 +112,7 @@ export interface AdminCourseClient {
     input: UpdateAdminCourseRequest,
   ): Promise<AdminCourseResponse>
   createGroup(courseId: string, input: SaveAdminGroupRequest): Promise<AdminGroupResponse>
+  createGroupLesson(input: CreateAdminGroupLessonRequest): Promise<AdminGroupLessonResponse>
   updateGroup(
     groupId: string,
     version: number,
@@ -277,6 +282,14 @@ export function createAdminCourseClient(
         await request(`/courses/${encodeURIComponent(courseId)}/groups`, {
           method: 'POST',
           body: JSON.stringify(saveAdminGroupRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async createGroupLesson(input) {
+      return adminGroupLessonResponseSchema.parse(
+        await request('/group-lessons', {
+          method: 'POST',
+          body: JSON.stringify(createAdminGroupLessonRequestSchema.parse(input)),
         }),
       )
     },

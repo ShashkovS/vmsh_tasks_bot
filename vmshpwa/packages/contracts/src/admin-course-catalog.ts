@@ -141,6 +141,49 @@ export const adminGroupResponseSchema = z
   .strict()
 export type AdminGroupResponse = z.infer<typeof adminGroupResponseSchema>
 
+export const createAdminGroupLessonRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    courseId: publicIdSchema,
+    groupId: publicIdSchema,
+    lessonNumber: z.number().int().positive().max(10_000),
+    title: z.string().trim().min(1).max(200).nullable(),
+    cycleAnchorDate: z.iso.date(),
+    businessTimezone: z.string().trim().min(1).max(100),
+    opensLocalTime: z.iso.datetime({ local: true, precision: -1 }).nullable(),
+    submissionClosesLocalTime: z.iso.datetime({ local: true, precision: -1 }),
+    hintScheduledLocalTime: z.iso.datetime({ local: true, precision: -1 }).nullable(),
+    solutionScheduledLocalTime: z.iso.datetime({ local: true, precision: -1 }).nullable(),
+  })
+  .strict()
+export type CreateAdminGroupLessonRequest = z.input<typeof createAdminGroupLessonRequestSchema>
+
+export const adminGroupLessonSchema = z
+  .object({
+    groupLessonId: publicIdSchema,
+    courseLessonId: publicIdSchema,
+    courseId: publicIdSchema,
+    groupId: publicIdSchema,
+    lessonNumber: z.number().int().positive().max(10_000),
+    title: z.string().trim().min(1).max(200).nullable(),
+    cycleAnchorDate: z.iso.date(),
+    businessTimezone: z.string().trim().min(1).max(100),
+    opensAt: z.iso.datetime({ offset: true }).nullable(),
+    submissionClosesAt: z.iso.datetime({ offset: true }),
+    hintScheduledAt: z.iso.datetime({ offset: true }).nullable(),
+    solutionScheduledAt: z.iso.datetime({ offset: true }).nullable(),
+  })
+  .strict()
+
+export const adminGroupLessonResponseSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    groupLesson: adminGroupLessonSchema,
+    requestId: z.string().trim().min(1),
+  })
+  .strict()
+export type AdminGroupLessonResponse = z.infer<typeof adminGroupLessonResponseSchema>
+
 export const adminCourseCatalogQueryKey = (principal: PrincipalQueryScope, seasonId?: string) =>
   [
     'admin-course-catalog',
