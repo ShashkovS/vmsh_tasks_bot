@@ -72,7 +72,8 @@ def list_students(
          AND active_group.group_id = enrollment.active_group_id
         LEFT JOIN student_strength AS strength
           ON strength.student_id = student.id
-        WHERE student.type = ?{scope_sql}
+        WHERE student.type = ?
+          AND student.public_id IS NOT NULL{scope_sql}
         ORDER BY student.surname, student.name, student.id,
                  course.sort_order, course.code, enrollment.id
         """,

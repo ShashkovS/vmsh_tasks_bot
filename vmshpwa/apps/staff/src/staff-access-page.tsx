@@ -15,6 +15,7 @@ import {
   createBrowserStorageNamespace,
   staffAccessQueryKey,
   type AdminCourse,
+  type CreateStaffMemberRequest,
   type ReplaceStaffScopesRequest,
   type StaffAccessMember,
   type StaffScopeSelection,
@@ -47,6 +48,105 @@ interface SaveStaffAccessCommand {
   member: StaffAccessMember
   input: ReplaceStaffScopesRequest
   draftKey: string
+}
+
+function TeacherCreator({
+  error,
+  saving,
+  onCancel,
+  onSave,
+}: {
+  error: Error | null
+  saving: boolean
+  onCancel: () => void
+  onSave: (input: CreateStaffMemberRequest) => void
+}) {
+  const [draft, setDraft] = useState<CreateStaffMemberRequest>({
+    schemaVersion: 1,
+    surname: '',
+    name: '',
+    middleName: null,
+    username: '',
+    password: '',
+  })
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    onSave(draft)
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Новый преподаватель</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form className="grid gap-3 md:grid-cols-2" onSubmit={submit}>
+          <Label className="grid gap-1">
+            Фамилия
+            <Input
+              disabled={saving}
+              onChange={(event) => setDraft({ ...draft, surname: event.target.value })}
+              required
+              value={draft.surname}
+            />
+          </Label>
+          <Label className="grid gap-1">
+            Имя
+            <Input
+              disabled={saving}
+              onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+              required
+              value={draft.name}
+            />
+          </Label>
+          <Label className="grid gap-1">
+            Отчество
+            <Input
+              disabled={saving}
+              onChange={(event) => setDraft({ ...draft, middleName: event.target.value || null })}
+              value={draft.middleName ?? ''}
+            />
+          </Label>
+          <Label className="grid gap-1">
+            Логин
+            <Input
+              autoComplete="off"
+              disabled={saving}
+              onChange={(event) => setDraft({ ...draft, username: event.target.value })}
+              required
+              value={draft.username}
+            />
+          </Label>
+          <Label className="grid gap-1 md:col-span-2">
+            Временный пароль
+            <Input
+              autoComplete="new-password"
+              disabled={saving}
+              minLength={8}
+              onChange={(event) => setDraft({ ...draft, password: event.target.value })}
+              required
+              type="password"
+              value={draft.password}
+            />
+          </Label>
+          {error ? (
+            <p className="text-small text-status-error md:col-span-2" role="alert">
+              {errorMessage(error)}
+            </p>
+          ) : null}
+          <div className="flex gap-2 md:col-span-2">
+            <Button disabled={saving} type="submit">
+              {saving ? 'Создаём…' : 'Создать преподавателя'}
+            </Button>
+            <Button disabled={saving} onClick={onCancel} type="button" variant="outline">
+              Отмена
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  )
 }
 
 function fullName(member: StaffAccessMember): string {
@@ -355,6 +455,15 @@ export function StaffAccessPage({
   const directory = useStaffAccessQuery(client, scope, isAdmin)
   const catalog = useAdminCourseCatalogQuery(client, scope, undefined, isAdmin)
   const queryClient = useQueryClient()
+  const [creatorOpen, setCreatorOpen] = useState(false)
+  const createMutation = useMutation({
+    mutationFn: (input: CreateStaffMemberRequest) => client.createStaffMember(input),
+    onSuccess: async () => {
+      setCreatorOpen(false)
+      await queryClient.invalidateQueries({ queryKey: staffAccessQueryKey(scope) })
+    },
+    onError: (error) => authentication.handleApiError(error),
+  })
   const mutation = useMutation({
     mutationFn: (command: SaveStaffAccessCommand) =>
       client.replaceStaffScopes(command.member.staffUserId, command.input),
@@ -402,6 +511,19 @@ export function StaffAccessPage({
     >
       <div className="space-y-4">
         <UsersSectionTabs onChange={onSectionChange} section="teachers" showImports showTeachers />
+        <div className="flex justify-end">
+          <Button onClick={() => setCreatorOpen(true)} size="sm">
+            Добавить преподавателя
+          </Button>
+        </div>
+        {creatorOpen ? (
+          <TeacherCreator
+            error={createMutation.error}
+            onCancel={() => setCreatorOpen(false)}
+            onSave={(input) => createMutation.mutate(input)}
+            saving={createMutation.isPending}
+          />
+        ) : null}
         <Alert>
           <AlertContent>
             <AlertTitle>Возможности преподавателя фиксированы ролью</AlertTitle>

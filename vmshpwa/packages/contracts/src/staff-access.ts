@@ -54,6 +54,18 @@ export const staffAccessMemberSchema = z
   .strict()
 export type StaffAccessMember = z.infer<typeof staffAccessMemberSchema>
 
+export const createStaffMemberRequestSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    surname: z.string().trim().min(1).max(100),
+    name: z.string().trim().min(1).max(100),
+    middleName: z.string().trim().min(1).max(100).nullable(),
+    username: z.string().trim().min(1).max(100),
+    password: z.string().min(8).max(256),
+  })
+  .strict()
+export type CreateStaffMemberRequest = z.infer<typeof createStaffMemberRequestSchema>
+
 export const staffAccessDirectoryResponseSchema = z
   .object({
     schemaVersion: z.literal(1),

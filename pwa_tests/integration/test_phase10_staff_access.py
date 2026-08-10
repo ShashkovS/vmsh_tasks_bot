@@ -16,6 +16,60 @@ from pwa_tests.integration.test_classroom_catalog_http_api import (
 pytest_plugins = ("pwa_tests.integration.test_classroom_catalog_http_api",)
 
 
+async def test_admin_creates_teacher_account(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    response = await classroom_http.client.post(
+        "/staff/api/v1/staff-members",
+        json={
+            "schemaVersion": 1,
+            "surname": "Новый",
+            "name": "Преподаватель",
+            "middleName": None,
+            "username": "teacher-new",
+            "password": "teacher-password-179",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+
+    assert response.status == 201, await response.text()
+    member = (await response.json())["member"]
+    assert member["role"] == "teacher"
+    assert member["account"]["username"] == "teacher-new"
+    assert member["scopes"] == []
+
+    duplicate = await classroom_http.client.post(
+        "/staff/api/v1/staff-members",
+        json={
+            "schemaVersion": 1,
+            "surname": "Другой",
+            "name": "Учитель",
+            "middleName": None,
+            "username": "teacher-new",
+            "password": "another-password-179",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+    assert duplicate.status == 409
+
+    teacher = await classroom_http.client.post(
+        "/staff/api/v1/staff-members",
+        json={
+            "schemaVersion": 1,
+            "surname": "Запрещено",
+            "name": "Учителю",
+            "middleName": None,
+            "username": "teacher-forbidden",
+            "password": "teacher-password-179",
+        },
+        headers=_headers(unsafe=True),
+        cookies=_cookies(classroom_http, "teacher"),
+    )
+    assert teacher.status == 403
+
+
 async def test_only_admin_lists_staff_access(
     classroom_http: ClassroomHttpFixture,
 ) -> None:

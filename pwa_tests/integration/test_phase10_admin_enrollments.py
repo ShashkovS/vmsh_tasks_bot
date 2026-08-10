@@ -120,6 +120,25 @@ async def test_admin_directory_contains_accounts_family_and_course_access(
     }
 
 
+async def test_directory_ignores_legacy_students_without_public_id(
+    classroom_http: ClassroomHttpFixture,
+) -> None:
+    classroom_http.factory.run_write(
+        lambda connection: connection.execute(
+            "INSERT INTO users (type, name, surname) VALUES (1, 'Старый', 'Пользователь')"
+        )
+    )
+
+    response = await classroom_http.client.get(
+        "/staff/api/v1/student-enrollments",
+        headers=_headers(),
+        cookies=_cookies(classroom_http, "admin"),
+    )
+
+    assert response.status == 200, await response.text()
+    assert all(student["studentId"] is not None for student in (await response.json())["students"])
+
+
 async def test_admin_directory_suggests_only_unique_canonical_student_logins(
     classroom_http: ClassroomHttpFixture,
 ) -> None:

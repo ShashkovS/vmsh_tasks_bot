@@ -26,6 +26,7 @@ import {
   apiErrorSchema,
   createAdminCourseRequestSchema,
   createAdminSeasonRequestSchema,
+  createStaffMemberRequestSchema,
   createStudentAccountRequestSchema,
   createFamilyAccountRequestSchema,
   familyAccountLinkResponseSchema,
@@ -70,6 +71,7 @@ import {
   type CourseEnrollmentProvisioningReceipt,
   type CreateAdminCourseRequest,
   type CreateAdminSeasonRequest,
+  type CreateStaffMemberRequest,
   type CreateStudentAccountRequest,
   type CreateFamilyAccountRequest,
   type FamilyAccountLinkResponse,
@@ -98,6 +100,7 @@ import {
 export interface AdminCourseClient {
   list(options?: { seasonId?: string; signal?: AbortSignal }): Promise<AdminCourseCatalogResponse>
   createSeason(input: CreateAdminSeasonRequest): Promise<AdminSeasonResponse>
+  createStaffMember(input: CreateStaffMemberRequest): Promise<StaffAccessMemberResponse>
   createCourse(input: CreateAdminCourseRequest): Promise<AdminCourseResponse>
   updateCourse(
     courseId: string,
@@ -239,6 +242,14 @@ export function createAdminCourseClient(
         await request('/seasons', {
           method: 'POST',
           body: JSON.stringify(createAdminSeasonRequestSchema.parse(input)),
+        }),
+      )
+    },
+    async createStaffMember(input) {
+      return staffAccessMemberResponseSchema.parse(
+        await request('/staff-members', {
+          method: 'POST',
+          body: JSON.stringify(createStaffMemberRequestSchema.parse(input)),
         }),
       )
     },

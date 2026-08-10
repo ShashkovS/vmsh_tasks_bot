@@ -2,20 +2,23 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import sqlite3
+import unicodedata
 import uuid
 from datetime import UTC, datetime
 
 from aiohttp import web
 
 from apps.pwa_api.errors import PwaApiError
-from apps.pwa_api.middleware import authenticated_session
+from apps.pwa_api.middleware import auth_service, authenticated_session
 from db_methods.pwa.audit import insert_audit_event
 from db_methods.pwa.staff_access import (
     find_scope_target,
     find_staff_member,
+    insert_teacher,
     insert_teacher_scope,
     list_staff_members,
     list_teacher_scopes,
@@ -23,13 +26,14 @@ from db_methods.pwa.staff_access import (
 )
 from helpers.consts import USER_TYPE
 from helpers.pwa.app_keys import PWA_DATABASE
-from models.pwa.auth import AuthAudience
+from models.pwa.auth import AuthAudience, normalize_login
 from models.pwa.staff_access import InvalidTeacherScopes, teacher_scope_changes
 
 
 staff_access_routes = web.RouteTableDef()
 _PUBLIC_ID = re.compile(r"[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?")
 _FIELDS = {"schemaVersion", "expectedScopes", "scopes"}
+_CREATE_FIELDS = {"schemaVersion", "surname", "name", "middleName", "username", "password"}
 
 
 def _now() -> str:
@@ -232,6 +236,112 @@ def _directory(connection) -> list[dict[str, object]]:
         _member_payload(member, scopes_by_user.get(int(member["id"]), []))
         for member in members
     ]
+
+
+def _required_text(value: object, *, maximum: int) -> str | None:
+    if not isinstance(value, str):
+        return None
+    result = " ".join(unicodedata.normalize("NFKC", value).strip().split())
+    return result if 1 <= len(result) <= maximum else None
+
+
+@staff_access_routes.post("/staff/api/v1/staff-members")
+async def create_staff_member(request: web.Request) -> web.Response:
+    actor_user_id = _admin_user_id(request)
+    actor_account_id = _actor_account_id(request)
+    if request.content_type != "application/json":
+        raise PwaApiError(
+            status=422, code="validation_error", message="Тело запроса должно быть JSON"
+        )
+    try:
+        payload = json.loads(await request.read())
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте данные преподавателя"
+        ) from error
+    if not isinstance(payload, dict) or set(payload) != _CREATE_FIELDS or payload.get("schemaVersion") != 1:
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте данные преподавателя"
+        )
+    surname = _required_text(payload["surname"], maximum=100)
+    name = _required_text(payload["name"], maximum=100)
+    username = _required_text(payload["username"], maximum=100)
+    middle_value = payload["middleName"]
+    middle_name = None if middle_value is None else _required_text(middle_value, maximum=100)
+    password = payload["password"]
+    normalized_username = normalize_login(username or "")
+    if (
+        surname is None
+        or name is None
+        or username is None
+        or (middle_value is not None and middle_name is None)
+        or not normalized_username
+        or not isinstance(password, str)
+        or not 8 <= len(password) <= 256
+        or not password.strip()
+    ):
+        raise PwaApiError(
+            status=422, code="validation_error", message="Проверьте данные преподавателя"
+        )
+
+    credential_hash = await asyncio.to_thread(
+        auth_service(request).credential_hasher.hash, password
+    )
+    user_public_id = f"user.staff.{uuid.uuid4().hex}"
+    account_public_id = f"account.staff.{uuid.uuid4().hex}"
+    now = _now()
+
+    def write(connection):
+        insert_teacher(
+            connection,
+            user_public_id=user_public_id,
+            account_public_id=account_public_id,
+            surname=surname,
+            name=name,
+            middle_name=middle_name,
+            username=username,
+            username_normalized=normalized_username,
+            credential_hash=credential_hash,
+            now=now,
+        )
+        insert_audit_event(
+            connection,
+            public_id=f"audit.{uuid.uuid4().hex}",
+            actor_user_id=actor_user_id,
+            actor_account_public_id=actor_account_id,
+            audience="staff",
+            action="staff.member_created",
+            object_type="staff_member",
+            object_id=user_public_id,
+            request_id=request["request_id"],
+            before_json=None,
+            after_json=json.dumps(
+                {"username": username, "role": "teacher"},
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ),
+            occurred_at=now,
+        )
+        return find_staff_member(connection, public_id=user_public_id)
+
+    try:
+        member = await _factory(request).run_write_async(write)
+    except sqlite3.IntegrityError as error:
+        raise PwaApiError(
+            status=409,
+            code="staff_member_conflict",
+            message="Такой логин преподавателя уже используется",
+        ) from error
+    assert member is not None
+    return web.json_response(
+        {
+            "schemaVersion": 1,
+            "member": _member_payload(member, []),
+            "requestId": request["request_id"],
+        },
+        status=201,
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @staff_access_routes.get("/staff/api/v1/staff-access")

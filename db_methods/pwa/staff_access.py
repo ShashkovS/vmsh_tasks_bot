@@ -30,6 +30,43 @@ def list_staff_members(connection: sqlite3.Connection) -> list[dict[str, object]
     return [dict(row) for row in rows]
 
 
+def insert_teacher(
+    connection: sqlite3.Connection,
+    *,
+    user_public_id: str,
+    account_public_id: str,
+    surname: str,
+    name: str,
+    middle_name: str | None,
+    username: str,
+    username_normalized: str,
+    credential_hash: str,
+    now: str,
+) -> None:
+    user_id = connection.execute(
+        "INSERT INTO users (public_id, type, surname, name, middlename) "
+        "VALUES (?, ?, ?, ?, ?) RETURNING id",
+        (user_public_id, int(USER_TYPE.TEACHER), surname, name, middle_name),
+    ).fetchone()["id"]
+    connection.execute(
+        "INSERT INTO auth_accounts "
+        "(public_id, audience, username, username_normalized, provisioning_source, "
+        "display_name, credential_kind, credential_hash, linked_user_id, status, "
+        "created_at, updated_at) VALUES (?, 'staff', ?, ?, 'staff', ?, 'password', "
+        "?, ?, 'active', ?, ?)",
+        (
+            account_public_id,
+            username,
+            username_normalized,
+            f"{name} {surname}",
+            credential_hash,
+            user_id,
+            now,
+            now,
+        ),
+    )
+
+
 def find_staff_member(
     connection: sqlite3.Connection, *, public_id: str
 ) -> dict[str, object] | None:

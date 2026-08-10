@@ -33,6 +33,39 @@ const course = {
 }
 
 describe('admin course client', () => {
+  it('creates a teacher account', async () => {
+    const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        schemaVersion: 1,
+        member: {
+          staffUserId: 'user.staff.teacher',
+          surname: 'Новый',
+          name: 'Преподаватель',
+          middleName: null,
+          role: 'teacher',
+          account: {
+            accountId: 'account.staff.teacher',
+            username: 'teacher-new',
+            status: 'active',
+          },
+          scopes: [],
+        },
+        requestId: 'teacher-create',
+      }),
+    )
+
+    await createAdminCourseClient(runtime, { fetchImplementation }).createStaffMember({
+      schemaVersion: 1,
+      surname: 'Новый',
+      name: 'Преподаватель',
+      middleName: null,
+      username: 'teacher-new',
+      password: 'teacher-password-179',
+    })
+
+    expect(fetchImplementation.mock.calls[0]?.[0]).toBe('/staff/api/v1/staff-members')
+  })
+
   it('creates a season', async () => {
     const fetchImplementation = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
