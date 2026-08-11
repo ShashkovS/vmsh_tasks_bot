@@ -33,12 +33,26 @@ sudo install -d -o root -g root -m 0755 \
   /web/vmsh_tasks_bot/deploy \
   /web/vmsh_tasks_bot/deploy/bin \
   /web/vmsh_tasks_bot/deploy/systemd
+# Общие родители содержат закрытые дочерние каталоги двух разных service
+# users. Разрешаем только traversal, но не просмотр списка файлов.
+sudo install -d -o root -g root -m 0711 \
+  /web/vmsh_tasks_bot/deploy/logs \
+  /web/vmsh_tasks_bot/deploy/runtime
 sudo install -d -o root -g vmsh_webhook -m 0750 \
   /web/vmsh_tasks_bot/deploy/config \
   /web/vmsh_tasks_bot/deploy/secrets
 
 sudo install -d -o vmsh_webhook -g vmsh_webhook -m 0750 \
   /web/vmsh_tasks_bot/deploy/logs/webhook
+sudo touch \
+  /web/vmsh_tasks_bot/deploy/logs/webhook/webhook.log \
+  /web/vmsh_tasks_bot/deploy/logs/webhook/deploy-launch.log
+sudo chown vmsh_webhook:vmsh_webhook \
+  /web/vmsh_tasks_bot/deploy/logs/webhook/webhook.log \
+  /web/vmsh_tasks_bot/deploy/logs/webhook/deploy-launch.log
+sudo chmod 0640 \
+  /web/vmsh_tasks_bot/deploy/logs/webhook/webhook.log \
+  /web/vmsh_tasks_bot/deploy/logs/webhook/deploy-launch.log
 sudo install -d -o vmsh_tasks_bot -g vmsh_tasks_bot -m 0750 \
   /web/vmsh_tasks_bot/deploy/logs/runs \
   /web/vmsh_tasks_bot/deploy/runtime/deploy
