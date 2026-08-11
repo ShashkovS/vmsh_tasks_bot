@@ -1,0 +1,13 @@
+# Install as /etc/sudoers.d/vmsh-webhook with mode 0440 and validate with visudo.
+# The public request cannot add arguments to either command.
+Cmnd_Alias VMSH_WEBHOOK_DEPLOY = /web/vmsh_tasks_bot/deploy/bin/deploy-vmsh-tasks-bot.sh ""
+vmsh_webhook ALL=(vmsh_tasks_bot) NOPASSWD: VMSH_WEBHOOK_DEPLOY
+
+Cmnd_Alias VMSH_DEPLOY_SERVICES = \
+    /usr/bin/systemctl stop vmshpwa.service, \
+    /usr/bin/systemctl start vmshpwa.service, \
+    /usr/bin/systemctl restart vmshpwa.service, \
+    /usr/bin/systemctl stop gunicorn.vmsh_tasks_bot.service, \
+    /usr/bin/systemctl start gunicorn.vmsh_tasks_bot.service, \
+    /usr/bin/systemctl restart gunicorn.vmsh_tasks_bot.service
+vmsh_tasks_bot ALL=(root) NOPASSWD: VMSH_DEPLOY_SERVICES
