@@ -167,7 +167,7 @@ while IFS= read -r changed_file; do
     apps/*|db_methods/*|models/*|helpers/*|handlers/*|templates/*|web/*)
       BACKEND_CHANGED=true
       ;;
-    vmshpwa/scripts/static_release.py|vmshpwa/scripts/production_http_smoke.py)
+    vmshpwa/scripts/static_release.py)
       FRONTEND_CHANGED=true
       ;;
     vmshpwa/scripts/*.py)
@@ -206,20 +206,8 @@ else
   echo "Frontend dependencies unchanged."
 fi
 
-#if [[ "$BACKEND_CHANGED" == true ]]; then
-#  CURRENT_STEP="testing PWA backend"
-#  cd "$REPO_DIR"
-#  make pwa-python-test PYTEST_WORKERS=8
-#fi
-
 PWA_RELEASE_ID=""
 if [[ "$FRONTEND_CHANGED" == true ]]; then
-  CURRENT_STEP="checking frontend"
-  cd "$REPO_DIR"
-#  make pwa-lint pwa-typecheck
-  cd "$REPO_DIR/vmshpwa"
-#  CI=true pnpm test
-
   CURRENT_STEP="building frontend"
   cd "$REPO_DIR"
   PWA_RELEASE_ID="${TARGET_REV:0:12}-$(date -u +%Y%m%d%H%M%S)"
@@ -242,10 +230,6 @@ if [[ "$FRONTEND_CHANGED" == true ]]; then
     PWA_RELEASE_ID="$PWA_RELEASE_ID" \
     PWA_RELEASE_ROOT="$RELEASE_ROOT" \
     PWA_RELEASE_REPORT="$RELEASE_ROOT/reports/${PWA_RELEASE_ID}-package.json"
-  make pwa-phase11-release-verify \
-    PWA_RELEASE_ID="$PWA_RELEASE_ID" \
-    PWA_RELEASE_ROOT="$RELEASE_ROOT" \
-    PWA_RELEASE_REPORT="$RELEASE_ROOT/reports/${PWA_RELEASE_ID}-verify.json"
 else
   echo "Frontend unchanged."
 fi
@@ -269,11 +253,6 @@ if [[ "$MIGRATIONS_CHANGED" == true ]]; then
 fi
 
 if [[ "$BACKEND_CHANGED" == true ]]; then
-  CURRENT_STEP="checking production toolchain"
-  VMSH_RUNTIME_PROFILE=pwa-production \
-  VMSH_PWA_PROTOTYPE=false \
-    uv run --no-sync python -m vmshpwa.scripts.toolchain_preflight
-
   if [[ "$MIGRATIONS_CHANGED" == true ]]; then
     CURRENT_STEP="starting backend services"
     sudo /usr/bin/systemctl start gunicorn.vmsh_tasks_bot.service
@@ -319,14 +298,6 @@ fi
 if [[ "$MIGRATIONS_CHANGED" == true ]]; then
   CURRENT_STEP="creating post-deploy SQLite backup"
   make_db_backup after-deploy
-fi
-
-if [[ "$FRONTEND_CHANGED" == true || "$BACKEND_CHANGED" == true ]]; then
-  CURRENT_STEP="running production HTTP smoke"
-  cd "$REPO_DIR"
-  PWA_PRODUCTION_ORIGIN=https://vmsh.shashkovs.ru \
-  PWA_PRODUCTION_INSTANCE=production \
-    make pwa-production-http-smoke
 fi
 
 CURRENT_STEP="recording deployed revision"

@@ -2,6 +2,17 @@
 
 Последнее обновление: 2026-08-11.
 
+## Lightweight production deploy — 11 August 2026
+
+- Webhook deploy больше не запускает Python/TypeScript tests, lint, typecheck,
+  Storybook, Playwright, visual regression, release re-verification,
+  toolchain preflight или общий production HTTP smoke на двухъядерном сервере.
+- На сервере остаются только необходимые install/build/package/migration шаги,
+  SQLite backup/integrity guard и дешёвые systemd/runtime health checks.
+- Актуальная политика и устанавливаемый скрипт:
+  [`vmsh-webhook-setup.md`](../../../docs/deploy/vmsh-webhook-setup.md) и
+  [`deploy-vmsh-tasks-bot.sh`](../../../docs/deploy/deploy-vmsh-tasks-bot.sh).
+
 ## Production Prometheus checkpoint — 11 August 2026
 
 - В общий aiohttp app factory добавлен внешний bounded-cardinality middleware

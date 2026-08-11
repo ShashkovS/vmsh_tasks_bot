@@ -226,15 +226,17 @@ sudo tail -n 300 \
 diff от последней успешно развёрнутой revision и затем:
 
 - обновляет `uv`/`pnpm` dependencies только при изменении lock/manifests;
-- при backend-изменениях до остановки production-процессов прогоняет PWA
-  Python tests на восьми изолированных workers;
-- при frontend-изменениях запускает lint, typecheck, unit tests, production
-  build, Brotli, package/verify; release активируется только после backend;
+- не запускает на production-сервере Python/TypeScript tests, lint, typecheck,
+  Storybook, Playwright, visual regression или общий HTTP smoke: эти проверки
+  выполняются на машинах разработки до push;
+- при frontend-изменениях выполняет только необходимую production-сборку,
+  Brotli и упаковку release; release активируется только после backend;
 - при изменении schema делает проверенный SQLite backup, останавливает оба
   процесса-писателя и применяет migrations; обычные Python-изменения не
   требуют остановки перед restart;
-- после backend-изменений проверяет toolchain, перезапускает legacy и PWA
-  services и проверяет runtime endpoints;
+- после backend-изменений перезапускает legacy и PWA services и делает только
+  дешёвые эксплуатационные проверки: состояние systemd, `/metrics` и три
+  runtime endpoint;
 - после успеха делает второй SQLite backup и обновляет revision marker;
 - при ошибке frontend после переключения возвращает предыдущий static release;
 - отправляет результат в `exceptions_channel` существующего production JSON
@@ -244,6 +246,10 @@ Backend-код и schema автоматически назад не откаты
 оборвалась, оба процесса остаются остановленными до ручной проверки и
 восстановления из созданного backup. Это безопаснее попытки запустить старый
 код поверх частично изменённой schema.
+
+SQLite backup/`PRAGMA quick_check`, проверка статуса сервисов и короткие HTTP
+health-запросы не являются тестовым прогоном и остаются в deploy: они защищают
+данные и подтверждают, что обновлённый production действительно поднялся.
 
 Скрипт не вызывает `git clean` и не удаляет untracked-файлы. Если такой файл
 реально мешает переключиться на новую revision, обычная защита `git checkout`
