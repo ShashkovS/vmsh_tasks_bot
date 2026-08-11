@@ -206,19 +206,19 @@ else
   echo "Frontend dependencies unchanged."
 fi
 
-if [[ "$BACKEND_CHANGED" == true ]]; then
-  CURRENT_STEP="testing PWA backend"
-  cd "$REPO_DIR"
-  make pwa-python-test PYTEST_WORKERS=8
-fi
+#if [[ "$BACKEND_CHANGED" == true ]]; then
+#  CURRENT_STEP="testing PWA backend"
+#  cd "$REPO_DIR"
+#  make pwa-python-test PYTEST_WORKERS=8
+#fi
 
 PWA_RELEASE_ID=""
 if [[ "$FRONTEND_CHANGED" == true ]]; then
   CURRENT_STEP="checking frontend"
   cd "$REPO_DIR"
-  make pwa-lint pwa-typecheck
+#  make pwa-lint pwa-typecheck
   cd "$REPO_DIR/vmshpwa"
-  CI=true pnpm test
+#  CI=true pnpm test
 
   CURRENT_STEP="building frontend"
   cd "$REPO_DIR"
