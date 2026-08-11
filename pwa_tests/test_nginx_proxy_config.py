@@ -48,11 +48,13 @@ map $uri $vmshpwa_service_worker_scope {{
     /family/sw.js "/family/";
 }}
 server {{ server_name {public_host}; return 308 https://{public_host}$request_uri; }}
+upstream vmshpwa_backend {{ server unix:/run/vmshpwa.sock fail_timeout=0; }}
 server {{
     server_name {public_host};
     add_header Content-Security-Policy "default-src 'none'; connect-src 'self' wss://{public_host}";
     add_header Cache-Control $vmshpwa_release_cache_control always;
     add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;
+    location = /metrics {{ access_log off; return 404; }}
 }}
 """
 
@@ -63,7 +65,13 @@ def test_template_has_one_host_and_separate_static_api_websocket_boundaries():
     assert source.count("server_name @@PUBLIC_HOST@@;") == 2
     assert "return 308 https://@@PUBLIC_HOST@@$request_uri;" in source
     assert "root @@STATIC_ROOT@@;" in source
+    assert "server unix:@@BACKEND_UNIX_SOCKET@@ fail_timeout=0;" in source
     assert source.count("include /etc/nginx/snippets/vmshpwa-proxy-headers.conf;") == 7
+
+    metrics = _location(source, "= /metrics")
+    assert "access_log off;" in metrics
+    assert "return 404;" in metrics
+    assert "proxy_pass" not in metrics
 
     landing = _location(source, "= /")
     assert "try_files /landing/index.html =404;" in landing
@@ -276,6 +284,47 @@ server {
 
     assert result == 2
     assert "service-worker cache boundary" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("site_source", "message"),
+    (
+        (
+            _rendered_site().replace(
+                "server unix:/run/vmshpwa.sock fail_timeout=0;",
+                "server 127.0.0.1:8000 fail_timeout=0;",
+            ),
+            "preserve the PWA Unix-socket upstream",
+        ),
+        (
+            _rendered_site().replace(
+                "return 404;", "proxy_pass http://vmshpwa_backend;"
+            ),
+            "return 404",
+        ),
+    ),
+)
+def test_syntax_check_rejects_prometheus_boundary_drift(
+    monkeypatch, tmp_path, capsys, site_source, message
+):
+    config = tmp_path / "nginx.conf"
+    config.write_text("events {}\n", encoding="utf-8")
+    site_config = tmp_path / "vmshpwa.conf"
+    site_config.write_text(site_source, encoding="utf-8")
+    monkeypatch.setattr(
+        nginx_config_check.shutil,
+        "which",
+        lambda _binary: "/usr/sbin/nginx",
+    )
+
+    result = nginx_config_check.check_nginx_config(
+        config,
+        site_config_path=site_config,
+        public_host="pwa.example.org",
+    )
+
+    assert result == 2
+    assert message in capsys.readouterr().out
 
 
 def test_syntax_check_runs_exact_nginx_test_command(monkeypatch, tmp_path, capsys):

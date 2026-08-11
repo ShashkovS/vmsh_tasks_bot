@@ -74,11 +74,16 @@ privacy-safe report.
 - [ ] Rendered nginx config прошёл `make pwa-nginx-check` до reload.
 - [ ] PWA API поднят двумя workers; legacy Telegram adapter поднят отдельно и
       не загружает Google в PWA process.
+- [ ] `/run/vmsh-prometheus` создан systemd, stale multiprocess-файлы очищены
+      перед стартом, Gunicorn слушает Unix socket и `127.0.0.1:8000`.
 
 ## После запуска
 
 - [ ] `make pwa-production-http-smoke` прошёл для точного HTTPS origin и
       ожидаемого runtime instance.
+- [ ] Локальный `http://127.0.0.1:8000/metrics` содержит HTTP/WebSocket
+      application metrics; публичный `https://vmsh.shashkovs.ru/metrics`
+      возвращает `404`, а Prometheus target `aiohttp` имеет состояние UP.
 - [ ] Проверены authenticated login/session revoke, WebSocket reconnect с
       обязательным refetch, API/SPA routing и nginx login rate limit.
 - [ ] Выполнены один безопасный Student read и один admin read без изменения

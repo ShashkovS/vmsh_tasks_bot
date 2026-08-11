@@ -129,6 +129,11 @@ from db_methods.pwa.written_submissions import PwaWrittenSubmissionRepository
 from helpers.config import logger
 from helpers.nats_brocker import InProcessBroker, JsonBroker, NatsBroker
 from helpers.object_storage import ObjectStorage, create_object_storage
+from helpers.prometheus_metrics import (
+    websocket_connection_closed,
+    websocket_connection_opened,
+    websocket_handler,
+)
 from helpers.pwa.api_contracts import (
     build_api_error_payload,
     build_realtime_error_payload,
@@ -448,6 +453,7 @@ async def _broadcast(
 
 
 @pwa_routes.get("/{audience:student|family|staff}/ws")
+@websocket_handler
 async def realtime(request: web.Request):
     audience = _audience(request)
     auth_audience = AuthAudience(audience)
@@ -477,6 +483,7 @@ async def realtime(request: web.Request):
     websocket = web.WebSocketResponse(heartbeat=25, max_msg_size=64 * 1024)
     _apply_pwa_response_headers(websocket, _request_id(request))
     await websocket.prepare(request)
+    metrics_lease = websocket_connection_opened(request)
     state = request.app[PWA_STATE]
     registry = request.app[PWA_WEBSOCKET_REGISTRY]
     registered = False
@@ -592,8 +599,11 @@ async def realtime(request: web.Request):
         # Failed close operations intentionally remain registered for the
         # next authoritative revalidation or shutdown attempt.  Successful
         # and peer-driven closes are removed immediately.
-        if websocket.closed:
-            await registry.unregister(websocket)
+        try:
+            if websocket.closed:
+                await registry.unregister(websocket)
+        finally:
+            websocket_connection_closed(metrics_lease)
     return websocket
 
 

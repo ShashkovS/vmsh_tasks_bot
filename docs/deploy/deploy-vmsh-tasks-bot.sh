@@ -289,6 +289,7 @@ if [[ "$BACKEND_CHANGED" == true ]]; then
   CURRENT_STEP="checking backend services"
   /usr/bin/systemctl is-active --quiet gunicorn.vmsh_tasks_bot.service
   /usr/bin/systemctl is-active --quiet vmshpwa.service
+  check_http_200 aiohttp-metrics http://127.0.0.1:8000/metrics
   check_http_200 student-runtime https://vmsh.shashkovs.ru/student/api/v1/runtime
   check_http_200 family-runtime https://vmsh.shashkovs.ru/family/api/v1/runtime
   check_http_200 staff-runtime https://vmsh.shashkovs.ru/staff/api/v1/runtime

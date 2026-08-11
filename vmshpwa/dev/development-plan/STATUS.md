@@ -1,6 +1,21 @@
 # Статус плана разработки
 
-Последнее обновление: 2026-08-10.
+Последнее обновление: 2026-08-11.
+
+## Production Prometheus checkpoint — 11 August 2026
+
+- В общий aiohttp app factory добавлен внешний bounded-cardinality middleware
+  и loopback-only `GET /metrics`; route label берётся только из canonical
+  aiohttp resource metadata, неизвестные маршруты получают `unmatched`.
+- Gunicorn сохраняет существующий Unix socket для Nginx и теми же двумя
+  workers дополнительно слушает `127.0.0.1:8000` для Prometheus. Systemd
+  создаёт/очищает `/run/vmsh-prometheus`, а `child_exit` помечает worker dead.
+- WebSocket lifetime исключён из HTTP latency и учитывается отдельным livesum
+  gauge; idempotent lease не позволяет одному соединению уменьшить gauge дважды.
+- Публичный `/metrics` закрыт exact Nginx location с `404`; ручной deploy после
+  успешного старта создаёт file-discovery target `aiohttp.json`.
+- Proof и известные unrelated baseline failures:
+  [`production-prometheus-instrumentation-2026-08-11.md`](../../../pwa_tests/reports/production-prometheus-instrumentation-2026-08-11.md).
 
 ## Deploy-first учебный цикл — 10 August 2026
 

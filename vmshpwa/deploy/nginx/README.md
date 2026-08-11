@@ -20,36 +20,21 @@ Before installation replace every marker in `vmshpwa.conf.template`:
 
 Wildcards, unresolved markers and client-derived values are forbidden. Install
 `vmshpwa-proxy-headers.conf` as
-`/etc/nginx/snippets/vmshpwa-proxy-headers.conf`. The runtime pair for the Unix
-deployment is:
+`/etc/nginx/snippets/vmshpwa-proxy-headers.conf`. Nginx keeps the existing Unix
+socket transport:
 
 ```text
 VMSH_PWA_TRUSTED_PROXY_HOPS=1
-VMSH_PWA_TRUSTED_PROXY_CIDRS=
 VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON=["/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock"]
 ```
 
 The path in the JSON and the rendered upstream must be byte-for-byte equal.
 Keep the socket, rendered nginx source and runtime environment under the single
-deployment root `/web/vmsh_tasks_bot/vmshpwa/runtime`. Nginx may use symlinks in
-its conventional system directories, but the actual files remain under that
-root. Use a dedicated directory owned by the backend service and the
-nginx/backend group (`0750` directory, `0660` socket); do not put it in a
-generally writable directory. Merely arriving over `AF_UNIX` is never trusted
-by the application.
-
-Loopback TCP is also supported for a controlled host:
-
-```text
-VMSH_PWA_TRUSTED_PROXY_HOPS=1
-VMSH_PWA_TRUSTED_PROXY_CIDRS=127.0.0.1/32,::1/128
-VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON=
-```
-
-In that variant the upstream must be changed to an exact loopback endpoint and
-the backend must not listen on a public interface. Unix with restrictive file
-permissions is the preferred production boundary because loopback alone does
-not identify which local process connected.
+deployment root `/web/vmsh_tasks_bot/vmshpwa/runtime`. The socket directory is
+owned by the backend service and nginx/backend group with restrictive
+permissions; it is never generally writable.
+Gunicorn additionally binds `127.0.0.1:8000` for local Prometheus scrapes; nginx
+does not use that listener and the backend must never bind it publicly.
 
 The proxy replaces `Forwarded` from `$remote_addr`, fixed HTTPS and `$host`, and
 suppresses all incoming `X-Forwarded-*`. It never appends client input. The
@@ -67,6 +52,10 @@ The public `/` entry point is served from `landing/index.html`; its hashed
 assets live under `/landing/assets/`. The landing page links only to the
 Student and Family cabinets. Other paths continue through their explicit
 application or legacy boundaries.
+
+The TLS server returns `404` for public `GET /metrics`. Prometheus bypasses
+nginx and scrapes `http://127.0.0.1:8000/metrics`, so the unauthenticated
+application endpoint remains local to the production host.
 
 Install the rendered nginx source from the deployment root and expose it to
 nginx through symlinks:

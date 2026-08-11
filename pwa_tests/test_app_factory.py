@@ -49,7 +49,17 @@ def test_factory_composes_only_selected_adapters():
     app = create_app([MarkerAdapter], runtime_config=runtime)
 
     assert app[ENABLED_ADAPTERS] == (MarkerAdapter,)
-    assert [route.method for route in app.router.routes()] == ["HEAD", "GET"]
+    assert [
+        route.method
+        for route in app.router.routes()
+        if route.resource.canonical == "/marker"
+    ] == ["HEAD", "GET"]
+    assert app.middlewares[0].__name__ == "prometheus_http_middleware"
+    assert [
+        route.method
+        for route in app.router.routes()
+        if route.resource.canonical == "/metrics"
+    ] == ["GET"]
 
 
 def test_factory_does_not_print_registered_routes(capsys):

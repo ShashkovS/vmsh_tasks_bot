@@ -83,6 +83,11 @@ server {
     location = /family { return 308 /family/; }
     location = /staff { return 308 /staff/; }
 
+    location = /metrics {
+        access_log off;
+        return 404;
+    }
+
     # Public entry page. It has no API or session state and deliberately does
     # not expose the Staff application link.
     location = / {

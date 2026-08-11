@@ -19,7 +19,8 @@ not replaced or started by this unit. Google credentials are not loaded by the
    exist and be writable by `@@SERVICE_USER@@`. The repository and virtual
    environment remain read-only to the service.
 4. Render the same backend Unix-socket path into nginx and
-   `VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON`.
+   `VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON`. Gunicorn also listens on
+   `127.0.0.1:8000` for Prometheus only; nginx continues to use the socket.
 5. Validate before installation:
 
    ```shell
@@ -39,6 +40,11 @@ not replaced or started by this unit. Google credentials are not loaded by the
 7. After `systemctl daemon-reload`, restart the PWA unit only after the explicit
    migration command has completed under the exclusive database lock. Do not
    use a rolling Gunicorn reload for schema maintenance.
+
+The unit creates `/run/vmsh-prometheus`, removes stale worker files before each
+start and exports `PROMETHEUS_MULTIPROC_DIR` before Gunicorn imports the
+application. `gunicorn.conf.py` marks dead worker processes in its
+`child_exit` hook. Do not set the multiprocess directory from application code.
 
 S3 settings are read from the allowlisted fields of
 `creds_prod/vmsh_bot_config_prod.json`; they are not duplicated in this env

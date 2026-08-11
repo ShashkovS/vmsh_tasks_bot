@@ -11,6 +11,12 @@ import re
 import weakref
 
 from aiohttp import web, WSMsgType, WSCloseCode
+
+from helpers.prometheus_metrics import (
+    websocket_connection_closed,
+    websocket_connection_opened,
+    websocket_handler,
+)
 from operator import itemgetter
 from time import perf_counter
 from typing import List, Dict
@@ -281,12 +287,14 @@ _user_id_to_websocket: Dict[int, List[weakref.ReferenceType[web.WebSocketRespons
 
 
 @routes.get('/game/ws')
+@websocket_handler
 async def websocket(request):
     user = Webtoken.user_by_webtoken(request.cookies.get(COOKIE_NAME, None))
     if not user:
         return
     ws = web.WebSocketResponse()
     await ws.prepare(request)
+    metrics_lease = websocket_connection_opened(request)
     if user.id not in _user_id_to_websocket:
         _user_id_to_websocket[user.id] = []
     cur_user_websockets = _user_id_to_websocket[user.id]
@@ -310,6 +318,7 @@ async def websocket(request):
             ref = cur_user_websockets[ws_ind]()
             if ref is None or ref is ws:
                 cur_user_websockets.pop(ws_ind)
+        websocket_connection_closed(metrics_lease)
     return ws
 
 

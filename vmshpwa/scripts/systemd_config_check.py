@@ -25,6 +25,7 @@ FORBIDDEN_ENVIRONMENT = frozenset(
         "VMSH_RUNTIME_PROFILE",
         "VMSH_PWA_PROTOTYPE",
         "GOOGLE_APPLICATION_CREDENTIALS",
+        "PROMETHEUS_MULTIPROC_DIR",
         "TELEGRAM_BOT_TOKEN",
     }
 )
@@ -73,7 +74,8 @@ def _environment(source: str) -> dict[str, str]:
     forbidden = sorted(FORBIDDEN_ENVIRONMENT & values.keys())
     if forbidden:
         raise SystemdProfileError(
-            "PWA environment must not select adapters/profile: " + ", ".join(forbidden)
+            "PWA environment must not select adapters/profile or override "
+            "unit-owned settings: " + ", ".join(forbidden)
         )
     return values
 
@@ -115,7 +117,10 @@ def _validate_unit(source: str, *, env_file: Path) -> None:
         "VMSH_PWA_PROTOTYPE=false ",
         "--workers 2",
         "--worker-class uvloop_worker.GunicornUVLoopWebWorkerFixed",
+        "--config ",
+        "/gunicorn.conf.py",
         "--bind unix:",
+        "--bind 127.0.0.1:8000",
         "--umask 007",
         "main:app",
         "Restart=on-failure",
@@ -124,6 +129,12 @@ def _validate_unit(source: str, *, env_file: Path) -> None:
         "NoNewPrivileges=true",
         "ProtectSystem=strict",
         "ReadWritePaths=",
+        "RuntimeDirectory=vmsh-prometheus",
+        "RuntimeDirectoryMode=0750",
+        "Environment=PROMETHEUS_MULTIPROC_DIR=/run/vmsh-prometheus",
+        "ExecStartPre=/usr/bin/find /run/vmsh-prometheus -mindepth 1 "
+        "-maxdepth 1 -type f -delete",
+        "/run/vmsh-prometheus",
     )
     missing = [item for item in required_fragments if item not in source]
     if missing:
@@ -135,6 +146,7 @@ def _validate_unit(source: str, *, env_file: Path) -> None:
         "--preload",
         "--workers 1",
         "aiohttp.GunicornWebWorker",
+        "--bind 0.0.0.0:",
         "telegram",
         "google",
     )
@@ -145,6 +157,16 @@ def _validate_unit(source: str, *, env_file: Path) -> None:
         raise SystemdProfileError(
             "PWA systemd unit contains a forbidden legacy/reload setting: "
             + ", ".join(found)
+        )
+    binds = re.findall(r"(?:^|\s)--bind\s+(\S+)", source)
+    if len(binds) != 2 or "127.0.0.1:8000" not in binds:
+        raise SystemdProfileError(
+            "PWA systemd unit must have exactly the Unix and loopback binds"
+        )
+    unix_binds = [bind for bind in binds if bind.startswith("unix:")]
+    if len(unix_binds) != 1 or not unix_binds[0].removeprefix("unix:").startswith("/"):
+        raise SystemdProfileError(
+            "PWA systemd unit must have exactly one absolute Unix bind"
         )
 
 

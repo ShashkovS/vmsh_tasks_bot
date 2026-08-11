@@ -1,5 +1,8 @@
+import atexit
 import os
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 # aiogram 3.30 rebuilds recursive generated Bot API models during import. Load
@@ -25,6 +28,14 @@ os.environ["VMSH_MEDIA_ROOT"] = ".runtime/vmshpwa/e2e-pytest"
 os.environ["VMSH_NATS_SERVER"] = ""
 os.environ["VMSH_NATS_TOPIC_PREFIX"] = "vmshpwa_e2e_pytest"
 os.environ["VMSH_PWA_PROTOTYPE"] = "true"
+
+# prometheus_client selects its multiprocess value implementation when metric
+# objects are imported. Set one process-private temporary directory before any
+# application module is collected; production sets the same variable in
+# systemd before Gunicorn starts.
+_PROMETHEUS_MULTIPROC_DIR = tempfile.mkdtemp(prefix="vmsh-prometheus-tests-")
+os.environ["PROMETHEUS_MULTIPROC_DIR"] = _PROMETHEUS_MULTIPROC_DIR
+atexit.register(shutil.rmtree, _PROMETHEUS_MULTIPROC_DIR, ignore_errors=True)
 
 
 @pytest.fixture(scope="session", autouse=True)

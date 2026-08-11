@@ -77,10 +77,11 @@ Systemd и nginx получают только symlink в своих станд�
       make pwa-systemd-check
     ```
 
-    Unit фиксирует `pwa-production`, отключённый prototype, два worker и Unix
-    socket; Telegram/Google остаются в отдельном legacy service. Environment
-    file имеет exact mode `0600`; unresolved markers и adapter/profile overrides
-    блокируют deploy.
+    Unit фиксирует `pwa-production`, отключённый prototype и два worker.
+    Кабинеты остаются на Unix socket, а второй bind `127.0.0.1:8000` обслуживает
+    локальный Prometheus scrape; Telegram/Google остаются в отдельном legacy
+    service. Environment file имеет exact mode `0600`; unresolved markers и
+    adapter/profile overrides блокируют deploy.
 14. Проверить три audience health/runtime URL, static history fallback,
     WebSocket upgrade, spoofed forwarding rejection, настоящий login `429` с
     `Retry-After`, CSP/security headers и service-worker files.
@@ -112,6 +113,10 @@ local process. Клиентский `Forwarded` и весь `X-Forwarded-*` ngin
 подавляет; приложение не использует aiohttp `request.remote` как готовую
 proxy-truth.
 
+Публичный exact location `/metrics` всегда возвращает `404` и не проксируется.
+Prometheus обращается напрямую к `http://127.0.0.1:8000/metrics`; этот listener
+не заменяет Unix upstream и никогда не публикуется на внешнем интерфейсе.
+
 Структурные тесты гарантируют namespaces, header replacement, WebSocket
 upgrade, rate-limit и fail-closed CSP markers. Настоящий syntax proof создаёт
 только [`nginx_config_check.py`](../scripts/nginx_config_check.py) над
@@ -133,6 +138,12 @@ Linux production host он дополнительно требует успеш�
 verify`; реальный `systemctl restart`, socket ownership и health через nginx
 остаются отдельным rollout proof.
 
+Unit создаёт `/run/vmsh-prometheus`, очищает stale multiprocess-файлы до старта
+Gunicorn и задаёт `PROMETHEUS_MULTIPROC_DIR` до импорта приложения. Hook
+[`gunicorn.conf.py`](../../gunicorn.conf.py) вызывает
+`multiprocess.mark_process_dead` после выхода worker. После успешного старта
+deploy создаёт exact file-discovery target `/etc/prometheus/targets/aiohttp.json`.
+
 Не следует применять `git reset --hard` или `git clean` в общей рабочей копии разработчика. Такие команды допустимы только внутри специально созданного deployment checkout, который не содержит пользовательских данных и незакоммиченной работы.
 
 ## Change detection
@@ -140,7 +151,8 @@ verify`; реальный `systemctl restart`, socket ownership и health чер
 - frontend dependency: `vmshpwa/pnpm-lock.yaml`, `vmshpwa/pnpm-workspace.yaml`, `vmshpwa/package.json`, `vmshpwa/apps/*/package.json`, `vmshpwa/packages/*/package.json`;
 - frontend source/config: `vmshpwa/apps`, `vmshpwa/packages`, `vmshpwa/.storybook`, Vite/TypeScript/ESLint/Stylelint/Playwright configs;
 - Python dependency: `pyproject.toml`, `uv.lock`;
-- backend: `apps`, `models`, `db_methods`, `helpers`, `handlers`, `migrations`, `main.py`;
+- backend: `apps`, `models`, `db_methods`, `helpers`, `handlers`, `migrations`,
+  `main.py`, `gunicorn.conf.py`;
 - documentation-only изменения deployment не перезапускают runtime.
 
 ## Checks

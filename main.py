@@ -15,6 +15,7 @@ from helpers.config import DATABASE_MUTABLE_CONFIG_FIELDS, Config, config, logge
 import db_methods as db
 from helpers.features import set_features
 from helpers.msg_texts import msgs
+from helpers.prometheus_metrics import configure_prometheus
 from helpers.pwa.app_keys import (
     ENABLED_ADAPTERS,
     PWA_DATABASE,
@@ -127,6 +128,9 @@ def create_app(
     selected_adapters = tuple(apps.all_apps if enabled_apps is None else enabled_apps)
     selected_config = runtime_config or config
     app = web.Application()
+    # Installed before adapters append their middleware, so application-level
+    # metrics observe their responses and failures without changing semantics.
+    configure_prometheus(app)
     app[RUNTIME_CONFIG] = selected_config
     app[ENABLED_ADAPTERS] = selected_adapters
     app[PWA_DATABASE] = PwaDatabaseState()

@@ -56,6 +56,20 @@ def _validate_rendered_site(source: str, public_host: str) -> str | None:
     )
     if any(required not in uncommented for required in worker_boundary):
         return "site config is missing the production service-worker cache boundary"
+    if "server unix:" not in uncommented:
+        return "site config must preserve the PWA Unix-socket upstream"
+    metrics_locations = re.findall(
+        r"location\s+=\s+/metrics\s*\{(?P<body>.*?)\}",
+        uncommented,
+        flags=re.DOTALL,
+    )
+    if len(metrics_locations) != 1:
+        return "site config must contain one exact public /metrics boundary"
+    metrics_body = metrics_locations[0]
+    if "access_log off;" not in metrics_body or "return 404;" not in metrics_body:
+        return "public /metrics must disable access logging and return 404"
+    if "proxy_pass" in metrics_body:
+        return "public /metrics must never be proxied"
     return None
 
 

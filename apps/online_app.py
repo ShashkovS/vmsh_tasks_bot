@@ -8,6 +8,12 @@ import logging
 import re
 from aiohttp import web, WSMsgType
 
+from helpers.prometheus_metrics import (
+    websocket_connection_closed,
+    websocket_connection_opened,
+    websocket_handler,
+)
+
 from helpers.config import config, logger, DEBUG, APP_PATH
 from models import Webtoken, User
 import db_methods as db
@@ -138,25 +144,30 @@ user_id_to_websocket = {}
 
 
 @routes.get('/online/ws')
+@websocket_handler
 async def websocket(request):
     user = Webtoken.user_by_webtoken(request.cookies.get(COOKIE_NAME, None))
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    user_id_to_websocket[user.id] = ws
+    metrics_lease = websocket_connection_opened(request)
 
-    # Этот цикл «зависает» до тех пор, пока коннекшн не сдохнет
-    async for msg in ws:
-        if msg.type == WSMsgType.TEXT:
-            if msg.data == 'close':
-                await ws.close()
-            else:
-                for other_user_id, other_ws in user_id_to_websocket.items():
-                    if other_user_id == user.id:
-                        continue
-                    await other_ws.send_str(msg.data + '/' + user.surname)
-        elif msg.type == WSMsgType.ERROR:
-            print(ws.exception())
-        print(msg)
+    try:
+        user_id_to_websocket[user.id] = ws
+        # Этот цикл «зависает» до тех пор, пока коннекшн не сдохнет
+        async for msg in ws:
+            if msg.type == WSMsgType.TEXT:
+                if msg.data == 'close':
+                    await ws.close()
+                else:
+                    for other_user_id, other_ws in user_id_to_websocket.items():
+                        if other_user_id == user.id:
+                            continue
+                        await other_ws.send_str(msg.data + '/' + user.surname)
+            elif msg.type == WSMsgType.ERROR:
+                print(ws.exception())
+            print(msg)
+    finally:
+        websocket_connection_closed(metrics_lease)
 
     print('websocket connection closed')
 

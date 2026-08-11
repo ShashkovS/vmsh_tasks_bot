@@ -14,10 +14,14 @@ Group=@@SERVICE_GROUP@@
 WorkingDirectory=@@REPOSITORY_DIR@@
 EnvironmentFile=@@ENV_FILE@@
 Environment=PATH=@@VENV_DIR@@/bin:/usr/local/texlive/2026/bin/x86_64-linux:/usr/local/bin:/usr/bin:/bin
+RuntimeDirectory=vmsh-prometheus
+RuntimeDirectoryMode=0750
+Environment=PROMETHEUS_MULTIPROC_DIR=/run/vmsh-prometheus
+ExecStartPre=/usr/bin/find /run/vmsh-prometheus -mindepth 1 -maxdepth 1 -type f -delete
 # EnvironmentFile takes precedence over Environment= in systemd. Put the two
 # security boundary values on the actual command line so the secret file cannot
 # accidentally select a local profile or prototype auth.
-ExecStart=/usr/bin/env VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false @@VENV_DIR@@/bin/gunicorn --workers 2 --worker-class uvloop_worker.GunicornUVLoopWebWorkerFixed --bind unix:@@BACKEND_UNIX_SOCKET@@ --no-control-socket --umask 007 --timeout 120 --graceful-timeout 30 --error-logfile - --capture-output main:app
+ExecStart=/usr/bin/env VMSH_RUNTIME_PROFILE=pwa-production VMSH_PWA_PROTOTYPE=false @@VENV_DIR@@/bin/gunicorn --config @@REPOSITORY_DIR@@/gunicorn.conf.py --workers 2 --worker-class uvloop_worker.GunicornUVLoopWebWorkerFixed --bind unix:@@BACKEND_UNIX_SOCKET@@ --bind 127.0.0.1:8000 --no-control-socket --umask 007 --timeout 120 --graceful-timeout 30 --error-logfile - --capture-output main:app
 Restart=on-failure
 RestartSec=3
 KillSignal=SIGTERM
@@ -28,7 +32,7 @@ PrivateDevices=true
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=@@DATABASE_DIR@@ @@MEDIA_ROOT@@ @@RUNTIME_WRITE_DIR@@ @@SOCKET_DIR@@
+ReadWritePaths=@@DATABASE_DIR@@ @@MEDIA_ROOT@@ @@RUNTIME_WRITE_DIR@@ @@SOCKET_DIR@@ /run/vmsh-prometheus
 LimitNOFILE=8192
 TasksMax=512
 

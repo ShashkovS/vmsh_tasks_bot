@@ -1306,6 +1306,12 @@ server {
     add_header Cache-Control $vmshpwa_release_cache_control always;
     add_header Service-Worker-Allowed $vmshpwa_service_worker_scope always;
 
+    # Prometheus обращается к loopback:8000 напрямую. Публичный endpoint закрыт.
+    location = /metrics {
+        access_log off;
+        return 404;
+    }
+
     # ----------------------------------------------------------------------
     # Student, Family и Staff API
     # ----------------------------------------------------------------------
@@ -1644,9 +1650,21 @@ sudo systemctl restart vmshpwa.service
 sudo systemctl status vmshpwa.service --no-pager -l
 sudo journalctl -u vmshpwa.service -n 100 --no-pager
 
-sudo curl --unix-socket /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock \
-  -i -H 'Host: vmsh.shashkovs.ru' \
-  http://localhost/student/api/v1/runtime
+test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/__metrics_ready)" = 404
+curl -fsS http://127.0.0.1:8000/metrics | grep 'vmsh_http_requests'
+
+sudo tee /etc/prometheus/targets/aiohttp.json >/dev/null <<'JSON'
+[
+  {
+    "targets": ["127.0.0.1:8000"],
+    "labels": {
+      "instance": "vmsh.shashkovs.ru"
+    }
+  }
+]
+JSON
+sudo chown root:prometheus /etc/prometheus/targets/aiohttp.json
+sudo chmod 0640 /etc/prometheus/targets/aiohttp.json
 
 curl -fsS https://vmsh.shashkovs.ru/student/api/v1/runtime
 curl -fsS https://vmsh.shashkovs.ru/family/api/v1/runtime
