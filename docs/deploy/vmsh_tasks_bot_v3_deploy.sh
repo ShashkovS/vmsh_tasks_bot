@@ -1573,29 +1573,21 @@ sudo install -d -o vmsh_tasks_bot -g nginx -m 0750 \
   /web/vmsh_tasks_bot/vmshpwa/runtime/media \
   /web/vmsh_tasks_bot/vmshpwa/runtime/write
 
+if ! sudo test -f /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env; then
+  sudo install \
+    -o vmsh_tasks_bot \
+    -g vmsh_tasks_bot \
+    -m 0600 \
+    /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/deploy/systemd/vmshpwa.env.example \
+    /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env
+fi
+
 sudo install \
-  -o vmsh_tasks_bot \
-  -g nginx \
-  -m 0600 \
-  /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/deploy/systemd/vmshpwa.env.example \
-  /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env
-
-sudo sed \
-  -e 's#@@REPOSITORY_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot#g' \
-  -e 's#@@ENV_FILE@@#/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env#g' \
-  -e 's#@@SERVICE_USER@@#vmsh_tasks_bot#g' \
-  -e 's#@@SERVICE_GROUP@@#nginx#g' \
-  -e 's#@@VENV_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot/.venv#g' \
-  -e 's#@@BACKEND_UNIX_SOCKET@@#/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock#g' \
-  -e 's#@@DATABASE_DIR@@#/web/vmsh_tasks_bot/vmsh_tasks_bot/db#g' \
-  -e 's#@@MEDIA_ROOT@@#/web/vmsh_tasks_bot/vmshpwa/runtime/media#g' \
-  -e 's#@@RUNTIME_WRITE_DIR@@#/web/vmsh_tasks_bot/vmshpwa/runtime/write#g' \
-  -e 's#@@SOCKET_DIR@@#/web/vmsh_tasks_bot/vmshpwa/runtime#g' \
+  -o root \
+  -g root \
+  -m 0644 \
   /web/vmsh_tasks_bot/vmsh_tasks_bot/vmshpwa/deploy/systemd/vmshpwa.service.template \
-  | sudo tee /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service >/dev/null
-
-sudo chown root:root /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
-sudo chmod 0644 /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
+  /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service
 sudo ln -sfn \
   /web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service \
   /etc/systemd/system/vmshpwa.service

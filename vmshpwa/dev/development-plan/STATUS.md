@@ -14,6 +14,8 @@
   gauge; idempotent lease не позволяет одному соединению уменьшить gauge дважды.
 - Публичный `/metrics` закрыт exact Nginx location с `404`; ручной deploy после
   успешного старта создаёт file-discovery target `aiohttp.json`.
+- Production unit теперь содержит готовые пути `vmshbeget` без `@@...@@` и
+  устанавливается прямым копированием, без цепочки `sed`.
 - Proof и известные unrelated baseline failures:
   [`production-prometheus-instrumentation-2026-08-11.md`](../../../pwa_tests/reports/production-prometheus-instrumentation-2026-08-11.md).
 

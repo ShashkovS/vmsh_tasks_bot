@@ -17,40 +17,15 @@ ENV_TEMPLATE = ROOT / "vmshpwa/deploy/systemd/vmshpwa.env.example"
 
 
 def _render(tmp_path: Path) -> tuple[Path, Path]:
-    socket = tmp_path / "run/vmshpwa.sock"
     environment = tmp_path / "vmshpwa.env"
-    replacements = {
-        "@@REPOSITORY_DIR@@": str(ROOT),
-        "@@ENV_FILE@@": str(environment),
-        "@@SERVICE_USER@@": "vmshpwa",
-        "@@SERVICE_GROUP@@": "nginx",
-        "@@VENV_DIR@@": "/opt/vmshpwa/venv",
-        "@@BACKEND_UNIX_SOCKET@@": str(socket),
-        "@@DATABASE_DIR@@": "/srv/vmshpwa/db",
-        "@@DATABASE_PATH@@": "/srv/vmshpwa/db/vmsh.sqlite3",
-        "@@MEDIA_ROOT@@": "/srv/vmshpwa/media",
-        "@@RUNTIME_WRITE_DIR@@": "/srv/vmshpwa/runtime",
-        "@@SOCKET_DIR@@": str(socket.parent),
-        "@@PUBLIC_HOST@@": "vmsh.example.test",
-        "@@AUTH_SIGNING_KEY@@": "s" * 32,
-        "@@REFRESH_PEPPER_B64@@": "c" * 44,
-        "@@THROTTLE_PEPPER_B64@@": "d" * 44,
-        "@@SENTRY_DSN@@": "https://public@example.test/1",
-        "@@RELEASE@@": "revision-test",
-        "@@VAPID_PUBLIC_KEY@@": "public-vapid-test",
-        "@@VAPID_PRIVATE_KEY@@": "private-vapid-test",
-        "@@OPERATOR_EMAIL@@": "operator@example.test",
-    }
-
-    def rendered(path: Path) -> str:
-        value = path.read_text(encoding="utf-8")
-        for marker, replacement in replacements.items():
-            value = value.replace(marker, replacement)
-        return value
-
     unit = tmp_path / "vmshpwa.service"
-    unit.write_text(rendered(UNIT_TEMPLATE), encoding="utf-8")
-    environment.write_text(rendered(ENV_TEMPLATE), encoding="utf-8")
+    unit.write_text(
+        UNIT_TEMPLATE.read_text(encoding="utf-8").replace(
+            "/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.env", str(environment)
+        ),
+        encoding="utf-8",
+    )
+    environment.write_text(ENV_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8")
     environment.chmod(0o600)
     return unit, environment
 
@@ -66,8 +41,9 @@ def test_profile_uses_required_prometheus_multiprocess_boundary(tmp_path: Path) 
         "ExecStartPre=/usr/bin/find /run/vmsh-prometheus -mindepth 1 "
         "-maxdepth 1 -type f -delete"
     ) in source
-    assert f"--config {ROOT}/gunicorn.conf.py" in source
-    assert "--bind unix:" in source
+    assert "@@" not in source
+    assert "--config /web/vmsh_tasks_bot/vmsh_tasks_bot/gunicorn.conf.py" in source
+    assert "--bind unix:/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.sock" in source
     assert "--bind 127.0.0.1:8000" in source
 
 

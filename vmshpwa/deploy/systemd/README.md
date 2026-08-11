@@ -5,20 +5,21 @@ Telegram webhook service remains a parallel adapter over the same SQLite and is
 not replaced or started by this unit. Google credentials are not loaded by the
 `pwa-production` profile.
 
-## Render and install
+## Install
 
-1. Render every `@@...@@` marker in `vmshpwa.service.template` into
-   `/web/vmsh_tasks_bot/vmshpwa/runtime`.
-   The socket, environment file and unit source stay under this directory.
+1. Install `vmshpwa.service.template` as
+   `/web/vmsh_tasks_bot/vmshpwa/runtime/vmshpwa.service` without substitutions.
+   It intentionally contains the production paths for the `vmshbeget` host.
+   The socket, environment file and installed unit stay under this directory.
 2. Keep the environment file owned by `vmsh_tasks_bot:vmsh_tasks_bot` with mode `0600`.
    It contains only the nginx -> PWA transport boundary. Application settings
    and secrets live in `creds_test/vmsh_bot_config_test.json` or
    `creds_prod/vmsh_bot_config_prod.json`. Do not create a second production
    settings file under the deployment directory.
 3. The database directory, media root and runtime-write directory must already
-   exist and be writable by `@@SERVICE_USER@@`. The repository and virtual
+   exist and be writable by `vmsh_tasks_bot`. The repository and virtual
    environment remain read-only to the service.
-4. Render the same backend Unix-socket path into nginx and
+4. Keep the same backend Unix-socket path in nginx and
    `VMSH_PWA_TRUSTED_PROXY_UNIX_SOCKETS_JSON`. Gunicorn also listens on
    `127.0.0.1:8000` for Prometheus only; nginx continues to use the socket.
 5. Validate before installation:
