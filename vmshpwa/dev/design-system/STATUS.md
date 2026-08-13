@@ -16,6 +16,25 @@
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
 ```text
+2026-08-13 — Shared file input affordance — ready for owner production check
+Implemented:
+  Native Input type=file keeps the browser picker, keyboard, multiple and
+  drag/drop semantics, but its selector is now a clear primary button with
+  density-aware size, hover/focus, disabled and invalid states. This fixes all
+  visible LaTeX, XLSX and missing-asset upload forms at once; Student's hidden
+  photo picker remains controlled by SubmissionComposer.
+Evidence:
+  UI/Controls--file-inputs;
+  vmshpwa/packages/ui/src/components/input.tsx;
+  vmshpwa/packages/ui/src/components/controls.stories.tsx.
+Checks:
+  focused story 5/5; full Storybook 267/267; lint, typecheck and build PASS;
+  mobile-light and desktop states inspected manually.
+Snapshots:
+  not updated.
+```
+
+```text
 2026-08-13 — Staff content recovery — ready for owner production check
 Implemented:
   lesson creation for all active course groups; condition as the bulk-upload

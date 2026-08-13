@@ -9,7 +9,7 @@
 ### Actions и inputs
 
 - Button: default/secondary/outline/ghost/destructive/link, compact/default/large/icon; loading не меняет ширину и объявляется assistive technology.
-- Input, Textarea: label/description/error через Field; prefix/suffix только когда не ухудшают доступность.
+- Input, Textarea: label/description/error через Field; prefix/suffix только когда не ухудшают доступность. Native `type=file` сохраняет системный picker, multiple и drag/drop, но его selector визуально оформлен как явная primary-кнопка во всех Staff/Student формах (`UI/Controls--file-inputs`).
 - Field/Label: required, optional, hint, validation, disabled, read-only, horizontal staff arrangement.
 - Checkbox, Switch: indeterminate для checkbox, ясная разница action vs immediate setting.
 - Select: single selection, groups, long labels, keyboard search; native fallback обсуждается для mobile.

@@ -2,6 +2,16 @@
 
 Последнее обновление: 2026-08-13.
 
+## Shared file input affordance — 13 August 2026
+
+- Общий native `Input type=file` получил явно выделенную primary-кнопку выбора,
+  density-aware размеры и различимые hover/focus/disabled/invalid состояния.
+- Изменение автоматически применяется к массовой и одиночной LaTeX-загрузке,
+  XLSX-импорту задач и загрузке missing assets. Native picker, multiple,
+  drag/drop и клавиатурная семантика сохранены; hidden Student photo picker не
+  затронут.
+- Story/interaction proof: `UI/Controls--file-inputs`.
+
 ## Historical TikZ static corpus gate — 13 August 2026
 
 - Обе owner-local архивные иерархии рекурсивно проверяются по точным маскам

@@ -101,6 +101,40 @@ export const States: Story = {
   ),
 }
 
+export const FileInputs: Story = {
+  name: 'Выбор файла',
+  render: () => (
+    <div className="grid max-w-2xl gap-5 sm:grid-cols-2">
+      <div className="space-y-1" data-density="staff">
+        <label className="text-label font-medium" htmlFor="staff-file">
+          LaTeX-файлы
+        </label>
+        <Input id="staff-file" multiple type="file" />
+        <p className="text-caption text-muted-foreground">Компактная плотность Staff</p>
+      </div>
+      <div className="space-y-1" data-density="student">
+        <label className="text-label font-medium" htmlFor="student-file">
+          Фотографии решения
+        </label>
+        <Input accept="image/*" id="student-file" multiple type="file" />
+        <p className="text-caption text-muted-foreground">Touch-размер Student</p>
+      </div>
+      <Input aria-label="Файл с ошибкой" aria-invalid type="file" />
+      <Input aria-label="Недоступный выбор файла" disabled type="file" />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const input = canvas.getByLabelText('LaTeX-файлы')
+    await userEvent.upload(input, [
+      new File(['condition'], '00-n.tex', { type: 'text/plain' }),
+      new File(['condition'], '00-p.tex', { type: 'text/plain' }),
+    ])
+    await expect(input).toHaveProperty('files.length', 2)
+    await expect(canvas.getByLabelText('Недоступный выбор файла')).toBeDisabled()
+  },
+}
+
 export const Tones: Story = {
   name: 'Badge — семантические тона',
   render: () => (
