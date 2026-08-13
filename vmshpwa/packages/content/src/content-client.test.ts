@@ -262,7 +262,7 @@ describe('Content API client', () => {
                 ],
                 requestId: 'asset-list-test',
               },
-              { etag: `"${revision.revisionId}:v2"` },
+              { etag: `W/"${revision.revisionId}:v2"` },
             )
           : jsonResponse(
               {
@@ -282,6 +282,7 @@ describe('Content API client', () => {
     const client = createContentApiClient(runtime('staff'), { fetchImplementation })
 
     const listed = await client.revisionAssets(revision.revisionId)
+    expect(listed.etag).toBe(`"${revision.revisionId}:v2"`)
     const file = new File(['image'], 'rook.png', { type: 'image/png' })
     await client.uploadRevisionAsset({
       revisionId: revision.revisionId,

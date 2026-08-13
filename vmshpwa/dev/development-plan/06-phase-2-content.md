@@ -89,12 +89,18 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 
 - Routes: `staff/src/routes/lessons.*`, `problems.*`.
 - Upload single/bulk; conditions and solutions separate; per-level selection.
-- Bulk upload never guesses by filename: Staff maps every selected `.tex` to
-  one explicit group lesson and `condition|hint|solution`. The UI validates
+- Bulk upload never guesses the group by filename: Staff maps every selected
+  `.tex` to one explicit group lesson. Material kind defaults to `condition`
+  and remains explicitly editable as `condition|hint|solution`. The UI validates
   duplicate slots and file bounds before work, processes the small weekly batch
   sequentially, keeps successful revisions on partial failure and never
   publishes them automatically. Implementation and Storybook proof:
   [`phase2-bulk-upload-ui.md`](../../../pwa_tests/reports/phase2-bulk-upload-ui.md).
+- A revision blocked by missing assets remains saved. The bulk row links directly
+  to the affected material card; Staff builds each missing TikZ SVG or uploads
+  the external figure and then retries compilation. The content client accepts
+  the exact weak form which a compression filter may produce from the opaque
+  version ETag and restores the strong database version token for `If-Match`.
 - Diagnostics grouped by errors/warnings with source location and recovery action.
 - Missing asset: search content-addressed library, upload replacement, reuse exact hash, rerun compile.
 - LaTeX в браузере не редактируется. Metadata grid содержит название, task/answer type, validation/wrong/congratulation messages и optional topic tags; поддерживает keyboard edits, TSV paste preview, cell errors и optimistic version conflict.
@@ -160,6 +166,9 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - Отсутствующая обязательная утилита обнаруживается readiness/preflight до compile; diagnostic называет capability и config field, но публичный response не раскрывает полный server path.
 
 ## Пруфы завершения этапа
+
+Production upload recovery checkpoint (13 August 2026):
+[`phase2-production-upload-recovery-2026-08-13.md`](../../../pwa_tests/reports/phase2-production-upload-recovery-2026-08-13.md).
 
 Browser renderer increment реализован, но сам этап 2 не закрыт: [`phase2-web-renderer.md`](../../../pwa_tests/reports/phase2-web-renderer.md).
 

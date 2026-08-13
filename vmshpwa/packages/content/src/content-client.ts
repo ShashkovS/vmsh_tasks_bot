@@ -277,6 +277,21 @@ function safeLogicalFilename(value: string): string {
   return value
 }
 
+function responseContentEtag(value: string | null): ContentEtag | undefined {
+  const direct = contentEtagSchema.safeParse(value)
+  if (direct.success) return direct.data
+  // Older production nginx compressed JSON globally and therefore rewrote
+  // the backend's opaque version validator from "id:vN" to W/"id:vN".
+  // The token is a database version, not a representation hash, so recover
+  // only this exact known shape and send the original strong token to aiohttp.
+  // See Phase 2 missing-assets recovery in dev/development-plan/06-phase-2-content.md.
+  if (value?.startsWith('W/')) {
+    const recovered = contentEtagSchema.safeParse(value.slice(2))
+    if (recovered.success) return recovered.data
+  }
+  return undefined
+}
+
 function validatedPublicationSlot(
   slot: PublicationSlotVersion | undefined,
 ): PublicationSlotVersion | undefined {
@@ -734,14 +749,13 @@ class BrowserContentApiClient implements ContentApiClient {
   ): Promise<VersionedContentResource<T>> {
     const response = await this.#request(path, request)
     const data = await this.#parseJsonResponse(response, parser)
-    const etag = contentEtagSchema.safeParse(response.headers.get('ETag'))
-    if (!etag.success) {
+    const etag = responseContentEtag(response.headers.get('ETag'))
+    if (!etag) {
       throw new ContentProtocolError('Versioned content response has no valid ETag', {
-        cause: etag.error,
         status: response.status,
       })
     }
-    return { data, etag: etag.data }
+    return { data, etag }
   }
 
   async #reviewResource<T extends { etag: ContentEtag }>(

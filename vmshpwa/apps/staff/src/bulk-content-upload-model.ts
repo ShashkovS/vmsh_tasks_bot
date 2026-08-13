@@ -9,7 +9,8 @@ export interface BulkContentUploadRow {
   id: string
   file: File
   groupLessonId: string
-  kind: ContentMaterialKind | ''
+  kind: ContentMaterialKind
+  revisionId: string | undefined
   phase: BulkUploadRowPhase
   message: string | undefined
 }
@@ -19,7 +20,8 @@ export function createBulkContentUploadRows(files: readonly File[]): BulkContent
     id: `bulk-${index}-${file.name}-${file.size}`,
     file,
     groupLessonId: '',
-    kind: '',
+    kind: 'condition',
+    revisionId: undefined,
     phase: 'queued',
     message: undefined,
   }))
@@ -45,10 +47,14 @@ export function validateBulkContentUploadRows(
     if (!row.groupLessonId || !targetIds.has(row.groupLessonId)) {
       return `Выберите действующую группу для файла «${row.file.name}».`
     }
-    if (!row.kind) return `Выберите вид материала для файла «${row.file.name}».`
     const slot = `${row.groupLessonId}:${row.kind}`
     if (slots.has(slot)) return 'Одна группа и вид материала выбраны для нескольких файлов.'
     slots.add(slot)
   }
   return undefined
+}
+
+export function bulkContentRecoveryHref(row: BulkContentUploadRow): string | undefined {
+  if (row.phase !== 'attention' || !row.groupLessonId || !row.revisionId) return undefined
+  return `/staff/lessons/${encodeURIComponent(row.groupLessonId)}#material-${row.kind}`
 }

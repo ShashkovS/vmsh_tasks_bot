@@ -2,7 +2,11 @@ import { AlertTriangle, CheckCircle2, Files, LoaderCircle, X } from 'lucide-reac
 import { useMemo, useState } from 'react'
 
 import { type ContentApiClient, useContentUploadTargetsQuery } from '@vmsh/content'
-import { type ContentMaterialKind, type ContentUploadTarget } from '@vmsh/contracts'
+import {
+  ApiResponseError,
+  type ContentMaterialKind,
+  type ContentUploadTarget,
+} from '@vmsh/contracts'
 import { LevelChip, type GroupView } from '@vmsh/product'
 import {
   Alert,
@@ -26,6 +30,7 @@ import {
 
 import {
   type BulkContentUploadRow,
+  bulkContentRecoveryHref,
   createBulkContentUploadRows,
   validateBulkContentUploadRows,
 } from './bulk-content-upload-model'
@@ -98,7 +103,6 @@ export function BulkContentUpload({
       // concurrent TeX/PDF subprocesses add load without improving the admin's
       // decision flow. See Phase 2 bulk upload in 06-phase-2-content.md.
       for (const row of rows) {
-        if (!row.kind) continue
         try {
           updateRow(row.id, { phase: 'uploading', message: undefined })
           const uploaded = await client.uploadSource({
@@ -107,7 +111,7 @@ export function BulkContentUpload({
             logicalFilename: row.file.name,
             source: row.file,
           })
-          updateRow(row.id, { phase: 'compiling' })
+          updateRow(row.id, { phase: 'compiling', revisionId: uploaded.data.revisionId })
           const compiled = await client.compileRevision(uploaded.data.revisionId, uploaded.etag)
           updateRow(row.id, {
             phase: compiled.data.status === 'ready' ? 'ready' : 'attention',
@@ -118,7 +122,12 @@ export function BulkContentUpload({
         } catch (error) {
           updateRow(row.id, {
             phase: 'attention',
-            message: error instanceof Error ? error.message : 'Не удалось обработать файл.',
+            message:
+              error instanceof ApiResponseError && error.code === 'content_assets_missing'
+                ? 'Файл сохранён. Откройте занятие и добавьте недостающие рисунки.'
+                : error instanceof Error
+                  ? error.message
+                  : 'Не удалось обработать файл.',
           })
         }
       }
@@ -145,8 +154,8 @@ export function BulkContentUpload({
           Массовая загрузка
         </CardTitle>
         <p className="text-small text-muted-foreground">
-          Выберите несколько файлов и явно укажите группу и вид каждого материала. Загрузка не
-          публикует материалы.
+          Выберите несколько файлов и укажите группу. По умолчанию это условия; при необходимости
+          вид материала можно изменить. Загрузка ничего не публикует.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -195,6 +204,7 @@ export function BulkContentUpload({
               const selectedTarget = targets.find(
                 (target) => target.groupLessonId === row.groupLessonId,
               )
+              const recoveryHref = bulkContentRecoveryHref(row)
               return (
                 <div
                   className="grid min-w-0 gap-2 rounded-md border border-border bg-surface-subtle p-2 lg:grid-cols-[minmax(12rem,1fr)_minmax(12rem,16rem)_minmax(10rem,13rem)_auto] lg:items-center"
@@ -257,7 +267,14 @@ export function BulkContentUpload({
                     </span>
                     <Select
                       disabled={running}
-                      onValueChange={(value) => updateRow(row.id, { kind: value ?? '' })}
+                      onValueChange={(value) =>
+                        updateRow(row.id, {
+                          kind:
+                            value && value in materialLabels
+                              ? value
+                              : 'condition',
+                        })
+                      }
                       value={row.kind || null}
                     >
                       <SelectTrigger aria-labelledby={kindLabelId} className="w-full" size="sm">
@@ -289,9 +306,17 @@ export function BulkContentUpload({
                     </Button>
                   </div>
                   {row.message ? (
-                    <p className="text-caption text-status-warning lg:col-span-4" role="status">
-                      {row.message}
-                    </p>
+                    <div
+                      className="flex flex-wrap items-center gap-2 text-caption text-status-warning lg:col-span-4"
+                      role="status"
+                    >
+                      <span>{row.message}</span>
+                      {recoveryHref ? (
+                        <a className="font-medium underline underline-offset-2" href={recoveryHref}>
+                          Открыть недостающие рисунки
+                        </a>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
               )
@@ -320,6 +345,19 @@ export function BulkContentUpload({
             )}
             Готово: {readyCount} · требуют внимания: {attentionCount}
           </p>
+        ) : null}
+
+        {attentionCount > 0 ? (
+          <Alert tone="warning">
+            <AlertTriangle aria-hidden="true" />
+            <AlertContent>
+              <AlertTitle>Загрузка сохранена, но нужны рисунки</AlertTitle>
+              <AlertDescription>
+                Откройте нужное занятие по ссылке у файла. В карточке материала соберите TikZ в SVG
+                или загрузите внешний рисунок, затем повторите сборку материала.
+              </AlertDescription>
+            </AlertContent>
+          </Alert>
         ) : null}
 
         <div className="flex flex-wrap gap-2">

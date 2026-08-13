@@ -16,6 +16,25 @@
 Допустимые статусы: `not started`, `in progress`, `ready for review`, `changes requested`, `accepted`, `blocked by phase N`.
 
 ```text
+2026-08-13 — Staff content recovery — ready for owner production check
+Implemented:
+  lesson creation for all active course groups; condition as the bulk-upload
+  default; direct recovery links and explicit missing-asset instructions;
+  clearer material-card action naming. Existing art direction is unchanged.
+Evidence:
+  Staff /lessons creation form, bulk upload panel and lesson material cards;
+  vmshpwa/apps/staff/src/staff-lessons-page.tsx;
+  vmshpwa/apps/staff/src/bulk-content-upload.tsx;
+  vmshpwa/apps/staff/src/content-page.tsx.
+Checks:
+  focused unit 22/22, nginx structure 26/26, lint/typecheck/build PASS.
+  Full unit baseline remains 611/622: 11 pre-existing auth/session/search-schema
+  failures reproduce in isolation and are unrelated to this increment.
+Snapshots:
+  not updated.
+```
+
+```text
 2026-07-26 — Phase 4M — ready for review
 Decision owner: ожидается Сергей Шашков
 Implemented:
@@ -762,7 +781,7 @@ Token core + brand + полировка готовы и зелёные (Storyboo
 ## Development Phase 8 — explicit Family lesson digest · 3 августа 2026
 
 - `Product/Staff admin/Family digest--Ready to send|Late family pending|Already
-  sent|No recipients|Loading|Error` документирует ручной preview/confirm и
+sent|No recipients|Loading|Error` документирует ручной preview/confirm и
   честные состояния получателей.
 - `Pages/Staff/Content publication--Explicit Family digest after review`
   связывает действие с конкретным групповым занятием; Family

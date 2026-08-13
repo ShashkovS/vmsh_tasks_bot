@@ -604,20 +604,17 @@ export const BulkUploadExplicitMapping: Story = {
 
     await userEvent.click(canvas.getByLabelText('Группа для файла beginners.tex'))
     await userEvent.click(await body.findByRole('option', { name: /Начинающие/ }))
-    await userEvent.click(canvas.getByLabelText('Вид материала для файла beginners.tex'))
-    await userEvent.click(await body.findByRole('option', { name: 'Условие' }))
 
     await userEvent.click(canvas.getByLabelText('Группа для файла continuing.tex'))
     await userEvent.click(await body.findByRole('option', { name: /Продолжающие/ }))
-    await userEvent.click(canvas.getByLabelText('Вид материала для файла continuing.tex'))
-    await userEvent.click(await body.findByRole('option', { name: 'Условие' }))
 
     await expect(canvas.getByText('Начинающие')).toBeVisible()
     await expect(canvas.getByText('Продолжающие')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Загрузить набор и проверить' }))
     await expect(await canvas.findByText('Готово: 1 · требуют внимания: 1')).toBeVisible()
     await expect(canvas.getByText('Не найден рисунок diagrams/angle.svg')).toBeVisible()
-    await expect(canvas.getByText(/Загрузка не публикует материалы/)).toBeVisible()
+    await expect(canvas.getByText(/Загрузка ничего не публикует/)).toBeVisible()
+    await expect(canvas.getByRole('link', { name: 'Открыть недостающие рисунки' })).toBeVisible()
   },
 }
 
@@ -633,13 +630,15 @@ export const ResumeInterruptedRevision: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
-      await canvas.findByRole('button', { name: 'Продолжить проверку revision 1' }),
+      await canvas.findByRole('button', { name: 'Найти недостающие рисунки revision 1' }),
     ).toBeVisible()
     await expect(
-      canvas.getByRole('button', { name: 'Продолжить проверку revision 2' }),
+      canvas.getByRole('button', { name: 'Найти недостающие рисунки revision 2' }),
     ).toBeVisible()
     await expect(canvas.getByText(/Revision 3 проверяется/)).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Продолжить проверку revision 1' }))
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Найти недостающие рисунки revision 1' }),
+    )
     await expect(await canvas.findByRole('heading', { name: 'PWA' })).toBeVisible()
     await expect(canvas.getByRole('heading', { name: 'Telegram Rich HTML' })).toBeVisible()
   },
@@ -750,7 +749,7 @@ export const RecoverMissingAsset: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(
-      await canvas.findByRole('button', { name: 'Продолжить проверку revision 1' }),
+      await canvas.findByRole('button', { name: 'Найти недостающие рисунки revision 1' }),
     )
     await expect(await canvas.findByText('figures/rook.png')).toBeVisible()
     await userEvent.upload(

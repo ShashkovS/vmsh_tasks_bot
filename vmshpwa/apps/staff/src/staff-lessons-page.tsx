@@ -12,7 +12,11 @@ import {
   useAuthentication,
   useStaffDashboardQuery,
 } from '@vmsh/app-shell'
-import { ApiResponseError, staffDashboardQueryKey } from '@vmsh/contracts'
+import {
+  ApiResponseError,
+  staffDashboardQueryKey,
+  type AdminGroupLessonResponse,
+} from '@vmsh/contracts'
 import {
   Alert,
   AlertContent,
@@ -24,6 +28,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Checkbox,
   Input,
   Label,
 } from '@vmsh/ui'
@@ -61,6 +66,7 @@ type LessonDraft = {
   submissionClosesLocalTime: string
   hintScheduledLocalTime: string
   solutionScheduledLocalTime: string
+  createForAllGroups: boolean
 }
 
 const emptyDraft: LessonDraft = {
@@ -73,12 +79,15 @@ const emptyDraft: LessonDraft = {
   submissionClosesLocalTime: '',
   hintScheduledLocalTime: '',
   solutionScheduledLocalTime: '',
+  createForAllGroups: true,
 }
 
-function lessonCreationError(error: Error): string {
+function lessonCreationError(error: unknown): string {
   return error instanceof ApiResponseError
     ? error.message
-    : 'Проверьте обязательные даты и повторите попытку.'
+    : error instanceof Error && error.message
+      ? error.message
+      : 'Проверьте обязательные даты и повторите попытку.'
 }
 
 function readDraft(key: string): LessonDraft {
@@ -107,6 +116,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
   )
   const catalog = useAdminCourseCatalogQuery(client, scope, undefined, true)
   const queryClient = useQueryClient()
+  const [creationNotice, setCreationNotice] = useState<string>()
   const selectedCourse =
     catalog.data?.courses.find((course) => course.courseId === draft.courseId) ??
     catalog.data?.courses[0]
@@ -114,27 +124,46 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
     selectedCourse?.groups.find((group) => group.groupId === draft.groupId) ??
     selectedCourse?.groups[0]
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!selectedCourse || !selectedGroup) throw new Error('Сначала создайте группу')
-      return client.createGroupLesson({
-        schemaVersion: 1,
-        courseId: selectedCourse.courseId,
-        groupId: selectedGroup.groupId,
-        lessonNumber: Number(draft.lessonNumber),
-        title: draft.title.trim() || null,
-        cycleAnchorDate: draft.cycleAnchorDate,
-        businessTimezone: 'Europe/Moscow',
-        opensLocalTime: draft.opensLocalTime || null,
-        submissionClosesLocalTime: draft.submissionClosesLocalTime,
-        hintScheduledLocalTime: draft.hintScheduledLocalTime || null,
-        solutionScheduledLocalTime: draft.solutionScheduledLocalTime || null,
-      })
+      const groups = draft.createForAllGroups
+        ? selectedCourse.groups.filter((group) => group.status === 'active')
+        : [selectedGroup]
+      const created: AdminGroupLessonResponse[] = []
+      const failures: string[] = []
+      for (const group of groups) {
+        try {
+          created.push(
+            await client.createGroupLesson({
+              schemaVersion: 1,
+              courseId: selectedCourse.courseId,
+              groupId: group.groupId,
+              lessonNumber: Number(draft.lessonNumber),
+              title: draft.title.trim() || null,
+              cycleAnchorDate: draft.cycleAnchorDate,
+              businessTimezone: 'Europe/Moscow',
+              opensLocalTime: draft.opensLocalTime || null,
+              submissionClosesLocalTime: draft.submissionClosesLocalTime,
+              hintScheduledLocalTime: draft.hintScheduledLocalTime || null,
+              solutionScheduledLocalTime: draft.solutionScheduledLocalTime || null,
+            }),
+          )
+        } catch (error) {
+          failures.push(`${group.shortCode} · ${group.name}: ${lessonCreationError(error)}`)
+        }
+      }
+      if (created.length === 0) throw new Error(failures.join('; ') || 'Занятия не созданы')
+      return { created, failures }
     },
-    onSuccess: async (response) => {
-      globalThis.localStorage.removeItem(draftKey)
+    onSuccess: async ({ created, failures }) => {
       await queryClient.invalidateQueries({ queryKey: staffDashboardQueryKey(scope) })
+      if (failures.length > 0) {
+        setCreationNotice(`Создано: ${created.length}. Не создано: ${failures.join('; ')}`)
+        return
+      }
+      globalThis.localStorage.removeItem(draftKey)
       globalThis.location.assign(
-        `/staff/lessons/${encodeURIComponent(response.groupLesson.groupLessonId)}`,
+        `/staff/lessons/${encodeURIComponent(created[0]!.groupLesson.groupLessonId)}`,
       )
     },
     onError: (error) => authentication.handleApiError(error),
@@ -146,6 +175,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setCreationNotice(undefined)
     mutation.mutate()
   }
 
@@ -179,6 +209,7 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
             Группа
             <select
               className="min-h-10 rounded-md border border-input bg-surface px-3 text-small"
+              disabled={mutation.isPending || draft.createForAllGroups}
               onChange={(event) => setDraft((value) => ({ ...value, groupId: event.target.value }))}
               value={selectedGroup?.groupId ?? ''}
             >
@@ -188,6 +219,19 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
                 </option>
               ))}
             </select>
+          </Label>
+          <Label className="flex items-center gap-2 md:col-span-2">
+            <Checkbox
+              checked={draft.createForAllGroups}
+              disabled={mutation.isPending}
+              onCheckedChange={(checked) =>
+                setDraft((value) => ({ ...value, createForAllGroups: checked === true }))
+              }
+            />
+            Создать занятие сразу для всех активных групп курса
+            {selectedCourse
+              ? ` (${selectedCourse.groups.filter((group) => group.status === 'active').length})`
+              : ''}
           </Label>
           <Label className="grid gap-1">
             Номер занятия
@@ -272,9 +316,21 @@ function LessonCreator({ onClose }: { onClose: () => void }) {
               </AlertContent>
             </Alert>
           ) : null}
+          {creationNotice ? (
+            <Alert className="md:col-span-2" tone="warning">
+              <AlertContent>
+                <AlertTitle>Занятия созданы частично</AlertTitle>
+                <AlertDescription>{creationNotice}</AlertDescription>
+              </AlertContent>
+            </Alert>
+          ) : null}
           <div className="flex gap-2 md:col-span-2">
             <Button disabled={mutation.isPending || !selectedGroup} type="submit">
-              {mutation.isPending ? 'Создаём…' : 'Создать и открыть'}
+              {mutation.isPending
+                ? 'Создаём…'
+                : draft.createForAllGroups
+                  ? 'Создать для всех групп'
+                  : 'Создать и открыть'}
             </Button>
             <Button disabled={mutation.isPending} onClick={onClose} type="button" variant="outline">
               Отмена

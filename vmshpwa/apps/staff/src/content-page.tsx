@@ -606,7 +606,7 @@ function MaterialWorkflowCard({
   )
 
   return (
-    <Card data-testid={`content-workflow-${kind}`}>
+    <Card data-testid={`content-workflow-${kind}`} id={`material-${kind}`}>
       <CardHeader className="gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle aria-level={2} role="heading">
@@ -701,13 +701,13 @@ function MaterialWorkflowCard({
                     </span>
                   </span>
                   <Button
-                    aria-label={`Продолжить проверку revision ${revision.data.revisionNumber}`}
+                    aria-label={`Найти недостающие рисунки revision ${revision.data.revisionNumber}`}
                     disabled={state.phase === 'processing'}
                     onClick={() => void compileStoredRevision(revision)}
                     size="xs"
                     variant="outline"
                   >
-                    <RefreshCw aria-hidden="true" /> Продолжить проверку
+                    <RefreshCw aria-hidden="true" /> Найти недостающие рисунки
                   </Button>
                 </li>
               ))}

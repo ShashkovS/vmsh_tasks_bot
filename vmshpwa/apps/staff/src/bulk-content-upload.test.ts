@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ContentUploadTarget } from '@vmsh/contracts'
 
 import {
+  bulkContentRecoveryHref,
   createBulkContentUploadRows,
   validateBulkContentUploadRows,
 } from './bulk-content-upload-model'
@@ -27,16 +28,11 @@ const targets: ContentUploadTarget[] = [
 ]
 
 describe('Staff bulk content upload validation', () => {
-  it('requires an explicit active group and material kind for every file', () => {
+  it('defaults every selected LaTeX file to a condition and requires an active group', () => {
     const [row] = createBulkContentUploadRows([new File(['tex'], 'condition.tex')])
 
+    expect(row?.kind).toBe('condition')
     expect(validateBulkContentUploadRows([row!], targets)).toContain('Выберите действующую группу')
-    expect(
-      validateBulkContentUploadRows(
-        [{ ...row!, groupLessonId: targets[0]!.groupLessonId }],
-        targets,
-      ),
-    ).toContain('Выберите вид материала')
     expect(
       validateBulkContentUploadRows(
         [
@@ -92,5 +88,16 @@ describe('Staff bulk content upload validation', () => {
     }
 
     expect(validateBulkContentUploadRows([row], targets)).toBeUndefined()
+  })
+
+  it('links an attention row back to the exact lesson and material card', () => {
+    const row = {
+      ...createBulkContentUploadRows([new File(['tex'], 'condition.tex')])[0]!,
+      groupLessonId: targets[0]!.groupLessonId,
+      revisionId: 'content-revision.condition',
+      phase: 'attention' as const,
+    }
+
+    expect(bulkContentRecoveryHref(row)).toBe('/staff/lessons/group-lesson-41-n#material-condition')
   })
 })
