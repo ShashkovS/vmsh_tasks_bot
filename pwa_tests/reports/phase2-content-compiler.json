@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "compilerVersion": "vmsh-latex-compiler/2",
+  "compilerVersion": "vmsh-latex-compiler/3",
   "goldenManifest": {
     "path": "vmshpwa/fixtures/content/golden-manifest.json",
     "sha256": "ea05ba31c0d425819088d50998d85ba35fc5b4deb233dc5ef553fb57c391bf82",

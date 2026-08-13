@@ -7,7 +7,7 @@
 
 ## Итог
 
-- compiler: `vmsh-latex-compiler/2`;
+- compiler: `vmsh-latex-compiler/3`;
 - manifest: `vmshpwa/fixtures/content/golden-manifest.json`;
 - manifest entries: 54;
 - compiled TeX sources: 30;

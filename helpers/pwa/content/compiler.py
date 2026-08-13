@@ -42,7 +42,7 @@ from .web_document import (
 )
 
 
-COMPILER_VERSION = "vmsh-latex-compiler/2"
+COMPILER_VERSION = "vmsh-latex-compiler/3"
 _MAX_KNOWN_ASSETS = 20_000
 _FORBIDDEN_TEX_COMMANDS = {
     "catcode",

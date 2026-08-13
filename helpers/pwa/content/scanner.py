@@ -302,7 +302,19 @@ def scan_commands(
     start: int,
     end: int,
     limits: ParserLimits,
-    skip_environments: frozenset[str] = frozenset({"tikzpicture"}),
+    skip_environments: frozenset[str] = frozenset(
+        {
+            "align",
+            "align*",
+            "comment",
+            "equation",
+            "equation*",
+            "gather",
+            "gather*",
+            "picture",
+            "tikzpicture",
+        }
+    ),
 ) -> tuple[CommandToken, ...]:
     """Return commands outside comments, math and selected opaque environments."""
 

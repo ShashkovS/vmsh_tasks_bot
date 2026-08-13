@@ -52,11 +52,19 @@ from .scanner import (
     skip_space_and_comments,
     syntax_diagnostic,
 )
+from .tikz import scan_tikz_sources
 
 
 AST_SCHEMA_VERSION = 2
 
-_PROBLEM_STARTS = {"задача", "problem", "problemn"}
+_PROBLEM_STARTS = {
+    "задача",
+    "задачабк",
+    "задачан",
+    "problem",
+    "problemn",
+    "сзадача",
+}
 _PROBLEM_ENDS = {"кзадача", "eproblem"}
 _FIELD_STARTS = {
     "ответ": "answer",
@@ -72,7 +80,6 @@ _FIELD_ENDS = {
     "hint": {"куказание", "кподсказка", "ehint"},
     "solution": {"крешение", "esolution"},
 }
-
 _ANNOUNCEMENT_STARTS = {
     "объявление": AnnouncementKind.REGULAR,
     "важноеОбъявление": AnnouncementKind.IMPORTANT,
@@ -82,20 +89,30 @@ _ANNOUNCEMENT_ENDS = {
     "кважноеОбъявление": AnnouncementKind.IMPORTANT,
 }
 _ANNOUNCEMENT_COMMANDS = set(_ANNOUNCEMENT_STARTS) | set(_ANNOUNCEMENT_ENDS)
+_SUBPART_COMMANDS = {"пункт", "пунктн", "спункт", "сспункт"}
+_SINGLE_GROUP_FIELDS = {"answ": "answer"}
 
 _FORMATTING_COMMANDS = {
     "textbf": StrongNode,
     "выд": EmphasisNode,
+    "выдж": EmphasisNode,
+    "выдд": EmphasisNode,
     "emph": EmphasisNode,
     "textit": EmphasisNode,
     "it": EmphasisNode,
     "texttt": CodeNode,
+    "mathbf": StrongNode,
 }
 _PRESERVE_GROUP_COMMANDS = {
     "boldrunes",
+    "doublebox",
+    "fbox",
+    "footnote",
+    "sout",
     "text",
     "textrm",
     "textsf",
+    "textsc",
     "hbox",
     "mbox",
     "centerline",
@@ -103,6 +120,11 @@ _PRESERVE_GROUP_COMMANDS = {
     "phantom",
     "runes",
     "shortstack",
+    "smash",
+    "textsuperscript",
+    "textup",
+    "underline",
+    "vbox",
 }
 _DISCARD_ONE_GROUP_COMMANDS = {
     "vspace",
@@ -121,7 +143,31 @@ _DISCARD_ONE_GROUP_COMMANDS = {
     "УстановитьГраницы",
     "УвеличитьВысоту",
     "УвеличитьШирину",
+    "bans",
+    "batype",
+    "baval",
+    "bchecker",
+    "bcongrat",
+    "bptype",
+    "btitle",
+    "bvalerr",
+    "bwrong",
+    "cline",
+    "newlength",
+    "newsavebox",
+    "npcopy",
+    "refstepcounter",
+    "usetikzlibrary",
 }
+_SKIP_TO_LINE_COMMANDS = {
+    "arraycolsep",
+    "hangafter",
+    "hsize",
+    "parshape",
+    "tabcolsep",
+    "vskip",
+}
+_SKIP_TO_NEXT_COMMAND = {"hangindent", "hskip"}
 _NO_OUTPUT_COMMANDS = {
     "noindent",
     "small",
@@ -135,10 +181,12 @@ _NO_OUTPUT_COMMANDS = {
     "sloppy",
     "hfill",
     "vfill",
+    "vfil",
     "hfil",
     "hss",
     "break",
     "newpage",
+    "newaaaaaalpage",
     "smallskip",
     "medskip",
     "bigskip",
@@ -159,7 +207,38 @@ _NO_OUTPUT_COMMANDS = {
     "СоздатьЗаголовок",
     "разделитель",
     "bfseries",
+    "bf",
     "em",
+    "sffamily",
+    "tt",
+    "rm",
+    "sc",
+    "sl",
+    "scriptsize",
+    "footnotesize",
+    "itshape",
+    "selectfont",
+    "tab",
+    "theFullTitleLine",
+    "ОбнулитьДанные",
+    "problemheight",
+    "nolinebreak",
+    "nopagebreak",
+    "pagebreak",
+    "columnbreak",
+    "indent",
+    "strut",
+    "makeatletter",
+    "makeatother",
+    "вСтрочку",
+    "-",
+    "center",
+    "hrulefill",
+    "largeskip",
+    "linewidth",
+    "невСтрочку",
+    "rightskip",
+    "textwidth",
 }
 _TEXT_SYMBOLS = {
     "%": "%",
@@ -175,6 +254,11 @@ _TEXT_SYMBOLS = {
     "пк": "»",
     "т": " — ",
     "bullet": "•",
+    "textbullet": "•",
+    "textdollar": "$",
+    "textnumero": "№",
+    "vdots": "⋮",
+    "ddots": "⋱",
     "dots": "…",
     "ldots": "…",
     "dotsb": "…",
@@ -183,32 +267,108 @@ _TEXT_SYMBOLS = {
     "dhchar": "ð",
     "thornchar": "þ",
     ",": "\u202f",
+    ";": "\u202f",
     "quad": " ",
     "qquad": " ",
+    "cdotp": "·",
+    ":": "\u202f",
+    "grqq": "“",
+    "i": "ı",
+    "blacksquare": "■",
+    "cdot": "·",
+    "*": "*",
 }
-_LINE_BREAK_COMMANDS = {"\\", "newline", "linebreak", "par"}
-_STRUCTURAL_COMMANDS = {
-    "пункт",
-    "includegraphics",
-    "rightpicture",
-    "leftpicture",
-    "righttikz",
-    "lefttikz",
-    "righttikzw",
-    "lefttikzw",
-    "begin",
-    "раздел",
-    "допраздел",
-    "resizebox",
-} | _ANNOUNCEMENT_COMMANDS
-_SUPPORTED_ENVIRONMENTS = {
+_LINE_BREAK_COMMANDS = {
+    "\\",
+    "newline",
+    "linebreak",
+    "par",
+    "subitem",
+    "subsubitem",
+    "сНовойСтроки",
+}
+_BLOCK_GROUP_WRAPPERS = {
+    "centerline",
+    "doublebox",
+    "hbox",
+    "makebox",
+    "parbox",
+    "scalebox",
+    "smash",
+    "textit",
+    "vbox",
+}
+_STRUCTURAL_COMMANDS = (
+    {
+        "includegraphics",
+        "rightpicture",
+        "leftpicture",
+        "righttikz",
+        "lefttikz",
+        "righttikzw",
+        "lefttikzw",
+        "begin",
+        "раздел",
+        "допраздел",
+        "resizebox",
+        "putthere",
+        "tikz",
+        "note",
+        "phantom",
+        "raisebox",
+    }
+    | _ANNOUNCEMENT_COMMANDS
+    | _SUBPART_COMMANDS
+    | _BLOCK_GROUP_WRAPPERS
+)
+_DISPLAY_MATH_ENVIRONMENTS = {
+    "align",
+    "align*",
+    "equation",
+    "equation*",
+    "gather",
+    "gather*",
+    "multline*",
+}
+_CROSS_SEMANTIC_LAYOUT_ENVIRONMENTS = {
     "center",
+    "figure",
+    "footnotesize",
+    "minipage",
+    "multicols",
+    "sideways",
+    "small",
+    "spacing",
+    "table",
+    "tabbing",
+    "tabular",
+    "tabularx",
+    "wrapfigure",
+    "wraptable",
+}
+_SUPPORTED_ENVIRONMENTS = {
+    *_DISPLAY_MATH_ENVIRONMENTS,
+    "center",
+    "comment",
     "itemize",
     "enumerate",
+    "figure",
+    "footnotesize",
+    "minipage",
     "nums",
     "tabular",
     "tabularx",
+    "tabbing",
     "tikzpicture",
+    "multicols",
+    "picture",
+    "quote",
+    "sideways",
+    "small",
+    "spacing",
+    "table",
+    "wrapfigure",
+    "wraptable",
 }
 
 
@@ -218,6 +378,14 @@ class _ProblemSlice:
     statement_end: int
     fields_start: int
     outer_end: int
+
+
+@dataclass(frozen=True)
+class _StructuralGroup:
+    start: int
+    content_start: int
+    content_end: int
+    end: int
 
 
 class _NodeLimitExceeded(ValueError):
@@ -246,8 +414,29 @@ class LatexAstParser:
         self.source_map = SourceMap(source_name, text)
         self.diagnostics: list[Diagnostic] = []
         self._node_count = 0
+        tikz_scan = scan_tikz_sources(text, limits=limits)
+        self._tikz_sources = {source.start: source for source in tikz_scan.sources}
+        self._tikz_context_starts = {
+            start for source in tikz_scan.sources for start in source.context_starts
+        }
 
     def parse(self) -> DocumentAst:
+        replacement_offset = self.text.find("\ufffd")
+        if replacement_offset >= 0:
+            replacement_count = self.text.count("\ufffd")
+            self._diagnose(
+                "source.replacement_character",
+                (
+                    "Source содержит символ замены U+FFFD "
+                    f"({replacement_count} вхождений) и уже повреждён до загрузки."
+                ),
+                replacement_offset,
+                replacement_offset + 1,
+                recovery=(
+                    "Восстановите исходный файл из корректной UTF-8/Windows-1251 "
+                    "копии; перекодирование текущих байтов не вернёт утраченные буквы."
+                ),
+            )
         try:
             body_start, body_end = self._document_body()
             slices = self._problem_slices(body_start, body_end)
@@ -412,7 +601,7 @@ class LatexAstParser:
         header_end = command.end
         source_item: str | None = None
         source_title: str | None = None
-        if command.name == "problemn":
+        if command.name in {"problemn", "задачан"}:
             item_group = read_group(
                 self.text,
                 header_end,
@@ -450,16 +639,41 @@ class LatexAstParser:
             end=problem_slice.outer_end,
             limits=self.limits,
         )
-        sections["statement"].append((header_end, problem_slice.statement_end))
         consumed_fields: list[tuple[int, int]] = []
         command_index = 0
         while command_index < len(commands):
             field_start = commands[command_index]
+            single_group_kind = _SINGLE_GROUP_FIELDS.get(field_start.name)
+            if single_group_kind is not None:
+                field_group = read_group(
+                    self.text,
+                    field_start.end,
+                    problem_slice.outer_end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if field_group is None:
+                    self._missing_argument(field_start)
+                    command_index += 1
+                    continue
+                sections[single_group_kind].append(
+                    (field_group.content_start, field_group.content_end)
+                )
+                consumed_fields.append((field_start.start, field_group.end))
+                command_index += 1
+                continue
             field_kind = _FIELD_STARTS.get(field_start.name)
             if field_kind is None:
                 command_index += 1
                 continue
             expected_ends = _FIELD_ENDS[field_kind]
+            next_field_start_index = next(
+                (
+                    candidate_index
+                    for candidate_index in range(command_index + 1, len(commands))
+                    if commands[candidate_index].name in _FIELD_STARTS
+                ),
+                None,
+            )
             field_end_index = next(
                 (
                     candidate_index
@@ -468,21 +682,47 @@ class LatexAstParser:
                 ),
                 None,
             )
+            if next_field_start_index is not None and (
+                field_end_index is None or next_field_start_index < field_end_index
+            ):
+                field_end_index = None
             if field_end_index is None:
+                recovery_end = (
+                    commands[next_field_start_index].start
+                    if next_field_start_index is not None
+                    else problem_slice.outer_end
+                )
                 self._diagnose(
                     "latex.field_unclosed",
                     f"Блок {field_kind} не имеет завершающей команды.",
                     field_start.start,
-                    problem_slice.outer_end,
+                    recovery_end,
                     recovery="Закройте блок соответствующей парной командой.",
                 )
-                sections[field_kind].append((field_start.end, problem_slice.outer_end))
-                consumed_fields.append((field_start.start, problem_slice.outer_end))
-                break
+                sections[field_kind].append((field_start.end, recovery_end))
+                consumed_fields.append((field_start.start, recovery_end))
+                if next_field_start_index is None:
+                    break
+                command_index = next_field_start_index
+                continue
             field_end = commands[field_end_index]
             sections[field_kind].append((field_start.end, field_end.start))
             consumed_fields.append((field_start.start, field_end.end))
             command_index = field_end_index + 1
+
+        statement_ranges = [(header_end, problem_slice.statement_end)]
+        for consumed_start, consumed_end in consumed_fields:
+            next_ranges: list[tuple[int, int]] = []
+            for range_start, range_end in statement_ranges:
+                if consumed_end <= range_start or consumed_start >= range_end:
+                    next_ranges.append((range_start, range_end))
+                    continue
+                if range_start < consumed_start:
+                    next_ranges.append((range_start, consumed_start))
+                if consumed_end < range_end:
+                    next_ranges.append((consumed_end, range_end))
+            statement_ranges = next_ranges
+        sections["statement"].extend(statement_ranges)
 
         trailing_cursor = problem_slice.fields_start
         for consumed_start, consumed_end in consumed_fields:
@@ -536,8 +776,12 @@ class LatexAstParser:
     def _parse_blocks(self, start: int, end: int) -> tuple[BlockNode, ...]:
         if start >= end:
             return ()
-        structural = list(
-            self._top_level_commands(start, end, set(_STRUCTURAL_COMMANDS))
+        structural: list[CommandToken | _StructuralGroup] = sorted(
+            (
+                *self._top_level_commands(start, end, set(_STRUCTURAL_COMMANDS)),
+                *self._top_level_structural_groups(start, end),
+            ),
+            key=lambda item: item.start,
         )
         nodes: list[BlockNode] = []
         cursor = start
@@ -548,25 +792,51 @@ class LatexAstParser:
                 structural_index += 1
                 continue
             nodes.extend(self._paragraphs(cursor, command.start))
-            if command.name == "пункт":
+            if isinstance(command, _StructuralGroup):
+                nodes.extend(
+                    self._parse_blocks(command.content_start, command.content_end)
+                )
+                cursor = command.end
+                structural_index += 1
+                continue
+            if command.name in _SUBPART_COMMANDS:
                 next_subpart = next(
                     (
                         candidate
                         for candidate in structural[structural_index + 1 :]
-                        if candidate.start >= command.end and candidate.name == "пункт"
+                        if candidate.start >= command.end
+                        and isinstance(candidate, CommandToken)
+                        and candidate.name in _SUBPART_COMMANDS
                     ),
                     None,
                 )
                 subpart_end = next_subpart.start if next_subpart is not None else end
-                label = self._subpart_label(
-                    sum(isinstance(node, SubpartNode) for node in nodes) + 1
+                content_start = command.end
+                explicit_label = (
+                    read_group(
+                        self.text,
+                        command.end,
+                        subpart_end,
+                        max_depth=self.limits.max_group_depth,
+                    )
+                    if command.name == "пунктн"
+                    else None
                 )
+                if explicit_label is not None:
+                    label = self.text[
+                        explicit_label.content_start : explicit_label.content_end
+                    ].strip()
+                    content_start = explicit_label.end
+                else:
+                    label = self._subpart_label(
+                        sum(isinstance(node, SubpartNode) for node in nodes) + 1
+                    )
                 nodes.append(
                     self._count(
                         SubpartNode(
                             span=self.source_map.span(command.start, subpart_end),
                             label=label,
-                            children=self._parse_blocks(command.end, subpart_end),
+                            children=self._parse_blocks(content_start, subpart_end),
                         )
                     )
                 )
@@ -599,6 +869,187 @@ class LatexAstParser:
                         )
                     )
                     cursor = groups[2].end
+            elif command.name == "putthere":
+                groups = self._read_groups(command.end, end, 3)
+                if len(groups) != 3:
+                    self._missing_argument(command)
+                    cursor = groups[-1].end if groups else command.end
+                else:
+                    nodes.extend(
+                        self._parse_blocks(
+                            groups[2].content_start, groups[2].content_end
+                        )
+                    )
+                    cursor = groups[2].end
+            elif command.name == "tikz":
+                extracted = self._tikz_sources.get(command.start)
+                if extracted is not None:
+                    figure = self._tikz_figure(
+                        command.start,
+                        extracted.end,
+                        extracted.source,
+                        width_hint=None,
+                        float_hint=None,
+                    )
+                    if figure is not None:
+                        nodes.append(figure)
+                    cursor = extracted.end
+                    structural_index += 1
+                    continue
+                cursor = command.end
+                options = read_optional_group(
+                    self.text,
+                    cursor,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if options is not None:
+                    cursor = options.end
+                body = read_group(
+                    self.text,
+                    cursor,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if body is None:
+                    self._missing_argument(command)
+                    cursor = options.end if options is not None else command.end
+                else:
+                    option_text = (
+                        self.text[options.start : options.end]
+                        if options is not None
+                        else ""
+                    )
+                    raw = (
+                        f"\\begin{{tikzpicture}}{option_text}"
+                        f"{self.text[body.content_start : body.content_end]}"
+                        "\\end{tikzpicture}"
+                    )
+                    figure = self._tikz_figure(
+                        command.start,
+                        body.end,
+                        raw,
+                        width_hint=None,
+                        float_hint=None,
+                    )
+                    if figure is not None:
+                        nodes.append(figure)
+                    cursor = body.end
+            elif command.name == "note":
+                group = read_group(
+                    self.text,
+                    command.end,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if group is None:
+                    self._missing_argument(command)
+                    cursor = command.end
+                else:
+                    nodes.extend(
+                        self._parse_blocks(group.content_start, group.content_end)
+                    )
+                    cursor = group.end
+            elif command.name == "phantom":
+                group = read_group(
+                    self.text,
+                    command.end,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if group is None:
+                    self._missing_argument(command)
+                    cursor = command.end
+                else:
+                    cursor = group.end
+            elif command.name in _BLOCK_GROUP_WRAPPERS:
+                if command.name in {"hbox", "vbox"}:
+                    group = self._box_content_group(command, end)
+                else:
+                    wrapper_cursor = command.end
+                    if command.name == "makebox":
+                        for _ in range(2):
+                            optional = read_optional_group(
+                                self.text,
+                                wrapper_cursor,
+                                end,
+                                max_depth=self.limits.max_group_depth,
+                            )
+                            if optional is None:
+                                break
+                            wrapper_cursor = optional.end
+                    if command.name in {"parbox", "scalebox"}:
+                        layout_argument = read_group(
+                            self.text,
+                            wrapper_cursor,
+                            end,
+                            max_depth=self.limits.max_group_depth,
+                        )
+                        wrapper_cursor = (
+                            layout_argument.end
+                            if layout_argument is not None
+                            else wrapper_cursor
+                        )
+                    group = read_group(
+                        self.text,
+                        wrapper_cursor,
+                        end,
+                        max_depth=self.limits.max_group_depth,
+                    )
+                if group is None:
+                    group_start = self.text.find("{", command.end, end)
+                    if command.name in {"hbox", "vbox"} and group_start >= 0:
+                        self._diagnose(
+                            "latex.layout_group_crosses_semantic_boundary",
+                            (
+                                f"Print-layout command \\{command.name} пересекает "
+                                "границу условия/подсказки/решения и не переносится "
+                                "в web AST."
+                            ),
+                            command.start,
+                            group_start + 1,
+                            severity=DiagnosticSeverity.WARNING,
+                        )
+                        cursor = group_start + 1
+                    else:
+                        self._missing_argument(command)
+                        cursor = command.end
+                else:
+                    nodes.extend(
+                        self._parse_blocks(group.content_start, group.content_end)
+                    )
+                    cursor = group.end
+            elif command.name == "raisebox":
+                lift = read_group(
+                    self.text,
+                    command.end,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                cursor = lift.end if lift is not None else command.end
+                for _ in range(2):
+                    optional = read_optional_group(
+                        self.text,
+                        cursor,
+                        end,
+                        max_depth=self.limits.max_group_depth,
+                    )
+                    if optional is None:
+                        break
+                    cursor = optional.end
+                content = read_group(
+                    self.text,
+                    cursor,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if lift is None or content is None:
+                    self._missing_argument(command)
+                else:
+                    nodes.extend(
+                        self._parse_blocks(content.content_start, content.content_end)
+                    )
+                    cursor = content.end
             elif command.name == "begin":
                 environment_nodes, cursor = self._parse_environment(command, end)
                 nodes.extend(environment_nodes)
@@ -702,11 +1153,34 @@ class LatexAstParser:
             return []
         ranges: list[tuple[int, int]] = []
         paragraph_start = start
-        for match in re.finditer(r"\n[ \t]*\n+", self.text[start:end]):
-            boundary_start = start + match.start()
-            if self._has_visible_source(paragraph_start, boundary_start):
-                ranges.append((paragraph_start, boundary_start))
-            paragraph_start = start + match.end()
+        cursor = start
+        brace_depth = 0
+        while cursor < end:
+            if self.text[cursor] == "%" and not is_escaped(self.text, cursor):
+                cursor = skip_comment(self.text, cursor, end)
+                continue
+            math = read_math(self.text, cursor, end)
+            if math is not None:
+                cursor = math.end
+                continue
+            if self.text[cursor] == "{" and not is_escaped(self.text, cursor):
+                brace_depth += 1
+                cursor += 1
+                continue
+            if self.text[cursor] == "}" and not is_escaped(self.text, cursor):
+                brace_depth = max(0, brace_depth - 1)
+                cursor += 1
+                continue
+            if self.text[cursor] == "\n" and brace_depth == 0:
+                match = re.match(r"\n[ \t]*\n+", self.text[cursor:end])
+                if match is not None:
+                    boundary_end = cursor + match.end()
+                    if self._has_visible_source(paragraph_start, cursor):
+                        ranges.append((paragraph_start, cursor))
+                    paragraph_start = boundary_end
+                    cursor = boundary_end
+                    continue
+            cursor += 1
         if self._has_visible_source(paragraph_start, end):
             ranges.append((paragraph_start, end))
         paragraphs = []
@@ -773,15 +1247,17 @@ class LatexAstParser:
             math = read_math(self.text, cursor, end)
             if math is not None:
                 flush(cursor)
-                nodes.append(
-                    self._count(
-                        MathNode(
-                            span=self.source_map.span(math.start, math.end),
-                            latex=self.text[math.content_start : math.content_end],
-                            display=math.display,
+                latex = self.text[math.content_start : math.content_end]
+                if latex.strip():
+                    nodes.append(
+                        self._count(
+                            MathNode(
+                                span=self.source_map.span(math.start, math.end),
+                                latex=latex,
+                                display=math.display,
+                            )
                         )
                     )
-                )
                 cursor = math.end
                 text_start = cursor
                 continue
@@ -808,6 +1284,16 @@ class LatexAstParser:
                 )
                 if group is None:
                     flush(cursor)
+                    source_group = read_group(
+                        self.text,
+                        cursor,
+                        len(self.text),
+                        max_depth=self.limits.max_group_depth,
+                    )
+                    if source_group is not None:
+                        cursor += 1
+                        text_start = cursor
+                        continue
                     self._diagnose(
                         "latex.group_unclosed",
                         "Не найдена закрывающая фигурная скобка.",
@@ -871,6 +1357,48 @@ class LatexAstParser:
                 max_depth=self.limits.max_group_depth,
             )
             if group is None:
+                if command.name in {"it", "выд", "выдж"}:
+                    nodes.append(
+                        self._count(
+                            EmphasisNode(
+                                span=self.source_map.span(command.start, end),
+                                children=self._parse_inline(
+                                    command.end,
+                                    end,
+                                    depth=depth + 1,
+                                ),
+                            )
+                        )
+                    )
+                    return end
+                token_start = skip_space_and_comments(self.text, command.end, end)
+                if token_start < end and self.text[token_start] not in "\\{}":
+                    token_end = token_start + 1
+                    if formatter is CodeNode:
+                        nodes.append(
+                            self._count(
+                                CodeNode(
+                                    span=self.source_map.span(command.start, token_end),
+                                    text=self.text[token_start:token_end],
+                                )
+                            )
+                        )
+                    else:
+                        child = self._count(
+                            TextNode(
+                                span=self.source_map.span(token_start, token_end),
+                                text=self.text[token_start:token_end],
+                            )
+                        )
+                        nodes.append(
+                            self._count(
+                                formatter(
+                                    span=self.source_map.span(command.start, token_end),
+                                    children=(child,),
+                                )
+                            )
+                        )
+                    return token_end
                 self._missing_argument(command)
                 return command.end
             if formatter is CodeNode:
@@ -889,6 +1417,126 @@ class LatexAstParser:
                 )
             nodes.append(self._count(node))
             return group.end
+        if command.name == "bf":
+            nodes.append(
+                self._count(
+                    StrongNode(
+                        span=self.source_map.span(command.start, end),
+                        children=self._parse_inline(
+                            command.end,
+                            end,
+                            depth=depth + 1,
+                        ),
+                    )
+                )
+            )
+            return end
+        if command.name == "verb":
+            delimiter_offset = command.end
+            if delimiter_offset >= end or self.text[delimiter_offset].isspace():
+                self._missing_argument(command)
+                return command.end
+            delimiter = self.text[delimiter_offset]
+            content_end = self.text.find(delimiter, delimiter_offset + 1, end)
+            if content_end < 0:
+                self._diagnose(
+                    "latex.verb_unclosed",
+                    "Команда \\verb не имеет завершающего delimiter.",
+                    command.start,
+                    end,
+                )
+                return end
+            nodes.append(
+                self._count(
+                    CodeNode(
+                        span=self.source_map.span(command.start, content_end + 1),
+                        text=self.text[delimiter_offset + 1 : content_end],
+                    )
+                )
+            )
+            return content_end + 1
+        if command.name == "overline":
+            group = read_group(
+                self.text,
+                command.end,
+                end,
+                max_depth=self.limits.max_group_depth,
+            )
+            if group is None:
+                self._missing_argument(command)
+                return command.end
+            nodes.append(
+                self._count(
+                    MathNode(
+                        span=self.source_map.span(command.start, group.end),
+                        latex=self.text[command.start : group.end],
+                        display=False,
+                    )
+                )
+            )
+            return group.end
+        if command.name == "sfrac":
+            groups = self._read_groups(command.end, end, 2)
+            if len(groups) != 2:
+                self._missing_argument(command)
+                return groups[-1].end if groups else command.end
+            nodes.append(
+                self._count(
+                    MathNode(
+                        span=self.source_map.span(command.start, groups[1].end),
+                        latex=self.text[command.start : groups[1].end],
+                        display=False,
+                    )
+                )
+            )
+            return groups[1].end
+        if command.name == "ensuremath":
+            group = read_group(
+                self.text,
+                command.end,
+                end,
+                max_depth=self.limits.max_group_depth,
+            )
+            if group is None:
+                self._missing_argument(command)
+                return command.end
+            latex = self.text[group.content_start : group.content_end].strip()
+            if latex:
+                nodes.append(
+                    self._count(
+                        MathNode(
+                            span=self.source_map.span(command.start, group.end),
+                            latex=latex,
+                            display=False,
+                        )
+                    )
+                )
+            return group.end
+        if command.name in {"'", '"'}:
+            group = read_group(
+                self.text,
+                command.end,
+                end,
+                max_depth=self.limits.max_group_depth,
+            )
+            if group is not None:
+                nodes.extend(
+                    self._parse_inline(
+                        group.content_start, group.content_end, depth=depth + 1
+                    )
+                )
+                return group.end
+            if command.end < end:
+                nodes.append(
+                    self._count(
+                        TextNode(
+                            span=self.source_map.span(command.end, command.end + 1),
+                            text=self.text[command.end],
+                        )
+                    )
+                )
+                return command.end + 1
+            return command.end
         if command.name == "href":
             href_group = read_group(
                 self.text,
@@ -935,14 +1583,61 @@ class LatexAstParser:
                     )
                 )
             return label_group.end
-        if command.name in _PRESERVE_GROUP_COMMANDS:
-            group = read_group(
+        if command.name == "url":
+            href_group = read_group(
                 self.text,
                 command.end,
                 end,
                 max_depth=self.limits.max_group_depth,
             )
+            if href_group is None:
+                self._missing_argument(command)
+                return command.end
+            href = self.text[href_group.content_start : href_group.content_end].strip()
+            label = self._count(
+                TextNode(
+                    span=self.source_map.span(
+                        href_group.content_start, href_group.content_end
+                    ),
+                    text=href,
+                )
+            )
+            if is_safe_link(href):
+                nodes.append(
+                    self._count(
+                        LinkNode(
+                            span=self.source_map.span(command.start, href_group.end),
+                            href=href,
+                            children=(label,),
+                        )
+                    )
+                )
+            else:
+                nodes.append(label)
+            return href_group.end
+        if command.name in _PRESERVE_GROUP_COMMANDS:
+            group = (
+                self._box_content_group(command, end)
+                if command.name in {"hbox", "vbox"}
+                else read_group(
+                    self.text,
+                    command.end,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+            )
             if group is None:
+                token_start = skip_space_and_comments(self.text, command.end, end)
+                if token_start < end and self.text[token_start] not in "\\{}":
+                    nodes.append(
+                        self._count(
+                            TextNode(
+                                span=self.source_map.span(token_start, token_start + 1),
+                                text=self.text[token_start : token_start + 1],
+                            )
+                        )
+                    )
+                    return token_start + 1
                 self._missing_argument(command)
                 return command.end
             nodes.extend(
@@ -953,6 +1648,161 @@ class LatexAstParser:
                 )
             )
             return group.end
+        if command.name == "makebox":
+            cursor = command.end
+            for _ in range(2):
+                optional = read_optional_group(
+                    self.text,
+                    cursor,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if optional is None:
+                    break
+                cursor = optional.end
+            group = read_group(
+                self.text,
+                cursor,
+                end,
+                max_depth=self.limits.max_group_depth,
+            )
+            if group is None:
+                self._missing_argument(command)
+                return cursor
+            nodes.extend(
+                self._parse_inline(
+                    group.content_start,
+                    group.content_end,
+                    depth=depth + 1,
+                )
+            )
+            return group.end
+        if command.name in {"fbox", "framebox"}:
+            cursor = command.end
+            for _ in range(2):
+                optional = read_optional_group(
+                    self.text,
+                    cursor,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if optional is None:
+                    break
+                cursor = optional.end
+            group = read_group(
+                self.text, cursor, end, max_depth=self.limits.max_group_depth
+            )
+            if group is None:
+                self._missing_argument(command)
+                return cursor
+            nodes.extend(
+                self._parse_inline(
+                    group.content_start, group.content_end, depth=depth + 1
+                )
+            )
+            return group.end
+        if command.name in {"parbox", "scalebox"}:
+            groups = self._read_groups(command.end, end, 2)
+            if len(groups) != 2:
+                self._missing_argument(command)
+                return groups[-1].end if groups else command.end
+            nodes.extend(
+                self._parse_inline(
+                    groups[1].content_start,
+                    groups[1].content_end,
+                    depth=depth + 1,
+                )
+            )
+            return groups[1].end
+        if command.name == "raisebox":
+            lift = read_group(
+                self.text, command.end, end, max_depth=self.limits.max_group_depth
+            )
+            if lift is None:
+                self._missing_argument(command)
+                return command.end
+            cursor = lift.end
+            for _ in range(2):
+                optional = read_optional_group(
+                    self.text,
+                    cursor,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if optional is None:
+                    break
+                cursor = optional.end
+            content = read_group(
+                self.text, cursor, end, max_depth=self.limits.max_group_depth
+            )
+            if content is None:
+                self._missing_argument(command)
+                return cursor
+            nodes.extend(
+                self._parse_inline(
+                    content.content_start, content.content_end, depth=depth + 1
+                )
+            )
+            return content.end
+        if command.name == "textcolor":
+            groups = self._read_groups(command.end, end, 2)
+            if len(groups) != 2:
+                self._missing_argument(command)
+                return groups[-1].end if groups else command.end
+            nodes.extend(
+                self._parse_inline(
+                    groups[1].content_start,
+                    groups[1].content_end,
+                    depth=depth + 1,
+                )
+            )
+            return groups[1].end
+        if command.name == "contour":
+            groups = self._read_groups(command.end, end, 2)
+            if len(groups) != 2:
+                self._missing_argument(command)
+                return groups[-1].end if groups else command.end
+            nodes.extend(
+                self._parse_inline(
+                    groups[1].content_start,
+                    groups[1].content_end,
+                    depth=depth + 1,
+                )
+            )
+            return groups[1].end
+        if command.name == "rule":
+            return self._skip_groups(command, end, 2)
+        if command.name == "tikzset":
+            group = read_group(
+                self.text,
+                command.end,
+                end,
+                max_depth=self.limits.max_group_depth,
+            )
+            if group is None:
+                self._missing_argument(command)
+                return command.end
+            if command.start not in self._tikz_context_starts:
+                self._diagnose(
+                    "latex.tikz_preamble_ignored",
+                    "Команда \\tikzset не примыкает к TikZ и не включена в asset.",
+                    command.start,
+                    group.end,
+                    recovery=(
+                        "Разместите локальный \\tikzset непосредственно перед "
+                        "\\begin{tikzpicture} или внутри % addToTikz-блока."
+                    ),
+                    severity=DiagnosticSeverity.WARNING,
+                )
+            return group.end
+        if command.name in _SKIP_TO_LINE_COMMANDS:
+            newline = self.text.find("\n", command.end, end)
+            return end if newline < 0 else newline
+        if command.name in _SKIP_TO_NEXT_COMMAND:
+            newline = self.text.find("\n", command.end, end)
+            line_end = end if newline < 0 else newline
+            next_command = self.text.find("\\", command.end, line_end)
+            return line_end if next_command < 0 else next_command
         if command.name in _DISCARD_ONE_GROUP_COMMANDS:
             group = read_group(
                 self.text,
@@ -990,7 +1840,7 @@ class LatexAstParser:
         if command.name in {"DotStep", "DotSize"}:
             newline = self.text.find("\n", command.end, end)
             return end if newline < 0 else newline
-        if command.name in {"resizebox", "multicolumn"}:
+        if command.name in {"resizebox", "multicolumn", "multirow"}:
             groups = self._read_groups(command.end, end, 3)
             if len(groups) != 3:
                 self._missing_argument(command)
@@ -1008,25 +1858,63 @@ class LatexAstParser:
                 self.text, command.end, end, max_depth=self.limits.max_group_depth
             )
             return group.end if group is not None else command.end
-        if command.name in {"newcommand", "renewcommand"}:
-            cursor = command.end
-            name_group = read_group(
-                self.text, cursor, end, max_depth=self.limits.max_group_depth
-            )
-            if name_group is None:
+        if command.name in {
+            "newcommand",
+            "newcommand*",
+            "providecommand",
+            "providecommand*",
+            "renewcommand",
+            "renewcommand*",
+            "def",
+        }:
+            declaration_end = self._local_macro_declaration_end(command, end)
+            if declaration_end is None:
                 self._missing_argument(command)
                 return command.end
-            cursor = name_group.end
-            optional = read_optional_group(
-                self.text, cursor, end, max_depth=self.limits.max_group_depth
-            )
-            if optional is not None:
-                cursor = optional.end
-            body_group = read_group(
-                self.text, cursor, end, max_depth=self.limits.max_group_depth
-            )
-            return body_group.end if body_group is not None else cursor
+            return declaration_end
         if command.name in _NO_OUTPUT_COMMANDS:
+            return command.end
+        if command.name in _SUBPART_COMMANDS:
+            optional = read_optional_group(
+                self.text,
+                command.end,
+                end,
+                max_depth=self.limits.max_group_depth,
+            )
+            nodes.append(
+                self._count(
+                    TextNode(
+                        self.source_map.span(
+                            command.start,
+                            optional.end if optional is not None else command.end,
+                        ),
+                        " • ",
+                    )
+                )
+            )
+            if command.name == "пунктн":
+                explicit = read_group(
+                    self.text,
+                    command.end,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                return explicit.end if explicit is not None else command.end
+            return optional.end if optional is not None else command.end
+        if command.name and set(command.name) == {"\ufffd"}:
+            return command.end
+        if command.name in {"", "\n", "\r", " "}:
+            # A command may be clipped by the current semantic/block slice.
+            # Only a backslash at the real source EOF is genuinely dangling.
+            if command.end < len(self.text):
+                return command.end
+            self._diagnose(
+                "latex.dangling_backslash",
+                "Одиночный обратный слеш не образует LaTeX-команду.",
+                command.start,
+                command.end,
+                recovery="Удалите слеш или используйте \\\\ для переноса строки.",
+            )
             return command.end
         if command.name in _STRUCTURAL_COMMANDS:
             # A structural command nested inside a formatting group cannot be
@@ -1069,6 +1957,20 @@ class LatexAstParser:
             groups.append(group)
             cursor = group.end
         return tuple(groups)
+
+    def _box_content_group(self, command: CommandToken, end: int) -> GroupToken | None:
+        cursor = skip_space_and_comments(self.text, command.end, end)
+        if self.text.startswith("to", cursor):
+            group_start = self.text.find("{", cursor + 2, end)
+            if group_start < 0:
+                return None
+            cursor = group_start
+        return read_group(
+            self.text,
+            cursor,
+            end,
+            max_depth=self.limits.max_group_depth,
+        )
 
     def _skip_groups(self, command: CommandToken, end: int, count: int) -> int:
         groups = self._read_groups(command.end, end, count)
@@ -1183,9 +2085,23 @@ class LatexAstParser:
         ].strip()
         content_group = groups[-1]
         if "tikz" in command.name:
-            tikz_source = self.text[
-                content_group.content_start : content_group.content_end
-            ].strip()
+            wrapper_source = self._tikz_sources.get(command.start)
+            nested_sources = tuple(
+                source
+                for source in self._tikz_sources.values()
+                if content_group.content_start
+                <= source.start
+                < content_group.content_end
+            )
+            tikz_source = (
+                wrapper_source.source
+                if wrapper_source is not None
+                else nested_sources[0].source
+                if len(nested_sources) == 1
+                else self.text[
+                    content_group.content_start : content_group.content_end
+                ].strip()
+            )
             return self._tikz_figure(
                 command.start,
                 cursor,
@@ -1310,7 +2226,7 @@ class LatexAstParser:
             limits=self.limits,
         )
         if match is None:
-            if environment in {"center", "tabular", "tabularx"}:
+            if environment in _CROSS_SEMANTIC_LAYOUT_ENVIRONMENTS:
                 self._diagnose(
                     "latex.layout_crosses_semantic_boundary",
                     (
@@ -1323,12 +2239,30 @@ class LatexAstParser:
                     severity=DiagnosticSeverity.WARNING,
                 )
                 cursor = group.end
-                if environment in {"tabular", "tabularx"}:
-                    preamble_groups = self._read_groups(
-                        cursor, end, 2 if environment == "tabularx" else 1
+                if environment == "multicols":
+                    argument_count = 1
+                elif environment == "minipage":
+                    placement = read_optional_group(
+                        self.text,
+                        cursor,
+                        end,
+                        max_depth=self.limits.max_group_depth,
                     )
+                    if placement is not None:
+                        cursor = placement.end
+                    argument_count = 1
+                elif environment in {"spacing", "tabular"}:
+                    argument_count = 1
+                elif environment in {"tabularx", "wrapfigure", "wraptable"}:
+                    argument_count = 2
+                else:
+                    argument_count = 0
+                if argument_count:
+                    preamble_groups = self._read_groups(cursor, end, argument_count)
                     if preamble_groups:
                         cursor = preamble_groups[-1].end
+                if environment == "center":
+                    return self._parse_blocks(group.end, end), end
                 return (), cursor
             self._diagnose(
                 "latex.environment_unclosed",
@@ -1347,8 +2281,23 @@ class LatexAstParser:
                 recovery="Замените environment поддерживаемой структурой или добавьте parser fixture.",
             )
             return (), environment_end
+        if environment == "comment":
+            return (), environment_end
+        if environment == "picture":
+            self._diagnose(
+                "latex.picture_ignored",
+                "Legacy environment 'picture' пропущен до будущей конвертации в TikZ.",
+                command.start,
+                environment_end,
+                recovery="Перенесите рисунок в TikZ для отображения в web-производной.",
+                severity=DiagnosticSeverity.WARNING,
+            )
+            return (), environment_end
         if environment == "tikzpicture":
             raw = self.text[command.start : environment_end]
+            extracted = self._tikz_sources.get(command.start)
+            if extracted is not None:
+                raw = extracted.source
             figure = self._tikz_figure(
                 command.start,
                 environment_end,
@@ -1357,8 +2306,109 @@ class LatexAstParser:
                 float_hint=None,
             )
             return ((figure,) if figure is not None else ()), environment_end
-        if environment == "center":
-            return self._parse_blocks(group.end, environment_end_start), environment_end
+        if environment in {
+            "center",
+            "figure",
+            "footnotesize",
+            "quote",
+            "sideways",
+            "small",
+            "table",
+            "tabbing",
+        }:
+            body_start = group.end
+            if environment == "figure":
+                placement = read_optional_group(
+                    self.text,
+                    body_start,
+                    environment_end_start,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if placement is not None:
+                    body_start = placement.end
+            return self._parse_blocks(
+                body_start, environment_end_start
+            ), environment_end
+        if environment in {"minipage", "spacing", "wrapfigure", "wraptable"}:
+            body_start = group.end
+            if environment == "minipage":
+                placement = read_optional_group(
+                    self.text,
+                    body_start,
+                    environment_end_start,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if placement is not None:
+                    body_start = placement.end
+                argument_count = 1
+            elif environment in {"wrapfigure", "wraptable"}:
+                argument_count = 2
+            else:
+                argument_count = 1
+            arguments = self._read_groups(
+                body_start, environment_end_start, argument_count
+            )
+            if len(arguments) != argument_count:
+                self._diagnose(
+                    "latex.environment_argument_missing",
+                    f"Environment {environment!r} не содержит обязательные аргументы.",
+                    command.start,
+                    group.end,
+                )
+            elif arguments:
+                body_start = arguments[-1].end
+            return self._parse_blocks(
+                body_start, environment_end_start
+            ), environment_end
+        if environment == "multicols":
+            column_count = read_group(
+                self.text,
+                group.end,
+                environment_end_start,
+                max_depth=self.limits.max_group_depth,
+            )
+            if column_count is None:
+                self._diagnose(
+                    "latex.multicols_count_missing",
+                    "Environment 'multicols' не содержит число колонок.",
+                    command.start,
+                    group.end,
+                )
+                body_start = group.end
+            else:
+                body_start = column_count.end
+            return self._parse_blocks(
+                body_start, environment_end_start
+            ), environment_end
+        if environment in _DISPLAY_MATH_ENVIRONMENTS:
+            latex = self.text[group.end : environment_end_start].strip()
+            if not latex:
+                self._diagnose(
+                    "latex.math_environment_empty",
+                    f"Environment {environment!r} не содержит формулу.",
+                    command.start,
+                    environment_end,
+                )
+                return (), environment_end
+            if environment.startswith("align"):
+                latex = f"\\begin{{aligned}}{latex}\\end{{aligned}}"
+            elif environment.startswith("gather") or environment == "multline*":
+                latex = f"\\begin{{gathered}}{latex}\\end{{gathered}}"
+            math = self._count(
+                MathNode(
+                    span=self.source_map.span(command.start, environment_end),
+                    latex=latex,
+                    display=True,
+                )
+            )
+            return (
+                self._count(
+                    ParagraphNode(
+                        span=self.source_map.span(command.start, environment_end),
+                        children=(math,),
+                    )
+                ),
+            ), environment_end
         if environment in {"itemize", "enumerate", "nums"}:
             return (
                 self._parse_list(
@@ -1369,6 +2419,15 @@ class LatexAstParser:
                     ordered=environment != "itemize",
                 ),
             ), environment_end
+        flattened_figures = self._table_block_figures(
+            command,
+            group,
+            environment,
+            environment_end_start,
+            environment_end,
+        )
+        if flattened_figures is not None:
+            return flattened_figures, environment_end
         return (
             self._parse_table(
                 command,
@@ -1378,6 +2437,137 @@ class LatexAstParser:
                 environment_end,
             ),
         ), environment_end
+
+    def _table_body_start(
+        self,
+        command: CommandToken,
+        environment_group: GroupToken,
+        environment: str,
+        body_end: int,
+    ) -> int:
+        cursor = environment_group.end
+        placement = read_optional_group(
+            self.text,
+            cursor,
+            body_end,
+            max_depth=self.limits.max_group_depth,
+        )
+        if placement is not None:
+            cursor = placement.end
+        argument_count = 2 if environment == "tabularx" else 1
+        for _ in range(argument_count):
+            group = read_group(
+                self.text,
+                cursor,
+                body_end,
+                max_depth=self.limits.max_group_depth,
+            )
+            if group is None:
+                self._diagnose(
+                    "latex.table_preamble_missing",
+                    "Таблица не содержит полного column preamble.",
+                    command.start,
+                    min(body_end, command.end + 1),
+                )
+                return cursor
+            cursor = group.end
+        return cursor
+
+    def _table_block_figures(
+        self,
+        command: CommandToken,
+        environment_group: GroupToken,
+        environment: str,
+        body_end: int,
+        outer_end: int,
+    ) -> tuple[BlockNode, ...] | None:
+        # Compatibility boundary: vmshpwa/docs/content-compiler-support-matrix.md.
+        body_start = self._table_body_start(
+            command, environment_group, environment, body_end
+        )
+        structural = self._top_level_commands(
+            body_start,
+            body_end,
+            {
+                "begin",
+                "includegraphics",
+                "rightpicture",
+                "leftpicture",
+                "righttikz",
+                "lefttikz",
+                "righttikzw",
+                "lefttikzw",
+                "tikz",
+            },
+        )
+        nested_tikz_sources = tuple(
+            sorted(
+                (
+                    source
+                    for source in self._tikz_sources.values()
+                    if body_start <= source.start < body_end
+                ),
+                key=lambda source: source.start,
+            )
+        )
+        if nested_tikz_sources:
+            figures: list[BlockNode] = []
+            for source in nested_tikz_sources:
+                figure = self._tikz_figure(
+                    source.start,
+                    source.end,
+                    source.source,
+                    width_hint=None,
+                    float_hint=None,
+                )
+                if figure is not None:
+                    figures.append(figure)
+            for candidate in structural:
+                if candidate.name not in {
+                    "includegraphics",
+                    "leftpicture",
+                    "rightpicture",
+                }:
+                    continue
+                figure, _cursor = self._parse_figure_command(candidate, body_end)
+                if figure is not None:
+                    figures.append(figure)
+            self._diagnose(
+                "latex.table_figure_layout_flattened",
+                "Табличная раскладка рисунков преобразована в последовательные web-блоки.",
+                command.start,
+                outer_end,
+                severity=DiagnosticSeverity.WARNING,
+            )
+            return tuple(figures)
+        has_figure = False
+        for candidate in structural:
+            if candidate.name != "begin":
+                has_figure = True
+                break
+            group = command_group(self.text, candidate, body_end, limits=self.limits)
+            if (
+                group is not None
+                and self.text[group.content_start : group.content_end].strip()
+                == "tikzpicture"
+            ):
+                has_figure = True
+                break
+        if not has_figure:
+            return None
+        figures = tuple(
+            node
+            for node in self._parse_blocks(body_start, body_end)
+            if isinstance(node, FigureNode)
+        )
+        self._diagnose(
+            "latex.table_figure_layout_flattened",
+            "Табличная раскладка рисунков преобразована в последовательные web-блоки.",
+            command.start,
+            outer_end,
+            severity=DiagnosticSeverity.WARNING,
+        )
+        return figures
 
     def _parse_list(
         self,
@@ -1434,24 +2624,9 @@ class LatexAstParser:
         body_end: int,
         outer_end: int,
     ) -> TableNode:
-        cursor = environment_group.end
-        argument_count = 2 if environment == "tabularx" else 1
-        for _ in range(argument_count):
-            group = read_group(
-                self.text,
-                cursor,
-                body_end,
-                max_depth=self.limits.max_group_depth,
-            )
-            if group is None:
-                self._diagnose(
-                    "latex.table_preamble_missing",
-                    "Таблица не содержит полного column preamble.",
-                    command.start,
-                    min(body_end, command.end + 1),
-                )
-                break
-            cursor = group.end
+        cursor = self._table_body_start(
+            command, environment_group, environment, body_end
+        )
         row_ranges = self._split_top_level(cursor, body_end, row_mode=True)
         rows: list[TableRowNode] = []
         for row_start, row_end in row_ranges:
@@ -1507,6 +2682,22 @@ class LatexAstParser:
                 continue
             character = self.text[cursor]
             if character == "{" and not is_escaped(self.text, cursor):
+                bounded_group = read_group(
+                    self.text,
+                    cursor,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if bounded_group is None:
+                    source_group = read_group(
+                        self.text,
+                        cursor,
+                        len(self.text),
+                        max_depth=self.limits.max_group_depth,
+                    )
+                    if source_group is not None:
+                        cursor += 1
+                        continue
                 brace_depth += 1
                 cursor += 1
                 continue
@@ -1552,6 +2743,22 @@ class LatexAstParser:
                 continue
             character = self.text[cursor]
             if character == "{" and not is_escaped(self.text, cursor):
+                bounded_group = read_group(
+                    self.text,
+                    cursor,
+                    end,
+                    max_depth=self.limits.max_group_depth,
+                )
+                if bounded_group is None:
+                    source_group = read_group(
+                        self.text,
+                        cursor,
+                        len(self.text),
+                        max_depth=self.limits.max_group_depth,
+                    )
+                    if source_group is not None:
+                        cursor += 1
+                        continue
                 brace_depth += 1
                 cursor += 1
                 continue
@@ -1571,6 +2778,137 @@ class LatexAstParser:
                 environment_depth = max(0, environment_depth - 1)
             cursor = command.end
         return tuple(result)
+
+    def _top_level_structural_groups(
+        self, start: int, end: int
+    ) -> tuple[_StructuralGroup, ...]:
+        result: list[_StructuralGroup] = []
+        cursor = start
+        while cursor < end:
+            if self.text[cursor] == "%" and not is_escaped(self.text, cursor):
+                cursor = skip_comment(self.text, cursor, end)
+                continue
+            math = read_math(self.text, cursor, end)
+            if math is not None:
+                cursor = math.end
+                continue
+            if self.text[cursor] != "{" or is_escaped(self.text, cursor):
+                command = read_command(self.text, cursor, end)
+                if command is not None and command.name in {
+                    "newcommand",
+                    "newcommand*",
+                    "providecommand",
+                    "providecommand*",
+                    "renewcommand",
+                    "renewcommand*",
+                    "def",
+                }:
+                    declaration_end = self._local_macro_declaration_end(command, end)
+                    if declaration_end is not None:
+                        cursor = declaration_end
+                        continue
+                if command is not None and command.name in _FORMATTING_COMMANDS:
+                    group = read_group(
+                        self.text,
+                        command.end,
+                        end,
+                        max_depth=self.limits.max_group_depth,
+                    )
+                    if group is not None and self._top_level_commands(
+                        group.content_start,
+                        group.content_end,
+                        set(_STRUCTURAL_COMMANDS),
+                    ):
+                        result.append(
+                            _StructuralGroup(
+                                start=command.start,
+                                content_start=group.content_start,
+                                content_end=group.content_end,
+                                end=group.end,
+                            )
+                        )
+                        cursor = group.end
+                        continue
+                cursor = command.end if command is not None else cursor + 1
+                continue
+            group = read_group(
+                self.text,
+                cursor,
+                end,
+                max_depth=self.limits.max_group_depth,
+            )
+            if group is None:
+                cursor += 1
+                continue
+            if self._top_level_commands(
+                group.content_start,
+                group.content_end,
+                set(_STRUCTURAL_COMMANDS),
+            ):
+                result.append(
+                    _StructuralGroup(
+                        start=group.start,
+                        content_start=group.content_start,
+                        content_end=group.content_end,
+                        end=group.end,
+                    )
+                )
+            cursor = group.end
+        return tuple(result)
+
+    def _local_macro_declaration_end(
+        self, command: CommandToken, end: int
+    ) -> int | None:
+        """Return the end of an inert local macro declaration.
+
+        Declarations are never executed by the bounded parser. Their bodies must
+        also stay opaque: otherwise braces containing TikZ or semantic commands
+        can be mistaken for visible document blocks.
+        """
+
+        if command.name == "def":
+            declared = read_command(
+                self.text,
+                skip_space_and_comments(self.text, command.end, end),
+                end,
+            )
+            if declared is None:
+                return None
+            body_start = self.text.find("{", declared.end, end)
+            if body_start < 0:
+                return None
+            body_group = read_group(
+                self.text,
+                body_start,
+                end,
+                max_depth=self.limits.max_group_depth,
+            )
+            return body_group.end if body_group is not None else None
+
+        cursor = command.end
+        name_group = read_group(
+            self.text, cursor, end, max_depth=self.limits.max_group_depth
+        )
+        if name_group is None:
+            name_command = read_command(
+                self.text, skip_space_and_comments(self.text, cursor, end), end
+            )
+            if name_command is None:
+                return None
+            cursor = name_command.end
+        else:
+            cursor = name_group.end
+        for _ in range(2):
+            optional = read_optional_group(
+                self.text, cursor, end, max_depth=self.limits.max_group_depth
+            )
+            if optional is None:
+                break
+            cursor = optional.end
+        body_group = read_group(
+            self.text, cursor, end, max_depth=self.limits.max_group_depth
+        )
+        return body_group.end if body_group is not None else None
 
 
 class PureAssetName:

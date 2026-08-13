@@ -443,6 +443,336 @@ def test_unknown_macro_and_environment_are_explicit_errors() -> None:
     assert "latex.environment_unsupported" in _codes(environment)
 
 
+def test_legacy_inline_layout_and_declaration_macros_preserve_content() -> None:
+    result = _compile(
+        r"""
+\задача
+{\it курсив}, {\bf жирный}, {\tt моно}.
+\makebox[4cm][l]{\textbf{метка} и $x$}
+6\textsuperscript{й}, \underline{слово}, число \overline{123},
+\verb|t.me/vmsh|.\сНовойСтроки
+\кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.unknown_macro" not in _codes(result)
+    for fragment in ("курсив", "жирный", "моно", "метка", "слово", "t.me/vmsh"):
+        assert fragment in result.web.content
+    assert "<tg-math>\\overline{123}</tg-math>" in result.telegram.content
+
+
+def test_legacy_layout_environments_and_positioned_tikz_are_semantic_blocks() -> None:
+    result = _compile(
+        r"""
+\задача
+\begin{multicols}{2}Первая колонка. Вторая колонка.\end{multicols}
+\begin{multline*}a+b\\=c\end{multline*}
+\begin{table}\begin{tabular}{cc}a&b\\c&d\end{tabular}\end{table}
+\putthere{1cm}{2cm}{\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}}
+\кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.environment_unsupported" not in _codes(result)
+    assert "latex.unknown_macro" not in _codes(result)
+    assert any(isinstance(node, TableNode) for node in result.ast.problems[0].statement)
+    assert any(
+        isinstance(node, FigureNode) for node in result.ast.problems[0].statement
+    )
+    assert "\\begin{gathered}" in result.telegram.content
+
+
+def test_comment_and_picture_environments_are_opaque_legacy_blocks() -> None:
+    result = _compile(
+        r"""
+\задача Видимый текст.
+\begin{comment}\ownerMagic \решение Скрыто. \крешение\end{comment}
+\begin{picture}(10,10)\put(1,1){\ownerMagic}\end{picture}
+\кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.unknown_macro" not in _codes(result)
+    assert "latex.picture_ignored" in _codes(result)
+    assert "Скрыто" not in result.web.content
+
+
+@pytest.mark.parametrize(
+    ("environment", "wrapper"),
+    [
+        ("align*", "aligned"),
+        ("gather", "gathered"),
+        ("equation", None),
+    ],
+)
+def test_display_math_environments_are_preserved(
+    environment: str, wrapper: str | None
+) -> None:
+    result = _compile(
+        rf"\задача \begin{{{environment}}}a+b=c\end{{{environment}}} \кзадача"
+    )
+
+    assert not result.has_errors
+    assert "latex.environment_unsupported" not in _codes(result)
+    if wrapper is not None:
+        assert rf"\begin{{{wrapper}}}" in result.telegram.content
+    else:
+        assert "a+b=c" in result.telegram.content
+
+
+def test_empty_math_and_cross_problem_layout_are_non_blocking_print_artifacts() -> None:
+    result = _compile(
+        r"""
+\begin{multicols}{2}
+\задача До $ $ пустой формулы. \кзадача
+\задача После. \кзадача
+\end{multicols}
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.layout_crosses_semantic_boundary" in _codes(result)
+    assert len(result.ast.problems) == 2
+
+
+def test_common_legacy_wrappers_preserve_semantic_text() -> None:
+    result = _compile(
+        r"""
+\задача
+\begin{quote}\footnotesize{Цитата} с \url{https://example.test/x}.\end{quote}
+\begin{minipage}{4cm}\scalebox{1.2}{\fbox{Текст}}\end{minipage}
+\begin{wrapfigure}{r}{2cm}\includegraphics{figure.svg}\end{wrapfigure}
+\raisebox{1pt}[2pt][0pt]{слово}\textcolor{red}{цвет}\rule{1cm}{1pt}
+\кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.unknown_macro" not in _codes(result)
+    for fragment in ("Цитата", "https://example.test/x", "Текст", "слово", "цвет"):
+        assert fragment in result.web.content
+    assert any(
+        isinstance(node, FigureNode) for node in result.ast.problems[0].statement
+    )
+
+
+def test_legacy_macro_declarations_are_skipped_without_execution() -> None:
+    result = _compile(
+        r"""
+\def\local#1{\ownerMagic{#1}}
+\newcommand\other[1][default]{\ownerMagic{#1}}
+\задача \"{o}, \'e, \sfrac{1}{2}, \mathbf{жирный}. \кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.unknown_macro" not in _codes(result)
+    assert "жирный" in result.web.content
+    assert "\\sfrac{1}{2}" in result.telegram.content
+
+
+def test_macro_declaration_bodies_with_structural_commands_stay_opaque() -> None:
+    result = _compile(
+        r"""
+\newcommand{\drawLocal}[1]{\begin{scope}\draw #1;\end{scope}}
+\def\wrapped#1{\rightpicture{0mm}{0mm}{1cm}{#1}}
+\задача Видимый текст. \кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.environment_unsupported" not in _codes(result)
+    assert "latex.structure_in_inline_group" not in _codes(result)
+    assert "Видимый текст" in result.web.content
+
+
+def test_common_inline_and_layout_compatibility_commands_are_bounded() -> None:
+    result = _compile(
+        r"""
+\задача
+\textsc{Текст} \ensuremath{a^2+b^2} \multirow{2}{*}{ячейка}
+\subitem подпункт \ddots \cdotp \grqq \i \blacksquare
+\columnbreak\strut\indent\nopagebreak
+\parshape=1 0mm \textwidth
+\hangindent=-1cm\hangafter=-2
+\vskip-3pt
+\arraycolsep=.1em
+\кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.unknown_macro" not in _codes(result)
+    for fragment in ("Текст", "a^2+b^2", "ячейка", "подпункт"):
+        assert fragment in result.web.content
+    assert "0mm" not in result.web.content
+
+
+def test_structural_content_inside_print_wrappers_remains_visible() -> None:
+    result = _compile(
+        r"""
+\задача
+\centerline{\begin{tabular}[c]{cc}A&B\\C&D\end{tabular}}
+\vbox to\problemheight{\textit{Текст \пункт подпункт}}
+\raisebox{-.5ex}{\resizebox{!}{1cm}{\includegraphics{figure.svg}}}
+\smash{\includegraphics{second.svg}}
+\phantom{\пункт невидимый заполнитель}
+\кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.argument_missing" not in _codes(result)
+    assert "latex.table_preamble_missing" not in _codes(result)
+    for fragment in ("A", "D", "Текст", "подпункт"):
+        assert fragment in result.web.content
+    assert "невидимый заполнитель" not in result.web.content
+
+
+def test_raw_layout_group_can_cross_problem_boundaries() -> None:
+    result = _compile(
+        r"""
+{
+\раздел{Раздел}
+\задача Первая. \кзадача
+\задача Вторая. \кзадача
+}
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.group_unclosed" not in _codes(result)
+    assert "latex.structure_in_inline_group" not in _codes(result)
+    assert len(result.ast.problems) == 2
+
+
+def test_npcopy_layout_wrapper_does_not_duplicate_semantic_problems() -> None:
+    result = _compile(
+        r"""
+\npcopy{3}{
+\раздел{Раздел}
+\задача Единственное условие. \кзадача
+}
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.unknown_macro" not in _codes(result)
+    assert len(result.ast.problems) == 1
+    assert result.web.content.count("Единственное условие") == 1
+
+
+def test_table_with_tikz_cells_flattens_to_figures_with_explicit_warning() -> None:
+    result = _compile(
+        r"""
+\задача
+\begin{tabular}{cc}
+\begin{tikzpicture}\draw (0,0)--(1,0);\end{tikzpicture}
+&
+\begin{tikzpicture}\draw (0,0)--(0,1);\end{tikzpicture}
+\end{tabular}
+\кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert "latex.table_figure_layout_flattened" in _codes(result)
+    assert (
+        sum(isinstance(node, FigureNode) for node in result.ast.problems[0].statement)
+        == 2
+    )
+
+
+def test_inline_tikz_command_becomes_a_bounded_figure_block() -> None:
+    result = _compile(
+        r"\задача До \tikz[scale=.5]{\draw (0,0)--(1,1);} после. \кзадача"
+    )
+
+    assert not result.has_errors
+    assert "latex.unknown_macro" not in _codes(result)
+    figures = [
+        node
+        for node in result.ast.problems[0].statement
+        if isinstance(node, FigureNode)
+    ]
+    assert len(figures) == 1
+    assert "\\begin{tikzpicture}[scale=.5]" in (figures[0].tikz_source or "")
+
+
+def test_field_before_problem_end_is_isolated_from_condition_statement() -> None:
+    result = _compile(
+        r"""
+\задача Условие.
+\указание СЕКРЕТНАЯ ПОДСКАЗКА. \куказание
+\кзадача
+\ответ СЕКРЕТНЫЙ ОТВЕТ. \кответ
+"""
+    )
+
+    assert not result.has_errors
+    assert result.ast.problems[0].hint
+    assert "СЕКРЕТНАЯ ПОДСКАЗКА" not in result.web.content
+    assert "СЕКРЕТНЫЙ ОТВЕТ" not in result.telegram.content
+
+
+def test_legacy_problem_subpart_and_single_group_answer_aliases_are_semantic() -> None:
+    result = _compile(
+        r"""
+\сзадача Условие. \спункт Первый. \пунктн{7} Седьмой.
+\answ{СЕКРЕТНЫЙ ОТВЕТ}
+\кзадача
+\задачан{42} Нумерованная. \кзадача
+\задачабк Ещё одна. \кзадача
+"""
+    )
+
+    assert not result.has_errors
+    assert len(result.ast.problems) == 3
+    assert result.ast.problems[0].answer
+    assert "СЕКРЕТНЫЙ ОТВЕТ" not in result.web.content
+    assert result.ast.problems[1].source_item == "42"
+    subparts = [
+        node
+        for node in result.ast.problems[0].statement
+        if isinstance(node, SubpartNode)
+    ]
+    assert [node.label for node in subparts] == ["a", "7"]
+
+
+def test_replacement_character_is_one_clear_source_error_not_macro_flood() -> None:
+    result = _compile("\\задача \\���{текст} \\кзадача")
+
+    diagnostics = [
+        item
+        for item in result.diagnostics
+        if item.code == "source.replacement_character"
+    ]
+    assert len(diagnostics) == 1
+    assert "3 вхождений" in diagnostics[0].message
+    assert "latex.unknown_macro" not in _codes(result)
+
+
+def test_dangling_backslash_has_specific_diagnostic() -> None:
+    result = compile_latex(
+        b"\\begin{document}\n\\problem text \\",
+        source_name="fixtures/dangling.tex",
+        role=ContentRole.CONDITION,
+    )
+
+    assert "latex.dangling_backslash" in _codes(result)
+    assert "latex.unknown_macro" not in _codes(result)
+
+
+def test_backslash_followed_by_whitespace_is_a_tex_control_space() -> None:
+    result = _compile("\\задача текст \\ \nпродолжение \\кзадача")
+
+    assert not result.has_errors
+    assert "latex.dangling_backslash" not in _codes(result)
+
+
 def test_russian_announcements_are_typed_and_rendered_for_web_and_telegram() -> None:
     result = _compile(
         r"""
