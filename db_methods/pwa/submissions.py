@@ -781,7 +781,8 @@ def _attempt_counts(
     day_start: datetime,
 ) -> tuple[int, int]:
     row = connection.execute(
-        "SELECT count(*) FILTER (WHERE server_received_at >= ?) AS hour_count, "
+        "SELECT count(*) FILTER (WHERE server_received_at >= ? AND verdict = -1) "
+        "AS hour_count, "
         "count(*) FILTER (WHERE server_received_at >= ?) AS day_count "
         "FROM test_attempts WHERE student_user_id = ? AND problem_id = ? "
         "AND counts_as_attempt = 1",
@@ -821,7 +822,7 @@ def _raise_if_limited(
     if policy.max_per_hour is not None and hour_count >= policy.max_per_hour:
         raise TestSubmissionRejected(
             code="test_attempt_hour_limit",
-            message="Слишком много попыток за последний час.",
+            message="За этот час уже было три неверных ответа.",
             http_status=429,
             details=_limit_receipt(
                 policy, hour_count=hour_count, day_count=day_count
@@ -1579,7 +1580,8 @@ class PwaTestSubmissionRepository:
                 ),
             )
             if evaluation.counts_as_attempt:
-                hour_count += 1
+                if evaluation.verdict == VERDICT.WRONG_ANSWER:
+                    hour_count += 1
                 day_count += 1
             receipt = TestAttemptReceipt(
                 attempt_public_id=attempt_public_id,

@@ -1354,8 +1354,10 @@ async def _inspect_revision_assets(
 async def _resolve_reusable_revision_assets(
     request: web.Request,
     context: ContentRevisionContext,
+    *,
+    actor_user_id: int | None,
 ) -> tuple[ContentRevisionContext, int]:
-    """Attach known global figures and cached TikZ without new conversions."""
+    """Attach known figures and generate/cache every referenced TikZ block."""
 
     repository = _repository(request)
     _result, references, descriptors = await _inspect_revision_assets(
@@ -1382,14 +1384,18 @@ async def _resolve_reusable_revision_assets(
             source = reference["tikzSource"]
             if not isinstance(source, str):
                 raise ContentRepositoryError("compiler TikZ reference has no source")
-            persisted = await service.resolve_and_attach_tikz(
-                **common, source=source
+            persisted = await service.convert_and_attach_tikz(
+                **common,
+                source=source,
+                actor_user_id=actor_user_id,
             )
         else:
             persisted = await service.resolve_and_attach_figure(**common)
         if persisted is not None:
             if persisted.revision_version is None:  # pragma: no cover - API invariant
-                raise ContentRepositoryError("reusable attachment lost revision version")
+                raise ContentRepositoryError(
+                    "reusable attachment lost revision version"
+                )
             version = persisted.revision_version
             reused_count += 1
     if reused_count:
@@ -1589,7 +1595,11 @@ async def upload_content_source(request: web.Request) -> web.Response:
         payload=payload,
         actor_user_id=actor_user_id,
     )
-    context, _reused_count = await _resolve_reusable_revision_assets(request, context)
+    context, _reused_count = await _resolve_reusable_revision_assets(
+        request,
+        context,
+        actor_user_id=actor_user_id,
+    )
     revision = context.revision
     response = web.json_response(
         {**_revision_payload(context), "requestId": _request_id(request)}, status=201
@@ -1638,11 +1648,15 @@ async def list_content_revision_assets(request: web.Request) -> web.Response:
 async def resolve_content_revision_assets(request: web.Request) -> web.Response:
     repository = _repository(request)
     context = await repository.get_revision_context(request.match_info["revision_id"])
-    _staff_actor(request, context.scope)
+    _principal, actor_user_id = _staff_actor(request, context.scope)
     _require_if_match(
         request, _etag(context.revision.public_id, context.revision.version)
     )
-    context, reused_count = await _resolve_reusable_revision_assets(request, context)
+    context, reused_count = await _resolve_reusable_revision_assets(
+        request,
+        context,
+        actor_user_id=actor_user_id,
+    )
     _result, references, descriptors = await _inspect_revision_assets(
         repository, context
     )

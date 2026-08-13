@@ -131,6 +131,37 @@ function StudentTaskMaterials({
   )
 }
 
+function StudentProblemActions({
+  conditionRevisionId,
+  courseId,
+  groupLessonId,
+  problem,
+}: {
+  conditionRevisionId: string
+  courseId: string
+  groupLessonId: string
+  problem: StudentProblemSummary
+}) {
+  return (
+    <div className="mt-4 space-y-4 rounded-lg border border-border bg-surface p-3 sm:p-4">
+      {problem.type === 'test' ? <StudentTestAnswer problemId={problem.problemId} /> : null}
+      {problem.type === 'oral' ? (
+        <StudentOralAdmission courseId={courseId} groupLessonId={groupLessonId} />
+      ) : null}
+      {problem.type === 'written' || problem.type === 'oral' ? (
+        <StudentWrittenSubmission
+          conditionRevisionId={conditionRevisionId}
+          configVersion={problem.configVersion}
+          problemId={problem.problemId}
+          problemType={problem.type}
+        />
+      ) : null}
+      <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} />
+      <StudentProblemQuestionLink groupLessonId={groupLessonId} problemId={problem.problemId} />
+    </div>
+  )
+}
+
 function StudentTaskMaterialsReady({
   client,
   database,
@@ -301,27 +332,107 @@ function CanonicalStudentTask({
   return (
     <StudentPublishedContentPage
       afterDocument={
-        <>
-          <StudentTaskMaterials groupLessonId={groupLessonId} problem={problem} />
-          {problem.type === 'test' ? <StudentTestAnswer problemId={problem.problemId} /> : null}
-          {problem.type === 'oral' ? (
-            <StudentOralAdmission courseId={courseId} groupLessonId={groupLessonId} />
-          ) : null}
-          {problem.type === 'written' || problem.type === 'oral' ? (
-            <StudentWrittenSubmission
-              conditionRevisionId={query.data.conditionRevisionId}
-              configVersion={problem.configVersion}
-              problemId={problem.problemId}
-              problemType={problem.type}
-            />
-          ) : null}
-          <StudentProblemQuestionLink groupLessonId={groupLessonId} problemId={problem.problemId} />
-        </>
+        <StudentProblemActions
+          conditionRevisionId={query.data.conditionRevisionId}
+          courseId={courseId}
+          groupLessonId={groupLessonId}
+          problem={problem}
+        />
       }
+      displayTitle={problem.title || `Задача ${problem.displayNumber}`}
       groupLessonId={groupLessonId}
       kind="condition"
       problemOrdinal={problem.sourceOrdinal}
       taskId={problem.problemId}
+    />
+  )
+}
+
+function CanonicalStudentWorksheet({
+  courseId,
+  groupId,
+  groupLessonId,
+  taskId,
+}: {
+  courseId: string
+  groupId: string
+  groupLessonId: string
+  taskId: string
+}) {
+  const authentication = useAuthentication()
+  const principal = useAuthenticatedPrincipal()
+  if (principal.audience !== 'student') throw new Error('Student task requires a Student principal')
+  const database = useOfflineDatabase()
+  const client = useMemo(() => {
+    const online = createStudentCourseClient(authentication.client.runtime, {
+      refreshSession: async () => {
+        try {
+          return await authentication.refresh()
+        } catch (error) {
+          authentication.handleApiError(error)
+          throw error
+        }
+      },
+    })
+    return createOfflineStudentCourseClient(online, database, principal.accountId)
+  }, [authentication, database, principal.accountId])
+  const query = useStudentProblemsQuery(
+    client,
+    { audience: 'student', accountId: principal.accountId },
+    courseId,
+    groupId,
+    groupLessonId,
+  )
+
+  if (query.isPending) {
+    return (
+      <PageLayout title="Листок" width="reading">
+        <PageStatePanel state="loading" />
+      </PageLayout>
+    )
+  }
+  if (query.error) {
+    const state = problemRequestState(query.error)
+    return (
+      <PageLayout title="Листок" width="reading">
+        <PageStatePanel
+          {...(state === 'error' || state === 'offline'
+            ? { actionLabel: 'Повторить', onAction: () => void query.refetch() }
+            : {})}
+          state={state}
+        />
+      </PageLayout>
+    )
+  }
+
+  return (
+    <StudentPublishedContentPage
+      groupLessonId={groupLessonId}
+      kind="condition"
+      renderAfterProblem={(documentProblem) => {
+        const problems = query.data.problems.filter(
+          (problem) => problem.sourceOrdinal === documentProblem.ordinal,
+        )
+        if (problems.length === 0) return null
+        return (
+          <div className="space-y-3">
+            {problems.map((problem) => (
+              <section aria-label={`Сдать ${problem.displayNumber}`} key={problem.problemId}>
+                {problems.length > 1 ? (
+                  <h3 className="mb-2 text-base font-semibold">Пункт {problem.displayNumber}</h3>
+                ) : null}
+                <StudentProblemActions
+                  conditionRevisionId={query.data.conditionRevisionId}
+                  courseId={courseId}
+                  groupLessonId={groupLessonId}
+                  problem={problem}
+                />
+              </section>
+            ))}
+          </div>
+        )
+      }}
+      taskId={taskId}
     />
   )
 }
@@ -348,6 +459,23 @@ export function StudentTaskDetailPage({
     groupId !== undefined &&
     groupLessonId !== undefined &&
     material === 'condition'
+
+  if (
+    taskId.startsWith('lesson-') &&
+    courseId !== undefined &&
+    groupId !== undefined &&
+    groupLessonId !== undefined &&
+    material === 'condition'
+  ) {
+    return (
+      <CanonicalStudentWorksheet
+        courseId={courseId}
+        groupId={groupId}
+        groupLessonId={groupLessonId}
+        taskId={taskId}
+      />
+    )
+  }
 
   if (canonicalContext) {
     return (

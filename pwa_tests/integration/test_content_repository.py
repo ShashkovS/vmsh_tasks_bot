@@ -1106,15 +1106,16 @@ async def test_uploaded_revision_asset_attach_is_versioned_idempotent_and_public
         alt_text="Рисунок",
     )
     assert (version, created) == (revision.version + 1, True)
-    retry_version, retry_created = (
-        await fixture.repository.attach_asset_to_uploaded_revision(
-            revision_id=revision.id,
-            expected_revision_version=revision.version,
-            asset_id=asset.id,
-            logical_name="figures/source.heic",
-            role="figure",
-            alt_text="Рисунок",
-        )
+    (
+        retry_version,
+        retry_created,
+    ) = await fixture.repository.attach_asset_to_uploaded_revision(
+        revision_id=revision.id,
+        expected_revision_version=revision.version,
+        asset_id=asset.id,
+        logical_name="figures/source.heic",
+        role="figure",
+        alt_text="Рисунок",
     )
     assert (retry_version, retry_created) == (version, False)
 
@@ -1582,6 +1583,66 @@ async def test_problem_matching_is_complete_scoped_and_idempotent(content_fixtur
             ),
             actor_user_id=fixture.actor_user_id,
         )
+
+
+async def test_problem_review_flattens_subparts_and_keeps_predicted_type(
+    content_fixture,
+):
+    fixture = content_fixture
+    _, group_lesson = await _create_group_lesson(
+        fixture,
+        course_lesson_public_id="course-lesson-points",
+        course_id=fixture.course_id,
+        lesson_number=43,
+        group_id="content-a",
+        group_lesson_public_id="group-lesson-points",
+    )
+    _, revision = await _create_source_revision(
+        fixture,
+        group_lesson_id=group_lesson.id,
+        suffix="points",
+        canonical_document={
+            "problems": [
+                {
+                    "ordinal": 1,
+                    "source_item": None,
+                    "source_title": "Два независимых пункта",
+                    "problem_type": 1,
+                    "statement": [
+                        {"kind": "subpart", "label": "а", "children": []},
+                        {"kind": "subpart", "label": "б", "children": []},
+                    ],
+                }
+            ]
+        },
+    )
+
+    review = await fixture.repository.get_problem_match_review(
+        revision_public_id=revision.public_id
+    )
+    assert [item.source.source_item for item in review.items] == ["а", "б"]
+    assert [item.source.display_number for item in review.items] == ["1а", "1б"]
+
+    await fixture.repository.resolve_problem_matches(
+        revision_public_id=revision.public_id,
+        expected_review_version=review.review_version,
+        drafts=tuple(
+            ProblemMatchDraft(
+                source_ordinal=1,
+                source_item=item,
+                decision=ProblemMatchDecision.INSERT_NEW,
+                problem_id=None,
+            )
+            for item in ("а", "б")
+        ),
+        actor_user_id=fixture.actor_user_id,
+    )
+    grid = await fixture.repository.get_problem_metadata_grid(
+        revision_public_id=revision.public_id
+    )
+
+    assert [row.problem.item for row in grid.rows] == ["а", "б"]
+    assert [row.problem.problem_type for row in grid.rows] == [1, 1]
 
 
 async def test_metadata_grid_updates_projection_and_keeps_revision_history(

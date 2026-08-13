@@ -1,6 +1,6 @@
 import { useState, type ClipboardEvent } from 'react'
 
-import { Button, Input, cn } from '@vmsh/ui'
+import { Button, Input, Textarea, cn } from '@vmsh/ui'
 
 /*
  * Editable metadata grid. Cells edit in place; a rectangular TSV fragment can be
@@ -10,8 +10,9 @@ import { Button, Input, cn } from '@vmsh/ui'
 export interface MetadataColumn {
   id: string
   header: string
-  editor?: 'text' | 'select'
+  editor?: 'text' | 'select' | 'textarea'
   options?: { value: string; label: string }[]
+  editorClassName?: string
 }
 
 export interface MetadataError {
@@ -138,7 +139,10 @@ export function MetadataGrid({
                         <select
                           aria-invalid={error ? true : undefined}
                           aria-label={`${column.header}, строка ${rowIndex + 1}`}
-                          className="h-8 min-w-36 rounded-md border border-input bg-surface px-2 text-small text-foreground aria-invalid:border-status-danger"
+                          className={cn(
+                            'h-8 min-w-36 rounded-md border border-input bg-surface px-2 text-small text-foreground aria-invalid:border-status-danger',
+                            column.editorClassName,
+                          )}
                           onChange={(event) => setCell(rowIndex, column.id, event.target.value)}
                           onPaste={(event) => handlePaste(event, rowIndex, colIndex)}
                           value={row[column.id] ?? ''}
@@ -150,11 +154,24 @@ export function MetadataGrid({
                             </option>
                           ))}
                         </select>
+                      ) : column.editor === 'textarea' ? (
+                        <Textarea
+                          aria-invalid={error ? true : undefined}
+                          aria-label={`${column.header}, строка ${rowIndex + 1}`}
+                          className={cn(
+                            'min-h-16 min-w-64 resize-y overflow-hidden [field-sizing:content]',
+                            column.editorClassName,
+                          )}
+                          onChange={(event) => setCell(rowIndex, column.id, event.target.value)}
+                          onPaste={(event) => handlePaste(event, rowIndex, colIndex)}
+                          rows={2}
+                          value={row[column.id] ?? ''}
+                        />
                       ) : (
                         <Input
                           aria-invalid={error ? true : undefined}
                           aria-label={`${column.header}, строка ${rowIndex + 1}`}
-                          className="h-8"
+                          className={cn('h-8', column.editorClassName)}
                           onChange={(event) => setCell(rowIndex, column.id, event.target.value)}
                           onPaste={(event) => handlePaste(event, rowIndex, colIndex)}
                           value={row[column.id] ?? ''}

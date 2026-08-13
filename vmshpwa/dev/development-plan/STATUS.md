@@ -1830,6 +1830,20 @@
 - Proof:
   [`phase2-content-picture-bank-2026-08-13.md`](../../../pwa_tests/reports/phase2-content-picture-bank-2026-08-13.md).
 
+## Pilot content workflow corrections — 14 августа 2026
+
+- Source upload автоматически собирает и кэширует TikZ; Staff больше не выбирает способ его подготовки. Внешний рисунок определяется по выбранному файлу, а уже известное имя переиспользуется до запроса новых bytes.
+- Первая condition revision автоматически создаёт задачи; неизменная следующая структура сопоставляется позиционно. Ручное сопоставление осталось только для структурно изменённого условия. Общий `*-sol.tex` создаёт hint и solution revision и обязан совпасть с условием по порядку.
+- Parser переносит тип из разделов «Тестовые / Письменные / Устные», а `\пункт` создаёт независимые problem rows `1а`, `1б`, … при едином визуальном условии.
+- Staff preview переключает полноширинные PWA/Telegram renderers; Student full-sheet view получил те же controls сдачи после каждой задачи/пункта. Opaque ID и служебный канал ответа преподавателя из пользовательской копии удалены.
+- Default rate limit уточнён: три неверных ответа за календарный час и пять любых попыток за календарный день.
+- Proof: Python parser/repository/submission **199 PASS** и content HTTP
+  integration **44 PASS**; Staff bulk/student task unit **13 PASS**; Staff content
+  Storybook interaction **15 PASS**; ESLint, Stylelint, strict TypeScript,
+  production build и `git diff --check` — **PASS**. Общий frontend suite
+  сохраняет отдельные ранее существующие failures auth/session/realtime и не
+  считается закрытым этим checkpoint.
+
 ## Phase 2 checkpoint: полный архивный parser gate — 13 августа 2026
 
 - Рекурсивно найдено **2184** TeX-файла по точным lesson-маскам; **7** файлов

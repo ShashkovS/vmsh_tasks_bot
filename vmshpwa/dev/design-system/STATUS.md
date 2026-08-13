@@ -479,6 +479,8 @@ Stories (удалены после приёмки): `Exploration/Art direction` 
 - статистика сложности задачи показывается школьнику только после завершения проверки
   всего занятия — по явному разрешению или через фиксированные семь дней после закрытия приёма;
 - KaTeX рендерится на клиенте; math fonts входят в PWA precache, TikZ остаётся external SVG;
+- Staff content review использует тот же `SemanticMathDocument`, что Student: PWA и Telegram показаны переключаемыми полноширинными previews, а не HTML-кодом. TikZ собирается автоматически без selector; внешний asset сразу получает preview с увеличением.
+- Student worksheet остаётся единой математической «простынёй», но после каждой задачи или независимого пункта показывает полноценную сдачу. Служебные opaque IDs и подписи о внутреннем Staff-канале пользователю не показываются.
 - Sonner заменяется Base UI Toast, Sheet — Base UI Drawer;
 - графики используют Visx/D3, Staff grid — TanStack Table/Virtual, новая DnD dependency не добавляется;
 - Staff сохраняет базовые label/alt/ARIA/contrast и axe gate; полноценный keyboard-аналог специализированного DnD не обязателен;

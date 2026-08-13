@@ -182,7 +182,6 @@ export const MissingAssets: Story = {
             ref: 'fig3.svg',
             sourceKind: 'figure',
             acceptedUploadKinds: ['raster', 'svg'],
-            selectedUploadKind: 'svg',
             status: 'missing',
           },
           {
@@ -190,7 +189,6 @@ export const MissingAssets: Story = {
             ref: 'tikz/diagram-2',
             sourceKind: 'tikz',
             acceptedUploadKinds: ['tikz'],
-            selectedUploadKind: 'tikz',
             status: 'missing',
           },
         ]}
@@ -207,7 +205,6 @@ const assetState = (
   ref: 'figures/rook.png',
   sourceKind: 'figure',
   acceptedUploadKinds: ['raster', 'svg'],
-  selectedUploadKind: 'raster',
   status,
   ...rest,
 })
@@ -274,7 +271,6 @@ export const MissingAssetsResolved: Story = {
             ref: 'tikz/diagram-2',
             sourceKind: 'tikz',
             acceptedUploadKinds: ['tikz'],
-            selectedUploadKind: 'tikz',
             status: 'attached',
             assetHref: attachedAssetPreview,
           },

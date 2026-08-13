@@ -50,6 +50,12 @@ function describeError(error: unknown): string {
   return 'Не удалось обработать ресурс. Повторите действие.'
 }
 
+function uploadKindForFile(file: File): 'raster' | 'svg' {
+  return file.type === 'image/svg+xml' || file.name.toLocaleLowerCase('en').endsWith('.svg')
+    ? 'svg'
+    : 'raster'
+}
+
 /**
  * Exact-revision asset recovery for the Staff content workflow. The server
  * owns conversion, deduplication and TikZ source lookup; this component keeps
@@ -72,10 +78,6 @@ export function RevisionAssetsRecovery({
     if (!assetsQuery.data) return []
     return assetsQuery.data.data.assets.map((slot) => {
       const draft = drafts[slot.logicalName]
-      const selectedUploadKind =
-        draft && slot.acceptedUploadKinds.includes(draft.kind)
-          ? draft.kind
-          : slot.acceptedUploadKinds[0]!
       const attached = slot.status === 'attached'
       const status: MissingAsset['status'] = attached
         ? draft?.phase === 'reused'
@@ -91,7 +93,6 @@ export function RevisionAssetsRecovery({
         ref: slot.logicalName,
         sourceKind: slot.sourceKind,
         acceptedUploadKinds: slot.acceptedUploadKinds,
-        selectedUploadKind,
         status,
         ...(draft?.file ? { fileName: draft.file.name } : {}),
         ...(slot.asset ? { assetHref: slot.asset.src } : {}),
@@ -237,17 +238,14 @@ export function RevisionAssetsRecovery({
         assets={items}
         disabled={busyAssetId !== undefined || compilePending || resolvePending}
         onFileSelect={(logicalName, file) =>
-          updateDraft(logicalName, { file, phase: undefined, errorMessage: undefined })
-        }
-        onResolve={(logicalName) => void resolveAsset(logicalName)}
-        onUploadKindChange={(logicalName, kind) =>
           updateDraft(logicalName, {
-            kind,
-            file: undefined,
+            ...(file ? { kind: uploadKindForFile(file) } : {}),
+            file,
             phase: undefined,
             errorMessage: undefined,
           })
         }
+        onResolve={(logicalName) => void resolveAsset(logicalName)}
       />
       {allResolved ? (
         <Button disabled={compilePending} onClick={() => void compileResolvedRevision()} size="sm">

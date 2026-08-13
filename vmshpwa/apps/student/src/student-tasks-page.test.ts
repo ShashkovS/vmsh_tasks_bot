@@ -63,9 +63,9 @@ describe('Student production Tasks mapping', () => {
     expect(publishedMaterialLabel(lessons[1]!)).toBe('Есть подсказка и решение')
   })
 
-  it('rejects malformed shareable context before the page uses it', () => {
+  it('rejects malformed shareable context and accepts the real zero lesson', () => {
     expect(studentTasksSearchSchema.safeParse({ course: '../staff' }).success).toBe(false)
-    expect(studentTasksSearchSchema.safeParse({ lesson: 0 }).success).toBe(false)
+    expect(studentTasksSearchSchema.safeParse({ lesson: 0 }).success).toBe(true)
     expect(studentTasksSearchSchema.parse({ view: 'sheet', topic: 'геометрия' })).toMatchObject({
       view: 'sheet',
       topic: 'геометрия',

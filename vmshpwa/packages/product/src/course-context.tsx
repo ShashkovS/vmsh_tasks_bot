@@ -94,9 +94,6 @@ export function CourseGroupSwitcher({
               type="button"
             >
               <LevelChip compact={compact} level={group} />
-              {!active && !compact ? (
-                <span className="ml-1.5 text-caption text-muted-foreground">доступна</span>
-              ) : null}
             </button>
           )
         })}

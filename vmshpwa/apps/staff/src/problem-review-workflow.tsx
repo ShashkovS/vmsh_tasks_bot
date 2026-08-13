@@ -49,7 +49,6 @@ const problemTypeOptions = [
   { value: '1', label: 'Тестовая' },
   { value: '2', label: 'Письменная' },
   { value: '3', label: 'Устная' },
-  { value: '4', label: 'Письменно вместо устной' },
 ]
 
 const answerTypeOptions = [
@@ -79,23 +78,34 @@ const answerTypeOptions = [
 ].map(([value, label]) => ({ value: String(value), label: String(label) }))
 
 const metadataColumns: MetadataColumn[] = [
-  { id: 'displayNumber', header: 'Номер' },
-  { id: 'title', header: 'Название' },
-  { id: 'problemType', header: 'Тип задачи', editor: 'select', options: problemTypeOptions },
-  { id: 'answerType', header: 'Тип ответа', editor: 'select', options: answerTypeOptions },
-  { id: 'answerValidation', header: 'Своя валидация' },
-  { id: 'validationError', header: 'Ошибка формата' },
-  { id: 'correctAnswer', header: 'Правильный ответ' },
-  { id: 'correctAnswerChecker', header: 'Проверяльщик' },
-  { id: 'wrongAnswer', header: 'Неверный ответ' },
-  { id: 'congratulation', header: 'Верный ответ' },
+  { id: 'displayNumber', header: 'Номер', editorClassName: 'w-16 min-w-16' },
+  { id: 'title', header: 'Название', editorClassName: 'min-w-56' },
+  {
+    id: 'problemType',
+    header: 'Тип задачи',
+    editor: 'select',
+    editorClassName: 'min-w-36',
+    options: problemTypeOptions,
+  },
+  {
+    id: 'answerType',
+    header: 'Тип ответа',
+    editor: 'select',
+    editorClassName: 'min-w-44 max-w-52',
+    options: answerTypeOptions,
+  },
+  { id: 'answerValidation', header: 'Своя валидация', editor: 'textarea' },
+  { id: 'validationError', header: 'Ошибка формата', editor: 'textarea' },
+  { id: 'correctAnswer', header: 'Правильный ответ', editor: 'textarea' },
+  { id: 'correctAnswerChecker', header: 'Проверяльщик', editor: 'textarea' },
+  { id: 'wrongAnswer', header: 'Неверный ответ', editor: 'textarea' },
+  { id: 'congratulation', header: 'Верный ответ', editor: 'textarea' },
 ]
 
 const typeLabels: Record<number, string> = {
   1: 'тестовая',
   2: 'письменная',
   3: 'устная',
-  4: 'письменно вместо устной',
 }
 
 function problemKey(sourceOrdinal: number, sourceItem: string): string {
@@ -350,14 +360,39 @@ export function ProblemReviewWorkflow({
 
   const advanceAfterMatching = useCallback(
     async (resource: MatchResource) => {
-      setMatchResource(resource)
-      const allMatched = resource.data.items.every((item) => item.match !== null)
+      let current = resource
+      setMatchResource(current)
+      let allMatched = current.data.items.every((item) => item.match !== null)
       if (!allMatched) {
-        const stored = parseStoredSelections(matchDraftKey, resource.data)
-        setSelections(stored?.selections ?? selectionsFromReview(resource.data))
-        setStaleDraft(stored !== undefined && stored.etag !== resource.etag)
-        setPhase('matching')
-        return
+        const firstConditionUpload = kind === 'condition' && current.data.candidates.length === 0
+        const exactExistingStructure =
+          current.data.candidates.length === current.data.items.length &&
+          current.data.items.every((item) => item.suggestedProblemId !== null)
+        if (firstConditionUpload || exactExistingStructure) {
+          current = await client.resolveProblemMatches({
+            revisionId,
+            etag: current.etag,
+            matches: current.data.items.map((item) => ({
+              sourceOrdinal: item.sourceOrdinal,
+              sourceItem: item.sourceItem,
+              decision: firstConditionUpload ? 'insert_new' : 'auto_position',
+              problemId: firstConditionUpload ? null : item.suggestedProblemId,
+            })),
+          })
+          setMatchResource(current)
+          allMatched = current.data.items.every((item) => item.match !== null)
+        } else if (kind !== 'condition') {
+          throw new Error(
+            'Структура задач или пунктов не совпадает с условием. Исправьте LaTeX-файл и загрузите новую revision.',
+          )
+        }
+        if (!allMatched) {
+          const stored = parseStoredSelections(matchDraftKey, current.data)
+          setSelections(stored?.selections ?? selectionsFromReview(current.data))
+          setStaleDraft(stored !== undefined && stored.etag !== current.etag)
+          setPhase('matching')
+          return
+        }
       }
       clearStoredObject(matchDraftKey)
       setStaleDraft(false)

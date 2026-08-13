@@ -24,11 +24,6 @@ import {
   Input,
   Label,
   Progress,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -317,7 +312,6 @@ export interface MissingAsset {
   ref: string
   sourceKind: 'figure' | 'tikz'
   acceptedUploadKinds: Array<'raster' | 'svg' | 'tikz'>
-  selectedUploadKind: 'raster' | 'svg' | 'tikz'
   status: 'missing' | 'uploading' | 'attached' | 'reused' | 'error'
   fileName?: string
   assetHref?: string
@@ -327,25 +321,13 @@ export interface MissingAsset {
 export interface MissingAssetsFlowProps {
   assets: MissingAsset[]
   disabled?: boolean
-  onUploadKindChange?: (assetId: string, kind: 'raster' | 'svg' | 'tikz') => void
   onFileSelect?: (assetId: string, file: File | undefined) => void
   onResolve?: (assetId: string) => void
   className?: string
 }
 
-const assetUploadKindLabels = {
-  raster: 'Фото или растровое изображение',
-  svg: 'Готовый SVG',
-  tikz: 'Собрать TikZ из LaTeX',
-} as const
-
-function assetFileAccept(kind: 'raster' | 'svg' | 'tikz'): string | undefined {
-  if (kind === 'svg') return '.svg,image/svg+xml'
-  if (kind === 'raster') {
-    return '.png,.jpg,.jpeg,.webp,.heic,.heif,image/png,image/jpeg,image/webp,image/heic,image/heif'
-  }
-  return undefined
-}
+const assetFileAccept =
+  '.svg,.png,.jpg,.jpeg,.webp,.heic,.heif,image/svg+xml,image/png,image/jpeg,image/webp,image/heic,image/heif'
 
 /** Compact Staff preview from the original attached asset; see the Phase 2
  * missing-assets flow in dev/development-plan/06-phase-2-content.md. */
@@ -361,7 +343,7 @@ function AttachedAssetPreview({ asset }: { asset: MissingAsset & { assetHref: st
         rel="noreferrer"
         target="_blank"
       >
-        Открыть прикреплённый ресурс
+        Открыть изображение
       </a>
     )
   }
@@ -410,7 +392,6 @@ function AttachedAssetPreview({ asset }: { asset: MissingAsset & { assetHref: st
 export function MissingAssetsFlow({
   assets,
   disabled = false,
-  onUploadKindChange,
   onFileSelect,
   onResolve,
   className,
@@ -443,9 +424,8 @@ export function MissingAssetsFlow({
       <ul className="space-y-2">
         {assets.map((asset, index) => {
           const inputId = `missing-asset-file-${index}`
-          const selectId = `missing-asset-kind-${index}`
           const resolved = asset.status === 'attached' || asset.status === 'reused'
-          const needsFile = asset.selectedUploadKind !== 'tikz'
+          const needsFile = asset.sourceKind !== 'tikz'
           return (
             <li className="space-y-2 rounded-md border border-border bg-surface p-3" key={asset.id}>
               <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
@@ -475,31 +455,12 @@ export function MissingAssetsFlow({
                   <AttachedAssetPreview asset={{ ...asset, assetHref: asset.assetHref }} />
                 ) : null
               ) : (
-                <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(10rem,0.7fr)_minmax(12rem,1fr)_auto] sm:items-end">
-                  <div className="min-w-0 space-y-1">
-                    <Label htmlFor={selectId}>Способ подготовки</Label>
-                    <Select
-                      disabled={disabled || asset.status === 'uploading'}
-                      onValueChange={(value) => value && onUploadKindChange?.(asset.id, value)}
-                      value={asset.selectedUploadKind}
-                    >
-                      <SelectTrigger className="w-full" id={selectId} size="sm">
-                        <SelectValue>{assetUploadKindLabels[asset.selectedUploadKind]}</SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {asset.acceptedUploadKinds.map((kind) => (
-                          <SelectItem key={kind} value={kind}>
-                            {assetUploadKindLabels[kind]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto] sm:items-end">
                   {needsFile ? (
                     <div className="min-w-0 space-y-1">
-                      <Label htmlFor={inputId}>Файл</Label>
+                      <Label htmlFor={inputId}>Изображение</Label>
                       <Input
-                        accept={assetFileAccept(asset.selectedUploadKind)}
+                        accept={assetFileAccept}
                         disabled={disabled || asset.status === 'uploading'}
                         id={inputId}
                         onChange={(event) => onFileSelect?.(asset.id, event.target.files?.[0])}
@@ -511,11 +472,7 @@ export function MissingAssetsFlow({
                         </p>
                       ) : null}
                     </div>
-                  ) : (
-                    <p className="text-caption text-muted-foreground">
-                      Сервер возьмёт точный TikZ-блок из этой revision.
-                    </p>
-                  )}
+                  ) : null}
                   <Button
                     disabled={
                       disabled ||
@@ -533,8 +490,8 @@ export function MissingAssetsFlow({
                     )}
                     {asset.status === 'error'
                       ? 'Повторить'
-                      : asset.selectedUploadKind === 'tikz'
-                        ? 'Собрать SVG'
+                      : asset.sourceKind === 'tikz'
+                        ? 'Повторить обработку'
                         : 'Загрузить'}
                   </Button>
                 </div>

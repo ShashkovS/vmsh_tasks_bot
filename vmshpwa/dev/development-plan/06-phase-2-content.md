@@ -2,7 +2,7 @@
 
 ## Результат
 
-Admin загружает условие/подсказку/решение одного уровня или пакет урока, разрешает позиционные расхождения задач, получает diagnostics и missing-assets flow, проверяет PWA/Telegram preview и публикует либо планирует конкретную revision по уровню. Print-раздел откладывается во вторую версию.
+Admin загружает условия либо общий файл подсказок и решений одного уровня или пакет урока, получает diagnostics и missing-assets flow, проверяет настоящий PWA/Telegram preview и публикует либо планирует конкретную revision по уровню. Первичная загрузка создаёт все найденные задачи автоматически; сопоставление появляется только при несовместимом изменении структуры уже существующего листка. Print-раздел откладывается во вторую версию.
 
 Дизайн-контракт этапа: [математический документ, publication controls, diagnostics, metadata grid и Storybook stories](18-design-implementation-map.md#phase-2-design).
 
@@ -41,8 +41,8 @@ Production migration не начинает историю с занятия 39. 
 
 1. Detect encoding (`CP1251`/UTF-8) и нормализовать в Unicode без изменения source hash record.
 2. Parse LaTeX в canonical typed document AST; unknown macro даёт diagnostic с file/line/column.
-3. Сопоставить задачи по порядку. Если число/структура пунктов изменились, остановить публикацию и показать ручное сопоставление с legacy `problems`; обязательного ID в LaTeX нет.
-4. Content-address assets; TikZ → отдельный sanitized SVG; raster → WebP.
+3. Для первого условия создать задачи по порядку без отдельного экрана сопоставления. Для следующей revision автоматически сохранить позиционное соответствие при неизменной структуре; только несовместимое изменение условия требует ручного сопоставления. Подсказки и решения обязаны совпадать с условиями по порядку и при расхождении блокируются с просьбой исправить TeX.
+4. Content-address assets; каждый TikZ автоматически нормализуется, разрешается через versioned cache и при cache miss собирается в sanitized SVG; raster → WebP. Способ обработки рисунка Staff не выбирает.
 5. Сгенерировать web AST/HTML для client KaTeX, Telegram-rich dialect и PDF.
 6. Проверить link/media/Telegram limits и sanitizer/CSP. Поддерживаемый корпус — KaTeX + конструкции исторического `a16_html_from_tex.py`.
 7. Сохранить compiler version/hash. Recompile не меняет publication до явного действия.
@@ -71,13 +71,14 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 
 ## Сопоставление задач и metadata review
 
+- **MATCH-00.** В задаче с `\пункт` родительское условие остаётся единым визуальным блоком, но canonical review создаёт отдельную строку `1а`, `1б`, … для каждого пункта. Тип ответа, сдача, попытки, результат и проверка принадлежат пункту; отдельной сдаваемой строки для родителя нет.
 - **MATCH-01.** Canonical identity строки — `(source_ordinal, source_item)` из
   exact compiler AST; если `source_item` в LaTeX отсутствует, используется
   строковое значение ordinal. Один полный batch обязан покрывать каждую
   canonical задачу ровно один раз. Частичные batch, повтор одного legacy
   `problem_id` и match за пределами concrete group lesson отклоняются до
   публикации.
-- **MATCH-02.** `auto_position` разрешён только при совпадении ordinal;
+- **MATCH-02.** На первом условии все canonical строки получают `insert_new` автоматически. `auto_position` разрешён только при совпадении ordinal и используется без отдельного экрана при одинаковой структуре следующей revision;
   `manual_match` выбирает существующую задачу того же group lesson;
   `insert_new` создаёт минимальную legacy projection со статусом письменной
   задачи, которую всё равно нельзя опубликовать до review metadata; `omit`
@@ -97,12 +98,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   Все 23 исторических `ANS_TYPE` поддерживаются; test требует answer type,
   non-test не сохраняет скрытую test-конфигурацию. Пустой checker допустим и
   означает будущий `pending_configuration`, а не ложную успешную проверку.
-- **METADATA-02.** Каждая revision условия, подсказки или решения проходит
-  собственное structural matching: файлы и публикации независимы и parser не
-  вправе молча считать их задачи совпавшими. При этом task/answer metadata
-  принадлежит задаче занятия и не дублируется для подсказки или решения.
-  Поэтому condition publication требует matching + metadata review, а
-  hint/solution publication — matching соответствующей revision.
+- **METADATA-02.** Один `usl-*-*-sol.tex` является источником сразу двух независимых revision — подсказки и решения. В нём присутствуют условия, а блоки подсказки/решения могут быть пустыми. Обе revision позиционно сверяются с опубликованной структурой условия без ручного сопоставления; несовпадение числа задач или пунктов блокирует сборку и требует исправить TeX. Task/answer metadata принадлежит задаче занятия и не дублируется.
 - До появления `problems.public_id` в Phase 3 Staff-only reconciliation wire
   использует legacy integer `problemId` только как candidate/mutation token.
   Он не попадает в Student/Family URL или payload; Phase 3 заменяет эту
@@ -111,7 +107,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 ## Staff UI
 
 - Routes: `staff/src/routes/lessons.*`, `problems.*`.
-- Upload single/bulk; conditions and solutions separate; per-level selection.
+- Upload single/bulk; обычный `usl-*.tex` по умолчанию является условием, `usl-*-sol.tex` загружается сразу как подсказки и решения; per-level selection.
 - Bulk upload never guesses the group by filename: Staff maps every selected
   `.tex` to one explicit group lesson. Material kind defaults to `condition`
   and remains explicitly editable as `condition|hint|solution`. The UI validates
@@ -119,9 +115,9 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   sequentially, keeps successful revisions on partial failure and never
   publishes them automatically. Implementation and Storybook proof:
   [`phase2-bulk-upload-ui.md`](../../../pwa_tests/reports/phase2-bulk-upload-ui.md).
-- A revision blocked by missing assets remains saved. The bulk row links directly
-  to the affected material card; Staff builds each missing TikZ SVG or uploads
-  the external figure and then retries compilation. The content client accepts
+- A revision blocked by missing external assets remains saved. The bulk row links directly
+  to the affected material card; каждый TikZ сервер собирает автоматически, а Staff загружает
+  только отсутствующий внешний рисунок и затем повторяет compilation. The content client accepts
   the exact weak form which a compression filter may produce from the opaque
   version ETag and restores the strong database version token for `If-Match`.
 - При загрузке source и по явной кнопке Staff сначала выполняет глобальный
@@ -136,7 +132,7 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
 - Structural output `a03_tempate_for_bot.py` не считается готовой metadata: до публикации **условия** admin явно просматривает `title`, `prob_type`, `ans_type`, `ans_validation`, `validation_error`, `cor_ans`, `cor_ans_checker`, `wrong_ans` и `congrat`. Заглушка или непроверенное parser default блокирует publish с полевым diagnostic. Подсказка и решение проходят собственное structural matching, но переиспользуют уже подтверждённую task metadata занятия.
 - Title остаётся коротким UI-именем, но должен узнаваемо отличать задачу. Равное название разных групп одного `course_lesson` только предлагает synonym candidate; автоматический merge не выполняется, а другой course/lesson не рассматривается.
 - Synonym suggestion from equal titles with explicit accept/reject.
-- Side-by-side PWA and Telegram preview. Уже сгенерированный PDF derivative можно открыть для regression/контроля, но команд печати и отдельного print workflow в v1 нет.
+- Переключаемые полноширинные PWA и Telegram previews используют настоящие клиентские renderers, а не показывают HTML-код. Для подсказки рядом повторяется условие задачи, disclosure открыт. Уже сгенерированный PDF derivative можно открыть для regression/контроля, но команд печати и отдельного print workflow в v1 нет.
 - Publish/schedule/hide confirmation per level/kind. Отдельная версионируемая lesson-window form задаёт `opensAt`, `submissionClosesAt` и hint/solution schedule; изменение cutoff требует отдельного confirmation/audit по `SCHEDULE-01`, а schedule решения и фактический publish не переопределяют его молча. Hidden lesson исчезает из Student как неопубликованный; просмотревший старую revision получает индикатор обновления после новой публикации.
 - Поле `datetime-local` передаёт серверу только локальное время минуты
   `scheduledLocalTime` и IANA `businessTimezone`, полученный из authoritative

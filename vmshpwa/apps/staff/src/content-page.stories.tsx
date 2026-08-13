@@ -471,14 +471,13 @@ export const UploadPreviewPublish: Story = {
 
     await expect(canvas.getByText('Занятие 41 · Начинающие')).toBeVisible()
     await expect(canvas.getByText(/3:1 · Команда вертикального отступа/)).toBeVisible()
-    await expect(canvas.getByRole('heading', { name: 'PWA' })).toBeVisible()
-    await expect(canvas.getByRole('heading', { name: 'Telegram Rich HTML' })).toBeVisible()
-    await expect(canvas.getByRole('heading', { name: 'PDF' })).toBeVisible()
+    await expect(canvas.getByRole('tab', { name: 'PWA' })).toBeVisible()
+    await expect(canvas.getByRole('tab', { name: 'Telegram' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('tab', { name: 'PDF' }))
     await expect(canvas.getByRole('link', { name: 'Открыть PDF' })).toHaveAttribute(
       'href',
       `/staff/api/v1/content/revisions/${revisionId}/pdf`,
     )
-    await expect(canvas.getByText(/<tg-math>n\^2<\/tg-math>/)).toBeVisible()
     await userEvent.click(await canvas.findByRole('button', { name: 'Опубликовать сейчас' }))
     await expect(canvas.getByText(/Опубликовать условие revision 1 сейчас/)).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить' }))
@@ -639,8 +638,8 @@ export const ResumeInterruptedRevision: Story = {
     await userEvent.click(
       canvas.getByRole('button', { name: 'Найти недостающие рисунки revision 1' }),
     )
-    await expect(await canvas.findByRole('heading', { name: 'PWA' })).toBeVisible()
-    await expect(canvas.getByRole('heading', { name: 'Telegram Rich HTML' })).toBeVisible()
+    await expect(await canvas.findByRole('tab', { name: 'PWA' })).toBeVisible()
+    await expect(canvas.getByRole('tab', { name: 'Telegram' })).toBeVisible()
   },
 }
 
@@ -753,14 +752,14 @@ export const RecoverMissingAsset: Story = {
     )
     await expect(await canvas.findByText('figures/rook.png')).toBeVisible()
     await userEvent.upload(
-      canvas.getByLabelText('Файл'),
+      canvas.getByLabelText('Изображение'),
       new File(['synthetic image'], 'rook.png', { type: 'image/png' }),
     )
     await expect(canvas.getByText('Выбран: rook.png')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Загрузить' }))
     await expect(await canvas.findByText('Переиспользован')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Повторить сборку материала' }))
-    await expect(await canvas.findByRole('heading', { name: 'PWA' })).toBeVisible()
+    await expect(await canvas.findByRole('tab', { name: 'PWA' })).toBeVisible()
     await expect(canvas.queryByText('figures/rook.png')).not.toBeInTheDocument()
   },
 }
@@ -807,7 +806,7 @@ export const AssetUploadErrorKeepsSelection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.upload(
-      await canvas.findByLabelText('Файл'),
+      await canvas.findByLabelText('Изображение'),
       new File(['synthetic image'], 'rook.png', { type: 'image/png' }),
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Загрузить' }))
@@ -1051,11 +1050,6 @@ export const MatchThenReviewMetadata: Story = {
       groupLessonId,
       revisionId,
     )
-    await userEvent.selectOptions(
-      await canvas.findByLabelText('Сопоставление задачи 1'),
-      'insert_new',
-    )
-    await userEvent.click(canvas.getByRole('button', { name: 'Подтвердить сопоставление' }))
     const title = await canvas.findByLabelText('Название, строка 1')
     await userEvent.type(title, 'Орехи и клетки')
     await userEvent.click(canvas.getByRole('button', { name: 'Сохранить' }))
@@ -1157,7 +1151,22 @@ export const MatchingDraftSurvivesReload: Story = {
                   match: null,
                 },
               ],
-              candidates: [],
+              candidates: [
+                {
+                  problemId: -61,
+                  problemNumber: 7,
+                  item: '',
+                  title: 'Старая задача с другой структурой',
+                  problemType: 2,
+                  answerType: null,
+                  answerValidation: null,
+                  validationError: null,
+                  correctAnswer: null,
+                  correctAnswerChecker: null,
+                  wrongAnswer: null,
+                  congratulation: null,
+                },
+              ],
               requestId: 'storybook-matching-draft',
             },
             etag,
@@ -1174,7 +1183,7 @@ export const MatchingDraftSurvivesReload: Story = {
             draftNamespace={storyDraftNamespace}
             groupLessonId={groupLessonId}
             key={generation}
-            kind="hint"
+            kind="condition"
             onReadyChange={() => undefined}
             revisionId={draftRevisionId}
           />

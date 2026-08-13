@@ -182,6 +182,23 @@ def test_print_header_whitespace_does_not_create_empty_web_or_telegram_paragraph
     assert result.telegram.content.startswith("<h2>Тест-задачи</h2>")
 
 
+def test_problem_type_follows_the_tex_section_without_exposing_legacy_hybrid_type() -> (
+    None
+):
+    result = _compile(
+        r"""
+\раздел{<<Тест>>-задачи}
+\задача Тестовая. \кзадача
+\раздел{<<Письменные>> задачи}
+\задача Письменная. \кзадача
+\раздел{<<Устные>> задачи}
+\задача Устная. \кзадача
+"""
+    )
+
+    assert [problem.problem_type for problem in result.ast.problems] == [1, 2, 3]
+
+
 def test_lists_tables_subparts_assets_and_tikz_have_typed_nodes() -> None:
     known_hash = "a" * 64
     tikz_source = r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}"
@@ -739,7 +756,7 @@ def test_legacy_problem_subpart_and_single_group_answer_aliases_are_semantic() -
         for node in result.ast.problems[0].statement
         if isinstance(node, SubpartNode)
     ]
-    assert [node.label for node in subparts] == ["a", "7"]
+    assert [node.label for node in subparts] == ["а", "7"]
 
 
 def test_replacement_character_is_one_clear_source_error_not_macro_flood() -> None:
@@ -791,7 +808,7 @@ $$x=1$$
 """
     )
 
-    assert result.ast.schema_version == 2
+    assert result.ast.schema_version == 3
     assert not result.has_errors
     assert "latex.unknown_macro" not in _codes(result)
     assert len(result.ast.introduction) == 1

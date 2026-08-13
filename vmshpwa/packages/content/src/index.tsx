@@ -1,5 +1,5 @@
 import renderMathInElement from 'katex/contrib/auto-render'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import { katexRenderOptions } from './katex-rendering'
 import { sanitizeSemanticHtml } from './sanitizer'
@@ -43,6 +43,23 @@ export type { ZoomableAssetFigureProps } from './zoomable-asset-figure'
 export interface MathHtmlProps {
   html: string
   className?: string
+}
+
+export function TelegramMathHtml({ html, className }: MathHtmlProps) {
+  const browserHtml = useMemo(
+    () =>
+      html
+        .replace(
+          /<tg-math-block>([\s\S]*?)<\/tg-math-block>/gu,
+          (_match, latex: string) => String.raw`<div>\[${latex}\]</div>`,
+        )
+        .replace(
+          /<tg-math>([\s\S]*?)<\/tg-math>/gu,
+          (_match, latex: string) => String.raw`<span>\(${latex}\)</span>`,
+        ),
+    [html],
+  )
+  return <MathHtml html={browserHtml} {...(className ? { className } : {})} />
 }
 
 const mathDelimiters = [

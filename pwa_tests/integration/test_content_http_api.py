@@ -1120,10 +1120,10 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
         "serverReceivedAt": _timestamp(),
         "clockSuspicious": False,
         "attempts": {
-            "usedThisHour": 1,
-            "remainingThisHour": 2,
+            "usedThisHour": 0,
+            "remainingThisHour": 3,
             "usedToday": 1,
-            "remainingToday": 5,
+            "remainingToday": 4,
             "unlimited": False,
         },
         "checkStatus": "checked",
@@ -1174,7 +1174,7 @@ async def test_student_test_submission_http_is_strict_idempotent_and_readable(
     invalid_receipt = await invalid_format.json()
     assert invalid_receipt["outcome"] == "invalid_format"
     assert invalid_receipt["verdict"] is None
-    assert invalid_receipt["attempts"]["usedThisHour"] == 1
+    assert invalid_receipt["attempts"]["usedThisHour"] == 0
     assert fixture.client.app[pwa_app.PWA_STATE]["cursors"] == {
         **cursors_after_created,
         "student": cursors_after_created["student"] + 1,
@@ -2717,11 +2717,12 @@ async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
     assert inventory.status == 200, await inventory.text()
     inventory_payload = await inventory.json()
     assert inventory_payload["status"] == "uploaded"
-    assert len(inventory_payload["missingAssets"]) == 3
-    tikz_name = next(
-        item["logicalName"]
-        for item in inventory_payload["assets"]
-        if item["sourceKind"] == "tikz"
+    assert len(inventory_payload["missingAssets"]) == 2
+    assert (
+        next(
+            item for item in inventory_payload["assets"] if item["sourceKind"] == "tikz"
+        )["status"]
+        == "attached"
     )
 
     blocked = await fixture.client.post(
@@ -2793,15 +2794,7 @@ async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
     )
     assert vector.status == 201, await vector.text()
     vector_etag = vector.headers["ETag"]
-    tikz = await _upload_asset(
-        fixture,
-        revision_id=revision_id,
-        logical_name=tikz_name,
-        kind="tikz",
-        if_match=vector_etag,
-    )
-    assert tikz.status == 201, await tikz.text()
-    final_etag = tikz.headers["ETag"]
+    final_etag = vector_etag
 
     resolved = await fixture.client.get(
         assets_url,
@@ -3076,7 +3069,10 @@ async def test_asset_upload_rejects_stale_unreferenced_or_malformed_requests(
             (revision_id,),
         ).fetchone()
     )
-    assert (stored["status"], stored["version"]) == ("uploaded", 1)
+    assert (stored["status"], stored["version"]) == (
+        "uploaded",
+        revision["version"],
+    )
 
 
 async def test_publication_requires_problem_matching_and_reviewed_metadata(

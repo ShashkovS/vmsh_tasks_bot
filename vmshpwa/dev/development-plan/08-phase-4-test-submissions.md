@@ -23,6 +23,7 @@
 Migration: `pwa_test_attempts_idempotency`; таблицы `test_attempts`, `idempotency_records`; dual-write в `results`.
 
 - Server authoritative проверяет `lesson_windows.submission_closes_at`, attempts policy, active student/problem revision и answer schema. Фактическая публикация solution не подменяет cutoff. Invalid-format сохраняется, но попытку не расходует; отправка после правильного ответа разрешена.
+- Default attempt policy: не более трёх **неверных** валидных ответов в одном календарном часу business timezone и не более пяти любых расходующих попытку ответов в календарный день. Верные ответы не уменьшают часовой остаток; invalid-format не уменьшает ни один остаток. Policy хранится в revision и допускает будущую настройку/отключение на уровне курса.
 - Metadata semantics повторяют legacy без неявных преобразований: custom `ans_validation` делает `fullmatch` на `student_answer.strip()`, пустое поле берёт default из `ANS_TYPE`, `SELECT_ONE` использует видимые `;`-separated labels, а не hidden values. `cor_ans` поддерживает несколько вариантов через `;`.
 - `validation_error` отвечает за понятный формат и контекст задачи; `wrong_ans` — за валидный, но неверный ответ; `congrat` — за верный. Первый текст по возможности называет искомую величину/порядок и даёт пример, чтобы отличить ошибку формата от промаха по задаче.
 - Offline `clientCreatedAt` до `submission_closes_at` считается своевременным даже при поздней доставке. Clock skew больше часа маркируется для диагностики.

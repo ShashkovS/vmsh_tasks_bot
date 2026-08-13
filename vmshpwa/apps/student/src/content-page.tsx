@@ -13,7 +13,7 @@ import {
   usePublishedContentReplacement,
   usePublishedContentQuery,
 } from '@vmsh/content'
-import { ApiResponseError, type ContentMaterialKind } from '@vmsh/contracts'
+import { ApiResponseError, type ContentMaterialKind, type WebContentProblem } from '@vmsh/contracts'
 import { useOfflineDatabase } from '@vmsh/offline'
 import { ContentUpdateMarker } from '@vmsh/product'
 
@@ -35,13 +35,17 @@ export function StudentPublishedContentPage({
   groupLessonId,
   kind,
   problemOrdinal,
+  displayTitle,
   afterDocument,
+  renderAfterProblem,
 }: {
   taskId: string
   groupLessonId?: string
   kind: ContentMaterialKind
   problemOrdinal?: number
+  displayTitle?: string
   afterDocument?: ReactNode
+  renderAfterProblem?: (problem: WebContentProblem) => ReactNode
 }) {
   const authentication = useAuthentication()
   const principal = useAuthenticatedPrincipal()
@@ -136,16 +140,25 @@ export function StudentPublishedContentPage({
   const visibleDocument = selectedProblem
     ? { ...document, introduction: [], problems: [selectedProblem] }
     : document
+  const visibleTitle =
+    displayTitle ||
+    (selectedProblem
+      ? selectedProblem.title ||
+        `Задача ${selectedProblem.ordinal}${selectedProblem.sourceItem ?? ''}`
+      : document.title || materialLabels[kind])
 
   return (
     <PageLayout
       description={`Опубликовано ${new Date(query.data.publishedAt).toLocaleString('ru-RU')}`}
       eyebrow={materialLabels[kind]}
-      title={selectedProblem?.title ?? document.title ?? `Задача ${taskId}`}
+      title={visibleTitle}
       width="reading"
     >
       <ContentUpdateMarker visible={contentWasReplaced} />
-      <SemanticMathDocument document={visibleDocument} />
+      <SemanticMathDocument
+        document={visibleDocument}
+        {...(renderAfterProblem ? { renderAfterProblem } : {})}
+      />
       {afterDocument}
     </PageLayout>
   )

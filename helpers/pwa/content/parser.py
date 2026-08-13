@@ -55,7 +55,7 @@ from .scanner import (
 from .tikz import scan_tikz_sources
 
 
-AST_SCHEMA_VERSION = 2
+AST_SCHEMA_VERSION = 3
 
 _PROBLEM_STARTS = {
     "задача",
@@ -443,7 +443,13 @@ class LatexAstParser:
             introduction_end = slices[0].start_command.start if slices else body_end
             introduction = self._parse_blocks(body_start, introduction_end)
             problems = tuple(
-                self._parse_problem(problem_slice, ordinal)
+                self._parse_problem(
+                    problem_slice,
+                    ordinal,
+                    problem_type=self._problem_type_at(
+                        body_start, problem_slice.start_command.start
+                    ),
+                )
                 for ordinal, problem_slice in enumerate(slices, start=1)
             )
         except _NodeLimitExceeded:
@@ -596,7 +602,35 @@ class LatexAstParser:
                 )
         return tuple(slices)
 
-    def _parse_problem(self, problem_slice: _ProblemSlice, ordinal: int) -> ProblemNode:
+    def _problem_type_at(self, body_start: int, problem_start: int) -> int:
+        problem_type = 2
+        for command in scan_commands(
+            self.text,
+            start=body_start,
+            end=problem_start,
+            limits=self.limits,
+        ):
+            if command.name not in {"раздел", "допраздел"}:
+                continue
+            group = command_group(self.text, command, problem_start, limits=self.limits)
+            if group is None:
+                continue
+            heading = self.text[group.content_start : group.content_end].casefold()
+            if "тест" in heading:
+                problem_type = 1
+            elif "устн" in heading:
+                problem_type = 3
+            elif "письм" in heading:
+                problem_type = 2
+        return problem_type
+
+    def _parse_problem(
+        self,
+        problem_slice: _ProblemSlice,
+        ordinal: int,
+        *,
+        problem_type: int,
+    ) -> ProblemNode:
         command = problem_slice.start_command
         header_end = command.end
         source_item: str | None = None
@@ -748,6 +782,7 @@ class LatexAstParser:
                 ordinal=ordinal,
                 source_item=source_item,
                 source_title=source_title,
+                problem_type=problem_type,
                 statement=parsed_sections["statement"],
                 trailing=parsed_sections["trailing"],
                 answer=parsed_sections["answer"],
@@ -1144,8 +1179,9 @@ class LatexAstParser:
 
     @staticmethod
     def _subpart_label(ordinal: int) -> str:
-        if 1 <= ordinal <= 26:
-            return chr(ord("a") + ordinal - 1)
+        labels = "абвгдежзиклмнопрстуфхцчшщъыьэюя"
+        if 1 <= ordinal <= len(labels):
+            return labels[ordinal - 1]
         return str(ordinal)
 
     def _paragraphs(self, start: int, end: int) -> list[ParagraphNode]:

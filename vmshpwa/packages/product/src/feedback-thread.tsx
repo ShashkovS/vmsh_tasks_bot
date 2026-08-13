@@ -1,4 +1,4 @@
-import { Bot, BriefcaseBusiness, Cog, Send, Smartphone } from 'lucide-react'
+import { Bot, Cog, Send, Smartphone } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { cn } from '@vmsh/ui'
@@ -35,11 +35,10 @@ const authorName: Record<ThreadAuthorKind, string> = {
 const channelView = {
   pwa: { icon: Smartphone, label: 'в приложении' },
   telegram: { icon: Send, label: 'через Telegram' },
-  staff: { icon: BriefcaseBusiness, label: 'в кабинете преподавателя' },
   system: { icon: Cog, label: 'системное событие' },
-} as const satisfies Record<ThreadChannel, { icon: typeof Smartphone; label: string }>
+} as const
 
-function ChannelBadge({ channel }: { channel: ThreadChannel }) {
+function ChannelBadge({ channel }: { channel: Exclude<ThreadChannel, 'staff'> }) {
   const { icon: Icon, label } = channelView[channel]
   return (
     <span className="inline-flex items-center gap-1 text-caption text-muted-foreground">
@@ -73,7 +72,9 @@ export function ThreadMessage({ message }: { message: ThreadMessageView }) {
             {name}
           </span>
           <time className="font-num text-caption text-muted-foreground">{message.at}</time>
-          {message.channel ? <ChannelBadge channel={message.channel} /> : null}
+          {message.channel && message.channel !== 'staff' ? (
+            <ChannelBadge channel={message.channel} />
+          ) : null}
         </div>
         {message.origin ? (
           <p className="text-caption text-muted-foreground">

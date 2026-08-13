@@ -126,7 +126,7 @@ class SubmissionClockAssessment:
 @dataclass(frozen=True, slots=True)
 class TestAttemptPolicy:
     max_per_hour: int | None = 3
-    max_per_day: int | None = 6
+    max_per_day: int | None = 5
 
     @classmethod
     def from_revision(cls, value: Mapping[str, object]) -> "TestAttemptPolicy":
@@ -151,7 +151,7 @@ class TestAttemptPolicy:
 
         return cls(
             max_per_hour=optional_limit("maxPerHour", 3),
-            max_per_day=optional_limit("maxPerDay", 6),
+            max_per_day=optional_limit("maxPerDay", 5),
         )
 
 

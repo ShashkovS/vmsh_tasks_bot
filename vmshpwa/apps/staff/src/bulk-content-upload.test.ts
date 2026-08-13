@@ -47,6 +47,12 @@ describe('Staff bulk content upload validation', () => {
     ).toContain('Выберите действующую группу')
   })
 
+  it('recognises the shared hints-and-solutions source by its established filename', () => {
+    const [row] = createBulkContentUploadRows([new File(['tex'], 'usl-20-n-sol.tex')])
+
+    expect(row?.kind).toBe('hint_solution')
+  })
+
   it('rejects duplicate group/material slots instead of silently overwriting a revision', () => {
     const rows = createBulkContentUploadRows([
       new File(['first'], 'first.tex'),
@@ -60,6 +66,21 @@ describe('Staff bulk content upload validation', () => {
     expect(validateBulkContentUploadRows(rows, targets)).toBe(
       'Одна группа и вид материала выбраны для нескольких файлов.',
     )
+  })
+
+  it('treats one combined solution file as occupying both hint and solution slots', () => {
+    const [combined] = createBulkContentUploadRows([new File(['combined'], 'usl-20-n-sol.tex')])
+    const [separate] = createBulkContentUploadRows([new File(['hint'], 'hint.tex')])
+
+    expect(
+      validateBulkContentUploadRows(
+        [
+          { ...combined!, groupLessonId: targets[0]!.groupLessonId },
+          { ...separate!, groupLessonId: targets[0]!.groupLessonId, kind: 'hint' },
+        ],
+        targets,
+      ),
+    ).toBe('Одна группа и вид материала выбраны для нескольких файлов.')
   })
 
   it('checks file type and the same 512 KiB source boundary as aiohttp', () => {
@@ -99,5 +120,16 @@ describe('Staff bulk content upload validation', () => {
     }
 
     expect(bulkContentRecoveryHref(row)).toBe('/staff/lessons/group-lesson-41-n#material-condition')
+  })
+
+  it('links a combined-material failure to the lesson without inventing a fake anchor', () => {
+    const row = {
+      ...createBulkContentUploadRows([new File(['tex'], 'usl-20-n-sol.tex')])[0]!,
+      groupLessonId: targets[0]!.groupLessonId,
+      revisionId: 'content-revision.solution',
+      phase: 'attention' as const,
+    }
+
+    expect(bulkContentRecoveryHref(row)).toBe('/staff/lessons/group-lesson-41-n')
   })
 })

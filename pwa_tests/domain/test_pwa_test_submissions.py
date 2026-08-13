@@ -414,7 +414,7 @@ def test_checker_version_changes_with_material_configuration():
 def test_attempt_policy_preserves_legacy_defaults_and_explicit_unlimited_mode():
     assert AttemptPolicy.from_revision({"schemaVersion": 1}) == AttemptPolicy(
         max_per_hour=3,
-        max_per_day=6,
+        max_per_day=5,
     )
     assert AttemptPolicy.from_revision({"unlimited": True}) == AttemptPolicy(
         max_per_hour=None,

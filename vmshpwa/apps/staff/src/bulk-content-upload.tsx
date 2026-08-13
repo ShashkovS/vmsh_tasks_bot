@@ -30,15 +30,17 @@ import {
 
 import {
   type BulkContentUploadRow,
+  type BulkContentMaterialKind,
   bulkContentRecoveryHref,
   createBulkContentUploadRows,
   validateBulkContentUploadRows,
 } from './bulk-content-upload-model'
 
-const materialLabels: Record<ContentMaterialKind, string> = {
+const materialLabels: Record<BulkContentMaterialKind, string> = {
   condition: 'Условие',
   hint: 'Подсказка',
   solution: 'Решение',
+  hint_solution: 'Подсказки и решения',
 }
 
 function colorIndex(colorKey: string | null): GroupView['colorIndex'] {
@@ -104,21 +106,23 @@ export function BulkContentUpload({
       // decision flow. See Phase 2 bulk upload in 06-phase-2-content.md.
       for (const row of rows) {
         try {
-          updateRow(row.id, { phase: 'uploading', message: undefined })
-          const uploaded = await client.uploadSource({
-            groupLessonId: row.groupLessonId,
-            kind: row.kind,
-            logicalFilename: row.file.name,
-            source: row.file,
-          })
-          updateRow(row.id, { phase: 'compiling', revisionId: uploaded.data.revisionId })
-          const compiled = await client.compileRevision(uploaded.data.revisionId, uploaded.etag)
-          updateRow(row.id, {
-            phase: compiled.data.status === 'ready' ? 'ready' : 'attention',
-            ...(compiled.data.status === 'ready'
-              ? {}
-              : { message: 'Revision сохранена, но требует отдельной проверки.' }),
-          })
+          const kinds: ContentMaterialKind[] =
+            row.kind === 'hint_solution' ? ['hint', 'solution'] : [row.kind]
+          for (const kind of kinds) {
+            updateRow(row.id, { phase: 'uploading', message: undefined })
+            const uploaded = await client.uploadSource({
+              groupLessonId: row.groupLessonId,
+              kind,
+              logicalFilename: row.file.name,
+              source: row.file,
+            })
+            updateRow(row.id, { phase: 'compiling', revisionId: uploaded.data.revisionId })
+            const compiled = await client.compileRevision(uploaded.data.revisionId, uploaded.etag)
+            if (compiled.data.status !== 'ready') {
+              throw new Error('Revision сохранена, но требует отдельной проверки.')
+            }
+          }
+          updateRow(row.id, { phase: 'ready', message: undefined })
         } catch (error) {
           updateRow(row.id, {
             phase: 'attention',
@@ -269,10 +273,7 @@ export function BulkContentUpload({
                       disabled={running}
                       onValueChange={(value) =>
                         updateRow(row.id, {
-                          kind:
-                            value && value in materialLabels
-                              ? value
-                              : 'condition',
+                          kind: value && value in materialLabels ? value : 'condition',
                         })
                       }
                       value={row.kind || null}
@@ -283,7 +284,7 @@ export function BulkContentUpload({
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent align="start">
-                        {(Object.keys(materialLabels) as ContentMaterialKind[]).map((kind) => (
+                        {(Object.keys(materialLabels) as BulkContentMaterialKind[]).map((kind) => (
                           <SelectItem key={kind} value={kind}>
                             {materialLabels[kind]}
                           </SelectItem>
@@ -353,8 +354,8 @@ export function BulkContentUpload({
             <AlertContent>
               <AlertTitle>Загрузка сохранена, но нужны рисунки</AlertTitle>
               <AlertDescription>
-                Откройте нужное занятие по ссылке у файла. В карточке материала соберите TikZ в SVG
-                или загрузите внешний рисунок, затем повторите сборку материала.
+                Откройте нужное занятие по ссылке у файла, загрузите отсутствующий внешний рисунок и
+                повторите сборку материала. TikZ обрабатывается автоматически.
               </AlertDescription>
             </AlertContent>
           </Alert>

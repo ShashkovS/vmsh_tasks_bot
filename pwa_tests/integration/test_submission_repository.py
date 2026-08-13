@@ -697,8 +697,8 @@ async def test_checked_attempt_dual_writes_exactly_one_legacy_result(
     assert receipt.outcome == "correct"
     assert receipt.display_answer == "7"
     assert receipt.verdict == int(VERDICT.SOLVED)
-    assert receipt.attempts.used_this_hour == 1
-    assert receipt.attempts.remaining_this_hour == 2
+    assert receipt.attempts.used_this_hour == 0
+    assert receipt.attempts.remaining_this_hour == 3
     assert attempt["problem_revision_id"] == fixture.problem_revision_id
     assert attempt["result_id"] == result["id"]
     assert attempt["verdict"] == int(VERDICT.SOLVED)
@@ -1262,6 +1262,30 @@ async def test_hour_limit_blocks_fourth_counted_attempt_but_not_invalid_format(
         )
     )
     assert counts == (4, 3)
+
+
+async def test_hour_limit_counts_only_wrong_answers_while_day_counts_all_answers(
+    submission_fixture: SubmissionFixture,
+):
+    fixture = submission_fixture
+    for index in range(2):
+        receipt = await fixture.repository.submit_test_answer(
+            command(fixture, answer="7", key=f"attempt-correct-{index}")
+        )
+        assert receipt.attempts.used_this_hour == 0
+
+    for index in range(3):
+        receipt = await fixture.repository.submit_test_answer(
+            command(fixture, answer="8", key=f"attempt-wrong-{index}")
+        )
+
+    assert receipt.attempts.used_this_hour == 3
+    assert receipt.attempts.used_today == 5
+    with pytest.raises(SubmissionRejected) as caught:
+        await fixture.repository.submit_test_answer(
+            command(fixture, answer="8", key="attempt-fourth-wrong")
+        )
+    assert caught.value.code == "test_attempt_hour_limit"
 
 
 async def test_explicit_unlimited_policy_accepts_repeated_attempts(

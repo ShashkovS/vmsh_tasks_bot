@@ -4,12 +4,13 @@ const SOURCE_LIMIT_BYTES = 512 * 1024
 const MAX_BATCH_FILES = 100
 
 type BulkUploadRowPhase = 'queued' | 'uploading' | 'compiling' | 'ready' | 'attention'
+export type BulkContentMaterialKind = ContentMaterialKind | 'hint_solution'
 
 export interface BulkContentUploadRow {
   id: string
   file: File
   groupLessonId: string
-  kind: ContentMaterialKind
+  kind: BulkContentMaterialKind
   revisionId: string | undefined
   phase: BulkUploadRowPhase
   message: string | undefined
@@ -20,7 +21,7 @@ export function createBulkContentUploadRows(files: readonly File[]): BulkContent
     id: `bulk-${index}-${file.name}-${file.size}`,
     file,
     groupLessonId: '',
-    kind: 'condition',
+    kind: /-sol\.tex$/iu.test(file.name) ? 'hint_solution' : 'condition',
     revisionId: undefined,
     phase: 'queued',
     message: undefined,
@@ -47,14 +48,21 @@ export function validateBulkContentUploadRows(
     if (!row.groupLessonId || !targetIds.has(row.groupLessonId)) {
       return `Выберите действующую группу для файла «${row.file.name}».`
     }
-    const slot = `${row.groupLessonId}:${row.kind}`
-    if (slots.has(slot)) return 'Одна группа и вид материала выбраны для нескольких файлов.'
-    slots.add(slot)
+    const materialKinds: ContentMaterialKind[] =
+      row.kind === 'hint_solution' ? ['hint', 'solution'] : [row.kind]
+    for (const kind of materialKinds) {
+      const slot = `${row.groupLessonId}:${kind}`
+      if (slots.has(slot)) return 'Одна группа и вид материала выбраны для нескольких файлов.'
+      slots.add(slot)
+    }
   }
   return undefined
 }
 
 export function bulkContentRecoveryHref(row: BulkContentUploadRow): string | undefined {
   if (row.phase !== 'attention' || !row.groupLessonId || !row.revisionId) return undefined
+  if (row.kind === 'hint_solution') {
+    return `/staff/lessons/${encodeURIComponent(row.groupLessonId)}`
+  }
   return `/staff/lessons/${encodeURIComponent(row.groupLessonId)}#material-${row.kind}`
 }

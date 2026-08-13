@@ -452,7 +452,7 @@ export function StudentTestAnswer({ problemId }: { problemId: string }) {
               <p className="mt-1 text-caption text-muted-foreground">
                 {receipt.attempts.unlimited
                   ? 'Число попыток не ограничено.'
-                  : `Осталось сегодня: ${receipt.attempts.remainingToday ?? '—'}.`}
+                  : `Неверных ответов до конца часа: ${receipt.attempts.remainingThisHour ?? '—'} · ответов сегодня: ${receipt.attempts.remainingToday ?? '—'}.`}
               </p>
             </AlertContent>
           </Alert>

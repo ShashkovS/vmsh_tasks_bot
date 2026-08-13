@@ -13,7 +13,7 @@
 - compiled TeX sources: 30;
 - active problem AST nodes: 334;
 - structural signal failures: 0;
-- deterministic record-set SHA-256: `272a779eacd614f8312127043fd15bdccfa98f5350e6993ed2398828a944554d`.
+- deterministic record-set SHA-256: `590de6459c02e19ca8e3d15cd1b7e6580e62558dad37dec394fd71d040ff4b78`.
 
 ## Диагностики
 

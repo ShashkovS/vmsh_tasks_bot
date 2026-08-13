@@ -178,7 +178,7 @@ export const PrivateSupportDialogue: Story = {
   render: () => <PrivateSupportDialogueHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('в кабинете преподавателя')).toBeVisible()
+    await expect(canvas.queryByText('в кабинете преподавателя')).not.toBeInTheDocument()
     await expect(canvas.getByText('системное событие')).toBeVisible()
     const message = canvas.getByLabelText('Сообщение')
     await userEvent.type(message, 'Теперь понятно, спасибо!')

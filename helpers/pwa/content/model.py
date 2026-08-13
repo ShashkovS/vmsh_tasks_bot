@@ -208,6 +208,7 @@ class ProblemNode:
     ordinal: int
     source_item: str | None
     source_title: str | None
+    problem_type: int
     statement: tuple[BlockNode, ...]
     trailing: tuple[BlockNode, ...]
     answer: tuple[BlockNode, ...]

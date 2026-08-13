@@ -462,6 +462,7 @@ class CanonicalProblemRecord:
     source_item: str
     source_title: str | None
     display_number: str
+    problem_type: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -807,12 +808,6 @@ def _canonical_problem_records(value: object) -> tuple[CanonicalProblemRecord, .
             raise ContentRepositoryError(
                 "content revision canonical problem identity is invalid"
             )
-        identity = (ordinal, source_item)
-        if identity in identities:
-            raise ContentRepositoryError(
-                "content revision canonical problem identities are duplicated"
-            )
-        identities.add(identity)
         source_title_value = raw.get("source_title")
         if source_title_value is None or source_title_value == "":
             source_title = None
@@ -820,14 +815,56 @@ def _canonical_problem_records(value: object) -> tuple[CanonicalProblemRecord, .
             source_title = source_title_value.strip() or None
         else:
             raise ContentRepositoryError("content revision canonical title is invalid")
-        records.append(
-            CanonicalProblemRecord(
-                source_ordinal=ordinal,
-                source_item=source_item,
-                source_title=source_title,
-                display_number=str(ordinal),
-            )
+        raw_problem_type = raw.get("problem_type", 2)
+        problem_type = (
+            raw_problem_type
+            if isinstance(raw_problem_type, int)
+            and not isinstance(raw_problem_type, bool)
+            and raw_problem_type in {1, 2, 3}
+            else 2
         )
+
+        subpart_labels: list[str] = []
+
+        def collect_subparts(blocks: object) -> None:
+            if not isinstance(blocks, list):
+                return
+            for block in blocks:
+                if not isinstance(block, dict):
+                    continue
+                label = block.get("label")
+                children = block.get("children")
+                if isinstance(label, str) and isinstance(children, list):
+                    normalized = label.strip()
+                    if normalized:
+                        subpart_labels.append(normalized)
+                    continue
+                for nested in block.values():
+                    if isinstance(nested, list):
+                        collect_subparts(nested)
+
+        collect_subparts(raw.get("statement"))
+        canonical_items = subpart_labels or [source_item]
+        for canonical_item in canonical_items:
+            identity = (ordinal, canonical_item)
+            if identity in identities:
+                raise ContentRepositoryError(
+                    "content revision canonical problem identities are duplicated"
+                )
+            identities.add(identity)
+            records.append(
+                CanonicalProblemRecord(
+                    source_ordinal=ordinal,
+                    source_item=canonical_item,
+                    source_title=source_title,
+                    display_number=(
+                        str(ordinal)
+                        if canonical_item == str(ordinal)
+                        else f"{ordinal}{canonical_item}"
+                    ),
+                    problem_type=problem_type,
+                )
+            )
     return tuple(records)
 
 
@@ -5010,7 +5047,7 @@ class PwaContentRepository:
                             "(group_id, lesson, prob, item, title, prob_text, "
                             "prob_type, ans_type, ans_validation, validation_error, "
                             "cor_ans, cor_ans_checker, wrong_ans, congrat, synonyms) "
-                            "VALUES (?, ?, ?, ?, ?, '', 2, NULL, NULL, NULL, NULL, "
+                            "VALUES (?, ?, ?, ?, ?, '', ?, NULL, NULL, NULL, NULL, "
                             "NULL, NULL, NULL, '') RETURNING id",
                             (
                                 scope["group_id"],
@@ -5019,6 +5056,7 @@ class PwaContentRepository:
                                 legacy_item,
                                 source.source_title
                                 or f"Задача {source.display_number}",
+                                source.problem_type,
                             ),
                         ).fetchone()
                     except sqlite3.IntegrityError as error:

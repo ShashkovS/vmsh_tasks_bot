@@ -258,7 +258,12 @@ function StudentLessonArchive({
                   void navigate({
                     to: '/tasks/$taskId',
                     params: { taskId: `lesson-${lesson.lessonNumber}` },
-                    search: { groupLesson: lesson.groupLessonId, material: 'condition' },
+                    search: {
+                      course: enrollment.course.courseId,
+                      group: groupId,
+                      groupLesson: lesson.groupLessonId,
+                      material: 'condition',
+                    },
                   })
                 }}
               />

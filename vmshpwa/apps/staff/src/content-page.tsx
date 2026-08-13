@@ -11,6 +11,7 @@ import {
 } from '@vmsh/app-shell'
 import {
   SemanticMathDocument,
+  TelegramMathHtml,
   createContentApiClient,
   type ContentApiClient,
   type PublicationSlotVersion,
@@ -53,6 +54,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@vmsh/ui'
 
 import { RevisionAssetsRecovery } from './revision-assets-recovery'
@@ -260,12 +265,42 @@ function formatInBusinessTimezone(instant: string, timezone: BusinessTimezone): 
   }).format(new Date(instant))
 }
 
+function hintPreviewWithConditions(
+  condition: WebContentDocument,
+  hint: WebContentDocument,
+): WebContentDocument {
+  const hints = new Map(hint.problems.map((problem) => [problem.ordinal, problem]))
+  return {
+    ...hint,
+    title: condition.title,
+    introduction: condition.introduction,
+    problems: condition.problems.map((problem) => {
+      const matchingHint = hints.get(problem.ordinal)
+      return {
+        ...problem,
+        blocks: matchingHint
+          ? [
+              ...problem.blocks,
+              {
+                type: 'callout' as const,
+                kind: 'note' as const,
+                title: 'Подсказка',
+                blocks: matchingHint.blocks,
+              },
+            ]
+          : problem.blocks,
+      }
+    }),
+  }
+}
+
 function MaterialWorkflowCard({
   client,
   draftNamespace,
   groupLessonId,
   history,
   kind,
+  conditionRevisionId,
   businessTimezone,
   onConflict,
 }: {
@@ -274,6 +309,7 @@ function MaterialWorkflowCard({
   groupLessonId: string
   history: StaffContentMaterialHistory
   kind: ContentMaterialKind
+  conditionRevisionId?: string
   businessTimezone: BusinessTimezone
   onConflict: () => Promise<unknown>
 }) {
@@ -373,12 +409,19 @@ function MaterialWorkflowCard({
   }
 
   const inspectCompiledRevision = async (revisionId: string) => {
-    const [inspected, webPreview, telegramPreview, pdf] = await Promise.all([
-      client.diagnostics(revisionId),
-      client.preview(revisionId, 'web'),
-      client.preview(revisionId, 'telegram'),
-      optionalPdfPreview(client, revisionId),
-    ])
+    const [inspected, webPreview, telegramPreview, pdf, conditionWeb, conditionTelegram] =
+      await Promise.all([
+        client.diagnostics(revisionId),
+        client.preview(revisionId, 'web'),
+        client.preview(revisionId, 'telegram'),
+        optionalPdfPreview(client, revisionId),
+        kind === 'hint' && conditionRevisionId
+          ? client.preview(conditionRevisionId, 'web')
+          : Promise.resolve(undefined),
+        kind === 'hint' && conditionRevisionId
+          ? client.preview(conditionRevisionId, 'telegram')
+          : Promise.resolve(undefined),
+      ])
     if (webPreview.kind !== 'web' || telegramPreview.kind !== 'telegram') {
       throw new Error('Сервер вернул несовместимые preview')
     }
@@ -393,8 +436,14 @@ function MaterialWorkflowCard({
       ].sort((left, right) => left.data.revisionNumber - right.data.revisionNumber),
       selectedRevisionId: inspected.data.revisionId,
       reviewReadyRevisionId: undefined,
-      webDocument: webPreview.document,
-      telegramHtml: telegramPreview.html,
+      webDocument:
+        kind === 'hint' && conditionWeb?.kind === 'web'
+          ? hintPreviewWithConditions(conditionWeb.document, webPreview.document)
+          : webPreview.document,
+      telegramHtml:
+        kind === 'hint' && conditionTelegram?.kind === 'telegram'
+          ? `${conditionTelegram.html}<hr/><h2>Подсказки</h2>${telegramPreview.html}`
+          : telegramPreview.html,
       pdfPreview: pdf.preview,
       pdfCheckedRevisionId: inspected.data.revisionId,
       pdfErrorMessage: pdf.error,
@@ -477,18 +526,32 @@ function MaterialWorkflowCard({
     if (!selectedRevision) return
     patchState({ previewLoading: true, errorMessage: undefined })
     try {
-      const [webPreview, telegramPreview, pdf] = await Promise.all([
-        client.preview(selectedRevision.data.revisionId, 'web'),
-        client.preview(selectedRevision.data.revisionId, 'telegram'),
-        optionalPdfPreview(client, selectedRevision.data.revisionId),
-      ])
+      const [webPreview, telegramPreview, pdf, conditionWeb, conditionTelegram] = await Promise.all(
+        [
+          client.preview(selectedRevision.data.revisionId, 'web'),
+          client.preview(selectedRevision.data.revisionId, 'telegram'),
+          optionalPdfPreview(client, selectedRevision.data.revisionId),
+          kind === 'hint' && conditionRevisionId
+            ? client.preview(conditionRevisionId, 'web')
+            : Promise.resolve(undefined),
+          kind === 'hint' && conditionRevisionId
+            ? client.preview(conditionRevisionId, 'telegram')
+            : Promise.resolve(undefined),
+        ],
+      )
       if (webPreview.kind !== 'web' || telegramPreview.kind !== 'telegram') {
         throw new Error('Сервер вернул несовместимые preview')
       }
       patchState({
         previewLoading: false,
-        webDocument: webPreview.document,
-        telegramHtml: telegramPreview.html,
+        webDocument:
+          kind === 'hint' && conditionWeb?.kind === 'web'
+            ? hintPreviewWithConditions(conditionWeb.document, webPreview.document)
+            : webPreview.document,
+        telegramHtml:
+          kind === 'hint' && conditionTelegram?.kind === 'telegram'
+            ? `${conditionTelegram.html}<hr/><h2>Подсказки</h2>${telegramPreview.html}`
+            : telegramPreview.html,
         pdfPreview: pdf.preview,
         pdfCheckedRevisionId: selectedRevision.data.revisionId,
         pdfErrorMessage: pdf.error,
@@ -828,53 +891,54 @@ function MaterialWorkflowCard({
         {state.webDocument &&
         state.telegramHtml &&
         state.previewRevisionId === selectedRevision?.data.revisionId ? (
-          <section
-            aria-label={`Preview: ${materialLabels[kind]}`}
-            className="grid min-w-0 gap-3 lg:grid-cols-3 lg:items-start"
-          >
-            <div className="min-w-0 space-y-2">
-              <h3 className="text-small font-medium">PWA</h3>
-              <div className="rounded-md border border-border bg-surface p-3">
-                <SemanticMathDocument document={state.webDocument} />
-              </div>
-            </div>
-            <div className="min-w-0 space-y-2">
-              <h3 className="text-small font-medium">Telegram Rich HTML</h3>
-              <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-surface-sunken p-3 font-mono text-caption text-foreground">
-                {state.telegramHtml}
-              </pre>
-            </div>
-            <div className="min-w-0 space-y-2">
-              <h3 className="text-small font-medium">PDF</h3>
-              <div className="space-y-2 rounded-md border border-border bg-surface p-3 text-small">
-                {state.pdfPreview && state.pdfCheckedRevisionId === state.previewRevisionId ? (
-                  <>
-                    <p className="text-muted-foreground">
-                      Сохранённая производная ·{' '}
-                      <span className="font-num">
-                        {Math.ceil(state.pdfPreview.byteSize / 1024)} КБ
-                      </span>
+          <section aria-label={`Preview: ${materialLabels[kind]}`} className="min-w-0">
+            <Tabs defaultValue="pwa">
+              <TabsList aria-label="Вариант предпросмотра" variant="line">
+                <TabsTrigger value="pwa">PWA</TabsTrigger>
+                <TabsTrigger value="telegram">Telegram</TabsTrigger>
+                <TabsTrigger value="pdf">PDF</TabsTrigger>
+              </TabsList>
+              <TabsContent className="min-w-0" value="pwa">
+                <div className="mx-auto max-w-[52rem] rounded-md border border-border bg-surface p-4 sm:p-6">
+                  <SemanticMathDocument document={state.webDocument} />
+                </div>
+              </TabsContent>
+              <TabsContent className="min-w-0" value="telegram">
+                <div className="mx-auto max-w-[42rem] rounded-md border border-border bg-surface p-4 sm:p-5">
+                  <TelegramMathHtml html={state.telegramHtml} />
+                </div>
+              </TabsContent>
+              <TabsContent className="min-w-0" value="pdf">
+                <div className="space-y-2 rounded-md border border-border bg-surface p-3 text-small">
+                  {state.pdfPreview && state.pdfCheckedRevisionId === state.previewRevisionId ? (
+                    <>
+                      <p className="text-muted-foreground">
+                        Сохранённая производная ·{' '}
+                        <span className="font-num">
+                          {Math.ceil(state.pdfPreview.byteSize / 1024)} КБ
+                        </span>
+                      </p>
+                      <a
+                        className="inline-flex h-7 items-center rounded-md border border-border px-2.5 text-[0.8rem] font-medium text-primary outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-focus"
+                        href={state.pdfPreview.src}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Открыть PDF
+                      </a>
+                    </>
+                  ) : state.pdfErrorMessage ? (
+                    <p className="text-status-danger" role="alert">
+                      PDF не удалось проверить: {state.pdfErrorMessage}
                     </p>
-                    <a
-                      className="inline-flex h-7 items-center rounded-md border border-border px-2.5 text-[0.8rem] font-medium text-primary outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-focus"
-                      href={state.pdfPreview.src}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      Открыть PDF
-                    </a>
-                  </>
-                ) : state.pdfErrorMessage ? (
-                  <p className="text-status-danger" role="alert">
-                    PDF не удалось проверить: {state.pdfErrorMessage}
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground">
-                    PDF-производная для этой revision пока не сохранена.
-                  </p>
-                )}
-              </div>
-            </div>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      PDF-производная для этой revision пока не сохранена.
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </section>
         ) : null}
 
@@ -1294,6 +1358,12 @@ export function StaffContentWorkspace({
     )
   }
 
+  const conditionRevisionId = materialHistoryFor(history.data.materials, 'condition')
+    .revisions.filter(
+      (revision) => revision.status === 'ready' && revision.missingAssets.length === 0,
+    )
+    .at(-1)?.revisionId
+
   return (
     <PageLayout
       description="Условие, подсказка и решение имеют отдельные revision, preview и действия публикации."
@@ -1327,6 +1397,7 @@ export function StaffContentWorkspace({
             client={client}
             draftNamespace={draftNamespace}
             businessTimezone={history.data.businessTimezone}
+            {...(conditionRevisionId ? { conditionRevisionId } : {})}
             groupLessonId={groupLessonId}
             history={materialHistoryFor(history.data.materials, kind)}
             key={kind}
