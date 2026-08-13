@@ -17,11 +17,13 @@ describe('semantic HTML sanitizer', () => {
       <h2 id="problem-1">Задача</h2>
       <p><strong>Докажите</strong> утверждение <a href="https://example.test/note">по заметке</a>.</p>
       <aside class="vmsh-note"><span class="vmsh-note-title">Наблюдение.</span> Текст.</aside>
+      <aside class="vmsh-theorem"><strong class="vmsh-note-title">Важно</strong><p>Срок сдачи.</p></aside>
       <img src="/student/api/v1/content/assets/figure-1" alt="Схема" width="800" height="480">
     `)
 
     expect(container.querySelector('#problem-1')).not.toBeNull()
     expect(container.querySelector('a')?.getAttribute('href')).toBe('https://example.test/note')
+    expect(container.querySelector('.vmsh-theorem')?.textContent).toContain('Важно')
     expect(container.querySelector('img')?.getAttribute('alt')).toBe('Схема')
   })
 

@@ -8,6 +8,8 @@ from collections.abc import Mapping, Sequence
 from urllib.parse import urlsplit
 
 from .model import (
+    AnnouncementKind,
+    AnnouncementNode,
     BlockNode,
     CodeNode,
     ContentRole,
@@ -29,9 +31,9 @@ from .model import (
 from .telegram import TELEGRAM_BOT_API_DIALECT, sanitize_telegram_rich_html
 
 
-WEB_RENDERER_VERSION = "vmsh-web-ast-html/1"
+WEB_RENDERER_VERSION = "vmsh-web-ast-html/2"
 TELEGRAM_RENDERER_VERSION = (
-    f"vmsh-telegram-rich/1;telegram-bot-api={TELEGRAM_BOT_API_DIALECT}"
+    f"vmsh-telegram-rich/2;telegram-bot-api={TELEGRAM_BOT_API_DIALECT}"
 )
 
 
@@ -209,6 +211,29 @@ def _blocks(
                 output.append(
                     f"<p><b>{label})</b></p>"
                     f"{_blocks(node.children, target=target, asset_urls=asset_urls)}"
+                )
+        elif isinstance(node, AnnouncementNode):
+            rendered = _blocks(
+                node.children,
+                target=target,
+                asset_urls=asset_urls,
+            )
+            if not rendered:
+                continue
+            if target == "web":
+                if node.kind is AnnouncementKind.REGULAR:
+                    output.append(f'<aside class="vmsh-note">{rendered}</aside>')
+                else:
+                    output.append(
+                        '<aside class="vmsh-theorem">'
+                        '<strong class="vmsh-note-title">Важно</strong>'
+                        f"{rendered}</aside>"
+                    )
+            elif node.kind is AnnouncementKind.REGULAR:
+                output.append(f"<aside>{rendered}</aside>")
+            else:
+                output.append(
+                    f"<blockquote><p><b>Важно.</b></p>{rendered}</blockquote>"
                 )
     return "".join(output)
 

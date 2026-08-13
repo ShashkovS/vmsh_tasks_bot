@@ -74,6 +74,21 @@ const semanticDocument = webContentDocumentSchema.parse({
         },
       ],
     },
+    {
+      type: 'callout',
+      kind: 'theorem',
+      title: 'Важно',
+      blocks: [
+        {
+          type: 'paragraph',
+          children: [
+            { type: 'text', value: 'Последний срок сдачи — после занятия; сохраните ' },
+            { type: 'math', latex: 'n^2 + 179 = k^2' },
+            { type: 'text', value: ' в решении.' },
+          ],
+        },
+      ],
+    },
   ],
   problems: [
     {
@@ -219,6 +234,8 @@ export const SemanticDocument: Story = {
     await waitFor(() => expect(canvasElement.querySelectorAll('.katex').length).toBeGreaterThan(4))
     await expect(canvas.getByRole('table', { name: 'Возможные разложения' })).toBeVisible()
     await expect(canvas.getByAltText(/Две пересекающиеся окружности/u)).toBeVisible()
+    await expect(canvas.getByText('Важно')).toBeVisible()
+    await expect(canvas.getByText(/Последний срок сдачи/u)).toBeVisible()
   },
 }
 
@@ -368,4 +385,14 @@ export const ZoomCanvas: Story = {
 
 export const DarkTheme: Story = {
   globals: { theme: 'dark' },
+}
+
+export const AnnouncementMobile: Story = {
+  name: 'Announcements · mobile',
+  parameters: { viewport: { defaultViewport: 'mobile2' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Важно')).toBeVisible()
+    await expect(canvas.getByText(/Последний срок сдачи/u)).toBeVisible()
+  },
 }

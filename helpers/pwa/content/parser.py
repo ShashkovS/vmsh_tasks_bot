@@ -8,6 +8,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from .model import (
+    AnnouncementKind,
+    AnnouncementNode,
     BlockNode,
     CodeNode,
     Diagnostic,
@@ -52,7 +54,7 @@ from .scanner import (
 )
 
 
-AST_SCHEMA_VERSION = 1
+AST_SCHEMA_VERSION = 2
 
 _PROBLEM_STARTS = {"задача", "problem", "problemn"}
 _PROBLEM_ENDS = {"кзадача", "eproblem"}
@@ -70,6 +72,16 @@ _FIELD_ENDS = {
     "hint": {"куказание", "кподсказка", "ehint"},
     "solution": {"крешение", "esolution"},
 }
+
+_ANNOUNCEMENT_STARTS = {
+    "объявление": AnnouncementKind.REGULAR,
+    "важноеОбъявление": AnnouncementKind.IMPORTANT,
+}
+_ANNOUNCEMENT_ENDS = {
+    "кобъявление": AnnouncementKind.REGULAR,
+    "кважноеОбъявление": AnnouncementKind.IMPORTANT,
+}
+_ANNOUNCEMENT_COMMANDS = set(_ANNOUNCEMENT_STARTS) | set(_ANNOUNCEMENT_ENDS)
 
 _FORMATTING_COMMANDS = {
     "textbf": StrongNode,
@@ -188,7 +200,7 @@ _STRUCTURAL_COMMANDS = {
     "раздел",
     "допраздел",
     "resizebox",
-}
+} | _ANNOUNCEMENT_COMMANDS
 _SUPPORTED_ENVIRONMENTS = {
     "center",
     "itemize",
@@ -590,9 +602,94 @@ class LatexAstParser:
             elif command.name == "begin":
                 environment_nodes, cursor = self._parse_environment(command, end)
                 nodes.extend(environment_nodes)
+            elif command.name in _ANNOUNCEMENT_STARTS:
+                announcement, cursor = self._parse_announcement(command, end)
+                nodes.append(announcement)
+            elif command.name in _ANNOUNCEMENT_ENDS:
+                self._diagnose(
+                    "latex.announcement_end_unexpected",
+                    f"Завершающая команда \\{command.name} не имеет начала объявления.",
+                    command.start,
+                    command.end,
+                    recovery="Удалите лишнюю команду или добавьте соответствующее начало объявления.",
+                )
+                cursor = command.end
             structural_index += 1
         nodes.extend(self._paragraphs(cursor, end))
         return tuple(nodes)
+
+    def _parse_announcement(
+        self, command: CommandToken, end: int
+    ) -> tuple[AnnouncementNode, int]:
+        kind = _ANNOUNCEMENT_STARTS[command.name]
+        boundary = next(
+            iter(
+                self._top_level_commands(
+                    command.end,
+                    end,
+                    _ANNOUNCEMENT_COMMANDS,
+                )
+            ),
+            None,
+        )
+        if boundary is None:
+            self._diagnose(
+                "latex.announcement_unclosed",
+                f"Объявление \\{command.name} не имеет завершающей команды.",
+                command.start,
+                end,
+                recovery=(
+                    "Добавьте \\кобъявление для обычного или "
+                    "\\кважноеОбъявление для важного объявления."
+                ),
+            )
+            content_end = end
+            outer_end = end
+        elif boundary.name in _ANNOUNCEMENT_STARTS:
+            self._diagnose(
+                "latex.announcement_nested",
+                "Объявления нельзя вкладывать друг в друга.",
+                boundary.start,
+                boundary.end,
+                recovery="Закройте текущее объявление до начала следующего.",
+            )
+            content_end = boundary.start
+            outer_end = boundary.start
+        else:
+            closing_kind = _ANNOUNCEMENT_ENDS[boundary.name]
+            if closing_kind is not kind:
+                self._diagnose(
+                    "latex.announcement_end_mismatch",
+                    (
+                        f"Команда \\{boundary.name} не соответствует началу "
+                        f"\\{command.name}."
+                    ),
+                    boundary.start,
+                    boundary.end,
+                    recovery="Используйте завершающую команду того же вида объявления.",
+                )
+            content_end = boundary.start
+            outer_end = boundary.end
+
+        children = self._parse_blocks(command.end, content_end)
+        if not children:
+            self._diagnose(
+                "latex.announcement_empty",
+                "Объявление не содержит отображаемого текста.",
+                command.start,
+                outer_end,
+                recovery="Добавьте текст объявления или удалите пустой блок.",
+            )
+        return (
+            self._count(
+                AnnouncementNode(
+                    span=self.source_map.span(command.start, outer_end),
+                    kind=kind,
+                    children=children,
+                )
+            ),
+            outer_end,
+        )
 
     @staticmethod
     def _subpart_label(ordinal: int) -> str:

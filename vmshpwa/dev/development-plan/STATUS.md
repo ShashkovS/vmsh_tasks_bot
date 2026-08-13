@@ -321,6 +321,15 @@
   [`helpers/pwa/content`](../../../helpers/pwa/content): bounded UTF-8/CP1251
   scanner, typed AST, positional diagnostics, role-isolated web/Telegram
   renderers, `WebContentDocument v1` и fixed-toolchain asset converters.
+- Текущий Phase 2B increment (13 августа 2026) добавляет семантические
+  `\объявление…\кобъявление` и
+  `\важноеОбъявление…\кважноеОбъявление`: typed AST, fail-closed парный
+  разбор, WebContentDocument callout, Telegram Rich blocks и адаптивную
+  Student/Staff вёрстку. Focused Python **92 PASS**, content/contract Vitest
+  **37 PASS**, Storybook **10 PASS**, type/lint/format и characterization
+  **PASS**; публикационный E2E объявления прошёл в Chromium, WebKit и Firefox.
+  Proof:
+  [`phase2-content-announcements-2026-08-13.md`](../../../pwa_tests/reports/phase2-content-announcements-2026-08-13.md).
 - Golden characterization: 30/30 TeX sources, 334 problem nodes, 0 errors и
   одно ожидаемое legacy-layout warning; report:
   [`phase2-content-compiler.md`](../../../pwa_tests/reports/phase2-content-compiler.md).

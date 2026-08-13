@@ -15,6 +15,8 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from .model import (
+    AnnouncementKind,
+    AnnouncementNode,
     BlockNode,
     CodeNode,
     ContentRole,
@@ -281,6 +283,25 @@ def _blocks(
                         "type": "subpart",
                         "label": _bounded(
                             node.label, 2_000, "subpart label", required=True
+                        ),
+                        "blocks": blocks,
+                    }
+                )
+        elif isinstance(node, AnnouncementNode):
+            blocks = _blocks(node.children, assets=assets)
+            if blocks:
+                result.append(
+                    {
+                        "type": "callout",
+                        "kind": (
+                            "note"
+                            if node.kind is AnnouncementKind.REGULAR
+                            else "theorem"
+                        ),
+                        **(
+                            {}
+                            if node.kind is AnnouncementKind.REGULAR
+                            else {"title": "Важно"}
                         ),
                         "blocks": blocks,
                     }

@@ -42,7 +42,7 @@ from .web_document import (
 )
 
 
-COMPILER_VERSION = "vmsh-latex-compiler/1"
+COMPILER_VERSION = "vmsh-latex-compiler/2"
 _MAX_KNOWN_ASSETS = 20_000
 _FORBIDDEN_TEX_COMMANDS = {
     "catcode",
@@ -271,7 +271,7 @@ def compile_latex(
         else:
             web_document = ContentDerivative(
                 kind="web_content_document",
-                renderer_version="vmsh-web-content-document/1",
+                renderer_version="vmsh-web-content-document/2",
                 content=web_document_content,
                 sha256=sha256_text(web_document_content),
             )

@@ -35,6 +35,11 @@ describe('web content derivative contract', () => {
     const parsed = webContentPreviewContractFixtureSchema.parse(pythonCompilerPreviewFixture)
     expect(parsed).toEqual(pythonCompilerPreviewFixture)
     expect(parsed.document.revisionId).toBeNull()
+    expect(parsed.document.contractVersion).toBe(1)
+    expect(parsed.document.introduction[0]).toMatchObject({ type: 'callout', kind: 'note' })
+    expect(parsed.document.problems[0]?.blocks).toContainEqual(
+      expect.objectContaining({ type: 'callout', kind: 'theorem', title: 'Важно' }),
+    )
 
     const forbiddenKeys = new Set(['answer', 'hint', 'solution'])
     const stack: unknown[] = [parsed.document]

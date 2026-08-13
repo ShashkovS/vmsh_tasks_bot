@@ -9,27 +9,28 @@ production backfill или реальную отправку в Telegram.
 
 ## Вход и безопасность
 
-| Возможность | Состояние | Реализация и доказательство |
-| --- | --- | --- |
-| UTF-8, UTF-8 BOM и Windows-1251 | Поддерживается | Raw bytes и их SHA-256 сохраняются отдельно от нормализованного Unicode; CRLF нормализуется только для разбора. |
-| Позиционные diagnostics | Поддерживается | File, one-based line/column и Unicode offset принадлежат каждому AST node и diagnostic. |
-| Ограниченный разбор | Поддерживается | Размер source, глубина групп, число nodes и размер TikZ ограничены; seeded malformed-input corpus проверяет детерминированность. |
-| Неизвестные команды и окружения | Fail closed | Получают явный error diagnostic и блокируют последующую публикацию. |
-| TeX file/output/dynamic primitives | Запрещены | `input`, `openout`, `write`, `directlua`, `catcode` и родственные команды обнаруживаются и внутри TikZ; shell не вызывается. |
-| Canonical logical paths | Поддерживается | Source name обязан быть ограниченным NFKC-stable relative POSIX path без `..`, controls, backslash и aliases. Asset reference не может выйти из logical namespace. |
+| Возможность                        | Состояние      | Реализация и доказательство                                                                                                                                        |
+| ---------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| UTF-8, UTF-8 BOM и Windows-1251    | Поддерживается | Raw bytes и их SHA-256 сохраняются отдельно от нормализованного Unicode; CRLF нормализуется только для разбора.                                                    |
+| Позиционные diagnostics            | Поддерживается | File, one-based line/column и Unicode offset принадлежат каждому AST node и diagnostic.                                                                            |
+| Ограниченный разбор                | Поддерживается | Размер source, глубина групп, число nodes и размер TikZ ограничены; seeded malformed-input corpus проверяет детерминированность.                                   |
+| Неизвестные команды и окружения    | Fail closed    | Получают явный error diagnostic и блокируют последующую публикацию.                                                                                                |
+| TeX file/output/dynamic primitives | Запрещены      | `input`, `openout`, `write`, `directlua`, `catcode` и родственные команды обнаруживаются и внутри TikZ; shell не вызывается.                                       |
+| Canonical logical paths            | Поддерживается | Source name обязан быть ограниченным NFKC-stable relative POSIX path без `..`, controls, backslash и aliases. Asset reference не может выйти из logical namespace. |
 
 ## Семантическое представление
 
-| Конструкция | Canonical AST | Browser derivative | Telegram Rich |
-| --- | --- | --- | --- |
-| Условие, подсказка, ответ, решение | Отдельные ветки одного problem node | Выбирается ровно один разрешённый material kind; condition не содержит соседних secret branches | То же правило выбора применяется до рендера |
-| Paragraph, heading, strong, emphasis, code, link | Typed nodes | Versioned JSON nodes | Strict allowlisted tags/attributes |
-| Inline/display math | Raw LaTeX math node | Inline math и отдельная formula node для client KaTeX | `<tg-math>` и `<tg-math-block>` |
-| Подпункты и ordered/unordered lists | Typed recursive blocks | Typed recursive blocks | Структурные list tags |
-| Таблицы | Rows/cells | До 200 строк и 20 колонок; превышение отклоняется без обрезки | До 20 колонок по Bot API limits |
-| External figures | Logical name, alt, optional known hash | `missing` либо explicit published asset descriptor; SVG остаётся внешним URL | Только безопасный public HTTP(S) media URL |
-| TikZ | Отдельный figure node с source/hash | После converter — внешний sanitized SVG asset | После converter — совместимая media derivative |
-| Legacy print-layout | Не становится семантикой | Игнорируется либо даёт warning | Не переносится как presentation markup |
+| Конструкция                                      | Canonical AST                                                            | Browser derivative                                                                              | Telegram Rich                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Условие, подсказка, ответ, решение               | Отдельные ветки одного problem node                                      | Выбирается ровно один разрешённый material kind; condition не содержит соседних secret branches | То же правило выбора применяется до рендера          |
+| Paragraph, heading, strong, emphasis, code, link | Typed nodes                                                              | Versioned JSON nodes                                                                            | Strict allowlisted tags/attributes                   |
+| Inline/display math                              | Raw LaTeX math node                                                      | Inline math и отдельная formula node для client KaTeX                                           | `<tg-math>` и `<tg-math-block>`                      |
+| Подпункты и ordered/unordered lists              | Typed recursive blocks                                                   | Typed recursive blocks                                                                          | Структурные list tags                                |
+| Таблицы                                          | Rows/cells                                                               | До 200 строк и 20 колонок; превышение отклоняется без обрезки                                   | До 20 колонок по Bot API limits                      |
+| `\объявление` и `\важноеОбъявление`              | Typed announcement block (`regular`/`important`) с рекурсивными children | Существующий `callout`: спокойный `note` либо акцентный `theorem` с меткой «Важно»              | Отдельный `aside` либо `blockquote` с меткой «Важно» |
+| External figures                                 | Logical name, alt, optional known hash                                   | `missing` либо explicit published asset descriptor; SVG остаётся внешним URL                    | Только безопасный public HTTP(S) media URL           |
+| TikZ                                             | Отдельный figure node с source/hash                                      | После converter — внешний sanitized SVG asset                                                   | После converter — совместимая media derivative       |
+| Legacy print-layout                              | Не становится семантикой                                                 | Игнорируется либо даёт warning                                                                  | Не переносится как presentation markup               |
 
 Internal Python `DocumentAst` содержит все ветки и source spans и никогда не
 является API payload. Browser wire — только строгий
@@ -39,6 +40,12 @@ revision ID. Совместная синтетическая fixture наход�
 [`python-compiler-preview.v1.json`](../packages/contracts/fixtures/content/python-compiler-preview.v1.json)
 и одновременно проверяется Python и Zod tests. Raw/generated HTML остаётся
 диагностическим preview, а не основным browser wire contract.
+
+Объявления распознаются только по русским парным командам
+`\объявление…\кобъявление` и
+`\важноеОбъявление…\кважноеОбъявление`. Незакрытые, несовпадающие, пустые,
+вложенные и лишние завершающие команды дают blocking positional diagnostic;
+TeX-определения из `newlistok.sty` compiler не исполняет.
 
 ## Assets и внешний toolchain
 

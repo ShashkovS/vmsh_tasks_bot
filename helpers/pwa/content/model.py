@@ -34,6 +34,11 @@ class ContentRole(StrEnum):
     FULL_PREVIEW = "full_preview"
 
 
+class AnnouncementKind(StrEnum):
+    REGULAR = "regular"
+    IMPORTANT = "important"
+
+
 @dataclass(frozen=True)
 class SourcePosition:
     """One-based human position plus a zero-based Unicode text offset."""
@@ -179,8 +184,21 @@ class SubpartNode:
     children: tuple["BlockNode", ...]
 
 
+@dataclass(frozen=True)
+class AnnouncementNode:
+    span: SourceSpan
+    kind: AnnouncementKind
+    children: tuple["BlockNode", ...]
+
+
 BlockNode: TypeAlias = (
-    ParagraphNode | HeadingNode | ListNode | TableNode | FigureNode | SubpartNode
+    ParagraphNode
+    | HeadingNode
+    | ListNode
+    | TableNode
+    | FigureNode
+    | SubpartNode
+    | AnnouncementNode
 )
 
 

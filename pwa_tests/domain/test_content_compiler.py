@@ -18,7 +18,14 @@ from helpers.pwa.content import (
     compile_latex,
     render_web_document,
 )
-from helpers.pwa.content.model import FigureNode, ListNode, SubpartNode, TableNode
+from helpers.pwa.content.model import (
+    AnnouncementKind,
+    AnnouncementNode,
+    FigureNode,
+    ListNode,
+    SubpartNode,
+    TableNode,
+)
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
@@ -436,6 +443,173 @@ def test_unknown_macro_and_environment_are_explicit_errors() -> None:
     assert "latex.environment_unsupported" in _codes(environment)
 
 
+def test_russian_announcements_are_typed_and_rendered_for_web_and_telegram() -> None:
+    result = _compile(
+        r"""
+\объявление
+Обычное объявление с \textbf{выделением} и $n$.
+
+\begin{itemize}\item Первый пункт.\end{itemize}
+\кобъявление
+\задача
+Условие.
+\важноеОбъявление
+Важное объявление.
+$$x=1$$
+\кважноеОбъявление
+\кзадача
+"""
+    )
+
+    assert result.ast.schema_version == 2
+    assert not result.has_errors
+    assert "latex.unknown_macro" not in _codes(result)
+    assert len(result.ast.introduction) == 1
+    regular = result.ast.introduction[0]
+    assert isinstance(regular, AnnouncementNode)
+    assert regular.kind is AnnouncementKind.REGULAR
+    important = next(
+        node
+        for node in result.ast.problems[0].statement
+        if isinstance(node, AnnouncementNode)
+    )
+    assert important.kind is AnnouncementKind.IMPORTANT
+
+    assert result.web_document is not None
+    document = json.loads(result.web_document.content)
+    assert document["contractVersion"] == 1
+    assert document["introduction"] == [
+        {
+            "type": "callout",
+            "kind": "note",
+            "blocks": [
+                {
+                    "type": "paragraph",
+                    "children": [
+                        {"type": "text", "value": "\nОбычное объявление с "},
+                        {
+                            "type": "strong",
+                            "children": [{"type": "text", "value": "выделением"}],
+                        },
+                        {"type": "text", "value": " и "},
+                        {"type": "math", "latex": "n"},
+                        {"type": "text", "value": "."},
+                    ],
+                },
+                {
+                    "type": "list",
+                    "ordered": False,
+                    "items": [
+                        [
+                            {
+                                "type": "paragraph",
+                                "children": [
+                                    {"type": "text", "value": " Первый пункт."}
+                                ],
+                            }
+                        ]
+                    ],
+                },
+            ],
+        }
+    ]
+    important_block = next(
+        block
+        for block in document["problems"][0]["blocks"]
+        if block["type"] == "callout"
+    )
+    assert important_block["kind"] == "theorem"
+    assert important_block["title"] == "Важно"
+    assert any(block["type"] == "formula" for block in important_block["blocks"])
+    assert '<aside class="vmsh-note">' in result.web.content
+    assert '<aside class="vmsh-theorem">' in result.web.content
+    assert '<strong class="vmsh-note-title">Важно</strong>' in result.web.content
+    assert "<aside>" in result.telegram.content
+    assert "<blockquote><p><b>Важно.</b></p>" in result.telegram.content
+    assert "<tg-math-block>x=1</tg-math-block>" in result.telegram.content
+
+
+def test_announcement_role_isolation_keeps_hint_out_of_condition() -> None:
+    source = r"""
+\задача Условие. \кзадача
+\подсказка
+\важноеОбъявление Секретная подсказка. \кважноеОбъявление
+\кподсказка
+"""
+    condition = _compile(source, role=ContentRole.CONDITION)
+    hint = _compile(source, role=ContentRole.HINT)
+
+    assert condition.web_document is not None
+    assert hint.web_document is not None
+    assert "Секретная подсказка" not in condition.web_document.content
+    assert "Секретная подсказка" in hint.web_document.content
+    assert '"type":"callout"' in hint.web_document.content
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_codes"),
+    [
+        (
+            r"\задача \объявление текст \кзадача",
+            {"latex.announcement_unclosed"},
+        ),
+        (
+            r"\задача \важноеОбъявление текст \кобъявление \кзадача",
+            {"latex.announcement_end_mismatch"},
+        ),
+        (
+            r"\задача \кобъявление \кзадача",
+            {"latex.announcement_end_unexpected"},
+        ),
+        (
+            r"\задача \объявление   \кобъявление \кзадача",
+            {"latex.announcement_empty"},
+        ),
+        (
+            r"\задача \объявление до \важноеОбъявление внутри "
+            r"\кважноеОбъявление \кобъявление \кзадача",
+            {"latex.announcement_nested"},
+        ),
+        (
+            r"\задача \объявление условие \кзадача "
+            r"\подсказка подсказка \кобъявление \кподсказка",
+            {
+                "latex.announcement_unclosed",
+                "latex.announcement_end_unexpected",
+            },
+        ),
+    ],
+)
+def test_malformed_announcements_fail_closed(
+    source: str, expected_codes: set[str]
+) -> None:
+    result = _compile(source)
+
+    assert result.has_errors
+    assert expected_codes <= _codes(result)
+
+
+def test_unexpected_announcement_end_has_exact_position() -> None:
+    result = _compile("\n\задача\nТекст\n\кважноеОбъявление\n\кзадача")
+    diagnostic = next(
+        item
+        for item in result.diagnostics
+        if item.code == "latex.announcement_end_unexpected"
+    )
+
+    assert (diagnostic.span.start.line, diagnostic.span.start.column) == (5, 1)
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["announcement", "endannouncement", "impAnnouncement", "endimpAnnouncement"],
+)
+def test_english_announcement_commands_remain_unsupported(command: str) -> None:
+    result = _compile(rf"\задача \{command} текст \кзадача")
+
+    assert "latex.unknown_macro" in _codes(result)
+
+
 def test_compilation_and_all_derivative_hashes_are_deterministic() -> None:
     payload = _document(r"\задача Текст $x^2$. \кзадача")
     first = compile_latex(
@@ -590,10 +764,11 @@ def test_python_compiler_preview_matches_shared_zod_fixture_without_secret_branc
     None
 ):
     payload = r"""\begin{document}
-Введение с $n$.
+\объявление Введение с $n$. \кобъявление
 \задача[name=demo.1,title=Синтетическая задача]
 Текст \textbf{жирный и \emph{выделенный}}; \href{https://example.test/material}{ссылка}.
 $$x^2+y^2=z^2$$
+\важноеОбъявление Проверьте формулу. \кважноеОбъявление
 \пункт Подпункт.
 \begin{itemize}\item Первый.\item Второй.\end{itemize}
 \begin{tabular}{cc}a&b\\c&d\end{tabular}

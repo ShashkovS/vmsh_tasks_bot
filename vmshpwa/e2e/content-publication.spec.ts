@@ -15,7 +15,16 @@ function targetForProject(projectName: string): ContentTarget {
 }
 
 function latexSource(title: string, statement: string, kind: ContentKind = 'condition'): string {
-  const problemStatement = kind === 'condition' ? statement : 'Условие для сопоставления.'
+  const problemStatement =
+    kind === 'condition'
+      ? String.raw`\объявление
+Обычное объявление для E2E.
+\кобъявление
+${statement}
+\важноеОбъявление
+Важное объявление для E2E.
+\кважноеОбъявление`
+      : 'Условие для сопоставления.'
   const trailingMaterial =
     kind === 'hint'
       ? String.raw`
@@ -69,6 +78,11 @@ async function uploadReviewAndPublish({
   expect(uploadPayload.revisionId).toMatch(/^content-revision-/)
 
   const matching = workflow.getByLabel('Сопоставление задачи 1')
+  if (kind === 'condition') {
+    await expect(workflow.getByText('Обычное объявление для E2E.', { exact: true })).toBeVisible()
+    await expect(workflow.getByText('Важное объявление для E2E.', { exact: true })).toBeVisible()
+    await expect(workflow.getByText('Важно', { exact: true })).toBeVisible()
+  }
   if (match === 'insert-new') {
     await matching.selectOption('insert_new')
   } else {
@@ -294,6 +308,9 @@ test('Phase 2: Staff publishes two real revisions, Student reads them, then roll
   await taskRow.click()
   await expect(page).toHaveURL(/\/student\/tasks\/problem-[0-9a-f]{32}\?/)
   await expect(page.getByText(firstStatement)).toBeVisible()
+  await expect(page.getByText('Обычное объявление для E2E.')).toBeVisible()
+  await expect(page.getByText('Важное объявление для E2E.')).toBeVisible()
+  await expect(page.getByText('Важно', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: /^Подсказка/ }).click()
   const revealResponsePromise = page.waitForResponse(
     (response) =>

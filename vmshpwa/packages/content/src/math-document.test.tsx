@@ -50,6 +50,47 @@ describe('browser math content renderer', () => {
     expect(katexRenderLimits).toEqual({ maxExpand: 1_000, maxSize: 20 })
   })
 
+  it('renders regular and important announcement callouts with distinct semantics', () => {
+    const document = webContentContractFixtureSchema.parse(webDocumentFixture).document
+    render(
+      <SemanticMathDocument
+        document={{
+          ...document,
+          introduction: [
+            {
+              type: 'callout',
+              kind: 'note',
+              blocks: [
+                {
+                  type: 'paragraph',
+                  children: [{ type: 'text', value: 'Спокойное объявление' }],
+                },
+              ],
+            },
+            {
+              type: 'callout',
+              kind: 'theorem',
+              title: 'Важно',
+              blocks: [
+                {
+                  type: 'paragraph',
+                  children: [{ type: 'text', value: 'Важное объявление' }],
+                },
+              ],
+            },
+          ],
+          problems: [],
+        }}
+      />,
+    )
+
+    const regular = screen.getByText('Спокойное объявление').closest('aside')
+    const important = screen.getByText('Важное объявление').closest('aside')
+    expect(regular?.classList.contains('vmsh-callout-note')).toBe(true)
+    expect(important?.classList.contains('vmsh-callout-theorem')).toBe(true)
+    expect(screen.getByText('Важно')).not.toBeNull()
+  })
+
   it('scales the framed canvas with keyboard controls and resets it', () => {
     render(
       <ZoomableAssetFigure

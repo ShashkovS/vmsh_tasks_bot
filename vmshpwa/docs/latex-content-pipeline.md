@@ -6,6 +6,12 @@
 
 Новый parser/converter использует опыт `_external_pipelines/a16_html_from_tex.py` и `edt_tasks_parser.py`, но не копирует их как непрозрачный скрипт. LaTeX сначала превращается в нормализованное document representation с явными math/asset/list/table nodes, а затем — в channel-specific output.
 
+Legacy-команды `\объявление…\кобъявление` и
+`\важноеОбъявление…\кважноеОбъявление` являются семантическими блочными
+конструкциями, а не print-layout. Parser хранит их как regular/important AST
+nodes с рекурсивными блоками и fail-closed проверяет парность; определения и
+английские aliases из `newlistok.sty` не исполняются и не входят в язык.
+
 ## Web и Telegram renderers
 
 Web HTML сохраняет исходные LaTeX expressions в безопасных math nodes. KaTeX работает на клиенте с HTML+MathML output; его CSS и fonts собираются Vite и входят в precache Student/Family. Текущий полный набор увеличивает precache примерно до 1.4 MiB; после стабилизации корпуса нужно оставить необходимые web-форматы/subsets с regression-набором реальных формул. Выделение/copy helper и интерактивное меню формул отключены, но assistive semantics не удаляются.
@@ -13,6 +19,12 @@ Web HTML сохраняет исходные LaTeX expressions в безопас
 Production browser boundary — Zod-first [`WebContentDocument v1`](../packages/contracts/src/content.ts), а не внутренний Python AST и не строка `web_html`. Deterministic adapter выбирает ровно один `materialKind` (`condition|hint|solution`), поэтому condition payload структурно не содержит соседние hint/solution/answer branches. Pre-persistence compiler preview имеет отдельную схему со строго `revisionId: null`; persisted/read payload требует непустой opaque `revisionId`. До recursive parsing контракт ограничивает JSON depth, block depth, число nodes и общий объём текста. Python↔TypeScript parity закреплена общей fixture [`python-compiler-preview.v1.json`](../packages/contracts/fixtures/content/python-compiler-preview.v1.json).
 
 Основной browser renderer — [`SemanticMathDocument`](../packages/content/src/math-document.tsx). Compatibility [`MathHtml`](../packages/content/src/index.tsx) принимает только явный semantic HTML allowlist: неподдерживаемый tag/attribute, event handler, inline style/SVG/form или запрещённый URL отклоняет всю производную, а не показывает безопасно выглядящий остаток. Sanitizer возвращает `DocumentFragment`, поэтому приложение не создаёт raw-string `innerHTML` sink и совместимо с Trusted Types policy DOMPurify. KaTeX запускается на main thread с `trust: false`, bounded `maxSize`/`maxExpand`; ошибка одной формулы оставляет детерминированный текстовый fallback и не скрывает документ.
+
+В `WebContentDocument v1` обычное объявление использует уже существующий
+`callout(kind=note)`, а важное — `callout(kind=theorem, title=Важно)`, поэтому
+wire version не меняется. Web renderer показывает первое как спокойный
+центрированный блок, второе — как адаптивную акцентную карточку без капителей;
+compatibility HTML использует allowlisted `vmsh-note`/`vmsh-theorem`.
 
 Telegram renderer создаёт HTML для проверенного 27 июля 2026 dialect [Bot API 10.2](https://core.telegram.org/bots/api) `sendRichMessage`: inline math становится `<tg-math>`, display math — `<tg-math-block>`, а headings, lists, tables, details, quotations и media проходят строгий Telegram allowlist. Это отдельный dialect и не передаётся в legacy `sendMessage(parse_mode=HTML)`. Named/numeric entities, children структурных tags, nesting, URL/attribute ranges и custom-emoji `<img>` проверяются до send; обычные media остаются отдельными blocks. Pipeline проверяет актуальные limits до публикации: не более 32 768 UTF-8 characters, 500 blocks, 16 уровней вложенности, 50 media и 20 table columns. Bot API 10.2 отдельно поддерживает `InputRichMessage.media`; media blocks принимают только HTTP(S), а formula source передаётся как raw LaTeX. Версия dialect и применённые limits входят в provenance и regression corpus, чтобы следующее изменение Bot API не стало молчаливым изменением renderer.
 
