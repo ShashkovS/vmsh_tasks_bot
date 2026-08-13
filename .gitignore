@@ -581,3 +581,4 @@ db/.*.vmshpwa-lifecycle.lock
 /.runtime/landing-proof/releases/landing-integration-20260810/student/sw.js
 /.runtime/landing-proof/releases/landing-integration-20260810/release.json
 /.runtime/landing-proof/report.json
+/ssh/id_ed25519_codex
