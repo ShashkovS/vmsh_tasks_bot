@@ -25,7 +25,7 @@ interface AssetDraft {
 
 export type RevisionAssetRecoveryClient = Pick<
   ContentApiClient,
-  'diagnostics' | 'revisionAssets' | 'uploadRevisionAsset'
+  'diagnostics' | 'revisionAssets' | 'resolveRevisionAssets' | 'uploadRevisionAsset'
 >
 
 export interface RevisionAssetsRecoveryProps {
@@ -65,6 +65,7 @@ export function RevisionAssetsRecovery({
   const [drafts, setDrafts] = useState<Record<string, AssetDraft>>({})
   const [busyAssetId, setBusyAssetId] = useState<string>()
   const [compilePending, setCompilePending] = useState(false)
+  const [resolvePending, setResolvePending] = useState(false)
   const [compileError, setCompileError] = useState<string>()
 
   const items = useMemo<MissingAsset[]>(() => {
@@ -167,6 +168,30 @@ export function RevisionAssetsRecovery({
     }
   }
 
+  const resolveKnownAssets = async () => {
+    const resource = assetsQuery.data
+    if (!resource || !client.resolveRevisionAssets || resolvePending || busyAssetId) return
+    setResolvePending(true)
+    setCompileError(undefined)
+    try {
+      const resolved = await client.resolveRevisionAssets(revisionId, resource.etag)
+      for (const slot of resolved.data.assets) {
+        const previous = resource.data.assets.find(
+          (candidate) => candidate.logicalName === slot.logicalName,
+        )
+        if (previous?.status === 'missing' && slot.status === 'attached') {
+          updateDraft(slot.logicalName, { phase: 'reused', errorMessage: undefined })
+        }
+      }
+      await assetsQuery.refetch()
+    } catch (error) {
+      setCompileError(describeError(error))
+      if (error instanceof ApiResponseError && error.status === 409) await assetsQuery.refetch()
+    } finally {
+      setResolvePending(false)
+    }
+  }
+
   if (assetsQuery.isPending) {
     return (
       <section aria-label="Загрузка списка ресурсов" className="space-y-2">
@@ -197,9 +222,20 @@ export function RevisionAssetsRecovery({
 
   return (
     <section aria-label="Ресурсы revision" className="space-y-3">
+      {!allResolved && client.resolveRevisionAssets ? (
+        <Button
+          disabled={busyAssetId !== undefined || compilePending || resolvePending}
+          onClick={() => void resolveKnownAssets()}
+          size="sm"
+          variant="outline"
+        >
+          <RefreshCw aria-hidden="true" />
+          {resolvePending ? 'Ищем в банке…' : 'Найти уже загруженные картинки'}
+        </Button>
+      ) : null}
       <MissingAssetsFlow
         assets={items}
-        disabled={busyAssetId !== undefined || compilePending}
+        disabled={busyAssetId !== undefined || compilePending || resolvePending}
         onFileSelect={(logicalName, file) =>
           updateDraft(logicalName, { file, phase: undefined, errorMessage: undefined })
         }

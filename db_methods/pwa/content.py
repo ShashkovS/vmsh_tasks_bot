@@ -46,6 +46,10 @@ from models.pwa.content import (
     require_revision_transition,
     resolve_student_lesson_phase,
 )
+from models.pwa.content_asset_names import (
+    figure_lookup_names,
+    normalize_content_asset_name,
+)
 
 from .connection import PwaConnectionFactory
 
@@ -4286,6 +4290,195 @@ class PwaContentRepository:
             return _media_asset(row)
 
         return await self._factory.run_read_async(read)
+
+    async def resolve_content_asset_name(
+        self, logical_name: str
+    ) -> MediaAssetRecord | None:
+        """Resolve an immutable global figure alias, including extensionless refs."""
+
+        candidates = figure_lookup_names(logical_name)
+
+        def read(connection):
+            for _display_name, normalized_name in candidates:
+                row = connection.execute(
+                    "SELECT asset.* FROM content_asset_names AS asset_name "
+                    "JOIN media_assets AS asset ON asset.id = asset_name.asset_id "
+                    "WHERE asset_name.normalized_name = ? "
+                    "AND asset.deleted_at IS NULL",
+                    (normalized_name,),
+                ).fetchone()
+                if row is not None:
+                    return _media_asset(row)
+            return None
+
+        return await self._factory.run_read_async(read)
+
+    async def get_content_asset_name_exact(
+        self, logical_name: str
+    ) -> MediaAssetRecord | None:
+        """Resolve only the named alias, without extensionless fallback."""
+
+        _display_name, normalized_name = normalize_content_asset_name(logical_name)
+
+        def read(connection):
+            row = connection.execute(
+                "SELECT asset.* FROM content_asset_names AS asset_name "
+                "JOIN media_assets AS asset ON asset.id = asset_name.asset_id "
+                "WHERE asset_name.normalized_name = ? AND asset.deleted_at IS NULL",
+                (normalized_name,),
+            ).fetchone()
+            return None if row is None else _media_asset(row)
+
+        return await self._factory.run_read_async(read)
+
+    async def bind_content_asset_name(
+        self,
+        *,
+        logical_name: str,
+        asset_id: int,
+        origin: str,
+        actor_user_id: int | None,
+    ) -> bool:
+        """Bind one global name once; a different asset can never replace it."""
+
+        display_name, normalized_name = normalize_content_asset_name(logical_name)
+        if origin not in {"upload", "archive_import", "backfill"}:
+            raise ContentInvariantError("content asset name origin is invalid")
+        timestamp = self._timestamp()
+
+        def write(connection):
+            asset = connection.execute(
+                "SELECT storage_namespace FROM media_assets "
+                "WHERE id = ? AND deleted_at IS NULL",
+                (asset_id,),
+            ).fetchone()
+            if asset is None:
+                raise ContentNotFound("named media asset does not exist")
+            if str(asset["storage_namespace"]) != "content":
+                raise ContentConflict("named media asset is outside content storage")
+            existing = connection.execute(
+                "SELECT asset_id FROM content_asset_names WHERE normalized_name = ?",
+                (normalized_name,),
+            ).fetchone()
+            if existing is not None:
+                if int(existing["asset_id"]) == asset_id:
+                    return False
+                raise ContentConflict("content asset name is already bound")
+            try:
+                connection.execute(
+                    "INSERT INTO content_asset_names "
+                    "(normalized_name, display_name, asset_id, origin, "
+                    "created_by_user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        normalized_name,
+                        display_name,
+                        asset_id,
+                        origin,
+                        actor_user_id,
+                        timestamp,
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                raise _translate_integrity(
+                    error, action="content asset name"
+                ) from error
+            return True
+
+        return await self._factory.run_write_async(write)
+
+    async def get_cached_tikz_asset(
+        self,
+        *,
+        normalized_sha256: str,
+        normalization_version: str,
+        conversion_version: str,
+    ) -> MediaAssetRecord | None:
+        _require_sha256(normalized_sha256)
+        normalization_version = _required_text(
+            normalization_version, label="TikZ normalization version"
+        )
+        conversion_version = _required_text(
+            conversion_version, label="conversion version"
+        )
+
+        def read(connection):
+            row = connection.execute(
+                "SELECT asset.* FROM content_tikz_cache AS cache "
+                "JOIN media_assets AS asset ON asset.id = cache.asset_id "
+                "WHERE cache.normalized_sha256 = ? "
+                "AND cache.normalization_version = ? "
+                "AND cache.conversion_version = ? AND asset.deleted_at IS NULL",
+                (normalized_sha256, normalization_version, conversion_version),
+            ).fetchone()
+            return None if row is None else _media_asset(row)
+
+        return await self._factory.run_read_async(read)
+
+    async def cache_tikz_asset(
+        self,
+        *,
+        normalized_sha256: str,
+        normalization_version: str,
+        conversion_version: str,
+        source_sha256: str,
+        asset_id: int,
+        actor_user_id: int | None,
+    ) -> MediaAssetRecord:
+        """Publish a TikZ cache entry and return the race-winning asset."""
+
+        _require_sha256(normalized_sha256)
+        _require_sha256(source_sha256)
+        normalization_version = _required_text(
+            normalization_version, label="TikZ normalization version"
+        )
+        conversion_version = _required_text(
+            conversion_version, label="conversion version"
+        )
+        timestamp = self._timestamp()
+
+        def write(connection):
+            asset = connection.execute(
+                "SELECT * FROM media_assets WHERE id = ? AND deleted_at IS NULL",
+                (asset_id,),
+            ).fetchone()
+            if asset is None:
+                raise ContentNotFound("TikZ media asset does not exist")
+            if (
+                str(asset["storage_namespace"]) != "content"
+                or str(asset["media_type"]) != "image/svg+xml"
+            ):
+                raise ContentConflict("TikZ cache requires a content SVG")
+            try:
+                connection.execute(
+                    "INSERT INTO content_tikz_cache "
+                    "(normalized_sha256, normalization_version, conversion_version, "
+                    "asset_id, source_sha256, created_by_user_id, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
+                    (
+                        normalized_sha256,
+                        normalization_version,
+                        conversion_version,
+                        asset_id,
+                        source_sha256,
+                        actor_user_id,
+                        timestamp,
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                raise _translate_integrity(error, action="TikZ cache") from error
+            winner = connection.execute(
+                "SELECT asset.* FROM content_tikz_cache AS cache "
+                "JOIN media_assets AS asset ON asset.id = cache.asset_id "
+                "WHERE cache.normalized_sha256 = ? "
+                "AND cache.normalization_version = ? "
+                "AND cache.conversion_version = ? AND asset.deleted_at IS NULL",
+                (normalized_sha256, normalization_version, conversion_version),
+            ).fetchone()
+            if winner is None:  # pragma: no cover - same transaction invariant
+                raise ContentRepositoryError("TikZ cache insert did not converge")
+            return _media_asset(winner)
+
+        return await self._factory.run_write_async(write)
 
     async def list_revision_assets(
         self, *, revision_id: int

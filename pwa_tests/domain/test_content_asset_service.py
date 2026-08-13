@@ -80,6 +80,50 @@ class FakeRepository:
     registrations: list[dict[str, object]] = field(default_factory=list)
     attachments: list[dict[str, object]] = field(default_factory=list)
     fail_registration_once: bool = False
+    names: dict[str, MediaAssetRecord] = field(default_factory=dict)
+    tikz: MediaAssetRecord | None = None
+
+    async def resolve_content_asset_name(
+        self, logical_name: str
+    ) -> MediaAssetRecord | None:
+        return self.names.get(logical_name.casefold())
+
+    async def get_content_asset_name_exact(
+        self, logical_name: str
+    ) -> MediaAssetRecord | None:
+        return self.names.get(logical_name.casefold())
+
+    async def bind_content_asset_name(self, **values) -> bool:
+        asset = MediaAssetRecord(
+            id=int(values["asset_id"]),
+            public_id=str(self.registrations[-1]["public_id"]),
+            sha256=str(self.registrations[-1]["sha256"]),
+            storage_namespace="content",
+            object_key=str(self.registrations[-1]["object_key"]),
+            media_type=str(self.registrations[-1]["media_type"]),
+            byte_size=int(self.registrations[-1]["byte_size"]),
+            conversion_version=str(self.registrations[-1]["conversion_version"]),
+        )
+        self.names[str(values["logical_name"]).casefold()] = asset
+        return True
+
+    async def get_cached_tikz_asset(self, **_values) -> MediaAssetRecord | None:
+        return self.tikz
+
+    async def cache_tikz_asset(self, **values) -> MediaAssetRecord:
+        if self.tikz is None:
+            registration = self.registrations[-1]
+            self.tikz = MediaAssetRecord(
+                id=int(values["asset_id"]),
+                public_id=str(registration["public_id"]),
+                sha256=str(registration["sha256"]),
+                storage_namespace="content",
+                object_key=str(registration["object_key"]),
+                media_type=str(registration["media_type"]),
+                byte_size=int(registration["byte_size"]),
+                conversion_version=str(registration["conversion_version"]),
+            )
+        return self.tikz
 
     async def register_media_asset(self, **values) -> MediaAssetRecord:
         self.registrations.append(values)
@@ -215,6 +259,80 @@ async def test_retry_after_database_failure_reuses_the_same_object_key() -> None
     assert len(storage.puts) == 2
     assert storage.puts[0][0] == storage.puts[1][0]
     assert len(repository.attachments) == 1
+
+
+@pytest.mark.asyncio
+async def test_global_name_reuses_asset_without_converting_new_bytes() -> None:
+    storage = FakeStorage()
+    repository = FakeRepository()
+    service = _service(storage, repository)
+
+    first = await service.convert_and_attach_raster(
+        revision_id=1,
+        logical_name="Figures/Shared.PNG",
+        payload=b"first",
+        actor_user_id=1,
+    )
+    second = await service.convert_and_attach_raster(
+        revision_id=2,
+        logical_name="figures/shared.png",
+        payload=b"different bytes are deliberately ignored",
+        actor_user_id=1,
+    )
+
+    assert first.record.id == second.record.id
+    assert second.reused is True
+    assert len(storage.puts) == 1
+    assert len(repository.registrations) == 1
+
+
+@pytest.mark.asyncio
+async def test_normalized_tikz_reuses_cached_svg() -> None:
+    storage = FakeStorage()
+    repository = FakeRepository()
+    service = _service(storage, repository)
+
+    await service.convert_and_attach_tikz(
+        revision_id=1,
+        logical_name="tikz-a",
+        source=r"\begin{tikzpicture} \draw (0,0)--(1,1); \end{tikzpicture}",
+        actor_user_id=1,
+    )
+    reused = await service.convert_and_attach_tikz(
+        revision_id=2,
+        logical_name="tikz-b",
+        source="""\\begin{tikzpicture}% same picture
+        \\draw (0,0)--(1,1);   \\end{tikzpicture}""",
+        actor_user_id=1,
+    )
+
+    assert reused.reused is True
+    assert len(storage.puts) == 1
+
+
+@pytest.mark.asyncio
+async def test_archive_import_resumes_a_partially_bound_alias_set() -> None:
+    storage = FakeStorage()
+    repository = FakeRepository()
+    service = _service(storage, repository)
+    await service.convert_and_attach_raster(
+        revision_id=1,
+        logical_name="shared.png",
+        payload=b"first",
+        actor_user_id=1,
+    )
+
+    record, reused = await service.import_named_figure(
+        logical_names=("shared.png", "pictures/shared.png"),
+        payload=b"first",
+        source_kind="raster",
+        source_filename="shared.png",
+        actor_user_id=1,
+    )
+
+    assert reused is True
+    assert repository.names["pictures/shared.png"].id == record.id
+    assert len(storage.puts) == 1
 
 
 @pytest.mark.asyncio

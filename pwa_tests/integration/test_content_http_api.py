@@ -2842,6 +2842,25 @@ async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
     assert malformed_media.status == 404
     assert await malformed_media.text() == "Content asset not found"
 
+    puts_before_reuse = len(fixture.asset_storage.puts)
+    reused_upload = await _upload(
+        fixture,
+        group_lesson=fixture.group_lesson_b,
+        kind="condition",
+        filename="assets/condition.tex",
+        source=source.encode(),
+    )
+    assert reused_upload.status == 201, await reused_upload.text()
+    reused_revision = await reused_upload.json()
+    reused_inventory = await fixture.client.get(
+        f"/staff/api/v1/content/revisions/{reused_revision['revisionId']}/assets",
+        cookies=_cookie(fixture, "admin"),
+        headers=_headers(),
+    )
+    assert reused_inventory.status == 200, await reused_inventory.text()
+    assert (await reused_inventory.json())["missingAssets"] == []
+    assert len(fixture.asset_storage.puts) == puts_before_reuse
+
     counts = fixture.factory.run_read(
         lambda connection: (
             connection.execute("SELECT count(*) AS count FROM media_assets").fetchone()[
@@ -2854,7 +2873,7 @@ async def test_missing_assets_upload_reuse_and_compile_share_typed_descriptors(
     )
     # Direct SVG and TikZ intentionally deduplicate because their sanitized
     # output bytes are identical; all three logical references stay attached.
-    assert counts == (2, 3)
+    assert counts == (2, 6)
 
 
 @pytest.mark.parametrize(

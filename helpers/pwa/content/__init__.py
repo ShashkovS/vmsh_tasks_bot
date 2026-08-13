@@ -6,6 +6,7 @@ from .assets import (
     ContentAssetConverter,
     ContentAssetTools,
     ConvertedAsset,
+    prepare_tikz_standalone_document,
     sanitize_svg,
 )
 from .asset_service import ContentAssetService, PersistedContentAsset
@@ -19,6 +20,7 @@ from .model import (
     SourceEncoding,
 )
 from .scanner import ParserLimits
+from .tikz import TikzScanIssue, TikzScanResult, TikzSource, scan_tikz_sources
 from .telegram import (
     TELEGRAM_BOT_API_DIALECT,
     TelegramMarkupError,
@@ -56,6 +58,8 @@ __all__ = [
     "TelegramRichLimits",
     "TelegramRichMetrics",
     "compile_latex",
+    "prepare_tikz_standalone_document",
+    "scan_tikz_sources",
     "sanitize_telegram_rich_html",
     "sanitize_svg",
     "validate_telegram_rich_html",
@@ -63,4 +67,7 @@ __all__ = [
     "WebAssetDescriptor",
     "WebDocumentError",
     "render_web_document",
+    "TikzScanIssue",
+    "TikzScanResult",
+    "TikzSource",
 ]

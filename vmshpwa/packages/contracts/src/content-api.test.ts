@@ -14,6 +14,7 @@ import {
   publishedContentSchema,
   rollbackContentRequestSchema,
   staffContentHistorySchema,
+  staffContentAssetResolveSchema,
   staffContentAssetUploadSchema,
   staffContentPreviewSchema,
   staffContentRevisionAssetsSchema,
@@ -271,6 +272,9 @@ describe('Phase-2 content HTTP contracts', () => {
     expect(staffContentRevisionAssetsSchema.parse(response).missingAssets).toEqual([
       'figures/rook.svg',
     ])
+    expect(staffContentAssetResolveSchema.parse({ ...response, reusedCount: 1 }).reusedCount).toBe(
+      1,
+    )
     expect(() =>
       staffContentRevisionAssetsSchema.parse({ ...response, missingAssets: [] }),
     ).toThrow()

@@ -25,6 +25,7 @@ import {
   rollbackContentRequestSchema,
   staffContentHistorySchema,
   staffContentAssetUploadSchema,
+  staffContentAssetResolveSchema,
   staffContentPreviewSchema,
   staffContentRevisionAssetsSchema,
   staffContentRevisionSchema,
@@ -53,6 +54,7 @@ import {
   type PrincipalQueryScope,
   type StaffContentHistory,
   type StaffContentAssetUpload,
+  type StaffContentAssetResolve,
   type StaffContentPreview,
   type StaffContentRevisionAssets,
   type StaffContentRevision,
@@ -161,6 +163,11 @@ export interface ContentApiClient {
     revisionId: string,
     options?: ContentRequestOptions,
   ): Promise<VersionedContentResource<StaffContentRevisionAssets>>
+  resolveRevisionAssets?(
+    revisionId: string,
+    etag: ContentEtag,
+    options?: ContentRequestOptions,
+  ): Promise<VersionedContentResource<StaffContentAssetResolve>>
   problemMatches(
     revisionId: string,
     options?: ContentRequestOptions,
@@ -389,6 +396,19 @@ class BrowserContentApiClient implements ContentApiClient {
       `/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/assets`,
       { method: 'GET', ...options },
       staffContentRevisionAssetsSchema,
+    )
+  }
+
+  async resolveRevisionAssets(
+    revisionId: string,
+    etag: ContentEtag,
+    options: ContentRequestOptions = {},
+  ): Promise<VersionedContentResource<StaffContentAssetResolve>> {
+    this.#requireStaff()
+    return this.#versionedJson(
+      `/content/revisions/${encodeURIComponent(publicIdSchema.parse(revisionId))}/assets/resolve`,
+      { method: 'POST', ifMatch: contentEtagSchema.parse(etag), ...options },
+      staffContentAssetResolveSchema,
     )
   }
 

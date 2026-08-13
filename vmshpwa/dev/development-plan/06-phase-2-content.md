@@ -28,6 +28,11 @@ before/after для обычного изменения расписания и 
 `lesson_window_schedule_sources`, `lesson_publications`, `hint_reveals`,
 `solution_reveals`.
 
+Миграция [`0079.pwa_content_asset_reuse.sql`](../../../migrations/0079.pwa_content_asset_reuse.sql)
+добавляет неизменяемые глобальные `content_asset_names` и версионированный
+`content_tikz_cache`. Имя внешнего рисунка сравнивается как безопасный NFC-путь
+без учёта регистра; занятое имя нельзя переназначить другой картинке.
+
 Legacy `lessons/problems` сохраняются. Compiler создаёт versioned representation и только после явной публикации обновляет совместимую projection/adapter, если это требуется Telegram. Source/publication принадлежат concrete `group_lesson`; Telegram destination разрешается через effective `telegram_bindings` (`group materials_target` заменяет course default, иначе наследует его), а token по-прежнему принадлежит runtime config.
 
 Production migration не начинает историю с занятия 39. Для существующих занятий 1–38 текущего сезона отдельный dry-run/backfill создаёт минимальные source/revision/problem-match/publication/window records из legacy `lessons`/`problems`, файлового корпуса и утверждённого schedule mapping. Report показывает занятия/уровни без source, несовпадающее число задач и неизвестные фактические timestamps. Неизвестное время сохраняется как nullable/provenance, а не подменяется точным вымышленным значением.
@@ -41,6 +46,24 @@ Production migration не начинает историю с занятия 39. 
 5. Сгенерировать web AST/HTML для client KaTeX, Telegram-rich dialect и PDF.
 6. Проверить link/media/Telegram limits и sanitizer/CSP. Поддерживаемый корпус — KaTeX + конструкции исторического `a16_html_from_tex.py`.
 7. Сохранить compiler version/hash. Recompile не меняет publication до явного действия.
+
+Перед ручным missing-assets flow сервер присоединяет известные глобальные
+имена и результаты TikZ с тем же `tikz-c14n`/converter version. Архивный импорт
+реализован командой `vmshpwa.scripts.content_picture_bank`: `rg --follow`
+перечисляет TeX-корпус, scanner отбрасывает комментарии и хвост после
+`\end{document}`, а S3/DB apply получает только реально упомянутые файлы.
+Полный JSON dry-run остаётся owner-local в `.runtime`; краткий воспроизводимый
+proof хранится в
+[`phase2-content-picture-bank-2026-08-13.md`](../../../pwa_tests/reports/phase2-content-picture-bank-2026-08-13.md).
+
+Следующий TikZ-only static gate реализован отдельно и пока не выполняет
+`pdflatex`, S3 upload или DB write. Команда
+[`content_tikz_corpus.py`](../../scripts/content_tikz_corpus.py) рекурсивно
+проходит обе архивные иерархии только по `usl-??-?.tex` и
+`usl-??-?-sol.tex`, собирает effective source по compatibility-правилам
+`a16_html_from_tex.py`, проверяет production parser/standalone boundary и
+сверяет внешние raster references с банком. Результат и открытые blockers:
+[`phase2-content-tikz-corpus-2026-08-13.md`](../../../pwa_tests/reports/phase2-content-tikz-corpus-2026-08-13.md).
 
 Внешний toolchain берётся из общего backend config: `pdflatex_path='pdflatex'`, `pdf2svg_path='pdf2svg'`, `cwebp_path='cwebp'`, `magick_path='magick'`. Default names разрешаются через `PATH` service profile; absolute override допустим, но machine-specific path не является частью content revision. Перед compile worker проверяет требуемые capabilities и использует только безопасный argv-вызов без shell. Provenance сохраняет нормализованные tool versions вместе с compiler version.
 
@@ -101,6 +124,9 @@ Reference: `_external_pipelines/a16_html_from_tex.py`, `edt_tasks_parser.py`, `m
   the external figure and then retries compilation. The content client accepts
   the exact weak form which a compression filter may produce from the opaque
   version ETag and restores the strong database version token for `If-Match`.
+- При загрузке source и по явной кнопке Staff сначала выполняет глобальный
+  поиск уже сохранённых картинок. Успешное переиспользование не принимает и не
+  конвертирует новые browser bytes; другая картинка требует другого имени.
 - Attached raster and SVG resources are shown from their original public URL in
   a bounded Staff preview. Activating the preview opens the same original asset
   in a large modal; no thumbnail object or duplicate media pipeline is created.

@@ -355,6 +355,11 @@ export const staffContentRevisionAssetsSchema = z
   })
 export type StaffContentRevisionAssets = z.infer<typeof staffContentRevisionAssetsSchema>
 
+export const staffContentAssetResolveSchema = staffContentRevisionAssetsSchema.safeExtend({
+  reusedCount: z.number().int().nonnegative().max(10_000),
+})
+export type StaffContentAssetResolve = z.infer<typeof staffContentAssetResolveSchema>
+
 export const staffContentAssetUploadSchema = z
   .object({
     revisionId: publicIdSchema,

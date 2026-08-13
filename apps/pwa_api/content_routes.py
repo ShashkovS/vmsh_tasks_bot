@@ -1351,6 +1351,52 @@ async def _inspect_revision_assets(
     return result, _asset_references(result.ast), descriptors
 
 
+async def _resolve_reusable_revision_assets(
+    request: web.Request,
+    context: ContentRevisionContext,
+) -> tuple[ContentRevisionContext, int]:
+    """Attach known global figures and cached TikZ without new conversions."""
+
+    repository = _repository(request)
+    _result, references, descriptors = await _inspect_revision_assets(
+        repository, context
+    )
+    version = context.revision.version
+    reused_count = 0
+    service = _asset_service(request)
+    for logical_name, reference in references.items():
+        if logical_name in descriptors:
+            continue
+        common = {
+            "revision_id": context.revision.id,
+            "logical_name": logical_name,
+            "expected_revision_version": version,
+            "ordinal": int(reference["ordinal"]),
+            "alt_text": (
+                str(reference["altText"])
+                if isinstance(reference["altText"], str)
+                else None
+            ),
+        }
+        if reference["sourceKind"] == "tikz":
+            source = reference["tikzSource"]
+            if not isinstance(source, str):
+                raise ContentRepositoryError("compiler TikZ reference has no source")
+            persisted = await service.resolve_and_attach_tikz(
+                **common, source=source
+            )
+        else:
+            persisted = await service.resolve_and_attach_figure(**common)
+        if persisted is not None:
+            if persisted.revision_version is None:  # pragma: no cover - API invariant
+                raise ContentRepositoryError("reusable attachment lost revision version")
+            version = persisted.revision_version
+            reused_count += 1
+    if reused_count:
+        context = await repository.get_revision_context(context.revision.public_id)
+    return context, reused_count
+
+
 def _revision_asset_payload(
     context: ContentRevisionContext,
     references: Mapping[str, Mapping[str, object]],
@@ -1543,6 +1589,7 @@ async def upload_content_source(request: web.Request) -> web.Response:
         payload=payload,
         actor_user_id=actor_user_id,
     )
+    context, _reused_count = await _resolve_reusable_revision_assets(request, context)
     revision = context.revision
     response = web.json_response(
         {**_revision_payload(context), "requestId": _request_id(request)}, status=201
@@ -1577,6 +1624,32 @@ async def list_content_revision_assets(request: web.Request) -> web.Response:
     response = web.json_response(
         {
             **_revision_asset_payload(context, references, descriptors),
+            "requestId": _request_id(request),
+        }
+    )
+    response.headers["ETag"] = _etag(
+        context.revision.public_id, context.revision.version
+    )
+    return response
+
+
+@content_routes.post("/staff/api/v1/content/revisions/{revision_id}/assets/resolve")
+@_translate_content_errors
+async def resolve_content_revision_assets(request: web.Request) -> web.Response:
+    repository = _repository(request)
+    context = await repository.get_revision_context(request.match_info["revision_id"])
+    _staff_actor(request, context.scope)
+    _require_if_match(
+        request, _etag(context.revision.public_id, context.revision.version)
+    )
+    context, reused_count = await _resolve_reusable_revision_assets(request, context)
+    _result, references, descriptors = await _inspect_revision_assets(
+        repository, context
+    )
+    response = web.json_response(
+        {
+            **_revision_asset_payload(context, references, descriptors),
+            "reusedCount": reused_count,
             "requestId": _request_id(request),
         }
     )
@@ -1650,7 +1723,7 @@ async def upload_content_revision_asset(request: web.Request) -> web.Response:
         )
     updated = await repository.get_revision_context(context.revision.public_id)
     descriptor = _asset_descriptor(persisted.record)
-    reused = not persisted.attachment_created
+    reused = persisted.reused
     response = web.json_response(
         {
             "revisionId": updated.revision.public_id,

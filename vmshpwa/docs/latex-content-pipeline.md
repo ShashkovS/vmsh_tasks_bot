@@ -12,6 +12,15 @@ Legacy-команды `\объявление…\кобъявление` и
 nodes с рекурсивными блоками и fail-closed проверяет парность; определения и
 английские aliases из `newlistok.sty` не исполняются и не входят в язык.
 
+Полный архив 2024–2025 используется как внешний compatibility corpus.
+[`content_archive_diagnostics.py`](../scripts/content_archive_diagnostics.py)
+компилирует каждый файл условия/решения тем же `compile_latex`, сохраняет
+source SHA-256 и все blocking line/column diagnostics, но не копирует текст
+материалов. Corpus-driven adapters поддерживают declaration-style legacy
+formatting, `makebox`, `verb`, `multicols`, `multline*`, оболочку `table` и
+позиционированный TikZ. Потерянные ранее символы `U+FFFD` считаются
+повреждением source, которое parser не пытается угадывать или восстанавливать.
+
 ## Web и Telegram renderers
 
 Web HTML сохраняет исходные LaTeX expressions в безопасных math nodes. KaTeX работает на клиенте с HTML+MathML output; его CSS и fonts собираются Vite и входят в precache Student/Family. Текущий полный набор увеличивает precache примерно до 1.4 MiB; после стабилизации корпуса нужно оставить необходимые web-форматы/subsets с regression-набором реальных формул. Выделение/copy helper и интерактивное меню формул отключены, но assistive semantics не удаляются.
@@ -89,6 +98,32 @@ validation, затем тот же shape проверяет Zod. Конфлик�
 descriptor остаётся `asset.missing` и блокирует публикацию.
 
 TikZ компилируется контролируемым toolchain в отдельный SVG object в S3 и подходящие print/Telegram производные. SVG не инлайнится в HTML. Для каждого рисунка сохраняются alt/описание, dimensions и provenance. Zoomable figure открывает изображение без потери доступной подписи. Реализация наследует проверенные операции `mathimg_service.py`: content hash, `pdflatex`, PDF→SVG и S3 upload.
+
+Перед hash/cache lookup [`scan_tikz_sources`](../../helpers/pwa/content/tikz.py)
+собирает самодостаточный asset source: `% addToTikz`, реально необходимые
+предшествующие `newcommand`/`def`, цвета, длины, `tikzset`, библиотеки и сам
+рисунок. Несколько `tikzpicture` внутри одного `righttikz[w]`/`lefttikz[w]`
+остаются одним asset, `\tikz{…}` и `\tikz\node…;` поддерживаются, а comments,
+`comment` environments, тела macro definitions и хвост после
+`\end{document}` не импортируются как самостоятельные картинки. Минимальная
+нормализация применяется уже к этому effective source, поэтому одинаковый
+рисунок переиспользуется, но одинаковое тело с разными macro/color context не
+может ошибочно получить чужой SVG.
+
+Воспроизводимый статический gate
+[`content_tikz_corpus.py`](../scripts/content_tikz_corpus.py) проходит обе
+owner-local архивные иерархии по точным lesson-маскам, запускает production AST
+parser и standalone preparation, но не вызывает TeX, S3 или БД. Его результат:
+[`phase2-content-tikz-corpus-2026-08-13.md`](../../pwa_tests/reports/phase2-content-tikz-corpus-2026-08-13.md).
+
+Отдельный recursive parser gate
+[`content_archive_recursive_diagnostics.py`](../scripts/content_archive_recursive_diagnostics.py)
+проверяет все lesson/solution sources двух архивов по точной production-маске.
+Обычный файл компилируется в роли `condition`, `-sol` — в роли `solution`,
+поэтому hints/solutions не могут попасть в условие через выбор соседнего файла.
+Gate не запускает TeX, S3 или БД; он сохраняет каждую blocking-диагностику со
+строкой и колонкой и отдельно фиксирует исключённые U+FFFD sources. Полный
+результат: [`phase2-content-archive-all-errors.md`](../../pwa_tests/reports/phase2-content-archive-all-errors.md).
 
 Browser [`ZoomableAssetFigure`](../packages/content/src/zoomable-asset-figure.tsx) загружает только root-relative либо credential-free HTTPS SVG/raster URL. Рамка-холст и изображение имеют единый transform; `+`, `−`, `0`, кнопки, pinch и pan меняют только локальный viewer state. Missing/error asset сохраняет alt и caption в явном fallback; исходный SVG никогда не инлайнится в DOM.
 

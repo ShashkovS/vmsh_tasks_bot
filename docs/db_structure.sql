@@ -2,7 +2,7 @@
 -- Authoritative source: repository yoyo migrations plus schema inventory.
 -- Schema-only: contains no product row values; DDL is migration-authored.
 -- Reference only: apply migrations rather than using this as a bootstrap.
--- Product schema SHA-256: 103111200a8f6a314ebe69d864b6fa360ec8dcfcc41f8d582d1fc7e41931561b
+-- Product schema SHA-256: 69bec2203e34f4cf66318ed3072546d5f0fe8bca89d3547a6d46dc5b37b169da
 
 CREATE TABLE achievement_definitions
 (
@@ -475,6 +475,20 @@ CREATE TABLE classrooms
     check (updated_at >= created_at)
 );
 
+CREATE TABLE content_asset_names
+(
+    id                 integer primary key,
+    normalized_name    text    not null unique
+        check (length(normalized_name) between 1 and 2000),
+    display_name       text    not null
+        check (length(trim(display_name)) between 1 and 2000),
+    asset_id           integer not null references media_assets (id),
+    origin             text    not null
+        check (origin in ('upload', 'archive_import', 'backfill')),
+    created_by_user_id integer references users (id),
+    created_at         text    not null
+);
+
 CREATE TABLE content_derivatives
 (
     id                 integer primary key,
@@ -603,6 +617,21 @@ CREATE TABLE content_sources
     archived_at        text,
     unique (group_lesson_id, kind, logical_filename),
     check (archived_at is null or archived_at >= created_at)
+);
+
+CREATE TABLE content_tikz_cache
+(
+    id                    integer primary key,
+    normalized_sha256     text    not null
+        check (length(normalized_sha256) = 64 and normalized_sha256 not glob '*[^0-9a-f]*'),
+    normalization_version text    not null check (length(trim(normalization_version)) > 0),
+    conversion_version    text    not null check (length(trim(conversion_version)) > 0),
+    asset_id              integer not null references media_assets (id),
+    source_sha256         text    not null
+        check (length(source_sha256) = 64 and source_sha256 not glob '*[^0-9a-f]*'),
+    created_by_user_id    integer references users (id),
+    created_at            text    not null,
+    unique (normalized_sha256, normalization_version, conversion_version)
 );
 
 CREATE TABLE course_enrollment_events
@@ -2863,6 +2892,9 @@ CREATE UNIQUE INDEX classroom_layout_versions_one_draft_uq
 CREATE INDEX classrooms_status_name_idx
     on classrooms (status, normalized_name, id);
 
+CREATE INDEX content_asset_names_asset_idx
+    on content_asset_names (asset_id, normalized_name);
+
 CREATE INDEX content_derivatives_asset_idx
     on content_derivatives (asset_id, revision_id)
     where asset_id is not null;
@@ -2883,6 +2915,9 @@ CREATE INDEX content_sources_group_kind_idx
 CREATE UNIQUE INDEX content_sources_one_active_material_uq
     on content_sources (group_lesson_id, kind)
     where archived_at is null;
+
+CREATE INDEX content_tikz_cache_asset_idx
+    on content_tikz_cache (asset_id, normalized_sha256);
 
 CREATE INDEX course_enrollment_events_timeline_idx
     on course_enrollment_events (enrollment_id, occurred_at, id);
@@ -3405,6 +3440,18 @@ begin
     select raise(abort, 'classroom deletion is forbidden');
 end;
 
+CREATE TRIGGER content_asset_names_delete_forbidden
+before delete on content_asset_names
+for each row begin
+    select raise(abort, 'content asset name deletion is forbidden');
+end;
+
+CREATE TRIGGER content_asset_names_immutable_update
+before update on content_asset_names
+for each row begin
+    select raise(abort, 'content asset name is immutable');
+end;
+
 CREATE TRIGGER content_derivatives_asset_hash_insert
 before insert on content_derivatives
 for each row
@@ -3570,6 +3617,18 @@ when not (
 )
 begin
     select raise(abort, 'content source identity/archive transition is invalid');
+end;
+
+CREATE TRIGGER content_tikz_cache_delete_forbidden
+before delete on content_tikz_cache
+for each row begin
+    select raise(abort, 'content TikZ cache deletion is forbidden');
+end;
+
+CREATE TRIGGER content_tikz_cache_immutable_update
+before update on content_tikz_cache
+for each row begin
+    select raise(abort, 'content TikZ cache is immutable');
 end;
 
 CREATE TRIGGER course_schedule_rules_delete_forbidden

@@ -29,8 +29,24 @@ production backfill или реальную отправку в Telegram.
 | Таблицы                                          | Rows/cells                                                               | До 200 строк и 20 колонок; превышение отклоняется без обрезки                                   | До 20 колонок по Bot API limits                      |
 | `\объявление` и `\важноеОбъявление`              | Typed announcement block (`regular`/`important`) с рекурсивными children | Существующий `callout`: спокойный `note` либо акцентный `theorem` с меткой «Важно»              | Отдельный `aside` либо `blockquote` с меткой «Важно» |
 | External figures                                 | Logical name, alt, optional known hash                                   | `missing` либо explicit published asset descriptor; SVG остаётся внешним URL                    | Только безопасный public HTTP(S) media URL           |
-| TikZ                                             | Отдельный figure node с source/hash                                      | После converter — внешний sanitized SVG asset                                                   | После converter — совместимая media derivative       |
+| TikZ                                             | Figure node с effective source/hash: контекстные declarations, inline и positional wrappers | После converter — внешний sanitized SVG asset                                                   | После converter — совместимая media derivative       |
 | Legacy print-layout                              | Не становится семантикой                                                 | Игнорируется либо даёт warning                                                                  | Не переносится как presentation markup               |
+
+Corpus-driven compatibility для архива 2024–2025 дополнительно сохраняет
+содержимое declaration-style `{\it …}`, `{\bf …}`, `{\tt …}`, `\makebox`,
+`\verb`, `\textsuperscript`, `\underline` и `\overline`. `multicols`
+линеаризуется, `multline*` становится display math, `table` сохраняет вложенную
+таблицу, а `\putthere{…}{…}{TikZ}` отбрасывает только позиционирование.
+Таблица с самостоятельными рисунками разворачивается в последовательность
+figure blocks с warning, включая `resizebox` внутри ячеек. Несколько
+`tikzpicture` в одном `righttikz[w]`/`lefttikz[w]` сохраняются одним asset;
+непарный print-only `center` восстанавливает вложенный TikZ до semantic boundary.
+Это bounded adapters известных конструкций, а не
+исполнение пользовательских TeX-определений.
+
+Символ замены `U+FFFD` является отдельной blocking-ошибкой повреждённого
+источника; сотни команд из утраченных букв не выдаются как независимые
+`unknown_macro`. Одиночный `\` также имеет отдельную позиционную диагностику.
 
 Internal Python `DocumentAst` содержит все ветки и source spans и никогда не
 является API payload. Browser wire — только строгий
@@ -51,6 +67,11 @@ TeX-определения из `newlistok.sty` compiler не исполняет
 
 - TikZ converter использует фиксированный argv `pdflatex -no-shell-escape` →
   `pdf2svg`, isolated temporary files, timeout и redacted failures.
+- Effective TikZ source формирует
+  [`helpers/pwa/content/tikz.py`](../../helpers/pwa/content/tikz.py): explicit
+  `% addToTikz`, dependency-scoped macros/constants/styles/libraries и layout
+  wrapper входят в hash; comments, document tail и невызванные macro bodies —
+  нет. Static standalone preparation не запускает toolchain.
 - Raster converter принимает bounded input, уменьшает изображение до 1920 px и
   сохраняет только WebP; исходный HEIC/JPEG/PNG не является производной для
   хранения.
@@ -93,6 +114,23 @@ limits входят в derivative metadata; live отправка в test channe
 результат: 30/30 TeX sources, 334 problem nodes, 0 structural failures и одно
 ожидаемое warning о legacy print-layout. PDF/JSON входят в общий manifest gate,
 но этим pure compiler не разбираются.
+
+Полный owner-local corpus 2024–2025 проверяется воспроизводимым
+[`content_archive_diagnostics.py`](../scripts/content_archive_diagnostics.py).
+Текущий результат и все оставшиеся line/column diagnostics находятся в
+[`phase2-content-archive-2024-2025-errors.md`](../../pwa_tests/reports/phase2-content-archive-2024-2025-errors.md);
+архив и его симлинк в report не копируются и не изменяются.
+
+Полная рекурсивная проверка двух owner-local архивов выполняется
+[`content_archive_recursive_diagnostics.py`](../scripts/content_archive_recursive_diagnostics.py)
+строго по маскам `usl-??-?.tex` / `usl-??-?-sol.tex`. Файлы с буквальным
+`U+FFFD` исключаются и перечисляются отдельно; роль `solution` назначается
+только суффиксу `-sol`. Текущий полный позиционный результат находится в
+[`phase2-content-archive-all-errors.md`](../../pwa_tests/reports/phase2-content-archive-all-errors.md).
+Legacy `picture` остаётся warning и непрозрачным блоком до конвертации в TikZ.
+Общие print-layout wrappers (`npcopy`, box/minipage/table wrappers, layout
+registers) не исполняются и не дублируют semantic problems. Локальные языки
+рисунков, домино и динамический `csname` сознательно не добавлены в dialect.
 
 До полного закрытия Phase 2 остаются:
 

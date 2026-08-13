@@ -2,6 +2,19 @@
 
 Последнее обновление: 2026-08-13.
 
+## Historical TikZ static corpus gate — 13 August 2026
+
+- Обе owner-local архивные иерархии рекурсивно проверяются по точным маскам
+  `usl-??-?.tex`/`usl-??-?-sol.tex`; comments, macro bodies и document tail не
+  считаются самостоятельными картинками.
+- Production parser теперь использует один effective TikZ source с
+  `% addToTikz`, dependency-scoped macros/colors/styles/libraries и positional
+  wrapper; inline `\tikz`, несколько environments в wrapper, таблицы с
+  `resizebox` и незакрытый print-only `center` покрыты regression tests.
+- Статический прогон не компилирует TikZ и не изменяет S3/БД. Полные числа,
+  позиции и три открытых source/toolchain blockers:
+  [`phase2-content-tikz-corpus-2026-08-13.md`](../../../pwa_tests/reports/phase2-content-tikz-corpus-2026-08-13.md).
+
 ## Production content upload recovery — 13 August 2026
 
 - Создание занятия в Staff теперь одним действием создаёт одноимённые занятия
@@ -321,6 +334,13 @@
   [`helpers/pwa/content`](../../../helpers/pwa/content): bounded UTF-8/CP1251
   scanner, typed AST, positional diagnostics, role-isolated web/Telegram
   renderers, `WebContentDocument v1` и fixed-toolchain asset converters.
+- Corpus gate 2024–2025 (13 августа 2026) прогнал **218** файлов условий и
+  решений (**2481** problem nodes); **36** агрегатных placeholders исключены
+  явно. Corpus-driven compatibility снизил blocking diagnostics с **1398** до
+  **25** в **14** файлах и устранил все `latex.unknown_macro`; оставшиеся
+  ошибки — повреждённые bytes, реальная непарность, три legacy `picture` и два
+  одиночных слеша. Все позиции:
+  [`phase2-content-archive-2024-2025-errors.md`](../../../pwa_tests/reports/phase2-content-archive-2024-2025-errors.md).
 - Текущий Phase 2B increment (13 августа 2026) добавляет семантические
   `\объявление…\кобъявление` и
   `\важноеОбъявление…\кважноеОбъявление`: typed AST, fail-closed парный
@@ -1782,3 +1802,40 @@
 - Focused API: **6 PASS**; contracts/client: **18 PASS**; schema inventory
   generate/check, Ruff и strict TypeScript — **PASS**. Storybook и код
   аудиторий не менялись.
+
+## Phase 2 checkpoint: глобальный банк картинок — 13 августа 2026
+
+- Migration `0079` добавляет неизменяемый регистр имён рисунков и
+  версионированный кэш нормализованного TikZ; повторное имя всегда ведёт к уже
+  зарегистрированному media asset.
+- Source upload автоматически присоединяет найденные ресурсы. Для старых
+  revision добавлены `POST .../assets/resolve` и кнопка Staff; TikZ cache hit не
+  запускает `pdflatex` повторно.
+- Архивный индексатор использует `rg --follow`, читает UTF-8/Windows-1251,
+  учитывает команды из `newlistok.sty`, локальные picture-макросы и конечные
+  анимации. Неупомянутые файлы не входят в импорт.
+- Dry-run двух архивов: **2554 TeX**, **2391 выбранный файл**, **1352 unused**,
+  **0 name conflicts**, **2 unresolved dynamic expressions**. Production apply
+  остаётся после deploy migration и доступности production credentials/DB.
+- Proof:
+  [`phase2-content-picture-bank-2026-08-13.md`](../../../pwa_tests/reports/phase2-content-picture-bank-2026-08-13.md).
+
+## Phase 2 checkpoint: полный архивный parser gate — 13 августа 2026
+
+- Рекурсивно найдено **2184** TeX-файла по точным lesson-маскам; **7** файлов
+  с буквальным U+FFFD исключены, **2177** скомпилированы в правильных ролях
+  condition/solution, найдено **25 827** problem nodes.
+- Исправлено **47** однозначных дефектных TeX-файлов. Проверка через
+  `/Users/sergeyshashkov/bin/pdflatex`: **44 PASS**, ещё **3** дошли только до
+  ранее отсутствовавших image assets; синтаксических регрессий от исправлений нет.
+- Parser получил bounded compatibility для общих legacy wrappers, math/list/
+  table environments, локальных inert macro declarations, `npcopy`, layout
+  groups/registers и TeX control spaces. `picture` остаётся warning; локальные
+  DSL рисунков/домино и динамический `csname` не добавлены.
+- Итог: **38** файлов с blocking errors, **3301** ошибок; из них **3295** —
+  неизвестные локальные графические макросы, остальные — два non-lesson файла
+  без задач, forbidden `csname` и одна таблица сверх wire-лимита 20 колонок.
+- Focused parser/report gate: **80 PASS**. Полный список со строками и колонками:
+  [`phase2-content-archive-all-errors.md`](../../../pwa_tests/reports/phase2-content-archive-all-errors.md).
+  Краткий proof:
+  [`phase2-content-archive-recursive-2026-08-13.md`](../../../pwa_tests/reports/phase2-content-archive-recursive-2026-08-13.md).

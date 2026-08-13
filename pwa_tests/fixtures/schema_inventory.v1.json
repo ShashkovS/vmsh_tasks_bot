@@ -241,6 +241,10 @@
       {
         "id": "0078.pwa_zero_lesson",
         "sha256": "d3cd9b34715197bfd9e77471593f76f8a2f1caf48cf8533c7c407135e8b797e7"
+      },
+      {
+        "id": "0079.pwa_content_asset_reuse",
+        "sha256": "f9150ef9e9d3cb9b727d886bcee0c5aa88c654b4fd961c7d09fdd3d27663467c"
       }
     ],
     "repository_head_status": {
@@ -251,7 +255,7 @@
     }
   },
   "product": {
-    "object_count": 423,
+    "object_count": 431,
     "objects": [
       {
         "columns": [
@@ -4552,6 +4556,162 @@
           },
           {
             "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "normalized_name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "display_name",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "asset_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "origin",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "asset_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "media_assets"
+          },
+          {
+            "from_columns": [
+              "created_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "asset_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "normalized_name",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "content_asset_names_asset_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "normalized_name",
+                "seqno": 0
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 1
+              }
+            ],
+            "name": "sqlite_autoindex_content_asset_names_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "content_asset_names",
+        "object_sha256": "b14c7b3fd2dba4b31e81eeeb74c07effb0e82ee38fcca0d4659e8cf6bdd701df",
+        "sql": "CREATE TABLE content_asset_names\n(\n    id                 integer primary key,\n    normalized_name    text    not null unique\n        check (length(normalized_name) between 1 and 2000),\n    display_name       text    not null\n        check (length(trim(display_name)) between 1 and 2000),\n    asset_id           integer not null references media_assets (id),\n    origin             text    not null\n        check (origin in ('upload', 'archive_import', 'backfill')),\n    created_by_user_id integer references users (id),\n    created_at         text    not null\n);",
+        "table_name": "content_asset_names",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
             "declared_type": "INTEGER",
             "default_sql": null,
             "hidden": 0,
@@ -5755,6 +5915,187 @@
         "object_sha256": "3930209c1f63b41faef0b81500a59652679093092d93ee4ad13a4fe8aef9a4be",
         "sql": "CREATE TABLE content_sources\n(\n    id                 integer primary key,\n    public_id          text    not null unique\n        check (\n            length(public_id) between 1 and 128\n            and public_id not glob '*[^a-z0-9._:-]*'\n            and substr(public_id, 1, 1) glob '[a-z0-9]'\n            and substr(public_id, -1, 1) glob '[a-z0-9]'\n        ),\n    group_lesson_id    integer not null references group_lessons (id),\n    kind               text    not null\n        check (kind in ('condition', 'hint', 'solution', 'teacher_note')),\n    logical_filename   text    not null\n        check (length(trim(logical_filename)) > 0),\n    source_encoding    text    not null\n        check (source_encoding in ('utf-8', 'cp1251')),\n    created_by_user_id integer references users (id),\n    created_at         text    not null,\n    archived_at        text,\n    unique (group_lesson_id, kind, logical_filename),\n    check (archived_at is null or archived_at >= created_at)\n);",
         "table_name": "content_sources",
+        "type": "table"
+      },
+      {
+        "columns": [
+          {
+            "cid": 0,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "id",
+            "not_null": false,
+            "primary_key_ordinal": 1
+          },
+          {
+            "cid": 1,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "normalized_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 2,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "normalization_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 3,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "conversion_version",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 4,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "asset_id",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 5,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "source_sha256",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 6,
+            "declared_type": "INTEGER",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_by_user_id",
+            "not_null": false,
+            "primary_key_ordinal": 0
+          },
+          {
+            "cid": 7,
+            "declared_type": "TEXT",
+            "default_sql": null,
+            "hidden": 0,
+            "name": "created_at",
+            "not_null": true,
+            "primary_key_ordinal": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "from_columns": [
+              "asset_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "media_assets"
+          },
+          {
+            "from_columns": [
+              "created_by_user_id"
+            ],
+            "match": "NONE",
+            "on_delete": "NO ACTION",
+            "on_update": "NO ACTION",
+            "target_columns": [
+              "id"
+            ],
+            "target_table": "users"
+          }
+        ],
+        "indexes": [
+          {
+            "columns": [
+              {
+                "cid": 4,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "asset_id",
+                "seqno": 0
+              },
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "normalized_sha256",
+                "seqno": 1
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 2
+              }
+            ],
+            "name": "content_tikz_cache_asset_idx",
+            "origin": "c",
+            "partial": false,
+            "unique": false
+          },
+          {
+            "columns": [
+              {
+                "cid": 1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "normalized_sha256",
+                "seqno": 0
+              },
+              {
+                "cid": 2,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "normalization_version",
+                "seqno": 1
+              },
+              {
+                "cid": 3,
+                "collation": "BINARY",
+                "descending": false,
+                "key": true,
+                "name": "conversion_version",
+                "seqno": 2
+              },
+              {
+                "cid": -1,
+                "collation": "BINARY",
+                "descending": false,
+                "key": false,
+                "name": null,
+                "seqno": 3
+              }
+            ],
+            "name": "sqlite_autoindex_content_tikz_cache_1",
+            "origin": "u",
+            "partial": false,
+            "unique": true
+          }
+        ],
+        "name": "content_tikz_cache",
+        "object_sha256": "ed14172d1e8d4095ab6b87936b855b85f049b50ab221c770ab8d571a2e84cc39",
+        "sql": "CREATE TABLE content_tikz_cache\n(\n    id                    integer primary key,\n    normalized_sha256     text    not null\n        check (length(normalized_sha256) = 64 and normalized_sha256 not glob '*[^0-9a-f]*'),\n    normalization_version text    not null check (length(trim(normalization_version)) > 0),\n    conversion_version    text    not null check (length(trim(conversion_version)) > 0),\n    asset_id              integer not null references media_assets (id),\n    source_sha256         text    not null\n        check (length(source_sha256) = 64 and source_sha256 not glob '*[^0-9a-f]*'),\n    created_by_user_id    integer references users (id),\n    created_at            text    not null,\n    unique (normalized_sha256, normalization_version, conversion_version)\n);",
+        "table_name": "content_tikz_cache",
         "type": "table"
       },
       {
@@ -25537,6 +25878,13 @@
         "type": "index"
       },
       {
+        "name": "content_asset_names_asset_idx",
+        "object_sha256": "db318559272d6a7c6a95e23c5ebcaca857152651ca84f5e27a4179af978c7302",
+        "sql": "CREATE INDEX content_asset_names_asset_idx\n    on content_asset_names (asset_id, normalized_name);",
+        "table_name": "content_asset_names",
+        "type": "index"
+      },
+      {
         "name": "content_derivatives_asset_idx",
         "object_sha256": "fad35922a19bc301382350f594f42c3348b4466a10057a96ceaf0f88b65178a1",
         "sql": "CREATE INDEX content_derivatives_asset_idx\n    on content_derivatives (asset_id, revision_id)\n    where asset_id is not null;",
@@ -25576,6 +25924,13 @@
         "object_sha256": "011c36e205406acccaf4ed2284d7db58ea07a32775024c24c752328f96d8d57e",
         "sql": "CREATE UNIQUE INDEX content_sources_one_active_material_uq\n    on content_sources (group_lesson_id, kind)\n    where archived_at is null;",
         "table_name": "content_sources",
+        "type": "index"
+      },
+      {
+        "name": "content_tikz_cache_asset_idx",
+        "object_sha256": "d9ab985cb8a700955aaec53348303c223ede6694d88ad59984d5b954a754980b",
+        "sql": "CREATE INDEX content_tikz_cache_asset_idx\n    on content_tikz_cache (asset_id, normalized_sha256);",
+        "table_name": "content_tikz_cache",
         "type": "index"
       },
       {
@@ -26447,6 +26802,20 @@
         "type": "trigger"
       },
       {
+        "name": "content_asset_names_delete_forbidden",
+        "object_sha256": "821596135159b56078495fd274ac9816400b930b7f7ea3ac96672799acda6fef",
+        "sql": "CREATE TRIGGER content_asset_names_delete_forbidden\nbefore delete on content_asset_names\nfor each row begin\n    select raise(abort, 'content asset name deletion is forbidden');\nend;",
+        "table_name": "content_asset_names",
+        "type": "trigger"
+      },
+      {
+        "name": "content_asset_names_immutable_update",
+        "object_sha256": "7a549c175a70205595e32e625cffc779d3f0f64d3c141dc5b2cf4320336323f3",
+        "sql": "CREATE TRIGGER content_asset_names_immutable_update\nbefore update on content_asset_names\nfor each row begin\n    select raise(abort, 'content asset name is immutable');\nend;",
+        "table_name": "content_asset_names",
+        "type": "trigger"
+      },
+      {
         "name": "content_derivatives_asset_hash_insert",
         "object_sha256": "ad5df94526d45864305c0e799eaffa97b8ed6fea564efc54a7e21b87df41ccd8",
         "sql": "CREATE TRIGGER content_derivatives_asset_hash_insert\nbefore insert on content_derivatives\nfor each row\nwhen new.asset_id is not null and not exists (\n    select 1 from media_assets as asset\n    where asset.id = new.asset_id\n      and asset.sha256 = new.sha256\n      and asset.deleted_at is null\n)\nbegin\n    select raise(abort, 'derivative asset hash does not match media asset');\nend;",
@@ -26549,6 +26918,20 @@
         "object_sha256": "7aa4222c9aafe091903314c62b93afbedef4e090db16cbb37fbc122d22c6db7c",
         "sql": "CREATE TRIGGER content_sources_identity_archive_guard\nbefore update on content_sources\nfor each row\nwhen not (\n    new.public_id is old.public_id\n    and new.group_lesson_id is old.group_lesson_id\n    and new.kind is old.kind\n    and new.logical_filename is old.logical_filename\n    and new.source_encoding is old.source_encoding\n    and new.created_by_user_id is old.created_by_user_id\n    and new.created_at is old.created_at\n    and old.archived_at is null\n    and new.archived_at is not null\n    and new.archived_at >= old.created_at\n)\nbegin\n    select raise(abort, 'content source identity/archive transition is invalid');\nend;",
         "table_name": "content_sources",
+        "type": "trigger"
+      },
+      {
+        "name": "content_tikz_cache_delete_forbidden",
+        "object_sha256": "99e30588708b10fa86a001ccb0e07d46eba2f5f10d362323f31625b12bbcea82",
+        "sql": "CREATE TRIGGER content_tikz_cache_delete_forbidden\nbefore delete on content_tikz_cache\nfor each row begin\n    select raise(abort, 'content TikZ cache deletion is forbidden');\nend;",
+        "table_name": "content_tikz_cache",
+        "type": "trigger"
+      },
+      {
+        "name": "content_tikz_cache_immutable_update",
+        "object_sha256": "57bbbd0cedfc0509a94f5143d74601c77d8745e512afe7f106cd33109fdb671a",
+        "sql": "CREATE TRIGGER content_tikz_cache_immutable_update\nbefore update on content_tikz_cache\nfor each row begin\n    select raise(abort, 'content TikZ cache is immutable');\nend;",
+        "table_name": "content_tikz_cache",
         "type": "trigger"
       },
       {
@@ -27441,8 +27824,8 @@
         "type": "trigger"
       }
     ],
-    "pragma_structure_sha256": "5d922a0b8edd46e64d5d6e7518520d7480d92d09ed47d626486549c3d70a4e9d",
-    "sha256": "103111200a8f6a314ebe69d864b6fa360ec8dcfcc41f8d582d1fc7e41931561b"
+    "pragma_structure_sha256": "6ebf44e3d4e129a400cbe5959d8eab2c37c111bf16e146a19f93ce01f17e95f1",
+    "sha256": "69bec2203e34f4cf66318ed3072546d5f0fe8bca89d3547a6d46dc5b37b169da"
   },
   "source_kind": "repository-migration-head"
 }

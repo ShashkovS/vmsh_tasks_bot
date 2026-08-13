@@ -328,6 +328,12 @@ def _standalone_document(tikz_source: str) -> str:
     )
 
 
+def prepare_tikz_standalone_document(source: str) -> str:
+    """Validate TikZ and assemble the exact TeX input without executing tools."""
+
+    return _standalone_document(_validate_tikz_source(source))
+
+
 def _split_svg_name(name: str) -> tuple[str | None, str]:
     if name.startswith("{"):
         namespace, _, local_name = name[1:].partition("}")
@@ -586,7 +592,7 @@ class ContentAssetConverter:
             pdf_path = directory / "content.pdf"
             svg_path = directory / "content.svg"
             tex_path.write_text(
-                _standalone_document(normalized_source), encoding="utf-8"
+                prepare_tikz_standalone_document(normalized_source), encoding="utf-8"
             )
             environment = _safe_environment(directory)
             latex_result = await self._run(
@@ -643,6 +649,44 @@ class ContentAssetConverter:
         """
 
         sanitized_svg = sanitize_svg(payload)
+        width, height = _svg_dimensions(sanitized_svg)
+        return ConvertedAsset(
+            source_sha256=_sha256(payload),
+            output_sha256=_sha256(sanitized_svg),
+            media_type="image/svg+xml",
+            data=sanitized_svg,
+            width=width,
+            height=height,
+        )
+
+    async def pdf_to_svg(self, payload: bytes) -> ConvertedAsset:
+        """Convert the first page of a caller-validated single-page PDF."""
+
+        if not isinstance(payload, bytes):
+            raise TypeError("PDF payload must be bytes")
+        if not payload.startswith(b"%PDF-") or len(payload) > 32 * 1024 * 1024:
+            raise AssetConversionError(
+                "asset.pdf_size", "pdf-to-svg", "PDF is invalid or exceeds 32 MiB"
+            )
+        with tempfile.TemporaryDirectory(dir=self.temp_root) as temporary:
+            directory = Path(temporary)
+            pdf_path = directory / "content.pdf"
+            svg_path = directory / "content.svg"
+            pdf_path.write_bytes(payload)
+            result = await self._run(
+                capability="pdf-to-svg",
+                executable=self.tools.pdf2svg,
+                args=(str(pdf_path), str(svg_path), "1"),
+                cwd=directory,
+                environment=_safe_environment(directory),
+            )
+            raw_svg = _assert_command_succeeded(
+                capability="pdf-to-svg",
+                return_code=result.return_code,
+                output_path=svg_path,
+                maximum_bytes=_MAX_SVG_BYTES,
+            )
+        sanitized_svg = sanitize_svg(raw_svg)
         width, height = _svg_dimensions(sanitized_svg)
         return ConvertedAsset(
             source_sha256=_sha256(payload),
@@ -757,6 +801,17 @@ class ConfiguredContentAssetConverter:
     async def svg_to_svg(self, payload: bytes) -> ConvertedAsset:
         converter = ContentAssetConverter(ContentAssetTools("", "", "", ""))
         return await converter.svg_to_svg(payload)
+
+    async def pdf_to_svg(self, payload: bytes) -> ConvertedAsset:
+        converter = ContentAssetConverter(
+            ContentAssetTools(
+                pdflatex="",
+                pdf2svg=_configured_tool(self._config, "pdf2svg_path"),
+                magick="",
+                cwebp="",
+            )
+        )
+        return await converter.pdf_to_svg(payload)
 
     async def raster_to_webp(self, payload: bytes) -> ConvertedAsset:
         converter = ContentAssetConverter(
